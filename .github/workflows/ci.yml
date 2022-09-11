@@ -13,6 +13,11 @@ env:
   LINES: 120
   COLUMNS: 120
 
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaultsrun
+defaults:
+  run:
+    shell: bash --noprofile --norc -exo pipefail {0}
+
 jobs:
   diff:
     runs-on: ubuntu-latest
@@ -47,9 +52,6 @@ jobs:
 
   codestyle_check:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
     needs:
       - diff
 
@@ -97,10 +99,6 @@ jobs:
         run: make ci-pyright
 
   documentation_spelling_check:
-    defaults:
-      run:
-        shell: bash
-
     runs-on: ubuntu-latest
     needs:
       - diff
@@ -139,7 +137,6 @@ jobs:
 
       - name: Run spellcheck script
         run: make spellcheck-docs
-        shell: bash
 
   unit_tests:
     needs:
@@ -150,9 +147,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
-    defaults:
-      run:
-        shell: bash
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
@@ -181,19 +175,20 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
+      - name: Generate gRPC stubs
+        run: |
+          pip install "grpcio-tools>=1.41" mypy-protobuf
+          python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. bentoml/grpc/v1alpha1/service.proto
+          python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. bentoml/grpc/v1alpha1/service_test.proto
+          pip uninstall -y mypy-protobuf
+
       - name: Install dependencies
         run: |
-          pip install .
+          pip install ".[grpc]"
           pip install -r requirements/tests-requirements.txt
 
       - name: Run unit tests
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: make tests-unit
-
-      - name: Run unit tests (Windows)
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: make tests-unit
-        shell: bash
+        run: ./scripts/ci/run_tests.sh unit --verbose
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -214,12 +209,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
-    defaults:
-      run:
-        shell: bash
+        server_type: ["http", "grpc"]
+        exclude:
+          - os: windows-latest
+            server_type: "grpc"
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
-    name: python${{ matrix.python-version }}_e2e_tests (${{ matrix.os }})
+    name: python${{ matrix.python-version }}_${{ matrix.server_type }}_e2e_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
 
@@ -257,24 +253,36 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Install dependencies
+      - name: Generate gRPC stubs
         run: |
-          pip install -e .
+          pip install "grpcio-tools>=1.41" mypy-protobuf
+          python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. bentoml/grpc/v1alpha1/service.proto
+          python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. bentoml/grpc/v1alpha1/service_test.proto
+          pip uninstall -y mypy-protobuf
+
+      - name: Install dependencies for ${{ matrix.server_type }}-based tests.
+        run: |
           pip install -r requirements/tests-requirements.txt
-          pip install -r tests/e2e/bento_server_general_features/requirements.txt
+          if [ "${{ matrix.server_type }}" == 'grpc' ]; then
+            pip install -e ".[grpc]"
+          else
+            pip install -e .
+          fi
+          if [ -f "tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt" ]; then
+            pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
+          fi
 
-      - name: Export Action Envvar
-        run: export GITHUB_ACTION=true
-
-      - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh general_features
+      - name: Run ${{ matrix.server_type }} tests and generate coverage report
+        run: ./scripts/ci/run_tests.sh ${{ matrix.server_type }}_server --verbose
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          flags: e2e-tests
+          flags: e2e-tests-${{ matrix.server_type }}
+          name: codecov-${{ matrix.os }}-python${{ matrix.python-version }}-e2e
+          fail_ci_if_error: true
           directory: ./
-          files: ./tests/e2e/bento_server_general_features/general_features.xml
+          files: ./tests/e2e/bento_server_${{ matrix.server_type }}/${{ matrix.server_type }}_server.xml
           verbose: true
 
 concurrency:

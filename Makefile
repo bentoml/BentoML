@@ -8,19 +8,23 @@ USE_GPU ?= false
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
+.PHONY: format format-proto lint lint-proto type style clean
 format: ## Running code formatter: black and isort
 	@./scripts/tools/formatter.sh
+format-proto: ## Running proto formatter: buf
+	@docker run --init --rm --volume $(GIT_ROOT):/workspace --workdir /workspace bufbuild/buf format --config "/workspace/bentoml/grpc/buf.yaml" -w --path "bentoml/grpc"
 lint: ## Running lint checker: pylint
 	@./scripts/tools/linter.sh
+lint-proto: ## Running proto lint checker: buf
+	@docker run --init --rm --volume $(GIT_ROOT):/workspace --workdir /workspace bufbuild/buf lint --config "/workspace/bentoml/grpc/buf.yaml" --error-format msvs --path "bentoml/grpc"
 type: ## Running type checker: pyright
 	@./scripts/tools/type_checker.sh
+style: format lint format-proto lint-proto ## Running formatter and linter
 clean: ## Clean all generated files
 	@echo "Cleaning all generated files..."
 	@cd $(GIT_ROOT)/docs && make clean
 	@cd $(GIT_ROOT) || exit 1
 	@find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
-hooks: __check_defined_FORCE ## Install pre-defined hooks
-	@./scripts/install_hooks.sh
 
 
 ci-%:
@@ -33,8 +37,10 @@ ci-format: ci-black ci-isort ## Running format check in CI: black, isort
 .PHONY: ci-lint
 ci-lint: ci-pylint ## Running lint check in CI: pylint
 
+.PHONY: tests-suite
+tests-suite: tests-unit tests-http_server tests-grpc_server ## Running BentoML tests suite (unit, e2e, integration)
 
-tests-%: check-defined-USE_GPU check-defined-USE_VERBOSE
+tests-%:
 	$(eval type :=$(subst tests-, , $@))
 	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
 	$(eval __positional:=$(foreach t, $(RUN_ARGS), -$(t)))
@@ -78,15 +84,3 @@ install-spellchecker-deps: ## Inform users to install enchant depending on their
 	@echo Make sure to install enchant from your distros package manager
 	@exit 1
 endif
-
-check_defined = $(strip $(foreach 1,$1, $(call __check_defined,$1,$(strip $(value 2)))))
-__check_defined = \
-    $(if $(value $1),, \
-        $(error Undefined $1$(if $2, ($2))$(if $(value @), \
-                required by target `$@`)))
-check-defined-% : __check_defined_FORCE
-	$(eval $@_target := $(subst check-defined-, ,$@))
-	@:$(call check_defined, $*, $@_target)
-
-.PHONY : __check_defined_FORCE
-__check_defined_FORCE:

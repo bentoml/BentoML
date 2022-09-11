@@ -52,7 +52,11 @@ else
 fi
 
 echo "Generating PyPI source distribution..."
-cd "$GIT_ROOT"
+cd "$GIT_ROOT" || exit 1
+
+# generate gRPC stubs
+./scripts/generate_grpc_stubs.sh
+
 python3 -m build -s -w
 
 # Use testpypi by default, run script with: "REPO=pypi release.sh" for

@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-pip install --user -r requirements/dev-requirements.txt

@@ -5,6 +5,7 @@ import logging
 from functools import lru_cache
 
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLConfigException
 
 try:
     import importlib.metadata as importlib_metadata
@@ -131,15 +132,15 @@ def load_global_config(bentoml_config_file: t.Optional[str] = None):
 
     if bentoml_config_file:
         if not bentoml_config_file.endswith((".yml", ".yaml")):
-            raise Exception(
+            raise BentoMLConfigException(
                 "BentoML config file specified in ENV VAR does not end with `.yaml`: "
                 f"`BENTOML_CONFIG={bentoml_config_file}`"
-            )
+            ) from None
         if not os.path.isfile(bentoml_config_file):
             raise FileNotFoundError(
                 "BentoML config file specified in ENV VAR not found: "
                 f"`BENTOML_CONFIG={bentoml_config_file}`"
-            )
+            ) from None
 
     bentoml_configuration = BentoMLConfiguration(
         override_config_file=bentoml_config_file,

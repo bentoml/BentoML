@@ -54,18 +54,17 @@ _check_otlp_protocol: t.Callable[[str], bool] = lambda s: s in (
     "grpc",
     "http",
 )
-_check_sample_rate: t.Callable[[float], None] = (
-    lambda sample_rate: logger.warning(
-        "Tracing enabled, but sample_rate is unset or zero. No traces will be collected. "
-        "Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
-    )
-    if sample_rate == 0.0
-    else None
-)
 _larger_than: t.Callable[[int | float], t.Callable[[int | float], bool]] = (
     lambda target: lambda val: val > target
 )
 _larger_than_zero: t.Callable[[int | float], bool] = _larger_than(0)
+
+
+def _check_sample_rate(sample_rate: float) -> None:
+    if sample_rate == 0.0:
+        logger.warning(
+            "Tracing enabled, but sample_rate is unset or zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
+        )
 
 
 def _is_ip_address(addr: str) -> bool:
@@ -103,12 +102,9 @@ RUNNER_CFG_SCHEMA = {
 SCHEMA = Schema(
     {
         "api_server": {
-            "port": And(int, _larger_than_zero),
-            "host": And(str, _is_ip_address),
-            "backlog": And(int, _larger_than(64)),
             "workers": Or(And(int, _larger_than_zero), None),
             "timeout": And(int, _larger_than_zero),
-            "max_request_size": And(int, _larger_than_zero),
+            "backlog": And(int, _larger_than(64)),
             Optional("ssl"): {
                 Optional("certfile"): Or(str, None),
                 Optional("keyfile"): Or(str, None),
@@ -137,14 +133,31 @@ SCHEMA = Schema(
                     "response_content_type": Or(bool, None),
                 },
             },
-            "cors": {
-                "enabled": bool,
-                "access_control_allow_origin": Or(str, None),
-                "access_control_allow_credentials": Or(bool, None),
-                "access_control_allow_headers": Or([str], str, None),
-                "access_control_allow_methods": Or([str], str, None),
-                "access_control_max_age": Or(int, None),
-                "access_control_expose_headers": Or([str], str, None),
+            "http": {
+                "host": And(str, _is_ip_address),
+                "port": And(int, _larger_than_zero),
+                "max_request_size": And(int, _larger_than_zero),
+                "cors": {
+                    "enabled": bool,
+                    "access_control_allow_origin": Or(str, None),
+                    "access_control_allow_credentials": Or(bool, None),
+                    "access_control_allow_headers": Or([str], str, None),
+                    "access_control_allow_methods": Or([str], str, None),
+                    "access_control_max_age": Or(int, None),
+                    "access_control_expose_headers": Or([str], str, None),
+                },
+            },
+            "grpc": {
+                "host": And(str, _is_ip_address),
+                "port": And(int, _larger_than_zero),
+                "metrics": {
+                    "port": And(int, _larger_than_zero),
+                    "host": And(str, _is_ip_address),
+                },
+                "reflection": {"enabled": bool},
+                "max_concurrent_streams": Or(int, None),
+                "max_message_length": Or(int, None),
+                "maximum_concurrent_rpcs": Or(int, None),
             },
         },
         "runners": {
@@ -181,6 +194,10 @@ SCHEMA = Schema(
     }
 )
 
+_WARNING_MESSAGE = (
+    "field 'api_server.%s' is deprecated and has been renamed to 'api_server.http.%s'"
+)
+
 
 class BentoMLConfiguration:
     def __init__(
@@ -212,7 +229,29 @@ class BentoMLConfiguration:
                     f"Config file {override_config_file} not found"
                 )
             with open(override_config_file, "rb") as f:
-                override_config = yaml.safe_load(f)
+                override_config: dict[str, t.Any] = yaml.safe_load(f)
+
+            # compatibility layer with old configuration pre gRPC features
+            # api_server.[max_request_size|cors|port|host] -> api_server.http.$^
+            if "api_server" in override_config:
+                user_api_config = override_config["api_server"]
+                # check if user are using older configuration
+                if "http" not in user_api_config:
+                    user_api_config["http"] = {}
+
+                for field in ["port", "host", "max_request_size", "cors"]:
+                    if field in user_api_config:
+                        old_field = user_api_config.pop(field)
+                        user_api_config["http"][field] = old_field
+                        logger.warning(_WARNING_MESSAGE, field, field)
+
+                config_merger.merge(override_config["api_server"], user_api_config)
+
+                assert all(
+                    key not in override_config["api_server"]
+                    for key in ["cors", "max_request_size", "host", "port"]
+                )
+
             config_merger.merge(self.config, override_config)
 
             global_runner_cfg = {
@@ -241,9 +280,13 @@ class BentoMLConfiguration:
 
     def override(self, keys: t.List[str], value: t.Any):
         if keys is None:
-            raise BentoMLConfigException("Configuration override key is None.")
+            raise BentoMLConfigException(
+                "Configuration override key is None."
+            ) from None
         if len(keys) == 0:
-            raise BentoMLConfigException("Configuration override key is empty.")
+            raise BentoMLConfigException(
+                "Configuration override key is empty."
+            ) from None
         if value is None:
             return
 
@@ -252,7 +295,7 @@ class BentoMLConfiguration:
             if key not in c:
                 raise BentoMLConfigException(
                     "Configuration override key is invalid, %s" % keys
-                )
+                ) from None
             c = c[key]
         c[keys[-1]] = value
 
@@ -321,6 +364,9 @@ class _BentoMLContainerClass:
     api_server_config = config.api_server
     runners_config = config.runners
 
+    grpc = api_server_config.grpc
+    http = api_server_config.http
+
     development_mode = providers.Static(True)
 
     @providers.SingletonFactory
@@ -333,23 +379,20 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origins: t.List[str] = Provide[
-            config.api_server.cors.access_control_allow_origin
-        ],
-        allow_credentials: t.List[str] = Provide[
-            config.api_server.cors.access_control_allow_credentials
-        ],
-        expose_headers: t.List[str] = Provide[
-            config.api_server.cors.access_control_expose_headers
-        ],
-        allow_methods: t.List[str] = Provide[
-            config.api_server.cors.access_control_allow_methods
-        ],
-        allow_headers: t.List[str] = Provide[
-            config.api_server.cors.access_control_allow_headers
-        ],
-        max_age: int = Provide[config.api_server.cors.access_control_max_age],
-    ) -> t.Dict[str, t.Union[t.List[str], int]]:
+        allow_origins: str | None = Provide[http.cors.access_control_allow_origin],
+        allow_credentials: bool
+        | None = Provide[http.cors.access_control_allow_credentials],
+        expose_headers: list[str]
+        | str
+        | None = Provide[http.cors.access_control_expose_headers],
+        allow_methods: list[str]
+        | str
+        | None = Provide[http.cors.access_control_allow_methods],
+        allow_headers: list[str]
+        | str
+        | None = Provide[http.cors.access_control_allow_headers],
+        max_age: int | None = Provide[http.cors.access_control_max_age],
+    ) -> dict[str, list[str] | str | int]:
         kwargs = dict(
             allow_origins=allow_origins,
             allow_credentials=allow_credentials,
@@ -359,15 +402,15 @@ class _BentoMLContainerClass:
             max_age=max_age,
         )
 
-        filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
+        filtered_kwargs: dict[str, list[str] | str | int] = {
+            k: v for k, v in kwargs.items() if v is not None
+        }
         return filtered_kwargs
 
     api_server_workers = providers.Factory[int](
         lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
-        config.api_server.workers,
+        api_server_config.workers,
     )
-    service_port = config.api_server.port
-    service_host = config.api_server.host
 
     prometheus_multiproc_dir = providers.Factory[str](
         os.path.join,
@@ -379,7 +422,7 @@ class _BentoMLContainerClass:
     @staticmethod
     def metrics_client(
         multiproc_dir: str = Provide[prometheus_multiproc_dir],
-        namespace: str = Provide[config.api_server.metrics.namespace],
+        namespace: str = Provide[api_server_config.metrics.namespace],
     ) -> "PrometheusClient":
         from ..server.metrics.prometheus import PrometheusClient
 
@@ -409,6 +452,7 @@ class _BentoMLContainerClass:
         from opentelemetry.sdk.environment_variables import OTEL_SERVICE_NAME
         from opentelemetry.sdk.environment_variables import OTEL_RESOURCE_ATTRIBUTES
 
+        from ...exceptions import InvalidArgument
         from ..utils.telemetry import ParentBasedTraceIdRatio
 
         if sample_rate is None:
@@ -437,15 +481,10 @@ class _BentoMLContainerClass:
         )
 
         if tracer_type == "zipkin" and zipkin_server_url is not None:
-            # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
-            from opentelemetry.exporter.zipkin.json import (
-                ZipkinExporter,  # type: ignore (no opentelemetry types)
-            )
+            from opentelemetry.exporter.zipkin.json import ZipkinExporter
 
-            exporter = ZipkinExporter(  # type: ignore (no opentelemetry types)
-                endpoint=zipkin_server_url,
-            )
-            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            exporter = ZipkinExporter(endpoint=zipkin_server_url)
+            provider.add_span_processor(BatchSpanProcessor(exporter))
             _check_sample_rate(sample_rate)
             return provider
         elif (
@@ -453,16 +492,12 @@ class _BentoMLContainerClass:
             and jaeger_server_address is not None
             and jaeger_server_port is not None
         ):
-            # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
-            from opentelemetry.exporter.jaeger.thrift import (
-                JaegerExporter,  # type: ignore (no opentelemetry types)
-            )
+            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 
-            exporter = JaegerExporter(  # type: ignore (no opentelemetry types)
-                agent_host_name=jaeger_server_address,
-                agent_port=jaeger_server_port,
+            exporter = JaegerExporter(
+                agent_host_name=jaeger_server_address, agent_port=jaeger_server_port
             )
-            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+            provider.add_span_processor(BatchSpanProcessor(exporter))
             _check_sample_rate(sample_rate)
             return provider
         elif (
@@ -471,21 +506,16 @@ class _BentoMLContainerClass:
             and otlp_server_url is not None
         ):
             if otlp_server_protocol == "grpc":
-                # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
-                from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-                    OTLPSpanExporter,  # type: ignore (no opentelemetry types)
-                )
+                from opentelemetry.exporter.otlp.proto.grpc import trace_exporter
 
             elif otlp_server_protocol == "http":
-                # pylint: disable=no-name-in-module # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/290
-                from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
-                    OTLPSpanExporter,  # type: ignore (no opentelemetry types)
-                )
-
-            exporter = OTLPSpanExporter(  # type: ignore (no opentelemetry types)
-                endpoint=otlp_server_url,
-            )
-            provider.add_span_processor(BatchSpanProcessor(exporter))  # type: ignore (no opentelemetry types)
+                from opentelemetry.exporter.otlp.proto.http import trace_exporter
+            else:
+                raise InvalidArgument(
+                    f"Invalid otlp protocol: {otlp_server_protocol}"
+                ) from None
+            exporter = trace_exporter.OTLPSpanExporter(endpoint=otlp_server_url)
+            provider.add_span_processor(BatchSpanProcessor(exporter))
             _check_sample_rate(sample_rate)
             return provider
         else:
@@ -494,9 +524,7 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def tracing_excluded_urls(
-        excluded_urls: t.Optional[t.Union[str, t.List[str]]] = Provide[
-            config.tracing.excluded_urls
-        ],
+        excluded_urls: str | list[str] | None = Provide[config.tracing.excluded_urls],
     ):
         from opentelemetry.util.http import ExcludeList
         from opentelemetry.util.http import parse_excluded_urls
@@ -513,7 +541,7 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def duration_buckets(
-        metrics: dict[str, t.Any] = Provide[config.api_server.metrics],
+        metrics: dict[str, t.Any] = Provide[api_server_config.metrics],
     ) -> tuple[float, ...]:
         """
         Returns a tuple of duration buckets in seconds. If not explicitly configured,

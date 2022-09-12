@@ -10,6 +10,20 @@ comment:
     - "main"
   show_carryforward_flags: true
 
+ignore:
+  - "src/bentoml/__main__.py"
+  - "src/bentoml/io.py"
+  - "src/bentoml/serve.py"
+  - "src/bentoml/start.py"
+  - "src/bentoml/types.py"
+  - "src/bentoml/grpc/types.py"
+  - "src/bentoml/_internal/types.py"
+  - "src/bentoml/testing/*"
+  - "src/bentoml/grpc/v1alpha1/*"
+  - "src/bentoml/_internal/external_typing/*"
+  - "src/bentoml/_internal/yatai_client/*"
+  - "src/bentoml/_internal/yatai_rest_api_client/*"
+
 coverage:
   precision: 2
   round: down

@@ -92,9 +92,7 @@ class RemoteRunnerClient(RunnerHandle):
         return self._conn
 
     @property
-    def _client(
-        self,
-    ) -> ClientSession:
+    def _client(self) -> ClientSession:
         import aiohttp
 
         if (
@@ -114,7 +112,7 @@ class RemoteRunnerClient(RunnerHandle):
                 trace_configs=[
                     create_trace_config(
                         # Remove all query params from the URL attribute on the span.
-                        url_filter=strip_query_params,  # type: ignore
+                        url_filter=strip_query_params,
                         tracer_provider=BentoMLContainer.tracer_provider.get(),
                     )
                 ],

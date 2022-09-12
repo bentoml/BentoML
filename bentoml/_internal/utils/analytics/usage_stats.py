@@ -196,6 +196,7 @@ def get_metrics_report(
 def track_serve(
     svc: Service,
     production: bool,
+    component: str = "standalone",
     metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
 ) -> t.Generator[None, None, None]:
@@ -220,6 +221,7 @@ def track_serve(
             event_properties = ServeUpdateEvent(
                 serve_id=serve_info.serve_id,
                 production=production,
+                component=component,
                 triggered_at=now,
                 duration_in_seconds=int((now - last_tracked_timestamp).total_seconds()),
                 metrics=get_metrics_report(metrics_client),

@@ -199,6 +199,7 @@ class ServeInitEvent(EventMeta):
 class ServeUpdateEvent(EventMeta):
     serve_id: str
     production: bool
+    component: str
     triggered_at: datetime
     duration_in_seconds: int
     metrics: t.List[t.Any] = attr.field(factory=list)

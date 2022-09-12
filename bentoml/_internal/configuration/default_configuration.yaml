@@ -61,11 +61,26 @@ tracing:
   type: zipkin
   sample_rate: ~
   excluded_urls: ~
+  timeout: ~
+  max_tag_value_length: ~
   zipkin:
-    url: ~
+    endpoint: ~
   jaeger:
-    address: ~
-    port: ~
+    protocol: thrift
+    collector_endpoint: ~
+    thrift:
+      agent_host_name: ~
+      agent_port: ~
+      udp_split_oversized_batches: ~
+    grpc:
+      insecure: ~
   otlp:
     protocol: ~
-    url: ~
+    endpoint: ~
+    compression: ~
+    http:
+      certificate_file: ~
+      headers: ~
+    grpc:
+      headers: ~
+      insecure: ~

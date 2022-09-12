@@ -44,6 +44,10 @@ api_server:
     assert "cors" not in bentoml_cfg["api_server"]
     assert bentoml_cfg["api_server"]["http"]["host"] == "0.0.0.0"
     assert bentoml_cfg["api_server"]["http"]["port"] == 5000
+    assert (
+        "Field 'api_server.max_request_size' is deprecated and has become obsolete."
+        in caplog.text
+    )
 
 
 @pytest.mark.usefixtures("config_cls")
@@ -68,7 +72,7 @@ api_server:
 """
     with caplog.at_level(logging.WARNING):
         config_cls(OLD_HOST)
-    assert "field 'api_server.host' is deprecated" in caplog.text
+    assert "Field 'api_server.host' is deprecated" in caplog.text
     caplog.clear()
 
     OLD_PORT = """\
@@ -77,7 +81,7 @@ api_server:
 """
     with caplog.at_level(logging.WARNING):
         config_cls(OLD_PORT)
-    assert "field 'api_server.port' is deprecated" in caplog.text
+    assert "Field 'api_server.port' is deprecated" in caplog.text
     caplog.clear()
 
     OLD_MAX_REQUEST_SIZE = """\
@@ -87,7 +91,7 @@ api_server:
     with caplog.at_level(logging.WARNING):
         config_cls(OLD_MAX_REQUEST_SIZE)
     assert (
-        "'api_server.max_request_size' is deprecated and has become obsolete."
+        "Field 'api_server.max_request_size' is deprecated and has become obsolete."
         in caplog.text
     )
     caplog.clear()
@@ -99,7 +103,57 @@ api_server:
 """
     with caplog.at_level(logging.WARNING):
         config_cls(OLD_CORS)
-    assert "field 'api_server.cors' is deprecated" in caplog.text
+    assert "Field 'api_server.cors' is deprecated" in caplog.text
+    caplog.clear()
+
+    OLD_JAEGER_ADDRESS = """\
+tracing:
+    type: jaeger
+    jaeger:
+        address: localhost
+"""
+    with caplog.at_level(logging.WARNING):
+        config_cls(OLD_JAEGER_ADDRESS)
+    assert "Field 'tracing.jaeger.address' is deprecated" in caplog.text
+    caplog.clear()
+
+    OLD_JAEGER_PORT = """\
+tracing:
+    type: jaeger
+    jaeger:
+        port: 6881
+"""
+    with caplog.at_level(logging.WARNING):
+        config_cls(OLD_JAEGER_PORT)
+    assert "Field 'tracing.jaeger.port' is deprecated" in caplog.text
+    caplog.clear()
+
+    OLD_ZIPKIN_URL = """\
+tracing:
+    type: zipkin
+    zipkin:
+        url: localhost:6881
+"""
+    with caplog.at_level(logging.WARNING):
+        config_cls(OLD_ZIPKIN_URL)
+    assert (
+        "Field 'tracing.zipkin.url' is deprecated and has been renamed to 'tracing.zipkin.endpoint'."
+        in caplog.text
+    )
+    caplog.clear()
+
+    OLD_OTLP_URL = """\
+tracing:
+    type: otlp
+    otlp:
+        url: localhost:6881
+"""
+    with caplog.at_level(logging.WARNING):
+        config_cls(OLD_OTLP_URL)
+    assert (
+        "Field 'tracing.otlp.url' is deprecated and has been renamed to 'tracing.otlp.endpoint'."
+        in caplog.text
+    )
     caplog.clear()
 
 

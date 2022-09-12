@@ -256,13 +256,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             a ``numpy.ndarray`` object. This can then be used
              inside users defined logics.
         """
-        obj = await request.json()
-        try:
-            res = np.array(obj, dtype=self._dtype)
-        except ValueError:
-            res = np.array(obj)
+        obj = await request.content
+        res = self.deserialize(obj)
+        return res
 
-        return self._verify_ndarray(res)
 
     async def to_http_response(self, obj: ext.NpNDArray, ctx: Context | None = None):
         """
@@ -276,10 +273,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             HTTP Response of type ``starlette.responses.Response``. This can
              be accessed via cURL or any external web traffic.
         """
-        obj = self._verify_ndarray(obj, InternalServerError)
+        serialized_obj = self.serialize(obj)
         if ctx is not None:
             res = Response(
-                json.dumps(obj.tolist()),
+                serialized_obj,
                 media_type=MIME_TYPE_JSON,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
@@ -288,6 +285,41 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return res
         else:
             return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
+
+
+    def serialize(self, obj: ext.NpNDArray) -> str:
+        """
+        Serialize ``numpy.ndarray`` to bytes.
+
+        Args:
+            obj: ``numpy.ndarray`` object
+
+        Returns:
+            Serialized string of given object.
+        """
+        res = self._verify_ndarray(obj, InternalServerError)
+        res = json.dumps(res.tolist())
+        return res
+
+    def deserialize(self, obj: bytes | str, encoding: str = "utf-8") -> ext.NpNDArray:
+        """
+        Deserialize given bytes to ``numpy.ndarray``.
+
+        Args:
+            obj: `bytes` to be deserialized.
+            encoding: Encoding to use in case obj is a `bytes`. Defaults to `utf-8`.
+
+        Returns:
+            a ``numpy.ndarray`` object.
+        """
+        obj = obj.decode(encoding) if isinstance(obj, bytes) else obj
+        obj = json.loads(obj)
+        try:
+            res = np.array(obj, dtype=self._dtype)
+        except ValueError:
+            res = np.array(obj)
+        res = self._verify_ndarray(res)
+        return res
 
     @classmethod
     def from_sample(

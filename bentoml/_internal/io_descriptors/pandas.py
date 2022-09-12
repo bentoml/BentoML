@@ -331,18 +331,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
                 )
             # TODO(jiang): check dtype
 
-        if serialization_format is SerializationFormat.JSON:
-            res = pd.read_json(io.BytesIO(obj), dtype=self._dtype, orient=self._orient)
-        elif serialization_format is SerializationFormat.PARQUET:
-            res = pd.read_parquet(io.BytesIO(obj), engine=get_parquet_engine())
-        elif serialization_format is SerializationFormat.CSV:
-            res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=self._dtype)
-        else:
-            raise InvalidArgument(
-                f"Unknown serialization format ({serialization_format})."
-            )
-
-        assert isinstance(res, pd.DataFrame)
+        res = self.deserialize(obj, serialization_format)
 
         if self._apply_column_names:
             if self._columns is None:
@@ -381,26 +370,8 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-
-        # For the response it doesn't make sense to enforce the same serialization format as specified
-        # by the request's headers['content-type']. Instead we simply use the _default_format.
+        resp = self.serialize(obj)
         serialization_format = self._default_format
-
-        if not LazyType["ext.PdDataFrame"](pd.DataFrame).isinstance(obj):
-            raise InvalidArgument(
-                f"return object is not of type `pd.DataFrame`, got type {type(obj)} instead"
-            )
-        if serialization_format is SerializationFormat.JSON:
-            resp = obj.to_json(orient=self._orient)
-        elif serialization_format is SerializationFormat.PARQUET:
-            resp = obj.to_parquet(engine=get_parquet_engine())
-        elif serialization_format is SerializationFormat.CSV:
-            resp = obj.to_csv()
-        else:
-            raise InvalidArgument(
-                f"Unknown serialization format ({serialization_format})."
-            )
-
         if ctx is not None:
             res = Response(
                 resp,
@@ -412,6 +383,77 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             return res
         else:
             return Response(resp, media_type=serialization_format.mime_type)
+
+    def serialize(
+        self,
+        obj: ext.PdDataFrame,
+        serialization_format: t.Optional[SerializationFormat] = None
+    ) -> str:
+        """
+        Serialize given object to string.
+
+        Args:
+            obj (`pd.DataFrame`):
+                `pd.DataFrame` that will be serialized to string
+            serialization_format (`SerializationFormat`):
+                Serialization format to use. If not provided, this the default will be used.
+        Returns:
+            Serialized string of given object.
+        """
+
+        # For the response it doesn't make sense to enforce the same serialization format as specified
+        # by the request's headers['content-type']. Instead we simply use the _default_format.
+        serialization_format = serialization_format or self._default_format
+
+        if not LazyType["ext.PdDataFrame"](pd.DataFrame).isinstance(obj):
+            raise InvalidArgument(
+                f"return object is not of type `pd.DataFrame`, got type {type(obj)} instead"
+            )
+        if serialization_format is SerializationFormat.JSON:
+            res = obj.to_json(orient=self._orient)
+        elif serialization_format is SerializationFormat.PARQUET:
+            res = obj.to_parquet(engine=get_parquet_engine())
+        elif serialization_format is SerializationFormat.CSV:
+            res = obj.to_csv()
+        else:
+            raise InvalidArgument(
+                f"Unknown serialization format ({serialization_format})."
+            )
+        return res
+
+    def deserialize(
+        self,
+        obj: bytes | str,
+        serialization_format: t.Optional[SerializationFormat] = None,
+        encoding: str = "utf-8"
+    ) -> pd.DataFrame:
+        """
+        Deserialize given bytes to Pandas DataFrame.
+
+        Args:
+            obj (`bytes`):
+                `bytes` that will be serialized to Pandas DataFrame
+            serialization_format (`SerializationFormat`):
+                Serialization format to use. If not provided, this the default will be used.
+            encoding (`str`):
+                Encoding to use in case obj is a `str`. Defaults to `utf-8`.
+        Returns:
+            Serialized string of given object.
+        """
+        obj = obj if isinstance(obj, bytes) else obj.encode(encoding)
+        serialization_format = serialization_format or self._default_format
+        if serialization_format is SerializationFormat.JSON:
+            res = pd.read_json(io.BytesIO(obj), dtype=self._dtype, orient=self._orient)
+        elif serialization_format is SerializationFormat.PARQUET:
+            res = pd.read_parquet(io.BytesIO(obj), engine=get_parquet_engine())
+        elif serialization_format is SerializationFormat.CSV:
+            res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=self._dtype)
+        else:
+            raise InvalidArgument(
+                f"Unknown serialization format ({serialization_format})."
+            )
+        assert isinstance(res, pd.DataFrame)
+        return res
 
     @classmethod
     def from_sample(

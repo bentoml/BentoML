@@ -596,7 +596,7 @@ fi
 
 
 @attr.frozen
-class TestOptions:
+class TestIO:
     # User shouldn't add new fields under yaml file.
     __forbid_extra_keys__ = True
     # no need to omit since BentoML has already handled the default values.
@@ -605,8 +605,66 @@ class TestOptions:
     input: str
     output: t.Optional[str] = attr.field(default=None)
 
-    def to_dict(self) -> t.Dict[str, t.Any]:
-        return attr.asdict(self)
+
+@attr.frozen
+class TestConfig:
+    # User shouldn't add new fields under yaml file.
+    __forbid_extra_keys__ = True
+    # no need to omit since BentoML has already handled the default values.
+    __omit_if_default__ = False
+
+    timeout: t.Optional[int] = attr.field(default=None)
+
+    def with_defaults(self) -> TestConfig:
+        # Convert from user provided options to actual build options with default values
+        defaults: t.Dict[str, t.Any] = {}
+
+        if self.timeout is None:
+            defaults["timeout"] = 30
+
+        return attr.evolve(self, **defaults)
+
+
+@attr.frozen
+class TestOptions:
+    # User shouldn't add new fields under yaml file.
+    __forbid_extra_keys__ = True
+    # no need to omit since BentoML has already handled the default values.
+    __omit_if_default__ = False
+
+    # config: str
+    config: t.Optional[TestConfig] = attr.field(
+        factory=TestConfig,
+        # converter=dict_options_converter(TestConfig)
+    )
+    endpoints: t.Optional[t.Dict[str, t.List[TestIO]]] = attr.field(default=None)
+
+
+    def with_defaults(self) -> TestOptions:
+        # Convert from user provided options to actual build options with default values
+        defaults: dict[str, t.Any] = {}
+        if self.config is None:
+            defaults["config"] = TestConfig().with_defaults()
+        return attr.evolve(self, **defaults)
+
+
+    def write_to_bento(self, bento_fs: FS):
+        bento_fs.makedir("tests", recreate=True)
+        with bento_fs.open("tests/tests.yaml", "w") as f:
+            test_options = attr.asdict(self)
+            yaml.dump(test_options, f)
+
+    @staticmethod
+    def from_yaml(file_path: str):
+        with open(file_path, "r") as f:
+            test_options = yaml.safe_load(f)
+            test_config = TestConfig(**test_options["config"])
+            test_endpoints = dict()
+            for endpoint_name, tests_list in test_options["endpoints"].items():
+                test_endpoints[endpoint_name] = [
+                    TestIO(**test) for test in tests_list
+                ]
+        return TestOptions(config=test_config, endpoints=test_endpoints)
 
 def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
@@ -621,8 +679,7 @@ bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_h
 
 
 if TYPE_CHECKING:
-    OptionsCls = t.Union[DockerOptions, CondaOptions, PythonOptions, TestOptions]
-
+    OptionsCls = t.Union[DockerOptions, CondaOptions, PythonOptions]
 
 def dict_options_converter(
     options_type: t.Type[OptionsCls],
@@ -667,7 +724,10 @@ class BentoBuildConfig:
         factory=CondaOptions,
         converter=dict_options_converter(CondaOptions),
     )
-    endpoints_tests: t.Optional[t.Dict[str, t.List[TestOptions]]] = attr.field(default=None)
+    tests: TestOptions = attr.field(
+        factory=TestOptions,
+        converter=dict_options_converter(TestOptions)
+    )
 
 
     def __attrs_post_init__(self) -> None:
@@ -724,7 +784,7 @@ class BentoBuildConfig:
             self.docker.with_defaults(),
             self.python.with_defaults(),
             self.conda.with_defaults(),
-            {} if self.endpoints_tests is None else self.endpoints_tests,
+            self.tests.with_defaults()
         )
 
     @classmethod
@@ -804,4 +864,4 @@ class FilledBentoBuildConfig(BentoBuildConfig):
     docker: DockerOptions
     python: PythonOptions
     conda: CondaOptions
-    endpoints_tests: t.Optional[t.Dict[str, t.List[TestOptions]]]
+    tests: TestOptions

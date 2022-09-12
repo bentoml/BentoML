@@ -236,16 +236,7 @@ class Bento(StoreItem):
         build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
         build_config.python.write_to_bento(bento_fs, build_ctx)
         build_config.conda.write_to_bento(bento_fs, build_ctx)
-
-        # Create tests directory + file
-        endpoint_tests = dict()
-        if build_config.endpoints_tests:
-            for endpoint, tests in build_config.endpoints_tests.items():
-                tests_parsed = [t.to_dict() for t in tests]
-                endpoint_tests[endpoint] = tests_parsed
-        bento_fs.makedir("tests", recreate=True)
-        with bento_fs.open("tests/endpoints_tests.yaml", "w") as f:
-            yaml.dump(endpoint_tests, f)
+        build_config.tests.write_to_bento(bento_fs)
 
         # Create `readme.md` file
         if build_config.description is None:

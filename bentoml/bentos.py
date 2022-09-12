@@ -18,7 +18,7 @@ from bentoml.exceptions import InvalidArgument
 from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.utils import resolve_user_filepath
-from ._internal.bento.build_config import BentoBuildConfig, TestOptions
+from ._internal.bento.build_config import BentoBuildConfig, TestIO
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -485,62 +485,80 @@ def test_bento_bundle(
     """
     Test given bento tag by creating docker container and running tests on it.
     """
+    import sys
     import time
-    import yaml
-    import json
-    import requests
     from bentoml._internal.utils import buildx
+    from bentoml._internal.bento.build_config import TestOptions
+    from bentoml._internal.client.test_client import TestClient, Endpoint, is_equal, get_test_data
 
+    # init
     bento = _bento_store.get(tag)
+    test_options = TestOptions.from_yaml(os.path.join(bento.path, "tests", "tests.yaml"))
+
+    # setup bento client
+    bento_client = TestClient()
+    for endpoint in bento.info.apis:
+        input_io_desc = getattr(sys.modules['bentoml._internal.io_descriptors'], endpoint.input_type)
+        output_io_desc = getattr(sys.modules['bentoml._internal.io_descriptors'], endpoint.output_type)
+        bento_client.add_endpoint(Endpoint(endpoint.name, input_io_desc(), output_io_desc()))
 
     # create docker image
-    containerize(bento.tag, quiet=True)
+    try:
+        containerize(bento.tag, quiet=True)
+    except Exception as e:
+        logger.error(f"Failed to create docker image for {bento.tag}")
+        logger.exception(e)
+    else:
 
-    # run container
-    docker_id = buildx.run_docker_container(tag)
-    # TODO: check if container is up and running (instead of using sleep)
-    time.sleep(20)
-
-    # read tests
-    endpoint_tests = dict()
-    tests_path = os.path.join(bento.path, "tests", "endpoints_tests.yaml")
-    with open(tests_path, "r") as f:
+        # run docker container
         try:
-            d = yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            logger.error(e)
-            raise
-    for endpoint, tests in d.items():
-        endpoint_tests[endpoint] = [TestOptions(**t) for t in tests]
+            is_ready = False
+            docker_id = buildx.run_docker_container(tag)
+            for i in range(test_options.config.timeout):
+                is_ready = bento_client.is_ready()
+                if is_ready:
+                    break
+                time.sleep(1)
+                logger.info(f"Waiting for container to be ready... ({i + 1}/{test_options.config.timeout})")
+            if not is_ready:
+                raise Exception(f"Timeout - Container {tag} is not ready after {test_options.config.timeout} seconds")
+        except Exception as e:
+            logger.error(f"Failed to run docker container for {bento.tag}")
+            logger.exception(e)
+        else:
 
-    # run tests on endpoints
-    for endpoint, tests in endpoint_tests.items():
-        logger.info(f"\ntesting endpoint : {endpoint}")
-        for i, test in enumerate(tests):
+            # run tests on endpoints
+            for endpoint_name, tests in test_options.endpoints.items():
+                curr_endpoint = bento_client.endpoints[endpoint_name]
+                logger.info(f"\nTesting endpoint : {endpoint_name}")
+                for i, test in enumerate(tests):
+                    test_passed = True
 
-            # send request with input to endpoint
-            try:
-                data = test.input
-                data = str(data)
-                res = requests.post(f"http://localhost:3000/{endpoint}", data=data)
-                res.raise_for_status()
-            except Exception as e:
-                logger.info(f"  - Failed test {i+1} : {e}")
-                continue
+                    # convert test input to the appropriate type (pandas dataframe, numpy array, etc.)
+                    input_data = get_test_data(curr_endpoint.input_io_desc, test.input)
 
-            # check if the output is correct
-            # TODO: do casting (to pandas/numpy etc...), then compare. try to cast to the type defined in the service endpoint decorator
-            successful_test = res.json() == json.loads(test.output) if test.output else True
+                    try:
+                        serving_output = bento_client.get_prediction(curr_endpoint.name, input_data)
+                    except Exception as e:
+                        logger.info(f"  - Failed test {i + 1} : Failed to get prediction from container")
+                        logger.exception(e)
+                        test_passed = False
 
-            if successful_test:
-                logger.info(f"  - Passed test {i+1}")
-            else:
-                logger.info(f"  - Failed test {i+1} : {res.json()} != {json.loads(test.output)}")
+                    if test_passed and test.output is not None:
+                        expected_output = get_test_data(curr_endpoint.output_io_desc, test.output)
+                        test_passed = is_equal(curr_endpoint.output_io_desc, expected_output, serving_output)
+                        if not test_passed:
+                            logger.info(f"  - Failed test {i + 1} : Expected output does not match serving output")
+                            logger.info(f"    {expected_output} != {serving_output}")
 
-    # stop container
-    buildx.kill_docker_container(docker_id)
-
-    # TODO: remove docker image
+                    if test_passed:
+                        logger.info(f"  - Passed test {i + 1}")
+        finally:
+            # stop container
+            buildx.kill_docker_container(docker_id)
+    finally:
+        # remove image
+        buildx.remove_docker_image(tag)
 
 
 __all__ = [

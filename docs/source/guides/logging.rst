@@ -59,8 +59,8 @@ logs are logged under the ``"bentoml"`` namespace.
 Web Service Request Logging
 """""""""""""""""""""""""""
 
-For web requests, logging can be enabled and disabled using the `logging.access` parameter in both the `api_server` and `runner`
-sections of the ``bentoml_configuration.yml``.
+For web requests, logging can be enabled and disabled using the `api_server.logging.access` parameter at the
+top level of the ``bentoml_configuration.yml``.
 
 .. code-block:: yaml
 
@@ -109,11 +109,6 @@ hexadecimal format, consistent with opentelemetry logging instrumentation.
 
     logging:
       formatting:
-<<<<<<< HEAD
-=======
-        format: "%(asctime)s %(levelname_bracketed)s %(component)s %(message)s%(trace_msg)s"
-        datefmt: "%Y-%m-%dT%H:%M:%S%z"
->>>>>>> 57805c3c (add docs)
         trace_id_format: 032x
         span_id_format: 016x
 

@@ -89,13 +89,28 @@ your ``bentoml_configuration.yml``:
 .. code-block:: yaml
 
     runners:
-        logging:
-          access:
-              enabled: True
-              ...
+      logging:
+        access:
+          enabled: True
+          ...
 
 The available configuration options are identical to the webserver request logging options above.
 These logs are disabled by default in order to prevent double logging of requests.
+
+
+Logging Formatting
+""""""""""""""""""
+
+You may configure the logging formatting options at the top level of your ``bentoml_configuration.yml``.
+The default configuration is shown below, where the opentelemetry trace_id and span_id are logged in
+hexadecimal format, consistent with opentelemetry logging instrumentation.
+
+.. code-block:: yaml
+
+    logging:
+      formatting:
+        trace_id_format: 032x
+        span_id_format: 016x
 
 
 Library Logging

@@ -15,6 +15,7 @@ from click.exceptions import UsageError
 
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.log import configure_logging
+from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.configuration import set_debug_mode
 from bentoml._internal.configuration import set_quiet_mode
 from bentoml._internal.utils.analytics import track
@@ -163,8 +164,12 @@ class BentoMLCommandGroup(click.Group):
             try:
                 return func(*args, **kwargs)
             except BentoMLException as err:
-                msg = f"[{cmd_group.name}] '{command_name}' failed: {str(err)}"
-                raise ClickException(click.style(msg, fg="red")) from err
+                msg = f"[{cmd_group.name}] `{command_name}` failed: {str(err)}"
+                if get_debug_mode():
+                    ClickException(click.style(msg, fg="red")).show()
+                    raise err from None
+                else:
+                    raise ClickException(click.style(msg, fg="red")) from err
 
         return t.cast("ClickFunctionWrapper[t.Any]", wrapper)
 

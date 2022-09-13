@@ -1,16 +1,16 @@
-import requests
 import typing as t
 from dataclasses import dataclass
-from bentoml.io import (
-    File,
-    JSON,
-    Text,
-    Image,
-    NumpyNdarray,
-    PandasSeries,
-    PandasDataFrame,
-    Multipart,
-)
+
+import requests
+
+from bentoml.io import File
+from bentoml.io import JSON
+from bentoml.io import Text
+from bentoml.io import Image
+from bentoml.io import Multipart
+from bentoml.io import NumpyNdarray
+from bentoml.io import PandasSeries
+from bentoml.io import PandasDataFrame
 
 bento_all_io = (
     File,

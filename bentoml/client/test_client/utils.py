@@ -1,16 +1,16 @@
-import fsspec
 import typing as t
+
+import fsspec
+
+from bentoml.io import File
+from bentoml.io import JSON
+from bentoml.io import Text
+from bentoml.io import Image
+from bentoml.io import Multipart
+from bentoml.io import NumpyNdarray
+from bentoml.io import PandasSeries
+from bentoml.io import PandasDataFrame
 from bentoml._internal.io_descriptors.pandas import SerializationFormat
-from bentoml.io import (
-    File,
-    JSON,
-    Text,
-    Image,
-    NumpyNdarray,
-    PandasSeries,
-    PandasDataFrame,
-    Multipart,
-)
 
 bento_all_io = (
     File,

@@ -15,6 +15,8 @@ from click.exceptions import UsageError
 
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.log import configure_logging
+from bentoml._internal.configuration import DEBUG_ENV_VAR
+from bentoml._internal.configuration import QUIET_ENV_VAR
 from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.configuration import set_debug_mode
 from bentoml._internal.configuration import set_quiet_mode
@@ -28,6 +30,7 @@ if TYPE_CHECKING:
     from click import Command
     from click import Context
     from click import Parameter
+    from click import HelpFormatter
 
     P = t.ParamSpec("P")
 
@@ -49,9 +52,39 @@ if TYPE_CHECKING:
 logger = logging.getLogger("bentoml")
 
 
+def kwargs_transformers(
+    _func: F[t.Any] | None = None,
+    *,
+    transformer: F[t.Any],
+) -> F[t.Any]:
+    def decorator(func: F[t.Any]) -> t.Callable[P, t.Any]:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+            return func(*args, **{k: transformer(v) for k, v in kwargs.items()})
+
+        return wrapper
+
+    if _func is None:
+        return decorator
+    return decorator(_func)
+
+
 class BentoMLCommandGroup(click.Group):
-    """Click command class customized for BentoML CLI, allow specifying a default
+    """
+    Click command class customized for BentoML CLI, allow specifying a default
     command for each group defined.
+
+    This command groups will also introduce support for aliases for commands.
+
+    Example:
+
+    .. code-block:: python
+
+        @click.group(cls=BentoMLCommandGroup)
+        def cli(): ...
+
+        @cli.command(aliases=["serve-http"])
+        def serve(): ...
     """
 
     NUMBER_OF_COMMON_PARAMS = 3
@@ -65,6 +98,7 @@ class BentoMLCommandGroup(click.Group):
             "--quiet",
             is_flag=True,
             default=False,
+            envvar=QUIET_ENV_VAR,
             help="Suppress all warnings and info logs",
         )
         @click.option(
@@ -72,6 +106,7 @@ class BentoMLCommandGroup(click.Group):
             "--debug",
             is_flag=True,
             default=False,
+            envvar=DEBUG_ENV_VAR,
             help="Generate debug information",
         )
         @click.option(
@@ -173,10 +208,17 @@ class BentoMLCommandGroup(click.Group):
 
         return t.cast("ClickFunctionWrapper[t.Any]", wrapper)
 
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        super(BentoMLCommandGroup, self).__init__(*args, **kwargs)
+        # these two dictionaries will store known aliases for commands and groups
+        self._commands: dict[str, list[str]] = {}
+        self._aliases: dict[str, str] = {}
+
     def command(self, *args: t.Any, **kwargs: t.Any) -> t.Callable[[F[P]], Command]:
         if "context_settings" not in kwargs:
             kwargs["context_settings"] = {}
         kwargs["context_settings"]["max_content_width"] = 120
+        aliases = kwargs.pop("aliases", None)
 
         def wrapper(func: F[P]) -> Command:
             # add common parameters to command.
@@ -191,9 +233,47 @@ class BentoMLCommandGroup(click.Group):
                 wrapped.__click_params__[-self.NUMBER_OF_COMMON_PARAMS :]
                 + wrapped.__click_params__[: -self.NUMBER_OF_COMMON_PARAMS]
             )
-            return super(BentoMLCommandGroup, self).command(*args, **kwargs)(wrapped)
+            cmd = super(BentoMLCommandGroup, self).command(*args, **kwargs)(wrapped)
+            # add aliases to a given commands if it is specified.
+            if aliases is not None:
+                assert cmd.name
+                self._commands[cmd.name] = aliases
+                self._aliases.update({alias: cmd.name for alias in aliases})
+            return cmd
 
         return wrapper
+
+    def resolve_alias(self, cmd_name: str):
+        return self._aliases[cmd_name] if cmd_name in self._aliases else cmd_name
+
+    def get_command(self, ctx: Context, cmd_name: str) -> Command | None:
+        cmd_name = self.resolve_alias(cmd_name)
+        return super(BentoMLCommandGroup, self).get_command(ctx, cmd_name)
+
+    def format_commands(self, ctx: Context, formatter: HelpFormatter) -> None:
+        rows: list[tuple[str, str]] = []
+        sub_commands = self.list_commands(ctx)
+
+        max_len = max(len(cmd) for cmd in sub_commands)
+        limit = formatter.width - 6 - max_len
+
+        for sub_command in sub_commands:
+            cmd = self.get_command(ctx, sub_command)
+            if cmd is None:
+                continue
+            # If the command is hidden, then we skip it.
+            if hasattr(cmd, "hidden") and cmd.hidden:
+                continue
+            if sub_command in self._commands:
+                aliases = ",".join(sorted(self._commands[sub_command]))
+                sub_command = "%s (%s)" % (sub_command, aliases)
+            # this cmd_help is available since click>=7
+            # BentoML requires click>=7.
+            cmd_help = cmd.get_short_help_str(limit)
+            rows.append((sub_command, cmd_help))
+        if rows:
+            with formatter.section("Commands"):
+                formatter.write_dl(rows)
 
     def resolve_command(
         self, ctx: Context, args: list[str]
@@ -237,13 +317,9 @@ def unparse_click_params(
     Unparse click call to a list of arguments. Used to modify some parameters and
     restore to system command. The goal is to unpack cases where parameters can be parsed multiple times.
 
-    Refers to ./buildx.py for examples of this usage. This is also used to unparse parameters for running API server.
-
     Args:
-        params (`dict[str, t.Any]`):
-            The dictionary of the parameters that is parsed from click.Context.
-        command_params (`list[click.Parameter]`):
-            The list of paramters (Arguments/Options) that is part of a given command.
+        params: The dictionary of the parameters that is parsed from click.Context.
+        command_params: The list of paramters (Arguments/Options) that is part of a given command.
 
     Returns:
         Unparsed list of arguments that can be redirected to system commands.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+
 import click
 
 from bentoml.bentos import test_bento_bundle

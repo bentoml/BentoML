@@ -18,7 +18,7 @@ from bentoml.exceptions import InvalidArgument
 from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.utils import resolve_user_filepath
-from ._internal.bento.build_config import BentoBuildConfig, TestIO
+from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -487,14 +487,13 @@ def test_bento_bundle(
     """
     import sys
     import time
+
     from bentoml._internal.utils import buildx
+    from bentoml.client.test_client import Endpoint
+    from bentoml.client.test_client import is_equal
+    from bentoml.client.test_client import TestClient
+    from bentoml.client.test_client import get_test_data
     from bentoml._internal.bento.build_config import TestOptions
-    from bentoml._internal.client.test_client import (
-        TestClient,
-        Endpoint,
-        is_equal,
-        get_test_data,
-    )
 
     # init
     bento = _bento_store.get(tag)

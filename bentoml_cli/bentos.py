@@ -16,6 +16,7 @@ from rich.syntax import Syntax
 from bentoml import Tag
 from bentoml.bentos import import_bento
 from bentoml.bentos import build_bentofile
+from bentoml.bentos import test_bento_bundle
 from bentoml_cli.utils import is_valid_bento_tag
 from bentoml_cli.utils import is_valid_bento_name
 from bentoml._internal.utils import rich_console as console
@@ -266,10 +267,20 @@ def add_bento_management_commands(
     @click.option(
         "-f", "--bentofile", type=click.STRING, default=DEFAULT_BENTO_BUILD_FILE
     )
+    @click.option(
+        "--test",
+        is_flag=True,
+        default=False,
+        help="Test the built Bento Service after build",
+    )
     @click.option("--version", type=click.STRING, default=None)
-    def build(build_ctx: str, bentofile: str, version: str) -> None:  # type: ignore (not accessed)
+    def build(build_ctx: str, bentofile: str, test: bool, version: str) -> None:  # type: ignore (not accessed)
         """Build a new Bento from current directory."""
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 
-        build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        bento = build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+
+        if test:
+            bento_tag = bento.tag.name + ":" + bento.tag.version
+            test_bento_bundle(bento_tag)

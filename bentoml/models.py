@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from simple_di import inject
 from simple_di import Provide
 
+from .exceptions import BentoMLException
 from ._internal.tag import Tag
 from ._internal.utils import calc_dir_size
 from ._internal.models import Model
@@ -204,20 +205,31 @@ def export_model(
     )
 
 
+@inject
 def push(
     tag: t.Union[Tag, str],
     *,
+    force: bool = False,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ):
-    raise NotImplementedError
+    from bentoml._internal.yatai_client import yatai_client
+
+    model_obj = _model_store.get(tag)
+    if not model_obj:
+        raise BentoMLException(f"Model {tag} not found in local store")
+    yatai_client.push_model(model_obj, force=force)
 
 
+@inject
 def pull(
     tag: t.Union[Tag, str],
     *,
+    force: bool = False,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Model:
-    raise NotImplementedError
+    from bentoml._internal.yatai_client import yatai_client
+
+    yatai_client.pull_model(tag, force=force)
 
 
 @inject

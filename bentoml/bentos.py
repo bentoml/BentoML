@@ -222,18 +222,28 @@ def export_bento(
 def push(
     tag: t.Union[Tag, str],
     *,
+    force: bool = False,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
-    raise NotImplementedError
+    """Push Bento to a yatai server."""
+    from bentoml._internal.yatai_client import yatai_client
+
+    bento = _bento_store.get(tag)
+    if not bento:
+        raise click.ClickException(f"Bento {tag} not found in local store")
+    yatai_client.push_bento(bento, force=force)
 
 
 @inject
 def pull(
     tag: t.Union[Tag, str],
     *,
+    force: bool = False,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
-    raise NotImplementedError
+    from bentoml._internal.yatai_client import yatai_client
+
+    yatai_client.pull_bento(tag, force=force, bento_store=_bento_store)
 
 
 @inject

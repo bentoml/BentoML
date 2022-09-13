@@ -163,7 +163,7 @@ class BentoMLCommandGroup(click.Group):
             try:
                 return func(*args, **kwargs)
             except BentoMLException as err:
-                msg = f"[{cmd_group.name}] `{command_name}` failed: {str(err)}"
+                msg = f"[{cmd_group.name}] '{command_name}' failed: {str(err)}"
                 raise ClickException(click.style(msg, fg="red")) from err
 
         return t.cast("ClickFunctionWrapper[t.Any]", wrapper)
@@ -279,7 +279,6 @@ def unparse_click_params(
                     logger.warning(
                         f"{command_params} is a prompt, skip parsing it for now."
                     )
-                    pass
                 if command_param.is_flag:
                     args.append(command_param.opts[-1])
                 else:

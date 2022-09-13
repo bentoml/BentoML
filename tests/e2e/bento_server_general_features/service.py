@@ -80,6 +80,17 @@ async def predict_ndarray_enforce_dtype(
 
 
 @svc.api(
+    input=NumpyNdarray(),
+    output=NumpyNdarray(),
+)
+async def predict_ndarray_multi_output(
+    inp: "np.ndarray[t.Any, np.dtype[t.Any]]",
+) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+    out1, out2 = await py_model.echo_multi_ndarray.async_run(inp, inp)
+    return out1 + out2
+
+
+@svc.api(
     input=PandasDataFrame(dtype={"col1": "int64"}, orient="records"),
     output=PandasDataFrame(),
 )

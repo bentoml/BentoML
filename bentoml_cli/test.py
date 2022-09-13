@@ -12,7 +12,7 @@ def add_test_command(cli: click.Group) -> None:
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
     def test(
-            bento_tag: str,
+        bento_tag: str,
     ) -> None:
         """Test given Bento by providing the bento_tag.
 

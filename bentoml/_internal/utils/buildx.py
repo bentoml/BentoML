@@ -312,26 +312,26 @@ def run_docker_cmd(
 
 def run_docker_container(docker_image_tag: str):
     # TODO: allow getting arguments
-    cmd = ['docker', 'run', '--rm', '-d', '-p', '3000:3000', docker_image_tag]
+    cmd = ["docker", "run", "--rm", "-d", "-p", "3000:3000", docker_image_tag]
     try:
         container_id = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-        container_id = container_id.decode('utf-8').strip()
+        container_id = container_id.decode("utf-8").strip()
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f'Failed to run docker container: {e.output}')
+        raise RuntimeError(f"Failed to run docker container: {e.output}")
     return container_id
 
 
 def kill_docker_container(docker_id: str):
-    cmd = ['docker', 'kill', docker_id]
+    cmd = ["docker", "kill", docker_id]
     try:
         subprocess.check_output(cmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f'Failed to kill docker container: {e.output}')
+        raise RuntimeError(f"Failed to kill docker container: {e.output}")
 
 
 def remove_docker_image(docker_id: str):
-    cmd = ['docker', 'image', 'rm', docker_id]
+    cmd = ["docker", "image", "rm", docker_id]
     try:
         subprocess.check_output(cmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f'Failed to remove docker image: {e.output}')
+        raise RuntimeError(f"Failed to remove docker image: {e.output}")

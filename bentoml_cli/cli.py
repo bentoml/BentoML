@@ -14,6 +14,7 @@ from bentoml_cli.models import add_model_management_commands
 from bentoml_cli.containerize import add_containerize_command
 from bentoml_cli.test import add_test_command
 
+
 def create_bentoml_cli() -> click.Group:
 
     from bentoml._internal.context import component_context

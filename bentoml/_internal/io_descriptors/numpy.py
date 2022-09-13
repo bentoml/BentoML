@@ -260,7 +260,6 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         res = self.deserialize(obj)
         return res
 
-
     async def to_http_response(self, obj: ext.NpNDArray, ctx: Context | None = None):
         """
         Process given objects and convert it to HTTP response.
@@ -285,7 +284,6 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             return res
         else:
             return Response(json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
-
 
     def serialize(self, obj: ext.NpNDArray) -> str:
         """

@@ -1,9 +1,27 @@
 import requests
 import typing as t
 from dataclasses import dataclass
-from bentoml.io import File, JSON, Text, Image, NumpyNdarray, PandasSeries, PandasDataFrame, Multipart
+from bentoml.io import (
+    File,
+    JSON,
+    Text,
+    Image,
+    NumpyNdarray,
+    PandasSeries,
+    PandasDataFrame,
+    Multipart,
+)
 
-bento_all_io = (File, JSON, Text, Image, NumpyNdarray, PandasSeries, PandasDataFrame, Multipart)
+bento_all_io = (
+    File,
+    JSON,
+    Text,
+    Image,
+    NumpyNdarray,
+    PandasSeries,
+    PandasDataFrame,
+    Multipart,
+)
 
 
 @dataclass
@@ -20,12 +38,12 @@ class Endpoint:
 
 
 class TestClient:
-
     def __init__(
-            self,
-            host: str = 'localhost',
-            port: t.Union[int, str] = 3000,
-            endpoints: t.Optional[t.Sequence[Endpoint]] = None):
+        self,
+        host: str = "localhost",
+        port: t.Union[int, str] = 3000,
+        endpoints: t.Optional[t.Sequence[Endpoint]] = None,
+    ):
         self._host = host
         self._port = port
         self.endpoints = dict()
@@ -41,12 +59,12 @@ class TestClient:
 
     @property
     def _url(self) -> str:
-        return f'http://{self._host}:{self._port}'
+        return f"http://{self._host}:{self._port}"
 
     def get_prediction(self, endpoint: str, data: t.Any) -> t.Any:
         if endpoint not in self.endpoints:
-            raise ValueError(f'Endpoint {endpoint} not found')
-        url = f'{self._url}/{endpoint}'
+            raise ValueError(f"Endpoint {endpoint} not found")
+        url = f"{self._url}/{endpoint}"
         serialized_data = self.endpoints[endpoint].serialize(data)
         res = requests.post(url, data=serialized_data)
         res.raise_for_status()
@@ -54,7 +72,7 @@ class TestClient:
         return deserialized_data
 
     def _readyz(self) -> requests.Response:
-        url = f'{self._url}/readyz'
+        url = f"{self._url}/readyz"
         res = requests.get(url)
         return res
 

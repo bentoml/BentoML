@@ -639,14 +639,12 @@ class TestOptions:
     )
     endpoints: t.Optional[t.Dict[str, t.List[TestIO]]] = attr.field(default=None)
 
-
     def with_defaults(self) -> TestOptions:
         # Convert from user provided options to actual build options with default values
         defaults: dict[str, t.Any] = {}
         if self.config is None:
             defaults["config"] = TestConfig().with_defaults()
         return attr.evolve(self, **defaults)
-
 
     def write_to_bento(self, bento_fs: FS):
         bento_fs.makedir("tests", recreate=True)
@@ -661,10 +659,9 @@ class TestOptions:
             test_config = TestConfig(**test_options["config"])
             test_endpoints = dict()
             for endpoint_name, tests_list in test_options["endpoints"].items():
-                test_endpoints[endpoint_name] = [
-                    TestIO(**test) for test in tests_list
-                ]
+                test_endpoints[endpoint_name] = [TestIO(**test) for test in tests_list]
         return TestOptions(config=test_config, endpoints=test_endpoints)
+
 
 def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
@@ -680,6 +677,7 @@ bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_h
 
 if TYPE_CHECKING:
     OptionsCls = t.Union[DockerOptions, CondaOptions, PythonOptions]
+
 
 def dict_options_converter(
     options_type: t.Type[OptionsCls],
@@ -725,10 +723,8 @@ class BentoBuildConfig:
         converter=dict_options_converter(CondaOptions),
     )
     tests: TestOptions = attr.field(
-        factory=TestOptions,
-        converter=dict_options_converter(TestOptions)
+        factory=TestOptions, converter=dict_options_converter(TestOptions)
     )
-
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()
@@ -784,7 +780,7 @@ class BentoBuildConfig:
             self.docker.with_defaults(),
             self.python.with_defaults(),
             self.conda.with_defaults(),
-            self.tests.with_defaults()
+            self.tests.with_defaults(),
         )
 
     @classmethod

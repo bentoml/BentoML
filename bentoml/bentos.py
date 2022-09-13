@@ -479,8 +479,8 @@ def containerize(
 
 @inject
 def test_bento_bundle(
-        tag: str,
-        _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    tag: str,
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
     """
     Test given bento tag by creating docker container and running tests on it.
@@ -489,18 +489,31 @@ def test_bento_bundle(
     import time
     from bentoml._internal.utils import buildx
     from bentoml._internal.bento.build_config import TestOptions
-    from bentoml._internal.client.test_client import TestClient, Endpoint, is_equal, get_test_data
+    from bentoml._internal.client.test_client import (
+        TestClient,
+        Endpoint,
+        is_equal,
+        get_test_data,
+    )
 
     # init
     bento = _bento_store.get(tag)
-    test_options = TestOptions.from_yaml(os.path.join(bento.path, "tests", "tests.yaml"))
+    test_options = TestOptions.from_yaml(
+        os.path.join(bento.path, "tests", "tests.yaml")
+    )
 
     # setup bento client
     bento_client = TestClient()
     for endpoint in bento.info.apis:
-        input_io_desc = getattr(sys.modules['bentoml._internal.io_descriptors'], endpoint.input_type)
-        output_io_desc = getattr(sys.modules['bentoml._internal.io_descriptors'], endpoint.output_type)
-        bento_client.add_endpoint(Endpoint(endpoint.name, input_io_desc(), output_io_desc()))
+        input_io_desc = getattr(
+            sys.modules["bentoml._internal.io_descriptors"], endpoint.input_type
+        )
+        output_io_desc = getattr(
+            sys.modules["bentoml._internal.io_descriptors"], endpoint.output_type
+        )
+        bento_client.add_endpoint(
+            Endpoint(endpoint.name, input_io_desc(), output_io_desc())
+        )
 
     # create docker image
     try:
@@ -519,9 +532,13 @@ def test_bento_bundle(
                 if is_ready:
                     break
                 time.sleep(1)
-                logger.info(f"Waiting for container to be ready... ({i + 1}/{test_options.config.timeout})")
+                logger.info(
+                    f"Waiting for container to be ready... ({i + 1}/{test_options.config.timeout})"
+                )
             if not is_ready:
-                raise Exception(f"Timeout - Container {tag} is not ready after {test_options.config.timeout} seconds")
+                raise Exception(
+                    f"Timeout - Container {tag} is not ready after {test_options.config.timeout} seconds"
+                )
         except Exception as e:
             logger.error(f"Failed to run docker container for {bento.tag}")
             logger.exception(e)
@@ -538,17 +555,29 @@ def test_bento_bundle(
                     input_data = get_test_data(curr_endpoint.input_io_desc, test.input)
 
                     try:
-                        serving_output = bento_client.get_prediction(curr_endpoint.name, input_data)
+                        serving_output = bento_client.get_prediction(
+                            curr_endpoint.name, input_data
+                        )
                     except Exception as e:
-                        logger.info(f"  - Failed test {i + 1} : Failed to get prediction from container")
+                        logger.info(
+                            f"  - Failed test {i + 1} : Failed to get prediction from container"
+                        )
                         logger.exception(e)
                         test_passed = False
 
                     if test_passed and test.output is not None:
-                        expected_output = get_test_data(curr_endpoint.output_io_desc, test.output)
-                        test_passed = is_equal(curr_endpoint.output_io_desc, expected_output, serving_output)
+                        expected_output = get_test_data(
+                            curr_endpoint.output_io_desc, test.output
+                        )
+                        test_passed = is_equal(
+                            curr_endpoint.output_io_desc,
+                            expected_output,
+                            serving_output,
+                        )
                         if not test_passed:
-                            logger.info(f"  - Failed test {i + 1} : Expected output does not match serving output")
+                            logger.info(
+                                f"  - Failed test {i + 1} : Expected output does not match serving output"
+                            )
                             logger.info(f"    {expected_output} != {serving_output}")
 
                     if test_passed:

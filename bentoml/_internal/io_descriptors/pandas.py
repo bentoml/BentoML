@@ -387,7 +387,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
     def serialize(
         self,
         obj: ext.PdDataFrame,
-        serialization_format: t.Optional[SerializationFormat] = None
+        serialization_format: t.Optional[SerializationFormat] = None,
     ) -> str:
         """
         Serialize given object to string.
@@ -425,7 +425,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         self,
         obj: bytes | str,
         serialization_format: t.Optional[SerializationFormat] = None,
-        encoding: str = "utf-8"
+        encoding: str = "utf-8",
     ) -> pd.DataFrame:
         """
         Deserialize given bytes to Pandas DataFrame.

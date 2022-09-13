@@ -14,6 +14,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import BentoMLException
 
 from ._internal.tag import Tag
 from ._internal.bento import Bento
@@ -230,7 +231,7 @@ def push(
 
     bento = _bento_store.get(tag)
     if not bento:
-        raise click.ClickException(f"Bento {tag} not found in local store")
+        raise BentoMLException(f"Bento {tag} not found in local store")
     yatai_client.push_bento(bento, force=force)
 
 

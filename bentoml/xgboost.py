@@ -4,12 +4,9 @@ from ._internal.frameworks.xgboost import get
 from ._internal.frameworks.xgboost import load_model
 from ._internal.frameworks.xgboost import save_model
 from ._internal.frameworks.xgboost import get_runnable
-from ._internal.frameworks.xgboost import XGBoostOptions
+from ._internal.frameworks.xgboost import XGBoostOptions as ModelOptions
 
 logger = logging.getLogger(__name__)
-
-
-ModelOptions = XGBoostOptions
 
 
 def save(tag, *args, **kwargs):

@@ -1,19 +1,11 @@
-import typing as t
-
 import fsspec
+import typing as t
+from typing import TYPE_CHECKING
+from bentoml.io import NumpyNdarray
+from bentoml.io import PandasDataFrame
 
-from bentoml._internal.io_descriptors.pandas import SerializationFormat
-
-bento_all_io = (
-    File,
-    JSON,
-    Text,
-    Image,
-    NumpyNdarray,
-    PandasSeries,
-    PandasDataFrame,
-    Multipart,
-)
+if TYPE_CHECKING:
+    from bentoml.io import IODescriptor
 
 
 def is_equal(
@@ -38,6 +30,8 @@ def get_test_data(io_desc: t.Type[IODescriptor[t.Any]], io_string: str) -> t.Any
             file_ext = io_string.split(".")[-1]
             file_ext = file_ext.upper()
             try:
+                from bentoml._internal.io_descriptors.pandas import SerializationFormat
+
                 SerializationFormat[file_ext]
             except KeyError:
                 raise ValueError(f'File extension "{file_ext}" is not supported')

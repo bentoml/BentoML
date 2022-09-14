@@ -282,5 +282,4 @@ def add_bento_management_commands(
         bento = build_bentofile(bentofile, build_ctx=build_ctx, version=version)
 
         if test:
-            bento_tag = bento.tag.name + ":" + bento.tag.version
-            test_bento_bundle(bento_tag)
+            test_bento_bundle(str(bento.tag))

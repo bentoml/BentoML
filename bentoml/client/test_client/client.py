@@ -3,32 +3,14 @@ from dataclasses import dataclass
 
 import requests
 
-from bentoml.io import File
-from bentoml.io import JSON
-from bentoml.io import Text
-from bentoml.io import Image
-from bentoml.io import Multipart
-from bentoml.io import NumpyNdarray
-from bentoml.io import PandasSeries
-from bentoml.io import PandasDataFrame
-
-bento_all_io = (
-    File,
-    JSON,
-    Text,
-    Image,
-    NumpyNdarray,
-    PandasSeries,
-    PandasDataFrame,
-    Multipart,
-)
+from bentoml.io import IODescriptor
 
 
 @dataclass
 class Endpoint:
     name: str
-    input_io_desc: t.Union[bento_all_io]
-    output_io_desc: t.Union[bento_all_io]
+    input_io_desc: IODescriptor[t.Any]
+    output_io_desc: IODescriptor[t.Any]
 
     def serialize(self, obj: t.Any) -> str:
         return self.input_io_desc.serialize(obj)

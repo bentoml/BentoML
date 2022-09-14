@@ -149,7 +149,7 @@ class CorkDispatcher:
     def __call__(
         self,
         callback: t.Callable[
-            [t.Collection[T_IN]], t.Coroutine[None, None, t.Collection[T_OUT]]
+            [t.Sequence[T_IN]], t.Coroutine[None, None, t.Sequence[T_OUT]]
         ],
     ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT]]:
         self.callback = callback

@@ -254,17 +254,22 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             super().__init__()
             self.model = load_model(bento_model)
 
+            self.booster = (
+                self.model
+                if isinstance(self.model, xgb.Booster)
+                else self.model.get_booster()
+            )
+
             # check for resources
-            available_gpus = os.getenv("CUDA_VISIBLE_DEVICES")
-            if available_gpus is not None and available_gpus not in ("", "-1"):
-                self.model.set_param({"predictor": "gpu_predictor", "gpu_id": 0})  # type: ignore (incomplete XGBoost types)
+            if os.getenv("CUDA_VISIBLE_DEVICES") not in (None, "", "-1"):
+                self.booster.set_param({"predictor": "gpu_predictor", "gpu_id": 0})  # type: ignore (incomplete XGBoost types)
             else:
                 nthreads = os.getenv("OMP_NUM_THREADS")
                 if nthreads is not None and nthreads != "":
                     nthreads = max(int(nthreads), 1)
                 else:
                     nthreads = 1
-                self.model.set_param({"predictor": "cpu_predictor", "nthread": nthreads})  # type: ignore (incomplete XGBoost types)
+                self.booster.set_param({"predictor": "cpu_predictor", "nthread": nthreads})  # type: ignore (incomplete XGBoost types)
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
             for method_name in bento_model.info.signatures:
@@ -281,9 +286,12 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             input_data: ext.NpNDArray
             | ext.PdDataFrame,  # TODO: add support for DMatrix
         ) -> ext.NpNDArray:
-            dmatrix = xgb.DMatrix(input_data)
+            if isinstance(self.model, xgb.Booster):
+                inp = xgb.DMatrix(input_data)
+            else:
+                inp = input_data
 
-            res = self.predict_fns[method_name](dmatrix)
+            res = self.predict_fns[method_name](inp)
             return np.asarray(res)  # type: ignore (incomplete np types)
 
         XGBoostRunnable.add_method(

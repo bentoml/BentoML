@@ -2,14 +2,6 @@ import typing as t
 
 import fsspec
 
-from bentoml.io import File
-from bentoml.io import JSON
-from bentoml.io import Text
-from bentoml.io import Image
-from bentoml.io import Multipart
-from bentoml.io import NumpyNdarray
-from bentoml.io import PandasSeries
-from bentoml.io import PandasDataFrame
 from bentoml._internal.io_descriptors.pandas import SerializationFormat
 
 bento_all_io = (
@@ -25,7 +17,7 @@ bento_all_io = (
 
 
 def is_equal(
-    io_desc: t.Union[bento_all_io], expected_obj: t.Any, actual_obj: t.Any
+    io_desc: t.Type[IODescriptor[t.Any]], expected_obj: t.Any, actual_obj: t.Any
 ) -> bool:
     if isinstance(io_desc, NumpyNdarray):
         return (expected_obj == actual_obj).all()
@@ -35,7 +27,7 @@ def is_equal(
         raise NotImplementedError(f"IO descriptor {io_desc} is not supported")
 
 
-def get_test_data(io_desc: t.Union[bento_all_io], io_string: str) -> t.Any:
+def get_test_data(io_desc: t.Type[IODescriptor[t.Any]], io_string: str) -> t.Any:
     io_desc_to_use = io_desc
 
     # TODO: find a better way to check if its a file. remember io_string can be a local file path, cloud file path (s3, gcs, etc), or an actual data (pandas df, numpy array, text, etc)

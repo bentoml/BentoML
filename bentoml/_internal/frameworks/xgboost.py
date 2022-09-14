@@ -6,12 +6,15 @@ import logging
 from types import ModuleType
 from typing import TYPE_CHECKING
 
+import attr
 import numpy as np
 
 import bentoml
 from bentoml import Tag
+from bentoml.models import ModelOptions
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 from bentoml._internal.models.model import ModelContext
 
@@ -32,11 +35,25 @@ except ImportError:  # pragma: no cover
         "https://xgboost.readthedocs.io/en/latest/install.html"
     )
 
+try:
+    from xgboost import XGBModel
+except ImportError:  # pragma: no cover
+    # if sklearn is not installed, XGBoost will not expose XGBModel, so make
+    # a dummy class ourselves
+    class XGBModel:
+        pass
+
+
 MODULE_NAME = "bentoml.xgboost"
 MODEL_FILENAME = "saved_model.ubj"
-API_VERSION = "v1"
+API_VERSION = "v2"
 
 logger = logging.getLogger(__name__)
+
+
+@attr.define
+class XGBoostOptions(ModelOptions):
+    model_class: str | None = None
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -64,7 +81,9 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     return model
 
 
-def load_model(bento_model: str | Tag | bentoml.Model) -> xgb.core.Booster:
+def load_model(
+    bento_model: str | Tag | bentoml.Model,
+) -> xgb.Booster | xgb.XGBModel:
     """
     Load the XGBoost model with the given tag from the local BentoML model store.
 
@@ -73,7 +92,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> xgb.core.Booster:
             Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
             instance to load the model from.
     Returns:
-        :obj:`~xgboost.core.Booster`: The XGBoost model loaded from the model store or BentoML :obj:`~bentoml.Model`.
+        The XGBoost model loaded from the model store or BentoML :obj:`~bentoml.Model`.
     Example:
 
     .. code-block:: python
@@ -92,13 +111,40 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> xgb.core.Booster:
         )
 
     model_file = bento_model.path_of(MODEL_FILENAME)
-    booster = xgb.core.Booster(model_file=model_file)
-    return booster
+    model_api_version = bento_model.info.api_version
+    if model_api_version == "v1":
+        model = xgb.Booster(model_file=model_file)
+    else:
+        if model_api_version != "v2":
+            logger.warning(
+                f"Got an XGBoost model with an unsupported version '{model_api_version}, unexpected errors may occur."
+            )
+        model_class = t.cast(XGBoostOptions, bento_model.info.options).model_class
+        if model_class is None:
+            raise BentoMLException(
+                f"Model '{bento_model.tag}' is missing the required 'model_class' option. This should not be possible; please file an issue if you encounter this error."
+            )
+        try:
+            xgb_class: type[xgb.XGBModel] | type[xgb.Booster] = getattr(
+                xgb, model_class
+            )
+        except AttributeError:
+            if model_class != "Booster":
+                raise BentoMLException(
+                    f"Model '{bento_model.tag}' is an XGBoost Scikit-Learn model, but sklearn is not installed."
+                ) from None
+            else:
+                raise BentoMLException(
+                    "xgboost.Booster could not be found, your XGBoost installation may be corrupted. Ensure there is no file named 'xgboost.py' that may be being loaded instead of the XGBoost library."
+                ) from None
+        model: xgb.Booster | xgb.XGBModel = xgb_class()
+        model.load_model(model_file)
+    return model
 
 
 def save_model(
     name: str,
-    model: xgb.core.Booster,
+    model: xgb.Booster | xgb.XGBModel,
     *,
     signatures: dict[str, ModelSignatureDict] | None = None,
     labels: dict[str, str] | None = None,
@@ -110,35 +156,34 @@ def save_model(
     Save an XGBoost model instance to the BentoML model store.
 
     Args:
-        name (``str``):
+        name:
             The name to give to the model in the BentoML store. This must be a valid
             :obj:`~bentoml.Tag` name.
-        model (:obj:`~xgboost.core.Booster`):
+        model:
             The XGBoost model to be saved.
-        signatures (``dict[str, ModelSignatureDict]``, optional):
+        signatures:
             Signatures of predict methods to be used. If not provided, the signatures default to
             ``{"predict": {"batchable": False}}``. See :obj:`~bentoml.types.ModelSignature` for more
             details.
-        labels (``dict[str, str]``, optional):
+        labels:
             A default set of management labels to be associated with the model. An example is
             ``{"training-set": "data-1"}``.
-        custom_objects (``dict[str, Any]``, optional):
+        custom_objects:
             Custom objects to be saved with the model. An example is
             ``{"my-normalizer": normalizer}``.
 
             Custom objects are currently serialized with cloudpickle, but this implementation is
             subject to change.
-        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
+        external_modules:
             user-defined additional python modules to be saved alongside the model or custom objects,
             e.g. a tokenizer module, preprocessor module, model configuration module
-        metadata (``dict[str, Any]``, optional):
+        metadata:
             Metadata to be associated with the model. An example is ``{"max_depth": 2}``.
 
             Metadata is intended for display in model management UI and therefore must be a default
             Python type, such as ``str`` or ``int``.
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the
-        user-defined model's name, and a generated `version` by BentoML.
+        A BentoML tag with the user-defined name and a generated version.
 
     Example:
 
@@ -159,8 +204,12 @@ def save_model(
         # `save` the booster to BentoML modelstore:
         bento_model = bentoml.xgboost.save_model("my_xgboost_model", bst, booster_params=param)
     """  # noqa: LN001
-    if not isinstance(model, xgb.core.Booster):
-        raise TypeError(f"Given model ({model}) is not a xgboost.core.Booster.")
+    if isinstance(model, xgb.Booster):
+        model_class = "Booster"
+    elif isinstance(model, XGBModel):
+        model_class = model.__class__.__name__
+    else:
+        raise TypeError(f"Given model ({model}) is not a xgboost.Booster.")
 
     context: ModelContext = ModelContext(
         framework_name="xgboost",
@@ -185,6 +234,7 @@ def save_model(
         external_modules=external_modules,
         metadata=metadata,
         context=context,
+        options=XGBoostOptions(model_class=model_class),
     ) as bento_model:
         model.save_model(bento_model.path_of(MODEL_FILENAME))  # type: ignore (incomplete XGBoost types)
 

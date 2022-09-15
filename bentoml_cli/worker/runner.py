@@ -114,7 +114,7 @@ def main(
         component_context.bento_version = "not available"
     else:
         component_context.bento_name = service.tag.name
-        component_context.bento_version = service.tag.version
+        component_context.bento_version = service.tag.version or ""
 
     for runner in service.runners:
         if runner.name == runner_name:

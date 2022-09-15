@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 START_TIME_VAR: "contextvars.ContextVar[float]" = contextvars.ContextVar(
     "START_TIME_VAR"
 )
+STATUS_VAR: "contextvars.ContextVar[int]" = contextvars.ContextVar("STATUS_VAR")
 from ..context import component_context
 
 
@@ -251,28 +252,33 @@ class RunnerTrafficMetricsMiddleware:
 
         async def wrapped_send(message: "ext.ASGIMessage") -> None:
             if message["type"] == "http.response.start":
-                status_code = message["status"]
+                STATUS_VAR.set(message["status"])
+            elif message["type"] == "http.response.body":
+                if ("more_body" not in message) or not message["more_body"]:
+                    assert START_TIME_VAR.get() != 0
+                    assert STATUS_VAR.get() != 0
 
-                # instrument request total count
-                self.metrics_request_total.labels(
-                    endpoint=endpoint,
-                    service_name=component_context.bento_name,
-                    service_version=component_context.bento_version,
-                    http_response_code=status_code,
-                    runner_name=component_context.component_name,
-                ).inc()
+                    # instrument request total count
+                    self.metrics_request_total.labels(
+                        endpoint=endpoint,
+                        service_name=component_context.bento_name,
+                        service_version=component_context.bento_version,
+                        http_response_code=STATUS_VAR.get(),
+                        runner_name=component_context.component_name,
+                    ).inc()
 
-                # instrument request duration
-                assert START_TIME_VAR.get() != 0
-                total_time = max(default_timer() - START_TIME_VAR.get(), 0)
-                self.metrics_request_duration.labels(  # type: ignore
-                    endpoint=endpoint,
-                    service_name=component_context.bento_name,
-                    service_version=component_context.bento_version,
-                    http_response_code=status_code,
-                    runner_name=component_context.component_name,
-                ).observe(total_time)
-            START_TIME_VAR.set(0)
+                    # instrument request duration
+                    total_time = max(default_timer() - START_TIME_VAR.get(), 0)
+                    self.metrics_request_duration.labels(  # type: ignore
+                        endpoint=endpoint,
+                        service_name=component_context.bento_name,
+                        service_version=component_context.bento_version,
+                        http_response_code=STATUS_VAR.get(),
+                        runner_name=component_context.component_name,
+                    ).observe(total_time)
+
+                    START_TIME_VAR.set(0)
+                    STATUS_VAR.set(0)
             await send(message)
 
         with self.metrics_request_in_progress.labels(

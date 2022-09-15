@@ -131,36 +131,41 @@ class HTTPTrafficMetricsMiddleware:
 
         async def wrapped_send(message: "ext.ASGIMessage") -> None:
             if message["type"] == "http.response.start":
-                status_code = message["status"]
+                STATUS_VAR.set(message["status"])
+            elif message["type"] == "http.response.body":
+                if ("more_body" not in message) or not message["more_body"]:
+                    assert START_TIME_VAR.get() != 0
+                    assert STATUS_VAR.get() != 0
 
-                # instrument request total count
-                self.legacy_metrics_request_total.labels(
-                    endpoint=endpoint,
-                    service_version=component_context.bento_version,
-                    http_response_code=status_code,
-                ).inc()
-                self.metrics_request_total.labels(
-                    endpoint=endpoint,
-                    service_name=component_context.bento_name,
-                    service_version=component_context.bento_version,
-                    http_response_code=status_code,
-                ).inc()
+                    # instrument request total count
+                    self.legacy_metrics_request_total.labels(
+                        endpoint=endpoint,
+                        service_version=component_context.bento_version,
+                        http_response_code=STATUS_VAR.get(),
+                    ).inc()
+                    self.metrics_request_total.labels(
+                        endpoint=endpoint,
+                        service_name=component_context.bento_name,
+                        service_version=component_context.bento_version,
+                        http_response_code=STATUS_VAR.get(),
+                    ).inc()
 
-                # instrument request duration
-                assert START_TIME_VAR.get() != 0
-                total_time = max(default_timer() - START_TIME_VAR.get(), 0)
-                self.legacy_metrics_request_duration.labels(  # type: ignore
-                    endpoint=endpoint,
-                    service_version=component_context.bento_version,
-                    http_response_code=status_code,
-                ).observe(total_time)
-                self.metrics_request_duration.labels(  # type: ignore
-                    endpoint=endpoint,
-                    service_name=component_context.bento_name,
-                    service_version=component_context.bento_version,
-                    http_response_code=status_code,
-                ).observe(total_time)
-            START_TIME_VAR.set(0)
+                    # instrument request duration
+                    total_time = max(default_timer() - START_TIME_VAR.get(), 0)
+                    self.legacy_metrics_request_duration.labels(  # type: ignore
+                        endpoint=endpoint,
+                        service_version=component_context.bento_version,
+                        http_response_code=STATUS_VAR.get(),
+                    ).observe(total_time)
+                    self.metrics_request_duration.labels(  # type: ignore
+                        endpoint=endpoint,
+                        service_name=component_context.bento_name,
+                        service_version=component_context.bento_version,
+                        http_response_code=STATUS_VAR.get(),
+                    ).observe(total_time)
+
+                    START_TIME_VAR.set(0)
+                    STATUS_VAR.set(0)
             await send(message)
 
         with self.legacy_metrics_request_in_progress.labels(

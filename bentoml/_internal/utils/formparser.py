@@ -178,6 +178,16 @@ class MultiPartParser:
         return items
 
 
+def file_body_to_message(f: UploadFile):
+    async def res():
+        return {
+            "type": "http.request",
+            "body": await f.read(),
+        }
+
+    return res
+
+
 async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     content_type_header = request.headers.get("Content-Type")
     content_type, _ = multipart.parse_options_header(content_type_header)
@@ -200,6 +210,10 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
         req._form = FormData([(field_name, data)])  # type: ignore (using internal starlette APIs)
         if isinstance(data, bytes):
             req._body = data
+        else:
+            req._receive = (  # type: ignore (using internal starlette APIs)
+                file_body_to_message(data)
+            )
         reqs[field_name] = req
     return reqs
 

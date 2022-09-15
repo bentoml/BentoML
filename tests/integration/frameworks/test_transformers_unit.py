@@ -38,7 +38,7 @@ def test_convert_to_auto_class():
 
 
 alias = "sentiment-analysis"
-original_task, _ = check_task(alias)  # type: ignore (unfinished transformers type)
+original_task, *_ = check_task(alias)  # type: ignore (unfinished transformers type)
 sentiment = pipeline(alias, model="hf-internal-testing/tiny-random-distilbert")
 
 

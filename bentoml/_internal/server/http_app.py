@@ -85,9 +85,9 @@ def log_exception(request: Request, exc_info: t.Any) -> None:
     )
 
 
-class ServiceAppFactory(BaseAppFactory):
+class HTTPAppFactory(BaseAppFactory):
     """
-    ServiceApp creates a REST API server based on APIs defined with a BentoService
+    HTTPApp creates a REST API server based on APIs defined with a BentoService
     via BentoService#apis. Each InferenceAPI will become one
     endpoint exposed on the REST server, and the RequestHandler defined on each
     InferenceAPI object will be used to handle Request object before feeding the
@@ -98,10 +98,8 @@ class ServiceAppFactory(BaseAppFactory):
     def __init__(
         self,
         bento_service: Service,
-        enable_access_control: bool = Provide[
-            BentoMLContainer.api_server_config.cors.enabled
-        ],
-        access_control_options: dict[str, list[str] | int] = Provide[
+        enable_access_control: bool = Provide[BentoMLContainer.http.cors.enabled],
+        access_control_options: dict[str, list[str] | str | int] = Provide[
             BentoMLContainer.access_control_options
         ],
         enable_metrics: bool = Provide[
@@ -217,14 +215,14 @@ class ServiceAppFactory(BaseAppFactory):
 
         # metrics middleware
         if self.enable_metrics:
-            from .instruments import HTTPTrafficMetricsMiddleware
+            from .http.instruments import HTTPTrafficMetricsMiddleware
 
             middlewares.append(Middleware(HTTPTrafficMetricsMiddleware))
 
         # otel middleware
-        import opentelemetry.instrumentation.asgi as otel_asgi  # type: ignore
+        import opentelemetry.instrumentation.asgi as otel_asgi
 
-        def client_request_hook(span: Span, _scope: dict[str, t.Any]) -> None:
+        def client_request_hook(span: Span, _: dict[str, t.Any]) -> None:
             if span is not None:
                 trace_context.request_id = span.context.span_id
 
@@ -241,7 +239,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():
-            from .access import AccessLogMiddleware
+            from .http.access import AccessLogMiddleware
 
             access_logger = logging.getLogger("bentoml.access")
             if access_logger.getEffectiveLevel() <= logging.INFO:

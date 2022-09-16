@@ -18,10 +18,11 @@ import multiprocessing
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
+import psutil
+
 from .._internal.tag import Tag
 from .._internal.utils import reserve_free_port
 from .._internal.utils import cached_contextmanager
-from .._internal.utils.platform import kill_subprocess_tree
 
 logger = logging.getLogger("bentoml")
 
@@ -73,6 +74,19 @@ async def async_request(
 
     headers = t.cast(t.Mapping[str, str], r.headers)
     return r.status, Headers(headers), r_body
+
+
+def kill_subprocess_tree(p: subprocess.Popen[t.Any]) -> None:
+    """
+    Tell the process to terminate and kill all of its children. Availabe both on Windows and Linux.
+    Note: It will return immediately rather than wait for the process to terminate.
+    Args:
+        p: subprocess.Popen object
+    """
+    if psutil.WINDOWS:
+        subprocess.call(["taskkill", "/F", "/T", "/PID", str(p.pid)])
+    else:
+        p.terminate()
 
 
 def _wait_until_api_server_ready(

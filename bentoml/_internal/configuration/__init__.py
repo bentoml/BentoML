@@ -5,6 +5,7 @@ import logging
 from functools import lru_cache
 
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLConfigException
 
 try:
     import importlib.metadata as importlib_metadata
@@ -29,6 +30,8 @@ logger = logging.getLogger(__name__)
 DEBUG_ENV_VAR = "BENTOML_DEBUG"
 QUIET_ENV_VAR = "BENTOML_QUIET"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
+# https://github.com/grpc/grpc/blob/master/doc/environment_variables.md
+GRPC_DEBUG_ENV_VAR = "GRPC_VERBOSITY"
 
 
 def expand_env_var(env_var: str) -> str:
@@ -96,6 +99,7 @@ def get_bentoml_config_file_from_env() -> t.Optional[str]:
 
 def set_debug_mode(enabled: bool) -> None:
     os.environ[DEBUG_ENV_VAR] = str(enabled)
+    os.environ[GRPC_DEBUG_ENV_VAR] = "DEBUG"
 
     logger.info(
         f"{'Enabling' if enabled else 'Disabling'} debug mode for current BentoML session"
@@ -109,9 +113,9 @@ def get_debug_mode() -> bool:
 
 
 def set_quiet_mode(enabled: bool) -> None:
-    os.environ[DEBUG_ENV_VAR] = str(enabled)
-
     # do not log setting quiet mode
+    os.environ[QUIET_ENV_VAR] = str(enabled)
+    os.environ[GRPC_DEBUG_ENV_VAR] = "NONE"
 
 
 def get_quiet_mode() -> bool:
@@ -131,15 +135,15 @@ def load_global_config(bentoml_config_file: t.Optional[str] = None):
 
     if bentoml_config_file:
         if not bentoml_config_file.endswith((".yml", ".yaml")):
-            raise Exception(
+            raise BentoMLConfigException(
                 "BentoML config file specified in ENV VAR does not end with `.yaml`: "
                 f"`BENTOML_CONFIG={bentoml_config_file}`"
-            )
+            ) from None
         if not os.path.isfile(bentoml_config_file):
             raise FileNotFoundError(
                 "BentoML config file specified in ENV VAR not found: "
                 f"`BENTOML_CONFIG={bentoml_config_file}`"
-            )
+            ) from None
 
     bentoml_configuration = BentoMLConfiguration(
         override_config_file=bentoml_config_file,

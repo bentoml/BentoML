@@ -8,25 +8,23 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from ..utils.metrics import metric_name
-from ..configuration.containers import BentoMLContainer
+from ...context import component_context
+from ...utils.metrics import metric_name
+from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from .. import external_typing as ext
-    from ..server.metrics.prometheus import PrometheusClient
+    from ... import external_typing as ext
+    from ...server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
-START_TIME_VAR: "contextvars.ContextVar[float]" = contextvars.ContextVar(
-    "START_TIME_VAR"
-)
-STATUS_VAR: "contextvars.ContextVar[int]" = contextvars.ContextVar("STATUS_VAR")
-from ..context import component_context
+START_TIME_VAR: contextvars.ContextVar[float] = contextvars.ContextVar("START_TIME_VAR")
+STATUS_VAR: contextvars.ContextVar[int] = contextvars.ContextVar("STATUS_VAR")
 
 
 class HTTPTrafficMetricsMiddleware:
     def __init__(
         self,
-        app: "ext.ASGIApp",
+        app: ext.ASGIApp,
         namespace: str = "bentoml_api_server",
     ):
         self.app = app
@@ -36,7 +34,7 @@ class HTTPTrafficMetricsMiddleware:
     @inject
     def _setup(
         self,
-        metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
+        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
         duration_buckets: tuple[float, ...] = Provide[
             BentoMLContainer.duration_buckets
         ],
@@ -105,9 +103,9 @@ class HTTPTrafficMetricsMiddleware:
 
     async def __call__(
         self,
-        scope: "ext.ASGIScope",
-        receive: "ext.ASGIReceive",
-        send: "ext.ASGISend",
+        scope: ext.ASGIScope,
+        receive: ext.ASGIReceive,
+        send: ext.ASGISend,
     ) -> None:
         if not self._is_setup:
             self._setup()

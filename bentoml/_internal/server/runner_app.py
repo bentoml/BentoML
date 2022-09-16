@@ -183,13 +183,13 @@ class RunnerAppFactory(BaseAppFactory):
         )
 
         if self.enable_metrics:
-            from .instruments import RunnerTrafficMetricsMiddleware
+            from .http.instruments import RunnerTrafficMetricsMiddleware
 
             middlewares.append(Middleware(RunnerTrafficMetricsMiddleware))
 
         access_log_config = BentoMLContainer.runners_config.logging.access
         if access_log_config.enabled.get():
-            from .access import AccessLogMiddleware
+            from .http.access import AccessLogMiddleware
 
             access_logger = logging.getLogger("bentoml.access")
             if access_logger.getEffectiveLevel() <= logging.INFO:

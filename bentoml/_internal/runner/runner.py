@@ -225,7 +225,7 @@ class Runner:
         init local runnable instance, for testing and debugging only
         """
         if not quiet:
-            logger.warning("'Runner.init_local' is for debugging and testing only")
+            logger.warning("'Runner.init_local' is for debugging and testing only.")
 
         self._init_local()
 

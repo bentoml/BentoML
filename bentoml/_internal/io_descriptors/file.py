@@ -13,6 +13,7 @@ from starlette.datastructures import UploadFile
 from .base import IODescriptor
 from ..types import FileLike
 from ..utils.http import set_cookies
+from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
@@ -23,10 +24,17 @@ from ..service.openapi.specification import RequestBody
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+
     from ..context import InferenceApiContext as Context
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
-FileType: t.TypeAlias = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
+else:
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
+
+FileType = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
 
 class File(IODescriptor[FileType]):
@@ -100,16 +108,16 @@ class File(IODescriptor[FileType]):
 
     """
 
+    _proto_fields = ("file",)
+
     def __new__(  # pylint: disable=arguments-differ # returning subclass from new
         cls, kind: FileKind = "binaryio", mime_type: str | None = None
     ) -> File:
         mime_type = mime_type if mime_type is not None else "application/octet-stream"
-
         if kind == "binaryio":
             res = object.__new__(BytesIOFile)
         else:
             raise ValueError(f"invalid File kind '{kind}'")
-
         res._mime_type = mime_type
         return res
 
@@ -134,11 +142,7 @@ class File(IODescriptor[FileType]):
             content={self._mime_type: MediaType(schema=self.openapi_schema())},
         )
 
-    async def to_http_response(
-        self,
-        obj: FileType,
-        ctx: Context | None = None,
-    ):
+    async def to_http_response(self, obj: FileType, ctx: Context | None = None):
         if isinstance(obj, bytes):
             body = obj
         else:
@@ -154,6 +158,31 @@ class File(IODescriptor[FileType]):
         else:
             res = Response(body)
         return res
+
+    async def to_proto(self, obj: FileType) -> pb.File:
+        from bentoml.grpc.utils import mimetype_to_filetype_pb_map
+
+        if isinstance(obj, bytes):
+            body = obj
+        else:
+            body = obj.read()
+
+        try:
+            kind = mimetype_to_filetype_pb_map()[self._mime_type]
+        except KeyError:
+            raise BadInput(
+                f"{self._mime_type} doesn't have a corresponding File 'kind'"
+            ) from None
+
+        return pb.File(kind=kind, content=body)
+
+    if TYPE_CHECKING:
+
+        async def from_proto(self, field: pb.File | bytes) -> FileLike[bytes]:
+            ...
+
+        async def from_http_request(self, request: Request) -> t.IO[bytes]:
+            ...
 
 
 class BytesIOFile(File):
@@ -183,3 +212,29 @@ class BytesIOFile(File):
         raise BentoMLException(
             f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
         )
+
+    async def from_proto(self, field: pb.File | bytes) -> FileLike[bytes]:
+        from bentoml.grpc.utils import filetype_pb_to_mimetype_map
+
+        mapping = filetype_pb_to_mimetype_map()
+        # check if the request message has the correct field
+        if isinstance(field, bytes):
+            content = field
+        else:
+            assert isinstance(field, pb.File)
+            if field.kind:
+                try:
+                    mime_type = mapping[field.kind]
+                    if mime_type != self._mime_type:
+                        raise BadInput(
+                            f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
+                        )
+                except KeyError:
+                    raise BadInput(
+                        f"{field.kind} is not a valid File kind. Accepted file kind: {[names for names,_ in pb.File.FileType.items()]}",
+                    ) from None
+            content = field.content
+            if not content:
+                raise BadInput("Content is empty!") from None
+
+        return FileLike[bytes](io.BytesIO(content), "<content>")

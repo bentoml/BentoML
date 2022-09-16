@@ -1,5 +1,5 @@
 github_checks:
-    annotations: false
+  annotations: false
 comment:
   layout: "reach, diff, files"
   behavior: default
@@ -22,7 +22,7 @@ ignore:
 coverage:
   precision: 2
   round: down
-  range: "80...100" 
+  range: "80...100"
   status:
     default_rules:
       flag_coverage_not_uploaded_behavior: exclude
@@ -63,7 +63,8 @@ coverage:
           - transformers
           - xgboost
           - unit-tests
-          - e2e-tests
+          - e2e-tests-http
+          - e2e-tests-grpc
       catboost:
         target: auto
         threshold: 10%
@@ -78,12 +79,12 @@ coverage:
         target: auto
         threshold: 10%
         flags:
-          - easyocr 
+          - easyocr
       evalml:
         target: auto
         threshold: 10%
         flags:
-          - evalml 
+          - evalml
       fastai:
         target: auto
         threshold: 10%
@@ -208,7 +209,8 @@ coverage:
         target: auto
         threshold: 10%
         flags:
-          - e2e-tests
+          - e2e-tests-http
+          - e2e-tests-grpc
       unit:
         target: auto
         threshold: 10%
@@ -328,11 +330,16 @@ flags:
     carryforward: true
     paths:
       - bentoml/_internal/frameworks/xgboost.py
-  e2e-tests:
+  e2e-tests-http:
     carryforward: true
     paths:
       - "bentoml/**/*"
       - bentoml/models.py
+  e2e-tests-grpc:
+    carryforward: true
+    paths:
+      - "bentoml/**/*"
+      - bentoml/grpc/utils.py
   unit-tests:
     carryforward: true
     paths:

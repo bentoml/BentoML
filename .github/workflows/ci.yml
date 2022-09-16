@@ -257,9 +257,15 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
+      # Simulate ./scripts/generate_grpc_stubs.sh
+      - name: Generate gRPC stubs
+        run: |
+          pip install protobuf==3.19.4 "grpcio-tools==1.41"
+          find bentoml/grpc/v1alpha1 -type f -name "*.proto" -exec python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. "{}" \;
+
       - name: Install dependencies
         run: |
-          pip install -e .
+          pip install -e ".[grpc]"
           pip install -r requirements/tests-requirements.txt
           pip install -r tests/e2e/bento_server_general_features/requirements.txt
 

@@ -1,9 +1,16 @@
-# type: ignore[reportMissingTypeStubs]
+from __future__ import annotations
+
 import os
 import sys
 import typing as t
 import logging
+from typing import TYPE_CHECKING
 from functools import partial
+
+if TYPE_CHECKING:
+    from prometheus_client.metrics_core import Metric
+
+    from ... import external_typing as ext
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +20,7 @@ class PrometheusClient:
         self,
         *,
         multiproc: bool = True,
-        multiproc_dir: t.Optional[str] = None,
+        multiproc_dir: str | None = None,
     ):
         """
         Set up multiproc_dir for prometheus to work in multiprocess mode,
@@ -87,6 +94,9 @@ class PrometheusClient:
             registry=self.registry,
         )
 
+    def make_wsgi_app(self) -> ext.WSGIApp:
+        return self.prometheus_client.make_wsgi_app(registry=self.registry)  # type: ignore (unfinished prometheus types)
+
     def generate_latest(self):
         if self.multiproc:
             registry = self.prometheus_client.CollectorRegistry()
@@ -94,6 +104,13 @@ class PrometheusClient:
             return self.prometheus_client.generate_latest(registry)
         else:
             return self.prometheus_client.generate_latest()
+
+    def text_string_to_metric_families(self) -> t.Generator[Metric, None, None]:
+        from prometheus_client.parser import text_string_to_metric_families
+
+        yield from text_string_to_metric_families(
+            self.generate_latest().decode("utf-8")
+        )
 
     @property
     def CONTENT_TYPE_LATEST(self) -> str:

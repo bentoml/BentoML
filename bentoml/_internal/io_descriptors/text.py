@@ -11,14 +11,18 @@ from bentoml.exceptions import BentoMLException
 from .base import IODescriptor
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import MediaType
-
-if TYPE_CHECKING:
-    from ..context import InferenceApiContext as Context
-
+from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
+from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import RequestBody
+
+if TYPE_CHECKING:
+    from google.protobuf import wrappers_pb2
+
+    from ..context import InferenceApiContext as Context
+else:
+    wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
 
 MIME_TYPE = "text/plain"
 
@@ -86,13 +90,14 @@ class Text(IODescriptor[str]):
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
+    _proto_fields = ("text",)
+    _mime_type = MIME_TYPE
+
     def __init__(self, *args: t.Any, **kwargs: t.Any):
         if args or kwargs:
             raise BentoMLException(
-                "'Text' is not designed to take any args or kwargs during initialization."
-            )
-
-        self._mime_type = MIME_TYPE
+                f"'{self.__class__.__name__}' is not designed to take any args or kwargs during initialization."
+            ) from None
 
     def input_type(self) -> t.Type[str]:
         return str
@@ -123,11 +128,21 @@ class Text(IODescriptor[str]):
         if ctx is not None:
             res = Response(
                 obj,
-                media_type=MIME_TYPE,
+                media_type=self._mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(obj, media_type=MIME_TYPE)
+            return Response(obj, media_type=self._mime_type)
+
+    async def from_proto(self, field: wrappers_pb2.StringValue | bytes) -> str:
+        if isinstance(field, bytes):
+            return field.decode("utf-8")
+        else:
+            assert isinstance(field, wrappers_pb2.StringValue)
+            return field.value
+
+    async def to_proto(self, obj: str) -> wrappers_pb2.StringValue:
+        return wrappers_pb2.StringValue(value=obj)

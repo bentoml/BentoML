@@ -3,14 +3,11 @@ from __future__ import annotations
 import sys
 import typing as t
 import logging
+from typing import TYPE_CHECKING
 
-import click
-
-from bentoml.bentos import containerize as containerize_bento
-from bentoml._internal.utils import kwargs_transformers
-from bentoml._internal.utils.docker import validate_tag
-
-logger = logging.getLogger("bentoml")
+if TYPE_CHECKING:
+    F = t.Callable[..., t.Any]
+    from click import Group
 
 
 def containerize_transformer(
@@ -23,7 +20,15 @@ def containerize_transformer(
     return value
 
 
-def add_containerize_command(cli: click.Group) -> None:
+def add_containerize_command(cli: Group) -> None:
+    import click
+
+    from bentoml.bentos import FEATURES
+    from bentoml.bentos import containerize as containerize_bento
+    from bentoml_cli.utils import kwargs_transformers
+    from bentoml._internal.utils.docker import validate_tag
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
@@ -160,35 +165,43 @@ def add_containerize_command(cli: click.Group) -> None:
     @click.option(
         "--ulimit", type=click.STRING, default=None, help="Ulimit options (default [])."
     )
+    @click.option(
+        "--enable-features",
+        multiple=True,
+        nargs=1,
+        metavar="[features,]",
+        help=f"Enable additional BentoML features. Available features are: {', '.join(FEATURES)}.",
+    )
     @kwargs_transformers(transformer=containerize_transformer)
     def containerize(  # type: ignore
         bento_tag: str,
-        docker_image_tag: list[str],
-        add_host: t.Iterable[str],
-        allow: t.Iterable[str],
-        build_arg: t.List[str],
-        build_context: t.List[str],
+        docker_image_tag: tuple[str],
+        add_host: tuple[str],
+        allow: tuple[str],
+        build_arg: tuple[str],
+        build_context: tuple[str],
         builder: str,
-        cache_from: t.List[str],
-        cache_to: t.List[str],
+        cache_from: tuple[str],
+        cache_to: tuple[str],
         cgroup_parent: str,
         iidfile: str,
-        label: t.List[str],
+        label: tuple[str],
         load: bool,
         network: str,
         metadata_file: str,
         no_cache: bool,
-        no_cache_filter: t.List[str],
-        output: t.List[str],
-        platform: t.List[str],
+        no_cache_filter: tuple[str],
+        output: tuple[str],
+        platform: tuple[str],
         progress: t.Literal["auto", "tty", "plain"],
         pull: bool,
         push: bool,
-        secret: t.List[str],
+        secret: tuple[str],
         shm_size: str,
         ssh: str,
         target: str,
         ulimit: str,
+        enable_features: tuple[str],
     ) -> None:
         """Containerizes given Bento into a ready-to-use Docker image.
 
@@ -217,10 +230,10 @@ def add_containerize_command(cli: click.Group) -> None:
         By doing so, BentoML will leverage Docker Buildx features such as multi-node
         builds for cross-platform images, Full BuildKit capabilities with all of the
         familiar UI from 'docker build'.
-
-        We also pass all given args for 'docker buildx' through 'bentoml containerize' with ease.
         """
         from bentoml._internal.utils import buildx
+
+        logger = logging.getLogger("bentoml")
 
         # run health check whether buildx is install locally
         buildx.health()
@@ -253,7 +266,7 @@ def add_containerize_command(cli: click.Group) -> None:
                 key, value = label_str.split("=")
                 labels[key] = value
 
-        output_ = None
+        output_: dict[str, t.Any] | None = None
         if output:
             output_ = {}
             for arg in output:
@@ -276,6 +289,9 @@ def add_containerize_command(cli: click.Group) -> None:
         exit_code = not containerize_bento(
             bento_tag,
             docker_image_tag=docker_image_tag,
+            # containerize options
+            features=enable_features,
+            # docker options
             add_host=add_hosts,
             allow=allow_,
             build_args=build_args,
@@ -291,7 +307,7 @@ def add_containerize_command(cli: click.Group) -> None:
             network=network,
             no_cache=no_cache,
             no_cache_filter=no_cache_filter,
-            output=output_,  # type: ignore
+            output=output_,
             platform=platform,
             progress=progress,
             pull=pull,
@@ -303,4 +319,17 @@ def add_containerize_command(cli: click.Group) -> None:
             target=target,
             ulimit=ulimit,
         )
+        if not exit_code:
+            grpc_metrics_port = BentoMLContainer.grpc.metrics.port.get()
+            logger.info(
+                'Successfully built docker image for "%s" with tags "%s"',
+                str(bento_tag),
+                ",".join(docker_image_tag),
+            )
+            logger.info(
+                'To run your newly built Bento container, use one of the above tags, and pass it to "docker run". i.e: "docker run -it --rm -p 3000:3000 %s". To use gRPC, pass "-e BENTOML_USE_GRPC=true -p %s:%s" to "docker run".',
+                docker_image_tag[0],
+                grpc_metrics_port,
+                grpc_metrics_port,
+            )
         sys.exit(exit_code)

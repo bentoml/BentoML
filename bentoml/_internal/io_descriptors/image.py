@@ -4,7 +4,6 @@ import io
 import typing as t
 import functools
 from typing import TYPE_CHECKING
-from itertools import chain
 from urllib.parse import quote
 
 from starlette.requests import Request
@@ -187,10 +186,15 @@ class Image(IODescriptor[ImageType]):
         )
         self._allow_all_images = allowed_mime_types is None
 
-        for mtype in chain(self._allowed_mimes, [self._mime_type]):
+        if self._mime_type not in MIME_EXT_MAPPING:  # pragma: no cover
+            raise InvalidArgument(
+                f"Invalid Image mime_type '{mime_type}'; supported mime types are {', '.join(PIL.Image.MIME.values())} "
+            )
+
+        for mtype in self._allowed_mimes:
             if mtype not in MIME_EXT_MAPPING:  # pragma: no cover
                 raise InvalidArgument(
-                    f"Invalid Image mime_type '{mtype}'; supported mime types are {', '.join(PIL.Image.MIME.values())} "
+                    f"Invalid Image MIME in allowed_mime_types: '{mtype}'; supported mime types are {', '.join(PIL.Image.MIME.values())} "
                 )
 
         self._pilmode: _Mode | None = pilmode
@@ -252,11 +256,11 @@ class Image(IODescriptor[ImageType]):
                 else:
                     if self._allowed_mimes is None:
                         raise BadInput(
-                            f"no multipart image file (with mime type in {MIME_EXT_MAPPING.keys()} or 'image/*'), got files with content types {', '.join(found_mimes)}"
+                            f"no multipart image file (supported images are: {', '.join(MIME_EXT_MAPPING.keys())}, or 'image/*'), got files with content types {', '.join(found_mimes)}"
                         )
                     else:
                         raise BadInput(
-                            f"no multipart image file (with mime type in {self._allowed_mimes}), got files with content types {', '.join(found_mimes)}"
+                            f"no multipart image file (allowed mime types are: {', '.join(self._allowed_mimes)}), got files with content types {', '.join(found_mimes)}"
                         )
 
         elif self._allowed_mimes is None:
@@ -267,11 +271,11 @@ class Image(IODescriptor[ImageType]):
         else:
             if self._allowed_mimes is None:
                 raise BadInput(
-                    f"no multipart image file (with mime type in {MIME_EXT_MAPPING.keys()} or 'image/*'), got request with content type {mime_type}"
+                    f"unsupported mime type {mime_type}; supported mime types are: {', '.join(MIME_EXT_MAPPING.keys())}, or 'image/*'"
                 )
             else:
                 raise BadInput(
-                    f"no multipart image file (with mime type in {self._allowed_mimes}), got a request with content type {mime_type}"
+                    f"mime type {mime_type} is not allowed, allowed mime types are: {', '.join(self._allowed_mimes)}"
                 )
 
         assert bytes_ is not None

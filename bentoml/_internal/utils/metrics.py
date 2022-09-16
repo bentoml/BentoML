@@ -23,7 +23,7 @@ DEFAULT_BUCKET = (
 MAX_BUCKET_COUNT = 100
 
 
-def metric_name(*args: str) -> str:
+def metric_name(*args: str | int) -> str:
     """
     Concatenates the given parts into a legal Prometheus metric name. For example,
     a valid tag name may includes invalid characters, so we need to escape them

@@ -78,6 +78,8 @@ def _is_ip_address(addr: str) -> bool:
         return False
 
 
+RUNNER_CFG_KEYS = ["batching", "resources", "logging", "metrics", "timeout"]
+
 RUNNER_CFG_SCHEMA = {
     Optional("batching"): {
         Optional("enabled"): bool,
@@ -96,6 +98,10 @@ RUNNER_CFG_SCHEMA = {
             Optional("response_content_length"): Or(bool, None),
             Optional("response_content_type"): Or(bool, None),
         },
+    },
+    Optional("metrics"): {
+        "enabled": bool,
+        "namespace": str,
     },
     Optional("timeout"): And(int, _larger_than_zero),
 }
@@ -221,12 +227,9 @@ class BentoMLConfiguration:
                 override_config = yaml.safe_load(f)
             config_merger.merge(self.config, override_config)
 
-            global_runner_cfg = {
-                k: self.config["runners"][k]
-                for k in ("batching", "resources", "logging", "timeout")
-            }
+            global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
             for key in self.config["runners"]:
-                if key not in ["batching", "resources", "logging", "timeout"]:
+                if key not in RUNNER_CFG_KEYS:
                     runner_cfg = self.config["runners"][key]
 
                     # key is a runner name
@@ -385,14 +388,10 @@ class _BentoMLContainerClass:
     @staticmethod
     def metrics_client(
         multiproc_dir: str = Provide[prometheus_multiproc_dir],
-        namespace: str = Provide[config.api_server.metrics.namespace],
     ) -> "PrometheusClient":
         from ..server.metrics.prometheus import PrometheusClient
 
-        return PrometheusClient(
-            multiproc_dir=multiproc_dir,
-            namespace=namespace,
-        )
+        return PrometheusClient(multiproc_dir=multiproc_dir)
 
     @providers.SingletonFactory
     @staticmethod
@@ -509,8 +508,10 @@ class _BentoMLContainerClass:
 
         if isinstance(excluded_urls, list):
             return ExcludeList(excluded_urls)
-        else:
+        elif isinstance(excluded_urls, str):
             return parse_excluded_urls(excluded_urls)
+        else:
+            return ExcludeList([])
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, str]]({})
@@ -519,7 +520,7 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def duration_buckets(
-        metrics: dict[str, t.Any] = Provide[config.api_server.metrics],
+        metrics: dict[str, t.Any] = Provide[config.api_server.metrics]
     ) -> tuple[float, ...]:
         """
         Returns a tuple of duration buckets in seconds. If not explicitly configured,

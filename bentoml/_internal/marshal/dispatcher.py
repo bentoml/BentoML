@@ -7,26 +7,17 @@ import logging
 import functools
 import traceback
 import collections
-from typing import TYPE_CHECKING
 
 import numpy as np
-from simple_di import inject
-from simple_di import Provide
 
 from ..utils import cached_property
 from ..utils.alg import TokenBucket
-from ..utils.metrics import metric_name
-from ..utils.metrics import exponential_buckets
-from ..configuration.containers import BentoMLContainer
-
-if TYPE_CHECKING:
-    from ..server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
 
 
 class NonBlockSema:
-    def __init__(self, count):
+    def __init__(self, count: int):
         self.sema = count
 
     def acquire(self):
@@ -56,7 +47,7 @@ class Optimizer:
         assume the outbound duration follows duration = o_a * n + o_b
         (all in seconds)
         """
-        self.o_stat = collections.deque(
+        self.o_stat: collections.deque[tuple[int, float, float]] = collections.deque(
             maxlen=self.N_KEPT_SAMPLE
         )  # to store outbound stat data
         self.o_a = 2
@@ -67,7 +58,7 @@ class Optimizer:
         self._refresh_tb = TokenBucket(2)  # to limit params refresh interval
         self._outbound_counter = 0
 
-    def log_outbound(self, n, wait, duration):
+    def log_outbound(self, n: int, wait: float, duration: float):
         if (
             self._outbound_counter <= self.N_SKIPPED_SAMPLE
         ):  # skip inaccurate info at beginning
@@ -82,7 +73,9 @@ class Optimizer:
     def trigger_refresh(self):
         x = tuple((i, 1) for i, _, _ in self.o_stat)
         y = tuple(i for _, i, _ in self.o_stat)
-        _o_a, _o_b = np.linalg.lstsq(x, y, rcond=None)[0]
+
+        _factors: tuple[float, float] = np.linalg.lstsq(x, y, rcond=None)[0]  # type: ignore
+        _o_a, _o_b = _factors
         _o_w = sum(w for _, _, w in self.o_stat) * 1.0 / len(self.o_stat)
 
         self.o_a, self.o_b = max(0.000001, _o_a), max(0, _o_b)
@@ -107,17 +100,12 @@ class CorkDispatcher:
     The wrapped function should be an async function.
     """
 
-    @inject
     def __init__(
         self,
-        runner_name: str,
-        worker_index: int,
-        method_name: str,
         max_latency_in_ms: int,
         max_batch_size: int,
         shared_sema: t.Optional[NonBlockSema] = None,
         fallback: t.Optional[t.Callable[[], t.Any]] = None,
-        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ):
         """
         params:
@@ -129,24 +117,16 @@ class CorkDispatcher:
             * all possible exceptions the decorated function has
         """
         self.max_latency_in_ms = max_latency_in_ms / 1000.0
-        self.callback = None
         self.fallback = fallback
         self.optimizer = Optimizer()
         self.max_batch_size = int(max_batch_size)
         self.tick_interval = 0.001
 
         self._controller = None
-        self._queue = collections.deque()  # TODO(hrmthw): maxlen
+        self._queue: collections.deque[
+            tuple[float, t.Any, asyncio.Future[t.Any]]
+        ] = collections.deque()  # TODO(bojiang): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
-
-        self.adaptive_batch_size_hist = metrics_client.Histogram(
-            name=metric_name(
-                runner_name, worker_index, method_name, "adaptive_batch_size"
-            ),
-            documentation=runner_name + " Runner adaptive batch size",
-            labelnames=[],  # TODO: add service version
-            buckets=exponential_buckets(1, 2, max_batch_size),
-        )
 
     def shutdown(self):
         if self._controller is not None:
@@ -169,13 +149,13 @@ class CorkDispatcher:
     def __call__(
         self,
         callback: t.Callable[
-            [t.Iterable[T_IN]], t.Coroutine[None, None, t.Iterable[T_OUT]]
+            [t.Collection[T_IN]], t.Coroutine[None, None, t.Collection[T_OUT]]
         ],
     ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT]]:
         self.callback = callback
 
         @functools.wraps(callback)
-        async def _func(data):
+        async def _func(data: t.Any) -> t.Any:
             if self._controller is None:
                 self._controller = self._loop.create_task(self.controller())
             try:
@@ -232,7 +212,7 @@ class CorkDispatcher:
             except Exception:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc())
 
-    async def inbound_call(self, data):
+    async def inbound_call(self, data: t.Any):
         now = time.time()
         future = self._loop.create_future()
         input_info = (now, data, future)
@@ -241,12 +221,13 @@ class CorkDispatcher:
             self._wake_event.notify_all()
         return await future
 
-    async def outbound_call(self, inputs_info):
+    async def outbound_call(
+        self, inputs_info: tuple[tuple[float, t.Any, asyncio.Future[t.Any]]]
+    ):
         _time_start = time.time()
         _done = False
         batch_size = len(inputs_info)
         logger.debug("Dynamic batching cork released, batch size: %d", batch_size)
-        self.adaptive_batch_size_hist.observe(batch_size)
         try:
             outputs = await self.callback(tuple(d for _, d, _ in inputs_info))
             assert len(outputs) == len(inputs_info)

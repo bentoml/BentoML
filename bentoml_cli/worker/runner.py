@@ -39,6 +39,11 @@ import click
     default=None,
     help="The environment variables to pass to the worker process. The format is a JSON string, e.g. '{0: {\"CUDA_VISIBLE_DEVICES\": 0}}'.",
 )
+@click.option(
+    "--prometheus-dir",
+    type=click.Path(exists=True),
+    help="Required by prometheus to pass the metrics in multi-process mode",
+)
 def main(
     bento_identifier: str,
     runner_name: str,
@@ -47,6 +52,7 @@ def main(
     no_access_log: bool,
     worker_id: int,
     worker_env_map: str | None,
+    prometheus_dir: str | None,
 ) -> None:
     """
     Start a runner server.
@@ -89,9 +95,12 @@ def main(
     configure_server_logging()
     import uvicorn  # type: ignore
 
-    if no_access_log:
-        from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.configuration.containers import BentoMLContainer
 
+    if prometheus_dir is not None:
+        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
+
+    if no_access_log:
         access_log_config = BentoMLContainer.runners_config.logging.access
         access_log_config.enabled.set(False)
 
@@ -101,11 +110,11 @@ def main(
 
     # setup context
     if service.tag is None:
-        component_context.bento_name = f"*{service.__class__}"
+        component_context.bento_name = f"{service.__class__}"
         component_context.bento_version = "not available"
     else:
         component_context.bento_name = service.tag.name
-        component_context.bento_version = service.tag.version
+        component_context.bento_version = service.tag.version or ""
 
     for runner in service.runners:
         if runner.name == runner_name:

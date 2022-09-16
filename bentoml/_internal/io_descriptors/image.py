@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import typing as t
+import functools
 from typing import TYPE_CHECKING
 from itertools import chain
 from urllib.parse import quote
@@ -55,6 +56,24 @@ else:
 ImageType = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 
 DEFAULT_PIL_MODE = "RGB"
+
+
+MIME_EXT_MAPPING: dict[str, str] = None  # type: ignore (lazy constant)
+
+
+@functools.lru_cache(maxsize=1)
+def initialize_pillow():
+    global MIME_EXT_MAPPING  # pylint: disable=global-statement
+
+    try:
+        import PIL.Image
+    except ImportError:
+        raise InternalServerError(
+            "`Pillow` is required to use {__name__}\n Instructions: `pip install -U Pillow`"
+        )
+
+    PIL.Image.init()
+    MIME_EXT_MAPPING = {v: k for k, v in PIL.Image.MIME.items()}  # type: ignore (lazy constant)
 
 
 class Image(IODescriptor[ImageType]):
@@ -144,8 +163,6 @@ class Image(IODescriptor[ImageType]):
         :obj:`Image`: IO Descriptor that either a :code:`PIL.Image.Image` or a :code:`np.ndarray` representing an image.
     """
 
-    MIME_EXT_MAPPING: dict[str, str] = {}
-
     _proto_fields = ("file",)
 
     def __init__(
@@ -155,8 +172,7 @@ class Image(IODescriptor[ImageType]):
         *,
         allowed_mime_types: t.Iterable[str] | None = None,
     ):
-        PIL.Image.init()
-        self.MIME_EXT_MAPPING.update({v: k for k, v in PIL.Image.MIME.items()})
+        initialize_pillow()
 
         if pilmode is not None and pilmode not in PIL.Image.MODES:  # pragma: no cover
             raise InvalidArgument(
@@ -172,13 +188,13 @@ class Image(IODescriptor[ImageType]):
         self._allow_all_images = allowed_mime_types is None
 
         for mtype in chain(self._allowed_mimes, [self._mime_type]):
-            if mtype not in self.mime_ext_mapping():  # pragma: no cover
+            if mtype not in MIME_EXT_MAPPING:  # pragma: no cover
                 raise InvalidArgument(
                     f"Invalid Image mime_type '{mtype}'; supported mime types are {', '.join(PIL.Image.MIME.values())} "
                 )
 
         self._pilmode: _Mode | None = pilmode
-        self._format = self.MIME_EXT_MAPPING[self._mime_type]
+        self._format: str = MIME_EXT_MAPPING[self._mime_type]
 
     def input_type(self) -> UnionType:
         return ImageType
@@ -222,7 +238,7 @@ class Image(IODescriptor[ImageType]):
 
                 if self._allowed_mimes is None:
                     if (
-                        val_content_type in self.MIME_EXT_MAPPING
+                        val_content_type in MIME_EXT_MAPPING
                         or val_content_type.startswith("image/")
                     ):
                         bytes_ = await val.read()
@@ -236,7 +252,7 @@ class Image(IODescriptor[ImageType]):
                 else:
                     if self._allowed_mimes is None:
                         raise BadInput(
-                            f"no multipart image file (with mime type in {self.MIME_EXT_MAPPING.keys()} or 'image/*'), got files with content types {', '.join(found_mimes)}"
+                            f"no multipart image file (with mime type in {MIME_EXT_MAPPING.keys()} or 'image/*'), got files with content types {', '.join(found_mimes)}"
                         )
                     else:
                         raise BadInput(
@@ -244,14 +260,14 @@ class Image(IODescriptor[ImageType]):
                         )
 
         elif self._allowed_mimes is None:
-            if mime_type in self.MIME_EXT_MAPPING or mime_type.startswith("image/"):
+            if mime_type in MIME_EXT_MAPPING or mime_type.startswith("image/"):
                 bytes_ = await request.body()
         elif mime_type in self._allowed_mimes:
             bytes_ = await request.body()
         else:
             if self._allowed_mimes is None:
                 raise BadInput(
-                    f"no multipart image file (with mime type in {self.MIME_EXT_MAPPING.keys()} or 'image/*'), got request with content type {mime_type}"
+                    f"no multipart image file (with mime type in {MIME_EXT_MAPPING.keys()} or 'image/*'), got request with content type {mime_type}"
                 )
             else:
                 raise BadInput(
@@ -265,7 +281,7 @@ class Image(IODescriptor[ImageType]):
 
         try:
             return PIL.Image.open(io.BytesIO(bytes_))
-        except PIL.UnidentifiedImageError:
+        except PIL.UnidentifiedImageError:  # type: ignore (bad pillow types)
             raise BadInput("Failed to parse uploaded image file") from None
 
     async def to_http_response(

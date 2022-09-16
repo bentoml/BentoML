@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 
 import attr
+import numpy as np
 
 
 @attr.define
@@ -47,6 +48,9 @@ class FrameworkTestModelInput:
                     result
                 ), f"Output from model call ({', '.join(map(str, self.input_args))}, **{self.input_kwargs}) is not as expected"
         else:
+            check = outp == self.expected
+            if isinstance(check, np.ndarray):
+                check = check.all()
             assert (
-                outp == self.expected
+                check
             ), f"Output from model call ({', '.join(map(str, self.input_args))}, **{self.input_kwargs}) is not as expected"

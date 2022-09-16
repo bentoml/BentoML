@@ -4,6 +4,7 @@ from ._internal.frameworks.xgboost import get
 from ._internal.frameworks.xgboost import load_model
 from ._internal.frameworks.xgboost import save_model
 from ._internal.frameworks.xgboost import get_runnable
+from ._internal.frameworks.xgboost import XGBoostOptions as ModelOptions
 
 logger = logging.getLogger(__name__)
 
@@ -34,4 +35,4 @@ def load_runner(tag, *args, **kwargs):
     return get(tag).to_runner()
 
 
-__all__ = ["load_model", "save_model", "get", "get_runnable"]
+__all__ = ["load_model", "save_model", "get", "get_runnable", "ModelOptions"]

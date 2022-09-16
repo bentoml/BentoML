@@ -21,6 +21,7 @@ from ..runner.utils import payload_paramss_to_batch_params
 from ..utils.metrics import metric_name
 from ..utils.metrics import exponential_buckets
 from ..server.base_app import BaseAppFactory
+from ..runner.container import Payload
 from ..runner.container import AutoContainer
 from ..marshal.dispatcher import CorkDispatcher
 from ..configuration.containers import BentoMLContainer
@@ -37,7 +38,6 @@ if TYPE_CHECKING:
 
     from ..runner.runner import Runner
     from ..runner.runner import RunnerMethod
-    from ..runner.container import Payload
 
 
 class RunnerAppFactory(BaseAppFactory):
@@ -241,7 +241,7 @@ class RunnerAppFactory(BaseAppFactory):
             )
 
             # multiple output branch
-            if LazyType[tuple[t.Any, ...]](tuple).isinstance(batch_ret):
+            if LazyType["tuple[t.Any, ...]"](tuple).isinstance(batch_ret):
                 output_num = len(batch_ret)
                 payloadss = tuple(
                     AutoContainer.batch_to_payloads(
@@ -249,7 +249,8 @@ class RunnerAppFactory(BaseAppFactory):
                     )
                     for idx in range(output_num)
                 )
-                return list(zip(*payloadss))
+                ret = list(zip(*payloadss))
+                return ret
 
             # single output branch
             payloads = AutoContainer.batch_to_payloads(
@@ -269,7 +270,9 @@ class RunnerAppFactory(BaseAppFactory):
 
             payload = await infer(params)
 
-            if isinstance(payload, tuple):
+            if not isinstance(
+                payload, Payload
+            ):  # a tuple, which means user runnable has multiple outputs
                 return Response(
                     pickle.dumps(payload),
                     headers={

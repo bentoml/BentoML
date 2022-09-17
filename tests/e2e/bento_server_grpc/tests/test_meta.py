@@ -17,20 +17,20 @@ from bentoml.testing.grpc.interceptors import AssertClientInterceptor
 @pytest.mark.asyncio
 async def test_success_invocation_custom_servicer(host: str) -> None:
     async with create_channel(host) as channel:
-        Check = channel.unary_unary(
+        HealthCheck = channel.unary_unary(
             "/grpc.health.v1.Health/Check",
             request_serializer=pb_health.HealthCheckRequest.SerializeToString,  # type: ignore (no grpc_health type)
             response_deserializer=pb_health.HealthCheckResponse.FromString,  # type: ignore (no grpc_health type)
         )
-        hc_resp = await t.cast(
+        health = await t.cast(
             t.Awaitable[pb_health.HealthCheckResponse],
-            Check(
+            HealthCheck(
                 pb_health.HealthCheckRequest(
                     service="bentoml.testing.v1alpha1.TestService"
                 )
             ),
         )
-        assert hc_resp.status == pb_health.HealthCheckResponse.SERVING  # type: ignore ( no generated enum types)
+        assert health.status == pb_health.HealthCheckResponse.SERVING  # type: ignore ( no generated enum types)
         stub = services_test.TestServiceStub(channel)  # type: ignore (no async types)
         request = pb_test.ExecuteRequest(input="BentoML")
         resp: pb_test.ExecuteResponse = await stub.Execute(request)

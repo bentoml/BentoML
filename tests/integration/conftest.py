@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+import typing as t
 import tempfile
 from typing import TYPE_CHECKING
 
@@ -8,13 +7,15 @@ import pytest
 from bentoml._internal.models import ModelStore
 
 if TYPE_CHECKING:
-    from _pytest.main import Session
     from _pytest.nodes import Item
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
 
 
-def pytest_addoption(parser: Parser) -> None:
+def pytest_addoption(parser: "Parser") -> None:
+    parser.addoption(
+        "--runslow", action="store_true", default=False, help="run slow tests"
+    )
     parser.addoption(
         "--gpus", action="store_true", default=False, help="run gpus related tests"
     )
@@ -26,7 +27,7 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
+def pytest_collection_modifyitems(config: "Config", items: t.List["Item"]) -> None:
     if config.getoption("--disable-tf-eager-execution"):
         try:
             from tensorflow.python.framework.ops import disable_eager_execution
@@ -46,8 +47,8 @@ def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
             item.add_marker(requires_eager_execution)
 
 
-def pytest_sessionstart(session: Session):  # pylint: disable=unused-argument
-    path = tempfile.mkdtemp("bentoml-pytest-unit")
+def pytest_sessionstart(session):
+    path = tempfile.mkdtemp("bentoml-pytest")
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     BentoMLContainer.model_store.set(ModelStore(path))

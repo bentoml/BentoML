@@ -155,6 +155,7 @@ async def create_channel(
 @cached_contextmanager("{interceptors}")
 def make_standalone_server(
     interceptors: t.Sequence[aio.ServerInterceptor] | None = None,
+    host: str = "0.0.0.0",
 ) -> t.Generator[tuple[aio.Server, str], None, None]:
     """
     Create a standalone aio.Server for testing.
@@ -203,7 +204,7 @@ def make_standalone_server(
         options=(("grpc.so_reuseport", 0),),
     )
     services_test.add_TestServiceServicer_to_server(TestServiceServicer(), server)  # type: ignore (no async types)
-    server.add_insecure_port(f"[::]:{port}")
+    server.add_insecure_port(f"{host}:{port}")
     print("Using port %d..." % port)
     try:
         yield server, "localhost:%d" % port

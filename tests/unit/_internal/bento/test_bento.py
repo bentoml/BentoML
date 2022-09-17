@@ -332,7 +332,6 @@ def test_bento(dummy_model_store: ModelStore):
             "src",
             "env",
         }
-        print(bento_fs.listdir("src"))
         assert set(bento_fs.listdir("src")) == {
             "simplebento.py",
             "subdir",

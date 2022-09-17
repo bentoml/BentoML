@@ -49,7 +49,7 @@ class AssertClientInterceptor(aio.UnaryUnaryClientInterceptor):
             if self._assert_code:
                 assert (
                     code == self._assert_code
-                ), f"{repr(call)} returns {await call.code()} while expecting {self._assert_code}."
+                ), f"{call!r} returns {await call.code()} while expecting {self._assert_code}."
             if self._assert_details:
                 assert (
                     self._assert_details in details

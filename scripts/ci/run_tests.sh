@@ -9,6 +9,7 @@
 fname=$(basename "$0")
 dname=$(dirname "$0")
 
+# shellcheck disable=SC1091
 source "$dname/helpers.sh"
 
 set_on_failed_callback "ERR=1"
@@ -185,7 +186,7 @@ main() {
 		fi
 	done
 
-	#  validate_yaml
+	# validate_yaml
 	parse_config "$argv"
 
 	OPTS=(--cov=bentoml --cov-config="$GIT_ROOT"/pyproject.toml --cov-report=xml:"$target.xml" --cov-report=term-missing -vvv)
@@ -200,7 +201,7 @@ main() {
 	fi
 
 	if [ "$type_tests" == 'unit' ] && [ "$ENABLE_XDIST" -eq 1 ]; then
-		OPTS=("${OPTS[@]}" --dist=loadfile -n auto)
+		OPTS=("${OPTS[@]}" --dist loadfile -n auto)
 	fi
 
 	if [ "$SKIP_DEPS" -eq 0 ]; then
@@ -215,11 +216,11 @@ main() {
 	fi
 
 	if [ "$type_tests" == 'e2e' ]; then
-		p="$GIT_ROOT"/"$test_dir"/"$fname"
+		p="$GIT_ROOT/$test_dir"
 		cd "$p" || exit 1
-		OPTS=("${OPTS[@]}" "--project-dir" "$p")
-		# shellcheck disable=SC2157
-		if [ -z "GITHUB_ACTIONS" ]; then # checking whether running inside GITHUB_ACTIONS
+		IFS='/' read -r -a paths <<<"$test_dir"
+		OPTS=("${OPTS[@]}" "--project" "${paths[2]}")
+		if [ -v GITHUB_ACTIONS ]; then # checking whether running inside GITHUB_ACTIONS
 			OPTS=("${OPTS[@]}" "--cleanup")
 		fi
 		path="."

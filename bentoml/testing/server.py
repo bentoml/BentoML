@@ -33,7 +33,6 @@ if TYPE_CHECKING:
 
     from bentoml._internal.bento.bento import Bento
 
-    DeploymentMode = t.Annotated[str, t.Literal["standalone", "distributed", "docker"]]
 else:
     pb_health = LazyLoader("pb_health", globals(), "grpc_health.v1.health_pb2")
     aio = LazyLoader("aio", globals(), "grpc.aio")
@@ -213,12 +212,7 @@ def run_bento_server_docker(
         container_name,
         "--publish",
         f"{port}:{bind_port}",
-        "-v",
-        f"{os.path.abspath(BentoMLContainer.prometheus_multiproc_dir.get())}:/home/bentoml/prometheus_multiproc_dir",
     ]
-    if os.environ.get("GITHUB_ACTIONS"):
-        # running this on actions, we need to access as root to mount the volume
-        cmd.extend(["--user", "root"])
     if config_file is not None:
         cmd.extend(["--env", "BENTOML_CONFIG=/home/bentoml/bentoml_config.yml"])
         cmd.extend(
@@ -426,7 +420,7 @@ def host_bento(
     bento_name: str | Tag | None = None,
     project_path: str = ".",
     config_file: str | None = None,
-    deployment_mode: DeploymentMode = "standalone",
+    deployment_mode: t.Literal["standalone", "distributed", "docker"] = "standalone",
     bentoml_home: str | None = None,
     use_grpc: bool = False,
     clean_context: contextlib.ExitStack | None = None,

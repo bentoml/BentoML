@@ -358,7 +358,7 @@ class Image(IODescriptor[ImageType]):
                     mime_type = mapping[field.kind]
                     if mime_type != self._mime_type:
                         raise BadInput(
-                            f"Inferred mime_type from 'kind' is '{mime_type}', while '{repr(self)}' is expecting '{self._mime_type}'",
+                            f"Inferred mime_type from 'kind' is '{mime_type}', while '{self!r}' is expecting '{self._mime_type}'",
                         )
                 except KeyError:
                     raise BadInput(

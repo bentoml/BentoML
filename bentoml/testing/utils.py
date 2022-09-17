@@ -31,18 +31,20 @@ async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":
     return await parser.parse()
 
 
-def handle_assert_exception(assert_fn: t.Any, obj: t.Any, msg: str):
+def handle_assert_exception(assert_object: t.Any, obj: t.Any, msg: str):
+    res = assert_object
     try:
-        if callable(assert_fn):
-            assert assert_fn(obj)
+        if callable(assert_object):
+            res = assert_object(obj)
+            assert res
         else:
-            assert obj == assert_fn
+            assert obj == assert_object
     except AssertionError:
-        raise ValueError(msg) from None
+        raise ValueError(f"Expected: {res}. {msg}") from None
     except Exception as e:  # pylint: disable=broad-except
         # if callable has some errors, then we raise it here
         raise ValueError(
-            f"Exception while excuting '{assert_fn.__name__}': {e}"
+            f"Exception while excuting '{assert_object.__name__}': {e}"
         ) from None
 
 
@@ -56,7 +58,6 @@ async def async_request(
     assert_data: bytes | t.Callable[[bytes], bool] | None = None,
     assert_headers: t.Callable[[t.Any], bool] | None = None,
 ) -> tuple[int, Headers, bytes]:
-    import aiohttp
     from starlette.datastructures import Headers
 
     async with aiohttp.ClientSession() as sess:
@@ -71,7 +72,7 @@ async def async_request(
         handle_assert_exception(
             assert_status,
             resp.status,
-            f"Return [{resp.status}] with status {resp.status}: {repr(body)}",
+            f"Return status [{resp.status}] with body: {body!r}",
         )
     if assert_data is not None:
         if callable(assert_data):
@@ -87,7 +88,7 @@ async def async_request(
         handle_assert_exception(
             assert_headers,
             resp.headers,
-            f"Headers assertion failed: {repr(resp.headers)}",
+            f"Headers assertion failed: {resp.headers!r}",
         )
     return resp.status, Headers(resp.headers), body
 

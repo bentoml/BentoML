@@ -171,13 +171,13 @@ def make_standalone_server(
     .. code-block:: python
 
         async def test_some_async():
-            server, host_url = make_standalone_server()
-            try:
-                await server.start()
-                channel = grpc.aio.insecure_channel(host_url)
-                ...  # test code here
-            finally:
-                await server.stop(None)
+            with make_standalone_server() as (server, host_url):
+                try:
+                    await server.start()
+                    channel = grpc.aio.insecure_channel(host_url)
+                    ...  # test code here
+                finally:
+                    await server.stop(None)
 
     Example for sync test cases:
 
@@ -201,7 +201,7 @@ def make_standalone_server(
     port = stack.enter_context(reserve_free_port(enable_so_reuseport=True))
     server = aio.server(
         interceptors=interceptors,
-        options=(("grpc.so_reuseport", 0),),
+        options=(("grpc.so_reuseport", 1),),
     )
     services_test.add_TestServiceServicer_to_server(TestServiceServicer(), server)  # type: ignore (no async types)
     server.add_insecure_port(f"{host}:{port}")

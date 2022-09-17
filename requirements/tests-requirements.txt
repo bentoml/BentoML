@@ -8,7 +8,7 @@ pydantic
 pylint>=2.14.0
 pytest-cov>=3.0.0
 pytest>=6.2.0
-pytest-xdist
+pytest-xdist[psutil]
 pytest-asyncio
 pandas
 scikit-learn

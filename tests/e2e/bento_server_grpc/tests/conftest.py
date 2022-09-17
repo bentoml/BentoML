@@ -31,7 +31,7 @@ def fixture_metrics_client() -> PrometheusClient:
 @pytest.fixture(scope="module")
 def host(
     bentoml_home: str,
-    deployment_mode: str,
+    deployment_mode: t.Literal["docker", "distributed", "standalone"],
     clean_context: ExitStack,
 ) -> t.Generator[str, None, None]:
     from bentoml.testing.server import host_bento

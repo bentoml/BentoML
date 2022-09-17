@@ -45,9 +45,6 @@ grpc_server:
   dependencies:
     - Pillow
     - pydantic
-    - "grpcio-tools>=1.41" # grpcio is included with grpcio-tools
-    - grpcio-health-checking
-    - grpcio-reflection
 
 catboost:
   <<: *ntmpl

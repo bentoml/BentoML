@@ -30,7 +30,7 @@ def fixture_server_config_file(request: FixtureRequest) -> str:
 @pytest.fixture(scope="module")
 def host(
     bentoml_home: str,
-    deployment_mode: str,
+    deployment_mode: t.Literal["docker", "distributed", "standalone"],
     server_config_file: str,
     clean_context: ExitStack,
 ) -> t.Generator[str, None, None]:

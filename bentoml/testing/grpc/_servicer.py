@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class TestServiceServicer(services.TestServiceServicer):
-    async def Execute(  # type: ignore (no async types)
+    async def Execute(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
         self,
         request: pb.ExecuteRequest,
         context: aio.ServicerContext[pb.ExecuteRequest, pb.ExecuteResponse],

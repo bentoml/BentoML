@@ -143,12 +143,12 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
                    |   +--------------------------------------------------------+   |
                    |   |                                                        |   |
                    |   |    Multipart(arr=NumpyNdarray(), annotations=JSON())   |   |
-                   |   |                                                        |   |
-                   |   +----------------+-----------------------+---------------+   |
-                   |                    |                       |                   |
-                   |                    |                       |                   |
-                   |                    |                       |                   |
-                   |                    +----+        +---------+                   |
+                   |   |               |                       |                |   |
+                   |   +---------------+-----------------------+----------------+   |
+                   |                   |                       |                    |
+                   |                   |                       |                    |
+                   |                   |                       |                    |
+                   |                   +-----+        +--------+                    |
                    |                         |        |                             |
                    |         +---------------v--------v---------+                   |
                    |         |  def predict(arr, annotations):  |                   |
@@ -236,10 +236,12 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
     def validate_input_mapping(self, field: t.MutableMapping[str, t.Any]) -> None:
         if len(set(field) - set(self._inputs)) != 0:
             raise InvalidArgument(
-                f"'{repr(self)}' accepts the following keys: {set(self._inputs)}. Given {field.__class__.__qualname__} has invalid fields: {set(field) - set(self._inputs)}",
+                f"'{self!r}' accepts the following keys: {set(self._inputs)}. Given {field.__class__.__qualname__} has invalid fields: {set(field) - set(self._inputs)}",
             ) from None
 
     async def from_proto(self, field: pb.Multipart) -> dict[str, t.Any]:
+        from bentoml.grpc.utils import validate_proto_fields
+
         if isinstance(field, bytes):
             raise InvalidArgument(
                 f"cannot use 'serialized_bytes' with {self.__class__.__name__}"
@@ -248,11 +250,18 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
         self.validate_input_mapping(message)
         reqs = await asyncio.gather(
             *tuple(
-                io_.from_proto(getattr(input_pb, io_._proto_fields[0]))
-                for io_, input_pb in zip(self._inputs.values(), message.values())
+                descriptor.from_proto(
+                    getattr(
+                        part,
+                        validate_proto_fields(
+                            part.WhichOneof("representation"), descriptor
+                        ),
+                    )
+                )
+                for descriptor, part in zip(self._inputs.values(), message.values())
             )
         )
-        return dict(zip(message, reqs))
+        return dict(zip(self._inputs, reqs))
 
     async def to_proto(self, obj: dict[str, t.Any]) -> pb.Multipart:
         self.validate_input_mapping(obj)

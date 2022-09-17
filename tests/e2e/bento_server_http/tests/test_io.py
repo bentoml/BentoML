@@ -218,12 +218,10 @@ async def test_image(host: str, img_file: str):
         f"http://{host}/echo_image",
         data=b,
         headers={"Content-Type": "application/pdf"},
-        assert_status=400,
+        assert_status=200,
     )
 
 
-# SklearnRunner is not suppose to take multiple arguments
-# TODO: move e2e tests to use a new bentoml.PickleModel module
 @pytest.mark.asyncio
 async def test_multipart_image_io(host: str, img_file: str):
     from starlette.datastructures import UploadFile
@@ -234,13 +232,9 @@ async def test_multipart_image_io(host: str, img_file: str):
             form.add_field("original", f1.read(), content_type="image/bmp")
             form.add_field("compared", f2.read(), content_type="image/bmp")
 
-    status, headers, body = await async_request(
-        "POST",
-        f"http://{host}/predict_multi_images",
-        data=form,
+    _, headers, body = await async_request(
+        "POST", f"http://{host}/predict_multi_images", data=form, assert_status=200
     )
-
-    assert status == 200
 
     form = await parse_multipart_form(headers=headers, body=body)
     for _, v in form.items():

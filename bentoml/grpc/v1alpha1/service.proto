@@ -121,7 +121,7 @@ message Part {
 
     // Series portrays a series of values. This can be used for
     // representing Series types in tabular data.
-    Series series = 5;
+    Series series =5;
 
     // File represents for any arbitrary file type. This can be
     // plaintext, image, video, audio, etc.
@@ -133,9 +133,6 @@ message Part {
     // JSON is represented by using google.protobuf.Value.
     // see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto
     google.protobuf.Value json = 8;
-
-    // serialized_bytes is for data serialized in BentoML's internal serialization format.
-    bytes serialized_bytes = 4;
   }
 
   // Tensor is similiar to ndarray but with a name

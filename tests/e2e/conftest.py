@@ -6,6 +6,7 @@ import shutil
 import typing as t
 import tempfile
 import contextlib
+from pathlib import Path
 from typing import TYPE_CHECKING
 from importlib import import_module
 
@@ -16,6 +17,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from bentoml.exceptions import InvalidArgument
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import validate_or_create_dir
+from bentoml._internal.configuration import expand_env_var
 
 if TYPE_CHECKING:
 
@@ -74,20 +76,21 @@ def pytest_sessionstart(session: Session) -> None:
     os.environ["PROMETHEUS_MULTIPROC_DIR"] = prom_dir
 
     mp.setattr(config, "_bentoml_home", _PYTEST_BENTOML_HOME, raising=False)
-    project_dir = config.getoption("project_dir")
-    assert project_dir, "--project-dir is required"
+    project = config.getoption("project")
+    assert project, "--project is required"
+    imported = import_module(
+        ".configure",
+        f"tests.e2e.{str(project)}",
+    )
     try:
-        imported = import_module(
-            ".configure",
-            f"tests.e2e.{t.cast(str, project_dir).rstrip('/').split('/')[-1]}",
-        )
+        imported = import_module(".configure", package=f"tests.e2e.{str(project)}")
         if not hasattr(imported, "create_model"):
             raise InvalidArgument(
                 "'create_model()' is required to create a test model."
             ) from None
     except ModuleNotFoundError:
         raise ModuleNotFoundError(
-            f"Failed to find 'configure.py' in E2E project '{project_dir}'."
+            f"Failed to find 'configure.py' in E2E project '{project}'."
         ) from None
     else:
         imported.create_model()
@@ -113,7 +116,7 @@ def pytest_sessionfinish(session: Session, exitstatus: int | ExitCode) -> None:
 
 
 def pytest_addoption(parser: pytest.Parser):
-    parser.addoption("--project-dir", action="store", default=None)
+    parser.addoption("--project", action="store", default=None)
     parser.addoption("--cleanup", action="store_true")
 
 
@@ -122,7 +125,7 @@ def pytest_generate_tests(metafunc: Metafunc):
         if os.getenv("VSCODE_IPC_HOOK_CLI") and not os.getenv("GITHUB_CODESPACE_TOKEN"):
             # When running inside VSCode remote container locally, we don't have access to
             # exposed reserved ports, so we can't run docker-based tests. However on GitHub
-            # Codespaces, we can run docker-based tests. (Investigate why this is the case)
+            # Codespaces, we can run docker-based tests.
             # Note that inside the remote container, it is already running as a Linux container.
             deployment_mode = ["distributed", "standalone"]
         else:

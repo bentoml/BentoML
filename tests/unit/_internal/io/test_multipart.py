@@ -64,12 +64,12 @@ async def test_exception_from_to_proto():
                 fields={"asdf": pb.Part(text=wrappers_pb2.StringValue(value="asdf"))}
             )
         )
-    assert f"'{repr(example)}' accepts the following keys: " in str(e.value)
+    assert f"'{example!r}' accepts the following keys: " in str(e.value)
     with pytest.raises(InvalidArgument) as e:
         await example.to_proto(
             {"asdf": pb.Part(text=wrappers_pb2.StringValue(value="asdf"))}
         )
-    assert f"'{repr(example)}' accepts the following keys: " in str(e.value)
+    assert f"'{example!r}' accepts the following keys: " in str(e.value)
 
 
 @pytest.mark.asyncio

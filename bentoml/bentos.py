@@ -18,9 +18,8 @@ from functools import partial
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml.exceptions import InvalidArgument
-from bentoml.exceptions import BentoMLException
-
+from .exceptions import InvalidArgument
+from .exceptions import BentoMLException
 from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.utils import resolve_user_filepath

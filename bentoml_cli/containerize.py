@@ -6,8 +6,11 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    F = t.Callable[..., t.Any]
     from click import Group
+
+    from bentoml._internal.bento import BentoStore
+
+    F = t.Callable[..., t.Any]
 
 
 def containerize_transformer(
@@ -22,11 +25,14 @@ def containerize_transformer(
 
 def add_containerize_command(cli: Group) -> None:
     import click
+    from simple_di import inject
+    from simple_di import Provide
 
     from bentoml.bentos import FEATURES
     from bentoml.bentos import containerize as containerize_bento
     from bentoml_cli.utils import kwargs_transformers
     from bentoml._internal.utils.docker import validate_tag
+    from bentoml._internal.configuration import get_debug_mode
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     @cli.command()
@@ -173,6 +179,7 @@ def add_containerize_command(cli: Group) -> None:
         help=f"Enable additional BentoML features. Available features are: {', '.join(FEATURES)}.",
     )
     @kwargs_transformers(transformer=containerize_transformer)
+    @inject
     def containerize(  # type: ignore
         bento_tag: str,
         docker_image_tag: tuple[str],
@@ -202,6 +209,7 @@ def add_containerize_command(cli: Group) -> None:
         target: str,
         ulimit: str,
         enable_features: tuple[str],
+        _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> None:
         """Containerizes given Bento into a ready-to-use Docker image.
 
@@ -285,6 +293,8 @@ def add_containerize_command(cli: Group) -> None:
                 )
         if push:
             load = False
+        if get_debug_mode():
+            progress = "plain"
 
         exit_code = not containerize_bento(
             bento_tag,
@@ -320,16 +330,37 @@ def add_containerize_command(cli: Group) -> None:
             ulimit=ulimit,
         )
         if not exit_code:
+            # Note that we have to duplicate the logic here
+            # to ensure there is a docker image tag after a successful containerize.
+            if not docker_image_tag:
+                bento = _bento_store.get(bento_tag)
+                docker_image_tag = (str(bento.tag),)
+            # This section contains some duplicate logics from containerize_bento
+            # to process log message.
             grpc_metrics_port = BentoMLContainer.grpc.metrics.port.get()
             logger.info(
                 'Successfully built docker image for "%s" with tags "%s"',
                 str(bento_tag),
                 ",".join(docker_image_tag),
             )
-            logger.info(
-                'To run your newly built Bento container, use one of the above tags, and pass it to "docker run". i.e: "docker run -it --rm -p 3000:3000 %s". To use gRPC, pass "-e BENTOML_USE_GRPC=true -p %s:%s" to "docker run".',
-                docker_image_tag[0],
-                grpc_metrics_port,
-                grpc_metrics_port,
+            docker_tag = ",".join(docker_image_tag)
+            if len(docker_image_tag) > 1:
+                instruction = 'To run your newly built Bento container, use one of the above tags, and pass it to "docker run". %s'
+            else:
+                instruction = f'To run your newly built Bento container, pass "{docker_tag}" to "docker run". %s'
+            instruction %= (
+                'For example: "docker run -it --rm -p 3000:3000 %s serve --production".'
+                % docker_tag
             )
+            if enable_features is not None:
+                # enable_features could be a tuple of comma-separated string.
+                features = [
+                    l for s in map(lambda x: x.split(","), enable_features) for l in s
+                ]
+                if "grpc" in features:
+                    instruction += (
+                        '\nAdditionally, to run your Bento container as a gRPC server, do: "docker run -it --rm -p 3000:3000 -p %s:%s %s serve-grpc --production"'
+                        % (grpc_metrics_port, grpc_metrics_port, docker_tag)
+                    )
+            logger.info(instruction)
         sys.exit(exit_code)

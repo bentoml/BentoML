@@ -112,6 +112,21 @@ which allows you to install the project without copying any files. Python will l
 folder and add it to Python library paths. This means that any changes you make to the
 folder will and can be tested immediately.
 
+.. dropdown:: For user using ``setuptools>=64.0.0``
+   :icon: question
+
+   BentoML uses `setuptools <https://setuptools.pypa.io/en/latest/>`_ to build and
+   package the project. Since ``setuptools>=64.0.0``, setuptools implemented `PEP 660 <https://peps.python.org/pep-0660/>`_, which changes the behavior of editable install in comparison with previous version of setuptools.
+
+   Currently, BentoML is not compatible with this new behavior. To install BentoML in editable mode, you have to pass ``--config-settings editable_mode=compat`` to ``pip``.
+
+   .. code-block:: bash
+
+      pip install -e ".[grpc]" --config-settings editable_mode=compat
+
+   See setuptools' `development mode guide <https://setuptools.pypa.io/en/latest/userguide/development_mode.html>`_ for more information.
+
+
 .. warning::
 
    You must not remove ``bentoml`` folder after installing in editable mode to keep using

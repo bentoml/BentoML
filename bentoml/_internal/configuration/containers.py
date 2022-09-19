@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
 import yaml
-import unflatten
 from schema import Or
 from schema import And
 from schema import Use
@@ -27,6 +26,7 @@ from ..utils import validate_or_create_dir
 from ..context import component_context
 from ..resource import system_resources
 from ...exceptions import BentoMLConfigException
+from ..utils.unflatten import unflatten
 
 if TYPE_CHECKING:
     from bentoml._internal.models import ModelStore
@@ -274,7 +274,7 @@ class BentoMLConfiguration:
                     split_with_quotes(line, sep="=", quote='"') for line in lines
                 ]
             }
-            override_config = unflatten.unflatten(override_config_map)  # type: ignore
+            override_config = unflatten(override_config_map)  # type: ignore
             config_merger.merge(self.config, override_config)
 
         if override_config_file is not None or override_config_values is not None:

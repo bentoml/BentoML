@@ -1,9 +1,6 @@
 from datetime import datetime
 
-try:
-    from importlib.metadata import version as _get_version
-except ImportError:
-    from importlib_metadata import version as _get_version
+from bentoml import __version__
 
 # -- Project information -----------------------------------------------------
 
@@ -11,7 +8,7 @@ project = "BentoML"
 copyright = f"2022-{datetime.now().year}, bentoml.com"
 author = "bentoml.com"
 
-version = _get_version("bentoml")
+version = __version__
 
 # -- General configuration ---------------------------------------------------
 

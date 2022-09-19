@@ -135,14 +135,70 @@ Install 🍱 BentoML with `conda <https://docs.conda.io/en/latest/>`_ via the `c
     conda install -c conda-forge bentoml
 
 
-Additional deep learning frameworks
------------------------------------
+Deep learning frameworks integration
+------------------------------------
 
-You may need to install additional libraries to use certain BentoML modules or features.
-For example, the :code:`bentoml.tensorflow` module requires TensorFlow to be installed;
-The :code:`bentoml.io.Image` class requires :code:`Pillow` to be installed; and to
-export saved models to s3, the :code:`fs-s3fs` package is required.
+BentoML provides first-class support for a list of :doc:`Deep learning frameworks <frameworks/index>`. In order to 
+use these integration with BentoML, you will need to install its corresponding package.
 
+For example: :doc:`bentoml.tensorflow <frameworks/tensorflow>` module requires ``tensorflow`` package to be installed.
+
+Additional features
+-------------------
+
+To use additional features in BentoML, such as gRPC, S3 support, and more, you will need
+to install a variant of BentoML with additional dependencies.
+
+To use gRPC support, use the following command:
+
+.. code-block:: bash
+
+    pip install "bentoml[grpc]"
+
+To use S3 upload support, Image IO support, pydantic validation for JSON, use the
+following command:
+
+.. code-block:: bash
+
+    pip install "bentoml[extras]"
+
+To use external tracing exporter such as `Jaeger <https://www.jaegertracing.io/>`_, `Zipkin <https://zipkin.io/>`_, `OpenTelemetry Protocol <https://opentelemetry.io/docs/reference/specification/protocol/exporter/>`_,
+use the following command:
+
+.. tab-set::
+
+    .. tab-item:: Jaeger
+
+        .. code-block:: bash
+
+            pip install "bentoml[tracing-jaeger]"
+
+    .. tab-item:: Zipkin
+
+        .. code-block:: bash
+
+            pip install "bentoml[tracing-zipkin]"
+
+    .. tab-item:: OpenTelemetry Protocol
+
+        .. code-block:: bash
+
+            pip install "bentoml[tracing-otlp]"
+
+To use all the above features, use the following command:
+
+.. code-block:: bash
+
+    pip install "bentoml[all]"
+
+.. tip::
+
+   The additional dependencies syntax can also be applied to all of the above installation methods
+
+   .. code-block:: bash
+
+      # editable install
+      pip install -e ".[grpc,tracing-jaeger]"
 
 
 .. note::

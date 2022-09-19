@@ -191,7 +191,7 @@ exclude = '''
 extend-exclude = "(_pb2.py$|_pb2_grpc.py$)"
 
 [tool.pytest.ini_options]
-addopts = "-rfEX -p pytester -p no:warnings -x --capture=tee-sys"
+addopts = "-rfEX -p pytester -p no:warnings -x --capture=tee-sys --cov-report=term-missing --cov-append"
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 markers = ["gpus", "disable-tf-eager-execution"]

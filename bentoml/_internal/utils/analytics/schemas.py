@@ -183,6 +183,7 @@ class ModelSaveEvent(EventMeta):
 class ServeInitEvent(EventMeta):
     serve_id: str
     production: bool
+    grpc: bool
     serve_from_bento: bool
 
     bento_creation_timestamp: t.Optional[datetime]
@@ -199,9 +200,21 @@ class ServeInitEvent(EventMeta):
 class ServeUpdateEvent(EventMeta):
     serve_id: str
     production: bool
-    component: str
+    grpc: bool
     triggered_at: datetime
     duration_in_seconds: int
+    component: str = attr.field(
+        validator=attr.validators.and_(
+            attr.validators.instance_of(str),
+            attr.validators.in_(["standalone", "api_server", "runner"]),
+        )
+    )
+    metrics_type: str = attr.field(
+        validator=attr.validators.and_(
+            attr.validators.instance_of(str),
+            attr.validators.in_(["not_available", "legacy", "current"]),
+        ),
+    )
     metrics: t.List[t.Any] = attr.field(factory=list)
 
 

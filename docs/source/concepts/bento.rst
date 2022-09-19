@@ -177,28 +177,28 @@ Import and Export
 Bentos can be exported to a standalone archive file outside of the store, for sharing
 Bentos between teams or moving between different deployment stages. For example:
 
-.. code:: bash
+.. code-block:: bash
 
-    > bentoml export iris_classifier:latest .
+    » bentoml export iris_classifier:latest .
 
-    INFO [cli] Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") exported to ./iris_classifier-nvjtj7wwfgsafuqj.bento
+    Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") exported to ./iris_classifier-nvjtj7wwfgsafuqj.bento
 
-.. code:: bash
+.. code-block:: bash
 
-    > bentoml import ./iris_classifier-nvjtj7wwfgsafuqj.bento
+    » bentoml import ./iris_classifier-nvjtj7wwfgsafuqj.bento
 
-    INFO [cli] Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") imported
+    Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") imported
 
 .. note::
 
     Bentos can be exported to or import from AWS S3, GCS, FTP, Dropbox, etc. For
     example with S3:
 
-    .. code:: bash
+    .. code-block:: bash
 
-        pip install fs-s3fs  # Additional dependency required for working with s3
-        bentoml import s3://bentoml.com/quickstart/iris_classifier.bento
-        bentoml export iris_classifier:latest s3://my_bucket/my_prefix/
+        » pip install "bentoml[extras]"
+        » bentoml import s3://bentoml.com/quickstart/iris_classifier.bento
+        » bentoml export iris_classifier:latest s3://my_bucket/my_prefix/
 
 
 Push and Pull
@@ -532,10 +532,51 @@ desired version, install from a custom PyPI source, or install from a GitHub rep
         - "torchvision==0.9.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cpu"
         - "git+https://github.com/username/mylib.git@main"
 
-.. note::
-    There's no need to specify :code:`bentoml` as a dependency here since BentoML will
-    addd the current version of BentoML to the Bento's dependency list by default. User
-    can override this by specifying a different BentoML version.
+To use a variant of BentoML with additional features such as gRPC, tracing exporters, pydantic
+validation, specify the desired variant in the under ``python.packages`` field:
+
+.. tab-set::
+
+   .. tab-item:: gRPC
+
+      .. code-block:: yaml
+
+         python:
+            packages:
+            - "bentoml[grpc]"
+
+   .. tab-item:: Extras
+
+      .. code-block:: yaml
+
+          python:
+              packages:
+              - "bentoml[extras]"
+
+   .. tab-item:: Jaeger
+
+      .. code-block:: yaml
+
+          python:
+              packages:
+              - "bentoml[tracing-jaeger]"
+
+   .. tab-item:: Zipkin
+
+      .. code-block:: yaml
+
+          python:
+          packages:
+          - "bentoml[tracing-zipkin]"
+
+   .. tab-item:: OpenTelemetry Protocol
+
+      .. code-block:: yaml
+
+          python:
+              packages:
+              - "bentoml[tracing-otlp]"
+
 
 
 If you already have a

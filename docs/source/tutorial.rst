@@ -52,7 +52,7 @@ There are three ways to complete this tutorial:
    If you have Docker installed, you can run the tutorial notebook from a pre-configured
    docker image with:
 
-   .. code:: bash
+   .. code-block:: bash
 
       docker run -it --rm -p 8888:8888 -p 3000:3000 -p 3001:3001 bentoml/quickstart:latest
 
@@ -60,7 +60,7 @@ There are three ways to complete this tutorial:
 
    Download the source code of this tutorial from `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_:
 
-   .. code:: bash
+   .. code-block:: bash
 
       git clone --depth=1 git@github.com:bentoml/BentoML.git
       cd bentoml/examples/quickstart/
@@ -197,7 +197,7 @@ Run the service in development mode:
           2022-09-18T21:12:19-0700 [INFO] [observer] BentoML is installed via development mode, adding source root to 'watch_dirs'
           2022-09-18T21:12:19-0700 [INFO] [observer] Watching directories: ['/Users/aarnphm/workspace/bentoml/aarnphm_fork/examples/quickstart', '/Users/aarnphm/bentoml/models', '/Users/aarnphm/workspace/bentoml/aarnphm_fork/bentoml']
 
-.. dropdown:: About the command ``bentoml serve`` and ``bentoml serve-grpc``
+.. dropdown:: About the command ``bentoml serve``
    :icon: code
 
    In the example above:
@@ -207,12 +207,16 @@ Run the service in development mode:
       .. tab-item:: HTTP
          :sync: http
 
+         ``serve`` is the command to start a HTTP BentoServer.
+
          - ``service`` refers to the Python module (the ``service.py`` file)
          - ``svc`` refers to the object created in ``service.py``, with ``svc = bentoml.Service(...)``
          - ``--reload`` option watches for local code changes and automatically restart server. This is for development use only.
 
       .. tab-item:: gRPC
          :sync: grpc
+
+         ``serve-grpc`` is the command to start a gRPC BentoServer.
 
          - ``service`` refers to the Python module (the ``service.py`` file)
          - ``svc`` refers to the object created in ``service.py``, with ``svc = bentoml.Service(...)``
@@ -382,7 +386,7 @@ advantage of all hardware resource available.
 
 You can test out the Runner interface this way:
 
-.. code:: python
+.. code-block:: python
 
    import bentoml
 
@@ -404,7 +408,7 @@ APIs list. The ``input`` and ``output`` parameter takes an
 function's expected input/output types, and is used for generating HTTP endpoints.
 
 In this example, both ``input`` and ``output`` are defined with
-:ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy ndarray>`, which means
+:ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`, which means
 the API function being decorated, takes a ``numpy.ndarray`` as input, and returns a
 ``numpy.ndarray`` as output.
 
@@ -425,12 +429,12 @@ creating the service object.
    BentoML supports both :ref:`sync and async endpoints <concepts/service:Sync vs Async APIs>`.
    For performance sensitive use cases, especially when working with IO-intense
    workloads (e.g. fetching features from multiple sources) or when
-   :doc:`composing multiple models <guides/multi_models>`, you may consider defining an
+   :ref:`composing multiple models <concepts/runner:Serving Multiple Models via Runner>` , you may consider defining an
    ``async`` API instead.
 
    Here's an example of the same endpoint above defined with ``async``:
 
-   .. code:: python
+   .. code-block:: python
 
       @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
       async def classify(input_series: np.ndarray) -> np.ndarray:
@@ -593,14 +597,14 @@ via the ``bentoml containerize`` CLI command:
    Specify the ``--platform`` to avoid potential compatibility issues with some
    Python libraries.
 
-   .. code:: bash
+   .. code-block:: bash
 
       bentoml containerize --platform=linux/amd64 iris_classifier:latest
 
 This creates a docker image that includes the Bento, and has all its dependencies
 installed. The docker image tag will be same as the Bento tag by default:
 
-.. code:: bash
+.. code-block:: bash
 
    » docker images
 

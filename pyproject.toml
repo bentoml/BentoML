@@ -3,6 +3,26 @@ requires = ["setuptools>=63", "setuptools_scm[toml]>=6.2", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
+name = "bentoml"
+description = "BentoML: The Unified Model Serving Framework"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.7"
+keywords = ["MLOps", "AI", "BentoML", "Model Serving", "Model Deployment"]
+license = { text = "Apache-2.0" }
+authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
+classifiers = [
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries",
+]
 dependencies = [
   "Jinja2>=3.0.1",
   "PyYAML>=5.0",
@@ -41,25 +61,6 @@ dependencies = [
   "backports.cached-property;python_version<'3.8'",
   "backports.shutil_copytree;python_version<'3.8'",
   "importlib-metadata;python_version<'3.8'",
-]name = "bentoml"
-description = "BentoML: The Unified Model Serving Framework"
-readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.7"
-keywords = ["MLOps", "AI", "BentoML", "Model Serving", "Model Deployment"]
-license = { text = "Apache-2.0" }
-authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
-classifiers = [
-  "License :: OSI Approved :: Apache Software License",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: Implementation :: CPython",
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
-  "Topic :: Software Development :: Libraries",
 ]
 dynamic = ["version"]
 
@@ -96,6 +97,9 @@ all = [
   "bentoml[grpc]",
   "bentoml[tracing]",
 ]
+aws = ["fs-s3fs"]
+io-image = ["Pillow"]
+io-pandas = ["pandas", "pyarrow"]
 grpc = [
   # Restrict maximum version due to breaking protobuf 4.21.0 changes
   # (see https://github.com/protocolbuffers/protobuf/issues/10051)
@@ -120,9 +124,6 @@ tracing-zipkin = ["opentelemetry-exporter-zipkin"]
 tracing-otlp = ["opentelemetry-exporter-otlp"]
 
 [tool.setuptools_scm]
-aws = ["fs-s3fs"]
-io-image = ["Pillow"]
-io-pandas = ["pandas", "pyarrow"]
 write_to = "bentoml/_version.py"
 git_describe_command = "git describe --dirty --tags --long --first-parent"
 version_scheme = "post-release"

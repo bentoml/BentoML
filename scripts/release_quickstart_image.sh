@@ -1,10 +1,10 @@
 #!/bin/bash
 
 if [ "$#" -eq 1 ]; then
-	BENTOML_VERSION=$1
+  BENTOML_VERSION=$1
 else
-	BENTOML_VERSION=$(python -c "import bentoml; print(bentoml.__version__)")
-	echo "Releasing with current BentoML Version $BENTOML_VERSION"
+  BENTOML_VERSION=$(python -c "import bentoml; print(bentoml.__version__)")
+  echo "Releasing with current BentoML Version $BENTOML_VERSION"
 fi
 
 export DOCKER_BUILDKIT=1
@@ -18,13 +18,12 @@ WORKDIR /home/bentoml
 
 
 COPY ../examples/quickstart .
-RUN pip install -U pip "bentoml[grpc]==${BENTOML_VERSION}" && pip install -r ./requirements.txt
+RUN pip install -U pip bentoml==${BENTOML_VERSION} && pip install -r ./requirements.txt
 
 # For jupyter notebook UI
 EXPOSE 8888
 # For accessing BentoServer
-EXPOSE 3000
-EXPOSE 3001
+EXPOSE 3000 
 
 ENV NB_USER=bentoml \
     NB_UID=1101 \

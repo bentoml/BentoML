@@ -16,5 +16,5 @@ imageio>=2.5.0
 pyarrow
 build[virtualenv] >=0.8.0
 yamllint
-grpcio-tools>=1.41.0,<1.49.0
+grpcio-tools>=1.41.0
 opentelemetry-test-utils==0.33b0

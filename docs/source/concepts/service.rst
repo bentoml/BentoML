@@ -87,7 +87,7 @@ when ``bentoml serve`` is called.
 If you want to import and run a service without using BentoML, this must be done manually. For
 example, to debug a service called ``svc`` in ``service.py``:
 
-.. code-block:: python
+.. code:: python
 
     from service import svc
 
@@ -211,7 +211,7 @@ Recall the API we created in the :doc:`tutorial </tutorial>`. The ``classify`` A
 arguments and returns results in the type of
 :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`:
 
-.. code-block:: python
+.. code:: python
 
     import numpy as np
     from bentoml.io import NumpyNdarray
@@ -245,7 +245,7 @@ arguments to `True`, the IO descriptor will strictly validate the input and outp
 based the specified data type and shape. To learn more, see IO descrptor reference for 
 :ref:`reference/api_io_descriptors:NumPy ndarray`.
 
-.. code-block:: python
+.. code:: python
 
     import numpy as np
 
@@ -277,7 +277,7 @@ arguments to `True`, the IO descriptor will strictly validate the input and outp
 based the specified data type and shape. To learn more, see IO descrptor reference for 
 :ref:`reference/api_io_descriptors:Tabular Data with Pandas`.
 
-.. code-block:: python
+.. code:: python
 
     import pandas as pd
 
@@ -309,7 +309,7 @@ a pydantic model, the IO descriptor will validate the input based on the specifi
 model and return. To learn more, see IO descrptor reference for
 :ref:`reference/api_io_descriptors:Structured Data with JSON`.
 
-.. code-block:: python
+.. code:: python
 
     from typing import Dict, Any
     from pydantic import BaseModel
@@ -365,7 +365,7 @@ instances, which allows the API function to accept multiple arguments or return 
 values. Each IO descriptor can be customized with independent schema and validation
 logic:
 
-.. code-block:: python
+.. code:: python
 
     import typing as t
     import numpy as np
@@ -400,7 +400,7 @@ intelligently create an optimally sized pool of workers to execute the synchrono
 logic. Synchronous APIs are simple and capable of getting the job done for most model
 serving scenarios.
 
-.. code-block:: python
+.. code:: python
 
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def predict(input_array: np.ndarray) -> np.ndarray:
@@ -413,7 +413,7 @@ invokes multiple runners simultaneously. The following async API example calls a
 feature store asynchronously, invokes two runners simultaneously, and returns a combined
 result.
 
-.. code-block:: python
+.. code:: python
 
     import aiohttp
     import asyncio

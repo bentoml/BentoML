@@ -120,7 +120,7 @@ async def test_empty_metrics(
 async def test_metrics_interceptors(
     prometheus_interceptor: PrometheusServerInterceptor,
     prometheus_client: PrometheusClient,
-    noop_service: Service,
+    simple_service: Service,
     metric_type: str,
     parent_set: list[str],
 ):
@@ -129,7 +129,7 @@ async def test_metrics_interceptors(
         host_url,
     ):
         services.add_BentoServiceServicer_to_server(
-            create_bento_servicer(noop_service), server
+            create_bento_servicer(simple_service), server
         )
         try:
             await server.start()

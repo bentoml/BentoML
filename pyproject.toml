@@ -132,18 +132,18 @@ version_scheme = "post-release"
 fallback_version = "0.0.0"
 
 [tool.coverage.paths]
-source = ["bentoml/"]
+source = ["bentoml"]
 
 [tool.coverage.run]
 branch = true
 source = ["bentoml", "bentoml_cli"]
 omit = [
-  "*/bentoml/**/*_pb2*.py",
-  "*/bentoml/__main__.py",
-  "*/bentoml/_internal/types.py",
-  "*/bentoml/_internal/external_typing/*",
-  "*/bentoml/testing/*",
-  "*/bentoml/io.py",
+  "bentoml/**/*_pb2*.py",
+  "bentoml/__main__.py",
+  "bentoml/_internal/types.py",
+  "bentoml/_internal/external_typing/*",
+  "bentoml/testing/*",
+  "bentoml/io.py",
 ]
 
 [tool.coverage.report]

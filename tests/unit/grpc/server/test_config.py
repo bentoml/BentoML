@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture()
-def servicer(noop_service: Service) -> Servicer:
-    return Servicer(noop_service)
+def servicer(simple_service: Service) -> Servicer:
+    return Servicer(simple_service)
 
 
 @pytest.mark.skipif(not psutil.WINDOWS, reason="Windows test.")

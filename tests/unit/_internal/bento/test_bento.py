@@ -142,7 +142,7 @@ conda:
         assert bentoinfo_b_from_yaml == bentoinfo_b
 
 
-def build_test_bento(model_store: ModelStore) -> Bento:
+def build_test_bento() -> Bento:
     bento_cfg = BentoBuildConfig(
         "simplebento.py:svc",
         include=["*.py", "config.json", "somefile", "*dir*", ".bentoignore"],
@@ -173,10 +173,10 @@ def fs_identical(fs1: fs.base.FS, fs2: fs.base.FS):
 
 
 @pytest.mark.usefixtures("change_test_dir")
-def test_bento_export(tmpdir: "Path", dummy_model_store: "ModelStore"):
+def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     working_dir = os.getcwd()
 
-    testbento = build_test_bento(dummy_model_store)
+    testbento = build_test_bento()
     # Bento build will change working dir to the build_context, this will reset it
     os.chdir(working_dir)
 
@@ -314,9 +314,9 @@ def test_bento_export(tmpdir: "Path", dummy_model_store: "ModelStore"):
 
 
 @pytest.mark.usefixtures("change_test_dir")
-def test_bento(dummy_model_store: ModelStore):
+def test_bento(model_store: ModelStore):
     start = datetime.now(timezone.utc)
-    bento = build_test_bento(dummy_model_store)
+    bento = build_test_bento()
     end = datetime.now(timezone.utc)
 
     assert bento.info.bentoml_version == BENTOML_VERSION

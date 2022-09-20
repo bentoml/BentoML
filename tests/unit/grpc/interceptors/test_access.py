@@ -118,7 +118,7 @@ async def test_trailing_metadata(caplog: LogCaptureFixture):
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("propagate_logs")
-async def test_access_log_exception(caplog: LogCaptureFixture, noop_service: Service):
+async def test_access_log_exception(caplog: LogCaptureFixture, simple_service: Service):
     with make_standalone_server(
         # we need to also setup opentelemetry interceptor
         # to make sure the access log is correctly setup.
@@ -128,7 +128,7 @@ async def test_access_log_exception(caplog: LogCaptureFixture, noop_service: Ser
         ]
     ) as (server, host_url):
         services.add_BentoServiceServicer_to_server(
-            create_bento_servicer(noop_service), server
+            create_bento_servicer(simple_service), server
         )
         try:
             await server.start()

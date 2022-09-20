@@ -205,14 +205,13 @@ async def test_image(host, img_file):
         assert_status=400,
     )
 
-    # Test Exception
     with open(str(img_file), "rb") as f1:
         b = f1.read()
     await async_request(
         "POST",
         f"http://{host}/echo_image",
         data=b,
-        headers={"Content-Type": "application/pdf"},
+        headers={"Content-Type": "application/vnd.bentoml.multiple_outputs"},
         assert_status=400,
     )
 

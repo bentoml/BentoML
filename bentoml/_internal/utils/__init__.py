@@ -172,16 +172,30 @@ class catch_exceptions(t.Generic[_T_co], object):
         return _
 
 
-def split_with_quotes(s: str, sep: str = ",", quote: str = '"') -> list[str]:
+def split_with_quotes(
+    s: str,
+    sep: str = ",",
+    quote: str = '"',
+    use_regex: bool = False,
+) -> list[str]:
     """
     Split a string with quotes, e.g.:
     >>> split_with_quotes('a,b,"c,d",e')
     ['a', 'b', 'c,d', 'e']
     """
-    reg = "({quote}[^{quote}]*{quote})|({sep})".format(
-        quote=re.escape(quote),
-        sep=re.escape(sep),
-    )
+    if use_regex:
+        assert (
+            "(" not in sep and ")" not in sep
+        ), "sep cannot contain '(' or ')' when using regex"
+        reg = "({quote}[^{quote}]*{quote})|({sep})".format(
+            quote=quote,
+            sep=sep,
+        )
+    else:
+        reg = "({quote}[^{quote}]*{quote})|({sep})".format(
+            quote=re.escape(quote),
+            sep=re.escape(sep),
+        )
     raw_parts = re.split(reg, s)
     parts: list[str] = []
     part_begin = 0
@@ -189,7 +203,7 @@ def split_with_quotes(s: str, sep: str = ",", quote: str = '"') -> list[str]:
         if i + 2 > len(raw_parts):
             parts.append("".join(filter(None, raw_parts[part_begin : i + 2])))
             continue
-        if raw_parts[i + 2] == sep:
+        if raw_parts[i + 2] is not None:
             parts.append("".join(filter(None, raw_parts[part_begin : i + 2])))
             part_begin = i + 3
             continue

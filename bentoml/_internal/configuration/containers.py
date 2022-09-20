@@ -266,15 +266,28 @@ class BentoMLConfiguration:
             config_merger.merge(self.config, override_config)
 
         if override_config_values is not None:
-            logger.info("Applying user config override from ENV VAR")
-            lines = split_with_quotes(override_config_values, sep="\n", quote='"')
+            logger.info(
+                "Applying user config override from ENV VAR: %s"
+                % override_config_values
+            )
+            lines = split_with_quotes(
+                override_config_values,
+                sep=r"\s+",
+                quote='"',
+                use_regex=True,
+            )
             override_config_map = {
                 k: v
                 for k, v in [
                     split_with_quotes(line, sep="=", quote='"') for line in lines
                 ]
             }
-            override_config = unflatten(override_config_map)  # type: ignore
+            try:
+                override_config = unflatten(override_config_map)  # type: ignore
+            except ValueError as e:
+                raise BentoMLConfigException(
+                    f'Failed to parse config options from the env var: {e}. \n *** Note: You can use " to quote the key if it contains special characters. ***'
+                ) from None
             config_merger.merge(self.config, override_config)
 
         if override_config_file is not None or override_config_values is not None:

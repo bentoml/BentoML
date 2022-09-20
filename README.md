@@ -21,11 +21,11 @@ BentoML makes it easy to create ML-powered prediction services that are ready to
 - Apply the **same code** for online(REST API or gRPC), offline batch, and streaming inference
 - Simple abstractions for building **multi-model inference** pipelines or graphs
 
-🚂  **Standardized process** for a frictionless transition to production
+🚂 **Standardized process** for a frictionless transition to production
 - Build `Bento` as the standard deployable artifact for ML services
 - Automatically **generate docker images** with the desired dependencies
 - Easy CUDA setup for inference with GPU
-- Rich integration with the MLOps eco-system, including Kubeflow, Airflow, MLFlow, Triton
+- Rich integration with the MLOps ecosystem, including Kubeflow, Airflow, MLFlow, Triton
 
 🏹 ***Scalable*** with powerful performance optimizations
 - [Adaptive batching](https://docs.bentoml.org/en/latest/guides/batching.html) dynamically groups inference requests on server-side optimal performance
@@ -33,12 +33,12 @@ BentoML makes it easy to create ML-powered prediction services that are ready to
 - [Maximize your GPU](https://docs.bentoml.org/en/latest/guides/gpu.html) and multi-core CPU utilization with automatic provisioning
 
 🚀 Deploy anywhere in a **DevOps-friendly** way
-- Streamlines production deployment workflow via:
+- Streamline production deployment workflow via:
     - [☁️ BentoML Cloud](https://bentoml.com/) - the fastest way to deploy your bento, simple and at scale
     - [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
     - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on AWS SageMaker, Lambda, ECS, GCP, Azure, and more!
 - Run offline batch inference jobs with Spark or Dask
-- Built-in support for Prometheus metrics and OpenTelemetry tracing
+- Built-in support for Prometheus metrics and OpenTelemetry
 - Flexible APIs for advanced CI/CD workflows
 
 

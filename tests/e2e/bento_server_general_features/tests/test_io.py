@@ -211,7 +211,7 @@ async def test_image(host, img_file):
         "POST",
         f"http://{host}/echo_image",
         data=b,
-        headers={"Content-Type": "application/vnd.bentoml.multiple_outputs"},
+        headers={"Content-Type": "application/pdf"},
         assert_status=400,
     )
 

@@ -57,6 +57,10 @@ ImageType = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 DEFAULT_PIL_MODE = "RGB"
 
 
+PIL_WRITE_ONLY_FORMATS = {
+    "PALM",
+    "PDF",
+}
 MIME_EXT_MAPPING: dict[str, str] = None  # type: ignore (lazy constant)
 
 
@@ -72,7 +76,7 @@ def initialize_pillow():
         )
 
     PIL.Image.init()
-    MIME_EXT_MAPPING = {v: k for k, v in PIL.Image.MIME.items()}  # type: ignore (lazy constant)
+    MIME_EXT_MAPPING = {v: k for k, v in PIL.Image.MIME.items() if k not in PIL_WRITE_ONLY_FORMATS}  # type: ignore (lazy constant)
 
 
 class Image(IODescriptor[ImageType]):

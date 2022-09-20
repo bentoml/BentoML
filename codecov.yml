@@ -14,6 +14,7 @@ ignore:
   - "bentoml/types.py"
   - "bentoml/_internal/types.py"
   - "bentoml/_internal/external_typing"
+  - "bentoml/grpc/v1alpha1"
   - "bentoml/__main__.py"
   - "bentoml/io.py"
   - "tests"

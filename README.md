@@ -9,36 +9,38 @@
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
 [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
 
-BentoML simplifies ML model deployment and serves your models at production scale.
+BentoML lets you create ML-powered prediction services that are ready to deploy and scale.
 
-👉 [Join us in our Slack community](https://l.linklyhq.com/l/ktOh) where hundreds of ML 
-practitioners are contributing to the project, helping other users, and discuss all 
-things MLOps.
+👉 [Join our Slack community today!](https://l.linklyhq.com/l/ktOh)
 
 ## Why BentoML? ##
 
-🍱 Easily go from training to model serving in production
-- Supports multiple ML frameworks natively: Tensorflow, PyTorch, XGBoost, Scikit-Learn and many more!
-- Easy definition of custom serving pipelines with pre-processing, post-processing and ensemble models
-- Enables multi-model inference graph with model runners architecture
-- Standard `.bento` format for packaging code, models and dependencies for easy versioning and deployment
-- Integrates with any training pipeline or ML experimentation platform
+🍭 Unified Model Serving API
+- Framework-agnostic model packaging for Tensorflow, PyTorch, XGBoost, Scikit-Learn, ONNX, and [many more](https://docs.bentoml.org/en/latest/frameworks/index.html)!
+- Write **custom Python code** alongside model inference for pre/post-processing and business logic
+- Apply the **same code** for online(REST API or gRPC), offline batch, and streaming inference
+- Simple abstractions for building **multi-model inference** pipelines or graphs
 
-✨ Model Serving the way you need it 
-- **Online serving** via REST API or gRPC
-- **Offline scoring** on batch datasets with Apache Spark, or Dask
-- **Stream serving** with Kafka, Beam, and Flink
+🚂  **Standardized process** for a frictionless transition to production
+- Build `Bento` as the standard deployable artifact for ML services
+- Automatically **generate docker images** with the desired dependencies
+- Easy CUDA setup for inference with GPU
+- Rich integration with the MLOps eco-system, including Kubeflow, Airflow, MLFlow, Triton
 
-🚢 Deployment workflow made for production
-- 🐳 Automatically generates docker images for production deployment
-- [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
-- [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
+🏹 ***Scalable*** with powerful performance optimizations
+- [Adaptive batching](https://docs.bentoml.org/en/latest/guides/batching.html) dynamically groups inference requests on server-side optimal performance
+- [Runner](https://docs.bentoml.org/en/latest/concepts/runner.html) abstraction scales model inference separately from your custom code
+- [Maximize your GPU](https://docs.bentoml.org/en/latest/guides/gpu.html) and multi-core CPU utilization with automatic provisioning
 
-🐍 Python-first, scales with powerful optimizations
-- Parallelizes compute-intense model inference workloads to scale separately from the serving logic
-- Adaptive batching dynamically groups inference requests for optimal performance
-- Orchestrates distributed inference graph with multiple models via [Yatai on Kubernetes](https://github.com/bentoml/Yatai)
-- Allows for easy configuration of CUDA dependencies for running inference with GPU
+🚀 Deploy anywhere in a **DevOps-friendly** way
+- Streamlines production deployment workflow via:
+    - [☁️ BentoML Cloud](https://bentoml.com/) - the fastest way to deploy your bento, simple and at scale
+    - [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
+    - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on AWS SageMaker, Lambda, ECS, GCP, Azure, and more!
+- Run offline batch inference jobs with Spark or Dask
+- Built-in support for Prometheus metrics and OpenTelemetry tracing
+- Flexible APIs for advanced CI/CD workflows
+
 
 ## Getting Started ##
 
@@ -46,7 +48,7 @@ things MLOps.
 - [Tutorial: Intro to BentoML](https://docs.bentoml.org/en/latest/tutorial.html) - Learn by doing! In under 10 minutes, you'll serve a model via REST API and generate a docker image for deployment.
 - [Main Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) - A step-by-step tour for learning main concepts in BentoML
 - [Examples](https://github.com/bentoml/BentoML/tree/main/examples) - Gallery of sample projects using BentoML
-- [ML Framework Sepecific Guides](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
+- [ML Framework Guides](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
 - [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) - Learn about BentoML's internals, architecture and advanced features
 
 
@@ -96,7 +98,7 @@ bentoml.pytorch.save_model(
 ```
 
 
-**Step 2:** Create a prediction service with the saved model:
+**Step 2:** Define a prediction servicel:
 
 Create a `service.py` file with:
 ```python
@@ -143,7 +145,7 @@ model will be running in its own worker processes. Since the model is saved with
 Define a `bentofile.yaml` build file for your ML project:
 
 ```yaml
-service: "service:svc"  # where the bentoml.Service instance is defined
+service: "service:svc"
 include:
 - "*.py"
 exclude:
@@ -155,7 +157,6 @@ python:
     - Pillow
 docker:
   distro: debian
-  cuda_version: 11.6.2
 ```
 
 Build a `Bento` using the `bentofile.yaml` specification from current directory: 
@@ -195,20 +196,18 @@ Learn more about other deployment options [here](https://docs.bentoml.org/en/lat
 ## Community ##
 
 - For general questions and support, join the [community slack](https://l.linklyhq.com/l/ktOh).
-- To receive release notification, star & watch the BentoML project on GitHub.
+- To receive release notification, star & watch the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
 - To report a bug or suggest a feature request, use [GitHub Issues](https://github.com/bentoml/BentoML/issues/new/choose).
-- For long-form discussions, use [Github Discussions](https://github.com/bentoml/BentoML/discussions).
 - To stay informed with community updates, follow the [BentoML Blog](modelserving.com) and [@bentomlai](http://twitter.com/bentomlai) on Twitter.
-
 
 ## Contributing ##
 
 There are many ways to contribute to the project:
 
-- If you have any feedback on the project, share it in [Github Discussions](https://github.com/bentoml/BentoML/discussions) or the `#bentoml-contributors` channel in the [community slack](https://l.linklyhq.com/l/ktOh).
+- If you have any feedback on the project, share it under the `#bentoml-contributors` channel in the [community slack](https://l.linklyhq.com/l/ktOh).
 - Report issues you're facing and "Thumbs up" on issues and feature requests that are relevant to you.
 - Investigate bugs and reviewing other developer's pull requests.
-- Contributing code or documentation to the project by submitting a Github pull request. Check out the [Development Guide](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md).
+- Contributing code or documentation to the project by submitting a GitHub pull request. Check out the [Development Guide](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md).
 - Learn more in the [contributing guide](https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md).
 
 ### Contributors! ###
@@ -228,6 +227,7 @@ Only BentoML's internal API calls are being reported. We strip out as much poten
 sensitive information as possible, and we will never collect user code, model data, model names, or stack traces.
 Here's the [code](./bentoml/_internal/utils/analytics/usage_stats.py) for usage tracking.
 You can opt-out of usage tracking by the `--do-not-track` CLI option:
+
 ```bash
 bentoml [command] --do-not-track
 ```

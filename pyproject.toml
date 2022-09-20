@@ -60,7 +60,7 @@ exclude = '''
     | lib
     | dist
     | typings
-    | bentoml/grpc
+    | bentoml/grpc/v1alpha1
   )/
   | bentoml/_version.py
 )
@@ -84,7 +84,11 @@ extension-pkg-allow-list = [
   "onnx",
   "pydantic.schema",
 ]
-ignore-paths = ["typings", "bentoml/_internal/external_typing", "bentoml/grpc"]
+ignore-paths = [
+  "typings",
+  "bentoml/_internal/external_typing",
+  "bentoml/grpc/v1alpha1",
+]
 disable = [
   "import-error",
   "print-statement",

@@ -7,15 +7,7 @@ git config --global pull.ff only
 git fetch upstream --tags && git pull
 
 # install editable wheels & tools for bentoml
-pip install -e ".[tracing,grpc]" --verbose
-pip install -r requirements/dev-requirements.txt
-pip install -U "grpcio-tools>=1.41.0" "mypy-protobuf>=3.3.0"
-# generate stubs
-OPTS=(-I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=.)
-python -m grpc_tools.protoc "${OPTS[@]}" bentoml/grpc/v1alpha1/service.proto
-python -m grpc_tools.protoc "${OPTS[@]}" bentoml/grpc/v1alpha1/service_test.proto
-# uninstall broken protobuf typestubs
-pip uninstall -y types-protobuf
+pip install -e ".[tracing,grpc]" -r requirements/dev-requirements.txt
 
 # setup docker buildx
 docker buildx install

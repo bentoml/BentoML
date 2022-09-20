@@ -117,7 +117,3 @@ catboost_info
 
 # ignore pyvenv
 pyvenv.cfg
-
-# generated stub that is included in distribution
-*_pb2*.py
-*_pb2*.pyi

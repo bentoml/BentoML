@@ -1,6 +1,119 @@
 [build-system]
-requires = ["setuptools<=60", "setuptools_scm[toml]>=6.2", "wheel"]
+requires = ["setuptools>=63", "setuptools_scm[toml]>=6.2", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "bentoml"
+description = "BentoML: The Unified Model Serving Framework"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.7"
+keywords = ["MLOps", "AI", "BentoML", "Model Serving", "Model Deployment"]
+license = { text = "Apache-2.0" }
+authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
+classifiers = [
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+  "Jinja2>=3.0.1",
+  "PyYAML>=5.0",
+  "aiohttp",
+  "attrs>=21.1.0",
+  "cattrs>=22.1.0",
+  "circus",
+  "click>=7.0",
+  "cloudpickle",
+  "deepmerge",
+  "fs",
+  "numpy",
+  "opentelemetry-api>=1.9.0",
+  "opentelemetry-instrumentation==0.33b0",
+  "opentelemetry-instrumentation-aiohttp-client==0.33b0",
+  "opentelemetry-instrumentation-asgi==0.33b0",
+  "opentelemetry-sdk>=1.9.0",
+  "opentelemetry-semantic-conventions==0.33b0",
+  "opentelemetry-util-http==0.33b0",
+  "packaging>=20.0",
+  "pathspec",
+  "pip-tools>=6.6.2",
+  "prometheus-client>=0.10.0,<0.14.0",
+  "psutil",
+  "pynvml<12",
+  "python-dateutil",
+  "python-dotenv>=0.20.0",
+  "python-multipart",
+  "requests",
+  "rich>=11.2.0",
+  "schema",
+  "simple-di>=0.1.4",
+  "starlette",
+  "uvicorn",
+  "watchfiles>=0.15.0",
+  "backports.cached-property;python_version<'3.8'",
+  "backports.shutil_copytree;python_version<'3.8'",
+  "importlib-metadata;python_version<'3.8'",
+]
+dynamic = ["version"]
+
+[project.urls]
+"Documentation" = "https://docs.bentoml.org/en/latest/"
+"Bug Reports" = "https://github.com/bentoml/BentoML/issues"
+"BentoML Community Slack" = "https://bit.ly/2N5IpbB"
+"BentoML Official Blog" = "https://modelserving.com"
+"BentoML Twitter" = "https://twitter.com/bentomlai"
+
+[project.scripts]
+bentoml = "bentoml_cli.cli:cli"
+
+[tool.setuptools]
+package-data = { "bentoml" = ["bentoml/*"], "bentoml_cli" = ["bentoml_cli/*"] }
+
+[tool.setuptools.packages.find]
+include = [
+  # include bentoml packages
+  "bentoml",
+  "bentoml.grpc*",
+  "bentoml.testing*",
+  "bentoml._internal*",
+  # include bentoml_cli packages
+  "bentoml_cli",
+  "bentoml_cli.worker",
+]
+
+[project.optional-dependencies]
+all = ["bentoml[extras]", "bentoml[grpc]", "bentoml[tracing]"]
+extras = ["Pillow", "pydantic<2", "fs-s3fs", "pandas"]
+grpc = [
+  # Restrict maximum version due to breaking protobuf 4.21.0 changes
+  # (see https://github.com/protocolbuffers/protobuf/issues/10051)
+  "protobuf>=3.5.0, <3.20",
+  # Lowest version that support 3.10. We need to set an upper bound
+  # since grpcio >=1.49.0 uses protbuf >=3.20.0, which breaks compatibility.
+  "grpcio>=1.41.0,<1.49",
+  "grpcio-health-checking",
+  "grpcio-reflection",
+  "opentelemetry-instrumentation-grpc==0.33b0",
+]
+# We kept for compatibility with previous
+# versions of BentoML. It is discouraged to use this, instead use any
+# of the above tracing.* extras.
+tracing = [
+  "bentoml[tracing-jaeger]",
+  "bentoml[tracing-otlp]",
+  "bentoml[tracing-zipkin]",
+]
+tracing-jaeger = ["opentelemetry-exporter-jaeger"]
+tracing-zipkin = ["opentelemetry-exporter-zipkin"]
+tracing-otlp = ["opentelemetry-exporter-otlp"]
 
 [tool.setuptools_scm]
 write_to = "bentoml/_version.py"

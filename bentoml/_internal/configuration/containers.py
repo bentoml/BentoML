@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import uuid
 import typing as t
 import logging
@@ -267,8 +268,7 @@ class BentoMLConfiguration:
 
         if override_config_values is not None:
             logger.info(
-                "Applying user config override from ENV VAR: %s"
-                % override_config_values
+                "Applying user config override from ENV VAR: %s", override_config_values
             )
             lines = split_with_quotes(
                 override_config_values,
@@ -277,7 +277,7 @@ class BentoMLConfiguration:
                 use_regex=True,
             )
             override_config_map = {
-                k: v
+                k: json.loads(v)
                 for k, v in [
                     split_with_quotes(line, sep="=", quote='"') for line in lines
                 ]

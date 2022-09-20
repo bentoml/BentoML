@@ -8,13 +8,14 @@ Unified Model Serving Framework
 
 What is BentoML?
 ----------------
-`BentoML <https://github.com/bentoml/BentoML>`_ is an open-source framework for serving
-ML models at production scale. Data Scientists and ML Engineers use BentoML to:
 
-* Accelerate and standardize the process of taking ML models to production across teams
-* Build reliable, scalable, and high performance model serving systems
-* Provide a flexible MLOps platform that grows with your Data Science needs
+`BentoML <https://github.com/bentoml/BentoML>`_ makes it easy to create ML-powered prediction services that are ready to deploy and scale.
 
+Data Scientists and ML Engineers use BentoML to:
+
+* Accelerate and standardize the process of taking ML models to production
+* Build scalable and high performance prediction services
+* Continuously deploy, monitor, and operate prediction services in production
 
 Learn BentoML
 -------------
@@ -79,7 +80,7 @@ Beyond Model Serving
         :link: https://github.com/bentoml/Yatai
         :link-type: url
 
-        Production-first ML platform on Kubernetes.
+        Model Deployment at scale on Kubernetes.
 
     .. grid-item-card:: `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_
         :link: https://github.com/bentoml/bentoctl

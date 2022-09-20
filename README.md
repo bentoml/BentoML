@@ -9,9 +9,7 @@
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
 [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
 
-BentoML makes it easy to create ML-powered prediction services that are ready to deploy and scale.
-
-👉 [Join our Slack community today!](https://l.linklyhq.com/l/ktOh)
+BentoML makes it easy to create Machine Learning services that are ready to deploy and scale.
 
 ## Why BentoML? ##
 
@@ -22,7 +20,7 @@ BentoML makes it easy to create ML-powered prediction services that are ready to
 - Simple abstractions for building **multi-model inference** pipelines or graphs
 
 🚂 **Standardized process** for a frictionless transition to production
-- Build `Bento` as the standard deployable artifact for ML services
+- Build [Bento](https://docs.bentoml.org/en/latest/concepts/bento.html) as the standard deployable artifact for ML services
 - Automatically **generate docker images** with the desired dependencies
 - Easy CUDA setup for inference with GPU
 - Rich integration with the MLOps ecosystem, including Kubeflow, Airflow, MLFlow, Triton
@@ -34,13 +32,14 @@ BentoML makes it easy to create ML-powered prediction services that are ready to
 
 🎯 Deploy anywhere in a **DevOps-friendly** way
 - Streamline production deployment workflow via:
-    - [☁️ BentoML Cloud](https://bentoml.com/) - the fastest way to deploy your bento, simple and at scale
+    - [☁️ BentoML Cloud](https://bentoml.com/): the fastest way to deploy your bento, simple and at scale
     - [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
-    - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on AWS SageMaker, Lambda, ECS, GCP, Azure, and more!
+    - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on AWS SageMaker, Lambda, ECE, GCP, Azure, Heroku, and more!
 - Run offline batch inference jobs with Spark or Dask
 - Built-in support for Prometheus metrics and OpenTelemetry
 - Flexible APIs for advanced CI/CD workflows
 
+👉 [Join our Slack community today!](https://l.linklyhq.com/l/ktOh)
 
 ## Getting Started ##
 

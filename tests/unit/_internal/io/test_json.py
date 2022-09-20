@@ -93,8 +93,8 @@ def test_not_yet_supported_pydantic():
 
 def test_invalid_init():
     with pytest.raises(AssertionError) as exc_info:
-        JSON(pydantic_model=ExampleAttrsClass)
-    assert "'pydantic_model' must be a subclass of 'pydantic.BaseModel'." == str(
+        JSON(pydantic_model=ExampleAttrsClass)  # type: ignore (testing exception)
+    assert "'pydantic_model' must be a subclass of 'pydantic.BaseModel'." in str(
         exc_info.value
     )
 

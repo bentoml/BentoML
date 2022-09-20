@@ -1,14 +1,22 @@
+# pylint: disable=unused-argument
 from __future__ import annotations
 
 import os
+import sys
 import typing as t
+import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
 
+from bentoml._internal.configuration.containers import BentoMLContainer
+
 if TYPE_CHECKING:
     from contextlib import ExitStack
 
+    from _pytest.main import Session
+    from _pytest.nodes import Item
+    from _pytest.config import Config
     from _pytest.fixtures import FixtureRequest as _PytestFixtureRequest
 
     class FixtureRequest(_PytestFixtureRequest):
@@ -16,6 +24,15 @@ if TYPE_CHECKING:
 
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def pytest_collection_modifyitems(
+    session: Session, config: Config, items: list[Item]
+) -> None:
+    subprocess.check_call(
+        [sys.executable, "-m", "train"],
+        env={"BENTOML_HOME": BentoMLContainer.bentoml_home.get()},
+    )
 
 
 @pytest.fixture(

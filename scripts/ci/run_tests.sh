@@ -218,8 +218,6 @@ main() {
 	if [ "$type_tests" == 'e2e' ]; then
 		p="$GIT_ROOT/$test_dir"
 		cd "$p" || exit 1
-		IFS='/' read -r -a paths <<<"$test_dir"
-		OPTS=("${OPTS[@]}" "--project" "${paths[2]}")
 		if [ -v GITHUB_ACTIONS ]; then # checking whether running inside GITHUB_ACTIONS
 			OPTS=("${OPTS[@]}" "--cleanup")
 		fi

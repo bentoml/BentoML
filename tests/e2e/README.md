@@ -25,7 +25,7 @@ qa:
 ```bash
 .
 ├── bentofile.yaml
-├── configure.py     # REQUIRED: See below
+├── train.py
 ...
 ├── service.py
 └── tests
@@ -38,15 +38,14 @@ qa:
 > Note that files under `tests` are merely examples, feel free to add any types of
 > additional tests.
 
-3. Contents of `configure.py` must have a `create_model()` function:
+3. Create a `train.py`:
 
 ```python
-import python_model
+if __name__ == "__main__":
+    import python_model
 
-import bentoml
+    import bentoml
 
-
-def create_model():
     bentoml.picklable_model.save_model(
         "py_model.case-1.grpc.e2e",
         python_model.PythonFunction(),
@@ -58,8 +57,6 @@ def create_model():
         },
         external_modules=[python_model],
     )
-
-...
 ```
 
 4. Inside `tests/conftest.py`, create a `host` fixture like so:
@@ -73,8 +70,23 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from bentoml._internal.configuration.containers import BentoMLContainer
+
 if TYPE_CHECKING:
     from contextlib import ExitStack
+
+    from _pytest.main import Session
+    from _pytest.nodes import Item
+    from _pytest.config import Config
+
+
+def pytest_collection_modifyitems(
+    session: Session, config: Config, items: list[Item]
+) -> None:
+    subprocess.check_call(
+        [sys.executable, "-m", "train"],
+        env={"BENTOML_HOME": BentoMLContainer.bentoml_home.get()},
+    )
 
 
 @pytest.fixture(scope="module")

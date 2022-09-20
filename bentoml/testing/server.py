@@ -19,6 +19,7 @@ from contextlib import contextmanager
 
 import psutil
 
+from bentoml.grpc.utils import import_grpc
 from bentoml._internal.tag import Tag
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import reserve_free_port
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
 
 else:
     pb_health = LazyLoader("pb_health", globals(), "grpc_health.v1.health_pb2")
-    aio = LazyLoader("aio", globals(), "grpc.aio")
+    _, aio = import_grpc()
 
 
 async def parse_multipart_form(headers: Headers, body: bytes) -> FormData:
@@ -161,9 +162,9 @@ def bentoml_build(project_path: str) -> t.Generator[Bento, None, None]:
     yield bento
 
 
-@cached_contextmanager("{bento_tag}, {image_tag}")
+@cached_contextmanager("{bento_tag}, {image_tag}, {use_grpc}")
 def bentoml_containerize(
-    bento_tag: str | Tag, image_tag: str | None = None
+    bento_tag: str | Tag, image_tag: str | None = None, use_grpc: bool = False
 ) -> t.Generator[str, None, None]:
     """
     Build the docker image from a saved bento, yield the docker image tag
@@ -179,7 +180,7 @@ def bentoml_containerize(
             str(bento_tag),
             docker_image_tag=[image_tag],
             progress="plain",
-            features=["grpc"],
+            features=["grpc"] if use_grpc else None,
         )
         yield image_tag
     finally:

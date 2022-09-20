@@ -6,34 +6,82 @@ import shutil
 import typing as t
 import tempfile
 import contextlib
-from pathlib import Path
 from typing import TYPE_CHECKING
-from importlib import import_module
 
 import psutil
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 
-from bentoml.exceptions import InvalidArgument
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import validate_or_create_dir
-from bentoml._internal.configuration import expand_env_var
+from bentoml._internal.configuration import CLEAN_BENTOML_VERSION
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-
     import numpy as np
     from _pytest.main import Session
+    from _pytest.main import PytestPluginManager  # type: ignore (not exported warning)
+    from _pytest.config import Config
     from _pytest.config import ExitCode
     from _pytest.python import Metafunc
     from _pytest.fixtures import FixtureRequest
+    from _pytest.config.argparsing import Parser
 
     class FilledFixtureRequest(FixtureRequest):
         param: str
+
+    from bentoml._internal.server.metrics.prometheus import PrometheusClient
 
 else:
     np = LazyLoader("np", globals(), "numpy")
 
 
+@pytest.mark.tryfirst
+def pytest_report_header(config: Config) -> list[str]:
+    return [f"bentoml: version={CLEAN_BENTOML_VERSION}"]
+
+
+@pytest.mark.tryfirst
+def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None:
+    group = parser.getgroup("bentoml")
+    group.addoption(
+        "--cleanup",
+        action="store_true",
+        help="If passed, We will cleanup temporary directory after session is finished.",
+    )
+
+
+def _setup_deployment_mode(metafunc: Metafunc):
+    if os.getenv("VSCODE_IPC_HOOK_CLI") and not os.getenv("GITHUB_CODESPACE_TOKEN"):
+        # When running inside VSCode remote container locally, we don't have access to
+        # exposed reserved ports, so we can't run docker-based tests. However on GitHub
+        # Codespaces, we can run docker-based tests.
+        # Note that inside the remote container, it is already running as a Linux container.
+        deployment_mode = ["distributed", "standalone"]
+    else:
+        if os.environ.get("GITHUB_ACTIONS") and (psutil.WINDOWS or psutil.MACOS):
+            # Due to GitHub Actions' limitation, we can't run docker-based tests
+            # on Windows and macOS. However, we can still running those tests on
+            # local development.
+            if psutil.MACOS:
+                deployment_mode = ["distributed", "standalone"]
+            else:
+                deployment_mode = ["standalone"]
+        else:
+            if psutil.WINDOWS:
+                deployment_mode = ["standalone", "docker"]
+            else:
+                deployment_mode = ["distributed", "standalone", "docker"]
+    metafunc.parametrize("deployment_mode", deployment_mode, scope="session")
+
+
+@pytest.mark.tryfirst
+def pytest_generate_tests(metafunc: Metafunc):
+    if "deployment_mode" in metafunc.fixturenames:
+        _setup_deployment_mode(metafunc)
+
+
+@pytest.mark.tryfirst
 def pytest_sessionstart(session: Session) -> None:
     """Create a temporary directory for the BentoML home directory, then monkey patch to config."""
     from bentoml._internal.configuration.containers import BentoMLContainer
@@ -76,26 +124,10 @@ def pytest_sessionstart(session: Session) -> None:
     os.environ["PROMETHEUS_MULTIPROC_DIR"] = prom_dir
 
     mp.setattr(config, "_bentoml_home", _PYTEST_BENTOML_HOME, raising=False)
-    project = config.getoption("project")
-    assert project, "--project is required"
-    imported = import_module(
-        ".configure",
-        f"tests.e2e.{str(project)}",
-    )
-    try:
-        imported = import_module(".configure", package=f"tests.e2e.{str(project)}")
-        if not hasattr(imported, "create_model"):
-            raise InvalidArgument(
-                "'create_model()' is required to create a test model."
-            ) from None
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError(
-            f"Failed to find 'configure.py' in E2E project '{project}'."
-        ) from None
-    else:
-        imported.create_model()
 
 
+@pytest.mark.tryfirst
+@pytest.mark.tryfirst
 def pytest_sessionfinish(session: Session, exitstatus: int | ExitCode) -> None:
     config = session.config
     if hasattr(session, "_original_bundle_build"):
@@ -113,36 +145,6 @@ def pytest_sessionfinish(session: Session, exitstatus: int | ExitCode) -> None:
         BentoMLContainer.bentoml_home.reset()
         # Set dynamically by pytest_configure() above.
         shutil.rmtree(config._bentoml_home)  # type: ignore (dynamic patch)
-
-
-def pytest_addoption(parser: pytest.Parser):
-    parser.addoption("--project", action="store", default=None)
-    parser.addoption("--cleanup", action="store_true")
-
-
-def pytest_generate_tests(metafunc: Metafunc):
-    if "deployment_mode" in metafunc.fixturenames:
-        if os.getenv("VSCODE_IPC_HOOK_CLI") and not os.getenv("GITHUB_CODESPACE_TOKEN"):
-            # When running inside VSCode remote container locally, we don't have access to
-            # exposed reserved ports, so we can't run docker-based tests. However on GitHub
-            # Codespaces, we can run docker-based tests.
-            # Note that inside the remote container, it is already running as a Linux container.
-            deployment_mode = ["distributed", "standalone"]
-        else:
-            if os.environ.get("GITHUB_ACTIONS") and (psutil.WINDOWS or psutil.MACOS):
-                # Due to GitHub Actions' limitation, we can't run docker-based tests
-                # on Windows and macOS. However, we can still running those tests on
-                # local development.
-                if psutil.MACOS:
-                    deployment_mode = ["distributed", "standalone"]
-                else:
-                    deployment_mode = ["standalone"]
-            else:
-                if psutil.WINDOWS:
-                    deployment_mode = ["standalone", "docker"]
-                else:
-                    deployment_mode = ["distributed", "standalone", "docker"]
-        metafunc.parametrize("deployment_mode", deployment_mode, scope="session")
 
 
 @pytest.fixture(scope="session")
@@ -174,3 +176,8 @@ def bin_file(tmpdir: str) -> str:
     with open(bin_file_, "wb") as of:
         of.write("â".encode("gb18030"))
     return str(bin_file_)
+
+
+@pytest.fixture(scope="module", name="metrics_client")
+def fixture_metrics_client() -> PrometheusClient:
+    return BentoMLContainer.metrics_client.get()

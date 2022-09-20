@@ -4,7 +4,7 @@ import typing as t
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
-from _interceptor import AsyncContextInterceptor
+from context_server_interceptor import AsyncContextInterceptor
 
 import bentoml
 from bentoml.io import File

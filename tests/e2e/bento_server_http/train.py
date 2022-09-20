@@ -1,9 +1,8 @@
-import pickle_model
+if __name__ == "__main__":
+    import pickle_model
 
-import bentoml
+    import bentoml
 
-
-def create_model():
     bentoml.picklable_model.save_model(
         "py_model.case-1.http.e2e",
         pickle_model.PickleModel(),

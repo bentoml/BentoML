@@ -132,18 +132,18 @@ version_scheme = "post-release"
 fallback_version = "0.0.0"
 
 [tool.coverage.paths]
-source = ["bentoml"]
+source = ["bentoml/"]
 
 [tool.coverage.run]
 branch = true
 source = ["bentoml", "bentoml_cli"]
 omit = [
-  "bentoml/**/*_pb2.py",
-  "bentoml/__main__.py",
-  "bentoml/_internal/types.py",
-  "bentoml/_internal/external_typing/*",
-  "bentoml/testing/*",
-  "bentoml/io.py",
+  "*/bentoml/**/*_pb2*.py",
+  "*/bentoml/__main__.py",
+  "*/bentoml/_internal/types.py",
+  "*/bentoml/_internal/external_typing/*",
+  "*/bentoml/testing/*",
+  "*/bentoml/io.py",
 ]
 
 [tool.coverage.report]
@@ -151,10 +151,10 @@ show_missing = true
 precision = 2
 omit = [
   "*/bentoml/**/*_pb2*.py",
-  "*/bentoml/_internal/external_typing/*",
-  "*/bentoml/_internal/types.py",
-  "*/bentoml/testing/*",
   '*/bentoml/__main__.py',
+  "*/bentoml/_internal/types.py",
+  "*/bentoml/_internal/external_typing/*",
+  "*/bentoml/testing/*",
   "*/bentoml/io.py",
 ]
 exclude_lines = [
@@ -194,7 +194,7 @@ exclude = '''
 extend-exclude = "(_pb2.py$|_pb2_grpc.py$)"
 
 [tool.pytest.ini_options]
-addopts = "-rfEX -p pytester -p no:warnings -x --capture=tee-sys --cov-report=term-missing --cov-append"
+addopts = "-rfEX -p pytester -p no:warnings -x --capture=tee-sys --tb=short --cov-report=term-missing --cov-append"
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 markers = ["gpus", "disable-tf-eager-execution"]

@@ -6,18 +6,20 @@ from typing import TYPE_CHECKING
 from contextlib import ExitStack
 from contextlib import asynccontextmanager
 
+from bentoml.exceptions import BentoMLException
+from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import reserve_free_port
 from bentoml._internal.utils import cached_contextmanager
 from bentoml._internal.utils import add_experimental_docstring
 from bentoml._internal.server.grpc.servicer import create_bento_servicer
 
-from ._io import make_pb_ndarray
-from ._io import randomize_pb_ndarray
-from ._servicer import TestServiceServicer
+from .servicer import TestServiceServicer
 
 if TYPE_CHECKING:
     import grpc
+    import numpy as np
     from grpc import aio
+    from numpy.typing import NDArray
     from grpc.aio._channel import Channel
     from google.protobuf.message import Message
 
@@ -30,6 +32,7 @@ else:
     pb, _ = import_generated_stubs()
     _, services_test = import_generated_stubs(file="service_test.proto")
     grpc, aio = import_grpc()
+    np = LazyLoader("np", globals(), "numpy")
 
 __all__ = [
     "async_client_call",
@@ -40,6 +43,33 @@ __all__ = [
     "TestServiceServicer",
     "create_bento_servicer",
 ]
+
+
+def randomize_pb_ndarray(shape: tuple[int, ...]) -> pb.NDArray:
+    arr: NDArray[np.float32] = t.cast("NDArray[np.float32]", np.random.rand(*shape))
+    return pb.NDArray(
+        shape=list(shape), dtype=pb.NDArray.DTYPE_FLOAT, float_values=arr.ravel()
+    )
+
+
+def make_pb_ndarray(arr: NDArray[t.Any]) -> pb.NDArray:
+    from bentoml._internal.io_descriptors.numpy import npdtype_to_dtypepb_map
+    from bentoml._internal.io_descriptors.numpy import npdtype_to_fieldpb_map
+
+    try:
+        fieldpb = npdtype_to_fieldpb_map()[arr.dtype]
+        dtypepb = npdtype_to_dtypepb_map()[arr.dtype]
+        return pb.NDArray(
+            **{
+                fieldpb: arr.ravel().tolist(),
+                "dtype": dtypepb,
+                "shape": tuple(arr.shape),
+            },
+        )
+    except KeyError:
+        raise BentoMLException(
+            f"Unsupported dtype '{arr.dtype}' for response message.",
+        ) from None
 
 
 async def async_client_call(

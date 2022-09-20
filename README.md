@@ -39,7 +39,6 @@ BentoML makes it easy to create Machine Learning services that are ready to depl
 - Built-in support for Prometheus metrics and OpenTelemetry
 - Flexible APIs for advanced CI/CD workflows
 
-👉 [Join our Slack community today!](https://l.linklyhq.com/l/ktOh)
 
 ## Getting Started ##
 
@@ -49,6 +48,7 @@ BentoML makes it easy to create Machine Learning services that are ready to depl
 - [Examples](https://github.com/bentoml/BentoML/tree/main/examples) - Gallery of sample projects using BentoML
 - [ML Framework Guides](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
 - [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) - Learn about BentoML's internals, architecture and advanced features
+- [Join BentoML Community Slack 💬](https://l.linklyhq.com/l/ktOh) to get help, ask questions, and share your ideas
 
 
 ## Installation ##

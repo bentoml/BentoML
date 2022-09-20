@@ -9,7 +9,7 @@
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
 [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
 
-BentoML lets you create ML-powered prediction services that are ready to deploy and scale.
+BentoML makes it easy to create ML-powered prediction services that are ready to deploy and scale.
 
 👉 [Join our Slack community today!](https://l.linklyhq.com/l/ktOh)
 

@@ -9,7 +9,7 @@ Deployment Overview
 The three most common deployment options with BentoML are:
 
 - 🐳 Generate container images from Bento for custom docker deployment
-- `🦄️ Yatai <https://github.com/bentoml/Yatai>`_: Production-first ML platform on Kubernetes
+- `🦄️ Yatai <https://github.com/bentoml/Yatai>`_: Model Deployment at scale on Kubernetes
 - `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_: Fast model deployment on any cloud platform
 
 

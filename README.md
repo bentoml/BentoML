@@ -11,7 +11,20 @@
 
 BentoML makes it easy to create Machine Learning services that are ready to deploy and scale.
 
-## Why BentoML? ##
+## Getting Started ##
+
+- [Documentation](https://docs.bentoml.org/) - Overview of the BentoML docs and related resources
+- [Tutorial: Intro to BentoML](https://docs.bentoml.org/en/latest/tutorial.html) - Learn by doing! In under 10 minutes, you'll serve a model via REST API and generate a docker image for deployment.
+- [Main Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) - A step-by-step tour for learning main concepts in BentoML
+- [Examples](https://github.com/bentoml/BentoML/tree/main/examples) - Gallery of sample projects using BentoML
+- [ML Framework Guides](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
+- [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) - Learn about BentoML's internals, architecture and advanced features
+- Need help? [Join BentoML Community Slack 💬](https://l.linklyhq.com/l/ktOh)
+
+---
+
+
+## Highlights
 
 🍭 Unified Model Serving API
 - Framework-agnostic model packaging for Tensorflow, PyTorch, XGBoost, Scikit-Learn, ONNX, and [many more](https://docs.bentoml.org/en/latest/frameworks/index.html)!
@@ -39,67 +52,24 @@ BentoML makes it easy to create Machine Learning services that are ready to depl
 - Built-in support for Prometheus metrics and OpenTelemetry
 - Flexible APIs for advanced CI/CD workflows
 
+## How it works
 
-## Getting Started ##
-
-- [Documentation](https://docs.bentoml.org/) - Overview of the BentoML docs and related resources
-- [Tutorial: Intro to BentoML](https://docs.bentoml.org/en/latest/tutorial.html) - Learn by doing! In under 10 minutes, you'll serve a model via REST API and generate a docker image for deployment.
-- [Main Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) - A step-by-step tour for learning main concepts in BentoML
-- [Examples](https://github.com/bentoml/BentoML/tree/main/examples) - Gallery of sample projects using BentoML
-- [ML Framework Guides](https://docs.bentoml.org/en/latest/frameworks/index.html) - Best practices and example usages by the ML framework of your choice
-- [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) - Learn about BentoML's internals, architecture and advanced features
-- [Join BentoML Community Slack 💬](https://l.linklyhq.com/l/ktOh) to get help, ask questions, and share your ideas
-
-
-## Installation ##
-
-```bash
-pip install bentoml
-```
-
-## Quick Tour ##
-
-**Step 1:** At the end of your model training pipeline, save your trained model instance with BentoML:
+Save your trained model with BentoML:
 
 ```python
 import bentoml
 
-model = train(...)
-
-saved_model = bentoml.pytorch.save_model("fraud_detect", model)
-print(f"Model saved: {saved_model}")
-
-# Model saved: Model(tag="fraud_detect:3qee3zd7lc4avuqj", path="~/bentoml/models/fraud_detect/3qee3zd7lc4avuqj/")
-```
-
-BentoML saves the model artifact files in a local model store, along with necessary metadata. 
-A new version tag is automatically generated for the model.
-
-Optionally, you may provide the `signatures` of your model for running inference with
-dynamic batching enabled, and attach labels, metadata, or `custom_objects` to be saved 
-together with your model, e.g.:
-
-```python
-bentoml.pytorch.save_model(
-    "demo_mnist",  # model name in the local model store
-    trained_model,  # model instance being saved
-    signatures={   # model signatures for runner inference
-      "predict": {
-        "batchable": True,
-        "batch_dim": 0,
-      }
-    },
-    metadata={   # user-defined additional metadata
-        "acc": acc,
-        "cv_stats": cv_stats,
-    },
+saved_model = bentoml.pytorch.save_model(
+    "demo_mnist", # model name in the local model store
+    model, # model instance being saved
 )
+
+print(f"Model saved: {saved_model}")
+# Model saved: Model(tag="demo_mnist:3qee3zd7lc4avuqj", path="~/bentoml/models/demo_mnist/3qee3zd7lc4avuqj/")
 ```
 
+Define a prediction service in a `service.py` file:
 
-**Step 2:** Define a prediction servicel:
-
-Create a `service.py` file with:
 ```python
 import numpy as np
 import bentoml
@@ -118,88 +88,54 @@ def predict(input_img: PILImage):
     return output_tensor.numpy()
 ```
 
-Start an HTTP server locally:
-
-```bash
-bentoml serve service.py:svc
-```
-
-And sent a test request to it:
-```bash
-curl -F 'image=@samples/1.png' http://127.0.0.1:3000/predict_image
-```
-
-You can also open http://127.0.0.1:3000 in a browser and debug the endpoint by sending
-requests directly from the web UI.
-
-Note that saved model is converted into a `Runner`, which in BentoML, represents a unit 
-of computation that can be scaled separately. In local deployment mode, this means the 
-model will be running in its own worker processes. Since the model is saved with a 
-`batchable: True` signature, BentoML applies dynamic batching to all the 
-`mnist_runner.predict.run` calls under the hood for optimal performance.
-
-
-**Step 3:** Build a Bento for deployment:
-
-Define a `bentofile.yaml` build file for your ML project:
+Create a `bentofile.yaml` build file for your ML service:
 
 ```yaml
 service: "service:svc"
 include:
 - "*.py"
-exclude:
-- "tests/"
 python:
   packages:
     - numpy
     - torch
     - Pillow
-docker:
-  distro: debian
 ```
 
-Build a `Bento` using the `bentofile.yaml` specification from current directory: 
+Now, run the prediction service:
+```bash
+bentoml serve
+```
+
+Sent a prediction request:
+```bash
+curl -F 'image=@samples/1.png' http://127.0.0.1:3000/predict_image
+```
+
+Build a Bento and generate a docker image:
+
 ```bash
 $ bentoml build
-
-Building BentoML service "pytorch_mnist:4mymorgurocxjuqj" from build context "~/workspace/gallery/pytorch_mnist"
-Packing model "demo_mnist:7drxqvwsu6zq5uqj" from "~/bentoml/models/demo_mnist/7drxqvwsu6zq5uqj"
-Locking PyPI package versions..
-
-██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
-
 Successfully built Bento(tag="pytorch_mnist:4mymorgurocxjuqj") at "~/bentoml/bentos/pytorch_mnist/4mymorgurocxjuqj/"
-```
-The Bento with `tag="pytorch_mnist:4mymorgurocxjuqj"` is now created in the local `Bento` store. It is an archive containing all the source code, model files, and dependency specs - anything that is required for reproducing the model in an identical environment for serving in production.
 
-
-**Step 4:** Deploying the `Bento`
-
-Generate a docker image from the Bento and run a docker container locally for serving:
-```bash
 $ bentoml containerize pytorch_mnist:4mymorgurocxjuqj
-
 Successfully built docker image "pytorch_mnist:4mymorgurocxjuqj"
 
-$ docker run --gpus all -p 3000:3000 pytorch_mnist:4mymorgurocxjuqj
+$ docker run -p 3000:3000 pytorch_mnist:4mymorgurocxjuqj
+Starting production BentoServer from "pytorch_mnist:4mymorgurocxjuqj" running on http://0.0.0.0:3000
 ```
 
-Learn more about other deployment options [here](https://docs.bentoml.org/en/latest/concepts/deploy.html).
+For a more detailed user guide, check out the [BentoML Tutorial](https://docs.bentoml.org/en/latest/tutorial.html).
 
+---
 
-## Community ##
+## Community
 
 - For general questions and support, join the [community slack](https://l.linklyhq.com/l/ktOh).
 - To receive release notification, star & watch the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
 - To report a bug or suggest a feature request, use [GitHub Issues](https://github.com/bentoml/BentoML/issues/new/choose).
-- To stay informed with community updates, follow the [BentoML Blog](modelserving.com) and [@bentomlai](http://twitter.com/bentomlai) on Twitter.
+- To stay informed with community updates, follow the [BentoML Blog](http://modelserving.com) and [@bentomlai](http://twitter.com/bentomlai) on Twitter.
 
-## Contributing ##
+## Contributing
 
 There are many ways to contribute to the project:
 
@@ -209,8 +145,7 @@ There are many ways to contribute to the project:
 - Contributing code or documentation to the project by submitting a GitHub pull request. Check out the [Development Guide](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md).
 - Learn more in the [contributing guide](https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md).
 
-### Contributors! ###
-
+### Contributors
 Thanks to all of our amazing contributors!
 
 <a href="https://github.com/bentoml/BentoML/graphs/contributors">

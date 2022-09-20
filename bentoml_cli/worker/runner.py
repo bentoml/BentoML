@@ -110,11 +110,11 @@ def main(
 
     # setup context
     if service.tag is None:
-        component_context.bento_name = f"{service.__class__.__name__}"
+        component_context.bento_name = service.name
         component_context.bento_version = "not available"
     else:
         component_context.bento_name = service.tag.name
-        component_context.bento_version = service.tag.version or ""
+        component_context.bento_version = service.tag.version or "not available"
 
     for runner in service.runners:
         if runner.name == runner_name:

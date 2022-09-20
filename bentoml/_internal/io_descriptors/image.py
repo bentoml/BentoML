@@ -17,6 +17,7 @@ from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
+from ...exceptions import InternalServerError
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import Response as OpenAPIResponse
@@ -61,12 +62,14 @@ PIL_WRITE_ONLY_FORMATS = {
     "PALM",
     "PDF",
 }
+READABLE_MIMES: set[str] = None  # type: ignore (lazy constant)
 MIME_EXT_MAPPING: dict[str, str] = None  # type: ignore (lazy constant)
 
 
 @functools.lru_cache(maxsize=1)
 def initialize_pillow():
     global MIME_EXT_MAPPING  # pylint: disable=global-statement
+    global READABLE_MIMES  # pylint: disable=global-statement
 
     try:
         import PIL.Image
@@ -76,7 +79,8 @@ def initialize_pillow():
         )
 
     PIL.Image.init()
-    MIME_EXT_MAPPING = {v: k for k, v in PIL.Image.MIME.items() if k not in PIL_WRITE_ONLY_FORMATS}  # type: ignore (lazy constant)
+    MIME_EXT_MAPPING = {v: k for k, v in PIL.Image.MIME.items()}  # type: ignore (lazy constant)
+    READABLE_MIMES = {k for k, v in MIME_EXT_MAPPING.items() if v not in PIL_WRITE_ONLY_FORMATS}  # type: ignore (lazy constant)
 
 
 class Image(IODescriptor[ImageType]):
@@ -184,7 +188,7 @@ class Image(IODescriptor[ImageType]):
 
         self._mime_type = mime_type.lower()
         self._allowed_mimes: set[str] = (
-            set(MIME_EXT_MAPPING.keys())
+            READABLE_MIMES
             if allowed_mime_types is None
             else {mtype.lower() for mtype in allowed_mime_types}
         )
@@ -199,6 +203,11 @@ class Image(IODescriptor[ImageType]):
             if mtype not in MIME_EXT_MAPPING:  # pragma: no cover
                 raise InvalidArgument(
                     f"Invalid Image MIME in allowed_mime_types: '{mtype}'; supported mime types are {', '.join(PIL.Image.MIME.values())} "
+                )
+
+            if mtype not in READABLE_MIMES:
+                raise InvalidArgument(
+                    f"Pillow does not support reading '{mtype}' files."
                 )
 
         self._pilmode: _Mode | None = pilmode

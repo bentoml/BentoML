@@ -48,12 +48,13 @@ def main(
         host = BentoMLContainer.grpc.host.get()
 
     # setup context
+    component_context.component_name = svc.name
     if svc.tag is None:
-        component_context.bento_name = f"*{svc.__class__.__name__}"
+        component_context.bento_name = svc.name
         component_context.bento_version = "not available"
     else:
         component_context.bento_name = svc.tag.name
-        component_context.bento_version = svc.tag.version
+        component_context.bento_version = svc.tag.version or "not available"
     if psutil.WINDOWS:
         import asyncio
 

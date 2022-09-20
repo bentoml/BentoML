@@ -10,8 +10,6 @@ from typing import TYPE_CHECKING
 import psutil
 import pytest
 
-from bentoml._internal.configuration.containers import BentoMLContainer
-
 if TYPE_CHECKING:
     from contextlib import ExitStack
 
@@ -26,10 +24,7 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def pytest_collection_modifyitems(
     session: Session, config: Config, items: list[Item]
 ) -> None:
-    subprocess.check_call(
-        [sys.executable, "-m", "train"],
-        env={"BENTOML_HOME": BentoMLContainer.bentoml_home.get()},
-    )
+    subprocess.check_call([sys.executable, "-m", "train"])
 
 
 @pytest.fixture(scope="module")

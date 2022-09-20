@@ -218,7 +218,7 @@ async def test_image(host: str, img_file: str):
         f"http://{host}/echo_image",
         data=b,
         headers={"Content-Type": "application/pdf"},
-        assert_status=200,
+        assert_status=400,
     )
 
 

@@ -424,7 +424,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install bentoml[{','.join(fea
     with open(bento.path_of(dockerfile_path), "r") as f:
         FINAL_DOCKERFILE = f"""\
 {f.read()}
-FROM base-{bento.info.docker.distro}
+FROM base-{bento.info.docker.distro} as final
 # Additional instructions for final image.
 {final_instruction}
 """

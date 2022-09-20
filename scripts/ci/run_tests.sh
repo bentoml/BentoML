@@ -21,6 +21,7 @@ CONFIG_FILE="$dname/config.yml"
 REQ_FILE="/tmp/additional-requirements.txt"
 SKIP_DEPS=0
 ERR=0
+VERBOSE=0
 ENABLE_XDIST=1
 
 cd "$GIT_ROOT" || exit
@@ -88,6 +89,7 @@ parse_args() {
 			;;
 		-v | --verbose)
 			set -x
+			VERBOSE=1
 			shift
 			;;
 		--disable-xdist)
@@ -189,7 +191,7 @@ main() {
 	# validate_yaml
 	parse_config "$argv"
 
-	OPTS=(--cov=bentoml --cov-config="$GIT_ROOT"/pyproject.toml --cov-report=xml:"$target.xml" --cov-report=term-missing -vvv)
+	OPTS=(--cov=bentoml --cov-config="$GIT_ROOT/pyproject.toml" --cov-report=xml:"$target.xml" --cov-report term-missing:skip-covered)
 
 	if [ -n "${PYTESTARGS[*]}" ]; then
 		# shellcheck disable=SC2206
@@ -198,6 +200,9 @@ main() {
 
 	if [ "$fname" == "test_frameworks.py" ]; then
 		OPTS=("--framework" "$target" "${OPTS[@]}")
+	fi
+	if [ "$VERBOSE" -eq 1 ]; then
+		OPTS=("${OPTS[@]}" -vvv)
 	fi
 
 	if [ "$type_tests" == 'unit' ] && [ "$ENABLE_XDIST" -eq 1 ]; then
@@ -218,9 +223,6 @@ main() {
 	if [ "$type_tests" == 'e2e' ]; then
 		p="$GIT_ROOT/$test_dir"
 		cd "$p" || exit 1
-		if [ -v GITHUB_ACTIONS ]; then # checking whether running inside GITHUB_ACTIONS
-			OPTS=("${OPTS[@]}" "--cleanup")
-		fi
 		path="."
 	else
 		path="$GIT_ROOT"/"$test_dir"/"$fname"

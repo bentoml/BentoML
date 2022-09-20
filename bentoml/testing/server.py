@@ -158,8 +158,11 @@ def bentoml_build(project_path: str) -> t.Generator[Bento, None, None]:
     """
     from bentoml import bentos
 
+    print(f"Building bento: {project_path}")
     bento = bentos.build_bentofile(build_ctx=project_path)
     yield bento
+    print(f"Deleting bento: {str(bento.tag)}")
+    bentos.delete(bento.tag)
 
 
 @cached_contextmanager("{bento_tag}, {image_tag}, {use_grpc}")
@@ -258,12 +261,9 @@ def run_bento_server_standalone(
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
-    from bentoml._internal.configuration.containers import BentoMLContainer
-
     copied = os.environ.copy()
     if config_file is not None:
         copied["BENTOML_CONFIG"] = os.path.abspath(config_file)
-    copied["BENTOML_HOME"] = BentoMLContainer.bentoml_home.get()
     with reserve_free_port(host=host, enable_so_reuseport=use_grpc) as server_port:
         cmd = [
             sys.executable,
@@ -334,7 +334,6 @@ def run_bento_server_distributed(
     copied["YATAI_BENTO_DEPLOYMENT_NAME"] = "test-deployment"
     copied["YATAI_BENTO_DEPLOYMENT_NAMESPACE"] = "yatai"
     copied["HTTP_PROXY"] = f"http://127.0.0.1:{proxy_port}"
-    copied["BENTOML_HOME"] = BentoMLContainer.bentoml_home.get()
     if config_file is not None:
         copied["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
@@ -477,9 +476,11 @@ def host_bento(
             ) as host_url:
                 yield host_url
         elif deployment_mode == "docker":
-            container = clean_context.enter_context(bentoml_containerize(bento.tag))
+            container_tag = clean_context.enter_context(
+                bentoml_containerize(bento.tag, use_grpc=use_grpc)
+            )
             with run_bento_server_docker(
-                container,
+                container_tag,
                 config_file=config_file,
                 use_grpc=use_grpc,
                 host=host,

@@ -136,36 +136,41 @@ source = ["bentoml"]
 
 [tool.coverage.run]
 branch = true
-source = ["bentoml", "bentoml_cli"]
+source = ["bentoml/", "bentoml_cli/"]
 omit = [
-  "bentoml/**/*_pb2*.py",
   "bentoml/__main__.py",
-  "bentoml/_internal/types.py",
-  "bentoml/_internal/external_typing/*",
-  "bentoml/testing/*",
   "bentoml/io.py",
+  "bentoml/serve.py",
+  "bentoml/start.py",
+  "bentoml/_internal/types.py",
+  "bentoml/testing/",
+  "bentoml/grpc/v1alpha1/",
+  "bentoml/_internal/external_typing/",
 ]
 
 [tool.coverage.report]
 show_missing = true
 precision = 2
 omit = [
-  "*/bentoml/**/*_pb2*.py",
-  '*/bentoml/__main__.py',
-  "*/bentoml/_internal/types.py",
-  "*/bentoml/_internal/external_typing/*",
-  "*/bentoml/testing/*",
+  "*/bentoml/__main__.py",
   "*/bentoml/io.py",
+  "*/bentoml/serve.py",
+  "*/bentoml/start.py",
+  "*/bentoml/_internal/types.py",
+  "*/bentoml/testing/",
+  "*/bentoml/grpc/v1alpha1/",
+  "*/bentoml/_internal/external_typing/",
 ]
 exclude_lines = [
-  "pragma: no cover",
-  "def __repr__",
-  "raise AssertionError",
-  "raise NotImplementedError",
-  "raise MissingDependencyException",
-  "except ImportError",
+  "\\#\\s*pragma: no cover",
+  "^\\s*def __repr__",
+  "^\\s*raise AssertionError\\(",
+  "^\\s*raise NotImplementedError\b",
+  "^\\s*raise MissingDependencyException\\(",
+  "^\\s*except ImportError",
   "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
+  "^\\s*if TYPE_CHECKING:",
+  "^\\s*@overload( |$)",
 ]
 
 [tool.black]

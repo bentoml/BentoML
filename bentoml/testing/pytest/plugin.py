@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import shutil
 import typing as t
 import logging
 import tempfile
@@ -32,7 +31,6 @@ if TYPE_CHECKING:
     from _pytest.config import ExitCode
     from _pytest.python import Metafunc
     from _pytest.fixtures import FixtureRequest
-    from _pytest.config.argparsing import Parser
 
     class FilledFixtureRequest(FixtureRequest):
         param: str
@@ -52,16 +50,6 @@ TEST_MODEL_CONTEXT = ModelContext(
 @pytest.mark.tryfirst
 def pytest_report_header(config: Config) -> list[str]:
     return [f"bentoml: version={CLEAN_BENTOML_VERSION}"]
-
-
-@pytest.mark.tryfirst
-def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None:
-    group = parser.getgroup("bentoml")
-    group.addoption(
-        "--cleanup",
-        action="store_true",
-        help="If passed, We will cleanup temporary directory after session is finished.",
-    )
 
 
 def _setup_deployment_mode(metafunc: Metafunc):
@@ -138,10 +126,28 @@ def _setup_session_environment(
     """Setup environment variable for test session."""
     for p in pairs:
         key, value = p
-        _ENV_VAR = os.environ.get(key)
-        if _ENV_VAR:
+        _ENV_VAR = os.environ.get(key, None)
+        if _ENV_VAR is not None:
             mp.setattr(o, f"_original_{key}", _ENV_VAR, raising=False)
         os.environ[key] = value
+
+
+def _setup_test_directory() -> tuple[str, str]:
+    # Ensure we setup correct home and prometheus_multiproc_dir folders.
+    # For any given test session.
+    bentoml_home = tempfile.mkdtemp("bentoml-pytest")
+    bentos = os.path.join(bentoml_home, "bentos")
+    models = os.path.join(bentoml_home, "models")
+    multiproc_dir = os.path.join(bentoml_home, "prometheus_multiproc_dir")
+    validate_or_create_dir(bentos, models, multiproc_dir)
+
+    # We need to set the below value inside container due to
+    # the fact that each value is a singleton, and will be cached.
+    BentoMLContainer.bentoml_home.set(bentoml_home)
+    BentoMLContainer.bento_store_dir.set(bentos)
+    BentoMLContainer.model_store_dir.set(models)
+    BentoMLContainer.prometheus_multiproc_dir.set(multiproc_dir)
+    return bentoml_home, multiproc_dir
 
 
 @pytest.mark.tryfirst
@@ -157,23 +163,11 @@ def pytest_sessionstart(session: Session) -> None:
     config = session.config
     config.add_cleanup(mp.undo)
 
-    # Ensure we setup correct home and prometheus_multiproc_dir folders.
-    # For any given test session.
-    _PYTEST_BENTOML_HOME = tempfile.mkdtemp("bentoml-pytest")
-    _PYTEST_MULTIPROC_DIR = os.path.join(
-        _PYTEST_BENTOML_HOME, "prometheus_multiproc_dir"
-    )
-    validate_or_create_dir(
-        *[
-            os.path.join(_PYTEST_BENTOML_HOME, d)
-            for d in ["bentos", "models", "prometheus_multiproc_dir"]
-        ]
-    )
-    BentoMLContainer.bentoml_home.set(_PYTEST_BENTOML_HOME)
-    BentoMLContainer.prometheus_multiproc_dir.set(_PYTEST_MULTIPROC_DIR)
+    _PYTEST_BENTOML_HOME, _PYTEST_MULTIPROC_DIR = _setup_test_directory()
 
-    # Ensure that we will always build bento using bentoml from source
-    # Setup prometheus multiproc directory for tests.
+    # The evironment variable patch ensures that we will
+    # always build bento using bentoml from source, use the correct
+    # test bentoml home directory, and setup prometheus multiproc directory.
     _setup_session_environment(
         mp,
         session,
@@ -187,11 +181,11 @@ def pytest_sessionstart(session: Session) -> None:
     _setup_session_environment(mp, config, ("BENTOML_HOME", _PYTEST_BENTOML_HOME))
 
 
-def _teardown_session_environment(session: Session, *variables: str):
+def _teardown_session_environment(o: Session | Config, *variables: str):
     """Restore environment variable to original value."""
     for variable in variables:
-        if hasattr(session, f"_original_{variable}"):
-            os.environ[variable] = getattr(session, f"_original_{variable}")
+        if hasattr(o, f"_original_{variable}"):
+            os.environ[variable] = getattr(o, f"_original_{variable}")
         else:
             os.environ.pop(variable, None)
 
@@ -199,10 +193,6 @@ def _teardown_session_environment(session: Session, *variables: str):
 @pytest.mark.tryfirst
 def pytest_sessionfinish(session: Session, exitstatus: int | ExitCode) -> None:
     config = session.config
-
-    # reset home and prometheus_multiproc_dir to default
-    BentoMLContainer.bentoml_home.reset()
-    BentoMLContainer.prometheus_multiproc_dir.reset()
 
     _teardown_session_environment(
         session,
@@ -212,9 +202,10 @@ def pytest_sessionfinish(session: Session, exitstatus: int | ExitCode) -> None:
         "__BENTOML_DEBUG_USAGE",
         "BENTOML_DO_NOT_TRACK",
     )
-    if config.getoption("cleanup"):
-        # Set dynamically by pytest_configure() above.
-        shutil.rmtree(config._bentoml_home)  # type: ignore (dynamic patch)
+    _teardown_session_environment(config, "BENTOML_HOME")
+
+    # reset home and prometheus_multiproc_dir to default
+    BentoMLContainer.prometheus_multiproc_dir.reset()
 
 
 @pytest.fixture(scope="session")
@@ -224,7 +215,7 @@ def bentoml_home(request: FixtureRequest) -> str:
     This directory is created via ``pytest_sessionstart``.
     """
     # Set dynamically by pytest_configure() above.
-    return request.config._bentoml_home  # type: ignore (dynamic patch)
+    return request.config._original_BENTOML_HOME  # type: ignore (dynamic patch)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -344,7 +335,7 @@ def reload_directory(
     yield root
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def simple_service() -> bentoml.Service:
     """
     This fixture create a simple service implementation that implements a noop runnable with two APIs:

@@ -9,8 +9,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml._internal.configuration.containers import BentoMLContainer
-
 if TYPE_CHECKING:
     from contextlib import ExitStack
 
@@ -29,10 +27,7 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def pytest_collection_modifyitems(
     session: Session, config: Config, items: list[Item]
 ) -> None:
-    subprocess.check_call(
-        [sys.executable, "-m", "train"],
-        env={"BENTOML_HOME": BentoMLContainer.bentoml_home.get()},
-    )
+    subprocess.check_call([sys.executable, "-m", "train"])
 
 
 @pytest.fixture(
@@ -44,7 +39,7 @@ def fixture_server_config_file(request: FixtureRequest) -> str:
     return os.path.join(PROJECT_DIR, "configs", request.param)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def host(
     bentoml_home: str,
     deployment_mode: t.Literal["docker", "distributed", "standalone"],

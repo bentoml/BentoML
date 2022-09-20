@@ -112,11 +112,3 @@ def host(
 ```bash
 ./scripts/ci/run_tests.sh qa
 ```
-
-By default, the E2E suite is setup so that the models and bentos will be created and
-saved under pytest temporary directory. To cleanup after the test, passing `--cleanup`
-to `run_tests.sh`:
-
-```bash
-./scripts/ci/run_tests.sh qa --cleanup
-```

@@ -1,10 +1,7 @@
 import typing as t
-import tempfile
 from typing import TYPE_CHECKING
 
 import pytest
-
-from bentoml._internal.models import ModelStore
 
 if TYPE_CHECKING:
     from _pytest.nodes import Item
@@ -45,10 +42,3 @@ def pytest_collection_modifyitems(config: "Config", items: t.List["Item"]) -> No
             item.add_marker(skip_gpus)
         if "requires_eager_execution" in item.keywords:
             item.add_marker(requires_eager_execution)
-
-
-def pytest_sessionstart(session):
-    path = tempfile.mkdtemp("bentoml-pytest")
-    from bentoml._internal.configuration.containers import BentoMLContainer
-
-    BentoMLContainer.model_store.set(ModelStore(path))

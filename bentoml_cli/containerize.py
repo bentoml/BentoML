@@ -31,7 +31,7 @@ def add_containerize_command(cli: Group) -> None:
     from bentoml.bentos import FEATURES
     from bentoml.bentos import containerize as containerize_bento
     from bentoml_cli.utils import kwargs_transformers
-    from bentoml._internal.utils.docker import validate_tag
+    from bentoml_cli.utils import validate_docker_tag
     from bentoml._internal.configuration import get_debug_mode
     from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -42,7 +42,7 @@ def add_containerize_command(cli: Group) -> None:
         "--docker-image-tag",
         help="Name and optionally a tag (format: 'name:tag'), defaults to bento tag.",
         required=False,
-        callback=validate_tag,
+        callback=validate_docker_tag,
         multiple=True,
     )
     @click.option(

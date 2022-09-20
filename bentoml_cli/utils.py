@@ -69,6 +69,62 @@ def kwargs_transformers(
     return decorator(_func)
 
 
+def _validate_docker_tag(tag: str) -> str:
+    if ":" in tag:
+        name, version = tag.split(":")[:2]
+    else:
+        name, version = tag, None
+
+    valid_name_pattern = re.compile(
+        r"""
+        ^(
+        [a-z0-9]+      # alphanumeric
+        (.|_{1,2}|-+)? # seperators
+        )*$
+        """,
+        re.VERBOSE,
+    )
+    valid_version_pattern = re.compile(
+        r"""
+        ^
+        [a-zA-Z0-9] # cant start with .-
+        [ -~]{,127} # ascii match rest, cap at 128
+        $
+        """,
+        re.VERBOSE,
+    )
+
+    if not valid_name_pattern.match(name):
+        raise BentoMLException(
+            f"Provided Docker Image tag {tag} is invalid. "
+            "Name components may contain lowercase letters, digits "
+            "and separators. A separator is defined as a period, "
+            "one or two underscores, or one or more dashes."
+        )
+    if version and not valid_version_pattern.match(version):
+        raise BentoMLException(
+            f"Provided Docker Image tag {tag} is invalid. "
+            "A tag name must be valid ASCII and may contain "
+            "lowercase and uppercase letters, digits, underscores, "
+            "periods and dashes. A tag name may not start with a period "
+            "or a dash and may contain a maximum of 128 characters."
+        )
+    return tag
+
+
+def validate_docker_tag(
+    ctx: Context, param: Parameter, tag: str | tuple[str] | None
+) -> str | tuple[str] | None:
+    if not tag:
+        return tag
+    elif isinstance(tag, tuple):
+        return tuple(map(_validate_docker_tag, tag))
+    elif isinstance(tag, str):
+        return _validate_docker_tag(tag)
+    else:
+        raise BentoMLException(f"Invalid tag type. Got {type(tag)}")
+
+
 class BentoMLCommandGroup(click.Group):
     """
     Click command class customized for BentoML CLI, allow specifying a default

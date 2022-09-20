@@ -32,7 +32,7 @@ BentoML makes it easy to create ML-powered prediction services that are ready to
 - [Runner](https://docs.bentoml.org/en/latest/concepts/runner.html) abstraction scales model inference separately from your custom code
 - [Maximize your GPU](https://docs.bentoml.org/en/latest/guides/gpu.html) and multi-core CPU utilization with automatic provisioning
 
-🚀 Deploy anywhere in a **DevOps-friendly** way
+🎯 Deploy anywhere in a **DevOps-friendly** way
 - Streamline production deployment workflow via:
     - [☁️ BentoML Cloud](https://bentoml.com/) - the fastest way to deploy your bento, simple and at scale
     - [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes

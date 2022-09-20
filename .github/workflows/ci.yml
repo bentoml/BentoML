@@ -150,12 +150,18 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
+        experimental: [false]
+        include:
+          - python-version: "3.11.0-rc.2"
+            os: ubuntu-latest
+            experimental: true
     defaults:
       run:
         shell: bash
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
+    continue-on-error: ${{ matrix.experimental }}
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -168,6 +174,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+
+      - name: Disable aiohttp C extension (3.11)
+        if: ${{ matrix.python-version == '3.11.0-rc.2' }}
+        # remove this once 3.11 is out and aiohttp supports 3.11 CI
+        env:
+          AIOHTTP_NO_EXTENSIONS: 1
 
       - name: Get pip cache dir
         id: cache-dir
@@ -214,6 +226,11 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
+        experimental: [false]
+        include:
+          - python-version: "3.11.0-rc.2"
+            os: ubuntu-latest
+            experimental: true
     defaults:
       run:
         shell: bash
@@ -221,6 +238,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_e2e_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
     timeout-minutes: 20
 
     env:
@@ -249,6 +267,12 @@ jobs:
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
+
+      - name: Disable aiohttp C extension (3.11)
+        if: ${{ matrix.python-version == '3.11.0-rc.2' }}
+        # remove this once 3.11 is out and aiohttp supports 3.11 CI
+        env:
+          AIOHTTP_NO_EXTENSIONS: 1
 
       - name: Cache pip dependencies
         uses: actions/cache@v3

@@ -341,7 +341,7 @@ flags:
     paths:
       - "bentoml/**/*"
       - bentoml/grpc/interceptors/
-      - bentoml/grpc/utils.py
+      - bentoml/grpc/utils/
   unit-tests:
     carryforward: true
     paths:

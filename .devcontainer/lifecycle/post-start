@@ -7,7 +7,7 @@ git config --global pull.ff only
 git fetch upstream --tags && git pull
 
 # install editable wheels & tools for bentoml
-pip install -e ".[tracing,grpc]" -r requirements/dev-requirements.txt --verbose
+pip install -e ".[tracing,grpc]" -r requirements/dev-requirements.txt
 
 # setup docker buildx
 docker buildx install

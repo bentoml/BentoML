@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import typing as t
 import tempfile
 from typing import TYPE_CHECKING
@@ -12,6 +13,7 @@ from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import create_bento_servicer
 from bentoml.testing.grpc import make_standalone_server
+from bentoml._internal.server.metrics.prometheus import PrometheusClient
 
 if TYPE_CHECKING:
     import grpc
@@ -22,7 +24,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2_grpc as services
     from bentoml.grpc.v1alpha1 import service_test_pb2 as pb_test
     from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
-    from bentoml._internal.server.metrics.prometheus import PrometheusClient
 else:
     from bentoml.grpc.utils import import_grpc
     from bentoml.grpc.utils import import_generated_stubs
@@ -40,15 +41,10 @@ def pytest_generate_tests(metafunc: Metafunc):
 
         prom_dir = tempfile.mkdtemp("prometheus-multiproc-unit")
         BentoMLContainer.prometheus_multiproc_dir.set(prom_dir)
-    if "prometheus_client" in metafunc.fixturenames:
-        from bentoml._internal.configuration.containers import BentoMLContainer
-
-        prom_client = BentoMLContainer.metrics_client.get()
-        metafunc.parametrize("prometheus_client", [prom_client])
 
 
 @pytest.fixture(scope="module")
-def prometheus_interceptor():
+def prometheus_interceptor() -> PrometheusServerInterceptor:
     from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
 
     return PrometheusServerInterceptor()
@@ -59,6 +55,13 @@ async def test_metrics_invocation(
     prometheus_interceptor: PrometheusServerInterceptor,
     mock_unary_unary_handler: MagicMock,
 ):
+    # This is to cleanup prometheus_client from previous tests
+    # that imports prometheus_client into sys.modules
+    # We don't want to disable multiproc since we want to test it.
+    # This line has to do with
+    if "prometheus_client" in sys.modules:
+        sys.modules.pop("prometheus_client")
+
     mhandler_call_details = MagicMock(spec=grpc.HandlerCallDetails)
     mcontinuation = MagicMock(return_value=Future())
     mcontinuation.return_value.set_result(mock_unary_unary_handler)

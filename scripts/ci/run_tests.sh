@@ -23,6 +23,7 @@ SKIP_DEPS=0
 ERR=0
 VERBOSE=0
 ENABLE_XDIST=1
+WORKERS=auto
 
 cd "$GIT_ROOT" || exit
 
@@ -61,6 +62,7 @@ Flags:
   -h, --help            show this message
   -v, --verbose         set verbose scripts
   -s, --skip-deps       skip install dependencies
+  -w, --workers         number of workers for pytest-xdist
   --disable-xdist       disable pytest-xdist
 
 
@@ -90,6 +92,11 @@ parse_args() {
 		-v | --verbose)
 			set -x
 			VERBOSE=1
+			shift
+			;;
+		-w | --workers)
+			shift
+			WORKERS="$2"
 			shift
 			;;
 		--disable-xdist)
@@ -206,7 +213,7 @@ main() {
 	fi
 
 	if [ "$type_tests" == 'unit' ] && [ "$ENABLE_XDIST" -eq 1 ] && [ "$(uname | tr '[:upper:]' '[:lower:]')" != "mingw64" ]; then
-		OPTS=("${OPTS[@]}" --dist loadfile -n auto)
+		OPTS=("${OPTS[@]}" --dist loadfile -n "$WORKERS")
 	fi
 
 	if [ "$SKIP_DEPS" -eq 0 ]; then

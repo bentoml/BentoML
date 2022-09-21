@@ -31,7 +31,7 @@ BentoML requires TensorFlow version 2.0 or higher. For TensorFlow version 1.0, c
 Saving a Trained Model
 ----------------------
 
-``bentoml.tensorflow`` supports saving ``tf.Module``s, ``keras.models.Sequential``s, and ``keras.Model``s.
+``bentoml.tensorflow`` supports saving ``tf.Module``, ``keras.models.Sequential``, and ``keras.Model``.
 
 .. tab-set::
 
@@ -285,6 +285,6 @@ to
 
 .. note::
 
-   You can find more examples for **TensorFlow** in our `bentoml/examples https://github.com/bentoml/BentoML/tree/main/examples`_ directory.
+   You can find more examples for **TensorFlow** in our `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_ directory.
 
 .. currentmodule:: bentoml.tensorflow

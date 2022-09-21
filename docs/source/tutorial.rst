@@ -167,7 +167,6 @@ Run the service in development mode:
        .. code-block:: bash
 
           » bentoml serve service:svc --reload
-
           2022-09-18T21:11:22-0700 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service.py:svc" can be accessed at http://0.0.0.0:3000/metrics.
           2022-09-18T21:11:22-0700 [INFO] [cli] Starting development HTTP BentoServer from "service.py:svc" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
           2022-09-18 21:11:23 circus[80177] [INFO] Loading the plugin...
@@ -234,7 +233,6 @@ Run the service in development mode:
    .. tip::
 
       ``bentoml serve`` also has an alias of ``bentoml serve-http`` 🙂
-
 
 Send prediction request to the service:
 
@@ -537,11 +535,7 @@ For starters, you can now serve it with the ``bentoml serve`` CLI command:
 
 .. note::
 
-   Even though the service definition code uses model ``iris_clf:latest``, the
-   ``latest`` version can be resolved with local model store to find the exact model
-   version during the ``bentoml build`` process.
-
-   This model is then bundled into the Bento, which makes sure this Bento is always using this exact model version, wherever it is deployed.
+   The build process resolves ``iris_clf:latest`` and packages the latest version of the ``iris_clf`` model in the model store to ensure the same version of the model gets deployed every time.
 
 
 Bento is the unit of deployment in BentoML, one of the most important artifacts to keep

@@ -126,7 +126,7 @@ def _dataframe_openapi_schema(dtype: bool | ext.PdDTypeArg | None, orient: ext.D
         return Schema(type="object")
 
 
-def _series_openapi_schema(dtype: bool | ext.PdDTypeArg | str | None, orient: ext.SeriesOrient = None) -> Schema:  # pragma: no cover
+def _series_openapi_schema(dtype: bool | ext.PdDTypeArg | None, orient: ext.SeriesOrient = None) -> Schema:  # pragma: no cover
     if isinstance(dtype, str):
         if orient in ["index", "values"]:
             return Schema(type="object", additionalProperties=Schema(type=_openapi_types(dtype)))

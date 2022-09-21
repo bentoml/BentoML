@@ -55,7 +55,6 @@ jobs:
         with:
           filters: |
             dependencies: &dependencies
-              - setup.cfg
               - pyproject.toml
               - scripts/ci/config.yml
               - requirements/tests-requirements.txt
@@ -220,7 +219,6 @@ jobs:
               - tests/integration/frameworks/models/xgboost.py
               - tests/integration/frameworks/test_frameworks.py
 
-
   catboost_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
@@ -245,7 +243,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |
@@ -291,7 +288,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -335,7 +331,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |
@@ -385,7 +380,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -398,7 +392,7 @@ jobs:
       - name: Run unit test for fastai
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"fastai.unit.xml" --cov-report term-missing:skip-covered)
+          OPTS=(--cov=bentoml --cov-config=./pyproject.toml --cov-report=xml:"fastai.unit.xml" --cov-report term-missing:skip-covered)
           python -m pytest ./tests/integration/frameworks/test_fastai_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for fastai failed!"
@@ -439,7 +433,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |
@@ -485,7 +478,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -528,7 +520,6 @@ jobs:
   #       with:
   #         path: ${{ steps.cache-dir.outputs.dir }}
   #         key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
   #     - name: Install dependencies
   #       run: |
@@ -573,7 +564,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -616,7 +606,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |
@@ -661,7 +650,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -704,7 +692,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |
@@ -752,7 +739,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -795,7 +781,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |
@@ -840,7 +825,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |
@@ -887,7 +871,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -900,7 +883,7 @@ jobs:
       - name: Run unit test for pytorch
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"pytorch.unit.xml" --cov-report term-missing:skip-covered)
+          OPTS=(--cov=bentoml --cov-config=./pyproject.toml --cov-report=xml:"pytorch.unit.xml" --cov-report term-missing:skip-covered)
           python -m pytest ./tests/integration/frameworks/test_pytorch_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for pytorch failed!"
@@ -940,7 +923,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |
@@ -985,7 +967,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -1028,7 +1009,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |
@@ -1074,7 +1054,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -1118,7 +1097,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |
@@ -1164,7 +1142,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -1208,7 +1185,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -1221,7 +1197,7 @@ jobs:
       - name: Run unit test for tensorflow_v2
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"tf2.unit.xml" --cov-report term-missing:skip-covered)
+          OPTS=(--cov=bentoml --cov-config=./pyproject.toml --cov-report=xml:"tf2.unit.xml" --cov-report term-missing:skip-covered)
           python -m pytest ./tests/integration/frameworks/test_tensorflow_v2_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for tensorflow_v2 failed!"
@@ -1231,7 +1207,7 @@ jobs:
       - name: Run tensorflow_v2 without eager execution
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"tf2.unit.no_eager.xml" --cov-report term-missing:skip-covered --disable-tf-eager-execution)
+          OPTS=(--cov=bentoml --cov-config=./pyproject.toml --cov-report=xml:"tf2.unit.no_eager.xml" --cov-report term-missing:skip-covered --disable-tf-eager-execution)
           python -m pytest ./tests/integration/frameworks/test_tensorflow_v2_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for tensorflow_v2 failed!"
@@ -1272,7 +1248,6 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-
       - name: Install dependencies
         run: |
           pip install .
@@ -1285,7 +1260,7 @@ jobs:
       - name: Run unit test for transformers
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./setup.cfg --cov-report=xml:"transformers.unit.xml" --cov-report term-missing:skip-covered)
+          OPTS=(--cov=bentoml --cov-config=./pyproject.toml --cov-report=xml:"transformers.unit.xml" --cov-report term-missing:skip-covered)
           python -m pytest ./tests/integration/frameworks/test_transformers_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for transformers failed!"
@@ -1325,7 +1300,6 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
 
       - name: Install dependencies
         run: |

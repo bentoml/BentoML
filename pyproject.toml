@@ -90,8 +90,16 @@ include = [
 ]
 
 [project.optional-dependencies]
-all = ["bentoml[extras]", "bentoml[grpc]", "bentoml[tracing]"]
-extras = ["Pillow", "pydantic<2", "fs-s3fs", "pandas"]
+all = [
+  "bentoml[aws]",
+  "bentoml[io-image]",
+  "bentoml[io-pandas]",
+  "bentoml[grpc]",
+  "bentoml[tracing]",
+]
+aws = ["fs-s3fs"]
+io-image = ["Pillow"]
+io-pandas = ["pandas", "pyarrow"]
 grpc = [
   # Restrict maximum version due to breaking protobuf 4.21.0 changes
   # (see https://github.com/protocolbuffers/protobuf/issues/10051)

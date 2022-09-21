@@ -450,5 +450,5 @@ your pull request.
 
 ## Documentations
 
-Refers to [BentoML Documentation Guide](./docs/README.md) for how to build and write
+Refer to [BentoML Documentation Guide](./docs/README.md) for how to build and write
 docs.

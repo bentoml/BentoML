@@ -13,6 +13,7 @@ into this part of the documentation.
     :titlesonly:
 
     batching
+    grpc
     configuration
     containerization
     gpu

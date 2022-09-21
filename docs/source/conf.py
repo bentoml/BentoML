@@ -29,6 +29,8 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "sphinx.ext.ifconfig",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.extlinks",
     "sphinx_click.ext",
     "sphinx_copybutton",
     "sphinx_design",
@@ -36,7 +38,27 @@ extensions = [
     "sphinxcontrib.spelling",
     "myst_parser",
     "sphinx_inline_tabs",
+    "hoverxref.extension",
 ]
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "pip": ("https://pip.pypa.io/en/latest", None),
+}
+extlinks = {
+    "pypi": ("https://pypi.org/project/%s", "%s"),  # noqa: WPS323
+    "wiki": ("https://wikipedia.org/wiki/%s", "%s"),  # noqa: WPS323
+}
+# hoverxref settings
+hoverxref_auto_ref = True
+hoverxref_sphinxtabs = True
+hoverxref_role_types = {
+    "hoverxref": "modal",
+    "ref": "tooltip",
+    "mod": "tooltip",
+    "class": "tooltip",
+    "doc": "tooltip",
+}
+hoverxref_intersphinx = ["python", "pip"]
 
 # Plugin Configurations:
 napoleon_google_docstring = True

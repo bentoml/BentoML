@@ -2,7 +2,7 @@
 Advanced Containerization
 =========================
 
-This guides describes advanced containerization options 
+This guide describes advanced containerization options 
 provided by BentoML:
 
 - :ref:`Using base image <guides/containerization:Custom Base Image>`

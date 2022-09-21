@@ -7,8 +7,9 @@ library you are working with, and you are ready to go!
 
 🍱 BentoML is distributed as a Python Package available `on PyPI <https://pypi.org/project/bentoml/>`_.
 
-* 🍱 BentoML supports Linux/UNIX, Windows, and MacOS.
-* 🍱 BentoML is tested with and requires Python 3.7 and above.
+* BentoML supports Linux/UNIX, Windows, and MacOS.
+* BentoML requires Python 3.7 or above.
+
 
 Install with pip
 ----------------
@@ -92,11 +93,6 @@ You may want an editable install if:
 .. seealso::
 
    For more information on development notes, refer to `our development guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_.
-
-.. warning::
-
-   Make sure that the current directory is not at ``$HOME`` directory, since BentoML will
-   create a ``~/bentoml`` directory internally.
 
 Clone the repository to your local folder and install 🍱 BentoML with the following command:
 

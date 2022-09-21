@@ -243,7 +243,7 @@ Numpy
 The data type and shape of the :code:`NumpyNdarray` can be specified with the :code:`dtype` 
 and :code:`shape` arguments. By setting the :code:`enforce_shape` and :code:`enforce_dtype` 
 arguments to `True`, the IO descriptor will strictly validate the input and output data 
-based the specified data type and shape. To learn more, see IO descrptor reference for 
+based the specified data type and shape. To learn more, see IO descriptor reference for 
 :ref:`reference/api_io_descriptors:NumPy ndarray`.
 
 .. code-block:: python

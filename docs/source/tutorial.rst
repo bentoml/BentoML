@@ -2,7 +2,7 @@
 Tutorial: Intro to BentoML
 ==========================
 
-BentoML is a Python-first, efficient and functional framework for machine learning model
+BentoML is a Python-first, efficient and flexible framework for machine learning model
 serving. It enables data scientists to save and version trained models in a standardized
 format and unifies how a saved model can be accessed for serving, while also allows ML
 engineers to use said saved models for building online prediction services or
@@ -54,7 +54,7 @@ There are three ways to complete this tutorial:
 
    .. code-block:: bash
 
-      docker run -it --rm -p 8888:8888 -p 3000:3000 -p 3001:3001 bentoml/quickstart:latest
+      » docker run -it --rm -p 8888:8888 -p 3000:3000 -p 3001:3001 bentoml/quickstart:latest
 
 #. Local Development Environment
 
@@ -62,8 +62,8 @@ There are three ways to complete this tutorial:
 
    .. code-block:: bash
 
-      git clone --depth=1 git@github.com:bentoml/BentoML.git
-      cd bentoml/examples/quickstart/
+      » git clone --depth=1 git@github.com:bentoml/BentoML.git
+      » cd bentoml/examples/quickstart/
 
    BentoML supports Linux, Windows and MacOS. You will need Python 3.7 or above to run
    this tutorial. We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_
@@ -73,12 +73,20 @@ There are three ways to complete this tutorial:
 
    .. code-block:: bash
 
-      pip install "bentoml[grpc]" scikit-learn pandas
+      » pip install bentoml scikit-learn pandas
 
 .. note::
 
-   BentoML provides gRPC support, in which we will demonstrate in this tutorial.
-   However, it is not required to use gRPC to get started with BentoML.
+   BentoML provides gRPC support, in which we will demonstrate alongside with HTTP
+   implemenetation in this tutorial. However, this is optional and you don't have to
+   know about gRPC to get started with gRPC.
+
+   If you are interested in walking through the gRPC example in this tutorial, install
+   the gRPC-variant of BentoML:
+
+   .. code-block:: bash
+
+      » pip install "bentoml[grpc]"
 
 
 Saving Models with BentoML
@@ -171,7 +179,7 @@ Run the service in development mode:
 
        .. code-block:: bash
 
-          bentoml serve service:svc --reload
+          » bentoml serve service:svc --reload
 
           2022-09-18T21:11:22-0700 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service.py:svc" can be accessed at http://0.0.0.0:3000/metrics.
           2022-09-18T21:11:22-0700 [INFO] [cli] Starting development HTTP BentoServer from "service.py:svc" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
@@ -186,7 +194,7 @@ Run the service in development mode:
 
        .. code-block:: bash
 
-          bentoml serve-grpc service:svc --reload --enable-reflection
+          » bentoml serve-grpc service:svc --reload --enable-reflection
 
           2022-09-18T21:12:18-0700 [INFO] [cli] To use gRPC UI, run the following command: 'docker run -it --rm -p 8080:8080 fullstorydev/grpcui -plaintext host.docker.internal:3000', followed by opening 'http://0.0.0.0:8080' in your browser of choice.
           2022-09-18T21:12:18-0700 [INFO] [cli] Prometheus metrics for gRPC BentoServer from "service.py:svc" can be accessed at http://0.0.0.0:3001.
@@ -232,9 +240,9 @@ Run the service in development mode:
 
       .. code-block:: bash
 
-         bentoml serve src.foo.bar.my_service:my_bento_service
-         # Or
-         bentoml serve ./src/foo/bar/my_service.py:my_bento_service
+         » bentoml serve src.foo.bar.my_service:my_bento_service
+         # or
+         » bentoml serve ./src/foo/bar/my_service.py:my_bento_service
 
    .. tip::
 
@@ -510,7 +518,7 @@ Next, run the ``bentoml build`` CLI command from the same directory:
     ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
     ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
     ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
- 
+
     Successfully built Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")
 
 🎉 You've just created your first Bento, and it is now ready for serving in production!
@@ -599,7 +607,7 @@ via the ``bentoml containerize`` CLI command:
 
    .. code-block:: bash
 
-      bentoml containerize --platform=linux/amd64 iris_classifier:latest
+      » bentoml containerize --platform=linux/amd64 iris_classifier:latest
 
 This creates a docker image that includes the Bento, and has all its dependencies
 installed. The docker image tag will be same as the Bento tag by default:

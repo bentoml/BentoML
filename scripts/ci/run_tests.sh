@@ -205,7 +205,7 @@ main() {
 		OPTS=("${OPTS[@]}" -vvv)
 	fi
 
-	if [ "$type_tests" == 'unit' ] && [ "$ENABLE_XDIST" -eq 1 ]; then
+	if [ "$type_tests" == 'unit' ] && [ "$ENABLE_XDIST" -eq 1 ] && [ "$(uname | tr '[:upper:]' '[:lower:]')" != "mingw64" ]; then
 		OPTS=("${OPTS[@]}" --dist loadfile -n auto)
 	fi
 

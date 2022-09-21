@@ -32,9 +32,6 @@ if TYPE_CHECKING:
     from _pytest.python import Metafunc
     from _pytest.fixtures import FixtureRequest
 
-    class FilledFixtureRequest(FixtureRequest):
-        param: str
-
     from bentoml._internal.server.metrics.prometheus import PrometheusClient
 
 else:
@@ -209,13 +206,12 @@ def pytest_sessionfinish(session: Session, exitstatus: int | ExitCode) -> None:
 
 
 @pytest.fixture(scope="session")
-def bentoml_home(request: FixtureRequest) -> str:
+def bentoml_home() -> str:
     """
     Return the BentoML home directory for the test session.
     This directory is created via ``pytest_sessionstart``.
     """
-    # Set dynamically by pytest_configure() above.
-    return request.config._original_BENTOML_HOME  # type: ignore (dynamic patch)
+    return BentoMLContainer.bentoml_home.get()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -257,7 +253,7 @@ def fixture_metrics_client() -> PrometheusClient:
 
 @pytest.fixture(scope="function")
 def reload_directory(
-    request: FilledFixtureRequest, tmp_path_factory: pytest.TempPathFactory
+    request: FixtureRequest, tmp_path_factory: pytest.TempPathFactory
 ) -> t.Generator[Path, None, None]:
     """
     This fixture will create an example bentoml working file directory
@@ -398,7 +394,7 @@ def fixture_propagate_logs() -> t.Generator[None, None, None]:
 
 
 @pytest.fixture(scope="function", name="change_test_dir")
-def fixture_change_dir(request: pytest.FixtureRequest) -> t.Generator[None, None, None]:
+def fixture_change_dir(request: FixtureRequest) -> t.Generator[None, None, None]:
     """A fixture to change given test directory to the directory of the current running test."""
     os.chdir(request.fspath.dirname)  # type: ignore (bad pytest stubs)
     yield

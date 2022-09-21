@@ -2,19 +2,6 @@
 Tutorial: Intro to BentoML
 ==========================
 
-BentoML is a Python-first, efficient and flexible framework for machine learning model
-serving. It enables data scientists to save and version trained models in a standardized
-format and unifies how a saved model can be accessed for serving, while also allows ML
-engineers to use said saved models for building online prediction services or
-batch inference jobs with ease.
-
-BentoML also helps define the APIs, environments, and dependencies for running a
-model, providing a build tool that encapsulates all model artifacts, source code, and
-dependencies into a self-contained format ``Bento``, which is designed to be DevOps
-friendly and ready for production deployment.
-
-Think about ``Bento`` as if it is a Docker container but designed for ML models.
-
 What are we building?
 ---------------------
 

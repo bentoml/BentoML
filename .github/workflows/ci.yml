@@ -138,8 +138,8 @@ jobs:
       - name: Disable aiohttp C extension (3.11)
         if: ${{ matrix.python-version == '3.11.0-rc.2' }}
         # remove this once 3.11 is out and aiohttp supports 3.11 CI
-        env:
-          AIOHTTP_NO_EXTENSIONS: 1
+        run: |
+          export AIOHTTP_NO_EXTENSIONS=1
 
       - name: Get pip cache dir
         id: cache-dir
@@ -152,6 +152,19 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+
+      - name: Setup system dependencies (3.11)
+        if: ${{ matrix.python-version == '3.11.0-rc.2' && matrix.os == 'ubuntu-latest' }}
+        run: |
+          sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+
+      - name: Install test dependencies (3.11)
+        if: ${{ matrix.python-version == '3.11.0-rc.2' }}
+        run: |
+          python -m pip install ninja cython
+          python -m pip install git+https://github.com/numpy/numpy.git
+          python -m pip install git+https://github.com/mesonbuild/meson.git
+          python -m pip  install git+https://github.com/scikit-learn/scikit-learn.git
 
       - name: Install dependencies
         run: |
@@ -227,8 +240,8 @@ jobs:
       - name: Disable aiohttp C extension (3.11)
         if: ${{ matrix.python-version == '3.11.0-rc.2' }}
         # remove this once 3.11 is out and aiohttp supports 3.11 CI
-        env:
-          AIOHTTP_NO_EXTENSIONS: 1
+        run: |
+          export AIOHTTP_NO_EXTENSIONS=1
 
       - name: Cache pip dependencies
         uses: actions/cache@v3
@@ -236,6 +249,19 @@ jobs:
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+
+      - name: Setup system dependencies (3.11)
+        if: ${{ matrix.python-version == '3.11.0-rc.2' && matrix.os == 'ubuntu-latest' }}
+        run: |
+          sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+
+      - name: Install test dependencies (3.11)
+        if: ${{ matrix.python-version == '3.11.0-rc.2' }}
+        run: |
+          python -m pip install ninja cython
+          python -m pip install git+https://github.com/numpy/numpy.git
+          python -m pip install git+https://github.com/mesonbuild/meson.git
+          python -m pip  install git+https://github.com/scikit-learn/scikit-learn.git
 
       - name: Install dependencies
         run: |

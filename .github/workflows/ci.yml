@@ -5,6 +5,8 @@ on:
     branches:
       - main
   pull_request:
+    branches:
+      - main
   schedule:
     - cron: "0 0 * * 1/2"
 
@@ -14,46 +16,11 @@ env:
   COLUMNS: 120
 
 jobs:
-  diff:
-    runs-on: ubuntu-latest
-    outputs:
-      related: ${{ steps.filter.outputs.related }}
-      bentoml: ${{ steps.filter.outputs.bentoml }}
-      docs: ${{ steps.filter.outputs.docs }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          base: "main"
-          filters: |
-            related: &related
-              - .github/workflows/ci.yml
-              - codecov.yml
-              - setup.cfg
-              - pyproject.toml
-              - scripts/ci/config.yml
-              - scripts/ci/run_tests.sh
-              - requirements/tests-requirements.txt
-            bentoml:
-              - *related
-              - "bentoml/**"
-              - "tests/**"
-              - "examples/**"
-            docs:
-              - *related
-              - requirements/docs-requirements.txt
-              - "docs/**"
-
   codestyle_check:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
-    needs:
-      - diff
-
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v3
@@ -102,10 +69,7 @@ jobs:
         shell: bash
 
     runs-on: ubuntu-latest
-    needs:
-      - diff
 
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.docs == 'true') || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -142,9 +106,6 @@ jobs:
         shell: bash
 
   unit_tests:
-    needs:
-      - diff
-
     strategy:
       fail-fast: false
       matrix:
@@ -159,7 +120,6 @@ jobs:
       run:
         shell: bash
 
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
     continue-on-error: ${{ matrix.experimental }}
     runs-on: ${{ matrix.os }}
@@ -218,9 +178,6 @@ jobs:
           verbose: true
 
   bento_server_e2e_tests:
-    needs:
-      - diff
-
     strategy:
       fail-fast: false
       matrix:
@@ -235,7 +192,6 @@ jobs:
       run:
         shell: bash
 
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_e2e_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}

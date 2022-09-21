@@ -78,8 +78,43 @@ def _openapi_types(item: str) -> str:  # pragma: no cover
         return "object"
 
 
-def _openapi_schema(dtype: bool | ext.PdDTypeArg | None) -> Schema:  # pragma: no cover
+def _dataframe_openapi_schema(dtype: bool | ext.PdDTypeArg | None, orient: ext.DataFrameOrient = None) -> Schema:  # pragma: no cover
     if isinstance(dtype, dict):
+        if orient == "records":
+            return Schema(
+                type="array",
+                items=Schema(
+                    type="object",
+                    properties={
+                        k: Schema(type=_openapi_types(v))
+                        for k, v in dtype.items()
+                    }
+                )
+            )
+        if orient == "index":
+            return Schema(
+                type="object",
+                additionalProperties=Schema(
+                    type="object",
+                    properties={
+                        k: Schema(type=_openapi_types(v))
+                        for k, v in dtype.items()
+                    }
+                )
+            )
+        if orient == "columns":
+            return Schema(
+                type="object",
+                properties={
+                    k: Schema(
+                        type="object",
+                        additionalProperties=Schema(
+                            type=_openapi_types(v)
+                        ))
+                    for k, v in dtype.items()
+                }
+            )
+
         return Schema(
             type="object",
             properties={
@@ -90,6 +125,15 @@ def _openapi_schema(dtype: bool | ext.PdDTypeArg | None) -> Schema:  # pragma: n
     else:
         return Schema(type="object")
 
+
+def _series_openapi_schema(dtype: bool | ext.PdDTypeArg | str | None, orient: ext.SeriesOrient = None) -> Schema:  # pragma: no cover
+    if isinstance(dtype, str):
+        if orient in ["index", "values"]:
+            return Schema(type="object", additionalProperties=Schema(type=_openapi_types(dtype)))
+        if orient in ["records", "columns"]:
+            return Schema(type="array", items=Schema(type=_openapi_types(dtype)))
+    else:
+        return Schema(type="object")
 
 class SerializationFormat(Enum):
     JSON = "application/json"
@@ -288,7 +332,7 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         return LazyType("pandas", "DataFrame")
 
     def openapi_schema(self) -> Schema:
-        return _openapi_schema(self._dtype)
+        return _dataframe_openapi_schema(self._dtype, self._orient)
 
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
@@ -686,7 +730,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
     def __init__(
         self,
         orient: ext.SeriesOrient = "records",
-        dtype: ext.PdDTypeArg | None = None,
+        dtype: ext.PdDTypeArg | str | None = None,
         enforce_dtype: bool = False,
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
@@ -702,7 +746,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
         return LazyType("pandas", "Series")
 
     def openapi_schema(self) -> Schema:
-        return _openapi_schema(self._dtype)
+        return _series_openapi_schema(self._dtype, self._orient)
 
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
@@ -730,7 +774,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
         """
         obj = await request.body()
         res: ext.PdSeries = pd.read_json(
-            obj,
+            io.BytesIO(obj),
             typ="series",
             orient=self._orient,
             dtype=self._dtype,

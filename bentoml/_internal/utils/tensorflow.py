@@ -223,18 +223,15 @@ def get_input_signatures_v2(
 
 def get_output_signatures_v2(
     func: tf_ext.RestoredFunction,
-) -> list[tf_ext.TensorSpec] | tf_ext.TensorSpec:
+) -> list[tuple[tf_ext.TensorSpec, ...] | tf_ext.TensorSpec]:
     if hasattr(func, "concrete_functions") and func.concrete_functions:
-        # tensorflow will generate concrete_functions:
-        # 1. from input_signature specified in tf.function, or
-        # 2. automatically from training data
         return [
             s for conc in func.concrete_functions for s in get_output_signatures_v2(conc)
         ]
 
     if hasattr(func, "structured_outputs"):
         # for concrete_functions
-        return func.structured_outputs
+        return [func.structured_outputs]
 
     return []
 

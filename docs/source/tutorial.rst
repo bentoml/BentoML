@@ -167,13 +167,12 @@ Run the service in development mode:
        .. code-block:: bash
 
           » bentoml serve service:svc --reload
-          2022-09-18T21:11:22-0700 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service.py:svc" can be accessed at http://0.0.0.0:3000/metrics.
-          2022-09-18T21:11:22-0700 [INFO] [cli] Starting development HTTP BentoServer from "service.py:svc" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+          2022-09-18T21:11:22-0700 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service.py:svc" can be accessed at http://localhost:3000/metrics.
+          2022-09-18T21:11:22-0700 [INFO] [cli] Starting development HTTP BentoServer from "service.py:svc" listening on 0.0.0.0:3000 (Press CTRL+C to quit)
           2022-09-18 21:11:23 circus[80177] [INFO] Loading the plugin...
           2022-09-18 21:11:23 circus[80177] [INFO] Endpoint: 'tcp://127.0.0.1:61825'
           2022-09-18 21:11:23 circus[80177] [INFO] Pub/sub: 'tcp://127.0.0.1:61826'
-          2022-09-18T21:11:23-0700 [INFO] [observer] BentoML is installed via development mode, adding source root to 'watch_dirs'
-          2022-09-18T21:11:23-0700 [INFO] [observer] Watching directories: ['/Users/aarnphm/workspace/bentoml/aarnphm_fork/examples/quickstart', '/Users/aarnphm/bentoml/models', '/Users/aarnphm/workspace/bentoml/aarnphm_fork/bentoml']
+          2022-09-18T21:11:23-0700 [INFO] [observer] Watching directories: ['~/workspace/bentoml/examples/quickstart', '~/bentoml/models']
 
     .. tab-item:: gRPC
        :sync: grpc
@@ -181,15 +180,12 @@ Run the service in development mode:
        .. code-block:: bash
 
           » bentoml serve-grpc service:svc --reload --enable-reflection
-
-          2022-09-18T21:12:18-0700 [INFO] [cli] To use gRPC UI, run the following command: 'docker run -it --rm -p 8080:8080 fullstorydev/grpcui -plaintext host.docker.internal:3000', followed by opening 'http://0.0.0.0:8080' in your browser of choice.
-          2022-09-18T21:12:18-0700 [INFO] [cli] Prometheus metrics for gRPC BentoServer from "service.py:svc" can be accessed at http://0.0.0.0:3001.
-          2022-09-18T21:12:18-0700 [INFO] [cli] Starting development gRPC BentoServer from "service.py:svc" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+          2022-09-18T21:12:18-0700 [INFO] [cli] Prometheus metrics for gRPC BentoServer from "service.py:svc" can be accessed at http://localhost:3001.
+          2022-09-18T21:12:18-0700 [INFO] [cli] Starting development gRPC BentoServer from "service.py:svc" listening on 0.0.0.0:3000 (Press CTRL+C to quit)
           2022-09-18 21:12:19 circus[81102] [INFO] Loading the plugin...
           2022-09-18 21:12:19 circus[81102] [INFO] Endpoint: 'tcp://127.0.0.1:61849'
           2022-09-18 21:12:19 circus[81102] [INFO] Pub/sub: 'tcp://127.0.0.1:61850'
-          2022-09-18T21:12:19-0700 [INFO] [observer] BentoML is installed via development mode, adding source root to 'watch_dirs'
-          2022-09-18T21:12:19-0700 [INFO] [observer] Watching directories: ['/Users/aarnphm/workspace/bentoml/aarnphm_fork/examples/quickstart', '/Users/aarnphm/bentoml/models', '/Users/aarnphm/workspace/bentoml/aarnphm_fork/bentoml']
+          2022-09-18T21:12:19-0700 [INFO] [observer] Watching directories: ['~/workspace/bentoml/examples/quickstart', '~/bentoml/models']
 
 .. dropdown:: About the command ``bentoml serve``
    :icon: code

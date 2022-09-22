@@ -494,31 +494,48 @@ validation, specify the desired variant in the under ``python.packages`` field:
          python:
             packages:
             - "bentoml[grpc]"
-   .. tab-item:: Extras
+
+   .. tab-item:: AWS
 
       .. code-block:: yaml
           python:
               packages:
-              - "bentoml[extras]"
+              - "bentoml[aws]"
+
+   .. tab-item:: Image IO
+
+      .. code-block:: yaml
+          python:
+              packages:
+              - "bentoml[io-image]"
+
+   .. tab-item:: Pandas IO
+
+      .. code-block:: yaml
+          python:
+              packages:
+              - "bentoml[io-pandas]"
+
    .. tab-item:: Jaeger
 
       .. code-block:: yaml
           python:
               packages:
               - "bentoml[tracing-jaeger]"
+
    .. tab-item:: Zipkin
 
       .. code-block:: yaml
           python:
           packages:
           - "bentoml[tracing-zipkin]"
+
    .. tab-item:: OpenTelemetry Protocol
 
       .. code-block:: yaml
           python:
               packages:
               - "bentoml[tracing-otlp]"
-
 
 If you already have a
 `requirements.txt <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_

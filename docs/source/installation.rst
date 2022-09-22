@@ -10,9 +10,13 @@ library you are working with, and you are ready to go!
 * BentoML supports Linux/UNIX, Windows, and MacOS.
 * BentoML requires Python 3.7 or above.
 
+.. code-block::
 
-Install with pip
-----------------
+   pip install --user bentoml
+
+
+Install using virtual environment
+---------------------------------
 
 You should install BentoML in a `virtual environment <https://docs.python.org/3/library/venv.html>`_. If you are not familar with virtual environment, refers to this
 `guide <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/>`_. Virtual environment are a great way to manage dependencies and
@@ -56,18 +60,29 @@ Additional features
 To use additional features in BentoML, such as gRPC, S3 support, and more, you will need
 to install a variant of BentoML with additional dependencies.
 
-To use gRPC support, use the following command:
+For gRPC support, use the following command:
 
 .. code-block:: bash
 
     pip install "bentoml[grpc]"
 
-To use S3 upload support, Image IO support, pydantic validation for JSON, use the
-following command:
+For all AWS-related features, use the following command:
 
 .. code-block:: bash
 
-    pip install "bentoml[extras]"
+    pip install "bentoml[aws]"
+
+For all :ref:`Image IO <reference/api_io_descriptors:Images>`, use the following command:
+
+.. code-block:: bash
+
+    pip install "bentoml[io-image]"
+
+For all :ref:`Pandas IO <reference/api_io_descriptors:Tabular Data with Pandas>`, use the following command:
+
+.. code-block:: bash
+
+    pip install "bentoml[io-pandas]"
 
 To use external tracing exporter such as `Jaeger <https://www.jaegertracing.io/>`_, `Zipkin <https://zipkin.io/>`_, `OpenTelemetry Protocol <https://opentelemetry.io/docs/reference/specification/protocol/exporter/>`_,
 use the following command:
@@ -106,19 +121,6 @@ To use all the above features, use the following command:
 
       # editable install
       pip install -e ".[grpc,tracing-jaeger]"
-
-Install with pipx
------------------
-
-If you prefer tools such as `pipx <https://pypa.github.io/pipx/>`_ to install bentoml
-into an isolated environment. This has an added benefit that later you can upgrade
-bentoml without affecting other projects.
-
-.. code-block:: bash
-
-    pipx install bentoml
-
-    bentoml --help
 
 Install from source
 -------------------
@@ -199,8 +201,8 @@ with the following command:
     cd bentoml
     git pull
 
-Install with conda
-------------------
+Install using conda
+-------------------
 
 Install 🍱 BentoML with `conda <https://docs.conda.io/en/latest/>`_ via the `conda-forge <https://conda-forge.org/>`_ channel:
 

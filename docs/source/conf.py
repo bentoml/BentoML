@@ -48,6 +48,11 @@ extlinks = {
     "pypi": ("https://pypi.org/project/%s", "%s"),  # noqa: WPS323
     "wiki": ("https://wikipedia.org/wiki/%s", "%s"),  # noqa: WPS323
 }
+# custom roles
+rst_prolog = """
+.. role:: raw-html(raw)
+    :format: html
+"""
 # hoverxref settings
 hoverxref_auto_ref = True
 hoverxref_sphinxtabs = True

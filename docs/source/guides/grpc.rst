@@ -5,7 +5,7 @@ Serving with gRPC
 This guide will demonstrate advanced features that BentoML offers for you to get started
 with `gRPC <https://grpc.io/>`_:
 
-- First-class support for custom servicer, interceptors, handlers.
+- First-class support for :ref:`custom gRPC Servicer <guides/grpc:Mounting Custom Servicer>`, interceptors, handlers.
 - Adding gRPC support to existing BentoService container.
 
 This guide will also walk your through some of the strengths and weaknesses of serving with gRPC, as well as
@@ -50,71 +50,39 @@ gRPC server:
    .. tab-item:: Python
       :sync: python
 
-      .. tab-set::
+      .. code-block:: python
+         :caption: `client.py`
 
-         .. tab-item:: Async
-            :sync: async-api
+         if __name__ == "__main__":
+            import asyncio
 
-            .. code-block:: python
-               :caption: `client.py`
+            import grpc
 
-               if __name__ == "__main__":
-                  import asyncio
+            from bentoml.grpc.utils import import_generated_stubs
 
-                  import grpc
-
-                  from bentoml.grpc.utils import import_generated_stubs
-
-                  pb, services = import_generated_stubs()
-                  async def run():
-                     async with grpc.aio.insecure_channel("localhost:3000") as channel:
-                           stub = services.BentoServiceStub(channel)
-                           req = stub.Call(
-                              request=pb.Request(
-                                 api_name="predict",
-                                 ndarray=pb.NDArray(
-                                       dtype=pb.NDArray.DTYPE_FLOAT,
-                                       shape=(1, 4),
-                                       float_values=[5.9, 3, 5.1, 1.8],
-                                 ),
-                              )
-                           )
-                     print(req)
-
-                  asyncio.run(run())
-
-         .. tab-item:: Sync
-            :sync: sync-api
-
-            .. code-block:: python
-               :caption: `client.py`
-
-
-               if __name__ == "__main__":
-                  import grpc
-
-                  from bentoml.grpc.utils import import_generated_stubs
-
-                  pb, services = import_generated_stubs()
-                  with grpc.insecure_channel("localhost:3000") as channel:
+            pb, services = import_generated_stubs()
+            async def run():
+               async with grpc.aio.insecure_channel("localhost:3000") as channel:
                      stub = services.BentoServiceStub(channel)
                      req = stub.Call(
-                           request=pb.Request(
-                              api_name="predict",
-                              ndarray=pb.NDArray(
+                        request=pb.Request(
+                           api_name="predict",
+                           ndarray=pb.NDArray(
                                  dtype=pb.NDArray.DTYPE_FLOAT,
                                  shape=(1, 4),
                                  float_values=[5.9, 3, 5.1, 1.8],
-                              ),
-                           )
+                           ),
+                        )
                      )
-                     print(req)
+               print(req)
+
+            asyncio.run(run())
 
    .. tab-item:: Go
       :sync: golang
 
       .. code-block:: go
-         :caption: client.go
+         :caption: `client.go`
 
          package client
 
@@ -152,6 +120,73 @@ gRPC server:
             fmt.Print(resp)
          }
 
+   .. tab-item:: C++
+      :sync: cpp
+
+      .. code-block:: cpp
+         :caption: `client.cpp`
+
+         #include <array>
+         #include <iostream>
+         #include <memory>
+         #include <mutex>
+         #include <string>
+         #include <vector>
+
+         #include <grpc/grpc.h>
+         #include <grpcpp/channel.h>
+         #include <grpcpp/client_context.h>
+         #include <grpcpp/create_channel.h>
+         #include <grpcpp/grpcpp.h>
+         #include <grpcpp/security/credentials.h>
+
+         #include "bentoml/grpc/v1alpha1/service.grpc.pb.h"
+         #include "bentoml/grpc/v1alpha1/service.pb.h"
+
+         using bentoml::grpc::v1alpha1::BentoService;
+         using bentoml::grpc::v1alpha1::NDArray;
+         using bentoml::grpc::v1alpha1::Request;
+         using bentoml::grpc::v1alpha1::Response;
+         using grpc::Channel;
+         using grpc::ClientAsyncResponseReader;
+         using grpc::ClientContext;
+         using grpc::CompletionQueue;
+         using grpc::Status;
+
+         int main(int argc, char **argv) {
+             auto stubs = BentoService::NewStub(grpc::CreateChannel(
+                   "localhost:3000", grpc::InsecureChannelCredentials()));
+             std::vector<float> data = {3.5, 2.4, 7.8, 5.1};
+             std::vector<int> shape = {1, 4};
+
+             Request request;
+             request.set_api_name("predict");
+
+             NDArray *ndarray = request.mutable_ndarray();
+             ndarray->mutable_shape()->Assign(shape.begin(), shape.end());
+             ndarray->mutable_float_values()->Assign(data.begin(), data.end());
+
+             Response resp;
+             ClientContext context;
+
+             // Storage for the status of the RPC upon completion.
+             Status status = stubs->Call(&context, request, &resp);
+
+             // Act upon the status of the actual RPC.
+             if (!status.ok()) {
+                std::cout << status.error_code() << ": " << status.error_message()
+                         << std::endl;
+                return 1;
+             }
+             if (!resp.has_ndarray()) {
+                std::cout << "Currently only accept output as NDArray." << std::endl;
+                return 1;
+             }
+             std::cout << "response byte size: " << resp.ndarray().ByteSizeLong()
+                         << std::endl;
+         }
+
+
 Then you can proceed to run the client scripts:
 
 .. tab-set::
@@ -170,23 +205,114 @@ Then you can proceed to run the client scripts:
 
          » go run ./client.go
 
+   .. tab-item:: C++
+      :sync: cpp
+
+      To compile C++ client, we need to somehow include the protobuf and gRPC C++
+      headers and use either clangd, g++ or `bazel <https://bazel.build/>`_ to compile
+      the binary.
+
+      Since this is outside of the scope of this guide, we will leave the details on how to
+      compile the C++ client to the reader. Below is a gist of how one can use
+      Bazel to compile the C++ client for those who are interested:
+
+      .. dropdown:: Bazel instruction
+
+         After installing bazel, define a ``WORKSPACE`` file in the same directory as
+         ``client.cpp``:
+
+         .. dropdown:: ``WORKSPACE``
+
+            .. code-block:: python
+
+               workspace(name = "client")
+
+               load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+               http_archive(
+                  name = "rules_proto",
+                  sha256 = "e017528fd1c91c5a33f15493e3a398181a9e821a804eb7ff5acdd1d2d6c2b18d",
+                  strip_prefix = "rules_proto-4.0.0-3.20.0",
+                  urls = [
+                     "https://github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0-3.20.0.tar.gz",
+                  ],
+               )
+               http_archive(
+                  name = "rules_proto_grpc",
+                  sha256 = "507e38c8d95c7efa4f3b1c0595a8e8f139c885cb41a76cab7e20e4e67ae87731",
+                  strip_prefix = "rules_proto_grpc-4.1.1",
+                  urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/archive/4.1.1.tar.gz"],
+               )
+
+               load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+               load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+
+               rules_proto_grpc_toolchains()
+               rules_proto_grpc_repos()
+               rules_proto_dependencies()
+               rules_proto_toolchains()
+
+         Then follow by defining a ``BUILD`` file:
+
+         .. dropdown:: ``BUILD``
+
+            .. code-block:: python
+
+               load("@rules_proto//proto:defs.bzl", "proto_library")
+               load("@rules_proto_grpc//cpp:defs.bzl", "cc_grpc_library", "cc_proto_library")
+
+               proto_library(
+                  name = "service_proto",
+                  srcs = ["bentoml/grpc/v1alpha1/service.proto"],
+                  deps = ["@com_google_protobuf//:struct_proto", "@com_google_protobuf//:wrappers_proto"]
+               )
+
+               cc_proto_library(
+                  name = "service_cc",
+                  protos = [":service_proto"],
+               )
+
+               cc_grpc_library(
+                  name = "service_cc_grpc",
+                  protos = [":service_proto"],
+                  deps = [":service_cc"],
+               )
+
+               cc_binary(
+                  name = "client_cc",
+                  srcs = ["client.cc"],
+                  deps = [
+                     ":service_cc_grpc",
+                     "@com_github_grpc_grpc//:grpc++",
+                  ],
+               )
+
+         Proceed then to run the client:
+
+         .. code-block:: bash
+
+            » bazel run :client_cc
+
+
 Congratulations! You have successfully served your BentoService with gRPC.
 
 Using the Service
 -----------------
 
-Let's take a quick look at `protobuf <https://developers.google.com/protocol-buffers/docs/overview>`_ definition of the BentoService:
+Let's take a quick look at `protobuf <https://github.com/bentoml/BentoML/blob/main/bentoml/grpc/v1alpha1/service.proto>`_ definition of the BentoService:
 
-.. tab-set-code::
+.. code-block:: protobuf
 
-    .. literalinclude:: ../../../bentoml/grpc/v1alpha1/service.proto
-        :language: protobuf
+   service BentoService {
+     rpc Call(Request) returns (Response) {}
+   }
 
-As you can see, we define a `simple rpc` ``Call`` that sends a ``Request`` message and returns a ``Response`` message.
+As you can see, BentoService defines a `simple rpc` ``Call`` that sends a ``Request`` message and returns a ``Response`` message.
 
-A ``Request`` message takes in an ``api_name`` field, which is the name of the API
-function defined inside your BentoService. The ``content`` field is a `oneof <https://developers.google.com/protocol-buffers/docs/proto3#oneof>`_ field,
-which means that only one fields can be set at a time. The ``content`` field can be one of the following types:
+A ``Request`` message takes in:
+
+* ``api_name``: the name of the API function defined inside your BentoService. 
+* `oneof <https://developers.google.com/protocol-buffers/docs/proto3#oneof>`_ ``content``: the field can be one of the following types:
 
    * ``NDArray``
    * ``DataFrame``
@@ -205,8 +331,13 @@ which means that only one fields can be set at a time. The ``content`` field can
 
 .. |google_protobuf_string_value| replace:: ``google.protobuf.StringValue``
 
-For example, in the :ref:`quickstart guide<tutorial:Creating a Service>`, we defined a ``classify`` API that takes in a :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`,
-which means our ``Request`` message would look like this:
+The ``Response`` message will then return one of the aforementioned types as result.
+
+:raw-html:`<br />`
+
+:bdg-info:`Example:` In the :ref:`quickstart guide<tutorial:Creating a Service>`, we defined a ``classify`` API that takes in a :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`.
+
+Therefore, our ``Request`` message would have the following structure:
 
 .. tab-set::
 
@@ -237,3 +368,59 @@ which means our ``Request`` message would look like this:
                }
             }
          }
+
+   .. tab-item:: C++
+      :sync: cpp
+
+      .. code-block:: cpp
+
+         #include "bentoml/grpc/v1alpha1/service.pb.h"
+
+         using bentoml::grpc::v1alpha1::BentoService;
+         using bentoml::grpc::v1alpha1::NDArray;
+         using bentoml::grpc::v1alpha1::Request;
+
+         std::vector<float> data = {3.5, 2.4, 7.8, 5.1};
+         std::vector<int> shape = {1, 4};
+
+         Request request;
+         request.set_api_name("predict");
+
+         NDArray *ndarray = request.mutable_ndarray();
+         ndarray->mutable_shape()->Assign(shape.begin(), shape.end());
+         ndarray->mutable_float_values()->Assign(data.begin(), data.end());
+
+Mounting Custom Servicer
+------------------------
+
+Since gRPC is designed for HTTP/2, one of the more powerful features it offers is
+multiplexing of multiple HTTP/2 calls over a single TCP connection, which address the
+phenomenon of :wiki:`head-of-line blocking <Head-of-line_blocking>`.
+
+This allows us to mount multiple gRPC servicer alongside the BentoService gRPC servicer,
+and serve them all under the same port.
+
+.. code-block:: python
+   :caption: `service.py`
+   :emphasize-lines: 13
+
+   import route_guide_pb2
+   import route_guide_pb2_grpc
+   from servicer_impl import RouteGuideServicer
+
+   svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
+
+   services_name = [
+       v.full_name for v in route_guide_pb2.DESCRIPTOR.services_by_name.values()
+   ]
+   svc.mount_grpc_servicer(
+       RouteGuideServicer,
+       add_servicer_fn=add_RouteGuideServicer_to_server,
+       service_names=services_name,
+   )
+
+.. note::
+
+   ``service_names`` is **REQUIRED** here, as this will be used for `reflection <https://github.com/grpc/grpc/blob/master/doc/server-reflection.md>`_
+   when ``--enable-reflection`` is passed to ``bentoml serve-grpc``.
+

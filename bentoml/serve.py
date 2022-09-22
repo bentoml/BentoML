@@ -109,10 +109,10 @@ def log_grpcui_instruction(port: int) -> None:
         "docker run -it --rm {network_args} fullstorydev/grpcui -plaintext {platform_deps}:{port}".format,
         port=port,
     )
-    message = "To use gRPC UI, run the following command: '%s', followed by opening 'http://0.0.0.0:8080' in your browser of choice."
+    message = "To use gRPC UI, run the following command: '%s', followed by opening 'http://localhost:8080' in your browser of choice."
 
     linux_instruction = docker_run(
-        platform_deps="0.0.0.0", network_args="--network=host"
+        platform_deps="localhost", network_args="--network=host"
     )
     mac_win_instruction = docker_run(
         platform_deps="host.docker.internal", network_args="-p 8080:8080"
@@ -229,11 +229,13 @@ def serve_http_development(
         )
     )
     if BentoMLContainer.api_server_config.metrics.enabled.get():
+        log_host = "localhost" if host == "0.0.0.0" else host
+
         logger.info(
             PROMETHEUS_MESSAGE,
             "HTTP",
             bento_identifier,
-            f"http://{host}:{port}/metrics",
+            f"http://{log_host}:{port}/metrics",
         )
 
     plugins = []
@@ -445,11 +447,13 @@ def serve_http_production(
     )
 
     if BentoMLContainer.api_server_config.metrics.enabled.get():
+        log_host = "localhost" if host == "0.0.0.0" else host
+
         logger.info(
             PROMETHEUS_MESSAGE,
             "HTTP",
             bento_identifier,
-            f"http://{host}:{port}/metrics",
+            f"http://{log_host}:{port}/metrics",
         )
 
     arbiter = create_standalone_arbiter(
@@ -587,11 +591,13 @@ def serve_grpc_development(
             )
         )
 
+        log_metrics_host = "localhost" if metrics_host == "0.0.0.0" else metrics_host
+
         logger.info(
             PROMETHEUS_MESSAGE,
             "gRPC",
             bento_identifier,
-            f"http://{metrics_host}:{metrics_port}",
+            f"http://{log_metrics_host}:{metrics_port}",
         )
 
     plugins = []
@@ -627,7 +633,7 @@ def serve_grpc_development(
     with track_serve(svc, production=False):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
-                'Starting development %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',
+                'Starting development %s BentoServer from "%s" listening on %s:%d (Press CTRL+C to quit)',
                 "gRPC",
                 bento_identifier,
                 host,
@@ -836,11 +842,13 @@ def serve_grpc_production(
             )
         )
 
+        log_metrics_host = "127.0.0.1" if metrics_host == "0.0.0.0" else metrics_host
+
         logger.info(
             PROMETHEUS_MESSAGE,
             "gRPC",
             bento_identifier,
-            f"http://{metrics_host}:{metrics_port}",
+            f"http://{log_metrics_host}:{metrics_port}",
         )
     arbiter = create_standalone_arbiter(
         watchers=watchers, sockets=list(circus_socket_map.values())
@@ -850,7 +858,7 @@ def serve_grpc_production(
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore
-                    'Starting production %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',
+                    'Starting production %s BentoServer from "%s" listening on %s:%d (Press CTRL+C to quit)',
                     "gRPC",
                     bento_identifier,
                     host,

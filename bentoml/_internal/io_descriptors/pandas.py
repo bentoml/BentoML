@@ -132,8 +132,7 @@ def _series_openapi_schema(dtype: bool | ext.PdDTypeArg | None, orient: ext.Seri
             return Schema(type="object", additionalProperties=Schema(type=_openapi_types(dtype)))
         if orient in ["records", "columns"]:
             return Schema(type="array", items=Schema(type=_openapi_types(dtype)))
-    else:
-        return Schema(type="object")
+    return Schema(type="object")
 
 class SerializationFormat(Enum):
     JSON = "application/json"

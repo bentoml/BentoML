@@ -11,10 +11,12 @@ import pytest
 from schema import Or
 from schema import And
 from schema import Schema
+from prometheus_client.parser import (
+    text_string_to_metric_families,  # type: ignore (no prometheus types)
+)
 
 import bentoml
 from bentoml._internal.utils import analytics
-from prometheus_client.parser import text_string_to_metric_families  # type: ignore (no prometheus types)
 
 if TYPE_CHECKING:
     from unittest.mock import MagicMock

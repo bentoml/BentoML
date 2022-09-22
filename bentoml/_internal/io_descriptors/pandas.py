@@ -729,7 +729,7 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
     def __init__(
         self,
         orient: ext.SeriesOrient = "records",
-        dtype: ext.PdDTypeArg | str | None = None,
+        dtype: ext.PdDTypeArg | None = None,
         enforce_dtype: bool = False,
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,

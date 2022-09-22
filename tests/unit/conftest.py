@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -160,11 +159,3 @@ def fixture_propagate_logs() -> t.Generator[None, None, None]:
     yield
     # restore propagate to False after tests
     logger.propagate = False
-
-
-@pytest.fixture(scope="function", name="change_test_dir")
-def fixture_change_dir(request: FixtureRequest) -> t.Generator[None, None, None]:
-    """A fixture to change given test directory to the directory of the current running test."""
-    os.chdir(request.fspath.dirname)  # type: ignore (bad pytest stubs)
-    yield
-    os.chdir(request.config.invocation_dir)  # type: ignore (bad pytest stubs)

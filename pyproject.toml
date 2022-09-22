@@ -164,9 +164,9 @@ omit = [
 exclude_lines = [
   "\\#\\s*pragma: no cover",
   "^\\s*def __repr__",
-  "^\\s*raise AssertionError\\(",
-  "^\\s*raise NotImplementedError\b",
-  "^\\s*raise MissingDependencyException\\(",
+  "^\\s*raise AssertionError",
+  "^\\s*raise NotImplementedError",
+  "^\\s*raise MissingDependencyException",
   "^\\s*except ImportError",
   "if __name__ == .__main__.:",
   "^\\s*if TYPE_CHECKING:",
@@ -199,7 +199,16 @@ exclude = '''
 extend-exclude = "(_pb2.py$|_pb2_grpc.py$)"
 
 [tool.pytest.ini_options]
-addopts = "-rfEX -p pytester -p no:warnings -x --capture=tee-sys --tb=short --cov-report=term-missing --cov-append"
+addopts = [
+  "-rfEX",
+  "-x",
+  "--capture=tee-sys",
+  "--tb=short",
+  "--import-mode=importlib",
+  "--cov=bentoml",
+  "--cov-report=term-missing:skip-covered",
+  "--cov-append",
+]
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 markers = ["gpus", "disable-tf-eager-execution"]

@@ -24,9 +24,10 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def pytest_collection_modifyitems(
     session: Session, config: Config, items: list[Item]
 ) -> None:
-    subprocess.check_call([sys.executable, "-m", "train"])
+    subprocess.check_call([sys.executable, f"{os.path.join(PROJECT_DIR, 'train.py')}"])
 
 
+@pytest.mark.usefixtures("change_test_dir")
 @pytest.fixture(scope="module")
 def host(
     bentoml_home: str,
@@ -42,6 +43,7 @@ def host(
     with host_bento(
         "service:svc",
         deployment_mode=deployment_mode,
+        project_path=PROJECT_DIR,
         bentoml_home=bentoml_home,
         clean_context=clean_context,
         # config_file=config_file,

@@ -5,8 +5,8 @@ Serving with gRPC
 This guide will demonstrate advanced features that BentoML offers for you to get started
 with `gRPC <https://grpc.io/>`_:
 
-- First-class support for :ref:`custom gRPC Servicer <guides/grpc:Mounting Custom Servicer>`, interceptors, handlers.
-- Adding gRPC support to existing BentoService container.
+- First-class support for :ref:`custom gRPC Servicer <guides/grpc:Mounting Servicer>`, :ref:`custom interceptors <guides/grpc:Mounting gRPC Interceptors>`, handlers.
+- Adding gRPC support to existing Bento.
 
 This guide will also walk your through some of the strengths and weaknesses of serving with gRPC, as well as
 recommendation on scenarios where gRPC might be a good fit. We will be using the example service from :ref:`the quickstart<tutorial:Tutorial: Intro to BentoML>` to interact and explore said gRPC features.
@@ -30,6 +30,9 @@ Why you may need this?
 Get started with gRPC in BentoML
 --------------------------------
 
+Requirements
+~~~~~~~~~~~~
+
 Install BentoML with gRPC support with :pypi:`pip`:
 
 .. code-block:: bash
@@ -41,6 +44,9 @@ Thats it! You can now serving your Bento with gRPC via :ref:`bentoml serve-grpc 
 .. code-block:: bash
 
    » bentoml serve-grpc iris_classifier:latest --production
+
+Client implementation
+~~~~~~~~~~~~~~~~~~~~~
 
 From another terminal, use one of the following client implementation to send request to the
 gRPC server:
@@ -293,19 +299,58 @@ Then you can proceed to run the client scripts:
 
             » bazel run :client_cc
 
+After successfully running the client, proceed to build the bento as usual:
 
-Congratulations! You have successfully served your BentoService with gRPC.
+.. code-block:: bash
 
-Using the Service
------------------
+   » bentoml build
 
-Let's take a quick look at `protobuf <https://github.com/bentoml/BentoML/blob/main/bentoml/grpc/v1alpha1/service.proto>`_ definition of the BentoService:
+
+To containerize the Bento with gRPC features, pass in ``--enable-features=grpc`` to
+:ref:`bentoml containerize <reference/cli:containerize-enable-features>` to add additional gRPC
+dependencies to your Bento
+
+.. code-block:: bash
+
+   » bentoml containerize iris_classifier:latest --enable-features=grpc
+
+``--enable-features`` allows users to containerize any of the existing Bentos with :ref:`additional features </installation:Additional features>` without having to rebuild the Bento.
+
+.. note::
+
+   ``--enable-features`` accepts a comma-separated list of features or multiple arguments.
+
+After containerization, your Bento container can now be used with gRPC:
+
+.. code-block:: bash
+
+   » docker run -it --rm -p 3000:3000 -p 3001:3001 iris_classifier:6otbsmxzq6lwbgxi serve-grpc --production
+
+Use one of the above :ref:`client implementation <guides/grpc:Client implementation>` to
+send test requests to your containerized BentoService.
+
+Congratulations! You have successfully served, containerized and tested your BentoService with gRPC.
+
+Interact with gPRC
+------------------
+
+Let's take a quick look at `protobuf <https://developers.google.com/protocol-buffers/>`_  definition of the BentoService:
 
 .. code-block:: protobuf
 
    service BentoService {
      rpc Call(Request) returns (Response) {}
    }
+
+.. dropdown:: `Expands for current protobuf definition.`
+   :icon: code
+
+   .. tab-set::
+
+      .. tab-item:: v1alpha1
+
+         .. literalinclude:: ../../../bentoml/grpc/v1alpha1/service.proto
+            :language: protobuf
 
 As you can see, BentoService defines a `simple rpc` ``Call`` that sends a ``Request`` message and returns a ``Response`` message.
 
@@ -390,8 +435,8 @@ Therefore, our ``Request`` message would have the following structure:
          ndarray->mutable_shape()->Assign(shape.begin(), shape.end());
          ndarray->mutable_float_values()->Assign(data.begin(), data.end());
 
-Mounting Custom Servicer
-------------------------
+Mounting Servicer
+-----------------
 
 Since gRPC is designed for HTTP/2, one of the more powerful features it offers is
 multiplexing of multiple HTTP/2 calls over a single TCP connection, which address the
@@ -423,4 +468,69 @@ and serve them all under the same port.
 
    ``service_names`` is **REQUIRED** here, as this will be used for `reflection <https://github.com/grpc/grpc/blob/master/doc/server-reflection.md>`_
    when ``--enable-reflection`` is passed to ``bentoml serve-grpc``.
+
+Mounting gRPC Interceptors
+--------------------------
+
+Inteceptors are a component of gRPC that allows us to intercept and interact with the
+proto message and service context either before - or after - the actual RPC call was
+sent/received by client/server.
+
+Interceptors to gRPC is what middleware is to HTTP. The most common use-case for Interceptors
+are authentication, :ref:`tracing <guides/tracing>`, access logs, and more.
+
+BentoML comes with a sets of built-in *async interceptors* to provide support for access logs,
+`OpenTelemetry <https://opentelemetry.io/>`_, and `Prometheus <https://prometheus.io/>`_.
+
+The following diagrams demonstrates the flow of a gRPC request from client to server:
+
+.. image:: /_static/img/interceptor-flow.svg
+   :alt: Interceptor Flow
+
+Since Interceptors are executed in the order they are added, users interceptors will be executed after the built-in interceptors.
+
+This also means that users interceptors should be **READ-ONLY**, and shouldn't modify the state of the
+incoming request.
+
+BentoML currently only support **async interceptors** (created using
+``grpc.aio.ServerInterceptor``, as opposed to ``grpc.ServerInterceptor``). This is
+because BentoML gRPC server is an async implementation of gRPC server.
+
+.. note::
+
+   If you are using ``grpc.ServerInterceptor``, you will need to migrate it over
+   to use the new ``grpc.aio.ServerInterceptor`` in order to use this feature.
+
+To add your intercptors to existing BentoService, use ``svc.add_grpc_interceptor``:
+
+.. code-block:: Python
+   :caption: `service.py`
+
+   svc.add_grpc_interceptor(MyInterceptor)
+
+.. note::
+
+   ``add_grpc_interceptor`` also supports `partial` class as well as multiple arguments
+   interceptors:
+
+   .. tab-set::
+
+      .. tab-item:: multiple arugments
+
+         .. code-block:: Python
+
+            svc.add_grpc_interceptor(MyInterceptor, arg1="foo", arg2="bar")
+
+      .. tab-item:: partial
+
+         .. code-block:: Python
+
+            from functools import partial
+
+            svc.add_grpc_interceptor(partial(MyInterceptor, arg1="foo", arg2="bar"))
+
+
+Recommendation for gRPC usage
+-----------------------------
+
 

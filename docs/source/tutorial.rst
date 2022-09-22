@@ -7,7 +7,7 @@ What are we building?
 
 In this tutorial, we will focus on online model serving with BentoML, using a
 classification model trained with `scikit-learn <https://scikit-learn.org/stable/>`_ and the Iris dataset.
-By the end of this tutorial, we will have an HTTP/gRPC endpoint for handling inference requests and a docker
+By the end of this tutorial, we will have a Bento that can be served easily using HTTP or gRPC for handling inference requests, and a docker
 container image for deployment.
 
 
@@ -64,12 +64,12 @@ There are three ways to complete this tutorial:
 
 .. note::
 
-   BentoML provides gRPC support, in which we will demonstrate alongside with HTTP
-   implemenetation in this tutorial. However, this is optional and you don't have to
-   know about gRPC to get started with gRPC.
+   BentoML provides gRPC support, and we will provide gRPC examples alongside the HTTP
+   ones in this tutorial. However, these examples are optional and you don't have to
+   know about gRPC to get started with BentoML.
 
-   If you are interested in walking through the gRPC example in this tutorial, install
-   the gRPC-variant of BentoML:
+   If you are interested in trying the gRPC examples in this tutorial, install
+   the gRPC dependencies for BentoML:
 
    .. code-block:: bash
 
@@ -157,7 +157,7 @@ a file ``service.py`` with:
         return result
 
 
-Run the service in development mode:
+We can now run the BentoML server for our new service in development mode:
 
 .. tab-set::
 

@@ -27,3 +27,11 @@ image:
 | Go       | `bazel run :client_go`    |
 | Java     | `bazel run :client_java`  |
 | Python   | `python -m python.client` |
+
+# Adding new language support
+
+- Update [gRPC guides](../../grpc.rst)
+- Create a new language directory. Add a `client.<ext>`
+- Add new rules to `WORKSPACE` and `BUILD`
+- Run `bazel run //:buildifier` for formatting
+- Then commit changes and create a PR.

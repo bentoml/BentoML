@@ -69,6 +69,7 @@ go_binary(
 
 # compile java/src/main/java/com/client/BentoServiceClient.java
 load("@io_grpc_grpc_java//:java_grpc_library.bzl", "java_grpc_library")
+
 java_proto_library(
     name = "service_java",
     deps = [":service_proto"],

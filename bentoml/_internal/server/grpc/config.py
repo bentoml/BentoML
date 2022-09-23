@@ -68,6 +68,7 @@ class Config:
         if self.max_message_length:
             options.extend(
                 (
+                    # grpc.max_message_length this is a deprecated options, for backward compatibility
                     ("grpc.max_message_length", self.max_message_length),
                     ("grpc.max_receive_message_length", self.max_message_length),
                     ("grpc.max_send_message_length", self.max_message_length),

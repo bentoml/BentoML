@@ -47,6 +47,8 @@ intersphinx_mapping = {
 extlinks = {
     "pypi": ("https://pypi.org/project/%s", "%s"),  # noqa: WPS323
     "wiki": ("https://wikipedia.org/wiki/%s", "%s"),  # noqa: WPS323
+    "slack": ("https://l.linklyhq.com/l/ktOX", ""),
+    "github": ("https://github.com/%s", "%s"),  # noqa: WPS323
 }
 # custom roles
 rst_prolog = """

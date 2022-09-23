@@ -6,29 +6,24 @@ This guide will demonstrate advanced features that BentoML offers for you to get
 with `gRPC <https://grpc.io/>`_:
 
 - First-class support for :ref:`custom gRPC Servicer <guides/grpc:Mounting Servicer>`, :ref:`custom interceptors <guides/grpc:Mounting gRPC Interceptors>`, handlers.
-- Adding gRPC support to existing Bento.
+- Seemlessly adding gRPC support to existing Bento.
+- Streaming support (currently on our roadmap).
 
 This guide will also walk your through some of the strengths and weaknesses of serving with gRPC, as well as
-recommendation on scenarios where gRPC might be a good fit. We will be using the example service from :ref:`the quickstart<tutorial:Tutorial: Intro to BentoML>` to interact and explore said gRPC features.
+recommendation on scenarios where gRPC might be a good fit.
 
 :bdg-info:`Requirements:` This guide assumes that you have basic knowledge of gRPC and protobuf. If you aren't
 familar with gRPC, you can start with gRPC `quick start guide <https://grpc.io/docs/languages/python/quickstart/>`_.
 
-.. note::
+.. seealso::
 
    For quick introduction to serving with gRPC, see :ref:`Intro to BentoML <tutorial:Tutorial: Intro to BentoML>`
 
-Why you may need this?
-----------------------
-
-- If gRPC is the required :wiki:`RPC <Remote_procedure_call>` framework your
-  organization's business logics.
-- If organization codebase exists in a polygot environment, and you want to communicate your ML application
-  with services implemented in different languages.
-- If you are simply curious about BentoML's support for gRPC 😊.
-
 Get started with gRPC in BentoML
 --------------------------------
+
+We will be using the example from :ref:`the quickstart<tutorial:Tutorial: Intro to BentoML>` to
+demonstrate BentoML capabilities with gRPC.
 
 Requirements
 ~~~~~~~~~~~~
@@ -45,7 +40,96 @@ Thats it! You can now serving your Bento with gRPC via :ref:`bentoml serve-grpc 
 
    » bentoml serve-grpc iris_classifier:latest --production
 
-Client implementation
+Interact with your gRPC BentoService
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are two ways to interact with your gRPC BentoService:
+
+1. Use tools such as :github:`fullstorydev/grpcurl`, :github:`fullstorydev/grpcui`: 
+   The server requires :github:`reflection <grpc/grpc/blob/master/doc/server-reflection.md>` to be enabled for those tools to work.
+   Pass in ``--enable-reflection`` to enable reflection:
+
+   .. code-block:: bash
+
+      » bentoml serve-grpc iris_classifier:latest --production --enable-reflection
+
+   Open a different terminal and use one of the following:
+
+   .. tab-set::
+
+      .. tab-item:: gRPCurl
+
+         We will use :github:`fullstorydev/grpcurl` to send a CURL-like request to the gRPC BentoServer.
+
+         Note that we will use `docker <https://docs.docker.com/get-docker/>`_ to run the ``grpcurl`` command.
+
+         .. tab-set::
+
+            .. tab-item:: MacOS/Windows
+               :sync: macwin
+
+               .. code-block:: bash
+
+                  » docker run -i --rm \
+                               fullstorydev/grpcurl -d @ -plaintext host.docker.internal:3000 \
+                               bentoml.grpc.v1alpha1.BentoService/Call <<EOT
+                  {
+                     "apiName": "classify",
+                     "ndarray": {
+                        "shape": [1, 4],
+                        "floatValues": [5.9, 3, 5.1, 1.8]
+                     }
+                  }
+                  EOT
+
+            .. tab-item:: Linux
+               :sync: Linux
+
+               .. code-block:: bash
+
+                  » docker run -i --rm \
+                               --network=host \
+                               fullstorydev/grpcurl -d @ -plaintext 0.0.0.0:3000 \
+                               bentoml.grpc.v1alpha1.BentoService/Call <<EOT
+                  {
+                     "apiName": "classify",
+                     "ndarray": {
+                        "shape": [1, 4],
+                        "floatValues": [5.9, 3, 5.1, 1.8]
+                     }
+                  }
+                  EOT
+
+      .. tab-item:: gRPCUI
+
+         We will use :github:`fullstorydev/grpcui` to send request from a web browser.
+
+         Note that we will use `docker <https://docs.docker.com/get-docker/>`_ to run the ``grpcui`` command.
+
+         .. tab-set::
+
+            .. tab-item:: MacOS/Windows
+               :sync: macwin
+
+               .. code-block:: bash
+
+                  » docker run --init --rm \
+                               -p 8080:8080 fullstorydev/grpcui -plaintext host.docker.internal:3000
+
+            .. tab-item:: Linux
+               :sync: Linux
+
+               .. code-block:: bash
+
+                  » docker run --init --rm \
+                               -p 8080:8080 \
+                               --network=host fullstorydev/grpcui -plaintext 0.0.0.0:3000
+
+         Proceed to http://127.0.0.1:8080 in your browser and send test request from the web UI.
+
+2. Use one of the below :ref:`client implementations <guides/grpc:Client Implementation>` to send test requests to your BentoService.
+
+Client Implementation
 ~~~~~~~~~~~~~~~~~~~~~
 
 From another terminal, use one of the following client implementation to send request to the
@@ -72,7 +156,7 @@ gRPC server:
                      stub = services.BentoServiceStub(channel)
                      req = stub.Call(
                         request=pb.Request(
-                           api_name="predict",
+                           api_name="classify",
                            ndarray=pb.NDArray(
                                  dtype=pb.NDArray.DTYPE_FLOAT,
                                  shape=(1, 4),
@@ -86,6 +170,41 @@ gRPC server:
 
    .. tab-item:: Go
       :sync: golang
+
+      :bdg-info:`Requirements:` Make sure to install the `prerequisites <https://grpc.io/docs/languages/go/quickstart/#prerequisites>`_ before using Go.
+
+      We will create our Golang client in the directory ``~/workspace/iris_go_client/``:
+
+      .. code-block:: bash
+
+         » mkdir -p ~/workspace/iris_go_client
+         » cd ~/workspace/iris_go_client
+
+      We will also need to include the protobuf files from `protocolbuffers/protobuf
+      <https://github.com/protocolbuffers/protobuf>`_ as a thirdparty dependency:
+
+      .. code-block:: bash
+
+         » mkdir -p thirdparty && cd thirdparty
+         » git clone --depth 1 https://github.com/protocolbuffers/protobuf.git
+
+      Create a different terminal. If you don't have BentoML repository cloned, clone it first:
+
+      .. code-block:: bash
+
+         » git clone https://github.com/bentoml/bentoml && cd bentoml
+
+      Given the your ``client.go`` will be saved under ``~/workspace/iris_go_client/client.go``, use the
+      following ``protoc`` command to generate the gRPC Go stubs:
+
+      .. code-block:: bash
+
+         » protoc -I. -I ~/workspace/iris_go_client/thirdparty/protobuf/src  \
+                  --go_out=~/workspace/iris_go_client --go_opt=paths=source_relative \
+                  --go-grpc_out=~/workspace/iris_go_client --go-grpc_opt=paths=source_relative \
+                  bentoml/grpc/v1alpha1/service.proto
+
+      Now, create a file named ``client.go`` in the ``~/workspace/iris_go_client`` directory with the following content:
 
       .. code-block:: go
          :caption: `client.go`
@@ -119,7 +238,7 @@ gRPC server:
 
             client := pb.NewBentoServiceClient(conn)
 
-            resp, err := client.Call(ctx, &pb.Request{ApiName: "predict", Content: &pb.Request_Ndarray{Ndarray: &pb.NDArray{Dtype: *pb.NDArray_DTYPE_FLOAT.Enum(), Shape: []int32{1, 4}, FloatValues: []float32{3.5, 2.4, 7.8, 5.1}}}})
+            resp, err := client.Call(ctx, &pb.Request{ApiName: "classify", Content: &pb.Request_Ndarray{Ndarray: &pb.NDArray{Dtype: *pb.NDArray_DTYPE_FLOAT.Enum(), Shape: []int32{1, 4}, FloatValues: []float32{3.5, 2.4, 7.8, 5.1}}}})
             if err != nil {
                panic(err)
             }
@@ -128,6 +247,19 @@ gRPC server:
 
    .. tab-item:: C++
       :sync: cpp
+
+      :bdg-info:`Requirements:` Make sure follow the `instructions <https://grpc.io/docs/languages/cpp/quickstart/#install-grpc>`_ to install gRPC and Protobuf locally.
+
+      In this example, we will use `bazel <https://bazel.build/>`_ to build and run the client.
+
+      We will create our C++ client in the directory ``~/workspace/iris_cc_client/``:
+
+      .. code-block:: bash
+
+         » mkdir -p ~/workspace/iris_cc_client
+         » cd ~/workspace/iris_cc_client
+
+      Create a ``~/workspace/iris_cc_client/client.cpp`` file with the following content:
 
       .. code-block:: cpp
          :caption: `client.cpp`
@@ -166,7 +298,7 @@ gRPC server:
              std::vector<int> shape = {1, 4};
 
              Request request;
-             request.set_api_name("predict");
+             request.set_api_name("classify");
 
              NDArray *ndarray = request.mutable_ndarray();
              ndarray->mutable_shape()->Assign(shape.begin(), shape.end());
@@ -207,6 +339,8 @@ Then you can proceed to run the client scripts:
    .. tab-item:: Go
       :sync: golang
 
+      Change directory to ``~/workspace/iris_go_client`` and run the following command:
+
       .. code-block:: bash
 
          » go run ./client.go
@@ -214,20 +348,15 @@ Then you can proceed to run the client scripts:
    .. tab-item:: C++
       :sync: cpp
 
-      To compile C++ client, we need to somehow include the protobuf and gRPC C++
-      headers and use either clangd, g++ or `bazel <https://bazel.build/>`_ to compile
-      the binary.
-
       Since this is outside of the scope of this guide, we will leave the details on how to
       compile the C++ client to the reader. Below is a gist of how one can use
-      Bazel to compile the C++ client for those who are interested:
+      `Bazel <https://bazel.build/>`_ to compile the C++ client for those who are interested:
 
       .. dropdown:: Bazel instruction
 
-         After installing bazel, define a ``WORKSPACE`` file in the same directory as
-         ``client.cpp``:
+         define a ``WORKSPACE`` file in the ``~/workspace/iris_cc_client`` directory:
 
-         .. dropdown:: ``WORKSPACE``
+         .. dropdown:: ``~/workspace/iris_cc_client/WORKSPACE``
 
             .. code-block:: python
 
@@ -260,7 +389,7 @@ Then you can proceed to run the client scripts:
 
          Then follow by defining a ``BUILD`` file:
 
-         .. dropdown:: ``BUILD``
+         .. dropdown:: ``~/workspace/iris_cc_client/BUILD``
 
             .. code-block:: python
 
@@ -305,6 +434,8 @@ After successfully running the client, proceed to build the bento as usual:
 
    » bentoml build
 
+Containerize your Bento 🍱 with gRPC support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To containerize the Bento with gRPC features, pass in ``--enable-features=grpc`` to
 :ref:`bentoml containerize <reference/cli:containerize-enable-features>` to add additional gRPC
@@ -324,15 +455,16 @@ After containerization, your Bento container can now be used with gRPC:
 
 .. code-block:: bash
 
-   » docker run -it --rm -p 3000:3000 -p 3001:3001 iris_classifier:6otbsmxzq6lwbgxi serve-grpc --production
+   » docker run -it --rm \
+                -p 3000:3000 -p 3001:3001 \
+                iris_classifier:6otbsmxzq6lwbgxi serve-grpc --production
 
-Use one of the above :ref:`client implementation <guides/grpc:Client implementation>` to
-send test requests to your containerized BentoService.
+:raw-html:`<br />`
 
 Congratulations! You have successfully served, containerized and tested your BentoService with gRPC.
 
-Interact with gPRC
-------------------
+Using gRPC in BentoML
+---------------------
 
 Let's take a quick look at `protobuf <https://developers.google.com/protocol-buffers/>`_  definition of the BentoService:
 
@@ -392,7 +524,7 @@ Therefore, our ``Request`` message would have the following structure:
       .. code-block:: python
 
          req = pb.Request(
-            api_name="predict",
+            api_name="classify",
             ndarray=pb.NDArray(
                dtype=pb.NDArray.DTYPE_FLOAT, shape=(1, 4), float_values=[5.9, 3, 5.1, 1.8]
             ),
@@ -404,7 +536,7 @@ Therefore, our ``Request`` message would have the following structure:
       .. code-block:: go
 
          req := &pb.Request{
-            ApiName: "predict",
+            ApiName: "classify",
             Content: &pb.Request_Ndarray{
                Ndarray: &pb.NDArray{
                   Dtype: *pb.NDArray_DTYPE_FLOAT.Enum(),
@@ -429,21 +561,19 @@ Therefore, our ``Request`` message would have the following structure:
          std::vector<int> shape = {1, 4};
 
          Request request;
-         request.set_api_name("predict");
+         request.set_api_name("classify");
 
          NDArray *ndarray = request.mutable_ndarray();
          ndarray->mutable_shape()->Assign(shape.begin(), shape.end());
          ndarray->mutable_float_values()->Assign(data.begin(), data.end());
 
 Mounting Servicer
------------------
+~~~~~~~~~~~~~~~~~
 
-Since gRPC is designed for HTTP/2, one of the more powerful features it offers is
-multiplexing of multiple HTTP/2 calls over a single TCP connection, which address the
-phenomenon of :wiki:`head-of-line blocking <Head-of-line_blocking>`.
-
-This allows us to mount multiple gRPC servicer alongside the BentoService gRPC servicer,
-and serve them all under the same port.
+With support for :ref:`multiplexing <guides/grpc:Demystifying the misconception of gRPC vs. REST>`
+to eliminate :wiki:`head-of-line blocking <Head-of-line_blocking>`,
+gPRC enables us to mount additional custom servicess alongside with BentoService,
+and serve them under the same port.
 
 .. code-block:: python
    :caption: `service.py`
@@ -464,19 +594,27 @@ and serve them all under the same port.
        service_names=services_name,
    )
 
+Serve your service with :ref:`bentoml serve-grpc <reference/cli:serve-grpc>` command:
+
+.. code-block:: bash
+
+   » bentoml serve-grpc service.py:svc --reload --enable-reflection
+
+Now your ``RouteGuide`` service can also be accessed through ``localhost:3000``.
+
 .. note::
 
-   ``service_names`` is **REQUIRED** here, as this will be used for `reflection <https://github.com/grpc/grpc/blob/master/doc/server-reflection.md>`_
+   ``service_names`` is **REQUIRED** here, as this will be used for :github:`server reflection <grpc/grpc/blob/master/doc/server-reflection.md>`
    when ``--enable-reflection`` is passed to ``bentoml serve-grpc``.
 
 Mounting gRPC Interceptors
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Inteceptors are a component of gRPC that allows us to intercept and interact with the
 proto message and service context either before - or after - the actual RPC call was
 sent/received by client/server.
 
-Interceptors to gRPC is what middleware is to HTTP. The most common use-case for Interceptors
+Interceptors to gRPC is what middleware is to HTTP. The most common use-case for interceptors
 are authentication, :ref:`tracing <guides/tracing>`, access logs, and more.
 
 BentoML comes with a sets of built-in *async interceptors* to provide support for access logs,
@@ -487,7 +625,7 @@ The following diagrams demonstrates the flow of a gRPC request from client to se
 .. image:: /_static/img/interceptor-flow.svg
    :alt: Interceptor Flow
 
-Since Interceptors are executed in the order they are added, users interceptors will be executed after the built-in interceptors.
+Since interceptors are executed in the order they are added, users interceptors will be executed after the built-in interceptors.
 
 This also means that users interceptors should be **READ-ONLY**, and shouldn't modify the state of the
 incoming request.
@@ -501,9 +639,11 @@ because BentoML gRPC server is an async implementation of gRPC server.
    If you are using ``grpc.ServerInterceptor``, you will need to migrate it over
    to use the new ``grpc.aio.ServerInterceptor`` in order to use this feature.
 
+   Feel free to reach out to us at :slack:`#support on Slack`
+
 To add your intercptors to existing BentoService, use ``svc.add_grpc_interceptor``:
 
-.. code-block:: Python
+.. code-block:: python
    :caption: `service.py`
 
    svc.add_grpc_interceptor(MyInterceptor)
@@ -515,22 +655,158 @@ To add your intercptors to existing BentoService, use ``svc.add_grpc_interceptor
 
    .. tab-set::
 
-      .. tab-item:: multiple arugments
+      .. tab-item:: multiple arguments
 
-         .. code-block:: Python
+         .. code-block:: python
 
             svc.add_grpc_interceptor(MyInterceptor, arg1="foo", arg2="bar")
 
       .. tab-item:: partial
 
-         .. code-block:: Python
+         .. code-block:: python
 
             from functools import partial
 
             svc.add_grpc_interceptor(partial(MyInterceptor, arg1="foo", arg2="bar"))
 
 
-Recommendation for gRPC usage
------------------------------
+Recommendations
+---------------
+
+gRPC is designed to be high performance framework for inter-service communications. This
+means that it is a perfect fit for building microservices. The following are some
+recommendation we have for using gRPC for model serving:
+
+Demystifying the misconception of gRPC vs. REST
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You might stumble upon articles comparing gRPC to REST, and you might get the impression
+that gRPC is a better choice than REST when building services. This is not entirely
+true.
+
+gRPC is built on top of HTTP/2, and it addresses some of the shortcomings of HTTP/1.1,
+such as :wiki:`head-of-line blocking <Head-of-line_blocking>`, and :wiki:`HTTP pipelining <HTTP_pipelining>`.
+However, gRPC is not a replacement for REST, and indeed it is not a replacement for
+model serving. gRPC comes with its own set of trade-offs, such as:
+
+* **Limited browser support**: It is impossible to call a gRPC service directly from any
+  browser. You will end up using tools such as :github:`gRPCUI <fullstorydev/grpcui>` in order to interact
+  with your service, or having to go through the hassle of implementing a gRPC client in
+  your language of choice.
+
+* **Binary protocol format**: While :github:`Protobuf <protocolbuffers/protobuf>` is
+  efficient to send and receive over the wire, it is not human-readable. This means
+  additional toolin for debugging and analyzing protobuf messages are required.
+
+* **Knowledge gap**: gRPC comes with its own concepts and learning curve, which requires
+  teams to invest time in filling those knowledge gap to be effectively use gRPC. This
+  often leads to a lot of friction and sometimes increase friction to the development
+  agility.
+
+* **Lack of suport for additional content types**: gRPC depends on protobuf, its content
+  type are restrictive, in comparison to out-of-the-box support from HTTP+REST.
+
+.. seealso::
+
+   `gRPC on HTTP/2 <https://grpc.io/blog/grpc-on-http2/>`_ dives into how gRPC is built
+   on top of HTTP/2, and this `article <https://www.cncf.io/blog/2018/07/03/http-2-smarter-at-scale/>`_
+   goes into more details on how HTTP/2 address the problem from HTTP/1.1
+
+   For HTTP/2 specification, see `RFC 7540 <https://tools.ietf.org/html/rfc7540>`_.
+
+Should I use gRPC instead of REST for model serving?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Yes and no.
+
+If your organization is already using gRPC for inter-service communications, using
+your Bento with gRPC is a no-brainer. You will be able to seemlessly integrate your
+Bento with your existing gRPC services without having to worry about the overhead of
+implementing :github:`grpc-gateway <grpc-ecosystem/grpc-gateway>`.
+
+However, if your organization is not using gRPC, we recommend to keep using REST for
+model serving. This is because REST is a well-known and well-understood protocol,
+meaning there is no knowledge gap for your team, which will increase developer agility, and
+faster go-to-market strategy.
+
+Performance tuning
+~~~~~~~~~~~~~~~~~~
+
+BentoML allows user to tune the performance of gRPC via :ref:`bentoml_configuration.yaml <guides/configuration:Configuring BentoML>` via ``api_server.grpc``.
+
+A quick overview of the available configuration for gRPC:
+
+.. code-block:: yaml
+   :caption: `bentoml_configuration.yaml`
+
+   api_server:
+     grpc:
+       host: 0.0.0.0
+       port: 3000
+       max_concurrent_streams: ~
+       maximum_concurrent_rpcs: ~
+       max_message_length: -1
+       reflection:
+         enabled: false
+       metrics:
+         host: 0.0.0.0
+         port: 3001
+
+``max_concurrent_streams``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:bdg-info:`Definition:` Maximum number of concurrent incoming streams to allow on a HTTP2 connection.
+By default we don't set a limit cap. HTTP/2 connections typically has limit of :ref:`maximum concurrent streams <httpwg.org/specs/rfc7540.html#rfc.section.5.1.2>`_
+on a connection at one time.
+
+.. dropdown:: Some notes about fine-tuning ``max_concurrent_streams``
+
+   Note that a gRPC channel uses a single HTTP/2 connection, and concurrent calls are multiplexed on said connection.
+   When the number of active calls reaches the connection stream limit, any additional
+   calls are queued to the client. Queued calls then wait for active calls to complete before being sent. This means that
+   application will higher load and long running streams could see a performance degradation caused by queuing because of the limit.
+
+   Setting a limit cap on the number of concurrent streams will prevent this from happening, but it also means that
+   you need to tune the limit cap to the right number. 
+
+   * If the limit cap is too low, you will sooner or later running into the issue mentioned above.
+
+   * Not setting a limit cap are also **NOT RECOMMENDED**. Too many streams on a single
+     HTTP/2 connection introduces `thread contention` between streams trying to write
+     to the connection, `packet loss` which causes all call to be blocked.
+
+   :bdg-info:`Remarks:` We recommend you to play around with the limit cap, starting with 100, and increase if needed.
+
+``maximum_concurrent_rpcs``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:bdg-info:`Definition:` The maximum number of concurrent RPCs this server will service before returning ``RESOURCE_EXHAUSTED`` status. By default we set
+to ``None`` to indicate no limit, and let gRPC to decide the limit.
+
+``max_message_length``
+^^^^^^^^^^^^^^^^^^^^^^
+
+:bdg-info:`Definition:` The maximum message length in bytes allowed to be received on/can be send to the server. By default we set to ``-1`` to indicate no limit.
+
+Message size limits via this options is a way to prevent gRPC from consuming excessive
+resources. By default, gRPC uses per-message limits to manage inbound and outbound
+message.
+
+.. dropdown:: Some notes about fine-tuning ``max_message_length``
+
+   This options sets two values: :github:`grpc.max_receive_message_length <grpc/grpc/blob/e8df8185e521b518a8f608b8a5cf98571e2d0925/include/grpc/impl/codegen/grpc_types.h#L153>`
+   and :github:`grpc.max_send_message_length <grpc/grpc/blob/e8df8185e521b518a8f608b8a5cf98571e2d0925/include/grpc/impl/codegen/grpc_types.h#L159>`.
+
+   .. code-block:: cpp
+
+      #define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
+
+      #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
+
+   By default, gRPC sets incoming message to be 4MB, and no limit on outgoing message.
+   We recommend you to only set this option if you want to limit the size of outcoming message. Otherwise, you should let gRPC to determine the limit.
+
+
+We recommend you to also check out `gRPC performance best practice <https://grpc.io/docs/guides/performance/>`_ to learn about best practice for gRPC.
 
 

@@ -2,8 +2,7 @@
 Tutorial: Intro to BentoML
 ==========================
 
-What are we building?
----------------------
+*time expected: 10 minutes*
 
 In this tutorial, we will focus on online model serving with BentoML, using a
 classification model trained with `scikit-learn <https://scikit-learn.org/stable/>`_ and the Iris dataset.
@@ -186,49 +185,6 @@ We can now run the BentoML server for our new service in development mode:
           2022-09-18 21:12:19 circus[81102] [INFO] Endpoint: 'tcp://127.0.0.1:61849'
           2022-09-18 21:12:19 circus[81102] [INFO] Pub/sub: 'tcp://127.0.0.1:61850'
           2022-09-18T21:12:19-0700 [INFO] [observer] Watching directories: ['~/workspace/bentoml/examples/quickstart', '~/bentoml/models']
-
-.. dropdown:: About the command ``bentoml serve``
-   :icon: code
-
-   In the example above:
-
-   .. tab-set::
-
-      .. tab-item:: HTTP
-         :sync: http
-
-         ``serve`` is the command to start a HTTP BentoServer.
-
-         - ``service`` refers to the Python module (the ``service.py`` file)
-         - ``svc`` refers to the object created in ``service.py``, with ``svc = bentoml.Service(...)``
-         - ``--reload`` option watches for local code changes and automatically restart server. This is for development use only.
-
-      .. tab-item:: gRPC
-         :sync: grpc
-
-         ``serve-grpc`` is the command to start a gRPC BentoServer.
-
-         - ``service`` refers to the Python module (the ``service.py`` file)
-         - ``svc`` refers to the object created in ``service.py``, with ``svc = bentoml.Service(...)``
-         - ``--reload`` option watches for local code changes and automatically restart server. This is for development use only.
-         - ``--enable-reflection`` option enables `gRPC server reflection <https://github.com/grpc/grpc/blob/master/doc/server-reflection.md>`_. By doing so, tools such as `grpcurl <https://github.com/fullstorydev/grpcurl>`_ can then be used to send request to the gRPC BentoServer.
-
-   .. tip::
-
-      This syntax also applies to projects with nested directories. 
-
-      For example, if you have a ``./src/foo/bar/my_service.py`` where a service object is defined
-      with: ``my_bento_service = bentoml.Service(...)``, the command will be:
-
-      .. code-block:: bash
-
-         » bentoml serve src.foo.bar.my_service:my_bento_service
-         # or
-         » bentoml serve ./src/foo/bar/my_service.py:my_bento_service
-
-   .. tip::
-
-      ``bentoml serve`` also has an alias of ``bentoml serve-http`` 🙂
 
 Send prediction request to the service:
 

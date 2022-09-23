@@ -317,6 +317,72 @@ gRPC server:
          :language: java
          :caption: `BentoServiceClient.java`
 
+   .. tab-item:: Node.js
+      :sync: js
+
+      :bdg-info:`Requirements:` Make sure to have `Node.js <https://nodejs.org/en/>`_
+      installed in your system.
+
+      We will create our Node.js client in the directory ``~/workspace/iris_node_client/``:
+
+      .. code-block:: bash
+
+         » mkdir -p ~/workspace/iris_node_client
+         » cd ~/workspace/iris_node_client
+
+      Initialize the project and use the following ``package.json``:
+
+      .. literalinclude:: ./snippets/grpc/js/package.json
+         :language: json
+         :caption: `package.json`
+
+      Install the dependencies with either ``npm`` or ``yarn``:
+
+      .. code-block:: bash
+
+         » yarn install --add-devs
+
+      .. note::
+
+         If you are using M1, you might also have to prepend ``npm_config_target_arch=x64`` to ``yarn`` command:
+
+         .. code-block:: bash
+
+            » npm_config_target_arch=x64 yarn install --add-devs
+
+      .. dropdown:: Additional setup
+
+         Since we requires the service proto file to build the Node.js client, we will perform
+         a `sparse checkout <https://github.blog/2020-01-17-bring-your-monorepo-down-to-size-with-sparse-checkout/>`_:
+
+         .. code-block:: bash
+
+            » mkdir bentoml && pushd bentoml
+            » git init
+            » git remote add -f origin https://github.com/bentoml/BentoML.git
+            » git config core.sparseCheckout true
+            » cat <<EOT >|.git/info/sparse-checkout
+            bentoml/grpc
+            EOT
+            » git pull origin main
+            » popd
+
+      Here is the ``protoc`` command to generate the gRPC Javascript stubs:
+
+      .. code-block:: bash
+
+         » $(npm bin)/grpc_tools_node_protoc \
+                  -I. --js_out=import_style=commonjs,binary:. \
+                  --grpc_out=grpc_js:js \
+                  bentoml/grpc/v1alpha1/service.proto
+
+      Proceed to create a ``~/workspace/iris_node_client/client.js`` file with the following content:
+
+      .. literalinclude:: ./snippets/grpc/js/client.js
+         :language: javascript
+         :caption: `client.js`
+
+
 :raw-html:`<br />`
 
 Then you can proceed to run the client scripts:
@@ -332,8 +398,6 @@ Then you can proceed to run the client scripts:
 
    .. tab-item:: Go
       :sync: golang
-
-      Change directory to ``~/workspace/iris_go_client`` and run the following command:
 
       .. code-block:: bash
 
@@ -398,6 +462,14 @@ Then you can proceed to run the client scripts:
 
          See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/docs/source/guides/snippets/grpc/README.md>` for running
          working Java client with bazel.
+
+   .. tab-item:: Node.js
+      :sync: js
+
+      .. code-block:: bash
+
+         » node client.js
+
 
 
 After successfully running the client, proceed to build the bento as usual:

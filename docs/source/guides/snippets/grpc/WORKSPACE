@@ -1,9 +1,5 @@
 workspace(name = "bentoml_grpc_client")
 
-# version we will be using for gRPC is 1.48.1
-
-protobuf_version = "3.19.4"
-
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # install buildifier
@@ -67,9 +63,9 @@ go_register_toolchains(version = "1.19")
 # TODO: Update this to v1.50.0 when 1.50.0 is out.
 http_archive(
     name = "com_github_grpc_grpc",
-    strip_prefix = "grpc-c3714eced8c51db9092e0adc2a1dfb715655c795",
+    strip_prefix = "grpc-master",
     urls = [
-        "https://github.com/grpc/grpc/archive/c3714eced8c51db9092e0adc2a1dfb715655c795.tar.gz",
+        "https://github.com/grpc/grpc/archive/master.tar.gz",
     ],
 )
 
@@ -170,3 +166,35 @@ maven_install(
 load("@maven//:compat.bzl", "compat_repositories")
 
 compat_repositories()
+
+# build_bazel_rules_nodejs sets rules for bootstrap nodejs
+# we will use 1.3.1
+http_archive(
+    name = "aspect_rules_js",
+    sha256 = "0707a425093704fab05fb91c3a4b62cf22dca18ea334d8a72f156d4c18e8db90",
+    strip_prefix = "rules_js-1.3.1",
+    url = "https://github.com/aspect-build/rules_js/archive/refs/tags/v1.3.1.tar.gz",
+)
+
+load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
+
+rules_js_dependencies()
+
+load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
+
+nodejs_register_toolchains(
+    name = "nodejs",
+    node_version = DEFAULT_NODE_VERSION,
+)
+
+load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
+
+npm_translate_lock(
+    name = "npm",
+    package_json = "//:js/package.json",
+    yarn_lock = "//:js/yarn.lock",
+)
+
+load("@npm//:repositories.bzl", "npm_repositories")
+
+npm_repositories()

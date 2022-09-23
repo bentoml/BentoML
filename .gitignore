@@ -125,3 +125,5 @@ pyvenv.cfg
 **/*/cpp/bentoml
 **/*/go/bentoml
 **/*/java/com/bentoml
+**/*/js/bentoml
+**/*/node_modules

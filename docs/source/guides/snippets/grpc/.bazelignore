@@ -1,1 +1,3 @@
 java/src/main/java/com/bentoml
+js/bentoml
+**/*/node_modules

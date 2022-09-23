@@ -1,0 +1,14 @@
+{
+  "name": "grpc_client_js",
+  "version": "1.0.0",
+  "description": "gRPC client in JavaScript",
+  "main": "client.js",
+  "keywords": [],
+  "author": "BentoML Team",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.7.1",
+    "google-protobuf": "^3.21.0",
+    "grpc-tools": "^1.11.2"
+  }
+}

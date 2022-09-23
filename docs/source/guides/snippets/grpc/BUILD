@@ -109,3 +109,22 @@ java_binary(
         ":java_library",
     ],
 )
+
+# compile js/client.js
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library")
+load("//:js/tools.bzl", "js_proto_grpc_library")
+
+# This macro expands to a link_npm_package for each third-party package in package.json
+npm_link_all_packages(name = "node_modules")
+
+js_proto_grpc_library(
+    name = "service_js_grpc",
+    protos = ":service_proto",
+)
+
+js_binary(
+    name = "client_js",
+    data = [":service_js_grpc"],
+    entry_point = "js/client.js",
+)

@@ -23,10 +23,11 @@ image:
 
 | Language | Command                   |
 | -------- | ------------------------- |
+| Python   | `python -m python.client` |
 | C++      | `bazel run :client_cc`    |
 | Go       | `bazel run :client_go`    |
 | Java     | `bazel run :client_java`  |
-| Python   | `python -m python.client` |
+| Node.js  | `bazel run :client_node`  |
 
 # Adding new language support
 

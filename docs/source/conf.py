@@ -18,7 +18,7 @@ source_suffix = [".rst", ".md"]
 master_doc = "index"
 
 # exclude patterns
-exclude_patterns = ["**/*/bazel-*"]
+exclude_patterns = ["**/*/bazel-*", "**/*/node_modules/*"]
 
 # Sphinx extensions
 extensions = [

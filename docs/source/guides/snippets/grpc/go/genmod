@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+# This script is a hack to test out client.go locally without using bazel.
+pushd "$(dirname "$0")/github.com/bentoml/bentoml/grpc/v1alpha1/" >/dev/null
+! [[ -f "go.mod" ]] && go mod init v1alpha1
+go mod tidy
+popd >/dev/null

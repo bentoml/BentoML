@@ -119,7 +119,7 @@ catboost_info
 pyvenv.cfg
 
 # bazel generated files
-bazel-*
+**/*/bazel-*
 # manual generated stubs
 **/*/swift/bentoml
 **/*/cpp/bentoml

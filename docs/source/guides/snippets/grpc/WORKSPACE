@@ -2,12 +2,21 @@ workspace(name = "bentoml_grpc_client")
 
 # version we will be using for gRPC is 1.48.1
 
-grpc_version = "1.48.1"
-
 protobuf_version = "3.19.4"
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# install buildifier
+http_archive(
+    name = "com_github_bazelbuild_buildtools",
+    sha256 = "ae34c344514e08c23e90da0e2d6cb700fcd28e80c02e23e4d5715dddcb42f7b3",
+    strip_prefix = "buildtools-4.2.2",
+    urls = [
+        "https://github.com/bazelbuild/buildtools/archive/refs/tags/4.2.2.tar.gz",
+    ],
+)
+
+# setup rules_proto and rules_proto_grpc
 http_archive(
     name = "rules_proto",
     sha256 = "e017528fd1c91c5a33f15493e3a398181a9e821a804eb7ff5acdd1d2d6c2b18d",
@@ -35,7 +44,7 @@ rules_proto_dependencies()
 
 rules_proto_toolchains()
 
-# We need to load go_grpc rules before gRPC rules
+# We need to load go_grpc rules first
 load("@rules_proto_grpc//:repositories.bzl", "bazel_gazelle", "io_bazel_rules_go")  # buildifier: disable=same-origin-load
 
 io_bazel_rules_go()
@@ -50,20 +59,23 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_depe
 
 go_rules_dependencies()
 
-# Using 1.19.0 Golang
 go_register_toolchains(version = "1.19")
 
-# grpc dependencies
+# grpc/grpc dependencies
+# Currently c3714eced8c51db9092e0adc2a1dfb715655c795  address
+# some build issues with upb for C++.
+# TODO: Update this to v1.50.0 when 1.50.0 is out.
 http_archive(
     name = "com_github_grpc_grpc",
-    strip_prefix = "grpc-%s" % grpc_version,
+    strip_prefix = "grpc-c3714eced8c51db9092e0adc2a1dfb715655c795",
     urls = [
-        "https://github.com/grpc/grpc/archive/v%s.tar.gz" % grpc_version,
+        "https://github.com/grpc/grpc/archive/c3714eced8c51db9092e0adc2a1dfb715655c795.tar.gz",
     ],
 )
 
 # Override the abseil-cpp version defined in grpc_deps(), which doesn't work on latest macOS
 # Fixes https://github.com/bazelbuild/bazel/issues/15168
+# This section is excerpted from https://github.com/bazelbuild/bazel/blob/master/distdir_deps.bzl
 http_archive(
     name = "com_google_absl",
     sha256 = "dcf71b9cba8dc0ca9940c4b316a0c796be8fab42b070bb6b7cab62b48f0e66c4",
@@ -71,6 +83,30 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/abseil/abseil-cpp/archive/refs/tags/20211102.0.tar.gz",
         "https://github.com/abseil/abseil-cpp/archive/refs/tags/20211102.0.tar.gz",
+    ],
+)
+
+# Projects using gRPC as an external dependency must call both grpc_deps() and
+# grpc_extra_deps().
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+
+grpc_deps()
+
+load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+
+grpc_extra_deps()
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()
+
+http_archive(
+    name = "com_google_googleapis",
+    sha256 = "5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0",
+    strip_prefix = "googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92",
+    urls = [
+        "https://mirror.bazel.build/github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz",
+        "https://github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz",
     ],
 )
 
@@ -85,55 +121,25 @@ http_archive(
 )
 
 http_archive(
-    name = "com_google_googleapis",
-    sha256 = "5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0",
-    strip_prefix = "googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92",
+    name = "bazel_gazelle",
+    sha256 = "de69a09dc70417580aabf20a28619bb3ef60d038470c7cf8442fafcf627c21cb",
     urls = [
-        "https://mirror.bazel.build/github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz",
-        "https://github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.24.0/bazel-gazelle-v0.24.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.24.0/bazel-gazelle-v0.24.0.tar.gz",
     ],
 )
 
-# protobuf dependencies
-http_archive(
-    name = "com_google_protobuf",
-    sha256 = "3bd7828aa5af4b13b99c191e8b1e884ebfa9ad371b0ce264605d347f135d2568",
-    strip_prefix = "protobuf-%s" % protobuf_version,
-    urls = [
-        "https://github.com/protocolbuffers/protobuf/archive/v%s.tar.gz" % protobuf_version,
-    ],
-)
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 
-load("@com_google_protobuf//:protobuf_deps.bzl", "PROTOBUF_MAVEN_ARTIFACTS", "protobuf_deps")
-
-protobuf_deps()
-
-# install buildifier
-http_archive(
-    name = "com_github_bazelbuild_buildtools",
-    sha256 = "ae34c344514e08c23e90da0e2d6cb700fcd28e80c02e23e4d5715dddcb42f7b3",
-    strip_prefix = "buildtools-4.2.2",
-    urls = [
-        "https://github.com/bazelbuild/buildtools/archive/refs/tags/4.2.2.tar.gz",
-    ],
-)
-
-# Projects using gRPC as an external dependency must call both grpc_deps() and
-# grpc_extra_deps().
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-
-grpc_deps()
-
-load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-
-grpc_extra_deps()
+gazelle_dependencies()
 
 # io_grpc_grpc_java is for java_grpc_library and related dependencies.
+# We will be using 1.48.1 for grpc-java
 http_archive(
     name = "io_grpc_grpc_java",
     sha256 = "88b12b2b4e0beb849eddde98d5373f2f932513229dbf9ec86cc8e4912fc75e79",
-    strip_prefix = "grpc-java-%s" % grpc_version,
-    urls = ["https://github.com/grpc/grpc-java/archive/v%s.tar.gz" % grpc_version],
+    strip_prefix = "grpc-java-1.48.1",
+    urls = ["https://github.com/grpc/grpc-java/archive/v1.48.1.tar.gz"],
 )
 
 http_archive(
@@ -144,6 +150,7 @@ http_archive(
 )
 
 load("@rules_jvm_external//:defs.bzl", "maven_install")
+load("@com_google_protobuf//:protobuf_deps.bzl", "PROTOBUF_MAVEN_ARTIFACTS")
 load("@io_grpc_grpc_java//:repositories.bzl", "IO_GRPC_GRPC_JAVA_ARTIFACTS", "IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS", "grpc_java_repositories")
 
 grpc_java_repositories()

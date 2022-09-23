@@ -132,6 +132,18 @@ There are two ways to interact with your gRPC BentoService:
 Client Implementation
 ~~~~~~~~~~~~~~~~~~~~~
 
+.. note::
+
+   All of the following client implementations are :github:`available on GitHub <bentoml/BentoML/tree/main/docs/source/guides/snippets/grpc/>`.
+
+.. note::
+
+   Make sure to have ``protoc`` and any of the language-specifi plugin installed and
+   aded to your ``PATH``.
+
+   For example, if you are using Go, you will need to install ``protoc-gen-go-grpc``,
+   and so on.
+
 From another terminal, use one of the following client implementation to send request to the
 gRPC server:
 
@@ -140,33 +152,18 @@ gRPC server:
    .. tab-item:: Python
       :sync: python
 
-      .. code-block:: python
+      We will create our Python client in the directory ``~/workspace/iris_python_client/``:
+
+      .. code-block:: bash
+
+         » mkdir -p ~/workspace/iris_python_client
+         » cd ~/workspace/iris_python_client
+
+      Now, create a file named ``client.py`` in the ``~/workspace/iris_python_client`` directory with the following content:
+
+      .. literalinclude:: ./snippets/grpc/python/client.py
+         :language: py
          :caption: `client.py`
-
-         if __name__ == "__main__":
-            import asyncio
-
-            import grpc
-
-            from bentoml.grpc.utils import import_generated_stubs
-
-            pb, services = import_generated_stubs()
-            async def run():
-               async with grpc.aio.insecure_channel("localhost:3000") as channel:
-                     stub = services.BentoServiceStub(channel)
-                     req = stub.Call(
-                        request=pb.Request(
-                           api_name="classify",
-                           ndarray=pb.NDArray(
-                                 dtype=pb.NDArray.DTYPE_FLOAT,
-                                 shape=(1, 4),
-                                 float_values=[5.9, 3, 5.1, 1.8],
-                           ),
-                        )
-                     )
-               print(req)
-
-            asyncio.run(run())
 
    .. tab-item:: Go
       :sync: golang
@@ -179,78 +176,75 @@ gRPC server:
 
          » mkdir -p ~/workspace/iris_go_client
          » cd ~/workspace/iris_go_client
+         » go mod init iris_go_client && go mod tidy
 
-      We will also need to include the protobuf files from `protocolbuffers/protobuf
-      <https://github.com/protocolbuffers/protobuf>`_ as a thirdparty dependency:
+      Add the following lines to ``~/workspace/iris_go_client/go.mod``:
 
-      .. code-block:: bash
+      .. code-block:: go
 
-         » mkdir -p thirdparty && cd thirdparty
-         » git clone --depth 1 https://github.com/protocolbuffers/protobuf.git
+         require github.com/bentoml/bentoml/grpc/v1alpha1 v0.0.0-unpublished
 
-      Create a different terminal. If you don't have BentoML repository cloned, clone it first:
+         replace github.com/bentoml/bentoml/grpc/v1alpha1 v0.0.0-unpublished => ./github.com/bentoml/bentoml/grpc/v1alpha1
 
-      .. code-block:: bash
+      This is to make sure Go will know where to import our generated gRPC stubs from
+      the incoming steps. (since we don't host the generate gRPC stubs on `pkg.go.dev` 😄)
 
-         » git clone https://github.com/bentoml/bentoml && cd bentoml
+      .. dropdown:: Additional setup
+
+         We will also need to include the protobuf files from :github:`protocolbuffers/protobuf` as a thirdparty dependency:
+
+         .. code-block:: bash
+
+            » mkdir -p thirdparty && pushd thirdparty
+            » git clone --depth 1 https://github.com/protocolbuffers/protobuf.git
+            » popd
+
+         Since we requires the service proto file to build the Go client, we will perform
+         a `sparse checkout <https://github.blog/2020-01-17-bring-your-monorepo-down-to-size-with-sparse-checkout/>`_:
+
+         .. code-block:: bash
+
+            » mkdir bentoml && pushd bentoml
+            » git init
+            » git remote add -f origin https://github.com/bentoml/BentoML.git
+            » git config core.sparseCheckout true
+            » cat <<EOT >|.git/info/sparse-checkout
+            bentoml/grpc
+            EOT
+            » git pull origin main
+            » popd
 
       Given the your ``client.go`` will be saved under ``~/workspace/iris_go_client/client.go``, use the
       following ``protoc`` command to generate the gRPC Go stubs:
 
       .. code-block:: bash
 
-         » protoc -I. -I ~/workspace/iris_go_client/thirdparty/protobuf/src  \
-                  --go_out=~/workspace/iris_go_client --go_opt=paths=source_relative \
-                  --go-grpc_out=~/workspace/iris_go_client --go-grpc_opt=paths=source_relative \
+         » protoc -I. -I thirdparty/protobuf/src  \
+                  --go_out=. --go_opt=paths=import \
+                  --go-grpc_out=. --go-grpc_opt=paths=import \
                   bentoml/grpc/v1alpha1/service.proto
+
+      The following command is a hack to make the generated Go code importable:
+
+      .. code-block:: bash
+
+         » pushd github.com/bentoml/bentoml/grpc/v1alpha1
+         » go mod init v1alpha1 && go mod tidy
+         » popd
 
       Now, create a file named ``client.go`` in the ``~/workspace/iris_go_client`` directory with the following content:
 
-      .. code-block:: go
+      .. literalinclude:: ./snippets/grpc/go/client.go
+         :language: go
          :caption: `client.go`
-
-         package client
-
-         import (
-            "context"
-            "fmt"
-            "time"
-
-            pb "bentoml/grpc/v1alpha1"
-
-            "google.golang.org/grpc"
-            "google.golang.org/grpc/credentials/insecure"
-         )
-
-         var opts []grpc.DialOption
-
-         const serverAddr = "localhost:3000"
-
-         func main() {
-            opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-            conn, err := grpc.Dial(serverAddr, opts...)
-            if err != nil {
-               panic(err)
-            }
-            defer conn.Close()
-            ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-            defer cancel()
-
-            client := pb.NewBentoServiceClient(conn)
-
-            resp, err := client.Call(ctx, &pb.Request{ApiName: "classify", Content: &pb.Request_Ndarray{Ndarray: &pb.NDArray{Dtype: *pb.NDArray_DTYPE_FLOAT.Enum(), Shape: []int32{1, 4}, FloatValues: []float32{3.5, 2.4, 7.8, 5.1}}}})
-            if err != nil {
-               panic(err)
-            }
-            fmt.Print(resp)
-         }
 
    .. tab-item:: C++
       :sync: cpp
 
       :bdg-info:`Requirements:` Make sure follow the `instructions <https://grpc.io/docs/languages/cpp/quickstart/#install-grpc>`_ to install gRPC and Protobuf locally.
 
-      In this example, we will use `bazel <https://bazel.build/>`_ to build and run the client.
+      In the C++ world, there are various of different build tools. Feel free to use the one
+      you are familiar with. In this example, we will use `bazel <https://bazel.build/>`_ to build and run the client.
 
       We will create our C++ client in the directory ``~/workspace/iris_cc_client/``:
 
@@ -261,10 +255,69 @@ gRPC server:
 
       Create a ``~/workspace/iris_cc_client/client.cpp`` file with the following content:
 
-      .. literalinclude:: ./snippets/cpp/client.cc
+      .. literalinclude:: ./snippets/grpc/cpp/client.cc
          :language: cpp
          :caption: `client.cpp`
 
+   .. tab-item:: Java
+      :sync: java
+
+      :bdg-info:`Requirements:` Make sure to have `JDK>=7 <https://jdk.java.net/>`_ and follow the `instructions <https://github.com/grpc/grpc-java/tree/master/compiler>`_ to install ``protoc`` plugin for gRPC Java.
+
+      We will create our Java client in the directory ``~/workspace/iris_java_client/``:
+
+      .. code-block:: bash
+
+         » mkdir -p ~/workspace/iris_java_client
+         » cd ~/workspace/iris_java_client
+         » mkdir -p src/main/java/com/client
+
+      You can use any of Java build tools (Maven, Gradle, Bazel, etc.) to build and run the client.
+
+      In this example, we will use `bazel <bazel.build>`_ to build and run the client.
+
+      .. dropdown:: Additional setup
+
+         We will also need to include the protobuf files from `protocolbuffers/protobuf
+         <https://github.com/protocolbuffers/protobuf>`_ as a thirdparty dependency:
+
+         .. code-block:: bash
+
+            » mkdir -p thirdparty && cd thirdparty
+            » git clone --depth 1 https://github.com/protocolbuffers/protobuf.git
+
+         Since we requires the service proto file to build the Java client, we will perform
+         a `sparse checkout <https://github.blog/2020-01-17-bring-your-monorepo-down-to-size-with-sparse-checkout/>`_:
+
+         .. code-block:: bash
+
+            » mkdir bentoml && pushd bentoml
+            » git init
+            » git remote add -f origin https://github.com/bentoml/BentoML.git
+            » git config core.sparseCheckout true
+            » cat <<EOT >|.git/info/sparse-checkout
+            bentoml/grpc
+            EOT
+            » git pull origin main
+            » popd
+
+      Here is the ``protoc`` command to generate the gRPC Java stubs:
+
+      .. code-block:: bash
+
+         » protoc -I . \
+                  -I ./thirdparty/protobuf/src \
+                  --java_out=./src/main/java \
+                  --grpc-java_out=./src/main/java \
+                  bentoml/grpc/v1alpha1/service.proto
+
+      Proceed to create a ``~/workspace/iris_java_client/src/main/java/com/client/BentoServiceClient.java`` file with the following content:
+
+      .. literalinclude:: ./snippets/grpc/java/src/main/java/com/client/BentoServiceClient.java
+         :language: java
+         :caption: `BentoServiceClient.java`
+
+:raw-html:`<br />`
 
 Then you can proceed to run the client scripts:
 
@@ -289,91 +342,71 @@ Then you can proceed to run the client scripts:
    .. tab-item:: C++
       :sync: cpp
 
-      Since this is outside of the scope of this guide, we will leave the details on how to
-      compile the C++ client to the reader. Below is a gist of how one can use
-      `Bazel <https://bazel.build/>`_ to compile the C++ client for those who are interested:
+      Below is a gist of how one can use `bazel <https://bazel.build/>`_ to compile the C++ client for those who are interested:
 
-      .. dropdown:: Bazel instruction
+      Define a ``WORKSPACE`` file in the ``~/workspace/iris_cc_client`` directory:
 
-         define a ``WORKSPACE`` file in the ``~/workspace/iris_cc_client`` directory:
+      .. dropdown:: ``~/workspace/iris_cc_client/WORKSPACE``
 
-         .. dropdown:: ``~/workspace/iris_cc_client/WORKSPACE``
+         .. literalinclude:: ./snippets/grpc/cpp/WORKSPACE.snippet.bzl
+            :language: python
 
-            .. code-block:: python
+      Then follow by defining a ``BUILD`` file:
 
-               workspace(name = "client")
+      .. dropdown:: ``~/workspace/iris_cc_client/BUILD``
 
-               load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+         .. literalinclude:: ./snippets/grpc/cpp/BUILD.snippet.bzl
+            :language: python
 
-               http_archive(
-                  name = "rules_proto",
-                  sha256 = "e017528fd1c91c5a33f15493e3a398181a9e821a804eb7ff5acdd1d2d6c2b18d",
-                  strip_prefix = "rules_proto-4.0.0-3.20.0",
-                  urls = [
-                     "https://github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0-3.20.0.tar.gz",
-                  ],
-               )
-               http_archive(
-                  name = "rules_proto_grpc",
-                  sha256 = "507e38c8d95c7efa4f3b1c0595a8e8f139c885cb41a76cab7e20e4e67ae87731",
-                  strip_prefix = "rules_proto_grpc-4.1.1",
-                  urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/archive/4.1.1.tar.gz"],
-               )
+      Proceed then to run the client:
 
-               load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-               load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+      .. code-block:: bash
 
-               rules_proto_grpc_toolchains()
-               rules_proto_grpc_repos()
-               rules_proto_dependencies()
-               rules_proto_toolchains()
+         » bazel run :client_cc
 
-         Then follow by defining a ``BUILD`` file:
+      .. note::
 
-         .. dropdown:: ``~/workspace/iris_cc_client/BUILD``
+         See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/docs/source/guides/snippets/grpc/README.md>` for running
+         working C++ client with bazel.
 
-            .. code-block:: python
+   .. tab-item:: Java
+      :sync: java
 
-               load("@rules_proto//proto:defs.bzl", "proto_library")
-               load("@rules_proto_grpc//cpp:defs.bzl", "cc_grpc_library", "cc_proto_library")
+      Below is a gist of how one can use `bazel <https://bazel.build/>`_ to compile the C++ client for those who are interested:
 
-               proto_library(
-                  name = "service_proto",
-                  srcs = ["bentoml/grpc/v1alpha1/service.proto"],
-                  deps = ["@com_google_protobuf//:struct_proto", "@com_google_protobuf//:wrappers_proto"]
-               )
+      Define a ``WORKSPACE`` file in the ``~/workspace/iris_java_client`` directory:
 
-               cc_proto_library(
-                  name = "service_cc",
-                  protos = [":service_proto"],
-               )
+      .. dropdown:: ``~/workspace/iris_java_client/WORKSPACE``
 
-               cc_grpc_library(
-                  name = "service_cc_grpc",
-                  protos = [":service_proto"],
-                  deps = [":service_cc"],
-               )
+         .. literalinclude:: ./snippets/grpc/java/WORKSPACE.snippet.bzl
+            :language: python
 
-               cc_binary(
-                  name = "client_cc",
-                  srcs = ["client.cc"],
-                  deps = [
-                     ":service_cc_grpc",
-                     "@com_github_grpc_grpc//:grpc++",
-                  ],
-               )
+      Then follow by defining a ``BUILD`` file:
 
-         Proceed then to run the client:
+      .. dropdown:: ``~/workspace/iris_java_client/BUILD``
 
-         .. code-block:: bash
+         .. literalinclude:: ./snippets/grpc/java/BUILD.snippet.bzl
+            :language: python
 
-            » bazel run :client_cc
+      Proceed then to run the client:
+
+      .. code-block:: bash
+
+         » bazel run :client_java
+
+      .. note::
+
+         See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/docs/source/guides/snippets/grpc/README.md>` for running
+         working Java client with bazel.
+
 
 After successfully running the client, proceed to build the bento as usual:
 
 .. code-block:: bash
 
    » bentoml build
+
+:raw-html:`<br />`
 
 Containerize your Bento 🍱 with gRPC support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -400,9 +433,9 @@ After containerization, your Bento container can now be used with gRPC:
                 -p 3000:3000 -p 3001:3001 \
                 iris_classifier:6otbsmxzq6lwbgxi serve-grpc --production
 
-:raw-html:`<br />`
-
 Congratulations! You have successfully served, containerized and tested your BentoService with gRPC.
+
+:raw-html:`<br />`
 
 Using gRPC in BentoML
 ---------------------

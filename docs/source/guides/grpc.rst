@@ -261,68 +261,9 @@ gRPC server:
 
       Create a ``~/workspace/iris_cc_client/client.cpp`` file with the following content:
 
-      .. code-block:: cpp
+      .. literalinclude:: ./snippets/cpp/client.cc
+         :language: cpp
          :caption: `client.cpp`
-
-         #include <array>
-         #include <iostream>
-         #include <memory>
-         #include <mutex>
-         #include <string>
-         #include <vector>
-
-         #include <grpc/grpc.h>
-         #include <grpcpp/channel.h>
-         #include <grpcpp/client_context.h>
-         #include <grpcpp/create_channel.h>
-         #include <grpcpp/grpcpp.h>
-         #include <grpcpp/security/credentials.h>
-
-         #include "bentoml/grpc/v1alpha1/service.grpc.pb.h"
-         #include "bentoml/grpc/v1alpha1/service.pb.h"
-
-         using bentoml::grpc::v1alpha1::BentoService;
-         using bentoml::grpc::v1alpha1::NDArray;
-         using bentoml::grpc::v1alpha1::Request;
-         using bentoml::grpc::v1alpha1::Response;
-         using grpc::Channel;
-         using grpc::ClientAsyncResponseReader;
-         using grpc::ClientContext;
-         using grpc::CompletionQueue;
-         using grpc::Status;
-
-         int main(int argc, char **argv) {
-             auto stubs = BentoService::NewStub(grpc::CreateChannel(
-                   "localhost:3000", grpc::InsecureChannelCredentials()));
-             std::vector<float> data = {3.5, 2.4, 7.8, 5.1};
-             std::vector<int> shape = {1, 4};
-
-             Request request;
-             request.set_api_name("classify");
-
-             NDArray *ndarray = request.mutable_ndarray();
-             ndarray->mutable_shape()->Assign(shape.begin(), shape.end());
-             ndarray->mutable_float_values()->Assign(data.begin(), data.end());
-
-             Response resp;
-             ClientContext context;
-
-             // Storage for the status of the RPC upon completion.
-             Status status = stubs->Call(&context, request, &resp);
-
-             // Act upon the status of the actual RPC.
-             if (!status.ok()) {
-                std::cout << status.error_code() << ": " << status.error_message()
-                         << std::endl;
-                return 1;
-             }
-             if (!resp.has_ndarray()) {
-                std::cout << "Currently only accept output as NDArray." << std::endl;
-                return 1;
-             }
-             std::cout << "response byte size: " << resp.ndarray().ByteSizeLong()
-                         << std::endl;
-         }
 
 
 Then you can proceed to run the client scripts:
@@ -438,7 +379,7 @@ Containerize your Bento 🍱 with gRPC support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To containerize the Bento with gRPC features, pass in ``--enable-features=grpc`` to
-:ref:`bentoml containerize <reference/cli:containerize-enable-features>` to add additional gRPC
+:ref:`bentoml containerize <reference/cli:containerize>` to add additional gRPC
 dependencies to your Bento
 
 .. code-block:: bash
@@ -466,6 +407,9 @@ Congratulations! You have successfully served, containerized and tested your Ben
 Using gRPC in BentoML
 ---------------------
 
+Protobuf definition
+~~~~~~~~~~~~~~~~~~~
+
 Let's take a quick look at `protobuf <https://developers.google.com/protocol-buffers/>`_  definition of the BentoService:
 
 .. code-block:: protobuf
@@ -488,17 +432,30 @@ As you can see, BentoService defines a `simple rpc` ``Call`` that sends a ``Requ
 
 A ``Request`` message takes in:
 
-* ``api_name``: the name of the API function defined inside your BentoService. 
-* `oneof <https://developers.google.com/protocol-buffers/docs/proto3#oneof>`_ ``content``: the field can be one of the following types:
+* `api_name`: the name of the API function defined inside your BentoService. 
+* `oneof <https://developers.google.com/protocol-buffers/docs/proto3#oneof>`_ `content`: the field can be one of the following types:
 
-   * ``NDArray``
-   * ``DataFrame``
-   * ``Series``
-   * ``File``
-   * |google_protobuf_string_value|_
-   * |google_protobuf_value|_
-   * ``Multipart``
-   * ``bytes``
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| Protobuf definition                                              | IO Descriptor                                                                             |
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| :ref:`guides/grpc:Array representation via ``NDArray```          | :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`       |
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| :ref:`guides/grpc:Tabular data representation via ``DataFrame``` | :ref:`bentoml.io.PandasDataFrame <reference/api_io_descriptors:Tabular Data with Pandas>` |
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| :ref:`guides/grpc:File-like object via ``File```                 | :ref:`bentoml.io.File <reference/api_io_descriptors:Files>`                               |
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| |google_protobuf_string_value|_                                  | :ref:`bentoml.io.Text <reference/api_io_descriptors:Texts>`                               |
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| |google_protobuf_value|_                                         | :ref:`bentoml.io.JSON <reference/api_io_descriptors:Structured Data with JSON>`           |
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| :ref:`guides/grpc:Complex payload via ``Multipart```             | :ref:`bentoml.io.Multipart <reference/api_io_descriptors:Multipart Payloads>`             |
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| :ref:`guides/grpc:Compact data format via ``serialized_bytes```  | (See below)                                                                               |
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+
+.. note::
+
+   ``Series`` is currently not yet supported.
 
 .. _google_protobuf_value: https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Value
 
@@ -567,6 +524,41 @@ Therefore, our ``Request`` message would have the following structure:
          ndarray->mutable_shape()->Assign(shape.begin(), shape.end());
          ndarray->mutable_float_values()->Assign(data.begin(), data.end());
 
+Array representation via ``NDArray``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:bdg-info:`Description:` ``NDArray`` represents a flattened n-dimensional array of arbitrary type.
+
+``NDArray`` accepts
+
+:bdg-primary:`API reference:` :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`
+
+Tabular data representation via ``DataFrame``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+File-like object via ``File``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:bdg-info:`Description:` ``File`` represents any arbitrary file type. this can be used
+to 
+
+``File`` is a special type of ``Request`` content that allows users to send files to the BentoService.
+
+Complex payload via ``Multipart``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Compact data format via ``serialized_bytes``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We introduce the field ``serialized_bytes`` to both ``Request`` and ``Response`` such
+that the payload is serialized with BentoML's internal serialization format.
+
+This is useful to when we want to send a large amount of data on the wire.
+However, as mentioned above, this is an internal serialization format and thus not
+**recommended** for use by users.
+
+add me
+
 Mounting Servicer
 ~~~~~~~~~~~~~~~~~
 
@@ -615,7 +607,7 @@ proto message and service context either before - or after - the actual RPC call
 sent/received by client/server.
 
 Interceptors to gRPC is what middleware is to HTTP. The most common use-case for interceptors
-are authentication, :ref:`tracing <guides/tracing>`, access logs, and more.
+are authentication, :ref:`tracing <guides/tracing:Tracing>`, access logs, and more.
 
 BentoML comes with a sets of built-in *async interceptors* to provide support for access logs,
 `OpenTelemetry <https://opentelemetry.io/>`_, and `Prometheus <https://prometheus.io/>`_.
@@ -627,11 +619,9 @@ The following diagrams demonstrates the flow of a gRPC request from client to se
 
 Since interceptors are executed in the order they are added, users interceptors will be executed after the built-in interceptors.
 
-This also means that users interceptors should be **READ-ONLY**, and shouldn't modify the state of the
-incoming request.
+Users interceptors should be **READ-ONLY**, which means it shouldn't modify the state or content of the incoming ``Request``.
 
-BentoML currently only support **async interceptors** (created using
-``grpc.aio.ServerInterceptor``, as opposed to ``grpc.ServerInterceptor``). This is
+BentoML currently only support **async interceptors** (via `grpc.aio.ServerInterceptor <https://grpc.github.io/grpc/python/grpc_asyncio.html#grpc.aio.ServerInterceptor>`_, as opposed to `grpc.ServerInterceptor <https://grpc.github.io/grpc/python/grpc_asyncio.html#grpc.aio.ServerInterceptor>`_). This is
 because BentoML gRPC server is an async implementation of gRPC server.
 
 .. note::
@@ -641,12 +631,83 @@ because BentoML gRPC server is an async implementation of gRPC server.
 
    Feel free to reach out to us at :slack:`#support on Slack`
 
+.. dropdown:: A toy implementation ``AppendMetadataInterceptor``
+
+   .. code-block:: python
+      :caption: metadata_interceptor.py
+
+      from __future__ import annotations
+
+      import typing as t
+      import functools
+      import dataclasses
+      from typing import TYPE_CHECKING
+
+      from grpc import aio
+
+      if TYPE_CHECKING:
+          from bentoml.grpc.types import Request
+          from bentoml.grpc.types import Response
+          from bentoml.grpc.types import RpcMethodHandler
+          from bentoml.grpc.types import AsyncHandlerMethod
+          from bentoml.grpc.types import HandlerCallDetails
+          from bentoml.grpc.types import BentoServicerContext
+
+
+      @dataclasses.dataclass
+      class Context:
+          usage: str
+          accuracy_score: float
+
+
+      class AppendMetadataInterceptor(aio.ServerInterceptor):
+           def __init__(self, *, usage: str, accuracy_score: float) -> None:
+               self.context = Context(usage=usage, accuracy_score=accuracy_score)
+               self._record: set[str] = set()
+
+           async def intercept_service(
+               self,
+               continuation: t.Callable[[HandlerCallDetails], t.Awaitable[RpcMethodHandler]],
+               handler_call_details: HandlerCallDetails,
+           ) -> RpcMethodHandler:
+               from bentoml.grpc.utils import wrap_rpc_handler
+
+               handler = await continuation(handler_call_details)
+
+               if handler and (handler.response_streaming or handler.request_streaming):
+                   return handler
+
+               def wrapper(behaviour: AsyncHandlerMethod[Response]):
+                   @functools.wraps(behaviour)
+                   async def new_behaviour(
+                      request: Request, context: BentoServicerContext
+                   ) -> Response | t.Awaitable[Response]:
+                       self._record.update(
+                         {f"{self.context.usage}:{self.context.accuracy_score}"}
+                       )
+                       resp = await behaviour(request, context)
+                       context.set_trailing_metadata(
+                          tuple(
+                                [
+                                   (k, str(v).encode("utf-8"))
+                                   for k, v in dataclasses.asdict(self.context).items()
+                                ]
+                          )
+                       )
+                       return resp
+
+                   return new_behaviour
+
+               return wrap_rpc_handler(wrapper, handler)
+
 To add your intercptors to existing BentoService, use ``svc.add_grpc_interceptor``:
 
 .. code-block:: python
    :caption: `service.py`
 
-   svc.add_grpc_interceptor(MyInterceptor)
+   from custom_interceptor import CustomInterceptor
+
+   svc.add_grpc_interceptor(CustomInterceptor)
 
 .. note::
 
@@ -659,16 +720,21 @@ To add your intercptors to existing BentoService, use ``svc.add_grpc_interceptor
 
          .. code-block:: python
 
-            svc.add_grpc_interceptor(MyInterceptor, arg1="foo", arg2="bar")
+            from metadata_interceptor import AppendMetadataInterceptor
 
-      .. tab-item:: partial
+            svc.add_grpc_interceptor(AppendMetadataInterceptor, usage="NLP", accuracy_score=0.867)
+
+      .. tab-item:: partial method
 
          .. code-block:: python
 
             from functools import partial
 
-            svc.add_grpc_interceptor(partial(MyInterceptor, arg1="foo", arg2="bar"))
+            from metadata_interceptor import AppendMetadataInterceptor
 
+            svc.add_grpc_interceptor(partial(AppendMetadataInterceptor, usage="NLP", accuracy_score=0.867))
+
+--------------
 
 Recommendations
 ---------------
@@ -676,6 +742,8 @@ Recommendations
 gRPC is designed to be high performance framework for inter-service communications. This
 means that it is a perfect fit for building microservices. The following are some
 recommendation we have for using gRPC for model serving:
+
+:raw-html:`<br />`
 
 Demystifying the misconception of gRPC vs. REST
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -714,6 +782,8 @@ model serving. gRPC comes with its own set of trade-offs, such as:
 
    For HTTP/2 specification, see `RFC 7540 <https://tools.ietf.org/html/rfc7540>`_.
 
+:raw-html:`<br />`
+
 Should I use gRPC instead of REST for model serving?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -728,6 +798,8 @@ However, if your organization is not using gRPC, we recommend to keep using REST
 model serving. This is because REST is a well-known and well-understood protocol,
 meaning there is no knowledge gap for your team, which will increase developer agility, and
 faster go-to-market strategy.
+
+:raw-html:`<br />`
 
 Performance tuning
 ~~~~~~~~~~~~~~~~~~
@@ -752,11 +824,14 @@ A quick overview of the available configuration for gRPC:
          host: 0.0.0.0
          port: 3001
 
+:raw-html:`<br />`
+
 ``max_concurrent_streams``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:bdg-info:`Definition:` Maximum number of concurrent incoming streams to allow on a HTTP2 connection.
-By default we don't set a limit cap. HTTP/2 connections typically has limit of :ref:`maximum concurrent streams <httpwg.org/specs/rfc7540.html#rfc.section.5.1.2>`_
+   :bdg-info:`Definition:` Maximum number of concurrent incoming streams to allow on a HTTP2 connection.
+
+By default we don't set a limit cap. HTTP/2 connections typically has limit of `maximum concurrent streams <httpwg.org/specs/rfc7540.html#rfc.section.5.1.2>`_
 on a connection at one time.
 
 .. dropdown:: Some notes about fine-tuning ``max_concurrent_streams``
@@ -777,17 +852,23 @@ on a connection at one time.
 
    :bdg-info:`Remarks:` We recommend you to play around with the limit cap, starting with 100, and increase if needed.
 
+:raw-html:`<br />`
+
 ``maximum_concurrent_rpcs``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:bdg-info:`Definition:` The maximum number of concurrent RPCs this server will service before returning ``RESOURCE_EXHAUSTED`` status. By default we set
-to ``None`` to indicate no limit, and let gRPC to decide the limit.
+   :bdg-info:`Definition:` The maximum number of concurrent RPCs this server will service before returning ``RESOURCE_EXHAUSTED`` status.
+
+By default we set to ``None`` to indicate no limit, and let gRPC to decide the limit.
+
+:raw-html:`<br />`
 
 ``max_message_length``
 ^^^^^^^^^^^^^^^^^^^^^^
 
-:bdg-info:`Definition:` The maximum message length in bytes allowed to be received on/can be send to the server. By default we set to ``-1`` to indicate no limit.
+   :bdg-info:`Definition:` The maximum message length in bytes allowed to be received on/can be send to the server.
 
+By default we set to ``-1`` to indicate no limit.
 Message size limits via this options is a way to prevent gRPC from consuming excessive
 resources. By default, gRPC uses per-message limits to manage inbound and outbound
 message.
@@ -808,5 +889,4 @@ message.
 
 
 We recommend you to also check out `gRPC performance best practice <https://grpc.io/docs/guides/performance/>`_ to learn about best practice for gRPC.
-
 

@@ -1,0 +1,17 @@
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+
+buildifier(
+    name = "buildifier",
+)
+
+# Create a generated proto library
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "service_proto",
+    srcs = ["bentoml/grpc/v1alpha1/service.proto"],
+    deps = [
+        "@com_google_protobuf//:struct_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)

@@ -726,9 +726,11 @@ support matrix for all distros:
 GPU support
 """""""""""
 
-The :code:`cuda_version` field specifies the target cuda version to install on the
-generated docker image. Currently, the only supported cuda version is :code:`"11.6.2"`.
-BentoML also installs additional packages required for the target cuda version.
+The :code:`cuda_version` field specifies the target cuda version to
+install on the generated docker image. Currently, the only supported
+cuda versions are :code:`"11.6.2"`, :code:`"11.4.3"` and
+:code:`"11.2.2"`.  BentoML also installs additional packages required
+for the target cuda version.
 
 .. code:: yaml
 

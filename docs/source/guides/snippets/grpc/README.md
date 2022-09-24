@@ -12,27 +12,26 @@ All clients are built to run with [quickstart image](https://docs.bentoml.org/en
 docker run -it --rm -p 8888:8888 -p 3000:3000 -p 3001:3001 bentoml/quickstart:latest serve-grpc --production --enable-reflection
 ```
 
-To get all available rules:
+To get all available client rules :
 
 ```bash
-bazel query //... --output label_kind | sort | column -t
+bazel query //... --output label_kind | grep client | sort | column -t
 ```
 
 The following table contains command to run clients to interact with the quickstart
 image:
 
-| Language | Command                   |
-| -------- | ------------------------- |
-| Python   | `python -m python.client` |
-| C++      | `bazel run :client_cc`    |
-| Go       | `bazel run :client_go`    |
-| Java     | `bazel run :client_java`  |
-| Node.js  | `bazel run :client_node`  |
+| Language | Command                     |
+| -------- | --------------------------- |
+| Python   | `bazel run //python:client` |
+| C++      | `bazel run //cpp:client`    |
+| Go       | `bazel run //go:client`     |
+| Java     | `bazel run //java:client`   |
+| Node.js  | `bazel run //js:client`     |
 
 # Adding new language support
 
 - Update [gRPC guides](../../grpc.rst)
-- Create a new language directory. Add a `client.<ext>`
-- Add new rules to `WORKSPACE` and `BUILD`
-- Run `bazel run //:buildifier` for formatting
-- Then commit changes and create a PR.
+- Create a new language directory. Add a `client.<ext>` and `BUILD`
+- Add new rules to `WORKSPACE`
+- `bazel run //:buildifier` for formatting

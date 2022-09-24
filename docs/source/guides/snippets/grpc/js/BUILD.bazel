@@ -1,0 +1,13 @@
+load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
+load("@rules_proto_grpc//js:defs.bzl", "js_grpc_node_library")
+
+js_grpc_node_library(
+    name = "service_grpc",
+    protos = ["//:service_v1alpha1_proto"],
+)
+
+nodejs_binary(
+    name = "client",
+    data = [":service_grpc"],
+    entry_point = "client.js",
+)

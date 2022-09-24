@@ -262,7 +262,8 @@ gRPC server:
    .. tab-item:: Java
       :sync: java
 
-      :bdg-info:`Requirements:` Make sure to have `JDK>=7 <https://jdk.java.net/>`_ and follow the `instructions <https://github.com/grpc/grpc-java/tree/master/compiler>`_ to install ``protoc`` plugin for gRPC Java.
+      :bdg-info:`Requirements:` Make sure to have `JDK>=7 <https://jdk.java.net/>`_ and follow the :github:`instructions <grpc/grpc-java/tree/master/compiler>` to install ``protoc`` plugin for gRPC Java.
+      Additionally, you will need to also have :github:`gRPC and protobuf <grpc/grpc-java>` available locally.
 
       We will create our Java client in the directory ``~/workspace/iris_java_client/``:
 
@@ -278,8 +279,7 @@ gRPC server:
 
       .. dropdown:: Additional setup
 
-         We will also need to include the protobuf files from `protocolbuffers/protobuf
-         <https://github.com/protocolbuffers/protobuf>`_ as a thirdparty dependency:
+         We will also need to include the protobuf files from :github:`protocolbuffers/protobuf` as a thirdparty dependency:
 
          .. code-block:: bash
 
@@ -469,7 +469,6 @@ Then you can proceed to run the client scripts:
       .. code-block:: bash
 
          » node client.js
-
 
 
 After successfully running the client, proceed to build the bento as usual:

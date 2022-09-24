@@ -1,4 +1,7 @@
-workspace(name = "bentoml_grpc_client")
+workspace(
+    name = "bentoml_grpc_client",
+    managed_directories = {"@npm": ["js/node_modules"]},
+)
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -129,13 +132,35 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 
 gazelle_dependencies()
 
+# load python rules here
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "rules_python",
+    strip_prefix = "rules_python-a364fcac97b7ccadb5c5a703ec8ce2f2ecef0d97",
+    url = "https://github.com/bazelbuild/rules_python/archive/a364fcac97b7ccadb5c5a703ec8ce2f2ecef0d97.zip",
+)
+
+load("@rules_python//python:pip.bzl", "pip_parse")
+
+pip_parse(
+    name = "bentoml_requirements",
+    requirements_lock = "//python:requirements.lock.txt",
+)
+
+# Load the starlark macro which will define your dependencies.
+load("@bentoml_requirements//:requirements.bzl", "install_deps")
+
+# Call it to define repos for your requirements.
+install_deps()
+
 # io_grpc_grpc_java is for java_grpc_library and related dependencies.
-# We will be using 1.48.1 for grpc-java
+# Using commit 0cda133c52ed937f9b0a19bcbfc36bf2892c7aa8
 http_archive(
     name = "io_grpc_grpc_java",
-    sha256 = "88b12b2b4e0beb849eddde98d5373f2f932513229dbf9ec86cc8e4912fc75e79",
-    strip_prefix = "grpc-java-1.48.1",
-    urls = ["https://github.com/grpc/grpc-java/archive/v1.48.1.tar.gz"],
+    sha256 = "35189faf484096c9eb2928c43b39f2457d1ca39046704ba8c65a69482f8ceed5",
+    strip_prefix = "grpc-java-0cda133c52ed937f9b0a19bcbfc36bf2892c7aa8",
+    urls = ["https://github.com/grpc/grpc-java/archive/0cda133c52ed937f9b0a19bcbfc36bf2892c7aa8.tar.gz"],
 )
 
 http_archive(
@@ -146,16 +171,10 @@ http_archive(
 )
 
 load("@rules_jvm_external//:defs.bzl", "maven_install")
-load("@com_google_protobuf//:protobuf_deps.bzl", "PROTOBUF_MAVEN_ARTIFACTS")
 load("@io_grpc_grpc_java//:repositories.bzl", "IO_GRPC_GRPC_JAVA_ARTIFACTS", "IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS", "grpc_java_repositories")
 
-grpc_java_repositories()
-
 maven_install(
-    artifacts = [
-        "com.google.api.grpc:grpc-google-cloud-pubsub-v1:0.1.24",
-        "com.google.api.grpc:proto-google-cloud-pubsub-v1:0.1.24",
-    ] + IO_GRPC_GRPC_JAVA_ARTIFACTS + PROTOBUF_MAVEN_ARTIFACTS,
+    artifacts = IO_GRPC_GRPC_JAVA_ARTIFACTS,
     generate_compat_repositories = True,
     override_targets = IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS,
     repositories = [
@@ -163,38 +182,51 @@ maven_install(
     ],
 )
 
+grpc_java_repositories()
+
 load("@maven//:compat.bzl", "compat_repositories")
 
 compat_repositories()
 
 # build_bazel_rules_nodejs sets rules for bootstrap nodejs
-# we will use 1.3.1
+# TODO: move to aspect_rules_js once it is more stable
 http_archive(
-    name = "aspect_rules_js",
-    sha256 = "0707a425093704fab05fb91c3a4b62cf22dca18ea334d8a72f156d4c18e8db90",
-    strip_prefix = "rules_js-1.3.1",
-    url = "https://github.com/aspect-build/rules_js/archive/refs/tags/v1.3.1.tar.gz",
+    name = "build_bazel_rules_nodejs",
+    sha256 = "493bb318d98bb7492cb30e534ad33df2fc5539b43d4dcc4e294a5cc60a126902",
+    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.5.4/rules_nodejs-5.5.4.tar.gz"],
 )
 
-load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
+http_archive(
+    name = "rules_nodejs",
+    sha256 = "404fb7ee034671eb30cc04c59d217adf0a8bd04b311ece17e052fc7ecb60ac32",
+    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.5.4/rules_nodejs-core-5.5.4.tar.gz"],
+)
 
-rules_js_dependencies()
+load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
 
-load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
-
+# The order matters because Bazel will provide the first registered toolchain when a rule asks Bazel to select it
+# This applies to the resolved_toolchain
 nodejs_register_toolchains(
-    name = "nodejs",
-    node_version = DEFAULT_NODE_VERSION,
+    name = "node16",
+    node_version = "16.5.0",
 )
 
-load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
+load("@rules_nodejs//nodejs:yarn_repositories.bzl", "yarn_repositories")
 
-npm_translate_lock(
+yarn_repositories(
+    name = "yarn",
+    node_repository = "node16",
+)
+
+load("@build_bazel_rules_nodejs//:repositories.bzl", "build_bazel_rules_nodejs_dependencies")
+
+build_bazel_rules_nodejs_dependencies()
+
+load("@build_bazel_rules_nodejs//:index.bzl", "yarn_install")
+
+yarn_install(
     name = "npm",
-    package_json = "//:js/package.json",
-    yarn_lock = "//:js/yarn.lock",
+    environment = {"npm_config_target_arch": "x64"},
+    package_json = "//js:package.json",
+    yarn_lock = "//js:yarn.lock",
 )
-
-load("@npm//:repositories.bzl", "npm_repositories")
-
-npm_repositories()

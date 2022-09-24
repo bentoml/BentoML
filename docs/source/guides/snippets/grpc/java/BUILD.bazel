@@ -1,0 +1,26 @@
+load("@io_grpc_grpc_java//:java_grpc_library.bzl", "java_grpc_library")
+
+java_proto_library(
+    name = "service",
+    deps = ["//:service_v1alpha1_proto"],
+)
+
+java_grpc_library(
+    name = "service_grpc",
+    srcs = ["//:service_v1alpha1_proto"],
+    deps = [":service"],
+)
+
+java_binary(
+    name = "client",
+    srcs = ["src/main/java/com/client/BentoServiceClient.java"],
+    main_class = "com.client.BentoServiceClient",
+    runtime_deps = [
+        "@io_grpc_grpc_java//netty",
+    ],
+    deps = [
+        ":service",
+        ":service_grpc",
+        "@io_grpc_grpc_java//api",
+    ],
+)

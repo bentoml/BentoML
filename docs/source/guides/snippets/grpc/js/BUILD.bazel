@@ -3,6 +3,7 @@ load("@rules_proto_grpc//js:defs.bzl", "js_grpc_node_library")
 
 js_grpc_node_library(
     name = "service_grpc",
+    deps_repo = "@npm",
     protos = ["//:service_v1alpha1_proto"],
 )
 

@@ -11,5 +11,9 @@
     "google-protobuf": "^3.21.0",
     "grpc-tools": "^1.11.2",
     "ts-protoc-gen": "^0.15.0"
+  },
+    "scripts": {
+      "compile": "npm_config_target_arch=x64 yarn && bash -x ./hack",
+      "client": "yarn compile && node client.js"
   }
 }

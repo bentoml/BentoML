@@ -21,13 +21,13 @@ bazel query //... --output label_kind | grep client | sort | column -t
 The following table contains command to run clients to interact with the quickstart
 image:
 
-| Language | Command                     |
-| -------- | --------------------------- |
-| Python   | `bazel run //python:client` |
-| C++      | `bazel run //cpp:client`    |
-| Go       | `bazel run //go:client`     |
-| Java     | `bazel run //java:client`   |
-| Node.js  | `bazel run //js:client`     |
+| Language | Command                           |
+| -------- | --------------------------------- |
+| Python   | `bazel run //python:client`       |
+| C++      | `bazel run //cpp:client`          |
+| Go       | `bazel run //go:client`           |
+| Java     | `bazel run //java:client`         |
+| Node.js  | `pushd js && yarn client && popd` |
 
 # Adding new language support
 

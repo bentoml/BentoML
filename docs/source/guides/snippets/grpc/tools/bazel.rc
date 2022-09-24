@@ -1,9 +1,5 @@
 build --client_env=CC=clang
-build --cxxopt='-std=c++14'
+build --cxxopt='-std=c++17'
 build --copt=-DGRPC_BAZEL_BUILD
 build --action_env=GRPC_BAZEL_RUNTIME=1
 build --define=use_fast_cpp_protos=true
-
-# Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
-# https://github.com/bazelbuild/bazel/issues/9190
-build:macos --dynamic_mode=off

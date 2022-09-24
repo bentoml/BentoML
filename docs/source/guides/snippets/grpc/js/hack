@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+
+pushd .. >/dev/null
+ln -s js/node_modules node_modules
+yarn
+"$(npm bin)"/grpc_tools_node_protoc -I. --js_out=import_style=commonjs,binary:js --grpc_out=grpc_js:js bentoml/grpc/v1alpha1/service.proto
+rm node_modules
+popd

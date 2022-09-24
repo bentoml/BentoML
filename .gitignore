@@ -117,13 +117,3 @@ catboost_info
 
 # ignore pyvenv
 pyvenv.cfg
-
-# bazel generated files
-**/*/bazel-*
-# manual generated stubs
-**/*/swift/bentoml
-**/*/cpp/bentoml
-**/*/go/bentoml
-**/*/java/com/bentoml
-**/*/js/bentoml
-**/*/node_modules

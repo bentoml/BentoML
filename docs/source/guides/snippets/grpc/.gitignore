@@ -1,0 +1,10 @@
+# bazel generated files
+bazel-*
+# manual generated stubs
+swift/**/*/bentoml
+cpp/bentoml
+csharp/bentoml
+go/bentoml
+java/**/*/bentoml
+node/bentoml
+node_modules

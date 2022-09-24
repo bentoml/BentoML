@@ -66,9 +66,9 @@ go_register_toolchains(version = "1.19")
 # TODO: Update this to v1.50.0 when 1.50.0 is out.
 http_archive(
     name = "com_github_grpc_grpc",
-    strip_prefix = "grpc-master",
+    strip_prefix = "grpc-c3714eced8c51db9092e0adc2a1dfb715655c795",
     urls = [
-        "https://github.com/grpc/grpc/archive/master.tar.gz",
+        "https://github.com/grpc/grpc/archive/c3714eced8c51db9092e0adc2a1dfb715655c795.tar.gz",
     ],
 )
 
@@ -230,3 +230,28 @@ yarn_install(
     package_json = "//js:package.json",
     yarn_lock = "//js:yarn.lock",
 )
+
+# swift rules
+http_archive(
+    name = "build_bazel_rules_swift",
+    sha256 = "51efdaf85e04e51174de76ef563f255451d5a5cd24c61ad902feeadafc7046d9",
+    url = "https://github.com/bazelbuild/rules_swift/releases/download/1.2.0/rules_swift.1.2.0.tar.gz",
+)
+
+load("@rules_proto_grpc//swift:repositories.bzl", rules_proto_grpc_swift_repos = "swift_repos")
+
+rules_proto_grpc_swift_repos()
+
+load(
+    "@build_bazel_rules_swift//swift:repositories.bzl",
+    "swift_rules_dependencies",
+)
+
+swift_rules_dependencies()
+
+load(
+    "@build_bazel_rules_swift//swift:extras.bzl",
+    "swift_rules_extra_dependencies",
+)
+
+swift_rules_extra_dependencies()

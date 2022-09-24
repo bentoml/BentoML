@@ -1,0 +1,17 @@
+load("@rules_proto_grpc//swift:defs.bzl", "swift_grpc_library")
+load(
+    "@build_bazel_rules_swift//swift:swift.bzl",
+    "swift_binary",
+)
+
+swift_grpc_library(
+    name = "service_grpc",
+    protos = ["//:service_v1alpha1_proto"],
+    extra_protoc_args = [""]
+)
+
+swift_binary(
+    name = "client",
+    srcs = ["Sources/BentoServiceClient/BentoServiceClient.swift"],
+    deps = [":service_grpc"],
+)

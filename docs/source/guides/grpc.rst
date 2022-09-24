@@ -263,7 +263,8 @@ gRPC server:
       :sync: java
 
       :bdg-info:`Requirements:` Make sure to have `JDK>=7 <https://jdk.java.net/>`_ and follow the :github:`instructions <grpc/grpc-java/tree/master/compiler>` to install ``protoc`` plugin for gRPC Java.
-      Additionally, you will need to also have :github:`gRPC and protobuf <grpc/grpc-java>` available locally.
+
+      Additionally, you will need to also have :github:`gRPC Java <grpc/grpc-java>` and :github:`protocolbuffers/protobuf` available locally.
 
       We will create our Java client in the directory ``~/workspace/iris_java_client/``:
 
@@ -332,7 +333,7 @@ gRPC server:
 
       Initialize the project and use the following ``package.json``:
 
-      .. literalinclude:: ./snippets/grpc/js/package.json
+      .. literalinclude:: ./snippets/grpc/node/package.json
          :language: json
          :caption: `package.json`
 
@@ -378,9 +379,74 @@ gRPC server:
 
       Proceed to create a ``~/workspace/iris_node_client/client.js`` file with the following content:
 
-      .. literalinclude:: ./snippets/grpc/js/client.js
+      .. literalinclude:: ./snippets/grpc/node/client.js
          :language: javascript
          :caption: `client.js`
+
+   .. tab-item:: Swift
+      :sync: swift
+
+      :bdg-info:`Requirements:` Make sure to follow the :github:`instructions <grpc/grpc-swift/blob/main/docs/quick-start.md#prerequisites>` to install ``protoc`` plugin for gRPC Swift.
+
+      Additionally, you will need to also have :github:`gRPC Swift <grpc/grpc-swift>` and :github:`protocolbuffers/protobuf` available locally.
+
+      We will create our Swift client in the directory ``~/workspace/iris_swift_client/``:
+
+      .. code-block:: bash
+
+         » mkdir -p ~/workspace/iris_swift_client
+         » cd ~/workspace/iris_swift_client
+
+      Create a new Swift package:
+
+      .. code-block:: bash
+
+         » swift package init --name BentoServiceClient
+
+      .. dropdown:: An example ``Package.swift`` that should be able to get you started:
+         :icon: code
+
+         .. literalinclude:: ./snippets/grpc/swift/Package.swift
+            :language: swift
+
+      .. dropdown:: Additional setup
+
+         We will also need to include the protobuf files from :github:`protocolbuffers/protobuf` as a thirdparty dependency:
+
+         .. code-block:: bash
+
+            » mkdir -p thirdparty && cd thirdparty
+            » git clone --depth 1 https://github.com/protocolbuffers/protobuf.git
+
+         Since we requires the service proto file to build the swift client, we will perform
+         a `sparse checkout <https://github.blog/2020-01-17-bring-your-monorepo-down-to-size-with-sparse-checkout/>`_:
+
+         .. code-block:: bash
+
+            » mkdir bentoml && pushd bentoml
+            » git init
+            » git remote add -f origin https://github.com/bentoml/BentoML.git
+            » git config core.sparseCheckout true
+            » cat <<EOT >|.git/info/sparse-checkout
+            bentoml/grpc
+            EOT
+            » git pull origin main
+            » popd
+
+      Here is the ``protoc`` command to generate the gRPC swift stubs:
+
+      .. code-block:: bash
+
+         » protoc -I . -I ./thirdparty/protobuf/src \
+                  --swift_out=Source/ --swift_opt=Visibility=Public \
+                  --grpc-swift_out=Source/ --grpc-swift_opt=Visibility=Public \
+                  bentoml/grpc/v1alpha1/service.proto
+
+      Proceed to create a ``Sources/BentoServiceClient/main.swift`` file with the following content:
+
+      .. literalinclude:: ./snippets/grpc/swift/Sources/BentoServiceClient/main.swift
+         :language: swift
+         :caption: `main.swift`
 
 
 :raw-html:`<br />`
@@ -469,6 +535,13 @@ Then you can proceed to run the client scripts:
       .. code-block:: bash
 
          » node client.js
+
+   .. tab-item:: Swift
+      :sync: swift
+
+      .. code-block:: bash
+
+         » swift run BentoServiceClient
 
 
 After successfully running the client, proceed to build the bento as usual:

@@ -1,6 +1,5 @@
-# compile go/client.go
 load("@rules_proto_grpc//go:defs.bzl", "go_grpc_library")
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary")
 
 go_grpc_library(
     name = "service_grpc",
@@ -8,8 +7,8 @@ go_grpc_library(
     protos = ["//:service_v1alpha1_proto"],
 )
 
-go_library(
-    name = "client_pkg",
+go_binary(
+    name = "client",
     srcs = ["client.go"],
     importpath = "github.com/bentoml/bentoml/grpc/v1alpha1",
     deps = [
@@ -19,9 +18,4 @@ go_library(
         "@org_golang_google_grpc//credentials:go_default_library",
         "@org_golang_google_grpc//credentials/insecure:go_default_library",
     ],
-)
-
-go_binary(
-    name = "client",
-    embed = [":client_pkg"],
 )

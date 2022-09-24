@@ -1,3 +1,5 @@
 java/src/main/java/com/bentoml
+kotlin/src/main/kotlin/com/bentoml
 js/bentoml
 **/*/node_modules
+thirdparty

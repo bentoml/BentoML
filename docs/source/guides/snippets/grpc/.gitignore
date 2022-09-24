@@ -6,6 +6,7 @@ cpp/bentoml
 csharp/bentoml
 go/bentoml
 java/**/*/bentoml
+kotlin/**/*/bentoml
 node/bentoml
 node_modules
 thirdparty/*

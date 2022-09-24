@@ -1,4 +1,4 @@
-workspace(name = "iris_java_client")
+workspace(name = "iris_kotlin_client")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -29,26 +29,6 @@ rules_proto_grpc_toolchains()
 
 rules_proto_grpc_repos()
 
-http_archive(
-    name = "com_github_grpc_grpc",
-    strip_prefix = "grpc-v1.48.1",
-    urls = [
-        "https://github.com/grpc/grpc/archive/v1.48.1.tar.gz",
-    ],
-)
-
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-
-grpc_deps()
-
-load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-
-grpc_extra_deps()
-
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
-protobuf_deps()
-
 # We will be using 1.48.1 for grpc-java
 http_archive(
     name = "io_grpc_grpc_java",
@@ -65,13 +45,22 @@ http_archive(
 )
 
 load("@rules_jvm_external//:defs.bzl", "maven_install")
-load("@com_google_protobuf//:protobuf_deps.bzl", "PROTOBUF_MAVEN_ARTIFACTS")
 load("@io_grpc_grpc_java//:repositories.bzl", "IO_GRPC_GRPC_JAVA_ARTIFACTS", "IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS", "grpc_java_repositories")
 
-grpc_java_repositories()
+IO_GRPC_GRPC_KOTLIN_ARTIFACTS = [
+    "com.google.guava:guava:29.0-android",
+    "com.squareup:kotlinpoet:1.11.0",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.2",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-debug:1.6.2",
+]
 
 maven_install(
-    artifacts = IO_GRPC_GRPC_JAVA_ARTIFACTS + PROTOBUF_MAVEN_ARTIFACTS,
+    artifacts = [
+        "com.google.jimfs:jimfs:1.1",
+        "com.google.truth.extensions:truth-proto-extension:1.0.1",
+        "com.google.protobuf:protobuf-kotlin:3.18.0",
+    ] + IO_GRPC_GRPC_KOTLIN_ARTIFACTS + IO_GRPC_GRPC_JAVA_ARTIFACTS,
     generate_compat_repositories = True,
     override_targets = IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS,
     repositories = [
@@ -82,3 +71,28 @@ maven_install(
 load("@maven//:compat.bzl", "compat_repositories")
 
 compat_repositories()
+
+grpc_java_repositories()
+
+# loading kotlin rules
+# first to load grpc/grpc-kotlin
+http_archive(
+    name = "com_github_grpc_grpc_kotlin",
+    sha256 = "b1ec1caa5d81f4fa4dca0662f8112711c82d7db6ba89c928ca7baa4de50afbb2",
+    strip_prefix = "grpc-kotlin-a1659c1b3fb665e01a6854224c7fdcafc8e54d56",
+    urls = ["https://github.com/grpc/grpc-kotlin/archive/a1659c1b3fb665e01a6854224c7fdcafc8e54d56.tar.gz"],
+)
+
+http_archive(
+    name = "io_bazel_rules_kotlin",
+    sha256 = "a57591404423a52bd6b18ebba7979e8cd2243534736c5c94d35c89718ea38f94",
+    urls = ["https://github.com/bazelbuild/rules_kotlin/releases/download/v1.6.0/rules_kotlin_release.tgz"],
+)
+
+load("@io_bazel_rules_kotlin//kotlin:repositories.bzl", "kotlin_repositories")
+
+kotlin_repositories()
+
+load("@io_bazel_rules_kotlin//kotlin:core.bzl", "kt_register_toolchains")
+
+kt_register_toolchains()

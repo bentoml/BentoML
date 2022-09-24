@@ -26,6 +26,7 @@ The following table contains command to run clients:
 | C++      | `bazel run //cpp:client`            |
 | Go       | `bazel run //go:client`             |
 | Java     | `bazel run //java:client`           |
+| Kotlin   | `bazel run //kotlin:client`         |
 | Swift    | `pushd swift && client && popd`     |
 | Node.js  | `pushd node && yarn client && popd` |
 

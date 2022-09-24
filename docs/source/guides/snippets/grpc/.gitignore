@@ -8,3 +8,4 @@ go/bentoml
 java/**/*/bentoml
 node/bentoml
 node_modules
+thirdparty/*

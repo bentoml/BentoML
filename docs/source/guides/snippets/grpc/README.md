@@ -18,17 +18,18 @@ To get all available client rules :
 bazel query //... --output label_kind | grep client | sort | column -t
 ```
 
-The following table contains command to run clients to interact with the quickstart
-image:
+The following table contains command to run clients:
 
 | Language | Command                             |
 | -------- | ----------------------------------- |
 | Python   | `bazel run //python:client`         |
 | C++      | `bazel run //cpp:client`            |
 | Go       | `bazel run //go:client`             |
-| Swift    | `bazel run //swift:client`          |
 | Java     | `bazel run //java:client`           |
+| Swift    | `pushd swift && client && popd`     |
 | Node.js  | `pushd node && yarn client && popd` |
+
+> For Swift client, make sure to compile gRPC Swift `protoc` beforehand to generate the client stubs.
 
 # Adding new language support
 
@@ -36,3 +37,8 @@ image:
 - Create a new language directory. Add a `client.<ext>` and `BUILD`
 - Add new rules to `WORKSPACE`
 - `bazel run //:buildifier` for formatting
+
+### TODO:
+
+- Write ruleset for compiling Swift
+- Write ruleset for running grpc-node

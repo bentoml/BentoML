@@ -1,5 +1,9 @@
 #if compiler(>=5.6)
+#if BAZEL_BUILD
+import swift_BentoServiceModel // internal targets
+#else
 import BentoServiceModel
+#endif
 import Foundation
 import GRPC
 import NIOCore

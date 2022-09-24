@@ -1,5 +1,8 @@
 build --client_env=CC=clang
-build --cxxopt='-std=c++17'
+build --cxxopt='-std=c++14'
 build --copt=-DGRPC_BAZEL_BUILD
 build --action_env=GRPC_BAZEL_RUNTIME=1
 build --define=use_fast_cpp_protos=true
+
+# Address https://github.com/bazelbuild/rules_swift/issues/776
+build --host_swiftcopt=-wmo --swiftcopt=-wmo

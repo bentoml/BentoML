@@ -188,49 +188,6 @@ load("@maven//:compat.bzl", "compat_repositories")
 
 compat_repositories()
 
-# build_bazel_rules_nodejs sets rules for bootstrap nodejs
-# TODO: move to aspect_rules_js once it is more stable
-http_archive(
-    name = "build_bazel_rules_nodejs",
-    sha256 = "493bb318d98bb7492cb30e534ad33df2fc5539b43d4dcc4e294a5cc60a126902",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.5.4/rules_nodejs-5.5.4.tar.gz"],
-)
-
-http_archive(
-    name = "rules_nodejs",
-    sha256 = "404fb7ee034671eb30cc04c59d217adf0a8bd04b311ece17e052fc7ecb60ac32",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.5.4/rules_nodejs-core-5.5.4.tar.gz"],
-)
-
-load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
-
-# The order matters because Bazel will provide the first registered toolchain when a rule asks Bazel to select it
-# This applies to the resolved_toolchain
-nodejs_register_toolchains(
-    name = "node16",
-    node_version = "16.5.0",
-)
-
-load("@rules_nodejs//nodejs:yarn_repositories.bzl", "yarn_repositories")
-
-yarn_repositories(
-    name = "yarn",
-    node_repository = "node16",
-)
-
-load("@build_bazel_rules_nodejs//:repositories.bzl", "build_bazel_rules_nodejs_dependencies")
-
-build_bazel_rules_nodejs_dependencies()
-
-load("@build_bazel_rules_nodejs//:index.bzl", "yarn_install")
-
-yarn_install(
-    name = "npm",
-    environment = {"npm_config_target_arch": "x64"},
-    package_json = "//js:package.json",
-    yarn_lock = "//js:yarn.lock",
-)
-
 # swift rules
 http_archive(
     name = "build_bazel_rules_swift",

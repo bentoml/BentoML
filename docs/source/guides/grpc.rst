@@ -53,79 +53,9 @@ There are two ways to interact with your gRPC BentoService:
 
       » bentoml serve-grpc iris_classifier:latest --production --enable-reflection
 
+   .. include:: ./snippets/grpc/docs/grpc_tools.rst
+
    Open a different terminal and use one of the following:
-
-   .. tab-set::
-
-      .. tab-item:: gRPCurl
-
-         We will use :github:`fullstorydev/grpcurl` to send a CURL-like request to the gRPC BentoServer.
-
-         Note that we will use `docker <https://docs.docker.com/get-docker/>`_ to run the ``grpcurl`` command.
-
-         .. tab-set::
-
-            .. tab-item:: MacOS/Windows
-               :sync: macwin
-
-               .. code-block:: bash
-
-                  » docker run -i --rm \
-                               fullstorydev/grpcurl -d @ -plaintext host.docker.internal:3000 \
-                               bentoml.grpc.v1alpha1.BentoService/Call <<EOT
-                  {
-                     "apiName": "classify",
-                     "ndarray": {
-                        "shape": [1, 4],
-                        "floatValues": [5.9, 3, 5.1, 1.8]
-                     }
-                  }
-                  EOT
-
-            .. tab-item:: Linux
-               :sync: Linux
-
-               .. code-block:: bash
-
-                  » docker run -i --rm \
-                               --network=host \
-                               fullstorydev/grpcurl -d @ -plaintext 0.0.0.0:3000 \
-                               bentoml.grpc.v1alpha1.BentoService/Call <<EOT
-                  {
-                     "apiName": "classify",
-                     "ndarray": {
-                        "shape": [1, 4],
-                        "floatValues": [5.9, 3, 5.1, 1.8]
-                     }
-                  }
-                  EOT
-
-      .. tab-item:: gRPCUI
-
-         We will use :github:`fullstorydev/grpcui` to send request from a web browser.
-
-         Note that we will use `docker <https://docs.docker.com/get-docker/>`_ to run the ``grpcui`` command.
-
-         .. tab-set::
-
-            .. tab-item:: MacOS/Windows
-               :sync: macwin
-
-               .. code-block:: bash
-
-                  » docker run --init --rm \
-                               -p 8080:8080 fullstorydev/grpcui -plaintext host.docker.internal:3000
-
-            .. tab-item:: Linux
-               :sync: Linux
-
-               .. code-block:: bash
-
-                  » docker run --init --rm \
-                               -p 8080:8080 \
-                               --network=host fullstorydev/grpcui -plaintext 0.0.0.0:3000
-
-         Proceed to http://127.0.0.1:8080 in your browser and send test request from the web UI.
 
 2. Use one of the below :ref:`client implementations <guides/grpc:Client Implementation>` to send test requests to your BentoService.
 
@@ -144,16 +74,20 @@ Client Implementation
 
    All of the following client implementations are :github:`available on GitHub <bentoml/BentoML/tree/main/docs/source/guides/snippets/grpc/>`.
 
-.. note::
-
-   Make sure to have ``protoc`` and any of the language-specifi plugin installed and
-   aded to your ``PATH``.
-
-   For example, if you are using Go, you will need to install ``protoc-gen-go-grpc``,
-   and so on.
+:raw-html:`<br />`
 
 From another terminal, use one of the following client implementation to send request to the
 gRPC server:
+
+.. note::
+
+   There are many different ways to generate stubs and implement your own gRPC clients.
+   Please feel free to use any workflow you like to generate stubs. 
+
+   With that being said, we recommend users to use either of the following two approaches:
+
+   - Using `bazel <bazel.build>`_ to manage and isolate dependencies (recommended)
+   - A manual approach using ``protoc`` its language-specific plugins
 
 .. tab-set::
 
@@ -167,7 +101,7 @@ gRPC server:
          » mkdir -p ~/workspace/iris_python_client
          » cd ~/workspace/iris_python_client
 
-      Now, create a file named ``client.py`` in the ``~/workspace/iris_python_client`` directory with the following content:
+      Create a ``client.py`` file with the following content:
 
       .. literalinclude:: ./snippets/grpc/python/client.py
          :language: python
@@ -184,40 +118,68 @@ gRPC server:
 
          » mkdir -p ~/workspace/iris_go_client
          » cd ~/workspace/iris_go_client
-         » go mod init iris_go_client && go mod tidy
 
-      Add the following lines to ``~/workspace/iris_go_client/go.mod``:
+      .. tab-set::
 
-      .. code-block:: go
+         .. tab-item:: Using bazel (recommended)
+            :sync: bazel-workflow
 
-         require github.com/bentoml/bentoml/grpc/v1alpha1 v0.0.0-unpublished
+            Define a |workspace|_ file:
 
-         replace github.com/bentoml/bentoml/grpc/v1alpha1 v0.0.0-unpublished => ./github.com/bentoml/bentoml/grpc/v1alpha1
+            .. dropdown:: ``WORKSPACE``
+               :icon: code
 
-      This is to make sure Go will know where to import our generated gRPC stubs from
-      the incoming steps. (since we don't host the generate gRPC stubs on `pkg.go.dev` 😄)
+               .. literalinclude:: ./snippets/grpc/docs/go/WORKSPACE.snippet.bzl
+                  :language: python
 
-      .. include:: ./snippets/grpc/docs/additional_setup.rst
+            Followed by defining a |build|_ file:
 
-      Given the your ``client.go`` will be saved under ``~/workspace/iris_go_client/client.go``, use the
-      following ``protoc`` command to generate the gRPC Go stubs:
+            .. dropdown:: ``BUILD``
+               :icon: code
 
-      .. code-block:: bash
+               .. literalinclude:: ./snippets/grpc/docs/go/BUILD.snippet.bzl
+                  :language: python
 
-         » protoc -I. -I thirdparty/protobuf/src  \
-                  --go_out=. --go_opt=paths=import \
-                  --go-grpc_out=. --go-grpc_opt=paths=import \
-                  bentoml/grpc/v1alpha1/service.proto
+         .. tab-item:: Manual workflow
+            :sync: manual-workflow
 
-      The following command is a hack to make the generated Go code importable:
+            Create a Go module:
 
-      .. code-block:: bash
+            .. code-block:: bash
 
-         » pushd github.com/bentoml/bentoml/grpc/v1alpha1
-         » go mod init v1alpha1 && go mod tidy
-         » popd
+               » go mod init iris_go_client && go mod tidy
 
-      Now, create a file named ``client.go`` in the ``~/workspace/iris_go_client`` directory with the following content:
+            Add the following lines to ``~/workspace/iris_go_client/go.mod``:
+
+            .. code-block:: go
+
+               require github.com/bentoml/bentoml/grpc/v1alpha1 v0.0.0-unpublished
+
+               replace github.com/bentoml/bentoml/grpc/v1alpha1 v0.0.0-unpublished => ./github.com/bentoml/bentoml/grpc/v1alpha1
+
+            By using `replace directive <https://go.dev/ref/mod#go-mod-file-replace>`_, we
+            ensure that Go will know where our generated stubs to be imported from. (since we don't host the generate gRPC stubs on `pkg.go.dev` 😄)
+
+            .. include:: ./snippets/grpc/docs/additional_setup.rst
+
+            Here is the ``protoc`` command to generate the gRPC Go stubs:
+
+            .. code-block:: bash
+
+               » protoc -I. -I thirdparty/protobuf/src  \
+                        --go_out=. --go_opt=paths=import \
+                        --go-grpc_out=. --go-grpc_opt=paths=import \
+                        bentoml/grpc/v1alpha1/service.proto
+
+            Then run the following to make sure the generated stubs are importable:
+
+            .. code-block:: bash
+
+               » pushd github.com/bentoml/bentoml/grpc/v1alpha1
+               » go mod init v1alpha1 && go mod tidy
+               » popd
+
+      Create a ``client.go`` file with the following content:
 
       .. literalinclude:: ./snippets/grpc/go/client.go
          :language: go
@@ -228,9 +190,6 @@ gRPC server:
 
       :bdg-info:`Requirements:` Make sure follow the `instructions <https://grpc.io/docs/languages/cpp/quickstart/#install-grpc>`_ to install gRPC and Protobuf locally.
 
-      In the C++ world, there are various of different build tools. Feel free to use the one
-      you are familiar with. In this example, we will use `bazel <https://bazel.build/>`_ to build and run the client.
-
       We will create our C++ client in the directory ``~/workspace/iris_cc_client/``:
 
       .. code-block:: bash
@@ -238,21 +197,42 @@ gRPC server:
          » mkdir -p ~/workspace/iris_cc_client
          » cd ~/workspace/iris_cc_client
 
-      Define a |workspace|_ file:
+      .. tab-set::
 
-      .. dropdown:: ``WORKSPACE``
+         .. tab-item:: Using bazel (recommended)
+            :sync: bazel-workflow
 
-         .. literalinclude:: ./snippets/grpc/cpp/WORKSPACE.snippet.bzl
-            :language: python
+            Define a |workspace|_ file:
 
-      Followed by defining a |build|_ file:
+            .. dropdown:: ``WORKSPACE``
+               :icon: code
 
-      .. dropdown:: ``BUILD``
+               .. literalinclude:: ./snippets/grpc/docs/cpp/WORKSPACE.snippet.bzl
+                  :language: python
 
-         .. literalinclude:: ./snippets/grpc/cpp/BUILD.snippet.bzl
-            :language: python
+            Followed by defining a |build|_ file:
 
-      Create a ``~/workspace/iris_cc_client/client.cpp`` file with the following content:
+            .. dropdown:: ``BUILD``
+               :icon: code
+
+               .. literalinclude:: ./snippets/grpc/docs/cpp/BUILD.snippet.bzl
+                  :language: python
+
+         .. tab-item:: Manual workflow
+            :sync: manual-workflow
+
+            .. include:: ./snippets/grpc/docs/additional_setup.rst
+
+            Here is the ``protoc`` command to generate the gRPC C++ stubs:
+
+            .. code-block:: bash
+
+               » protoc -I . -I ./thirdparty/protobuf/src \
+                        --cpp_out=. --grpc_out=. \
+                        --plugin=protoc-gen-grpc=$(which grpc_cpp_plugin) \
+                        bentoml/grpc/v1alpha1/service.proto
+
+      Create a ``client.cpp`` file with the following content:
 
       .. literalinclude:: ./snippets/grpc/cpp/client.cc
          :language: cpp
@@ -261,14 +241,15 @@ gRPC server:
    .. tab-item:: Java
       :sync: java
 
-      :bdg-info:`Requirements:` Make sure to have `JDK>=7 <https://jdk.java.net/>`_ and follow the :github:`instructions <grpc/grpc-java/tree/master/compiler>` to install ``protoc`` plugin for gRPC Java.
+      :bdg-info:`Requirements:` Make sure to have `JDK>=7 <https://jdk.java.net/>`_.
 
-      Additionally, you will need to also have :github:`gRPC Java <grpc/grpc-java>` and :github:`protocolbuffers/protobuf` available locally.
+      :bdg-info:`Optional:`  follow the :github:`instructions <grpc/grpc-java/tree/master/compiler>` to install ``protoc`` plugin for gRPC Java if you plan to use ``protoc`` standalone.
 
-      Feel free to use any Java build tools of choice (Maven, Gradle, Bazel, etc.) to build and run the client.
+      .. note::
 
-      In this example, we will use `bazel <bazel.build>`_ to build and run the client.
+         Feel free to use any Java build tools of choice (Maven, Gradle, Bazel, etc.) to build and run the client you find fit.
 
+         In this tutorial we will be using `bazel <https://bazel.build/>`_.
 
       We will create our Java client in the directory ``~/workspace/iris_java_client/``:
 
@@ -276,33 +257,57 @@ gRPC server:
 
          » mkdir -p ~/workspace/iris_java_client
          » cd ~/workspace/iris_java_client
-         » mkdir -p src/main/java/com/client
 
-      Define a |workspace|_ file:
-
-      .. dropdown:: ``WORKSPACE``
-
-         .. literalinclude:: ./snippets/grpc/java/WORKSPACE.snippet.bzl
-            :language: python
-
-      Followed by defining a |build|_ file:
-
-      .. dropdown:: ``BUILD``
-
-         .. literalinclude:: ./snippets/grpc/java/BUILD.snippet.bzl
-            :language: python
-
-      .. include:: ./snippets/grpc/docs/additional_setup.rst
-
-      Here is the ``protoc`` command to generate the gRPC Java stubs:
+      Create the client Java package (``com.client.BentoServiceClient``):
 
       .. code-block:: bash
 
-         » protoc -I . \
-                  -I ./thirdparty/protobuf/src \
-                  --java_out=./src/main/java \
-                  --grpc-java_out=./src/main/java \
-                  bentoml/grpc/v1alpha1/service.proto
+         » mkdir -p src/main/java/com/client
+
+      .. tab-set::
+
+         .. tab-item:: Using bazel (recommended)
+            :sync: bazel-workflow
+
+            Define a |workspace|_ file:
+
+            .. dropdown:: ``WORKSPACE``
+               :icon: code
+
+               .. literalinclude:: ./snippets/grpc/docs/java/WORKSPACE.snippet.bzl
+                  :language: python
+
+            Followed by defining a |build|_ file:
+
+            .. dropdown:: ``BUILD``
+               :icon: code
+
+               .. literalinclude:: ./snippets/grpc/docs/java/BUILD.snippet.bzl
+                  :language: python
+
+         .. tab-item:: Using others build system
+            :sync: manual-workflow
+
+            One simply can't manually running ``javac`` to compile the Java class, since
+            there are way too many dependencies to be resolved.
+
+            Provided below is an example of how one can use `gradle <https://gradle.org/>`_ to build the Java client.
+
+            .. code-block:: bash
+
+               » gradle init --project-dir .
+
+            The following ``build.gradle`` should be able to help you get started:
+
+            .. literalinclude:: ./snippets/grpc/java/build.gradle
+               :language: groovy
+               :caption: ``./build.gradle``
+
+            To build the client, run:
+
+            .. code-block:: bash
+
+               » ./gradlew build
 
       Proceed to create a ``src/main/java/com/client/BentoServiceClient.java`` file with the following content:
 
@@ -310,12 +315,27 @@ gRPC server:
          :language: java
          :caption: `BentoServiceClient.java`
 
+      .. dropdown:: On running ``protoc`` standalone (optional)
+         :icon: book
+
+         .. include:: ./snippets/grpc/docs/additional_setup.rst
+
+         Here is the ``protoc`` command to generate the gRPC Java stubs if you need to use ``protoc`` standalone:
+
+         .. code-block:: bash
+
+            » protoc -I . \
+                     -I ./thirdparty/protobuf/src \
+                     --java_out=./src/main/java \
+                     --grpc-java_out=./src/main/java \
+                     bentoml/grpc/v1alpha1/service.proto
+
    .. tab-item:: Kotlin
       :sync: kotlin
 
       :bdg-info:`Requirements:` Make sure to have the `prequisites <https://grpc.io/docs/languages/kotlin/quickstart/#prerequisites>`_ to get started with :github:`grpc/grpc-kotlin`.
 
-      Additionally, you will need to also install :github:`Kotlin gRPC codegen <grpc/grpc-kotlin/blob/master/compiler/README.md>` in order to generate gRPC stubs.
+      :bdg-info:`Optional:` feel free to install :github:`Kotlin gRPC codegen <grpc/grpc-kotlin/blob/master/compiler/README.md>` in order to generate gRPC stubs if you plan to use ``protoc`` standalone.
 
       To bootstrap the Kotlin client, feel free to use either `gradle <https://gradle.org/>`_ or
       `maven <https://maven.apache.org/>`_ to build and run the following client code.
@@ -330,36 +350,68 @@ gRPC server:
          » cd ~/workspace/iris_kotlin_client
          » mkdir -p src/main/kotlin/com/client
 
-      Define a |workspace|_ file:
+      .. tab-set::
 
-      .. dropdown:: ``WORKSPACE``
+         .. tab-item:: Using bazel (recommended)
+            :sync: bazel-workflow
 
-         .. literalinclude:: ./snippets/grpc/kotlin/WORKSPACE.snippet.bzl
-            :language: python
+            Define a |workspace|_ file:
 
-      Followed by defining a |build|_ file:
+            .. dropdown:: ``WORKSPACE``
 
-      .. dropdown:: ``BUILD``
+               .. literalinclude:: ./snippets/grpc/docs/kotlin/WORKSPACE.snippet.bzl
+                  :language: python
 
-         .. literalinclude:: ./snippets/grpc/kotlin/BUILD.snippet.bzl
-            :language: python
+            Followed by defining a |build|_ file:
 
-      .. include:: ./snippets/grpc/docs/additional_setup.rst
+            .. dropdown:: ``BUILD``
 
-      Here is the ``protoc`` command to generate the gRPC Kotlin stubs:
+               .. literalinclude:: ./snippets/grpc/kotlin/docs/BUILD.snippet.bzl
+                  :language: python
 
-      .. code-block:: bash
+         .. tab-item:: Using others build system
+            :sync: manual-workflow
 
-         » protoc -I. -I ./thirdparty/protobuf/src \
-                  --kotlin_out ./kotlin/src/main/kotlin/ \
-                  --grpc-kotlin_out ./kotlin/src/main/kotlin \
-                  bentoml/grpc/v1alpha1/service.proto
+            One simply can't manually compile all the Kotlin files, since there are way too many dependencies to be resolved.
+
+            Provided below is an example of how one can use `gradle <https://gradle.org/>`_ to build the Kotlin client.
+
+            .. code-block:: bash
+
+               » gradle init --project-dir .
+
+            The following ``build.gradle`` should be able to help you get started:
+
+            .. literalinclude:: ./snippets/grpc/kotlin/build.gradle.kt
+               :language: groovy
+               :caption: ``./build.gradle.kt``
+
+            To build the client, run:
+
+            .. code-block:: bash
+
+               » ./gradlew build
 
       Proceed to create a ``src/main/kotlin/com/client/BentoServiceClient.kt`` file with the following content:
 
       .. literalinclude:: ./snippets/grpc/kotlin/src/main/kotlin/com/client/BentoServiceClient.kt
          :language: java
          :caption: `BentoServiceClient.kt`
+
+      .. dropdown:: On running ``protoc`` standalone (optional)
+         :icon: book
+
+         .. include:: ./snippets/grpc/docs/additional_setup.rst
+
+         Here is the ``protoc`` command to generate the gRPC Kotlin stubs if you need to use ``protoc`` standalone:
+
+         .. code-block:: bash
+
+            » protoc -I. -I ./thirdparty/protobuf/src \
+                     --kotlin_out ./kotlin/src/main/kotlin/ \
+                     --grpc-kotlin_out ./kotlin/src/main/kotlin \
+                     --plugin=protoc-gen-grpc-kotlin=$(which protoc-gen-grpc-kotlin) \
+                     bentoml/grpc/v1alpha1/service.proto
 
    .. tab-item:: Node.js
       :sync: nodejs
@@ -401,7 +453,8 @@ gRPC server:
       .. code-block:: bash
 
          » $(npm bin)/grpc_tools_node_protoc \
-                  -I. --js_out=import_style=commonjs,binary:. \
+                  -I . -I ./thirdparty/protobuf/src \
+                  --js_out=import_style=commonjs,binary:. \
                   --grpc_out=grpc_js:js \
                   bentoml/grpc/v1alpha1/service.proto
 
@@ -454,6 +507,10 @@ gRPC server:
          :language: swift
          :caption: `main.swift`
 
+.. TODO::
+
+   Bazel instruction for ``swift``, ``nodejs``, ``python``
+
 :raw-html:`<br />`
 
 Then you can proceed to run the client scripts:
@@ -470,16 +527,38 @@ Then you can proceed to run the client scripts:
    .. tab-item:: Go
       :sync: golang
 
-      .. code-block:: bash
+      .. tab-set::
 
-         » go run ./client.go
+         .. tab-item:: Using bazel (recommended)
+            :sync: bazel-workflow
+
+            .. code-block:: bash
+
+               » bazel run //:client_go
+
+         .. tab-item:: Manual workflow
+            :sync: manual-workflow
+
+            .. code-block:: bash
+
+               » go run ./client.go
 
    .. tab-item:: C++
       :sync: cpp
 
-      .. code-block:: bash
+      .. tab-set::
 
-         » bazel run :client_cc
+         .. tab-item:: Using bazel (recommended)
+            :sync: bazel-workflow
+
+            .. code-block:: bash
+
+               » bazel run :client_cc
+
+         .. tab-item:: Manual workflow
+            :sync: manual-workflow
+
+            Refer to :github:`grpc/grpc` for instructions on using CMake and other similar build tools.
 
       .. note::
 
@@ -488,9 +567,24 @@ Then you can proceed to run the client scripts:
    .. tab-item:: Java
       :sync: java
 
-      .. code-block:: bash
+      .. tab-set::
 
-         » bazel run :client_java
+         .. tab-item:: Using bazel (recommended)
+            :sync: bazel-workflow
+
+            .. code-block:: bash
+
+               » bazel run :client_java
+
+         .. tab-item:: Using others build system
+            :sync: manual-workflow
+
+            We will use ``gradlew`` to build the client and run it:
+
+            .. code-block:: bash
+
+               » ./gradlew build && \
+                  ./build/tmp/scripts/bentoServiceClient/bento-service-client
 
       .. note::
 
@@ -499,9 +593,24 @@ Then you can proceed to run the client scripts:
    .. tab-item:: Kotlin
       :sync: kotlin
 
-      .. code-block:: bash
+      .. tab-set::
 
-         » bazel run :client_kt
+         .. tab-item:: Using bazel (recommended)
+            :sync: bazel-workflow
+
+            .. code-block:: bash
+
+               » bazel run :client_kt
+
+         .. tab-item:: Using others build system
+            :sync: manual-workflow
+
+            We will use ``gradlew`` to build the client and run it:
+
+            .. code-block:: bash
+
+               » ./gradlew build && \
+                  ./build/tmp/scripts/bentoServiceClient/bento-service-client
 
       .. note::
 
@@ -521,7 +630,7 @@ Then you can proceed to run the client scripts:
 
          » swift run BentoServiceClient
 
-.. dropdown:: Additional resources for client implementation
+.. dropdown:: Additional language support for client implementation
    :icon: triangle-down
 
    .. tab-set::
@@ -593,7 +702,7 @@ Congratulations! You have successfully served, containerized and tested your Ben
 Using gRPC in BentoML
 ---------------------
 
-We will dive into the details of how gRPC is implemented in BentoML.
+We will dive into some of the details of how gRPC is implemented in BentoML.
 
 Protobuf definition
 ~~~~~~~~~~~~~~~~~~~
@@ -613,7 +722,7 @@ Let's take a quick look at `protobuf <https://developers.google.com/protocol-buf
 
       .. tab-item:: v1alpha1
 
-         .. literalinclude:: ../../../bentoml/grpc/v1alpha1/service.proto
+         .. literalinclude:: ./snippets/grpc/bentoml/grpc/v1alpha1/service.proto
             :language: protobuf
 
 As you can see, BentoService defines a `simple rpc` ``Call`` that sends a ``Request`` message and returns a ``Response`` message.
@@ -672,37 +781,37 @@ Therefore, our ``Request`` message would have the following structure:
    .. tab-item:: Go
       :sync: golang
 
-      .. literalinclude:: ./snippets/grpc/go/request.go
+      .. literalinclude:: ./snippets/grpc/docs/go/request.go
          :language: go
 
    .. tab-item:: C++
       :sync: cpp
 
-      .. literalinclude:: ./snippets/grpc/cpp/request.cc
+      .. literalinclude:: ./snippets/grpc/docs/cpp/request.cc
          :language: cpp
 
    .. tab-item:: Java
       :sync: java
 
-      .. literalinclude:: ./snippets/grpc/java/Request.java
+      .. literalinclude:: ./snippets/grpc/docs/java/Request.java
          :language: java
 
    .. tab-item:: Kotlin
       :sync: kotlin
 
-      .. literalinclude:: ./snippets/grpc/kotlin/Request.kt
+      .. literalinclude:: ./snippets/grpc/docs/kotlin/Request.kt
          :language: java
 
    .. tab-item:: Node.js
       :sync: nodejs
 
-      .. literalinclude:: ./snippets/grpc/node/request.js
+      .. literalinclude:: ./snippets/grpc/docs/node/request.js
          :language: javascript
 
    .. tab-item:: Swift
       :sync: swift
 
-      .. literalinclude:: ./snippets/grpc/swift/Request.swift
+      .. literalinclude:: ./snippets/grpc/docs/swift/Request.swift
          :language: swift
 
 
@@ -710,9 +819,7 @@ Therefore, our ``Request`` message would have the following structure:
 Array representation via ``NDArray``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:bdg-info:`Description:` ``NDArray`` represents a flattened n-dimensional array of arbitrary type.
-
-``NDArray`` accepts the following fields:
+:bdg-info:`Description:` ``NDArray`` represents a flattened n-dimensional array of arbitrary type. It accepts the following fields:
 
 * `dtype`
 
@@ -742,26 +849,195 @@ Array representation via ``NDArray``
 
 * `shape`
 
-   A list of `int32` that represents the shape of the flattened array.
-   Note that the input data should be a flattened array so that BentoML can reconstruct the expected array following the given shape.
+  A list of `int32` that represents the shape of the flattened array. the :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>` will
+  then reshape the given payload into expected shape.
+
+  Note that this value will always takes precendence over the ``shape`` field in the :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>` descriptor,
+  meaning the array will be reshaped to this value first if given. Refer to :meth:`bentoml.io.NumpyNdarray.from_proto` for implementation details.
+
+* `string_values`, `float_values`, `double_values`, `bool_values`, `int32_values`, `int64_values`, `uint32_values`, `unit64_values`
+
+  Each of the fields is a `list` of the corresponding data type. The list is a flattened array, and will be reconstructed
+  alongside with ``shape`` field to the original payload.
+
+  Per request sent, one message should only contain **ONE** of the aforementioned fields.
+
+  The interaction among the above fields and ``dtype`` are as follows:
+
+  - if ``dtype`` is not present in the message:
+      * All of the fields are empty, then we return a ``np.empty``.
+      * We will loop through all of the provided fields, and only allows one field per message.
+
+        If here are more than two fields (i.e. ``string_values`` and ``float_values``), then we will raise an error, as we don't know how to deserialize the data.
+
+  - otherwise:
+      * We will use the provided dtype-to-field maps to get the data from the given message.
+
+  For example, if ``dtype`` is ``DTYPE_FLOAT``, then the payload expects to have ``float_values`` field.
+
+.. grid:: 2
+
+    .. grid-item-card::  ``Python API``
+
+      .. code-block:: python
+
+         NumpyNdarray.from_sample(
+            np.array([[5.4, 3.4, 1.5, 0.4]])
+         )
+
+    .. grid-item-card::  ``pb.NDArray``
+
+      .. code-block:: none
+
+         ndarray {
+           dtype: DTYPE_FLOAT
+           shape: 1
+           shape: 4
+           float_values: 5.4
+           float_values: 3.4
+           float_values: 1.5
+           float_values: 0.4
+         }
 
 
+:bdg-primary:`API reference:` :meth:`bentoml.io.NumpyNdarray.from_proto`
 
-:bdg-primary:`API reference:` :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`
+:raw-html:`<br />`
 
 Tabular data representation via ``DataFrame``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:bdg-info:`Description:` ``DataFrame`` represents any tabular data type. Currently we only support the columns orientation
+since it is turned out to be the only orientation that we can preserve ordering.
+
+This means that every other orientation is currently not yet supported.
+
+It accepts the following fields:
+
+* `column_names`
+
+  A list of `string` that represents the column names of the given tabular data.
+
+* `column_values`
+
+  A list of `Series` where `Series` represents a series of arbitrary data type. The allowed fields for
+  `Series` as similar to the ones in `NDArray`:
+
+  * one of [`string_values`, `float_values`, `double_values`, `bool_values`, `int32_values`, `int64_values`, `uint32_values`, `unit64_values`]
+
+.. grid:: 2
+
+    .. grid-item-card::  ``Python API``
+
+      .. code-block:: python
+
+         PandasDataFrame.from_sample(
+             pd.DataFrame({
+               "age": [3, 29],
+               "height": [94, 170],
+               "weight": [31, 115]
+             }),
+             orient="columns",
+         )
+
+    .. grid-item-card::  ``pb.DataFrame``
+
+      .. code-block:: none
+
+         dataframe {
+           column_names: "age"
+           column_names: "height"
+           column_names: "weight"
+           columns {
+             int32_values: 3
+             int32_values: 29
+           }
+           columns {
+             int32_values: 40
+             int32_values: 190
+           }
+           columns {
+             int32_values: 140
+             int32_values: 178
+           }
+         }
+
+:bdg-primary:`API reference:` :meth:`bentoml.io.PandasDataFrame.from_proto`
 
 File-like object via ``File``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :bdg-info:`Description:` ``File`` represents any arbitrary file type. this can be used
-to 
+to send in any file type, including images, videos, audio, etc.
 
-``File`` is a special type of ``Request`` content that allows users to send files to the BentoService.
+.. note::
+
+   Currently both :class:`bentoml.io.File` and :class:`bentoml.io.Image` are using
+   ``pb.File``
+
+It accepts the following fields:
+
+* `content`
+
+  A `bytes` field that represents the content of the file.
+
+.. TODO::
+
+   - Document ``kind`` once enum was dropped.
+   - Demonstrate python API to protobuf representation
+
 
 Complex payload via ``Multipart``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:bdg-info:`Description:` ``Multipart`` represents a complex payload that can contain
+multiple different fields. It takes a ``fields``, which is a dictionary of input name to
+its coresponding :class:`bentoml.io.IODescriptor`
+
+.. grid:: 2
+
+    .. grid-item-card::  ``Python API``
+
+      .. code-block:: python
+
+         Multipart(
+            meta=Text(),
+            arr=NumpyNdarray(
+               dtype=np.float16,
+               shape=[2,2]
+            )
+         )
+
+    .. grid-item-card::  ``pb.Multipart``
+
+      .. code-block:: none
+
+         multipart {
+            fields {
+               key: "arr"
+               value {
+                  ndarray {
+                  dtype: DTYPE_FLOAT
+                  shape: 2
+                  shape: 2
+                  float_values: 1.0
+                  float_values: 2.0
+                  float_values: 3.0
+                  float_values: 4.0
+                  }
+               }
+            }
+            fields {
+               key: "meta"
+               value {
+                  text {
+                  value: "nlp"
+                  }
+               }
+            }
+         }
+
+:bdg-primary:`API reference:` :meth:`bentoml.io.Multipart.from_proto`
 
 Compact data format via ``serialized_bytes``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -772,8 +1048,6 @@ that the payload is serialized with BentoML's internal serialization format.
 This is useful to when we want to send a large amount of data on the wire.
 However, as mentioned above, this is an internal serialization format and thus not
 **recommended** for use by users.
-
-add me
 
 Mounting Servicer
 ~~~~~~~~~~~~~~~~~
@@ -950,7 +1224,7 @@ To add your intercptors to existing BentoService, use ``svc.add_grpc_interceptor
 
             svc.add_grpc_interceptor(partial(AppendMetadataInterceptor, usage="NLP", accuracy_score=0.867))
 
---------------
+---------------
 
 Recommendations
 ---------------

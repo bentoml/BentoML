@@ -43,6 +43,10 @@ NumPy ``ndarray``
 
 .. autoclass:: bentoml.io.NumpyNdarray
 .. automethod:: bentoml.io.NumpyNdarray.from_sample
+.. automethod:: bentoml.io.NumpyNdarray.from_proto
+.. automethod:: bentoml.io.NumpyNdarray.from_http_request
+.. automethod:: bentoml.io.NumpyNdarray.to_proto
+.. automethod:: bentoml.io.NumpyNdarray.to_http_response
 
 
 Tabular Data with Pandas
@@ -83,6 +87,10 @@ Tabular Data with Pandas
 
 .. autoclass:: bentoml.io.PandasDataFrame
 .. automethod:: bentoml.io.PandasDataFrame.from_sample
+.. automethod:: bentoml.io.PandasDataFrame.from_proto
+.. automethod:: bentoml.io.PandasDataFrame.from_http_request
+.. automethod:: bentoml.io.PandasDataFrame.to_proto
+.. automethod:: bentoml.io.PandasDataFrame.to_http_response
 .. autoclass:: bentoml.io.PandasSeries
 
 
@@ -131,6 +139,10 @@ Texts
 :code:`bentoml.io.Text` is commonly used for NLP Applications:
 
 .. autoclass:: bentoml.io.Text
+.. automethod:: bentoml.io.Text.from_proto
+.. automethod:: bentoml.io.Text.from_http_request
+.. automethod:: bentoml.io.Text.to_proto
+.. automethod:: bentoml.io.Text.to_http_response
 
 Images
 ------
@@ -168,10 +180,19 @@ Images
                 - Pillow
 
 .. autoclass:: bentoml.io.Image
+.. automethod:: bentoml.io.Image.from_proto
+.. automethod:: bentoml.io.Image.from_http_request
+.. automethod:: bentoml.io.Image.to_proto
+.. automethod:: bentoml.io.Image.to_http_response
 
 Files
 -----
+
 .. autoclass:: bentoml.io.File
+.. automethod:: bentoml.io.File.from_proto
+.. automethod:: bentoml.io.File.from_http_request
+.. automethod:: bentoml.io.File.to_proto
+.. automethod:: bentoml.io.File.to_http_response
 
 Multipart Payloads
 ------------------
@@ -182,6 +203,10 @@ Multipart Payloads
     contains a image file and additional metadata in JSON.
 
 .. autoclass:: bentoml.io.Multipart
+.. automethod:: bentoml.io.Multipart.from_proto
+.. automethod:: bentoml.io.Multipart.from_http_request
+.. automethod:: bentoml.io.Multipart.to_proto
+.. automethod:: bentoml.io.Multipart.to_http_response
 
 Custom IODescriptor
 -------------------

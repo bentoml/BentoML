@@ -1,7 +1,9 @@
 load("@rules_python//python:defs.bzl", "py_binary")
+load("@bentoml_requirements//:requirements.bzl", "requirement")
 
 py_binary(
     name = "client",
     srcs = ["client.py"],
     python_version = "PY3",
+    deps = [requirement("grpcio"), requirement("bentoml")]
 )

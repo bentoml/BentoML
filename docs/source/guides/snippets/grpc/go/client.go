@@ -27,7 +27,7 @@ func main() {
 
 	client := pb.NewBentoServiceClient(conn)
 
-	req = &pb.Request{
+	req := &pb.Request{
 		ApiName: "classify",
 		Content: &pb.Request_Ndarray{
 			Ndarray: &pb.NDArray{

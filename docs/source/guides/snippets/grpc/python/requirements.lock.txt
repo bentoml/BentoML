@@ -201,7 +201,5 @@ wrapt==1.14.1
     #   opentelemetry-instrumentation-grpc
 yarl==1.8.1
     # via aiohttp
-
-# The following packages are considered to be unsafe in a requirements file:
-# pip
-# setuptools
+pip==22.1.0
+setuptools==65.3.0

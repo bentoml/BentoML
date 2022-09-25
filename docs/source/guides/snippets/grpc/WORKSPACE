@@ -130,12 +130,11 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 gazelle_dependencies()
 
 # load python rules here
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
+# Using commit f0efec5cf8c0ae16483ee677a09ec70737a01bf5
 http_archive(
     name = "rules_python",
-    strip_prefix = "rules_python-a364fcac97b7ccadb5c5a703ec8ce2f2ecef0d97",
-    url = "https://github.com/bazelbuild/rules_python/archive/a364fcac97b7ccadb5c5a703ec8ce2f2ecef0d97.zip",
+    strip_prefix = "rules_python-f0efec5cf8c0ae16483ee677a09ec70737a01bf5",
+    url = "https://github.com/bazelbuild/rules_python/archive/f0efec5cf8c0ae16483ee677a09ec70737a01bf5.zip",
 )
 
 load("@rules_python//python:pip.bzl", "pip_parse")
@@ -221,26 +220,5 @@ kt_register_toolchains()
 
 # swift rules
 # TODO: Currently fails at detecting compiled gRPC swift library
-http_archive(
-    name = "build_bazel_rules_swift",
-    sha256 = "51efdaf85e04e51174de76ef563f255451d5a5cd24c61ad902feeadafc7046d9",
-    url = "https://github.com/bazelbuild/rules_swift/releases/download/1.2.0/rules_swift.1.2.0.tar.gz",
-)
-
-load("@rules_proto_grpc//swift:repositories.bzl", rules_proto_grpc_swift_repos = "swift_repos")
-
-rules_proto_grpc_swift_repos()
-
-load(
-    "@build_bazel_rules_swift//swift:repositories.bzl",
-    "swift_rules_dependencies",
-)
-
-swift_rules_dependencies()
-
-load(
-    "@build_bazel_rules_swift//swift:extras.bzl",
-    "swift_rules_extra_dependencies",
-)
-
-swift_rules_extra_dependencies()
+# Since CgRPC is deprecated, seems like no rules are being maintained
+# for the newer swift implementation.

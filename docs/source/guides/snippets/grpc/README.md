@@ -20,17 +20,20 @@ bazel query //... --output label_kind | grep client | sort | column -t
 
 The following table contains command to run clients:
 
-| Language | Command                             |
-| -------- | ----------------------------------- |
-| Python   | `bazel run //python:client`         |
-| C++      | `bazel run //cpp:client`            |
-| Go       | `bazel run //go:client`             |
-| Java     | `bazel run //java:client`           |
-| Kotlin   | `bazel run //kotlin:client`         |
-| Swift    | `pushd swift && client && popd`     |
-| Node.js  | `pushd node && yarn client && popd` |
+| Language           | Command                             |
+| ------------------ | ----------------------------------- |
+| [Python](./python) | `bazel run //python:client`         |
+| [C++](./cpp)       | `bazel run //cpp:client`            |
+| [Go](./go)         | `bazel run //go:client`             |
+| [Java](./java)     | `bazel run //java:client`           |
+| [Kotlin](./kotlin) | `bazel run //kotlin:client`         |
+| [Swift](./swift)   | `pushd swift && client && popd`     |
+| [Node.js](./node)  | `pushd node && yarn client && popd` |
 
 > For Swift client, make sure to compile gRPC Swift `protoc` beforehand to generate the client stubs.
+
+Note that each of the above client examples are also working standalone if you wish not
+to use bazel.
 
 # Adding new language support
 

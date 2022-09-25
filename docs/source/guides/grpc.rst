@@ -301,7 +301,7 @@ gRPC server:
 
             .. literalinclude:: ./snippets/grpc/java/build.gradle
                :language: groovy
-               :caption: ``./build.gradle``
+               :caption: build.gradle
 
             To build the client, run:
 
@@ -380,11 +380,11 @@ gRPC server:
 
                » gradle init --project-dir .
 
-            The following ``build.gradle`` should be able to help you get started:
+            The following ``build.gradle.kts`` should be able to help you get started:
 
-            .. literalinclude:: ./snippets/grpc/kotlin/build.gradle.kt
+            .. literalinclude:: ./snippets/grpc/kotlin/build.gradle.kts
                :language: groovy
-               :caption: ``./build.gradle.kt``
+               :caption: build.gradle.kts
 
             To build the client, run:
 
@@ -775,7 +775,7 @@ Therefore, our ``Request`` message would have the following structure:
    .. tab-item:: Python
       :sync: python
 
-      .. literalinclude:: ./snippets/grpc/python/request.py
+      .. literalinclude:: ./snippets/grpc/docs/python/request.py
          :language: python
 
    .. tab-item:: Go

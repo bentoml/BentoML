@@ -1,3 +1,5 @@
+# We will have to manually generate the lock files
+# TODO: bazel rules :)
 git+https://github.com/bentoml/bentoml.git@9ac664f27b6d5801a2f0ad46d3fe32f943e6be8f
 setuptools==65.3.0
 protobuf==3.19.4

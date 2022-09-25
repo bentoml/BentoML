@@ -1,4 +1,4 @@
-workspace(name = "bentoml_grpc_client")
+workspace(name = "bentoml")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -141,7 +141,7 @@ load("@rules_python//python:pip.bzl", "pip_parse")
 
 pip_parse(
     name = "bentoml_requirements",
-    requirements_lock = "//python:requirements.lock.txt",
+    requirements_lock = "//grpc-client/python:requirements.lock.txt",
 )
 
 # Load the starlark macro which will define your dependencies.

@@ -1,8 +1,8 @@
-# `Serving with gRPC` snippets
+# gRPC client
 
-Contains examples for all snippets using for [Serving with gRPC](https://docs.bentoml.org/en/latest/guides/grpc.html)
+Contains examples for gRPC clients using for [Serving with gRPC](https://docs.bentoml.org/en/latest/guides/grpc.html)
 
-We will use [`bazel`](bazel.build) to build and run these examples
+We will use [`bazel`](bazel.build) to build and run these examples.
 
 # Instruction
 
@@ -20,15 +20,15 @@ bazel query //... --output label_kind | grep client | sort | column -t
 
 The following table contains command to run clients:
 
-| Language           | Command                             |
-| ------------------ | ----------------------------------- |
-| [Python](./python) | `bazel run //python:client`         |
-| [C++](./cpp)       | `bazel run //cpp:client`            |
-| [Go](./go)         | `bazel run //go:client`             |
-| [Java](./java)     | `bazel run //java:client`           |
-| [Kotlin](./kotlin) | `bazel run //kotlin:client`         |
-| [Swift](./swift)   | `pushd swift && client && popd`     |
-| [Node.js](./node)  | `pushd node && yarn client && popd` |
+| Language           | Command                                 |
+| ------------------ | --------------------------------------- |
+| [Python](./python) | `bazel run //grpc-client/python:client` |
+| [C++](./cpp)       | `bazel run //grpc-client/cpp:client`    |
+| [Go](./go)         | `bazel run //grpc-client/go:client`     |
+| [Java](./java)     | `bazel run //grpc-client/java:client`   |
+| [Kotlin](./kotlin) | `bazel run //grpc-client/kotlin:client` |
+| [Swift](./swift)   | `pushd swift && client && popd`         |
+| [Node.js](./node)  | `pushd node && yarn client && popd`     |
 
 > For Swift client, make sure to compile gRPC Swift `protoc` beforehand to generate the client stubs.
 
@@ -37,7 +37,7 @@ to use bazel.
 
 # Adding new language support
 
-- Update [gRPC guides](../../grpc.rst)
+- Update [gRPC guides](../docs/source/guides/grpc.rst)
 - Create a new language directory. Add a `client.<ext>` and `BUILD`
 - Add new rules to `WORKSPACE`
 - `bazel run //:buildifier` for formatting

@@ -54,7 +54,7 @@ There are two ways to interact with your gRPC BentoService:
 
       » bentoml serve-grpc iris_classifier:latest --production --enable-reflection
 
-   .. include:: ./snippets/grpc/docs/grpc_tools.rst
+   .. include:: ./snippets/grpc/grpc_tools.rst
 
    Open a different terminal and use one of the following:
 
@@ -102,7 +102,7 @@ gRPC server:
 
       Create a ``client.py`` file with the following content:
 
-      .. literalinclude:: ./snippets/grpc/python/client.py
+      .. literalinclude:: ../../../grpc-client/python/client.py
          :language: python
          :caption: `client.py`
 
@@ -128,7 +128,7 @@ gRPC server:
             .. dropdown:: ``WORKSPACE``
                :icon: code
 
-               .. literalinclude:: ./snippets/grpc/docs/go/WORKSPACE.snippet.bzl
+               .. literalinclude:: ./snippets/grpc/go/WORKSPACE.snippet.bzl
                   :language: python
 
             Followed by defining a |build|_ file:
@@ -136,7 +136,7 @@ gRPC server:
             .. dropdown:: ``BUILD``
                :icon: code
 
-               .. literalinclude:: ./snippets/grpc/docs/go/BUILD.snippet.bzl
+               .. literalinclude:: ./snippets/grpc/go/BUILD.snippet.bzl
                   :language: python
 
          .. tab-item:: Using protoc and language-specific plugins
@@ -159,7 +159,7 @@ gRPC server:
             By using `replace directive <https://go.dev/ref/mod#go-mod-file-replace>`_, we
             ensure that Go will know where our generated stubs to be imported from. (since we don't host the generate gRPC stubs on `pkg.go.dev` 😄)
 
-            .. include:: ./snippets/grpc/docs/additional_setup.rst
+            .. include:: ./snippets/grpc/additional_setup.rst
 
             Here is the ``protoc`` command to generate the gRPC Go stubs:
 
@@ -180,7 +180,7 @@ gRPC server:
 
       Create a ``client.go`` file with the following content:
 
-      .. literalinclude:: ./snippets/grpc/go/client.go
+      .. literalinclude:: ../../../grpc-client/go/client.go
          :language: go
          :caption: `client.go`
 
@@ -206,7 +206,7 @@ gRPC server:
             .. dropdown:: ``WORKSPACE``
                :icon: code
 
-               .. literalinclude:: ./snippets/grpc/docs/cpp/WORKSPACE.snippet.bzl
+               .. literalinclude:: ./snippets/grpc/cpp/WORKSPACE.snippet.bzl
                   :language: python
 
             Followed by defining a |build|_ file:
@@ -214,13 +214,13 @@ gRPC server:
             .. dropdown:: ``BUILD``
                :icon: code
 
-               .. literalinclude:: ./snippets/grpc/docs/cpp/BUILD.snippet.bzl
+               .. literalinclude:: ./snippets/grpc/cpp/BUILD.snippet.bzl
                   :language: python
 
          .. tab-item:: Using protoc and language-specific plugins
             :sync: protoc-and-plugins
 
-            .. include:: ./snippets/grpc/docs/additional_setup.rst
+            .. include:: ./snippets/grpc/additional_setup.rst
 
             Here is the ``protoc`` command to generate the gRPC C++ stubs:
 
@@ -233,7 +233,7 @@ gRPC server:
 
       Create a ``client.cpp`` file with the following content:
 
-      .. literalinclude:: ./snippets/grpc/cpp/client.cc
+      .. literalinclude:: ../../../grpc-client/cpp/client.cc
          :language: cpp
          :caption: `client.cpp`
 
@@ -273,7 +273,7 @@ gRPC server:
             .. dropdown:: ``WORKSPACE``
                :icon: code
 
-               .. literalinclude:: ./snippets/grpc/docs/java/WORKSPACE.snippet.bzl
+               .. literalinclude:: ./snippets/grpc/java/WORKSPACE.snippet.bzl
                   :language: python
 
             Followed by defining a |build|_ file:
@@ -281,7 +281,7 @@ gRPC server:
             .. dropdown:: ``BUILD``
                :icon: code
 
-               .. literalinclude:: ./snippets/grpc/docs/java/BUILD.snippet.bzl
+               .. literalinclude:: ./snippets/grpc/java/BUILD.snippet.bzl
                   :language: python
 
          .. tab-item:: Using others build system
@@ -298,7 +298,7 @@ gRPC server:
 
             The following ``build.gradle`` should be able to help you get started:
 
-            .. literalinclude:: ./snippets/grpc/java/build.gradle
+            .. literalinclude:: ../../../grpc-client/java/build.gradle
                :language: groovy
                :caption: build.gradle
 
@@ -310,14 +310,14 @@ gRPC server:
 
       Proceed to create a ``src/main/java/com/client/BentoServiceClient.java`` file with the following content:
 
-      .. literalinclude:: ./snippets/grpc/java/src/main/java/com/client/BentoServiceClient.java
+      .. literalinclude:: ../../../grpc-client/java/src/main/java/com/client/BentoServiceClient.java
          :language: java
          :caption: `BentoServiceClient.java`
 
       .. dropdown:: On running ``protoc`` standalone (optional)
          :icon: book
 
-         .. include:: ./snippets/grpc/docs/additional_setup.rst
+         .. include:: ./snippets/grpc/additional_setup.rst
 
          Here is the ``protoc`` command to generate the gRPC Java stubs if you need to use ``protoc`` standalone:
 
@@ -358,7 +358,7 @@ gRPC server:
 
             .. dropdown:: ``WORKSPACE``
 
-               .. literalinclude:: ./snippets/grpc/docs/kotlin/WORKSPACE.snippet.bzl
+               .. literalinclude:: ./snippets/grpc/kotlin/WORKSPACE.snippet.bzl
                   :language: python
 
             Followed by defining a |build|_ file:
@@ -381,7 +381,7 @@ gRPC server:
 
             The following ``build.gradle.kts`` should be able to help you get started:
 
-            .. literalinclude:: ./snippets/grpc/kotlin/build.gradle.kts
+            .. literalinclude:: ../../../grpc-client/kotlin/build.gradle.kts
                :language: groovy
                :caption: build.gradle.kts
 
@@ -393,14 +393,14 @@ gRPC server:
 
       Proceed to create a ``src/main/kotlin/com/client/BentoServiceClient.kt`` file with the following content:
 
-      .. literalinclude:: ./snippets/grpc/kotlin/src/main/kotlin/com/client/BentoServiceClient.kt
+      .. literalinclude:: ../../../grpc-client/kotlin/src/main/kotlin/com/client/BentoServiceClient.kt
          :language: java
          :caption: `BentoServiceClient.kt`
 
       .. dropdown:: On running ``protoc`` standalone (optional)
          :icon: book
 
-         .. include:: ./snippets/grpc/docs/additional_setup.rst
+         .. include:: ./snippets/grpc/additional_setup.rst
 
          Here is the ``protoc`` command to generate the gRPC Kotlin stubs if you need to use ``protoc`` standalone:
 
@@ -427,7 +427,7 @@ gRPC server:
 
       .. dropdown:: Initialize the project and use the following ``package.json``:
 
-         .. literalinclude:: ./snippets/grpc/node/package.json
+         .. literalinclude:: ../../../grpc-client/node/package.json
             :language: json
             :caption: `package.json`
 
@@ -445,7 +445,7 @@ gRPC server:
 
             » npm_config_target_arch=x64 yarn install --add-devs
 
-      .. include:: ./snippets/grpc/docs/additional_setup.rst
+      .. include:: ./snippets/grpc/additional_setup.rst
 
       Here is the ``protoc`` command to generate the gRPC Javascript stubs:
 
@@ -459,7 +459,7 @@ gRPC server:
 
       Proceed to create a ``client.js`` file with the following content:
 
-      .. literalinclude:: ./snippets/grpc/node/client.js
+      .. literalinclude:: ../../../grpc-client/node/client.js
          :language: javascript
          :caption: `client.js`
 
@@ -486,10 +486,10 @@ gRPC server:
       .. dropdown:: An example ``Package.swift`` for the client:
          :icon: code
 
-         .. literalinclude:: ./snippets/grpc/swift/Package.swift
+         .. literalinclude:: ../../../grpc-client/swift/Package.swift
             :language: swift
 
-      .. include:: ./snippets/grpc/docs/additional_setup.rst
+      .. include:: ./snippets/grpc/additional_setup.rst
 
       Here is the ``protoc`` command to generate the gRPC swift stubs:
 
@@ -502,7 +502,7 @@ gRPC server:
 
       Proceed to create a ``Sources/BentoServiceClient/main.swift`` file with the following content:
 
-      .. literalinclude:: ./snippets/grpc/swift/Sources/BentoServiceClient/main.swift
+      .. literalinclude:: ../../../grpc-client/swift/Sources/BentoServiceClient/main.swift
          :language: swift
          :caption: `main.swift`
 
@@ -721,7 +721,7 @@ Let's take a quick look at `protobuf <https://developers.google.com/protocol-buf
 
       .. tab-item:: v1alpha1
 
-         .. literalinclude:: ./snippets/grpc/bentoml/grpc/v1alpha1/service.proto
+         .. literalinclude:: ../../../bentoml/grpc/v1alpha1/service.proto
             :language: protobuf
 
 As you can see, BentoService defines a `simple rpc` ``Call`` that sends a ``Request`` message and returns a ``Response`` message.
@@ -774,43 +774,43 @@ Therefore, our ``Request`` message would have the following structure:
    .. tab-item:: Python
       :sync: python
 
-      .. literalinclude:: ./snippets/grpc/docs/python/request.py
+      .. literalinclude:: ./snippets/grpc/python/request.py
          :language: python
 
    .. tab-item:: Go
       :sync: golang
 
-      .. literalinclude:: ./snippets/grpc/docs/go/request.go
+      .. literalinclude:: ./snippets/grpc/go/request.go
          :language: go
 
    .. tab-item:: C++
       :sync: cpp
 
-      .. literalinclude:: ./snippets/grpc/docs/cpp/request.cc
+      .. literalinclude:: ./snippets/grpc/cpp/request.cc
          :language: cpp
 
    .. tab-item:: Java
       :sync: java
 
-      .. literalinclude:: ./snippets/grpc/docs/java/Request.java
+      .. literalinclude:: ./snippets/grpc/java/Request.java
          :language: java
 
    .. tab-item:: Kotlin
       :sync: kotlin
 
-      .. literalinclude:: ./snippets/grpc/docs/kotlin/Request.kt
+      .. literalinclude:: ./snippets/grpc/kotlin/Request.kt
          :language: java
 
    .. tab-item:: Node.js
       :sync: nodejs
 
-      .. literalinclude:: ./snippets/grpc/docs/node/request.js
+      .. literalinclude:: ./snippets/grpc/node/request.js
          :language: javascript
 
    .. tab-item:: Swift
       :sync: swift
 
-      .. literalinclude:: ./snippets/grpc/docs/swift/Request.swift
+      .. literalinclude:: ./snippets/grpc/swift/Request.swift
          :language: swift
 
 

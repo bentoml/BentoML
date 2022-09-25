@@ -27,7 +27,17 @@ func main() {
 
 	client := pb.NewBentoServiceClient(conn)
 
-	resp, err := client.Call(ctx, &pb.Request{ApiName: "classify", Content: &pb.Request_Ndarray{Ndarray: &pb.NDArray{Dtype: *pb.NDArray_DTYPE_FLOAT.Enum(), Shape: []int32{1, 4}, FloatValues: []float32{3.5, 2.4, 7.8, 5.1}}}})
+	req = &pb.Request{
+		ApiName: "classify",
+		Content: &pb.Request_Ndarray{
+			Ndarray: &pb.NDArray{
+				Dtype:       *pb.NDArray_DTYPE_FLOAT.Enum(),
+				Shape:       []int32{1, 4},
+				FloatValues: []float32{3.5, 2.4, 7.8, 5.1},
+			},
+		},
+	}
+	resp, err := client.Call(ctx, req)
 	if err != nil {
 		panic(err)
 	}

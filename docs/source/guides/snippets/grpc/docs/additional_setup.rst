@@ -1,5 +1,4 @@
-.. dropdown:: Additional setup
-   :icon: gear
+.. dropdown:: Adding standalone ``.proto`` files [`expands me`] 
 
    We will also need to include the protobuf files from :github:`protocolbuffers/protobuf` as a thirdparty dependency:
 

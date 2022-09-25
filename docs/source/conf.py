@@ -58,16 +58,6 @@ extlinks = {
 rst_prolog = """
 .. role:: raw-html(raw)
     :format: html
-
-.. role:: protoc_cmd(language, opts, version)
-
-    Here is the ``protoc`` command to generate the gRPC ${language} stubs:
-
-    .. code-block:: bash
-
-       » protoc -I. -I ./thirdparty/protobuf/src \
-               ${opts} \
-               bentoml/grpc/${version}/service.proto
 """
 # hoverxref settings
 hoverxref_auto_ref = True

@@ -129,6 +129,14 @@ There are two ways to interact with your gRPC BentoService:
 
 2. Use one of the below :ref:`client implementations <guides/grpc:Client Implementation>` to send test requests to your BentoService.
 
+.. _workspace: https://bazel.build/concepts/build-ref
+
+.. |workspace| replace:: ``WORKSPACE``
+
+.. _build: https://bazel.build/concepts/build-files
+
+.. |build| replace:: ``BUILD``
+
 Client Implementation
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -162,7 +170,7 @@ gRPC server:
       Now, create a file named ``client.py`` in the ``~/workspace/iris_python_client`` directory with the following content:
 
       .. literalinclude:: ./snippets/grpc/python/client.py
-         :language: py
+         :language: python
          :caption: `client.py`
 
    .. tab-item:: Go
@@ -230,25 +238,25 @@ gRPC server:
          » mkdir -p ~/workspace/iris_cc_client
          » cd ~/workspace/iris_cc_client
 
+      Define a |workspace|_ file:
+
+      .. dropdown:: ``WORKSPACE``
+
+         .. literalinclude:: ./snippets/grpc/cpp/WORKSPACE.snippet.bzl
+            :language: python
+
+      Followed by defining a |build|_ file:
+
+      .. dropdown:: ``BUILD``
+
+         .. literalinclude:: ./snippets/grpc/cpp/BUILD.snippet.bzl
+            :language: python
+
       Create a ``~/workspace/iris_cc_client/client.cpp`` file with the following content:
 
       .. literalinclude:: ./snippets/grpc/cpp/client.cc
          :language: cpp
          :caption: `client.cpp`
-
-      Define a ``WORKSPACE`` file in the ``~/workspace/iris_cc_client`` directory:
-
-      .. dropdown:: ``~/workspace/iris_cc_client/WORKSPACE``
-
-         .. literalinclude:: ./snippets/grpc/cpp/WORKSPACE.snippet.bzl
-            :language: python
-
-      Then followed by defining a ``BUILD`` file:
-
-      .. dropdown:: ``~/workspace/iris_cc_client/BUILD``
-
-         .. literalinclude:: ./snippets/grpc/cpp/BUILD.snippet.bzl
-            :language: python
 
    .. tab-item:: Java
       :sync: java
@@ -256,6 +264,11 @@ gRPC server:
       :bdg-info:`Requirements:` Make sure to have `JDK>=7 <https://jdk.java.net/>`_ and follow the :github:`instructions <grpc/grpc-java/tree/master/compiler>` to install ``protoc`` plugin for gRPC Java.
 
       Additionally, you will need to also have :github:`gRPC Java <grpc/grpc-java>` and :github:`protocolbuffers/protobuf` available locally.
+
+      Feel free to use any Java build tools of choice (Maven, Gradle, Bazel, etc.) to build and run the client.
+
+      In this example, we will use `bazel <bazel.build>`_ to build and run the client.
+
 
       We will create our Java client in the directory ``~/workspace/iris_java_client/``:
 
@@ -265,20 +278,16 @@ gRPC server:
          » cd ~/workspace/iris_java_client
          » mkdir -p src/main/java/com/client
 
-      Feel free to use any Java build tools of choice (Maven, Gradle, Bazel, etc.) to build and run the client.
+      Define a |workspace|_ file:
 
-      In this example, we will use `bazel <bazel.build>`_ to build and run the client.
-
-      Define a ``WORKSPACE`` file in the ``~/workspace/iris_java_client`` directory:
-
-      .. dropdown:: ``~/workspace/iris_java_client/WORKSPACE``
+      .. dropdown:: ``WORKSPACE``
 
          .. literalinclude:: ./snippets/grpc/java/WORKSPACE.snippet.bzl
             :language: python
 
-      Then followed by defining a ``BUILD`` file:
+      Followed by defining a |build|_ file:
 
-      .. dropdown:: ``~/workspace/iris_java_client/BUILD``
+      .. dropdown:: ``BUILD``
 
          .. literalinclude:: ./snippets/grpc/java/BUILD.snippet.bzl
             :language: python
@@ -321,16 +330,16 @@ gRPC server:
          » cd ~/workspace/iris_kotlin_client
          » mkdir -p src/main/kotlin/com/client
 
-      Define a ``WORKSPACE`` file in the ``~/workspace/iris_kotlin_client`` directory:
+      Define a |workspace|_ file:
 
-      .. dropdown:: ``~/workspace/iris_kotlin_client/WORKSPACE``
+      .. dropdown:: ``WORKSPACE``
 
          .. literalinclude:: ./snippets/grpc/kotlin/WORKSPACE.snippet.bzl
             :language: python
 
-      Then followed by defining a ``BUILD`` file:
+      Followed by defining a |build|_ file:
 
-      .. dropdown:: ``~/workspace/iris_kotlin_client/BUILD``
+      .. dropdown:: ``BUILD``
 
          .. literalinclude:: ./snippets/grpc/kotlin/BUILD.snippet.bzl
             :language: python
@@ -349,11 +358,11 @@ gRPC server:
       Proceed to create a ``src/main/kotlin/com/client/BentoServiceClient.kt`` file with the following content:
 
       .. literalinclude:: ./snippets/grpc/kotlin/src/main/kotlin/com/client/BentoServiceClient.kt
-         :language: kotlin
+         :language: java
          :caption: `BentoServiceClient.kt`
 
    .. tab-item:: Node.js
-      :sync: js
+      :sync: nodejs
 
       :bdg-info:`Requirements:` Make sure to have `Node.js <https://nodejs.org/en/>`_
       installed in your system.
@@ -365,11 +374,11 @@ gRPC server:
          » mkdir -p ~/workspace/iris_node_client
          » cd ~/workspace/iris_node_client
 
-      Initialize the project and use the following ``package.json``:
+      .. dropdown:: Initialize the project and use the following ``package.json``:
 
-      .. literalinclude:: ./snippets/grpc/node/package.json
-         :language: json
-         :caption: `package.json`
+         .. literalinclude:: ./snippets/grpc/node/package.json
+            :language: json
+            :caption: `package.json`
 
       Install the dependencies with either ``npm`` or ``yarn``:
 
@@ -422,7 +431,7 @@ gRPC server:
 
          » swift package init --name BentoServiceClient
 
-      .. dropdown:: An example ``Package.swift`` that should be able to get you started:
+      .. dropdown:: An example ``Package.swift`` for the client:
          :icon: code
 
          .. literalinclude:: ./snippets/grpc/swift/Package.swift
@@ -444,17 +453,6 @@ gRPC server:
       .. literalinclude:: ./snippets/grpc/swift/Sources/BentoServiceClient/main.swift
          :language: swift
          :caption: `main.swift`
-
-   .. tab-item:: .NET
-      :sync: dotnet
-
-      :bdg-primary:`Note:` Please check out the :github:`examples <grpc/grpc-dotnet/tree/master/examples>` folder for client implementation :github:`grpc/grpc-dotnet`
-
-   .. tab-item:: Dart
-      :sync: dart
-
-      :bdg-primary:`Note:` Please check out the :github:`examples <grpc/grpc-dart/tree/master/examples>` folder for client implementation :github:`grpc/grpc-dart`
-
 
 :raw-html:`<br />`
 
@@ -510,7 +508,7 @@ Then you can proceed to run the client scripts:
          See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/docs/source/guides/snippets/grpc/README.md>` for working Kotlin client.
 
    .. tab-item:: Node.js
-      :sync: js
+      :sync: nodejs
 
       .. code-block:: bash
 
@@ -523,15 +521,36 @@ Then you can proceed to run the client scripts:
 
          » swift run BentoServiceClient
 
-   .. tab-item:: .NET
-      :sync: dotnet
+.. dropdown:: Additional resources for client implementation
+   :icon: triangle-down
 
-      :bdg-primary:`Note:` Please check out the :github:`examples <grpc/grpc-dotnet/tree/master/examples>` folder for client implementation :github:`grpc/grpc-dotnet`
+   .. tab-set::
 
-   .. tab-item:: Dart
-      :sync: dart
+      .. tab-item:: PHP
+         :sync: php
 
-      :bdg-primary:`Note:` Please check out the :github:`examples <grpc/grpc-dart/tree/master/examples>` folder for client implementation :github:`grpc/grpc-dart`
+         :bdg-primary:`Note:` Please check out the :github:`gRPC PHP <grpc/grpc/blob/master/src/php/README.md#overview>` overview for PHP client implementation.
+
+      .. tab-item:: Ruby
+         :sync: ruby
+
+         :bdg-primary:`Note:` Please check out the :github:`gRPC Ruby <grpc/grpc/blob/master/src/ruby/README.md#grpc-ruby>` for how to install from source.
+         Check out the :github:`examples folder <grpc/grpc/blob/master/examples/ruby/README.md#prerequisites>` for Ruby client implementation.
+
+      .. tab-item:: .NET
+         :sync: dotnet
+
+         :bdg-primary:`Note:` Please check out the :github:`gRPC .NET <grpc/grpc-dotnet/tree/master/examples>` examples folder for :github:`grpc/grpc-dotnet` client implementation.
+
+      .. tab-item:: Dart
+         :sync: dart
+
+         :bdg-primary:`Note:` Please check out the :github:`gRPC Dart <grpc/grpc-dart/tree/master/examples>` examples folder for :github:`grpc/grpc-dart` client implementation.
+
+      .. tab-item:: Rust
+         :sync: rust
+
+         :bdg-primary:`Note:` Currently there are no official gRPC Rust client implementation. Please check out the :github:`tikv/grpc-rs` as one of the unofficial implementation.
 
 
 After successfully running the client, proceed to build the bento as usual:
@@ -569,10 +588,12 @@ After containerization, your Bento container can now be used with gRPC:
 
 Congratulations! You have successfully served, containerized and tested your BentoService with gRPC.
 
-:raw-html:`<br />`
+-------------
 
 Using gRPC in BentoML
 ---------------------
+
+We will dive into the details of how gRPC is implemented in BentoML.
 
 Protobuf definition
 ~~~~~~~~~~~~~~~~~~~
@@ -645,58 +666,86 @@ Therefore, our ``Request`` message would have the following structure:
    .. tab-item:: Python
       :sync: python
 
-      .. code-block:: python
-
-         req = pb.Request(
-            api_name="classify",
-            ndarray=pb.NDArray(
-               dtype=pb.NDArray.DTYPE_FLOAT, shape=(1, 4), float_values=[5.9, 3, 5.1, 1.8]
-            ),
-         )
+      .. literalinclude:: ./snippets/grpc/python/request.py
+         :language: python
 
    .. tab-item:: Go
       :sync: golang
 
-      .. code-block:: go
-
-         req := &pb.Request{
-            ApiName: "classify",
-            Content: &pb.Request_Ndarray{
-               Ndarray: &pb.NDArray{
-                  Dtype: *pb.NDArray_DTYPE_FLOAT.Enum(),
-                  Shape: []int32{1, 4},
-                  FloatValues: []float32{3.5, 2.4, 7.8, 5.1}
-               }
-            }
-         }
+      .. literalinclude:: ./snippets/grpc/go/request.go
+         :language: go
 
    .. tab-item:: C++
       :sync: cpp
 
-      .. code-block:: cpp
+      .. literalinclude:: ./snippets/grpc/cpp/request.cc
+         :language: cpp
 
-         #include "bentoml/grpc/v1alpha1/service.pb.h"
+   .. tab-item:: Java
+      :sync: java
 
-         using bentoml::grpc::v1alpha1::BentoService;
-         using bentoml::grpc::v1alpha1::NDArray;
-         using bentoml::grpc::v1alpha1::Request;
+      .. literalinclude:: ./snippets/grpc/java/Request.java
+         :language: java
 
-         std::vector<float> data = {3.5, 2.4, 7.8, 5.1};
-         std::vector<int> shape = {1, 4};
+   .. tab-item:: Kotlin
+      :sync: kotlin
 
-         Request request;
-         request.set_api_name("classify");
+      .. literalinclude:: ./snippets/grpc/kotlin/Request.kt
+         :language: java
 
-         NDArray *ndarray = request.mutable_ndarray();
-         ndarray->mutable_shape()->Assign(shape.begin(), shape.end());
-         ndarray->mutable_float_values()->Assign(data.begin(), data.end());
+   .. tab-item:: Node.js
+      :sync: nodejs
+
+      .. literalinclude:: ./snippets/grpc/node/request.js
+         :language: javascript
+
+   .. tab-item:: Swift
+      :sync: swift
+
+      .. literalinclude:: ./snippets/grpc/swift/Request.swift
+         :language: swift
+
+
 
 Array representation via ``NDArray``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :bdg-info:`Description:` ``NDArray`` represents a flattened n-dimensional array of arbitrary type.
 
-``NDArray`` accepts
+``NDArray`` accepts the following fields:
+
+* `dtype`
+
+  The data type of given input. This is a `Enum <https://developers.google.com/protocol-buffers/docs/proto3#enum>`_ field that provides 1-1 mapping with Protobuf data types to NumPy data types:
+
+  +-----------------------+---------------+------------+
+  | pb.NDArray.DType      | numpy.dtype   | Enum value |
+  +=======================+===============+============+
+  | ``DTYPE_UNSPECIFIED`` | ``None``      | 0          |
+  +-----------------------+---------------+------------+
+  | ``DTYPE_FLOAT``       | ``np.float``  | 1          |
+  +-----------------------+---------------+------------+
+  | ``DTYPE_DOUBLE``      | ``np.double`` | 2          |
+  +-----------------------+---------------+------------+
+  | ``DTYPE_BOOL``        | ``np.bool_``  | 3          |
+  +-----------------------+---------------+------------+
+  | ``DTYPE_INT32``       | ``np.int32``  | 4          |
+  +-----------------------+---------------+------------+
+  | ``DTYPE_INT64``       | ``np.int64``  | 5          |
+  +-----------------------+---------------+------------+
+  | ``DTYPE_UINT32``      | ``np.uint32`` | 6          |
+  +-----------------------+---------------+------------+
+  | ``DTYPE_UINT64``      | ``np.uint64`` | 7          |
+  +-----------------------+---------------+------------+
+  | ``DTYPE_STRING``      | ``np.str_``   | 8          |
+  +-----------------------+---------------+------------+
+
+* `shape`
+
+   A list of `int32` that represents the shape of the flattened array.
+   Note that the input data should be a flattened array so that BentoML can reconstruct the expected array following the given shape.
+
+
 
 :bdg-primary:`API reference:` :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`
 

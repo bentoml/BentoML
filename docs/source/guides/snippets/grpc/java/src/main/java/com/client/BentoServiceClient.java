@@ -40,10 +40,7 @@ public class BentoServiceClient {
     try {
       BentoServiceBlockingStub blockingStub = BentoServiceGrpc.newBlockingStub(channel);
 
-      NDArray.Builder builder = NDArray.newBuilder();
-      builder.addAllShape(shapeIterable);
-      builder.addAllFloatValues(arrayIterable);
-      builder.setDtype(NDArray.DType.DTYPE_FLOAT);
+      NDArray.Builder builder = NDArray.newBuilder().addAllShape(shapeIterable).addAllFloatValues(arrayIterable).setDtype(NDArray.DType.DTYPE_FLOAT);
 
       Request req = Request.newBuilder().setApiName(apiName).setNdarray(builder).build();
 

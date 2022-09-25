@@ -36,8 +36,6 @@ def host(
 ) -> t.Generator[str, None, None]:
     from bentoml.testing.server import host_bento
 
-    # PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # config_file = os.path.join(PROJECT_DIR, "tracing.yml")
     if psutil.WINDOWS:
         pytest.skip("gRPC is not supported on Windows.")
     with host_bento(
@@ -46,7 +44,6 @@ def host(
         project_path=PROJECT_DIR,
         bentoml_home=bentoml_home,
         clean_context=clean_context,
-        # config_file=config_file,
         use_grpc=True,
     ) as _host:
         yield _host

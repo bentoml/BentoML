@@ -151,8 +151,10 @@ async def server_warmup(
     return False
 
 
-@cached_contextmanager("{project_path}")
-def bentoml_build(project_path: str) -> t.Generator[Bento, None, None]:
+@cached_contextmanager("{project_path}, {cleanup}")
+def bentoml_build(
+    project_path: str, cleanup: bool = True
+) -> t.Generator[Bento, None, None]:
     """
     Build a BentoML project.
     """
@@ -161,13 +163,17 @@ def bentoml_build(project_path: str) -> t.Generator[Bento, None, None]:
     print(f"Building bento: {project_path}")
     bento = bentos.build_bentofile(build_ctx=project_path)
     yield bento
-    print(f"Deleting bento: {str(bento.tag)}")
-    bentos.delete(bento.tag)
+    if cleanup:
+        print(f"Deleting bento: {str(bento.tag)}")
+        bentos.delete(bento.tag)
 
 
-@cached_contextmanager("{bento_tag}, {image_tag}, {use_grpc}")
+@cached_contextmanager("{bento_tag}, {image_tag}, {cleanup}, {use_grpc}")
 def bentoml_containerize(
-    bento_tag: str | Tag, image_tag: str | None = None, use_grpc: bool = False
+    bento_tag: str | Tag,
+    image_tag: str | None = None,
+    cleanup: bool = True,
+    use_grpc: bool = False,
 ) -> t.Generator[str, None, None]:
     """
     Build the docker image from a saved bento, yield the docker image tag
@@ -187,8 +193,9 @@ def bentoml_containerize(
         )
         yield image_tag
     finally:
-        print(f"Removing bento server docker image: {image_tag}")
-        subprocess.call(["docker", "rmi", image_tag])
+        if cleanup:
+            print(f"Removing bento server docker image: {image_tag}")
+            subprocess.call(["docker", "rmi", image_tag])
 
 
 @cached_contextmanager("{image_tag}, {config_file}, {use_grpc}")
@@ -197,7 +204,7 @@ def run_bento_server_docker(
     config_file: str | None = None,
     use_grpc: bool = False,
     timeout: float = 90,
-    host: str = "0.0.0.0",
+    host: str = "127.0.0.1",
 ):
     """
     Launch a bentoml service container from a docker image, yield the host URL
@@ -256,7 +263,7 @@ def run_bento_server_standalone(
     use_grpc: bool = False,
     config_file: str | None = None,
     timeout: float = 90,
-    host: str = "0.0.0.0",
+    host: str = "127.0.0.1",
 ):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
@@ -311,7 +318,7 @@ def run_bento_server_distributed(
     config_file: str | None = None,
     use_grpc: bool = False,
     timeout: float = 90,
-    host: str = "0.0.0.0",
+    host: str = "127.0.0.1",
 ):
     """
     Launch a bentoml service as a simulated distributed environment(Yatai), yields the host URL.
@@ -319,7 +326,6 @@ def run_bento_server_distributed(
     import yaml
 
     import bentoml
-    from bentoml._internal.configuration.containers import BentoMLContainer
 
     with reserve_free_port(enable_so_reuseport=use_grpc) as proxy_port:
         pass
@@ -333,9 +339,13 @@ def run_bento_server_distributed(
     # to ensure yatai specified headers BP100
     copied["YATAI_BENTO_DEPLOYMENT_NAME"] = "test-deployment"
     copied["YATAI_BENTO_DEPLOYMENT_NAMESPACE"] = "yatai"
-    copied["HTTP_PROXY"] = f"http://127.0.0.1:{proxy_port}"
+    if use_grpc:
+        copied["GPRC_PROXY"] = f"localhost:{proxy_port}"
+    else:
+        copied["HTTP_PROXY"] = f"http://127.0.0.1:{proxy_port}"
     if config_file is not None:
         copied["BENTOML_CONFIG"] = os.path.abspath(config_file)
+    print(copied)
 
     runner_map = {}
     processes: list[subprocess.Popen[str]] = []
@@ -424,7 +434,7 @@ def host_bento(
     bentoml_home: str | None = None,
     use_grpc: bool = False,
     clean_context: contextlib.ExitStack | None = None,
-    host: str = "0.0.0.0",
+    host: str = "127.0.0.1",
 ) -> t.Generator[str, None, None]:
     """
     Host a bentoml service, yields the host URL.
@@ -439,17 +449,14 @@ def host_bento(
                        those files in the same test session.
         bentoml_home: if set, we will change the given BentoML home folder to :code:`bentoml_home`. Default
                       to :code:`$HOME/bentoml`
-        grpc: if True, running gRPC tests.
-        host: set a given host for the bento, default to :code:`0.0.0.0`
+        use_grpc: if True, running gRPC tests.
+        host: set a given host for the bento, default to ``127.0.0.1``
 
     Returns:
         :obj:`str`: a generated host URL where we run the test bento.
     """
     import bentoml
 
-    # host changed to 127.0.0.1 for running on Windows
-    if psutil.WINDOWS:
-        host = "127.0.0.1"
     if clean_context is None:
         clean_context = contextlib.ExitStack()
         clean_on_exit = True

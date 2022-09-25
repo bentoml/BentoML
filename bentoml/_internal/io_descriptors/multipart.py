@@ -248,6 +248,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
             ) from None
         message = field.fields
         self.validate_input_mapping(message)
+        to_populate = zip(self._inputs.values(), message.values())
         reqs = await asyncio.gather(
             *tuple(
                 descriptor.from_proto(
@@ -258,7 +259,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
                         ),
                     )
                 )
-                for descriptor, part in zip(self._inputs.values(), message.values())
+                for descriptor, part in to_populate
             )
         )
         return dict(zip(self._inputs, reqs))
@@ -276,6 +277,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
                 zip(
                     obj,
                     [
+                        # TODO: support multiple proto_fields
                         pb.Part(**{io_._proto_fields[0]: resp})
                         for io_, resp in zip(self._inputs.values(), resps)
                     ],

@@ -31,7 +31,7 @@ else:
 
     pb, _ = import_generated_stubs()
     _, services_test = import_generated_stubs(file="service_test.proto")
-    grpc, aio = import_grpc()
+    grpc, aio = import_grpc()  # pylint: disable=E1111
     np = LazyLoader("np", globals(), "numpy")
 
 __all__ = [
@@ -185,7 +185,7 @@ async def create_channel(
 @cached_contextmanager("{interceptors}")
 def make_standalone_server(
     interceptors: t.Sequence[aio.ServerInterceptor] | None = None,
-    host: str = "0.0.0.0",
+    host: str = "127.0.0.1",
 ) -> t.Generator[tuple[aio.Server, str], None, None]:
     """
     Create a standalone aio.Server for testing.
@@ -233,7 +233,7 @@ def make_standalone_server(
         interceptors=interceptors,
         options=(("grpc.so_reuseport", 1),),
     )
-    services_test.add_TestServiceServicer_to_server(TestServiceServicer(), server)  # type: ignore (no async types)
+    services_test.add_TestServiceServicer_to_server(TestServiceServicer(), server)  # type: ignore (no async types) # pylint: disable=E0601
     server.add_insecure_port(f"{host}:{port}")
     print("Using port %d..." % port)
     try:

@@ -203,7 +203,7 @@ addopts = [
   "-rfEX",
   "-x",
   "--capture=tee-sys",
-  "--tb=short",
+  "--tb=long",
   "--import-mode=importlib",
   "--cov=bentoml",
   "--cov-report=term-missing:skip-covered",

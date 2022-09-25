@@ -14,12 +14,12 @@ import fs.errors
 
 from bentoml import Tag
 from bentoml.exceptions import BentoMLException
+from bentoml.testing.pytest import TEST_MODEL_CONTEXT
 from bentoml._internal.models import ModelOptions as InternalModelOptions
 from bentoml._internal.models.model import Model
 from bentoml._internal.models.model import ModelInfo
 from bentoml._internal.models.model import ModelStore
 from bentoml._internal.configuration import BENTOML_VERSION
-from bentoml.testing.pytest import TEST_MODEL_CONTEXT
 
 if TYPE_CHECKING:
     from pathlib import Path

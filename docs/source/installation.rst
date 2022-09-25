@@ -12,7 +12,7 @@ library you are working with, and you are ready to go!
 
 .. code-block::
 
-   pip install --user bentoml
+   pip install bentoml
 
 
 Install using virtual environment

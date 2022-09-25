@@ -18,7 +18,7 @@ library you are working with, and you are ready to go!
 Install using virtual environment
 ---------------------------------
 
-You should install BentoML in a `virtual environment <https://docs.python.org/3/library/venv.html>`_. If you are not familar with virtual environment, refers to this
+You should install BentoML in a `virtual environment <https://docs.python.org/3/library/venv.html>`_. If you are not familiar with virtual environment, refer to this
 `guide <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/>`_. Virtual environment are a great way to manage dependencies and
 avoid compatibility issues among different projects.
 

@@ -7,9 +7,8 @@ with `gRPC <https://grpc.io/>`_:
 
 - First-class support for :ref:`custom gRPC Servicer <guides/grpc:Mounting Servicer>`, :ref:`custom interceptors <guides/grpc:Mounting gRPC Interceptors>`, handlers.
 - Seemlessly adding gRPC support to existing Bento.
-- Streaming support (currently on our roadmap).
 
-This guide will also walk your through some of the strengths and weaknesses of serving with gRPC, as well as
+This guide will also walk you through tradeoffs of serving with gRPC, as well as
 recommendation on scenarios where gRPC might be a good fit.
 
 :bdg-info:`Requirements:` This guide assumes that you have basic knowledge of gRPC and protobuf. If you aren't
@@ -28,20 +27,22 @@ demonstrate BentoML capabilities with gRPC.
 Requirements
 ~~~~~~~~~~~~
 
+BentoML supports for gRPC are introduced in version 1.0.7 and above.
+
 Install BentoML with gRPC support with :pypi:`pip`:
 
 .. code-block:: bash
 
-   » pip install "bentoml[grpc]"
+   » pip install -U "bentoml[grpc]"
 
-Thats it! You can now serving your Bento with gRPC via :ref:`bentoml serve-grpc <reference/cli:serve-grpc>` without having to modify your current service definition 😃.
+Thats it! You can now serve your Bento with gRPC via :ref:`bentoml serve-grpc <reference/cli:serve-grpc>` without having to modify your current service definition 😃.
 
 .. code-block:: bash
 
    » bentoml serve-grpc iris_classifier:latest --production
 
-Interact with your gRPC BentoService
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using your gRPC BentoService
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are two ways to interact with your gRPC BentoService:
 
@@ -81,10 +82,8 @@ gRPC server:
 
 .. note::
 
-   There are many different ways to generate stubs and implement your own gRPC clients.
-   Please feel free to use any workflow you like to generate stubs. 
-
-   With that being said, we recommend users to use either of the following two approaches:
+   gRPC comes with supports for multiple languages. In the upcoming sections
+   we will demonstrate two workflows of generating stubs and implementing clients:
 
    - Using `bazel <bazel.build>`_ to manage and isolate dependencies (recommended)
    - A manual approach using ``protoc`` its language-specific plugins
@@ -140,8 +139,8 @@ gRPC server:
                .. literalinclude:: ./snippets/grpc/docs/go/BUILD.snippet.bzl
                   :language: python
 
-         .. tab-item:: Manual workflow
-            :sync: manual-workflow
+         .. tab-item:: Using protoc and language-specific plugins
+            :sync: protoc-and-plugins
 
             Create a Go module:
 
@@ -218,8 +217,8 @@ gRPC server:
                .. literalinclude:: ./snippets/grpc/docs/cpp/BUILD.snippet.bzl
                   :language: python
 
-         .. tab-item:: Manual workflow
-            :sync: manual-workflow
+         .. tab-item:: Using protoc and language-specific plugins
+            :sync: protoc-and-plugins
 
             .. include:: ./snippets/grpc/docs/additional_setup.rst
 
@@ -286,7 +285,7 @@ gRPC server:
                   :language: python
 
          .. tab-item:: Using others build system
-            :sync: manual-workflow
+            :sync: protoc-and-plugins
 
             One simply can't manually running ``javac`` to compile the Java class, since
             there are way too many dependencies to be resolved.
@@ -370,7 +369,7 @@ gRPC server:
                   :language: python
 
          .. tab-item:: Using others build system
-            :sync: manual-workflow
+            :sync: protoc-and-plugins
 
             One simply can't manually compile all the Kotlin files, since there are way too many dependencies to be resolved.
 
@@ -536,8 +535,8 @@ Then you can proceed to run the client scripts:
 
                » bazel run //:client_go
 
-         .. tab-item:: Manual workflow
-            :sync: manual-workflow
+         .. tab-item:: Using protoc and language-specific plugins
+            :sync: protoc-and-plugins
 
             .. code-block:: bash
 
@@ -555,8 +554,8 @@ Then you can proceed to run the client scripts:
 
                » bazel run :client_cc
 
-         .. tab-item:: Manual workflow
-            :sync: manual-workflow
+         .. tab-item:: Using protoc and language-specific plugins
+            :sync: protoc-and-plugins
 
             Refer to :github:`grpc/grpc` for instructions on using CMake and other similar build tools.
 
@@ -577,7 +576,7 @@ Then you can proceed to run the client scripts:
                » bazel run :client_java
 
          .. tab-item:: Using others build system
-            :sync: manual-workflow
+            :sync: protoc-and-plugins
 
             We will use ``gradlew`` to build the client and run it:
 
@@ -603,7 +602,7 @@ Then you can proceed to run the client scripts:
                » bazel run :client_kt
 
          .. tab-item:: Using others build system
-            :sync: manual-workflow
+            :sync: protoc-and-plugins
 
             We will use ``gradlew`` to build the client and run it:
 
@@ -868,10 +867,30 @@ Array representation via ``NDArray``
       * All of the fields are empty, then we return a ``np.empty``.
       * We will loop through all of the provided fields, and only allows one field per message.
 
-        If here are more than two fields (i.e. ``string_values`` and ``float_values``), then we will raise an error, as we don't know how to deserialize the data.
+        If here are more than one field (i.e. ``string_values`` and ``float_values``), then we will raise an error, as we don't know how to deserialize the data.
 
   - otherwise:
-      * We will use the provided dtype-to-field maps to get the data from the given message.
+      * We will use the provided dtype-to-field map to get the data from the given message.
+
+      +------------------+-------------------+
+      | DType            | field             |
+      +------------------+-------------------+
+      | ``DTYPE_BOOL``   | ``bool_values``   |
+      +------------------+-------------------+
+      | ``DTYPE_DOUBLE`` | ``double_values`` |
+      +------------------+-------------------+
+      | ``DTYPE_FLOAT``  | ``float_values``  |
+      +------------------+-------------------+
+      | ``DTYPE_INT32``  | ``int32_values``  |
+      +------------------+-------------------+
+      | ``DTYPE_INT64``  | ``int64_values``  |
+      +------------------+-------------------+
+      | ``DTYPE_STRING`` | ``string_values`` |
+      +------------------+-------------------+
+      | ``DTYPE_UINT32`` | ``uint32_values`` |
+      +------------------+-------------------+
+      | ``DTYPE_UINT64`` | ``uint64_values`` |
+      +------------------+-------------------+
 
   For example, if ``dtype`` is ``DTYPE_FLOAT``, then the payload expects to have ``float_values`` field.
 
@@ -908,9 +927,7 @@ Tabular data representation via ``DataFrame``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :bdg-info:`Description:` ``DataFrame`` represents any tabular data type. Currently we only support the columns orientation
-since it is turned out to be the only orientation that we can preserve ordering.
-
-This means that every other orientation is currently not yet supported.
+since it is best for preserving the input order.
 
 It accepts the following fields:
 
@@ -1042,19 +1059,16 @@ its coresponding :class:`bentoml.io.IODescriptor`
 Compact data format via ``serialized_bytes``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We introduce the field ``serialized_bytes`` to both ``Request`` and ``Response`` such
-that the payload is serialized with BentoML's internal serialization format.
+The ``serialized_bytes`` field in both ``Request`` and ``Response``  is reserved for pre-established protocol encoding between client and server.
 
-This is useful to when we want to send a large amount of data on the wire.
-However, as mentioned above, this is an internal serialization format and thus not
-**recommended** for use by users.
+BentoML leverages the field to improve serialization performance between BentoML client and server. Thus the field is not **recommended** for use directly.
 
 Mounting Servicer
 ~~~~~~~~~~~~~~~~~
 
 With support for :ref:`multiplexing <guides/grpc:Demystifying the misconception of gRPC vs. REST>`
 to eliminate :wiki:`head-of-line blocking <Head-of-line_blocking>`,
-gPRC enables us to mount additional custom servicess alongside with BentoService,
+gPRC enables us to mount additional custom services alongside with BentoService,
 and serve them under the same port.
 
 .. code-block:: python
@@ -1109,7 +1123,7 @@ The following diagrams demonstrates the flow of a gRPC request from client to se
 
 Since interceptors are executed in the order they are added, users interceptors will be executed after the built-in interceptors.
 
-Users interceptors should be **READ-ONLY**, which means it shouldn't modify the state or content of the incoming ``Request``.
+   Users interceptors shouldn't modify the existing headers and data of the incoming ``Request``.
 
 BentoML currently only support **async interceptors** (via `grpc.aio.ServerInterceptor <https://grpc.github.io/grpc/python/grpc_asyncio.html#grpc.aio.ServerInterceptor>`_, as opposed to `grpc.ServerInterceptor <https://grpc.github.io/grpc/python/grpc_asyncio.html#grpc.aio.ServerInterceptor>`_). This is
 because BentoML gRPC server is an async implementation of gRPC server.
@@ -1261,7 +1275,7 @@ model serving. gRPC comes with its own set of trade-offs, such as:
   often leads to a lot of friction and sometimes increase friction to the development
   agility.
 
-* **Lack of suport for additional content types**: gRPC depends on protobuf, its content
+* **Lack of support for additional content types**: gRPC depends on protobuf, its content
   type are restrictive, in comparison to out-of-the-box support from HTTP+REST.
 
 .. seealso::

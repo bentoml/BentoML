@@ -254,12 +254,18 @@ def add_bento_management_commands(
         default=False,
         help="Forced push to yatai even if it exists in yatai",
     )
-    def push(bento_tag: str, force: bool) -> None:  # type: ignore (not accessed)
+    @click.option(
+        "-t",
+        "--threads",
+        default=10,
+        help="Number of threads to use for upload",
+    )
+    def push(bento_tag: str, force: bool, threads: int) -> None:  # type: ignore (not accessed)
         """Push Bento to a yatai server."""
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
-        yatai_client.push_bento(bento_obj, force=force)
+        yatai_client.push_bento(bento_obj, force=force, threads=threads)
 
     @cli.command()
     @click.argument("build_ctx", type=click.Path(), default=".")

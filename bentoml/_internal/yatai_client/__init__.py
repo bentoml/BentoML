@@ -4,11 +4,13 @@ import io
 import typing as t
 import tarfile
 import tempfile
+import threading
 from typing import TYPE_CHECKING
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from functools import wraps
 from contextlib import contextmanager
+from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 
 import fs
@@ -51,13 +53,19 @@ from ..yatai_rest_api_client.schemas import CreateBentoSchema
 from ..yatai_rest_api_client.schemas import CreateModelSchema
 from ..yatai_rest_api_client.schemas import ModelUploadStatus
 from ..yatai_rest_api_client.schemas import UpdateBentoSchema
+from ..yatai_rest_api_client.schemas import CompletePartSchema
 from ..yatai_rest_api_client.schemas import BentoManifestSchema
 from ..yatai_rest_api_client.schemas import ModelManifestSchema
+from ..yatai_rest_api_client.schemas import TransmissionStrategy
 from ..yatai_rest_api_client.schemas import FinishUploadBentoSchema
 from ..yatai_rest_api_client.schemas import FinishUploadModelSchema
 from ..yatai_rest_api_client.schemas import BentoRunnerResourceSchema
 from ..yatai_rest_api_client.schemas import CreateBentoRepositorySchema
 from ..yatai_rest_api_client.schemas import CreateModelRepositorySchema
+from ..yatai_rest_api_client.schemas import CompleteMultipartUploadSchema
+from ..yatai_rest_api_client.schemas import PreSignMultipartUploadUrlSchema
+
+FILE_CHUNK_SIZE = 100 * 1024 * 1024  # 100Mb
 
 
 class ObjectWrapper(object):
@@ -185,12 +193,12 @@ class YataiClient:
             self.spinner_progress.stop_task(task_id)
             self.spinner_progress.update(task_id, visible=False)
 
-    def push_bento(self, bento: "Bento", *, force: bool = False):
+    def push_bento(self, bento: "Bento", *, force: bool = False, threads: int = 10):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
                 f'Pushing Bento "{bento.tag}"', start=False, visible=False
             )
-            self._do_push_bento(bento, upload_task_id, force=force)
+            self._do_push_bento(bento, upload_task_id, force=force, threads=threads)
 
     def _do_push_bento(
         self,
@@ -198,6 +206,7 @@ class YataiClient:
         upload_task_id: TaskID,
         *,
         force: bool = False,
+        threads: int = 10,
     ):
         yatai_rest_client = get_current_yatai_rest_api_client()
         name = bento.tag.name
@@ -206,17 +215,19 @@ class YataiClient:
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
         model_tags = [m.tag for m in info.models]
-        model_store = bento._model_store
+        model_store = bento._model_store  # type: ignore
         models = (model_store.get(name) for name in model_tags)
         with ThreadPoolExecutor(max_workers=max(len(model_tags), 1)) as executor:
 
-            def push_model(model: "Model"):
+            def push_model(model: "Model") -> None:
                 model_upload_task_id = self.transmission_progress.add_task(
                     f'Pushing model "{model.tag}"', start=False, visible=False
                 )
-                self._do_push_model(model, model_upload_task_id, force=force)
+                self._do_push_model(
+                    model, model_upload_task_id, force=force, threads=threads
+                )
 
-            futures = executor.map(push_model, models)
+            futures: t.Iterator[None] = executor.map(push_model, models)
             list(futures)
         with self.spin(text=f'Fetching Bento repository "{name}"'):
             bento_repository = yatai_rest_client.get_bento_repository(
@@ -270,7 +281,7 @@ class YataiClient:
         )
         if not remote_bento:
             with self.spin(text=f'Registering Bento "{bento.tag}" with Yatai..'):
-                yatai_rest_client.create_bento(
+                remote_bento = yatai_rest_client.create_bento(
                     bento_repository_name=bento_repository.name,
                     req=CreateBentoSchema(
                         description="",
@@ -282,7 +293,7 @@ class YataiClient:
                 )
         else:
             with self.spin(text=f'Updating Bento "{bento.tag}"..'):
-                yatai_rest_client.update_bento(
+                remote_bento = yatai_rest_client.update_bento(
                     bento_repository_name=bento_repository.name,
                     version=version,
                     req=UpdateBentoSchema(
@@ -290,15 +301,28 @@ class YataiClient:
                         labels=labels,
                     ),
                 )
-        with self.spin(text=f'Getting a presigned upload url for "{bento.tag}" ..'):
-            remote_bento = yatai_rest_client.presign_bento_upload_url(
-                bento_repository_name=bento_repository.name, version=version
-            )
+
+        transmission_strategy: TransmissionStrategy = "proxy"
+        presigned_upload_url: str | None = None
+
+        if remote_bento.transmission_strategy is not None:
+            transmission_strategy = remote_bento.transmission_strategy
+        else:
+            with self.spin(
+                text=f'Getting a presigned upload url for bento "{bento.tag}" ..'
+            ):
+                remote_bento = yatai_rest_client.presign_bento_upload_url(
+                    bento_repository_name=bento_repository.name, version=version
+                )
+                if remote_bento.presigned_upload_url:
+                    transmission_strategy = "presigned_url"
+                    presigned_upload_url = remote_bento.presigned_upload_url
+
         with io.BytesIO() as tar_io:
             bento_dir_path = bento.path
             if bento_dir_path is None:
                 raise BentoMLException(f'Bento "{bento}" path cannot be None')
-            with self.spin(text=f'Creating tar archive for Bento "{bento.tag}"..'):
+            with self.spin(text=f'Creating tar archive for bento "{bento.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
 
                     def filter_(
@@ -312,11 +336,11 @@ class YataiClient:
 
                     tar.add(bento_dir_path, arcname="./", filter=filter_)
             tar_io.seek(0, 0)
-            if not remote_bento.presigned_urls_deprecated:
-                with self.spin(text=f'Start uploading Bento "{bento.tag}"..'):
-                    yatai_rest_client.start_upload_bento(
-                        bento_repository_name=bento_repository.name, version=version
-                    )
+
+            with self.spin(text=f'Start uploading bento "{bento.tag}"..'):
+                yatai_rest_client.start_upload_bento(
+                    bento_repository_name=bento_repository.name, version=version
+                )
 
             file_size = tar_io.getbuffer().nbytes
 
@@ -325,15 +349,19 @@ class YataiClient:
             )
             self.transmission_progress.start_task(upload_task_id)
 
+            io_mutex = threading.Lock()
+
             def io_cb(x: int):
-                self.transmission_progress.update(upload_task_id, advance=x)
+                with io_mutex:
+                    self.transmission_progress.update(upload_task_id, advance=x)
 
             wrapped_file = CallbackIOWrapper(
                 io_cb,
                 tar_io,
                 "read",
             )
-            if remote_bento.presigned_urls_deprecated:
+
+            if transmission_strategy == "proxy":
                 try:
                     yatai_rest_client.upload_bento(
                         bento_repository_name=bento_repository.name,
@@ -342,11 +370,11 @@ class YataiClient:
                     )
                 except Exception as e:  # pylint: disable=broad-except
                     self.log_progress.add_task(
-                        f'[bold red]Failed to upload Bento "{bento.tag}"'
+                        f'[bold red]Failed to upload bento "{bento.tag}"'
                     )
                     raise e
                 self.log_progress.add_task(
-                    f'[bold green]Successfully pushed Bento "{bento.tag}"'
+                    f'[bold green]Successfully pushed bento "{bento.tag}"'
                 )
                 return
             finish_req = FinishUploadBentoSchema(
@@ -354,14 +382,124 @@ class YataiClient:
                 reason="",
             )
             try:
-                resp = requests.put(
-                    remote_bento.presigned_upload_url, data=wrapped_file
-                )
-                if resp.status_code != 200:
-                    finish_req = FinishUploadBentoSchema(
-                        status=BentoUploadStatus.FAILED,
-                        reason=resp.text,
-                    )
+                if presigned_upload_url is not None:
+                    resp = requests.put(presigned_upload_url, data=wrapped_file)
+                    if resp.status_code != 200:
+                        finish_req = FinishUploadBentoSchema(
+                            status=BentoUploadStatus.FAILED,
+                            reason=resp.text,
+                        )
+                else:
+                    with self.spin(
+                        text=f'Start multipart uploading Bento "{bento.tag}"...'
+                    ):
+                        remote_bento = yatai_rest_client.start_bento_multipart_upload(
+                            bento_repository_name=bento_repository.name,
+                            version=version,
+                        )
+                        if not remote_bento.upload_id:
+                            raise BentoMLException(
+                                f'Failed to start multipart upload for Bento "{bento.tag}", upload_id is empty'
+                            )
+
+                        upload_id: str = remote_bento.upload_id
+
+                    chunks_count = file_size // FILE_CHUNK_SIZE + 1
+
+                    def chunk_upload(
+                        upload_id: str, chunk_number: int
+                    ) -> FinishUploadBentoSchema | t.Tuple[str, int]:
+                        with self.spin(
+                            text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of Bento "{bento.tag}"...'
+                        ):
+                            remote_bento = (
+                                yatai_rest_client.presign_bento_multipart_upload_url(
+                                    bento_repository_name=bento_repository.name,
+                                    version=version,
+                                    req=PreSignMultipartUploadUrlSchema(
+                                        upload_id=upload_id,
+                                        part_number=chunk_number,
+                                    ),
+                                )
+                            )
+                        with self.spin(
+                            text=f'({chunk_number}/{chunks_count}) Uploading chunk of Bento "{bento.tag}"...'
+                        ):
+
+                            chunk = (
+                                tar_io.getbuffer()[
+                                    (chunk_number - 1)
+                                    * FILE_CHUNK_SIZE : chunk_number
+                                    * FILE_CHUNK_SIZE
+                                ]
+                                if chunk_number < chunks_count
+                                else tar_io.getbuffer()[
+                                    (chunk_number - 1) * FILE_CHUNK_SIZE :
+                                ]
+                            )
+
+                            with io.BytesIO(chunk) as chunk_io:
+                                wrapped_file = CallbackIOWrapper(
+                                    io_cb,
+                                    chunk_io,
+                                    "read",
+                                )
+
+                                resp = requests.put(
+                                    remote_bento.presigned_upload_url, data=wrapped_file
+                                )
+                                if resp.status_code != 200:
+                                    return FinishUploadBentoSchema(
+                                        status=BentoUploadStatus.FAILED,
+                                        reason=resp.text,
+                                    )
+                                return resp.headers["ETag"], chunk_number
+
+                    futures_: t.List[
+                        Future[FinishUploadBentoSchema | t.Tuple[str, int]]
+                    ] = []
+
+                    with ThreadPoolExecutor(
+                        max_workers=min(max(chunks_count, 1), threads)
+                    ) as executor:
+                        for i in range(1, chunks_count + 1):
+                            future = executor.submit(
+                                chunk_upload,
+                                upload_id,
+                                i,
+                            )
+                            futures_.append(future)
+
+                    parts: t.List[CompletePartSchema] = []
+
+                    for future in futures_:
+                        result = future.result()
+                        if isinstance(result, FinishUploadBentoSchema):
+                            finish_req = result
+                            break
+                        else:
+                            etag, chunk_number = result
+                            parts.append(
+                                CompletePartSchema(
+                                    part_number=chunk_number,
+                                    etag=etag,
+                                )
+                            )
+
+                    with self.spin(
+                        text=f'Completing multipart upload of Bento "{bento.tag}"...'
+                    ):
+                        remote_bento = (
+                            yatai_rest_client.complete_bento_multipart_upload(
+                                bento_repository_name=bento_repository.name,
+                                version=version,
+                                req=CompleteMultipartUploadSchema(
+                                    upload_id=upload_id,
+                                    parts=parts,
+                                ),
+                            )
+                        )
+
             except Exception as e:  # pylint: disable=broad-except
                 finish_req = FinishUploadBentoSchema(
                     status=BentoUploadStatus.FAILED,
@@ -459,20 +597,40 @@ class YataiClient:
 
                 futures = executor.map(pull_model, remote_bento.manifest.models)
                 list(futures)
+
             # Download bento files from yatai
-            with self.spin(text=f'Getting a presigned download url for bento "{_tag}"'):
-                remote_bento = yatai_rest_client.presign_bento_download_url(
-                    name, version
-                )
-            if not remote_bento.presigned_urls_deprecated:
-                response = requests.get(
-                    remote_bento.presigned_download_url, stream=True
-                )
+            transmission_strategy: TransmissionStrategy = "proxy"
+            presigned_download_url: str | None = None
+
+            if remote_bento.transmission_strategy is not None:
+                transmission_strategy = remote_bento.transmission_strategy
             else:
+                with self.spin(
+                    text=f'Getting a presigned download url for bento "{_tag}"'
+                ):
+                    remote_bento = yatai_rest_client.presign_bento_download_url(
+                        name, version
+                    )
+                    if remote_bento.presigned_download_url:
+                        presigned_download_url = remote_bento.presigned_download_url
+                        transmission_strategy = "presigned_url"
+
+            if transmission_strategy == "proxy":
                 response = yatai_rest_client.download_bento(
                     bento_repository_name=name,
                     version=version,
                 )
+            else:
+                if presigned_download_url is None:
+                    with self.spin(
+                        text=f'Getting a presigned download url for bento "{_tag}"'
+                    ):
+                        remote_bento = yatai_rest_client.presign_bento_download_url(
+                            name, version
+                        )
+                        presigned_download_url = remote_bento.presigned_download_url
+                response = requests.get(presigned_download_url, stream=True)
+
             if response.status_code != 200:
                 raise BentoMLException(
                     f'Failed to download bento "{_tag}": {response.text}'
@@ -497,38 +655,46 @@ class YataiClient:
                 )
                 tar_file.seek(0, 0)
                 tar = tarfile.open(fileobj=tar_file, mode="r:gz")
-                with fs.open_fs("temp://") as temp_fs:
-                    for member in tar.getmembers():
-                        f = tar.extractfile(member)
-                        if f is None:
-                            continue
-                        p = Path(member.name)
-                        if p.parent != Path("."):
-                            temp_fs.makedirs(str(p.parent), recreate=True)
-                        temp_fs.writebytes(member.name, f.read())
-                    bento = Bento.from_fs(temp_fs)
-                    for model_tag in remote_bento.manifest.models:
-                        with self.spin(text=f'Copying model "{model_tag}" to bento'):
-                            copy_model(
-                                model_tag,
-                                src_model_store=model_store,
-                                target_model_store=bento._model_store,  # type: ignore
-                            )
-                    bento = bento.save(bento_store)
-                    self.log_progress.add_task(
-                        f'[bold green]Successfully pulled bento "{_tag}"'
-                    )
-                    return bento
+                with self.spin(text=f'Extracting bento "{_tag}" tar file'):
+                    with fs.open_fs("temp://") as temp_fs:
+                        for member in tar.getmembers():
+                            f = tar.extractfile(member)
+                            if f is None:
+                                continue
+                            p = Path(member.name)
+                            if p.parent != Path("."):
+                                temp_fs.makedirs(str(p.parent), recreate=True)
+                            temp_fs.writebytes(member.name, f.read())
+                        bento = Bento.from_fs(temp_fs)
+                        for model_tag in remote_bento.manifest.models:
+                            with self.spin(
+                                text=f'Copying model "{model_tag}" to bento'
+                            ):
+                                copy_model(
+                                    model_tag,
+                                    src_model_store=model_store,
+                                    target_model_store=bento._model_store,  # type: ignore
+                                )
+                        bento = bento.save(bento_store)
+                        self.log_progress.add_task(
+                            f'[bold green]Successfully pulled bento "{_tag}"'
+                        )
+                        return bento
 
-    def push_model(self, model: "Model", *, force: bool = False):
+    def push_model(self, model: "Model", *, force: bool = False, threads: int = 10):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
                 f'Pushing model "{model.tag}"', start=False, visible=False
             )
-            self._do_push_model(model, upload_task_id, force=force)
+            self._do_push_model(model, upload_task_id, force=force, threads=threads)
 
     def _do_push_model(
-        self, model: "Model", upload_task_id: TaskID, *, force: bool = False
+        self,
+        model: "Model",
+        upload_task_id: TaskID,
+        *,
+        force: bool = False,
+        threads: int = 10,
     ):
         yatai_rest_client = get_current_yatai_rest_api_client()
         name = model.tag.name
@@ -564,7 +730,7 @@ class YataiClient:
                 for key, value in info.labels.items()
             ]
             with self.spin(text=f'Registering model "{model.tag}" with Yatai..'):
-                yatai_rest_client.create_model(
+                remote_model = yatai_rest_client.create_model(
                     model_repository_name=model_repository.name,
                     req=CreateModelSchema(
                         description="",
@@ -582,23 +748,33 @@ class YataiClient:
                         labels=labels,
                     ),
                 )
-        with self.spin(
-            text=f'Getting a presigned upload url for model "{model.tag}"..'
-        ):
-            remote_model = yatai_rest_client.presign_model_upload_url(
-                model_repository_name=model_repository.name, version=version
-            )
+
+        transmission_strategy: TransmissionStrategy = "proxy"
+        presigned_upload_url: str | None = None
+
+        if remote_model.transmission_strategy is not None:
+            transmission_strategy = remote_model.transmission_strategy
+        else:
+            with self.spin(
+                text=f'Getting a presigned upload url for Model "{model.tag}" ..'
+            ):
+                remote_model = yatai_rest_client.presign_model_upload_url(
+                    model_repository_name=model_repository.name, version=version
+                )
+                if remote_model.presigned_upload_url:
+                    transmission_strategy = "presigned_url"
+                    presigned_upload_url = remote_model.presigned_upload_url
+
         with io.BytesIO() as tar_io:
             bento_dir_path = model.path
             with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
                     tar.add(bento_dir_path, arcname="./")
             tar_io.seek(0, 0)
-            if not remote_model.presigned_urls_deprecated:
-                with self.spin(text=f'Start uploading model "{model.tag}"..'):
-                    yatai_rest_client.start_upload_model(
-                        model_repository_name=model_repository.name, version=version
-                    )
+            with self.spin(text=f'Start uploading model "{model.tag}"..'):
+                yatai_rest_client.start_upload_model(
+                    model_repository_name=model_repository.name, version=version
+                )
             file_size = tar_io.getbuffer().nbytes
             self.transmission_progress.update(
                 upload_task_id,
@@ -608,15 +784,18 @@ class YataiClient:
             )
             self.transmission_progress.start_task(upload_task_id)
 
+            io_mutex = threading.Lock()
+
             def io_cb(x: int):
-                self.transmission_progress.update(upload_task_id, advance=x)
+                with io_mutex:
+                    self.transmission_progress.update(upload_task_id, advance=x)
 
             wrapped_file = CallbackIOWrapper(
                 io_cb,
                 tar_io,
                 "read",
             )
-            if remote_model.presigned_urls_deprecated:
+            if transmission_strategy == "proxy":
                 try:
                     yatai_rest_client.upload_model(
                         model_repository_name=model_repository.name,
@@ -637,14 +816,124 @@ class YataiClient:
                 reason="",
             )
             try:
-                resp = requests.put(
-                    remote_model.presigned_upload_url, data=wrapped_file
-                )
-                if resp.status_code != 200:
-                    finish_req = FinishUploadModelSchema(
-                        status=ModelUploadStatus.FAILED,
-                        reason=resp.text,
-                    )
+                if presigned_upload_url is not None:
+                    resp = requests.put(presigned_upload_url, data=wrapped_file)
+                    if resp.status_code != 200:
+                        finish_req = FinishUploadModelSchema(
+                            status=ModelUploadStatus.FAILED,
+                            reason=resp.text,
+                        )
+                else:
+                    with self.spin(
+                        text=f'Start multipart uploading Model "{model.tag}"...'
+                    ):
+                        remote_model = yatai_rest_client.start_model_multipart_upload(
+                            model_repository_name=model_repository.name,
+                            version=version,
+                        )
+                        if not remote_model.upload_id:
+                            raise BentoMLException(
+                                f'Failed to start multipart upload for model "{model.tag}", upload_id is empty'
+                            )
+
+                        upload_id: str = remote_model.upload_id
+
+                    chunks_count = file_size // FILE_CHUNK_SIZE + 1
+
+                    def chunk_upload(
+                        upload_id: str, chunk_number: int
+                    ) -> FinishUploadModelSchema | t.Tuple[str, int]:
+                        with self.spin(
+                            text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of model "{model.tag}"...'
+                        ):
+                            remote_model = (
+                                yatai_rest_client.presign_model_multipart_upload_url(
+                                    model_repository_name=model_repository.name,
+                                    version=version,
+                                    req=PreSignMultipartUploadUrlSchema(
+                                        upload_id=upload_id,
+                                        part_number=chunk_number,
+                                    ),
+                                )
+                            )
+
+                        with self.spin(
+                            text=f'({chunk_number}/{chunks_count}) Uploading chunk of model "{model.tag}"...'
+                        ):
+                            chunk = (
+                                tar_io.getbuffer()[
+                                    (chunk_number - 1)
+                                    * FILE_CHUNK_SIZE : chunk_number
+                                    * FILE_CHUNK_SIZE
+                                ]
+                                if chunk_number < chunks_count
+                                else tar_io.getbuffer()[
+                                    (chunk_number - 1) * FILE_CHUNK_SIZE :
+                                ]
+                            )
+
+                            with io.BytesIO(chunk) as chunk_io:
+                                wrapped_file = CallbackIOWrapper(
+                                    io_cb,
+                                    chunk_io,
+                                    "read",
+                                )
+
+                                resp = requests.put(
+                                    remote_model.presigned_upload_url, data=wrapped_file
+                                )
+                                if resp.status_code != 200:
+                                    return FinishUploadModelSchema(
+                                        status=ModelUploadStatus.FAILED,
+                                        reason=resp.text,
+                                    )
+                                return resp.headers["ETag"], chunk_number
+
+                    futures_: t.List[
+                        Future[FinishUploadModelSchema | t.Tuple[str, int]]
+                    ] = []
+
+                    with ThreadPoolExecutor(
+                        max_workers=min(max(chunks_count, 1), threads)
+                    ) as executor:
+                        for i in range(1, chunks_count + 1):
+                            future = executor.submit(
+                                chunk_upload,
+                                upload_id,
+                                i,
+                            )
+                            futures_.append(future)
+
+                    parts: t.List[CompletePartSchema] = []
+
+                    for future in futures_:
+                        result = future.result()
+                        if isinstance(result, FinishUploadModelSchema):
+                            finish_req = result
+                            break
+                        else:
+                            etag, chunk_number = result
+                            parts.append(
+                                CompletePartSchema(
+                                    part_number=chunk_number,
+                                    etag=etag,
+                                )
+                            )
+
+                    with self.spin(
+                        text=f'Completing multipart upload of model "{model.tag}"...'
+                    ):
+                        remote_model = (
+                            yatai_rest_client.complete_model_multipart_upload(
+                                model_repository_name=model_repository.name,
+                                version=version,
+                                req=CompleteMultipartUploadSchema(
+                                    upload_id=upload_id,
+                                    parts=parts,
+                                ),
+                            )
+                        )
+
             except Exception as e:  # pylint: disable=broad-except
                 finish_req = FinishUploadModelSchema(
                     status=ModelUploadStatus.FAILED,
@@ -716,16 +1005,41 @@ class YataiClient:
 
         if not remote_model:
             raise BentoMLException(f'Model "{_tag}" not found on Yatai')
-        if not remote_model.presigned_urls_deprecated:
-            response = requests.get(remote_model.presigned_download_url, stream=True)
+
+        # Download model files from yatai
+        transmission_strategy: TransmissionStrategy = "proxy"
+        presigned_download_url: str | None = None
+
+        if remote_model.transmission_strategy is not None:
+            transmission_strategy = remote_model.transmission_strategy
+        else:
+            with self.spin(text=f'Getting a presigned download url for model "{_tag}"'):
+                remote_model = yatai_rest_client.presign_model_download_url(
+                    name, version
+                )
+                if remote_model.presigned_download_url:
+                    presigned_download_url = remote_model.presigned_download_url
+                    transmission_strategy = "presigned_url"
+
+        if transmission_strategy == "proxy":
+            response = yatai_rest_client.download_model(
+                model_repository_name=name, version=version
+            )
+        else:
+            if presigned_download_url is None:
+                with self.spin(
+                    text=f'Getting a presigned download url for model "{_tag}"'
+                ):
+                    remote_model = yatai_rest_client.presign_model_download_url(
+                        name, version
+                    )
+                    presigned_download_url = remote_model.presigned_download_url
+
+            response = requests.get(presigned_download_url, stream=True)
             if response.status_code != 200:
                 raise BentoMLException(
                     f'Failed to download model "{_tag}": {response.text}'
                 )
-        else:
-            response = yatai_rest_client.download_model(
-                model_repository_name=name, version=version
-            )
 
         total_size_in_bytes = int(response.headers.get("content-length", 0))
         block_size = 1024  # 1 Kibibyte
@@ -745,20 +1059,21 @@ class YataiClient:
             )
             tar_file.seek(0, 0)
             tar = tarfile.open(fileobj=tar_file, mode="r:gz")
-            with fs.open_fs("temp://") as temp_fs:
-                for member in tar.getmembers():
-                    f = tar.extractfile(member)
-                    if f is None:
-                        continue
-                    p = Path(member.name)
-                    if p.parent != Path("."):
-                        temp_fs.makedirs(str(p.parent), recreate=True)
-                    temp_fs.writebytes(member.name, f.read())
-                model = Model.from_fs(temp_fs).save(model_store)
-                self.log_progress.add_task(
-                    f'[bold green]Successfully pulled model "{_tag}"'
-                )
-                return model
+            with self.spin(text=f'Extracting model "{_tag}" tar file'):
+                with fs.open_fs("temp://") as temp_fs:
+                    for member in tar.getmembers():
+                        f = tar.extractfile(member)
+                        if f is None:
+                            continue
+                        p = Path(member.name)
+                        if p.parent != Path("."):
+                            temp_fs.makedirs(str(p.parent), recreate=True)
+                        temp_fs.writebytes(member.name, f.read())
+                    model = Model.from_fs(temp_fs).save(model_store)
+                    self.log_progress.add_task(
+                        f'[bold green]Successfully pulled model "{_tag}"'
+                    )
+                    return model
 
 
 yatai_client = YataiClient()

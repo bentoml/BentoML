@@ -4,6 +4,31 @@ Tracing
 
 BentoML API server supports tracing with `Zipkin <https://zipkin.io/>`_,
 `Jaeger <https://www.jaegertracing.io/>`_ and `OTLP <https://opentelemetry.io/>`_.
+
+:bdg-info:`Requirements:` bentoml must be installed with the extras dependencies for
+tracing exporters. The following command will install BentoML with its coresponding
+tracing exporter:
+
+.. tab-set::
+
+   .. tab-item:: Jaeger
+
+       .. code-block:: bash
+
+          pip install "bentoml[tracing-jaeger]"
+
+   .. tab-item:: Zipkin
+
+      .. code-block:: bash
+
+         pip install "bentoml[tracing-zipkin]"
+
+   .. tab-item:: OpenTelemetry Protocol
+
+      .. code-block:: bash
+
+         pip install "bentoml[tracing-otlp]"
+
 To config tracing server, user can provide a config YAML file specifying the tracer type and tracing server information:
 
 .. code-block:: yaml
@@ -19,12 +44,6 @@ To config tracing server, user can provide a config YAML file specifying the tra
       otlp:
         protocol: grpc
         url: http://localhost:4317
-
-First, bentoml must be installed with the extras "tracing".
-
-.. code-block:: bash
-
-    pip install bentoml[tracing]
 
 By default, no traces will be collected. Set sample_rate to your desired fraction in order to start collecting them.
 Here is an example config for tracing with a Zipkin server:

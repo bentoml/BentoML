@@ -14,6 +14,13 @@ library you are working with, and you are ready to go!
 
    pip install bentoml
 
+To install all additional features in BentoML, such as gRPC, S3 support, and more, you will need
+to install BentoML with ``all`` variant:
+
+.. code-block:: bash
+
+    pip install "bentoml[all]"
+
 Install from source
 -------------------
 
@@ -92,72 +99,3 @@ with the following command:
 
     cd bentoml
     git pull
-
-Additional features
--------------------
-
-To use additional features in BentoML, such as gRPC, S3 support, and more, you will need
-to install a variant of BentoML with additional dependencies.
-
-For gRPC support, use the following command:
-
-.. code-block:: bash
-
-    pip install "bentoml[grpc]"
-
-For all AWS-related features, use the following command:
-
-.. code-block:: bash
-
-    pip install "bentoml[aws]"
-
-For all :ref:`Image IO <reference/api_io_descriptors:Images>`, use the following command:
-
-.. code-block:: bash
-
-    pip install "bentoml[io-image]"
-
-For all :ref:`Pandas IO <reference/api_io_descriptors:Tabular Data with Pandas>`, use the following command:
-
-.. code-block:: bash
-
-    pip install "bentoml[io-pandas]"
-
-To use external tracing exporter such as `Jaeger <https://www.jaegertracing.io/>`_, `Zipkin <https://zipkin.io/>`_, `OpenTelemetry Protocol <https://opentelemetry.io/docs/reference/specification/protocol/exporter/>`_,
-use the following command:
-
-.. tab-set::
-
-    .. tab-item:: Jaeger
-
-        .. code-block:: bash
-
-            pip install "bentoml[tracing-jaeger]"
-
-    .. tab-item:: Zipkin
-
-        .. code-block:: bash
-
-            pip install "bentoml[tracing-zipkin]"
-
-    .. tab-item:: OpenTelemetry Protocol
-
-        .. code-block:: bash
-
-            pip install "bentoml[tracing-otlp]"
-
-To use all the above features, use the following command:
-
-.. code-block:: bash
-
-    pip install "bentoml[all]"
-
-.. tip::
-
-   The additional dependencies syntax can also be applied to all of the above installation methods
-
-   .. code-block:: bash
-
-      # editable install
-      pip install -e ".[grpc,tracing-jaeger]"
-

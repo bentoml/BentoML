@@ -163,6 +163,12 @@ def export_bento(
     """
     Export a bento.
 
+    To export a bento to S3, you must install BentoML with extras ``aws``:
+
+    .. code-block:: bash
+
+       » pip install bentoml[aws]
+
     Examples:
 
     .. code-block:: python

@@ -6,7 +6,10 @@ load("@io_grpc_grpc_java//:java_grpc_library.bzl", "java_grpc_library")
 proto_library(
     name = "service_proto",
     srcs = ["src/main/proto/v1alpha1/service.proto"],
-    deps = ["@com_google_protobuf//:struct_proto", "@com_google_protobuf//:wrappers_proto"],
+    deps = [
+        "@com_google_protobuf//:struct_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
 )
 
 java_proto_library(
@@ -21,11 +24,11 @@ java_grpc_library(
 )
 
 java_library(
-    name="grpc-library",
-    srcs = glob(["src/main/java/**/*.java"],),
+    name = "grpc-library",
+    srcs = glob(["src/main/java/**/*.java"]),
     deps = [
-        ":service_java_proto",
         ":service_java_grpc",
+        ":service_java_proto",
         "@io_grpc_grpc_java//api",
     ],
 )

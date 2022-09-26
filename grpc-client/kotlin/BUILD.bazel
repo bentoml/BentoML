@@ -8,7 +8,10 @@ load("@com_github_grpc_grpc_kotlin//:kt_jvm_grpc.bzl", "kt_jvm_grpc_library", "k
 proto_library(
     name = "service_proto",
     srcs = ["src/main/proto/v1alpha1/service.proto"],
-    deps = ["@com_google_protobuf//:struct_proto", "@com_google_protobuf//:wrappers_proto"],
+    deps = [
+        "@com_google_protobuf//:struct_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
 )
 
 java_proto_library(
@@ -24,7 +27,7 @@ kt_jvm_proto_library(
 kt_jvm_grpc_library(
     name = "service_kt_grpc",
     srcs = [":service_proto"],
-    deps = [ ":service_java_proto" ],
+    deps = [":service_java_proto"],
 )
 
 kt_jvm_binary(
@@ -32,8 +35,8 @@ kt_jvm_binary(
     srcs = ["src/main/kotlin/com/client/BentoServiceClient.kt"],
     main_class = "com.client.BentoServiceClient",
     deps = [
-        ":service_kt_proto",
         ":service_kt_grpc",
+        ":service_kt_proto",
         "@com_google_protobuf//:protobuf_java_util",
         "@io_grpc_grpc_java//netty",
     ],

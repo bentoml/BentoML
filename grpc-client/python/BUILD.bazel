@@ -5,5 +5,9 @@ py_binary(
     name = "client",
     srcs = ["client.py"],
     python_version = "PY3",
-    deps = [requirement("grpcio"), requirement("bentoml")]
+    deps = [
+        requirement("grpcio"),
+        requirement("bentoml"),
+        requirement("protobuf"),
+    ],
 )

@@ -14,46 +14,6 @@ library you are working with, and you are ready to go!
 
    pip install bentoml
 
-
-Install using virtual environment
----------------------------------
-
-You should install BentoML in a `virtual environment <https://docs.python.org/3/library/venv.html>`_. If you are not familiar with virtual environment, refer to this
-`guide <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/>`_. Virtual environment are a great way to manage dependencies and
-avoid compatibility issues among different projects.
-
-Start create a virtual environment in your project directory
-
-.. code-block:: bash
-
-    python3 -m venv ./venv
-
-.. tip::
-
-   Alternatively, you can also use `virtualenv <https://virtualenv.pypa.io/en/latest/>`_ that provides more features than the built-in venv module.
-
-Activate the virtual environment:
-
-.. tab-set::
-
-    .. tab-item:: MacOS/UNIX
-
-        .. code-block:: bash
-
-            source ./venv/bin/activate
-
-    .. tab-item:: Windows
-
-        .. code-block:: powershell
-
-            .\venv\Scripts\activate
-
-Now, you can install BentoML via pip:
-
-.. code-block:: bash
-
-    pip install bentoml
-
 Install from source
 -------------------
 
@@ -132,24 +92,6 @@ with the following command:
 
     cd bentoml
     git pull
-
-Install using conda
--------------------
-
-Install 🍱 BentoML with `conda <https://docs.conda.io/en/latest/>`_ via the `conda-forge <https://conda-forge.org/>`_ channel:
-
-.. code-block:: bash
-
-    conda install -c conda-forge bentoml
-
-
-.. note::
-
-    Historical releases can be found on the `BentoML Releases page <https://github.com/bentoml/BentoML/releases>`_.
-
-.. seealso::
-
-    For the 0.13-LTS releases, see the `0.13-LTS documentation <https://docs.bentoml.org/en/v0.13.1/>`_.
 
 Additional features
 -------------------

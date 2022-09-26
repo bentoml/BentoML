@@ -2,10 +2,8 @@
 Installation
 ============
 
-Install 🍱 BentoML with your favourite package manager, alongside with whichever deep learning
-library you are working with, and you are ready to go!
-
 🍱 BentoML is distributed as a Python Package available `on PyPI <https://pypi.org/project/bentoml/>`_.
+Install BentoML alongside with whichever deep learning library you are working with, and you are ready to go!
 
 * BentoML supports Linux/UNIX, Windows, and MacOS.
 * BentoML requires Python 3.7 or above.

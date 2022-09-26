@@ -69,7 +69,7 @@ Flags:
 If pytest_additional_arguments is given, this will be appended to given tests run.
 
 Example:
-  $ $dname/$fname pytorch --gpus
+  $ $dname/$fname pytorch --run-gpu-tests
 HEREDOC
 	exit 2
 }

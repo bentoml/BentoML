@@ -190,7 +190,14 @@ jobs:
           pip install -r requirements/tests-requirements.txt
 
       - name: Run unit tests
-        run: ./scripts/ci/run_tests.sh unit --verbose
+        run: |
+          OPTS=(--cov-config pyproject.toml --cov-report=xml:unit.xml -vvv)
+          if [ "${{ matrix.os }}" != 'windows-latest' ]; then
+            # we will use pytest-xdist to improve tests run-time.
+            OPTS=(${OPTS[@]} --run-grpc-tests --dist loadfile -n auto)
+          fi
+          # Now run the unit tests
+          python -m pytest tests/unit "${OPTS[@]}"
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v3

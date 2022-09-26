@@ -21,10 +21,12 @@ from bentoml._internal.configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     import numpy as np
     from _pytest.main import Session
+    from _pytest.nodes import Item
     from _pytest.config import Config
     from _pytest.config import ExitCode
     from _pytest.python import Metafunc
     from _pytest.fixtures import FixtureRequest
+    from _pytest.config.argparsing import Parser
 
     from bentoml._internal.server.metrics.prometheus import PrometheusClient
 
@@ -37,10 +39,49 @@ TEST_MODEL_CONTEXT = ModelContext(
     framework_versions={"testing": "v1"},
 )
 
+_RUN_GPU_TESTS_MARKER = "--run-gpu-tests"
+_RUN_GRPC_TESTS_MARKER = "--run-grpc-tests"
+
 
 @pytest.mark.tryfirst
 def pytest_report_header(config: Config) -> list[str]:
     return [f"bentoml: version={CLEAN_BENTOML_VERSION}"]
+
+
+def pytest_addoption(parser: Parser) -> None:
+    parser.addoption(
+        _RUN_GPU_TESTS_MARKER,
+        action="store_true",
+        default=False,
+        help="run gpus related tests.",
+    )
+    parser.addoption(
+        _RUN_GRPC_TESTS_MARKER,
+        action="store_true",
+        default=False,
+        help="run grpc related tests.",
+    )
+
+
+def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
+    if config.getoption(_RUN_GRPC_TESTS_MARKER):
+        return
+    elif config.getoption(_RUN_GPU_TESTS_MARKER):
+        return
+
+    skip_gpus = pytest.mark.skip(
+        reason=f"need {_RUN_GPU_TESTS_MARKER} option to run gpus related tests."
+    )
+    skip_grpc = pytest.mark.skip(
+        reason=f"need {_RUN_GRPC_TESTS_MARKER} option to run grpc related tests."
+    )
+
+    for item in items:
+        if "require_gpus" in item.keywords:
+            item.add_marker(skip_gpus)
+        if "require_grpc" in item.keywords or psutil.WINDOWS:
+            # We don't run gRPC tests on Windows
+            item.add_marker(skip_grpc)
 
 
 def _setup_deployment_mode(metafunc: Metafunc):

@@ -11,12 +11,6 @@ if TYPE_CHECKING:
 
 def pytest_addoption(parser: "Parser") -> None:
     parser.addoption(
-        "--runslow", action="store_true", default=False, help="run slow tests"
-    )
-    parser.addoption(
-        "--gpus", action="store_true", default=False, help="run gpus related tests"
-    )
-    parser.addoption(
         "--disable-tf-eager-execution",
         action="store_true",
         default=False,
@@ -32,13 +26,8 @@ def pytest_collection_modifyitems(config: "Config", items: t.List["Item"]) -> No
             disable_eager_execution()
         except ImportError:
             return
-    elif config.getoption("--gpus"):
-        return
 
-    skip_gpus = pytest.mark.skip(reason="Skip gpus tests")
     requires_eager_execution = pytest.mark.skip(reason="Requires eager execution")
     for item in items:
-        if "gpus" in item.keywords:
-            item.add_marker(skip_gpus)
         if "requires_eager_execution" in item.keywords:
             item.add_marker(requires_eager_execution)

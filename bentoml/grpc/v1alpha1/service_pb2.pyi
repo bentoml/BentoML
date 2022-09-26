@@ -177,6 +177,7 @@ class Part(google.protobuf.message.Message):
     FILE_FIELD_NUMBER: builtins.int
     TEXT_FIELD_NUMBER: builtins.int
     JSON_FIELD_NUMBER: builtins.int
+    SERIALIZED_BYTES_FIELD_NUMBER: builtins.int
     @property
     def ndarray(self) -> global___NDArray:
         """NDArray represents a n-dimensional array of arbitrary type."""
@@ -203,6 +204,8 @@ class Part(google.protobuf.message.Message):
         """JSON is represented by using google.protobuf.Value.
         see https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto
         """
+    serialized_bytes: builtins.bytes
+    """serialized_bytes is for data serialized in BentoML's internal serialization format."""
     def __init__(
         self,
         *,
@@ -212,10 +215,11 @@ class Part(google.protobuf.message.Message):
         file: global___File | None = ...,
         text: google.protobuf.wrappers_pb2.StringValue | None = ...,
         json: google.protobuf.struct_pb2.Value | None = ...,
+        serialized_bytes: builtins.bytes = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["dataframe", b"dataframe", "file", b"file", "json", b"json", "ndarray", b"ndarray", "representation", b"representation", "series", b"series", "text", b"text"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["dataframe", b"dataframe", "file", b"file", "json", b"json", "ndarray", b"ndarray", "representation", b"representation", "series", b"series", "text", b"text"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions.Literal["representation", b"representation"]) -> typing_extensions.Literal["ndarray", "dataframe", "series", "file", "text", "json"] | None: ...
+    def HasField(self, field_name: typing_extensions.Literal["dataframe", b"dataframe", "file", b"file", "json", b"json", "ndarray", b"ndarray", "representation", b"representation", "serialized_bytes", b"serialized_bytes", "series", b"series", "text", b"text"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["dataframe", b"dataframe", "file", b"file", "json", b"json", "ndarray", b"ndarray", "representation", b"representation", "serialized_bytes", b"serialized_bytes", "series", b"series", "text", b"text"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["representation", b"representation"]) -> typing_extensions.Literal["ndarray", "dataframe", "series", "file", "text", "json", "serialized_bytes"] | None: ...
 
 global___Part = Part
 

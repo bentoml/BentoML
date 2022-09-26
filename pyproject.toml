@@ -45,7 +45,7 @@ dependencies = [
   "packaging>=20.0",
   "pathspec",
   "pip-tools>=6.6.2",
-  "prometheus-client>=0.10.0,<0.14.0",
+  "prometheus-client>=0.10.0",
   "psutil",
   "pynvml<12",
   "python-dateutil",
@@ -103,10 +103,10 @@ io-pandas = ["pandas", "pyarrow"]
 grpc = [
   # Restrict maximum version due to breaking protobuf 4.21.0 changes
   # (see https://github.com/protocolbuffers/protobuf/issues/10051)
-  "protobuf>=3.5.0, <3.20",
+  "protobuf>=3.5.0, <3.20, !=3.19.5",
   # Lowest version that support 3.10. We need to set an upper bound
   # since grpcio >=1.49.0 uses protbuf >=3.20.0, which breaks compatibility.
-  "grpcio>=1.41.0,<1.49",
+  "grpcio>=1.41.0, <1.49",
   "grpcio-health-checking",
   "grpcio-reflection",
   "opentelemetry-instrumentation-grpc==0.33b0",

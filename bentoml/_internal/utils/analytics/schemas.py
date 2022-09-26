@@ -209,12 +209,6 @@ class ServeUpdateEvent(EventMeta):
             attr.validators.in_(["standalone", "api_server", "runner"]),
         )
     )
-    metrics_type: str = attr.field(
-        validator=attr.validators.and_(
-            attr.validators.instance_of(str),
-            attr.validators.in_(["not_available", "legacy", "current"]),
-        ),
-    )
     metrics: t.List[t.Any] = attr.field(factory=list)
 
 

@@ -193,10 +193,10 @@ def test_track_serve_init_no_bento(
 @pytest.mark.parametrize(
     "mock_output,expected",
     [
-        (b"", tuple([[], None])),
+        (b"", []),
         (
             b"""# HELP BENTOML_noop_request_total Multiprocess metric""",
-            tuple([[], None]),
+            [],
         ),
     ],
 )
@@ -250,7 +250,7 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
             "utf-8"
         )
     )
-    output, _ = analytics.usage_stats.get_metrics_report(mock_prometheus_client)
+    output = analytics.usage_stats.get_metrics_report(mock_prometheus_client)
     assert {
         "endpoint": "/predict",
         "http_response_code": "200",
@@ -308,9 +308,7 @@ def test_get_metrics_report(
     mock_prometheus_client.text_string_to_metric_families.return_value = (
         generated_metrics
     )
-    output, _ = analytics.usage_stats.get_metrics_report(
-        mock_prometheus_client, grpc=grpc
-    )
+    output = analytics.usage_stats.get_metrics_report(mock_prometheus_client, grpc=grpc)
     if expected:
         assert expected in output
 

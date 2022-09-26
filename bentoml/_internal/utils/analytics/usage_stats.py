@@ -184,7 +184,7 @@ def filter_metrics(
 def get_metrics_report(
     metrics_client: PrometheusClient,
     grpc: bool = False,
-) -> tuple[list[dict[str, str | float]], bool | None]:
+) -> list[dict[str, str | float]]:
     """
     Get Prometheus metrics reports from the metrics client. This will be used to determine tracking events.
     If the return metrics are legacy metrics, the metrics will have prefix BENTOML_, otherwise they will have prefix bentoml_
@@ -221,17 +221,12 @@ def get_metrics_report(
                 lambda samples: [s for s in samples if "endpoint" in s.labels],
             ]
         # If metrics prefix is BENTOML_, this is legacy metrics
-        if metric_name.endswith("_request"):
-            if metric_name.startswith("BENTOML_"):
-                # This is the case where we have legacy metrics with
-                # newer metrics. We will ignore the newer metrics.
-                return filter_metrics(metric_samples, *_filters), True
-            else:
-                # This is the case where we only have newer metrics
-                assert metric_name.startswith("bentoml_")
-                return filter_metrics(metric_samples, *_filters), False
+        if metric_name.endswith("_request") and (
+            metric_name.startswith("bentoml_") or metric_name.startswith("BENTOML_")
+        ):
+            return filter_metrics(metric_samples, *_filters)
 
-    return [], None
+    return []
 
 
 @inject
@@ -262,10 +257,6 @@ def track_serve(
     def loop() -> t.NoReturn:  # type: ignore
         last_tracked_timestamp: datetime = serve_info.serve_started_timestamp
         while not stop_event.wait(tracking_interval):  # pragma: no cover
-            metrics_type = "not_available"
-            metrics, use_legacy_metrics = get_metrics_report(metrics_client, grpc=grpc)
-            if use_legacy_metrics is not None:
-                metrics_type = "legacy" if use_legacy_metrics else "current"
             now = datetime.now(timezone.utc)
             event_properties = ServeUpdateEvent(
                 serve_id=serve_info.serve_id,
@@ -274,8 +265,7 @@ def track_serve(
                 component=component,
                 triggered_at=now,
                 duration_in_seconds=int((now - last_tracked_timestamp).total_seconds()),
-                metrics_type=metrics_type,
-                metrics=metrics,
+                metrics=get_metrics_report(metrics_client, grpc=grpc),
             )
             last_tracked_timestamp = now
             track(event_properties)

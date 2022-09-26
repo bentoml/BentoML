@@ -60,5 +60,13 @@ if [ ! -x "${filename_abs}" ]; then
 	chmod a+x "${filename_abs}"
 fi
 
+pushd ../grpc-client >/dev/null
+! [[ -d "thirdparty" ]] && mkdir -p thirdparty
+pushd thirdparty >/dev/null
+# We will only need the stubs, not the submodules.
+! [[ -d "protobuf" ]] && git clone -b v3.19.4 --depth 1 https://github.com/protocolbuffers/protobuf.git
+popd >/dev/null
+popd >/dev/null
+
 popd >/dev/null
 exec "${filename_abs}" "$@"

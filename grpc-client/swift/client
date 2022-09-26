@@ -4,12 +4,6 @@ set -e
 
 pushd .. >/dev/null
 
-! [[ -d "thirdparty" ]] && mkdir thirdparty
-
-pushd thirdparty >/dev/null
-! [[ -d "protobuf" ]] && git clone --depth 1 https://github.com/protocolbuffers/protobuf.git
-popd
-
 if ! $(which protoc-gen-grpc-swift &>/dev/null); then
 	echo "protoc-gen-grpc-swift is missing. Make sure to compile it first and add it to your PATH."
 	exit 1

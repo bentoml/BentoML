@@ -2,18 +2,13 @@
 
 set -e
 
-pushd .. >/dev/null
+pushd "$(dirname "$0")"/../.. >/dev/null
 
-! [[ -d "thirdparty" ]] && mkdir thirdparty
-
-pushd thirdparty >/dev/null
-! [[ -d "protobuf" ]] && git clone -b v3.19.4 https://github.com/protocolbuffers/protobuf.git
-popd
-pushd .. >/dev/null
 # We will use BentoML tools/bazel.rc
 echo "Building shared C++ gRPC..."
 bazel build @com_github_grpc_grpc//:all
 bazel build @com_google_protobuf//:protoc
+
 if ! [ -f "bazel-bin/src/compiler/grpc_php_plugin" ]; then
 	echo "We will compile grpc_php_plugin from source."
 	bazel build @com_github_grpc_grpc//src/compiler:grpc_php_plugin
@@ -21,8 +16,11 @@ fi
 
 PROTOC=$(pwd)/bazel-bin/external/com_google_protobuf/protoc
 PLUGIN=protoc-gen-grpc=$(pwd)/bazel-bin/src/compiler/grpc_php_plugin
-popd
+popd >/dev/null
 
+pushd .. >/dev/null
+
+echo "Generate PHP stubs."
 "$PROTOC" -I . -I ./thirdparty/protobuf/src --php_out=php --grpc_out=php --plugin="$PLUGIN" bentoml/grpc/v1alpha1/service.proto
 
-popd
+popd >/dev/null

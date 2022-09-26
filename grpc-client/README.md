@@ -12,10 +12,16 @@ All clients are built to run with [quickstart image](https://docs.bentoml.org/en
 docker run -it --rm -p 8888:8888 -p 3000:3000 -p 3001:3001 bentoml/quickstart:latest serve-grpc --production --enable-reflection
 ```
 
-To get all available client rules :
+To get all available client rules:
 
 ```bash
-bazel query //... --output label_kind | grep client | sort | column -t
+bazel query //... --output label_kind | grep ":client" | sort | column -t
+```
+
+To build all rules for better caching:
+
+```bash
+bazel build ...
 ```
 
 The following table contains command to run clients:

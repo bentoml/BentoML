@@ -1066,9 +1066,7 @@ BentoML leverages the field to improve serialization performance between BentoML
 Mounting Servicer
 ~~~~~~~~~~~~~~~~~
 
-With support for :ref:`multiplexing <guides/grpc:Demystifying the misconception of gRPC vs. REST>`
-to eliminate :wiki:`head-of-line blocking <Head-of-line_blocking>`,
-gPRC enables us to mount additional custom services alongside with BentoService,
+gRPC service :ref:`multiplexing <guides/grpc:Demystifying the misconception of gRPC vs. REST>` enables us to mount additional custom servicers alongside with BentoService,
 and serve them under the same port.
 
 .. code-block:: python
@@ -1118,7 +1116,7 @@ BentoML comes with a sets of built-in *async interceptors* to provide support fo
 
 The following diagrams demonstrates the flow of a gRPC request from client to server:
 
-.. image:: /_static/img/interceptor-flow.svg
+.. image:: /_static/img/interceptor-flow.png
    :alt: Interceptor Flow
 
 Since interceptors are executed in the order they are added, users interceptors will be executed after the built-in interceptors.

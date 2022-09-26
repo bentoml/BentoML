@@ -198,7 +198,7 @@ async def test_exception_to_proto():
             np.array("asdf")
         )
     with pytest.raises(BadInput):
-        await NumpyNdarray(dtype=np.generic).to_proto(np.array("asdf"))
+        await NumpyNdarray(dtype=np.dtype(np.void)).to_proto(np.array("asdf"))
 
 
 @pytest.mark.asyncio

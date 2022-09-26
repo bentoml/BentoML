@@ -185,7 +185,7 @@ async def create_channel(
 @cached_contextmanager("{interceptors}")
 def make_standalone_server(
     interceptors: t.Sequence[aio.ServerInterceptor] | None = None,
-    host: str = "127.0.0.1",
+    host: str = "0.0.0.0",
 ) -> t.Generator[tuple[aio.Server, str], None, None]:
     """
     Create a standalone aio.Server for testing.

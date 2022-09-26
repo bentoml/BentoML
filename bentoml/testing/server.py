@@ -345,7 +345,6 @@ def run_bento_server_distributed(
         copied["HTTP_PROXY"] = f"http://127.0.0.1:{proxy_port}"
     if config_file is not None:
         copied["BENTOML_CONFIG"] = os.path.abspath(config_file)
-    print(copied)
 
     runner_map = {}
     processes: list[subprocess.Popen[str]] = []

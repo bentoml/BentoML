@@ -16,4 +16,5 @@ proto_library(
         "@com_google_protobuf//:struct_proto",
         "@com_google_protobuf//:wrappers_proto",
     ],
+    visibility = ["//grpc-client:__subpackages__"],
 )

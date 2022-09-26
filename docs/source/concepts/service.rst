@@ -12,9 +12,9 @@ Creating a Service
 ------------------
 
 A BentoML service is composed of Runners and APIs. Consider the following service
-definition from the :doc:`tutorial <tutorial>`:
+definition from the :doc:`tutorial </tutorial>`:
 
-.. code:: python
+.. code-block:: python
 
     import numpy as np
     import bentoml
@@ -30,10 +30,10 @@ definition from the :doc:`tutorial <tutorial>`:
         return result
 
 
-Services are initialized through `bentoml.Service()` call, with the service name and a
+Services are initialized through ``bentoml.Service()`` call, with the service name and a
 list of :doc:`Runners </concepts/runner>` required in the service:
 
-.. code:: python
+.. code-block:: python
 
     # Create the iris_classifier_service with the ScikitLearn runner
     svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
@@ -41,10 +41,10 @@ list of :doc:`Runners </concepts/runner>` required in the service:
 .. note::
     The service name will become the name of the Bento.
 
-The :code:`svc` object created provides a decorator method :code:`svc.api`for defining
+The ``svc`` object created provides a decorator method ``svc.api`` for defining`
 APIs in this service:
 
-.. code:: python
+.. code-block:: python
 
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def classify(input_series: np.ndarray) -> np.ndarray:
@@ -60,7 +60,7 @@ throughput and resource utilization.
 
 BentoML provides a convenient way of creating Runner instance from a saved model:
 
-.. code:: python
+.. code-block:: python
 
     runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
@@ -103,7 +103,7 @@ Service APIs
 Inference APIs define how the service functionality can be called remotely. A service can 
 have one or more APIs. An API consists of its input/output specs and a callback function:
 
-.. code:: python
+.. code-block:: python
 
     # Create new API and add it to "svc"
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())  # define IO spec
@@ -114,20 +114,19 @@ have one or more APIs. An API consists of its input/output specs and a callback 
         # Define post-processing logic
         return result
 
-By decorating a function with :code:`@svc.api`, we declare that the function shall be
+By decorating a function with ``@svc.api`, we declare that the function shall be`
 invoked when this API is called. The API function is a great place for defining your
 serving logic, such as feature fetching, pre and post processing, and model inferences 
 via Runners.
 
-When running :code:`bentoml serve` with the example above, this API function is
-transformed into an HTTP endpoint, :code:`/predict`, that takes in a ``np.ndarray`` as 
+When running ``bentoml serve`` with the example above, this API function is
+transformed into an HTTP endpoint, ``/predict``, that takes in a ``np.ndarray`` as 
 input, and returns a ``np.ndarray`` as output. The endpoint can be called with the following
 ``curl`` command:
 
-.. code:: bash
+.. code-block:: bash
 
-    > curl \
-        -X POST \
+    » curl -X POST \
         -H "content-type: application/json" \
         --data "[[5.9, 3, 5.1, 1.8]]" \
         http://127.0.0.1:3000/predict
@@ -142,9 +141,9 @@ Route
 ^^^^^
 
 By default, the function name becomes the endpoint URL. Users can also customize
-this URL via the :code:`route` option, e.g.:
+this URL via the ``route`` option, e.g.:
 
-.. code:: python
+.. code-block:: python
 
     @svc.api(
         input=NumpyNdarray(),
@@ -167,7 +166,7 @@ argument added to the service API function. Both the request and response contex
 accessed through the inference context for getting and setting the headers, cookies, and
 status codes.
 
-.. code:: python
+.. code-block:: python
 
     @svc.api(
         input=NumpyNdarray(),
@@ -195,7 +194,7 @@ status codes.
             )
         ]
         ctx.response.headers.append("X-Custom-Header", "value")
-        
+
         return result
 
 
@@ -205,12 +204,12 @@ IO Descriptors
 IO descriptors are used for defining an API's input and output specifications. It
 describes the expected data type, helps validate that the input and output conform to
 the expected format and schema and convert them from and to the native types. They are
-specified through the :code:`input` and :code:`output` arguments in the :code:`@svc.api`
+specified through the ``input`` and ``output`` arguments in the ``@svc.api``
 decorator method.
 
-Recall the API we created in the :doc:`tutorial`. The classify API both accepts
+Recall the API we created in the :doc:`tutorial </tutorial>`. The ``classify`` API both accepts
 arguments and returns results in the type of
-:ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy ndarray>`:
+:ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`:
 
 .. code-block:: python
 
@@ -222,9 +221,9 @@ arguments and returns results in the type of
         ...
 
 
-Besides the :code:`NumpyNdarray` IO descriptor, BentoML supports a variety of IO
-descriptors including :code:`PandasDataFrame`, :code:`JSON`, :code:`String`,
-:code:`Image`, :code:`Text`, and :code:`File`. For detailed documentation on how to
+Besides the ``NumpyNdarray`` IO descriptor, BentoML supports a variety of IO
+descriptors including ``PandasDataFrame``, ``JSON``, ``String``,
+``Image``, ``Text``, and ``File``. For detailed documentation on how to
 declare and invoke these descriptors please see the
 :doc:`IO Descriptors </reference/api_io_descriptors>` API reference page.
 
@@ -234,16 +233,16 @@ Schema and Validation
 
 IO descriptors allow users to define the expected data types, shape, and schema, based 
 on the type of the input and output descriptor specified. IO descriptors can also be defined 
-through  examples with the :code:`from_sample` API to simplify the development of service 
+through  examples with the ``from_sample`` API to simplify the development of service 
 definitions.
 
 Numpy
 ~~~~~
 
-The data type and shape of the :code:`NumpyNdarray` can be specified with the :code:`dtype` 
-and :code:`shape` arguments. By setting the :code:`enforce_shape` and :code:`enforce_dtype` 
+The data type and shape of the ``NumpyNdarray`` can be specified with the ``dtype`` 
+and ``shape`` arguments. By setting the ``enforce_shape`` and ``enforce_dtype`` 
 arguments to `True`, the IO descriptor will strictly validate the input and output data 
-based the specified data type and shape. To learn more, see IO descriptor reference for 
+based the specified data type and shape. To learn more, see IO descrptor reference for 
 :ref:`reference/api_io_descriptors:NumPy ndarray`.
 
 .. code-block:: python
@@ -272,8 +271,8 @@ based the specified data type and shape. To learn more, see IO descriptor refere
 Pandas DataFrame
 ~~~~~~~~~~~~~~~~
 
-The data type and shape of the :code:`PandasDataFrame` can be specified with the :code:`dtype` 
-and :code:`shape` arguments. By setting the :code:`enforce_shape` and :code:`enforce_dtype` 
+The data type and shape of the ``PandasDataFrame`` can be specified with the ``dtype`` 
+and ``shape`` arguments. By setting the ``enforce_shape`` and ``enforce_dtype`` 
 arguments to `True`, the IO descriptor will strictly validate the input and output data 
 based the specified data type and shape. To learn more, see IO descrptor reference for 
 :ref:`reference/api_io_descriptors:Tabular Data with Pandas`.
@@ -336,7 +335,7 @@ model and return. To learn more, see IO descrptor reference for
 Built-in Types
 ^^^^^^^^^^^^^^
 
-Beside :code:`NumpyNdarray`, BentoML supports a variety of other built-in IO descriptor
+Beside ``NumpyNdarray``, BentoML supports a variety of other built-in IO descriptor
 types under the :doc:`bentoml.io <reference/api_io_descriptors>` module. Each type comes
 with support of type validation and OpenAPI specification generation. For example:
 
@@ -361,7 +360,7 @@ Learn more about other built-in IO Descriptors :doc:`here </reference/api_io_des
 Composite Types
 ^^^^^^^^^^^^^^^
 
-The :code:`Multipart` IO descriptors can be used to group multiple IO Descriptor
+The ``Multipart`` IO descriptors can be used to group multiple IO Descriptor
 instances, which allows the API function to accept multiple arguments or return multiple
 values. Each IO descriptor can be customized with independent schema and validation
 logic:
@@ -396,7 +395,7 @@ Sync vs Async APIs
 ------------------
 
 APIs can be defined as either synchronous function or asynchronous coroutines in Python.
-The API we created in the :doc:`tutorial <tutorial>` was a synchronous API. BentoML will
+The API we created in the :doc:`tutorial </tutorial>` was a synchronous API. BentoML will
 intelligently create an optimally sized pool of workers to execute the synchronous
 logic. Synchronous APIs are simple and capable of getting the job done for most model
 serving scenarios.

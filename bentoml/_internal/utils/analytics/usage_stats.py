@@ -181,7 +181,6 @@ def filter_metrics(
     ]
 
 
-@inject
 def get_metrics_report(
     metrics_client: PrometheusClient,
     grpc: bool = False,

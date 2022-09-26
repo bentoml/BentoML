@@ -181,7 +181,7 @@ main() {
   #  validate_yaml
   parse_config "$argv"
 
-  OPTS=(--cov=bentoml --cov-config="$GIT_ROOT"/setup.cfg --cov-report=xml:"$target.xml" --cov-report=term-missing -x)
+  OPTS=(--cov=bentoml --cov-config="$GIT_ROOT"/pyproject.toml --cov-report=xml:"$target.xml" --cov-report=term-missing -x)
 
   if [ -n "${PYTESTARGS[*]}" ]; then
     # shellcheck disable=SC2206

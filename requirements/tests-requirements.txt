@@ -2,7 +2,7 @@
 black[jupyter]==22.3.0
 codecov
 coverage>=4.4
-setuptools==60.0.0
+setuptools>=63
 isort>=5.0.0
 pydantic
 pylint>=2.14.0
@@ -16,5 +16,5 @@ imageio>=2.5.0
 pyarrow
 build[virtualenv] >=0.8.0
 yamllint
-grpcio-tools>=1.41.0
+grpcio-tools>=1.41.0,<1.49.0
 opentelemetry-test-utils==0.33b0

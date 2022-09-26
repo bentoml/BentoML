@@ -30,7 +30,6 @@ jobs:
             related: &related
               - .github/workflows/ci.yml
               - codecov.yml
-              - setup.cfg
               - pyproject.toml
               - scripts/ci/config.yml
               - scripts/ci/run_tests.sh

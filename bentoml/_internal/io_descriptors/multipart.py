@@ -248,7 +248,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
             ) from None
         message = field.fields
         self.validate_input_mapping(message)
-        to_populate = zip(self._inputs.values(), message.values())
+        to_populate = {self._inputs[k]: message[k] for k in self._inputs}
         reqs = await asyncio.gather(
             *tuple(
                 descriptor.from_proto(
@@ -259,10 +259,10 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
                         ),
                     )
                 )
-                for descriptor, part in to_populate
+                for descriptor, part in to_populate.items()
             )
         )
-        return dict(zip(self._inputs, reqs))
+        return dict(zip(self._inputs.keys(), reqs))
 
     async def to_proto(self, obj: dict[str, t.Any]) -> pb.Multipart:
         self.validate_input_mapping(obj)

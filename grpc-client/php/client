@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+if ! $(which php >/dev/null); then
+	echo "PHP is required."
+	exit 0
+fi
+
+if ! $(which composer >/dev/null); then
+	echo "composer is required."
+	exit 0
+fi
+
+[[ -f ./composer.lock ]] && composer update || composer install
+
+echo "Running PHP client"
+
+php -d extension=grpc -d max_execution_time=300 BentoServiceClient.php

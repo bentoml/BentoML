@@ -1,7 +1,7 @@
-java/src/main/java/com/bentoml
-kotlin/src/main/kotlin/com/bentoml
-js/bentoml
-go/bentoml
-swift/Sources/bentoml
+grpc-client/java/src/main/java/com/bentoml
+grpc-client/kotlin/src/main/kotlin/com/bentoml
+grpc-client/js/bentoml
+grpc-client/go/bentoml
+grpc-client/swift/Sources/bentoml
 **/*/node_modules
-thirdparty
+grpc-client/thirdparty

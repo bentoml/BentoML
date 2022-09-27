@@ -103,10 +103,12 @@ io-pandas = ["pandas", "pyarrow"]
 grpc = [
   # Restrict maximum version due to breaking protobuf 4.21.0 changes
   # (see https://github.com/protocolbuffers/protobuf/issues/10051)
+  # 3.19.5 is currently breaking on a lot of system.
   "protobuf>=3.5.0, <3.20, !=3.19.5",
   # Lowest version that support 3.10. We need to set an upper bound
   # since grpcio >=1.49.0 uses protbuf >=3.20.0, which breaks compatibility.
-  "grpcio>=1.41.0, <1.49",
+  # We can't use 1.48.2 since it depends on 3.19.5
+  "grpcio>=1.41.0, <1.49, !=1.48.2",
   "grpcio-health-checking",
   "grpcio-reflection",
   "opentelemetry-instrumentation-grpc==0.33b0",

@@ -33,7 +33,7 @@ that ``main`` version is not always stable. If you run into any issues, please e
 create `an issue <https://github.com/bentoml/BentoML/issues/new/choose>`_ or join our
 `community Slack <https://l.linklyhq.com/l/ktOX>`_ to get help.
 
-Editable install
+Editable Install
 ----------------
 
 You may want an editable install if:

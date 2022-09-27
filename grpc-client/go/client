@@ -4,7 +4,7 @@ set -e
 
 pushd .. >/dev/null
 
-if ! $(which protoc-gen-go-grpc &>/dev/null); then
+if ! which protoc-gen-go-grpc &>/dev/null; then
 	echo "protoc-gen-go-grpc is missing. Make sure to install it and add it to your PATH."
 	exit 1
 fi

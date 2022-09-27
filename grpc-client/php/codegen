@@ -2,7 +2,8 @@
 
 set -e
 
-pushd "$(dirname "$0")"/../.. >/dev/null
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+pushd "$SCRIPT_DIR"/../.. >/dev/null
 
 # We will use BentoML tools/bazel.rc
 echo "Building shared C++ gRPC..."
@@ -14,13 +15,9 @@ if ! [ -f "bazel-bin/src/compiler/grpc_php_plugin" ]; then
 	bazel build @com_github_grpc_grpc//src/compiler:grpc_php_plugin
 fi
 
-PROTOC=$(pwd)/bazel-bin/external/com_google_protobuf/protoc
-PLUGIN=protoc-gen-grpc=$(pwd)/bazel-bin/src/compiler/grpc_php_plugin
-popd >/dev/null
-
-pushd .. >/dev/null
+PLUGIN=protoc-gen-grpc=$(pwd)/bazel-bin/external/com_github_grpc_grpc/src/compiler/grpc_php_plugin
 
 echo "Generate PHP stubs."
-"$PROTOC" -I . -I ./thirdparty/protobuf/src --php_out=php --grpc_out=php --plugin="$PLUGIN" bentoml/grpc/v1alpha1/service.proto
+bazel run @com_google_protobuf//:protoc -- -I ./grpc-client -I ./grpc-client/thirdparty/protobuf/src --php_out=grpc-client/php --grpc_out=grpc-client/php --plugin="$PLUGIN" grpc-client/bentoml/grpc/v1alpha1/service.proto
 
 popd >/dev/null

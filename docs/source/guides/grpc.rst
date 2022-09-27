@@ -466,28 +466,31 @@ gRPC server:
    .. tab-item:: Swift
       :sync: swift
 
-      :bdg-info:`Requirements:` Make sure to follow the :github:`instructions <grpc/grpc-swift/blob/main/docs/quick-start.md#prerequisites>` to install ``protoc`` plugin for gRPC Swift.
+   .. tab-item:: PHP
+      :sync: php
 
-      Additionally, you will need to also have :github:`gRPC Swift <grpc/grpc-swift>` and :github:`protocolbuffers/protobuf` available locally.
+      :bdg-info:`Requirements:` Make sure to follow the :github:`instructions <grpc/grpc/blob/master/src/php/README.md>` to install ``grpc`` via either `pecl <https://pecl.php.net/>`_ or from source.
 
-      We will create our Swift client in the directory ``~/workspace/iris_swift_client/``:
+      We will then use `bazel <bazel.build>`_, `composer <https://getcomposer.org/>`_ to build and run the client.
 
-      .. code-block:: bash
-
-         » mkdir -p ~/workspace/iris_swift_client
-         » cd ~/workspace/iris_swift_client
-
-      Create a new Swift package:
+      We will create our PHP client in the directory ``~/workspace/iris_php_client/``:
 
       .. code-block:: bash
 
-         » swift package init --name BentoServiceClient
+         » mkdir -p ~/workspace/iris_php_client
+         » cd ~/workspace/iris_php_client
 
-      .. dropdown:: An example ``Package.swift`` for the client:
+      Create a new PHP package:
+
+      .. code-block:: bash
+
+         » composer init
+
+      .. dropdown:: An example ``composer.json`` for the client:
          :icon: code
 
-         .. literalinclude:: ../../../grpc-client/swift/Package.swift
-            :language: swift
+         .. literalinclude:: ../../../grpc-client/php/composer.json
+            :language: json
 
       .. include:: ./snippets/grpc/additional_setup.rst
 
@@ -496,15 +499,16 @@ gRPC server:
       .. code-block:: bash
 
          » protoc -I . -I ./thirdparty/protobuf/src \
-                  --swift_out=Source/ --swift_opt=Visibility=Public \
-                  --grpc-swift_out=Source/ --grpc-swift_opt=Visibility=Public \
+                  --php_out=. \
+                  --grpc_out=. \
+                  --plugin=protoc-gen-grpc=$(which grpc_php_plugin) \
                   bentoml/grpc/v1alpha1/service.proto
 
-      Proceed to create a ``Sources/BentoServiceClient/main.swift`` file with the following content:
+      Proceed to create a ``BentoServiceClient.php`` file with the following content:
 
-      .. literalinclude:: ../../../grpc-client/swift/Sources/BentoServiceClient/main.swift
-         :language: swift
-         :caption: `main.swift`
+      .. literalinclude:: ../../../grpc-client/php/BentoServiceClient.php
+         :language: php
+         :caption: `BentoServiceClient.php`
 
 .. TODO::
 
@@ -629,15 +633,18 @@ Then you can proceed to run the client scripts:
 
          » swift run BentoServiceClient
 
+   .. tab-item:: PHP
+      :sync: php
+
+      .. code-block:: bash
+
+         » php -d extension=/path/to/grpc.so -d max_execution_time=300 BentoServiceClient.php
+
+
 .. dropdown:: Additional language support for client implementation
    :icon: triangle-down
 
    .. tab-set::
-
-      .. tab-item:: PHP
-         :sync: php
-
-         :bdg-primary:`Note:` Please check out the :github:`gRPC PHP <grpc/grpc/blob/master/src/php/README.md#overview>` overview for PHP client implementation.
 
       .. tab-item:: Ruby
          :sync: ruby

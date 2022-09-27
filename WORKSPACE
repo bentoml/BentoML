@@ -62,11 +62,6 @@ go_register_toolchains(version = "1.19")
 # some build issues with upb for C++.
 # TODO: Update this to v1.50.0 when 1.50.0 is out.
 http_archive(
-    name = "com_google_protobuf",
-    strip_prefix = "protobuf-3.19.4",
-    urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.19.4.zip"],
-)
-http_archive(
     name = "com_github_grpc_grpc",
     strip_prefix = "grpc-c3714eced8c51db9092e0adc2a1dfb715655c795",
     urls = [

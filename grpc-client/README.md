@@ -26,16 +26,16 @@ bazel build ...
 
 The following table contains command to run clients:
 
-| Language           | Command                                      |
-| ------------------ | -------------------------------------------- |
-| [Python](./python) | `bazel run //grpc-client/python:client`      |
-| [C++](./cpp)       | `bazel run //grpc-client/cpp:client`         |
-| [Go](./go)         | `bazel run //grpc-client/go:client`          |
-| [Java](./java)     | `bazel run //grpc-client/java:client`        |
-| [Kotlin](./kotlin) | `bazel run //grpc-client/kotlin:client`      |
-| [Swift](./swift)   | `pushd swift && client && popd`              |
-| [Node.js](./node)  | `pushd node && yarn client && popd`          |
-| [PHP](./php)       | `pushd php && ./codegen && ./client && popd` |
+| Language           | Command                                 |
+| ------------------ | --------------------------------------- |
+| [Python](./python) | `bazel run //grpc-client/python:client` |
+| [C++](./cpp)       | `bazel run //grpc-client/cpp:client`    |
+| [Go](./go)         | `bazel run //grpc-client/go:client`     |
+| [Java](./java)     | `bazel run //grpc-client/java:client`   |
+| [Kotlin](./kotlin) | `bazel run //grpc-client/kotlin:client` |
+| [Swift](./swift)   | `pushd swift && client && popd`         |
+| [Node.js](./node)  | `pushd node && yarn client && popd`     |
+| [PHP](./php)       | See [PHP instruction](./php/README.md)  |
 
 > For Swift client, make sure to compile gRPC Swift `protoc` beforehand to generate the client stubs.
 

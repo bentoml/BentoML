@@ -27,7 +27,7 @@ demonstrate BentoML capabilities with gRPC.
 Requirements
 ~~~~~~~~~~~~
 
-BentoML supports for gRPC are introduced in version 1.0.7 and above.
+BentoML supports for gRPC are introduced in version 1.0.6 and above.
 
 Install BentoML with gRPC support with :pypi:`pip`:
 

@@ -12,8 +12,7 @@ Install BentoML alongside with whichever deep learning library you are working w
 
    pip install bentoml
 
-To install all additional features in BentoML, such as gRPC, S3 support, and more, you will need
-to install BentoML with ``all`` variant:
+To install all additional features in BentoML, such as gRPC, S3 support, and more, use the ``all`` variant. Features can also be installed separate later.
 
 .. code-block:: bash
 

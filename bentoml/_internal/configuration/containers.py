@@ -290,7 +290,7 @@ class BentoMLConfiguration:
             config_merger.merge(self.config, override_config)
 
         if override_config_file is not None or override_config_values is not None:
-            self._finish_config()
+            self._finalize()
 
         if validate_schema:
             try:
@@ -301,7 +301,7 @@ class BentoMLConfiguration:
                     " conform to the required schema."
                 ) from e
 
-    def _finish_config(self):
+    def _finalize(self):
         global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
         for key in self.config["runners"]:
             if key not in RUNNER_CFG_KEYS:

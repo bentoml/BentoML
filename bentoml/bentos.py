@@ -442,9 +442,13 @@ FROM base-{bento.info.docker.distro}
 FEATURES = [
     "tracing",
     "grpc",
-    "tracing.zipkin",
-    "tracing.jaeger",
-    "tracing.otlp",
+    "aws",
+    "all",
+    "io-image",
+    "io-pandas",
+    "tracing-zipkin",
+    "tracing-jaeger",
+    "tracing-otlp",
 ]
 
 

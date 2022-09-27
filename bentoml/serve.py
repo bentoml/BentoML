@@ -630,7 +630,7 @@ def serve_grpc_development(
         loglevel="ERROR",
     )
 
-    with track_serve(svc, grpc=True):
+    with track_serve(svc, serve_kind="grpc"):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
                 'Starting development %s BentoServer from "%s" listening on %s:%d (Press CTRL+C to quit)',
@@ -854,7 +854,7 @@ def serve_grpc_production(
         watchers=watchers, sockets=list(circus_socket_map.values())
     )
 
-    with track_serve(svc, production=True, grpc=True):
+    with track_serve(svc, production=True, serve_kind="grpc"):
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore

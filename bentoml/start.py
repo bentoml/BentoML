@@ -347,7 +347,7 @@ def start_grpc_server(
     arbiter = create_standalone_arbiter(
         watchers=watchers, sockets=list(circus_socket_map.values())
     )
-    with track_serve(svc, production=True, component=API_SERVER, grpc=True):
+    with track_serve(svc, production=True, component=API_SERVER, serve_kind="grpc"):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
                 'Starting bare %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',

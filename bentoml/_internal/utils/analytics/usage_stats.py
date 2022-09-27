@@ -125,7 +125,7 @@ def track(event_properties: EventMeta):
 def _track_serve_init(
     svc: Service,
     production: bool,
-    grpc: bool,
+    serve_kind: str,
     serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
 ):
     if svc.bento is not None:
@@ -134,7 +134,7 @@ def _track_serve_init(
             serve_id=serve_info.serve_id,
             serve_from_bento=True,
             production=production,
-            grpc=grpc,
+            serve_kind=serve_kind,
             bento_creation_timestamp=bento.info.creation_time,
             num_of_models=len(bento.info.models),
             num_of_runners=len(svc.runners),
@@ -149,7 +149,7 @@ def _track_serve_init(
             serve_id=serve_info.serve_id,
             serve_from_bento=False,
             production=production,
-            grpc=grpc,
+            serve_kind=serve_kind,
             bento_creation_timestamp=None,
             num_of_models=len(
                 set(
@@ -183,7 +183,7 @@ def filter_metrics(
 
 def get_metrics_report(
     metrics_client: PrometheusClient,
-    grpc: bool = False,
+    serve_kind: str,
 ) -> list[dict[str, str | float]]:
     """
     Get Prometheus metrics reports from the metrics client. This will be used to determine tracking events.
@@ -204,11 +204,11 @@ def get_metrics_report(
             continue
         # We only care about the counter metrics.
         assert metric_type == "counter"
-        if grpc:
+        if serve_kind == "grpc":
             _filters: list[t.Callable[[list[Sample]], list[Sample]]] = [
                 lambda samples: [s for s in samples if "api_name" in s.labels]
             ]
-        else:
+        elif serve_kind == "http":
             _filters = [
                 lambda samples: [
                     s
@@ -220,6 +220,8 @@ def get_metrics_report(
                 ],
                 lambda samples: [s for s in samples if "endpoint" in s.labels],
             ]
+        else:
+            raise NotImplementedError("Unknown serve kind %s" % serve_kind)
         # If metrics prefix is BENTOML_, this is legacy metrics
         if metric_name.endswith("_request") and (
             metric_name.startswith("bentoml_") or metric_name.startswith("BENTOML_")
@@ -235,7 +237,7 @@ def track_serve(
     svc: Service,
     *,
     production: bool = False,
-    grpc: bool = False,
+    serve_kind: str = "http",
     component: str = "standalone",
     metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
@@ -244,7 +246,7 @@ def track_serve(
         yield
         return
 
-    _track_serve_init(svc=svc, production=production, grpc=grpc)
+    _track_serve_init(svc=svc, production=production, serve_kind=serve_kind)
 
     if _usage_event_debugging():
         tracking_interval = 5
@@ -262,12 +264,12 @@ def track_serve(
                 serve_id=serve_info.serve_id,
                 production=production,
                 # Note that we are currently only have two tracking jobs: http and grpc
-                job="grpc" if grpc else "http",
+                serve_kind=serve_kind,
                 # Current accept components are "standalone", "api_server" and "runner"
                 component=component,
                 triggered_at=now,
                 duration_in_seconds=int((now - last_tracked_timestamp).total_seconds()),
-                metrics=get_metrics_report(metrics_client, grpc=grpc),
+                metrics=get_metrics_report(metrics_client, serve_kind=serve_kind),
             )
             last_tracked_timestamp = now
             track(event_properties)

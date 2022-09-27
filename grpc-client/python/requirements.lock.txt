@@ -134,7 +134,7 @@ pip-tools==6.8.0
     # via bentoml
 prometheus-client==0.13.1
     # via bentoml
-protobuf==3.19.4
+protobuf==3.19.5
     # via
     #   -r python/requirement.in
     #   grpcio-health-checking

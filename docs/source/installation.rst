@@ -19,7 +19,7 @@ to install BentoML with ``all`` variant:
 
     pip install "bentoml[all]"
 
-Install from source
+Install from Source
 -------------------
 
 If you want to install BentoML from source, run the following command:

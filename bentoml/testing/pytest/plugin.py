@@ -48,14 +48,16 @@ def pytest_report_header(config: Config) -> list[str]:
     return [f"bentoml: version={CLEAN_BENTOML_VERSION}"]
 
 
+@pytest.hookimpl
 def pytest_addoption(parser: Parser) -> None:
-    parser.addoption(
+    group = parser.getgroup("bentoml", "BentoML pytest plugins.")
+    group.addoption(
         _RUN_GPU_TESTS_MARKER,
         action="store_true",
         default=False,
         help="run gpus related tests.",
     )
-    parser.addoption(
+    group.addoption(
         _RUN_GRPC_TESTS_MARKER,
         action="store_true",
         default=False,
@@ -63,25 +65,36 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
-    if config.getoption(_RUN_GRPC_TESTS_MARKER):
-        return
-    elif config.getoption(_RUN_GPU_TESTS_MARKER):
-        return
-
-    skip_gpus = pytest.mark.skip(
-        reason=f"need {_RUN_GPU_TESTS_MARKER} option to run gpus related tests."
+def pytest_configure(config: Config) -> None:
+    # We will inject marker documentation here.
+    config.addinivalue_line(
+        "markers",
+        "requires_gpus: requires GPU to run given test.",
     )
-    skip_grpc = pytest.mark.skip(
-        reason=f"need {_RUN_GRPC_TESTS_MARKER} option to run grpc related tests."
+    config.addinivalue_line(
+        "markers",
+        "requires_grpc: requires gRPC support to run given test.",
     )
 
-    for item in items:
-        if "require_gpus" in item.keywords:
-            item.add_marker(skip_gpus)
-        if "require_grpc" in item.keywords or psutil.WINDOWS:
-            # We don't run gRPC tests on Windows
-            item.add_marker(skip_grpc)
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item: Item) -> None:
+    config = item.config
+    if "requires_gpus" in item.keywords and not config.getoption(_RUN_GPU_TESTS_MARKER):
+        item.add_marker(
+            pytest.mark.skip(
+                reason=f"need {_RUN_GPU_TESTS_MARKER} option to run gpus related tests."
+            )
+        )
+    # We don't run gRPC tests on Windows
+    if ("requires_grpc" in item.keywords or psutil.WINDOWS) and not config.getoption(
+        _RUN_GRPC_TESTS_MARKER
+    ):
+        item.add_marker(
+            pytest.mark.skip(
+                reason=f"need {_RUN_GRPC_TESTS_MARKER} option to run grpc related tests."
+            )
+        )
 
 
 def _setup_deployment_mode(metafunc: Metafunc):

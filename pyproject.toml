@@ -74,6 +74,9 @@ dynamic = ["version"]
 [project.scripts]
 bentoml = "bentoml_cli.cli:cli"
 
+[project.entry-points.pytest11]
+bentoml = "bentoml.testing.pytest.plugin"
+
 [tool.setuptools]
 package-data = { "bentoml" = ["bentoml/*"], "bentoml_cli" = ["bentoml_cli/*"] }
 
@@ -211,7 +214,6 @@ addopts = [
 ]
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
-markers = ["run-gpu-tests", "run-grpc-tests", "disable-tf-eager-execution"]
 
 [tool.pylint.main]
 recursive = true

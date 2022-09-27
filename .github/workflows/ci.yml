@@ -194,7 +194,7 @@ jobs:
           OPTS=(--cov-config pyproject.toml --cov-report=xml:unit.xml -vvv)
           if [ "${{ matrix.os }}" != 'windows-latest' ]; then
             # we will use pytest-xdist to improve tests run-time.
-            OPTS=(${OPTS[@]} --run-grpc-tests --dist loadfile -n auto)
+            OPTS=(${OPTS[@]} --dist loadfile -n auto --run-grpc-tests)
           fi
           # Now run the unit tests
           python -m pytest tests/unit "${OPTS[@]}"

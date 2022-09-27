@@ -18,6 +18,14 @@ def pytest_addoption(parser: "Parser") -> None:
     )
 
 
+def pytest_configure(config: "Config") -> None:
+    # We will inject marker documentation here.
+    config.addinivalue_line(
+        "markers",
+        "requires_eager_execution: requires enable eager execution to run Tensorflow-based tests.",
+    )
+
+
 def pytest_collection_modifyitems(config: "Config", items: t.List["Item"]) -> None:
     if config.getoption("--disable-tf-eager-execution"):
         try:

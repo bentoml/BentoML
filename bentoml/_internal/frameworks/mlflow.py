@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
 if TYPE_CHECKING:
     import mlflow
+    import mlflow.models
 else:
     mlflow = LazyLoader(
         "mlflow",
@@ -205,19 +206,16 @@ def import_model(
             # For MLflow < 1.25
             from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 
-            local_path = _download_artifact_from_uri(
+            local_path: str = _download_artifact_from_uri(
                 artifact_uri=model_uri, output_path=download_dir
             )
-
-        mlflow_model_path = bento_model.path_of(MLFLOW_MODEL_FOLDER)
-        # Rename model folder from original artifact name to fixed "mlflow_model"
-        shutil.move(local_path, mlflow_model_path)
-        # If the temp dir we created still exists now, we never needed it because
-        # the provided mlflow url must have provided enough path information.  Just
-        # delete it.  If it's not here, it means we needed it but it's been renamed
-        # by now so we don't need to remove it.
-        if os.path.isdir(download_dir):
+        finally:
+            mlflow_model_path = bento_model.path_of(MLFLOW_MODEL_FOLDER)
+            # Rename model folder from original artifact name to fixed "mlflow_model"
+            shutil.move(local_path, mlflow_model_path)  # type: ignore (local_path is bound)
+            # Remove the tempdir
             shutil.rmtree(download_dir)
+
         mlflow_model_file = os.path.join(mlflow_model_path, MLMODEL_FILE_NAME)
 
         if not os.path.exists(mlflow_model_file):
@@ -258,7 +256,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             input_spec=None,
             output_spec=None,
         )
-        def predict(self, input_data):
+        def predict(self, input_data: t.Any) -> t.Any:
             return self.model.predict(input_data)
 
     return MLflowPyfuncRunnable

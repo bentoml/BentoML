@@ -73,7 +73,7 @@ Client Implementation
 
 .. note::
 
-   All of the following client implementations are :github:`available on GitHub <bentoml/BentoML/tree/main/docs/source/guides/snippets/grpc/>`.
+   All of the following client implementations are :github:`available on GitHub <bentoml/BentoML/tree/main/grpc-client/>`.
 
 :raw-html:`<br />`
 
@@ -471,6 +471,10 @@ gRPC server:
 
       :bdg-info:`Requirements:` Make sure to follow the :github:`instructions <grpc/grpc/blob/master/src/php/README.md>` to install ``grpc`` via either `pecl <https://pecl.php.net/>`_ or from source.
 
+      .. note::
+
+         You will also have to symlink the built C++ extension to the PHP extension directory for it to be loaded by PHP.
+
       We will then use `bazel <bazel.build>`_, `composer <https://getcomposer.org/>`_ to build and run the client.
 
       We will create our PHP client in the directory ``~/workspace/iris_php_client/``:
@@ -565,7 +569,7 @@ Then you can proceed to run the client scripts:
 
       .. note::
 
-         See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/docs/source/guides/snippets/grpc/README.md>` for working C++ client.
+         See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/grpc-client/README.md>` for working C++ client.
 
    .. tab-item:: Java
       :sync: java
@@ -591,7 +595,7 @@ Then you can proceed to run the client scripts:
 
       .. note::
 
-         See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/docs/source/guides/snippets/grpc/README.md>` for working Java client.
+         See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/grpc-client/README.md>` for working Java client.
 
    .. tab-item:: Kotlin
       :sync: kotlin
@@ -617,7 +621,7 @@ Then you can proceed to run the client scripts:
 
       .. note::
 
-         See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/docs/source/guides/snippets/grpc/README.md>` for working Kotlin client.
+         See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/grpc-client/README.md>` for working Kotlin client.
 
    .. tab-item:: Node.js
       :sync: nodejs

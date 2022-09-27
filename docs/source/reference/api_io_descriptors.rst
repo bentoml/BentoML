@@ -48,6 +48,12 @@ NumPy ``ndarray``
 Tabular Data with Pandas
 ------------------------
 
+To use the IO descriptor, install bentoml with extra ``io-pandas`` dependency:
+
+.. code-block:: bash
+
+    pip install "bentoml[io-pandas]"
+
 .. note::
 
    The :code:`pandas` package is required to use the :obj:`bentoml.io.PandasDataFrame`
@@ -134,6 +140,13 @@ Texts
 
 Images
 ------
+
+To use the IO descriptor, install bentoml with extra ``io-image`` dependency:
+
+
+.. code-block:: bash
+
+    pip install "bentoml[io-image]"
 
 .. note::
 

@@ -1,9 +1,6 @@
 from datetime import datetime
 
-try:
-    from importlib.metadata import version as _get_version
-except ImportError:
-    from importlib_metadata import version as _get_version
+from bentoml import __version__
 
 # -- Project information -----------------------------------------------------
 
@@ -11,7 +8,7 @@ project = "BentoML"
 copyright = f"2022-{datetime.now().year}, bentoml.com"
 author = "bentoml.com"
 
-version = _get_version("bentoml")
+version = __version__
 
 # -- General configuration ---------------------------------------------------
 
@@ -69,7 +66,7 @@ pygments_dark_style = "monokai"
 myst_enable_extensions = ["colon_fence"]
 
 # Remove the prompt when copying examples
-copybutton_prompt_text = r">>> |\.\.\.|» |\% |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_text = r">>> |\.\.\.|> |» |\% |\$ "
 copybutton_prompt_is_regexp = True
 copybutton_line_continuation_character = "\\"
 copybutton_here_doc_delimiter = "EOT"

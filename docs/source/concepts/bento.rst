@@ -538,6 +538,60 @@ desired version, install from a custom PyPI source, or install from a GitHub rep
     can override this by specifying a different BentoML version.
 
 
+To use a variant of BentoML with additional features such as gRPC, tracing exporters, pydantic
+validation, specify the desired variant in the under ``python.packages`` field:
+
+.. tab-set::
+
+   .. tab-item:: gRPC
+
+      .. code-block:: yaml
+         python:
+            packages:
+            - "bentoml[grpc]"
+
+   .. tab-item:: AWS
+
+      .. code-block:: yaml
+          python:
+              packages:
+              - "bentoml[aws]"
+
+   .. tab-item:: Image IO
+
+      .. code-block:: yaml
+          python:
+              packages:
+              - "bentoml[io-image]"
+
+   .. tab-item:: Pandas IO
+
+      .. code-block:: yaml
+          python:
+              packages:
+              - "bentoml[io-pandas]"
+
+   .. tab-item:: Jaeger
+
+      .. code-block:: yaml
+          python:
+              packages:
+              - "bentoml[tracing-jaeger]"
+
+   .. tab-item:: Zipkin
+
+      .. code-block:: yaml
+          python:
+          packages:
+          - "bentoml[tracing-zipkin]"
+
+   .. tab-item:: OpenTelemetry Protocol
+
+      .. code-block:: yaml
+          python:
+              packages:
+              - "bentoml[tracing-otlp]"
+
 If you already have a
 `requirements.txt <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_
 file that defines python packages for your project, you may also supply a path to the

@@ -148,7 +148,7 @@ def test_track_serve_init(
         noop_service,
         production=production,
         serve_info=analytics.usage_stats.get_serve_info(),
-        grpc=False,
+        serve_kind="http",
     )
 
     assert mock_do_not_track.called
@@ -160,7 +160,7 @@ def test_track_serve_init(
             noop_service,
             production=production,
             serve_info=analytics.usage_stats.get_serve_info(),
-            grpc=False,
+            serve_kind="http",
         )
     assert "model_types" in caplog.text
 
@@ -184,7 +184,7 @@ def test_track_serve_init_no_bento(
             bentoml.Service("test"),
             production=False,
             serve_info=analytics.usage_stats.get_serve_info(),
-            grpc=False,
+            serve_kind="http",
         )
     assert "model_types" not in caplog.text
 
@@ -200,17 +200,19 @@ def test_track_serve_init_no_bento(
         ),
     ],
 )
-@pytest.mark.parametrize("grpc", [True, False])
+@pytest.mark.parametrize("serve_kind", ["grpc", "http"])
 def test_filter_metrics_report(
     mock_prometheus_client: MagicMock,
     mock_output: bytes,
     expected: tuple[list[t.Any], bool | None],
-    grpc: bool,
+    serve_kind: str,
 ):
     mock_prometheus_client.multiproc.return_value = False
     mock_prometheus_client.generate_latest.return_value = mock_output
     assert (
-        analytics.usage_stats.get_metrics_report(mock_prometheus_client, grpc=grpc)
+        analytics.usage_stats.get_metrics_report(
+            mock_prometheus_client, serve_kind=serve_kind
+        )
         == expected
     )
 
@@ -250,7 +252,9 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
             "utf-8"
         )
     )
-    output = analytics.usage_stats.get_metrics_report(mock_prometheus_client)
+    output = analytics.usage_stats.get_metrics_report(
+        mock_prometheus_client, serve_kind="http"
+    )
     assert {
         "endpoint": "/predict",
         "http_response_code": "200",
@@ -265,10 +269,10 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
 
 @patch("bentoml._internal.server.metrics.prometheus.PrometheusClient")
 @pytest.mark.parametrize(
-    "grpc,expected",
+    "serve_kind,expected",
     [
         (
-            True,
+            "grpc",
             {
                 "api_name": "pred_json",
                 "http_response_code": "200",
@@ -277,7 +281,7 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
                 "value": 15.0,
             },
         ),
-        (False, None),
+        ("http", None),
     ],
 )
 @pytest.mark.parametrize(
@@ -300,7 +304,7 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
 def test_get_metrics_report(
     mock_prometheus_client: MagicMock,
     noop_service: Service,
-    grpc: bool,
+    serve_kind: str,
     expected: dict[str, str | float] | None,
     generated_metrics: t.Generator[Metric, None, None],
 ):
@@ -308,7 +312,9 @@ def test_get_metrics_report(
     mock_prometheus_client.text_string_to_metric_families.return_value = (
         generated_metrics
     )
-    output = analytics.usage_stats.get_metrics_report(mock_prometheus_client, grpc=grpc)
+    output = analytics.usage_stats.get_metrics_report(
+        mock_prometheus_client, serve_kind=serve_kind
+    )
     if expected:
         assert expected in output
 

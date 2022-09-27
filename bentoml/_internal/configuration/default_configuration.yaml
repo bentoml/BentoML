@@ -12,6 +12,10 @@ api_server:
       request_content_type: true
       response_content_length: true
       response_content_type: true
+      format:
+        trace_id: 032x
+        span_id: 016x
+
   http:
     host: 0.0.0.0
     port: 3000
@@ -65,8 +69,3 @@ tracing:
   otlp:
     protocol: ~
     url: ~
-
-logging:
-  formatting:
-    trace_id_format: 032x
-    span_id_format: 016x

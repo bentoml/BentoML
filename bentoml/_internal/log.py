@@ -119,8 +119,8 @@ def trace_record_factory(*args: t.Any, **kwargs: t.Any):
         from .configuration.containers import BentoMLContainer
 
         logging_formatting = BentoMLContainer.logging_formatting.get()
-        trace_id_format = logging_formatting["trace_id_format"]
-        span_id_format = logging_formatting["span_id_format"]
+        trace_id_format = logging_formatting["trace_id"]
+        span_id_format = logging_formatting["span_id"]
 
         trace_id = format(trace_id, trace_id_format)
         span_id = format(trace_context.span_id, span_id_format)

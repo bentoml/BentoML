@@ -261,7 +261,9 @@ def track_serve(
             event_properties = ServeUpdateEvent(
                 serve_id=serve_info.serve_id,
                 production=production,
-                grpc=grpc,
+                # Note that we are currently only have two tracking jobs: http and grpc
+                job="grpc" if grpc else "http",
+                # Current accept components are "standalone", "api_server" and "runner"
                 component=component,
                 triggered_at=now,
                 duration_in_seconds=int((now - last_tracked_timestamp).total_seconds()),

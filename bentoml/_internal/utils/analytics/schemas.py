@@ -200,7 +200,7 @@ class ServeInitEvent(EventMeta):
 class ServeUpdateEvent(EventMeta):
     serve_id: str
     production: bool
-    grpc: bool
+    job: str
     triggered_at: datetime
     duration_in_seconds: int
     component: str = attr.field(

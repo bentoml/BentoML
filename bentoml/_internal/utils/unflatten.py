@@ -35,10 +35,12 @@ IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
 """
+from __future__ import annotations
 from __future__ import absolute_import
 
 import re
 import sys
+import typing as t
 from operator import itemgetter
 
 if sys.version_info[0] == 2:
@@ -47,7 +49,7 @@ else:
     string_type = str
 
 
-def unflatten(arg):
+def unflatten(arg: dict[str, t.Any]) -> dict[str, t.Any]:
     """Unflatten nested dict/array data.
 
     This function takes a single argument which may either be a
@@ -80,15 +82,13 @@ def unflatten(arg):
     {'foo': [{'bar': 'val'}, {'baz': 'x'}]}
 
     """
-    if hasattr(arg, "iteritems"):
-        items = arg.iteritems()
-    elif hasattr(arg, "items"):
+    if hasattr(arg, "items"):
         items = arg.items()
     else:
         items = arg
 
-    data = {}
-    holders = []
+    data: dict[str, t.Any] = {}
+    holders: list[t.Any] = []
     for flat_key, val in items:
         parsed_key = _parse_key(flat_key)
         obj = data
@@ -126,7 +126,7 @@ def unflatten(arg):
     return data
 
 
-def _node_type(value):
+def _node_type(value: _holder) -> tuple[object] | t.Literal["terminal"]:
     if isinstance(value, _holder):
         return (value.node_type,)
     else:
@@ -134,20 +134,22 @@ def _node_type(value):
 
 
 class _holder(dict):
-    def __init__(self, flat_key):
-        self.flat_key = flat_key
-        self.data = {}
+    node_type: type
 
-    def __contains__(self, key):
+    def __init__(self, flat_key: str):
+        self.flat_key = flat_key
+        self.data: dict[t.Any, t.Any] = {}
+
+    def __contains__(self, key: t.Any):
         return key in self.data
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: t.Any):
         return self.data[key]
 
-    def get(self, key):
+    def get(self, key: t.Any):
         return self.data.get(key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: t.Any, value: t.Any):
         self.data[key] = value
 
 
@@ -161,9 +163,9 @@ class _dict_holder(_holder):
 class _list_holder(_holder):
     node_type = list
 
-    def getvalue(self):
+    def getvalue(self) -> list[t.Any]:
         items = sorted(self.data.items(), key=itemgetter(0))
-        value = []
+        value: list[t.Any] = []
         for n, (key, val) in enumerate(items):
             if key != n:
                 assert key > n
@@ -176,12 +178,12 @@ class _list_holder(_holder):
 _dot_or_indexes_re = re.compile(r"(\.?\"[^\"]*\")|(\[\d+\])|(\.\w*)|(^\w*)")
 
 
-def _parse_key(flat_key):
+def _parse_key(flat_key: str):
     if not isinstance(flat_key, string_type):
         raise TypeError("keys must be strings")
 
     split_key = _dot_or_indexes_re.split(flat_key)
-    parts = [""] if flat_key.startswith(".") else []
+    parts: list[t.Any] = [""] if flat_key.startswith(".") else []
 
     for i in range(0, len(split_key), 5):
         sep = split_key[i]
@@ -229,8 +231,8 @@ def _parse_key(flat_key):
     return parts
 
 
-def _unparse_key(parsed):
-    bits = []
+def _unparse_key(parsed: list[t.Any]) -> str:
+    bits: list[str] = []
     for part in parsed:
         if isinstance(part, string_type):
             if part.isidentifier():

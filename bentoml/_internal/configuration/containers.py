@@ -276,13 +276,13 @@ class BentoMLConfiguration:
                 use_regex=True,
             )
             override_config_map = {
-                k: yaml.load(v)
+                k: yaml.safe_load(v)
                 for k, v in [
                     split_with_quotes(line, sep="=", quote='"') for line in lines
                 ]
             }
             try:
-                override_config = unflatten(override_config_map)  # type: ignore
+                override_config = unflatten(override_config_map)
             except ValueError as e:
                 raise BentoMLConfigException(
                     f'Failed to parse config options from the env var: {e}. \n *** Note: You can use " to quote the key if it contains special characters. ***'

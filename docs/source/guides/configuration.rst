@@ -36,6 +36,36 @@ like the example above. For a full configuration schema including all customizab
 the BentoML configuration template defined in 
 `default_configuration.yml <https://github.com/bentoml/BentoML/blob/main/bentoml/_internal/configuration/default_configuration.yaml>`_.
 
+
+Overrding configuration with environment variables
+--------------------------------------------------
+
+Users can also override configuration fields with environment variables. by defining
+an oneline value of a "flat" JSON via ``BENTOML_CONFIG_OPTIONS``:
+
+.. code-block:: yaml
+
+   $ BENTOML_CONFIG_OPTIONS='runners.pytorch_mnist.resources."nvidia.com/gpu"[0]=0 runners.pytorch_mnist.resources."nvidia.com/gpu"[1]=2' \
+            bentoml serve pytorch_mnist_demo:latest --production
+
+Which the override configuration will be intepreted as:
+
+.. code-block:: yaml
+
+   runners:
+    pytorch_mnist:
+      resources:
+        nvidia.com/gpu: [0, 2]
+
+.. note::
+
+   For fields that represents a iterable type, the override array must have a space
+   separating each element:
+
+   .. image:: /_static/img/configuration-override-env.png
+      :alt: Configuration override environment variable
+
+
 Docker Deployment
 -----------------
 

@@ -21,10 +21,12 @@ from simple_di import providers
 from deepmerge.merger import Merger
 
 from . import expand_env_var
+from ..utils import split_with_quotes
 from ..utils import validate_or_create_dir
 from ..context import component_context
 from ..resource import system_resources
 from ...exceptions import BentoMLConfigException
+from ..utils.unflatten import unflatten
 
 if TYPE_CHECKING:
     from bentoml._internal.models import ModelStore
@@ -214,6 +216,7 @@ class BentoMLConfiguration:
     def __init__(
         self,
         override_config_file: t.Optional[str] = None,
+        override_config_values: t.Optional[str] = None,
         validate_schema: bool = True,
     ):
         # Load default configuration
@@ -222,15 +225,6 @@ class BentoMLConfiguration:
         )
         with open(default_config_file, "rb") as f:
             self.config: t.Dict[str, t.Any] = yaml.safe_load(f)
-
-        if validate_schema:
-            try:
-                SCHEMA.validate(self.config)
-            except SchemaError as e:
-                raise BentoMLConfigException(
-                    "Default configuration 'default_configuration.yml' does not"
-                    " conform to the required schema."
-                ) from e
 
         # User override configuration
         if override_config_file is not None:
@@ -271,26 +265,54 @@ class BentoMLConfiguration:
 
             config_merger.merge(self.config, override_config)
 
-            global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
-            for key in self.config["runners"]:
-                if key not in RUNNER_CFG_KEYS:
-                    runner_cfg = self.config["runners"][key]
+        if override_config_values is not None:
+            logger.info(
+                "Applying user config override from ENV VAR: %s", override_config_values
+            )
+            lines = split_with_quotes(
+                override_config_values,
+                sep=r"\s+",
+                quote='"',
+                use_regex=True,
+            )
+            override_config_map = {
+                k: yaml.safe_load(v)
+                for k, v in [
+                    split_with_quotes(line, sep="=", quote='"') for line in lines
+                ]
+            }
+            try:
+                override_config = unflatten(override_config_map)
+            except ValueError as e:
+                raise BentoMLConfigException(
+                    f'Failed to parse config options from the env var: {e}. \n *** Note: You can use " to quote the key if it contains special characters. ***'
+                ) from None
+            config_merger.merge(self.config, override_config)
 
-                    # key is a runner name
-                    if runner_cfg.get("resources") == "system":
-                        runner_cfg["resources"] = system_resources()
+        if override_config_file is not None or override_config_values is not None:
+            self._finalize()
 
-                    self.config["runners"][key] = config_merger.merge(
-                        deepcopy(global_runner_cfg), runner_cfg
-                    )
+        if validate_schema:
+            try:
+                SCHEMA.validate(self.config)
+            except SchemaError as e:
+                raise BentoMLConfigException(
+                    "Default configuration 'default_configuration.yml' does not"
+                    " conform to the required schema."
+                ) from e
 
-            if validate_schema:
-                try:
-                    SCHEMA.validate(self.config)
-                except SchemaError as e:
-                    raise BentoMLConfigException(
-                        "Invalid configuration file was given."
-                    ) from e
+    def _finalize(self):
+        global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
+        for key in self.config["runners"]:
+            if key not in RUNNER_CFG_KEYS:
+                runner_cfg = self.config["runners"][key]
+                # key is a runner name
+                if runner_cfg.get("resources") == "system":
+                    runner_cfg["resources"] = system_resources()
+                self.config["runners"][key] = config_merger.merge(
+                    deepcopy(global_runner_cfg),
+                    runner_cfg,
+                )
 
     def override(self, keys: t.List[str], value: t.Any):
         if keys is None:

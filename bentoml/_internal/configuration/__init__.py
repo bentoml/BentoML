@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 DEBUG_ENV_VAR = "BENTOML_DEBUG"
 QUIET_ENV_VAR = "BENTOML_QUIET"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
+CONFIG_OVERRIDE_ENV_VAR = "BENTOML_CONFIG_OPTIONS"
 # https://github.com/grpc/grpc/blob/master/doc/environment_variables.md
 GRPC_DEBUG_ENV_VAR = "GRPC_VERBOSITY"
 
@@ -97,6 +98,13 @@ def get_bentoml_config_file_from_env() -> t.Optional[str]:
     return None
 
 
+def get_bentoml_override_config_from_env() -> t.Optional[str]:
+    if CONFIG_OVERRIDE_ENV_VAR in os.environ:
+        # User local config options for customizing bentoml
+        return os.environ.get(CONFIG_OVERRIDE_ENV_VAR, None)
+    return None
+
+
 def set_debug_mode(enabled: bool) -> None:
     os.environ[DEBUG_ENV_VAR] = str(enabled)
     os.environ[GRPC_DEBUG_ENV_VAR] = "DEBUG"
@@ -147,6 +155,7 @@ def load_global_config(bentoml_config_file: t.Optional[str] = None):
 
     bentoml_configuration = BentoMLConfiguration(
         override_config_file=bentoml_config_file,
+        override_config_values=get_bentoml_override_config_from_env(),
     )
 
     BentoMLContainer.config.set(bentoml_configuration.as_dict())

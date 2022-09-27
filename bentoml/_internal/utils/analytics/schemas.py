@@ -179,6 +179,12 @@ class ModelSaveEvent(EventMeta):
     model_size_in_kb: float
 
 
+# serve_kind determines different type of serving scenarios
+SERVE_KIND = ["grpc", "http"]
+# components are different components to be tracked.
+COMPONENT_KIND = ["standalone", "api_server", "runner"]
+
+
 @attr.define
 class ServeInitEvent(EventMeta):
     serve_id: str
@@ -186,6 +192,7 @@ class ServeInitEvent(EventMeta):
     serve_from_bento: bool
 
     bento_creation_timestamp: t.Optional[datetime]
+    serve_kind: str = attr.field(validator=attr.validators.in_(SERVE_KIND))
     num_of_models: int = attr.field(default=0)
     num_of_runners: int = attr.field(default=0)
     num_of_apis: int = attr.field(default=0)
@@ -199,9 +206,14 @@ class ServeInitEvent(EventMeta):
 class ServeUpdateEvent(EventMeta):
     serve_id: str
     production: bool
-    component: str
     triggered_at: datetime
     duration_in_seconds: int
+    serve_kind: str = attr.field(validator=attr.validators.in_(SERVE_KIND))
+    component: str = attr.field(
+        validator=attr.validators.and_(
+            attr.validators.instance_of(str), attr.validators.in_(COMPONENT_KIND)
+        )
+    )
     metrics: t.List[t.Any] = attr.field(factory=list)
 
 

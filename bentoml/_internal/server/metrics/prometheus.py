@@ -34,10 +34,10 @@ class PrometheusClient:
             assert multiproc_dir is not None, "multiproc_dir must be provided"
 
         self.multiproc = multiproc
-        self.multiproc_dir: t.Optional[str] = multiproc_dir
+        self.multiproc_dir: str | None = multiproc_dir
         self._registry = None
         self._imported = False
-        self._pid: t.Optional[int] = None
+        self._pid: int | None = None
 
     @property
     def prometheus_client(self):
@@ -56,6 +56,7 @@ class PrometheusClient:
 
         # step 2:
         import prometheus_client
+        import prometheus_client.parser
         import prometheus_client.multiprocess
 
         self._imported = True
@@ -106,9 +107,7 @@ class PrometheusClient:
             return self.prometheus_client.generate_latest()
 
     def text_string_to_metric_families(self) -> t.Generator[Metric, None, None]:
-        from prometheus_client.parser import text_string_to_metric_families
-
-        yield from text_string_to_metric_families(
+        yield from self.prometheus_client.parser.text_string_to_metric_families(
             self.generate_latest().decode("utf-8")
         )
 

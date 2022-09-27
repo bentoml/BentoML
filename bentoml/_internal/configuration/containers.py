@@ -225,6 +225,14 @@ class BentoMLConfiguration:
         )
         with open(default_config_file, "rb") as f:
             self.config: t.Dict[str, t.Any] = yaml.safe_load(f)
+        if validate_schema:
+            try:
+                SCHEMA.validate(self.config)
+            except SchemaError as e:
+                raise BentoMLConfigException(
+                    "Default configuration 'default_configuration.yml' does not"
+                    " conform to the required schema."
+                ) from e
 
         # User override configuration
         if override_config_file is not None:
@@ -285,7 +293,7 @@ class BentoMLConfiguration:
                 override_config = unflatten(override_config_map)
             except ValueError as e:
                 raise BentoMLConfigException(
-                    f'Failed to parse config options from the env var: {e}. \n *** Note: You can use " to quote the key if it contains special characters. ***'
+                    f"Failed to parse config options from the env var: {e}. \n *** Note: You can use '\"' to quote the key if it contains special characters. ***"
                 ) from None
             config_merger.merge(self.config, override_config)
 
@@ -297,8 +305,7 @@ class BentoMLConfiguration:
                 SCHEMA.validate(self.config)
             except SchemaError as e:
                 raise BentoMLConfigException(
-                    "Default configuration 'default_configuration.yml' does not"
-                    " conform to the required schema."
+                    "Invalid configuration file was given."
                 ) from e
 
     def _finalize(self):

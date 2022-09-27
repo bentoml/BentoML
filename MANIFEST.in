@@ -25,6 +25,7 @@ prune */.ipynb_checkpoints
 prune **/*/README*
 prune bazel-*
 prune grpc-client
+prune tools
 
 # Patterns to exclude from any directory
 global-exclude *.py[cod]

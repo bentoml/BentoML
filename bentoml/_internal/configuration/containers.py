@@ -139,6 +139,10 @@ SCHEMA = Schema(
                     "request_content_type": Or(bool, None),
                     "response_content_length": Or(bool, None),
                     "response_content_type": Or(bool, None),
+                    "format": {
+                        "trace_id": str,
+                        "span_id": str,
+                    },
                 },
             },
             "http": {
@@ -197,12 +201,6 @@ SCHEMA = Schema(
                     },
                 },
             },
-        },
-        "logging": {
-            "formatting": {
-                "trace_id_format": str,
-                "span_id_format": str,
-            }
         },
     }
 )
@@ -607,7 +605,7 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def logging_formatting(
-        cfg: dict[str, t.Any] = Provide[config.logging.formatting],
+        cfg: dict[str, t.Any] = Provide[api_server_config.logging.access.format],
     ) -> dict[str, str]:
         return cfg
 

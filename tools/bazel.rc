@@ -1,0 +1,17 @@
+build --client_env=CC=clang
+build --cxxopt=-std=c++14 --host_cxxopt=-std=c++14
+build --define=use_fast_cpp_protos=true
+build:opt --compilation_mode=opt
+build:opt --copt=-Wframe-larger-than=16384
+
+build:dbg --compilation_mode=dbg
+build:dbg --copt=-Werror=return-stack-address
+
+# Address https://github.com/bazelbuild/rules_swift/issues/776
+build --host_swiftcopt=-wmo --swiftcopt=-wmo
+# Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
+# https://github.com/bazelbuild/bazel/issues/9190
+build:macos --dynamic_mode=off
+
+build:windows_opt --compilation_mode=opt
+build:windows_dbg --compilation_mode=dbg

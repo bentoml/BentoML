@@ -5,6 +5,9 @@ exclude *.yml *.yaml
 exclude .git*
 exclude bentoml/grpc/buf.yaml
 exclude bentoml/_internal/frameworks/FRAMEWORK_TEMPLATE_PY
+exclude .bazelignore
+exclude .bazelrc
+exclude BUILD WORKSPACE
 
 # Directories to exclude in PyPI package
 prune .devcontainer
@@ -20,6 +23,8 @@ prune */__pycache__
 prune */.DS_Store
 prune */.ipynb_checkpoints
 prune **/*/README*
+prune bazel-*
+prune grpc-client
 
 # Patterns to exclude from any directory
 global-exclude *.py[cod]

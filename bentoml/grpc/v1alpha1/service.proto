@@ -7,7 +7,7 @@ import "google/protobuf/wrappers.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
-option go_package = "github.com/bentoml/grpc/v1alpha1";
+option go_package = "github.com/bentoml/bentoml/grpc/v1alpha1;service";
 option java_multiple_files = true;
 option java_outer_classname = "ServiceProto";
 option java_package = "com.bentoml.grpc.v1alpha1";

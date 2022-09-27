@@ -176,6 +176,8 @@ exclude = '''
     | \.tox
     | \.venv
     | _build
+    | .build
+    | bazel-*
     | build
     | venv
     | lib

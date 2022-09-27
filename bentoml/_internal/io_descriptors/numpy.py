@@ -192,6 +192,12 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
                       result = await runner.run(input_array)
 
                When ``enforce_shape=True`` is provided, BentoML will raise an exception if the input array received does not match the `shape` provided.
+
+               .. dropdown:: About the behaviour of ``shape``
+                  :icon: triangle-down
+
+                  If specified, then both :meth:`bentoml.io.NumpyNdarray.from_http_request` and :meth:`bentoml.io.NumpyNdarray.from_proto`
+                  will reshape the input array before sending it to the API function.
         enforce_shape: Whether to enforce a certain shape. If ``enforce_shape=True`` then ``shape`` must be specified.
 
     Returns:
@@ -432,10 +438,32 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             context: grpc.ServicerContext
 
         Returns:
-            a ``numpy.ndarray`` object. This can then be used
-             inside users defined logics.
+            ``numpy.ndarray``: A ``np.array`` constructed from given protobuf message.
+
+        .. seealso::
+
+            :ref:`Protobuf representation of np.ndarray <guides/grpc:Array representation via \\`\\`NDArray\\`\\`>`
+
+        .. note::
+
+           Currently, we support ``pb.NDArray`` and ``serialized_bytes`` as valid inputs.
+           ``serialized_bytes`` will be prioritised over ``pb.NDArray`` if both are provided.
+           Serialized bytes has a specialized bytes representation and should not be used by users directly.
         """
         if isinstance(field, bytes):
+
+            # We will be using ``np.frombuffer`` to deserialize the bytes.
+            # This means that we need to ensure that ``dtype`` are provided to the IO descriptor
+            #
+            # ```python
+            # from __future__ import annotations
+            #
+            # import numpy as np
+            #
+            # @svc.api(input=NumpyNdarray(dtype=np.float16), output=NumpyNdarray())
+            # def predict(input: np.ndarray):
+            #     ... # input will be serialized with np.frombuffer, and hence dtype is required
+            # ```
             if not self._dtype:
                 raise BadInput(
                     "'serialized_bytes' requires specifying 'dtype'."
@@ -445,6 +473,14 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             array = np.frombuffer(field, dtype=self._dtype)
         else:
             assert isinstance(field, pb.NDArray)
+
+            # The behaviour of dtype are as follows:
+            # - if not provided:
+            #     * All of the fields are empty, then we return a ``np.empty``.
+            #     * We will loop through all of the provided fields, and only allows one field per message.
+            #       If here are more than two fields (i.e. ``string_values`` and ``float_values``), then we will raise an error, as we don't know how to deserialize the data.
+            # - if provided:
+            #     * We will use the provided dtype-to-field maps to get the data from the given message.
             if field.dtype == pb.NDArray.DTYPE_UNSPECIFIED:
                 dtype = None
             else:
@@ -474,9 +510,13 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
             except ValueError:
                 array = np.array(values_array)
 
+            # We will try to reshape the array if ``shape`` is provided.
+            # Note that all of the logics here are handled in-place, meaning that we will ensure
+            # not to create new copies of given initialized array.
             if field.shape:
                 array = np.reshape(array, field.shape)
 
+        # We will try to run validation process before sending this of to the user.
         return self.validate_array(array)
 
     async def to_proto(self, obj: ext.NpNDArray) -> pb.NDArray:
@@ -484,11 +524,10 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         Process given objects and convert it to grpc protobuf response.
 
         Args:
-            obj: `np.ndarray` that will be serialized to protobuf
-            context: grpc.aio.ServicerContext from grpc.aio.Server
+            obj: ``np.array`` that will be serialized to protobuf.
         Returns:
-            `io_descriptor_pb2.Array`:
-                Protobuf representation of given `np.ndarray`
+            ``pb.NDArray``:
+                Protobuf representation of given ``np.ndarray``
         """
         try:
             obj = self.validate_array(obj)

@@ -117,3 +117,35 @@ catboost_info
 
 # ignore pyvenv
 pyvenv.cfg
+
+# bazel generated files
+bazel-*
+cpp/bentoml
+go/bentoml
+node/bentoml
+node_modules
+thirdparty
+
+# Swift-related
+swift/**/*/bentoml
+.DS_Store
+/.build
+/Packages
+/*.xcodeproj
+xcuserdata/
+DerivedData/
+.swiftpm/config/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.netrc
+Package.resolved
+
+# Java-Kotlin
+**/*/java/**/*/bentoml
+**/*/kotlin/**/*/bentoml
+.gradle
+
+# PHP generated stubs
+**/*/php/Bentoml
+**/*/php/GPBMetadata
+composer.lock
+vendor

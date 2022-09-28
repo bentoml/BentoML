@@ -244,12 +244,12 @@ def test_legacy_get_metrics_report(
     mock_prometheus_client.multiproc.return_value = False
     mock_prometheus_client.text_string_to_metric_families.return_value = text_string_to_metric_families(
         b"""\
-# HELP BENTOML_noop_service_request_in_progress Multiprocess metric
-# TYPE BENTOML_noop_service_request_in_progress gauge
-BENTOML_noop_service_request_in_progress{endpoint="/predict",service_version="not available"} 0.0
-# HELP BENTOML_noop_service_request_total Multiprocess metric
-# TYPE BENTOML_noop_service_request_total counter
-BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",service_version="not available"} 8.0
+# HELP BENTOML_simple_service_request_in_progress Multiprocess metric
+# TYPE BENTOML_simple_service_request_in_progress gauge
+BENTOML_simple_service_request_in_progress{endpoint="/predict",service_version="not available"} 0.0
+# HELP BENTOML_simple_service_request_total Multiprocess metric
+# TYPE BENTOML_simple_service_request_total counter
+BENTOML_simple_service_request_total{endpoint="/predict",http_response_code="200",service_version="not available"} 8.0
 """.decode(
             "utf-8"
         )
@@ -278,7 +278,7 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
             {
                 "api_name": "pred_json",
                 "http_response_code": "200",
-                "service_name": "noop_service",
+                "service_name": "simple_service",
                 "service_version": "not available",
                 "value": 15.0,
             },
@@ -293,10 +293,10 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
             b"""\
                 # HELP bentoml_api_server_request_total Multiprocess metric
                 # TYPE bentoml_api_server_request_total counter
-                bentoml_api_server_request_total{api_name="pred_json",http_response_code="200",service_name="noop_service",service_version="not available"} 15.0
+                bentoml_api_server_request_total{api_name="pred_json",http_response_code="200",service_name="simple_service",service_version="not available"} 15.0
                 # HELP bentoml_api_server_request_in_progress Multiprocess metric
                 # TYPE bentoml_api_server_request_in_progress gauge
-                bentoml_api_server_request_in_progress{api_name="pred_json",service_name="noop_service",service_version="not available"} 0.0
+                bentoml_api_server_request_in_progress{api_name="pred_json",service_name="simple_service",service_version="not available"} 0.0
                 """.decode(
                 "utf-8"
             )
@@ -305,7 +305,7 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
 )
 def test_get_metrics_report(
     mock_prometheus_client: MagicMock,
-    noop_service: Service,
+    simple_service: Service,
     serve_kind: str,
     expected: dict[str, str | float] | None,
     generated_metrics: t.Generator[Metric, None, None],

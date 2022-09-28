@@ -1,7 +1,6 @@
 # pylint: disable=unused-argument
 from __future__ import annotations
 
-import os
 import typing as t
 import logging
 from typing import TYPE_CHECKING

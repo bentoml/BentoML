@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import typing as t
 import tempfile
 from typing import TYPE_CHECKING
@@ -8,15 +9,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-import sys
-
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import create_bento_servicer
 from bentoml.testing.grpc import make_standalone_server
-from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
-
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import grpc

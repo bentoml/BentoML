@@ -25,6 +25,10 @@ class RunnerHandle(ABC):
         ...
 
     @abstractmethod
+    def is_ready(self) -> bool:
+        return True
+
+    @abstractmethod
     def run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],

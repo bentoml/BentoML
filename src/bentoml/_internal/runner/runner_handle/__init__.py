@@ -25,7 +25,7 @@ class RunnerHandle(ABC):
         ...
 
     @abstractmethod
-    def is_ready(self) -> bool:
+    async def is_ready(self) -> bool:
         return True
 
     @abstractmethod

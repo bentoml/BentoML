@@ -216,5 +216,9 @@ class RemoteRunnerClient(RunnerHandle):
             ),
         )
 
+    async def is_ready(self) -> bool:
+        async with self._client.get(f"{self._addr}/readyz") as resp:
+            return resp.status == 200
+
     def __del__(self) -> None:
         self._close_conn()

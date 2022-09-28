@@ -293,7 +293,7 @@ def bin_file(tmpdir: str) -> str:
     return str(bin_file_)
 
 
-@pytest.fixture(scope="module", name="prometheus_client")
+@pytest.fixture(scope="module", name="prom_client")
 def fixture_metrics_client() -> PrometheusClient:
     """This fixtures return a PrometheusClient instance that can be used for testing."""
     return BentoMLContainer.metrics_client.get()

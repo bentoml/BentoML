@@ -193,6 +193,9 @@ SCHEMA = Schema(
                 "url": Or(str, None),
             },
         },
+        Optional("monitoring"): {
+            "logging_config_file": Or(str, None),
+        },
         Optional("yatai"): {
             "default_server": Or(str, None),
             "servers": {
@@ -215,6 +218,13 @@ SCHEMA = Schema(
 _WARNING_MESSAGE = (
     "field 'api_server.%s' is deprecated and has been renamed to 'api_server.http.%s'"
 )
+
+
+def _get_default_monitoring_logging_config_file() -> str:
+    """
+    Get the default monitoring logging config file path
+    """
+    return os.path.join(os.path.dirname(__file__), "default_monitoring_logging.yaml")
 
 
 class BentoMLConfiguration:
@@ -616,6 +626,38 @@ class _BentoMLContainerClass:
         cfg: dict[str, t.Any] = Provide[api_server_config.logging.access.format],
     ) -> dict[str, str]:
         return cfg
+
+    @providers.SingletonFactory
+    @staticmethod
+    def monitoring_log_config(
+        logging_config_file: str
+        | None = Provide[config.monitoring.logging_config_file],
+        log_path: str | None = Provide[config.monitoring.log_path],
+    ) -> dict[str, t.Any]:
+        if logging_config_file is None:
+            logging_config_file = _get_default_monitoring_logging_config_file()
+
+        if log_path is None:
+            log_path = f"monitoring"
+
+        with open(logging_config_file, "r") as f:
+            import yaml
+
+            config = yaml.safe_load(f.read())
+
+        if (
+            "handlers" in config
+            and "bentoml_monitor_data" in config["handlers"]
+            and "filename" in config["handlers"]["bentoml_monitor_data"]
+        ):
+            config["handlers"]["bentoml_monitor_data"]["filename"] = config["handlers"][
+                "bentoml_monitor_data"
+            ]["filename"].format(
+                path=log_path,
+                worker_id=component_context.component_index,
+            )
+
+        return config
 
 
 BentoMLContainer = _BentoMLContainerClass()

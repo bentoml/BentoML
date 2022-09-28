@@ -1,0 +1,25 @@
+loggers:
+  bentoml_monitor_data:
+    level: INFO
+    handlers: bentoml_monitor_data
+  bentoml_monitor_schema:
+    level: INFO
+    handlers: bentoml_monitor_schema
+
+handlers:
+  bentoml_monitor_data:
+    class: logging.handlers.TimedRotatingFileHandler
+    level: INFO
+    formatter: bentoml_json
+    filename: "{path}/data/data.log.{worker_id}"
+    when: "D"
+  bentoml_monitor_schema:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: bentoml_json
+    filename: "{path}/schema/schema.log.{worker_id}"
+
+formatters:
+  bentoml_json:
+    class: pythonjsonlogger.jsonlogger.JsonFormatter
+    format: "%(message)s"

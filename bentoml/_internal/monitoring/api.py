@@ -1,0 +1,232 @@
+from __future__ import annotations
+
+import typing as t
+import logging
+import datetime
+import contextlib
+import collections
+import logging.config
+from typing import TYPE_CHECKING
+
+from simple_di import inject
+from simple_di import Provide
+
+from ..configuration.containers import BentoMLContainer
+
+if TYPE_CHECKING:
+    from ..types import JSONSerializable
+
+    DT = t.TypeVar("DT")
+    MT = t.TypeVar("MT", bound="Monitor[t.Any]")
+
+logger = logging.getLogger(__name__)
+
+BENTOML_MONITOR_ROLES = {"feature", "prediction", "target"}
+BENTOML_MONITOR_TYPES = {"numerical", "categorical", "numerical_sequence"}
+
+MONITORS: dict[str, Monitor[t.Any]] = {}  # cache of monitors
+
+
+class Monitor(t.Generic[DT]):
+    def __init__(self, name: str):
+        pass
+
+    def start_record(self) -> None:
+        pass
+
+    def stop_record(self) -> None:
+        pass
+
+    def export_schema(self) -> JSONSerializable:
+        pass
+
+    def export_data(self) -> JSONSerializable:
+        pass
+
+    def log(self, data: DT, name: str, role: str, data_type: str) -> None:
+        pass
+
+    def log_batch(
+        self, data_batch: t.Iterable[DT], name: str, role: str, data_type: str
+    ) -> None:
+        pass
+
+    def log_table(
+        self,
+        data: t.Iterable[t.Iterable[DT]],
+        schema: dict[str, str],
+    ) -> None:
+        pass
+
+
+class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
+    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID) = ("timestamp", "request_id")
+
+    @inject
+    def __init__(
+        self,
+        name: str,
+        log_config: dict[str, t.Any] = Provide[BentoMLContainer.monitoring_log_config],
+    ) -> None:
+        self.name = name
+        logging.config.dictConfig(log_config)
+        self.data_logger = logging.getLogger("bentoml_monitor_data")
+        self.schema_logger = logging.getLogger("bentoml_monitor_schema")
+        self._is_first_record = True
+        self._is_first_column = False
+        self._schema: list[dict[str, str]] = []
+        self._columns: dict[
+            str,
+            collections.deque[JSONSerializable],
+        ] = collections.defaultdict(collections.deque)
+
+    def start_record(self) -> None:
+        """
+        Start recording data. This method should be called before logging any data.
+        """
+        self._is_first_column = True
+
+    def stop_record(self) -> None:
+        """
+        Stop recording data. This method should be called after logging all data.
+        """
+        if not self._is_first_record:
+            self.export_schema()
+            self._is_first_record = False
+
+        if self._is_first_column:
+            logger.warning("No data logged in this record. Will skip this record.")
+        else:
+            self.export_data()
+
+    def export_schema(self):
+        """
+        Export schema of the data. This method should be called after all data is logged.
+        """
+        self.schema_logger.info(self._schema)
+
+    def export_data(self):
+        """
+        Export data. This method should be called after all data is logged.
+        """
+        assert (
+            len(set(len(q) for q in self._columns.values())) == 1
+        ), "All columns must have the same length"
+        while True:
+            try:
+                record = {k: v.popleft() for k, v in self._columns.items()}
+                self.data_logger.info(record)
+            except IndexError:
+                break
+
+    def log(
+        self,
+        data: JSONSerializable,
+        name: str,
+        role: str,
+        data_type: str,
+    ) -> None:
+        """
+        log a data with column name, role and type to the current record
+        """
+        if name in self.PRESERVED_COLUMNS:
+            raise ValueError(
+                f"Column name {name} is preserved. Please use a different name."
+            )
+
+        assert role in BENTOML_MONITOR_ROLES, f"Invalid role {role}"
+        assert data_type in BENTOML_MONITOR_TYPES, f"Invalid data type {data_type}"
+
+        if self._is_first_record:
+            self._schema.append({"name": name, "role": role, "type": data_type})
+        if self._is_first_column:
+            self._is_first_column = False
+
+            from ..context import trace_context
+
+            # universal columns
+            self._columns[self.COLUMN_TIME].append(datetime.datetime.now().isoformat())
+            self._columns[self.COLUMN_RID].append(trace_context.request_id)
+
+        self._columns[name].append(data)
+
+    def log_batch(
+        self,
+        data_batch: t.Iterable[JSONSerializable],
+        name: str,
+        role: str,
+        data_type: str,
+    ) -> None:
+        """
+        Log a batch of data. The data will be logged as a single column.
+        """
+        try:
+            for data in data_batch:
+                self.log(data, name, role, data_type)
+        except TypeError:
+            raise ValueError(
+                "data_batch is not iterable. Please use log() to log a single data."
+            )
+
+    def log_table(
+        self,
+        data: t.Iterable[t.Iterable[JSONSerializable]],
+        schema: dict[str, str],
+    ) -> None:
+        raise NotImplementedError("Not implemented yet")
+
+
+@contextlib.contextmanager
+def monitor(
+    name: str,
+    monitor_class: t.Type[MT] = BentoMLDefaultMonitor,
+) -> t.Generator[MT, None, None]:
+    """
+    Context manager for monitoring.
+
+    :param name: name of the monitor
+    :param monitor_class: class of the monitor
+
+    :return: a monitor instance
+
+    Example::
+
+        with bentoml.monitor("my_monitor") as m:
+            m.log(1, "x", "feature", "numerical")
+            m.log(2, "y", "feature", "numerical")
+            m.log(3, "z", "feature", "numerical")
+            m.log(4, "prediction", "prediction", "numerical")
+
+        # or
+        with bentoml.monitor("my_monitor") as m:
+            m.log_batch([1, 2, 3], "x", "feature", "numerical")
+            m.log_batch([4, 5, 6], "y", "feature", "numerical")
+            m.log_batch([7, 8, 9], "z", "feature", "numerical")
+            m.log_batch([10, 11, 12], "prediction", "prediction", "numerical")
+
+        this will log the following data:
+        {
+            "timestamp": "2021-09-01T00:00:00",
+            "request_id": "1234567890",
+            "x": 1,
+            "y": 2,
+            "z": 3,
+            "prediction": 4,
+        }
+        and the following schema:
+        [
+            {"name": "timestamp", "role": "time", "type": "datetime"},
+            {"name": "request_id", "role": "request_id", "type": "string"},
+            {"name": "x", "role": "feature", "type": "numerical"},
+            {"name": "y", "role": "feature", "type": "numerical"},
+            {"name": "z", "role": "feature", "type": "numerical"},
+            {"name": "prediction", "role": "prediction", "type": "numerical"},
+        ]
+    """
+    if name not in MONITORS:
+        MONITORS[name] = monitor_class(name)
+
+    mon = MONITORS[name]
+    mon.start_record()
+    yield mon  # type: ignore
+    mon.stop_record()

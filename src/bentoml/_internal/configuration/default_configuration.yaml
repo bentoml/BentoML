@@ -75,3 +75,7 @@ tracing:
   otlp:
     protocol: ~
     url: ~
+
+monitoring:
+  logging_config_file: ~
+  log_path: ~

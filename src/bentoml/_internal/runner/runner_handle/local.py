@@ -25,6 +25,9 @@ class LocalRunnerRef(RunnerHandle):
         self._runnable = runner.runnable_class(**runner.runnable_init_params)  # type: ignore
         self._limiter = None
 
+    def is_ready(self) -> bool:
+        return True
+
     def run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],

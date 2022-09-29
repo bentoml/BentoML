@@ -240,6 +240,9 @@ class Runner:
     def destroy(self):
         object.__setattr__(self, "_runner_handle", DummyRunnerHandle())
 
+    async def runner_handle_is_ready(self) -> bool:
+        return await self._runner_handle.is_ready()
+
     @property
     def scheduled_worker_count(self) -> int:
         return self.scheduling_strategy.get_worker_count(

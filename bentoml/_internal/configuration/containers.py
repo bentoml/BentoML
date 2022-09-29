@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import os
+import math
 import uuid
 import typing as t
 import logging
-import multiprocessing
 from copy import deepcopy
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
@@ -24,6 +24,7 @@ from . import expand_env_var
 from ..utils import split_with_quotes
 from ..utils import validate_or_create_dir
 from ..context import component_context
+from ..resource import CpuResource
 from ..resource import system_resources
 from ...exceptions import BentoMLConfigException
 from ..utils.unflatten import unflatten
@@ -449,7 +450,7 @@ class _BentoMLContainerClass:
         return filtered_kwargs
 
     api_server_workers = providers.Factory[int](
-        lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
+        lambda workers: workers or math.ceil(CpuResource.from_system()),
         api_server_config.workers,
     )
 

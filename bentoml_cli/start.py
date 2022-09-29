@@ -63,7 +63,7 @@ def add_start_command(cli: click.Group) -> None:
     @click.option(
         "--api-workers",
         type=click.INT,
-        default=None,
+        default=BentoMLContainer.api_server_workers.get(),
         help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
         envvar="BENTOML_API_WORKERS",
     )
@@ -295,7 +295,7 @@ def add_start_command(cli: click.Group) -> None:
     @click.option(
         "--api-workers",
         type=click.INT,
-        default=None,
+        default=BentoMLContainer.api_server_workers.get(),
         help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
         envvar="BENTOML_API_WORKERS",
     )

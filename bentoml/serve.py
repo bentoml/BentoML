@@ -289,7 +289,7 @@ def serve_http_production(
     port: int = Provide[BentoMLContainer.http.port],
     host: str = Provide[BentoMLContainer.http.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-    api_workers: int | None = None,
+    api_workers: int = Provide[BentoMLContainer.api_server_workers],
     ssl_certfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
     ssl_keyfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
     ssl_keyfile_password: str
@@ -442,7 +442,7 @@ def serve_http_production(
                 ),
             ],
             working_dir=working_dir,
-            numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+            numprocesses=api_workers,
         )
     )
 
@@ -650,7 +650,7 @@ def serve_grpc_production(
     port: int = Provide[BentoMLContainer.grpc.port],
     host: str = Provide[BentoMLContainer.grpc.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-    api_workers: int | None = None,
+    api_workers: int = Provide[BentoMLContainer.api_server_workers],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
@@ -808,7 +808,7 @@ def serve_grpc_production(
                 args=args,
                 use_sockets=False,
                 working_dir=working_dir,
-                numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+                numprocesses=api_workers,
             )
         )
 

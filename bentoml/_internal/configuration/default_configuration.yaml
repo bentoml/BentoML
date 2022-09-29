@@ -1,5 +1,5 @@
 api_server:
-  workers: null  # When this is set to null the number of available CPU cores is used.
+  workers: ~ # When this is set to null the number of available CPU cores is used.
   timeout: 60
   backlog: 2048
   metrics:

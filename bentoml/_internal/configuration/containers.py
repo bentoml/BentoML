@@ -378,6 +378,13 @@ class BentoMLConfiguration:
                 raise BentoMLConfigException(
                     f"Failed to parse config options from the env var: {e}. \n *** Note: You can use '\"' to quote the key if it contains special characters. ***"
                 ) from None
+            # v1 -> v2 changes follow:
+            # - api_server.[max_request_size|cors|port|host] -> api_server.http.$^
+            # - tracing.jaeger.* -> tracing.jaeger.http.*
+            # - add tracing.jaeger.grpc.* with default values
+            # TODO: follow up versioning and deprecation generation.
+            v1_to_v2_migration(config_merger, override_config)
+
             config_merger.merge(self.config, override_config)
 
         if override_config_file is not None or override_config_values is not None:

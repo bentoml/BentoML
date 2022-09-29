@@ -303,7 +303,6 @@ def serve_http_production(
     from bentoml import load
 
     from ._internal.utils import reserve_free_port
-    from ._internal.resource import CpuResource
     from ._internal.utils.uri import path_to_uri
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
@@ -659,7 +658,6 @@ def serve_grpc_production(
     from bentoml.exceptions import UnprocessableEntity
 
     from ._internal.utils import reserve_free_port
-    from ._internal.resource import CpuResource
     from ._internal.utils.uri import path_to_uri
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve

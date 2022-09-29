@@ -46,6 +46,7 @@ from ._internal.service.loader import load
 
 # Framework specific modules are lazily loaded upon import
 if TYPE_CHECKING:
+    # matrics
     from bentoml import h2o
     from bentoml import flax
     from bentoml import onnx
@@ -56,6 +57,7 @@ if TYPE_CHECKING:
     from bentoml import mlflow
     from bentoml import paddle
     from bentoml import easyocr
+    from bentoml import metrics
     from bentoml import pycaret
     from bentoml import pytorch
     from bentoml import sklearn
@@ -75,6 +77,9 @@ if TYPE_CHECKING:
     # Model management APIs
     from . import io
     from . import models
+
+    # Prometheus metrics client
+    from . import metrics  # isort: skip
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
 
@@ -114,6 +119,7 @@ else:
 
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
+    metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
 
     del _LazyLoader
 
@@ -123,6 +129,7 @@ __all__ = [
     "Cookie",
     "Service",
     "models",
+    "metrics",
     "io",
     "Tag",
     "Model",

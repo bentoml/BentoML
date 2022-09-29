@@ -142,3 +142,24 @@ class PrometheusClient:
             self.prometheus_client.Gauge,
             registry=self.registry,
         )
+
+    @property
+    def Info(self):
+        return partial(
+            self.prometheus_client.Info,
+            registry=self.registry,
+        )
+
+    @property
+    def Enum(self):
+        return partial(
+            self.prometheus_client.Enum,
+            registry=self.registry,
+        )
+
+    @property
+    def Metric(self):
+        return partial(
+            self.prometheus_client.Metric,
+            registry=self.registry,
+        )

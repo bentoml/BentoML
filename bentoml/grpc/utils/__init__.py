@@ -7,18 +7,20 @@ from typing import TYPE_CHECKING
 from functools import lru_cache
 from dataclasses import dataclass
 
-from bentoml._internal.utils.lazy_loader import LazyLoader
+from bentoml.exceptions import InvalidArgument
 
 if TYPE_CHECKING:
     import types
     from enum import Enum
 
     import grpc
-    from google.protobuf import descriptor as descriptor_mod
 
     from bentoml.exceptions import BentoMLException
+    from bentoml.grpc.types import ProtoField
     from bentoml.grpc.types import RpcMethodHandler
+    from bentoml.grpc.types import BentoServicerContext
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml._internal.io_descriptors import IODescriptor
 
     # We need this here so that __all__ is detected due to lazy import
     def import_generated_stubs(
@@ -35,9 +37,6 @@ else:
 
     pb, _ = import_generated_stubs()
     grpc, _ = import_grpc()
-    descriptor_mod = LazyLoader(
-        "descriptor_mod", globals(), "google.protobuf.descriptor"
-    )
 
 __all__ = [
     "grpc_status_code",
@@ -46,6 +45,7 @@ __all__ = [
     "GRPC_CONTENT_TYPE",
     "import_generated_stubs",
     "import_grpc",
+    "validate_proto_fields",
 ]
 
 logger = logging.getLogger(__name__)
@@ -54,26 +54,17 @@ logger = logging.getLogger(__name__)
 GRPC_CONTENT_TYPE = "application/grpc"
 
 
-def get_field_by_name(
-    descriptor: descriptor_mod.FieldDescriptor | descriptor_mod.Descriptor,
-    field: str,
-) -> descriptor_mod.FieldDescriptor:
-    if isinstance(descriptor, descriptor_mod.FieldDescriptor):
-        # descriptor is a FieldDescriptor
-        return descriptor.message_type.fields_by_name[field]
-    elif isinstance(descriptor, descriptor_mod.Descriptor):
-        # descriptor is a Descriptor
-        return descriptor.fields_by_name[field]
-    else:
-        raise NotImplementedError(f"Type {type(descriptor)} is not yet supported.")
-
-
-def is_map_field(field: descriptor_mod.FieldDescriptor) -> bool:
-    return (
-        field.type == descriptor_mod.FieldDescriptor.TYPE_MESSAGE
-        and field.message_type.has_options
-        and field.message_type.GetOptions().map_entry
-    )
+def validate_proto_fields(
+    field: str | None, io_: IODescriptor[t.Any]
+) -> str | ProtoField:
+    if field is None:
+        raise InvalidArgument('"field" cannot be empty.')
+    accepted_fields = io_._proto_fields + ("serialized_bytes",)
+    if field not in accepted_fields:
+        raise InvalidArgument(
+            f"'{io_.__class__.__name__}' accepts one of the following fields: '{','.join(accepted_fields)}' got '{field}' instead.",
+        ) from None
+    return field
 
 
 @lru_cache(maxsize=1)
@@ -179,7 +170,13 @@ def parse_method_name(method_name: str) -> tuple[MethodName, bool]:
 
 
 def wrap_rpc_handler(
-    wrapper: t.Callable[..., t.Any],
+    wrapper: t.Callable[
+        ...,
+        t.Callable[
+            [pb.Request, BentoServicerContext],
+            t.Coroutine[t.Any, t.Any, pb.Response | t.Awaitable[pb.Response]],
+        ],
+    ],
     handler: RpcMethodHandler | None,
 ) -> RpcMethodHandler | None:
     if not handler:

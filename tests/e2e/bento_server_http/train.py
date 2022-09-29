@@ -1,11 +1,10 @@
-import pickle_model
+if __name__ == "__main__":
+    import pickle_model
 
-import bentoml.picklable_model
+    import bentoml
 
-
-def train():
     bentoml.picklable_model.save_model(
-        "py_model.case-1.e2e",
+        "py_model.case-1.http.e2e",
         pickle_model.PickleModel(),
         signatures={
             "predict_file": {"batchable": True},
@@ -18,7 +17,3 @@ def train():
         },
         external_modules=[pickle_model],
     )
-
-
-if __name__ == "__main__":
-    train()

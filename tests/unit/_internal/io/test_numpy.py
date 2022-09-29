@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 from __future__ import annotations
 
 import logging
@@ -9,11 +10,18 @@ import pytest
 
 from bentoml.io import NumpyNdarray
 from bentoml.exceptions import BadInput
+from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.service.openapi.specification import Schema
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture
+
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+else:
+    from bentoml.grpc.utils import import_generated_stubs
+
+    pb, _ = import_generated_stubs()
 
 
 class ExampleGeneric(str, np.generic):
@@ -33,6 +41,15 @@ def test_invalid_dtype():
     with pytest.raises(BentoMLException) as e:
         _ = NumpyNdarray.from_sample(generic)  # type: ignore (test exception)
     assert "expects a 'numpy.array'" in str(e.value)
+
+
+def test_invalid_init():
+    with pytest.raises(InvalidArgument) as exc_info:
+        NumpyNdarray(enforce_dtype=True)
+    assert "'dtype' must be specified" in str(exc_info.value)
+    with pytest.raises(InvalidArgument) as exc_info:
+        NumpyNdarray(enforce_shape=True)
+    assert "'shape' must be specified" in str(exc_info.value)
 
 
 @pytest.mark.parametrize("dtype, expected", [("float", "number"), (">U8", "integer")])
@@ -99,3 +116,95 @@ def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
     with caplog.at_level(logging.DEBUG):
         example.validate_array(np.array("asdf"))
     assert "Failed to reshape" in caplog.text
+
+
+def generate_1d_array(dtype: pb.NDArray.DType.ValueType, length: int = 3):
+    if dtype == pb.NDArray.DTYPE_BOOL:
+        return [True] * length
+    elif dtype == pb.NDArray.DTYPE_STRING:
+        return ["a"] * length
+    else:
+        return [1] * length
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "dtype",
+    filter(lambda x: x > 0, [v.number for v in pb.NDArray.DType.DESCRIPTOR.values]),
+)
+async def test_from_proto(dtype: pb.NDArray.DType.ValueType) -> None:
+    from bentoml._internal.io_descriptors.numpy import dtypepb_to_fieldpb_map
+    from bentoml._internal.io_descriptors.numpy import dtypepb_to_npdtype_map
+
+    np.testing.assert_array_equal(
+        await NumpyNdarray(dtype=example.dtype, shape=example.shape).from_proto(
+            example.ravel().tobytes(),
+        ),
+        example,
+    )
+    # DTYPE_UNSPECIFIED
+    np.testing.assert_array_equal(
+        await NumpyNdarray().from_proto(
+            pb.NDArray(dtype=pb.NDArray.DType.DTYPE_UNSPECIFIED),
+        ),
+        np.empty(0),
+    )
+    np.testing.assert_array_equal(
+        await NumpyNdarray().from_proto(
+            pb.NDArray(shape=tuple(example.shape)),
+        ),
+        np.empty(tuple(example.shape)),
+    )
+    # different DTYPE
+    np.testing.assert_array_equal(
+        await NumpyNdarray().from_proto(
+            pb.NDArray(
+                dtype=dtype,
+                **{dtypepb_to_fieldpb_map()[dtype]: generate_1d_array(dtype)},
+            ),
+        ),
+        np.array(generate_1d_array(dtype), dtype=dtypepb_to_npdtype_map()[dtype]),
+    )
+    # given shape from message.
+    np.testing.assert_array_equal(
+        await NumpyNdarray().from_proto(
+            pb.NDArray(shape=[3, 3], float_values=[1.0] * 9),
+        ),
+        np.array([[1.0] * 3] * 3),
+    )
+
+
+@pytest.mark.asyncio
+async def test_exception_from_proto():
+    with pytest.raises(AssertionError):
+        await NumpyNdarray().from_proto(pb.NDArray(string_values="asdf"))
+        await NumpyNdarray().from_proto(pb.File(content=b"asdf"))  # type: ignore (testing exception)
+    with pytest.raises(BadInput):
+        await NumpyNdarray().from_proto(b"asdf")
+    with pytest.raises(BadInput) as exc_info:
+        await NumpyNdarray().from_proto(pb.NDArray(dtype=123, string_values="asdf"))  # type: ignore (testing exception)
+    assert "123 is invalid." == str(exc_info.value)
+    with pytest.raises(BadInput) as exc_info:
+        await NumpyNdarray().from_proto(
+            pb.NDArray(string_values="asdf", float_values=[1.0, 2.0])
+        )
+    assert "Array contents can only be one of" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_exception_to_proto():
+    with pytest.raises(BadInput):
+        await NumpyNdarray(dtype=np.float32, enforce_dtype=True).to_proto(
+            np.array("asdf")
+        )
+    with pytest.raises(BadInput):
+        await NumpyNdarray(dtype=np.dtype(np.void)).to_proto(np.array("asdf"))
+
+
+@pytest.mark.asyncio
+async def test_to_proto() -> None:
+    assert await NumpyNdarray().to_proto(example) == pb.NDArray(
+        shape=example.shape,
+        dtype=pb.NDArray.DType.DTYPE_DOUBLE,
+        double_values=example.ravel().tolist(),
+    )

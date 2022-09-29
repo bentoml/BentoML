@@ -132,7 +132,7 @@ def test_track_serve_init(
     mock_usage_event_debugging: MagicMock,
     mock_do_not_track: MagicMock,
     mock_post: MagicMock,
-    noop_service: Service,
+    simple_service: Service,
     production: bool,
     caplog: LogCaptureFixture,
 ):
@@ -145,7 +145,7 @@ def test_track_serve_init(
     mock_response.text = "sent"
 
     analytics.usage_stats._track_serve_init(  # type: ignore (private warning)
-        noop_service,
+        simple_service,
         production=production,
         serve_info=analytics.usage_stats.get_serve_info(),
         serve_kind="http",
@@ -157,7 +157,7 @@ def test_track_serve_init(
     mock_usage_event_debugging.return_value = True
     with caplog.at_level(logging.INFO):
         analytics.usage_stats._track_serve_init(  # type: ignore (private warning)
-            noop_service,
+            simple_service,
             production=production,
             serve_info=analytics.usage_stats.get_serve_info(),
             serve_kind="http",
@@ -218,10 +218,12 @@ def test_filter_metrics_report(
 
 
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
-def test_track_serve_do_not_track(mock_do_not_track: MagicMock, noop_service: Service):
+def test_track_serve_do_not_track(
+    mock_do_not_track: MagicMock, simple_service: Service
+):
     mock_do_not_track.return_value = True
     with analytics.track_serve(
-        noop_service,
+        simple_service,
         production=False,
         serve_info=analytics.usage_stats.get_serve_info(),
     ) as output:
@@ -236,18 +238,18 @@ def test_track_serve_do_not_track(mock_do_not_track: MagicMock, noop_service: Se
 def test_legacy_get_metrics_report(
     mock_prometheus_client: MagicMock,
     mock_do_not_track: MagicMock,
-    noop_service: Service,
+    simple_service: Service,
 ):
     mock_do_not_track.return_value = True
     mock_prometheus_client.multiproc.return_value = False
     mock_prometheus_client.text_string_to_metric_families.return_value = text_string_to_metric_families(
         b"""\
-# HELP BENTOML_noop_service_request_in_progress Multiprocess metric
-# TYPE BENTOML_noop_service_request_in_progress gauge
-BENTOML_noop_service_request_in_progress{endpoint="/predict",service_version="not available"} 0.0
-# HELP BENTOML_noop_service_request_total Multiprocess metric
-# TYPE BENTOML_noop_service_request_total counter
-BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",service_version="not available"} 8.0
+# HELP BENTOML_simple_service_request_in_progress Multiprocess metric
+# TYPE BENTOML_simple_service_request_in_progress gauge
+BENTOML_simple_service_request_in_progress{endpoint="/predict",service_version="not available"} 0.0
+# HELP BENTOML_simple_service_request_total Multiprocess metric
+# TYPE BENTOML_simple_service_request_total counter
+BENTOML_simple_service_request_total{endpoint="/predict",http_response_code="200",service_version="not available"} 8.0
 """.decode(
             "utf-8"
         )
@@ -276,7 +278,7 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
             {
                 "api_name": "pred_json",
                 "http_response_code": "200",
-                "service_name": "noop_service",
+                "service_name": "simple_service",
                 "service_version": "not available",
                 "value": 15.0,
             },
@@ -291,10 +293,10 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
             b"""\
                 # HELP bentoml_api_server_request_total Multiprocess metric
                 # TYPE bentoml_api_server_request_total counter
-                bentoml_api_server_request_total{api_name="pred_json",http_response_code="200",service_name="noop_service",service_version="not available"} 15.0
+                bentoml_api_server_request_total{api_name="pred_json",http_response_code="200",service_name="simple_service",service_version="not available"} 15.0
                 # HELP bentoml_api_server_request_in_progress Multiprocess metric
                 # TYPE bentoml_api_server_request_in_progress gauge
-                bentoml_api_server_request_in_progress{api_name="pred_json",service_name="noop_service",service_version="not available"} 0.0
+                bentoml_api_server_request_in_progress{api_name="pred_json",service_name="simple_service",service_version="not available"} 0.0
                 """.decode(
                 "utf-8"
             )
@@ -303,7 +305,7 @@ BENTOML_noop_service_request_total{endpoint="/predict",http_response_code="200",
 )
 def test_get_metrics_report(
     mock_prometheus_client: MagicMock,
-    noop_service: Service,
+    simple_service: Service,
     serve_kind: str,
     expected: dict[str, str | float] | None,
     generated_metrics: t.Generator[Metric, None, None],
@@ -331,7 +333,7 @@ def test_track_serve(
     mock_track_serve_init: MagicMock,
     mock_post: MagicMock,
     mock_do_not_track: MagicMock,
-    noop_service: Service,
+    simple_service: Service,
     monkeypatch: MonkeyPatch,
     caplog: LogCaptureFixture,
 ):
@@ -344,7 +346,7 @@ def test_track_serve(
 
     with caplog.at_level(logging.INFO):
         with analytics.track_serve(
-            noop_service,
+            simple_service,
             production=False,
             metrics_client=mock_prometheus_client,
             serve_info=analytics.usage_stats.get_serve_info(),

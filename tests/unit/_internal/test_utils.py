@@ -8,7 +8,18 @@ import pytest
 from scipy.sparse import csr_matrix
 
 import bentoml._internal.utils as utils
+from bentoml._internal.types import LazyType
 from bentoml._internal.types import MetadataDict
+
+
+def test_typeref():
+
+    # assert __eq__
+    assert LazyType("numpy", "ndarray") == np.ndarray
+    assert LazyType("numpy", "ndarray") == LazyType(type(np.array([2, 3])))
+
+    # evaluate
+    assert LazyType("numpy", "ndarray").get_class() == np.ndarray
 
 
 def test_validate_labels():

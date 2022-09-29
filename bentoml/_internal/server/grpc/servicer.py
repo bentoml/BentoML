@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import anyio
 
 from bentoml.grpc.utils import grpc_status_code
+from bentoml.grpc.utils import validate_proto_fields
 
 from ....exceptions import InvalidArgument
 from ....exceptions import BentoMLException
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
     from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.types import GeneratedProtocolMessageType
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_pb2_grpc as services
 
@@ -148,28 +148,24 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
             # We will use fields descriptor to determine how to process that request.
             try:
                 # we will check if the given fields list contains a pb.Multipart.
-                field = request.WhichOneof("content")
-                if field is None:
-                    raise InvalidArgument("Request cannot be empty.")
-                accepted_fields = api.input._proto_fields + ("serialized_bytes",)
-                if field not in accepted_fields:
-                    raise InvalidArgument(
-                        f"'{api.input.__class__.__name__}' accepts one of the following fields: '{', '.join(accepted_fields)}', and none of them are found in the request message.",
-                    ) from None
-                input_ = await api.input.from_proto(getattr(request, field))
+                input_proto = getattr(
+                    request,
+                    validate_proto_fields(request.WhichOneof("content"), api.input),
+                )
+                input_data = await api.input.from_proto(input_proto)
                 if asyncio.iscoroutinefunction(api.func):
                     if isinstance(api.input, Multipart):
-                        output = await api.func(**input_)
+                        output = await api.func(**input_data)
                     else:
-                        output = await api.func(input_)
+                        output = await api.func(input_data)
                 else:
                     if isinstance(api.input, Multipart):
-                        output = await anyio.to_thread.run_sync(api.func, **input_)
+                        output = await anyio.to_thread.run_sync(api.func, **input_data)
                     else:
-                        output = await anyio.to_thread.run_sync(api.func, input_)
-                protos = await api.output.to_proto(output)
+                        output = await anyio.to_thread.run_sync(api.func, input_data)
+                res = await api.output.to_proto(output)
                 # TODO(aarnphm): support multiple proto fields
-                response = pb.Response(**{api.output._proto_fields[0]: protos})
+                response = pb.Response(**{api.output._proto_fields[0]: res})
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
                 await context.abort(code=grpc_status_code(e), details=e.message)

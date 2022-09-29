@@ -1,8 +1,9 @@
-# type: ignore[no-untyped-def]
+from __future__ import annotations
 
 import io
 import sys
 import json
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -11,9 +12,16 @@ import aiohttp
 from bentoml.testing.utils import async_request
 from bentoml.testing.utils import parse_multipart_form
 
+if TYPE_CHECKING:
+    import PIL.Image as PILImage
+else:
+    from bentoml._internal.utils import LazyLoader
+
+    PILImage = LazyLoader("PILImage", globals(), "PIL.Image")
+
 
 @pytest.mark.asyncio
-async def test_numpy(host):
+async def test_numpy(host: str):
     await async_request(
         "POST",
         f"http://{host}/predict_ndarray_enforce_shape",
@@ -55,7 +63,7 @@ async def test_numpy(host):
 
 
 @pytest.mark.asyncio
-async def test_json(host):
+async def test_json(host: str):
     ORIGIN = "http://bentoml.ai"
 
     await async_request(
@@ -87,7 +95,7 @@ async def test_json(host):
 
 
 @pytest.mark.asyncio
-async def test_obj(host):
+async def test_obj(host: str):
     for obj in [1, 2.2, "str", [1, 2, 3], {"a": 1, "b": 2}]:
         obj_str = json.dumps(obj, separators=(",", ":"))
         await async_request(
@@ -101,7 +109,7 @@ async def test_obj(host):
 
 
 @pytest.mark.asyncio
-async def test_pandas(host):
+async def test_pandas(host: str):
     import pandas as pd
 
     ORIGIN = "http://bentoml.ai"
@@ -139,7 +147,7 @@ async def test_pandas(host):
 
 
 @pytest.mark.asyncio
-async def test_file(host, bin_file):
+async def test_file(host: str, bin_file: str):
     # Test File as binary
     with open(str(bin_file), "rb") as f:
         b = f.read()
@@ -174,9 +182,7 @@ async def test_file(host, bin_file):
 
 
 @pytest.mark.asyncio
-async def test_image(host, img_file):
-    import PIL.Image
-
+async def test_image(host: str, img_file: str):
     with open(str(img_file), "rb") as f1:
         img_bytes = f1.read()
 
@@ -191,11 +197,11 @@ async def test_image(host, img_file):
 
     bio = io.BytesIO(body)
     bio.name = "test.bmp"
-    img = PIL.Image.open(bio)
+    img = PILImage.open(bio)
     array1 = np.array(img)
-    array2 = PIL.Image.open(img_file)
+    array2 = PILImage.open(img_file)
 
-    np.testing.assert_array_almost_equal(array1, array2)
+    np.testing.assert_array_almost_equal(array1, np.array(array2))
 
     await async_request(
         "POST",
@@ -216,12 +222,8 @@ async def test_image(host, img_file):
     )
 
 
-# SklearnRunner is not suppose to take multiple arguments
-# TODO: move e2e tests to use a new bentoml.PickleModel module
-@pytest.mark.skip
 @pytest.mark.asyncio
-async def test_multipart_image_io(host, img_file):
-    import PIL.Image
+async def test_multipart_image_io(host: str, img_file: str):
     from starlette.datastructures import UploadFile
 
     with open(img_file, "rb") as f1:
@@ -230,16 +232,12 @@ async def test_multipart_image_io(host, img_file):
             form.add_field("original", f1.read(), content_type="image/bmp")
             form.add_field("compared", f2.read(), content_type="image/bmp")
 
-    status, headers, body = await async_request(
-        "POST",
-        f"http://{host}/predict_multi_images",
-        data=form,
+    _, headers, body = await async_request(
+        "POST", f"http://{host}/predict_multi_images", data=form, assert_status=200
     )
-
-    assert status == 200
 
     form = await parse_multipart_form(headers=headers, body=body)
     for _, v in form.items():
         assert isinstance(v, UploadFile)
-        img = PIL.Image.open(v.file)
+        img = PILImage.open(v.file)
         assert np.array(img).shape == (10, 10, 3)

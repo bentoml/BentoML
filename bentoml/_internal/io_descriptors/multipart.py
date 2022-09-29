@@ -143,12 +143,12 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
                    |   +--------------------------------------------------------+   |
                    |   |                                                        |   |
                    |   |    Multipart(arr=NumpyNdarray(), annotations=JSON())   |   |
-                   |   |                                                        |   |
-                   |   +----------------+-----------------------+---------------+   |
-                   |                    |                       |                   |
-                   |                    |                       |                   |
-                   |                    |                       |                   |
-                   |                    +----+        +---------+                   |
+                   |   |               |                       |                |   |
+                   |   +---------------+-----------------------+----------------+   |
+                   |                   |                       |                    |
+                   |                   |                       |                    |
+                   |                   |                       |                    |
+                   |                   +-----+        +--------+                    |
                    |                         |        |                             |
                    |         +---------------v--------v---------+                   |
                    |         |  def predict(arr, annotations):  |                   |
@@ -236,28 +236,33 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
     def validate_input_mapping(self, field: t.MutableMapping[str, t.Any]) -> None:
         if len(set(field) - set(self._inputs)) != 0:
             raise InvalidArgument(
-                f"'{repr(self)}' accepts the following keys: {set(self._inputs)}. Given {field.__class__.__qualname__} has invalid fields: {set(field) - set(self._inputs)}",
+                f"'{self!r}' accepts the following keys: {set(self._inputs)}. Given {field.__class__.__qualname__} has invalid fields: {set(field) - set(self._inputs)}",
             ) from None
 
     async def from_proto(self, field: pb.Multipart) -> dict[str, t.Any]:
+        from bentoml.grpc.utils import validate_proto_fields
+
         if isinstance(field, bytes):
             raise InvalidArgument(
                 f"cannot use 'serialized_bytes' with {self.__class__.__name__}"
             ) from None
         message = field.fields
         self.validate_input_mapping(message)
+        to_populate = {self._inputs[k]: message[k] for k in self._inputs}
         reqs = await asyncio.gather(
             *tuple(
-                io_.from_proto(getattr(input_pb, io_._proto_fields[0]))
-                for io_, input_pb in self.io_fields_mapping(message).items()
+                descriptor.from_proto(
+                    getattr(
+                        part,
+                        validate_proto_fields(
+                            part.WhichOneof("representation"), descriptor
+                        ),
+                    )
+                )
+                for descriptor, part in to_populate.items()
             )
         )
-        return dict(zip(message, reqs))
-
-    def io_fields_mapping(
-        self, message: t.MutableMapping[str, pb.Part]
-    ) -> dict[IODescriptor[t.Any], pb.Part]:
-        return {io_: part for io_, part in zip(self._inputs.values(), message.values())}
+        return dict(zip(self._inputs.keys(), reqs))
 
     async def to_proto(self, obj: dict[str, t.Any]) -> pb.Multipart:
         self.validate_input_mapping(obj)
@@ -268,13 +273,14 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
             )
         )
         return pb.Multipart(
-            fields={
-                key: pb.Part(
-                    **{
-                        io_._proto_fields[0]: resp
+            fields=dict(
+                zip(
+                    obj,
+                    [
+                        # TODO: support multiple proto_fields
+                        pb.Part(**{io_._proto_fields[0]: resp})
                         for io_, resp in zip(self._inputs.values(), resps)
-                    }
+                    ],
                 )
-                for key in obj
-            }
+            )
         )

@@ -353,7 +353,7 @@ Flags:
 If `pytest_additional_arguments` is given, the additional arguments will be passed to all of the tests run by the tests script.
 
 Example:
-  $ ./scripts/ci/run_tests.sh pytorch --gpus --capture=tee-sys
+  $ ./scripts/ci/run_tests.sh pytorch --run-gpus-tests --capture=tee-sys
 ```
 
 All tests are then defined under [config.yml](./scripts/ci/config.yml) where each field follows the following format:

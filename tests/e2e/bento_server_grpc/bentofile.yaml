@@ -1,0 +1,11 @@
+service: service:svc
+exclude:
+  - python_model.py
+  - "*.xml"
+python:
+  packages:
+    - pandas
+    - pydantic
+    - Pillow
+    - scikit-learn
+    - pyarrow

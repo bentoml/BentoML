@@ -4,6 +4,7 @@ SHELL := /bin/bash
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
 USE_VERBOSE ?=false
 USE_GPU ?= false
+USE_GRPC ?= false
 
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
@@ -49,7 +50,9 @@ tests-%:
 ifeq ($(USE_VERBOSE),true)
 	./scripts/ci/run_tests.sh -v $(type) $(__positional)
 else ifeq ($(USE_GPU),true)
-	./scripts/ci/run_tests.sh -v $(type) --gpus $(__positional)
+	./scripts/ci/run_tests.sh -v $(type) --run-gpu-tests $(__positional)
+else ifeq ($(USE_GPRC),true)
+	./scripts/ci/run_tests.sh -v $(type) --run-gprc-tests $(__positional)
 else
 	./scripts/ci/run_tests.sh $(type) $(__positional)
 endif

@@ -9,18 +9,21 @@
 fname=$(basename "$0")
 dname=$(dirname "$0")
 
+# shellcheck disable=SC1091
 source "$dname/helpers.sh"
 
 set_on_failed_callback "ERR=1"
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
-ERR=0
-
 declare -a PYTESTARGS
 CONFIG_FILE="$dname/config.yml"
 REQ_FILE="/tmp/additional-requirements.txt"
 SKIP_DEPS=0
+ERR=0
+VERBOSE=0
+ENABLE_XDIST=1
+WORKERS=auto
 
 cd "$GIT_ROOT" || exit
 
@@ -53,25 +56,31 @@ usage() {
 Running unit/integration tests with pytest and generate coverage reports. Make sure that given testcases is defined under $CONFIG_FILE.
 
 Usage:
-  $dname/$fname [-h|--help] [-v|--verbose] [-s|--skip_deps] <target> <pytest_additional_arguments>
+  $dname/$fname [-h|--help] [-v|--verbose] [-s|--skip-deps] <target> <pytest_additional_arguments>
 
 Flags:
   -h, --help            show this message
   -v, --verbose         set verbose scripts
-  -s, --skip_deps       skip install dependencies
+  -s, --skip-deps       skip install dependencies
+  -w, --workers         number of workers for pytest-xdist
+  --disable-xdist       disable pytest-xdist
 
 
 If pytest_additional_arguments is given, this will be appended to given tests run.
 
 Example:
-  $ $dname/$fname pytorch --gpus
+  $ $dname/$fname pytorch --run-gpu-tests
 HEREDOC
 	exit 2
 }
 
 parse_args() {
-	if [ "${#@}" -eq 0 ]; then
+	if [ "${#}" -eq 0 ]; then
 		FAIL "$0 doesn't run without any arguments"
+		exit 1
+	fi
+	if [ "${1:0:1}" = "-" ]; then
+		FAIL "First arguments must be a target, not a flag."
 		exit 1
 	fi
 
@@ -82,9 +91,19 @@ parse_args() {
 			;;
 		-v | --verbose)
 			set -x
+			VERBOSE=1
 			shift
 			;;
-		-s | --skip_deps)
+		-w | --workers)
+			shift
+			WORKERS="$2"
+			shift
+			;;
+		--disable-xdist)
+			ENABLE_XDIST=0
+			shift
+			;;
+		-s | --skip-deps)
 			SKIP_DEPS=1
 			shift
 			;;
@@ -176,10 +195,10 @@ main() {
 		fi
 	done
 
-	#  validate_yaml
+	# validate_yaml
 	parse_config "$argv"
 
-	OPTS=(--cov=bentoml --cov-config="$GIT_ROOT"/pyproject.toml --cov-report=xml:"$target.xml" --cov-report=term-missing -x)
+	OPTS=(--cov-config="$GIT_ROOT/pyproject.toml" --cov-report=xml:"$target.xml")
 
 	if [ -n "${PYTESTARGS[*]}" ]; then
 		# shellcheck disable=SC2206
@@ -187,7 +206,14 @@ main() {
 	fi
 
 	if [ "$fname" == "test_frameworks.py" ]; then
-		OPTS=("--framework" "$target" ${OPTS[@]})
+		OPTS=("--framework" "$target" "${OPTS[@]}")
+	fi
+	if [ "$VERBOSE" -eq 1 ]; then
+		OPTS=("${OPTS[@]}" -vvv)
+	fi
+
+	if [ "$type_tests" == 'unit' ] && [ "$ENABLE_XDIST" -eq 1 ] && [ "$(uname | tr '[:upper:]' '[:lower:]')" != "win32" ]; then
+		OPTS=("${OPTS[@]}" --dist loadfile -n "$WORKERS")
 	fi
 
 	if [ "$SKIP_DEPS" -eq 0 ]; then
@@ -202,7 +228,8 @@ main() {
 	fi
 
 	if [ "$type_tests" == 'e2e' ]; then
-		cd "$GIT_ROOT"/"$test_dir"/"$fname" || exit 1
+		p="$GIT_ROOT/$test_dir"
+		cd "$p" || exit 1
 		path="."
 	else
 		path="$GIT_ROOT"/"$test_dir"/"$fname"
@@ -213,13 +240,11 @@ main() {
 
 	# Return non-zero if pytest failed
 	if ! test $ERR = 0; then
-		FAIL "$args $type_tests tests failed!"
+		FAIL "$type_tests tests failed!"
 		exit 1
 	fi
 
-	PASS "$args $type_tests tests passed!"
+	PASS "$type_tests tests passed!"
 }
 
 main "$@" || exit 1
-
-# vim: set ft=sh ts=2 sw=2 tw=0 et :

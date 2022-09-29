@@ -308,7 +308,7 @@ def test_runner_cpu(
         )
 
 
-@pytest.mark.gpus
+@pytest.mark.requires_gpus
 def test_runner_nvidia_gpu(
     framework: types.ModuleType,
     test_model: FrameworkTestModel,

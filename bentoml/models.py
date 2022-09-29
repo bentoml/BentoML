@@ -221,15 +221,10 @@ def push(
 
 
 @inject
-def pull(
-    tag: t.Union[Tag, str],
-    *,
-    force: bool = False,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> Model:
+def pull(tag: t.Union[Tag, str], *, force: bool = False) -> Model:
     from bentoml._internal.yatai_client import yatai_client
 
-    yatai_client.pull_model(tag, force=force)
+    return yatai_client.pull_model(tag, force=force)
 
 
 @inject

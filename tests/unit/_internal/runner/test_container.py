@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import typing as t
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,7 +11,7 @@ import bentoml._internal.runner.container as c
 
 @pytest.mark.parametrize("batch_dim_exc", [AssertionError])
 @pytest.mark.parametrize("wrong_batch_dim", [1, 19])
-def test_default_container(batch_dim_exc, wrong_batch_dim):
+def test_default_container(batch_dim_exc: t.Type[Exception], wrong_batch_dim: int):
 
     l1 = [1, 2, 3]
     l2 = [3, 4, 5, 6]
@@ -31,7 +35,7 @@ def test_default_container(batch_dim_exc, wrong_batch_dim):
         yield "cherry"
 
     assert c.DefaultContainer.from_payload(
-        c.DefaultContainer.to_payload(_generator())
+        c.DefaultContainer.to_payload(_generator(), batch_dim=0)
     ) == list(_generator())
 
     assert c.DefaultContainer.from_batch_payloads(
@@ -40,7 +44,7 @@ def test_default_container(batch_dim_exc, wrong_batch_dim):
 
 
 @pytest.mark.parametrize("batch_dim", [0, 1])
-def test_ndarray_container(batch_dim):
+def test_ndarray_container(batch_dim: int):
 
     arr1 = np.ones((3, 3))
     if batch_dim == 0:
@@ -58,7 +62,8 @@ def test_ndarray_container(batch_dim):
     assert (arr2 == restored_arr2).all()
 
     assert (
-        c.NdarrayContainer.from_payload(c.NdarrayContainer.to_payload(arr1)) == arr1
+        c.NdarrayContainer.from_payload(c.NdarrayContainer.to_payload(arr1, batch_dim))
+        == arr1
     ).all()
 
     restored_batch, restored_indices = c.NdarrayContainer.from_batch_payloads(
@@ -71,7 +76,7 @@ def test_ndarray_container(batch_dim):
 
 @pytest.mark.parametrize("batch_dim_exc", [AssertionError])
 @pytest.mark.parametrize("wrong_batch_dim", [1, 19])
-def test_pandas_container(batch_dim_exc, wrong_batch_dim):
+def test_pandas_container(batch_dim_exc: t.Type[Exception], wrong_batch_dim: int):
 
     cols = ["a", "b", "c"]
     arr1 = np.ones((3, 3))
@@ -89,7 +94,7 @@ def test_pandas_container(batch_dim_exc, wrong_batch_dim):
     assert df2.equals(restored_df2)
 
     assert c.PandasDataFrameContainer.from_payload(
-        c.PandasDataFrameContainer.to_payload(df1)
+        c.PandasDataFrameContainer.to_payload(df1, batch_dim=0)
     ).equals(df1)
 
     restored_batch, restored_indices = c.PandasDataFrameContainer.from_batch_payloads(

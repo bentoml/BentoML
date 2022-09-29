@@ -244,9 +244,15 @@ def add_model_management_commands(
         default=False,
         help="Forced push to yatai even if it exists in yatai",
     )
-    def push(model_tag: str, force: bool):  # type: ignore (not accessed)
+    @click.option(
+        "-t",
+        "--threads",
+        default=10,
+        help="Number of threads to use for upload",
+    )
+    def push(model_tag: str, force: bool, threads: int):  # type: ignore (not accessed)
         """Push Model to a yatai server."""
         model_obj = model_store.get(model_tag)
         if not model_obj:
             raise click.ClickException(f"Model {model_tag} not found in local store")
-        yatai_client.push_model(model_obj, force=force)
+        yatai_client.push_model(model_obj, force=force, threads=threads)

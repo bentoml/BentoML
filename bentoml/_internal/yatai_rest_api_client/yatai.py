@@ -20,6 +20,8 @@ from .schemas import FinishUploadBentoSchema
 from .schemas import FinishUploadModelSchema
 from .schemas import CreateBentoRepositorySchema
 from .schemas import CreateModelRepositorySchema
+from .schemas import CompleteMultipartUploadSchema
+from .schemas import PreSignMultipartUploadUrlSchema
 from ...exceptions import YataiRESTApiClientError
 from ..configuration import BENTOML_VERSION
 
@@ -140,6 +142,45 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
 
+    def start_bento_multipart_upload(
+        self, bento_repository_name: str, version: str
+    ) -> BentoSchema:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/start_multipart_upload",
+        )
+        resp = self.session.patch(url)
+        self._check_resp(resp)
+        return schema_from_json(resp.text, BentoSchema)
+
+    def presign_bento_multipart_upload_url(
+        self,
+        bento_repository_name: str,
+        version: str,
+        req: PreSignMultipartUploadUrlSchema,
+    ) -> BentoSchema:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_multipart_upload_url",
+        )
+        resp = self.session.patch(url, data=schema_to_json(req))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, BentoSchema)
+
+    def complete_bento_multipart_upload(
+        self,
+        bento_repository_name: str,
+        version: str,
+        req: CompleteMultipartUploadSchema,
+    ) -> BentoSchema:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/complete_multipart_upload",
+        )
+        resp = self.session.patch(url, data=schema_to_json(req))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, BentoSchema)
+
     def start_upload_bento(
         self, bento_repository_name: str, version: str
     ) -> BentoSchema:
@@ -252,6 +293,45 @@ class YataiRESTApiClient:
             f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_download_url",
         )
         resp = self.session.patch(url)
+        self._check_resp(resp)
+        return schema_from_json(resp.text, ModelSchema)
+
+    def start_model_multipart_upload(
+        self, model_repository_name: str, version: str
+    ) -> ModelSchema:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/start_multipart_upload",
+        )
+        resp = self.session.patch(url)
+        self._check_resp(resp)
+        return schema_from_json(resp.text, ModelSchema)
+
+    def presign_model_multipart_upload_url(
+        self,
+        model_repository_name: str,
+        version: str,
+        req: PreSignMultipartUploadUrlSchema,
+    ) -> ModelSchema:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_multipart_upload_url",
+        )
+        resp = self.session.patch(url, data=schema_to_json(req))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, ModelSchema)
+
+    def complete_model_multipart_upload(
+        self,
+        model_repository_name: str,
+        version: str,
+        req: CompleteMultipartUploadSchema,
+    ) -> ModelSchema:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/complete_multipart_upload",
+        )
+        resp = self.session.patch(url, data=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
 

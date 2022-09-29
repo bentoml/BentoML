@@ -1,11 +1,7 @@
 import json
+import typing as t
 from enum import Enum
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Type
-from typing import TypeVar
-from typing import Optional
+from typing import TYPE_CHECKING
 from datetime import datetime
 
 import attr
@@ -15,13 +11,13 @@ from dateutil.parser import parse
 time_format = "%Y-%m-%d %H:%M:%S.%f"
 
 
-def datetime_encoder(time_obj: Optional[datetime]) -> Optional[str]:
+def datetime_encoder(time_obj: t.Optional[datetime]) -> t.Optional[str]:
     if not time_obj:
         return None
     return time_obj.strftime(time_format)
 
 
-def datetime_decoder(datetime_str: Optional[str], _: Any) -> Optional[datetime]:
+def datetime_decoder(datetime_str: t.Optional[str], _: t.Any) -> t.Optional[datetime]:
     if not datetime_str:
         return None
     return parse(datetime_str)
@@ -33,15 +29,15 @@ converter.register_unstructure_hook(datetime, datetime_encoder)
 converter.register_structure_hook(datetime, datetime_decoder)
 
 
-T = TypeVar("T")
+T = t.TypeVar("T")
 
 
-def schema_from_json(json_content: str, cls: Type[T]) -> T:
+def schema_from_json(json_content: str, cls: t.Type[T]) -> T:
     dct = json.loads(json_content)
     return converter.structure(dct, cls)
 
 
-def schema_to_json(obj: Any) -> str:
+def schema_to_json(obj: t.Any) -> str:
     res = converter.unstructure(obj, obj.__class__)
     return json.dumps(res)
 
@@ -50,8 +46,8 @@ def schema_to_json(obj: Any) -> str:
 class BaseSchema:
     uid: str
     created_at: datetime
-    updated_at: Optional[datetime]
-    deleted_at: Optional[datetime]
+    updated_at: t.Optional[datetime]
+    deleted_at: t.Optional[datetime]
 
 
 @attr.define
@@ -103,7 +99,7 @@ class OrganizationSchema(ResourceSchema):
 
 @attr.define
 class OrganizationListSchema(BaseListSchema):
-    items: List[OrganizationSchema]
+    items: t.List[OrganizationSchema]
 
 
 @attr.define
@@ -141,17 +137,17 @@ class BentoApiSchema:
 
 @attr.define
 class BentoRunnerResourceSchema:
-    cpu: Optional[Any]
-    nvidia_gpu: Optional[Any]
-    custom_resources: Optional[Any]
+    cpu: t.Optional[t.Any]
+    nvidia_gpu: t.Optional[t.Any]
+    custom_resources: t.Optional[t.Any]
 
 
 @attr.define
 class BentoRunnerSchema:
     name: str
-    runnable_type: Optional[str]
-    models: Optional[List[str]]
-    resource_config: Optional[BentoRunnerResourceSchema]
+    runnable_type: t.Optional[str]
+    models: t.Optional[t.List[str]]
+    resource_config: t.Optional[BentoRunnerResourceSchema]
 
 
 @attr.define
@@ -159,9 +155,15 @@ class BentoManifestSchema:
     service: str
     bentoml_version: str
     size_bytes: int
-    apis: Dict[str, BentoApiSchema] = attr.field(factory=dict)
-    models: List[str] = attr.field(factory=list)
-    runners: Optional[List[BentoRunnerSchema]] = attr.field(factory=list)
+    apis: t.Dict[str, BentoApiSchema] = attr.field(factory=dict)
+    models: t.List[str] = attr.field(factory=list)
+    runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)
+
+
+if TYPE_CHECKING:
+    TransmissionStrategy = t.Literal["presigned_url", "proxy"]
+else:
+    TransmissionStrategy = str
 
 
 @attr.define
@@ -175,16 +177,18 @@ class BentoSchema(ResourceSchema):
     presigned_download_url: str
     manifest: BentoManifestSchema
 
-    presigned_urls_deprecated: Optional[bool] = attr.field(default=None)
-    upload_started_at: Optional[datetime] = attr.field(default=None)
-    upload_finished_at: Optional[datetime] = attr.field(default=None)
+    transmission_strategy: t.Optional[TransmissionStrategy] = attr.field(default=None)
+    upload_id: t.Optional[str] = attr.field(default=None)
+
+    upload_started_at: t.Optional[datetime] = attr.field(default=None)
+    upload_finished_at: t.Optional[datetime] = attr.field(default=None)
     build_at: datetime = attr.field(factory=datetime.now)
 
 
 @attr.define
 class BentoRepositorySchema(ResourceSchema):
     description: str
-    latest_bento: Optional[BentoSchema]
+    latest_bento: t.Optional[BentoSchema]
 
 
 @attr.define
@@ -193,19 +197,37 @@ class CreateBentoSchema:
     version: str
     manifest: BentoManifestSchema
     build_at: datetime = attr.field(factory=datetime.now)
-    labels: List[LabelItemSchema] = attr.field(factory=list)
+    labels: t.List[LabelItemSchema] = attr.field(factory=list)
 
 
 @attr.define
 class UpdateBentoSchema:
-    manifest: Optional[BentoManifestSchema] = attr.field(default=None)
-    labels: Optional[List[LabelItemSchema]] = attr.field(default=None)
+    manifest: t.Optional[BentoManifestSchema] = attr.field(default=None)
+    labels: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
+
+
+@attr.define
+class PreSignMultipartUploadUrlSchema:
+    upload_id: str
+    part_number: int
+
+
+@attr.define
+class CompletePartSchema:
+    part_number: int
+    etag: str
+
+
+@attr.define
+class CompleteMultipartUploadSchema:
+    parts: t.List[CompletePartSchema]
+    upload_id: str
 
 
 @attr.define
 class FinishUploadBentoSchema:
-    status: Optional[BentoUploadStatus]
-    reason: Optional[str]
+    status: t.Optional[BentoUploadStatus]
+    reason: t.Optional[str]
 
 
 @attr.define
@@ -234,9 +256,9 @@ class ModelManifestSchema:
     api_version: str
     bentoml_version: str
     size_bytes: int
-    metadata: Dict[str, Any] = attr.field(factory=dict)
-    context: Dict[str, Any] = attr.field(factory=dict)
-    options: Dict[str, Any] = attr.field(factory=dict)
+    metadata: t.Dict[str, t.Any] = attr.field(factory=dict)
+    context: t.Dict[str, t.Any] = attr.field(factory=dict)
+    options: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
 @attr.define
@@ -250,16 +272,18 @@ class ModelSchema(ResourceSchema):
     presigned_download_url: str
     manifest: ModelManifestSchema
 
-    presigned_urls_deprecated: Optional[bool] = attr.field(default=None)
-    upload_started_at: Optional[datetime] = attr.field(default=None)
-    upload_finished_at: Optional[datetime] = attr.field(default=None)
+    transmission_strategy: t.Optional[TransmissionStrategy] = attr.field(default=None)
+    upload_id: t.Optional[str] = attr.field(default=None)
+
+    upload_started_at: t.Optional[datetime] = attr.field(default=None)
+    upload_finished_at: t.Optional[datetime] = attr.field(default=None)
     build_at: datetime = attr.field(factory=datetime.now)
 
 
 @attr.define
 class ModelRepositorySchema(ResourceSchema):
     description: str
-    latest_model: Optional[ModelSchema]
+    latest_model: t.Optional[ModelSchema]
 
 
 @attr.define
@@ -268,10 +292,10 @@ class CreateModelSchema:
     version: str
     manifest: ModelManifestSchema
     build_at: datetime = attr.field(factory=datetime.now)
-    labels: List[LabelItemSchema] = attr.field(factory=list)
+    labels: t.List[LabelItemSchema] = attr.field(factory=list)
 
 
 @attr.define
 class FinishUploadModelSchema:
-    status: Optional[ModelUploadStatus]
-    reason: Optional[str]
+    status: t.Optional[ModelUploadStatus]
+    reason: t.Optional[str]

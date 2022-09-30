@@ -264,8 +264,15 @@ class HTTPAppFactory(BaseAppFactory):
         else:
             for runner in self.bento_service.runners:
                 on_startup.append(runner.init_client)
-        for runner in self.bento_service.runners:
-            asyncio.get_event_loop().run_until_complete(runner.runner_handle_is_ready())
+
+        async def wait_for_runner_ready():
+            ready_status = False
+            while not ready_status:
+                ready_status = all(await asyncio.gather(*(runner.runner_handle_is_ready() for runner in self.bento_service.runners)))
+                await asyncio.sleep(0.1)
+        
+        on_startup.append(lambda: asyncio.run(wait_for_runner_ready()))
+
         on_startup.extend(super().on_startup)
         return on_startup
 

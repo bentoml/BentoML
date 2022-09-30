@@ -53,6 +53,9 @@ class DummyRunnerHandle(RunnerHandle):
     ) -> None:
         pass
 
+    async def is_ready(self) -> bool:
+        return True
+
     def run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, t.Any, t.Any],

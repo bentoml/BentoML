@@ -8,30 +8,16 @@ from typing import TYPE_CHECKING
 
 import yaml
 import click
-from simple_di import inject
-from simple_di import Provide
 from rich.table import Table
 from rich.syntax import Syntax
 
-from bentoml import Tag
-from bentoml.bentos import import_bento
-from bentoml.bentos import build_bentofile
 from bentoml_cli.utils import is_valid_bento_tag
 from bentoml_cli.utils import is_valid_bento_name
-from bentoml._internal.utils import rich_console as console
-from bentoml._internal.utils import calc_dir_size
-from bentoml._internal.utils import human_readable_size
-from bentoml._internal.utils import display_path_under_home
-from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-from bentoml._internal.yatai_client import yatai_client
-from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from click import Group
     from click import Context
     from click import Parameter
-
-    from bentoml._internal.bento import BentoStore
 
 logger = logging.getLogger("bentoml")
 
@@ -53,11 +39,20 @@ def parse_delete_targets_argument_callback(
     return delete_targets
 
 
-@inject
-def add_bento_management_commands(
-    cli: Group,
-    bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-):
+def add_bento_management_commands(cli: Group):
+    from bentoml import Tag
+    from bentoml.bentos import import_bento
+    from bentoml.bentos import build_bentofile
+    from bentoml._internal.utils import rich_console as console
+    from bentoml._internal.utils import calc_dir_size
+    from bentoml._internal.utils import human_readable_size
+    from bentoml._internal.utils import display_path_under_home
+    from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
+    from bentoml._internal.yatai_client import yatai_client
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
+    bento_store = BentoMLContainer.bento_store.get()
+
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.option(

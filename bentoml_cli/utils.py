@@ -13,18 +13,6 @@ import click
 from click import ClickException
 from click.exceptions import UsageError
 
-from bentoml.exceptions import BentoMLException
-from bentoml._internal.log import configure_logging
-from bentoml._internal.configuration import DEBUG_ENV_VAR
-from bentoml._internal.configuration import QUIET_ENV_VAR
-from bentoml._internal.configuration import get_debug_mode
-from bentoml._internal.configuration import set_debug_mode
-from bentoml._internal.configuration import set_quiet_mode
-from bentoml._internal.utils.analytics import track
-from bentoml._internal.utils.analytics import CliEvent
-from bentoml._internal.utils.analytics import cli_events_map
-from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
-
 if TYPE_CHECKING:
     from click import Option
     from click import Command
@@ -70,6 +58,8 @@ def kwargs_transformers(
 
 
 def _validate_docker_tag(tag: str) -> str:
+    from bentoml.exceptions import BentoMLException
+
     if ":" in tag:
         name, version = tag.split(":")[:2]
     else:
@@ -96,18 +86,11 @@ def _validate_docker_tag(tag: str) -> str:
 
     if not valid_name_pattern.match(name):
         raise BentoMLException(
-            f"Provided Docker Image tag {tag} is invalid. "
-            "Name components may contain lowercase letters, digits "
-            "and separators. A separator is defined as a period, "
-            "one or two underscores, or one or more dashes."
+            f"Provided Docker Image tag {tag} is invalid. Name components may contain lowercase letters, digits and separators. A separator is defined as a period, one or two underscores, or one or more dashes."
         )
     if version and not valid_version_pattern.match(version):
         raise BentoMLException(
-            f"Provided Docker Image tag {tag} is invalid. "
-            "A tag name must be valid ASCII and may contain "
-            "lowercase and uppercase letters, digits, underscores, "
-            "periods and dashes. A tag name may not start with a period "
-            "or a dash and may contain a maximum of 128 characters."
+            f"Provided Docker Image tag {tag} is invalid. A tag name must be valid ASCII and may contain lowercase and uppercase letters, digits, underscores, periods and dashes. A tag name may not start with a period or a dash and may contain a maximum of 128 characters."
         )
     return tag
 
@@ -115,6 +98,8 @@ def _validate_docker_tag(tag: str) -> str:
 def validate_docker_tag(
     ctx: Context, param: Parameter, tag: str | tuple[str] | None
 ) -> str | tuple[str] | None:
+    from bentoml.exceptions import BentoMLException
+
     if not tag:
         return tag
     elif isinstance(tag, tuple):
@@ -148,6 +133,12 @@ class BentoMLCommandGroup(click.Group):
     @staticmethod
     def bentoml_common_params(func: F[P]) -> WrappedCLI[bool, bool]:
         # NOTE: update NUMBER_OF_COMMON_PARAMS when adding option.
+        from bentoml._internal.log import configure_logging
+        from bentoml._internal.configuration import DEBUG_ENV_VAR
+        from bentoml._internal.configuration import QUIET_ENV_VAR
+        from bentoml._internal.configuration import set_debug_mode
+        from bentoml._internal.configuration import set_quiet_mode
+        from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
 
         @click.option(
             "-q",
@@ -198,6 +189,11 @@ class BentoMLCommandGroup(click.Group):
         cmd_group: click.Group,
         **kwargs: t.Any,
     ) -> WrappedCLI[bool]:
+        from bentoml._internal.utils.analytics import track
+        from bentoml._internal.utils.analytics import CliEvent
+        from bentoml._internal.utils.analytics import cli_events_map
+        from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
+
         command_name = kwargs.get("name", func.__name__)
 
         @functools.wraps(func)
@@ -209,10 +205,9 @@ class BentoMLCommandGroup(click.Group):
             start_time = time.time_ns()
 
             def get_tracking_event(return_value: t.Any) -> CliEvent:
-                if TYPE_CHECKING:
-                    # we only need to pass type checking here for group name
-                    # since we know the cmd_group.name to be BentoMLCommandGroup
-                    assert cmd_group.name
+                # we only need to pass type checking here for group name
+                # since we know the cmd_group.name to be BentoMLCommandGroup
+                assert cmd_group.name
 
                 if (
                     cmd_group.name in cli_events_map
@@ -248,6 +243,9 @@ class BentoMLCommandGroup(click.Group):
     def raise_click_exception(
         func: F[P] | WrappedCLI[bool], cmd_group: click.Group, **kwargs: t.Any
     ) -> ClickFunctionWrapper[t.Any]:
+        from bentoml.exceptions import BentoMLException
+        from bentoml._internal.configuration import get_debug_mode
+
         command_name = kwargs.get("name", func.__name__)
 
         @functools.wraps(func)

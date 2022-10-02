@@ -83,9 +83,9 @@ BentoML service:
 
    # define a new endpoint on the BentoML service
    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-   def classify_tumor(input: np.ndarray) -> np.ndarray:
+   async def classify_tumor(input: np.ndarray) -> np.ndarray:
        # use 'runner.predict.run(input)' instead of 'booster.predict'
-       res = runner.predict.run(input)
+       res = await runner.predict.async_run(input)
        return res
 
 Take note of the name of the service (``svc`` in this example) and the name of the file.

@@ -103,7 +103,7 @@ previously saved ResNet50 model is used for inference.
    svc = bentoml.Service("keras_resnet50", runners=[runner])
 
    @svc.api(input=Image(), output=JSON())
-   def predict(img):
+   async def predict(img):
 
        from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
 
@@ -111,7 +111,7 @@ previously saved ResNet50 model is used for inference.
        arr = np.array(img)
        arr = np.expand_dims(arr, axis=0)
        arr = preprocess_input(arr)
-       preds = runner.run(arr)
+       preds = await runner.async_run(arr)
        return decode_predictions(preds, top=1)[0]
 
 

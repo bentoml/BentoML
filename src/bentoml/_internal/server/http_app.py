@@ -11,6 +11,9 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+from starlette.responses import PlainTextResponse
+from starlette.exceptions import HTTPException
+
 from ..context import trace_context
 from ..context import InferenceApiContext as Context
 from ...exceptions import BentoMLException
@@ -265,16 +268,24 @@ class HTTPAppFactory(BaseAppFactory):
             for runner in self.bento_service.runners:
                 on_startup.append(runner.init_client)
 
-        async def wait_for_runner_ready():
-            ready_status = False
-            while not ready_status:
-                ready_status = all(await asyncio.gather(*(runner.runner_handle_is_ready() for runner in self.bento_service.runners)))
-                await asyncio.sleep(0.1)
-        
-        on_startup.append(lambda: asyncio.run(wait_for_runner_ready()))
-
         on_startup.extend(super().on_startup)
         return on_startup
+
+    async def readyz(self, _: "Request") -> "Response":
+
+        ready_status = all(
+            await asyncio.gather(
+                *(
+                    runner.runner_handle_is_ready()
+                    for runner in self.bento_service.runners
+                )
+            )
+        )
+
+        if ready_status:
+            return PlainTextResponse("\n", status_code=200)
+        else:
+            raise HTTPException(500)
 
     @property
     def on_shutdown(self) -> list[t.Callable[[], None]]:

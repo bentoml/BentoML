@@ -1,11 +1,11 @@
-import grpc
-import numpy as np
 import time
 
+import grpc
+import numpy as np
 from locust import task
+from locust import User
 from locust import between
 from locust import HttpUser
-from locust import User
 from sklearn import datasets
 
 from bentoml.grpc.utils import import_generated_stubs
@@ -101,7 +101,9 @@ class IrisGrpcUser(GrpcUser):
             )
         except grpc.RpcError as e:
             request_meta["exception"] = e
-        request_meta["response_time"] = (time.perf_counter() - start_perf_counter) * 1000
+        request_meta["response_time"] = (
+            time.perf_counter() - start_perf_counter
+        ) * 1000
         self.environment.events.request.fire(**request_meta)
-    
+
     wait_time = between(0.01, 2)

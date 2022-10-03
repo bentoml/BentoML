@@ -112,8 +112,8 @@ else:
     )
     xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
 
-    io = _LazyLoader("io", globals(), "bentoml.io")
-    models = _LazyLoader("models", globals(), "bentoml.models")
+    io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
+    models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
 
     del _LazyLoader
 

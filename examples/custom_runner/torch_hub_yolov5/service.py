@@ -47,10 +47,12 @@ svc = bentoml.Service("yolo_v5_demo", runners=[yolo_v5_runner])
 
 
 @svc.api(input=Image(), output=PandasDataFrame())
-def invocation(input_img):
-    return yolo_v5_runner.inference.run([input_img])[0]
+async def invocation(input_img):
+    batch_ret = await yolo_v5_runner.inference.async_run([input_img])
+    return batch_ret[0]
 
 
 @svc.api(input=Image(), output=Image())
-def render(input_img):
-    return yolo_v5_runner.render.run([input_img])[0]
+async def render(input_img):
+    batch_ret = await yolo_v5_runner.render.async_run([input_img])
+    return batch_ret[0]

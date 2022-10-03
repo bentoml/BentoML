@@ -31,6 +31,7 @@ svc = bentoml.Service(
 
 
 @svc.api(input=bentoml.io.Image(), output=bentoml.io.NumpyNdarray())
-def predict(input_img):
+async def predict(input_img):
     input_arr = np.array(input_img).reshape([-1, 1, 28, 28])
-    return mnist_runner.run(input_arr)[0]
+    batch_ret = await mnist_runner.async_run(input_arr)
+    return batch_ret[0]

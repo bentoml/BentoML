@@ -13,8 +13,8 @@ svc = bentoml.Service("iris_flask_demo", runners=[iris_clf_runner])
 
 
 @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-def predict_bentoml(input_series: np.ndarray) -> np.ndarray:
-    return iris_clf_runner.predict.run(input_series)
+async def predict_bentoml(input_series: np.ndarray) -> np.ndarray:
+    return await iris_clf_runner.predict.async_run(input_series)
 
 
 flask_app = Flask(__name__)

@@ -92,8 +92,8 @@ iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
 @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-def classify(input_series: np.ndarray) -> np.ndarray:
-    return iris_clf_runner.predict.run(input_series)
+async def classify(input_series: np.ndarray) -> np.ndarray:
+    return await iris_clf_runner.predict.async_run(input_series)
 ```
 
 Copy this to a `service.py` file, and run your service with Bento Server locally:

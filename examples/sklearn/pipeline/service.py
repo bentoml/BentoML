@@ -11,12 +11,12 @@ svc = bentoml.Service("doc_classifier", runners=[model_runner])
 
 
 @svc.api(input=Text(), output=JSON())
-def predict(input_doc: str):
-    prediction = model_runner.predict.run([input_doc])[0]
-    return {"result": target_names[prediction]}
+async def predict(input_doc: str):
+    predictions = await model_runner.predict.async_run([input_doc])
+    return {"result": target_names[predictions[0]]}
 
 
 @svc.api(input=Text(), output=JSON())
-def predict_proba(input_doc: str):
-    predictions = model_runner.predict_proba.run([input_doc])[0]
-    return predictions
+async def predict_proba(input_doc: str):
+    predictions = await model_runner.predict_proba.run([input_doc])
+    return predictions[0]

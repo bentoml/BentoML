@@ -24,6 +24,6 @@ kfserving_input = JSON(pydantic_model=KFServingInputSchema)
     output=NumpyNdarray(),
     route="v1/models/iris_classifier",
 )
-def classify(kf_input: KFServingInputSchema) -> np.ndarray:
+async def classify(kf_input: KFServingInputSchema) -> np.ndarray:
     instances = np.array(kf_input.instances)
-    return iris_clf_runner.predict.run(instances)
+    return await iris_clf_runner.predict.async_run(instances)

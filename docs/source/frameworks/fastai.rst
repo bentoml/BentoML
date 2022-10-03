@@ -102,9 +102,9 @@ Building a Service using fastai
 
 
    @svc.api(input=Text(), output=NumpyNdarray())
-   def classify_text(text: str) -> np.ndarray:
+   async def classify_text(text: str) -> np.ndarray:
       # returns sentiment score of a given text
-      res = runner.predict.run(text)
+      res = await runner.predict.async_run(text)
       return np.asarray(res[-1])
 
 

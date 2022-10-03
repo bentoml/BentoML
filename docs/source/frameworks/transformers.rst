@@ -130,8 +130,8 @@ Create a BentoML service with the previously saved `unmasker` pipeline using the
     svc = bentoml.Service("unmasker_service", runners=[runner])
 
     @svc.api(input=Text(), output=JSON())
-    def unmask(input_series: str) -> list:
-        return runner.run(input_series)
+    async def unmask(input_series: str) -> list:
+        return await runner.async_run(input_series)
 
 Pretrained Models
 -----------------
@@ -170,8 +170,8 @@ Serving a Pretrained Model
     svc = bentoml.Service('pretrained_unmasker_service', runners=[runner])
 
     @svc.api(input=Text(), output=JSON())
-    def unmask(input_series: str) -> list:
-        return runner.run(input_series)
+    async def unmask(input_series: str) -> list:
+        return await runner.async_run(input_series)
 
 Custom Pipelines
 ----------------
@@ -274,8 +274,8 @@ To serve a custom pipeline, simply create a runner and service with the previous
     svc = bentoml.Service("my_classification_service", runners=[runner])
 
     @svc.api(input=Text(), output=JSON())
-    def classify(input_series: str) -> list:
-        return runner.run(input_series)
+    async def classify(input_series: str) -> list:
+        return await runner.async_run(input_series)
 
 Adaptive Batching
 -----------------

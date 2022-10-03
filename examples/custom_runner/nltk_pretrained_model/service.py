@@ -30,6 +30,6 @@ svc = bentoml.Service("sentiment_analyzer", runners=[nltk_runner])
 
 
 @svc.api(input=Text(), output=JSON())
-def analysis(input_text):
-    is_positive = nltk_runner.is_positive.run(input_text)
+async def analysis(input_text):
+    is_positive = await nltk_runner.is_positive.async_run(input_text)
     return {"is_positive": is_positive}

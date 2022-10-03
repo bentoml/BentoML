@@ -9,5 +9,5 @@ input_spec = NumpyNdarray(dtype="int", shape=(-1, 2))
 
 
 @svc.api(input=input_spec, output=NumpyNdarray())
-def predict(input_arr):
-    return reg_runner.predict.run(input_arr)
+async def predict(input_arr):
+    return await reg_runner.predict.async_run(input_arr)

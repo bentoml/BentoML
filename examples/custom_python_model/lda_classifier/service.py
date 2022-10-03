@@ -12,5 +12,5 @@ svc = bentoml.Service("iris_classifier_lda", runners=[iris_clf_runner])
 
 
 @svc.api(input=NumpyNdarray(dtype="float", shape=(-1, 4)), output=JSON())
-def classify(input_series: np.ndarray) -> typing.List[float]:
-    return iris_clf_runner.predict.run(input_series)
+async def classify(input_series: np.ndarray) -> typing.List[float]:
+    return await iris_clf_runner.predict.async_run(input_series)

@@ -12,5 +12,5 @@ input_spec = bentoml.io.NumpyNdarray(
 
 
 @svc.api(input=input_spec, output=bentoml.io.NumpyNdarray())
-def predict(input_arr):
-    return mnist_runner.predict.run(input_arr)
+async def predict(input_arr):
+    return await mnist_runner.predict.async_run(input_arr)

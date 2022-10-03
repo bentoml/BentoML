@@ -16,5 +16,5 @@ input_spec = NumpyNdarray(
 
 
 @svc.api(input=input_spec, output=NumpyNdarray())
-def classify(input_series: np.ndarray) -> np.ndarray:
-    return lgb_iris_runner.predict.run(input_series)
+async def classify(input_series: np.ndarray) -> np.ndarray:
+    return await lgb_iris_runner.predict.async_run(input_series)

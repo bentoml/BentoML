@@ -79,9 +79,9 @@ Building a Service using CatBoost
 
 
    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-   def classify_cancer(input: np.ndarray) -> np.ndarray:
+   async def classify_cancer(input: np.ndarray) -> np.ndarray:
       # returns sentiment score of a given text
-      res = runner.predict.run(input)
+      res = await runner.predict.async_run(input)
       return res
 
 

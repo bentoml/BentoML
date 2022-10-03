@@ -22,9 +22,9 @@ svc = bentoml.Service("iris_fastapi_demo", runners=[iris_clf_runner])
 
 
 @svc.api(input=JSON(pydantic_model=IrisFeatures), output=NumpyNdarray())
-def predict_bentoml(input_data: IrisFeatures) -> np.ndarray:
+async def predict_bentoml(input_data: IrisFeatures) -> np.ndarray:
     input_df = pd.DataFrame([input_data.dict()])
-    return iris_clf_runner.predict.run(input_df)
+    return await iris_clf_runner.predict.async_run(input_df)
 
 
 fastapi_app = FastAPI()

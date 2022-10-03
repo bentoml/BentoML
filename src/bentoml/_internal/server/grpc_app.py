@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import time
+import socket
 import typing as t
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 from functools import partial
@@ -43,7 +46,7 @@ class GRPCAppFactory:
         self.enable_metrics = enable_metrics
 
     @property
-    def on_startup(self) -> OnStartup:
+    async def on_startup(self) -> OnStartup:
         on_startup: OnStartup = [self.bento_service.on_grpc_server_startup]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
@@ -52,7 +55,49 @@ class GRPCAppFactory:
             for runner in self.bento_service.runners:
                 on_startup.append(runner.init_client)
 
-        return on_startup
+        async def wait_for_runner_ready():
+            ready_status = False
+            while not ready_status:
+                ready_status = all(
+                    await asyncio.gather(
+                        *(
+                            runner.runner_handle_is_ready()
+                            for runner in self.bento_service.runners
+                        )
+                    )
+                )
+
+        import yaml
+
+        start_time = time.time()
+        print("Waiting for runners %s to be ready.." % self.bento_service.runners)
+        with open(
+            "bentoml/_internal/configuration/default_configuration.yaml", "r"
+        ) as f:
+            timeout = yaml.load(f)["runners"]["timeout"]
+        while time.time() - start_time < timeout:
+            try:
+                if all(
+                    await asyncio.gather(
+                        *(
+                            runner.runner_handle_is_ready()
+                            for runner in self.bento_service.runners
+                        )
+                    )
+                ):
+                    break
+                else:
+                    time.sleep(5)
+            except (ConnectionError, socket.timeout):
+                print("Retrying ...")
+                time.sleep(5)
+            else:
+                on_startup.append(wait_for_runner_ready)
+                return on_startup
+        raise Exception(
+            "Runners %s failed to be ready within %s seconds"
+            % (self.bento_service.runners, timeout)
+        )
 
     @property
     def on_shutdown(self) -> list[t.Callable[[], None]]:

@@ -1,5 +1,4 @@
 import time
-from types import ModuleType
 
 import grpc
 import numpy as np

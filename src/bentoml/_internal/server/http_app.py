@@ -272,19 +272,17 @@ class HTTPAppFactory(BaseAppFactory):
 
     async def readyz(self, _: "Request") -> "Response":
 
-        ready_status = all(
+        if all(
             await asyncio.gather(
                 *(
                     runner.runner_handle_is_ready()
                     for runner in self.bento_service.runners
                 )
             )
-        )
-
-        if ready_status:
+        ):
             return PlainTextResponse("\n", status_code=200)
-        else:
-            raise HTTPException(500)
+
+        raise HTTPException(500)
 
     @property
     def on_shutdown(self) -> list[t.Callable[[], None]]:

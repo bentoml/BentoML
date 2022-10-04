@@ -23,11 +23,6 @@ if TYPE_CHECKING:
     from .grpc.servicer import Servicer
 
     OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
-    from grpc import aio
-else:
-    from bentoml.grpc.utils import import_grpc
-
-    _, aio = import_grpc()
 
 
 class GRPCAppFactory:
@@ -74,7 +69,7 @@ class GRPCAppFactory:
                     break
                 else:
                     time.sleep(check_interval)
-            except (ConnectionError, socket.timeout, aio.AioRpcError) as e:
+            except (ConnectionError, socket.timeout) as e:
                 logger.debug("[%s] Retrying ..." % e)
                 time.sleep(check_interval)
         raise RuntimeError(

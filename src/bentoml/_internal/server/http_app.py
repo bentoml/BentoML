@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
-
 from starlette.responses import PlainTextResponse
 from starlette.exceptions import HTTPException
 

@@ -23,6 +23,11 @@ if TYPE_CHECKING:
     from .grpc.servicer import Servicer
 
     OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
+    from grpc import aio
+else:
+    from bentoml.grpc.utils import import_grpc
+
+    _, aio = import_grpc()
 
 
 class GRPCAppFactory:
@@ -45,37 +50,18 @@ class GRPCAppFactory:
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
 
-    @property
-    async def on_startup(self) -> OnStartup:
-        on_startup: OnStartup = [self.bento_service.on_grpc_server_startup]
-        if BentoMLContainer.development_mode.get():
-            for runner in self.bento_service.runners:
-                on_startup.append(partial(runner.init_local, quiet=True))
-        else:
-            for runner in self.bento_service.runners:
-                on_startup.append(runner.init_client)
-
-        async def wait_for_runner_ready():
-            ready_status = False
-            while not ready_status:
-                ready_status = all(
-                    await asyncio.gather(
-                        *(
-                            runner.runner_handle_is_ready()
-                            for runner in self.bento_service.runners
-                        )
-                    )
-                )
-
-        import yaml
-
+    @inject
+    async def wait_for_runner_ready(
+        self,
+        *,
+        runner_timeout: int = Provide[BentoMLContainer.runners_config.timeout],
+        check_interval: int = 5,
+    ):
         start_time = time.time()
-        print("Waiting for runners %s to be ready.." % self.bento_service.runners)
-        with open(
-            "bentoml/_internal/configuration/default_configuration.yaml", "r"
-        ) as f:
-            timeout = yaml.load(f)["runners"]["timeout"]
-        while time.time() - start_time < timeout:
+        logger.debug(
+            "Waiting for runners {!r} to be ready...".format(self.bento_service.runners)
+        )
+        while time.time() - start_time < runner_timeout:
             try:
                 if all(
                     await asyncio.gather(
@@ -87,13 +73,27 @@ class GRPCAppFactory:
                 ):
                     break
                 else:
-                    time.sleep(5)
-            except (ConnectionError, socket.timeout):
-                print("Retrying ...")
-                time.sleep(5)
-            else:
-                on_startup.append(wait_for_runner_ready)
-                return on_startup
+                    time.sleep(check_interval)
+            except (ConnectionError, socket.timeout, aio.AioRpcError) as e:
+                logger.debug("[%s] Retrying ..." % e)
+                time.sleep(check_interval)
+        raise RuntimeError(
+            f"Timed out waiting {runner_timeout} seconds for runners to be ready."
+        )
+
+    @property
+    def on_startup(self) -> OnStartup:
+        on_startup: OnStartup = [self.bento_service.on_grpc_server_startup]
+        if BentoMLContainer.development_mode.get():
+            for runner in self.bento_service.runners:
+                on_startup.append(partial(runner.init_local, quiet=True))
+        else:
+            for runner in self.bento_service.runners:
+                on_startup.append(runner.init_client)
+
+        on_startup.append(self.wait_for_runner_ready)
+        return on_startup
+
         raise Exception(
             "Runners %s failed to be ready within %s seconds"
             % (self.bento_service.runners, timeout)

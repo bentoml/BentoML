@@ -87,7 +87,7 @@ def pytest_runtest_setup(item: Item) -> None:
             )
         )
     # We don't run gRPC tests on Windows
-    if ("requires_grpc" in item.keywords or psutil.WINDOWS) and not config.getoption(
+    if "requires_grpc" in item.keywords and not config.getoption(
         _RUN_GRPC_TESTS_MARKER
     ):
         item.add_marker(

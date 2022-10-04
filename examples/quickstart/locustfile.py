@@ -1,4 +1,5 @@
 import time
+from types import ModuleType
 
 import grpc
 import numpy as np
@@ -8,7 +9,8 @@ from locust import between
 from locust import HttpUser
 from sklearn import datasets
 
-from bentoml.grpc.utils import import_generated_stubs
+from bentoml.grpc.v1alpha1 import service_pb2 as pb
+from bentoml.grpc.v1alpha1 import service_pb2_grpc as service
 
 test_data = datasets.load_iris().data
 num_of_rows = test_data.shape[0]
@@ -49,9 +51,10 @@ class GrpcUser(User):
     def __init__(self, environment):
         super().__init__(environment)
         self.environment = environment
-        self.pb, self.services = import_generated_stubs()
+
+    def on_start(self):
         self.channel = grpc.insecure_channel(self.host)
-        self.stub = self.services.BentoServiceStub(self.channel)
+        self.stub = service.BentoServiceStub(self.channel)
 
 
 class IrisGrpcUser(GrpcUser):
@@ -88,10 +91,10 @@ class IrisGrpcUser(GrpcUser):
         start_perf_counter = time.perf_counter()
         try:
             request_meta["response"] = self.stub.Call(
-                request=self.pb.Request(
+                request=pb.Request(
                     api_name=request_meta["name"],
-                    ndarray=self.pb.NDArray(
-                        dtype=self.pb.NDArray.DTYPE_FLOAT,
+                    ndarray=pb.NDArray(
+                        dtype=pb.NDArray.DTYPE_FLOAT,
                         # shape=(1, 4),
                         shape=(len(input_data), 4),
                         # float_values=[5.9, 3, 5.1, 1.8],

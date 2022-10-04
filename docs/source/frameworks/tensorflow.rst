@@ -73,7 +73,7 @@ Saving a Trained Model
         bentoml.tensorflow.save(
             model,
             "my_tf_model",
-            signatures={"__call__": {"batchable": True, "batchdim": 0}}
+            signatures={"__call__": {"batchable": True, "batch_dim": 0}}
         )
 
    .. tab-item:: keras.Model
@@ -101,7 +101,7 @@ Saving a Trained Model
         bentoml.tensorflow.save(
             model,
             "my_keras_model",
-            signatures={"__call__": {"batchable": True, "batchdim": 0}}
+            signatures={"__call__": {"batchable": True, "batch_dim": 0}}
         )
 
 
@@ -128,7 +128,7 @@ Saving a Trained Model
         bentoml.tensorflow.save(
             model,
             "my_keras_model",
-            signatures={"__call__": {"batchable": True, "batchdim": 0}}
+            signatures={"__call__": {"batchable": True, "batch_dim": 0}}
         )
 
    .. tab-item:: Functional keras.Model
@@ -150,7 +150,7 @@ Saving a Trained Model
         bentoml.tensorflow.save(
             model,
             "my_keras_model",
-            signatures={"__call__": {"batchable": True, "batchdim": 0}}
+            signatures={"__call__": {"batchable": True, "batch_dim": 0}}
         )
 
 ``bentoml.tensorflow`` also supports saving models that take multiple tensors as input:
@@ -178,7 +178,7 @@ Saving a Trained Model
     bentoml.tensorflow.save(
         model,
         "my_tf_model",
-        signatures={"__call__": {"batchable": True, "batchdim": 0}}
+        signatures={"__call__": {"batchable": True, "batch_dim": 0}}
     )
 
 .. note::
@@ -186,7 +186,7 @@ Saving a Trained Model
     :obj:`~bentoml.tensorflow.save_model` has two parameters: ``tf_signature`` and ``signatures``.
     Use the following arguments to define the model signatures to ensure consistent model behaviors in a Python session and from the BentoML model store.
     - `tf_signatures` is an alias to `tf.saved_model.save <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_ *signatures* field. This optional signatures controls which methods in a given `obj <https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/trackable/base.py#L281>`_ will be available to programs that consume `SavedModel's <https://www.tensorflow.org/guide/saved_model>`_, for example, serving APIs. Read more about TensorFlow's signatures behavior `from their API documentation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_.
-    - ``signatures`` refers to a general :ref:`Model Signatures <concepts/model:Model Signatures>`_ that dictates which methods can be used for inference in the Runner context. This signatures dictionary will be used during the creation process of a Runner instance.
+    - ``signatures`` refers to a general `Model Signatures <concepts/model:Model Signatures>`_ that dictates which methods can be used for inference in the Runner context. This signatures dictionary will be used during the creation process of a Runner instance.
 
 The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML’s `Adaptive Batching <guides/batching:Adaptive Batching>`_ is disabled when using :obj:`~bentoml.tensorflow.save_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow: 
 
@@ -266,7 +266,7 @@ to
     bentoml.tensorflow.save(
         model,
         "test_model",
-        signatures={"__call__": {"batchable": True, "batchdim": 0}},
+        signatures={"__call__": {"batchable": True, "batch_dim": 0}},
     )
 
     #client 1

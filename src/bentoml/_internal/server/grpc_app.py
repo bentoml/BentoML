@@ -89,11 +89,6 @@ class GRPCAppFactory:
         on_startup.append(self.wait_for_runner_ready)
         return on_startup
 
-        raise Exception(
-            "Runners %s failed to be ready within %s seconds"
-            % (self.bento_service.runners, timeout)
-        )
-
     @property
     def on_shutdown(self) -> list[t.Callable[[], None]]:
         on_shutdown = [self.bento_service.on_grpc_server_shutdown]

@@ -2,6 +2,8 @@
 Advanced Containerization
 =========================
 
+*time expected: 12 minutes*
+
 This guide describes advanced containerization options 
 provided by BentoML:
 

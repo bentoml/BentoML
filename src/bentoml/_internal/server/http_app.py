@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import sys
+import time
+import socket
 import typing as t
 import asyncio
 import logging
@@ -272,17 +274,32 @@ class HTTPAppFactory(BaseAppFactory):
 
     async def readyz(self, _: "Request") -> "Response":
 
-        if all(
-            await asyncio.gather(
-                *(
-                    runner.runner_handle_is_ready()
-                    for runner in self.bento_service.runners
-                )
-            )
-        ):
-            return PlainTextResponse("\n", status_code=200)
+        runner_timeout = BentoMLContainer.runners_config.timeout.get()
+        check_interval = 5
+        start_time = time.time()
+        logger.debug(
+            "Waiting for runners {!r} to be ready...".format(self.bento_service.runners)
+        )
+        while time.time() - start_time < runner_timeout:
+            try:
+                if all(
+                    await asyncio.gather(
+                        *(
+                            runner.runner_handle_is_ready()
+                            for runner in self.bento_service.runners
+                        )
+                    )
+                ):
+                    return PlainTextResponse("\n", status_code=200)
+                else:
+                    time.sleep(check_interval)
+            except (ConnectionError, socket.timeout, HTTPException) as e:
+                logger.debug("[%s] Retrying ..." % e)
+                time.sleep(check_interval)
 
-        raise HTTPException(500)
+        raise RuntimeError(
+            f"Timed out waiting {runner_timeout} seconds for runners to be ready."
+        )
 
     @property
     def on_shutdown(self) -> list[t.Callable[[], None]]:

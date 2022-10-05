@@ -57,6 +57,7 @@ class PrometheusClient:
         # step 2:
         import prometheus_client
         import prometheus_client.parser
+        import prometheus_client.metrics
         import prometheus_client.multiprocess
 
         self._imported = True
@@ -140,5 +141,26 @@ class PrometheusClient:
     def Gauge(self):
         return partial(
             self.prometheus_client.Gauge,
+            registry=self.registry,
+        )
+
+    @property
+    def Info(self):
+        return partial(
+            self.prometheus_client.Info,
+            registry=self.registry,
+        )
+
+    @property
+    def Enum(self):
+        return partial(
+            self.prometheus_client.Enum,
+            registry=self.registry,
+        )
+
+    @property
+    def Metric(self):
+        return partial(
+            self.prometheus_client.Metric,
             registry=self.registry,
         )

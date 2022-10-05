@@ -75,6 +75,9 @@ if TYPE_CHECKING:
     # Model management APIs
     from . import io
     from . import models
+
+    # Prometheus metrics client
+    from . import metrics  # isort: skip
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
 
@@ -114,6 +117,7 @@ else:
 
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
+    metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
 
     del _LazyLoader
 
@@ -123,6 +127,7 @@ __all__ = [
     "Cookie",
     "Service",
     "models",
+    "metrics",
     "io",
     "Tag",
     "Model",

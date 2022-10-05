@@ -46,7 +46,6 @@ from ._internal.service.loader import load
 
 # Framework specific modules are lazily loaded upon import
 if TYPE_CHECKING:
-    # matrics
     from bentoml import h2o
     from bentoml import flax
     from bentoml import onnx
@@ -57,7 +56,6 @@ if TYPE_CHECKING:
     from bentoml import mlflow
     from bentoml import paddle
     from bentoml import easyocr
-    from bentoml import metrics
     from bentoml import pycaret
     from bentoml import pytorch
     from bentoml import sklearn

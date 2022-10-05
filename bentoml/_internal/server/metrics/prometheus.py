@@ -57,6 +57,7 @@ class PrometheusClient:
         # step 2:
         import prometheus_client
         import prometheus_client.parser
+        import prometheus_client.metrics
         import prometheus_client.multiprocess
 
         self._imported = True

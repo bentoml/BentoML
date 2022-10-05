@@ -64,43 +64,13 @@ class. By implementing a :code:`Runnable` class, users can create Runner instanc
 runs custom logic. Here's an example, creating an NLTK runner that does sentiment
 analysis with a pre-trained model:
 
-.. code:: python
-    :caption: `service.py`
-
-    import bentoml
-    import nltk
-    from bentoml.io import Text, JSON
-    from nltk.sentiment import SentimentIntensityAnalyzer
-    from statistics import mean
-
-
-    class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ("cpu",)
-        SUPPORTS_CPU_MULTI_THREADING = False
-
-        def __init__(self):
-            self.sia = SentimentIntensityAnalyzer()
-
-        @bentoml.Runnable.method(batchable=False)
-        def is_positive(self, input_text):
-            scores = [
-                self.sia.polarity_scores(sentence)["compound"]
-                for sentence in nltk.sent_tokenize(input_text)
-            ]
-            return mean(scores) > 0
-
-    nltk_runner = bentoml.Runner(NLTKSentimentAnalysisRunnable, name='nltk_sentiment')
-
-    svc = bentoml.Service('sentiment_analyzer', runners=[nltk_runner])
-
-    @svc.api(input=Text(), output=JSON())
-    def analysis(input_text):
-        is_positive = nltk_runner.is_positive.run(input_text)
-        return { "is_positive": is_positive }
+.. literalinclude:: ../../../examples/custom_runner/nltk_pretrained_model/service.py
+   :language: python
+   :caption: `service.py`
 
 .. note::
 
-    Full code example can be found `here <https://github.com/bentoml/BentoML/tree/main/examples/custom_runner/nltk_pretrained_model>`_.
+    Full code example can be found :github:`here <tree/main/examples/custom_runner/nltk_pretrained_model>`_.
 
 
 The constant attribute ``SUPPORTED_RESOURCES`` indicates which resources this Runnable class
@@ -131,8 +101,8 @@ Runnable class can also take :code:`__init__` parameters to customize its behavi
 different scenarios. The same Runnable class can also be used to create multiple runners
 and used in the same service. For example:
 
-.. code:: python
-    :caption: `service.py`
+.. code-block:: python
+   :caption: `service.py`
 
     import bentoml
     import torch
@@ -165,11 +135,14 @@ and used in the same service. For example:
 
     svc = bentoml.Service(__name__, runners=[my_runner_1, my_runner_2])
 
+.. epigraph::
+    All runners presented in one ``bentoml.Service`` object must have unique names.
+
 .. note::
-    All runners presented in one :code:`bentoml.Service` object must have unique names.
+
     The default Runner name is the Runnable class name. When using the same Runnable
     class to create multiple runners and use them in the same service, user must rename
-    runners by specifying the :code:`name` parameter when creating the runners. Runner
+    runners by specifying the ``name`` parameter when creating the runners. Runner
     name are a key to configuring individual runner at deploy time and to runner related
     logging and tracing features.
 

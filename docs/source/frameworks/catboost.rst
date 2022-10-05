@@ -59,7 +59,7 @@ To verify that the saved learner can be loaded properly:
 
 
 Building a Service using CatBoost
---------------------------------
+---------------------------------
 
 .. seealso::
 

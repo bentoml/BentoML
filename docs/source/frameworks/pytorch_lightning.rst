@@ -30,7 +30,7 @@ Here's a simple example of using PyTorch Lightning with BentoML:
 
 .. note::
 
-   You can find more examples for **PyTorch Lightning** in our `bentoml/examples https://github.com/bentoml/BentoML/tree/main/examples`_ directory.
+   You can find more examples for **PyTorch Lightning** in our :github:`bentoml/examples <tree/main/examples>` directory.
 
 
 .. currentmodule:: bentoml.pytorch_lightning

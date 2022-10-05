@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -10,7 +11,6 @@ from sklearn.ensemble import RandomForestClassifier
 
 import bentoml
 import bentoml.models
-from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 
 # fmt: off
@@ -66,7 +66,7 @@ def test_sklearn_save_load(metadata: t.Dict[str, t.Any]) -> None:
         metadata, labels=labels, custom_objects={"func": custom_f}
     )
     assert bentomodel.info.metadata is not None
-    assert_have_file_extension(bentomodel.path, ".pkl")
+    assert any(f.suffix == ".pkl" for f in Path(bentomodel.path).iterdir())
     for k in labels.keys():
         assert labels[k] == bentomodel.info.labels[k]
     assert bentomodel.custom_objects["func"](3) == custom_f(3)

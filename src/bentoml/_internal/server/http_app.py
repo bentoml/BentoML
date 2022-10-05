@@ -268,7 +268,6 @@ class HTTPAppFactory(BaseAppFactory):
         else:
             for runner in self.bento_service.runners:
                 on_startup.append(runner.init_client)
-
         on_startup.extend(super().on_startup)
         return on_startup
 

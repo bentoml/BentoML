@@ -135,7 +135,7 @@ Saving a Trained Model
 
       .. code-block:: python
         :caption: `train.py`
-    
+
         x = keras.layers.Input((5,), dtype=tf.float64, name="x")
         y = keras.layers.Dense(
             6,
@@ -156,40 +156,46 @@ Saving a Trained Model
 ``bentoml.tensorflow`` also supports saving models that take multiple tensors as input:
 
 .. code-block:: python
-    :caption: `train.py`
+   :caption: `train.py`
 
    class MultiInputModel(tf.Module):
-        def __init__(self):
-            ...
+       def __init__(self):
+           ...
 
-        @tf.function(
-            input_signature=[
-                tf.TensorSpec(shape=[None, 5], dtype=tf.float64, name="x1"),
-                tf.TensorSpec(shape=[None, 5], dtype=tf.float64, name="x2"),
-                tf.TensorSpec(shape=(), dtype=tf.float64, name="factor"),
-            ]
-        )
-        def __call__(self, x1: tf.Tensor, x2: tf.Tensor, factor: tf.Tensor):
-            ...
+       @tf.function(
+           input_signature=[
+               tf.TensorSpec(shape=[None, 5], dtype=tf.float64, name="x1"),
+               tf.TensorSpec(shape=[None, 5], dtype=tf.float64, name="x2"),
+               tf.TensorSpec(shape=(), dtype=tf.float64, name="factor"),
+           ]
+       )
+       def __call__(self, x1: tf.Tensor, x2: tf.Tensor, factor: tf.Tensor):
+           ...
 
-    model = MultiInputModel()
-    ... # training
+   model = MultiInputModel()
+   ... # training
 
-    bentoml.tensorflow.save(
-        model,
-        "my_tf_model",
-        signatures={"__call__": {"batchable": True, "batch_dim": 0}}
-    )
+   bentoml.tensorflow.save(
+       model,
+       "my_tf_model",
+       signatures={"__call__": {"batchable": True, "batch_dim": 0}}
+   )
 
 .. note::
 
     :obj:`~bentoml.tensorflow.save_model` has two parameters: ``tf_signature`` and ``signatures``.
-    Use the following arguments to define the model signatures to ensure consistent model behaviors in a Python session and from the BentoML model store.
-    - `tf_signatures` is an alias to `tf.saved_model.save <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_ *signatures* field. This optional signatures controls which methods in a given `obj <https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/trackable/base.py#L281>`_ will be available to programs that consume `SavedModel's <https://www.tensorflow.org/guide/saved_model>`_, for example, serving APIs. Read more about TensorFlow's signatures behavior `from their API documentation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_.
-    - ``signatures`` refers to a general `Model Signatures <concepts/model:Model Signatures>`_ that dictates which methods can be used for inference in the Runner context. This signatures dictionary will be used during the creation process of a Runner instance.
 
-The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML’s `Adaptive Batching <guides/batching:Adaptive Batching>`_ is disabled when using :obj:`~bentoml.tensorflow.save_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow: 
+    Use the following arguments to define the model signatures to ensure consistent model behaviors in a Python session and from the BentoML model store:
 
+    - ``tf_signatures`` is an alias to `tf.saved_model.save <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_ *signatures* field. This optional signatures controls which methods in a given `obj <https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/trackable/base.py#L281>`_ will be available to programs that consume `SavedModel's <https://www.tensorflow.org/guide/saved_model>`_, for example, serving APIs. Read more about TensorFlow's signatures behavior `from their API documentation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_.
+
+    - ``signatures`` refers to a general :ref:`Model Signatures <concepts/model:Model Signatures>` that dictates which methods can be used for inference in the Runner context. This signatures dictionary will be used during the creation process of a Runner instance.
+
+:bdg-info:`Note:` The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``.
+
+This means BentoML’s :ref:`Adaptive Batching <guides/batching:Adaptive Batching>` is disabled when using :obj:`~bentoml.tensorflow.save_model()`.
+
+If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow: 
 
 
 .. code-block:: python
@@ -214,77 +220,77 @@ Create a BentoML service with the previously saved `my_tf_model` pipeline using 
         batch_ret = await runner.async_run([json_obj])
         return batch_ret[0]
 
-.. note::
+.. seealso::
 
-    Follow the steps to get the best performance out of your TensorFlow model.
-    #. Save the model with well-defined :obj:`~tf.function` decorator.
-    #. Apply adaptive batching if possible.
-    #. Serve on GPUs if applicable.
-    #. See performance guide from [TensorFlow Doc]
+    The following resources can help you to fine-tune your Tensorflow model:
+
+    - |tf_function|_
+
+    - Apply :ref:`Adaptive Batching <frameworks/tensorflow:Adaptive Batching>`.
+
+    - `Serve on GPUs <https://www.tensorflow.org/guide/gpu>`_ and `GPU optimization <https://www.tensorflow.org/guide/gpu_performance_analysis>`_
+
+    - `Graph optimization with Grappler <https://www.tensorflow.org/guide/graph_optimization>`_
+
+
+.. _tf_function: https://www.tensorflow.org/guide/function
+
+.. |tf_function| replace:: Performance tuning with well-defined ``tf.function``
+
 
 Adaptive Batching
 -----------------
 
-Most TensorFlow models can accept batched data as input. If batch inference is supported, it is recommended to enable batching to take advantage of 
-the adaptive batching capability to improve the throughput and efficiency of the model. Enable adaptive batching by overriding the :obj:`~signatures` 
-argument with the method name and providing :obj:`~batchable` and :obj:`~batch_dim` configurations when saving the model to the model store.
+Most TensorFlow models can accept batched data as input. If batch inference is supported, it is recommended to enable batching to take advantage of
+the :ref:`adaptive batching <guides/batching:Adaptive Batching>` capability to improve the throughput and efficiency of the model.
 
-We may modify our code from
+Enable adaptive batching by overriding ``signatures`` argument with the method name and providing ``batchable`` and ``batch_dim`` configurations when saving the model to the model store:
 
-.. code-block:: python
-    :caption: `train.py`
+.. code-block:: diff
+   :caption: `batch.diff`
 
-    class NativeModel(tf.Module):
-        @tf.function(
-            input_signature=[
-                tf.TensorSpec(shape=[1, 5], dtype=tf.int64, name="inputs")
-            ]
-        )
-        def __call__(self, inputs):
-            ...
+   diff --git a/train.py b/train_batched.py
+   index 3b4bf11f..2d0ea09c 100644
+   --- a/train.py
+   +++ b/train_batched.py
+   @@ -3,15 +3,24 @@ import bentoml
+   class NativeModel(tf.Module):
+       @tf.function(
+           input_signature=[
+   -            tf.TensorSpec(shape=[1, 5], dtype=tf.int64, name="inputs")
+   +            tf.TensorSpec(shape=[None, 5], dtype=tf.float64, name="inputs")
+           ]
+       )
+       def __call__(self, inputs):
+           ...
 
-    model = NativeModel()
-    bentoml.tensorflow.save(model, "test_model")  # the default signature is `{"__call__": {"batchable": False}}`
+   model = NativeModel()
+   -bentoml.tensorflow.save(model, "test_model")
+   +bentoml.tensorflow.save(
+   +    model,
+   +    "test_model",
+   +    signatures={"__call__": {"batchable": True, "batch_dim": 0}},
+   +)
 
-    runner.run([[1,2,3,4,5]])  # -> bentoml will always call `model([[1,2,3,4,5]])`
+   runner = bentoml.tensorflow.get("test_model")
+   runner.init_local()
+   +
+   +#client 1
+   runner.run([[1,2,3,4,5]])
+   +
+   +#client 2
+   +runner.run([[6,7,8,9,0]])
 
-to
-
-.. code-block:: python
-    :caption: `train.py`
-
-    class NativeModel(tf.Module):
-        @tf.function(
-            input_signature=[
-                tf.TensorSpec(shape=[None, 5], dtype=tf.float64, name="inputs")
-            ]
-        )
-        def __call__(self, inputs):
-            ...
-
-    model = NativeModel()
-    bentoml.tensorflow.save(
-        model,
-        "test_model",
-        signatures={"__call__": {"batchable": True, "batch_dim": 0}},
-    )
-
-    #client 1
-    runner.run([[1,2,3,4,5]])
-
-    #client 2
-    runner.run([[6,7,8,9,0]])
-
-    # if multiple requests from different clients arrived at the same time,
-    # bentoml will automatically merge them and call model([[1,2,3,4,5], [6,7,8,9,0]])
+From the diff above, when multiple clients send requests to a given server running this
+model, BentoML will automatically batched inbound request and invoke ``model([[1,2,3,4,5], [6,7,8,9,0]])``
 
 .. seealso::
 
-   See :ref:`Adaptive Batching <guides/batching:Adaptive Batching>` to learn more.
-
+   See :ref:`Adaptive Batching <guides/batching:Adaptive Batching>` to learn more about
+   the adaptive batching feature in BentoML.
 
 .. note::
 
-   You can find more examples for **TensorFlow** in our `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_ directory.
+   You can find more examples for **TensorFlow** in our :github:`bentoml/examples <bentoml/BentoML/tree/main/examples>` directory.
 
 .. currentmodule:: bentoml.tensorflow

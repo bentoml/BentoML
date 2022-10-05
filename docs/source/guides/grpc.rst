@@ -68,6 +68,10 @@ There are two ways to interact with your gRPC BentoService:
 
 .. |build| replace:: ``BUILD``
 
+.. _bazel: https://bazel.build
+
+.. |bazel| replace:: `bazel`
+
 Client Implementation
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -85,7 +89,7 @@ gRPC server:
    gRPC comes with supports for multiple languages. In the upcoming sections
    we will demonstrate two workflows of generating stubs and implementing clients:
 
-   - Using `bazel <bazel.build>`_ to manage and isolate dependencies (recommended)
+   - Using |bazel|_ to manage and isolate dependencies (recommended)
    - A manual approach using ``protoc`` its language-specific plugins
 
 .. tab-set::
@@ -248,7 +252,7 @@ gRPC server:
 
          Feel free to use any Java build tools of choice (Maven, Gradle, Bazel, etc.) to build and run the client you find fit.
 
-         In this tutorial we will be using `bazel <https://bazel.build/>`_.
+         In this tutorial we will be using |bazel|_.
 
       We will create our Java client in the directory ``~/workspace/iris_java_client/``:
 
@@ -339,7 +343,7 @@ gRPC server:
       To bootstrap the Kotlin client, feel free to use either `gradle <https://gradle.org/>`_ or
       `maven <https://maven.apache.org/>`_ to build and run the following client code.
 
-      In this example, we will use `bazel <bazel.build>`_ to build and run the client.
+      In this example, we will use |bazel|_ to build and run the client.
 
       We will create our Kotlin client in the directory ``~/workspace/iris_kotlin_client/``, followed by creating the client directory structure:
 
@@ -365,7 +369,7 @@ gRPC server:
 
             .. dropdown:: ``BUILD``
 
-               .. literalinclude:: ./snippets/grpc/kotlin/docs/BUILD.snippet.bzl
+               .. literalinclude:: ./snippets/grpc/kotlin/BUILD.snippet.bzl
                   :language: python
 
          .. tab-item:: Using others build system
@@ -466,6 +470,45 @@ gRPC server:
    .. tab-item:: Swift
       :sync: swift
 
+      :bdg-info:`Requirements:` Make sure to have the :github:`prequisites <grpc/grpc-swift/blob/main/docs/quick-start.md#prerequisites>` to get started with :github:`grpc/grpc-swift`.
+
+      We will create our Swift client in the directory ``~/workspace/iris_swift_client/``:
+
+      .. code-block:: bash
+
+         » mkdir -p ~/workspace/iris_swift_client
+         » cd ~/workspace/iris_swift_client
+
+      We will use `Swift Package Manager <https://swift.org/package-manager/>`_ to build and run the client.
+
+      .. code-block:: bash
+
+         » swift package init --type executable
+
+      .. dropdown:: Initialize the project and use the following ``Package.swift``:
+
+         .. literalinclude:: ../../../grpc-client/swift/Package.swift
+            :language: swift
+            :caption: `Package.swift`
+
+      .. include:: ./snippets/grpc/additional_setup.rst
+
+      Here is the ``protoc`` command to generate the gRPC Swift stubs:
+
+      .. code-block:: bash
+
+         » protoc -I. -I ./thirdparty/protobuf/src \
+                  --swift_out=Sources --swift_opt=Visibility=Public \
+                  --grpc-swift_out=Sources --grpc-swift_opt=Visibility=Public \
+                  --plugin=protoc-gen-grpc-swift=$(which protoc-gen-grpc-swift) \
+                  bentoml/grpc/v1alpha1/service.proto
+
+      Proceed to create a ``Sources/BentoServiceClient/main.swift`` file with the following content:
+
+      .. literalinclude:: ../../../grpc-client/swift/Sources/BentoServiceClient/main.swift
+         :language: swift
+         :caption: `main.swift`
+
    .. tab-item:: PHP
       :sync: php
 
@@ -475,7 +518,7 @@ gRPC server:
 
          You will also have to symlink the built C++ extension to the PHP extension directory for it to be loaded by PHP.
 
-      We will then use `bazel <bazel.build>`_, `composer <https://getcomposer.org/>`_ to build and run the client.
+      We will then use |bazel|_, `composer <https://getcomposer.org/>`_ to build and run the client.
 
       We will create our PHP client in the directory ``~/workspace/iris_php_client/``:
 

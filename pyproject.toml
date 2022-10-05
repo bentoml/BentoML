@@ -74,9 +74,6 @@ dynamic = ["version"]
 [project.scripts]
 bentoml = "bentoml_cli.cli:cli"
 
-[project.entry-points.pytest11]
-bentoml = "bentoml.testing.pytest.plugin"
-
 [tool.setuptools]
 package-data = { "bentoml" = ["bentoml/*"], "bentoml_cli" = ["bentoml_cli/*"] }
 

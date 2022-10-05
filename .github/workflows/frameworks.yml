@@ -15,6 +15,7 @@ env:
   BENTOML_DO_NOT_TRACK: True
   LINES: 120
   COLUMNS: 120
+  PYTEST_PLUGINS: bentoml.testing.pytest.plugin
 
 jobs:
   diff:

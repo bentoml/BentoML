@@ -98,8 +98,6 @@ class Server:
     async def startup(self) -> None:
         from bentoml.exceptions import MissingDependencyException
 
-        # Running on_startup callback.
-        await self.servicer.startup()
         # register bento servicer
         services.add_BentoServiceServicer_to_server(
             self.servicer.bento_servicer, self.server
@@ -134,6 +132,9 @@ class Server:
             await self.servicer.health_servicer.set(
                 service, pb_health.HealthCheckResponse.SERVING  # type: ignore (no types available)
             )
+        # Running on_startup callback.
+        await self.servicer.startup()
+        # Start the server
         await self.server.start()
 
     async def shutdown(self):

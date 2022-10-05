@@ -9,7 +9,7 @@ import bentoml
 
 @pytest.mark.parametrize(
     "metrics_type",
-    filter(lambda x: isinstance(x, bentoml.metrics._MetricsMeta), dir(bentoml.metrics)),
+    filter(lambda x: isinstance(x, bentoml.metrics.Metrics), dir(bentoml.metrics)),
 )
 def test_metrics_initialization(metrics_type: t.Type[bentoml.metrics._MetricsMeta]):
     m = metrics_type(name="test_metrics", documentation="test")

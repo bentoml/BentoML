@@ -269,18 +269,25 @@ class HTTPAppFactory(BaseAppFactory):
         on_startup.extend(super().on_startup)
         return on_startup
 
-    async def readyz(self, _: "Request") -> "Response":
-        if all(
-            await asyncio.gather(
-                *(
-                    runner.runner_handle_is_ready()
-                    for runner in self.bento_service.runners
-                )
-            )
+    async def readyz(
+        self, _: "Request"
+    ) -> "Response":  # TODO call the config here, if false return 200
+        if (
+            BentoMLContainer.api_server_config.runner_readiness_probe.check_runners.get()
         ):
-            return PlainTextResponse("\n", status_code=200)
+            if all(
+                await asyncio.gather(
+                    *(
+                        runner.runner_handle_is_ready()
+                        for runner in self.bento_service.runners
+                    )
+                )
+            ):
+                return PlainTextResponse("\n", status_code=200)
 
-        raise HTTPException(status_code=500, detail="Runners are not ready.")
+            raise HTTPException(status_code=500, detail="Runners are not ready.")
+
+        return PlainTextResponse("\n", status_code=200)
 
     @property
     def on_shutdown(self) -> list[t.Callable[[], None]]:

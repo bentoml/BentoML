@@ -168,6 +168,16 @@ def start_http_server(
         backlog=backlog,
     )
 
+    ssl_args = construct_ssl_args(
+        ssl_certfile=ssl_certfile,
+        ssl_keyfile=ssl_keyfile,
+        ssl_keyfile_password=ssl_keyfile_password,
+        ssl_version=ssl_version,
+        ssl_cert_reqs=ssl_cert_reqs,
+        ssl_ca_certs=ssl_ca_certs,
+        ssl_ciphers=ssl_ciphers,
+    )
+    scheme = "https" if len(ssl_args) > 0 else "http"
     watchers.append(
         create_watcher(
             name="api_server",
@@ -187,15 +197,7 @@ def start_http_server(
                 "$(CIRCUS.WID)",
                 "--prometheus-dir",
                 prometheus_dir,
-                *construct_ssl_args(
-                    ssl_certfile=ssl_certfile,
-                    ssl_keyfile=ssl_keyfile,
-                    ssl_keyfile_password=ssl_keyfile_password,
-                    ssl_version=ssl_version,
-                    ssl_cert_reqs=ssl_cert_reqs,
-                    ssl_ca_certs=ssl_ca_certs,
-                    ssl_ciphers=ssl_ciphers,
-                ),
+                *ssl_args,
             ],
             working_dir=working_dir,
             numprocesses=api_workers,
@@ -204,9 +206,9 @@ def start_http_server(
     if BentoMLContainer.api_server_config.metrics.enabled.get():
         logger.info(
             PROMETHEUS_MESSAGE,
-            "HTTP",
+            scheme.upper(),
             bento_identifier,
-            f"http://{host}:{port}/metrics",
+            f"{scheme}://{host}:{port}/metrics",
         )
 
     arbiter = create_standalone_arbiter(
@@ -216,9 +218,10 @@ def start_http_server(
     with track_serve(svc, production=True, component=API_SERVER):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
-                'Starting bare %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',
-                "HTTP",
+                'Starting bare %s BentoServer from "%s" running on %s://%s:%d (Press CTRL+C to quit)',
+                scheme.upper(),
                 bento_identifier,
+                scheme,
                 host,
                 port,
             ),

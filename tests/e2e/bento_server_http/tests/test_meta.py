@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -28,6 +29,7 @@ async def test_api_server_meta(host: str) -> None:
     status, _, _ = await async_request("GET", f"http://{host}/readyz")
     assert status == 500
     status, _, body = await async_request("GET", f"http://{host}/metrics")
+    await asyncio.sleep(20)
     assert status == 200
     assert body
     status, _, body = await async_request("POST", f"http://{host}//api/v1/with_prefix")

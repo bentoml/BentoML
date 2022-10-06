@@ -6,9 +6,9 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-import psutil
-
 from .base import Arguments
+from ..utils import MACOS
+from ..utils import WINDOWS
 
 if TYPE_CHECKING:
     from .base import ArgType
@@ -29,7 +29,7 @@ def find_binary() -> str | None:
 def health() -> bool:
     client = find_binary()
 
-    if psutil.WINDOWS:
+    if WINDOWS:
         logger.error("nerdctl is NOT SUPPORTED on Windows.")
         return False
 
@@ -40,7 +40,7 @@ def health() -> bool:
         logger.warning(
             "nerdctl not found. Make sure it is installed and in your PATH. See https://github.com/containerd/nerdctl"
         )
-        if psutil.MACOS:
+        if MACOS:
             logger.info(
                 "To run nerdctl on MacOS, use lima. See https://github.com/lima-vm/lima#getting-started and use BuildKit templates to run nerdctl."
             )

@@ -4,13 +4,19 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
   schedule:
-    - cron: "0 0 * * 1/2"
+    - cron: "0 6 * * 1/2" # Every other day 6AM UTC
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 env:
-  LINES: 120
-  COLUMNS: 120
+  LINES: 200
+  COLUMNS: 200
   BENTOML_DO_NOT_TRACK: True
+  BENTOML_DEBUG: True
 
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaultsrun
 defaults:
@@ -18,286 +24,117 @@ defaults:
     shell: bash --noprofile --norc -exo pipefail {0}
 
 jobs:
-  diff:
+  type:
     runs-on: ubuntu-latest
-    outputs:
-      related: ${{ steps.filter.outputs.related }}
-      bentoml: ${{ steps.filter.outputs.bentoml }}
-      docs: ${{ steps.filter.outputs.docs }}
-      protos: ${{ steps.filter.outputs.protos }}
+    if: "!github.event.repository.fork" # Don't run on fork repository
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
-        id: filter
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup CI
+        uses: ./.github/actions/setup-repo
         with:
-          base: "main"
-          filters: |
-            related: &related
-              - .github/workflows/ci.yml
-              - codecov.yml
-              - pyproject.toml
-              - requirements/tests-requirements.txt
-            protos: &protos
-              - "src/bentoml/grpc/**/*.proto"
-            bentoml:
-              - *protos
-              - *related
-              - "src/bentoml/**"
-              - "src/bentoml_cli/**"
-              - "tests/**"
-              - "examples/**"
-            docs:
-              - *related
-              - requirements/docs-requirements.txt
-              - "docs/**"
+          python-version: "3.10"
+      - name: Get current branch.
+        id: current-branch
+        run: echo "branch=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+      - name: Get workspace directory
+        id: get-workspace
+        run: echo "workspace=$(bazel info workspace)" >> $GITHUB_OUTPUT
+      - name: (pyright) Running type checking.
+        if: ${{ steps.current-branch.outputs.branch != 'main' }}
+        run: |
+          cd ${{ steps.get-workspace.outputs.workspace }} || exit 1
+          git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py' | xargs -0 --no-run-if-empty bazel run --run_under="cd $PWD &&" //:pyright || true
 
-  codestyle_check:
+  lint:
     runs-on: ubuntu-latest
-    needs:
-      - diff
-
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
-
+    if: "!github.event.repository.fork" # Don't run on fork repository
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10.6"
-          architecture: x64
-
-      - name: Get pip cache dir
-        id: cache-dir
-        run: |
-          echo ::set-output name=dir::$(pip cache dir)
-
-      - name: Fetch origin
-        run: git fetch origin "$GITHUB_BASE_REF"
-
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: "17"
-      - name: Install pyright
-        run: |
-          npm install -g npm@^7 pyright
-      - name: Setup bufbuild/buf
-        uses: bufbuild/buf-setup-action@v1.13.1
-        with:
-          github_token: ${{ github.token }}
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        id: cache-pip
-        with:
-          path: ${{ steps.cache-dir.outputs.dir }}
-          key: codestyle-${{ hashFiles('requirements/dev-requirements.txt') }}
-
-      - name: Install dependencies
-        run: |
-          pip install .
-          pip install -r requirements/dev-requirements.txt
-
-      - name: Format check
-        run: |
-          black --check src examples tests
-          black --check --pyi typings
-          isort --check .
-      - name: Lint check
-        if: ${{ github.event_name == 'pull_request' }}
-        run: git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py' | xargs -0 --no-run-if-empty pylint --rcfile pyproject.toml --fail-under 9.0 --exit-zero
-      - name: Type check
-        if: ${{ github.event_name == 'pull_request' }}
-        run: git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py[i]' | xargs -0 --no-run-if-empty pyright
-      - name: Proto check
-        if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.protos == 'true') || github.event_name == 'push' }}
-        run: |
-          buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs src
-
-  documentation_spelling_check:
-    runs-on: ubuntu-latest
-    needs:
-      - diff
-
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.docs == 'true') || github.event_name == 'push' }}
-    steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
-
-      - name: Setup python
-        uses: actions/setup-python@v4
+      - name: Setup CI
+        uses: ./.github/actions/setup-repo
         with:
-          python-version: 3.9
-
-      - name: Get pip cache dir
-        id: cache-dir
+          python-version: "3.10"
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Get current branch.
+        id: get-current-branch
+        run: echo "branch=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+      - name: Get workspace directory
+        id: get-workspace
+        run: echo "workspace=$(bazel info workspace)" >> $GITHUB_OUTPUT
+        # Running formatter check
+      - name: Lock dependencies
+        run: bazel run pypi-linux.update
+      - name: Run style check
         run: |
-          echo ::set-output name=dir::$(pip cache dir)
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        id: cache-pip
-        with:
-          path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-docs-${{ hashFiles('requirements/docs-requirements.txt') }}
-
-      - name: Install dependencies
-        run: |
-          pip install .
-          pip install -r requirements/docs-requirements.txt
-
+          bazel run //:buildcheck
+          bazel run //:black -- --check "${{ steps.get-workspace.outputs.workspace }}/src"
+          bazel run //:isort -- --check "${{ steps.get-workspace.outputs.workspace }}/src"
+          bazel run //:v1alpha1_proto_lint
+          bazel run //:v1_proto_lint
+      - name: (pylint) Linting source.
+        if: ${{ steps.get-current-branch.outputs.branch != 'main' }}
+        run: git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py' | xargs -0 --no-run-if-empty bazel run --run_under="cd $PWD &&" //:pylint -- --rcfile "${{ steps.get-workspace.outputs.workspace }}/pyproject.toml" --fail-under 9.0
+      # Running spellcheck
       - name: Install libenchant
         run: |
-          sudo apt-get update && sudo apt-get install -y libenchant-2-dev
+          sudo apt-get update -y
+          sudo apt-get install -y libenchant-dev
+      - name: Running spellcheck
+        run: bazel run //:sphinx-build -- -b spelling "${{ steps.get-workspace.outputs.workspace }}/docs/source" "${{ steps.get-workspace.outputs.workspace }}/docs/build"
 
-      - name: Run spellcheck script
-        run: make spellcheck-docs
-
-  unit_tests:
-    needs:
-      - diff
-
+  tests:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        os: [ubuntu, macos, windows]
+        # Bazel lowest support is 3.8
+        python-version: ["3.8"]
+        architecture: [x64]
 
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
-    name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # fetch all tags and branches
-
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: x64
-
-      - name: Get pip cache dir
-        id: cache-dir
-        run: |
-          echo ::set-output name=dir::$(pip cache dir)
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        id: cache-pip
-        with:
-          path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
-      - name: Install dependencies
-        run: |
-          pip install ".[grpc]"
-          pip install -r requirements/tests-requirements.txt
-
-      - name: Run unit tests
-        run: |
-          OPTS=(--cov-config pyproject.toml --cov=src/bentoml --cov-append)
-          if [ "${{ matrix.os }}" != 'windows-latest' ]; then
-            # we will use pytest-xdist to improve tests run-time.
-            OPTS=(${OPTS[@]} --dist loadfile -n auto --run-grpc-tests)
-          fi
-          # Now run the unit tests
-          coverage run -m pytest tests/unit "${OPTS[@]}"
-
-      - name: Generage coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-  bento_server_e2e_tests:
-    needs:
-      - diff
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
-        server_type: ["http", "grpc"]
-        exclude:
-          - os: windows-latest
-            server_type: "grpc"
-          - os: macos-latest
-            server_type: "grpc"
-            python-version: "3.10"
-
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
-    name: python${{ matrix.python-version }}_${{ matrix.server_type }}_e2e_tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    if: "!github.event.repository.fork" # Don't run on fork repository
+    name: ${{ matrix.os }}-tests-python${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}-latest
+    timeout-minutes: 60
 
     env:
       SETUPTOOLS_USE_DISTUTILS: stdlib
       BENTOML_BUNDLE_LOCAL_BUILD: True
 
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v4
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup CI
+        uses: ./.github/actions/setup-repo
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: x64
-
+          architecture: ${{ matrix.architecture }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu' }}
       - name: Set up Docker Buildx
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu' }}
         id: buildx
         uses: docker/setup-buildx-action@v2
-
-      - name: Get pip cache dir
-        id: cache-dir
+      - name: Get target lock target
+        id: lock
         run: |
-          echo ::set-output name=dir::$(pip cache dir)
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        id: cache-pip
-        with:
-          path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
-      - name: Install dependencies for ${{ matrix.server_type }}-based tests.
-        run: |
-          pip install -r requirements/tests-requirements.txt
-          if [ "${{ matrix.server_type }}" == 'grpc' ]; then
-            pip install -e ".[grpc]"
+          if [ "${{ matrix.os }}" == "ubuntu" ]; then
+            target="linux"
           else
-            pip install -e .
+            target="${{ matrix.os }}"
           fi
-          if [ -f "tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt" ]; then
-            pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
-          fi
-
-      - name: Run ${{ matrix.server_type }} tests and generate coverage report
-        run: |
-          OPTS=(--cov-config pyproject.toml --cov=src/bentoml --cov-append)
-          coverage run -m pytest tests/e2e/bento_server_${{ matrix.server_type }} "${OPTS[@]}"
-
-      - name: Generage coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-concurrency:
-  group: ci-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: true
+          echo "target=$target" >> $GITHUB_OUTPUT
+      - name: Lock dependencies
+        run: bazel run pypi-${{ steps.lock.outputs.target }}.update
+      - name: Run tests
+        run: bazel test tests/... --test_env=GITHUB_ACTIONS=${GITHUB_ACTIONS}

@@ -2,6 +2,11 @@
 Scikit-Learn
 ============
 
+Compatibility
+-------------
+
+BentoML has been validated to work with scikit-learn version 1.0.2 and higher.
+
 Below is a simple example of using scikit-learn with BentoML:
 
 .. code:: python

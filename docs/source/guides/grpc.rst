@@ -37,6 +37,10 @@ Install BentoML with gRPC support with :pypi:`pip`:
 
    » pip install -U "bentoml[grpc]"
 
+.. note::
+
+   To add gRPC reflection support, do ``pip install -U "bentoml[grpc,grpc-reflection]"`` instead.
+
 Thats it! You can now serve your Bento with gRPC via :ref:`bentoml serve-grpc <reference/cli:serve-grpc>` without having to modify your current service definition 😃.
 
 .. code-block:: bash
@@ -105,6 +109,45 @@ gRPC server:
 
          » mkdir -p ~/workspace/iris_python_client
          » cd ~/workspace/iris_python_client
+
+      .. tab-set::
+
+         .. tab-item:: Using bazel (recommended)
+            :sync: bazel-workflow
+
+            Create the following ``requirements.txt``:
+
+            .. literalinclude:: ./snippets/grpc/python/requirements.txt
+               :language: text
+
+            Also create an empty ``requirements.lock.txt`` (This will be the target of our ``compile_pip_requirements`` target)
+
+            Define a |workspace|_ file:
+
+            .. dropdown:: ``WORKSPACE``
+               :icon: code
+
+               .. literalinclude:: ./snippets/grpc/python/WORKSPACE.snippet.bzl
+                  :language: python
+
+            Followed by defining a |build|_ file:
+
+            .. dropdown:: ``BUILD``
+               :icon: code
+
+               .. literalinclude:: ./snippets/grpc/python/BUILD.snippet.bzl
+                  :language: python
+
+         .. tab-item:: Running with local Python environment
+            :sync: protoc-and-plugins
+
+            Create a virtual environment and install the following dependencies:
+
+            .. code-block:: bash
+
+               » python3 -m venv venv
+               » source venv/bin/activate
+               » pip install -U "bentoml[grpc,grpc-reflection]"
 
       Create a ``client.py`` file with the following content:
 
@@ -421,6 +464,10 @@ gRPC server:
    .. tab-item:: Node.js
       :sync: nodejs
 
+      .. note::
+
+         For bazel implementation, see :github:`grpc-client/node <bentoml/BentoML/tree/main/grpc-client/>`
+
       :bdg-info:`Requirements:` Make sure to have `Node.js <https://nodejs.org/en/>`_
       installed in your system.
 
@@ -471,6 +518,10 @@ gRPC server:
 
    .. tab-item:: Swift
       :sync: swift
+
+      .. note::
+
+         For bazel implementation, see :github:`grpc-client/swift <bentoml/BentoML/tree/main/grpc-client/>`
 
       :bdg-info:`Requirements:` Make sure to have the :github:`prequisites <grpc/grpc-swift/blob/main/docs/quick-start.md#prerequisites>` to get started with :github:`grpc/grpc-swift`.
 
@@ -559,10 +610,6 @@ gRPC server:
          :language: php
          :caption: `BentoServiceClient.php`
 
-.. TODO::
-
-   Bazel instruction for ``swift``, ``nodejs``, ``python``
-
 :raw-html:`<br />`
 
 Then you can proceed to run the client scripts:
@@ -572,9 +619,21 @@ Then you can proceed to run the client scripts:
    .. tab-item:: Python
       :sync: python
 
-      .. code-block:: bash
+      .. tab-set::
 
-         » python -m client
+         .. tab-item:: Using bazel (recommended)
+            :sync: bazel-workflow
+
+            .. code-block:: bash
+
+               » bazel run //:client_python
+
+         .. tab-item:: Using local Python environment
+            :sync: protoc-and-plugins
+
+            .. code-block:: bash
+
+               » python -m client
 
    .. tab-item:: Go
       :sync: golang

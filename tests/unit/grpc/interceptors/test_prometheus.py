@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import typing as t
 import tempfile
@@ -9,16 +10,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from tests.proto import service_test_pb2 as pb_test
-from tests.proto import service_test_pb2_grpc as services_test
 from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import make_standalone_server
 from bentoml.testing.grpc import create_test_bento_servicer
+from bentoml._internal.utils import run_in_bazel
+from bentoml._internal.utils import BENTOML_IN_BAZEL
 from bentoml._internal.utils import LazyLoader
-from tests.unit.grpc.conftest import TestServiceServicer
 from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
 from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -27,19 +27,26 @@ if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
     from bentoml import Service
+    from tests.proto import service_test_pb2 as pb_test
+    from tests.proto import service_test_pb2_grpc as services_test
 else:
-    wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
     grpc, aio = import_grpc()
+    wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
+    pb_test = LazyLoader("pb_test", globals(), "tests.proto.service_test_pb2")
+    services_test = LazyLoader(
+        "services_test", globals(), "tests.proto.service_test_pb2_grpc"
+    )
 
 prom_dir = tempfile.mkdtemp("prometheus-multiproc")
 BentoMLContainer.prometheus_multiproc_dir.set(prom_dir)
 interceptor = PrometheusServerInterceptor()
 
-if "prometheus_client" in sys.modules:
-    mods = [m for m in sys.modules if "prometheus_client" in m]
-    list(map(lambda s: sys.modules.pop(s), mods))
-    if not interceptor._is_setup:
-        interceptor._setup()
+if BENTOML_IN_BAZEL not in os.environ or not run_in_bazel():
+    if "prometheus_client" in sys.modules:
+        mods = [m for m in sys.modules if "prometheus_client" in m]
+        list(map(lambda s: sys.modules.pop(s), mods))
+        if not interceptor._is_setup:
+            interceptor._setup()
 
 
 @pytest.mark.asyncio
@@ -58,7 +65,7 @@ async def test_metrics_invocation(mock_unary_unary_handler: MagicMock):
 
 
 @pytest.mark.asyncio
-async def test_empty_metrics():
+async def test_empty_metrics(test_servicer: services_test.TestServiceServicer):
     metrics_client = BentoMLContainer.metrics_client.get()
     # This test a branch where we change inside the handler whether or not the incoming
     # handler contains pb.Request
@@ -68,9 +75,7 @@ async def test_empty_metrics():
         host_url,
     ):
         try:
-            services_test.add_TestServiceServicer_to_server(
-                TestServiceServicer(), server
-            )
+            services_test.add_TestServiceServicer_to_server(test_servicer, server)
             await server.start()
             async with create_channel(host_url) as channel:
                 Execute = channel.unary_unary(

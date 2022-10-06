@@ -7,13 +7,12 @@ from unittest.mock import PropertyMock
 import pytest
 
 from bentoml._internal.utils.lazy_loader import LazyLoader
+from bentoml.grpc.utils import import_grpc
 
 if TYPE_CHECKING:
     import grpc
     from grpc import aio
 else:
-    from bentoml.grpc.utils import import_grpc
-
     grpc, _ = import_grpc()
 
 
@@ -33,10 +32,14 @@ else:
     services = LazyLoader("services", globals(), "tests.proto.service_test_pb2_grpc")
 
 
-class TestServiceServicer(services.TestServiceServicer):
-    async def Execute(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
-        self,
-        request: pb.ExecuteRequest,
-        context: aio.ServicerContext[pb.ExecuteRequest, pb.ExecuteResponse],
-    ) -> pb.ExecuteResponse:
-        return pb.ExecuteResponse(output="Hello, {}!".format(request.input))
+@pytest.fixture(scope="module", name="test_servicer")
+def fixture_test_servicer() -> services.TestServiceServicer:
+    class TestServiceServicer(services.TestServiceServicer):
+        async def Execute(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
+            self,
+            request: pb.ExecuteRequest,
+            _: aio.ServicerContext[pb.ExecuteRequest, pb.ExecuteResponse],
+        ) -> pb.ExecuteResponse:
+            return pb.ExecuteResponse(output="Hello, {}!".format(request.input))
+
+    return TestServiceServicer()

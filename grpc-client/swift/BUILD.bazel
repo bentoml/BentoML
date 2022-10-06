@@ -1,0 +1,50 @@
+load(
+    "@build_bazel_rules_swift//swift:swift.bzl",
+    "swift_binary",
+    "swift_grpc_library",
+    "swift_proto_library",
+)
+
+swift_proto_library(
+    name = "v1alpha1_proto_lib",
+    deps = ["//:v1alpha1_proto"],
+)
+
+swift_grpc_library(
+    name = "v1alpha1_grpc_lib",
+    srcs = ["//:v1alpha1_proto"],
+    flavor = "client",
+    deps = [":v1alpha1_proto_lib"],
+)
+
+swift_binary(
+    name = "client_v1alpha1",
+    srcs = ["Sources/v1alpha1/BentoServiceClient/main.swift"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":v1alpha1_grpc_lib",
+        ":v1alpha1_proto_lib",
+    ],
+)
+
+swift_proto_library(
+    name = "v1_proto_lib",
+    deps = ["//:v1_proto"],
+)
+
+swift_grpc_library(
+    name = "v1_grpc_lib",
+    srcs = ["//:v1_proto"],
+    flavor = "client",
+    deps = [":v1_proto_lib"],
+)
+
+swift_binary(
+    name = "client_v1",
+    srcs = ["Sources/v1/BentoServiceClient/main.swift"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":v1_grpc_lib",
+        ":v1_proto_lib",
+    ],
+)

@@ -11,11 +11,11 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-import psutil
 from simple_di import inject
 from simple_di import Provide
 
 from .exceptions import BentoMLException
+from ._internal.utils import LINUX
 from ._internal.container import build as _internal_build
 from ._internal.container import health
 from ._internal.container import get_backend

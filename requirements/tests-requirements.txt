@@ -1,22 +1,17 @@
-# Tests dependencies
-pandas
-pydantic
-scikit-learn
-yamllint==1.29.0
-black[jupyter]==22.12.0
-codecov==2.1.12
-coverage[toml]==7.1.0
-setuptools>=63
-isort==5.11.4
-pylint==2.16.0
+# Separate out the tests requirements to vendor the requirements
+# so that external libraries can use internal py_test rules.
 pytest-cov==4.0.0
-pytest==7.2.1
-pytest-xdist[psutil]==3.1.0
-pytest-asyncio==0.20.3
-imageio==2.25.0
-pyarrow==11.0.0
-build[virtualenv]==0.10.0
-protobuf<4.0dev
-grpcio
-grpcio-health-checking
-opentelemetry-instrumentation-grpc==0.35b0
+pytest==7.2.0
+pytest-xdist[psutil]==3.0.2
+pytest-asyncio==0.20.2
+coverage[toml]==6.5.0
+yamllint==1.28.0
+black==22.10.0
+codecov==2.1.12
+setuptools==65.5.1
+isort==5.10.1
+pylint==2.15.5
+imageio==2.22.4
+build[virtualenv]==0.9.0
+tomli==2.0.1
+setuptools-scm[toml]==7.0.5

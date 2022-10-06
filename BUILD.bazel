@@ -1,33 +1,160 @@
-load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
-load("@rules_proto//proto:defs.bzl", "proto_library")
+package(default_visibility = ["//:__subpackages__"])
 
-package(default_visibility = ["//visibility:public"])
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 
+# rules_python
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@pypi//:requirements.bzl", "entry_point", "requirement")
+
+exports_files([
+    "README.md",
+    "package.json",
+    "yarn.lock",
+])
+
+# export default pyproject.toml config
 filegroup(
     name = "pyproject",
     srcs = ["pyproject.toml"],
 )
 
+compile_pip_requirements(
+    name = "pypi",
+    extra_args = ["--allow-unsafe"],
+    requirements_in = "//requirements:pypi-requirements.txt",
+    requirements_txt = "//:bazel-requirements.lock.txt",
+    visibility = ["//visibility:__pkg__"],
+)
+
+compile_pip_requirements(
+    name = "tests",
+    extra_args = ["--allow-unsafe"],
+    requirements_in = "//requirements:tests-requirements.txt",
+    requirements_txt = "//:bazel-tests-requirements.lock.txt",
+)
+
+genrule(
+    name = "make-tests-requirements",
+    srcs = ["@tests//:requirements.bzl"],
+    outs = ["requirements.clean.bzl"],
+    cmd = " | ".join([
+        "cat $<",
+        """tr "'" '"' """,
+        "cat >$@",
+    ]),
+)
+
+write_file(
+    name = "gen-tests-starlark",
+    out = "update.sh",
+    content = [
+        # This depends on bash, which is not going to work on Windows.
+        "#!/usr/bin/env bash",
+        "cd $BUILD_WORKSPACE_DIRECTORY",
+        "cp -fv bazel-bin/requirements.clean.bzl rules/py/deps.bzl",
+    ],
+)
+
+sh_binary(
+    name = "vendor-tests",
+    srcs = ["update.sh"],
+    data = [":make-tests-requirements"],
+)
+
+[
+    alias(
+        name = "{}_proto".format(version),
+        actual = "//src/bentoml/grpc/{}:service_proto".format(version),
+        visibility = ["//visibility:public"],
+    )
+    for version in [
+        "v1alpha1",
+        "v1",
+    ]
+]
+
+[
+    alias(
+        name = "{}_proto_lint".format(version),
+        actual = "//src/bentoml/grpc/{}:service_proto_lint".format(version),
+        visibility = ["//visibility:public"],
+    )
+    for version in [
+        "v1alpha1",
+        "v1",
+    ]
+]
+
+## Expose public entrypoint for Bazel target.
+alias(
+    name = "cli",
+    actual = "//src/bentoml_cli:cli",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "sdk",
+    actual = "//src/bentoml:bentoml",
+    visibility = ["//visibility:public"],
+)
+
+# thirdparty alias
+alias(
+    name = "protobuf-python",
+    actual = "@com_google_protobuf//:protobuf_python",
+)
+
+alias(
+    name = "grpcio-python",
+    actual = "@com_github_grpc_grpc//src/python/grpcio/grpc:grpcio",
+)
+
+alias(
+    name = "buildozer",
+    actual = "@com_github_bazelbuild_buildtools//buildozer",
+)
+
 buildifier(
-    name = "buildifier",
+    name = "buildfmt",
 )
 
-proto_library(
-    name = "service_v1alpha1_proto",
-    srcs = ["src/bentoml/grpc/v1alpha1/service.proto"],
-    visibility = ["//grpc-client:__subpackages__"],
-    deps = [
-        "@com_google_protobuf//:struct_proto",
-        "@com_google_protobuf//:wrappers_proto",
-    ],
+buildifier_test(
+    name = "buildcheck",
+    srcs = glob([
+        "**/*.bzl",
+        "**/*.bazel",
+    ]),
 )
 
-proto_library(
-    name = "service_v1_proto",
-    srcs = ["src/bentoml/grpc/v1/service.proto"],
-    visibility = ["//grpc-client:__subpackages__"],
-    deps = [
-        "@com_google_protobuf//:struct_proto",
-        "@com_google_protobuf//:wrappers_proto",
-    ],
+alias(
+    name = "pyright",
+    actual = "@npm//:node_modules/pyright/index.js",
 )
+
+alias(
+    name = "sphinx-build",
+    actual = entry_point(
+        "sphinx",
+        script = "sphinx-build",
+    ),
+)
+
+alias(
+    name = "sphinx-autobuild",
+    actual = entry_point("sphinx-autobuild"),
+)
+
+[
+    alias(
+        name = tool,
+        actual = entry_point(tool),
+    )
+    for tool in [
+        "black",
+        "isort",
+        "pylint",
+    ]
+]

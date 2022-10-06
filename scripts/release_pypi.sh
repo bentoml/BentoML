@@ -57,7 +57,7 @@ cd "$GIT_ROOT" || exit 1
 ./tools/generate-grpc-stubs v1alpha1
 ./tools/generate-grpc-stubs v1
 
-python3 -m build -s -w
+python3 -m build -s -w -C--global-option=--quiet
 
 # Use testpypi by default, run script with: "REPO=pypi release.sh" for
 # releasing to Pypi.org

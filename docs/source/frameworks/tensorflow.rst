@@ -25,8 +25,7 @@ If you must use TensorFlow for your Keras model, make sure that your Keras model
 Compatibility
 -------------
 
-BentoML requires TensorFlow version 2.0 or higher. For TensorFlow version 1.0, consider using a :ref:`concepts/runner:Custom Runner`.
-
+BentoML requires TensorFlow version 2.9.0 or higher. For TensorFlow version 1.0, consider using a :ref:`concepts/runner:Custom Runner`.
 
 Saving a Trained Model
 ----------------------

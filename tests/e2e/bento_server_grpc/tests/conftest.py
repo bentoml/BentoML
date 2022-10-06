@@ -7,8 +7,10 @@ import typing as t
 import subprocess
 from typing import TYPE_CHECKING
 
-import psutil
 import pytest
+
+from bentoml._internal.utils import run_in_bazel
+from bentoml._internal.utils import WINDOWS
 
 if TYPE_CHECKING:
     from contextlib import ExitStack
@@ -24,9 +26,10 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def pytest_collection_modifyitems(
     session: Session, config: Config, items: list[Item]
 ) -> None:
-    subprocess.check_call(
-        ["pip", "install", "-r", f"{os.path.join(PROJECT_DIR, 'requirements.txt')}"]
-    )
+    if not run_in_bazel():
+        subprocess.check_call(
+            ["pip", "install", "-r", f"{os.path.join(PROJECT_DIR, 'requirements.txt')}"]
+        )
     subprocess.check_call([sys.executable, f"{os.path.join(PROJECT_DIR, 'train.py')}"])
 
 
@@ -39,7 +42,7 @@ def host(
 ) -> t.Generator[str, None, None]:
     from bentoml.testing.server import host_bento
 
-    if psutil.WINDOWS:
+    if WINDOWS:
         pytest.skip("gRPC is not supported on Windows.")
     with host_bento(
         "service:svc",

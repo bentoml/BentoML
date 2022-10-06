@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tests.proto import service_test_pb2 as pb_test
-from tests.proto import service_test_pb2_grpc as services_test
+import sys
+
+print(sys.path)
+
 from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import wrap_rpc_handler
 from bentoml.grpc.utils import import_generated_stubs
@@ -18,9 +20,10 @@ from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import make_standalone_server
 from bentoml.testing.grpc import create_test_bento_servicer
 from bentoml._internal.utils import LazyLoader
-from tests.unit.grpc.conftest import TestServiceServicer
 from bentoml.grpc.interceptors.access import AccessLogServerInterceptor
 from bentoml.grpc.interceptors.opentelemetry import AsyncOpenTelemetryServerInterceptor
+
+print(globals())
 
 if TYPE_CHECKING:
     import grpc
@@ -35,9 +38,15 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import AsyncHandlerMethod
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
+    from tests.proto import service_test_pb2 as pb_test
+    from tests.proto import service_test_pb2_grpc as services_test
 else:
     grpc, aio = import_grpc()
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
+    pb_test = LazyLoader("pb_test", globals(), "tests.proto.service_test_pb2")
+    services_test = LazyLoader(
+        "services_test", globals(), "tests.proto.service_test_pb2_grpc"
+    )
 
 
 class AppendMetadataInterceptor(aio.ServerInterceptor):
@@ -68,7 +77,9 @@ class AppendMetadataInterceptor(aio.ServerInterceptor):
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("propagate_logs")
-async def test_success_logs(caplog: LogCaptureFixture):
+async def test_success_logs(
+    caplog: LogCaptureFixture, test_servicer: services_test.TestServiceServicer
+):
     with make_standalone_server(
         # we need to also setup opentelemetry interceptor
         # to make sure the access log is correctly setup.
@@ -78,9 +89,7 @@ async def test_success_logs(caplog: LogCaptureFixture):
         ]
     ) as (server, host_url):
         try:
-            services_test.add_TestServiceServicer_to_server(
-                TestServiceServicer(), server
-            )
+            services_test.add_TestServiceServicer_to_server(test_servicer, server)
             await server.start()
             with caplog.at_level(logging.INFO, "bentoml.access"):
                 async with create_channel(host_url) as channel:
@@ -97,7 +106,9 @@ async def test_success_logs(caplog: LogCaptureFixture):
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("propagate_logs")
-async def test_trailing_metadata(caplog: LogCaptureFixture):
+async def test_trailing_metadata(
+    caplog: LogCaptureFixture, test_servicer: services_test.TestServiceServicer
+):
     with make_standalone_server(
         # we need to also setup opentelemetry interceptor
         # to make sure the access log is correctly setup.
@@ -108,9 +119,7 @@ async def test_trailing_metadata(caplog: LogCaptureFixture):
         ]
     ) as (server, host_url):
         try:
-            services_test.add_TestServiceServicer_to_server(
-                TestServiceServicer(), server
-            )
+            services_test.add_TestServiceServicer_to_server(test_servicer, server)
             await server.start()
             with caplog.at_level(logging.INFO, "bentoml.access"):
                 async with create_channel(host_url) as channel:

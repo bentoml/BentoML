@@ -1,96 +1,40 @@
 # TODO: Migrate to bzlmod once 6.0.0 is released.
 workspace(name = "com_github_bentoml_bentoml")
 
-load("//bazel:deps.bzl", "internal_deps")
+load("//rules:deps.bzl", "bentoml_dependencies")
 
-internal_deps()
+bentoml_dependencies()
 
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+# NOTE: external users wish to use BentoML workspace setup
+# should always be loaded in this order.
+load("//rules:workspace0.bzl", "workspace0")
 
-rules_proto_grpc_toolchains()
+workspace0()
 
-rules_proto_grpc_repos()
+load("//rules:workspace1.bzl", "workspace1")
 
-rules_proto_dependencies()
+workspace1()
 
-rules_proto_toolchains()
+load("//rules:workspace2.bzl", "workspace2")
 
-# We need to load go_grpc rules first
-load("@rules_proto_grpc//:repositories.bzl", "bazel_gazelle", "io_bazel_rules_go")  # buildifier: disable=same-origin-load
+workspace2()
 
-io_bazel_rules_go()
+load("@rules_python//python:pip.bzl", "pip_parse")
 
-bazel_gazelle()
-
-load("@rules_proto_grpc//go:repositories.bzl", rules_proto_grpc_go_repos = "go_repos")
-
-rules_proto_grpc_go_repos()
-
-load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies")
-
-go_rules_dependencies()
-
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
-protobuf_deps()
-
-# Projects using gRPC as an external dependency must call both grpc_deps() and
-# grpc_extra_deps().
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-
-grpc_deps()
-
-load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-
-grpc_extra_deps()
-
-load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
-
-gazelle_dependencies()
-
-load("@rules_jvm_external//:defs.bzl", "maven_install")
-load("@io_grpc_grpc_java//:repositories.bzl", "IO_GRPC_GRPC_JAVA_ARTIFACTS", "IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS", "grpc_java_repositories")
-
-IO_GRPC_GRPC_KOTLIN_ARTIFACTS = [
-    "com.squareup:kotlinpoet:1.11.0",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.2",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-debug:1.6.2",
-]
-
-maven_install(
-    artifacts = [
-        "com.google.jimfs:jimfs:1.1",
-        "com.google.truth.extensions:truth-proto-extension:1.0.1",
-        "com.google.protobuf:protobuf-kotlin:3.18.0",
-    ] + IO_GRPC_GRPC_KOTLIN_ARTIFACTS + IO_GRPC_GRPC_JAVA_ARTIFACTS,
-    generate_compat_repositories = True,
-    override_targets = IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS,
-    repositories = [
-        "https://repo.maven.apache.org/maven2/",
-    ],
+pip_parse(
+    name = "pypi",
+    requirements = "//:bazel-requirements.lock.txt",
 )
 
-load("@maven//:compat.bzl", "compat_repositories")
+pip_parse(
+    name = "tests",
+    requirements = "//:bazel-tests-requirements.lock.txt",
+)
 
-compat_repositories()
+load("@pypi//:requirements.bzl", pypi_deps = "install_deps")
 
-grpc_java_repositories()
+pypi_deps()
 
-load("@io_bazel_rules_kotlin//kotlin:repositories.bzl", "kotlin_repositories")
+load("//rules/py:deps.bzl", tests_deps = "install_deps")
 
-kotlin_repositories()
-
-load("@io_bazel_rules_kotlin//kotlin:core.bzl", "kt_register_toolchains")
-
-kt_register_toolchains()
-
-# swift rules
-# TODO: Currently fails at detecting compiled gRPC swift library
-# Since CgRPC is deprecated, seems like no rules are being maintained
-# for the newer swift implementation.
-
-# TODO: rules_python for editable install?
-# What we can do is to build the wheel, the install it to pip_parse
-# This will ensure hermeticity.
+tests_deps()

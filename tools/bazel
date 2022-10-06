@@ -3,6 +3,7 @@
 set -e
 
 # courtesy of https://github.com/grpc/grpc
+GIT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)/.."
 
 # DISABLE_BAZEL_WRAPPER can be set to eliminate the wrapper logic
 if [ "${DISABLE_BAZEL_WRAPPER}" != "" ] && [ "${OVERRIDE_BAZEL_VERSION}" == "" ]; then
@@ -18,14 +19,14 @@ if [ "${DISABLE_BAZEL_WRAPPER}" != "" ] && [ "${OVERRIDE_BAZEL_VERSION}" == "" ]
 	fi
 fi
 
-VERSION=${OVERRIDE_BAZEL_VERSION:-5.3.1}
+VERSION=${OVERRIDE_BAZEL_VERSION:-$(<"$GIT_ROOT/.bazelversion")}
 echo "INFO: Running bazel wrapper (see //tools/bazel for details), bazel version $VERSION will be used instead of system-wide bazel installation." >&2
 
 BASEURL_MIRROR="https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/bazel/releases/download"
 BASEURL="https://github.com/bazelbuild/bazel/releases/download"
 pushd "$(dirname "$0")" >/dev/null
 # bazel binary will be downloaded to GIT_ROOT/tools directory by default
-DOWNLOAD_DIR=${OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR:-$(pwd)}
+DOWNLOAD_DIR=${OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR:-$GIT_ROOT/tools}
 
 case $(uname -sm) in
 "Linux x86_64")
@@ -59,13 +60,18 @@ if [ ! -x "${filename_abs}" ]; then
 	chmod a+x "${filename_abs}"
 fi
 
-pushd ../grpc-client >/dev/null
-! [[ -d "thirdparty" ]] && mkdir -p thirdparty
-pushd thirdparty >/dev/null
-# We will only need the stubs, not the submodules.
-! [[ -d "protobuf" ]] && git clone -b v3.19.4 --depth 1 https://github.com/protocolbuffers/protobuf.git
-popd >/dev/null
 popd >/dev/null
 
-popd >/dev/null
+[ ! -f "$GIT_ROOT/bazel-requirements.lock.txt" ] && touch "$GIT_ROOT/bazel-requirements.lock.txt"
+[ ! -f "$GIT_ROOT/bazel-tests-requirements.lock.txt" ] && touch "$GIT_ROOT/bazel-tests-requirements.lock.txt"
+[ ! -f "$GIT_ROOT/yarn.lock" ] && touch "$GIT_ROOT/yarn.lock"
+
+if ! [ -f "$GIT_ROOT/.bazel-requirements.lock" ]; then
+	echo "INFO: Locking depdencies..." >&2
+	touch "$GIT_ROOT/.bazel-requirements.lock"
+	"${filename_abs}" run //:pypi.update
+	"${filename_abs}" run //:tests.update
+	"${filename_abs}" run //:vendor-tests
+fi
+
 exec "${filename_abs}" "$@"

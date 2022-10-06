@@ -1,8 +1,8 @@
 import os
 import typing as t
 
-import psutil
 import pytest
+from bentoml._internal.utils import WINDOWS
 
 WINDOWS_PATHS = [
     r"C:\foo\bar",
@@ -17,7 +17,7 @@ POSIX_PATHS = ["/foo/bar", "/foo/bar with space", "/foo/中文", "relative/path"
 
 @pytest.fixture()
 def example_paths():
-    if psutil.WINDOWS:
+    if WINDOWS:
         return WINDOWS_PATHS
     else:
         return POSIX_PATHS

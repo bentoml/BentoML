@@ -1,6 +1,6 @@
-package(default_visibility = ["//visibility:private"])
+load("//rules:utils.bzl", "run_shell")
 
-load("//bazel:utils.bzl", "run_shell")
+package(default_visibility = ["//visibility:private"])
 
 run_shell(
     name = "download_mnist_data",

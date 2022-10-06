@@ -17,6 +17,7 @@ from sklearn.neighbors import KNeighborsClassifier
 import bentoml
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
+from bentoml._internal.utils import run_in_bazel
 from bentoml._internal.models.model import ModelContext
 
 if TYPE_CHECKING:
@@ -105,13 +106,21 @@ def test_wrong_module_load():
         bentoml.mlflow.load_model(model)
 
 
+def determine_testdata(p: str) -> str:
+    uri = str(Path(__file__).parent / p)
+    if run_in_bazel():
+        dirp = os.path.dirname(__file__)
+        uri = os.path.join(os.getcwd(), os.path.relpath(dirp, start=os.getcwd()), p)
+    return uri
+
+
 def test_invalid_import():
-    uri = Path(__file__).parent / "NoPyfunc"
+    uri = determine_testdata("NoPyfunc")
     with pytest.raises(
         BentoMLException,
         match="does not support the required python_function flavor",
     ):
-        _ = bentoml.mlflow.import_model("NoPyfunc", str(uri.resolve()))
+        _ = bentoml.mlflow.import_model("NoPyfunc", uri)
 
 
 @pytest.fixture(name="no_mlmodel")
@@ -153,7 +162,7 @@ def test_mlflow_load_runner(URI: Path):
 
 
 def test_mlflow_invalid_import_mlproject():
-    uri = Path(__file__).parent / "MNIST"
+    uri = determine_testdata("MNIST")
     with pytest.raises(BentoMLException):
         _ = bentoml.mlflow.import_model(MODEL_NAME, str(uri))
 

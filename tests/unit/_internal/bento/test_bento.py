@@ -11,6 +11,7 @@ import fs
 import pytest
 
 from bentoml import Tag
+from bentoml._internal.utils import run_in_bazel
 from bentoml._internal.bento import Bento
 from bentoml._internal.models import ModelStore
 from bentoml._internal.bento.bento import BentoInfo
@@ -142,9 +143,19 @@ conda:
         assert bentoinfo_b_from_yaml == bentoinfo_b
 
 
+def handle_ctx_path(ctx_path: str, importpath: str) -> tuple[str, str]:
+    ctx_path = ctx_path.strip("./")
+    if run_in_bazel():
+        ctx_path = os.path.join(os.getcwd(), ctx_path)
+        importpath = os.path.join(ctx_path, importpath)
+    return ctx_path, importpath
+
+
 def build_test_bento() -> Bento:
+    ctx, importpath = handle_ctx_path("./simplebento", "simplebento.py")
+
     bento_cfg = BentoBuildConfig(
-        "simplebento.py:svc",
+        f"{importpath}:svc",
         include=["*.py", "config.json", "somefile", "*dir*", ".bentoignore"],
         exclude=["*.storage", "/somefile", "/subdir2"],
         conda={
@@ -160,16 +171,7 @@ def build_test_bento() -> Bento:
         },
     )
 
-    return Bento.create(bento_cfg, version="1.0", build_ctx="./simplebento")
-
-
-def fs_identical(fs1: fs.base.FS, fs2: fs.base.FS):
-    for path in fs1.walk.dirs():
-        assert fs2.isdir(path)
-
-    for path in fs1.walk.files():
-        assert fs2.isfile(path)
-        assert fs1.readbytes(path) == fs2.readbytes(path)
+    return Bento.create(bento_cfg, version="1.0", build_ctx=ctx)
 
 
 @pytest.mark.usefixtures("change_test_dir")
@@ -180,17 +182,21 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     # Bento build will change working dir to the build_context, this will reset it
     os.chdir(working_dir)
 
-    cfg = BentoBuildConfig("bentoa.py:svc")
-    bentoa = Bento.create(cfg, build_ctx="./bentoa")
+    ctx, importpath = handle_ctx_path("./bentoa", "bentoa.py")
+    cfg = BentoBuildConfig(f"{importpath}:svc")
+    bentoa = Bento.create(cfg, build_ctx=ctx)
     # Bento build will change working dir to the build_context, this will reset it
     os.chdir(working_dir)
 
-    bentoa1 = Bento.create(cfg, build_ctx="./bentoa1")
+    ctx, importpath = handle_ctx_path("./bentoa1", "bentoa.py")
+    cfg = BentoBuildConfig(f"{importpath}:svc")
+    bentoa1 = Bento.create(cfg, build_ctx=ctx)
     # Bento build will change working dir to the build_context, this will reset it
     os.chdir(working_dir)
 
-    cfg = BentoBuildConfig("bentob.py:svc")
-    bentob = Bento.create(cfg, build_ctx="./bentob")
+    ctx, importpath = handle_ctx_path("./bentob", "bentob.py")
+    cfg = BentoBuildConfig(f"{importpath}:svc")
+    bentob = Bento.create(cfg, build_ctx=ctx)
 
     bento = testbento
     path = os.path.join(tmpdir, "testbento")

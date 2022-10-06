@@ -4,7 +4,7 @@ import os
 import logging
 from pathlib import Path
 
-from ..utils.pkg import source_locations
+from ..utils import run_in_bazel
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
@@ -45,19 +45,27 @@ def build_bentoml_editable_wheel(
             f"Environment variable '{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package ({e}). Install development dependencies with 'pip install -r requirements/dev-requirements.txt' and try again."
         ) from None
 
-    # Find bentoml module path
-    # This will be $GIT_ROOT/src/bentoml
-    module_location = source_locations("bentoml")
-    if not module_location:
+    # Find bentoml module path from this file
+    # This will be $GIT_ROOT/src/bentoml or "../../../bentoml/"
+    bentoml_path = Path(__file__).parent.parent.parent
+    if not bentoml_path:
         raise BentoMLException("Could not find bentoml module location.")
-    bentoml_path = Path(module_location)
 
     if not Path(
-        module_location, "grpc", _internal_protocol_version, "service_pb2.py"
+        bentoml_path, "grpc", _internal_protocol_version, "service_pb2.py"
     ).exists():
         raise ModuleNotFoundError(
             f"Generated stubs for version {_internal_protocol_version} are missing. Make sure to run '{bentoml_path.as_posix()}/scripts/generate_grpc_stubs.sh {_internal_protocol_version}' beforehand to generate gRPC stubs."
         ) from None
+
+    if run_in_bazel():
+        _version_file = bentoml_path / "_version.py"
+        if _version_file.exists():
+            # we need to remove the generated _version.py in bazel if
+            # this exists. This will ensure bazel won't try to generate
+            # new version (as it doesn't have access to .git).
+            # There is not easy way to exclude _version.py in in our py_test rules unfortunately.
+            os.remove(str(_version_file))
 
     # location to pyproject.toml
     pyproject = bentoml_path.parent.parent / "pyproject.toml"
@@ -74,6 +82,7 @@ def build_bentoml_editable_wheel(
             builder.python_executable = env.executable
             builder.scripts_dir = env.scripts_dir
             env.install(builder.build_system_requires)
+            # NOTE that using --global-option=--quiet will suppress the output of distutils
             builder.build(
                 "wheel", target_path, config_settings={"--global-option": "--quiet"}
             )

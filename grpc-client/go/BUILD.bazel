@@ -2,17 +2,18 @@ load("@rules_proto_grpc//go:defs.bzl", "go_grpc_library")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary")
 
 go_grpc_library(
-    name = "service_grpc_v1alpha1",
+    name = "v1alpha1_grpc_lib",
     importpath = "github.com/bentoml/bentoml/grpc/v1alpha1",
-    protos = ["//:service_v1alpha1_proto"],
+    protos = ["//:v1alpha1_proto"],
 )
 
 go_binary(
     name = "client_v1alpha1",
-    srcs = ["client.go"],
+    srcs = ["v1alpha1/client.go"],
     importpath = "github.com/bentoml/bentoml/grpc/v1alpha1",
+    visibility = ["//visibility:public"],
     deps = [
-        ":service_grpc_v1alpha1",
+        ":v1alpha1_grpc_lib",
         "@com_github_golang_protobuf//proto:go_default_library",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials:go_default_library",
@@ -21,17 +22,18 @@ go_binary(
 )
 
 go_grpc_library(
-    name = "service_grpc",
+    name = "v1_grpc_lib",
     importpath = "github.com/bentoml/bentoml/grpc/v1",
-    protos = ["//:service_v1_proto"],
+    protos = ["//:v1_proto"],
 )
 
 go_binary(
-    name = "client",
-    srcs = ["client.go"],
+    name = "client_v1",
+    srcs = ["v1/client.go"],
     importpath = "github.com/bentoml/bentoml/grpc/v1",
+    visibility = ["//visibility:public"],
     deps = [
-        ":service_grpc",
+        ":v1_grpc_lib",
         "@com_github_golang_protobuf//proto:go_default_library",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials:go_default_library",

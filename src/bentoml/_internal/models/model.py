@@ -61,7 +61,7 @@ MODEL_YAML_FILENAME = "model.yaml"
 CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
 
-@attr.define
+@attr.frozen
 class ModelOptions:
     def with_options(self, **kwargs: t.Any) -> ModelOptions:
         return attr.evolve(self, **kwargs)

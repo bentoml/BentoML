@@ -8,10 +8,10 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING
 
-import psutil
 from packaging.version import parse
 
 from .base import Arguments
+from ..utils import WINDOWS
 
 if TYPE_CHECKING:
     from .base import ArgType
@@ -85,7 +85,7 @@ def construct_build_args(
         cache_from = parse_dict_opt(cache_from)
     cmds.construct_args(cache_from, opt="cache-from")
     if isolation is not None:
-        if not psutil.WINDOWS and isolation != "default":
+        if not WINDOWS and isolation != "default":
             logger.warning("'isolation=%s' is only supported on Windows.", isolation)
         cmds.construct_args(isolation, opt="isolation")
     if isinstance(label, dict):

@@ -1,0 +1,103 @@
+load("@rules_python//python:defs.bzl", "py_library")
+load("//rules/py:python.bzl", _FRAMEWORK_SRCS = "SUPPORTED_FRAMEWORKS_TARGETS")
+load("@pypi//:requirements.bzl", "requirement")
+
+package(default_visibility = [
+    "//:__subpackages__",
+    "//tests:__subpackages__",
+])
+
+# TODO: "detectron", "easyocr", "evalml", "fasttext", "flax", "gluon", "h2o", "onnxmlir", "paddle", "pycaret", "pyspark", "spacy", "statsmodels", "tensorflow_v1",
+
+[
+    py_library(
+        name = src,
+        srcs = [
+            "{}.py".format(src),
+            "//src/bentoml/_internal:srcs_files",
+        ],
+        data = ["//src/bentoml/_internal:data_files"],
+        deps = [
+            "//src/bentoml",
+            "//src/bentoml/_internal/frameworks:{}".format(src),
+        ],
+    )
+    for src in _FRAMEWORK_SRCS
+]
+
+py_library(
+    name = "bentoml",
+    srcs = [
+        "//src/bentoml/_internal:srcs_files",
+        "//src/bentoml/grpc:srcs_files",
+        "//src/bentoml/testing:srcs_files",
+    ] + glob(["*.py"]),
+    data = [
+        "metrics.pyi",
+        "//src/bentoml/_internal:data_files",
+        "//src/bentoml/_internal:srcs_files",
+        "//src/bentoml/grpc:srcs_files",
+    ],
+    imports = ["../"],
+    deps = [
+        requirement("grpcio"),
+        requirement("protobuf"),
+        requirement("fs"),
+        requirement("rich"),
+        requirement("attrs"),
+        requirement("cattrs"),
+        requirement("circus"),
+        requirement("pynvml"),
+        requirement("click"),
+        requirement("PyYAML"),
+        requirement("schema"),
+        requirement("aiohttp"),
+        requirement("starlette"),
+        requirement("pathspec"),
+        requirement("Jinja2"),
+        requirement("uvicorn"),
+        requirement("watchfiles"),
+        requirement("backports.cached-property"),
+        requirement("backports.shutil_copytree"),
+        requirement("importlib-metadata"),
+        requirement("singledispatchmethod"),
+        requirement("tomli"),
+        requirement("cloudpickle"),
+        requirement("deepmerge"),
+        requirement("numpy"),
+        requirement("opentelemetry-api"),
+        requirement("opentelemetry-sdk"),
+        requirement("opentelemetry-exporter-otlp-proto-http"),
+        requirement("opentelemetry-instrumentation"),
+        requirement("opentelemetry-instrumentation-aiohttp-client"),
+        requirement("opentelemetry-instrumentation-asgi"),
+        requirement("opentelemetry-semantic-conventions"),
+        requirement("opentelemetry-instrumentation-grpc"),
+        requirement("opentelemetry-util-http"),
+        requirement("packaging"),
+        requirement("pip-tools"),
+        requirement("prometheus-client"),
+        requirement("psutil"),
+        requirement("python-dateutil"),
+        requirement("python-json-logger"),
+        requirement("Pillow"),
+        requirement("pandas"),
+        requirement("requests"),
+        requirement("python-multipart"),
+        requirement("pydantic"),
+        requirement("simple-di"),
+        requirement("click-option-group"),
+        requirement("pip-requirements-parser"),
+    ],
+)
+
+filegroup(
+    name = "srcs_files",
+    srcs = [
+        "//:README.md",  # This is used for metadata for wheels.
+        "//src/bentoml/_internal:data_files",
+        "//src/bentoml/_internal:srcs_files",
+        "//src/bentoml/grpc:srcs_files",
+        "//src/bentoml/testing:srcs_files",
+    ],
+)

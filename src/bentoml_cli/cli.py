@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import click
-import psutil
 
 from bentoml_cli.env import add_env_command
 from bentoml_cli.serve import add_serve_command
@@ -16,6 +15,7 @@ from bentoml_cli.containerize import add_containerize_command
 def create_bentoml_cli() -> click.Group:
 
     from bentoml import __version__ as BENTOML_VERSION
+    from bentoml._internal.utils import WINDOWS
     from bentoml._internal.context import component_context
 
     component_context.component_type = "cli"
@@ -44,7 +44,7 @@ def create_bentoml_cli() -> click.Group:
     add_serve_command(bentoml_cli)
     add_containerize_command(bentoml_cli)
 
-    if psutil.WINDOWS:
+    if WINDOWS:
         import sys
 
         sys.stdout.reconfigure(encoding="utf-8")  # type: ignore

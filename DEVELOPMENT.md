@@ -1,6 +1,6 @@
 # Developer Guide
 
-Before getting started, check out the `#bentoml-contributors` channel in the [BentoML community slack](https://l.linklyhq.com/l/ktOh).
+Before getting started, check out the `#bentoml-contributors` channel in the [BentoML Community Slack](https://l.linklyhq.com/l/ktOh).
 
 If you are interested in contributing to existing issues and feature requets, check out the [good-first-issue](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Agood-first-issue) and [help-wanted](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Ahelp-wanted) issues list.
 
@@ -39,7 +39,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 6. Install BentoML with pip in editable mode:
 
    ```bash
-   pip install -e .
+   pip install -e ".[all]"
    ```
 
    This installs BentoML in an editable state. The changes you make will automatically be reflected without reinstalling BentoML.
@@ -50,7 +50,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
    pip install -r ./requirements/dev-requirements.txt
    ```
 
-8. Test the BentoML installation either with `bash`:
+8. Test the BentoML installation either in a terminal:
 
    ```bash
    bentoml --version
@@ -203,10 +203,14 @@ export BENTOML_DEBUG=TRUE
 And/or use the `--verbose` option when running `bentoml` CLI command, e.g.:
 
 ```bash
-bentoml get IrisClassifier --verbose
+bentoml get iris_classifier --verbose
 ```
 
 ## Style check, auto-formatting, type-checking
+
+It is encouraged to have [bazel](https://bazel.build/) setup for faster development.
+
+BentoML is [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible. We define package configuration via [`pyproject.toml`][https://github.com/bentoml/bentoml/blob/main/pyproject.toml].
 
 formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyCQA/isort), [buf](https://github.com/bufbuild/buf)
 
@@ -215,41 +219,60 @@ linter: [pylint](https://pylint.org/), [buf](https://github.com/bufbuild/buf)
 type checker: [pyright](https://github.com/microsoft/pyright)
 
 We are using [buf](https://github.com/bufbuild/buf) for formatting and linting
-of our proto files. Configuration can be found [here](./bentoml/grpc/buf.yaml).
+of our proto files. Configuration can be found [here](./src/bentoml/grpc/buf.yaml).
 Currently, we are running `buf` with docker, hence we kindly ask our developers
 to have docker available. Docker installation can be found [here](https://docs.docker.com/get-docker/).
 
-Run linter/format script:
+Run linter:
 
 ```bash
-make format
+./tools/lint
+```
 
-make lint
+Run formatter:
+
+```bash
+./tools/style
 ```
 
 Run type checker:
 
 ```bash
-make type
+bazel run //:pyright
 ```
 
 ## Editing proto files
 
-The proto files for the BentoML gRPC service are located under [`bentoml/grpc`](./bentoml/grpc/).
-The generated python files are not checked in the git repository, and are instead generated via this [`script`](./scripts/generate_grpc_stubs.sh).
-If you edit the proto files, make sure to run `./scripts/generate_grpc_stubs.sh` to
-regenerate the proto stubs.
+The proto files for the BentoML gRPC service are located under [`src/bentoml/grpc`](./src/bentoml/grpc/).
+The generated python files are not checked in the git repository and are instead generated via this [`script`](./tools/generate-grpc-stubs).
+If you edit the proto files, make sure to run `./tools/generate-grpc-stubs <version>` to generate the proto stubs.
+
+To invoke protoc directly, use `@com_google_protobuf`:
+
+```bash
+bazel run @com_google_protobuf//:protoc -- ...
+```
 
 ## Deploy with your changes
 
-Test test out your changes in an actual BentoML model deployment, you can create a new Bento with your custom BentoML source repo:
+Test out your changes in an actual BentoML model deployment, you can create a new Bento with your custom BentoML source repo:
 
-1. Install custom BentoML in editable mode. e.g.:
-   - git clone your bentoml fork
-   - `pip install -e PATH_TO_THE_FORK`
-2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True` and `export SETUPTOOLS_USE_DISTUTILS=stdlib`
-   - make sure you have the latest setuptools installed: `pip install -U setuptools`
+1. Install custom BentoML in editable mode.
+
+   ```bash
+   pip install -e PATH_TO_THE_FORK
+   ```
+
+2. Set the following environment variables:
+
+   ```bash
+   export BENTOML_BUNDLE_LOCAL_BUILD=True
+   export SETUPTOOLS_USE_DISTUTILS=stdlib
+   pip install -U setuptools
+   ```
+
 3. Build a new Bento with `bentoml build` in your project directory
+
 4. The new Bento will include a wheel file built from the BentoML source, and
    `bentoml containerize` will install it to override the default BentoML installation in base image
 
@@ -280,56 +303,41 @@ docker:
 
 ## Testing
 
-Make sure to install all test dependencies:
+BentoML CI uses [bazel](https://bazel.build/) to run tests, and setup toolchains.
+
+### Running with Bazel
+
+Generate the locked dependencies:
 
 ```bash
-pip install -r requirements/tests-requirements.txt
+bazel run //:pypi.update
 ```
 
-BentoML tests come with a Pytest plugin. Export `PYTEST_PLUGINS`:
+Use `bazel test` to run the test suite:
 
 ```bash
-export PYTEST_PLUGINS=bentoml.testing.pytest.plugin
+bazel test ${flags} //tests/...
 ```
 
-### Unit tests
-
-You can run unit tests in two ways:
-
-Run all unit tests directly with pytest:
+On Windows, remove the prefix `//`:
 
 ```bash
-# GIT_ROOT=$(git rev-parse --show-toplevel)
-pytest tests/unit
+bazel test ${flags} tests/...
 ```
 
-### Integration tests
-
-Write a general framework tests under `./tests/integration/frameworks/models`, and the
-run the following command
+If you update tests dependencies then make sure to vendor Starlark requirements again:
 
 ```bash
-pytest tests/integration/frameworks/test_frameworks.py --framework pytorch
+bazel run //:vendor-tests
 ```
 
-### E2E tests
+### Adding test suites
 
-```bash
-# example: run e2e tests to check for http general features
-pytest tests/e2e/bento_server_grpc
-```
-
-### Adding new test suite
-
-If you are adding new ML framework support, it is recommended that you also add a separate test suite in our CI. Currently we are using GitHub Actions to manage our CI/CD workflow.
+If you are adding new ML framework support, it is recommended that you also add a separate test suite in our CI. Currently, we are using GitHub Actions to manage our CI/CD workflow.
 
 We recommend using [`nektos/act`](https://github.com/nektos/act) to run and test Actions locally.
 
-Add a new job for your new framework under [framework.yml](./.github/workflows/frameworks.yml)
-
-## Python tools ecosystem
-
-Currently, BentoML is [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible. We define package configuration via [`pyproject.toml`][https://github.com/bentoml/bentoml/blob/main/pyproject.toml].
+To add framework tests, create a new file that matches the framework you want to test under [`models` folder](./tests/integration/frameworks/models/).
 
 ## Benchmark
 

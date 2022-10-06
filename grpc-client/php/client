@@ -2,9 +2,9 @@
 
 set -e
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+WORKSPACE=$(bazel info workspace)
 
-cd "$SCRIPT_DIR" || exit 1
+pushd "$WORKSPACE/grpc-client/php" >/dev/null
 
 if ! which php >/dev/null; then
 	echo "PHP is required."
@@ -27,3 +27,4 @@ echo "Running PHP client"
 COMPILED_PATH=${COMPILED_GRPC_SO:-grpc}
 
 php -d extension="${COMPILED_PATH}" -d max_execution_time=300 BentoServiceClient.php
+popd >/dev/null

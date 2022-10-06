@@ -17,15 +17,14 @@ import multiprocessing
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
-import psutil
-
-from bentoml.grpc.utils import import_grpc
-from bentoml._internal.tag import Tag
-from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils import reserve_free_port
-from bentoml._internal.utils import cached_contextmanager
-
+from ..grpc.utils import import_grpc
 from ..grpc.utils import LATEST_PROTOCOL_VERSION
+from .._internal.tag import Tag
+from .._internal.utils import WINDOWS
+from .._internal.utils import LazyLoader
+from .._internal.utils import run_in_bazel
+from .._internal.utils import reserve_free_port
+from .._internal.utils import cached_contextmanager
 
 if TYPE_CHECKING:
     from grpc import aio
@@ -64,7 +63,7 @@ def kill_subprocess_tree(p: subprocess.Popen[t.Any]) -> None:
     Args:
         p: subprocess.Popen object
     """
-    if psutil.WINDOWS:
+    if WINDOWS:
         subprocess.call(["taskkill", "/F", "/T", "/PID", str(p.pid)])
     else:
         p.terminate()
@@ -136,8 +135,12 @@ def build(project_path: str, cleanup: bool = True) -> t.Generator[Bento, None, N
     """
     from bentoml import bentos
 
-    print(f"Building bento: {project_path}")
-    bento = bentos.build_bentofile(build_ctx=project_path)
+    # NOTE: We need to specify the bentofile.yaml
+    # here to work inside bazel.
+    bento = bentos.build_bentofile(
+        bentofile=os.path.join(project_path, "bentofile.yaml"), build_ctx=project_path
+    )
+    print(f"Bento path: {bento.path}")
     yield bento
     if cleanup:
         print(f"Deleting bento: {str(bento.tag)}")
@@ -209,9 +212,9 @@ def run_bento_server_container(
     ]
     if config_file is not None:
         cmd.extend(["--env", "BENTOML_CONFIG=/home/bentoml/bentoml_config.yml"])
-        cmd.extend(
-            ["-v", f"{os.path.abspath(config_file)}:/home/bentoml/bentoml_config.yml"]
-        )
+        if not run_in_bazel():
+            config_file = os.path.abspath(config_file)
+        cmd.extend(["-v", f"{config_file}:/home/bentoml/bentoml_config.yml"])
     if use_grpc:
         cmd.extend(
             ["--publish", f"{prom_port}:{BentoMLContainer.grpc.metrics.port.get()}"]

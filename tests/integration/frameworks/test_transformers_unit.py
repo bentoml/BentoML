@@ -3,6 +3,11 @@ from __future__ import annotations
 import typing as t
 import logging
 
+# NOTE: We have to run this first to ensure correct setup
+from bentoml.testing.pytest import set_huggingface_envar
+
+set_huggingface_envar()
+
 import pytest
 from transformers.pipelines import pipeline  # type: ignore
 from transformers.pipelines import check_task  # type: ignore
@@ -167,9 +172,8 @@ def test_custom_pipeline():
     """
     import numpy as np
     from transformers.pipelines import SUPPORTED_TASKS
-
-    from .models.transformers import CustomPipeline
-    from .models.transformers import TINY_TEXT_MODEL
+    from tests.integration.frameworks.models.transformers import CustomPipeline
+    from tests.integration.frameworks.models.transformers import TINY_TEXT_MODEL
 
     TASK_NAME: str = "custom-classification-task"
     TASK_DEFINITION: t.Dict[str, t.Any] = {

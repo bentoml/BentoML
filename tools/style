@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+
+BASEDIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" &>/dev/null && pwd 2>/dev/null)"
+# NOTE that we are using local bazel instead of system bazel.
+BAZEL_BIN="$BASEDIR/bazel"
+
+GIT_ROOT=$("${BAZEL_BIN}" info workspace >&1 2>/dev/null)
+
+cd "$GIT_ROOT" || exit 1
+
+"${BAZEL_BIN}" run //:buildfmt
+"${BAZEL_BIN}" run //:black -- "$GIT_ROOT/src"
+"${BAZEL_BIN}" run //:black -- --pyi "$GIT_ROOT/typings" "$GIT_ROOT/src/bentoml/metrics.pyi"
+"${BAZEL_BIN}" run //:isort -- "$GIT_ROOT/src"
+
+if command -v buf >/dev/null 2>&1; then
+	buf format --config "$GIT_ROOT/src/bentoml/grpc/buf.yaml" -w src/bentoml/grpc
+else
+	if command -v docker >/dev/null 2>&1; then
+		docker run --init --rm --volume "$GIT_ROOT/src":/workspace --workdir /workspace bufbuild/buf format --config "/workspace/bentoml/grpc/buf.yaml" -w bentoml/grpc
+	fi
+fi

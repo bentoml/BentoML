@@ -12,7 +12,6 @@ from functools import lru_cache
 
 import attr
 import yaml
-import psutil
 import attr.converters
 from simple_di import inject
 from simple_di import Provide
@@ -134,6 +133,8 @@ class CommonProperties:
     )
 
     def __attrs_post_init__(self):
+        import psutil
+
         self.total_memory_in_mb = int(psutil.virtual_memory().total / 1024.0 / 1024.0)
         proc = psutil.Process(os.getpid())
         with proc.oneshot():

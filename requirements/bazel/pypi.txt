@@ -1,0 +1,90 @@
+# Dependencies for bazel
+aiohttp==3.8.3
+attrs==22.1.0
+cattrs==22.2.0
+circus==0.17.1
+click==8.1.3
+cloudpickle==2.2.0
+deepmerge==1.1.0
+fs==2.4.16
+Jinja2==3.1.2
+numpy==1.23.5
+opentelemetry-api==1.14.0
+opentelemetry-instrumentation==0.35b0
+opentelemetry-instrumentation-aiohttp-client==0.35b0
+opentelemetry-instrumentation-asgi==0.35b0
+opentelemetry-sdk==1.14.0
+opentelemetry-semantic-conventions==0.35b0
+opentelemetry-util-http==0.35b0
+packaging==21.3
+pathspec==0.10.1
+pip-requirements-parser==31.2.0
+pip-tools==6.9.0
+prometheus-client==0.15.0
+psutil==5.9.3
+pynvml==11.4.1
+python-dateutil==2.8.2
+python-json-logger==2.0.4
+python-multipart==0.0.5
+PyYAML==6.0
+requests==2.28.1
+rich==12.6.0
+schema==0.7.5
+simple-di==0.1.5
+starlette==0.21.0
+uvicorn==0.19.0
+watchfiles==0.18.0
+backports.cached-property==1.0.2
+backports.shutil_copytree==0.0.0.2
+importlib-metadata==5.0.0
+# dependency of bentoml[all]
+filetype==1.2.0
+pandas==1.5.1
+pyarrow==10.0.0
+pydantic==1.10.2
+Pillow==9.3.0
+fs-s3fs==1.1.1
+opentelemetry-instrumentation-grpc==0.35b0
+grpcio==1.48.1
+grpcio-reflection==1.48.1
+grpcio-health-checking==1.48.1
+grpcio-channelz==1.48.1
+protobuf==3.19.6
+opentelemetry-exporter-jaeger==1.14.0
+opentelemetry-exporter-otlp==1.14.0
+opentelemetry-exporter-zipkin==1.14.0
+setuptools-scm[toml]==7.0.5
+# test dependencies to use with bazel
+pytest-cov==4.0.0
+pytest==7.2.0
+pytest-xdist[psutil]==3.0.2
+pytest-asyncio==0.20.2
+coverage[toml]==6.5.0
+scikit-learn==1.0.2
+yamllint==1.28.0
+black==22.10.0
+codecov==2.1.12
+setuptools==65.5.1
+isort==5.10.1
+pylint==2.15.5
+imageio==2.22.4
+build[virtualenv]==0.8.0
+tomli>=1.0.0;python_version < '3.11'
+# docs requirements
+Sphinx==5.3.0
+sphinx-autobuild==2021.3.14
+sphinx-click==4.3.0
+sphinx-copybutton==0.5.1
+sphinx-hoverxref==1.3.0
+sphinx-issues==3.0.1
+sphinx-design==0.3.0
+sphinx-inline-tabs==2021.3.28b7
+sphinxcontrib-fulltoc==1.2.0
+sphinxcontrib-spelling==7.7.0
+sphinxext-opengraph==0.7.2
+# Tools
+mypy-protobuf==3.3.0
+# side import dependencies (we want to specify it here to avoid building from whl_library)
+scipy==1.9.3 # <- scikit-learn & numpy
+# e2e deps.
+fastapi==0.87.0

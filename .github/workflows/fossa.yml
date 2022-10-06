@@ -1,0 +1,32 @@
+name: license-scanning
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 0 1/7 * *" # Every 7th day at 12AM UTC
+
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaultsrun
+defaults:
+  run:
+    shell: bash --noprofile --norc -exo pipefail {0}
+
+jobs:
+  fossa:
+    runs-on: ubuntu-latest
+    if: "!github.event.repository.fork" # Don't run on fork repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup CI
+        uses: ./.github/actions/setup-repo
+        with:
+          python-version: "3.10"
+      - name: Run FOSSA scan
+        uses: fossas/fossa-action@main # Use a specific version if locking is preferred
+        with:
+          api-key: ${{ secrets.FOSSA_API_KEY }}
+          branch: main

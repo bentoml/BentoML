@@ -74,6 +74,7 @@ def build_bentoml_editable_wheel(
             builder.python_executable = env.executable
             builder.scripts_dir = env.scripts_dir
             env.install(builder.build_system_requires)
+            # NOTE that using --global-option=--quiet will suppress the output of distutils
             builder.build(
                 "wheel", target_path, config_settings={"--global-option": "--quiet"}
             )

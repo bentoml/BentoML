@@ -56,6 +56,7 @@ coverage.xml
 .pytest_cache/
 .test_bundle/
 *.xml
+*.db
 
 # Sphinx documentation
 docs/build/
@@ -120,14 +121,9 @@ pyvenv.cfg
 
 # bazel generated files
 bazel-*
-grpc-client/cpp/bentoml
-grpc-client/go/bentoml
-grpc-client/node/bentoml
-node_modules
-thirdparty
+grpc-client/bentoml
 
 # Swift-related
-**/*/Sources/bentoml
 .DS_Store
 **/*/.build
 /Packages
@@ -140,8 +136,6 @@ DerivedData/
 Package.resolved
 
 # Java-Kotlin
-**/*/java/**/*/bentoml
-**/*/kotlin/**/*/bentoml
 .gradle
 
 # PHP generated stubs
@@ -151,3 +145,7 @@ composer.lock
 vendor
 *.pkl
 *.ckpt
+
+# Node-reloated
+yarn-error.log
+node_modules

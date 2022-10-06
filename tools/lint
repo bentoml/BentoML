@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+
+BASEDIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" &>/dev/null && pwd 2>/dev/null)"
+GIT_ROOT="$(bazel info workspace)"
+
+cd "$GIT_ROOT" || exit 1
+
+# NOTE that we are using local bazel instead of system bazel.
+BAZEL_BIN="$BASEDIR/bazel"
+
+"${BAZEL_BIN}" run //:buildcheck
+"${BAZEL_BIN}" run //:black -- --check "$GIT_ROOT/src"
+"${BAZEL_BIN}" run //:isort -- --check "$GIT_ROOT/src"
+# linting protos
+"${BAZEL_BIN}" run //:v1_proto_lint
+"${BAZEL_BIN}" run //:v1alpha1_proto_lint
+
+# Running pylint for whole codebase.
+bazel run //:pylint -- --rcfile "$GIT_ROOT/pyproject.toml" --fail-under 9.0 "$GIT_ROOT/src" "$GIT_ROOT/examples" "$GIT_ROOT/tests"

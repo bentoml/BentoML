@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=63", "setuptools_scm[toml]>=6.2", "wheel"]
+requires = ["setuptools>=63", "setuptools_scm[toml]==7.0.5", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,6 +12,10 @@ license = { text = "Apache-2.0" }
 authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
 classifiers = [
   "License :: OSI Approved :: Apache Software License",
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
@@ -19,7 +23,6 @@ classifiers = [
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: Implementation :: CPython",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Topic :: Software Development :: Libraries",
 ]
@@ -68,10 +71,12 @@ dependencies = [
   "backports.shutil_copytree;python_version<'3.8'",
   "importlib-metadata;python_version<'3.8'",
   "singledispatchmethod;python_version<'3.8'",
+  "tomli>=1.0.0;python_version < '3.11'",
 ]
 dynamic = ["version"]
 
 [project.urls]
+"Homepage" = "https://bentoml.com"
 "Documentation" = "https://docs.bentoml.org/en/latest/"
 "Bug Reports" = "https://github.com/bentoml/BentoML/issues"
 "BentoML Community Slack" = "https://bit.ly/2N5IpbB"
@@ -82,13 +87,14 @@ dynamic = ["version"]
 bentoml = "bentoml_cli.cli:cli"
 
 [tool.setuptools.package-data]
-bentoml = ["bentoml/*"]
-bentoml_cli = ["bentoml_cli/*"]
+bentoml = ["py.typed", "_internal/**", "grpc/**", "testing/**"]
+bentoml_cli = ["py.typed", "**/*.py"]
 
 [tool.setuptools.exclude-package-data]
 "*" = [
   ".git*",
   ".bazel*",
+  "BUILD",
   "BUILD.bazel",
   "WORKSPACE",
   "*.md",
@@ -96,21 +102,12 @@ bentoml_cli = ["bentoml_cli/*"]
   "*.py[cod]",
   "typings",
 ]
-bentoml = ["grpc/buf.yaml", "_internal/frameworks/FRAMEWORK_TEMPLATE_PY"]
-bentoml_cli = ["worker/README.md"]
+"bentoml.grpc" = ["*.yaml"]
+"bentoml._internal.frameworks" = ["FRAMEWORK_TEMPLATE_PY"]
+bentoml_cli = ["*.md"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = [
-  # include bentoml packages
-  "bentoml",
-  "bentoml.grpc*",
-  "bentoml.testing*",
-  "bentoml._internal*",
-  # include bentoml_cli packages
-  "bentoml_cli",
-  "bentoml_cli.worker",
-]
 
 [project.optional-dependencies]
 all = [
@@ -140,8 +137,8 @@ grpc = [
   # Lowest version that support 3.10. We need to set an upper bound
   # We can't use 1.48.2 since it depends on 3.19.5
   "grpcio>=1.41.0,!=1.48.2",
-  # grpcio>=1.48.0 provides a pre-built M1 wheel.
-  "grpcio>=1.48.0,!=1.48.2;platform_machine=='arm64' and platform_system=='Darwin'",
+  # grpcio>=1.48.1 is currently the only version that works with M1
+  "grpcio>=1.48.0,!=1.48.2,<1.49;platform_machine=='arm64' and platform_system=='Darwin'",
   "grpcio-health-checking>=1.41.0,!=1.48.2",
   "opentelemetry-instrumentation-grpc==0.35b0",
 ]
@@ -169,11 +166,11 @@ fallback_version = "0.0.0"
 source = ["src"]
 
 [tool.coverage.run]
-branch = true
 parallel = true
 source = ["src/bentoml/"]
 omit = [
   "src/bentoml/__main__.py",
+  "src/bentoml/_version.py",
   "src/bentoml/io.py",
   "src/bentoml/serve.py",
   "src/bentoml/start.py",
@@ -190,7 +187,8 @@ omit = [
 show_missing = true
 precision = 2
 omit = [
-  'src/bentoml/__main__.py',
+  "src/bentoml/__main__.py",
+  "src/bentoml/_version.py",
   "src/bentoml/io.py",
   "src/bentoml/serve.py",
   "src/bentoml/start.py",
@@ -235,8 +233,7 @@ exclude = '''
     | src/bentoml/grpc/v1alpha1
     | src/bentoml/grpc/v1
     | tests/proto
-    | grpc-client/thirdparty
-    | grpc-client/bentoml
+    | third_party
   )/
   | src/bentoml/_version.py
 )
@@ -263,7 +260,7 @@ ignore-paths = [
   "src/bentoml/grpc/v1alpha1",
   "src/bentoml/grpc/v1",
 ]
-disable = ["coerce-builtin", "no-absolute-import", "C", "R"]
+disable = ["coerce-builtin", "no-absolute-import", "C", "R", "fixme"]
 enable = ["c-extension-no-member"]
 evaluation = "10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)"
 msg-template = "{msg_id}:{symbol} [{line:0>3d}:{column:0>2d}] {obj}: {msg}"
@@ -305,13 +302,12 @@ known_first_party = "bentoml"
 force_alphabetical_sort_within_sections = true
 skip_glob = [
   "typings/*",
-  "test/*",
+  "tests/*",
   "**/*_pb2.py*",
   "**/*_pb2_grpc.py*",
   "venv/*",
   "lib/*",
-  "grpc-client/thirdparty",
-  "grpc-client/bentoml",
+  "third_party/*",
   "bazel-*",
 ]
 
@@ -324,8 +320,8 @@ exclude = [
   'src/bentoml/_internal/external_typing/',
   'src/**/*_pb2.py*',
   "src/**/*_pb2_grpc.py*",
-  "grpc-client/thirdparty",
-  "test/proto",
+  "tests/proto",
+  "third_party",
   "bazel-*",
 ]
 analysis.useLibraryCodeForTypes = true
@@ -383,7 +379,7 @@ reportImplicitStringConcatenation = "none"
 reportUndefinedVariable = "error"
 reportUnboundVariable = "error"
 reportInvalidStubStatement = "error"
-reportIncompleteStub = "error"
-reportUnsupportedDunderAll = "error"
 reportUnusedCallResult = "none"
 reportUnusedCoroutine = "error"
+reportIncompleteStub = "error"
+reportUnsupportedDunderAll = "error"

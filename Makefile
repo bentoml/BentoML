@@ -2,38 +2,20 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
-USE_VERBOSE ?=false
-USE_GPU ?= false
-USE_GRPC ?= false
 
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: format format-proto lint lint-proto type style clean
+.PHONY: format lint type clean test
 format: ## Running code formatter: black and isort
-	@echo "(black) Formatting codebase..."
-	@black --config pyproject.toml src tests docs examples
-	@echo "(black) Formatting stubs..."
-	@find src -name "*.pyi" ! -name "*_pb2*" -exec black --pyi --config pyproject.toml {} \;
-	@echo "(isort) Reordering imports..."
-	isort .
-format-proto: ## Running proto formatter: buf
-	@echo "Formatting proto files..."
-	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf format --config "/workspace/bentoml/grpc/buf.yaml" -w bentoml/grpc
+	@./tools/style
 lint: ## Running lint checker: pylint
-	@echo "(pylint) Linting bentoml..."
-	@pylint --rcfile=pyproject.toml --fail-under 9.5 src
-	@echo "(pylint) Linting examples..."
-	@pylint --rcfile=pyproject.toml --fail-under 9.5 examples
-	@echo "(pylint) Linting tests..."
-	@pylint --rcfile=pyproject.toml --fail-under 9.5 tests
-lint-proto: ## Running proto lint checker: buf
-	@echo "Linting proto files..."
-	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf lint --config "/workspace/bentoml/grpc/buf.yaml" --error-format msvs bentoml/grpc
+	@./tools/lint
 type: ## Running type checker: pyright
-	@echo "(pyright) Typechecking codebase..."
-	@pyright -p src -w
-style: format lint format-proto lint-proto ## Running formatter and linter
+	@echo "(pyright) Watching codebase's type..."
+	@pyright -p src/ -w
+test: ## Running tests
+	@bazel test //tests/...
 clean: ## Clean all generated files
 	@echo "Cleaning all generated files..."
 	@cd $(GIT_ROOT)/docs && make clean

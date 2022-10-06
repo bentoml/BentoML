@@ -6,8 +6,7 @@ comment:
   behavior: default
   require_base: no
   require_head: no
-  branches:
-    - "main"
+  branches: ["main"]
   show_carryforward_flags: true
 
 coverage:
@@ -17,3 +16,11 @@ coverage:
   status:
     patch: off
     project: off
+
+flag_management:
+  default_rules:
+    carryforward: true
+    statuses:
+      - type: project
+        target: auto
+        threshold: 10%

@@ -1,10 +1,19 @@
 # TODO: Migrate to bzlmod once 6.0.0 is released.
 workspace(name = "com_github_bentoml_bentoml")
 
-load("//bazel:deps.bzl", "internal_deps")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+load("//rules:internal.bzl", internal_deps = "bentoml_internal_deps")
 
 internal_deps()
 
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+load("@bazel_skylib//lib:unittest.bzl", "register_unittest_toolchains")
+
+bazel_skylib_workspace()
+
+register_unittest_toolchains()
+
+# setup rules_proto_grpc
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
 
@@ -16,7 +25,7 @@ rules_proto_dependencies()
 
 rules_proto_toolchains()
 
-# We need to load go_grpc rules first
+# NOTE: the two following macros set up rules_go and bazel_gazelle
 load("@rules_proto_grpc//:repositories.bzl", "bazel_gazelle", "io_bazel_rules_go")  # buildifier: disable=same-origin-load
 
 io_bazel_rules_go()
@@ -27,20 +36,19 @@ load("@rules_proto_grpc//go:repositories.bzl", rules_proto_grpc_go_repos = "go_r
 
 rules_proto_grpc_go_repos()
 
-load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies")
+load("@rules_proto_grpc//php:repositories.bzl", rules_proto_grpc_php_repos = "php_repos")
 
-go_rules_dependencies()
+rules_proto_grpc_php_repos()
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
 
-# Projects using gRPC as an external dependency must call both grpc_deps() and
-# grpc_extra_deps().
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
 grpc_deps()
 
+# NOTE: grpc_extra_deps register toolchain to 1.18
 load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 
 grpc_extra_deps()
@@ -49,6 +57,42 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 
 gazelle_dependencies()
 
+# load go tooling, buf
+load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
+
+rules_buf_dependencies()
+
+rules_buf_toolchains(version = "v1.9.0")
+
+# NOTE: rules_python
+load("@rules_python//python:pip.bzl", "pip_parse")
+load("@rules_python//python/pip_install:pip_repository.bzl", "pip_repository")
+
+pip_parse(
+    name = "pypi",
+    requirements_lock = "//requirements/bazel:pypi.lock.txt",
+)
+
+pip_parse(
+    name = "frameworks",
+    requirements_darwin = "//requirements/bazel:frameworks-macos.lock.txt",
+    requirements_linux = "//requirements/bazel:frameworks-linux.lock.txt",
+    requirements_windows = "//requirements/bazel:frameworks-windows.lock.txt",
+)
+
+load("@pypi//:requirements.bzl", pypi_deps = "install_deps")
+
+pypi_deps()
+
+load("@frameworks//:requirements.bzl", framework_deps = "install_deps")
+
+framework_deps()
+
+load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies")
+
+aspect_bazel_lib_dependencies()
+
+# NOTE: Java and Kotlin setup.
 load("@rules_jvm_external//:defs.bzl", "maven_install")
 load("@io_grpc_grpc_java//:repositories.bzl", "IO_GRPC_GRPC_JAVA_ARTIFACTS", "IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS", "grpc_java_repositories")
 
@@ -86,11 +130,92 @@ load("@io_bazel_rules_kotlin//kotlin:core.bzl", "kt_register_toolchains")
 
 kt_register_toolchains()
 
-# swift rules
-# TODO: Currently fails at detecting compiled gRPC swift library
-# Since CgRPC is deprecated, seems like no rules are being maintained
-# for the newer swift implementation.
+# TODO: setup container rules and utilities to run bazel in docker.
+load(
+    "@io_bazel_rules_docker//repositories:repositories.bzl",
+    container_repositories = "repositories",
+)
 
-# TODO: rules_python for editable install?
-# What we can do is to build the wheel, the install it to pip_parse
-# This will ensure hermeticity.
+container_repositories()
+
+load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
+
+container_deps()
+
+load("@io_bazel_rules_docker//container:pull.bzl", "container_pull")
+
+container_pull(
+    name = "python3_slim_amd64",
+    digest = "sha256:07d8280c273cb45f1f6dbbe06578681eb7a8937e1224b1182b98080b01a41d01",
+    registry = "index.docker.io",
+    repository = "library/python",
+    tag = "3.7-slim",
+)
+
+http_file(
+    name = "bazel_gpg",
+    sha256 = "8375bd5de1778a9fbb58a482a7ce9444ab9b1f6bb5fddd3700ae86b3fe0e4d3a",
+    urls = ["https://bazel.build/bazel-release.pub.gpg"],
+)
+
+# NOTE: rules_nodejs
+load("@rules_proto_grpc//js:repositories.bzl", rules_proto_grpc_js_repos = "js_repos")
+
+rules_proto_grpc_js_repos()
+
+load("@build_bazel_rules_nodejs//:repositories.bzl", "build_bazel_rules_nodejs_dependencies")
+
+build_bazel_rules_nodejs_dependencies()
+
+load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
+
+nodejs_register_toolchains(
+    name = "nodejs",
+    node_version = "16.16.0",
+)
+
+# Install the yarn tool
+load("@rules_nodejs//nodejs:yarn_repositories.bzl", "yarn_repositories")
+
+yarn_repositories(
+    name = "yarn",
+    node_repository = "nodejs",
+)
+
+load("@build_bazel_rules_nodejs//:index.bzl", "yarn_install")
+
+yarn_install(
+    name = "npm",
+    exports_directories_only = False,  # Required for ts_library
+    package_json = "//:package.json",
+    package_path = "/",
+    symlink_node_modules = True,
+    yarn = "@yarn//:bin/yarn",
+    yarn_lock = "//:yarn.lock",
+)
+
+# NOTE: rules_swift and rules_apple
+load(
+    "@build_bazel_apple_support//lib:repositories.bzl",
+    "apple_support_dependencies",
+)
+
+apple_support_dependencies()
+
+load(
+    "@build_bazel_rules_swift//swift:repositories.bzl",
+    "swift_rules_dependencies",
+)
+
+swift_rules_dependencies()
+
+load(
+    "@build_bazel_rules_swift//swift:extras.bzl",
+    "swift_rules_extra_dependencies",
+)
+
+swift_rules_extra_dependencies()
+
+load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
+
+rules_foreign_cc_dependencies()

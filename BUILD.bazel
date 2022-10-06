@@ -1,33 +1,158 @@
-load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
-load("@rules_proto//proto:defs.bzl", "proto_library")
+package(default_visibility = ["//:__subpackages__"])
 
-package(default_visibility = ["//visibility:public"])
+# rules_python
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@pypi//:requirements.bzl", "entry_point", "requirement")
 
+exports_files([
+    "README.md",
+    "package.json",
+    "yarn.lock",
+])
+
+# export default pyproject.toml config
 filegroup(
     name = "pyproject",
     srcs = ["pyproject.toml"],
 )
 
+compile_pip_requirements(
+    name = "pypi",
+    extra_args = ["--allow-unsafe"],
+    requirements_in = "//requirements/bazel:pypi.txt",
+    requirements_txt = "//requirements/bazel:pypi.lock.txt",
+    visibility = ["//visibility:__pkg__"],
+)
+
+[
+    compile_pip_requirements(
+        name = "frameworks-{}".format(platform),
+        extra_args = ["--allow-unsafe"],
+        requirements_in = "//requirements/bazel:frameworks.txt",
+        requirements_txt = "//requirements/bazel:frameworks-{}.lock.txt".format(platform),
+        visibility = ["//visibility:__pkg__"],
+    )
+    for platform in [
+        "linux",
+        "macos",
+        "windows",
+    ]
+]
+
+[
+    alias(
+        name = "{}_proto".format(version),
+        actual = "//src/bentoml/grpc/{}:service_proto".format(version),
+        visibility = ["//visibility:public"],
+    )
+    for version in [
+        "v1alpha1",
+        "v1",
+    ]
+]
+
+[
+    alias(
+        name = "{}_proto_lint".format(version),
+        actual = "//src/bentoml/grpc/{}:service_proto_lint".format(version),
+        visibility = ["//visibility:public"],
+    )
+    for version in [
+        "v1alpha1",
+        "v1",
+    ]
+]
+
+## Expose public entrypoint for Bazel target.
+alias(
+    name = "cli",
+    actual = "//src/bentoml_cli:cli",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "sdk",
+    actual = "//src/bentoml",
+    visibility = ["//visibility:public"],
+)
+
+# thirdparty alias
+alias(
+    name = "protobuf",
+    actual = "@com_google_protobuf//:protobuf_python",
+)
+
+alias(
+    name = "grpcio",
+    actual = "@com_github_grpc_grpc//src/python/grpcio/grpc:grpcio",
+)
+
+alias(
+    name = "grpcio-health-checking",
+    actual = "@com_github_grpc_grpc//src/python/grpcio_health_checking/grpc_health/v1:grpc_health",
+)
+
+alias(
+    name = "buildozer",
+    actual = "@com_github_bazelbuild_buildtools//buildozer",
+)
+
+alias(
+    name = "coveragepy",
+    actual = entry_point("coverage"),
+)
+
 buildifier(
-    name = "buildifier",
+    name = "buildfmt",
 )
 
-proto_library(
-    name = "service_v1alpha1_proto",
-    srcs = ["src/bentoml/grpc/v1alpha1/service.proto"],
-    visibility = ["//grpc-client:__subpackages__"],
-    deps = [
-        "@com_google_protobuf//:struct_proto",
-        "@com_google_protobuf//:wrappers_proto",
-    ],
+buildifier_test(
+    name = "buildcheck",
+    srcs = glob([
+        "**/*.bzl",
+        "**/*.bazel",
+    ]),
 )
 
-proto_library(
-    name = "service_v1_proto",
-    srcs = ["src/bentoml/grpc/v1/service.proto"],
-    visibility = ["//grpc-client:__subpackages__"],
-    deps = [
-        "@com_google_protobuf//:struct_proto",
-        "@com_google_protobuf//:wrappers_proto",
-    ],
+alias(
+    name = "pyright",
+    actual = "@npm//:node_modules/pyright/index.js",
 )
+
+alias(
+    name = "sphinx-build",
+    actual = entry_point(
+        "sphinx",
+        script = "sphinx-build",
+    ),
+)
+
+alias(
+    name = "protoc-gen-mypy",
+    actual = entry_point(
+        "mypy-protobuf",
+        script = "protoc-gen-mypy",
+    ),
+)
+
+alias(
+    name = "protoc-gen-mypy_grpc",
+    actual = entry_point(
+        "mypy-protobuf",
+        script = "protoc-gen-mypy_grpc",
+    ),
+)
+
+[
+    alias(
+        name = tool,
+        actual = entry_point(tool),
+    )
+    for tool in [
+        "black",
+        "isort",
+        "pylint",
+    ]
+]

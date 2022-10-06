@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+BASEDIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" &>/dev/null && pwd 2>/dev/null)"
+
+# NOTE that we are using local bazel instead of system bazel.
+BAZEL_BIN="$BASEDIR/bazel"
+
+"${BAZEL_BIN}" run //:pypi.update
+if [[ "$(uname)" == "Darwin" ]]; then
+	"${BAZEL_BIN}" run //:frameworks-macos.update
+elif [[ "$(uname)" == "Linux" ]]; then
+	"${BAZEL_BIN}" run //:frameworks-linux.update
+elif [[ "$(uname)" == "Windows" ]]; then
+	"${BAZEL_BIN}" run //:frameworks-windows.update
+fi

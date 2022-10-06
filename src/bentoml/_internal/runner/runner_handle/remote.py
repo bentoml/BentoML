@@ -217,7 +217,10 @@ class RemoteRunnerClient(RunnerHandle):
         )
 
     async def is_ready(self) -> bool:
-        async with self._client.get(f"{self._addr}/readyz") as resp:
+        import aiohttp
+
+        timeout = aiohttp.ClientTimeout(total=5)
+        async with self._client.get(f"{self._addr}/readyz", timeout=timeout) as resp:
             return resp.status == 200
 
     def __del__(self) -> None:

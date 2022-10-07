@@ -26,15 +26,18 @@ async def test_api_server_meta(host: str) -> None:
     assert b'{"Hello":"World"}' == body
     status, _, _ = await async_request("GET", f"http://{host}/docs.json")
     assert status == 200
-    status, _, _ = await async_request("GET", f"http://{host}/readyz")
-    assert status == 500
     status, _, body = await async_request("GET", f"http://{host}/metrics")
-    await asyncio.sleep(20)
     assert status == 200
     assert body
     status, _, body = await async_request("POST", f"http://{host}//api/v1/with_prefix")
     assert status == 404
 
+@pytest.mark.asyncio
+async def test_runner_readiness(host: str) -> None:
+    await async_request("GET", f"http://{host}/readyz", assert_status=500)
+    await asyncio.sleep(10)
+    status, _, _ = await async_request("GET", f"http://{host}/readyz")
+    assert status == 200
 
 @pytest.mark.asyncio
 async def test_cors(host: str, server_config_file: str) -> None:

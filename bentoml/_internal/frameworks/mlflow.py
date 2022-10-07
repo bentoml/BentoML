@@ -213,8 +213,12 @@ def import_model(
             mlflow_model_path = bento_model.path_of(MLFLOW_MODEL_FOLDER)
             # Rename model folder from original artifact name to fixed "mlflow_model"
             shutil.move(local_path, mlflow_model_path)  # type: ignore (local_path is bound)
-            # Remove the tempdir
-            shutil.rmtree(download_dir)
+            # Remove the tempdir if it still exists.
+            # NOTE for models:/ uri downloads, the download_dir itself is actually renamed
+            # in the previous line, not a subdir of download_dir like other methods.
+            # Calling rmtree unchecked will lead to models:/ downloads failing
+            if os.path.exists(download_dir):
+                shutil.rmtree(download_dir)
 
         mlflow_model_file = os.path.join(mlflow_model_path, MLMODEL_FILE_NAME)
 

@@ -30,12 +30,21 @@ res_arr = np.array(
 )
 # fmt: on
 
-
+# MLFlow db initialization spews SQLAlchemy deprecation warnings
+@pytest.mark.filterwarnings("ignore:.*:sqlalchemy.exc.SADeprecationWarning")
 def test_mlflow_save_load():
     (model, data) = sklearn_model_data()
     uri = Path(current_file, "sklearn_clf")
+    tracking_db = Path(current_file, "mlruns.db")
     if not uri.exists():
         mlflow.sklearn.save_model(model, uri.resolve())
+    mlflow.set_tracking_uri("sqlite:///" + str(tracking_db))
+    client = mlflow.tracking.MlflowClient()
+    v = mlflow.register_model(str(uri), "sklearn_clf")
+    client.transition_model_version_stage(
+        name="sklearn_clf", version=v.version, stage="Staging"
+    )
+
     bento_model = bentoml.mlflow.import_model(MODEL_NAME, str(uri.resolve()))
     model_info = bentoml.models.get(bento_model.tag)
 
@@ -80,3 +89,9 @@ def test_mlflow_load_runner():
 def test_mlflow_invalid_import_mlproject(uri):
     with pytest.raises(BentoMLException):
         _ = bentoml.mlflow.import_model(MODEL_NAME, str(uri))
+
+
+def test_mlflow_import_models_url():
+    tracking_db = Path(current_file, "mlruns.db")
+    mlflow.set_tracking_uri("sqlite:///" + str(tracking_db))
+    _ = bentoml.mlflow.import_model(MODEL_NAME, "models:/sklearn_clf/Staging")

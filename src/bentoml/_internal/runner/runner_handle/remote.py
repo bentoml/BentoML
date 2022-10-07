@@ -219,6 +219,7 @@ class RemoteRunnerClient(RunnerHandle):
     async def is_ready(self) -> bool:
         import aiohttp
 
+        # modeling after k8s' liveness probe frequency of 5s (see `periodSeconds` at https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
         timeout = aiohttp.ClientTimeout(total=5)
         async with self._client.get(f"{self._addr}/readyz", timeout=timeout) as resp:
             return resp.status == 200

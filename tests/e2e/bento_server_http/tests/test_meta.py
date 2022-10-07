@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import time
 import asyncio
 from pathlib import Path
+from asyncio.timeouts import timeout
 
 import pytest
 
@@ -35,8 +37,14 @@ async def test_api_server_meta(host: str) -> None:
 
 @pytest.mark.asyncio
 async def test_runner_readiness(host: str) -> None:
-    status, _, _ = await async_request("GET", f"http://{host}/readyz")
-    await asyncio.sleep(20)
+    timeout = 300
+    start_time = time.time()
+    status = ""
+    while (time.time() - start_time) < timeout:
+        status, _, _ = await async_request("GET", f"http://{host}/readyz")
+        await asyncio.sleep(20)
+        if status == 200:
+            break
     assert status == 200
 
 

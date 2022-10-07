@@ -5,7 +5,6 @@ from __future__ import annotations
 import time
 import asyncio
 from pathlib import Path
-from asyncio.timeouts import timeout
 
 import pytest
 

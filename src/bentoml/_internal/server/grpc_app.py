@@ -50,27 +50,29 @@ class GRPCAppFactory:
         *,
         check_interval: int = 5,
     ):
+        if BentoMLContainer.api_server_config.health_probe.check_runners.get():
+            logger.debug(
+                "Waiting for runners {!r} to be ready...".format(
+                    self.bento_service.runners
+                )
+            )
 
-        logger.debug(
-            "Waiting for runners {!r} to be ready...".format(self.bento_service.runners)
-        )
-
-        while True:
-            try:
-                if all(
-                    await asyncio.gather(
-                        *(
-                            runner.runner_handle_is_ready()
-                            for runner in self.bento_service.runners
+            while True:
+                try:
+                    if all(
+                        await asyncio.gather(
+                            *(
+                                runner.runner_handle_is_ready()
+                                for runner in self.bento_service.runners
+                            )
                         )
-                    )
-                ):
-                    break
-                else:
+                    ):
+                        break
+                    else:
+                        time.sleep(check_interval)
+                except ConnectionError as e:
+                    logger.debug("[%s] Retrying ..." % e)
                     time.sleep(check_interval)
-            except ConnectionError as e:
-                logger.debug("[%s] Retrying ..." % e)
-                time.sleep(check_interval)
 
     @property
     def on_startup(self) -> OnStartup:

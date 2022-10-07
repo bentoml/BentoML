@@ -171,7 +171,7 @@ SCHEMA = Schema(
                 "max_message_length": Or(int, None),
                 "maximum_concurrent_rpcs": Or(int, None),
             },
-            "runner_readiness_probe": {"check_runners": bool},
+            "health_probe": {"check_runners": bool},
         },
         "runners": {
             **RUNNER_CFG_SCHEMA,

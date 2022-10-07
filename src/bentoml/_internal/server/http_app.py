@@ -269,12 +269,8 @@ class HTTPAppFactory(BaseAppFactory):
         on_startup.extend(super().on_startup)
         return on_startup
 
-    async def readyz(
-        self, _: "Request"
-    ) -> "Response":  # TODO call the config here, if false return 200
-        if (
-            BentoMLContainer.api_server_config.runner_readiness_probe.check_runners.get()
-        ):
+    async def readyz(self, _: "Request") -> "Response":
+        if BentoMLContainer.api_server_config.health_probe.check_runners.get():
             if all(
                 await asyncio.gather(
                     *(

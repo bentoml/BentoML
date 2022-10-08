@@ -7,28 +7,17 @@ from typing import TYPE_CHECKING
 
 import yaml
 import click
-from simple_di import inject
-from simple_di import Provide
 from rich.table import Table
 from rich.syntax import Syntax
 
-from bentoml import Tag
-from bentoml.models import import_model
 from bentoml_cli.utils import is_valid_bento_tag
 from bentoml_cli.utils import BentoMLCommandGroup
 from bentoml_cli.utils import is_valid_bento_name
-from bentoml._internal.utils import rich_console as console
-from bentoml._internal.utils import calc_dir_size
-from bentoml._internal.utils import human_readable_size
-from bentoml._internal.yatai_client import yatai_client
-from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from click import Group
     from click import Context
     from click import Parameter
-
-    from bentoml._internal.models import ModelStore
 
 logger = logging.getLogger("bentoml")
 
@@ -50,11 +39,17 @@ def parse_delete_targets_argument_callback(
     return delete_targets
 
 
-@inject
-def add_model_management_commands(
-    cli: Group,
-    model_store: ModelStore = Provide[BentoMLContainer.model_store],
-) -> None:
+def add_model_management_commands(cli: Group) -> None:
+    from bentoml import Tag
+    from bentoml.models import import_model
+    from bentoml._internal.utils import rich_console as console
+    from bentoml._internal.utils import calc_dir_size
+    from bentoml._internal.utils import human_readable_size
+    from bentoml._internal.yatai_client import yatai_client
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
+    model_store = BentoMLContainer.model_store.get()
+
     @cli.group(name="models", cls=BentoMLCommandGroup)
     def model_cli():
         """Model Subcommands Groups"""

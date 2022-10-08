@@ -9,11 +9,6 @@ from gettext import gettext
 
 import click
 
-from bentoml import __version__ as BENTOML_VERSION
-from bentoml.exceptions import CLIException
-from bentoml._internal.utils.pkg import get_pkg_version
-from bentoml._internal.utils.pkg import PackageNotFoundError
-
 conda_packages_name = "conda_packages"
 
 
@@ -56,6 +51,11 @@ def pretty_format(
 
 
 def add_env_command(cli: click.Group) -> None:
+    from bentoml import __version__ as BENTOML_VERSION
+    from bentoml.exceptions import CLIException
+    from bentoml._internal.utils.pkg import get_pkg_version
+    from bentoml._internal.utils.pkg import PackageNotFoundError
+
     @cli.command(help=gettext("Print environment info and exit"))
     @click.option(
         "-o",

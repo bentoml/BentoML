@@ -8,7 +8,6 @@ import mlflow.sklearn
 
 import bentoml
 from bentoml.exceptions import BentoMLException
-from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 
 current_file = Path(__file__).parent

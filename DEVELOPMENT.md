@@ -286,6 +286,12 @@ Make sure to install all test dependencies:
 pip install -r requirements/tests-requirements.txt
 ```
 
+BentoML tests come with a Pytest plugin. Export `PYTEST_PLUGINS`:
+
+```bash
+export PYTEST_PLUGINS=bentoml.testing.pytest.plugin
+```
+
 ### Unit tests
 
 You can run unit tests in two ways:

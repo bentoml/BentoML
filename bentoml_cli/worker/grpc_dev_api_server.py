@@ -15,7 +15,6 @@ import click
     type=click.BOOL,
     is_flag=True,
     help="Enable reflection.",
-    default=False,
 )
 @click.option(
     "--max-concurrent-streams",
@@ -62,13 +61,14 @@ def main(
 
     from bentoml._internal.server import grpc
 
-    grpc_options: dict[str, t.Any] = {"enable_reflection": enable_reflection}
-    if max_concurrent_streams:
+    grpc_options: dict[str, t.Any] = {
+        "bind_address": f"{host}:{port}",
+        "enable_reflection": enable_reflection,
+    }
+    if max_concurrent_streams is not None:
         grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)
 
-    grpc.Server(
-        grpc.Config(svc.grpc_servicer, bind_address=f"{host}:{port}", **grpc_options)
-    ).run()
+    grpc.Server(svc.grpc_servicer, **grpc_options).run()
 
 
 if __name__ == "__main__":

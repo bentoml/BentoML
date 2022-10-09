@@ -33,7 +33,6 @@ import click
     type=click.BOOL,
     is_flag=True,
     help="Enable reflection.",
-    default=False,
 )
 @click.option(
     "--max-concurrent-streams",
@@ -71,6 +70,10 @@ def main(
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
 
     svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
+    if not port:
+        port = BentoMLContainer.grpc.port.get()
+    if not host:
+        host = BentoMLContainer.grpc.host.get()
 
     # setup context
     component_context.component_name = svc.name
@@ -83,13 +86,14 @@ def main(
 
     from bentoml._internal.server import grpc
 
-    grpc_options: dict[str, t.Any] = {"enable_reflection": enable_reflection}
+    grpc_options: dict[str, t.Any] = {
+        "bind_address": f"{host}:{port}",
+        "enable_reflection": enable_reflection,
+    }
     if max_concurrent_streams:
         grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)
 
-    grpc.Server(
-        grpc.Config(svc.grpc_servicer, bind_address=f"{host}:{port}", **grpc_options)
-    ).run()
+    grpc.Server(svc.grpc_servicer, **grpc_options).run()
 
 
 if __name__ == "__main__":

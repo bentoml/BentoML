@@ -117,10 +117,10 @@ class Server(aio._server.Server):
             # want to explicitly set it to 1 so that we can spawn multiple gRPC servers in
             # production settings.
             options.append(("grpc.so_reuseport", 1))
-
         if self.max_concurrent_streams:
             options.append(("grpc.max_concurrent_streams", self.max_concurrent_streams))
-
+        if self.enable_channelz:
+            options.append(("grpc.enable_channelz", 1))
         if self.max_message_length:
             options.extend(
                 (

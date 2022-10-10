@@ -33,7 +33,7 @@ The following table contains command to run clients:
 | [Go](./go)         | `bazel run //grpc-client/go:client`     |
 | [Java](./java)     | `bazel run //grpc-client/java:client`   |
 | [Kotlin](./kotlin) | `bazel run //grpc-client/kotlin:client` |
-| [Swift](./swift)   | `pushd swift && client && popd`         |
+| [Swift](./swift)   | `./swift/client`                        |
 | [Node.js](./node)  | `pushd node && yarn client && popd`     |
 | [PHP](./php)       | See [PHP instruction](./php/README.md)  |
 

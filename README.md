@@ -159,7 +159,7 @@ Thanks to all of our amazing contributors!
 BentoML collects usage data that helps our team to improve the product.
 Only BentoML's internal API calls are being reported. We strip out as much potentially 
 sensitive information as possible, and we will never collect user code, model data, model names, or stack traces.
-Here's the [code](./bentoml/_internal/utils/analytics/usage_stats.py) for usage tracking.
+Here's the [code](./src/bentoml/_internal/utils/analytics/usage_stats.py) for usage tracking.
 You can opt-out of usage tracking by the `--do-not-track` CLI option:
 
 ```bash

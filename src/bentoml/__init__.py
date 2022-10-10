@@ -44,40 +44,43 @@ from ._internal.utils.http import Cookie
 from ._internal.yatai_client import YataiClient
 from ._internal.service.loader import load
 
-# Framework specific modules are lazily loaded upon import
+# Framework specific modules, model management and IO APIs are lazily loaded upon import.
 if TYPE_CHECKING:
-    from bentoml import h2o
-    from bentoml import flax
-    from bentoml import onnx
-    from bentoml import gluon
-    from bentoml import keras
-    from bentoml import spacy
-    from bentoml import fastai
-    from bentoml import mlflow
-    from bentoml import paddle
-    from bentoml import easyocr
-    from bentoml import pycaret
-    from bentoml import pytorch
-    from bentoml import sklearn
-    from bentoml import xgboost
-    from bentoml import catboost
-    from bentoml import lightgbm
-    from bentoml import onnxmlir
-    from bentoml import detectron
-    from bentoml import tensorflow
-    from bentoml import statsmodels
-    from bentoml import torchscript
-    from bentoml import transformers
-    from bentoml import tensorflow_v1
-    from bentoml import picklable_model
-    from bentoml import pytorch_lightning
+    from . import h2o
+    from . import flax
+    from . import onnx
+    from . import gluon
+    from . import keras
+    from . import spacy
+    from . import fastai
+    from . import mlflow
+    from . import paddle
+    from . import easyocr
+    from . import pycaret
+    from . import pytorch
+    from . import sklearn
+    from . import xgboost
+    from . import catboost
+    from . import lightgbm
+    from . import onnxmlir
+    from . import detectron
+    from . import tensorflow
+    from . import statsmodels
+    from . import torchscript
+    from . import transformers
+    from . import tensorflow_v1
+    from . import picklable_model
+    from . import pytorch_lightning
 
-    # Model management APIs
+    # isort: off
+
     from . import io
     from . import models
 
     # Prometheus metrics client
-    from . import metrics  # isort: skip
+    from . import metrics
+
+    # isort: on
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
 

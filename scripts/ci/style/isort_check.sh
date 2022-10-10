@@ -11,9 +11,9 @@ echo "Running isort format check..."
 set_on_failed_callback "[FAIL] isort format check failed"
 
 if ! (isort --check .); then
-  FAIL "isort format check failed"
-  echo "Make sure to run \`make format\`"
-  exit 1
+	FAIL "isort format check failed"
+	echo "Make sure to run \`make format\`"
+	exit 1
 fi
 
 PASS "isort format check passed!"

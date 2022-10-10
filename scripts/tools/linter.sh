@@ -8,7 +8,7 @@ source ./scripts/ci/helpers.sh
 
 INFO "(pylint) Linting bentoml..."
 
-pylint --rcfile="./pyproject.toml" --fail-under 9.5 bentoml bentoml_cli
+pylint --rcfile="./pyproject.toml" --fail-under 9.5 src
 
 INFO "(pylint) Linting examples..."
 

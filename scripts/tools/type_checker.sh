@@ -8,4 +8,4 @@ source ./scripts/ci/helpers.sh
 
 INFO "(pyright) Typechecking codebase..."
 
-pyright -p . -w
+pyright -p src/ -w

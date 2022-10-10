@@ -8,7 +8,7 @@ source ./scripts/ci/helpers.sh
 
 INFO "(black) Formatting codebase..."
 
-black --config ./pyproject.toml bentoml bentoml_cli tests docs examples
+black --config ./pyproject.toml src tests docs examples
 
 INFO "(black) Formatting stubs..."
 

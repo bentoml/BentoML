@@ -14,12 +14,12 @@ format: ## Running code formatter: black and isort
 	@./scripts/tools/formatter.sh
 format-proto: ## Running proto formatter: buf
 	@echo "Formatting proto files..."
-	docker run --init --rm --volume $(GIT_ROOT):/workspace --workdir /workspace bufbuild/buf format --config "/workspace/bentoml/grpc/buf.yaml" -w --path "bentoml/grpc"
+	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf format --config "/workspace/bentoml/grpc/buf.yaml" -w --path "bentoml/grpc"
 lint: ## Running lint checker: pylint
 	@./scripts/tools/linter.sh
 lint-proto: ## Running proto lint checker: buf
 	@echo "Linting proto files..."
-	docker run --init --rm --volume $(GIT_ROOT):/workspace --workdir /workspace bufbuild/buf lint --config "/workspace/bentoml/grpc/buf.yaml" --error-format msvs --path "bentoml/grpc"
+	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf lint --config "/workspace/bentoml/grpc/buf.yaml" --error-format msvs --path "bentoml/grpc"
 type: ## Running type checker: pyright
 	@./scripts/tools/type_checker.sh
 style: format lint format-proto lint-proto ## Running formatter and linter

@@ -10,13 +10,13 @@ comment:
   show_carryforward_flags: true
 
 ignore:
-  - "bentoml/testing"
-  - "bentoml/types.py"
-  - "bentoml/_internal/types.py"
-  - "bentoml/_internal/external_typing"
-  - "bentoml/grpc/v1alpha1"
-  - "bentoml/__main__.py"
-  - "bentoml/io.py"
+  - "src/bentoml/types.py"
+  - "src/bentoml/__main__.py"
+  - "src/bentoml/_internal/types.py"
+  - "src/bentoml/io.py"
+  - "src/bentoml/testing"
+  - "src/bentoml/_internal/external_typing"
+  - "src/bentoml/grpc/v1alpha1"
   - "tests"
   - "typings"
 
@@ -32,8 +32,8 @@ coverage:
         target: auto
         threshold: 10%
         paths:
-          - "bentoml/*.py"
-          - "bentoml/_internal/**/*"
+          - "src/bentoml/*.py"
+          - "src/bentoml/_internal/**/*"
         flags:
           - catboost
           - detectron
@@ -225,125 +225,125 @@ flags:
   catboost:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/catboost.py
+      - src/bentoml/_internal/frameworks/catboost.py
   detectron:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/detectron.py
+      - src/bentoml/_internal/frameworks/detectron.py
   easyocr:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/easyocr.py
+      - src/bentoml/_internal/frameworks/easyocr.py
   evalml:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/evalml.py
+      - src/bentoml/_internal/frameworks/evalml.py
   fastai:
     carryforward: true
     paths:
-      - bentoml/fastai.py
-      - bentoml/_internal/frameworks/fastai.py
+      - src/bentoml/fastai.py
+      - src/bentoml/_internal/frameworks/fastai.py
   fasttext:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/fasttext.py
+      - src/bentoml/_internal/frameworks/fasttext.py
   flax:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/flax.py
+      - src/bentoml/_internal/frameworks/flax.py
   gluon:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/gluon.py
+      - src/bentoml/_internal/frameworks/gluon.py
   h2o:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/h2o.py
+      - src/bentoml/_internal/frameworks/h2o.py
   keras:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/keras.py
+      - src/bentoml/_internal/frameworks/keras.py
   lightgbm:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/lightgbm.py
+      - src/bentoml/_internal/frameworks/lightgbm.py
   mlflow:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/mlflow.py
+      - src/bentoml/_internal/frameworks/mlflow.py
   onnx:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/onnx.py
+      - src/bentoml/_internal/frameworks/onnx.py
   onnxmlir:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/onnxmlir.py
+      - src/bentoml/_internal/frameworks/onnxmlir.py
   paddle:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/paddle.py
+      - src/bentoml/_internal/frameworks/paddle.py
   picklable_model:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/picklable.py
+      - src/bentoml/_internal/frameworks/picklable.py
   pycaret:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/pycaret.py
+      - src/bentoml/_internal/frameworks/pycaret.py
   pyspark:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/pyspark.py
+      - src/bentoml/_internal/frameworks/pyspark.py
   pytorch:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/pytorch.py
+      - src/bentoml/_internal/frameworks/pytorch.py
   pytorch_lightning:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/pytorch_lightning.py
+      - src/bentoml/_internal/frameworks/pytorch_lightning.py
   sklearn:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/sklearn.py
+      - src/bentoml/_internal/frameworks/sklearn.py
   spacy:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/spacy.py
+      - src/bentoml/_internal/frameworks/spacy.py
   statsmodels:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/statsmodels.py
+      - src/bentoml/_internal/frameworks/statsmodels.py
   tensorflow:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/tensorflow_v2.py
+      - src/bentoml/_internal/frameworks/tensorflow_v2.py
   tensorflow_v1:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/tensorflow_v1.py
+      - src/bentoml/_internal/frameworks/tensorflow_v1.py
   transformers:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/transformers.py
+      - src/bentoml/_internal/frameworks/transformers.py
   xgboost:
     carryforward: true
     paths:
-      - bentoml/_internal/frameworks/xgboost.py
+      - src/bentoml/_internal/frameworks/xgboost.py
   e2e-tests-http:
     carryforward: true
     paths:
-      - "bentoml/**/*"
-      - bentoml/models.py
+      - "src/bentoml/**/*"
+      - "src/bentoml/models.py"
   e2e-tests-grpc:
     carryforward: true
     paths:
-      - "bentoml/**/*"
-      - bentoml/grpc/interceptors/
-      - bentoml/grpc/utils/
+      - "src/bentoml/**/*"
+      - "src/bentoml/grpc/interceptors/"
+      - "src/bentoml/grpc/utils/"
   unit-tests:
     carryforward: true
     paths:
-      - "bentoml/**/*"
-      - bentoml/models.py
+      - "src/bentoml/**/*"
+      - "src/bentoml/models.py"

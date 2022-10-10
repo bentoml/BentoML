@@ -3,7 +3,7 @@
 GIT_ROOT=$(git rev-parse --show-toplevel)
 STUBS_GENERATOR="bentoml/stubs-generator"
 
-cd "$GIT_ROOT" || exit 1
+cd "$GIT_ROOT/src" || exit 1
 
 main() {
 	local VERSION="${1:-v1alpha1}"
@@ -39,7 +39,7 @@ EOF
 	fi
 
 	echo "Generating gRPC stubs..."
-	find bentoml/grpc/"$VERSION" -type f -name "*.proto" -exec docker run --rm -it -v "$GIT_ROOT":/workspace --platform=linux/amd64 "$STUBS_GENERATOR" python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. "{}" \;
+	find "bentoml/grpc/$VERSION" -type f -name "*.proto" -exec docker run --rm -it -v "$GIT_ROOT/src":/workspace --platform=linux/amd64 "$STUBS_GENERATOR" python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. "{}" \;
 }
 
 if [ "${#}" -gt 1 ]; then

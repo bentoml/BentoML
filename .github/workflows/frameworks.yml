@@ -7,7 +7,6 @@ on:
   pull_request:
     branches:
       - main
-      - runners-1.0
   schedule:
     - cron: "0 0 * * 1/2"
 
@@ -67,156 +66,156 @@ jobs:
               - tests/integration/frameworks/test_frameworks.py
             runner: &runner
               - *related
-              - bentoml/_internal/runner/**
-              - bentoml/_internal/models/**
+              - src/bentoml/_internal/runner/**
+              - src/bentoml/_internal/models/**
             catboost:
               - *runner
-              - bentoml/catboost.py
-              - bentoml/_internal/frameworks/catboost.py
+              - src/bentoml/catboost.py
+              - src/bentoml/_internal/frameworks/catboost.py
               - tests/integration/frameworks/models/catboost.py
               - tests/integration/frameworks/test_frameworks.py
             detectron2:
               - *runner
-              - bentoml/detectron.py
-              - bentoml/_internal/frameworks/detectron.py
+              - src/bentoml/detectron.py
+              - src/bentoml/_internal/frameworks/detectron.py
               - tests/integration/frameworks/test_detectron2_impl.py
             easyocr:
               - *runner
-              - bentoml/easyocr.py
-              - bentoml/_internal/frameworks/easyocr.py
+              - src/bentoml/easyocr.py
+              - src/bentoml/_internal/frameworks/easyocr.py
               - tests/integration/frameworks/test_easyocr_impl.py
             evalml:
               - *runner
-              - bentoml/evalml.py
-              - bentoml/_internal/frameworks/evalml.py
+              - src/bentoml/evalml.py
+              - src/bentoml/_internal/frameworks/evalml.py
               - tests/integration/frameworks/test_evalml_impl.py
             fasttext:
               - *runner
-              - bentoml/fasttext.py
-              - bentoml/_internal/frameworks/fasttext.py
+              - src/bentoml/fasttext.py
+              - src/bentoml/_internal/frameworks/fasttext.py
               - tests/integration/frameworks/test_fasttext_impl.py
             gluon:
               - *runner
-              - bentoml/gluon.py
-              - bentoml/_internal/frameworks/gluon.py
+              - src/bentoml/gluon.py
+              - src/bentoml/_internal/frameworks/gluon.py
               - tests/integration/frameworks/test_gluon_impl.py
             h2o:
               - *runner
-              - bentoml/h2o.py
-              - bentoml/_internal/frameworks/h2o.py
+              - src/bentoml/h2o.py
+              - src/bentoml/_internal/frameworks/h2o.py
               - tests/integration/frameworks/test_h2o_impl.py
             lightgbm:
               - *runner
-              - bentoml/lightgbm.py
-              - bentoml/_internal/frameworks/lightgbm.py
+              - src/bentoml/lightgbm.py
+              - src/bentoml/_internal/frameworks/lightgbm.py
               - tests/integration/frameworks/models/lightgbm.py
               - tests/integration/frameworks/test_frameworks.py
             mlflow:
               - *runner
-              - bentoml/mlflow.py
-              - bentoml/_internal/frameworks/mlflow.py
+              - src/bentoml/mlflow.py
+              - src/bentoml/_internal/frameworks/mlflow.py
               - tests/integration/frameworks/mlflow
             fastai:
               - *runner
-              - bentoml/fastai.py
-              - bentoml/_internal/frameworks/fastai.py
-              - bentoml/_internal/frameworks/common/pytorch.py
+              - src/bentoml/fastai.py
+              - src/bentoml/_internal/frameworks/fastai.py
+              - src/bentoml/_internal/frameworks/common/pytorch.py
               - tests/integration/frameworks/test_frameworks.py
               - tests/integration/frameworks/test_fastai_unit.py
             onnx:
               - *runner
-              - bentoml/onnx.py
-              - bentoml/_internal/frameworks/onnx.py
+              - src/bentoml/onnx.py
+              - src/bentoml/_internal/frameworks/onnx.py
               - tests/integration/frameworks/models/onnx.py
               - tests/integration/frameworks/test_frameworks.py
             onnxmlir:
               - *runner
-              - bentoml/onnxmlir.py
-              - bentoml/_internal/frameworks/onnxmlir.py
+              - src/bentoml/onnxmlir.py
+              - src/bentoml/_internal/frameworks/onnxmlir.py
               - tests/integration/frameworks/test_onnxmlir_impl.py
             paddle:
               - *runner
-              - bentoml/paddle.py
-              - bentoml/_internal/frameworks/paddle.py
+              - src/bentoml/paddle.py
+              - src/bentoml/_internal/frameworks/paddle.py
               - tests/integration/frameworks/paddle
             picklable_model:
               - *runner
-              - bentoml/picklable_model.py
-              - bentoml/_internal/frameworks/picklable_model.py
+              - src/bentoml/picklable_model.py
+              - src/bentoml/_internal/frameworks/picklable_model.py
               - tests/integration/frameworks/picklable_model
             pycaret:
               - *runner
-              - bentoml/pycaret.py
-              - bentoml/_internal/frameworks/pycaret.py
+              - src/bentoml/pycaret.py
+              - src/bentoml/_internal/frameworks/pycaret.py
               - tests/integration/frameworks/test_pycaret_impl.py
             pyspark_mllib:
               - *runner
-              - bentoml/pyspark.py
-              - bentoml/_internal/frameworks/pyspark.py
+              - src/bentoml/pyspark.py
+              - src/bentoml/_internal/frameworks/pyspark.py
               - tests/integration/frameworks/test_pyspark_impl.py
             pytorch:
               - *runner
-              - bentoml/pytorch.py
-              - bentoml/_internal/frameworks/common/pytorch.py
-              - bentoml/_internal/frameworks/pytorch.py
+              - src/bentoml/pytorch.py
+              - src/bentoml/_internal/frameworks/common/pytorch.py
+              - src/bentoml/_internal/frameworks/pytorch.py
               - tests/integration/frameworks/test_pytorch_unit.py
               - tests/integration/frameworks/test_frameworks.py
             torchscript:
               - *runner
-              - bentoml/torchscript.py
-              - bentoml/_internal/frameworks/common/pytorch.py
-              - bentoml/_internal/frameworks/torchscript.py
+              - src/bentoml/torchscript.py
+              - src/bentoml/_internal/frameworks/common/pytorch.py
+              - src/bentoml/_internal/frameworks/torchscript.py
               - tests/integration/frameworks/test_torchscript_impl.py
             pytorch_lightning:
               - *runner
-              - bentoml/pytorch.py
-              - bentoml/pytorch_lightning.py
-              - bentoml/_internal/frameworks/common/pytorch.py
-              - bentoml/_internal/frameworks/torchscript.py
-              - bentoml/_internal/frameworks/pytorch_lightning.py
+              - src/bentoml/pytorch.py
+              - src/bentoml/pytorch_lightning.py
+              - src/bentoml/_internal/frameworks/common/pytorch.py
+              - src/bentoml/_internal/frameworks/torchscript.py
+              - src/bentoml/_internal/frameworks/pytorch_lightning.py
               - tests/integration/frameworks/test_pytorch_lightning_impl.py
             sklearn:
               - *runner
-              - bentoml/sklearn.py
-              - bentoml/_internal/frameworks/sklearn.py
+              - src/bentoml/sklearn.py
+              - src/bentoml/_internal/frameworks/sklearn.py
               - tests/integration/frameworks/test_sklearn_impl.py
             spacy:
               - *runner
-              - bentoml/spacy.py
-              - bentoml/_internal/frameworks/spacy.py
+              - src/bentoml/spacy.py
+              - src/bentoml/_internal/frameworks/spacy.py
               - tests/integration/frameworks/spacy
             statsmodels:
               - *runner
-              - bentoml/statsmodels.py
-              - bentoml/_internal/frameworks/statsmodels.py
+              - src/bentoml/statsmodels.py
+              - src/bentoml/_internal/frameworks/statsmodels.py
               - tests/integration/frameworks/test_statsmodels_impl.py
             tf1: &tf1
               - *runner
-              - bentoml/tensorflow.py
-              - bentoml/_internal/frameworks/tensorflow_v1.py
+              - src/bentoml/tensorflow.py
+              - src/bentoml/_internal/frameworks/tensorflow_v1.py
               - tests/integration/frameworks/test_tensorflow_v1_impl.py
             tf2: &tf2
               - *runner
-              - bentoml/tensorflow.py
-              - bentoml/_internal/frameworks/tensorflow_v2.py
+              - src/bentoml/tensorflow.py
+              - src/bentoml/_internal/frameworks/tensorflow_v2.py
               - tests/integration/frameworks/models/tensorflow_v2.py
               - tests/integration/frameworks/tensorflow_v2_unit.py
             keras_tf2:
               - *runner
               - *tf2
-              - bentoml/keras.py
-              - bentoml/_internal/frameworks/keras.py
+              - src/bentoml/keras.py
+              - src/bentoml/_internal/frameworks/keras.py
               - tests/integration/frameworks/models/keras.py
               - tests/integration/frameworks/test_frameworks.py
             transformers:
               - *runner
-              - bentoml/transformers.py
-              - bentoml/_internal/frameworks/transformers.py
+              - src/bentoml/transformers.py
+              - src/bentoml/_internal/frameworks/transformers.py
               - tests/integration/frameworks/test_transformers_impl.py
             xgboost:
               - *runner
-              - bentoml/xgboost.py
-              - bentoml/_internal/frameworks/xgboost.py
+              - src/bentoml/xgboost.py
+              - src/bentoml/_internal/frameworks/xgboost.py
               - tests/integration/frameworks/models/xgboost.py
               - tests/integration/frameworks/test_frameworks.py
 
@@ -393,7 +392,7 @@ jobs:
       - name: Run unit test for fastai
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./pyproject.toml --cov-report=xml:"fastai.unit.xml" --cov-report term-missing:skip-covered)
+          OPTS=(--cov=src/bentoml --cov-config=./pyproject.toml --cov-report=xml:"fastai.unit.xml" --cov-report term-missing:skip-covered)
           python -m pytest ./tests/integration/frameworks/test_fastai_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for fastai failed!"
@@ -884,7 +883,7 @@ jobs:
       - name: Run unit test for pytorch
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./pyproject.toml --cov-report=xml:"pytorch.unit.xml" --cov-report term-missing:skip-covered)
+          OPTS=(--cov=src/bentoml --cov-config=./pyproject.toml --cov-report=xml:"pytorch.unit.xml" --cov-report term-missing:skip-covered)
           python -m pytest ./tests/integration/frameworks/test_pytorch_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for pytorch failed!"
@@ -1198,7 +1197,7 @@ jobs:
       - name: Run unit test for tensorflow_v2
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./pyproject.toml --cov-report=xml:"tf2.unit.xml" --cov-report term-missing:skip-covered)
+          OPTS=(--cov=src/bentoml --cov-config=./pyproject.toml --cov-report=xml:"tf2.unit.xml" --cov-report term-missing:skip-covered)
           python -m pytest ./tests/integration/frameworks/test_tensorflow_v2_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for tensorflow_v2 failed!"
@@ -1208,7 +1207,7 @@ jobs:
       - name: Run tensorflow_v2 without eager execution
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./pyproject.toml --cov-report=xml:"tf2.unit.no_eager.xml" --cov-report term-missing:skip-covered --disable-tf-eager-execution)
+          OPTS=(--cov=src/bentoml --cov-config=./pyproject.toml --cov-report=xml:"tf2.unit.no_eager.xml" --cov-report term-missing:skip-covered --disable-tf-eager-execution)
           python -m pytest ./tests/integration/frameworks/test_tensorflow_v2_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for tensorflow_v2 failed!"
@@ -1261,7 +1260,7 @@ jobs:
       - name: Run unit test for transformers
         shell: bash
         run: |
-          OPTS=(--cov=bentoml --cov-config=./pyproject.toml --cov-report=xml:"transformers.unit.xml" --cov-report term-missing:skip-covered)
+          OPTS=(--cov=src/bentoml --cov-config=./pyproject.toml --cov-report=xml:"transformers.unit.xml" --cov-report term-missing:skip-covered)
           python -m pytest ./tests/integration/frameworks/test_transformers_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for transformers failed!"

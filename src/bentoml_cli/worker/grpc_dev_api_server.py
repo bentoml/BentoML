@@ -22,6 +22,13 @@ import click
     help="Enable reflection.",
 )
 @click.option(
+    "--enable-channelz",
+    type=click.BOOL,
+    is_flag=True,
+    help="Enable reflection.",
+    default=False,
+)
+@click.option(
     "--max-concurrent-streams",
     type=int,
     help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
@@ -52,12 +59,12 @@ def main(
     prometheus_dir: str | None,
     working_dir: str | None,
     enable_reflection: bool,
+    enable_channelz: bool,
     max_concurrent_streams: int | None,
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
     ssl_ca_certs: str | None,
 ):
-    import grpc
     import psutil
 
     from bentoml import load
@@ -94,6 +101,7 @@ def main(
     grpc_options: dict[str, t.Any] = {
         "bind_address": f"{host}:{port}",
         "enable_reflection": enable_reflection,
+        "enable_channelz": enable_channelz,
     }
     if max_concurrent_streams is not None:
         grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)

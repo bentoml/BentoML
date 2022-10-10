@@ -127,6 +127,7 @@ grpc = [
   "grpcio>=1.41.0, <1.49, !=1.48.2",
   "grpcio-health-checking>=1.41.0, <1.49, !=1.48.2",
   "grpcio-reflection>=1.41.0, <1.49, !=1.48.2",
+  "grpcio-channelz>=1.41.0, <1.49, !=1.48.2",
   "opentelemetry-instrumentation-grpc==0.33b0",
 ]
 # We kept for compatibility with previous

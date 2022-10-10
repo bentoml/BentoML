@@ -15,13 +15,10 @@ ENV \
   APP_ROOT={{ app_root }} \
   PATH={{ path_root }}
 
-RUN {{ common.mount_cache("/var/cache/yum") }} bash <<EOF
-set -euxo pipefail
-
-dnf install -y --setopt=tsflags=nodocs python{{ short_pyver }}
-ln -sf /usr/bin/python{{ __options__python_version }} /usr/bin/python3
-ln -sf /usr/bin/pip{{ __options__python_version }} /usr/bin/pip3
-EOF
+RUN {{ common.mount_cache("/var/cache/yum") }} \
+    dnf install -y --setopt=tsflags=nodocs python{{ short_pyver }} && \
+    ln -sf /usr/bin/python{{ __options__python_version }} /usr/bin/python3 && \
+    ln -sf /usr/bin/pip{{ __options__python_version }} /usr/bin/pip3
 
 RUN python3 --version
 

@@ -9,24 +9,18 @@
 {% set __conda_exec__ = [conda_path, "bin", "conda"] | join("/") %}
 {% set __conda_pkg__ = [conda_path, "pkg"] | join("/") %}
 
-RUN {{ mount_cache(__conda_pkg__) }} bash <<EOF
-set -euxo pipefail
+RUN {{ mount_cache(__conda_pkg__) }} set -euxo pipefail && \
+    echo "Installing Python $PYTHON_VERSION with conda..." && \
+    {{ __conda_exec__ }} install -y -n base pkgs/main::python={{ python_version }} pip
 
-echo "Installing Python $PYTHON_VERSION with conda..."
-{{ __conda_exec__ }} install -y -n base pkgs/main::python={{ python_version }} pip
-EOF
-
-RUN {{ mount_cache(__conda_pkg__) }} bash <<EOF
-set -euxo pipefail
-
-if [ -f {{ environment_yml }} ]; then
-  # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
-  # pip-installed packages to satisfy dependencies.
-  echo "Updating conda base environment with environment.yml"
-  {{ __conda_exec__ }} config --set pip_interop_enabled True
-  {{ __conda_exec__ }} env update -n base -f {{ environment_yml }}
-  {{ __conda_exec__ }} clean --all
-fi
-EOF
+RUN {{ mount_cache(__conda_pkg__) }} set -euxo pipefail && \
+    if [ -f {{ environment_yml }} ]; then \
+      # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
+      # pip-installed packages to satisfy dependencies.
+      echo "Updating conda base environment with environment.yml"; \
+      {{ __conda_exec__ }} config --set pip_interop_enabled True; \
+      {{ __conda_exec__ }} env update -n base -f {{ environment_yml }}; \
+      {{ __conda_exec__ }} clean --all; \
+    fi
 
 {%- endmacro -%}

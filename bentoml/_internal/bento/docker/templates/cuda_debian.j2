@@ -3,25 +3,15 @@
 {{ super() }}
 
 RUN {{ common.mount_cache(__lib_apt__) }} \
-    {{ common.mount_cache(__cache_apt__) }} bash <<EOF
-set -euxo pipefail
-
-apt-get update -y
-apt-get install -y --no-install-recommends --allow-remove-essential \
-		software-properties-common curl
-
-# add deadsnakes ppa to install python
-add-apt-repository ppa:deadsnakes/ppa
-apt-get update -y
-
-apt-get install -y --no-install-recommends --allow-remove-essential \
-		{% if "ubuntu22.04" in __base_image__ and __options__python_version == "3.10" %}python{{ __options__python_version }}-jammy{% else %}python{{ __options__python_version }}{% endif %} \
-		python{{ __options__python_version }}-dev \
-		python{{ __options__python_version }}-distutils
-EOF
+    {{ common.mount_cache(__cache_apt__) }} \
+    set -euxo pipefail && \
+    # add deadsnakes ppa to install python
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends --allow-remove-essential software-properties-common curl {% if "ubuntu22.04" in __base_image__ and __options__python_version == "3.10" %}python{{ __options__python_version }}-jammy{% else %}python{{ __options__python_version }}{% endif %} python{{ __options__python_version }}-dev python{{ __options__python_version }}-distutils
 
 RUN ln -sf /usr/bin/python{{ __options__python_version }} /usr/bin/python3 && \
-	ln -sf /usr/bin/pip{{ __options__python_version }} /usr/bin/pip3
+    ln -sf /usr/bin/pip{{ __options__python_version }} /usr/bin/pip3
 
 RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
     python3 get-pip.py && \

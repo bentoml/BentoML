@@ -11,7 +11,6 @@ from bentoml.testing.grpc import create_channel
 from bentoml.grpc.v1alpha1 import service_pb2 as pb
 from bentoml.grpc.v1alpha1 import service_test_pb2 as pb_test
 from bentoml.grpc.v1alpha1 import service_test_pb2_grpc as services_test
-from bentoml.testing.grpc.interceptors import AssertClientInterceptor
 
 
 @pytest.mark.asyncio
@@ -41,13 +40,9 @@ async def test_success_invocation_custom_servicer(host: str) -> None:
 async def test_trailing_metadata_interceptors(host: str) -> None:
     async with create_channel(
         host,
-        interceptors=[
-            AssertClientInterceptor(
-                assert_trailing_metadata=aio.Metadata.from_tuple(
-                    (("usage", "NLP"), ("accuracy_score", "0.8247"))
-                )
-            )
-        ],
+        assert_trailing_metadata=aio.Metadata.from_tuple(
+            (("usage", "NLP"), ("accuracy_score", "0.8247"))
+        ),
     ) as channel:
         Call = channel.unary_unary(
             "/bentoml.grpc.v1alpha1.BentoService/Call",

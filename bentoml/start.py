@@ -240,6 +240,9 @@ def start_grpc_server(
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+    ssl_certfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
 ) -> None:
     from bentoml import load
 
@@ -291,7 +294,6 @@ def start_grpc_server(
         ]
         if reflection:
             args.append("--enable-reflection")
-
         if max_concurrent_streams:
             args.extend(
                 [
@@ -299,6 +301,12 @@ def start_grpc_server(
                     str(max_concurrent_streams),
                 ]
             )
+        if ssl_certfile:
+            args.extend(["--ssl-certfile", str(ssl_certfile)])
+        if ssl_keyfile:
+            args.extend(["--ssl-keyfile", str(ssl_keyfile)])
+        if ssl_ca_certs:
+            args.extend(["--ssl-ca-certs", str(ssl_ca_certs)])
 
         watchers.append(
             create_watcher(

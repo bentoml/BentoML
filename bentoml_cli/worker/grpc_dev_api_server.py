@@ -27,6 +27,24 @@ import click
     help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
     default=None,
 )
+@click.option(
+    "--ssl-certfile",
+    type=str,
+    default=None,
+    help="SSL certificate file",
+)
+@click.option(
+    "--ssl-keyfile",
+    type=str,
+    default=None,
+    help="SSL key file",
+)
+@click.option(
+    "--ssl-ca-certs",
+    type=str,
+    default=None,
+    help="CA certificates file",
+)
 def main(
     bento_identifier: str,
     host: str,
@@ -35,7 +53,11 @@ def main(
     working_dir: str | None,
     enable_reflection: bool,
     max_concurrent_streams: int | None,
+    ssl_certfile: str | None,
+    ssl_keyfile: str | None,
+    ssl_ca_certs: str | None,
 ):
+    import grpc
     import psutil
 
     from bentoml import load
@@ -75,6 +97,12 @@ def main(
     }
     if max_concurrent_streams is not None:
         grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)
+    if ssl_certfile:
+        grpc_options["ssl_certfile"] = ssl_certfile
+    if ssl_keyfile:
+        grpc_options["ssl_keyfile"] = ssl_keyfile
+    if ssl_ca_certs:
+        grpc_options["ssl_ca_certs"] = ssl_ca_certs
 
     grpc.Server(svc.grpc_servicer, **grpc_options).run()
 

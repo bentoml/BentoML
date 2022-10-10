@@ -11,6 +11,11 @@ import click
 @click.option("--port", type=click.INT, required=False, default=None)
 @click.option("--working-dir", required=False, type=click.Path(), default=None)
 @click.option(
+    "--prometheus-dir",
+    type=click.Path(exists=True),
+    help="Required by prometheus to pass the metrics in multi-process mode",
+)
+@click.option(
     "--enable-reflection",
     type=click.BOOL,
     is_flag=True,
@@ -27,6 +32,7 @@ def main(
     bento_identifier: str,
     host: str,
     port: int,
+    prometheus_dir: str | None,
     working_dir: str | None,
     enable_reflection: bool,
     max_concurrent_streams: int | None,
@@ -40,6 +46,8 @@ def main(
 
     component_context.component_type = "grpc_dev_api_server"
     configure_server_logging()
+    if prometheus_dir is not None:
+        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
 
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
     if not port:

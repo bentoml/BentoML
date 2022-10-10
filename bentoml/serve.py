@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import sys
 import json
-import math
 import shutil
 import typing as t
 import logging
@@ -530,6 +529,8 @@ def serve_grpc_development(
             str(api_port),
             "--working-dir",
             working_dir,
+            "--prometheus-dir",
+            prometheus_dir,
         ]
 
         if reflection:
@@ -786,6 +787,8 @@ def serve_grpc_production(
             json.dumps(runner_bind_map),
             "--working-dir",
             working_dir,
+            "--prometheus-dir",
+            prometheus_dir,
             "--worker-id",
             "$(CIRCUS.WID)",
         ]

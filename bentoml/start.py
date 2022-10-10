@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import sys
 import json
-import math
 import typing as t
 import logging
 import contextlib
@@ -122,7 +121,7 @@ def start_http_server(
     port: int = Provide[BentoMLContainer.api_server_config.port],
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-    api_workers: int | None = None,
+    api_workers: int = Provide[BentoMLContainer.api_server_workers],
     ssl_certfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
     ssl_keyfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
     ssl_keyfile_password: str
@@ -140,7 +139,6 @@ def start_http_server(
     from .serve import construct_ssl_args
     from .serve import PROMETHEUS_MESSAGE
     from .serve import ensure_prometheus_dir
-    from ._internal.resource import CpuResource
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
 
@@ -200,7 +198,7 @@ def start_http_server(
                 ),
             ],
             working_dir=working_dir,
-            numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+            numprocesses=api_workers,
         )
     )
     if BentoMLContainer.api_server_config.metrics.enabled.get():
@@ -235,7 +233,7 @@ def start_grpc_server(
     port: int = Provide[BentoMLContainer.grpc.port],
     host: str = Provide[BentoMLContainer.grpc.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-    api_workers: int | None = None,
+    api_workers: int = Provide[BentoMLContainer.api_server_workers],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
@@ -247,7 +245,6 @@ def start_grpc_server(
     from .serve import ensure_prometheus_dir
     from .serve import PROMETHEUS_SERVER_NAME
     from ._internal.utils import reserve_free_port
-    from ._internal.resource import CpuResource
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
 
@@ -284,6 +281,8 @@ def start_grpc_server(
             json.dumps(runner_map),
             "--working-dir",
             working_dir,
+            "--prometheus-dir",
+            prometheus_dir,
             "--worker-id",
             "$(CIRCUS.WID)",
         ]
@@ -304,7 +303,7 @@ def start_grpc_server(
                 args=args,
                 use_sockets=False,
                 working_dir=working_dir,
-                numprocesses=api_workers or math.ceil(CpuResource.from_system()),
+                numprocesses=api_workers,
             )
         )
 

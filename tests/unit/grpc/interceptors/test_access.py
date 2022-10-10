@@ -1,4 +1,4 @@
-# pylint: disabl=unused-argument
+# pylint: disable=unused-argument,used-before-assignment,assignment-from-no-return
 from __future__ import annotations
 
 import typing as t

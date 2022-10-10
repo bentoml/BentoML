@@ -1,3 +1,4 @@
+# pylint: disable=assignment-from-no-return,used-before-assignment
 from __future__ import annotations
 
 import io
@@ -43,7 +44,8 @@ def assert_ndarray(
     assert_shape: list[int],
     assert_dtype: pb.NDArray.DType.ValueType,
 ) -> bool:
-    __tracebackhide__ = True  # Hide traceback for py.test
+    # Hide traceback from pytest
+    __tracebackhide__ = True  # pylint: disable=unused-variable
 
     dtype = resp.ndarray.dtype
     try:

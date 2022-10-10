@@ -498,7 +498,7 @@ def containerize(
 
     bento = _bento_store.get(tag)
     if not docker_image_tag:
-        docker_image_tag = [str(bento.tag)]
+        docker_image_tag = (str(bento.tag),)
 
     logger.info(f"Building docker image for {bento}...")
     if platform and not psutil.LINUX and platform != "linux/amd64":

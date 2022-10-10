@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import sys
 import typing as t
 import asyncio
 import logging
 from typing import TYPE_CHECKING
+from concurrent.futures import ThreadPoolExecutor
+
+from simple_di import inject
+from simple_di import Provide
 
 from ...utils import LazyLoader
 from ...utils import cached_property
+from ...configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +25,7 @@ if TYPE_CHECKING:
 
     from bentoml.grpc.v1alpha1 import service_pb2_grpc as services
 
-    from .config import Config
+    from .servicer import Servicer
 else:
     from bentoml.grpc.utils import import_grpc
     from bentoml.grpc.utils import import_generated_stubs
@@ -42,44 +48,89 @@ else:
     )
 
 
-class Server:
+class Server(aio._server.Server):
     """An async implementation of a gRPC server."""
 
-    def __init__(self, config: Config):
-        self.config = config
-        self.servicer = config.servicer
-        self.loaded = False
+    @inject
+    def __init__(
+        self,
+        servicer: Servicer,
+        bind_address: str,
+        enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+        max_message_length: int
+        | None = Provide[BentoMLContainer.grpc.max_message_length],
+        max_concurrent_streams: int
+        | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+        maximum_concurrent_rpcs: int
+        | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
+        migration_thread_pool_workers: int = 1,
+        graceful_shutdown_timeout: float | None = None,
+        compression: grpc.Compression | None = None,
+    ):
+        self.servicer = servicer
+        self.max_message_length = max_message_length
+        self.max_concurrent_streams = max_concurrent_streams
+        self.bind_address = bind_address
+        self.enable_reflection = enable_reflection
+        self.graceful_shutdown_timeout = graceful_shutdown_timeout
+
+        if not bool(self.servicer):
+            self.servicer.load()
+        assert self.servicer.loaded
+
+        super().__init__(
+            # Note that the max_workers are used inside ThreadPoolExecutor.
+            # This ThreadPoolExecutor are used by aio.Server() to execute non-AsyncIO RPC handlers.
+            # Setting it to 1 makes it thread-safe for sync APIs.
+            thread_pool=ThreadPoolExecutor(max_workers=migration_thread_pool_workers),
+            generic_handlers=() if self.handlers is None else self.handlers,
+            interceptors=self.servicer.interceptors_stack,
+            options=self.options,
+            # maximum_concurrent_rpcs defines the maximum number of concurrent RPCs this server
+            # will service before returning RESOURCE_EXHAUSTED status.
+            # Set to None will indicate no limit.
+            maximum_concurrent_rpcs=maximum_concurrent_rpcs,
+            compression=compression,
+        )
+
+    @property
+    def options(self) -> grpc.aio.ChannelArgumentType:
+        options: grpc.aio.ChannelArgumentType = []
+
+        if sys.platform != "win32":
+            # https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h#L294
+            # Eventhough GRPC_ARG_ALLOW_REUSEPORT is set to 1 by default, we want still
+            # want to explicitly set it to 1 so that we can spawn multiple gRPC servers in
+            # production settings.
+            options.append(("grpc.so_reuseport", 1))
+
+        if self.max_concurrent_streams:
+            options.append(("grpc.max_concurrent_streams", self.max_concurrent_streams))
+
+        if self.max_message_length:
+            options.extend(
+                (
+                    # grpc.max_message_length this is a deprecated options, for backward compatibility
+                    ("grpc.max_message_length", self.max_message_length),
+                    ("grpc.max_receive_message_length", self.max_message_length),
+                    ("grpc.max_send_message_length", self.max_message_length),
+                )
+            )
+
+        return tuple(options)
+
+    @property
+    def handlers(self) -> t.Sequence[grpc.GenericRpcHandler] | None:
+        # Note that currently BentoML doesn't provide any specific
+        # handlers for gRPC. If users have any specific handlers,
+        # BentoML will pass it through to grpc.aio.Server
+        return self.servicer.bento_service.grpc_handlers
 
     @cached_property
     def loop(self) -> asyncio.AbstractEventLoop:
         return asyncio.get_event_loop()
 
-    def load(self) -> Self:
-        from concurrent.futures import ThreadPoolExecutor
-
-        assert not self.loaded
-        if not bool(self.servicer):
-            self.servicer.load()
-        assert self.servicer.loaded
-
-        self.server = aio.server(
-            migration_thread_pool=ThreadPoolExecutor(
-                max_workers=self.config.migration_thread_pool_workers
-            ),
-            options=self.config.options,
-            maximum_concurrent_rpcs=self.config.maximum_concurrent_rpcs,
-            handlers=self.config.handlers,
-            interceptors=self.servicer.interceptors_stack,
-        )
-        self.loaded = True
-
-        return self
-
     def run(self) -> None:
-        if not self.loaded:
-            self.load()
-        assert self.loaded
-
         try:
             self.loop.run_until_complete(self.serve())
         finally:
@@ -91,7 +142,7 @@ class Server:
                 raise RuntimeError(f"Server failed unexpectedly: {e}") from None
 
     async def serve(self) -> None:
-        self.add_insecure_port(self.config.bind_address)
+        self.add_insecure_port(self.bind_address)
         await self.startup()
         await self.wait_for_termination()
 
@@ -101,11 +152,9 @@ class Server:
         # Running on_startup callback.
         await self.servicer.startup()
         # register bento servicer
-        services.add_BentoServiceServicer_to_server(
-            self.servicer.bento_servicer, self.server
-        )
+        services.add_BentoServiceServicer_to_server(self.servicer.bento_servicer, self)
         services_health.add_HealthServicer_to_server(
-            self.servicer.health_servicer, self.server
+            self.servicer.health_servicer, self
         )
 
         service_names = self.servicer.service_names
@@ -115,10 +164,10 @@ class Server:
             add_servicer_fn,
             user_service_names,
         ) in self.servicer.mount_servicers:
-            add_servicer_fn(user_servicer(), self.server)
+            add_servicer_fn(user_servicer(), self)
             service_names += tuple(user_service_names)
 
-        if self.config.enable_reflection:
+        if self.enable_reflection:
             try:
                 # reflection is required for health checking to work.
                 from grpc_reflection.v1alpha import reflection
@@ -127,32 +176,18 @@ class Server:
                     "reflection is enabled, which requires 'grpcio-reflection' to be installed. Install with 'pip install grpcio-reflection'."
                 )
             service_names += (reflection.SERVICE_NAME,)
-            reflection.enable_server_reflection(service_names, self.server)
+            reflection.enable_server_reflection(service_names, self)
 
         # mark all services as healthy
         for service in service_names:
             await self.servicer.health_servicer.set(
                 service, pb_health.HealthCheckResponse.SERVING  # type: ignore (no types available)
             )
-        await self.server.start()
+        await self.start()
 
     async def shutdown(self):
         # Running on_startup callback.
         await self.servicer.shutdown()
-        await self.server.stop(grace=self.config.graceful_shutdown_timeout)
+        await self.stop(grace=self.graceful_shutdown_timeout)
         await self.servicer.health_servicer.enter_graceful_shutdown()
         self.loop.stop()
-
-    async def wait_for_termination(self, timeout: int | None = None) -> bool:
-        return await self.server.wait_for_termination(timeout=timeout)
-
-    def add_insecure_port(self, address: str) -> int:
-        return self.server.add_insecure_port(address)
-
-    def add_secure_port(self, address: str, credentials: grpc.ServerCredentials) -> int:
-        return self.server.add_secure_port(address, credentials)
-
-    def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: t.Sequence[grpc.GenericRpcHandler]
-    ) -> None:
-        self.server.add_generic_rpc_handlers(generic_rpc_handlers)

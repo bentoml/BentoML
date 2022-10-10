@@ -22,6 +22,11 @@ import click
     help="Working directory for the API server",
 )
 @click.option(
+    "--prometheus-dir",
+    type=click.Path(exists=True),
+    help="Required by prometheus to pass the metrics in multi-process mode",
+)
+@click.option(
     "--worker-id",
     required=False,
     type=click.INT,
@@ -45,6 +50,7 @@ def main(
     bento_identifier: str,
     host: str,
     port: int,
+    prometheus_dir: str | None,
     runner_map: str | None,
     working_dir: str | None,
     worker_id: int | None,
@@ -67,6 +73,8 @@ def main(
     configure_server_logging()
 
     BentoMLContainer.development_mode.set(False)
+    if prometheus_dir is not None:
+        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
 

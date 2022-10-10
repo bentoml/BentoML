@@ -132,6 +132,9 @@ def start_http_server(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
 ) -> None:
+    from circus.sockets import CircusSocket
+    from circus.watcher import Watcher
+
     from bentoml import load
 
     from .serve import create_watcher
@@ -144,19 +147,13 @@ def start_http_server(
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
-
     runner_requirements = {runner.name for runner in svc.runners}
     if not runner_requirements.issubset(set(runner_map)):
         raise ValueError(
             f"{bento_identifier} requires runners {runner_requirements}, but only {set(runner_map)} are provided."
         )
-
-    from circus.sockets import CircusSocket  # type: ignore
-    from circus.watcher import Watcher  # type: ignore
-
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
-
     prometheus_dir = ensure_prometheus_dir()
 
     logger.debug("Runner map: %s", runner_map)
@@ -167,7 +164,6 @@ def start_http_server(
         port=port,
         backlog=backlog,
     )
-
     ssl_args = construct_ssl_args(
         ssl_certfile=ssl_certfile,
         ssl_keyfile=ssl_keyfile,
@@ -244,9 +240,13 @@ def start_grpc_server(
     ssl_keyfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
 ) -> None:
+    from circus.sockets import CircusSocket
+    from circus.watcher import Watcher
+
     from bentoml import load
 
     from .serve import create_watcher
+    from .serve import construct_ssl_args
     from .serve import PROMETHEUS_MESSAGE
     from .serve import ensure_prometheus_dir
     from .serve import PROMETHEUS_SERVER_NAME
@@ -256,20 +256,21 @@ def start_grpc_server(
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
-
     runner_requirements = {runner.name for runner in svc.runners}
     if not runner_requirements.issubset(set(runner_map)):
         raise ValueError(
             f"{bento_identifier} requires runners {runner_requirements}, but only {set(runner_map)} are provided."
         )
-
-    from circus.sockets import CircusSocket  # type: ignore
-    from circus.watcher import Watcher  # type: ignore
-
     watchers: list[Watcher] = []
     circus_socket_map: dict[str, CircusSocket] = {}
     prometheus_dir = ensure_prometheus_dir()
     logger.debug("Runner map: %s", runner_map)
+    ssl_args = construct_ssl_args(
+        ssl_certfile=ssl_certfile,
+        ssl_keyfile=ssl_keyfile,
+        ssl_ca_certs=ssl_ca_certs,
+    )
+    scheme = "https" if len(ssl_args) > 0 else "http"
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(
             reserve_free_port(host=host, port=port, enable_so_reuseport=True)
@@ -291,6 +292,7 @@ def start_grpc_server(
             prometheus_dir,
             "--worker-id",
             "$(CIRCUS.WID)",
+            *ssl_args,
         ]
         if reflection:
             args.append("--enable-reflection")
@@ -301,12 +303,6 @@ def start_grpc_server(
                     str(max_concurrent_streams),
                 ]
             )
-        if ssl_certfile:
-            args.extend(["--ssl-certfile", str(ssl_certfile)])
-        if ssl_keyfile:
-            args.extend(["--ssl-keyfile", str(ssl_keyfile)])
-        if ssl_ca_certs:
-            args.extend(["--ssl-ca-certs", str(ssl_ca_certs)])
 
         watchers.append(
             create_watcher(
@@ -360,9 +356,10 @@ def start_grpc_server(
     with track_serve(svc, production=True, component=API_SERVER, serve_kind="grpc"):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
-                'Starting bare %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',
+                'Starting bare %s BentoServer from "%s" running on %s://%s:%d (Press CTRL+C to quit)',
                 "gRPC",
                 bento_identifier,
+                scheme,
                 host,
                 port,
             ),

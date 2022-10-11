@@ -12,7 +12,7 @@ black --config ./pyproject.toml src tests docs examples
 
 INFO "(black) Formatting stubs..."
 
-find bentoml -name "*.pyi" ! -name "*_pb2*" -exec black --pyi --config ./pyproject.toml {} \;
+find src -name "*.pyi" ! -name "*_pb2*" -exec black --pyi --config ./pyproject.toml {} \;
 
 INFO "(isort) Reordering imports..."
 

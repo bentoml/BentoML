@@ -80,7 +80,7 @@ def test_model(model, test_loader, device="cpu"):
     return correct, total
 
 
-def cross_validate(dataset, epochs=NUM_EPOCHS, k_folds=K_FOLDS):
+def cross_validate(dataset, epochs=NUM_EPOCHS, k_folds=K_FOLDS, device="cpu"):
     results = {}
 
     # Define the K-fold Cross Validator
@@ -113,14 +113,16 @@ def cross_validate(dataset, epochs=NUM_EPOCHS, k_folds=K_FOLDS):
         )
 
         # Train this fold
-        model = SimpleConvNet()
+        model = SimpleConvNet().to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
         loss_function = nn.CrossEntropyLoss()
         for epoch in range(epochs):
-            train_epoch(model, optimizer, loss_function, train_loader, epoch)
+            train_epoch(
+                model, optimizer, loss_function, train_loader, epoch, device=device
+            )
 
         # Evaluation for this fold
-        correct, total = test_model(model, test_loader)
+        correct, total = test_model(model, test_loader, device)
         print("Accuracy for fold %d: %d %%" % (fold, 100.0 * correct / total))
         print("--------------------------------")
         results[fold] = 100.0 * (correct / total)
@@ -140,6 +142,7 @@ def cross_validate(dataset, epochs=NUM_EPOCHS, k_folds=K_FOLDS):
 
 def train(dataset, epochs=NUM_EPOCHS, device="cpu"):
 
+    print(device)
     train_sampler = torch.utils.data.RandomSampler(dataset)
     train_loader = torch.utils.data.DataLoader(
         dataset,
@@ -147,7 +150,7 @@ def train(dataset, epochs=NUM_EPOCHS, device="cpu"):
         sampler=train_sampler,
         worker_init_fn=_dataloader_init_fn,
     )
-    model = SimpleConvNet()
+    model = SimpleConvNet().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     loss_function = nn.CrossEntropyLoss()
     for epoch in range(epochs):
@@ -196,7 +199,7 @@ if __name__ == "__main__":
     )
 
     if args.k_folds > 1:
-        cv_results = cross_validate(train_set, args.epochs, args.k_folds)
+        cv_results = cross_validate(train_set, args.epochs, args.k_folds, device)
     else:
         cv_results = {}
 

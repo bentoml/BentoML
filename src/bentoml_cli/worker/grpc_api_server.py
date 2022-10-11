@@ -43,7 +43,7 @@ import click
     "--enable-channelz",
     type=click.BOOL,
     is_flag=True,
-    help="Enable reflection.",
+    help="Enable channelz.",
     default=False,
 )
 @click.option(

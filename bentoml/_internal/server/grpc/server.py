@@ -12,6 +12,7 @@ from simple_di import Provide
 
 from ...utils import LazyLoader
 from ...utils import cached_property
+from ...utils import resolve_user_filepath
 from ...configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,6 @@ if TYPE_CHECKING:
     from grpc import aio
     from grpc_health.v1 import health_pb2 as pb_health
     from grpc_health.v1 import health_pb2_grpc as services_health
-    from typing_extensions import Self
 
     from bentoml.grpc.v1alpha1 import service_pb2_grpc as services
 
@@ -48,6 +48,13 @@ else:
     )
 
 
+def _load_from_file(p: str) -> bytes:
+    rp = resolve_user_filepath(p, ctx=None)
+    with open(rp, "rb") as f:
+        return f.read()
+
+
+# NOTE: we are using the internal aio._server.Server (which is initialized with aio.server)
 class Server(aio._server.Server):
     """An async implementation of a gRPC server."""
 
@@ -56,14 +63,16 @@ class Server(aio._server.Server):
         self,
         servicer: Servicer,
         bind_address: str,
-        enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
         max_message_length: int
         | None = Provide[BentoMLContainer.grpc.max_message_length],
-        max_concurrent_streams: int
-        | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
         maximum_concurrent_rpcs: int
         | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
+        enable_reflection: bool = False,
+        max_concurrent_streams: int | None = None,
         migration_thread_pool_workers: int = 1,
+        ssl_certfile: str | None = None,
+        ssl_keyfile: str | None = None,
+        ssl_ca_certs: str | None = None,
         graceful_shutdown_timeout: float | None = None,
         compression: grpc.Compression | None = None,
     ):
@@ -73,6 +82,9 @@ class Server(aio._server.Server):
         self.bind_address = bind_address
         self.enable_reflection = enable_reflection
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
+        self.ssl_certfile = ssl_certfile
+        self.ssl_keyfile = ssl_keyfile
+        self.ssl_ca_certs = ssl_ca_certs
 
         if not bool(self.servicer):
             self.servicer.load()
@@ -141,8 +153,33 @@ class Server(aio._server.Server):
             except Exception as e:  # pylint: disable=broad-except
                 raise RuntimeError(f"Server failed unexpectedly: {e}") from None
 
+    def configure_port(self, addr: str):
+        if self.ssl_certfile:
+            client_auth = False
+            ca_cert = None
+            assert (
+                self.ssl_keyfile
+            ), "'ssl_keyfile' is required when 'ssl_certfile' is provided."
+            if self.ssl_ca_certs is not None:
+                client_auth = True
+                ca_cert = _load_from_file(self.ssl_ca_certs)
+            server_credentials = grpc.ssl_server_credentials(
+                (
+                    (
+                        _load_from_file(self.ssl_keyfile),
+                        _load_from_file(self.ssl_certfile),
+                    ),
+                ),
+                root_certificates=ca_cert,
+                require_client_auth=client_auth,
+            )
+
+            self.add_secure_port(addr, server_credentials)
+        else:
+            self.add_insecure_port(addr)
+
     async def serve(self) -> None:
-        self.add_insecure_port(self.bind_address)
+        self.configure_port(self.bind_address)
         await self.startup()
         await self.wait_for_termination()
 

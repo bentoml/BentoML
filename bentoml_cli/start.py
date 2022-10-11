@@ -312,6 +312,24 @@ def add_start_command(cli: click.Group) -> None:
         type=click.INT,
         help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
     )
+    @click.option(
+        "--ssl-certfile",
+        type=str,
+        default=None,
+        help="SSL certificate file",
+    )
+    @click.option(
+        "--ssl-keyfile",
+        type=str,
+        default=None,
+        help="SSL key file",
+    )
+    @click.option(
+        "--ssl-ca-certs",
+        type=str,
+        default=None,
+        help="CA certificates file",
+    )
     @add_experimental_docstring
     def start_grpc_server(  # type: ignore (unused warning)
         bento: str,
@@ -321,7 +339,10 @@ def add_start_command(cli: click.Group) -> None:
         backlog: int,
         api_workers: int | None,
         working_dir: str,
+        ssl_certfile: str | None,
+        ssl_keyfile: str | None,
         enable_reflection: bool,
+        ssl_ca_certs: str | None,
         max_concurrent_streams: int | None,
     ) -> None:
         """
@@ -343,5 +364,8 @@ def add_start_command(cli: click.Group) -> None:
             backlog=backlog,
             api_workers=api_workers,
             reflection=enable_reflection,
+            ssl_keyfile=ssl_keyfile,
+            ssl_certfile=ssl_certfile,
+            ssl_ca_certs=ssl_ca_certs,
             max_concurrent_streams=max_concurrent_streams,
         )

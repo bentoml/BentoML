@@ -291,6 +291,27 @@ def add_serve_command(cli: click.Group) -> None:
         help="Maximum number of concurrent incoming streams to allow on a http2 connection.",
         show_default=True,
     )
+    @click.option(
+        "--ssl-certfile",
+        type=str,
+        default=None,
+        help="SSL certificate file",
+        show_default=True,
+    )
+    @click.option(
+        "--ssl-keyfile",
+        type=str,
+        default=None,
+        help="SSL key file",
+        show_default=True,
+    )
+    @click.option(
+        "--ssl-ca-certs",
+        type=str,
+        default=None,
+        help="CA certificates file",
+        show_default=True,
+    )
     @add_experimental_docstring
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
@@ -301,6 +322,9 @@ def add_serve_command(cli: click.Group) -> None:
         backlog: int,
         reload: bool,
         working_dir: str,
+        ssl_certfile: str | None,
+        ssl_keyfile: str | None,
+        ssl_ca_certs: str | None,
         enable_reflection: bool,
         max_concurrent_streams: int | None,
     ):
@@ -352,6 +376,9 @@ def add_serve_command(cli: click.Group) -> None:
                 host=host,
                 backlog=backlog,
                 api_workers=api_workers,
+                ssl_keyfile=ssl_keyfile,
+                ssl_certfile=ssl_certfile,
+                ssl_ca_certs=ssl_ca_certs,
                 max_concurrent_streams=max_concurrent_streams,
                 reflection=enable_reflection,
             )
@@ -365,6 +392,9 @@ def add_serve_command(cli: click.Group) -> None:
                 backlog=backlog,
                 reload=reload,
                 host=DEFAULT_DEV_SERVER_HOST if not host else host,
+                ssl_keyfile=ssl_keyfile,
+                ssl_certfile=ssl_certfile,
+                ssl_ca_certs=ssl_ca_certs,
                 max_concurrent_streams=max_concurrent_streams,
                 reflection=enable_reflection,
             )

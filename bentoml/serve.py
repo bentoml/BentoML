@@ -119,7 +119,7 @@ def log_grpcui_instruction(port: int) -> None:
 
     if os.path.exists("/.dockerenv"):
         logger.info(
-            "Detected running  Bento inside an OCI container. In order to use gRPC UI, do as follows: If your local machine are either MacOS or Windows , then use '%s'. Otherwise use '%s'.",
+            "Detected running Bento inside an OCI container. In order to use gRPC UI, do as follows: If your local machine are either MacOS or Windows , then use '%s'. Otherwise use '%s'.",
             mac_win_instruction,
             linux_instruction,
         )
@@ -132,11 +132,11 @@ def log_grpcui_instruction(port: int) -> None:
 def construct_ssl_args(
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
-    ssl_keyfile_password: str | None,
-    ssl_version: int | None,
-    ssl_cert_reqs: int | None,
-    ssl_ca_certs: str | None,
-    ssl_ciphers: str | None,
+    ssl_keyfile_password: str | None = None,
+    ssl_version: int | None = None,
+    ssl_cert_reqs: int | None = None,
+    ssl_ca_certs: str | None = None,
+    ssl_ciphers: str | None = None,
 ) -> list[str]:
     args: list[str] = []
 
@@ -168,15 +168,13 @@ def serve_http_development(
     host: str = Provide[BentoMLContainer.http.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
-    ssl_certfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
-    ssl_keyfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
-    ssl_keyfile_password: str
-    | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile_password],
-    ssl_version: int | None = Provide[BentoMLContainer.api_server_config.ssl.version],
-    ssl_cert_reqs: int
-    | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
-    ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
-    ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
+    ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+    ssl_keyfile_password: str | None = Provide[BentoMLContainer.ssl.keyfile_password],
+    ssl_version: int | None = Provide[BentoMLContainer.ssl.version],
+    ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
+    ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
     reload: bool = False,
 ) -> None:
     from circus.sockets import CircusSocket
@@ -191,12 +189,19 @@ def serve_http_development(
     svc = load(bento_identifier, working_dir=working_dir)
 
     prometheus_dir = ensure_prometheus_dir()
-
     watchers: list[Watcher] = []
-
     circus_sockets: list[CircusSocket] = [
         CircusSocket(name=API_SERVER_NAME, host=host, port=port, backlog=backlog)
     ]
+    ssl_args = construct_ssl_args(
+        ssl_certfile=ssl_certfile,
+        ssl_keyfile=ssl_keyfile,
+        ssl_keyfile_password=ssl_keyfile_password,
+        ssl_version=ssl_version,
+        ssl_cert_reqs=ssl_cert_reqs,
+        ssl_ca_certs=ssl_ca_certs,
+        ssl_ciphers=ssl_ciphers,
+    )
 
     watchers.append(
         create_watcher(
@@ -211,15 +216,7 @@ def serve_http_development(
                 working_dir,
                 "--prometheus-dir",
                 prometheus_dir,
-                *construct_ssl_args(
-                    ssl_certfile=ssl_certfile,
-                    ssl_keyfile=ssl_keyfile,
-                    ssl_keyfile_password=ssl_keyfile_password,
-                    ssl_version=ssl_version,
-                    ssl_cert_reqs=ssl_cert_reqs,
-                    ssl_ca_certs=ssl_ca_certs,
-                    ssl_ciphers=ssl_ciphers,
-                ),
+                *ssl_args,
             ],
             working_dir=working_dir,
             # we don't want to close stdin for child process in case user use debugger.
@@ -227,14 +224,15 @@ def serve_http_development(
             close_child_stdin=False,
         )
     )
+    scheme = "https" if len(ssl_args) > 0 else "http"
     if BentoMLContainer.api_server_config.metrics.enabled.get():
         log_host = "localhost" if host == "0.0.0.0" else host
 
         logger.info(
             PROMETHEUS_MESSAGE,
-            "HTTP",
+            scheme.upper(),
             bento_identifier,
-            f"http://{log_host}:{port}/metrics",
+            f"{scheme}://{log_host}:{port}/metrics",
         )
 
     plugins = []
@@ -269,9 +267,10 @@ def serve_http_development(
     with track_serve(svc):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
-                'Starting development %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',
-                "HTTP",
+                'Starting development %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
+                scheme.upper(),
                 bento_identifier,
+                scheme,
                 host,
                 port,
             ),
@@ -289,16 +288,16 @@ def serve_http_production(
     host: str = Provide[BentoMLContainer.http.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: int = Provide[BentoMLContainer.api_server_workers],
-    ssl_certfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
-    ssl_keyfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
-    ssl_keyfile_password: str
-    | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile_password],
-    ssl_version: int | None = Provide[BentoMLContainer.api_server_config.ssl.version],
-    ssl_cert_reqs: int
-    | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
-    ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
-    ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
+    ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+    ssl_keyfile_password: str | None = Provide[BentoMLContainer.ssl.keyfile_password],
+    ssl_version: int | None = Provide[BentoMLContainer.ssl.version],
+    ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
+    ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
 ) -> None:
+    from circus.sockets import CircusSocket
+
     from bentoml import load
 
     from ._internal.utils import reserve_free_port
@@ -308,14 +307,10 @@ def serve_http_production(
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
-
-    from circus.sockets import CircusSocket  # type: ignore
-
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
     uds_path = None
-
     prometheus_dir = ensure_prometheus_dir()
 
     if psutil.POSIX:
@@ -410,6 +405,16 @@ def serve_http_production(
         backlog=backlog,
     )
 
+    ssl_args = construct_ssl_args(
+        ssl_certfile=ssl_certfile,
+        ssl_keyfile=ssl_keyfile,
+        ssl_keyfile_password=ssl_keyfile_password,
+        ssl_version=ssl_version,
+        ssl_cert_reqs=ssl_cert_reqs,
+        ssl_ca_certs=ssl_ca_certs,
+        ssl_ciphers=ssl_ciphers,
+    )
+    scheme = "https" if len(ssl_args) > 0 else "http"
     watchers.append(
         create_watcher(
             name="api_server",
@@ -429,15 +434,7 @@ def serve_http_production(
                 "$(CIRCUS.WID)",
                 "--prometheus-dir",
                 prometheus_dir,
-                *construct_ssl_args(
-                    ssl_certfile=ssl_certfile,
-                    ssl_keyfile=ssl_keyfile,
-                    ssl_keyfile_password=ssl_keyfile_password,
-                    ssl_version=ssl_version,
-                    ssl_cert_reqs=ssl_cert_reqs,
-                    ssl_ca_certs=ssl_ca_certs,
-                    ssl_ciphers=ssl_ciphers,
-                ),
+                *ssl_args,
             ],
             working_dir=working_dir,
             numprocesses=api_workers,
@@ -449,9 +446,9 @@ def serve_http_production(
 
         logger.info(
             PROMETHEUS_MESSAGE,
-            "HTTP",
+            scheme.upper(),
             bento_identifier,
-            f"http://{log_host}:{port}/metrics",
+            f"{scheme}://{log_host}:{port}/metrics",
         )
 
     arbiter = create_standalone_arbiter(
@@ -463,9 +460,10 @@ def serve_http_production(
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore
-                    'Starting production %s BentoServer from "%s" running on http://%s:%d (Press CTRL+C to quit)',
-                    "HTTP",
+                    'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
+                    scheme.upper(),
                     bento_identifier,
+                    scheme,
                     host,
                     port,
                 ),
@@ -483,6 +481,9 @@ def serve_grpc_development(
     port: int = Provide[BentoMLContainer.grpc.port],
     host: str = Provide[BentoMLContainer.grpc.host],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
+    ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
@@ -502,9 +503,7 @@ def serve_grpc_development(
     svc = load(bento_identifier, working_dir=working_dir)
 
     prometheus_dir = ensure_prometheus_dir()
-
     watchers: list[Watcher] = []
-
     circus_sockets: list[CircusSocket] = []
 
     if not reflection:
@@ -513,6 +512,12 @@ def serve_grpc_development(
         )
     else:
         log_grpcui_instruction(port)
+    ssl_args = construct_ssl_args(
+        ssl_certfile=ssl_certfile,
+        ssl_keyfile=ssl_keyfile,
+        ssl_ca_certs=ssl_ca_certs,
+    )
+    scheme = "https" if len(ssl_args) > 0 else "http"
 
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(
@@ -531,6 +536,7 @@ def serve_grpc_development(
             working_dir,
             "--prometheus-dir",
             prometheus_dir,
+            *ssl_args,
         ]
 
         if reflection:
@@ -555,7 +561,6 @@ def serve_grpc_development(
                 close_child_stdin=False,
             )
         )
-
     if BentoMLContainer.api_server_config.metrics.enabled.get():
         metrics_host = BentoMLContainer.grpc.metrics.host.get()
         metrics_port = BentoMLContainer.grpc.metrics.port.get()
@@ -633,9 +638,10 @@ def serve_grpc_development(
     with track_serve(svc, serve_kind="grpc"):
         arbiter.start(
             cb=lambda _: logger.info(  # type: ignore
-                'Starting development %s BentoServer from "%s" listening on %s:%d (Press CTRL+C to quit)',
+                'Starting development %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
                 "gRPC",
                 bento_identifier,
+                scheme,
                 host,
                 port,
             ),
@@ -651,6 +657,9 @@ def serve_grpc_production(
     host: str = Provide[BentoMLContainer.grpc.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: int = Provide[BentoMLContainer.api_server_workers],
+    ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     reflection: bool = False,
@@ -770,6 +779,12 @@ def serve_grpc_production(
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
     logger.debug(f"Runner map: {runner_bind_map}")
+    ssl_args = construct_ssl_args(
+        ssl_certfile=ssl_certfile,
+        ssl_keyfile=ssl_keyfile,
+        ssl_ca_certs=ssl_ca_certs,
+    )
+    scheme = "https" if len(ssl_args) > 0 else "http"
 
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(
@@ -791,6 +806,7 @@ def serve_grpc_production(
             prometheus_dir,
             "--worker-id",
             "$(CIRCUS.WID)",
+            *ssl_args,
         ]
         if reflection:
             args.append("--enable-reflection")
@@ -813,6 +829,7 @@ def serve_grpc_production(
             )
         )
 
+    scheme = "https" if len(ssl_args) > 0 else "http"
     if BentoMLContainer.api_server_config.metrics.enabled.get():
         metrics_host = BentoMLContainer.grpc.metrics.host.get()
         metrics_port = BentoMLContainer.grpc.metrics.port.get()
@@ -859,9 +876,10 @@ def serve_grpc_production(
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore
-                    'Starting production %s BentoServer from "%s" listening on %s:%d (Press CTRL+C to quit)',
+                    'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
                     "gRPC",
                     bento_identifier,
+                    scheme,
                     host,
                     port,
                 ),

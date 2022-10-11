@@ -66,7 +66,12 @@ Learn BentoML
         :link-type: url
 
         Join us in our Slack community where hundreds of ML practitioners are contributing to the project, helping other users, and discuss all things MLOps.
+    
+    .. grid-item-card:: :doc:`🖥 BentoML Metrics <metrics>`
+        :link: metrics
+        :link-type: doc
 
+        A simple guide of using BentoML custom Metrics. After viewing this tutorial, you'll be able to attach custome Prometheus Metrics to your ML model API endpoints.
 
 Beyond Model Serving
 --------------------
@@ -143,6 +148,7 @@ contributing to the project, helping other users and discuss all things MLOps.
 
    installation
    tutorial
+   metrics
    concepts/index
    frameworks/index
    guides/index

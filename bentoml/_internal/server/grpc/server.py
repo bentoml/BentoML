@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from grpc import aio
     from grpc_health.v1 import health_pb2 as pb_health
     from grpc_health.v1 import health_pb2_grpc as services_health
-    from typing_extensions import Self
 
     from bentoml.grpc.v1alpha1 import service_pb2_grpc as services
 
@@ -64,20 +63,16 @@ class Server(aio._server.Server):
         self,
         servicer: Servicer,
         bind_address: str,
-        enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
         max_message_length: int
         | None = Provide[BentoMLContainer.grpc.max_message_length],
-        max_concurrent_streams: int
-        | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
         maximum_concurrent_rpcs: int
         | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
+        enable_reflection: bool = False,
+        max_concurrent_streams: int | None = None,
         migration_thread_pool_workers: int = 1,
-        ssl_certfile: str
-        | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
-        ssl_keyfile: str
-        | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
-        ssl_ca_certs: str
-        | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
+        ssl_certfile: str | None = None,
+        ssl_keyfile: str | None = None,
+        ssl_ca_certs: str | None = None,
         graceful_shutdown_timeout: float | None = None,
         compression: grpc.Compression | None = None,
     ):
@@ -165,7 +160,7 @@ class Server(aio._server.Server):
             assert (
                 self.ssl_keyfile
             ), "'ssl_keyfile' is required when 'ssl_certfile' is provided."
-            if self.ssl_ca_certs:
+            if self.ssl_ca_certs is not None:
                 client_auth = True
                 ca_cert = _load_from_file(self.ssl_ca_certs)
             server_credentials = grpc.ssl_server_credentials(
@@ -179,7 +174,7 @@ class Server(aio._server.Server):
                 require_client_auth=client_auth,
             )
 
-            self.server.add_secure_port(addr, server_credentials)
+            self.add_secure_port(addr, server_credentials)
         else:
             self.add_insecure_port(addr)
 

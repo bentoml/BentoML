@@ -408,6 +408,7 @@ class _BentoMLContainerClass:
 
     grpc = api_server_config.grpc
     http = api_server_config.http
+    ssl = api_server_config.ssl
 
     development_mode = providers.Static(True)
 

@@ -122,15 +122,13 @@ def start_http_server(
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: int = Provide[BentoMLContainer.api_server_workers],
-    ssl_certfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
-    ssl_keyfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
-    ssl_keyfile_password: str
-    | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile_password],
-    ssl_version: int | None = Provide[BentoMLContainer.api_server_config.ssl.version],
-    ssl_cert_reqs: int
-    | None = Provide[BentoMLContainer.api_server_config.ssl.cert_reqs],
-    ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
-    ssl_ciphers: str | None = Provide[BentoMLContainer.api_server_config.ssl.ciphers],
+    ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+    ssl_keyfile_password: str | None = Provide[BentoMLContainer.ssl.keyfile_password],
+    ssl_version: int | None = Provide[BentoMLContainer.ssl.version],
+    ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
+    ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
 ) -> None:
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
@@ -236,9 +234,9 @@ def start_grpc_server(
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
-    ssl_certfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.certfile],
-    ssl_keyfile: str | None = Provide[BentoMLContainer.api_server_config.ssl.keyfile],
-    ssl_ca_certs: str | None = Provide[BentoMLContainer.api_server_config.ssl.ca_certs],
+    ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
 ) -> None:
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher

@@ -58,7 +58,7 @@ make install-spellchecker-deps
 
 To run spellchecker locally:
 ```bash
-make spellcheck-doc
+make spellcheck-docs
 ```
 
 ##### Watch Docs

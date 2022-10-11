@@ -74,10 +74,26 @@ dynamic = ["version"]
 [project.scripts]
 bentoml = "bentoml_cli.cli:cli"
 
-[tool.setuptools]
-package-data = { "bentoml" = ["bentoml/*"], "bentoml_cli" = ["bentoml_cli/*"] }
+[tool.setuptools.package-data]
+bentoml = ["bentoml/*"]
+bentoml_cli = ["bentoml_cli/*"]
+
+[tool.setuptools.exclude-package-data]
+"*" = [
+  ".git*",
+  ".bazel*",
+  "BUILD.bazel",
+  "WORKSPACE",
+  "*.md",
+  "Makefile",
+  "*.py[cod]",
+  "typings",
+]
+bentoml = ["grpc/buf.yaml", "_internal/frameworks/FRAMEWORK_TEMPLATE_PY"]
+bentoml_cli = ["worker/README.md"]
 
 [tool.setuptools.packages.find]
+where = ["src"]
 include = [
   # include bentoml packages
   "bentoml",
@@ -126,40 +142,44 @@ tracing-zipkin = ["opentelemetry-exporter-zipkin"]
 tracing-otlp = ["opentelemetry-exporter-otlp"]
 
 [tool.setuptools_scm]
-write_to = "bentoml/_version.py"
+write_to = "src/bentoml/_version.py"
 git_describe_command = "git describe --dirty --tags --long --first-parent"
 version_scheme = "post-release"
 fallback_version = "0.0.0"
 
 [tool.coverage.paths]
-source = ["bentoml"]
+source = ["src"]
 
 [tool.coverage.run]
 branch = true
-source = ["bentoml/", "bentoml_cli/"]
+source = ["src"]
 omit = [
-  "bentoml/__main__.py",
-  "bentoml/io.py",
-  "bentoml/serve.py",
-  "bentoml/start.py",
-  "bentoml/_internal/types.py",
-  "bentoml/testing/",
-  "bentoml/grpc/v1alpha1/",
-  "bentoml/_internal/external_typing/",
+  "src/bentoml/__main__.py",
+  "src/bentoml/io.py",
+  "src/bentoml/serve.py",
+  "src/bentoml/start.py",
+  "src/bentoml/_internal/types.py",
+  "src/bentoml/testing/*",
+  "src/bentoml/grpc/v1alpha1/*",
+  "src/bentoml/_internal/external_typing/*",
+  "src/bentoml/_internal/yatai_client/*",
+  "src/bentoml/_internal/yatai_rest_api_client/*",
 ]
 
 [tool.coverage.report]
 show_missing = true
 precision = 2
 omit = [
-  "*/bentoml/__main__.py",
-  "*/bentoml/io.py",
-  "*/bentoml/serve.py",
-  "*/bentoml/start.py",
-  "*/bentoml/_internal/types.py",
-  "*/bentoml/testing/",
-  "*/bentoml/grpc/v1alpha1/",
-  "*/bentoml/_internal/external_typing/",
+  'src/bentoml/__main__.py',
+  "src/bentoml/io.py",
+  "src/bentoml/serve.py",
+  "src/bentoml/start.py",
+  "src/bentoml/_internal/types.py",
+  "src/bentoml/testing/*",
+  "src/bentoml/grpc/v1alpha1/*",
+  "src/bentoml/_internal/external_typing/*",
+  "src/bentoml/_internal/yatai_client/*",
+  "src/bentoml/_internal/yatai_rest_api_client/*",
 ]
 exclude_lines = [
   "\\#\\s*pragma: no cover",
@@ -190,13 +210,12 @@ exclude = '''
     | lib
     | dist
     | typings
-    | bentoml/grpc/v1alpha1
+    | src/bentoml/grpc/v1alpha1
     | grpc-client/thirdparty
   )/
-  | bentoml/_version.py
+  | src/bentoml/_version.py
 )
 '''
-extend-exclude = "(_pb2.py$|_pb2_grpc.py$)"
 
 [tool.pytest.ini_options]
 addopts = [
@@ -225,8 +244,8 @@ extension-pkg-allow-list = [
 ]
 ignore-paths = [
   "typings",
-  "bentoml/_internal/external_typing",
-  "bentoml/grpc/v1alpha1",
+  "src/bentoml/_internal/external_typing",
+  "src/bentoml/grpc/v1alpha1",
 ]
 disable = [
   "import-error",
@@ -352,25 +371,23 @@ force_alphabetical_sort_within_sections = true
 skip_glob = [
   "typings/*",
   "test/*",
-  "**/*_pb2.py",
-  "**/*_pb2_grpc.py",
+  "**/*_pb2.py*",
+  "**/*_pb2_grpc.py*",
   "venv/*",
   "lib/*",
-  'bentoml/grpc/v1alpha1/',
   "grpc-client/thirdparty",
   "bazel-*",
 ]
 
 [tool.pyright]
 pythonVersion = "3.10"
-include = ["bentoml/"]
+include = ["src/bentoml/", "src/bentoml_cli/"]
 exclude = [
-  'bentoml/_version.py',
-  'bentoml/__main__.py',
-  'bentoml/_internal/external_typing/',
-  'bentoml/grpc/v1alpha1/',
-  '**/*_pb2.py',
-  "**/*_pb2_grpc.py",
+  'src/bentoml/_version.py',
+  'src/bentoml/__main__.py',
+  'src/bentoml/_internal/external_typing/',
+  'src/**/*_pb2.py*',
+  "src/**/*_pb2_grpc.py*",
   "grpc-client/thirdparty",
   "bazel-*",
 ]

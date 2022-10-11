@@ -140,8 +140,8 @@ def build(
     build_args: dict[str, str] | None,
     build_context: dict[str, str] | None,
     builder: str | None,
-    cache_from: str | t.Iterable[str] | dict[str, str] | None,
-    cache_to: str | t.Iterable[str] | dict[str, str] | None,
+    cache_from: str | tuple[str] | dict[str, str] | None,
+    cache_to: str | tuple[str] | dict[str, str] | None,
     cgroup_parent: str | None,
     file: PathType | None,
     iidfile: PathType | None,
@@ -150,9 +150,9 @@ def build(
     metadata_file: PathType | None,
     network: str | None,
     no_cache: bool,
-    no_cache_filter: t.Iterable[str] | None,
+    no_cache_filter: tuple[str] | None,
     output: str | dict[str, str] | None,
-    platform: str | t.Iterable[str] | None,
+    platform: str | tuple[str] | None,
     progress: t.Literal["auto", "tty", "plain"],
     pull: bool,
     push: bool,
@@ -171,7 +171,7 @@ def build(
 
     if isinstance(tags, str):
         cmds.extend(["--tag", tags])
-    elif isinstance(tags, t.Iterable):
+    elif isinstance(tags, tuple):
         for tag in tags:
             cmds.extend(["--tag", tag])
 
@@ -186,7 +186,7 @@ def build(
 
     if platform is not None and len(platform) > 0:
         if isinstance(platform, str):
-            platform = [platform]
+            platform = (platform,)
         cmds += ["--platform", ",".join(platform)]
 
     if build_args is not None:
@@ -205,7 +205,7 @@ def build(
     if cache_from is not None:
         if isinstance(cache_from, str):
             cmds.extend(["--cache-from", cache_from])
-        elif isinstance(cache_from, t.Iterable):
+        elif isinstance(cache_from, tuple):
             for arg in cache_from:
                 cmds.extend(["--cache-from", arg])
         else:
@@ -215,7 +215,7 @@ def build(
     if cache_to is not None:
         if isinstance(cache_to, str):
             cmds.extend(["--cache-to", cache_to])
-        elif isinstance(cache_to, t.Iterable):
+        elif isinstance(cache_to, tuple):
             for arg in cache_to:
                 cmds.extend(["--cache-to", arg])
         else:
@@ -292,7 +292,7 @@ def build(
 
     cmds.append(str(context_path))
 
-    logger.debug(f"docker buildx build cmd: `{cmds}`")
+    logger.debug(f"docker buildx build cmd: '{cmds}'")
 
     run_docker_cmd(cmds, env=subprocess_env, cwd=cwd)
 

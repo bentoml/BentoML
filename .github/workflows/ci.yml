@@ -41,11 +41,12 @@ jobs:
               - scripts/ci/run_tests.sh
               - requirements/tests-requirements.txt
             protos: &protos
-              - "bentoml/grpc/**/*.proto"
+              - "src/bentoml/grpc/**/*.proto"
             bentoml:
               - *protos
               - *related
-              - "bentoml/**"
+              - "src/bentoml/**"
+              - "src/bentoml_cli/**"
               - "tests/**"
               - "examples/**"
             docs:
@@ -106,7 +107,7 @@ jobs:
         run: make ci-pyright
       - name: Proto check
         if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.protos == 'true') || github.event_name == 'push' }}
-        run: buf lint --config "bentoml/grpc/buf.yaml" --error-format msvs --path "bentoml/grpc"
+        run: buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs --path "src/bentoml/grpc"
 
   documentation_spelling_check:
     runs-on: ubuntu-latest

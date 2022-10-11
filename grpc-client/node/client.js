@@ -7,7 +7,7 @@ function main() {
   const target = "localhost:3000";
   const client = new services.BentoServiceClient(
     target,
-    grpc.credentials.createInsecure(),
+    grpc.credentials.createInsecure()
   );
   var ndarray = new pb.NDArray();
   ndarray

@@ -10,8 +10,9 @@ flake8:
       - W503
       - E501
     exclude:
-      - bentoml/_version.py
-      - guides
+      - src/bentoml/_version.py
+      - src/bentoml/metrics.pyi
+      - examples
 
 
 only_mention_files_with_errors: True

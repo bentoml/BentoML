@@ -146,7 +146,7 @@ def generate_dockerfile(
     .. dropdown:: Implementation Notes
 
         The coresponding Dockerfile template will be determined automatically based on given :class:`DockerOptions`.
-        The templates are located `here <https://github.com/bentoml/BentoML/tree/main/bentoml/_internal/bento/docker/templates>`_
+        The templates are located `here <https://github.com/bentoml/BentoML/tree/main/src/bentoml/_internal/bento/docker/templates>`_
 
         As one can see, the Dockerfile templates are organized with the format :code:`<release_type>_<distro>.j2` with:
 

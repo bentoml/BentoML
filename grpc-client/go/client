@@ -1,6 +1,10 @@
 #!/bin/bash
 
-set -e
+set -ex
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+
+cd "$SCRIPT_DIR" || exit 1
 
 pushd .. >/dev/null
 
@@ -9,17 +13,17 @@ if ! which protoc-gen-go-grpc &>/dev/null; then
 	exit 1
 fi
 
-if ! [[ -d "github.com/bentoml/bentoml/grpc" ]]; then
+if ! [[ -d "$SCRIPT_DIR/github.com/bentoml/bentoml/grpc" ]]; then
 	protoc -I. -I ./thirdparty/protobuf/src \
-		--go_out . --go_opt paths=import \
-		--go-grpc_out . --go-grpc_opt paths=import \
+		--go_out "$SCRIPT_DIR" --go_opt paths=import \
+		--go-grpc_out "$SCRIPT_DIR" --go-grpc_opt paths=import \
 		bentoml/grpc/v1alpha1/service.proto
 fi
 
 popd >/dev/null
 
 # This script is a hack to test out client.go locally without using bazel.
-pushd "$(dirname "$0")/github.com/bentoml/bentoml/grpc/v1alpha1/" >/dev/null
+pushd "$SCRIPT_DIR/github.com/bentoml/bentoml/grpc/v1alpha1/" >/dev/null
 ! [[ -f "go.mod" ]] && go mod init v1alpha1
 go mod tidy
 popd >/dev/null

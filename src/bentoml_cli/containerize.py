@@ -10,8 +10,6 @@ if TYPE_CHECKING:
 
     from bentoml._internal.bento import BentoStore
 
-    F = t.Callable[..., t.Any]
-
 
 def containerize_transformer(
     value: t.Iterable[str] | str | bool | None,

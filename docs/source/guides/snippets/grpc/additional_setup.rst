@@ -18,7 +18,7 @@ repositories and copy the proto files into our project:
    » git remote add -f origin https://github.com/bentoml/BentoML.git
    » git config core.sparseCheckout true
    » cat <<EOT >|.git/info/sparse-checkout
-   bentoml/grpc
+   src/bentoml/grpc
    EOT
-   » git pull origin main
+   » git pull origin main && mv src/bentoml/grpc .
    » popd

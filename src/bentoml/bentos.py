@@ -18,9 +18,8 @@ from functools import partial
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml.exceptions import InvalidArgument
-from bentoml.exceptions import BentoMLException
-
+from .exceptions import InvalidArgument
+from .exceptions import BentoMLException
 from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.utils import resolve_user_filepath
@@ -275,7 +274,7 @@ def build(
     conda: t.Optional[t.Dict[str, t.Any]] = None,
     version: t.Optional[str] = None,
     build_ctx: t.Optional[str] = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> "Bento":
     """
     User-facing API for building a Bento. The available build options are identical to the keys of a
@@ -454,8 +453,8 @@ FEATURES = [
 
 @inject
 def containerize(
-    tag: Tag | str,
-    docker_image_tag: t.Iterable[str] | None = None,
+    bento_tag: Tag | str,
+    docker_image_tag: tuple[str] | None = None,
     *,
     # containerize options
     features: t.Sequence[str] | None = None,
@@ -465,8 +464,8 @@ def containerize(
     build_args: dict[str, str] | None = None,
     build_context: dict[str, str] | None = None,
     builder: str | None = None,
-    cache_from: str | t.Iterable[str] | dict[str, str] | None = None,
-    cache_to: str | t.Iterable[str] | dict[str, str] | None = None,
+    cache_from: str | tuple[str] | dict[str, str] | None = None,
+    cache_to: str | tuple[str] | dict[str, str] | None = None,
     cgroup_parent: str | None = None,
     iidfile: PathType | None = None,
     labels: dict[str, str] | None = None,
@@ -474,20 +473,20 @@ def containerize(
     metadata_file: PathType | None = None,
     network: str | None = None,
     no_cache: bool = False,
-    no_cache_filter: t.Iterable[str] | None = None,
+    no_cache_filter: tuple[str] | None = None,
     output: str | dict[str, str] | None = None,
-    platform: str | t.Iterable[str] | None = None,
+    platform: str | tuple[str] | None = None,
     progress: t.Literal["auto", "tty", "plain"] = "auto",
-    pull: bool = False,
-    push: bool = False,
+    pull: bool = False,  # pylint: disable=W0621
+    push: bool = False,  # pylint: disable=W0621
     quiet: bool = False,
-    secrets: str | t.Iterable[str] | None = None,
+    secrets: str | tuple[str] | None = None,
     shm_size: str | int | None = None,
     rm: bool = False,
     ssh: str | None = None,
     target: str | None = None,
     ulimit: str | None = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> bool:
 
     import psutil
@@ -496,11 +495,11 @@ def containerize(
 
     env = {"DOCKER_BUILDKIT": "1", "DOCKER_SCAN_SUGGEST": "false"}
 
-    bento = _bento_store.get(tag)
+    bento = _bento_store.get(bento_tag)
     if not docker_image_tag:
-        docker_image_tag = [str(bento.tag)]
+        docker_image_tag = (str(bento.tag),)
 
-    logger.info(f"Building docker image for {bento}...")
+    logger.info("Building docker image for %s", bento.tag)
     if platform and not psutil.LINUX and platform != "linux/amd64":
         logger.warning(
             'Current platform is set to "%s". To avoid issue, we recommend you to build the container with x86_64 (amd64): "bentoml containerize %s --platform linux/amd64"',

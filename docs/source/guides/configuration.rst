@@ -29,7 +29,7 @@ Remaining properties will take their defaults values.
 
 Throughout the BentoML documentation, features that are customizable through configuration are demonstrated 
 like the example above. For a full configuration schema including all customizable properties, refer to
-the BentoML configuration template defined in :github:`default_configuration.yml <bentoml/BentoML/blob/main/bentoml/_internal/configuration/default_configuration.yaml>`.
+the BentoML configuration template defined in :github:`default_configuration.yml <bentoml/BentoML/blob/main/src/bentoml/_internal/configuration/default_configuration.yaml>`.
 
 
 

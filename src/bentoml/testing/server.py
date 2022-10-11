@@ -187,7 +187,7 @@ def bentoml_containerize(
         print(f"Building bento server docker image: {bento_tag}")
         bentos.containerize(
             str(bento_tag),
-            docker_image_tag=[image_tag],
+            docker_image_tag=(image_tag,),
             progress="plain",
             features=["grpc"] if use_grpc else None,
         )

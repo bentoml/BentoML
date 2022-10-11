@@ -1,6 +1,10 @@
 #!/bin/bash
 
-set -e
+set -ex
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+
+cd "$SCRIPT_DIR" || exit 1
 
 pushd .. >/dev/null
 
@@ -9,10 +13,10 @@ if ! which protoc-gen-grpc-swift &>/dev/null; then
 	exit 1
 fi
 
-if ! [[ -d "Sources/bentoml" ]]; then
+if ! [[ -d "swift/Sources/bentoml" ]]; then
 	protoc -I . -I ./thirdparty/protobuf/src \
-		--swift_out=Sources --swift_opt=Visibility=Public \
-		--grpc-swift_out=Sources --grpc-swift_opt=Visibility=Public \
+		--swift_out=swift/Sources --swift_opt=Visibility=Public \
+		--grpc-swift_out=swift/Sources --grpc-swift_opt=Visibility=Public \
 		bentoml/grpc/v1alpha1/service.proto
 fi
 

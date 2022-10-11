@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import logging
+from pathlib import Path
 
 from ..utils.pkg import source_locations
 from ...exceptions import BentoMLException
@@ -35,9 +36,11 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         raise MissingDependencyException(_exc_message) from e
 
     # Find bentoml module path
+    # This will be $GIT_ROOT/src/bentoml
     module_location = source_locations("bentoml")
     if not module_location:
         raise BentoMLException("Could not find bentoml module location.")
+    bentoml_path = Path(module_location)
 
     try:
         from importlib import import_module
@@ -45,10 +48,11 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         _ = import_module("bentoml.grpc.v1alpha1.service_pb2")
     except ModuleNotFoundError:
         raise ModuleNotFoundError(
-            f"Generated stubs are not found. Make sure to run '{module_location}/scripts/generate_grpc_stubs.sh' beforehand to generate gRPC stubs."
+            f"Generated stubs are not found. Make sure to run '{bentoml_path.as_posix()}/scripts/generate_grpc_stubs.sh' beforehand to generate gRPC stubs."
         ) from None
 
-    pyproject = os.path.abspath(os.path.join(module_location, "..", "pyproject.toml"))
+    # location to pyproject.toml
+    pyproject = bentoml_path.parent.parent / "pyproject.toml"
 
     # this is for BentoML developer to create Service containing custom development
     # branches of BentoML library, it is True only when BentoML module is installed
@@ -58,7 +62,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
             "BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento."
         )
         with IsolatedEnvBuilder() as env:
-            builder = ProjectBuilder(os.path.dirname(pyproject))
+            builder = ProjectBuilder(pyproject.parent)
             builder.python_executable = env.executable
             builder.scripts_dir = env.scripts_dir
             env.install(builder.build_system_requires)

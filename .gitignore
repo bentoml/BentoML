@@ -109,7 +109,7 @@ tests/integration/data
 
 # setuptools_scm generated version file
 typings
-bentoml/_version.py
+**/*/_version.py
 typings
 
 # test files
@@ -120,16 +120,16 @@ pyvenv.cfg
 
 # bazel generated files
 bazel-*
-cpp/bentoml
-go/bentoml
-node/bentoml
+grpc-client/cpp/bentoml
+grpc-client/go/bentoml
+grpc-client/node/bentoml
 node_modules
 thirdparty
 
 # Swift-related
-swift/**/*/bentoml
+**/*/Sources/bentoml
 .DS_Store
-/.build
+**/*/.build
 /Packages
 /*.xcodeproj
 xcuserdata/

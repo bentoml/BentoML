@@ -107,7 +107,7 @@ jobs:
         run: make ci-pyright
       - name: Proto check
         if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.protos == 'true') || github.event_name == 'push' }}
-        run: buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs --path "src/bentoml/grpc"
+        run: buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs --path src
 
   documentation_spelling_check:
     runs-on: ubuntu-latest

@@ -28,7 +28,6 @@ from bentoml._internal.utils import cached_contextmanager
 if TYPE_CHECKING:
     from grpc import aio
     from grpc_health.v1 import health_pb2 as pb_health
-    from aiohttp.typedefs import LooseHeaders
     from starlette.datastructures import Headers
     from starlette.datastructures import FormData
 
@@ -53,33 +52,6 @@ async def parse_multipart_form(headers: Headers, body: bytes) -> FormData:
 
     parser = MultiPartParser(headers=headers, stream=async_bytesio(body))
     return await parser.parse()
-
-
-async def async_request(
-    method: str,
-    url: str,
-    headers: LooseHeaders | None = None,
-    data: t.Any = None,
-    timeout: int | None = None,
-) -> tuple[int, Headers, bytes]:
-    """
-    A HTTP client with async API.
-    """
-    import aiohttp
-    from starlette.datastructures import Headers
-
-    async with aiohttp.ClientSession() as sess:
-        async with sess.request(
-            method,
-            url,
-            data=data,
-            headers=headers,
-            timeout=timeout,
-        ) as r:
-            r_body = await r.read()
-
-    headers = t.cast(t.Mapping[str, str], r.headers)
-    return r.status, Headers(headers), r_body
 
 
 def kill_subprocess_tree(p: subprocess.Popen[t.Any]) -> None:
@@ -107,6 +79,8 @@ async def server_warmup(
     from bentoml.testing.grpc import create_channel
 
     start_time = time.time()
+    proxy_handler = urllib.request.ProxyHandler({})
+    opener = urllib.request.build_opener(proxy_handler)
     print("Waiting for host %s to be ready.." % host_url)
     while time.time() - start_time < timeout:
         try:
@@ -118,8 +92,8 @@ async def server_warmup(
                 async with create_channel(host_url) as channel:
                     Check = channel.unary_unary(
                         "/grpc.health.v1.Health/Check",
-                        request_serializer=pb_health.HealthCheckRequest.SerializeToString,  # type: ignore (no grpc_health type)
-                        response_deserializer=pb_health.HealthCheckResponse.FromString,  # type: ignore (no grpc_health type)
+                        request_serializer=pb_health.HealthCheckRequest.SerializeToString,
+                        response_deserializer=pb_health.HealthCheckResponse.FromString,
                     )
                     resp = await t.cast(
                         t.Awaitable[pb_health.HealthCheckResponse],
@@ -128,17 +102,14 @@ async def server_warmup(
                             timeout=timeout,
                         ),
                     )
-                    if resp.status == pb_health.HealthCheckResponse.SERVING:  # type: ignore (no generated enum types)
+                    if resp.status == pb_health.HealthCheckResponse.SERVING:
                         return True
                     else:
                         time.sleep(check_interval)
+            elif opener.open(f"http://{host_url}/readyz", timeout=1).status == 200:
+                return True
             else:
-                proxy_handler = urllib.request.ProxyHandler({})
-                opener = urllib.request.build_opener(proxy_handler)
-                if opener.open(f"http://{host_url}/readyz", timeout=1).status == 200:
-                    return True
-                else:
-                    time.sleep(check_interval)
+                time.sleep(check_interval)
         except (
             aio.AioRpcError,
             ConnectionError,
@@ -434,6 +405,7 @@ def host_bento(
     use_grpc: bool = False,
     clean_context: contextlib.ExitStack | None = None,
     host: str = "127.0.0.1",
+    timeout: float = 120,
 ) -> t.Generator[str, None, None]:
     """
     Host a bentoml service, yields the host URL.
@@ -479,6 +451,7 @@ def host_bento(
                 config_file=config_file,
                 use_grpc=use_grpc,
                 host=host,
+                timeout=timeout,
             ) as host_url:
                 yield host_url
         elif deployment_mode == "docker":
@@ -490,6 +463,7 @@ def host_bento(
                 config_file=config_file,
                 use_grpc=use_grpc,
                 host=host,
+                timeout=timeout,
             ) as host_url:
                 yield host_url
         elif deployment_mode == "distributed":
@@ -498,6 +472,7 @@ def host_bento(
                 config_file=config_file,
                 use_grpc=use_grpc,
                 host=host,
+                timeout=timeout,
             ) as host_url:
                 yield host_url
         else:

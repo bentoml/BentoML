@@ -77,7 +77,7 @@ async def async_client_call(
     channel: Channel,
     data: dict[str, Message | pb.Part | bytes | str | dict[str, t.Any]],
     assert_data: pb.Response | t.Callable[[pb.Response], bool] | None = None,
-    timeout: int | None = None,
+    timeout: int | None = 90,
     sanity: bool = True,
 ) -> pb.Response:
     """

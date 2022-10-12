@@ -422,6 +422,7 @@ def host_bento(
                       to :code:`$HOME/bentoml`
         use_grpc: if True, running gRPC tests.
         host: set a given host for the bento, default to ``127.0.0.1``
+        timeout: the timeout for the server to start
 
     Returns:
         :obj:`str`: a generated host URL where we run the test bento.
@@ -442,7 +443,9 @@ def host_bento(
             f"Starting bento server {bento_name} at '{project_path}' {'with config file '+config_file+' ' if config_file else ' '}in {deployment_mode} mode..."
         )
         if bento_name is None or not bentoml.list(bento_name):
-            bento = clean_context.enter_context(bentoml_build(project_path))
+            bento = clean_context.enter_context(
+                bentoml_build(project_path, cleanup=clean_on_exit)
+            )
         else:
             bento = bentoml.get(bento_name)
         if deployment_mode == "standalone":
@@ -456,7 +459,11 @@ def host_bento(
                 yield host_url
         elif deployment_mode == "docker":
             container_tag = clean_context.enter_context(
-                bentoml_containerize(bento.tag, use_grpc=use_grpc)
+                bentoml_containerize(
+                    bento.tag,
+                    use_grpc=use_grpc,
+                    cleanup=clean_on_exit,
+                )
             )
             with run_bento_server_docker(
                 container_tag,

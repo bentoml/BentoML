@@ -136,8 +136,8 @@ async def test_json(host: str):
         await async_client_call(
             "echo_json",
             channel=channel,
-            data={"json": struct_pb2.Value(string_value='"hi"')},
-            assert_data=lambda resp: resp.json.string_value == '"hi"',
+            data={"json": struct_pb2.Value(string_value="hi")},
+            assert_data=lambda resp: resp.json.string_value == "hi",
         )
         await async_client_call(
             "echo_json",

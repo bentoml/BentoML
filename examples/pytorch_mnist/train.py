@@ -142,7 +142,7 @@ def cross_validate(dataset, epochs=NUM_EPOCHS, k_folds=K_FOLDS, device="cpu"):
 
 def train(dataset, epochs=NUM_EPOCHS, device="cpu"):
 
-    print(device)
+    print("Training using %s." % device)
     train_sampler = torch.utils.data.RandomSampler(dataset)
     train_loader = torch.utils.data.DataLoader(
         dataset,

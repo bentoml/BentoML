@@ -52,8 +52,8 @@ class AssertClientInterceptor(aio.UnaryUnaryClientInterceptor):
                 ), f"{call!r} returns {await call.code()} while expecting {self._assert_code}."
             if self._assert_details:
                 assert (
-                    self._assert_details in details
-                ), f"'{self._assert_details}' is not in {await call.details()}."
+                    self._assert_details == details
+                ), f"Details '{details}, while expecting '{self._assert_details}'."
             if self._assert_trailing_metadata:
                 assert (
                     self._assert_trailing_metadata == trailing_metadata

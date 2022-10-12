@@ -106,15 +106,12 @@ async def async_client_call(
         Call(pb.Request(api_name=method, **data), timeout=timeout),
     )
     if sanity:
-        assert output
+        assert isinstance(output, pb.Response)
     if assert_data:
-        try:
-            if callable(assert_data):
-                assert assert_data(output)
-            else:
-                assert output == assert_data
-        except AssertionError:
-            raise AssertionError(f"Failed while checking data: {output}") from None
+        if callable(assert_data):
+            assert assert_data(output), f"Failed while checking data: {output}"
+        else:
+            assert output == assert_data, f"Failed while checking data: {output}"
     return output
 
 

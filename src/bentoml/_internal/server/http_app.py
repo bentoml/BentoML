@@ -271,17 +271,14 @@ class HTTPAppFactory(BaseAppFactory):
 
     async def readyz(self, _: "Request") -> "Response":
         if BentoMLContainer.api_server_config.health_probe.check_runners.get():
-            if all(
-                await asyncio.gather(
-                    *(
-                        runner.runner_handle_is_ready()
-                        for runner in self.bento_service.runners
-                    )
-                )
-            ):
-                return PlainTextResponse("\n", status_code=200)
+            runner_statuses = (
+                runner.runner_handle_is_ready() for runner in self.bento_service.runners
+            )
 
-            raise HTTPException(status_code=500, detail="Runners are not ready.")
+            runners_ready = all(await asyncio.gather(*runner_statuses))
+
+            if not runners_ready:
+                raise HTTPException(status_code=503, detail="Runners are not ready.")
 
         return PlainTextResponse("\n", status_code=200)
 

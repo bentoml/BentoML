@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 import typing as t
 import asyncio
 import logging
@@ -21,7 +20,7 @@ if TYPE_CHECKING:
     from ..service import Service
     from .grpc.servicer import Servicer
 
-    OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
+    OnStartup = list[t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]]
 
 
 class GRPCAppFactory:
@@ -51,28 +50,27 @@ class GRPCAppFactory:
         check_interval: int = 5,
     ):
         if BentoMLContainer.api_server_config.health_probe.check_runners.get():
-            logger.debug(
-                "Waiting for runners {!r} to be ready...".format(
-                    self.bento_service.runners
-                )
+            logger.info(
+                "Waiting for runners %r to be ready...", self.bento_service.runners
             )
 
             while True:
                 try:
-                    if all(
-                        await asyncio.gather(
-                            *(
-                                runner.runner_handle_is_ready()
-                                for runner in self.bento_service.runners
-                            )
-                        )
-                    ):
+                    runner_statuses = (
+                        runner.runner_handle_is_ready()
+                        for runner in self.bento_service.runners
+                    )
+
+                    runners_ready = all(await asyncio.gather(*runner_statuses))
+
+                    if runners_ready:
                         break
-                    else:
-                        time.sleep(check_interval)
                 except ConnectionError as e:
-                    logger.debug("[%s] Retrying ..." % e)
-                    time.sleep(check_interval)
+                    logger.debug("[%s] Retrying ...", e)
+
+                await asyncio.sleep(check_interval)
+
+            logger.info("All runners ready; continuing initialization.")
 
     @property
     def on_startup(self) -> OnStartup:

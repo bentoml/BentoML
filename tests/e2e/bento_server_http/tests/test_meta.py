@@ -36,12 +36,12 @@ async def test_api_server_meta(host: str) -> None:
 
 @pytest.mark.asyncio
 async def test_runner_readiness(host: str) -> None:
-    timeout = 300
+    timeout = 20
     start_time = time.time()
     status = ""
     while (time.time() - start_time) < timeout:
         status, _, _ = await async_request("GET", f"http://{host}/readyz")
-        await asyncio.sleep(20)
+        await asyncio.sleep(5)
         if status == 200:
             break
     assert status == 200

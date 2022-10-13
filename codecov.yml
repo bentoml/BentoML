@@ -27,6 +27,7 @@ coverage:
   status:
     default_rules:
       flag_coverage_not_uploaded_behavior: exclude
+    patch: off
     project:
       default:
         target: auto
@@ -217,9 +218,6 @@ coverage:
         threshold: 10%
         flags:
           - unit-tests
-    patch:
-      default:
-        threshold: 10%
 
 flags:
   catboost:

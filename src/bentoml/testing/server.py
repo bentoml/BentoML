@@ -205,7 +205,7 @@ def run_bento_server_docker(
         cmd.extend(["--publish", f"{bind_prom_port}:{bind_prom_port}"])
     cmd.append(image_tag)
     if use_grpc:
-        cmd.extend(["serve-grpc", "--production", "--enable-reflection"])
+        cmd.extend(["serve-grpc", "--production"])
     print(f"Running API server docker image: '{' '.join(cmd)}'")
     with subprocess.Popen(
         cmd,
@@ -253,7 +253,7 @@ def run_bento_server_standalone(
             f"{server_port}",
         ]
         if use_grpc:
-            cmd += ["--host", f"{host}", "--enable-reflection"]
+            cmd += ["--host", f"{host}"]
     cmd += [bento]
     print(f"Running command: '{' '.join(cmd)}'")
     p = subprocess.Popen(
@@ -368,8 +368,6 @@ def run_bento_server_distributed(
     ]
     with reserve_free_port(host=host, enable_so_reuseport=use_grpc) as server_port:
         cmd.extend(["--port", f"{server_port}"])
-        if use_grpc:
-            cmd.append("--enable-reflection")
     print(f"Running command: '{' '.join(cmd)}'")
     processes.append(
         subprocess.Popen(

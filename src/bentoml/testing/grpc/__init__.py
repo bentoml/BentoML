@@ -82,7 +82,7 @@ async def async_client_call(
     assert_code: grpc.StatusCode | None = None,
     assert_details: str | None = None,
     assert_trailing_metadata: aio.Metadata | None = None,
-) -> pb.Response:
+) -> pb.Response | None:
     """
     Invoke a given API method via a client.
 
@@ -101,7 +101,6 @@ async def async_client_call(
         The response from the server.
     """
 
-    res = pb.Response()
     try:
         Call = channel.unary_unary(
             "/bentoml.grpc.v1alpha1.BentoService/Call",
@@ -111,7 +110,7 @@ async def async_client_call(
         output: aio.UnaryUnaryCall[pb.Request, pb.Response] = Call(
             pb.Request(api_name=method, **data), timeout=timeout
         )
-        res: pb.Response = await output  # type: ignore (duck typing)
+        res: pb.Response = await t.cast(t.Awaitable[pb.Response], output)
         return_code = await output.code()
         details = await output.details()
         trailing_metadata = await output.trailing_metadata()
@@ -135,6 +134,7 @@ async def async_client_call(
             assert (
                 trailing_metadata == assert_trailing_metadata
             ), f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
+        return res
     except aio.AioRpcError as call:
         code = call.code()
         details = call.details()
@@ -151,7 +151,6 @@ async def async_client_call(
             assert (
                 trailing_metadata == assert_trailing_metadata
             ), f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
-    return res
 
 
 @asynccontextmanager

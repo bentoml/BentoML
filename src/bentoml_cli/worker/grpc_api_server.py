@@ -92,6 +92,11 @@ def main(
     component_context.component_index = worker_id
     configure_server_logging()
 
+    if worker_id is None:
+        # worker ID is not set; this server is running in standalone mode
+        # and should not be concerned with the status of its runners
+        BentoMLContainer.config.runner_probe.enabled.set(False)
+
     BentoMLContainer.development_mode.set(False)
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)

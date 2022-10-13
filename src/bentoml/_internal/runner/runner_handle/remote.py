@@ -130,7 +130,7 @@ class RemoteRunnerClient(RunnerHandle):
         __bentoml_method: RunnerMethod[t.Any, P, R],
         *args: P.args,
         **kwargs: P.kwargs,
-    ) -> R:
+    ) -> R | tuple[R, ...]:
         from ...runner.container import AutoContainer
 
         inp_batch_dim = __bentoml_method.config.batch_dim[0]

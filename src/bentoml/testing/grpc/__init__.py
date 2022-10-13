@@ -101,6 +101,7 @@ async def async_client_call(
         The response from the server.
     """
 
+    res: pb.Response | None = None
     try:
         Call = channel.unary_unary(
             "/bentoml.grpc.v1alpha1.BentoService/Call",
@@ -110,7 +111,7 @@ async def async_client_call(
         output: aio.UnaryUnaryCall[pb.Request, pb.Response] = Call(
             pb.Request(api_name=method, **data), timeout=timeout
         )
-        res: pb.Response = await t.cast(t.Awaitable[pb.Response], output)
+        res = await t.cast(t.Awaitable[pb.Response], output)
         return_code = await output.code()
         details = await output.details()
         trailing_metadata = await output.trailing_metadata()
@@ -121,36 +122,23 @@ async def async_client_call(
                 assert assert_data(res), f"Failed while checking data: {output}"
             else:
                 assert res == assert_data, f"Failed while checking data: {output}"
-        if assert_code is None:
-            assert_code = grpc.StatusCode.OK
-        assert (
-            return_code == assert_code
-        ), f"{output!r} returns {return_code} while expecting {assert_code}."
-        if assert_details and details:
-            assert (
-                assert_details in details
-            ), f"Details '{assert_details}' is not in '{details}'."
-        if assert_trailing_metadata:
-            assert (
-                trailing_metadata == assert_trailing_metadata
-            ), f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
-        return res
     except aio.AioRpcError as call:
-        code = call.code()
+        return_code = call.code()
         details = call.details()
         trailing_metadata = call.trailing_metadata()
-        if assert_code:
-            assert (
-                code == assert_code
-            ), f"{call!r} returns {code} while expecting {assert_code}."
-        if assert_details and details:
-            assert (
-                assert_details in details
-            ), f"Details '{assert_details}' is not in '{details}'."
-        if assert_trailing_metadata:
-            assert (
-                trailing_metadata == assert_trailing_metadata
-            ), f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
+    if assert_code is not None:
+        assert (
+            return_code == assert_code
+        ), f"Method '{method}' returns {return_code} while expecting {assert_code}."
+    if assert_details is not None:
+        assert (
+            assert_details == details
+        ), f"Details '{assert_details}' is not in '{details}'."
+    if assert_trailing_metadata is not None:
+        assert (
+            trailing_metadata == assert_trailing_metadata
+        ), f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
+    return res
 
 
 @asynccontextmanager

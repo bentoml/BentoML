@@ -241,8 +241,11 @@ class Runner:
     def destroy(self):
         object.__setattr__(self, "_runner_handle", DummyRunnerHandle())
 
-    async def runner_handle_is_ready(self) -> bool:
-        return await self._runner_handle.is_ready()
+    async def runner_handle_is_ready(
+        self,
+        timeout: int = Provide[BentoMLContainer.api_server_config.runner_probe.timeout],
+    ) -> bool:
+        return await self._runner_handle.is_ready(timeout)
 
     @property
     def scheduled_worker_count(self) -> int:

@@ -216,12 +216,12 @@ class RemoteRunnerClient(RunnerHandle):
             ),
         )
 
-    async def is_ready(self) -> bool:
+    async def is_ready(self, timeout: int) -> bool:
         import aiohttp
 
         # default kubernetes probe timeout is also 1s; see
         # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
-        timeout = aiohttp.ClientTimeout(total=1)
+        aio_timeout = aiohttp.ClientTimeout(total=timeout)
         async with self._client.get(
             f"{self._addr}/readyz",
             headers={
@@ -231,7 +231,7 @@ class RemoteRunnerClient(RunnerHandle):
                 "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
                 "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
             },
-            timeout=timeout,
+            timeout=aio_timeout,
         ) as resp:
             return resp.status == 200
 

@@ -25,7 +25,7 @@ class RunnerHandle(ABC):
         ...
 
     @abstractmethod
-    async def is_ready(self) -> bool:
+    async def is_ready(self, timeout: int) -> bool:
         return True
 
     @abstractmethod
@@ -53,7 +53,7 @@ class DummyRunnerHandle(RunnerHandle):
     ) -> None:
         pass
 
-    async def is_ready(self) -> bool:
+    async def is_ready(self, timeout: int) -> bool:
         return True
 
     def run_method(

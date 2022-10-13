@@ -8,9 +8,10 @@ from functools import lru_cache
 from dataclasses import dataclass
 
 from bentoml.exceptions import InvalidArgument
+from bentoml.grpc.utils._import_hook import import_grpc
+from bentoml.grpc.utils._import_hook import import_generated_stubs
 
 if TYPE_CHECKING:
-    import types
     from enum import Enum
 
     import grpc
@@ -22,18 +23,7 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
     from bentoml._internal.io_descriptors import IODescriptor
 
-    # We need this here so that __all__ is detected due to lazy import
-    def import_generated_stubs(
-        version: str = "v1alpha1",
-    ) -> tuple[types.ModuleType, types.ModuleType]:
-        ...
-
-    def import_grpc() -> tuple[types.ModuleType, types.ModuleType]:
-        ...
-
 else:
-    from bentoml.grpc.utils._import_hook import import_grpc
-    from bentoml.grpc.utils._import_hook import import_generated_stubs
 
     pb, _ = import_generated_stubs()
     grpc, _ = import_grpc()

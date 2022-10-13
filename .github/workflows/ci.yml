@@ -210,6 +210,7 @@ jobs:
           directory: ./
           files: ./unit.xml
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   bento_server_e2e_tests:
     needs:
@@ -288,6 +289,7 @@ jobs:
           directory: ./
           files: ./tests/e2e/bento_server_${{ matrix.server_type }}/${{ matrix.server_type }}_server.xml
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}

@@ -261,6 +261,7 @@ jobs:
           files: ./catboost.xml
           flags: catboost
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   detectron2_integration_tests:
     needs: diff
@@ -305,6 +306,7 @@ jobs:
           files: ./detectron2.xml
           flags: detectron
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   easyocr_integration_tests:
     needs: diff
@@ -349,6 +351,7 @@ jobs:
           files: ./easyocr.xml
           flags: easyocr
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # TODO: evalml_integration_tests:
   # TODO: fasttext_integration_tests
@@ -407,6 +410,7 @@ jobs:
           files: ./fastai.xml,./fastai.unit.xml
           flags: fastai
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   gluon_integration_tests:
     needs: diff
@@ -581,6 +585,7 @@ jobs:
           files: ./keras_tf2.xml
           flags: keras
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   lightgbm_integration_tests:
     needs: diff
@@ -624,6 +629,7 @@ jobs:
           files: ./lightgbm.xml
           flags: lightgbm
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   mlflow_integration_tests:
     needs: diff
@@ -667,6 +673,7 @@ jobs:
           files: ./mlflow.xml
           flags: mlflow
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   onnx_integration_tests:
     needs: diff
@@ -710,6 +717,7 @@ jobs:
           files: ./onnx.xml
           flags: onnx
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # TODO:onnxmlir_integration_tests
 
@@ -799,6 +807,7 @@ jobs:
           files: ./picklable_model.xml
           flags: picklable_model
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   pycaret_integration_tests:
     needs: diff
@@ -898,6 +907,7 @@ jobs:
           files: ./pytorch.xml,./pytorch.unit.xml
           flags: pytorch
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   pytorch_lightning_integration_tests:
     needs: diff
@@ -941,6 +951,7 @@ jobs:
           files: ./pytorch_lightning.xml
           flags: pytorch_lightning
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   torchscript_integration_tests:
     needs: diff
@@ -984,6 +995,7 @@ jobs:
           files: ./torchscript.xml
           flags: torchscript
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   sklearn_integration_tests:
     needs: diff
@@ -1027,6 +1039,7 @@ jobs:
           files: ./sklearn.xml
           flags: sklearn
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   spacy_integration_tests:
     needs: diff
@@ -1222,6 +1235,7 @@ jobs:
           files: ./tf2.xml,./tf2.unit.xml,./tf2.unit.no_eager.xml
           flags: tensorflow
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   transformers_integration_tests:
     needs: diff
@@ -1275,6 +1289,7 @@ jobs:
           files: ./transformers.xml
           flags: transformers
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   xgboost_integration_tests:
     needs: diff
@@ -1318,6 +1333,7 @@ jobs:
           files: ./xgboost.xml
           flags: xgboost
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
 concurrency:
   group: frameworks${{ github.event.pull_request.number || github.sha }}

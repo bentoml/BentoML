@@ -5,12 +5,16 @@ import typing as t
 import asyncio
 import logging
 from typing import TYPE_CHECKING
+from inspect import isawaitable
 
 import anyio
 
+from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import grpc_status_code
 from bentoml.grpc.utils import validate_proto_fields
+from bentoml.grpc.utils import import_generated_stubs
 
+from ...utils import LazyLoader
 from ....exceptions import InvalidArgument
 from ....exceptions import BentoMLException
 
@@ -34,11 +38,6 @@ if TYPE_CHECKING:
     from ...service.service import Service
 
 else:
-    from bentoml.grpc.utils import import_grpc
-    from bentoml.grpc.utils import import_generated_stubs
-
-    from ...utils import LazyLoader
-
     pb, services = import_generated_stubs()
     grpc, aio = import_grpc()
     health = LazyLoader(
@@ -98,26 +97,18 @@ class Servicer:
 
     async def startup(self):
         for handler in self.on_startup:
-            if is_async_iterable(handler):
-                await handler()
-            else:
-                handler()
+            out = handler()
+            if isawaitable(out):
+                await out
 
     async def shutdown(self):
         for handler in self.on_shutdown:
-            if is_async_iterable(handler):
-                await handler()
-            else:
-                handler()
+            out = handler()
+            if isawaitable(out):
+                await out
 
     def __bool__(self):
         return self.loaded
-
-
-def is_async_iterable(obj: t.Any) -> bool:  # pragma: no cover
-    return asyncio.iscoroutinefunction(obj) or (
-        callable(obj) and asyncio.iscoroutinefunction(obj.__call__)
-    )
 
 
 def create_bento_servicer(service: Service) -> services.BentoServiceServicer:

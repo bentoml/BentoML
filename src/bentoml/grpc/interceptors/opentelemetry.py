@@ -16,6 +16,7 @@ from opentelemetry.trace.status import Status
 from opentelemetry.trace.status import StatusCode
 from opentelemetry.semconv.trace import SpanAttributes
 
+from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import wrap_rpc_handler
 from bentoml.grpc.utils import GRPC_CONTENT_TYPE
 from bentoml.grpc.utils import parse_method_name
@@ -38,8 +39,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
 else:
-    from bentoml.grpc.utils import import_grpc
-
     grpc, aio = import_grpc()
 
 logger = logging.getLogger(__name__)

@@ -8,10 +8,10 @@ from grpc_health.v1 import health_pb2 as pb_health
 from google.protobuf import wrappers_pb2
 
 from bentoml.testing.grpc import create_channel
+from bentoml.testing.grpc import async_client_call
 from bentoml.grpc.v1alpha1 import service_pb2 as pb
 from bentoml.grpc.v1alpha1 import service_test_pb2 as pb_test
 from bentoml.grpc.v1alpha1 import service_test_pb2_grpc as services_test
-from bentoml.testing.grpc.interceptors import AssertClientInterceptor
 
 
 @pytest.mark.asyncio
@@ -39,26 +39,12 @@ async def test_success_invocation_custom_servicer(host: str) -> None:
 
 @pytest.mark.asyncio
 async def test_trailing_metadata_interceptors(host: str) -> None:
-    async with create_channel(
-        host,
-        interceptors=[
-            AssertClientInterceptor(
-                assert_trailing_metadata=aio.Metadata.from_tuple(
-                    (("usage", "NLP"), ("accuracy_score", "0.8247"))
-                )
-            )
-        ],
-    ) as channel:
-        Call = channel.unary_unary(
-            "/bentoml.grpc.v1alpha1.BentoService/Call",
-            request_serializer=pb.Request.SerializeToString,
-            response_deserializer=pb.Response.FromString,
-        )
-        await t.cast(
-            t.Awaitable[pb.Request],
-            Call(
-                pb.Request(
-                    api_name="bonjour", text=wrappers_pb2.StringValue(value="BentoML")
-                )
+    async with create_channel(host) as channel:
+        await async_client_call(
+            "bonjour",
+            channel=channel,
+            data={"text": wrappers_pb2.StringValue(value="BentoML")},
+            assert_trailing_metadata=aio.Metadata.from_tuple(
+                (("usage", "NLP"), ("accuracy_score", "0.8247"))
             ),
         )

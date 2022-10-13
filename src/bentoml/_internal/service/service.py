@@ -12,6 +12,7 @@ from bentoml.exceptions import BentoMLException
 from ..tag import Tag
 from ..models import Model
 from ..runner import Runner
+from ...grpc.utils import import_grpc
 from ..bento.bento import get_default_svc_readme
 from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
@@ -27,8 +28,6 @@ if TYPE_CHECKING:
     from ..server.grpc.servicer import Servicer
     from .openapi.specification import OpenAPISpecification
 else:
-    from bentoml.grpc.utils import import_grpc
-
     grpc, _ = import_grpc()
 
 logger = logging.getLogger(__name__)

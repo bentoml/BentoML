@@ -10,6 +10,9 @@ from concurrent.futures import ThreadPoolExecutor
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml.grpc.utils import import_grpc
+from bentoml.grpc.utils import import_generated_stubs
+
 from ...utils import LazyLoader
 from ...utils import cached_property
 from ...utils import resolve_user_filepath
@@ -27,10 +30,6 @@ if TYPE_CHECKING:
 
     from .servicer import Servicer
 else:
-    from bentoml.grpc.utils import import_grpc
-    from bentoml.grpc.utils import import_generated_stubs
-    from bentoml._internal.utils import LazyLoader
-
     grpc, aio = import_grpc()
     _, services = import_generated_stubs()
     health_exception_msg = "'grpcio-health-checking' is required for using health checking endpoints. Install with 'pip install grpcio-health-checking'."

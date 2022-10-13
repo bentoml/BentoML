@@ -7,6 +7,8 @@ from contextlib import ExitStack
 from contextlib import asynccontextmanager
 
 from bentoml.exceptions import BentoMLException
+from bentoml.grpc.utils import import_grpc
+from bentoml.grpc.utils import import_generated_stubs
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import reserve_free_port
 from bentoml._internal.utils import cached_contextmanager
@@ -26,9 +28,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_test_pb2_grpc as services_test
 else:
-    from bentoml.grpc.utils import import_grpc
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
     _, services_test = import_generated_stubs(file="service_test.proto")
     grpc, aio = import_grpc()  # pylint: disable=E1111
@@ -76,17 +75,15 @@ async def async_client_call(
     method: str,
     channel: Channel,
     data: dict[str, Message | pb.Part | bytes | str | dict[str, t.Any]],
+    sanity: bool = True,
+    timeout: int | None = 90,
     assert_data: pb.Response | t.Callable[[pb.Response], bool] | None = None,
     assert_code: grpc.StatusCode | None = None,
     assert_details: str | None = None,
-    timeout: int | None = None,
-    sanity: bool = True,
-) -> pb.Response:
+    assert_trailing_metadata: aio.Metadata | None = None,
+) -> pb.Response | None:
     """
-    Note that to use this function, 'channel' should not be created with any client interceptors,
-    since we will handle interceptors' lifecycle separately.
-
-    This function will also mimic the generated stubs function 'Call' from given 'channel'.
+    Invoke a given API method via a client.
 
     Args:
         method: The method name to call.
@@ -94,79 +91,71 @@ async def async_client_call(
                  any client interceptors. as we will handle interceptors' lifecycle separately.
         data: The data to send to the server.
         assert_data: The data to assert against the response.
-        assert_code: The code to assert against the response.
-        assert_details: The details to assert against the response.
         timeout: The timeout for the RPC.
         sanity: Whether to perform sanity check on the response.
+        assert_code: The code to assert against the response.
+        assert_details: The details to assert against the response.
 
     Returns:
         The response from the server.
     """
-    from bentoml.testing.grpc.interceptors import AssertClientInterceptor
 
-    if assert_code is None:
-        # by default, we want to check if the request is healthy
-        assert_code = grpc.StatusCode.OK
-    # We will add our own interceptors to the channel, which means
-    # We will have to check whether channel already has interceptors.
-    assert (
-        len(
-            list(
-                filter(
-                    lambda x: len(x) != 0,
-                    map(
-                        lambda stack: getattr(channel, stack),
-                        [
-                            "_unary_unary_interceptors",
-                            "_unary_stream_interceptors",
-                            "_stream_unary_interceptors",
-                            "_stream_stream_interceptors",
-                        ],
-                    ),
-                )
-            )
-        )
-        == 0
-    ), "'channel' shouldn't have any interceptors."
+    res: pb.Response | None = None
     try:
-        # we will handle adding our testing interceptors here.
-        # prefer not to use private attributes, but this will do
-        channel._unary_unary_interceptors.append(  # type: ignore (private warning)
-            AssertClientInterceptor(
-                assert_code=assert_code, assert_details=assert_details
-            )
-        )
         Call = channel.unary_unary(
             "/bentoml.grpc.v1alpha1.BentoService/Call",
             request_serializer=pb.Request.SerializeToString,
             response_deserializer=pb.Response.FromString,
         )
-        output = await t.cast(
-            t.Awaitable[pb.Response],
-            Call(pb.Request(api_name=method, **data), timeout=timeout),
+        output: aio.UnaryUnaryCall[pb.Request, pb.Response] = Call(
+            pb.Request(api_name=method, **data), timeout=timeout
         )
+        res = await t.cast(t.Awaitable[pb.Response], output)
+        return_code = await output.code()
+        details = await output.details()
+        trailing_metadata = await output.trailing_metadata()
         if sanity:
-            assert output
+            assert isinstance(res, pb.Response)
         if assert_data:
-            try:
-                if callable(assert_data):
-                    assert assert_data(output)
-                else:
-                    assert output == assert_data
-            except AssertionError:
-                raise AssertionError(f"Failed while checking data: {output}") from None
-        return output
-    finally:
-        # we will reset interceptors per call
-        channel._unary_unary_interceptors = []  # type: ignore (private warning)
+            if callable(assert_data):
+                assert assert_data(res), f"Failed while checking data: {output}"
+            else:
+                assert res == assert_data, f"Failed while checking data: {output}"
+    except aio.AioRpcError as call:
+        return_code = call.code()
+        details = call.details()
+        trailing_metadata = call.trailing_metadata()
+    if assert_code is not None:
+        assert (
+            return_code == assert_code
+        ), f"Method '{method}' returns {return_code} while expecting {assert_code}."
+    if assert_details is not None:
+        assert (
+            assert_details == details
+        ), f"Details '{assert_details}' is not in '{details}'."
+    if assert_trailing_metadata is not None:
+        assert (
+            trailing_metadata == assert_trailing_metadata
+        ), f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
+    return res
 
 
 @asynccontextmanager
 @add_experimental_docstring
 async def create_channel(
-    host_url: str, interceptors: t.Sequence[aio.ClientInterceptor] | None = None
+    host_url: str,
+    interceptors: t.Sequence[aio.ClientInterceptor] | None = None,
 ) -> t.AsyncGenerator[Channel, None]:
-    """Create an async channel with given host_url and client interceptors."""
+    """
+    Create an async channel with given host_url and client interceptors.
+
+    Args:
+        host_url: The host url to connect to.
+        interceptors: The client interceptors to use. This is optional, by default set to None.
+
+    Returns:
+        A insecure channel.
+    """
     channel: Channel | None = None
     try:
         async with aio.insecure_channel(host_url, interceptors=interceptors) as channel:

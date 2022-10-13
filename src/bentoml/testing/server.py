@@ -105,11 +105,11 @@ async def server_warmup(
                     if resp.status == pb_health.HealthCheckResponse.SERVING:
                         return True
                     else:
-                        time.sleep(check_interval)
+                        await asyncio.sleep(check_interval)
             elif opener.open(f"http://{host_url}/readyz", timeout=1).status == 200:
                 return True
             else:
-                time.sleep(check_interval)
+                await asyncio.sleep(check_interval)
         except (
             aio.AioRpcError,
             ConnectionError,
@@ -117,7 +117,7 @@ async def server_warmup(
             socket.timeout,
         ) as e:
             print(f"[{e}] Retrying to connect to the host {host_url}...")
-            time.sleep(check_interval)
+            await asyncio.sleep(check_interval)
     print(f"Timed out waiting {timeout} seconds for Server {host_url} to be ready.")
     return False
 

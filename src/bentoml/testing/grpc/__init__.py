@@ -76,9 +76,12 @@ async def async_client_call(
     method: str,
     channel: Channel,
     data: dict[str, Message | pb.Part | bytes | str | dict[str, t.Any]],
-    assert_data: pb.Response | t.Callable[[pb.Response], bool] | None = None,
-    timeout: int | None = 90,
     sanity: bool = True,
+    timeout: int | None = 90,
+    assert_data: pb.Response | t.Callable[[pb.Response], bool] | None = None,
+    assert_code: grpc.StatusCode | None = None,
+    assert_details: str | None = None,
+    assert_trailing_metadata: aio.Metadata | None = None,
 ) -> pb.Response:
     """
     Invoke a given API method via a client.
@@ -91,28 +94,64 @@ async def async_client_call(
         assert_data: The data to assert against the response.
         timeout: The timeout for the RPC.
         sanity: Whether to perform sanity check on the response.
+        assert_code: The code to assert against the response.
+        assert_details: The details to assert against the response.
 
     Returns:
         The response from the server.
     """
 
-    Call = channel.unary_unary(
-        "/bentoml.grpc.v1alpha1.BentoService/Call",
-        request_serializer=pb.Request.SerializeToString,
-        response_deserializer=pb.Response.FromString,
-    )
-    output = await t.cast(
-        t.Awaitable[pb.Response],
-        Call(pb.Request(api_name=method, **data), timeout=timeout),
-    )
-    if sanity:
-        assert isinstance(output, pb.Response)
-    if assert_data:
-        if callable(assert_data):
-            assert assert_data(output), f"Failed while checking data: {output}"
-        else:
-            assert output == assert_data, f"Failed while checking data: {output}"
-    return output
+    res = pb.Response()
+    try:
+        Call = channel.unary_unary(
+            "/bentoml.grpc.v1alpha1.BentoService/Call",
+            request_serializer=pb.Request.SerializeToString,
+            response_deserializer=pb.Response.FromString,
+        )
+        output: aio.UnaryUnaryCall[pb.Request, pb.Response] = Call(
+            pb.Request(api_name=method, **data), timeout=timeout
+        )
+        res: pb.Response = await output  # type: ignore (duck typing)
+        return_code = await output.code()
+        details = await output.details()
+        trailing_metadata = await output.trailing_metadata()
+        if sanity:
+            assert isinstance(res, pb.Response)
+        if assert_data:
+            if callable(assert_data):
+                assert assert_data(res), f"Failed while checking data: {output}"
+            else:
+                assert res == assert_data, f"Failed while checking data: {output}"
+        if assert_code is None:
+            assert_code = grpc.StatusCode.OK
+        assert (
+            return_code == assert_code
+        ), f"{output!r} returns {return_code} while expecting {assert_code}."
+        if assert_details and details:
+            assert (
+                assert_details in details
+            ), f"Details '{assert_details}' is not in '{details}'."
+        if assert_trailing_metadata:
+            assert (
+                trailing_metadata == assert_trailing_metadata
+            ), f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
+    except aio.AioRpcError as call:
+        code = call.code()
+        details = call.details()
+        trailing_metadata = call.trailing_metadata()
+        if assert_code:
+            assert (
+                code == assert_code
+            ), f"{call!r} returns {code} while expecting {assert_code}."
+        if assert_details and details:
+            assert (
+                assert_details in details
+            ), f"Details '{assert_details}' is not in '{details}'."
+        if assert_trailing_metadata:
+            assert (
+                trailing_metadata == assert_trailing_metadata
+            ), f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
+    return res
 
 
 @asynccontextmanager
@@ -120,39 +159,20 @@ async def async_client_call(
 async def create_channel(
     host_url: str,
     interceptors: t.Sequence[aio.ClientInterceptor] | None = None,
-    assert_code: grpc.StatusCode | None = None,
-    assert_details: str | None = None,
-    assert_trailing_metadata: aio.Metadata | None = None,
 ) -> t.AsyncGenerator[Channel, None]:
     """
     Create an async channel with given host_url and client interceptors.
 
     Args:
-        assert_code: The code to assert against the response.
-        assert_details: The details to assert against the response.
+        host_url: The host url to connect to.
+        interceptors: The client interceptors to use. This is optional, by default set to None.
 
     Returns:
         A insecure channel.
     """
-    from bentoml.testing.grpc.interceptors import AssertClientInterceptor
-
     channel: Channel | None = None
-    if assert_code is None:
-        # by default, we want to check if the request is healthy
-        assert_code = grpc.StatusCode.OK
-    channel_interceptors: list[aio.ClientInterceptor] = [
-        AssertClientInterceptor(
-            assert_code=assert_code,
-            assert_details=assert_details,
-            assert_trailing_metadata=assert_trailing_metadata,
-        )
-    ]
-    if interceptors:
-        channel_interceptors.extend(interceptors)
     try:
-        async with aio.insecure_channel(
-            host_url, interceptors=channel_interceptors
-        ) as channel:
+        async with aio.insecure_channel(host_url, interceptors=interceptors) as channel:
             # create a blocking call to wait til channel is ready.
             await channel.channel_ready()
             yield channel

@@ -87,47 +87,45 @@ async def test_numpy(host: str):
             data={"ndarray": pb.NDArray(shape=[2, 2], int32_values=[1, 2, 3, 4])},
             assert_data=lambda resp: resp.ndarray.int32_values == [2, 4, 6, 8],
         )
-    with pytest.raises(aio.AioRpcError):
-        async with create_channel(
-            host, assert_code=grpc.StatusCode.INTERNAL
-        ) as channel:
-            await async_client_call(
-                "double_ndarray",
-                channel=channel,
-                data={"ndarray": pb.NDArray(string_values=np.array(["2", "2f"]))},
-            )
-        async with create_channel(
-            host, assert_code=grpc.StatusCode.INVALID_ARGUMENT
-        ) as channel:
-            await async_client_call(
-                "double_ndarray",
-                channel=channel,
-                data={
-                    "ndarray": pb.NDArray(
-                        dtype=123, string_values=np.array(["2", "2f"])  # type: ignore (test exception)
-                    )
-                },
-            )
-            await async_client_call(
-                "double_ndarray",
-                channel=channel,
-                data={"serialized_bytes": np.array([1, 2, 3, 4]).ravel().tobytes()},
-            )
-            await async_client_call(
-                "double_ndarray",
-                channel=channel,
-                data={"text": wrappers_pb2.StringValue(value="asdf")},
-            )
-            await async_client_call(
-                "echo_ndarray_enforce_shape",
-                channel=channel,
-                data={"ndarray": randomize_pb_ndarray((1000,))},
-            )
-            await async_client_call(
-                "echo_ndarray_enforce_dtype",
-                channel=channel,
-                data={"ndarray": pb.NDArray(string_values=np.array(["2", "2f"]))},
-            )
+        await async_client_call(
+            "double_ndarray",
+            channel=channel,
+            data={"ndarray": pb.NDArray(string_values=np.array(["2", "2f"]))},
+            assert_code=grpc.StatusCode.INTERNAL,
+        )
+        await async_client_call(
+            "double_ndarray",
+            channel=channel,
+            data={
+                "ndarray": pb.NDArray(
+                    dtype=123, string_values=np.array(["2", "2f"])  # type: ignore (test exception)
+                )
+            },
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
+        await async_client_call(
+            "double_ndarray",
+            channel=channel,
+            data={"serialized_bytes": np.array([1, 2, 3, 4]).ravel().tobytes()},
+        )
+        await async_client_call(
+            "double_ndarray",
+            channel=channel,
+            data={"text": wrappers_pb2.StringValue(value="asdf")},
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
+        await async_client_call(
+            "echo_ndarray_enforce_shape",
+            channel=channel,
+            data={"ndarray": randomize_pb_ndarray((1000,))},
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
+        await async_client_call(
+            "echo_ndarray_enforce_dtype",
+            channel=channel,
+            data={"ndarray": pb.NDArray(string_values=np.array(["2", "2f"]))},
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
 
 
 @pytest.mark.asyncio
@@ -170,31 +168,30 @@ async def test_json(host: str):
                 )
             },
         )
-    with pytest.raises(aio.AioRpcError):
-        async with create_channel(
-            host, assert_code=grpc.StatusCode.INVALID_ARGUMENT
-        ) as channel:
-            await async_client_call(
-                "echo_json",
-                channel=channel,
-                data={"serialized_bytes": b"\n?xfa"},
-            )
-            await async_client_call(
-                "echo_json",
-                channel=channel,
-                data={"text": wrappers_pb2.StringValue(value="asdf")},
-            )
-            await async_client_call(
-                "echo_json_validate",
-                channel=channel,
-                data={
-                    "json": make_iris_proto(
-                        sepal_len=struct_pb2.Value(number_value=2.34),
-                        sepal_width=struct_pb2.Value(number_value=1.58),
-                        petal_len=struct_pb2.Value(number_value=6.52),
-                    ),
-                },
-            )
+        await async_client_call(
+            "echo_json",
+            channel=channel,
+            data={"serialized_bytes": b"\n?xfa"},
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
+        await async_client_call(
+            "echo_json",
+            channel=channel,
+            data={"text": wrappers_pb2.StringValue(value="asdf")},
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
+        await async_client_call(
+            "echo_json_validate",
+            channel=channel,
+            data={
+                "json": make_iris_proto(
+                    sepal_len=struct_pb2.Value(number_value=2.34),
+                    sepal_width=struct_pb2.Value(number_value=1.58),
+                    petal_len=struct_pb2.Value(number_value=6.52),
+                ),
+            },
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
 
 
 @pytest.mark.asyncio
@@ -217,25 +214,24 @@ async def test_file(host: str, bin_file: str):
             assert_data=lambda resp: resp.file.content == b"\x810\x899"
             and resp.file.kind == pb.File.FILE_TYPE_BYTES,
         )
-    with pytest.raises(aio.AioRpcError):
-        async with create_channel(
-            host, assert_code=grpc.StatusCode.INVALID_ARGUMENT
-        ) as channel:
-            await async_client_call(
-                "predict_file",
-                channel=channel,
-                data={"file": pb.File(kind=123, content=fb)},  # type: ignore (testing exception)
-            )
-            await async_client_call(
-                "predict_file",
-                channel=channel,
-                data={"file": pb.File(kind=pb.File.FILE_TYPE_PDF, content=fb)},
-            )
-            await async_client_call(
-                "predict_file",
-                channel=channel,
-                data={"text": wrappers_pb2.StringValue(value="asdf")},
-            )
+        await async_client_call(
+            "predict_file",
+            channel=channel,
+            data={"file": pb.File(kind=123, content=fb)},  # type: ignore (testing exception)
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
+        await async_client_call(
+            "predict_file",
+            channel=channel,
+            data={"file": pb.File(kind=pb.File.FILE_TYPE_PDF, content=fb)},
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
+        await async_client_call(
+            "predict_file",
+            channel=channel,
+            data={"text": wrappers_pb2.StringValue(value="asdf")},
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
 
 
 def assert_image(
@@ -283,25 +279,24 @@ async def test_image(host: str, img_file: str):
                 assert_image, im_file=img_file, assert_kind=pb.File.FILE_TYPE_BMP
             ),
         )
-    with pytest.raises(aio.AioRpcError):
-        async with create_channel(
-            host, assert_code=grpc.StatusCode.INVALID_ARGUMENT
-        ) as channel:
-            await async_client_call(
-                "echo_image",
-                channel=channel,
-                data={"file": pb.File(kind=123, content=fb)},  # type: ignore (testing exception)
-            )
-            await async_client_call(
-                "echo_image",
-                channel=channel,
-                data={"file": pb.File(kind=pb.File.FILE_TYPE_PDF, content=fb)},
-            )
-            await async_client_call(
-                "echo_image",
-                channel=channel,
-                data={"text": wrappers_pb2.StringValue(value="asdf")},
-            )
+        await async_client_call(
+            "echo_image",
+            channel=channel,
+            data={"file": pb.File(kind=123, content=fb)},  # type: ignore (testing exception)
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
+        await async_client_call(
+            "echo_image",
+            channel=channel,
+            data={"file": pb.File(kind=pb.File.FILE_TYPE_PDF, content=fb)},
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
+        await async_client_call(
+            "echo_image",
+            channel=channel,
+            data={"text": wrappers_pb2.StringValue(value="asdf")},
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
 
 
 @pytest.mark.asyncio
@@ -352,20 +347,17 @@ async def test_pandas(host: str):
                 columns=[pb.Series(int64_values=[46])],
             ),
         )
-    with pytest.raises(aio.AioRpcError):
-        async with create_channel(
-            host, assert_code=grpc.StatusCode.INVALID_ARGUMENT
-        ) as channel:
-            await async_client_call(
-                "echo_dataframe",
-                channel=channel,
-                data={
-                    "dataframe": pb.DataFrame(
-                        column_names=["col1"],
-                        columns=[pb.Series(int64_values=[23], int32_values=[23])],
-                    ),
-                },
-            )
+        await async_client_call(
+            "echo_dataframe",
+            channel=channel,
+            data={
+                "dataframe": pb.DataFrame(
+                    column_names=["col1"],
+                    columns=[pb.Series(int64_values=[23], int32_values=[23])],
+                ),
+            },
+            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
 
 
 def assert_multi_images(resp: pb.Response, method: str, im_file: str) -> bool:

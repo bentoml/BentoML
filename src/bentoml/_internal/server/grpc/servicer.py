@@ -5,6 +5,7 @@ import typing as t
 import asyncio
 import logging
 from typing import TYPE_CHECKING
+from inspect import isawaitable
 
 import anyio
 
@@ -98,26 +99,18 @@ class Servicer:
 
     async def startup(self):
         for handler in self.on_startup:
-            if is_async_iterable(handler):
-                await handler()
-            else:
-                handler()
+            out = handler()
+            if isawaitable(out):
+                await out
 
     async def shutdown(self):
         for handler in self.on_shutdown:
-            if is_async_iterable(handler):
-                await handler()
-            else:
-                handler()
+            out = handler()
+            if isawaitable(out):
+                await out
 
     def __bool__(self):
         return self.loaded
-
-
-def is_async_iterable(obj: t.Any) -> bool:  # pragma: no cover
-    return asyncio.iscoroutinefunction(obj) or (
-        callable(obj) and asyncio.iscoroutinefunction(obj.__call__)
-    )
 
 
 def create_bento_servicer(service: Service) -> services.BentoServiceServicer:

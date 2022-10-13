@@ -40,6 +40,13 @@ import click
     help="Enable reflection.",
 )
 @click.option(
+    "--enable-channelz",
+    type=click.BOOL,
+    is_flag=True,
+    help="Enable channelz.",
+    default=False,
+)
+@click.option(
     "--max-concurrent-streams",
     type=click.INT,
     help="Maximum number of concurrent incoming streams to allow on a HTTP2 connection.",
@@ -72,6 +79,7 @@ def main(
     working_dir: str | None,
     worker_id: int | None,
     enable_reflection: bool,
+    enable_channelz: bool,
     max_concurrent_streams: int | None,
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
@@ -118,6 +126,7 @@ def main(
     grpc_options: dict[str, t.Any] = {
         "bind_address": f"{host}:{port}",
         "enable_reflection": enable_reflection,
+        "enable_channelz": enable_channelz,
     }
     if max_concurrent_streams:
         grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)

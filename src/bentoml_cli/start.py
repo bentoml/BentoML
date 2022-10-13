@@ -307,6 +307,13 @@ def add_start_command(cli: click.Group) -> None:
         help="Enable reflection.",
     )
     @click.option(
+        "--enable-channelz",
+        is_flag=True,
+        default=BentoMLContainer.grpc.channelz.enabled.get(),
+        type=click.BOOL,
+        help="Enable Channelz. See https://github.com/grpc/proposal/blob/master/A14-channelz.md.",
+    )
+    @click.option(
         "--max-concurrent-streams",
         default=BentoMLContainer.grpc.max_concurrent_streams.get(),
         type=click.INT,
@@ -343,6 +350,7 @@ def add_start_command(cli: click.Group) -> None:
         ssl_keyfile: str | None,
         enable_reflection: bool,
         ssl_ca_certs: str | None,
+        enable_channelz: bool,
         max_concurrent_streams: int | None,
     ) -> None:
         """
@@ -367,5 +375,6 @@ def add_start_command(cli: click.Group) -> None:
             ssl_keyfile=ssl_keyfile,
             ssl_certfile=ssl_certfile,
             ssl_ca_certs=ssl_ca_certs,
+            channelz=enable_channelz,
             max_concurrent_streams=max_concurrent_streams,
         )

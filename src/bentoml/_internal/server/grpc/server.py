@@ -210,7 +210,7 @@ class Server(aio._server.Server):
                 from grpc_channelz.v1 import channelz
             except ImportError:
                 raise MissingDependencyException(
-                    "'--debug' is passed, which requires 'grpcio-channelz' to be installed. Install with 'pip install grpcio-channelz'."
+                    "'--debug' is passed, which requires 'grpcio-channelz' to be installed. Install with 'pip install bentoml[grpc-channelz]'."
                 ) from None
             if "GRPC_TRACE" not in os.environ:
                 logger.debug(
@@ -223,7 +223,7 @@ class Server(aio._server.Server):
                 from grpc_reflection.v1alpha import reflection
             except ImportError:
                 raise MissingDependencyException(
-                    "reflection is enabled, which requires 'grpcio-reflection' to be installed. Install with 'pip install grpcio-reflection'."
+                    "reflection is enabled, which requires 'grpcio-reflection' to be installed. Install with 'pip install bentoml[grpc-reflection]'."
                 ) from None
             service_names += (reflection.SERVICE_NAME,)
             reflection.enable_server_reflection(service_names, self)

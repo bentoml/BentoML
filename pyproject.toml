@@ -111,6 +111,8 @@ all = [
   "bentoml[io-image]",
   "bentoml[io-pandas]",
   "bentoml[grpc]",
+  "bentoml[grpc-reflection]",
+  "bentoml[grpc-channelz]",
   "bentoml[tracing]",
 ]
 aws = ["fs-s3fs"]
@@ -126,10 +128,13 @@ grpc = [
   # We can't use 1.48.2 since it depends on 3.19.5
   "grpcio>=1.41.0, <1.49, !=1.48.2",
   "grpcio-health-checking>=1.41.0, <1.49, !=1.48.2",
-  "grpcio-reflection>=1.41.0, <1.49, !=1.48.2",
-  "grpcio-channelz>=1.41.0, <1.49, !=1.48.2",
   "opentelemetry-instrumentation-grpc==0.33b0",
 ]
+grpc-reflection = [
+  "bentoml[grpc]",
+  "grpcio-reflection>=1.41.0, <1.49, !=1.48.2",
+]
+grpc-channelz = ["bentoml[grpc]", "grpcio-channelz>=1.41.0, <1.49, !=1.48.2"]
 # We kept for compatibility with previous
 # versions of BentoML. It is discouraged to use this, instead use any
 # of the above tracing.* extras.

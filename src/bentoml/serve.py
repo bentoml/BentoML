@@ -488,8 +488,8 @@ def serve_grpc_development(
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     reload: bool = False,
-    channelz: bool = False,
-    reflection: bool = False,
+    channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
+    reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
 ) -> None:
     from circus.sockets import CircusSocket
 
@@ -665,8 +665,8 @@ def serve_grpc_production(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
-    channelz: bool = False,
-    reflection: bool = False,
+    channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
+    reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
 ) -> None:
     from bentoml import load
     from bentoml.exceptions import UnprocessableEntity

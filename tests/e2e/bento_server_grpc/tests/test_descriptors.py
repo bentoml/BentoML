@@ -207,9 +207,9 @@ async def test_file(host: str, bin_file: str):
         await async_client_call(
             "predict_file",
             channel=channel,
-            data={"file": pb.File(kind=pb.File.FILE_TYPE_BYTES, content=fb)},
+            data={"file": pb.File(kind="application/octet-stream", content=fb)},
             assert_data=lambda resp: resp.file.content == b"\x810\x899"
-            and resp.file.kind == pb.File.FILE_TYPE_BYTES,
+            and resp.file.kind == "application/octet-stream",
         )
         await async_client_call(
             "predict_file",
@@ -220,7 +220,7 @@ async def test_file(host: str, bin_file: str):
         await async_client_call(
             "predict_file",
             channel=channel,
-            data={"file": pb.File(kind=pb.File.FILE_TYPE_PDF, content=fb)},
+            data={"file": pb.File(kind="application/pdf", content=fb)},
             assert_code=grpc.StatusCode.INVALID_ARGUMENT,
         )
         await async_client_call(
@@ -233,7 +233,7 @@ async def test_file(host: str, bin_file: str):
 
 def assert_image(
     resp: pb.Response | pb.Part,
-    assert_kind: pb.File.FileType.ValueType,
+    assert_kind: str,
     im_file: str | ext.NpNDArray,
 ) -> bool:
     fio = io.BytesIO(resp.file.content)
@@ -265,15 +265,15 @@ async def test_image(host: str, img_file: str):
             channel=channel,
             data={"serialized_bytes": fb},
             assert_data=partial(
-                assert_image, im_file=img_file, assert_kind=pb.File.FILE_TYPE_BMP
+                assert_image, im_file=img_file, assert_kind="image/bmp"
             ),
         )
         await async_client_call(
             "echo_image",
             channel=channel,
-            data={"file": pb.File(kind=pb.File.FILE_TYPE_BMP, content=fb)},
+            data={"file": pb.File(kind="image/bmp", content=fb)},
             assert_data=partial(
-                assert_image, im_file=img_file, assert_kind=pb.File.FILE_TYPE_BMP
+                assert_image, im_file=img_file, assert_kind="image/bmp"
             ),
         )
         await async_client_call(
@@ -285,7 +285,7 @@ async def test_image(host: str, img_file: str):
         await async_client_call(
             "echo_image",
             channel=channel,
-            data={"file": pb.File(kind=pb.File.FILE_TYPE_PDF, content=fb)},
+            data={"file": pb.File(kind="application/pdf", content=fb)},
             assert_code=grpc.StatusCode.INVALID_ARGUMENT,
         )
         await async_client_call(
@@ -376,7 +376,7 @@ def assert_multi_images(resp: pb.Response, method: str, im_file: str) -> bool:
     expected = arr * arr
     return assert_image(
         resp.multipart.fields["result"],
-        assert_kind=pb.File.FILE_TYPE_BMP,
+        assert_kind="image/bmp",
         im_file=expected,
     )
 
@@ -393,12 +393,8 @@ async def test_multipart(host: str, img_file: str):
             data={
                 "multipart": {
                     "fields": {
-                        "original": pb.Part(
-                            file=pb.File(kind=pb.File.FILE_TYPE_BMP, content=fb)
-                        ),
-                        "compared": pb.Part(
-                            file=pb.File(kind=pb.File.FILE_TYPE_BMP, content=fb)
-                        ),
+                        "original": pb.Part(file=pb.File(kind="image/bmp", content=fb)),
+                        "compared": pb.Part(file=pb.File(kind="image/bmp", content=fb)),
                     }
                 }
             },

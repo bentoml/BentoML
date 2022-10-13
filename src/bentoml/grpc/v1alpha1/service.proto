@@ -153,32 +153,8 @@ message Multipart {
 // File represents for any arbitrary file type. This can be
 // plaintext, image, video, audio, etc.
 message File {
-  // FileType represents possible file type to be handled by BentoML.
-  // Currently, we only support plaintext (Text()), image (Image()), and file (File()).
-  // TODO: support audio and video streaming file types.
-  enum FileType {
-    FILE_TYPE_UNSPECIFIED = 0;
-
-    // file types
-    FILE_TYPE_CSV = 1;
-    FILE_TYPE_PLAINTEXT = 2;
-    FILE_TYPE_JSON = 3;
-    FILE_TYPE_BYTES = 4;
-    FILE_TYPE_PDF = 5;
-
-    // image types
-    FILE_TYPE_PNG = 6;
-    FILE_TYPE_JPEG = 7;
-    FILE_TYPE_GIF = 8;
-    FILE_TYPE_BMP = 9;
-    FILE_TYPE_TIFF = 10;
-    FILE_TYPE_WEBP = 11;
-    FILE_TYPE_SVG = 12;
-  }
-
-  // optional type of file, let it be csv, text, parquet, etc.
-  optional FileType kind = 1;
-
+  // optional file type, let it be csv, text, parquet, etc.
+  optional string kind = 1;
   // contents of file as bytes.
   bytes content = 2;
 }

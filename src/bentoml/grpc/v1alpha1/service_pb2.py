@@ -23,91 +23,11 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'\n\031com.bentoml.grpc.v1alpha1B\014ServiceProtoP\001Z0github.com/bentoml/bentoml/grpc/v1alpha1;service\220\001\001\370\001\001\242\002\003SVC',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n#bentoml/grpc/v1alpha1/service.proto\x12\x15\x62\x65ntoml.grpc.v1alpha1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1egoogle/protobuf/wrappers.proto\"\xa3\x03\n\x07Request\x12\x10\n\x08\x61pi_name\x18\x01 \x01(\t\x12\x31\n\x07ndarray\x18\x03 \x01(\x0b\x32\x1e.bentoml.grpc.v1alpha1.NDArrayH\x00\x12\x35\n\tdataframe\x18\x05 \x01(\x0b\x32 .bentoml.grpc.v1alpha1.DataFrameH\x00\x12/\n\x06series\x18\x06 \x01(\x0b\x32\x1d.bentoml.grpc.v1alpha1.SeriesH\x00\x12+\n\x04\x66ile\x18\x07 \x01(\x0b\x32\x1b.bentoml.grpc.v1alpha1.FileH\x00\x12,\n\x04text\x18\x08 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\t \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12\x35\n\tmultipart\x18\n \x01(\x0b\x32 .bentoml.grpc.v1alpha1.MultipartH\x00\x12\x1a\n\x10serialized_bytes\x18\x02 \x01(\x0cH\x00\x42\t\n\x07\x63ontentJ\x04\x08\x04\x10\x05J\x04\x08\x0b\x10\x0e\"\x92\x03\n\x08Response\x12\x31\n\x07ndarray\x18\x01 \x01(\x0b\x32\x1e.bentoml.grpc.v1alpha1.NDArrayH\x00\x12\x35\n\tdataframe\x18\x03 \x01(\x0b\x32 .bentoml.grpc.v1alpha1.DataFrameH\x00\x12/\n\x06series\x18\x05 \x01(\x0b\x32\x1d.bentoml.grpc.v1alpha1.SeriesH\x00\x12+\n\x04\x66ile\x18\x06 \x01(\x0b\x32\x1b.bentoml.grpc.v1alpha1.FileH\x00\x12,\n\x04text\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\x08 \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12\x35\n\tmultipart\x18\t \x01(\x0b\x32 .bentoml.grpc.v1alpha1.MultipartH\x00\x12\x1a\n\x10serialized_bytes\x18\x02 \x01(\x0cH\x00\x42\t\n\x07\x63ontentJ\x04\x08\x04\x10\x05J\x04\x08\n\x10\x0e\"\xde\x02\n\x04Part\x12\x31\n\x07ndarray\x18\x01 \x01(\x0b\x32\x1e.bentoml.grpc.v1alpha1.NDArrayH\x00\x12\x35\n\tdataframe\x18\x03 \x01(\x0b\x32 .bentoml.grpc.v1alpha1.DataFrameH\x00\x12/\n\x06series\x18\x05 \x01(\x0b\x32\x1d.bentoml.grpc.v1alpha1.SeriesH\x00\x12+\n\x04\x66ile\x18\x06 \x01(\x0b\x32\x1b.bentoml.grpc.v1alpha1.FileH\x00\x12,\n\x04text\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\x08 \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12\x1a\n\x10serialized_bytes\x18\x04 \x01(\x0cH\x00\x42\x10\n\x0erepresentationJ\x04\x08\x02\x10\x03J\x04\x08\t\x10\x0e\"\x95\x01\n\tMultipart\x12<\n\x06\x66ields\x18\x01 \x03(\x0b\x32,.bentoml.grpc.v1alpha1.Multipart.FieldsEntry\x1aJ\n\x0b\x46ieldsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.bentoml.grpc.v1alpha1.Part:\x02\x38\x01\"\xf1\x02\n\x04\x46ile\x12\x37\n\x04kind\x18\x01 \x01(\x0e\x32$.bentoml.grpc.v1alpha1.File.FileTypeH\x00\x88\x01\x01\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\x0c\"\x95\x02\n\x08\x46ileType\x12\x19\n\x15\x46ILE_TYPE_UNSPECIFIED\x10\x00\x12\x11\n\rFILE_TYPE_CSV\x10\x01\x12\x17\n\x13\x46ILE_TYPE_PLAINTEXT\x10\x02\x12\x12\n\x0e\x46ILE_TYPE_JSON\x10\x03\x12\x13\n\x0f\x46ILE_TYPE_BYTES\x10\x04\x12\x11\n\rFILE_TYPE_PDF\x10\x05\x12\x11\n\rFILE_TYPE_PNG\x10\x06\x12\x12\n\x0e\x46ILE_TYPE_JPEG\x10\x07\x12\x11\n\rFILE_TYPE_GIF\x10\x08\x12\x11\n\rFILE_TYPE_BMP\x10\t\x12\x12\n\x0e\x46ILE_TYPE_TIFF\x10\n\x12\x12\n\x0e\x46ILE_TYPE_WEBP\x10\x0b\x12\x11\n\rFILE_TYPE_SVG\x10\x0c\x42\x07\n\x05_kind\"Q\n\tDataFrame\x12\x14\n\x0c\x63olumn_names\x18\x01 \x03(\t\x12.\n\x07\x63olumns\x18\x02 \x03(\x0b\x32\x1d.bentoml.grpc.v1alpha1.Series\"\xa1\x01\n\x06Series\x12\x17\n\x0b\x62ool_values\x18\x01 \x03(\x08\x42\x02\x10\x01\x12\x18\n\x0c\x66loat_values\x18\x02 \x03(\x02\x42\x02\x10\x01\x12\x18\n\x0cint32_values\x18\x03 \x03(\x05\x42\x02\x10\x01\x12\x18\n\x0cint64_values\x18\x06 \x03(\x03\x42\x02\x10\x01\x12\x15\n\rstring_values\x18\x05 \x03(\t\x12\x19\n\rdouble_values\x18\x04 \x03(\x01\x42\x02\x10\x01\"\xc8\x03\n\x07NDArray\x12\x33\n\x05\x64type\x18\x01 \x01(\x0e\x32$.bentoml.grpc.v1alpha1.NDArray.DType\x12\r\n\x05shape\x18\x02 \x03(\x05\x12\x15\n\rstring_values\x18\x05 \x03(\t\x12\x18\n\x0c\x66loat_values\x18\x03 \x03(\x02\x42\x02\x10\x01\x12\x19\n\rdouble_values\x18\x04 \x03(\x01\x42\x02\x10\x01\x12\x17\n\x0b\x62ool_values\x18\x06 \x03(\x08\x42\x02\x10\x01\x12\x18\n\x0cint32_values\x18\x07 \x03(\x05\x42\x02\x10\x01\x12\x18\n\x0cint64_values\x18\x08 \x03(\x03\x42\x02\x10\x01\x12\x19\n\ruint32_values\x18\t \x03(\rB\x02\x10\x01\x12\x19\n\ruint64_values\x18\n \x03(\x04\x42\x02\x10\x01\"\xa9\x01\n\x05\x44Type\x12\x15\n\x11\x44TYPE_UNSPECIFIED\x10\x00\x12\x0f\n\x0b\x44TYPE_FLOAT\x10\x01\x12\x10\n\x0c\x44TYPE_DOUBLE\x10\x02\x12\x0e\n\nDTYPE_BOOL\x10\x03\x12\x0f\n\x0b\x44TYPE_INT32\x10\x04\x12\x0f\n\x0b\x44TYPE_INT64\x10\x05\x12\x10\n\x0c\x44TYPE_UINT32\x10\x06\x12\x10\n\x0c\x44TYPE_UINT64\x10\x07\x12\x10\n\x0c\x44TYPE_STRING\x10\x08\x32Y\n\x0c\x42\x65ntoService\x12I\n\x04\x43\x61ll\x12\x1e.bentoml.grpc.v1alpha1.Request\x1a\x1f.bentoml.grpc.v1alpha1.Response\"\x00\x42i\n\x19\x63om.bentoml.grpc.v1alpha1B\x0cServiceProtoP\x01Z0github.com/bentoml/bentoml/grpc/v1alpha1;service\x90\x01\x01\xf8\x01\x01\xa2\x02\x03SVCb\x06proto3'
+  serialized_pb=b'\n#bentoml/grpc/v1alpha1/service.proto\x12\x15\x62\x65ntoml.grpc.v1alpha1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1egoogle/protobuf/wrappers.proto\"\xa3\x03\n\x07Request\x12\x10\n\x08\x61pi_name\x18\x01 \x01(\t\x12\x31\n\x07ndarray\x18\x03 \x01(\x0b\x32\x1e.bentoml.grpc.v1alpha1.NDArrayH\x00\x12\x35\n\tdataframe\x18\x05 \x01(\x0b\x32 .bentoml.grpc.v1alpha1.DataFrameH\x00\x12/\n\x06series\x18\x06 \x01(\x0b\x32\x1d.bentoml.grpc.v1alpha1.SeriesH\x00\x12+\n\x04\x66ile\x18\x07 \x01(\x0b\x32\x1b.bentoml.grpc.v1alpha1.FileH\x00\x12,\n\x04text\x18\x08 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\t \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12\x35\n\tmultipart\x18\n \x01(\x0b\x32 .bentoml.grpc.v1alpha1.MultipartH\x00\x12\x1a\n\x10serialized_bytes\x18\x02 \x01(\x0cH\x00\x42\t\n\x07\x63ontentJ\x04\x08\x04\x10\x05J\x04\x08\x0b\x10\x0e\"\x92\x03\n\x08Response\x12\x31\n\x07ndarray\x18\x01 \x01(\x0b\x32\x1e.bentoml.grpc.v1alpha1.NDArrayH\x00\x12\x35\n\tdataframe\x18\x03 \x01(\x0b\x32 .bentoml.grpc.v1alpha1.DataFrameH\x00\x12/\n\x06series\x18\x05 \x01(\x0b\x32\x1d.bentoml.grpc.v1alpha1.SeriesH\x00\x12+\n\x04\x66ile\x18\x06 \x01(\x0b\x32\x1b.bentoml.grpc.v1alpha1.FileH\x00\x12,\n\x04text\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\x08 \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12\x35\n\tmultipart\x18\t \x01(\x0b\x32 .bentoml.grpc.v1alpha1.MultipartH\x00\x12\x1a\n\x10serialized_bytes\x18\x02 \x01(\x0cH\x00\x42\t\n\x07\x63ontentJ\x04\x08\x04\x10\x05J\x04\x08\n\x10\x0e\"\xde\x02\n\x04Part\x12\x31\n\x07ndarray\x18\x01 \x01(\x0b\x32\x1e.bentoml.grpc.v1alpha1.NDArrayH\x00\x12\x35\n\tdataframe\x18\x03 \x01(\x0b\x32 .bentoml.grpc.v1alpha1.DataFrameH\x00\x12/\n\x06series\x18\x05 \x01(\x0b\x32\x1d.bentoml.grpc.v1alpha1.SeriesH\x00\x12+\n\x04\x66ile\x18\x06 \x01(\x0b\x32\x1b.bentoml.grpc.v1alpha1.FileH\x00\x12,\n\x04text\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\x08 \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12\x1a\n\x10serialized_bytes\x18\x04 \x01(\x0cH\x00\x42\x10\n\x0erepresentationJ\x04\x08\x02\x10\x03J\x04\x08\t\x10\x0e\"\x95\x01\n\tMultipart\x12<\n\x06\x66ields\x18\x01 \x03(\x0b\x32,.bentoml.grpc.v1alpha1.Multipart.FieldsEntry\x1aJ\n\x0b\x46ieldsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.bentoml.grpc.v1alpha1.Part:\x02\x38\x01\"3\n\x04\x46ile\x12\x11\n\x04kind\x18\x01 \x01(\tH\x00\x88\x01\x01\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\x0c\x42\x07\n\x05_kind\"Q\n\tDataFrame\x12\x14\n\x0c\x63olumn_names\x18\x01 \x03(\t\x12.\n\x07\x63olumns\x18\x02 \x03(\x0b\x32\x1d.bentoml.grpc.v1alpha1.Series\"\xa1\x01\n\x06Series\x12\x17\n\x0b\x62ool_values\x18\x01 \x03(\x08\x42\x02\x10\x01\x12\x18\n\x0c\x66loat_values\x18\x02 \x03(\x02\x42\x02\x10\x01\x12\x18\n\x0cint32_values\x18\x03 \x03(\x05\x42\x02\x10\x01\x12\x18\n\x0cint64_values\x18\x06 \x03(\x03\x42\x02\x10\x01\x12\x15\n\rstring_values\x18\x05 \x03(\t\x12\x19\n\rdouble_values\x18\x04 \x03(\x01\x42\x02\x10\x01\"\xc8\x03\n\x07NDArray\x12\x33\n\x05\x64type\x18\x01 \x01(\x0e\x32$.bentoml.grpc.v1alpha1.NDArray.DType\x12\r\n\x05shape\x18\x02 \x03(\x05\x12\x15\n\rstring_values\x18\x05 \x03(\t\x12\x18\n\x0c\x66loat_values\x18\x03 \x03(\x02\x42\x02\x10\x01\x12\x19\n\rdouble_values\x18\x04 \x03(\x01\x42\x02\x10\x01\x12\x17\n\x0b\x62ool_values\x18\x06 \x03(\x08\x42\x02\x10\x01\x12\x18\n\x0cint32_values\x18\x07 \x03(\x05\x42\x02\x10\x01\x12\x18\n\x0cint64_values\x18\x08 \x03(\x03\x42\x02\x10\x01\x12\x19\n\ruint32_values\x18\t \x03(\rB\x02\x10\x01\x12\x19\n\ruint64_values\x18\n \x03(\x04\x42\x02\x10\x01\"\xa9\x01\n\x05\x44Type\x12\x15\n\x11\x44TYPE_UNSPECIFIED\x10\x00\x12\x0f\n\x0b\x44TYPE_FLOAT\x10\x01\x12\x10\n\x0c\x44TYPE_DOUBLE\x10\x02\x12\x0e\n\nDTYPE_BOOL\x10\x03\x12\x0f\n\x0b\x44TYPE_INT32\x10\x04\x12\x0f\n\x0b\x44TYPE_INT64\x10\x05\x12\x10\n\x0c\x44TYPE_UINT32\x10\x06\x12\x10\n\x0c\x44TYPE_UINT64\x10\x07\x12\x10\n\x0c\x44TYPE_STRING\x10\x08\x32Y\n\x0c\x42\x65ntoService\x12I\n\x04\x43\x61ll\x12\x1e.bentoml.grpc.v1alpha1.Request\x1a\x1f.bentoml.grpc.v1alpha1.Response\"\x00\x42i\n\x19\x63om.bentoml.grpc.v1alpha1B\x0cServiceProtoP\x01Z0github.com/bentoml/bentoml/grpc/v1alpha1;service\x90\x01\x01\xf8\x01\x01\xa2\x02\x03SVCb\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,google_dot_protobuf_dot_wrappers__pb2.DESCRIPTOR,])
 
 
-
-_FILE_FILETYPE = _descriptor.EnumDescriptor(
-  name='FileType',
-  full_name='bentoml.grpc.v1alpha1.File.FileType',
-  filename=None,
-  file=DESCRIPTOR,
-  create_key=_descriptor._internal_create_key,
-  values=[
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_UNSPECIFIED', index=0, number=0,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_CSV', index=1, number=1,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_PLAINTEXT', index=2, number=2,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_JSON', index=3, number=3,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_BYTES', index=4, number=4,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_PDF', index=5, number=5,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_PNG', index=6, number=6,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_JPEG', index=7, number=7,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_GIF', index=8, number=8,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_BMP', index=9, number=9,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_TIFF', index=10, number=10,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_WEBP', index=11, number=11,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='FILE_TYPE_SVG', index=12, number=12,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-  ],
-  containing_type=None,
-  serialized_options=None,
-  serialized_start=1540,
-  serialized_end=1817,
-)
-_sym_db.RegisterEnumDescriptor(_FILE_FILETYPE)
 
 _NDARRAY_DTYPE = _descriptor.EnumDescriptor(
   name='DType',
@@ -164,8 +84,8 @@ _NDARRAY_DTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2363,
-  serialized_end=2532,
+  serialized_start=2044,
+  serialized_end=2213,
 )
 _sym_db.RegisterEnumDescriptor(_NDARRAY_DTYPE)
 
@@ -508,8 +428,8 @@ _FILE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='kind', full_name='bentoml.grpc.v1alpha1.File.kind', index=0,
-      number=1, type=14, cpp_type=8, label=1,
-      has_default_value=False, default_value=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -525,7 +445,6 @@ _FILE = _descriptor.Descriptor(
   ],
   nested_types=[],
   enum_types=[
-    _FILE_FILETYPE,
   ],
   serialized_options=None,
   is_extendable=False,
@@ -538,8 +457,8 @@ _FILE = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1457,
-  serialized_end=1826,
+  serialized_start=1456,
+  serialized_end=1507,
 )
 
 
@@ -577,8 +496,8 @@ _DATAFRAME = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1828,
-  serialized_end=1909,
+  serialized_start=1509,
+  serialized_end=1590,
 )
 
 
@@ -644,8 +563,8 @@ _SERIES = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1912,
-  serialized_end=2073,
+  serialized_start=1593,
+  serialized_end=1754,
 )
 
 
@@ -740,8 +659,8 @@ _NDARRAY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2076,
-  serialized_end=2532,
+  serialized_start=1757,
+  serialized_end=2213,
 )
 
 _REQUEST.fields_by_name['ndarray'].message_type = _NDARRAY
@@ -836,8 +755,6 @@ _PART.fields_by_name['serialized_bytes'].containing_oneof = _PART.oneofs_by_name
 _MULTIPART_FIELDSENTRY.fields_by_name['value'].message_type = _PART
 _MULTIPART_FIELDSENTRY.containing_type = _MULTIPART
 _MULTIPART.fields_by_name['fields'].message_type = _MULTIPART_FIELDSENTRY
-_FILE.fields_by_name['kind'].enum_type = _FILE_FILETYPE
-_FILE_FILETYPE.containing_type = _FILE
 _FILE.oneofs_by_name['_kind'].fields.append(
   _FILE.fields_by_name['kind'])
 _FILE.fields_by_name['kind'].containing_oneof = _FILE.oneofs_by_name['_kind']
@@ -941,8 +858,8 @@ _BENTOSERVICE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=2534,
-  serialized_end=2623,
+  serialized_start=2215,
+  serialized_end=2304,
   methods=[
   _descriptor.MethodDescriptor(
     name='Call',

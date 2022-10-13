@@ -1,0 +1,19 @@
+api_server:
+  workers: 1 # When this is set to null the number of available CPU cores is used.
+  timeout: 60
+  backlog: 4096
+  metrics:
+    enabled: true
+    namespace: bentoml_api_server
+  logging:
+    access:
+      enabled: true
+  grpc:
+    host: 0.0.0.0
+    port: 3000
+    max_concurrent_streams: 300
+    maximum_concurrent_rpcs: 2
+    max_message_length: 256
+    metrics:
+      host: 0.0.0.0
+      port: 3001

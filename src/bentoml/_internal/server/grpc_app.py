@@ -62,7 +62,6 @@ class GRPCAppFactory:
                         runner.runner_handle_is_ready()
                         for runner in self.bento_service.runners
                     )
-
                     runners_ready = all(await asyncio.gather(*runner_statuses))
 
                     if runners_ready:

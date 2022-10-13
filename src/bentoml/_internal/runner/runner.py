@@ -5,6 +5,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import attr
+from simple_di import Provide
 
 from ..tag import validate_tag_str
 from ..utils import first_not_none

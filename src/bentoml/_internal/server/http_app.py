@@ -270,11 +270,10 @@ class HTTPAppFactory(BaseAppFactory):
         return on_startup
 
     async def readyz(self, _: "Request") -> "Response":
-        if BentoMLContainer.api_server_config.health_probe.check_runners.get():
+        if BentoMLContainer.api_server_config.runner_probe.enabled.get():
             runner_statuses = (
                 runner.runner_handle_is_ready() for runner in self.bento_service.runners
             )
-
             runners_ready = all(await asyncio.gather(*runner_statuses))
 
             if not runners_ready:

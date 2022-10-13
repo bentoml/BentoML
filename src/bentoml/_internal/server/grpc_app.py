@@ -47,9 +47,11 @@ class GRPCAppFactory:
     async def wait_for_runner_ready(
         self,
         *,
-        check_interval: int = 5,
+        check_interval: int = Provide[
+            BentoMLContainer.api_server_config.runner_probe.period
+        ],
     ):
-        if BentoMLContainer.api_server_config.health_probe.check_runners.get():
+        if BentoMLContainer.api_server_config.runner_probe.enabled.get():
             logger.info(
                 "Waiting for runners %r to be ready...", self.bento_service.runners
             )

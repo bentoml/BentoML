@@ -222,7 +222,17 @@ class RemoteRunnerClient(RunnerHandle):
         # default kubernetes probe timeout is also 1s; see
         # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
         timeout = aiohttp.ClientTimeout(total=1)
-        async with self._client.get(f"{self._addr}/readyz", timeout=timeout) as resp:
+        async with self._client.get(
+            f"{self._addr}/readyz",
+            headers={
+                "Bento-Name": component_context.bento_name,
+                "Bento-Version": component_context.bento_version,
+                "Runner-Name": self._runner.name,
+                "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
+                "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+            },
+            timeout=timeout,
+        ) as resp:
             return resp.status == 200
 
     def __del__(self) -> None:

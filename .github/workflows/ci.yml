@@ -269,7 +269,7 @@ jobs:
         run: |
           pip install -r requirements/tests-requirements.txt
           if [ "${{ matrix.server_type }}" == 'grpc' ]; then
-            pip install -e ".[grpc]"
+            pip install -e ".[grpc,grpc-reflection]"
           else
             pip install -e .
           fi

@@ -7,6 +7,8 @@ from contextlib import ExitStack
 from contextlib import asynccontextmanager
 
 from bentoml.exceptions import BentoMLException
+from bentoml.grpc.utils import import_grpc
+from bentoml.grpc.utils import import_generated_stubs
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import reserve_free_port
 from bentoml._internal.utils import cached_contextmanager
@@ -26,9 +28,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_test_pb2_grpc as services_test
 else:
-    from bentoml.grpc.utils import import_grpc
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
     _, services_test = import_generated_stubs(file="service_test.proto")
     grpc, aio = import_grpc()  # pylint: disable=E1111

@@ -6,9 +6,11 @@ import functools
 from timeit import default_timer
 from typing import TYPE_CHECKING
 
+from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import to_http_status
 from bentoml.grpc.utils import wrap_rpc_handler
 from bentoml.grpc.utils import GRPC_CONTENT_TYPE
+from bentoml.grpc.utils import import_generated_stubs
 
 if TYPE_CHECKING:
     import grpc
@@ -23,9 +25,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import BentoServicerContext
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 else:
-    from bentoml.grpc.utils import import_grpc
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
     grpc, aio = import_grpc()
 

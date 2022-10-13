@@ -10,8 +10,10 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import to_http_status
 from bentoml.grpc.utils import wrap_rpc_handler
+from bentoml.grpc.utils import import_generated_stubs
 from bentoml._internal.context import component_context
 from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -30,9 +32,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
     from bentoml._internal.server.metrics.prometheus import PrometheusClient
 else:
-    from bentoml.grpc.utils import import_grpc
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
     grpc, aio = import_grpc()
 

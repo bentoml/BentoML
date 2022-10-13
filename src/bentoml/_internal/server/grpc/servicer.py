@@ -9,9 +9,12 @@ from inspect import isawaitable
 
 import anyio
 
+from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import grpc_status_code
 from bentoml.grpc.utils import validate_proto_fields
+from bentoml.grpc.utils import import_generated_stubs
 
+from ...utils import LazyLoader
 from ....exceptions import InvalidArgument
 from ....exceptions import BentoMLException
 
@@ -35,11 +38,6 @@ if TYPE_CHECKING:
     from ...service.service import Service
 
 else:
-    from bentoml.grpc.utils import import_grpc
-    from bentoml.grpc.utils import import_generated_stubs
-
-    from ...utils import LazyLoader
-
     pb, services = import_generated_stubs()
     grpc, aio = import_grpc()
     health = LazyLoader(

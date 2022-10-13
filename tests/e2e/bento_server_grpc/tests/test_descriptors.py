@@ -1,4 +1,3 @@
-# pylint: disable=assignment-from-no-return,used-before-assignment
 from __future__ import annotations
 
 import io
@@ -9,6 +8,8 @@ from functools import partial
 
 import pytest
 
+from bentoml.grpc.utils import import_grpc
+from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import randomize_pb_ndarray
@@ -20,18 +21,14 @@ if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
     import PIL.Image as PILImage
-    from grpc import aio
     from google.protobuf import struct_pb2
     from google.protobuf import wrappers_pb2
 
     from bentoml._internal import external_typing as ext
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 else:
-    from bentoml.grpc.utils import import_grpc
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
-    grpc, aio = import_grpc()
+    grpc, _ = import_grpc()
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
     struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
     np = LazyLoader("np", globals(), "numpy")
@@ -134,8 +131,8 @@ async def test_json(host: str):
         await async_client_call(
             "echo_json",
             channel=channel,
-            data={"json": struct_pb2.Value(string_value="hi")},
-            assert_data=lambda resp: resp.json.string_value == "hi",
+            data={"json": struct_pb2.Value(string_value='"hi"')},
+            assert_data=lambda resp: resp.json.string_value == '"hi"',
         )
         await async_client_call(
             "echo_json",

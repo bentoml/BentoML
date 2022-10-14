@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import bentoml
 from bentoml import Tag
 
-from .torchscript import save_model as script_save_model
+from .torchscript import save_model as _save_model
 from .torchscript import MODEL_FILENAME
 from ...exceptions import NotFound
 from ...exceptions import MissingDependencyException
@@ -21,9 +21,7 @@ try:
     import pytorch_lightning as pl
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "`pytorch_lightning` is required in order to use module "
-        "`bentoml.pytorch_lightning`, install python-lightning with: "
-        "`pip install pytorch-lightning`"
+        "'pytorch_lightning' is required in order to use module 'bentoml.pytorch_lightning', install python-lightning with: 'pip install pytorch-lightning'"
     )
 
 MODULE_NAME = "bentoml.pytorch_lightning"
@@ -74,7 +72,7 @@ def load_model(
             f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
-    model: torch.ScriptModule = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage]
+    model: torch.ScriptModule = torch.jit.load(weight_file, map_location=device_id)
     return model
 
 
@@ -160,7 +158,7 @@ def save_model(
     """
     if not isinstance(model, pl.LightningModule):
         raise TypeError(
-            f"`model` must be an instance of `pl.LightningModule`, got {type(model)}"
+            f"'model' must be an instance of 'pl.LightningModule', got {type(model)} instead."
         )
 
     script_module = model.to_torchscript()
@@ -169,7 +167,7 @@ def save_model(
         script_module, dict
     ), "Saving a dict of pytorch_lightning Module into one BentoModel is not supported"
 
-    return script_save_model(
+    return _save_model(
         name,
         script_module,
         signatures=signatures,

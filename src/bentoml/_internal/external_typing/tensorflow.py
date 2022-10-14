@@ -3,14 +3,14 @@ import typing as t
 from tensorflow.python.framework.ops import Tensor
 from tensorflow.python.module.module import Module
 from tensorflow.python.client.session import Session
-from tensorflow.python.eager.function import FunctionSpec
+from tensorflow.python.trackable.base import Trackable
 from tensorflow.python.eager.def_function import Function
+from tensorflow.python.eager.function_spec import FunctionSpec
 from tensorflow.python.framework.type_spec import TypeSpec
 from tensorflow.python.ops.tensor_array_ops import TensorArray
 from tensorflow.python.ops.tensor_array_ops import TensorArraySpec
 from tensorflow.python.framework.tensor_spec import TensorSpec
 from tensorflow.python.keras.engine.training import Model
-from tensorflow.python.training.tracking.base import Trackable
 from tensorflow.python.framework.sparse_tensor import SparseTensorSpec
 from tensorflow.python.keras.engine.sequential import Sequential
 from tensorflow.python.framework.indexed_slices import IndexedSlices

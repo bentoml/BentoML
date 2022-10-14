@@ -412,7 +412,7 @@ def unparse_click_params(
                     or command_param.prompt is not None
                 ):
                     logger.warning(
-                        f"{command_params} is a prompt, skip parsing it for now."
+                        "%s is a prompt, skip parsing it for now.", command_params
                     )
                 if command_param.is_flag:
                     args.append(command_param.opts[-1])

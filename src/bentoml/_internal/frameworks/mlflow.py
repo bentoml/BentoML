@@ -12,8 +12,7 @@ from bentoml import Tag
 from bentoml.models import ModelContext
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
-
-from ..utils import LazyLoader
+from bentoml.exceptions import MissingDependencyException
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -22,17 +21,12 @@ if TYPE_CHECKING:
     from bentoml.types import ModelSignatureDict
 
 
-if TYPE_CHECKING:
+try:
     import mlflow
     import mlflow.models
-else:
-    mlflow = LazyLoader(
-        "mlflow",
-        globals(),
-        "mlflow",
-        exc_msg="`mlflow` is required in order to use module `bentoml.mlflow`, install "
-        "mlflow with `pip install mlflow`. For more information, refer to "
-        "https://mlflow.org/",
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        "'mlflow' is required in order to use module 'bentoml.mlflow', install mlflow with 'pip install mlflow'. For more information, refer to https://mlflow.org/",
     )
 
 
@@ -167,7 +161,9 @@ def import_model(
             "predict": {"batchable": False},
         }
         logger.info(
-            f"Using the default model signature for MLflow pyfunc model ({signatures}) for model {name}."
+            'Using the default model signature for mlflow (%s) for model "%s".',
+            signatures,
+            name,
         )
     if len(signatures) != 1 or "predict" not in signatures:
         raise BentoMLException(

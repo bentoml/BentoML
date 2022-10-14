@@ -52,11 +52,8 @@ def _check_flax_supported() -> None:  # pragma: no cover
 
     if not _supported:
         logger.warning(
-            "Detected transformers version: "
-            f"{get_pkg_version('transformers')}, which "
-            "doesn't have supports for Flax. "
-            "Update `transformers` to 4.x and "
-            "above to have Flax supported."
+            "Detected transformers version: %s, which doesn't have supports for Flax. Update 'transformers' to 4.x and above to have Flax supported.",
+            get_pkg_version("transformers"),
         )
     else:
         _flax_available = find_spec("jax") is not None and find_spec("flax") is not None
@@ -64,15 +61,13 @@ def _check_flax_supported() -> None:  # pragma: no cover
             _jax_version = get_pkg_version("jax")
             _flax_version = get_pkg_version("flax")
             logger.info(
-                f"Jax version {_jax_version}, "
-                f"Flax version {_flax_version} available."
+                f"Jax version %s, Flax version %s available.",
+                _jax_version,
+                _flax_version,
             )
         else:
             logger.warning(
-                "No versions of Flax or Jax are found under "
-                "the current machine. In order to use "
-                "Flax with transformers 4.x and above, "
-                "refers to https://github.com/google/flax#quick-install"
+                "No versions of Flax or Jax are found under the current machine. In order to use Flax with transformers 4.x and above, refers to https://github.com/google/flax#quick-install"
             )
 
 

@@ -53,5 +53,5 @@ def add_login_command(cli: click.Group) -> None:
         add_context(ctx)
 
         logger.info(
-            f"login successfully! user: {user.name}, organization: {org.name}",
+            'Login successfully! user: "%s", organization: "%s"', user.name, org.name
         )

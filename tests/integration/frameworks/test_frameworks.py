@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 import types
 import typing as t
+import logging
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -16,6 +18,9 @@ from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 
 from .models import FrameworkTestModel
 
+if TYPE_CHECKING:
+    from _pytest.logging import LogCaptureFixture
+
 
 @pytest.fixture(name="saved_model")
 def fixture_saved_model(
@@ -24,6 +29,53 @@ def fixture_saved_model(
     return framework.save_model(
         test_model.name, test_model.model, **test_model.save_kwargs
     )
+
+
+def test_backward_warnings(
+    framework: types.ModuleType,
+    test_model: FrameworkTestModel,
+    caplog: LogCaptureFixture,
+    saved_model: bentoml.Model,
+):
+    # We want to cover the cases where the user is using the old API
+    # and we want to make sure that the warning is raised.
+    if (
+        not hasattr(framework, "__test_backward_compatible__")
+        or framework.__test_backward_compatible__ is False
+    ):
+        pytest.skip(
+            "Module '%s' does not have a backward compatible warning."
+            % framework.__name__
+        )
+    if hasattr(framework, "save"):
+        with caplog.at_level(logging.WARNING):
+            framework.save(test_model.name, test_model.model)
+        assert (
+            f'The "{framework.__name__}.save" method is deprecated. Use "{framework.__name__}.save_model" instead.'
+            in caplog.text
+        )
+        caplog.clear()
+    if hasattr(framework, "load"):
+        with caplog.at_level(logging.WARNING):
+            framework.load(saved_model.tag)
+        assert (
+            f'The "{framework.__name__}.load" method is deprecated. Use "{framework.__name__}.load_model" instead.'
+            in caplog.text
+        )
+        caplog.clear()
+    if hasattr(framework, "load_runner"):
+        with caplog.at_level(logging.ERROR):
+            framework.load_runner(saved_model.tag, "asdf")
+            assert '"load_runner" arguments will be ignored.' in caplog.text
+            caplog.clear()
+
+        with caplog.at_level(logging.WARNING):
+            framework.load_runner(saved_model.tag)
+            assert (
+                f'The "{framework.__name__}.load_runner" method is deprecated. Use "{framework.__name__}.get("{saved_model.tag}").to_runner()" instead.'
+                in caplog.text
+            )
+            caplog.clear()
 
 
 def test_wrong_module_load_exc(framework: types.ModuleType):

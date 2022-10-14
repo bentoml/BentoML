@@ -197,7 +197,9 @@ def save_model(
     if signatures is None:
         signatures = {"predict": {"batchable": False}}
         logger.info(
-            f"Using the default model signature ({signatures}) for model {name}."
+            'Using the default model signature for fastai (%s) for model "%s".',
+            signatures,
+            name,
         )
     batchable_enabled_signatures = [v for v in signatures if signatures[v]["batchable"]]
     if len(batchable_enabled_signatures) > 0:

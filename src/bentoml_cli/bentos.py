@@ -175,7 +175,7 @@ def add_bento_management_commands(cli: Group):
 
                 if delete_confirmed:
                     bento_store.delete(bento.tag)
-                    logger.info(f"{bento} deleted")
+                    logger.info("%s deleted.", bento)
 
         for target in delete_targets:
             delete_target(target)
@@ -208,7 +208,7 @@ def add_bento_management_commands(cli: Group):
         """
         bento = bento_store.get(bento_tag)
         out_path = bento.export(out_path)
-        logger.info(f"{bento} exported to {out_path}")
+        logger.info("%s exported to %s.", bento, out_path)
 
     @cli.command(name="import")
     @click.argument("bento_path", type=click.STRING)
@@ -225,7 +225,7 @@ def add_bento_management_commands(cli: Group):
             bentoml import s3://mybucket/bentos/my_bento.bento
         """
         bento = import_bento(bento_path)
-        logger.info(f"{bento} imported")
+        logger.info("%s imported.", bento)
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)

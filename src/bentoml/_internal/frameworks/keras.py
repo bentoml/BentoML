@@ -31,13 +31,11 @@ if TYPE_CHECKING:  # pragma: no cover
     KerasArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
 
 try:
+    import keras
     import tensorflow as tf
-    import tensorflow.keras as keras
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "Tensorflow is required in order to use module `bentoml.keras`, since BentoML "
-        "uses Tensorflow as Keras backend. Install Tensorflow with `pip install "
-        "tensorflow`. For more information, refer to https://www.tensorflow.org/install"
+        "Tensorflow is required in order to use module 'bentoml.keras', since BentoML uses Tensorflow as Keras backend. Install Tensorflow with 'pip install tensorflow'. For more information, refer to https://www.tensorflow.org/install"
     )
 
 MODULE_NAME = "bentoml.keras"
@@ -241,8 +239,8 @@ def save_model(
     if not isinstance(
         model,
         (
-            LazyType("tensorflow.keras.Model"),
-            LazyType("tensorflow.keras.sequential", "Sequential"),
+            t.cast("t.Type[keras.Model]", LazyType("keras.Model")),
+            t.cast("t.Type[keras.Sequential]", LazyType("keras.Sequential")),
         ),
     ):
         raise TypeError(
@@ -259,8 +257,11 @@ def save_model(
                 "batchable": False,
             }
         }
-
-        logger.info(f"Using the default model signature {signatures} for Keras models.")
+        logger.info(
+            'Using the default model signature for keras (%s) for model "%s".',
+            signatures,
+            name,
+        )
 
     options = KerasOptions(include_optimizer=include_optimizer)
 

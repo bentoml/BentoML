@@ -273,6 +273,7 @@ init-import = true
 contextmanager-decorators = [
   "contextlib.contextmanager",
   "bentoml._internal.utils.cached_contextmanager",
+  "tf.device",
 ]
 
 [tool.isort]

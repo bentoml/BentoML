@@ -104,13 +104,13 @@ class ServiceReloaderPlugin(CircusPlugin):
             filtered = [c for c in uniq_paths if self.should_include(c)]
             if filtered:
                 change_type, path = self.display_path(changes)
-                logger.warning(f"{change_type.upper()}: {path}")
+                logger.warning("%s: %s", change_type.upper(), path)
                 return True
         return False
 
     def look_after(self):
         if self.has_modification():
-            logger.warning(f"{self.__class__.__name__} detected changes. Reloading...")
+            logger.warning("%s detected changes. Reloading...", self.__class__.__name__)
             self.call("restart", name="*")
 
     def handle_init(self):

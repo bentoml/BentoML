@@ -117,7 +117,8 @@ def load_model(
     else:
         if model_api_version != "v2":
             logger.warning(
-                f"Got an XGBoost model with an unsupported version '{model_api_version}, unexpected errors may occur."
+                f"Got an XGBoost model with an unsupported version '%s', unexpected errors may occur.",
+                model_api_version,
             )
         model_class = t.cast(XGBoostOptions, bento_model.info.options).model_class
         if model_class is None:
@@ -143,7 +144,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: xgb.Booster | xgb.XGBModel,
     *,
     signatures: dict[str, ModelSignatureDict] | None = None,
@@ -217,12 +218,14 @@ def save_model(
     )
 
     if signatures is None:
-        logger.info(
-            'Using default model signature `{"predict": {"batchable": False}}` for XGBoost model'
-        )
         signatures = {
             "predict": {"batchable": False},
         }
+        logger.info(
+            'Using the default model signature for xgboost (%s) for model "%s".',
+            signatures,
+            name,
+        )
 
     with bentoml.models.create(
         name,

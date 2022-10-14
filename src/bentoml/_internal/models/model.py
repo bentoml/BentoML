@@ -204,13 +204,15 @@ class Model(StoreItem):
     ) -> Model:
         self._save(model_store)
 
-        logger.info(f"Successfully saved {self}")
+        logger.info("Successfully saved %s", self)
         return self
 
     def _save(self, model_store: ModelStore) -> Model:
         if not self.validate():
-            logger.warning(f"Failed to create Model for {self.tag}, not saving.")
-            raise BentoMLException("Failed to save Model because it was invalid")
+            logger.warning("Failed to create %s, not saving...", self)
+            raise BentoMLException(
+                f"Failed to save {self!s} due to {MODEL_YAML_FILENAME} does not exist.",
+            ) from None
 
         with model_store.register(self.tag) as model_path:
             out_fs = fs.open_fs(model_path, create=True, writeable=True)

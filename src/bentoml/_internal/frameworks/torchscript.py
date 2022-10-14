@@ -134,7 +134,9 @@ def save_model(
     if signatures is None:
         signatures = {"__call__": {"batchable": False}}
         logger.info(
-            f"Using the default model signature ({signatures}) for model {name}."
+            'Using the default model signature for torchscript (%s) for model "%s".',
+            signatures,
+            name,
         )
 
     with bentoml.models.create(

@@ -55,7 +55,7 @@ def pytest_collection_modifyitems(config: "Config", items: t.List["Item"]) -> No
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
-    framework_name: str = t.cast(str, metafunc.config.getoption("framework"))
+    framework_name = t.cast(str, metafunc.config.getoption("framework"))
 
     if "framework" in metafunc.fixturenames and "test_model" in metafunc.fixturenames:
         metafunc.parametrize("framework,test_model", test_inputs(framework_name))
@@ -79,11 +79,16 @@ def test_inputs(framework: str | None) -> list[tuple[ModuleType, FrameworkTestMo
     input_modules: list[ModuleType] = []
     for framework_name in frameworks:
         try:
-            input_modules.append(
-                import_module(
-                    f".{framework_name}", "tests.integration.frameworks.models"
-                )
+            module = import_module(
+                f".{framework_name}", "tests.integration.frameworks.models"
             )
+            if hasattr(module, "backward_compatible"):
+                object.__setattr__(
+                    module.framework,
+                    "__test_backward_compatible__",
+                    module.backward_compatible,
+                )
+            input_modules.append(module)
         except ModuleNotFoundError as e:
             logger.warning(
                 f"Failed to find test module for framework {framework_name} (tests.integration.frameworks.models.{framework_name}): {e}"

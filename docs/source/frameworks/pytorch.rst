@@ -131,9 +131,25 @@ For common PyTorch models with single input:
 
 .. note::
 
-    :bdg-info:`Remarks:` All of the external python modules/util functions that the model
-    requires must be included in the project. The PyTorch framework requires them to restore
-    the model.
+    :bdg-info:`Remarks:` All of the external python classes/util functions that the model
+    requires must be referenced in `<module>.<class>` format, and ensure the module is passed
+    to ``bentoml.pytorch.save`` as the ``external_modules`` parameter. For example:
+
+    .. code-block:: python
+        :caption: `train.py`
+        
+        import my_models  # where your model class is defined
+
+        model = my_models.MyModel()
+        bentoml.pytorch.save(
+            model,
+            "my_torch_model",
+            signatures={"__call__": {"batchable": True, "batchdim": 0}},
+            external_modules=[my_models],
+        )
+    
+    The PyTorch framework requires them to restore the model. This is due to the limitation of PyTorch model serialization.
+    A better practice is to use :doc:`/frameworks/torchscript` to convert the model to TorchScript, which is more portable and less prone to compatibility issues.
 
 .. note::
 

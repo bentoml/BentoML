@@ -5,6 +5,8 @@ from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+import pandas as pd
+
 if TYPE_CHECKING:
     from types import UnionType
 
@@ -84,3 +86,9 @@ class IODescriptor(ABC, t.Generic[IOType]):
     @abstractmethod
     async def to_proto(self, obj: IOType) -> t.Any:
         ...
+
+    async def to_pandas_series(self, input: t.Any) -> tuple[pd.Series[t.Any]]:
+        raise NotImplementedError
+
+    async def from_pandas_series(self, input: tuple[pd.Series[t.Any]]) -> IOType:
+        raise NotImplementedError

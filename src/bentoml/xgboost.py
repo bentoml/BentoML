@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def save(tag: Tag | str, *args: t.Any, **kwargs: t.Any):
+def save(tag: str, *args: t.Any, **kwargs: t.Any):
     logger.warning(
         'The "%s.save" method is deprecated. Use "%s.save_model" instead.',
         __name__,

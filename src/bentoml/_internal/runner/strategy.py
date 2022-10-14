@@ -82,7 +82,8 @@ class DefaultStrategy(Strategy):
         if cpus is not None and cpus > 0:
             if "cpu" not in runnable_class.SUPPORTED_RESOURCES:
                 logger.warning(
-                    f"No known supported resource available for {runnable_class}, falling back to using CPU."
+                    "No known supported resource available for %s, falling back to using CPU.",
+                    runnable_class,
                 )
 
             if runnable_class.SUPPORTS_CPU_MULTI_THREADING:

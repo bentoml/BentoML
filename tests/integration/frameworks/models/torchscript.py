@@ -13,6 +13,8 @@ from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.torchscript
 
+backward_compatible = True
+
 test_x_nda = np.array([[1] * 5])
 test_x_df = pd.DataFrame(test_x_nda)
 test_x = torch.Tensor(test_x_nda, device="cpu")

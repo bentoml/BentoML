@@ -292,7 +292,7 @@ def build(
 
     cmds.append(str(context_path))
 
-    logger.debug(f"docker buildx build cmd: '{cmds}'")
+    logger.debug("docker buildx build cmd: '%s'", cmds)
 
     run_docker_cmd(cmds, env=subprocess_env, cwd=cwd)
 

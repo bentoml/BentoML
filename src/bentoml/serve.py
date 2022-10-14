@@ -65,18 +65,21 @@ def ensure_prometheus_dir(
     except shutil.Error as e:
         if not use_alternative:
             raise RuntimeError(
-                f"Failed to clean the prometheus multiproc directory {directory}: {e}"
+                f"Failed to clean prometheus multiproc directory {directory}: {e}"
             )
     except OSError as e:
         if not use_alternative:
             raise RuntimeError(
                 f"Failed to create the prometheus multiproc directory {directory}: {e}"
             )
-    assert use_alternative
+    assert (
+        use_alternative
+    ), "'use_alternative' must be True to setup Prometheus correctly."
     alternative = tempfile.mkdtemp()
-    logger.warning(
-        f"Failed to ensure the prometheus multiproc directory {directory}, "
-        f"using alternative: {alternative}",
+    logger.debug(
+        "Failed to create prometheus multiproc directory %s, using temporary alternative: %s",
+        directory,
+        alternative,
     )
     BentoMLContainer.prometheus_multiproc_dir.set(alternative)
     return alternative
@@ -396,7 +399,7 @@ def serve_http_production(
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
-    logger.debug(f"Runner map: {runner_bind_map}")
+    logger.debug("Runner map: %s", runner_bind_map)
 
     circus_socket_map[API_SERVER_NAME] = CircusSocket(
         name=API_SERVER_NAME,
@@ -782,7 +785,7 @@ def serve_grpc_production(
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
-    logger.debug(f"Runner map: {runner_bind_map}")
+    logger.debug("Runner map: %s", runner_bind_map)
     ssl_args = construct_ssl_args(
         ssl_certfile=ssl_certfile,
         ssl_keyfile=ssl_keyfile,

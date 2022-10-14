@@ -18,6 +18,8 @@ from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.onnx
 
+backward_compatible = True
+
 # specify parameters via map
 param = {"max_depth": 3, "eta": 0.3, "objective": "multi:softprob", "num_class": 2}
 

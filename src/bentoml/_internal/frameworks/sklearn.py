@@ -36,7 +36,7 @@ except ImportError:  # pragma: no cover
         from sklearn.utils._joblib import parallel_backend
     except ImportError:
         raise MissingDependencyException(
-            "sklearn is required in order to use the module 'bentoml.sklearn', install sklearn with 'pip install sklearn'. For more information, refer to https://scikit-learn.org/stable/install.html"
+            "scikit-learn is required in order to use the module 'bentoml.sklearn', install sklearn with 'pip install sklearn'. For more information, refer to https://scikit-learn.org/stable/install.html"
         )
 
 MODULE_NAME = "bentoml.sklearn"

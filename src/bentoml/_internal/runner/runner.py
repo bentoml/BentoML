@@ -107,7 +107,7 @@ class Runner:
 
             if name != lname:
                 logger.warning(
-                    f"Converting runner name '%s' to lowercase: '%s'", name, lname
+                    "Converting runner name '%s' to lowercase: '%s'", name, lname
                 )
 
         try:
@@ -200,7 +200,7 @@ class Runner:
         else:
             default_method = None
             logger.debug(
-                'No default method found for Runner "%s", all method access needs to be in the form of `runner.{method}.run`.',
+                "No default method found for Runner '%s', all method access needs to be in the form of 'runner.{method}.run'.",
                 name,
             )
 

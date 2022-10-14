@@ -30,9 +30,7 @@ try:
     import xgboost as xgb
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "xgboost is required in order to use module `bentoml.xgboost`, install "
-        "xgboost with `pip install xgboost`. For more information, refers to "
-        "https://xgboost.readthedocs.io/en/latest/install.html"
+        "'xgboost' is required in order to use module 'bentoml.xgboost', install xgboost with 'pip install xgboost'. For more information, refers to https://xgboost.readthedocs.io/en/latest/install.html"
     )
 
 try:
@@ -117,7 +115,7 @@ def load_model(
     else:
         if model_api_version != "v2":
             logger.warning(
-                f"Got an XGBoost model with an unsupported version '%s', unexpected errors may occur.",
+                "Got an XGBoost model with an unsupported version '%s', unexpected errors may occur.",
                 model_api_version,
             )
         model_class = t.cast(XGBoostOptions, bento_model.info.options).model_class
@@ -144,7 +142,7 @@ def load_model(
 
 
 def save_model(
-    name: Tag | str,
+    name: str,
     model: xgb.Booster | xgb.XGBModel,
     *,
     signatures: dict[str, ModelSignatureDict] | None = None,

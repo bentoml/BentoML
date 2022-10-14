@@ -158,7 +158,7 @@ def query_cgroup_cpu_count() -> float:
                     # quota_str is "max" meaning the cpu quota is unset
                     quota = None
         except FileNotFoundError as err:
-            logger.warning(f"Caught exception while calculating CPU quota: %s", err)
+            logger.warning("Caught exception while calculating CPU quota: %s", err)
     if quota is not None and quota < 0:
         quota = None
     elif quota == 0:

@@ -71,9 +71,9 @@ def silent(func: t.Callable[P, T]) -> t.Callable[P, T]:  # pragma: no cover
                         "Tracking Error: %s", err, stack_info=True, stacklevel=3
                     )
                 else:
-                    logger.info(f"Tracking Error: %s", err)
+                    logger.info("Tracking Error: %s", err)
             else:
-                logger.debug(f"Tracking Error: %s", err)
+                logger.debug("Tracking Error: %s", err)
 
     return wrapper
 

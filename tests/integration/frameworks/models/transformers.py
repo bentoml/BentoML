@@ -24,6 +24,8 @@ from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.transformers
 
+backward_compatible = True
+
 if TYPE_CHECKING:
     from transformers.utils.generic import ModelOutput
     from transformers.tokenization_utils_base import BatchEncoding

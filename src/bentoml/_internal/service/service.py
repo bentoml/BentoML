@@ -64,7 +64,7 @@ def get_valid_service_name(user_provided_svc_name: str) -> str:
 
     if user_provided_svc_name != lower_name:
         logger.warning(
-            f"Converting %s to lowercase: %s.", user_provided_svc_name, lower_name
+            "Converting %s to lowercase: %s.", user_provided_svc_name, lower_name
         )
 
     # Service name must be a valid Tag name; create a dummy tag to use its validation

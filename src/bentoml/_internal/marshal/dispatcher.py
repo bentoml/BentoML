@@ -209,8 +209,8 @@ class CorkDispatcher:
                 self._loop.create_task(self.outbound_call(inputs_info))
             except asyncio.CancelledError:
                 break
-            except Exception:  # pylint: disable=broad-except
-                logger.error(traceback.format_exc())
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error(traceback.format_exc(), exc_info=e)
 
     async def inbound_call(self, data: t.Any):
         now = time.time()

@@ -14,6 +14,8 @@ from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.pytorch
 
+backward_compatible = True
+
 test_np = np.array([[1] * 5]).astype(np.float32)
 test_tensor = torch.from_numpy(test_np)
 

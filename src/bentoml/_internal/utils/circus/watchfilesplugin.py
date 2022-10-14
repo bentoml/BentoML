@@ -49,11 +49,11 @@ class ServiceReloaderPlugin(CircusPlugin):
         if not is_pypi_installed_bentoml():
             # bentoml src from this __file__
             logger.info(
-                "BentoML is installed via development mode, adding source root to 'watch_dirs'"
+                "BentoML is installed via development mode, adding source root to 'watch_dirs'."
             )
             watch_dirs.append(t.cast(str, source_locations("bentoml")))
 
-        logger.info(f"Watching directories: {watch_dirs}")
+        logger.info("Watching directories: %s", watch_dirs)
         self.watch_dirs = watch_dirs
 
         self.create_spec()

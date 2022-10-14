@@ -196,7 +196,9 @@ def generate_dockerfile(
 
     template = ENVIRONMENT.get_template(base, globals=J2_FUNCTION)
     logger.debug(
-        f"Using base Dockerfile template: {base}, and their path: {os.path.join(TEMPLATES_PATH[0], base)}"
+        "Using base Dockerfile template: %s, and their path: %s",
+        base,
+        os.path.join(TEMPLATES_PATH[0], base),
     )
 
     if user_templates is not None:

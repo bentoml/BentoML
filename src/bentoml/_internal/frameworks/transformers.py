@@ -314,7 +314,7 @@ def save_model(
         LazyType["ext.TransformersPipeline"]("transformers.pipelines.base.Pipeline"),  # type: ignore
     ):
         raise BentoMLException(
-            "`pipeline` must be an instance of `transformers.pipelines.base.Pipeline`. "
+            "'pipeline' must be an instance of 'transformers.pipelines.base.Pipeline'. "
             "To save other Transformers types like models, tokenizers, configs, feature "
             "extractors, construct a pipeline with the model, tokenizer, config, or feature "
             "extractor specified as arguments, then call save_model with the pipeline. "

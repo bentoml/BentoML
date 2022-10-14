@@ -131,9 +131,7 @@ For common PyTorch models with single input:
 
 .. note::
 
-    :bdg-info:`Remarks:` All of the external python classes/util functions that the model
-    requires must be referenced in `<module>.<class>` format, and ensure the module is passed
-    to ``bentoml.pytorch.save`` as the ``external_modules`` parameter. For example:
+    :bdg-info:`Remarks:` External python classes or utility functions required by the model must be referenced in ``<module>.<class>`` format, and such modules should be passed to ``bentoml.pytorch.save`` via ``external_modules``. For example:
 
     .. code-block:: python
        :caption: `train.py`

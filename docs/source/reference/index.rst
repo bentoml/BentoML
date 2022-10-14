@@ -9,6 +9,7 @@ BentoML APIs and learn about all the options they provide.
   :maxdepth: 2
 
   core
+  metrics_methods
   stores
   api_io_descriptors
   frameworks/index

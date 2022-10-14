@@ -19,6 +19,7 @@ into this part of the documentation.
     gpu
     logging
     monitoring
+    metrics
     performance
     server
     security

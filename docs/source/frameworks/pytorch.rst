@@ -147,8 +147,9 @@ For common PyTorch models with single input:
            external_modules=[my_models],
        )
     
-    The PyTorch framework requires them to restore the model. This is due to the limitation of PyTorch model serialization.
-    A better practice is to use :doc:`/frameworks/torchscript` to convert the model to TorchScript, which is more portable and less prone to compatibility issues.
+    This is due to a limitation from PyTorch model serialisation, where PyTorch requires the model's source code to restore it.
+    
+    A better practice is to compile your model to `TorchScript <https://pytorch.org/docs/stable/jit.html>`_ format.
 
 .. note::
 

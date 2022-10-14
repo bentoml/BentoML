@@ -1102,10 +1102,47 @@ It accepts the following fields:
 
   A `bytes` field that represents the content of the file.
 
-.. TODO::
+* `kind`
 
-   - Document ``kind`` once enum was dropped.
-   - Demonstrate python API to protobuf representation
+  An optional `string` field that represents the file type. If specified, it will raise an error if
+  ``mime_type`` specified in :ref:`bentoml.io.File <reference/api_io_descriptors:Files>` is not matched.
+
+.. grid:: 2
+
+    .. grid-item-card::  ``Python API``
+
+      .. code-block:: python
+
+         Image(mime_type="application/pdf")
+
+    .. grid-item-card::  ``pb.File``
+
+      .. code-block:: none
+
+         file {
+           kind: "application/pdf"
+           content: <bytes>
+         }
+
+
+:ref:`bentoml.io.Image <reference/api_io_descriptors:Images>` will also be using ``pb.File``.
+
+.. grid:: 2
+
+    .. grid-item-card::  ``Python API``
+
+      .. code-block:: python
+
+         File(mime_type="image/png")
+
+    .. grid-item-card::  ``pb.File``
+
+      .. code-block:: none
+
+         file {
+           kind: "image/png"
+           content: <bytes>
+         }
 
 
 Complex payload via ``Multipart``

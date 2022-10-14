@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
+from starlette.responses import PlainTextResponse
+from starlette.exceptions import HTTPException
 
 from ..context import trace_context
 from ..context import InferenceApiContext as Context
@@ -266,6 +268,18 @@ class HTTPAppFactory(BaseAppFactory):
                 on_startup.append(runner.init_client)
         on_startup.extend(super().on_startup)
         return on_startup
+
+    async def readyz(self, _: "Request") -> "Response":
+        if BentoMLContainer.api_server_config.runner_probe.enabled.get():
+            runner_statuses = (
+                runner.runner_handle_is_ready() for runner in self.bento_service.runners
+            )
+            runners_ready = all(await asyncio.gather(*runner_statuses))
+
+            if not runners_ready:
+                raise HTTPException(status_code=503, detail="Runners are not ready.")
+
+        return PlainTextResponse("\n", status_code=200)
 
     @property
     def on_shutdown(self) -> list[t.Callable[[], None]]:

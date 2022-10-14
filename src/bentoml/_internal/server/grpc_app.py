@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 from functools import partial
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
     from ..service import Service
     from .grpc.servicer import Servicer
 
-    OnStartup = list[t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]]
+    OnStartup = list[t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]]
 
 
 class GRPCAppFactory:
@@ -42,6 +43,36 @@ class GRPCAppFactory:
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
 
+    @inject
+    async def wait_for_runner_ready(
+        self,
+        *,
+        check_interval: int = Provide[
+            BentoMLContainer.api_server_config.runner_probe.period
+        ],
+    ):
+        if BentoMLContainer.api_server_config.runner_probe.enabled.get():
+            logger.info(
+                "Waiting for runners %r to be ready...", self.bento_service.runners
+            )
+
+            while True:
+                try:
+                    runner_statuses = (
+                        runner.runner_handle_is_ready()
+                        for runner in self.bento_service.runners
+                    )
+                    runners_ready = all(await asyncio.gather(*runner_statuses))
+
+                    if runners_ready:
+                        break
+                except ConnectionError as e:
+                    logger.debug("[%s] Retrying ...", e)
+
+                await asyncio.sleep(check_interval)
+
+            logger.info("All runners ready; continuing initialization.")
+
     @property
     def on_startup(self) -> OnStartup:
         on_startup: OnStartup = [self.bento_service.on_grpc_server_startup]
@@ -52,6 +83,7 @@ class GRPCAppFactory:
             for runner in self.bento_service.runners:
                 on_startup.append(runner.init_client)
 
+        on_startup.append(self.wait_for_runner_ready)
         return on_startup
 
     @property

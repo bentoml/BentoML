@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -25,13 +27,24 @@ async def test_api_server_meta(host: str) -> None:
     assert b'{"Hello":"World"}' == body
     status, _, _ = await async_request("GET", f"http://{host}/docs.json")
     assert status == 200
-    status, _, _ = await async_request("GET", f"http://{host}/readyz")
-    assert status == 200
     status, _, body = await async_request("GET", f"http://{host}/metrics")
     assert status == 200
     assert body
     status, _, body = await async_request("POST", f"http://{host}//api/v1/with_prefix")
     assert status == 404
+
+
+@pytest.mark.asyncio
+async def test_runner_readiness(host: str) -> None:
+    timeout = 20
+    start_time = time.time()
+    status = ""
+    while (time.time() - start_time) < timeout:
+        status, _, _ = await async_request("GET", f"http://{host}/readyz")
+        await asyncio.sleep(5)
+        if status == 200:
+            break
+    assert status == 200
 
 
 @pytest.mark.asyncio

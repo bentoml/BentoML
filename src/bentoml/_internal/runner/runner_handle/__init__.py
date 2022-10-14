@@ -25,6 +25,10 @@ class RunnerHandle(ABC):
         ...
 
     @abstractmethod
+    async def is_ready(self, timeout: int) -> bool:
+        return True
+
+    @abstractmethod
     def run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],
@@ -48,6 +52,9 @@ class DummyRunnerHandle(RunnerHandle):
         self, runner: Runner | None = None
     ) -> None:
         pass
+
+    async def is_ready(self, timeout: int) -> bool:
+        return True
 
     def run_method(
         self,

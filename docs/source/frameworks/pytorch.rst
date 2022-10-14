@@ -136,17 +136,18 @@ For common PyTorch models with single input:
     to ``bentoml.pytorch.save`` as the ``external_modules`` parameter. For example:
 
     .. code-block:: python
-        :caption: `train.py`
+       :caption: `train.py`
+       :emphasize-lines: 1,8
         
-        import my_models  # where your model class is defined
+       import my_models
 
-        model = my_models.MyModel()
-        bentoml.pytorch.save(
-            model,
-            "my_torch_model",
-            signatures={"__call__": {"batchable": True, "batchdim": 0}},
-            external_modules=[my_models],
-        )
+       model = my_models.MyModel()
+       bentoml.pytorch.save(
+           model,
+           "my_torch_model",
+           signatures={"__call__": {"batchable": True, "batch_dim": 0}},
+           external_modules=[my_models],
+       )
     
     The PyTorch framework requires them to restore the model. This is due to the limitation of PyTorch model serialization.
     A better practice is to use :doc:`/frameworks/torchscript` to convert the model to TorchScript, which is more portable and less prone to compatibility issues.

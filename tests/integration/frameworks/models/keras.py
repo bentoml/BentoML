@@ -56,7 +56,7 @@ def KerasSequentialModel() -> keras.models.Model:
             ),
         )
     )
-    opt = keras.optimizers.Adam(0.002, 0.5)
+    opt = keras.optimizers.adam_v2.Adam(0.002, 0.5)
     net.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
     return net
 

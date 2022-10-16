@@ -86,7 +86,7 @@ async def test_multipart_from_to_proto(img_file: str):
                         )
                     )
                 ),
-                "arg2": pb.Part(file=pb.File(kind=pb.File.FILE_TYPE_BMP, content=img)),
+                "arg2": pb.Part(file=pb.File(kind="image/bmp", content=img)),
             }
         )
     )

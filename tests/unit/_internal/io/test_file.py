@@ -55,7 +55,7 @@ async def test_exception_from_proto():
         await File().from_proto("")  # type: ignore (testing exceptions)
     with pytest.raises(BadInput) as exc_info:
         await File(mime_type="image/jpeg").from_proto(
-            pb.File(kind=pb.File.FILE_TYPE_BYTES, content=b"asdf")
+            pb.File(kind="application/octet-stream", content=b"asdf")
         )
     assert "Inferred mime_type from 'kind' is" in str(exc_info.value)
     with pytest.raises(BadInput) as exc_info:
@@ -64,9 +64,7 @@ async def test_exception_from_proto():
         )
     assert "is not a valid File kind." in str(exc_info.value)
     with pytest.raises(BadInput) as exc_info:
-        await File(mime_type="image/jpeg").from_proto(
-            pb.File(kind=pb.File.FILE_TYPE_JPEG)
-        )
+        await File(mime_type="image/jpeg").from_proto(pb.File(kind="image/jpeg"))
     assert "Content is empty!" == str(exc_info.value)
 
 
@@ -80,5 +78,5 @@ async def test_exception_to_proto():
 @pytest.mark.asyncio
 async def test_to_proto() -> None:
     assert await File(mime_type="image/bmp").to_proto(io.BytesIO(b"asdf")) == pb.File(
-        kind=pb.File.FILE_TYPE_BMP, content=b"asdf"
+        kind="image/bmp", content=b"asdf"
     )

@@ -77,10 +77,7 @@ async def test_exception_from_proto():
         await Image(mime_type="image/jpeg").from_proto(
             pb.File(kind="application/octet-stream", content=b"asdf")
         )
-    assert "Inferred mime_type from 'kind' is" in str(exc_info.value)
-    with pytest.raises(BadInput) as exc_info:
-        await Image(mime_type="image/jpeg").from_proto(pb.File(kind=123, content=b"asdf"))  # type: ignore (testing exception)
-    assert "is not a valid File kind." in str(exc_info.value)
+    assert "MIME type from 'kind'" in str(exc_info.value)
     with pytest.raises(BadInput) as exc_info:
         await Image(mime_type="image/jpeg").from_proto(pb.File(kind="image/jpeg"))
     assert "Content is empty!" == str(exc_info.value)
@@ -91,10 +88,6 @@ async def test_exception_to_proto():
     with pytest.raises(BadInput) as exc_info:
         await Image().to_proto(io.BytesIO(b"asdf"))  # type: ignore (testing exception)
     assert "Unsupported Image type received:" in str(exc_info.value)
-    with pytest.raises(BadInput) as exc_info:
-        example = np.random.rand(255, 255, 3)
-        await Image(mime_type="image/sgi").to_proto(example)
-    assert "doesn't have a corresponding File 'kind'" in str(exc_info.value)
 
 
 @pytest.mark.asyncio

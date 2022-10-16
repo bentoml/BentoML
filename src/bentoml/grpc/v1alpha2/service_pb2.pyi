@@ -266,60 +266,18 @@ class File(google.protobuf.message.Message):
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    class _FileType:
-        ValueType = typing.NewType("ValueType", builtins.int)
-        V: typing_extensions.TypeAlias = ValueType
-
-    class _FileTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[File._FileType.ValueType], builtins.type):  # noqa: F821
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
-        FILE_TYPE_UNSPECIFIED: File._FileType.ValueType  # 0
-        FILE_TYPE_CSV: File._FileType.ValueType  # 1
-        """file types"""
-        FILE_TYPE_PLAINTEXT: File._FileType.ValueType  # 2
-        FILE_TYPE_JSON: File._FileType.ValueType  # 3
-        FILE_TYPE_BYTES: File._FileType.ValueType  # 4
-        FILE_TYPE_PDF: File._FileType.ValueType  # 5
-        FILE_TYPE_PNG: File._FileType.ValueType  # 6
-        """image types"""
-        FILE_TYPE_JPEG: File._FileType.ValueType  # 7
-        FILE_TYPE_GIF: File._FileType.ValueType  # 8
-        FILE_TYPE_BMP: File._FileType.ValueType  # 9
-        FILE_TYPE_TIFF: File._FileType.ValueType  # 10
-        FILE_TYPE_WEBP: File._FileType.ValueType  # 11
-        FILE_TYPE_SVG: File._FileType.ValueType  # 12
-
-    class FileType(_FileType, metaclass=_FileTypeEnumTypeWrapper):
-        """FileType represents possible file type to be handled by BentoML.
-        Currently, we only support plaintext (Text()), image (Image()), and file (File()).
-        TODO: support audio and video streaming file types.
-        """
-
-    FILE_TYPE_UNSPECIFIED: File.FileType.ValueType  # 0
-    FILE_TYPE_CSV: File.FileType.ValueType  # 1
-    """file types"""
-    FILE_TYPE_PLAINTEXT: File.FileType.ValueType  # 2
-    FILE_TYPE_JSON: File.FileType.ValueType  # 3
-    FILE_TYPE_BYTES: File.FileType.ValueType  # 4
-    FILE_TYPE_PDF: File.FileType.ValueType  # 5
-    FILE_TYPE_PNG: File.FileType.ValueType  # 6
-    """image types"""
-    FILE_TYPE_JPEG: File.FileType.ValueType  # 7
-    FILE_TYPE_GIF: File.FileType.ValueType  # 8
-    FILE_TYPE_BMP: File.FileType.ValueType  # 9
-    FILE_TYPE_TIFF: File.FileType.ValueType  # 10
-    FILE_TYPE_WEBP: File.FileType.ValueType  # 11
-    FILE_TYPE_SVG: File.FileType.ValueType  # 12
-
     KIND_FIELD_NUMBER: builtins.int
     CONTENT_FIELD_NUMBER: builtins.int
-    kind: global___File.FileType.ValueType
-    """optional type of file, let it be csv, text, parquet, etc."""
+    kind: builtins.str
+    """optional file type, let it be csv, text, parquet, etc.
+    v1alpha1 uses 1 as FileType enum.
+    """
     content: builtins.bytes
     """contents of file as bytes."""
     def __init__(
         self,
         *,
-        kind: global___File.FileType.ValueType | None = ...,
+        kind: builtins.str | None = ...,
         content: builtins.bytes = ...,
     ) -> None: ...
     def HasField(self, field_name: typing_extensions.Literal["_kind", b"_kind", "kind", b"kind"]) -> builtins.bool: ...

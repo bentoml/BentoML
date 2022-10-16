@@ -179,6 +179,7 @@ omit = [
   "src/bentoml/_internal/types.py",
   "src/bentoml/testing/*",
   "src/bentoml/grpc/v1alpha1/*",
+  "src/bentoml/grpc/v1alpha2/*",
   "src/bentoml/_internal/external_typing/*",
   "src/bentoml/_internal/yatai_client/*",
   "src/bentoml/_internal/yatai_rest_api_client/*",
@@ -195,6 +196,7 @@ omit = [
   "src/bentoml/_internal/types.py",
   "src/bentoml/testing/*",
   "src/bentoml/grpc/v1alpha1/*",
+  "src/bentoml/grpc/v1alpha2/*",
   "src/bentoml/_internal/external_typing/*",
   "src/bentoml/_internal/yatai_client/*",
   "src/bentoml/_internal/yatai_rest_api_client/*",
@@ -230,7 +232,9 @@ exclude = '''
     | dist
     | typings
     | src/bentoml/grpc/v1alpha1
+    | src/bentoml/grpc/v1alpha2
     | grpc-client/thirdparty
+    | grpc-client/bentoml
   )/
   | src/bentoml/_version.py
 )
@@ -255,6 +259,7 @@ extension-pkg-allow-list = [
 ignore-paths = [
   "src/bentoml/_internal/external_typing",
   "src/bentoml/grpc/v1alpha1",
+  "src/bentoml/grpc/v1alpha2",
 ]
 disable = ["coerce-builtin", "no-absolute-import", "C", "R"]
 enable = ["c-extension-no-member"]
@@ -304,6 +309,7 @@ skip_glob = [
   "venv/*",
   "lib/*",
   "grpc-client/thirdparty",
+  "grpc-client/bentoml",
   "bazel-*",
 ]
 

@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha2 import service_pb2 as pb
 
     from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context

@@ -15,7 +15,7 @@
 
                » docker run -i --rm \
                               fullstorydev/grpcurl -d @ -plaintext host.docker.internal:3000 \
-                              bentoml.grpc.v1alpha1.BentoService/Call <<EOT
+                              bentoml.grpc.v1alpha2.BentoService/Call <<EOT
                {
                   "apiName": "classify",
                   "ndarray": {
@@ -33,7 +33,7 @@
                » docker run -i --rm \
                               --network=host \
                               fullstorydev/grpcurl -d @ -plaintext 0.0.0.0:3000 \
-                              bentoml.grpc.v1alpha1.BentoService/Call <<EOT
+                              bentoml.grpc.v1alpha2.BentoService/Call <<EOT
                {
                   "apiName": "classify",
                   "ndarray": {

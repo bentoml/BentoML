@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
     from bentoml._internal import external_typing as ext
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha2 import service_pb2 as pb
 else:
     pb, _ = import_generated_stubs()
     grpc, _ = import_grpc()
@@ -214,12 +214,6 @@ async def test_file(host: str, bin_file: str):
         await async_client_call(
             "predict_file",
             channel=channel,
-            data={"file": pb.File(kind=123, content=fb)},  # type: ignore (testing exception)
-            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
-        )
-        await async_client_call(
-            "predict_file",
-            channel=channel,
             data={"file": pb.File(kind="application/pdf", content=fb)},
             assert_code=grpc.StatusCode.INVALID_ARGUMENT,
         )
@@ -275,12 +269,6 @@ async def test_image(host: str, img_file: str):
             assert_data=partial(
                 assert_image, im_file=img_file, assert_kind="image/bmp"
             ),
-        )
-        await async_client_call(
-            "echo_image",
-            channel=channel,
-            data={"file": pb.File(kind=123, content=fb)},  # type: ignore (testing exception)
-            assert_code=grpc.StatusCode.INVALID_ARGUMENT,
         )
         await async_client_call(
             "echo_image",

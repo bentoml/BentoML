@@ -1,16 +1,16 @@
 syntax = "proto3";
 
-package bentoml.grpc.v1alpha1;
+package bentoml.grpc.v1alpha2;
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/wrappers.proto";
 
 // cc_enable_arenas pre-allocate memory for given message to improve speed. (C++ only)
 option cc_enable_arenas = true;
-option go_package = "github.com/bentoml/bentoml/grpc/v1alpha1;service";
+option go_package = "github.com/bentoml/bentoml/grpc/v1alpha2;service";
 option java_multiple_files = true;
 option java_outer_classname = "ServiceProto";
-option java_package = "com.bentoml.grpc.v1alpha1";
+option java_package = "com.bentoml.grpc.v1alpha2";
 option objc_class_prefix = "SVC";
 option py_generic_services = true;
 
@@ -153,32 +153,9 @@ message Multipart {
 // File represents for any arbitrary file type. This can be
 // plaintext, image, video, audio, etc.
 message File {
-  // FileType represents possible file type to be handled by BentoML.
-  // Currently, we only support plaintext (Text()), image (Image()), and file (File()).
-  // TODO: support audio and video streaming file types.
-  enum FileType {
-    FILE_TYPE_UNSPECIFIED = 0;
-
-    // file types
-    FILE_TYPE_CSV = 1;
-    FILE_TYPE_PLAINTEXT = 2;
-    FILE_TYPE_JSON = 3;
-    FILE_TYPE_BYTES = 4;
-    FILE_TYPE_PDF = 5;
-
-    // image types
-    FILE_TYPE_PNG = 6;
-    FILE_TYPE_JPEG = 7;
-    FILE_TYPE_GIF = 8;
-    FILE_TYPE_BMP = 9;
-    FILE_TYPE_TIFF = 10;
-    FILE_TYPE_WEBP = 11;
-    FILE_TYPE_SVG = 12;
-  }
-
-  // optional type of file, let it be csv, text, parquet, etc.
-  optional FileType kind = 1;
-
+  // optional file type, let it be csv, text, parquet, etc.
+  // v1alpha1 uses 1 as FileType enum.
+  optional string kind = 3;
   // contents of file as bytes.
   bytes content = 2;
 }

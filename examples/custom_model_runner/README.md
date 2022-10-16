@@ -76,7 +76,7 @@ curl -F 'image=@mnist_png/testing/8/1007.png' http://127.0.0.1:3000/predict
 <td>
 
 ```bash
-grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1alpha1.BentoService/Call <<EOM
+grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1alpha2.BentoService/Call <<EOM
 {
   "apiName": "classify",
   "file": {

@@ -12,7 +12,7 @@ from bentoml._internal.utils import LazyLoader
 if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha2 import service_pb2 as pb
 else:
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
     pb, _ = import_generated_stubs()
@@ -30,12 +30,8 @@ async def test_metrics_available(host: str, img_file: str):
             data={
                 "multipart": {
                     "fields": {
-                        "original": pb.Part(
-                            file=pb.File(kind=pb.File.FILE_TYPE_BMP, content=fb)
-                        ),
-                        "compared": pb.Part(
-                            file=pb.File(kind=pb.File.FILE_TYPE_BMP, content=fb)
-                        ),
+                        "original": pb.Part(file=pb.File(kind="image/bmp", content=fb)),
+                        "compared": pb.Part(file=pb.File(kind="image/bmp", content=fb)),
                     }
                 }
             },

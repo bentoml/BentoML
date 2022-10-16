@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 def import_generated_stubs(
-    version: str = "v1alpha1",
+    version: str = "v1alpha2",
     file: str = "service.proto",
 ) -> tuple[types.ModuleType, types.ModuleType]:
     """

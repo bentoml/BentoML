@@ -21,3 +21,13 @@ proto_library(
         "@com_google_protobuf//:wrappers_proto",
     ],
 )
+
+proto_library(
+    name = "service_v1alpha2_proto",
+    srcs = ["src/bentoml/grpc/v1alpha2/service.proto"],
+    visibility = ["//grpc-client:__subpackages__"],
+    deps = [
+        "@com_google_protobuf//:struct_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)

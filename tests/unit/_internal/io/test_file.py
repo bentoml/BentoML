@@ -9,7 +9,7 @@ from bentoml.io import File
 from bentoml.exceptions import BadInput
 
 if TYPE_CHECKING:
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha2 import service_pb2 as pb
 else:
     from bentoml.grpc.utils import import_generated_stubs
 

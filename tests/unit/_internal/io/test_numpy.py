@@ -16,7 +16,7 @@ from bentoml._internal.service.openapi.specification import Schema
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture
 
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha2 import service_pb2 as pb
 else:
     from bentoml.grpc.utils import import_generated_stubs
 

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from google.protobuf import struct_pb2
     from google.protobuf import wrappers_pb2
 
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha2 import service_pb2 as pb
 else:
     from bentoml.grpc.utils import import_generated_stubs
     from bentoml._internal.utils import LazyLoader

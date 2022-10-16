@@ -8,8 +8,8 @@ from locust import between
 from locust import HttpUser
 from sklearn import datasets
 
-from bentoml.grpc.v1alpha1 import service_pb2 as pb
-from bentoml.grpc.v1alpha1 import service_pb2_grpc as service
+from bentoml.grpc.v1alpha2 import service_pb2 as pb
+from bentoml.grpc.v1alpha2 import service_pb2_grpc as services
 
 test_data = datasets.load_iris().data
 num_of_rows = test_data.shape[0]
@@ -53,7 +53,7 @@ class GrpcUser(User):
 
     def on_start(self):
         self.channel = grpc.insecure_channel(self.host)
-        self.stub = service.BentoServiceStub(self.channel)
+        self.stub = services.BentoServiceStub(self.channel)
 
 
 class IrisGrpcUser(GrpcUser):

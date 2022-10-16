@@ -9,9 +9,9 @@ from google.protobuf import wrappers_pb2
 
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
-from bentoml.grpc.v1alpha1 import service_pb2 as pb
-from bentoml.grpc.v1alpha1 import service_test_pb2 as pb_test
-from bentoml.grpc.v1alpha1 import service_test_pb2_grpc as services_test
+from bentoml.grpc.v1alpha2 import service_pb2 as pb
+from bentoml.grpc.v1alpha2 import service_test_pb2 as pb_test
+from bentoml.grpc.v1alpha2 import service_test_pb2_grpc as services_test
 
 
 @pytest.mark.asyncio
@@ -26,7 +26,7 @@ async def test_success_invocation_custom_servicer(host: str) -> None:
             t.Awaitable[pb_health.HealthCheckResponse],
             HealthCheck(
                 pb_health.HealthCheckRequest(
-                    service="bentoml.testing.v1alpha1.TestService"
+                    service="bentoml.testing.v1alpha2.TestService"
                 )
             ),
         )

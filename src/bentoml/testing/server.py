@@ -75,6 +75,7 @@ async def server_warmup(
     check_interval: float = 1,
     popen: subprocess.Popen[t.Any] | None = None,
     service_name: str | None = None,
+    _internal_stubs_version: str = "v1alpha2",
 ) -> bool:
     start_time = time.time()
     proxy_handler = urllib.request.ProxyHandler({})
@@ -86,7 +87,9 @@ async def server_warmup(
 
             try:
                 if service_name is None:
-                    service_name = "bentoml.grpc.v1alpha1.BentoService"
+                    service_name = (
+                        f"bentoml.grpc.{_internal_stubs_version}.BentoService"
+                    )
                 async with create_channel(host_url) as channel:
                     Check = channel.unary_unary(
                         "/grpc.health.v1.Health/Check",

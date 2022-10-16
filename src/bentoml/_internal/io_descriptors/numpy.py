@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     import numpy as np
     from typing_extensions import Self
 
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha2 import service_pb2 as pb
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse

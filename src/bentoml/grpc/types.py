@@ -13,9 +13,9 @@ if TYPE_CHECKING:
     import grpc
     from grpc import aio
 
-    from bentoml.grpc.v1alpha1.service_pb2 import Request
-    from bentoml.grpc.v1alpha1.service_pb2 import Response
-    from bentoml.grpc.v1alpha1.service_pb2_grpc import BentoServiceServicer
+    from bentoml.grpc.v1alpha2.service_pb2 import Request
+    from bentoml.grpc.v1alpha2.service_pb2 import Response
+    from bentoml.grpc.v1alpha2.service_pb2_grpc import BentoServiceServicer
 
     P = t.TypeVar("P")
 

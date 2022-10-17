@@ -306,7 +306,7 @@ def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
 
 def find_nested_requirements_txts(
     base_requirements_txt: Path,
-) -> t.Tuple[Path, t.Set[Path]]:
+) -> tuple[Path, set[Path]]:
     """Recursively search the provided requirements.txt file to find nested
     requirements files specified with `-r`.
     """

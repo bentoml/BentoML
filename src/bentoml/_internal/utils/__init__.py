@@ -279,6 +279,7 @@ def copy_file_to_fs_folder(
     src_fs = fs.open_fs(dir_name)
     dst_filename = file_name if dst_filename is None else dst_filename
     dst_path = fs.path.join(dst_folder_path, dst_filename)
+    dst_fs.makedir(dst_folder_path, recreate=True)
     fs.copy.copy_file(src_fs, file_name, dst_fs, dst_path)
 
 

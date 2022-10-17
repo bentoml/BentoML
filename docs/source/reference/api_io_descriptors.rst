@@ -98,6 +98,11 @@ To use the IO descriptor, install bentoml with extra ``io-pandas`` dependency:
 .. automethod:: bentoml.io.PandasDataFrame.to_proto
 .. automethod:: bentoml.io.PandasDataFrame.to_http_response
 .. autoclass:: bentoml.io.PandasSeries
+.. automethod:: bentoml.io.PandasSeries.from_sample
+.. automethod:: bentoml.io.PandasSeries.from_proto
+.. automethod:: bentoml.io.PandasSeries.from_http_request
+.. automethod:: bentoml.io.PandasSeries.to_proto
+.. automethod:: bentoml.io.PandasSeries.to_http_response
 
 
 Structured Data with JSON

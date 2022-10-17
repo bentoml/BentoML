@@ -310,7 +310,7 @@ def find_nested_requirements_txts(
     """Recursively search the provided requirements.txt file to find nested
     requirements files specified with `-r`.
     """
-    sub_requirements_txt_files: t.Set[Path] = set()
+    sub_requirements_txt_files: set[Path] = set()
     with base_requirements_txt.open("r") as f:
         for line in f.readlines():
             if line.startswith("-r"):

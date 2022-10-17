@@ -1,0 +1,5 @@
+-r train/requirements.txt
+
+pydantic
+Pillow
+fastapi

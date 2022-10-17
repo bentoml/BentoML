@@ -9,6 +9,7 @@ import subprocess
 from sys import version_info
 from shlex import quote
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import fs
 import attr
@@ -22,6 +23,7 @@ from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
+from ..utils import find_nested_requirements_txts
 from .docker import DistroSpec
 from .docker import get_supported_spec
 from .docker import SUPPORTED_CUDA_VERSIONS
@@ -544,15 +546,25 @@ fi
             f.write(install_sh)
 
         if self.requirements_txt is not None:
-            requirements_txt_file = resolve_user_filepath(
-                self.requirements_txt, build_ctx
+            base_txt, nested_txts = find_nested_requirements_txts(
+                Path(
+                    resolve_user_filepath(self.requirements_txt, build_ctx),
+                )
             )
             copy_file_to_fs_folder(
-                requirements_txt_file,
+                str(base_txt.absolute()),
                 bento_fs,
                 py_folder,
                 dst_filename="requirements.txt",
             )
+            for txt in nested_txts:
+                dst_path = txt.relative_to(base_txt.parent)
+                copy_file_to_fs_folder(
+                    str(txt.absolute()),
+                    bento_fs,
+                    fs.path.combine(py_folder, str(dst_path.parent)),
+                    dst_filename=dst_path.name,
+                )
         elif self.packages is not None:
             with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
                 f.write("\n".join(self.packages))

@@ -303,6 +303,24 @@ def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
     raise FileNotFoundError(f"file {filepath} not found")
 
 
+def find_nested_requirements_txts(
+    base_requirements_txt: Path,
+) -> t.Tuple[Path, t.Set[Path]]:
+    """Recursively search the provided requirements.txt file to find nested
+    requirements files specified with `-r`.
+    """
+    sub_requirements_txt_files: t.Set[Path] = set()
+    with base_requirements_txt.open("r") as f:
+        for line in f.readlines():
+            if line.startswith("-r"):
+                base, nested = find_nested_requirements_txts(
+                    base_requirements_txt.parent / line.split("-r")[1].strip(),
+                )
+                sub_requirements_txt_files.update(nested)
+                sub_requirements_txt_files.add(base)
+    return base_requirements_txt, sub_requirements_txt_files
+
+
 def label_validator(
     _: t.Any, _attr: attr.Attribute[dict[str, str]], labels: dict[str, str]
 ):

@@ -768,6 +768,20 @@ class PandasSeries(
                ``dtype``, then applies those to incoming dataframes. If ``False``, then don't
                infer dtypes at all (only applies to the data). This is not applicable for :code:`orient='table'`.
         enforce_dtype: Whether to enforce a certain data type. if :code:`enforce_dtype=True` then :code:`dtype` must be specified.
+        shape: Optional shape check that users can specify for their incoming HTTP
+               requests. We will only check the number of columns you specified for your
+               given shape:
+               .. code-block:: python
+                  :caption: `service.py`
+
+                  import pandas as pd
+                  from bentoml.io import PandasSeries
+
+                  @svc.api(input=PandasSeries(shape=(51,), enforce_shape=True), output=PandasSeries())
+                  def infer(input_series: pd.Series) -> pd.Series:
+                  # if input_series have shape (40,), it will throw out errors
+                        ...
+        enforce_shape: Whether to enforce a certain shape. If ``enforce_shape=True`` then ``shape`` must be specified.
 
     Returns:
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
@@ -781,10 +795,14 @@ class PandasSeries(
         orient: ext.SeriesOrient = "records",
         dtype: ext.PdDTypeArg | None = None,
         enforce_dtype: bool = False,
+        shape: tuple[int, ...] | None = None,
+        enforce_shape: bool = False,
     ):
         self._orient = orient
         self._dtype = dtype
         self._enforce_dtype = enforce_dtype
+        shape: tuple[int, ...] | None = (None,)
+        enforce_shape: bool = (False,)
         self._sample_input = None
 
     @property
@@ -897,6 +915,15 @@ class PandasSeries(
             raise InvalidArgument(
                 f"return object is not of type 'pd.Series', got type '{type(series)}' instead"
             ) from None
+        # TODO: convert from wide to long format (melt())
+        if self._shape is not None and self._shape != series.shape:
+            msg = f"{self.__class__.__name__}: Expecting Series of shape '{self._shape}', but '{series.shape}' was received."
+            if self._enforce_shape and not all(
+                left == right
+                for left, right in zip(self._shape, series.shape)
+                if left != -1 and right != -1
+            ):
+                raise exception_cls(msg) from None
         if self._dtype is not None and self._dtype != series.dtype:
             if np.can_cast(series.dtype, self._dtype, casting="same_kind"):
                 series = series.astype(self._dtype)
@@ -1002,6 +1029,7 @@ class PandasSeries(
         sample_input: ext.PdSeries,
         orient: ext.SeriesOrient = "records",
         enforce_dtype: bool = True,
+        enforce_shape: bool = True,
     ) -> PandasSeries:
         """
         Create a :obj:`PandasSeries` IO Descriptor from given inputs.
@@ -1019,6 +1047,9 @@ class PandasSeries(
             enforce_dtype: Enforce a certain data type. `dtype` must be specified at function
                            signature. If you don't want to enforce a specific dtype then change
                            ``enforce_dtype=False``.
+            enforce_shape: Enforce a certain shape. ``shape`` must be specified at function
+                           signature. If you don't want to enforce a specific shape then change
+                           ``enforce_shape=False``.
 
         Returns:
             :obj:`PandasSeries`: :code:`PandasSeries` IODescriptor from given users inputs.
@@ -1041,6 +1072,8 @@ class PandasSeries(
             orient=orient,
             dtype=sample_input.dtype,
             enforce_dtype=enforce_dtype,
+            shape=sample_input.shape,
+            enforce_shape=enforce_shape,
         )
         inst.sample_input = sample_input
 

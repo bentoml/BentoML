@@ -179,7 +179,7 @@ def query_os_cpu_count() -> int:
     cpu_count = os.cpu_count()
     if cpu_count is not None:
         return cpu_count
-    logger.warning("os.cpu_count() is NoneType.")
+    logger.warning("Failed to determine CPU count, using 1 as default.")
     return 1
 
 

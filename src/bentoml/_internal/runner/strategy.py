@@ -143,7 +143,7 @@ class DefaultStrategy(Strategy):
                 for thread_env in THREAD_ENVS:
                     environ[thread_env] = str(thread_count)
                 logger.info(
-                    "Environ for worker %d: set CPU thread count to %s",
+                    "Environ for worker %d: set CPU thread count to %d",
                     worker_index,
                     thread_count,
                 )

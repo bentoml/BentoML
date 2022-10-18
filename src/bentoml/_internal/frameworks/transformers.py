@@ -66,7 +66,7 @@ def _check_flax_supported() -> None:  # pragma: no cover
             )
         else:
             logger.warning(
-                "No versions of Flax or Jax are found under the current machine. In order to use Flax with transformers 4.x and above, refer to https://github.com/google/flax#quick-install"
+                "No versions of Flax or Jax found on the current machine. In order to use Flax with transformers 4.x and above, refer to https://github.com/google/flax#quick-install"
             )
 
 
@@ -345,7 +345,7 @@ def save_model(
             "__call__": {"batchable": False},
         }
         logger.info(
-            'Using the default model signature for transformers (%s) for model "%s".',
+            'Using the default model signature for Transformers (%s) for model "%s".',
             signatures,
             name,
         )

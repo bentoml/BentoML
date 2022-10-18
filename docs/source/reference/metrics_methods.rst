@@ -1,7 +1,7 @@
 =========================
 Metrics in BentoML
 =========================
-BentoML provides native support for all Prometheus Client Metrics. 
+BentoML provides native support for all Prometheus Client Metrics, :ref:`guides/metrics:Custom Metrics in BentoML`. 
 Users can access the metrics API by replacing  ``prometheus_client`` with ``bentoml.metrics``.
 
 For example to write a custom metric using Prometheus Client user can write the following

@@ -83,6 +83,7 @@ def test_inputs(framework: str | None) -> list[tuple[ModuleType, FrameworkTestMo
                 f".{framework_name}", "tests.integration.frameworks.models"
             )
             if hasattr(module, "backward_compatible"):
+                # We want to test modules that has backward log warning
                 object.__setattr__(
                     module.framework,
                     "__test_backward_compatible__",

@@ -105,11 +105,13 @@ def test_do_not_track(
     assert not mock_post.called
 
 
+@patch("bentoml._internal.utils.analytics.usage_stats.logger")
 @patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 def test_send_usage_failure(
     mock_do_not_track: MagicMock,
     mock_post: MagicMock,
+    mock_logger: MagicMock,
     event_properties: analytics.schemas.ModelSaveEvent,
 ):
     mock_do_not_track.return_value = False
@@ -118,6 +120,7 @@ def test_send_usage_failure(
     analytics.track(event_properties)
     assert mock_do_not_track.called
     assert mock_post.called
+    mock_logger.debug.assert_called_with("Tracking Error: %s", mock_post.side_effect)
 
 
 @patch("bentoml._internal.utils.analytics.usage_stats.requests.post")

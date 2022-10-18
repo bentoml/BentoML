@@ -204,12 +204,20 @@ def load_bento(
 
     # not in validate as it's only really necessary when getting bentos from disk
     if bento.info.bentoml_version != BENTOML_VERSION:
-        logger.warning(
-            'Bento "%s" was built with BentoML version %s, which does not match the current BentoML version %s',
-            bento.tag,
-            bento.info.bentoml_version,
-            BENTOML_VERSION,
-        )
+        info_bentoml_version = bento.info.bentoml_version
+        if tuple(info_bentoml_version.split(".")) > tuple(BENTOML_VERSION.split(".")):
+            logger.warning(
+                "%s was built with newer version of BentoML, which does not match with current running BentoML version %s",
+                bento,
+                BENTOML_VERSION,
+            )
+        else:
+            logger.debug(
+                "%s was built with BentoML version %s, which does not match the current BentoML version %s",
+                bento,
+                info_bentoml_version,
+                BENTOML_VERSION,
+            )
     return _load_bento(bento, standalone_load)
 
 
@@ -361,6 +369,8 @@ def load(
                 logger.debug("'%s' loaded from Bento store: %s", svc.name, svc)
             except (NotFound, ImportServiceError) as e2:
                 raise BentoMLException(
-                    f"Failed to load bento or import service '{bento_identifier}'.\nIf you are attempting to import bento in local store: '{e1}'.\n\nIf you are importing by python module path: '{e2}'"
+                    f"Failed to load bento or import service '{bento_identifier}'.\n"
+                    f"If you are attempting to import bento in local store: '{e1}'.\n"
+                    f"If you are importing by python module path: '{e2}'."
                 )
     return svc

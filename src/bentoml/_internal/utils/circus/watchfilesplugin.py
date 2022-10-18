@@ -110,7 +110,7 @@ class ServiceReloaderPlugin(CircusPlugin):
 
     def look_after(self):
         if self.has_modification():
-            logger.warning("%s detected changes. Reloading...", self.__class__.__name__)
+            logger.warning("Detected changes. Reloading...")
             self.call("restart", name="*")
 
     def handle_init(self):

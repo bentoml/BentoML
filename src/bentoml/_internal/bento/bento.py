@@ -144,7 +144,6 @@ class Bento(StoreItem):
         self.__fs = bento_fs
         self.check_fs(None, bento_fs)
         self._info = info
-        self.validate()
 
     @property
     def tag(self) -> Tag:
@@ -275,6 +274,10 @@ class Bento(StoreItem):
         )
         # Create bento.yaml
         res.flush_info()
+        try:
+            res.validate()
+        except BentoMLException as e:
+            raise BentoMLException(f"Failed to create {res!s}: {e}") from None
 
         return res
 
@@ -289,10 +292,10 @@ class Bento(StoreItem):
             )
 
         res = cls(info.tag, item_fs, info)
-        if not res.validate():
-            raise BentoMLException(
-                f"Failed to create bento because it contains an invalid '{BENTO_YAML_FILENAME}'"
-            )
+        try:
+            res.validate()
+        except BentoMLException as e:
+            raise BentoMLException(f"Failed to load bento: {e}") from None
 
         return res
 
@@ -431,7 +434,10 @@ class BentoInfo:
         object.__setattr__(self, "name", self.tag.name)
         object.__setattr__(self, "version", self.tag.version)
 
-        self.validate()
+        try:
+            self.validate()
+        except BentoMLException as e:
+            raise BentoMLException(f"Failed to initialize {self!s}: {e}") from None
 
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)

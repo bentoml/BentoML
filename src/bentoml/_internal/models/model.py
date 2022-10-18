@@ -232,10 +232,10 @@ class Model(StoreItem):
             )
 
         res = Model(tag=info.tag, model_fs=item_fs, info=info, _internal=True)
-        if not res.validate():
-            raise BentoMLException(
-                f"Failed to load bento model because it contains an invalid '{MODEL_YAML_FILENAME}'"
-            )
+        try:
+            res.validate()
+        except BentoMLException as e:
+            raise BentoMLException(f"Failed to load {self!s}: {e}") from None
 
         return res
 

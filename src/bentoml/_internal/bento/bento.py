@@ -325,11 +325,10 @@ class Bento(StoreItem):
         self,
         bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     ) -> "Bento":
-        if not self.validate():
-            logger.warning("Failed to create %s, not saving...", self)
-            raise BentoMLException(
-                f"Failed to save {self!s} due to {BENTO_YAML_FILENAME} does not exist.",
-            ) from None
+        try:
+            self.validate()
+        except BentoMLException as e:
+            raise BentoMLException(f"Failed to save {self!s}: {e}") from None
 
         with bento_store.register(self.tag) as bento_path:
             out_fs = fs.open_fs(bento_path, create=True, writeable=True)
@@ -340,7 +339,10 @@ class Bento(StoreItem):
         return self
 
     def validate(self):
-        return self._fs.isfile(BENTO_YAML_FILENAME)
+        if not self._fs.isfile(BENTO_YAML_FILENAME):
+            raise BentoMLException(
+                f"{self!s} does not contain a {BENTO_YAML_FILENAME}."
+            )
 
     def __str__(self):
         return f'Bento(tag="{self.tag}")'

@@ -179,7 +179,7 @@ class NumpyNdarray(
                 ).text
 
     Args:
-        dtype: Data type users wish to convert their inputs/outputs to. Refers to `arrays dtypes <https://numpy.org/doc/stable/reference/arrays.dtypes.html>`_ for more information.
+        dtype: Data type users wish to convert their inputs/outputs to. Refer to `arrays dtypes <https://numpy.org/doc/stable/reference/arrays.dtypes.html>`_ for more information.
         enforce_dtype: Whether to enforce a certain data type. if :code:`enforce_dtype=True` then :code:`dtype` must be specified.
         shape: Given shape that an array will be converted to. For example:
 

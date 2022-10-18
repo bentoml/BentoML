@@ -53,7 +53,7 @@ def load_model(
         tag (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         device_id (:code:`str`, `optional`, default to :code:`cpu`):
-            Optional devices to put the given model on. Refers to `device attributes <https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device>`_.
+            Optional devices to put the given model on. Refer to `device attributes <https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device>`_.
 
     Returns:
         :obj:`torch.nn.Module`: an instance of :code:`torch.nn.Module` from BentoML modelstore.

@@ -438,7 +438,7 @@ class cached_contextmanager:
 class compose:
     """
     Function composition: compose(f, g)(...) is equivalent to f(g(...)).
-    Refers to https://github.com/mentalisttraceur/python-compose for original implementation.
+    Refer to https://github.com/mentalisttraceur/python-compose for original implementation.
 
     Args:
         *functions: Functions (or other callables) to compose.

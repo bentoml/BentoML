@@ -30,7 +30,7 @@ try:
     import catboost as cb
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "'catboost' is required in order to use module 'bentoml.catboost', install catboost with 'pip install catboost'. For more information, refers to https://catboost.ai/en/docs/concepts/installation."
+        "'catboost' is required in order to use module 'bentoml.catboost', install catboost with 'pip install catboost'. For more information, refer to https://catboost.ai/en/docs/concepts/installation."
     )
 
 MODULE_NAME = "bentoml.catboost"

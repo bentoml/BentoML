@@ -66,7 +66,7 @@ def _check_flax_supported() -> None:  # pragma: no cover
             )
         else:
             logger.warning(
-                "No versions of Flax or Jax are found under the current machine. In order to use Flax with transformers 4.x and above, refers to https://github.com/google/flax#quick-install"
+                "No versions of Flax or Jax are found under the current machine. In order to use Flax with transformers 4.x and above, refer to https://github.com/google/flax#quick-install"
             )
 
 
@@ -320,7 +320,7 @@ def save_model(
             "extractor specified as arguments, then call save_model with the pipeline. "
             "Refer to https://huggingface.co/docs/transformers/main_classes/pipelines "
             "for more information on pipelines. If transformers doesn't provide a task you "
-            "need, refers to the custom pipeline section to create your own pipelines."
+            "need, refer to the custom pipeline section to create your own pipelines."
             """
             ```python
             import bentoml

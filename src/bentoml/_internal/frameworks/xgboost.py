@@ -30,7 +30,7 @@ try:
     import xgboost as xgb
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "'xgboost' is required in order to use module 'bentoml.xgboost', install xgboost with 'pip install xgboost'. For more information, refers to https://xgboost.readthedocs.io/en/latest/install.html"
+        "'xgboost' is required in order to use module 'bentoml.xgboost', install xgboost with 'pip install xgboost'. For more information, refer to https://xgboost.readthedocs.io/en/latest/install.html"
     )
 
 try:

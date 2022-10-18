@@ -154,7 +154,7 @@ def save_model(
         model (:obj:`tensorflow.keras.Model` | :obj:`tensorflow.keras.engine.sequential.Sequential`):
             Instance of the Keras model to be saved to BentoML modelstore.
         tf_signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
-            Refers to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
+            Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
             from Tensorflow documentation for more information.
         tf_save_options (`tf.saved_model.SaveOptions`, `optional`, default to :code:`None`):
             :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.

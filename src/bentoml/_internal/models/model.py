@@ -208,11 +208,10 @@ class Model(StoreItem):
         return self
 
     def _save(self, model_store: ModelStore) -> Model:
-        if not self.validate():
-            logger.warning("Failed to create %s, not saving...", self)
-            raise BentoMLException(
-                f"Failed to save {self!s} due to {MODEL_YAML_FILENAME} does not exist.",
-            ) from None
+        try:
+            self.validate()
+        except BentoMLException as e:
+            raise BentoMLException(f"Failed to save {self!s}: {e}") from None
 
         with model_store.register(self.tag) as model_path:
             out_fs = fs.open_fs(model_path, create=True, writeable=True)
@@ -310,7 +309,10 @@ class Model(StoreItem):
         return self.info.creation_time
 
     def validate(self):
-        return self._fs.isfile(MODEL_YAML_FILENAME)
+        if not self._fs.isfile(MODEL_YAML_FILENAME):
+            raise BentoMLException(
+                f"{self!s} does not contain a {MODEL_YAML_FILENAME}."
+            )
 
     def __str__(self):
         return f'Model(tag="{self.tag}")'

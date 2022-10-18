@@ -103,7 +103,7 @@ keras_tf1:
     - "tensorflow==1.15"
     - "h5py==2.10.0"
 
-keras_tf2:
+keras:
   <<: *ntmpl
   dependencies:
     - "protobuf<3.20,>=3.9.2"
@@ -230,7 +230,7 @@ xgboost:
   dependencies:
     - "xgboost"
 
-tensorflow_v2:
+tensorflow:
   <<: *ntmpl
   dependencies:
     - "tensorflow"

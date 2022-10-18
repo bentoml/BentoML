@@ -574,7 +574,7 @@ jobs:
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: make tests-keras_tf2
+        run: make tests-keras
         shell: bash
 
       - name: Upload test coverage to Codecov
@@ -1204,14 +1204,14 @@ jobs:
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: make tests-tensorflow_v2
+        run: make tests-tensorflow
         shell: bash
 
       - name: Run unit test for tensorflow_v2
         shell: bash
         run: |
           OPTS=(--cov=src/bentoml --cov-config=./pyproject.toml --cov-report=xml:"tf2.unit.xml" --cov-report term-missing:skip-covered)
-          python -m pytest ./tests/integration/frameworks/test_tensorflow_v2_unit.py "${OPTS[@]}" || ERR=1
+          python -m pytest ./tests/integration/frameworks/test_tensorflow_unit.py "${OPTS[@]}" || ERR=1
           if [ $ERR -eq 1 ]; then
             echo "unit tests for tensorflow_v2 failed!"
             exit 1

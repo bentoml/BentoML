@@ -5,6 +5,8 @@ import logging
 from typing import TYPE_CHECKING
 
 import attr
+from simple_di import inject
+from simple_di import Provide
 
 from ..tag import validate_tag_str
 from ..utils import first_not_none
@@ -239,6 +241,13 @@ class Runner:
 
     def destroy(self):
         object.__setattr__(self, "_runner_handle", DummyRunnerHandle())
+
+    @inject
+    async def runner_handle_is_ready(
+        self,
+        timeout: int = Provide[BentoMLContainer.api_server_config.runner_probe.timeout],
+    ) -> bool:
+        return await self._runner_handle.is_ready(timeout)
 
     @property
     def scheduled_worker_count(self) -> int:

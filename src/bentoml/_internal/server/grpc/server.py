@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import typing as t
 import asyncio
@@ -9,6 +10,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 from simple_di import inject
 from simple_di import Provide
+
+from bentoml.grpc.utils import import_grpc
+from bentoml.grpc.utils import import_generated_stubs
 
 from ...utils import LazyLoader
 from ...utils import cached_property
@@ -27,10 +31,6 @@ if TYPE_CHECKING:
 
     from .servicer import Servicer
 else:
-    from bentoml.grpc.utils import import_grpc
-    from bentoml.grpc.utils import import_generated_stubs
-    from bentoml._internal.utils import LazyLoader
-
     grpc, aio = import_grpc()
     _, services = import_generated_stubs()
     health_exception_msg = "'grpcio-health-checking' is required for using health checking endpoints. Install with 'pip install grpcio-health-checking'."
@@ -68,6 +68,7 @@ class Server(aio._server.Server):
         maximum_concurrent_rpcs: int
         | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
         enable_reflection: bool = False,
+        enable_channelz: bool = False,
         max_concurrent_streams: int | None = None,
         migration_thread_pool_workers: int = 1,
         ssl_certfile: str | None = None,
@@ -81,6 +82,7 @@ class Server(aio._server.Server):
         self.max_concurrent_streams = max_concurrent_streams
         self.bind_address = bind_address
         self.enable_reflection = enable_reflection
+        self.enable_channelz = enable_channelz
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.ssl_certfile = ssl_certfile
         self.ssl_keyfile = ssl_keyfile
@@ -115,10 +117,10 @@ class Server(aio._server.Server):
             # want to explicitly set it to 1 so that we can spawn multiple gRPC servers in
             # production settings.
             options.append(("grpc.so_reuseport", 1))
-
         if self.max_concurrent_streams:
             options.append(("grpc.max_concurrent_streams", self.max_concurrent_streams))
-
+        if self.enable_channelz:
+            options.append(("grpc.enable_channelz", 1))
         if self.max_message_length:
             options.extend(
                 (
@@ -203,18 +205,28 @@ class Server(aio._server.Server):
         ) in self.servicer.mount_servicers:
             add_servicer_fn(user_servicer(), self)
             service_names += tuple(user_service_names)
-
+        if self.enable_channelz:
+            try:
+                from grpc_channelz.v1 import channelz
+            except ImportError:
+                raise MissingDependencyException(
+                    "'--debug' is passed, which requires 'grpcio-channelz' to be installed. Install with 'pip install bentoml[grpc-channelz]'."
+                ) from None
+            if "GRPC_TRACE" not in os.environ:
+                logger.debug(
+                    "channelz is enabled, while GRPC_TRACE is not set. No channel tracing will be recorded."
+                )
+            channelz.add_channelz_servicer(self)
         if self.enable_reflection:
             try:
                 # reflection is required for health checking to work.
                 from grpc_reflection.v1alpha import reflection
             except ImportError:
                 raise MissingDependencyException(
-                    "reflection is enabled, which requires 'grpcio-reflection' to be installed. Install with 'pip install grpcio-reflection'."
-                )
+                    "reflection is enabled, which requires 'grpcio-reflection' to be installed. Install with 'pip install bentoml[grpc-reflection]'."
+                ) from None
             service_names += (reflection.SERVICE_NAME,)
             reflection.enable_server_reflection(service_names, self)
-
         # mark all services as healthy
         for service in service_names:
             await self.servicer.health_servicer.set(

@@ -1,6 +1,5 @@
--r tests-requirements.txt
 catboost
-lightgbm
+lightgbm;platform_machine!="arm64"
 mlflow
 fastai
 xgboost

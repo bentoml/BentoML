@@ -1,4 +1,4 @@
-# pylint: disabl=unused-argument
+# pylint: disable=unused-argument,used-before-assignment,assignment-from-no-return
 from __future__ import annotations
 
 import typing as t
@@ -8,14 +8,19 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import wrap_rpc_handler
+from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
+from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import create_bento_servicer
 from bentoml.testing.grpc import make_standalone_server
+from bentoml._internal.utils import LazyLoader
 from bentoml.grpc.interceptors.access import AccessLogServerInterceptor
 from bentoml.grpc.interceptors.opentelemetry import AsyncOpenTelemetryServerInterceptor
 
 if TYPE_CHECKING:
+    import grpc
     from grpc import aio
     from _pytest.logging import LogCaptureFixture
     from google.protobuf import wrappers_pb2
@@ -27,17 +32,13 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import AsyncHandlerMethod
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_pb2_grpc as services
     from bentoml.grpc.v1alpha1 import service_test_pb2 as pb_test
     from bentoml.grpc.v1alpha1 import service_test_pb2_grpc as services_test
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-    from bentoml._internal.utils import LazyLoader
-
-    pb, services = import_generated_stubs()
+    _, services = import_generated_stubs()
     pb_test, services_test = import_generated_stubs(file="service_test.proto")
-    aio = LazyLoader("aio", globals(), "grpc.aio")
+    grpc, aio = import_grpc()
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
 
 
@@ -132,23 +133,14 @@ async def test_access_log_exception(caplog: LogCaptureFixture, simple_service: S
         )
         try:
             await server.start()
-            with caplog.at_level(logging.INFO, "bentoml.access"):
+            with caplog.at_level(logging.INFO):
                 async with create_channel(host_url) as channel:
-                    Call = channel.unary_unary(
-                        "/bentoml.grpc.v1alpha1.BentoService/Call",
-                        request_serializer=pb.Request.SerializeToString,
-                        response_deserializer=pb.Response.FromString,
+                    await async_client_call(
+                        "invalid",
+                        channel=channel,
+                        data={"text": wrappers_pb2.StringValue(value="asdf")},
+                        assert_code=grpc.StatusCode.INTERNAL,
                     )
-                    with pytest.raises(aio.AioRpcError):
-                        await t.cast(
-                            t.Awaitable[pb.Response],
-                            Call(
-                                pb.Request(
-                                    api_name="invalid",
-                                    text=wrappers_pb2.StringValue(value="asdf"),
-                                )
-                            ),
-                        )
             assert (
                 "(scheme=http,path=/bentoml.grpc.v1alpha1.BentoService/Call,type=application/grpc,size=17) (http_status=500,grpc_status=13,type=application/grpc,size=0)"
                 in caplog.text

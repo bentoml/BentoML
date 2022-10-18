@@ -285,6 +285,13 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
+        "--enable-channelz",
+        is_flag=True,
+        default=BentoMLContainer.grpc.channelz.enabled.get(),
+        type=click.BOOL,
+        help="Enable Channelz. See https://github.com/grpc/proposal/blob/master/A14-channelz.md.",
+    )
+    @click.option(
         "--max-concurrent-streams",
         default=BentoMLContainer.grpc.max_concurrent_streams.get(),
         type=click.INT,
@@ -326,6 +333,7 @@ def add_serve_command(cli: click.Group) -> None:
         ssl_keyfile: str | None,
         ssl_ca_certs: str | None,
         enable_reflection: bool,
+        enable_channelz: bool,
         max_concurrent_streams: int | None,
     ):
         """Start a gRPC BentoServer from a given 🍱
@@ -381,6 +389,7 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ca_certs=ssl_ca_certs,
                 max_concurrent_streams=max_concurrent_streams,
                 reflection=enable_reflection,
+                channelz=enable_channelz,
             )
         else:
             from bentoml.serve import serve_grpc_development
@@ -397,4 +406,5 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ca_certs=ssl_ca_certs,
                 max_concurrent_streams=max_concurrent_streams,
                 reflection=enable_reflection,
+                channelz=enable_channelz,
             )

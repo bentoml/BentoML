@@ -107,7 +107,7 @@ jobs:
         run: make ci-pyright
       - name: Proto check
         if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.protos == 'true') || github.event_name == 'push' }}
-        run: buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs --path "src/bentoml/grpc"
+        run: buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs src
 
   documentation_spelling_check:
     runs-on: ubuntu-latest
@@ -210,6 +210,7 @@ jobs:
           directory: ./
           files: ./unit.xml
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   bento_server_e2e_tests:
     needs:
@@ -288,6 +289,7 @@ jobs:
           directory: ./
           files: ./tests/e2e/bento_server_${{ matrix.server_type }}/${{ matrix.server_type }}_server.xml
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}

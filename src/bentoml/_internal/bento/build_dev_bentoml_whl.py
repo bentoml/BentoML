@@ -66,7 +66,9 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
             builder.python_executable = env.executable
             builder.scripts_dir = env.scripts_dir
             env.install(builder.build_system_requires)
-            builder.build("wheel", target_path)
+            builder.build(
+                "wheel", target_path, config_settings={"--global-option": "--quiet"}
+            )
     else:
         logger.info(
             "Custom BentoML build is detected. For a Bento to use the same build at serving time, add your custom BentoML build to the pip packages list, e.g. `packages=['git+https://github.com/bentoml/bentoml.git@13dfb36']`"

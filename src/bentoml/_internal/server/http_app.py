@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
+from starlette.responses import PlainTextResponse
+from starlette.exceptions import HTTPException
 
 from ..context import trace_context
 from ..context import InferenceApiContext as Context
@@ -17,7 +19,6 @@ from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
 from ..configuration.containers import BentoMLContainer
-from ..io_descriptors.multipart import Multipart
 
 if TYPE_CHECKING:
     from starlette.routing import BaseRoute
@@ -267,6 +268,18 @@ class HTTPAppFactory(BaseAppFactory):
         on_startup.extend(super().on_startup)
         return on_startup
 
+    async def readyz(self, _: "Request") -> "Response":
+        if BentoMLContainer.api_server_config.runner_probe.enabled.get():
+            runner_statuses = (
+                runner.runner_handle_is_ready() for runner in self.bento_service.runners
+            )
+            runners_ready = all(await asyncio.gather(*runner_statuses))
+
+            if not runners_ready:
+                raise HTTPException(status_code=503, detail="Runners are not ready.")
+
+        return PlainTextResponse("\n", status_code=200)
+
     @property
     def on_shutdown(self) -> list[t.Callable[[], None]]:
         on_shutdown = [self.bento_service.on_asgi_app_shutdown]
@@ -298,7 +311,7 @@ class HTTPAppFactory(BaseAppFactory):
                 input_data = await api.input.from_http_request(request)
                 ctx = None
                 if asyncio.iscoroutinefunction(api.func):
-                    if isinstance(api.input, Multipart):
+                    if api.multi_input:
                         if api.needs_ctx:
                             ctx = Context.from_http(request)
                             input_data[api.ctx_param] = ctx
@@ -310,7 +323,7 @@ class HTTPAppFactory(BaseAppFactory):
                         else:
                             output = await api.func(input_data)
                 else:
-                    if isinstance(api.input, Multipart):
+                    if api.multi_input:
                         if api.needs_ctx:
                             ctx = Context.from_http(request)
                             input_data[api.ctx_param] = ctx

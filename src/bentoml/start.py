@@ -232,6 +232,7 @@ def start_grpc_server(
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: int = Provide[BentoMLContainer.api_server_workers],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
@@ -294,6 +295,8 @@ def start_grpc_server(
         ]
         if reflection:
             args.append("--enable-reflection")
+        if channelz:
+            args.append("--enable-channelz")
         if max_concurrent_streams:
             args.extend(
                 [

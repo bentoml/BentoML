@@ -27,6 +27,7 @@ pushd "$SCRIPT_DIR/github.com/bentoml/bentoml/grpc/v1alpha1/" >/dev/null
 ! [[ -f "go.mod" ]] && go mod init v1alpha1
 go mod tidy
 popd >/dev/null
+go mod tidy
 
 # Then run the client
 go run ./client.go

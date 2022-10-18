@@ -35,9 +35,15 @@ api_server:
     max_message_length: -1
     reflection:
       enabled: false
+    channelz:
+      enabled: false
     metrics:
       host: 0.0.0.0
       port: 3001
+  runner_probe: # configure whether the API server's health check endpoints (readyz, livez, healthz) also check the runners
+    enabled: true
+    timeout: 1
+    period: 10
 
 runners:
   batching:

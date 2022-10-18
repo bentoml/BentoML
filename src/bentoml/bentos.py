@@ -437,10 +437,12 @@ FROM base-{bento.info.docker.distro} as final
         yield bento.path, dockerfile_path
 
 
-# Sync with BentoML extra dependencies
+# Sync with BentoML extra dependencies found in ../../pyproject.toml
 FEATURES = [
     "tracing",
     "grpc",
+    "grpc-reflection",
+    "grpc-channelz",
     "aws",
     "all",
     "io-image",

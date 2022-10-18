@@ -52,9 +52,8 @@ class GRPCAppFactory:
         ],
     ):
         if BentoMLContainer.api_server_config.runner_probe.enabled.get():
-            logger.info(
-                "Waiting for runners %r to be ready...", self.bento_service.runners
-            )
+            logger.info("Waiting for runners to be ready...")
+            logger.debug("Current runners: %r", self.bento_service.runners)
 
             while True:
                 try:
@@ -71,7 +70,7 @@ class GRPCAppFactory:
 
                 await asyncio.sleep(check_interval)
 
-            logger.info("All runners ready; continuing initialization.")
+            logger.info("All runners ready.")
 
     @property
     def on_startup(self) -> OnStartup:

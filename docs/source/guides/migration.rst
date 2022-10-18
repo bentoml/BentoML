@@ -2,9 +2,9 @@
 1.0 Migration Guide
 ===================
 
-BentoML version 1.0.0 APIs are backward incompatible with version 0.13.1. However, most of the common 
-functionality can be achieved with the new version. We will guide and demonstrate the migration by 
-transforming the `quickstart <https://github.com/bentoml/BentoML/tree/main/examples/quickstart>`_ gallery project 
+BentoML version 1.0.0 APIs are backward incompatible with version 0.13.1. However, most of the common
+functionality can be achieved with the new version. We will guide and demonstrate the migration by
+transforming the `quickstart <https://github.com/bentoml/BentoML/tree/main/examples/quickstart>`_ gallery project
 from BentoML version 0.13.1 to 1.0.0. Complete every migration action denoted like the section below.
 
 .. admonition:: 💡 Migration Task
@@ -14,14 +14,14 @@ from BentoML version 0.13.1 to 1.0.0. Complete every migration action denoted li
 
 .. code-block:: bash
 
-    > pip install bentoml
+    $ pip install -U bentoml
 
 
 Train Models
 ------------
 
 First, the quickstart project begins by training a classifier Scikit-Learn model from the iris datasets. 
-By running :code:`python train.py`, we obtain a trained classifier model.
+By running ``python train.py``, we obtain a trained classifier model.
 
 .. code-block:: python
     :caption: train.py
@@ -45,7 +45,7 @@ objects like tokenizers to be saved alongside the model. See
 
 .. admonition:: 💡 Migration Task
 
-   Append the model saving logic below to `train.py` and run `python train.py`.
+   Append the model saving logic below to ``train.py`` and run ``python train.py``.
 
 .. code-block:: python
 
@@ -56,7 +56,7 @@ You can view and manage all saved models via the :code:`bentoml models` CLI comm
 
 .. code-block:: bash
 
-    > bentoml models list
+    $ bentoml models list
 
     Tag                        Module           Size        Creation Time        Path
     iris_clf:zy3dfgxzqkjrlgxi  bentoml.sklearn  5.81 KiB    2022-05-19 08:36:52  ~/bentoml/models/iris_clf/zy3dfgxzqkjrlgxi
@@ -68,47 +68,46 @@ Next, we will transform the service definition module and breakdown each section
 
 .. admonition:: 💡 Migration Task
 
-   Update the service definition module `service.py` from the BentoML 0.13.1 specification to 1.0.0 specification.
+   Update the service definition module ``service.py`` from the BentoML 0.13.1 specification to 1.0.0 specification.
 
 .. tab-set::
 
     .. tab-item:: 0.13.1
 
-        .. code-block:: python
-            :caption: service.py
+       .. code-block:: python
+          :caption: service.py
 
-            import pandas as pd
+          import pandas as pd
 
-            from bentoml import env, artifacts, api, BentoService
-            from bentoml.adapters import DataframeInput
-            from bentoml.frameworks.sklearn import SklearnModelArtifact
+          from bentoml import env, artifacts, api, BentoService
+          from bentoml.adapters import DataframeInput
+          from bentoml.frameworks.sklearn import SklearnModelArtifact
 
-            @env(infer_pip_packages=True)
-            @artifacts([SklearnModelArtifact('model')])
-            class IrisClassifier(BentoService):
-                @api(input=DataframeInput(), batch=True)
-                def predict(self, df: pd.DataFrame):
-                    return self.artifacts.model.predict(df)
+          @env(infer_pip_packages=True)
+          @artifacts([SklearnModelArtifact('model')])
+          class IrisClassifier(BentoService):
+              @api(input=DataframeInput(), batch=True)
+              def predict(self, df: pd.DataFrame):
+                  return self.artifacts.model.predict(df)
 
     .. tab-item:: 1.0.0
 
-        .. code-block:: python
-            :caption: service.py
+       .. code-block:: python
+          :caption: service.py
 
-            import numpy as np
-            import pandas as pd
+          import numpy as np
+          import pandas as pd
 
-            import bentoml
-            from bentoml.io import NumpyNdarray, PandasDataFrame
+          import bentoml
 
-            iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
+          iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
-            svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
+          svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
-            @svc.api(input=PandasDataFrame(), output=NumpyNdarray())
-            def predict(input_series: pd.DataFrame) -> np.ndarray:
-                result = iris_clf_runner.predict.run(input_series)
-                return result
+          @svc.api(input=bentoml.io.PandasDataFrame(), output=bentoml.io.NumpyNdarray())
+          def predict(input_series: pd.DataFrame) -> np.ndarray:
+              result = iris_clf_runner.predict.run(input_series)
+              return result
 
 Environment
 ~~~~~~~~~~~
@@ -129,9 +128,10 @@ defined in the :code:`bentofile.yaml` file in the project directory. The content
 
 .. admonition:: 💡 Migration Task
 
-   Save the contents below to the `bentofile.yaml` file in the same directory as `service.py`.
+   Save the contents below to the ``bentofile.yaml`` file in the same directory as ``service.py``.
 
 .. code-block:: yaml
+   :caption: `bentofile.yaml`
 
     service: "service.py:svc"
     labels:
@@ -207,14 +207,14 @@ saving. Executing the :code:`bentoml serve` command will bring up an API server 
 
 .. code-block:: bash
 
-    > bentoml serve --reload
+    $ bentoml serve --reload
 
 To bring up the API server and runners in a production like setting, use the :code:`--production` option. In production 
 mode, API servers and runners will run in separate processes to maximize server utility and parallelism.
 
 .. code-block:: bash
 
-    > bentoml serve --production
+    $ bentoml serve --production
 
 
 Building Bentos
@@ -262,7 +262,7 @@ the service for distribution. This operation is unique to BentoML version 1.0.0.
 
         .. code-block:: bash
 
-            > bentoml build
+            $ bentoml build
 
             Building BentoML service "iris_classifier:6otbsmxzq6lwbgxi" from build context "/home/user/gallery/quickstart"
             Packing model "iris_clf:zy3dfgxzqkjrlgxi"
@@ -281,7 +281,7 @@ You can view and manage all saved models via the :code:`bentoml` CLI command.
 
 .. code-block:: bash
 
-    > bentoml list
+    $ bentoml list
 
     Tag                               Size        Creation Time        Path
     iris_classifier:6otbsmxzq6lwbgxi  16.48 KiB   2022-07-01 16:03:44  ~/bentoml/bentos/iris_classifier/6otbsmxzq6lwbgxi
@@ -295,7 +295,7 @@ API servers and runners will run in separate processes to maximize server utilit
 
 .. code-block:: bash
 
-    > bentoml serve iris_classifier:latest --production
+    $ bentoml serve iris_classifier:latest --production
 
     2022-07-06T02:02:30-0700 [INFO] [] Starting production BentoServer from "." running on http://0.0.0.0:3000 (Press CTRL+C to quit)
     2022-07-06T02:02:31-0700 [INFO] [runner-iris_clf:1] Setting up worker: set CPU thread count to 10
@@ -308,7 +308,7 @@ version 1.0.0, see :ref:`Containerize Bentos <concepts/deploy:Containerize Bento
 
 .. code-block:: bash
 
-    > bentoml containerize iris_classifier:latest
+    $ bentoml containerize iris_classifier:latest
 
     Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
     Successfully built docker image "iris_classifier:6otbsmxzq6lwbgxi"
@@ -317,7 +317,7 @@ You can run the docker image to start the service.
 
 .. code-block:: bash
 
-    > docker run -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi
+    $ docker run -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi
 
     2022-07-01T21:57:47+0000 [INFO] [] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
     2022-07-01T21:57:47+0000 [INFO] [] Starting production BentoServer from "/home/bentoml/bento" running on http://0.0.0.0:3000 (Press CTRL+C to quit)
@@ -327,6 +327,25 @@ You can run the docker image to start the service.
     2022-07-01T21:57:48+0000 [INFO] [runner-iris_clf:1] Setting up worker: set CPU thread count to 4
     2022-07-01T21:57:48+0000 [INFO] [api_server:3] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
     2022-07-01T21:57:48+0000 [INFO] [api_server:4] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
+
+.. note::
+
+   BentoML 1.x leverage BuildKit <https://github.com/moby/buildkit>`_, to
+   containerize Bentos.
+
+   BuildKit has been `integrated into Docker 18.09 and higher <https://docs.docker.com/develop/develop-images/build_enhancements/>`_.
+   Providing the environment variable ``DOCKER_BUILDKIT=1`` will enable BuildKit:
+
+   .. code-block:: bash
+
+      $ DOCKER_BUILDKIT=1 bentoml containerize iris_classifier:latest
+
+.. seealso::
+
+   :ref:`Containerize Bentos <concepts/bento:Docker Options>` to learn more about our
+   docker options and how to customize the docker image. :ref:`guides/containerization:Advanced Containerization` goes into more 
+   details about advanced containerization features that BentoML provides, for those who
+   are interested.
 
 Deploy Bentos
 -------------

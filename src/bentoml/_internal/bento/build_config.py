@@ -549,6 +549,14 @@ fi
                 resolve_user_filepath(self.requirements_txt, build_ctx),
                 include_nested=True,
             )
+            # We need to make sure that we don't write any file references
+            # back into the final `requirements.txt` file. We've already
+            # resolved them and included their contents so we can discard
+            # them.
+            for option_line in requirements_txt.options:
+                option_line.options.pop("constraints", None)
+                option_line.options.pop("requirements", None)
+
             with bento_fs.open(
                 fs.path.combine(py_folder, "requirements.txt"), "w"
             ) as f:

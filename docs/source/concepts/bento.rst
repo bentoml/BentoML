@@ -575,6 +575,14 @@ validation, specify the desired variant in the under ``python.packages`` field:
            packages:
            - "bentoml[io-pandas]"
 
+   .. tab-item:: JSON IO
+
+      .. code-block:: yaml
+
+         python:
+           packages:
+           - "bentoml[io-json]"
+
    .. tab-item:: Jaeger
 
       .. code-block:: yaml

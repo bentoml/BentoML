@@ -109,7 +109,15 @@ Structured Data with JSON
    `Pydantic <https://pydantic-docs.helpmanual.io/>`_ model, and use it to for data
    validation.
 
-   Make sure to install `Pydantic <https://pydantic-docs.helpmanual.io/>`_ with ``pip install pydantic`` if you want to use ``pydantic``.
+   To use the IO descriptor with pydantic, install bentoml with extra ``io-json`` dependency:
+
+   .. code-block:: bash
+
+      pip install "bentoml[io-json]"
+
+   This will include BentoML with `Pydantic <https://pydantic-docs.helpmanual.io/>`_
+   alongside with BentoML
+
    Then proceed to add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
    Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
@@ -138,7 +146,38 @@ Structured Data with JSON
               dependencies:
                 - pydantic
 
+   Refers to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+
+   .. tab-set::
+
+      .. tab-item:: pip
+
+         .. code-block:: yaml
+            :caption: `bentofile.yaml`
+
+            ...
+            python:
+              packages:
+                - pydantic
+
+      .. tab-item:: conda
+
+         .. code-block:: yaml
+            :caption: `bentofile.yaml`
+
+            ...
+            conda:
+              channels:
+                - conda-forge
+              dependencies:
+                - pydantic
+
 .. autoclass:: bentoml.io.JSON
+.. automethod:: bentoml.io.JSON.from_sample
+.. automethod:: bentoml.io.JSON.from_proto
+.. automethod:: bentoml.io.JSON.from_http_request
+.. automethod:: bentoml.io.JSON.to_proto
+.. automethod:: bentoml.io.JSON.to_http_response
 
 Texts
 -----

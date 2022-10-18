@@ -108,6 +108,7 @@ include = [
 [project.optional-dependencies]
 all = [
   "bentoml[aws]",
+  "bentoml[io-json]",
   "bentoml[io-image]",
   "bentoml[io-pandas]",
   "bentoml[grpc]",
@@ -116,6 +117,7 @@ all = [
   "bentoml[tracing]",
 ]
 aws = ["fs-s3fs"]
+io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["Pillow"]
 io-pandas = ["pandas", "pyarrow"]
 grpc = [

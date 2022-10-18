@@ -1,6 +1,7 @@
 =========================
 Metrics in BentoML
 =========================
+
 BentoML provides native support for all Prometheus Client Metrics, :ref:`guides/metrics:Custom Metrics in BentoML`. 
 Users can access the metrics API by replacing  ``prometheus_client`` with ``bentoml.metrics``.
 
@@ -31,6 +32,7 @@ Here are all of the documentation for all of the metrics Prometheus Client provi
 
 Prometheus Client Metrics
 -------------------------
+
 Here are the signature for the Metrics provided by Prometheus Client. To access these metrics in BentoML, you have to replace ``prometheus_client`` with ``bentoml.metrics``.
 
 .. autoclass:: prometheus_client.Counter
@@ -65,6 +67,7 @@ Here are the signature for the Metrics provided by Prometheus Client. To access 
 
 Using Metrics
 ----------------
+
 After a metrics has been created, one can start using it right away.
 
 .. code-block:: python
@@ -98,6 +101,7 @@ You can find metrics on port 3001 for gRPC. For example, ``0.0.0.0:3001``.
 
 Additional Metric Methods
 -------------------------
+
 The following methods are availble under ``bentoml.metrics``.
 
 start_http_server
@@ -121,4 +125,5 @@ generate_latest
 
 text_string_to_metric_families
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autofunction:: bentoml.metrics.text_string_to_metric_families

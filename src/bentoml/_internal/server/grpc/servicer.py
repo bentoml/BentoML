@@ -116,7 +116,6 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
     This is the actual implementation of BentoServicer.
     Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Call
     """
-    from ...io_descriptors.multipart import Multipart
 
     class BentoServiceImpl(services.BentoServiceServicer):
         """An asyncio implementation of BentoService servicer."""
@@ -145,12 +144,12 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                 )
                 input_data = await api.input.from_proto(input_proto)
                 if asyncio.iscoroutinefunction(api.func):
-                    if isinstance(api.input, Multipart):
+                    if api.multi_input:
                         output = await api.func(**input_data)
                     else:
                         output = await api.func(input_data)
                 else:
-                    if isinstance(api.input, Multipart):
+                    if api.multi_input:
                         output = await anyio.to_thread.run_sync(api.func, **input_data)
                     else:
                         output = await anyio.to_thread.run_sync(api.func, input_data)

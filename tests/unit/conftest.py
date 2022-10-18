@@ -145,7 +145,7 @@ def simple_service() -> bentoml.Service:
 
     @svc.api(input=Text(), output=Text())
     def invalid(data: str) -> str:  # type: ignore
-        raise RuntimeError("invalid implementation.")
+        raise NotImplementedError
 
     return svc
 

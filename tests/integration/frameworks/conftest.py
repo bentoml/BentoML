@@ -86,7 +86,7 @@ def test_inputs(framework: str | None) -> list[tuple[ModuleType, FrameworkTestMo
             )
         except ModuleNotFoundError as e:
             logger.warning(
-                f"Failed to find test module for framework {framework_name} (tests.integration.frameworks.models.{framework_name})"
+                f"Failed to find test module for framework {framework_name} (tests.integration.frameworks.models.{framework_name}): {e}"
             )
 
     return [

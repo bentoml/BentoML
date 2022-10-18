@@ -1,3 +1,4 @@
+# pylint: disable=used-before-assignment,assignment-from-no-return
 from __future__ import annotations
 
 import io
@@ -13,7 +14,7 @@ from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import randomize_pb_ndarray
-from bentoml._internal.utils import LazyType
+from bentoml._internal.types import LazyType
 from bentoml._internal.utils import LazyLoader
 
 if TYPE_CHECKING:
@@ -131,8 +132,8 @@ async def test_json(host: str):
         await async_client_call(
             "echo_json",
             channel=channel,
-            data={"json": struct_pb2.Value(string_value='"hi"')},
-            assert_data=lambda resp: resp.json.string_value == '"hi"',
+            data={"json": struct_pb2.Value(string_value="hi")},
+            assert_data=lambda resp: resp.json.string_value == "hi",
         )
         await async_client_call(
             "echo_json",

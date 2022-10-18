@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - mlflow
+      - cloudpickle
+      - psutil
+      - scikit-learn
+name: no-pyfunc

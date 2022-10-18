@@ -150,3 +150,4 @@ Package.resolved
 composer.lock
 vendor
 *.pkl
+*.ckpt

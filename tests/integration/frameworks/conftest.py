@@ -3,19 +3,22 @@ from __future__ import annotations
 import os
 import typing as t
 import pkgutil
+import logging
 from types import ModuleType
 from typing import TYPE_CHECKING
 from importlib import import_module
 
 import pytest
 
-from .models import FrameworkTestModel
-
 if TYPE_CHECKING:
+    from .models import FrameworkTestModel
+
     from _pytest.nodes import Item
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
 
+
+logger = logging.getLogger("bentoml.tests")
 
 def pytest_addoption(parser: Parser):
     parser.addoption("--framework", action="store", default=None)
@@ -81,9 +84,7 @@ def test_inputs(framework: str | None) -> list[tuple[ModuleType, FrameworkTestMo
                 )
             )
         except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(
-                f"Failed to find test module for framework {framework_name} (tests.integration.frameworks.models.{framework_name})"
-            ) from e
+            logger.warning(f"Failed to find test module for framework {framework_name} (tests.integration.frameworks.models.{framework_name})")
 
     return [
         (module.framework, _model)

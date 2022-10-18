@@ -226,13 +226,7 @@ exclude = '''
 [tool.pytest.ini_options]
 addopts = [
   "-rfEX",
-  "-x",
-  "--capture=tee-sys",
-  "--tb=long",
-  "--import-mode=importlib",
-  "--cov=bentoml",
-  "--cov-report=term-missing:skip-covered",
-  "--cov-append",
+  "-pbentoml.testing.pytest.plugin"
 ]
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]

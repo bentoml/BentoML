@@ -1,4 +1,3 @@
-# pylint: disable=used-before-assignment,assignment-from-no-return
 from __future__ import annotations
 
 import io

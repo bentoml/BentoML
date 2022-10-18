@@ -1,4 +1,5 @@
 # Dev dependencies
+-e .[all]
 -r tests-requirements.txt
 twine
 wheel

@@ -1,5 +1,4 @@
 # Tests dependencies
--r frameworks-requirements.txt
 black[jupyter]==22.8.0
 codecov
 coverage>=4.4

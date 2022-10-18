@@ -90,6 +90,7 @@ class PrometheusClient:
             self.prometheus_client.multiprocess.mark_process_dead(self._pid)
 
     def start_http_server(self, port: int, addr: str = "") -> None:
+        """Starts a WSGI server for prometheus metrics as a daemon thread."""
         self.prometheus_client.start_http_server(
             port=port,
             addr=addr,
@@ -97,9 +98,11 @@ class PrometheusClient:
         )
 
     def make_wsgi_app(self) -> ext.WSGIApp:
+        """Create a WSGI app which serves the metrics from a registry."""
         return self.prometheus_client.make_wsgi_app(registry=self.registry)  # type: ignore (unfinished prometheus types)
 
     def generate_latest(self):
+        """Returns the metrics from the registry in latest text format as a string."""
         if self.multiproc:
             registry = self.prometheus_client.CollectorRegistry()
             self.prometheus_client.multiprocess.MultiProcessCollector(registry)
@@ -108,6 +111,7 @@ class PrometheusClient:
             return self.prometheus_client.generate_latest()
 
     def text_string_to_metric_families(self) -> t.Generator[Metric, None, None]:
+        """Parse Prometheus text format from a unicode string."""
         yield from self.prometheus_client.parser.text_string_to_metric_families(
             self.generate_latest().decode("utf-8")
         )

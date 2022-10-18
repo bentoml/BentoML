@@ -192,15 +192,15 @@ def test_json_openapi_components():
 
 def test_json_openapi_request_responses():
     request_body = JSON().openapi_request_body()
-    assert request_body.required
+    assert request_body["required"]
 
-    assert "application/json" in request_body.content
+    assert "application/json" in request_body["content"]
 
     responses = JSON().openapi_responses()
 
-    assert responses.content
+    assert responses["content"]
 
-    assert "application/json" in responses.content
+    assert "application/json" in responses["content"]
 
 
 @pytest.mark.asyncio

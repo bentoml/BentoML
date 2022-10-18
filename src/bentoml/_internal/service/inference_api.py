@@ -26,7 +26,7 @@ RESERVED_API_NAMES = [
 class InferenceAPI:
     def __init__(
         self,
-        user_defined_callback: t.Callable[..., t.Any],
+        user_defined_callback: t.Callable[..., t.Any] | None,
         input_descriptor: IODescriptor[t.Any],
         output_descriptor: IODescriptor[t.Any],
         name: Optional[str],
@@ -49,75 +49,82 @@ class InferenceAPI:
         self.func = user_defined_callback
         input_type = input_descriptor.input_type()
         self.multi_input = isinstance(input_type, dict)
-        sig = inspect.signature(user_defined_callback)
 
-        if len(sig.parameters) == 0:
-            raise ValueError("Expected API function to take parameters.")
+        if user_defined_callback is not None:
+            sig = inspect.signature(user_defined_callback)
 
-        if isinstance(input_type, dict):
-            # note: in python 3.6 kwarg order was not guaranteed to be preserved,
-            #       though it is in practice.
-            for key in sig.parameters:
-                if key not in input_type:
+            if len(sig.parameters) == 0:
+                raise ValueError("Expected API function to take parameters.")
+
+            if isinstance(input_type, dict):
+                # note: in python 3.6 kwarg order was not guaranteed to be preserved,
+                #       though it is in practice.
+                for key in sig.parameters:
+                    if key not in input_type:
+                        if (
+                            key in ["context", "ctx"]
+                            or sig.parameters[key].annotation == Context
+                        ):
+                            if self.needs_ctx:
+                                raise ValueError(
+                                    f"API function has two context parameters: '{self.ctx_param}' and '{key}'; it should only have one."
+                                )
+
+                            self.needs_ctx = True
+                            self.ctx_param = key
+                            continue
+
+                        raise ValueError(
+                            f"API function has extra parameter with name '{key}'."
+                        )
+
+                    annotation: t.Type[t.Any] = sig.parameters[key].annotation
                     if (
-                        key in ["context", "ctx"]
-                        or sig.parameters[key].annotation == Context
+                        isinstance(annotation, t.Type)
+                        and annotation != inspect.Signature.empty
                     ):
-                        if self.needs_ctx:
-                            raise ValueError(
-                                f"API function has two context parameters: '{self.ctx_param}' and '{key}'; it should only have one."
+                        # if type annotations have been successfully resolved
+                        if not is_compatible_type(input_type[key], annotation):
+                            raise TypeError(
+                                f"Expected type of argument '{key}' to be '{input_type[key]}', got '{sig.parameters[key].annotation}'"
                             )
 
-                        self.needs_ctx = True
-                        self.ctx_param = key
-                        continue
-
+                expected_args = len(input_type) + (1 if self.needs_ctx else 0)
+                if len(sig.parameters) != expected_args:
                     raise ValueError(
-                        f"API function has extra parameter with name '{key}'."
+                        f"expected API function to have arguments ({', '.join(input_type.keys())}, [context]), got ({', '.join(sig.parameters.keys())})"
                     )
 
-                annotation: t.Type[t.Any] = sig.parameters[key].annotation
+            else:
+                param_iter = iter(sig.parameters)
+                first_arg = next(param_iter)
+                annotation = sig.parameters[first_arg].annotation
                 if (
                     isinstance(annotation, t.Type)
                     and annotation != inspect.Signature.empty
                 ):
-                    # if type annotations have been successfully resolved
-                    if not is_compatible_type(input_type[key], annotation):
+                    if not is_compatible_type(input_type, annotation):
                         raise TypeError(
-                            f"Expected type of argument '{key}' to be '{input_type[key]}', got '{sig.parameters[key].annotation}'"
+                            f"Expected type of argument '{first_arg}' to be '{input_type}', got '{sig.parameters[first_arg].annotation}'"
                         )
 
-            expected_args = len(input_type) + (1 if self.needs_ctx else 0)
-            if len(sig.parameters) != expected_args:
-                raise ValueError(
-                    f"expected API function to have arguments ({', '.join(input_type.keys())}, [context]), got ({', '.join(sig.parameters.keys())})"
-                )
-
-        else:
-            param_iter = iter(sig.parameters)
-            first_arg = next(param_iter)
-            annotation = sig.parameters[first_arg].annotation
-            if isinstance(annotation, t.Type) and annotation != inspect.Signature.empty:
-                if not is_compatible_type(input_type, annotation):
-                    raise TypeError(
-                        f"Expected type of argument '{first_arg}' to be '{input_type}', got '{sig.parameters[first_arg].annotation}'"
+                if len(sig.parameters) > 2:
+                    raise ValueError(
+                        "API function should only take one or two arguments"
                     )
+                elif len(sig.parameters) == 2:
+                    self.needs_ctx = True
 
-            if len(sig.parameters) > 2:
-                raise ValueError("API function should only take one or two arguments")
-            elif len(sig.parameters) == 2:
-                self.needs_ctx = True
-
-                second_arg = next(param_iter)
-                annotation = sig.parameters[second_arg].annotation
-                if (
-                    isinstance(annotation, t.Type)
-                    and annotation != inspect.Signature.empty
-                ):
-                    if not annotation == Context:
-                        raise TypeError(
-                            f"Expected type of argument '{second_arg}' to be '{input_type}', got '{sig.parameters[second_arg].annotation}'"
-                        )
+                    second_arg = next(param_iter)
+                    annotation = sig.parameters[second_arg].annotation
+                    if (
+                        isinstance(annotation, t.Type)
+                        and annotation != inspect.Signature.empty
+                    ):
+                        if not annotation == Context:
+                            raise TypeError(
+                                f"Expected type of argument '{second_arg}' to be '{input_type}', got '{sig.parameters[second_arg].annotation}'"
+                            )
 
         self.input = input_descriptor
         self.output = output_descriptor

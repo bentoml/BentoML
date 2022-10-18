@@ -29,16 +29,15 @@ def test_invalid_kind():
 @pytest.mark.parametrize("mime_type", ["application/octet-stream", "application/pdf"])
 def test_file_openapi_request_responses(mime_type: str):
     request_body = File(mime_type=mime_type).openapi_request_body()
-    assert request_body.required
+    assert request_body["required"]
 
-    assert mime_type in request_body.content
+    assert mime_type in request_body["content"]
 
     responses = File(mime_type=mime_type).openapi_responses()
 
-    assert responses.content
+    assert responses["content"]
 
-    assert mime_type in responses.content
-
+    assert mime_type in responses["content"]
 
 @pytest.mark.asyncio
 async def test_from_proto(bin_file: str):

@@ -27,7 +27,7 @@ else:
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor[str]):
+class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
     """
     :obj:`Text` defines API specification for the inputs/outputs of a Service. :obj:`Text`
     represents strings for all incoming requests/outcoming responses as specified in
@@ -102,6 +102,13 @@ class Text(IODescriptor[str]):
     def input_type(self) -> t.Type[str]:
         return str
 
+    def to_spec(self) -> dict[str, t.Any]:
+        return {"id": self.descriptor_id}
+
+    @classmethod
+    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+        return cls()
+
     def openapi_schema(self) -> Schema:
         return Schema(type="string")
 
@@ -109,16 +116,18 @@ class Text(IODescriptor[str]):
         pass
 
     def openapi_request_body(self) -> RequestBody:
-        return RequestBody(
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-            required=True,
-        )
+        return {
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "required": True,
+            "x-bentoml-descriptor": self.to_spec(),
+        }
 
     def openapi_responses(self) -> OpenAPIResponse:
-        return OpenAPIResponse(
-            description=SUCCESS_DESCRIPTION,
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-        )
+        return {
+            "description": SUCCESS_DESCRIPTION,
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "x-bentoml-descriptor": self.to_spec(),
+        }
 
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()

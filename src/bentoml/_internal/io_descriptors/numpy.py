@@ -115,7 +115,9 @@ def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
 
 
 # TODO: when updating docs, add examples with gRPCurl
-class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
+class NumpyNdarray(
+    IODescriptor["ext.NpNDArray"], descriptor_id="bentoml.io.NumpyNdarray"
+):
     """
     :obj:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -249,6 +251,24 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
     def input_type(self) -> LazyType[ext.NpNDArray]:
         return LazyType("numpy", "ndarray")
 
+    def to_spec(self) -> dict[str, t.Any]:
+        return {
+            "id": self.descriptor_id,
+            "args": {
+                "dtype": None if self._dtype is None else self._dtype.name,
+                "shape": self._shape,
+                "enforce_dtype": self._enforce_dtype,
+                "enforce_shape": self._enforce_shape,
+            },
+        }
+
+    @classmethod
+    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+        if "args" not in spec:
+            raise InvalidArgument(f"Missing args key in NumpyNdarray spec: {spec}")
+        res = NumpyNdarray(**spec["args"])
+        return res
+
     @property
     def sample_input(self) -> ext.NpNDArray | None:
         return self._sample_input
@@ -279,24 +299,26 @@ class NumpyNdarray(IODescriptor["ext.NpNDArray"]):
         return
 
     def openapi_request_body(self) -> RequestBody:
-        return RequestBody(
-            content={
+        return {
+            "content": {
                 self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
-            required=True,
-        )
+            "required": True,
+            "x-bentoml-descriptor": self.to_spec(),
+        }
 
     def openapi_responses(self) -> OpenAPIResponse:
-        return OpenAPIResponse(
-            description=SUCCESS_DESCRIPTION,
-            content={
+        return {
+            "description": SUCCESS_DESCRIPTION,
+            "content": {
                 self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
-        )
+            "x-bentoml-descriptor": self.to_spec(),
+        }
 
     def validate_array(
         self, arr: ext.NpNDArray, exception_cls: t.Type[Exception] = BadInput

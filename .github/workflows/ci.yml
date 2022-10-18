@@ -2,17 +2,15 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
   schedule:
     - cron: "0 0 * * 1/2"
 
 env:
-  BENTOML_DO_NOT_TRACK: True
   LINES: 120
   COLUMNS: 120
-  PYTEST_PLUGINS: bentoml.testing.pytest.plugin
+  BENTOML_DO_NOT_TRACK: True
 
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaultsrun
 defaults:
@@ -26,6 +24,7 @@ jobs:
       related: ${{ steps.filter.outputs.related }}
       bentoml: ${{ steps.filter.outputs.bentoml }}
       docs: ${{ steps.filter.outputs.docs }}
+      protos: ${{ steps.filter.outputs.protos }}
     steps:
       - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
@@ -37,8 +36,6 @@ jobs:
               - .github/workflows/ci.yml
               - codecov.yml
               - pyproject.toml
-              - scripts/ci/config.yml
-              - scripts/ci/run_tests.sh
               - requirements/tests-requirements.txt
             protos: &protos
               - "src/bentoml/grpc/**/*.proto"
@@ -100,14 +97,20 @@ jobs:
           pip install -r requirements/dev-requirements.txt
 
       - name: Format check
-        run: make ci-format
+        run: |
+          black --check src examples tests
+          black --check --pyi typings
+          isort --check .
       - name: Lint check
-        run: make ci-lint
+        run: |
+          git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py' | xargs -0 --no-run-if-empty pylint --rcfile pyproject.toml --fail-under 9.0 --exit-zero
       - name: Type check
-        run: make ci-pyright
+        run: |
+          git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py[i]' | xargs -0 --no-run-if-empty pyright
       - name: Proto check
         if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.protos == 'true') || github.event_name == 'push' }}
-        run: buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs src
+        run: |
+          buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs src
 
   documentation_spelling_check:
     runs-on: ubuntu-latest
@@ -193,23 +196,21 @@ jobs:
 
       - name: Run unit tests
         run: |
-          OPTS=(--cov-config pyproject.toml --cov-report=xml:unit.xml -vvv)
+          OPTS=(--cov-config pyproject.toml --cov=src/bentoml --cov-append)
           if [ "${{ matrix.os }}" != 'windows-latest' ]; then
             # we will use pytest-xdist to improve tests run-time.
             OPTS=(${OPTS[@]} --dist loadfile -n auto --run-grpc-tests)
           fi
           # Now run the unit tests
-          python -m pytest tests/unit "${OPTS[@]}"
+          coverage run -m pytest tests/unit "${OPTS[@]}"
+
+      - name: Generage coverage
+        run: coverage xml
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          name: codecov-${{ matrix.os }}-python${{ matrix.python-version }}
-          fail_ci_if_error: true
-          flags: unit-tests
-          directory: ./
-          files: ./unit.xml
-          verbose: true
+          files: coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
 
   bento_server_e2e_tests:
@@ -278,17 +279,17 @@ jobs:
           fi
 
       - name: Run ${{ matrix.server_type }} tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh ${{ matrix.server_type }}_server --verbose
+        run: |
+          OPTS=(--cov-config pyproject.toml --cov=src/bentoml --cov-append)
+          coverage run -m pytest tests/e2e/bento_server_${{ matrix.server_type }} "${OPTS[@]}"
+
+      - name: Generage coverage
+        run: coverage xml
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          flags: e2e-tests-${{ matrix.server_type }}
-          name: codecov-${{ matrix.os }}-python${{ matrix.python-version }}-e2e
-          fail_ci_if_error: true
-          directory: ./
-          files: ./tests/e2e/bento_server_${{ matrix.server_type }}/${{ matrix.server_type }}_server.xml
-          verbose: true
+          files: coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
 
 concurrency:

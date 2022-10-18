@@ -10,7 +10,6 @@ from bentoml import Tag
 from bentoml.models import Model
 from bentoml.models import ModelContext
 from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
@@ -81,7 +80,7 @@ def load_model(
         bento_model = get(bento_model)
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
-        raise BentoMLException(
+        raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
     model_file = bento_model.path_of(MODEL_FILENAME)

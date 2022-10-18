@@ -94,7 +94,7 @@ def host(
         yield _host
 ```
 
-4. Install this e2e requirements:
+4. Install your new e2e test's requirements:
 
 ```bash
 pip install -r tests/e2e/qa/requirements.txt
@@ -103,5 +103,5 @@ pip install -r tests/e2e/qa/requirements.txt
 5. To run the tests, navigate to `GIT_ROOT` (root directory of bentoml), and call:
 
 ```bash
-pytest tests/e2e/qa --cov-config pyproject.toml --cov-report html:html
+pytest tests/e2e/qa
 ```

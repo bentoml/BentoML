@@ -775,7 +775,7 @@ Let's take a quick look at `protobuf <https://developers.google.com/protocol-buf
 
       .. tab-item:: v1alpha1
 
-         .. literalinclude:: ../../../bentoml/grpc/v1alpha1/service.proto
+         .. literalinclude:: ../../../src/bentoml/grpc/v1alpha1/service.proto
             :language: protobuf
 
 As you can see, BentoService defines a `simple rpc` ``Call`` that sends a ``Request`` message and returns a ``Response`` message.

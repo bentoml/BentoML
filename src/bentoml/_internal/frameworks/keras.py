@@ -258,7 +258,7 @@ def save_model(
             }
         }
         logger.info(
-            'Using the default model signature for keras (%s) for model "%s".',
+            'Using the default model signature for Keras (%s) for model "%s".',
             signatures,
             name,
         )

@@ -124,7 +124,7 @@ def save_model(
     if signatures is None:
         signatures = {"__call__": ModelSignature(batchable=False)}
         logger.info(
-            'Using the default model signature for pickable_model (%s) for model "%s".',
+            'Using the default model signature for pickable model (%s) for model "%s".',
             signatures,
             name,
         )

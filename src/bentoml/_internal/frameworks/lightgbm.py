@@ -203,7 +203,7 @@ def save_model(
             "predict": {"batchable": False},
         }
         logger.info(
-            'Using the default model signature for lightgbm (%s) for model "%s".',
+            'Using the default model signature for LightGBM (%s) for model "%s".',
             signatures,
             name,
         )

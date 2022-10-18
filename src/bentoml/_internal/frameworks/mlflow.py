@@ -161,7 +161,7 @@ def import_model(
             "predict": {"batchable": False},
         }
         logger.info(
-            'Using the default model signature for mlflow (%s) for model "%s".',
+            'Using the default model signature for MLflow (%s) for model "%s".',
             signatures,
             name,
         )

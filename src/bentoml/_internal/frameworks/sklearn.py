@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
 
-    SklearnModel = BaseEstimator | Pipeline
+    SklearnModel: t.TypeAlias = BaseEstimator | Pipeline
 
 
 try:
@@ -155,7 +155,7 @@ def save_model(
     if signatures is None:
         signatures = {"predict": {"batchable": False}}
         logger.info(
-            'Using the default model signature for sklearn (%s) for model "%s".',
+            'Using the default model signature for scikit-learn (%s) for model "%s".',
             signatures,
             name,
         )

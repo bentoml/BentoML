@@ -36,7 +36,7 @@ try:
     import torch.nn as nn
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "fastai requires 'torch' as a dependency. Please follow PyTorch instruction at https://pytorch.org/ in order to use 'fastai'."
+        "fastai requires 'torch' as a dependency. Please follow PyTorch instruction at https://pytorch.org/get-started/locally/ in order to use 'fastai'."
     )
 
 try:

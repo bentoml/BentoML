@@ -262,7 +262,7 @@ def save_model(
             pass
     assert (
         _onnxruntime_pkg is not None and _onnxruntime_version is not None
-    ), "Failed to find onnxruntime package."
+    ), "Failed to find onnxruntime package version."
 
     assert _onnxruntime_version is not None, "onnxruntime is not installed"
     context = ModelContext(
@@ -286,9 +286,7 @@ def save_model(
         provided_methods = list(signatures.keys())
         if provided_methods != ["run"]:
             raise BentoMLException(
-                "bentoml.onnx will load onnx model into an "
-                "`onnxruntime.InferenceSession` for inference, hence the only "
-                f"allowed method name is `run` instead of provided {provided_methods}"
+                f"Provided method names {[m for m  in provided_methods if m != 'run']} are invalid. 'bentoml.onnx' will load ONNX model into an 'onnxruntime.InferenceSession' for inference, so the only supported method name is 'run'."
             )
 
     if not isinstance(model, onnx.ModelProto):
@@ -361,12 +359,12 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 session_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL
                 if session_options.intra_op_num_threads != 0:
                     logger.warning(
-                        "You have modified default setting of onnxruntime.InferenceSession's 'intra_op_num_threads' setting, bentoml.onnx will try to manage CPU resource for you and override this setting."
+                        "Overriding specified 'session_options.intra_op_num_threads'."
                     )
                 session_options.intra_op_num_threads = thread_count
                 if session_options.inter_op_num_threads != 0:
                     logger.warning(
-                        "You have modified default setting of onnxruntime.InferenceSession's 'inter_op_num_threads' setting, bentoml.onnx will try to manage CPU resource for you and override this setting."
+                        "Overriding specified 'session_options.inter_op_num_threads'."
                     )
                 session_options.inter_op_num_threads = thread_count
 

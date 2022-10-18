@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import bentoml
 from bentoml import Tag
 
-from .torchscript import save_model as _save_model
+from .torchscript import save_model as script_save_model
 from .torchscript import MODEL_FILENAME
 from ...exceptions import NotFound
 from ...exceptions import MissingDependencyException
@@ -167,7 +167,7 @@ def save_model(
         script_module, dict
     ), "Saving a dict of pytorch_lightning Module into one BentoModel is not supported"
 
-    return _save_model(
+    return script_save_model(
         name,
         script_module,
         signatures=signatures,

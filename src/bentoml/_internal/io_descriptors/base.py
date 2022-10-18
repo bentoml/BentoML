@@ -5,13 +5,12 @@ from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-import pandas as pd
-
 if TYPE_CHECKING:
     from types import UnionType
 
     from starlette.requests import Request
     from starlette.responses import Response
+    import pandas as pd
 
     from bentoml.grpc.types import ProtoField
 
@@ -87,8 +86,8 @@ class IODescriptor(ABC, t.Generic[IOType]):
     async def to_proto(self, obj: IOType) -> t.Any:
         ...
 
-    async def to_pandas_series(self, input: t.Any) -> tuple[pd.Series[t.Any]]:
-        raise NotImplementedError
+    async def from_pandas_series(self, series: tuple[pd.Series[t.Any]]) -> IOType:
+        raise NotImplementedError("This IO descriptor does not currently support batch inference.")
 
-    async def from_pandas_series(self, input: tuple[pd.Series[t.Any]]) -> IOType:
-        raise NotImplementedError
+    async def to_pandas_series(self, obj: IOType) -> tuple[pd.Series[t.Any]]:
+        raise NotImplementedError("This IO descriptor does not currently support batch inference.")

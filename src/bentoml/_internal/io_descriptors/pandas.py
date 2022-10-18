@@ -630,6 +630,12 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
             ],
         )
 
+    async def from_pandas_series(self, series: tuple[pd.Series[t.Any]]) -> pd.DataFrame[t.Any]:
+        return pd.DataFrame.from_records(series)
+
+    async def to_pandas_series(self, obj: pd.DataFrame[t.Any]) -> tuple[pd.Series[t.Any]]:
+        return tuple(obj.iloc)
+
 
 class PandasSeries(IODescriptor["ext.PdSeries"]):
     """
@@ -835,3 +841,13 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
 
     async def to_proto(self, obj: ext.PdSeries) -> pb.Series:
         raise NotImplementedError("Currently not yet implemented.")
+
+    async def from_pandas_series(self, series: tuple[pd.Series[t.Any]]) -> pd.Series[t.Any]:
+        if len(series) == 0:
+            raise InvalidArgument(f"No series passed, cannot construct a series from no data.")
+        elif len(series) > 1:
+            raise InvalidArgument(f"Multiple series passed when only one was expected.")
+        return series[0]
+
+    async def to_pandas_series(self, obj: pd.Series[t.Any]) -> tuple[pd.Series[t.Any]]:
+        return tuple(obj)

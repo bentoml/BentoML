@@ -25,6 +25,7 @@ from ..runner.container import DataContainer
 from ..runner.container import DataContainerRegistry
 from ..utils.tensorflow import get_tf_version
 from ..utils.tensorflow import get_input_signatures_v2
+from ..utils.tensorflow import get_output_signatures_v2
 from ..utils.tensorflow import get_restorable_functions
 from ..utils.tensorflow import cast_py_args_to_tf_function_args
 
@@ -41,6 +42,8 @@ except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'tensorflow' is required in order to use module 'bentoml.tensorflow', install tensorflow with 'pip install tensorflow'. For more information, refer to https://www.tensorflow.org/install"
     )
+    TFModelOutputType = tf_ext.EagerTensor | tuple[tf_ext.EagerTensor]
+    TFRunnableOutputType = ext.NpNDArray | tuple[ext.NpNDArray]
 
 MODULE_NAME = "bentoml.tensorflow"
 API_VERSION = "v1"
@@ -275,11 +278,44 @@ def get_runnable(
         raw_method = getattr(runnable_self.model, method_name)
         method_partial_kwargs = partial_kwargs.get(method_name)
 
+        output_sigs = get_output_signatures_v2(raw_method)
+
+        if len(output_sigs) == 1:
+
+            # if there's only one output signatures, then we can
+            # define the _postprocess function without doing
+            # conditional casting each time
+
+            sig = output_sigs[0]
+            if isinstance(sig, tuple):
+
+                def _postprocess(
+                    res: tuple[tf_ext.EagerTensor],
+                ) -> TFRunnableOutputType:
+                    return tuple(t.cast("ext.NpNDArray", r.numpy()) for r in res)
+
+            else:
+
+                def _postprocess(res: tf_ext.EagerTensor) -> TFRunnableOutputType:
+                    return t.cast("ext.NpNDArray", res.numpy())
+
+        else:
+
+            # if there are no output signature or more than one output
+            # signatures, the post process function need to do casting
+            # depends on the real output value each time
+
+            def _postprocess(res: TFModelOutputType) -> TFRunnableOutputType:
+                if isinstance(res, tuple):
+                    return tuple(t.cast("ext.NpNDArray", r.numpy()) for r in res)
+                else:
+                    return t.cast("ext.NpNDArray", res.numpy())
+
         def _run_method(
             _runnable_self: TensorflowRunnable,
-            *args: "TFArgType",
-            **kwargs: "TFArgType",
-        ) -> "ext.NpNDArray":
+            *args: TFArgType,
+            **kwargs: TFArgType,
+        ) -> TFRunnableOutputType:
             if method_partial_kwargs is not None:
                 kwargs = dict(method_partial_kwargs, **kwargs)
 
@@ -301,14 +337,14 @@ def get_runnable(
                     raise
 
                 res = raw_method(*casted_args)
-            return t.cast("ext.NpNDArray", res.numpy())
+            return _postprocess(res)
 
         return _run_method
 
     def add_run_method(method_name: str, options: ModelSignature):
         def run_method(
             runnable_self: TensorflowRunnable, *args: "TFArgType", **kwargs: "TFArgType"
-        ) -> "ext.NpNDArray":
+        ) -> TFRunnableOutputType:
             _run_method = runnable_self.methods_cache.get(
                 method_name
             )  # is methods_cache nessesary?

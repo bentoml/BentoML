@@ -213,6 +213,23 @@ def get_input_signatures_v2(
     return []
 
 
+def get_output_signatures_v2(
+    func: tf_ext.RestoredFunction,
+) -> list[tuple[tf_ext.TensorSpec, ...] | tf_ext.TensorSpec]:
+    if hasattr(func, "concrete_functions") and func.concrete_functions:
+        return [
+            s
+            for conc in func.concrete_functions
+            for s in get_output_signatures_v2(conc)
+        ]
+
+    if hasattr(func, "structured_outputs"):
+        # for concrete_functions
+        return [func.structured_outputs]
+
+    return []
+
+
 def get_input_signatures(
     func: tf_ext.DecoratedFunction,
 ) -> list[tuple[tf_ext.InputSignature, ...]]:

@@ -3,8 +3,8 @@ from __future__ import annotations
 import functools
 from abc import ABC
 from abc import abstractmethod
-import aiohttp
 
+import aiohttp
 import starlette
 
 import bentoml
@@ -80,15 +80,21 @@ class HTTPClient(Client):
     def call(self, api_name: str, inp: t.Any = None, **kwargs: t.Any) -> t.Any:
         asyncio.run(self.async_call(api_name, inp))
 
-    async def async_call(self, api_name: str, inp: t.Any = None, **kwargs: t.Any) -> t.Any:
+    async def async_call(
+        self, api_name: str, inp: t.Any = None, **kwargs: t.Any
+    ) -> t.Any:
         return self._call(inp, _bentoml_api=self._svc.apis[api_name])
 
-    async def _call(self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any) -> t.Any:
+    async def _call(
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
+    ) -> t.Any:
         api = _bentoml_api
 
         if api.multi_input:
             if inp is not None:
-                raise BentoMLException(f"'{api.name}' takes multiple inputs; all inputs must be passed as keyword arguments.")
+                raise BentoMLException(
+                    f"'{api.name}' takes multiple inputs; all inputs must be passed as keyword arguments."
+                )
         fake_resp = await api.input.to_http_response(inp, None)
         req_body = fake_resp.body
 
@@ -99,7 +105,9 @@ class HTTPClient(Client):
                 headers={"content-type": fake_resp.headers["content-type"]},
             ) as resp:
                 if resp.status != 200:
-                    raise BentoMLException(f"Error making request: {resp.status}: {str(await resp.read())}")
+                    raise BentoMLException(
+                        f"Error making request: {resp.status}: {str(await resp.read())}"
+                    )
 
                 fake_req = starlette.requests.Request(scope={"type": "http"})
                 headers = starlette.datastructures.Headers(headers=resp.headers)

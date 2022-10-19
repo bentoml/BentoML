@@ -39,6 +39,7 @@ def test_file_openapi_request_responses(mime_type: str):
 
     assert mime_type in responses["content"]
 
+
 @pytest.mark.asyncio
 async def test_from_proto(bin_file: str):
     with open(bin_file, "rb") as f:

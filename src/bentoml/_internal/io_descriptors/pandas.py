@@ -146,6 +146,14 @@ class SerializationFormat(Enum):
     def __init__(self, mime_type: str):
         self.mime_type = mime_type
 
+    def __str__(self) -> str:
+        if self == SerializationFormat.JSON:
+            return "json"
+        elif self == SerializationFormat.PARQUET:
+            return "parquet"
+        elif self == SerializationFormat.CSV:
+            return "csv"
+
 
 def _infer_serialization_format_from_request(
     request: Request, default_format: SerializationFormat
@@ -182,7 +190,9 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
         )
 
 
-class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
+class PandasDataFrame(
+    IODescriptor["ext.PdDataFrame"], descriptor_id="bentoml.io.PandasDataFrame"
+):
     """
     :obj:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
     where either inputs will be converted to or outputs will be converted from type
@@ -330,6 +340,28 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
     @sample_input.setter
     def sample_input(self, value: ext.PdDataFrame) -> None:
         self._sample_input = value
+
+    def to_spec(self) -> dict[str, t.Any]:
+        # TODO: support extension dtypes
+        return {
+            "id": self.descriptor_id,
+            "args": {
+                "orient": self._orient,
+                "columns": self._columns,
+                "dtype": None if self._dtype is None else self._dtype.name,
+                "shape": self._shape,
+                "enforce_dtype": self._enforce_dtype,
+                "enforce_shape": self._enforce_shape,
+                "default_format": str(self._default_format),
+            },
+        }
+
+    @classmethod
+    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+        if "args" not in spec:
+            raise InvalidArgument(f"Missing args key in PandasDataFrame spec: {spec}")
+        res = PandasDataFrame(**spec["args"])
+        return res
 
     def input_type(self) -> LazyType[ext.PdDataFrame]:
         return LazyType("pandas", "DataFrame")
@@ -637,7 +669,9 @@ class PandasDataFrame(IODescriptor["ext.PdDataFrame"]):
         return tuple(obj.iloc)
 
 
-class PandasSeries(IODescriptor["ext.PdSeries"]):
+class PandasSeries(
+    IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
+):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
@@ -754,6 +788,26 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
     def input_type(self) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")
 
+    def to_spec(self) -> dict[str, t.Any]:
+        # TODO: support extension dtypes
+        return {
+            "id": self.descriptor_id,
+            "args": {
+                "orient": self._orient,
+                "dtype": self._dtype.name,
+                "shape": self._shape,
+                "enforce_dtype": self._enforce_dtype,
+                "enforce_shape": self._enforce_shape,
+            },
+        }
+
+    @classmethod
+    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+        if "args" not in spec:
+            raise InvalidArgument(f"Missing args key in PandasSeries spec: {spec}")
+        res = PandasSeries(**spec["args"])
+        return res
+
     def openapi_schema(self) -> Schema:
         return _series_openapi_schema(self._dtype, self._orient)
 
@@ -761,16 +815,18 @@ class PandasSeries(IODescriptor["ext.PdSeries"]):
         pass
 
     def openapi_request_body(self) -> RequestBody:
-        return RequestBody(
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-            required=True,
-        )
+        return {
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "required": True,
+            "x-bentoml-descriptor": self.to_spec(),
+        }
 
     def openapi_responses(self) -> OpenAPIResponse:
-        return OpenAPIResponse(
-            description=SUCCESS_DESCRIPTION,
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-        )
+        return {
+            "description": SUCCESS_DESCRIPTION,
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "x-bentoml-descriptor": self.to_spec(),
+        }
 
     async def from_http_request(self, request: Request) -> ext.PdSeries:
         """

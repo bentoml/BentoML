@@ -5,9 +5,12 @@ from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from ...exceptions import InvalidArgument
+
 if TYPE_CHECKING:
     from types import UnionType
 
+    from typing_extensions import Self
     from starlette.requests import Request
     from starlette.responses import Response
     import pandas as pd
@@ -29,7 +32,15 @@ if TYPE_CHECKING:
     )
 
 
+IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
+
 IOType = t.TypeVar("IOType")
+
+
+def from_spec(spec: dict[str, str]) -> IODescriptor[t.Any]:
+    if "id" not in spec:
+        raise InvalidArgument(f"IO descriptor spec ({spec}) missing ID.")
+    return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)
 
 
 class IODescriptor(ABC, t.Generic[IOType]):
@@ -44,13 +55,32 @@ class IODescriptor(ABC, t.Generic[IOType]):
     _mime_type: str
     _rpc_content_type: str = "application/grpc"
     _proto_fields: tuple[ProtoField]
+    descriptor_id: str | None
+
+    def __init_subclass__(cls, *, descriptor_id: str | None = None):
+        if descriptor_id is not None:
+            if descriptor_id in IO_DESCRIPTOR_REGISTRY:
+                raise ValueError(
+                    f"Descriptor ID {descriptor_id} already registered to {IO_DESCRIPTOR_REGISTRY[descriptor_id]}."
+                )
+            IO_DESCRIPTOR_REGISTRY[descriptor_id] = cls
+        cls.descriptor_id = descriptor_id
+
+    @abstractmethod
+    def to_spec(self) -> dict[str, t.Any]:
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+        raise NotImplementedError
 
     def __repr__(self) -> str:
         return self.__class__.__qualname__
 
     @abstractmethod
     def input_type(self) -> InputType:
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def openapi_schema(self) -> Schema | Reference:

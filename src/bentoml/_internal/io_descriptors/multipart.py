@@ -8,6 +8,7 @@ from starlette.requests import Request
 from multipart.multipart import parse_options_header
 from starlette.responses import Response
 
+from . import from_spec as io_descriptor_from_spec
 from .base import IODescriptor
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
@@ -32,7 +33,7 @@ else:
     pb, _ = import_generated_stubs()
 
 
-class Multipart(IODescriptor[t.Dict[str, t.Any]]):
+class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Multipart"):
     """
     :obj:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
     of a Service can receive/send a **multipart** request/responses as specified in your API function signature.
@@ -187,6 +188,26 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
 
         return res
 
+    def to_spec(self) -> dict[str, t.Any]:
+        return {
+            "id": self.descriptor_id,
+            "args": {
+                argname: descriptor.to_spec()
+                for argname, descriptor in self._inputs.items()
+            },
+        }
+
+    @classmethod
+    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+        if "args" not in spec:
+            raise InvalidArgument(f"Missing args key in Multipart spec: {spec}")
+        return Multipart(
+            **{
+                argname: io_descriptor_from_spec(spec)
+                for argname, spec in spec["args"].items()
+            }
+        )
+
     def openapi_schema(self) -> Schema:
         return Schema(
             type="object",
@@ -197,16 +218,18 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]]):
         pass
 
     def openapi_request_body(self) -> RequestBody:
-        return RequestBody(
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-            required=True,
-        )
+        return {
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "required": True,
+            "x-bentoml-descriptor": self.to_spec(),
+        }
 
     def openapi_responses(self) -> OpenAPIResponse:
-        return OpenAPIResponse(
-            description=SUCCESS_DESCRIPTION,
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-        )
+        return {
+            "description": SUCCESS_DESCRIPTION,
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "x-bentoml-descriptor": self.to_spec(),
+        }
 
     async def from_http_request(self, request: Request) -> dict[str, t.Any]:
         ctype, _ = parse_options_header(request.headers["content-type"])

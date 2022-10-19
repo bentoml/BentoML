@@ -72,7 +72,7 @@ class DefaultJsonEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-class JSON(IODescriptor[JSONType]):
+class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
     """
     :obj:`JSON` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from a JSON representation
@@ -200,6 +200,30 @@ class JSON(IODescriptor[JSONType]):
                 "'validate_json' option from 'bentoml.io.JSON' has been deprecated. Use a Pydantic model to specify validation options instead."
             )
 
+    def to_spec(self) -> dict[str, t.Any]:
+        return {
+            "id": self.descriptor_id,
+            "args": {
+                "has_pydantic_model": self._pydantic_model is not None,
+                "has_json_encoder": self._json_encoder is not None,
+            },
+        }
+
+    @classmethod
+    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+        if "args" not in spec:
+            raise InvalidArgument(f"Missing args key in JSON spec: {spec}")
+        if "has_pydantic_model" in spec["args"] and spec["args"]["has_pydantic_model"]:
+            logger.warning(
+                "BentoML does not support loading pydantic models from URLs; output will be a normal dictionary."
+            )
+        if "has_json_encoder" in spec["args"] and spec["args"]["has_json_encoder"]:
+            logger.warning(
+                "BentoML does not support loading JSON encoders from URLs; output will be a normal dictionary."
+            )
+
+        return cls()
+
     def input_type(self) -> UnionType:
         return JSONType
 
@@ -227,16 +251,18 @@ class JSON(IODescriptor[JSONType]):
         return {"schemas": pydantic_components_schema(self._pydantic_model)}
 
     def openapi_request_body(self) -> RequestBody:
-        return RequestBody(
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-            required=True,
-        )
+        return {
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "required": True,
+            "x-bentoml-io-descriptor": self.to_spec(),
+        }
 
     def openapi_responses(self) -> OpenAPIResponse:
-        return OpenAPIResponse(
-            description=SUCCESS_DESCRIPTION,
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-        )
+        return {
+            "description": SUCCESS_DESCRIPTION,
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "x-bentoml-io-descriptor": self.to_spec(),
+        }
 
     async def from_http_request(self, request: Request) -> JSONType:
         json_str = await request.body()

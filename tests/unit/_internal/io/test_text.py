@@ -32,15 +32,15 @@ def test_text_openapi_request_responses():
     mime_type = "text/plain"
 
     request_body = Text().openapi_request_body()
-    assert request_body.required
+    assert request_body["required"]
 
-    assert mime_type in request_body.content
+    assert mime_type in request_body["content"]
 
     responses = Text().openapi_responses()
 
-    assert responses.content
+    assert responses["content"]
 
-    assert mime_type in responses.content
+    assert mime_type in responses["content"]
 
 
 @pytest.mark.asyncio

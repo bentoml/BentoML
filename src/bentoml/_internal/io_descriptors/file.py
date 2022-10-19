@@ -37,7 +37,7 @@ else:
 FileType = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
 
-class File(IODescriptor[FileType]):
+class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
     """
     :obj:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as
@@ -121,6 +121,15 @@ class File(IODescriptor[FileType]):
         res._mime_type = mime_type
         return res
 
+    def to_spec(self):
+        raise NotImplementedError
+
+    @classmethod
+    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+        if "args" not in spec:
+            raise InvalidArgument(f"Missing args key in File spec: {spec}")
+        return cls(**spec["args"])
+
     def input_type(self) -> t.Type[t.Any]:
         return FileLike[bytes]
 
@@ -130,17 +139,19 @@ class File(IODescriptor[FileType]):
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_request_body(self) -> RequestBody:
-        return RequestBody(
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-            required=True,
-        )
+    def openapi_request_body(self) -> dict[str, t.Any]:
+        return {
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "required": True,
+            "x-bentoml-io-descriptor": self.to_spec(),
+        }
 
     def openapi_responses(self) -> OpenAPIResponse:
-        return OpenAPIResponse(
-            description=SUCCESS_DESCRIPTION,
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-        )
+        return {
+            "description": SUCCESS_DESCRIPTION,
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "x-bentoml-io-descriptor": self.to_spec(),
+        }
 
     async def to_http_response(self, obj: FileType, ctx: Context | None = None):
         if isinstance(obj, bytes):
@@ -176,16 +187,23 @@ class File(IODescriptor[FileType]):
 
         return pb.File(kind=kind, content=body)
 
-    if TYPE_CHECKING:
+    async def from_proto(self, field: pb.File | bytes) -> FileLike[bytes]:
+        raise NotImplementedError
 
-        async def from_proto(self, field: pb.File | bytes) -> FileLike[bytes]:
-            ...
-
-        async def from_http_request(self, request: Request) -> t.IO[bytes]:
-            ...
+    async def from_http_request(self, request: Request) -> t.IO[bytes]:
+        raise NotImplementedError
 
 
-class BytesIOFile(File):
+class BytesIOFile(File, descriptor_id=None):
+    def to_spec(self) -> dict[str, t.Any]:
+        return {
+            "id": super().descriptor_id,
+            "args": {
+                "kind": "binaryio",
+                "mime_type": self._mime_type,
+            },
+        }
+
     async def from_http_request(self, request: Request) -> t.IO[bytes]:
         content_type, _ = parse_options_header(request.headers["content-type"])
         if content_type.decode("utf-8") == "multipart/form-data":

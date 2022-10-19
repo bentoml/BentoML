@@ -83,7 +83,7 @@ def initialize_pillow():
     READABLE_MIMES = {k for k, v in MIME_EXT_MAPPING.items() if v not in PIL_WRITE_ONLY_FORMATS}  # type: ignore (lazy constant)
 
 
-class Image(IODescriptor[ImageType]):
+class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
     """
     :obj:`Image` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from images as specified
@@ -212,6 +212,23 @@ class Image(IODescriptor[ImageType]):
 
         self._pilmode: _Mode | None = pilmode
         self._format: str = MIME_EXT_MAPPING[self._mime_type]
+
+    def to_spec(self) -> dict[str, t.Any]:
+        return {
+            "id": self.descriptor_id,
+            "args": {
+                "pilmode": self._pilmode,
+                "mime_type": self._mime_type,
+                "allowed_mime_types": list(self._allowed_mimes),
+            },
+        }
+
+    @classmethod
+    def from_spec(cls) -> Self:
+        if "args" not in spec:
+            raise InvalidArgument(f"Missing args key in Image spec: {spec}")
+
+        return cls(**spec["args"])
 
     def input_type(self) -> UnionType:
         return ImageType

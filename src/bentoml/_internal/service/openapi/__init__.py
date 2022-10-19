@@ -114,8 +114,8 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
             # setup inference endpoints
             **{
                 make_api_path(api): PathItem(
-                    post=Operation(
-                        responses={
+                    post={
+                        "responses": {
                             HTTPStatus.OK.value: api.output.openapi_responses(),
                             **{
                                 ex.error_code.value: Response(
@@ -136,12 +136,13 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
                                 for filled in exception_schema(ex)
                             },
                         },
-                        tags=[APP_TAG.name],
-                        summary=f"{api}",
-                        description=api.doc or "",
-                        requestBody=api.input.openapi_request_body(),
-                        operationId=f"{svc.name}__{api.name}",
-                    )
+                        "tags": [APP_TAG.name],
+                        "x-bentoml-name": api.name,
+                        "summary": str(api),
+                        "description": api.doc or "",
+                        "requestBody": api.input.openapi_request_body(),
+                        "operationId": f"{svc.name}__{api.name}",
+                    },
                 )
                 for api in svc.apis.values()
             },

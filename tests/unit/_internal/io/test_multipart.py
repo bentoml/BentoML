@@ -47,11 +47,11 @@ def test_multipart_openapi_schema():
 
 def test_multipart_openapi_request_responses():
     request_body = example.openapi_request_body()
-    assert request_body.required
+    assert request_body["required"]
 
     responses = example.openapi_responses()
 
-    assert responses.content
+    assert responses["content"]
 
 
 @pytest.mark.asyncio

@@ -73,15 +73,15 @@ def test_numpy_openapi_schema():
 
 def test_numpy_openapi_request_body():
     nparray = NumpyNdarray().openapi_request_body()
-    assert nparray.required
+    assert nparray["required"]
 
-    assert nparray.content
-    assert "application/json" in nparray.content
+    assert nparray["content"]
+    assert "application/json" in nparray["content"]
 
     ndarray = from_example.openapi_request_body()
-    assert ndarray.required
-    assert ndarray.content
-    assert ndarray.content["application/json"].example == example.tolist()
+    assert ndarray["required"]
+    assert ndarray["content"]
+    assert ndarray["content"]["application/json"].example == example.tolist()
 
     nparray = NumpyNdarray(dtype="float")
     nparray.sample_input = ExampleGeneric("asdf")  # type: ignore (test exception)
@@ -92,10 +92,10 @@ def test_numpy_openapi_request_body():
 def test_numpy_openapi_responses():
     responses = NumpyNdarray().openapi_responses()
 
-    assert responses.content
+    assert responses["content"]
 
-    assert "application/json" in responses.content
-    assert not responses.content["application/json"].example
+    assert "application/json" in responses["content"]
+    assert not responses["content"]["application/json"].example
 
 
 def test_verify_numpy_ndarray(caplog: LogCaptureFixture):

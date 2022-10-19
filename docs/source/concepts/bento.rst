@@ -981,6 +981,38 @@ Setup script is always executed after the specified Python packages, conda depen
 and system packages are installed. Thus user can import and utilize those libraries in
 their setup script for the initialization process.
 
+Enable features for your Bento
+""""""""""""""""""""""""""""""
+
+Users can optionally pass in ``--enable-features`` flag to ``bentoml containerize`` to
+enable additional features for the generated Bento container image.
+
+This maps directly 1-to-1 with BentoML's pip installable features. For example:
+
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+| Feature                                                                                | ``pip install``              | ``--enable-features``                 |
++========================================================================================+==============================+=======================================+
+| gRPC                                                                                   | ``bentoml[grpc]``            | ``--enable-features=grpc``            |
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+| `gRPC Channelz <https://grpc.io/blog/a-short-introduction-to-channelz/>`_              | ``bentoml[grpc-channelz]``   | ``--enable-features=grpc-channelz``   |
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+| `gRPC Reflection <https://github.com/grpc/grpc/blob/master/doc/server-reflection.md>`_ | ``bentoml[grpc-reflection]`` | ``--enable-features=grpc-reflection`` |
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+| :ref:`Jaeger Exporter <guides/tracing:Tracing>`                                        | ``bentoml[tracing-jaeger]``  | ``--enable-features=tracing-jaeger``  |
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+| :ref:`OTLP Exporter <guides/tracing:Tracing>`                                          | ``bentoml[tracing-otlp]``    | ``--enable-features=tracing-otlp``    |
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+| :ref:`Zipkin Exporter <guides/tracing:Tracing>`                                        | ``bentoml[tracing-zipkin]``  | ``--enable-features=tracing-zipkin``  |
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+| AWS                                                                                    | ``bentoml[aws]``             | ``--enable-features=aws``             |
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+| Image                                                                                  | ``bentoml[io-image]``        | ``--enable-features=io-image``        |
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+| Pandas                                                                                 | ``bentoml[io-pandas]``       | ``--enable-features=io-pandas``       |
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+| Pydantic                                                                               | ``bentoml[io-json]``         | ``--enable-features=io-json``         |
++----------------------------------------------------------------------------------------+------------------------------+---------------------------------------+
+
 Advanced Options
 """"""""""""""""
 

@@ -734,7 +734,7 @@ dependencies to your Bento
 
    » bentoml containerize iris_classifier:latest --enable-features=grpc
 
-``--enable-features`` allows users to containerize any of the existing Bentos with :ref:`additional features </installation:Additional features>` without having to rebuild the Bento.
+``--enable-features`` allows users to containerize any of the existing Bentos with :ref:`additional features <concepts/bento:Enable features for your Bento>` that BentoML provides without having to rebuild the Bento.
 
 .. note::
 

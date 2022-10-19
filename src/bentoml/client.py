@@ -1,16 +1,19 @@
 from __future__ import annotations
 
+import typing as t
 import functools
 from abc import ABC
 from abc import abstractmethod
 
 import aiohttp
-import starlette
+import starlette.requests
+import starlette.datastructures
 
 import bentoml
 from bentoml import Service
-from bentoml.exceptions import BentoMLException
-from bentoml._internal.service.inference_api import InferenceAPI
+
+from .exceptions import BentoMLException
+from ._internal.service.inference_api import InferenceAPI
 
 
 class Client(ABC):
@@ -26,12 +29,22 @@ class Client(ABC):
             if not hasattr(self, name):
                 setattr(self, name, functools.partial(self._call, _bentoml_api=api))
 
+    def call(self, api_name: str, inp: t.Any = None, **kwargs: t.Any) -> t.Any:
+        asyncio.run(self.async_call(api_name, inp))
+
+    async def async_call(
+        self, api_name: str, inp: t.Any = None, **kwargs: t.Any
+    ) -> t.Any:
+        return self._call(inp, _bentoml_api=self._svc.apis[api_name])
+
     @abstractmethod
-    def call(api_name: str):
+    async def _call(
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
+    ) -> t.Any:
         raise NotImplementedError
 
     @staticmethod
-    async def from_url(server_url: str) -> Self:
+    async def from_url(server_url: str) -> Client:
         # TODO: SSL and grpc support
         # connection is passed off to the client, and so is not closed
         async with aiohttp.ClientSession(server_url) as conn:
@@ -41,7 +54,7 @@ class Client(ABC):
         dummy_service = Service(openapi_spec["info"]["title"])
 
         for route, spec in openapi_spec["paths"].items():
-            for method, meth_spec in spec.items():
+            for meth_spec in spec.values():
                 if "Service APIs" in meth_spec["tags"]:
                     if "x-bentoml-descriptor" not in meth_spec["requestBody"]:
                         # TODO: better message stating min version for from_url to work
@@ -77,14 +90,6 @@ class Client(ABC):
 class HTTPClient(Client):
     _svc: Service
 
-    def call(self, api_name: str, inp: t.Any = None, **kwargs: t.Any) -> t.Any:
-        asyncio.run(self.async_call(api_name, inp))
-
-    async def async_call(
-        self, api_name: str, inp: t.Any = None, **kwargs: t.Any
-    ) -> t.Any:
-        return self._call(inp, _bentoml_api=self._svc.apis[api_name])
-
     async def _call(
         self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
     ) -> t.Any:
@@ -112,6 +117,8 @@ class HTTPClient(Client):
                 fake_req = starlette.requests.Request(scope={"type": "http"})
                 headers = starlette.datastructures.Headers(headers=resp.headers)
                 fake_req._body = await resp.read()
-                fake_req._headers = headers
+                # Request.headers sets a _headers variable. We will need to set this
+                # value to our fake request object.
+                fake_req._headers = headers  # type: ignore (request._headers is property)
 
         return await api.output.from_http_request(fake_req)

@@ -6,13 +6,16 @@ import os.path
 import tempfile
 from typing import TYPE_CHECKING
 
-import bentoml
-from bentoml import Bento
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import MissingDependencyException
-from bentoml._internal.tag import Tag
-from bentoml._internal.service.loader import load_bento
+from ..bentos import import_bento
+from ..bentos import get as get_bento
+from .service.loader import load as load_service
+from .bento import Bento
+from ..exceptions import NotFound
+from ..exceptions import BentoMLException
+from ..exceptions import MissingDependencyException
+from .tag import Tag
+from .service.loader import load_bento
+from .service import Service
 
 try:
     import pyspark
@@ -42,21 +45,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-"""
-Example Usage:
-
-bento_udf = bentoml.spark.get_udf(spark, "iris_classifier:latest", "predict", )
-
-"""
-
-
-def _distribute_bento(spark: SparkSession, bento: Bento) -> None:
+def _distribute_bento(spark: SparkSession, bento: Bento) -> str:
     temp_dir = tempfile.mkdtemp()
     export_path = bento.export(temp_dir)
     spark.sparkContext.addFile(export_path)
+    return os.path.basename(export_path)
 
 
-def _load_bento(bento_tag: Tag) -> bentoml.Service:
+def _load_bento(bento_tag: Tag) -> Service:
     """
     load Bento from local bento store or the SparkFiles directory
     """
@@ -71,7 +67,7 @@ def _load_bento(bento_tag: Tag) -> bentoml.Service:
         if not os.path.isfile(bento_path):
             raise
 
-        bentoml.import_bento(bento_path)
+        import_bento(bento_path)
         return load_bento(str(bento_tag))
 
 
@@ -102,7 +98,7 @@ def _load_bento(bento_tag: Tag) -> bentoml.Service:
 # In  -> pd.Series  # .to_numpy()
 # Out -> pd.Series  # pd.Series(np_array)
 # Return Type -> NumpyNdarray.dtype (must be defined)
-#
+
 # PandasDataframe
 # In  -> list[pd.Series] | DataFrame
 # Out -> DataFrame
@@ -118,6 +114,10 @@ def get_udf(
     spark: SparkSession, bento_tag: Tag | str, api_name: str | None
 ) -> UserDefinedFunctionLike:
     """
+    Example Usage:
+
+    bento_udf = bentoml.spark.get_udf(spark, "iris_classifier:latest", "predict", )
+
     Args:
         spark: the Spark session for registering the UDF
         bento_tag: target Bento to run, the tag must be found in driver's local Bento store
@@ -126,7 +126,7 @@ def get_udf(
     Returns:
         A pandas_udf for running target Bento on Spark DataFrame
     """
-    svc = bentoml.load(str(bento_tag))
+    svc = load_service(str(bento_tag))
     assert svc.tag is not None
     bento_tag = svc.tag  # resolved tag, no more "latest" here
 
@@ -135,7 +135,7 @@ def get_udf(
             raise BentoMLException(
                 f'Bento "{bento_tag}" has multiple APIs ({svc.apis.keys()}), specify which API should be used for registering the UDF, e.g.: bentoml.spark.get_udf(spark, "my_service:latest", "predict")'
             )
-        api_name = next(svc.apis.keys().__iter__())
+        api_name = next(iter(svc.apis))
     else:
         if api_name not in svc.apis:
             raise BentoMLException(
@@ -151,12 +151,12 @@ def get_udf(
     #     raise BentoMLException(f"Service API output type {api.output.__class__} is not supported for Spark UDF conversion")
 
     # Distribute Bento file to worker nodes
-    _distribute_bento(spark, bentoml.get(bento_tag))
+    bento_filename = _distribute_bento(spark, get_bento(bento_tag))
 
     # def process(
     #     iterator: t.Iterator[api.input.spark_udf_input_type()]
     # ) -> t.Iterator[api.output.spark_udf_output_type()]:
-    def process(iterator: t.Iterator[pd.Series[t.Any]]) -> t.Iterator[pd.Series[t.Any]]:
+    def process(iterator: t.Iterator[tuple[pd.Series[t.Any]]]) -> t.Iterator[tuple[pd.Series[t.Any]]]:
         # Initialize local service instance
         # TODO: support inference via remote bento server
         svc = _load_bento(bento_tag)
@@ -175,19 +175,7 @@ def get_udf(
 
         for input_args in iterator:
             # default batch size = 10,000
-            if len(input_args) > 1:
-                assert all(
-                    [isinstance(arg, pd.Series) for arg in input_args]
-                ), "all input columns must be pd.Series, struct type not supported"
-                input_df = pd.DataFrame(
-                    data=pd.Series, columns=list(range(len(input_args)))
-                )
-            else:
-                if isinstance(input_args[0], pd.Series):
-                    input_df = pd.DataFrame(data=pd.Series, columns=[0])
-                else:
-                    input_df = input_args[0]
 
-            yield inference_api.func(input_df)
+            yield api.output.to_pandas_series(inference_api.func(api.input.from_pandas_series(input_args)))
 
-    return pandas_udf(process, returnType=api.output.spark_udf_return_type())
+    return pandas_udf(process)

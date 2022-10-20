@@ -26,7 +26,7 @@ class StateException(Exception):
 
 class RemoteException(BentoMLException):
     """
-    Raise when known exceptions happened in remote process
+    A special exception that is used to wrap the exception from remote server
     """
 
     def __init__(self, message: str, payload: BentoMLException | None = None):
@@ -81,12 +81,12 @@ class UnprocessableEntity(BentoMLException):
     error_code = HTTPStatus.UNPROCESSABLE_ENTITY
 
 
-class TooManyRequests(BentoMLException):
+class ServiceUnavailable(BentoMLException):
     """
     Raise when incoming requests exceeds the capacity of a server
     """
 
-    error_code = HTTPStatus.TOO_MANY_REQUESTS
+    error_code = HTTPStatus.SERVICE_UNAVAILABLE
 
 
 class BentoMLConfigException(BentoMLException):

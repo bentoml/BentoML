@@ -14,6 +14,7 @@ from ...context import component_context
 from ..container import Payload
 from ...utils.uri import uri_to_path
 from ....exceptions import RemoteException
+from ....exceptions import ServiceUnavailable
 from ...runner.utils import Params
 from ...runner.utils import PAYLOAD_META_HEADER
 from ...configuration.containers import BentoMLContainer
@@ -159,7 +160,19 @@ class RemoteRunnerClient(RunnerHandle):
         ) as resp:
             body = await resp.read()
 
+        try:
+            content_type = resp.headers["Content-Type"]
+            assert content_type.lower().startswith("application/vnd.bentoml.")
+        except (KeyError, AssertionError):
+            raise RemoteException(
+                f"An unexpected exception occurred in remote runner {self._runner.name}: [{resp.status}] {body.decode()}"
+            ) from None
+
         if resp.status != 200:
+            if resp.status == 503:
+                raise ServiceUnavailable(body.decode()) from None
+            if resp.status == 500:
+                raise RemoteException(body.decode()) from None
             raise RemoteException(
                 f"An exception occurred in remote runner {self._runner.name}: [{resp.status}] {body.decode()}"
             ) from None
@@ -169,18 +182,6 @@ class RemoteRunnerClient(RunnerHandle):
         except KeyError:
             raise RemoteException(
                 f"Bento payload decode error: {PAYLOAD_META_HEADER} header not set. An exception might have occurred in the remote server. [{resp.status}] {body.decode()}"
-            ) from None
-
-        try:
-            content_type = resp.headers["Content-Type"]
-        except KeyError:
-            raise RemoteException(
-                f"Bento payload decode error: Content-Type header not set. An exception might have occurred in the remote server. [{resp.status}] {body.decode()}"
-            ) from None
-
-        if not content_type.lower().startswith("application/vnd.bentoml."):
-            raise RemoteException(
-                f"Bento payload decode error: invalid Content-Type '{content_type}'."
             ) from None
 
         if content_type == "application/vnd.bentoml.multiple_outputs":

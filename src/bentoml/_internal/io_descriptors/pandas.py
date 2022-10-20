@@ -794,7 +794,7 @@ class PandasSeries(
             "id": self.descriptor_id,
             "args": {
                 "orient": self._orient,
-                "dtype": self._dtype.name,
+                "dtype": None if self._dtype is None else self._dtype.name,
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,

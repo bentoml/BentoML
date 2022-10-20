@@ -6,11 +6,12 @@ import typing as t
 import logging
 import functools
 from typing import TYPE_CHECKING
-from functools import partial
 
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import ServiceUnavailable
 from bentoml._internal.types import LazyType
 
 from ..context import trace_context
@@ -52,10 +53,6 @@ class RunnerAppFactory(BaseAppFactory):
         self.worker_index = worker_index
         self.enable_metrics = enable_metrics
 
-        from starlette.responses import Response
-
-        TooManyRequests = partial(Response, status_code=429)
-
         self.dispatchers: dict[str, CorkDispatcher] = {}
         for method in runner.runner_methods:
             if not method.config.batchable:
@@ -63,7 +60,7 @@ class RunnerAppFactory(BaseAppFactory):
             self.dispatchers[method.name] = CorkDispatcher(
                 max_latency_in_ms=method.max_latency_ms,
                 max_batch_size=method.max_batch_size,
-                fallback=TooManyRequests,
+                fallback=ServiceUnavailable,
             )
 
     @property
@@ -267,12 +264,40 @@ class RunnerAppFactory(BaseAppFactory):
 
             r_: bytes = await request.body()
             params: Params[t.Any] = pickle.loads(r_)
-
-            payload = await infer(params)
-
-            if not isinstance(
-                payload, Payload
-            ):  # a tuple, which means user runnable has multiple outputs
+            try:
+                payload = await infer(params)
+            except BentoMLException as e:
+                # pass known exceptions to the client
+                return Response(
+                    status_code=e.error_code,
+                    content=str(e),
+                    headers={
+                        PAYLOAD_META_HEADER: "{}",
+                        "Content-Type": "application/vnd.bentoml.error}",
+                        "Server": server_str,
+                    },
+                )
+            if isinstance(payload, ServiceUnavailable):
+                return Response(
+                    "Service Busy",
+                    status_code=payload.error_code,
+                    headers={
+                        PAYLOAD_META_HEADER: json.dumps({}),
+                        "Content-Type": "application/vnd.bentoml.error",
+                        "Server": server_str,
+                    },
+                )
+            if isinstance(payload, Payload):
+                return Response(
+                    payload.data,
+                    headers={
+                        PAYLOAD_META_HEADER: json.dumps(payload.meta),
+                        "Content-Type": f"application/vnd.bentoml.{payload.container}",
+                        "Server": server_str,
+                    },
+                )
+            if isinstance(payload, tuple):
+                # a tuple, which means user runnable has multiple outputs
                 return Response(
                     pickle.dumps(payload),
                     headers={
@@ -281,13 +306,8 @@ class RunnerAppFactory(BaseAppFactory):
                         "Server": server_str,
                     },
                 )
-            return Response(
-                payload.data,
-                headers={
-                    PAYLOAD_META_HEADER: json.dumps(payload.meta),
-                    "Content-Type": f"application/vnd.bentoml.{payload.container}",
-                    "Server": server_str,
-                },
+            raise BentoMLException(
+                f"Unexpected payload type: {type(payload)}, {payload}"
             )
 
         return _request_handler

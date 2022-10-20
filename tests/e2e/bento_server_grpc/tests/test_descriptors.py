@@ -13,7 +13,7 @@ from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import randomize_pb_ndarray
-from bentoml._internal.utils import LazyType
+from bentoml._internal.types import LazyType
 from bentoml._internal.utils import LazyLoader
 
 if TYPE_CHECKING:

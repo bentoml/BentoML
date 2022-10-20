@@ -159,7 +159,7 @@ keras_models = [
     FrameworkTestModel(
         name="tf2",
         model=model,
-        # save_kwargs={"signature": {"__call__": {"batchable": True, "batchdim": 0}}},
+        save_kwargs={"signatures": {"__call__": {"batchable": True, "batch_dim": 0}}},
         configurations=[
             Config(
                 test_inputs={

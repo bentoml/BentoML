@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import typing as t
 import logging
 from typing import TYPE_CHECKING
 from unittest.mock import Mock
@@ -9,6 +10,7 @@ from unittest.mock import PropertyMock
 
 import torch
 import pytest
+import torch.nn as nn
 import torch.functional as F
 from fastai.data.core import TfmdDL
 from fastai.data.core import Datasets
@@ -21,8 +23,7 @@ from fastai.data.transforms import Transform
 import bentoml
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
-from tests.utils.frameworks.fastai_utils import custom_model
-from tests.utils.frameworks.pytorch_utils import LinearModel
+from tests.integration.frameworks.models.fastai import custom_model
 
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
@@ -32,24 +33,29 @@ if TYPE_CHECKING:
 learner = custom_model()
 
 
+class LinearModel(nn.Module):
+    def forward(self, x: t.Any) -> t.Any:
+        return x
+
+
 class _FakeLossFunc(Module):
     reduction = "none"
 
-    def forward(self, x, y):
+    def forward(self, x: t.Any, y: t.Any):
         return F.mse_loss(x, y)
 
-    def activation(self, x):
+    def activation(self, x: t.Any):
         return x + 1
 
-    def decodes(self, x):
+    def decodes(self, x: t.Any):
         return 2 * x
 
 
 class _Add1(Transform):
-    def encodes(self, x):
+    def encodes(self, x: t.Any):
         return x + 1
 
-    def decodes(self, x):
+    def decodes(self, x: t.Any):
         return x - 1
 
 
@@ -60,9 +66,9 @@ mock_learner.loss_func = _FakeLossFunc()
 
 
 def test_raise_exceptions():
-    with pytest.raises(BentoMLException) as excinfo:
+    with pytest.raises(BentoMLException) as exc:
         bentoml.fastai.save_model("invalid_learner", LinearModel())  # type: ignore (testing exception)
-    assert "does not support saving pytorch" in str(excinfo.value)
+    assert "does not support saving pytorch" in str(exc.value)
 
     class ForbiddenType:
         pass

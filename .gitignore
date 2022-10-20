@@ -149,3 +149,5 @@ Package.resolved
 **/*/php/GPBMetadata
 composer.lock
 vendor
+*.pkl
+*.ckpt

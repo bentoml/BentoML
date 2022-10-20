@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import shutil
 import typing as t
 import platform
 import subprocess
@@ -89,21 +90,29 @@ def add_env_command(cli: click.Group) -> None:
 
         if "CONDA_PREFIX" in os.environ:
             # conda packages
-            conda_packages = run_cmd(["conda", "env", "export"])
+            conda_like = None
+            for possible_exec in ["conda", "mamba", "micromamba"]:
+                if shutil.which(possible_exec) is not None:
+                    conda_like = possible_exec
+                    break
+            assert (
+                conda_like is not None
+            ), "couldn't find a conda-like executable, while CONDA_PREFIX is set."
+            conda_packages = run_cmd([conda_like, "env", "export"])
 
             # user is currently in a conda environment,
             # doing this is faster than invoking `conda --version`
             try:
                 conda_version = get_pkg_version("conda")
             except PackageNotFoundError:
-                conda_version = run_cmd(["conda", "--version"])[0].split(" ")[-1]
+                conda_version = run_cmd([conda_like, "--version"])[0].split(" ")[-1]
 
-            info_dict["conda"] = conda_version
+            info_dict[conda_like] = conda_version
             info_dict["in_conda_env"] = str(True)
             info_dict["conda_packages"] = conda_packages
-        else:
-            # process info from `pip freeze`
-            pip_packages = run_cmd(["pip", "freeze"])
-            info_dict["pip_packages"] = pip_packages
+
+        # process info from `pip freeze`
+        pip_packages = run_cmd(["pip", "freeze"])
+        info_dict["pip_packages"] = pip_packages
         click.echo(pretty_format(info_dict, output=output))
         ctx.exit(0)

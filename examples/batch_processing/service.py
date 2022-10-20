@@ -9,9 +9,9 @@ svc = bentoml.Service("batch_processor", runners=[iris_clf_runner])
 
 @svc.api(
     input=PandasDataFrame(),
-    output=PandasDataFrame(),
+    output=PandasSeries(dtype="float"),
 )
-async def classify1(input_series: pd.DataFrame) -> pd.DataFrame:
+async def classify1(input_series: pd.DataFrame) -> pd.Series:
     return await PandasDataFrame(iris_clf_runner.predict.async_run(input_series))
 
 @svc.api(

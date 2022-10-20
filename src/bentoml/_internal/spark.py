@@ -156,7 +156,7 @@ def get_udf(
     # def process(
     #     iterator: t.Iterator[api.input.spark_udf_input_type()]
     # ) -> t.Iterator[api.output.spark_udf_output_type()]:
-    def process(iterator: t.Iterator[tuple[pd.Series[t.Any]]]) -> t.Iterator[tuple[pd.Series[t.Any]]]:
+    def process(iterator: t.Iterator[t.Tuple[pd.Series]]) -> t.Iterator[pd.Series]:
         # Initialize local service instance
         # TODO: support inference via remote bento server
         svc = _load_bento(bento_tag)
@@ -178,4 +178,4 @@ def get_udf(
 
             yield api.output.to_pandas_series(inference_api.func(api.input.from_pandas_series(input_args)))
 
-    return pandas_udf(process)
+    return pandas_udf(process, returnType=api.output._dtype)

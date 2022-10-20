@@ -105,7 +105,7 @@ class CorkDispatcher:
         max_latency_in_ms: int,
         max_batch_size: int,
         shared_sema: t.Optional[NonBlockSema] = None,
-        fallback: t.Callable[[], t.Any] | t.Type[t.Any] | None = None,
+        fallback: t.Callable[[], t.Any] | type[t.Any] | None = None,
     ):
         """
         params:

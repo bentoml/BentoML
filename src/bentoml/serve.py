@@ -55,7 +55,7 @@ def ensure_prometheus_dir(
                     return str(path.absolute())
                 else:
                     raise RuntimeError(
-                        "Prometheus multiproc directory {} is not empty".format(path)
+                        f"Prometheus multiproc directory {path} is not empty."
                     )
             else:
                 return str(path.absolute())
@@ -65,21 +65,26 @@ def ensure_prometheus_dir(
     except shutil.Error as e:
         if not use_alternative:
             raise RuntimeError(
-                f"Failed to clean the prometheus multiproc directory {directory}: {e}"
+                f"Failed to clean the Prometheus multiproc directory {directory}: {e}"
             )
-    except OSError as e:
+    except Exception as e:  # pylint: disable=broad-except
         if not use_alternative:
             raise RuntimeError(
-                f"Failed to create the prometheus multiproc directory {directory}: {e}"
-            )
-    assert use_alternative
-    alternative = tempfile.mkdtemp()
-    logger.warning(
-        f"Failed to ensure the prometheus multiproc directory {directory}, "
-        f"using alternative: {alternative}",
-    )
-    BentoMLContainer.prometheus_multiproc_dir.set(alternative)
-    return alternative
+                f"Failed to create the Prometheus multiproc directory {directory}: {e}"
+            ) from None
+    try:
+        alternative = tempfile.mkdtemp()
+        logger.debug(
+            "Failed to create the Prometheus multiproc directory %s, using temporary alternative: %s",
+            directory,
+            alternative,
+        )
+        BentoMLContainer.prometheus_multiproc_dir.set(alternative)
+        return alternative
+    except Exception as e:  # pylint: disable=broad-except
+        raise RuntimeError(
+            f"Failed to create temporary Prometheus multiproc directory {directory}: {e}"
+        ) from None
 
 
 def create_watcher(
@@ -396,7 +401,7 @@ def serve_http_production(
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
-    logger.debug(f"Runner map: {runner_bind_map}")
+    logger.debug("Runner map: %s", runner_bind_map)
 
     circus_socket_map[API_SERVER_NAME] = CircusSocket(
         name=API_SERVER_NAME,
@@ -782,7 +787,7 @@ def serve_grpc_production(
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
-    logger.debug(f"Runner map: {runner_bind_map}")
+    logger.debug("Runner map: %s", runner_bind_map)
     ssl_args = construct_ssl_args(
         ssl_certfile=ssl_certfile,
         ssl_keyfile=ssl_keyfile,

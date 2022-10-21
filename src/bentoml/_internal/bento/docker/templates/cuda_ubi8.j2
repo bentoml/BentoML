@@ -9,7 +9,7 @@
 # Since cuda is built on top of ubi8/ubi, it doesn't have the correct python
 # repository provided by RHEL, so we need to setup some ENV variables according
 # to s2i-base image.
-# Refers to https://github.com/sclorg/s2i-base-container/blob/master/core/Dockerfile.rhel8
+# Refer to https://github.com/sclorg/s2i-base-container/blob/master/core/Dockerfile.rhel8
 ENV \
   HOME={{ ubi_home_root }} \
   APP_ROOT={{ app_root }} \

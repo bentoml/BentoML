@@ -28,18 +28,6 @@ from ..utils.tensorflow import get_input_signatures_v2
 from ..utils.tensorflow import get_restorable_functions
 from ..utils.tensorflow import cast_py_args_to_tf_function_args
 
-logger = logging.getLogger(__name__)
-
-try:
-    import tensorflow as tf  # type: ignore
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "`tensorflow` is required in order to use module `bentoml.tensorflow`, install "
-        "tensorflow with `pip install tensorflow`. For more information, refer to "
-        "https://www.tensorflow.org/install"
-    )
-
-
 if TYPE_CHECKING:
     from .. import external_typing as ext
     from ..models.model import ModelSignatureDict
@@ -47,8 +35,17 @@ if TYPE_CHECKING:
 
     TFArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
 
+try:
+    import tensorflow as tf
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        "'tensorflow' is required in order to use module 'bentoml.tensorflow', install tensorflow with 'pip install tensorflow'. For more information, refer to https://www.tensorflow.org/install"
+    )
+
 MODULE_NAME = "bentoml.tensorflow"
 API_VERSION = "v1"
+
+logger = logging.getLogger(__name__)
 
 
 @attr.define
@@ -113,24 +110,22 @@ def load_model(
         except RuntimeError:
             pass
 
-    with tf.device(device_name):
-        tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(bento_model.path)  # type: ignore
+    with tf.device(device_name):  # type: ignore (tf.device is a context manager)
+        tf_model: tf_ext.AutoTrackable = tf.saved_model.load(bento_model.path)
         return tf_model
 
 
 def save_model(
     name: str,
-    model: t.Union["tf_ext.KerasModel", "tf_ext.Module"],
+    model: tf_ext.KerasModel | tf_ext.Module,
     *,
-    tf_signatures: "tf_ext.ConcreteFunction" | None = None,
-    tf_save_options: "tf_ext.SaveOptions" | None = None,
-    signatures: t.Dict[str, ModelSignature]
-    | t.Dict[str, ModelSignatureDict]
-    | None = None,
-    labels: t.Dict[str, str] | None = None,
-    custom_objects: t.Dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
-    metadata: t.Dict[str, t.Any] | None = None,
+    tf_signatures: tf_ext.ConcreteFunction | None = None,
+    tf_save_options: tf_ext.SaveOptions | None = None,
+    signatures: dict[str, ModelSignature] | dict[str, ModelSignatureDict] | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: list[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
 
     """
@@ -142,7 +137,7 @@ def save_model(
         model (``keras.Model`` | ``tf.Module``):
             Instance of model to be saved
         tf_signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
-            Refers to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
+            Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
             from Tensorflow documentation for more information.
         tf_save_options (`tf.saved_model.SaveOptions`, `optional`, default to :code:`None`):
             :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
@@ -213,9 +208,10 @@ def save_model(
             }
         else:
             signatures = {"__call__": {"batchable": False}}
-
         logger.info(
-            f"Using the default model signature {signatures} for TensorFlow models."
+            'Using the default model signature for Tensorflow (%s) for model "%s".',
+            signatures,
+            name,
         )
 
     with bentoml.models.create(

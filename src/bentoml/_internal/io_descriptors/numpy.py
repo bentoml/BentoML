@@ -179,7 +179,7 @@ class NumpyNdarray(
                 ).text
 
     Args:
-        dtype: Data type users wish to convert their inputs/outputs to. Refers to `arrays dtypes <https://numpy.org/doc/stable/reference/arrays.dtypes.html>`_ for more information.
+        dtype: Data type users wish to convert their inputs/outputs to. Refer to `arrays dtypes <https://numpy.org/doc/stable/reference/arrays.dtypes.html>`_ for more information.
         enforce_dtype: Whether to enforce a certain data type. if :code:`enforce_dtype=True` then :code:`dtype` must be specified.
         shape: Given shape that an array will be converted to. For example:
 
@@ -329,20 +329,30 @@ class NumpyNdarray(
             if np.can_cast(arr.dtype, self._dtype, casting="same_kind"):
                 arr = arr.astype(self._dtype, casting="same_kind")  # type: ignore
             else:
-                msg = f'{self.__class__.__name__}: Expecting ndarray of dtype "{self._dtype}", but "{arr.dtype}" was received.'
+                msg = '%s: Expecting ndarray of dtype "%s", but "%s" was received.'
                 if self._enforce_dtype:
-                    raise exception_cls(msg) from None
+                    raise exception_cls(
+                        msg % (self.__class__.__name__, self._dtype, arr.dtype)
+                    ) from None
                 else:
-                    logger.debug(msg)
+                    logger.debug(msg, self.__class__.__name__, self._dtype, arr.dtype)
 
         if self._shape is not None and not _is_matched_shape(self._shape, arr.shape):
-            msg = f'{self.__class__.__name__}: Expecting ndarray of shape "{self._shape}", but "{arr.shape}" was received.'
+            msg = '%s: Expecting ndarray of shape "%s", but "%s" was received.'
             if self._enforce_shape:
-                raise exception_cls(msg) from None
+                raise exception_cls(
+                    msg % (self.__class__.__name__, self._shape, arr.shape)
+                ) from None
             try:
                 arr = arr.reshape(self._shape)
             except ValueError as e:
-                logger.debug(f"{msg} Failed to reshape: {e}.")
+                logger.debug(
+                    msg + "Failed to reshape: %s",
+                    self.__class__.__name__,
+                    self._shape,
+                    arr.shape,
+                    e,
+                )
 
         return arr
 

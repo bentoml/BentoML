@@ -229,7 +229,7 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
             if ip in ("[::1]", "127.0.0.1"):
                 attributes[SpanAttributes.NET_PEER_NAME] = "localhost"
         except IndexError:
-            logger.warning(f"Failed to parse peer address '{context.peer()}'")
+            logger.warning("Failed to parse peer address '%s'", context.peer())
 
         return self._tracer.start_as_current_span(
             name=method_name,

@@ -110,7 +110,8 @@ def set_debug_mode(enabled: bool) -> None:
     os.environ[GRPC_DEBUG_ENV_VAR] = "DEBUG"
 
     logger.info(
-        f"{'Enabling' if enabled else 'Disabling'} debug mode for current BentoML session"
+        "%s debug mode for current BentoML session",
+        "Enabling" if enabled else "Disabling",
     )
 
 

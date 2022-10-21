@@ -120,7 +120,7 @@ def test_send_usage_failure(
     analytics.track(event_properties)
     assert mock_do_not_track.called
     assert mock_post.called
-    mock_logger.debug.assert_called_with("Tracking Error: something went wrong")
+    mock_logger.debug.assert_called_with("Tracking Error: %s", mock_post.side_effect)
 
 
 @patch("bentoml._internal.utils.analytics.usage_stats.requests.post")

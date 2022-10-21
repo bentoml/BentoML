@@ -170,12 +170,15 @@ def _infer_serialization_format_from_request(
         return SerializationFormat.CSV
     elif content_type:
         logger.debug(
-            f"Unknown content-type ('{content_type}'), falling back to '{default_format}' serialization format.",
+            "Unknown Content-Type ('%s'), falling back to '%s' serialization format.",
+            content_type,
+            default_format,
         )
         return default_format
     else:
         logger.debug(
-            f"Content-type not specified, falling back to '{default_format}' serialization format.",
+            "Content-Type not specified, falling back to '%s' serialization format.",
+            default_format,
         )
         return default_format
 
@@ -554,11 +557,11 @@ class PandasDataFrame(
         #         raise exception_cls(msg) from None
 
         if self._columns is not None and len(self._columns) != dataframe.shape[1]:
-            msg = f"length of 'columns' ({len(self._columns)}) does not match the # of columns of incoming data."
+            msg = "length of 'columns' (%d) does not match the # of columns of incoming data."
             if self._apply_column_names:
-                raise BadInput(msg) from None
+                raise BadInput(msg % len(self._columns)) from None
             else:
-                logger.debug(msg)
+                logger.debug(msg, len(self._columns))
                 dataframe.columns = pd.Index(self._columns)
 
         # TODO: convert from wide to long format (melt())

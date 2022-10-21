@@ -585,20 +585,20 @@ fi
                     f"--output-file={pip_compile_out}",
                 ]
             )
-            logger.info("Locking PyPI package versions..")
+            logger.info("Locking PyPI package versions.")
             cmd = [sys.executable, "-m", "piptools", "compile"]
             cmd.extend(pip_compile_args)
             try:
                 subprocess.check_call(cmd)
             except subprocess.CalledProcessError as e:
-                logger.error(f"Failed locking PyPI packages: {e}")
+                logger.error("Failed to lock PyPI packages: %s", e, exc_info=e)
                 logger.error(
-                    "Falling back to using user-provided package requirement specifier, equivalent to `lock_packages=False`"
+                    "Falling back to using the user-provided package requirement specifiers, which is equivalent to 'lock_packages=false'."
                 )
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
-        defaults: t.Dict[str, t.Any] = {}
+        defaults: dict[str, t.Any] = {}
 
         if self.requirements_txt is None:
             if self.lock_packages is None:

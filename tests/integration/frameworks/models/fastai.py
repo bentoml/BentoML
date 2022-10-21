@@ -30,6 +30,8 @@ framework = bentoml.fastai
 
 SEED = 123
 
+backward_compatible = False
+
 set_seed(SEED, reproducible=True)
 
 iris: Bunch = t.cast("Bunch", load_iris())

@@ -158,7 +158,7 @@ def add_start_command(cli: click.Group) -> None:
             host = parsed.hostname or host
             port = parsed.port or port
 
-        logger.info(" Using remote runners: %s", runner_map)
+        logger.info("Using remote runners: %s", runner_map)
         start_http_server(
             bento,
             runner_map=runner_map_dict,
@@ -362,7 +362,7 @@ def add_start_command(cli: click.Group) -> None:
         from bentoml.start import start_grpc_server
 
         runner_map = dict([s.split("=", maxsplit=2) for s in remote_runner or []])
-        logger.info(" Using remote runners: %s", runner_map)
+        logger.info("Using remote runners: %s", runner_map)
         start_grpc_server(
             bento,
             runner_map=runner_map,

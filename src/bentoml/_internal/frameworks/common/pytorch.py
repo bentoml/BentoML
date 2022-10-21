@@ -25,10 +25,7 @@ try:
     import torch
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "`torch` is required in order to use module `bentoml.pytorch`, "
-        "`bentoml.torchscript` or `bentoml.pytorch_lightning`. Install torch with `pip "
-        "install torch`. For more information, refer to "
-        "https://pytorch.org/get-started/locally/"
+        "'torch' is required in order to use module 'bentoml.pytorch', 'bentoml.torchscript' or 'bentoml.pytorch_lightning'. Install torch with 'pip install torch'. For more information, refer to https://pytorch.org/get-started/locally/"
     )
 
 if TYPE_CHECKING:
@@ -36,7 +33,8 @@ if TYPE_CHECKING:
 
     from ... import external_typing as ext
 
-    ModelType = t.Union[torch.nn.Module, torch.ScriptModule, pl.LightningModule]
+    ModelType = torch.nn.Module | torch.ScriptModule | pl.LightningModule
+    T = t.TypeVar("T")
 
 logger = logging.getLogger(__name__)
 
@@ -71,13 +69,13 @@ class PytorchModelRunnable(bentoml.Runnable):
         # if torch.cuda.device_count():
         if torch.cuda.is_available():
             self.device_id = "cuda"
-            torch.set_default_tensor_type(
-                "torch.cuda.FloatTensor"
-            )  # initially torch.FloatTensor
+            # by default, torch.FloatTensor will be used on CPU.
+            torch.set_default_tensor_type("torch.cuda.FloatTensor")
         else:
             self.device_id = "cpu"
         self.model: ModelType = loader(bento_model, device_id=self.device_id)
-        self.model.train(False)  # to turn off dropout and batchnorm
+        # We want to turn off dropout and batchnorm when running inference.
+        self.model.train(False)
 
 
 def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tensor]:
@@ -88,7 +86,7 @@ def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tens
     ) -> torch.Tensor:
         params = Params(*args, **kwargs)
 
-        def _mapping(item: t.Any) -> t.Any:
+        def _mapping(item: T) -> torch.Tensor | T:
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 return torch.Tensor(item, device=self.device_id)
             if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):

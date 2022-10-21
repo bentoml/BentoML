@@ -12,6 +12,7 @@ from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.pytorch_lightning
 
+backward_compatible = True
 
 from .torchscript import test_y
 from .torchscript import test_x_list

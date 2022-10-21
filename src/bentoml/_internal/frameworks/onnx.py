@@ -19,30 +19,34 @@ from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..utils.pkg import get_pkg_version
+from ..utils.pkg import PackageNotFoundError
 from ..runner.utils import Params
 
 if TYPE_CHECKING:
+    import torch  # noqa
+
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
+
+    from .. import external_typing as ext
+    from ..external_typing import tensorflow as tf_ext  # noqa
+
+    ProvidersType = list[str | tuple[str, dict[str, t.Any]]]
+    ONNXArgType = ext.NpNDArray | ext.PdDataFrame | torch.Tensor | tf_ext.Tensor
 
 
 try:
     import onnx
-except ImportError:  # pragma: no cover (trivial error checking)
+except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "onnx is required in order to use module `bentoml.onnx`, install "
-        "onnx with `pip install onnx`. For more information, refer to "
-        "https://onnx.ai/get-started.html"
+        "onnx is required in order to use module 'bentoml.onnx', install onnx with 'pip install onnx'. For more information, refer to https://onnx.ai/get-started.html"
     )
 
 try:
     import onnxruntime as ort
-except ImportError:  # pragma: no cover (trivial error checking)
+except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "`onnxruntime` or `onnxruntime-gpu` is required by `bentoml.onnx`, "
-        "install onnxruntime or onnxruntime-gpu with `pip install onnxruntime` "
-        "or `pip install onnxruntime-gpu`. For more information, refer to "
-        "https://onnxruntime.ai/"
+        "'onnxruntime' or 'onnxruntime-gpu' is required by 'bentoml.onnx', install onnxruntime or onnxruntime-gpu with 'pip install onnxruntime' or 'pip install onnxruntime-gpu'. For more information, refer to https://onnxruntime.ai/"
     )
 
 MODULE_NAME = "bentoml.onnx"
@@ -50,17 +54,6 @@ MODEL_FILENAME = "saved_model.onnx"
 API_VERSION = "v1"
 
 logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-    import torch  # noqa
-
-    from .. import external_typing as ext
-    from ..external_typing import tensorflow as tf_ext  # noqa
-
-    ProvidersType = list[str | t.Tuple[str, t.Dict[str, t.Any]]]
-    ONNXArgType = t.Union[
-        "ext.NpNDArray", "ext.PdDataFrame", "torch.Tensor", "tf_ext.Tensor"
-    ]
 
 
 # helper methods
@@ -83,8 +76,8 @@ def flatten_list(lst: t.List[t.Any]) -> t.List[str]:  # pragma: no cover
 class ONNXOptions(ModelOptions):
     """Options for the ONNX model"""
 
-    providers: list[str] | None = attr.field(default=None)
-    session_options: "ort.SessionOptions" | None = attr.field(default=None)
+    providers: t.Optional[list[str]] = attr.field(default=None)
+    session_options: t.Optional["ort.SessionOptions"] = attr.field(default=None)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -117,7 +110,7 @@ def load_model(
     bento_model: str | Tag | bentoml.Model,
     *,
     providers: ProvidersType | None = None,
-    session_options: "ort.SessionOptions" | None = None,
+    session_options: ort.SessionOptions | None = None,
 ) -> ort.InferenceSession:
     """
     Load the onnx model with the given tag from the local BentoML model store.
@@ -256,21 +249,22 @@ def save_model(
 
     """
 
-    try:
-        import importlib.metadata as importlib_metadata
-    except ImportError:
-        import importlib_metadata
-
     # prefer "onnxruntime-gpu" over "onnxruntime" for framework versioning
+    _onnxruntime_version = None
+    _onnxruntime_pkg = None
     _PACKAGE = ["onnxruntime-gpu", "onnxruntime", "onnxruntime-silicon"]
     for p in _PACKAGE:
         try:
             _onnxruntime_version = get_pkg_version(p)
             _onnxruntime_pkg = p
             break
-        except importlib_metadata.PackageNotFoundError:
+        except PackageNotFoundError:
             pass
+    assert (
+        _onnxruntime_pkg is not None and _onnxruntime_version is not None
+    ), "Failed to find onnxruntime package version."
 
+    assert _onnxruntime_version is not None, "onnxruntime is not installed"
     context = ModelContext(
         framework_name="onnx",
         framework_versions={
@@ -284,15 +278,15 @@ def save_model(
             "run": {"batchable": False},
         }
         logger.info(
-            f"Using the default model signature for onnx ({signatures}) for model {name}."
+            'Using the default model signature for ONNX (%s) for model "%s".',
+            signatures,
+            name,
         )
     else:
         provided_methods = list(signatures.keys())
         if provided_methods != ["run"]:
             raise BentoMLException(
-                "bentoml.onnx will load onnx model into an "
-                "`onnxruntime.InferenceSession` for inference, hence the only "
-                f"allowed method name is `run` instead of provided {provided_methods}"
+                f"Provided method names {[m for m  in provided_methods if m != 'run']} are invalid. 'bentoml.onnx' will load ONNX model into an 'onnxruntime.InferenceSession' for inference, so the only supported method name is 'run'."
             )
 
     if not isinstance(model, onnx.ModelProto):
@@ -365,18 +359,12 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 session_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL
                 if session_options.intra_op_num_threads != 0:
                     logger.warning(
-                        "You have modified default setting of "
-                        "onnxruntime.InferenceSession's `intra_op_num_threads` "
-                        "setting, bentoml.onnx will try to manage CPU resource "
-                        "for you and override this setting"
+                        "Overriding specified 'session_options.intra_op_num_threads'."
                     )
                 session_options.intra_op_num_threads = thread_count
                 if session_options.inter_op_num_threads != 0:
                     logger.warning(
-                        "You have modified default setting of "
-                        "onnxruntime.InferenceSession's `inter_op_num_threads` "
-                        "setting, bentoml.onnx will try to manage CPU resource "
-                        "for you and override this setting"
+                        "Overriding specified 'session_options.inter_op_num_threads'."
                     )
                 session_options.inter_op_num_threads = thread_count
 
@@ -388,7 +376,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             for method_name in bento_model.info.signatures:
                 self.predict_fns[method_name] = getattr(self.model, method_name)
 
-    def _mapping(item: ONNXArgType) -> "ext.NpNDArray":
+    def _mapping(item: ONNXArgType) -> ext.NpNDArray:
 
         # currently ort only support np.float32
         # https://onnxruntime.ai/docs/api/python/auto_examples/plot_common_errors.html
@@ -399,25 +387,25 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         elif LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
             item = item.to_numpy(dtype=np.float32)
         elif LazyType["tf.Tensor"]("tensorflow.Tensor").isinstance(item):
-            item = np.array(memoryview(item)).astype(np.float32, copy=False)  # type: ignore
+            item = np.array(memoryview(item)).astype(np.float32, copy=False)
         elif LazyType["torch.Tensor"]("torch.Tensor").isinstance(item):
             item = item.numpy().astype(np.float32, copy=False)
         else:
             raise TypeError(
-                "`run` of ONNXRunnable only takes "
-                "`numpy.ndarray` or `pd.DataFrame`, `tf.Tensor`, or `torch.Tensor` as input parameters"
+                "'run' of ONNXRunnable only takes 'numpy.ndarray' or 'pd.DataFrame', 'tf.Tensor', or 'torch.Tensor' as input parameters."
             )
-        return item
+        # This cast is safe since we have already checked the type of item
+        return t.cast("ext.NpNDArray", item)
 
     def add_runnable_method(method_name: str, options: ModelSignature):
-        def _run(self, *args: ONNXArgType) -> t.Any:
+        def _run(self: ONNXRunnable, *args: ONNXArgType) -> t.Any:
             params = Params["ONNXArgType"](*args)
             params = params.map(_mapping)
 
-            input_names = {
+            input_names: dict[str, ext.NpNDArray] = {
                 i.name: val for i, val in zip(self.model.get_inputs(), params.args)
             }
-            output_names = [o.name for o in self.model.get_outputs()]
+            output_names: list[str] = [o.name for o in self.model.get_outputs()]
             return self.predict_fns[method_name](output_names, input_names)[0]
 
         ONNXRunnable.add_method(

@@ -144,7 +144,6 @@ class Bento(StoreItem):
         self.__fs = bento_fs
         self.check_fs(None, bento_fs)
         self._info = info
-        self.validate()
 
     @property
     def tag(self) -> Tag:
@@ -185,7 +184,7 @@ class Bento(StoreItem):
             tag = tag.make_new_version()
 
         logger.info(
-            f'Building BentoML service "{tag}" from build context "{build_ctx}"'
+            'Building BentoML service "%s" from build context "%s".', tag, build_ctx
         )
 
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
@@ -203,8 +202,8 @@ class Bento(StoreItem):
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))
         for model in models:
-            logger.info(f'Packing model "{model.tag}"')
-            model._save(bento_model_store)  # type: ignore[reportPrivateUsage]
+            logger.info('Packing model "%s"', model.tag)
+            model._save(bento_model_store)
 
         # Apply default build options
         build_config = build_config.with_defaults()
@@ -275,6 +274,10 @@ class Bento(StoreItem):
         )
         # Create bento.yaml
         res.flush_info()
+        try:
+            res.validate()
+        except BentoMLException as e:
+            raise BentoMLException(f"Failed to create {res!s}: {e}") from None
 
         return res
 
@@ -289,10 +292,10 @@ class Bento(StoreItem):
             )
 
         res = cls(info.tag, item_fs, info)
-        if not res.validate():
-            raise BentoMLException(
-                f"Failed to create bento because it contains an invalid '{BENTO_YAML_FILENAME}'"
-            )
+        try:
+            res.validate()
+        except BentoMLException as e:
+            raise BentoMLException(f"Failed to load bento: {e}") from None
 
         return res
 
@@ -325,9 +328,10 @@ class Bento(StoreItem):
         self,
         bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     ) -> "Bento":
-        if not self.validate():
-            logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
-            raise BentoMLException("Failed to save Bento because it was invalid.")
+        try:
+            self.validate()
+        except BentoMLException as e:
+            raise BentoMLException(f"Failed to save {self!s}: {e}") from None
 
         with bento_store.register(self.tag) as bento_path:
             out_fs = fs.open_fs(bento_path, create=True, writeable=True)
@@ -338,7 +342,10 @@ class Bento(StoreItem):
         return self
 
     def validate(self):
-        return self._fs.isfile(BENTO_YAML_FILENAME)
+        if not self._fs.isfile(BENTO_YAML_FILENAME):
+            raise BentoMLException(
+                f"{self!s} does not contain a {BENTO_YAML_FILENAME}."
+            )
 
     def __str__(self):
         return f'Bento(tag="{self.tag}")'
@@ -427,7 +434,10 @@ class BentoInfo:
         object.__setattr__(self, "name", self.tag.name)
         object.__setattr__(self, "version", self.tag.version)
 
-        self.validate()
+        try:
+            self.validate()
+        except BentoMLException as e:
+            raise BentoMLException(f"Failed to initialize {self!s}: {e}") from None
 
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)
@@ -440,7 +450,7 @@ class BentoInfo:
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
-            logger.error(exc)
+            logger.error("Error while parsing YAML file: %s", exc)
             raise
 
         assert yaml_content is not None

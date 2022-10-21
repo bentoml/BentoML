@@ -20,18 +20,22 @@ if TYPE_CHECKING:
 
 framework = bentoml.catboost
 
+backward_compatible = False
 
-def accurate_to(expected, accuracy: float) -> t.Callable[[ext.NpNdArray], bool]:
-    def check(out):
+
+def accurate_to(
+    expected: list[int], accuracy: float
+) -> t.Callable[[ext.NpNDArray], t.Any]:
+    def check(out: ext.NpNDArray) -> t.Any:
         return metrics.accuracy_score(expected, out) >= accuracy
 
     return check
 
 
 def generator_accurate_to(
-    expected, accuracy: float
-) -> t.Callable[[ext.NpNdArray], bool]:
-    def check(out):
+    expected: list[int], accuracy: float
+) -> t.Callable[[ext.NpNDArray], t.Any]:
+    def check(out: ext.NpNDArray) -> t.Any:
         score = metrics.accuracy_score(expected, next(out))
         return score >= accuracy
 

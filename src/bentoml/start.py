@@ -153,9 +153,7 @@ def start_http_server(
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     prometheus_dir = ensure_prometheus_dir()
-
     logger.debug("Runner map: %s", runner_map)
-
     circus_socket_map[API_SERVER_NAME] = CircusSocket(
         name=API_SERVER_NAME,
         host=host,

@@ -329,7 +329,9 @@ class RunnerAppFactory(BaseAppFactory):
                 ret = await runner_method.async_run(*params.args, **params.kwargs)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.error(
-                    f"Exception on runner '{runner_method.runner.name}' method '{runner_method.name}'",
+                    "Exception on runner '%s' method '%s'",
+                    runner_method.runner.name,
+                    runner_method.name,
                     exc_info=exc,
                 )
                 return Response(

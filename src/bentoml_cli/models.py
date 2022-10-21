@@ -175,7 +175,7 @@ def add_model_management_commands(cli: Group) -> None:
 
                 if delete_confirmed:
                     model_store.delete(model.tag)
-                    logger.info(f"{model} deleted")
+                    logger.info("%s deleted.", model)
 
         for target in delete_targets:
             delete_target(target)
@@ -204,7 +204,7 @@ def add_model_management_commands(cli: Group) -> None:
         """
         bentomodel = model_store.get(model_tag)
         out_path = bentomodel.export(out_path)
-        logger.info(f"{bentomodel} exported to {out_path}")
+        logger.info("%s exported to %s.", bentomodel, out_path)
 
     @model_cli.command(name="import")
     @click.argument("model_path", type=click.STRING)
@@ -215,7 +215,7 @@ def add_model_management_commands(cli: Group) -> None:
         bentoml models import s3://mybucket/models/my_model.bentomodel
         """
         bentomodel = import_model(model_path)
-        logger.info(f"{bentomodel} imported")
+        logger.info("%s imported.", bentomodel)
 
     @model_cli.command()
     @click.argument("model_tag", type=click.STRING)

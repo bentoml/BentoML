@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import keras
 import numpy as np
 import tensorflow as tf
-import tensorflow.keras as keras
 
 import bentoml
 
@@ -11,6 +11,8 @@ from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.tensorflow
+
+backward_compatible = True
 
 
 class NativeModel(tf.Module):

@@ -99,12 +99,13 @@ Next, we will transform the service definition module and breakdown each section
           import pandas as pd
 
           import bentoml
+          from bentoml.io import NumpyNdarray, PandasDataFrame
 
           iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
           svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
-          @svc.api(input=bentoml.io.PandasDataFrame(), output=bentoml.io.NumpyNdarray())
+          @svc.api(input=PandasDataFrame(), output=NumpyNdarray())
           def predict(input_series: pd.DataFrame) -> np.ndarray:
               result = iris_clf_runner.predict.run(input_series)
               return result

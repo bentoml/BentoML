@@ -126,6 +126,12 @@ class RemoteRunnerClient(RunnerHandle):
             )
         return self._client_cache
 
+    def _reset_client(self):
+        self._close_conn()
+        if self._client_cache is not None:
+            self._client_cache.close()
+            self._client_cache = None
+
     async def async_run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],
@@ -147,18 +153,34 @@ class RemoteRunnerClient(RunnerHandle):
                 ) from None
 
         path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
-        async with self._client.post(
-            f"{self._addr}/{path}",
-            data=pickle.dumps(payload_params),  # FIXME: pickle inside pickle
-            headers={
-                "Bento-Name": component_context.bento_name,
-                "Bento-Version": component_context.bento_version,
-                "Runner-Name": self._runner.name,
-                "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-                "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
-            },
-        ) as resp:
-            body = await resp.read()
+        try:
+            async with self._client.post(
+                f"{self._addr}/{path}",
+                data=pickle.dumps(payload_params),  # FIXME: pickle inside pickle
+                headers={
+                    "Bento-Name": component_context.bento_name,
+                    "Bento-Version": component_context.bento_version,
+                    "Runner-Name": self._runner.name,
+                    "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
+                    "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+                },
+            ) as resp:
+                body = await resp.read()
+        except aiohttp.ClientOSError:
+            # most likely the TCP connection has been closed; retry after reconnecting
+            self._reset_client()
+            async with self._client.post(
+                f"{self._addr}/{path}",
+                data=pickle.dumps(payload_params),  # FIXME: pickle inside pickle
+                headers={
+                    "Bento-Name": component_context.bento_name,
+                    "Bento-Version": component_context.bento_version,
+                    "Runner-Name": self._runner.name,
+                    "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
+                    "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+                },
+            ) as resp:
+                body = await resp.read()
 
         try:
             content_type = resp.headers["Content-Type"]

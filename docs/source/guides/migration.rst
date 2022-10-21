@@ -2,9 +2,9 @@
 1.0 Migration Guide
 ===================
 
-BentoML version 1.0.0 APIs are backward incompatible with version 0.13.1. However, most of the common
-functionality can be achieved with the new version. We will guide and demonstrate the migration by
-transforming the `quickstart <https://github.com/bentoml/BentoML/tree/main/examples/quickstart>`_ gallery project
+BentoML version 1.0.0 APIs are backward incompatible with version 0.13.1. However, most of the
+functionality is maintained in the new version. We will demonstrate this by
+migrating the `quickstart <https://github.com/bentoml/BentoML/tree/main/examples/quickstart>`_ gallery project.
 from BentoML version 0.13.1 to 1.0.0. Complete every migration action denoted like the section below.
 
 .. admonition:: 💡 Migration Task

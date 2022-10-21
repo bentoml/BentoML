@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 import pyspark
 import bentoml
+from pyspark.sql.functions import col
 
 spark = SparkSession.builder.master("local[1]").appName("testApp").getOrCreate()
 
@@ -12,4 +13,4 @@ import bentoml._internal.spark
 
 udf = bentoml._internal.spark.get_udf(spark, "batch_processor:latest", "classify1")
 
-udf(df)
+df.select(udf(col("_c0"), col("_c1"), col("_c2"), col("_c3"))).show()

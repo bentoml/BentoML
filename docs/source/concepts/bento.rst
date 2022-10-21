@@ -984,7 +984,7 @@ their setup script for the initialization process.
 Enable features for your Bento
 """"""""""""""""""""""""""""""
 
-Users can optionally pass in ``--enable-features`` flag to ``bentoml containerize`` to
+Users can optionally pass in the ``--enable-features`` flag to ``bentoml containerize`` to
 enable additional features for the generated Bento container image.
 
 This maps directly 1-to-1 with BentoML's pip installable features. For example:

@@ -126,23 +126,23 @@ def get_udf(
     Returns:
         A pandas_udf for running target Bento on Spark DataFrame
     """
-    svc = load_service(str(bento_tag))
-    assert svc.tag is not None
-    bento_tag = svc.tag  # resolved tag, no more "latest" here
+    svc2 = load_service(str(bento_tag))
+    assert svc2.tag is not None
+    bento_tag = svc2.tag  # resolved tag, no more "latest" here
 
     if api_name is None:
-        if len(svc.apis) != 1:
+        if len(svc2.apis) != 1:
             raise BentoMLException(
-                f'Bento "{bento_tag}" has multiple APIs ({svc.apis.keys()}), specify which API should be used for registering the UDF, e.g.: bentoml.spark.get_udf(spark, "my_service:latest", "predict")'
+                f'Bento "{bento_tag}" has multiple APIs ({svc2.apis.keys()}), specify which API should be used for registering the UDF, e.g.: bentoml.spark.get_udf(spark, "my_service:latest", "predict")'
             )
-        api_name = next(iter(svc.apis))
+        api_name = next(iter(svc2.apis))
     else:
-        if api_name not in svc.apis:
+        if api_name not in svc2.apis:
             raise BentoMLException(
-                f"API name '{api_name}' not found in Bento '{bento_tag}', available APIs are {svc.apis.keys()}"
+                f"API name '{api_name}' not found in Bento '{bento_tag}', available APIs are {svc2.apis.keys()}"
             )
 
-    api = svc.apis[api_name]
+    api = svc2.apis[api_name]
 
     # Validate API io descriptors are supported for Spark UDF
     # if api.input.__class__ not in SUPPORT_INPUT_IO_DESCRIPTORS:

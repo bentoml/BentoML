@@ -27,6 +27,7 @@ from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
+    import numpy as np
     import pandas as pd
 
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
@@ -348,7 +349,7 @@ class PandasDataFrame(
             "args": {
                 "orient": self._orient,
                 "columns": self._columns,
-                "dtype": None if self._dtype is None else self._dtype.name,
+                "dtype": self._dtype.name if LazyType["np.dtype[t.Any]"]("numpy.dtype").isinstance(self._dtype) else self._dtype,
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,
@@ -645,7 +646,7 @@ class PandasDataFrame(
         not_supported: list[ext.PdDType] = list(
             filter(
                 lambda x: x not in mapping,
-                map(lambda x: t.cast("ext.PdSeries", obj[x]).dtype, columns_name),
+                map(lambda x: obj[x].dtype, columns_name),
             )
         )
         if len(not_supported) > 0:
@@ -669,9 +670,10 @@ class PandasDataFrame(
         if len(obj.columns != 1):
             raise InvalidArgument("There should be only one column")
 
+        return t.cast("pd.Series[t.Any]", obj.iloc[0])
 
 class PandasSeries(
-    IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
+    IODescriptor["ext.PdSeries[t.Any]"], descriptor_id="bentoml.io.PandasSeries"
 ):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
@@ -786,7 +788,7 @@ class PandasSeries(
         self._enforce_shape = enforce_shape
         # TODO: support parquet for serde pd.Series
 
-    def input_type(self) -> LazyType[ext.PdSeries]:
+    def input_type(self) -> LazyType[ext.PdSeries[t.Any]]:
         return LazyType("pandas", "Series")
 
     def to_spec(self) -> dict[str, t.Any]:
@@ -795,7 +797,7 @@ class PandasSeries(
             "id": self.descriptor_id,
             "args": {
                 "orient": self._orient,
-                "dtype": None if self._dtype is None else self._dtype.name,
+                "dtype": self._dtype.name if LazyType["np.dtype[t.Any]"]("numpy.dtype").isinstance(self._dtype) else self._dtype,
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,

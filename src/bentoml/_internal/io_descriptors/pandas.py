@@ -662,11 +662,12 @@ class PandasDataFrame(
             ],
         )
 
-    async def from_pandas_series(self, series: pd.Series[t.Any]) -> pd.DataFrame[t.Any]:
-        return pd.DataFrame.from_records(series)
+    def from_pandas_series(self, series: tuple[pd.Series[t.Any]]) -> pd.DataFrame:
+        return pd.DataFrame(series).transpose()
 
-    async def to_pandas_series(self, obj: pd.DataFrame[t.Any]) -> pd.Series[t.Any]:
-        return obj.iloc
+    def to_pandas_series(self, obj: pd.DataFrame) -> pd.Series[t.Any]:
+        if len(obj.columns != 1):
+            raise InvalidArgument("There should be only one column")
 
 
 class PandasSeries(
@@ -898,12 +899,12 @@ class PandasSeries(
     async def to_proto(self, obj: ext.PdSeries) -> pb.Series:
         raise NotImplementedError("Currently not yet implemented.")
 
-    async def from_pandas_series(self, series: pd.Series[t.Any]) -> pd.Series[t.Any]:
+    def from_pandas_series(self, series: tuple[pd.Series[t.Any]]) -> pd.Series[t.Any]:
         if len(series) == 0:
             raise InvalidArgument(f"No series passed, cannot construct a series from no data.")
         elif len(series) > 1:
             raise InvalidArgument(f"Multiple series passed when only one was expected.")
         return series[0]
 
-    async def to_pandas_series(self, obj: pd.Series[t.Any]) -> pd.Series[t.Any]:
+    def to_pandas_series(self, obj: pd.Series[t.Any]) -> pd.Series[t.Any]:
         return obj

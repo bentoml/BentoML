@@ -116,8 +116,8 @@ class IODescriptor(ABC, t.Generic[IOType]):
     async def to_proto(self, obj: IOType) -> t.Any:
         ...
 
-    async def from_pandas_series(self, series: tuple[pd.Series[t.Any]]) -> IOType:
+    def from_pandas_series(self, series: tuple[pd.Series[t.Any]]) -> IOType:
         raise NotImplementedError("This IO descriptor does not currently support batch inference.")
 
-    async def to_pandas_series(self, obj: IOType) -> tuple[pd.Series[t.Any]]:
+    def to_pandas_series(self, obj: IOType) -> pd.Series[t.Any]:
         raise NotImplementedError("This IO descriptor does not currently support batch inference.")

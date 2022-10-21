@@ -1048,7 +1048,7 @@ It accepts the following fields:
 
   Similar to NumpyNdarray, each of the fields is a `list` of the corresponding data type. The list is a 1-D array, and will be then pass to ``pd.Series``.
 
-  Per request sent, one message should only contain **ONE** of the aforementioned fields.
+  Each request should only contain **ONE** of the aforementioned fields.
 
   The interaction among the above fields and ``dtype`` from ``PandasSeries`` are as follows:
 

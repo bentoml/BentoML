@@ -779,7 +779,7 @@ class PandasSeries(
 
                   @svc.api(input=PandasSeries(shape=(51,), enforce_shape=True), output=PandasSeries())
                   def infer(input_series: pd.Series) -> pd.Series:
-                  # if input_series have shape (40,), it will throw out errors
+                  # if input_series has shape (40,), it will error
                         ...
         enforce_shape: Whether to enforce a certain shape. If ``enforce_shape=True`` then ``shape`` must be specified.
 

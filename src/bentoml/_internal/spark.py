@@ -52,7 +52,7 @@ def _distribute_bento(spark: SparkSession, bento: Bento) -> str:
     return os.path.basename(export_path)
 
 
-def _load_bento(bento_tag: Tag) -> Service:
+def _load_bento(bento_tag: Tag):
     """
     load Bento from local bento store or the SparkFiles directory
     """
@@ -109,7 +109,33 @@ def _load_bento(bento_tag: Tag) -> Service:
 # Out -> pd.Series[str]
 # Return Type -> Str
 
+def _get_process(bento_tag: Tag, api_name: str) -> t.Callable[[t.Iterator[tuple[pd.Series[t.Any]]]], t.Iterator[pd.Series[t.Any]]]:
+    # def process(
+    #     iterator: t.Iterator[api.input.spark_udf_input_type()]
+    # ) -> t.Iterator[api.output.spark_udf_output_type()]:
+    def process(iterator: t.Iterator[t.Tuple[pd.Series]]) -> t.Iterator[pd.Series]:  # type: ignore  # this type annotation is evaluated at runtime by 
+        # Initialize local service instance
+        # TODO: support inference via remote bento server
+        svc = _load_bento(bento_tag)
+        for runner in svc.runners:
+            runner.init_local(quiet=True)
 
+        assert (
+            api_name in svc.apis
+        ), "An error occurred transferring the Bento to the Spark worker; see <something>."
+        inference_api = svc.apis[api_name]
+        assert inference_api.func is not None, "Inference API function not defined"
+
+        for input_args in t.cast("t.Iterator[tuple[pd.Series[t.Any]]]", iterator):
+            # default batch size = 10,000
+            func_input = inference_api.input.from_pandas_series(input_args)
+            func_output = inference_api.func(func_input)
+            assert isinstance(func_output, pd.Series), f"type is {type(func_output)}"
+            yield inference_api.output.to_pandas_series(func_output)
+
+    return process  # type: ignore  # process type evaluated at runtime
+    
+    
 def get_udf(
     spark: SparkSession, bento_tag: Tag | str, api_name: str | None
 ) -> UserDefinedFunctionLike:
@@ -151,31 +177,11 @@ def get_udf(
     #     raise BentoMLException(f"Service API output type {api.output.__class__} is not supported for Spark UDF conversion")
 
     # Distribute Bento file to worker nodes
-    bento_filename = _distribute_bento(spark, get_bento(bento_tag))
+    _distribute_bento(spark, get_bento(bento_tag))
 
-    # def process(
-    #     iterator: t.Iterator[api.input.spark_udf_input_type()]
-    # ) -> t.Iterator[api.output.spark_udf_output_type()]:
-    def process(iterator: t.Iterator[t.Tuple[pd.Series]]) -> t.Iterator[pd.Series]:
-        # Initialize local service instance
-        # TODO: support inference via remote bento server
-        svc = _load_bento(bento_tag)
-        for runner in svc.runners:
-            runner.init_local(quiet=True)
+    process = _get_process(bento_tag, api_name)
 
-        assert (
-            api_name in svc.apis
-        ), "An error occurred transferring the Bento to the Spark worker; see <something>."
-        inference_api = svc.apis[api_name]
-
-        for input_batch in iterator:
-            func_input = inference_api.input.to_pandas_series(input_batch)
-            func_output = inference_api.func(func_input)
-            yield inference_api.output.from_pandas_series(func_output)
-
-        for input_args in iterator:
-            # default batch size = 10,000
-
-            yield api.output.to_pandas_series(inference_api.func(api.input.from_pandas_series(input_args)))
+    if api.output._dtype is None:
+        raise BentoMLException(f"Output descriptor for {api_name} must specify a dtype.")
 
     return pandas_udf(process, returnType=api.output._dtype)

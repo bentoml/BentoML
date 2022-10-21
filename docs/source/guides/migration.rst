@@ -331,7 +331,7 @@ You can run the docker image to start the service.
 
 .. note::
 
-   BentoML 1.x leverage BuildKit <https://github.com/moby/buildkit>`_, to
+   BentoML 1.x leverages BuildKit <https://github.com/moby/buildkit>`_, to
    containerize Bentos.
 
    BuildKit has been `integrated into Docker 18.09 and higher <https://docs.docker.com/develop/develop-images/build_enhancements/>`_.

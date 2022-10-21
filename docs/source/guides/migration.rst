@@ -335,16 +335,36 @@ You can run the docker image to start the service.
    containerize Bentos.
 
    BuildKit has been `integrated into Docker 18.09 and higher <https://docs.docker.com/develop/develop-images/build_enhancements/>`_.
-   Providing the environment variable ``DOCKER_BUILDKIT=1`` will enable BuildKit:
+   By providing the environment variable ``DOCKER_BUILDKIT=1``, Docker will use BuildKit
+   to containerize your Bento.
+
+   If you are using :ref:`bentoml containerize <reference/cli:containerize>`, BentoML
+   will automatically set the environment variable ``DOCKER_BUILDKIT=1`` for you:
 
    .. code-block:: bash
 
-      $ DOCKER_BUILDKIT=1 bentoml containerize iris_classifier:latest
+      $ bentoml containerize iris_classifier:latest
+
+   If you are using ``docker build``, you will need to set the environment variable
+   ``DOCKER_BUILDKIT=1`` yourself. Make sure to also pass in the build context path to
+   be the Bento path. See `docker build documentation <https://docs.docker.com/engine/reference/commandline/build/#usage>`_ for more details.
+
+   .. code-block:: bash
+
+      $ BENTO_PATH=$(bentoml get iris_classifier:latest -o path)
+      $ DOCKER_BUILDKIT=1 docker build -t iris_classifier:v1 \
+                                       -f $BENTO_PATH/env/docker/Dockerfile \
+                                       $BENTO_PATH
+
+   :bdg-info:`Remarks:` We recommend users to **always** use :ref:`bentoml containerize <reference/cli:containerize>` to containerize Bentos.
+
 
 .. seealso::
 
    :ref:`Containerize Bentos <concepts/bento:Docker Options>` to learn more about our
-   docker options and how to customize the docker image. :ref:`guides/containerization:Advanced Containerization` goes into more 
+   docker options and how to customize the docker image.
+
+   :ref:`guides/containerization:Advanced Containerization` goes into more 
    details about advanced containerization features that BentoML provides, for those who
    are interested.
 

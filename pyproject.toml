@@ -45,6 +45,7 @@ dependencies = [
   "packaging>=20.0",
   "pathspec",
   "pip-tools>=6.6.2",
+  "pip-requirements-parser>=31.2.0",
   "prometheus-client>=0.10.0",
   "psutil",
   "pynvml<12",

@@ -17,6 +17,7 @@ import psutil
 import fs.copy
 from dotenv import dotenv_values  # type: ignore
 from pathspec import PathSpec
+from pip_requirements_parser import RequirementsFile
 
 from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
@@ -544,15 +545,22 @@ fi
             f.write(install_sh)
 
         if self.requirements_txt is not None:
-            requirements_txt_file = resolve_user_filepath(
-                self.requirements_txt, build_ctx
+            requirements_txt = RequirementsFile.from_file(
+                resolve_user_filepath(self.requirements_txt, build_ctx),
+                include_nested=True,
             )
-            copy_file_to_fs_folder(
-                requirements_txt_file,
-                bento_fs,
-                py_folder,
-                dst_filename="requirements.txt",
-            )
+            # We need to make sure that we don't write any file references
+            # back into the final `requirements.txt` file. We've already
+            # resolved them and included their contents so we can discard
+            # them.
+            for option_line in requirements_txt.options:
+                option_line.options.pop("constraints", None)
+                option_line.options.pop("requirements", None)
+
+            with bento_fs.open(
+                fs.path.combine(py_folder, "requirements.txt"), "w"
+            ) as f:
+                f.write(requirements_txt.dumps(preserve_one_empty_line=True))
         elif self.packages is not None:
             with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
                 f.write("\n".join(self.packages))

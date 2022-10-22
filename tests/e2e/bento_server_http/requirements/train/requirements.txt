@@ -1,6 +1,3 @@
 pandas
-pydantic
-Pillow
 scikit-learn
 pyarrow
-fastapi

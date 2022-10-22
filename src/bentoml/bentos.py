@@ -447,6 +447,7 @@ FEATURES = [
     "all",
     "io-image",
     "io-pandas",
+    "io-json",
     "tracing-zipkin",
     "tracing-jaeger",
     "tracing-otlp",

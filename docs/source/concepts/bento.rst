@@ -559,6 +559,14 @@ validation, specify the desired variant in the under ``python.packages`` field:
            packages:
            - "bentoml[aws]"
 
+   .. tab-item:: JSON IO
+
+      .. code-block:: yaml
+
+         python:
+           packages:
+           - "bentoml[io-json]"
+
    .. tab-item:: Image IO
 
       .. code-block:: yaml
@@ -574,6 +582,14 @@ validation, specify the desired variant in the under ``python.packages`` field:
          python:
            packages:
            - "bentoml[io-pandas]"
+
+   .. tab-item:: JSON IO
+
+      .. code-block:: yaml
+
+         python:
+           packages:
+           - "bentoml[io-json]"
 
    .. tab-item:: Jaeger
 
@@ -591,7 +607,7 @@ validation, specify the desired variant in the under ``python.packages`` field:
            packages:
            - "bentoml[tracing-zipkin]"
 
-   .. tab-item:: OpenTelemetry Protocol
+   .. tab-item:: OTLP
 
       .. code-block:: yaml
 

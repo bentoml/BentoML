@@ -8,7 +8,6 @@
 [![actions_status](https://github.com/bentoml/bentoml/workflows/CI/badge.svg)](https://github.com/bentoml/bentoml/actions)
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
 [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
-[![codecov](https://codecov.io/gh/bentoml/BentoML/branch/main/graph/badge.svg?token=GMzgXdpE5b)](https://codecov.io/gh/bentoml/BentoML)
 
 BentoML makes it easy to create Machine Learning services that are ready to deploy and scale.
 

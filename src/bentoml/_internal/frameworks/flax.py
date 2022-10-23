@@ -7,11 +7,13 @@ from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
+import msgpack.exceptions
 
-from ..utils.pkg import get_pkg_version
+from ..utils.pkg import pkg_version_info
+from .common.jax import jnp, jaxlib, jax
 from .common.jax import JaxArrayContainer
 from ...exceptions import NotFound
-from ...exceptions import InvalidArgument
+from ...exceptions import InvalidArgument, BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
 from ..runner.utils import Params
@@ -23,15 +25,15 @@ API_VERSION = "v1"
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from flax import linen as nn
     from .. import external_typing as ext
     from ..tag import Tag
     from ...types import ModelSignature
     from ..models.model import ModelSignaturesType
 
-from .common.jax import jnp
-
 try:
+    import flax.version
+    from flax import linen as nn
+    from flax.core import FrozenDict, freeze
     from flax import serialization
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
@@ -70,16 +72,14 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 
 def load_model(bento_model: str | Tag | bentoml.Model) -> nn.Module:
     """
-    Load the ``fastai.learner.Learner`` model instance with the given tag from the local BentoML model store.
-
-    If the model uses ``mixed_precision``, then the loaded model will also be converted to FP32. Learn more about `mixed precision <https://docs.fast.ai/callback.fp16.html>`_.
+    Load the ``flax.linen.Module`` model instance with the given tag from the local BentoML model store.
 
     Args:
         bento_model: Either the tag of the model to get from the store, or a BentoML `~bentoml.Model` instance to load the model from.
 
     Returns:
-        :code:`fastai.learner.Learner`:
-            The :code:`fastai.learner.Learner` model instance loaded from the model store or BentoML :obj:`~bentoml.Model`.
+        ``flax.linen.Module``:
+            The ``flax.linen.Module`` model instance loaded from the model store or BentoML :obj:`~bentoml.Model`.
 
     Example:
 
@@ -87,7 +87,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> nn.Module:
 
        import bentoml
 
-       model = bentoml.fastai.load_model("fai_learner")
+       model = bentoml.flax.load_model("mnist:latest")
        results = model.predict("some input")
     """  # noqa
 
@@ -98,15 +98,27 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> nn.Module:
         raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
+    if "_flax_module" not in bento_model.custom_objects:
+        raise BentoMLException(
+            f"Model {bento_model.tag} was either corrupt or not saved with 'bentoml.flax.save_model()'."
+        )
+    module: nn.Module = bento_model.custom_objects["_flax_module"]
 
-    pickle_file: str = bento_model.path_of(MODEL_FILENAME)
-    with open(pickle_file, "rb") as f:
-        return t.cast(learner.Learner, learner.load_learner(f, cpu=True))
+    serialized = bento_model.path_of(MODEL_FILENAME)
+    with open(serialized, "rb") as f:
+        state_dict = serialization.from_bytes(module, f.read())
+
+    # ensure that all arrays are restored as jnp.ndarray
+    # NOTE: This is to prevent a bug this will be fixed in Flax >= v0.3.4:
+    # https://github.com/google/flax/issues/1261
+    if pkg_version_info("flax") < (0, 3, 4):
+        state_dict = jax.tree_util.tree_map(jnp.ndarray, state_dict)
 
 
 def save_model(
     name: str,
-    learner_: learner.Learner,
+    module: nn.Module,
+    state: dict[str, t.Any] | FrozenDict[str, t.Any],
     *,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
@@ -115,25 +127,19 @@ def save_model(
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
-    Save a :code:`fastai.learner.Learner` model instance to the BentoML model store.
-
-    If the :func:`save_model` method failed while saving a given learner,
-    your learner may contain a :obj:`~fastai.callback.core.Callback` that is not picklable.
-    All FastAI callbacks are stateful, which makes some of them not picklable.
-    Use :func:`Learner.remove_cbs` to remove unpicklable callbacks.
+    Save a ``flax.linen.Module`` model instance to the BentoML model store.
 
     Args:
         name: The name to give to the model in the BentoML store. This must be a valid
               :obj:`~bentoml.Tag` name.
-        learner: :obj:`~fastai.learner.Learner` to be saved.
+        module: ``flax.linen.Module`` to be saved.
         signatures: Signatures of predict methods to be used. If not provided, the signatures default to
                     ``predict``. See :obj:`~bentoml.types.ModelSignature` for more details.
         labels: A default set of management labels to be associated with the model. An example is ``{"training-set": "data-1"}``.
         custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
                         Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
-        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
-            user-defined additional python modules to be saved alongside the model or custom objects,
-            e.g. a tokenizer module, preprocessor module, model configuration module
+        external_modules: user-defined additional python modules to be saved alongside the model or custom objects,
+                          e.g. a tokenizer module, preprocessor module, model configuration module.
         metadata: Metadata to be associated with the model. An example is ``{"bias": 4}``.
                   Metadata is intended for display in a model management UI and therefore must be a
                   default Python type, such as :obj:`str` or :obj:`int`.
@@ -145,54 +151,53 @@ def save_model(
 
     .. code-block:: python
 
-       from fastai.metrics import accuracy
-       from fastai.text.data import URLs
-       from fastai.text.data import untar_data
-       from fastai.text.data import TextDataLoaders
-       from fastai.text.models import AWD_LSTM
-       from fastai.text.learner import text_classifier_learner
+       import jax
 
-       dls = TextDataLoaders.from_folder(untar_data(URLs.IMDB), valid="test")
+       rng, init_rng = jax.random.split(rng)
+       state = create_train_state(init_rng, config)
 
-       learner = text_classifier_learner(dls, AWD_LSTM, drop_mult=0.5, metrics=accuracy)
-       learner.fine_tune(4, 1e-2)
+       for epoch in range(1, config.num_epochs + 1):
+           rng, input_rng = jax.random.split(rng)
+           state, train_loss, train_accuracy = train_epoch(
+               state, train_ds, config.batch_size, input_rng
+           )
+           _, test_loss, test_accuracy = apply_model(
+               state, test_ds["image"], test_ds["label"]
+           )
 
-       # Test run the model
-       learner.model.eval()
-       learner.predict("I love that movie!")
+           logger.info(
+               "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
+               % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
+           )
 
        # `Save` the model with BentoML
        tag = bentoml.fastai.save_model("fai_learner", learner)
     """
-    import cloudpickle
-
-    if isinstance(learner_, nn.Module):
+    if not isinstance(module, nn.Module):
         raise BentoMLException(
-            "'bentoml.fastai.save_model()' does not support saving pytorch 'Module's directly. You should create a new 'Learner' object from the model, or use 'bentoml.pytorch.save_model()' to save your PyTorch model instead."
+            f"'bentoml.flax.save_model()' only support saving 'flax.linen.Module' object. Got {module.__class__.__name__} instead."
         )
-    if not isinstance(learner_, learner.Learner):
-        raise BentoMLException(
-            f"'bentoml.fastai.save_model()' only support saving fastai 'Learner' object. Got {learner.__class__.__name__} instead."
-        )
+    if not isinstance(state, FrozenDict):
+        state = freeze(state)
 
     context = ModelContext(
-        framework_name="fastai",
+        framework_name="flax",
         framework_versions={
-            "fastai": get_pkg_version("fastai"),
-            "fastcore": get_pkg_version("fastcore"),
-            "torch": get_pkg_version("torch"),
+            "flax": flax.version.__version__,
+            "jax": jax.__version__,
+            "jaxlib": jaxlib.version.__version__,
         },
     )
 
     if signatures is None:
         signatures = {"predict": {"batchable": False}}
         logger.info(
-            f"Using the default model signature ({signatures}) for model {name}."
+            'Using the default model signature for flax (%s) for model "%s".',
+            signatures,
+            name,
         )
-    batchable_enabled_signatures = [v for v in signatures if signatures[v]["batchable"]]
-    if len(batchable_enabled_signatures) > 0:
-        message = f"Batchable signatures are not supported for fastai models. The following signatures have batchable sets to 'True': {batchable_enabled_signatures}. Consider using PyTorch layer from the learner model. To learn more, visit https://docs.bentoml.org/en/latest/frameworks/fastai.html."
-        raise BentoMLException(message)
+    custom_objects = {} if custom_objects is None else custom_objects
+    custom_objects["_flax_module"] = module
 
     with bentoml.models.create(
         name,
@@ -206,7 +211,8 @@ def save_model(
         metadata=metadata,
         context=context,
     ) as bento_model:
-        learner_.export(bento_model.path_of(MODEL_FILENAME), pickle_module=cloudpickle)
+        with open(bento_model.path_of(MODEL_FILENAME), "wb") as f:
+            f.write(serialization.to_bytes(state))
         return bento_model
 
 

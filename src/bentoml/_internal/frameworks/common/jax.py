@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import pickle
 import typing as t
+from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
@@ -20,23 +22,27 @@ except ImportError:  # pragma: no cover
     ) from None
 
 try:
+    import jax  # type: ignore (early check) # pylint: disable=unused-import
     import jax.numpy as jnp
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "jax is required in order to use with 'bentoml.flax'. See https://github.com/google/jax#installation for installation instructions."
     ) from None
 
+if TYPE_CHECKING:
+    from ... import external_typing as ext
+
 
 class JaxArrayContainer(DataContainer[jnp.ndarray, jnp.ndarray]):
     @classmethod
     def batches_to_batch(
         cls,
-        batches: t.Sequence[torch.Tensor],
+        batches: t.Sequence[jnp.ndarray],
         batch_dim: int = 0,
     ) -> tuple[jnp.ndarray, list[int]]:
-        batch = torch.cat(tuple(batches), dim=batch_dim)
-        indices = list(
-            itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
+        batch: jnp.ndarray = jnp.concatenate(batches, axis=batch_dim)
+        indices: list[int] = list(
+            itertools.accumulate(subbatch.shape[0] for subbatch in batches)
         )
         indices = [0] + indices
         return batch, indices
@@ -44,34 +50,31 @@ class JaxArrayContainer(DataContainer[jnp.ndarray, jnp.ndarray]):
     @classmethod
     def batch_to_batches(
         cls,
-        batch: torch.Tensor,
+        batch: jnp.ndarray,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-    ) -> t.List[torch.Tensor]:
-        sizes = [indices[i] - indices[i - 1] for i in range(1, len(indices))]
-        output: list[torch.Tensor] = torch.split(batch, sizes, dim=batch_dim)
-        return output
+    ) -> list[jnp.ndarray]:
+        return jnp.split(batch, indices[1:-1], axis=batch_dim)
 
     @classmethod
     @inject
     def to_payload(  # pylint: disable=arguments-differ
         cls,
-        batch: torch.Tensor,
+        batch: jnp.ndarray,
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
-        batch = batch.cpu().numpy()
         if plasma_db:
             return cls.create_payload(
                 plasma_db.put(batch).binary(),
-                batch_size=batch.shape[batch_dim],
-                meta={"plasma": True},
+                batch.shape[batch_dim],
+                {"plasma": True},
             )
 
         return cls.create_payload(
             pickle.dumps(batch),
-            batch_size=batch.shape[batch_dim],
-            meta={"plasma": False},
+            batch.shape[batch_dim],
+            {"plasma": False},
         )
 
     @classmethod
@@ -79,29 +82,28 @@ class JaxArrayContainer(DataContainer[jnp.ndarray, jnp.ndarray]):
     def from_payload(  # pylint: disable=arguments-differ
         cls,
         payload: Payload,
-        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
-    ) -> torch.Tensor:
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
+    ) -> jnp.ndarray:
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma
 
             assert plasma_db
-            ret = plasma_db.get(plasma.ObjectID(payload.data))
-
-        else:
-            ret = pickle.loads(payload.data)
-        return torch.from_numpy(ret).requires_grad_(False)
+            return plasma_db.get(plasma.ObjectID(payload.data))
+        return pickle.loads(payload.data)
 
     @classmethod
     @inject
     def batch_to_payloads(  # pylint: disable=arguments-differ
         cls,
-        batch: torch.Tensor,
+        batch: jnp.ndarray,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> t.List[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
-        payloads = [cls.to_payload(i, batch_dim=batch_dim) for i in batches]
+        payloads = [
+            cls.to_payload(subbatch, batch_dim, plasma_db) for subbatch in batches
+        ]
         return payloads
 
     @classmethod
@@ -110,8 +112,8 @@ class JaxArrayContainer(DataContainer[jnp.ndarray, jnp.ndarray]):
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
-    ) -> t.Tuple[torch.Tensor, list[int]]:
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
+    ) -> tuple[jnp.ndarray, list[int]]:
         batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
 

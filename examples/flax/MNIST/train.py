@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import argparse
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -217,8 +218,22 @@ def load_and_predict(path: str, idx: int = 0):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--lr", type=float, default=0.1)
+    parser.add_argument("--momentum", type=float, default=0.9)
+    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--num-epochs", type=int, default=10)
+    parser.add_argument("--enable-tensorboard", action="store_true", default=True)
+    args = parser.parse_args()
+
     training_state = train_and_evaluate(
-        config=DEFAULT_CONFIG.with_options(num_epochs=5)
+        config=DEFAULT_CONFIG.with_options(
+            learning_rate=args.lr,
+            momentum=args.momentum,
+            batch_size=args.batch_size,
+            num_epochs=args.num_epochs,
+            enable_tensorboard=args.enable_tensorboard,
+        ),
     )
 
     with open(os.path.join(os.path.dirname(__file__), "model.msgpack"), "wb") as f:

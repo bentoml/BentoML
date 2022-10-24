@@ -14,9 +14,9 @@ import bentoml
 
 from ..types import LazyType
 from ...models import ModelOptions
+from ..utils.pkg import get_pkg_version
 from .common.jax import jax
 from .common.jax import jnp
-from .common.jax import jaxlib
 from .common.jax import JaxArrayContainer
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from ..models.model import ModelSignaturesType
 
 try:
-    import flax.version
     from flax import linen as nn
     from flax import serialization
 except ImportError:  # pragma: no cover
@@ -229,9 +228,9 @@ def save_model(
     context = ModelContext(
         framework_name="flax",
         framework_versions={
-            "flax": flax.version.__version__,
-            "jax": jax.__version__,
-            "jaxlib": jaxlib.version.__version__,
+            "flax": get_pkg_version("flax"),
+            "jax": get_pkg_version("jax"),
+            "jaxlib": get_pkg_version("jaxlib"),
         },
     )
 

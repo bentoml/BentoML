@@ -6,4 +6,5 @@ labels:
 include:
   - "*.py"
 python:
+  lock_packages: true
   requirements_txt: ./requirements.txt

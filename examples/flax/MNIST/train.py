@@ -38,6 +38,7 @@ class ConfigDict:
     batch_size: int = 128
     num_epochs: int = 10
     momentum: float = 0.9
+    enable_tensorboard: bool = True
 
     def to_dict(self) -> dict[str, t.Any]:
         return cattrs.unstructure(self)
@@ -152,9 +153,11 @@ def train_and_evaluate(
     """
     train_ds, test_ds = get_datasets()
     rng = jax.random.PRNGKey(0)
+    summary_writer: tensorboard.SummaryWriter | None = None
 
-    summary_writer = tensorboard.SummaryWriter(workdir)
-    summary_writer.hparams(config.to_dict())
+    if config.enable_tensorboard:
+        summary_writer = tensorboard.SummaryWriter(workdir)
+        summary_writer.hparams(config.to_dict())
 
     rng, init_rng = jax.random.split(rng)
     state = create_train_state(init_rng, config)
@@ -173,12 +176,16 @@ def train_and_evaluate(
             % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
         )
 
-        summary_writer.scalar("train_loss", train_loss, epoch)
-        summary_writer.scalar("train_accuracy", train_accuracy, epoch)
-        summary_writer.scalar("test_loss", test_loss, epoch)
-        summary_writer.scalar("test_accuracy", test_accuracy, epoch)
+        if config.enable_tensorboard:
+            assert summary_writer is not None
+            summary_writer.scalar("train_loss", train_loss, epoch)
+            summary_writer.scalar("train_accuracy", train_accuracy, epoch)
+            summary_writer.scalar("test_loss", test_loss, epoch)
+            summary_writer.scalar("test_accuracy", test_accuracy, epoch)
 
-    summary_writer.flush()
+    if config.enable_tensorboard:
+        assert summary_writer is not None
+        summary_writer.flush()
 
     return state
 
@@ -209,9 +216,10 @@ def load_and_predict(path: str, idx: int = 0):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--lr", type=float, default=0.1)
-    parser.add_argument("--momentum", type=float, default=0.9)
-    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--momentum", type=float, default=0.94)
+    parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--num-epochs", type=int, default=10)
+    parser.add_argument("--enable-tensorboard", action="store_true")
     args = parser.parse_args()
 
     training_state = train_and_evaluate(
@@ -220,6 +228,7 @@ if __name__ == "__main__":
             momentum=args.momentum,
             batch_size=args.batch_size,
             num_epochs=args.num_epochs,
+            enable_tensorboard=args.enable_tensorboard,
         ),
     )
 

@@ -44,7 +44,10 @@ def pytest_collection_modifyitems(
             sys.executable,
             f"{os.path.join(PROJECT_DIR, 'train.py')}",
             "--num-epochs",
-            "2",
+            "2",  # 2 epochs for faster testing
+            "--lr",
+            "0.22",  # speed up training time
+            "--enable-tensorboard",
         ]
     )
 

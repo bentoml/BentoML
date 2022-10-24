@@ -6,6 +6,7 @@ write_file(
     content = [
         "#!/usr/bin/env bash\n",
         "cd $BUILD_WORKING_DIRECTORY\n",
+        "python -m pip install -r requirements.txt\n",
         "python train.py $@",
     ],
 )

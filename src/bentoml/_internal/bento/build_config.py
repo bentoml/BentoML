@@ -673,6 +673,11 @@ fi
         if self.requirements_txt is None:
             if self.lock_packages is None:
                 defaults["lock_packages"] = True
+        else:
+            logger.debug(
+                "'requirements_txt: %s' is passed, and bentoml won't lock PyPI package by default. If you wish to lock it pass 'python.lock_packages=true' to your 'bentofile.yaml'.",
+                self.requirements_txt,
+            )
 
         return attr.evolve(self, **defaults)
 

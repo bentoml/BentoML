@@ -1,0 +1,4 @@
+-r nested/requirements.txt
+pydantic
+Pillow
+fastapi

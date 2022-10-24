@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import os
-import argparse
 import typing as t
-import logging
+import argparse
 from typing import TYPE_CHECKING
 
 import jax
@@ -19,6 +18,7 @@ from flax import serialization
 from flax.metrics import tensorboard
 from flax.training import train_state
 
+import bentoml
 from bentoml._internal.utils.pkg import pkg_version_info
 
 if TYPE_CHECKING:
@@ -31,10 +31,6 @@ if TYPE_CHECKING:
 
     NumpyElem = ext.NpNDArray | tf.RaggedTensor
 
-logging.basicConfig(level=logging.INFO)
-
-logger = logging.getLogger(__name__)
-
 
 @attrs.define
 class ConfigDict:
@@ -42,7 +38,6 @@ class ConfigDict:
     batch_size: int = 128
     num_epochs: int = 10
     momentum: float = 0.9
-    enable_tensorboard: bool = False
 
     def to_dict(self) -> dict[str, t.Any]:
         return cattrs.unstructure(self)
@@ -157,11 +152,9 @@ def train_and_evaluate(
     """
     train_ds, test_ds = get_datasets()
     rng = jax.random.PRNGKey(0)
-    summary_writer: tensorboard.SummaryWriter | None = None
 
-    if config.enable_tensorboard:
-        summary_writer = tensorboard.SummaryWriter(workdir)
-        summary_writer.hparams(config.to_dict())
+    summary_writer = tensorboard.SummaryWriter(workdir)
+    summary_writer.hparams(config.to_dict())
 
     rng, init_rng = jax.random.split(rng)
     state = create_train_state(init_rng, config)
@@ -175,21 +168,17 @@ def train_and_evaluate(
             state, test_ds["image"], test_ds["label"]
         )
 
-        logger.info(
+        print(
             "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
             % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
         )
 
-        if config.enable_tensorboard:
-            assert summary_writer is not None
-            summary_writer.scalar("train_loss", train_loss, epoch)
-            summary_writer.scalar("train_accuracy", train_accuracy, epoch)
-            summary_writer.scalar("test_loss", test_loss, epoch)
-            summary_writer.scalar("test_accuracy", test_accuracy, epoch)
+        summary_writer.scalar("train_loss", train_loss, epoch)
+        summary_writer.scalar("train_accuracy", train_accuracy, epoch)
+        summary_writer.scalar("test_loss", test_loss, epoch)
+        summary_writer.scalar("test_accuracy", test_accuracy, epoch)
 
-    if config.enable_tensorboard:
-        assert summary_writer is not None
-        summary_writer.flush()
+    summary_writer.flush()
 
     return state
 
@@ -223,7 +212,6 @@ if __name__ == "__main__":
     parser.add_argument("--momentum", type=float, default=0.9)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--num-epochs", type=int, default=10)
-    parser.add_argument("--enable-tensorboard", action="store_true", default=True)
     args = parser.parse_args()
 
     training_state = train_and_evaluate(
@@ -232,9 +220,8 @@ if __name__ == "__main__":
             momentum=args.momentum,
             batch_size=args.batch_size,
             num_epochs=args.num_epochs,
-            enable_tensorboard=args.enable_tensorboard,
         ),
     )
 
-    with open(os.path.join(os.path.dirname(__file__), "model.msgpack"), "wb") as f:
-        f.write(serialization.to_bytes(training_state))
+    model = bentoml.flax.save_model("mnist_flax", CNN(), training_state)
+    print(f"Saved model: {model}")

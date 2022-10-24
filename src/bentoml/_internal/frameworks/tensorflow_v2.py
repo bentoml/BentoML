@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 
 import bentoml
 from bentoml import Tag
-from bentoml import Runnable
 from bentoml.models import ModelContext
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import MissingDependencyException
@@ -219,7 +218,7 @@ def save_model(
         custom_objects=custom_objects,
         external_modules=external_modules,
         metadata=metadata,
-        signatures=signatures,  # type: ignore
+        signatures=signatures,
     ) as bento_model:
 
         tf.saved_model.save(
@@ -232,16 +231,14 @@ def save_model(
         return bento_model
 
 
-def get_runnable(
-    bento_model: bentoml.Model,
-):
+def get_runnable(bento_model: bentoml.Model):
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs
 
-    class TensorflowRunnable(Runnable):
+    class TensorflowRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 
@@ -256,7 +253,7 @@ def get_runnable(
                 self.device_name = "/device:CPU:0"
 
             self.model = load_model(bento_model, device_name=self.device_name)
-            self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}
+            self.methods_cache: dict[str, t.Callable[..., t.Any]] = {}
             self.session_stack = contextlib.ExitStack()
             self.session_stack.enter_context(tf.device(self.device_name))
 
@@ -314,7 +311,7 @@ def get_runnable(
             try:
                 res = raw_method(*args, **kwargs)
             except ValueError:
-                # Tensorflow performs type checking implicitly if users decorate with `tf.function
+                # Tensorflow performs type checking implicitly if users decorate with `tf.function`
                 # or provide `tf_signatures` when calling `save_model()`. Type checking and
                 # casting is deferred to after the `ValueError` is raised to optimize performance.
                 sigs = get_input_signatures_v2(raw_method)

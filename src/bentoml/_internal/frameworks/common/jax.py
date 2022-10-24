@@ -15,14 +15,14 @@ from ...runner.container import DataContainerRegistry
 from ...configuration.containers import BentoMLContainer
 
 try:
-    import jaxlib as jaxlib  # type: ignore (early check) # pylint: disable=unused-import
+    import jaxlib as jaxlib
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "jax requires jaxlib to be installed. See https://github.com/google/jax#installation for installation instructions."
     ) from None
 
 try:
-    import jax  # type: ignore (early check) # pylint: disable=unused-import
+    import jax
     import jax.numpy as jnp
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
@@ -31,6 +31,8 @@ except ImportError:  # pragma: no cover
 
 if TYPE_CHECKING:
     from ... import external_typing as ext
+
+__all__ = ["jax", "jnp", "jaxlib", "JaxArrayContainer"]
 
 
 class JaxArrayContainer(DataContainer[jnp.ndarray, jnp.ndarray]):

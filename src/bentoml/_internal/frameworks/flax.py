@@ -2,30 +2,33 @@ from __future__ import annotations
 
 import typing as t
 import logging
-import contextlib
+import functools
 from types import ModuleType
+from pickle import UnpicklingError
 from typing import TYPE_CHECKING
 
-import bentoml
+import attr
 import msgpack.exceptions
 
-from ..utils.pkg import pkg_version_info
-from .common.jax import jnp, jaxlib, jax
+import bentoml
+
+from ..types import LazyType
+from ...models import ModelOptions
+from .common.jax import jax
+from .common.jax import jnp
+from .common.jax import jaxlib
 from .common.jax import JaxArrayContainer
 from ...exceptions import NotFound
-from ...exceptions import InvalidArgument, BentoMLException
+from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
 from ..runner.utils import Params
 
-MODULE_NAME = "bentoml.flax"
-MODEL_FILENAME = "saved_model.msgpack"
-API_VERSION = "v1"
-
-logger = logging.getLogger(__name__)
-
 if TYPE_CHECKING:
-    from .. import external_typing as ext
+    from flax import struct
+    from flax.core import FrozenDict
+    from jax._src.lib.xla_bridge import XlaBackend
+
     from ..tag import Tag
     from ...types import ModelSignature
     from ..models.model import ModelSignaturesType
@@ -33,15 +36,37 @@ if TYPE_CHECKING:
 try:
     import flax.version
     from flax import linen as nn
-    from flax.core import FrozenDict, freeze
     from flax import serialization
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "flax is required in order to use with 'bentoml.flax'. See https://flax.readthedocs.io/en/latest/index.html#installation for instructions."
     )
 
+# NOTE: tensorflow is required since jax depends on XLA, which is a part of Tensorflow.
+try:
+    import tensorflow as tf
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        "'tensorflow' is required in order to use module 'bentoml.flax', install tensorflow with 'pip install tensorflow'. For more information, refer to https://www.tensorflow.org/install"
+    )
+
+
+MODULE_NAME = "bentoml.flax"
+MODEL_FILENAME = "saved_model.msgpack"
+API_VERSION = "v1"
+
+logger = logging.getLogger(__name__)
+
 
 __all__ = ["load_model", "save_model", "get_runnable", "get", "JaxArrayContainer"]
+
+
+@attr.define
+class FlaxOptions(ModelOptions):
+    """Options for the Keras model."""
+
+    partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
+    device: str = attr.field(default="cpu")
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -70,30 +95,42 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     return model
 
 
-def load_model(bento_model: str | Tag | bentoml.Model) -> nn.Module:
+def load_model(
+    bento_model: str | Tag | bentoml.Model,
+    init: bool = True,
+    device: str | XlaBackend = "cpu",
+) -> tuple[nn.Module, dict[str, t.Any]]:
     """
     Load the ``flax.linen.Module`` model instance with the given tag from the local BentoML model store.
 
     Args:
         bento_model: Either the tag of the model to get from the store, or a BentoML `~bentoml.Model` instance to load the model from.
+        init: Whether to initialize the state dict of given ``flax.linen.Module``.
+              By default, the weights and values will be put to ``jnp.ndarray``. If ``init`` is set to ``False``,
+              The state_dict will only be put to given accelerator device instead.
+        device: The device to put the state dict to. By default, it will be put to ``cpu``. This is
+                only used when ``init`` is set to ``False``.
 
     Returns:
-        ``flax.linen.Module``:
-            The ``flax.linen.Module`` model instance loaded from the model store or BentoML :obj:`~bentoml.Model`.
+        A tuple of ``flax.linen.Module`` as well as its ``state_dict`` from the model store.
 
     Example:
 
     .. code-block:: python
 
        import bentoml
+       import jax
 
-       model = bentoml.flax.load_model("mnist:latest")
-       results = model.predict("some input")
-    """  # noqa
+       net, state_dict = bentoml.flax.load_model("mnist:latest")
+       predict_fn = jax.jit(lambda s: net.apply({"params": state_dict["params"]}, x))
+       results = predict_fn(jnp.ones((1, 28, 28, 1)))
+    """
+    # NOTE: we need to hide all GPU from TensorFlow, otherwise it will try to allocate
+    # memory on the GPU and make it unavailable for JAX.
+    tf.config.experimental.set_visible_devices([], "GPU")
 
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
-
     if bento_model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
@@ -105,20 +142,31 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> nn.Module:
     module: nn.Module = bento_model.custom_objects["_flax_module"]
 
     serialized = bento_model.path_of(MODEL_FILENAME)
-    with open(serialized, "rb") as f:
-        state_dict = serialization.from_bytes(module, f.read())
+    try:
+        with open(serialized, "rb") as f:
+            state_dict: dict[str, t.Any] = serialization.from_bytes(module, f.read())
+    except (UnpicklingError, msgpack.exceptions.ExtraData, UnicodeDecodeError) as err:
+        raise BentoMLException(
+            f"Unable to covert model {bento_model.tag}'s state_dict: {err}"
+        ) from None
 
     # ensure that all arrays are restored as jnp.ndarray
     # NOTE: This is to prevent a bug this will be fixed in Flax >= v0.3.4:
     # https://github.com/google/flax/issues/1261
-    if pkg_version_info("flax") < (0, 3, 4):
-        state_dict = jax.tree_util.tree_map(jnp.ndarray, state_dict)
+    if init:
+        state_dict = jax.tree_util.tree_map(jnp.array, state_dict)
+    else:
+        # keep the params on given device if we don't want to initialize
+        state_dict = jax.tree_util.tree_map(
+            lambda s: jax.device_put(s, jax.devices(device)[0]), state_dict
+        )
+    return module, state_dict
 
 
 def save_model(
     name: str,
     module: nn.Module,
-    state: dict[str, t.Any] | FrozenDict[str, t.Any],
+    state: dict[str, t.Any] | FrozenDict[str, t.Any] | struct.PyTreeNode,
     *,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
@@ -171,14 +219,12 @@ def save_model(
            )
 
        # `Save` the model with BentoML
-       tag = bentoml.fastai.save_model("fai_learner", learner)
+       tag = bentoml.flax.save_model("mnist", CNN(), state)
     """
     if not isinstance(module, nn.Module):
         raise BentoMLException(
             f"'bentoml.flax.save_model()' only support saving 'flax.linen.Module' object. Got {module.__class__.__name__} instead."
         )
-    if not isinstance(state, FrozenDict):
-        state = freeze(state)
 
     context = ModelContext(
         framework_name="flax",
@@ -190,9 +236,9 @@ def save_model(
     )
 
     if signatures is None:
-        signatures = {"predict": {"batchable": False}}
+        signatures = {"__call__": {"batchable": False}}
         logger.info(
-            'Using the default model signature for flax (%s) for model "%s".',
+            'Using the default model signature for Flax (%s) for model "%s".',
             signatures,
             name,
         )
@@ -205,7 +251,7 @@ def save_model(
         api_version=API_VERSION,
         signatures=signatures,
         labels=labels,
-        options=None,
+        options=FlaxOptions(),
         custom_objects=custom_objects,
         external_modules=external_modules,
         metadata=metadata,
@@ -220,52 +266,52 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    logger.warning(
-        "Runners created from FastAIRunnable will not be optimized for performance. If performance is critical to your usecase, please access the PyTorch model directly via 'learn.model' and use 'bentoml.pytorch.get_runnable()' instead."
-    )
+    partial_kwargs: dict[str, t.Any] = bento_model.info.options.partial_kwargs
+    device: str = bento_model.info.options.device
 
-    class FastAIRunnable(bentoml.Runnable):
-        # fastai only supports GPU during training, not for inference.
-        SUPPORTED_RESOURCES = ("cpu",)
+    class FlaxRunnable(bentoml.Runnable):
+        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu", "tpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()
 
-            if torch.cuda.is_available():
-                logger.debug(
-                    "CUDA is available, but BentoML does not support running fastai models on GPU."
-                )
-            self.learner = load_model(bento_model)
-            self.learner.model.train(False)  # type: ignore (bad pytorch type) # to turn off dropout and batchnorm
-            self._no_grad_context = contextlib.ExitStack()
-            if hasattr(torch, "inference_mode"):  # pytorch>=1.9
-                self._no_grad_context.enter_context(torch.inference_mode())
-            else:
-                self._no_grad_context.enter_context(torch.no_grad())
+            self.model, self.state_dict = load_model(bento_model, device=device)
+            self.params = self.state_dict["params"]
+            self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}
 
-            self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
-            for method_name in bento_model.info.signatures:
-                try:
-                    self.predict_fns[method_name] = getattr(self.learner, method_name)
-                except AttributeError:
-                    raise InvalidArgument(
-                        f"No method with name {method_name} found for Learner of type {self.learner.__class__}"
-                    )
+    def gen_run_method(self: FlaxRunnable, method_name: str):
+        method = getattr(self.model, method_name)
+        method_partial_kwargs = partial_kwargs.get(method_name)
+        if method_partial_kwargs is not None:
+            method = functools.partial(method, **method_partial_kwargs)
 
-        def __del__(self):
-            if hasattr(self, "_no_grad_context"):
-                self._no_grad_context.close()
+        def mapping(item: jnp.ndarray) -> jnp.ndarray:
+            if not LazyType["jnp.ndarray"]("jnp.ndarray").isinstance(item):
+                return jnp.asarray(item)
+            return item
+
+        def run_method(self: FlaxRunnable, *args: jnp.ndarray):
+            params = Params[jnp.ndarray](*args).map(mapping)
+
+            arg = params.args[0] if len(params.args) == 1 else params.args
+            # NOTE: can we jit this?
+            # No?, as we should not interfere with JAX tracing in multiple threads
+            # https://jax.readthedocs.io/en/latest/concurrency.html?highlight=concurrency
+            return self.model.apply({"params": self.params}, arg, method=method)
+
+        return run_method
 
     def add_runnable_method(method_name: str, options: ModelSignature):
-        def _run(
-            self: FastAIRunnable,
-            input_data: ext.NpNDArray | torch.Tensor | ext.PdSeries | ext.PdDataFrame,
-        ) -> torch.Tensor:
-            return self.predict_fns[method_name](input_data)
+        def run_method(self: FlaxRunnable, *args: jnp.ndarray):
+            fn = self.methods_cache.get(method_name)
+            if not fn:
+                fn = gen_run_method(self, method_name)
+                self.methods_cache[method_name] = fn
+            return fn(self, *args)
 
-        FastAIRunnable.add_method(
-            _run,
+        FlaxRunnable.add_method(
+            run_method,
             name=method_name,
             batchable=options.batchable,
             batch_dim=options.batch_dim,
@@ -276,4 +322,4 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     for method_name, options in bento_model.info.signatures.items():
         add_runnable_method(method_name, options)
 
-    return FastAIRunnable
+    return FlaxRunnable

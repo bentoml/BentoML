@@ -213,7 +213,7 @@ class CorkDispatcher:
 
         if self.optimizer.o_a + self.optimizer.o_b >= self.max_latency_in_ms * 1.1:
             logger.warning(
-                f"BentoML has detected that a service has a max latency that is likely too low for serving. If many 429 errors are encountered, try raising the runner.max_latency in your BentoML configuration."
+                "BentoML has detected that a service has a max latency that is likely too low for serving. If many 429 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
             )
 
         while True:

@@ -42,7 +42,7 @@ class Optimizer:
     N_SKIPPED_SAMPLE = 2  # amount of outbound info skipped after init
     INTERVAL_REFRESH_PARAMS = 5  # seconds between each params refreshing
 
-    def __init__(self):
+    def __init__(self, max_latency: float):
         """
         assume the outbound duration follows duration = o_a * n + o_b
         (all in seconds)
@@ -50,8 +50,8 @@ class Optimizer:
         self.o_stat: collections.deque[tuple[int, float, float]] = collections.deque(
             maxlen=self.N_KEPT_SAMPLE
         )  # to store outbound stat data
-        self.o_a = 2
-        self.o_b = 1
+        self.o_a = min(2, max_latency * 2 / 3)
+        self.o_b = min(1, max_latency * 1 / 3)
 
         self.wait = 0.01  # the avg wait time before outbound called
 
@@ -120,7 +120,7 @@ class CorkDispatcher:
         """
         self.max_latency_in_ms = max_latency_in_ms / 1000.0
         self.fallback = fallback
-        self.optimizer = Optimizer()
+        self.optimizer = Optimizer(self.max_latency_in_ms)
         self.max_batch_size = int(max_batch_size)
         self.tick_interval = 0.001
 
@@ -189,7 +189,7 @@ class CorkDispatcher:
                 wn = now - self._queue[-1][0]
                 a = self.optimizer.o_a
                 b = self.optimizer.o_b
-                
+
                 # we do not reject waiting requests while training the optimizer
                 if self._sema.is_locked():
                     await asyncio.sleep(self.tick_interval)
@@ -210,6 +210,11 @@ class CorkDispatcher:
                 break
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)
+
+        if self.optimizer.o_a + self.optimizer.o_b >= self.max_latency_in_ms * 1.1:
+            logger.warning(
+                f"BentoML has detected that a service has a max latency that is likely too low for serving. If many 429 errors are encountered, try raising the runner.max_latency in your BentoML configuration."
+            )
 
         while True:
             try:

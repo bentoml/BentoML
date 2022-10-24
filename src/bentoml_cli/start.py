@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import json
 import logging
@@ -71,7 +72,7 @@ def add_start_command(cli: click.Group) -> None:
         "--working-dir",
         type=click.Path(),
         help="When loading from source code, specify the directory to find the Service instance",
-        default=".",
+        default=None,
         show_default=True,
     )
     @click.option(
@@ -138,6 +139,11 @@ def add_start_command(cli: click.Group) -> None:
         """
         Start a HTTP API server standalone. This will be used inside Yatai.
         """
+        if working_dir is None:
+            if os.path.isdir(os.path.expanduser(bento)):
+                working_dir = os.path.expanduser(bento)
+            else:
+                working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
@@ -218,7 +224,7 @@ def add_start_command(cli: click.Group) -> None:
         "--working-dir",
         type=click.Path(),
         help="When loading from source code, specify the directory to find the Service instance",
-        default=".",
+        default=None,
         show_default=True,
     )
     @add_experimental_docstring
@@ -234,6 +240,11 @@ def add_start_command(cli: click.Group) -> None:
         """
         Start Runner server standalone. This will be used inside Yatai.
         """
+        if working_dir is None:
+            if os.path.isdir(os.path.expanduser(bento)):
+                working_dir = os.path.expanduser(bento)
+            else:
+                working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
@@ -289,7 +300,7 @@ def add_start_command(cli: click.Group) -> None:
         "--working-dir",
         type=click.Path(),
         help="When loading from source code, specify the directory to find the Service instance",
-        default=".",
+        default=None,
         show_default=True,
     )
     @click.option(
@@ -356,6 +367,11 @@ def add_start_command(cli: click.Group) -> None:
         """
         Start a gRPC API server standalone. This will be used inside Yatai.
         """
+        if working_dir is None:
+            if os.path.isdir(os.path.expanduser(bento)):
+                working_dir = os.path.expanduser(bento)
+            else:
+                working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 

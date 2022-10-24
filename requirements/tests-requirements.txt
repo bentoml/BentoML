@@ -1,5 +1,6 @@
 # Tests dependencies
 black[jupyter]==22.8.0
+circus[test]
 codecov
 coverage>=4.4
 setuptools>=63

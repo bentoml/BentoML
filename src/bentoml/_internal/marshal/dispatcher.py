@@ -56,13 +56,13 @@ class Optimizer:
         self.wait = 0.01  # the avg wait time before outbound called
 
         self._refresh_tb = TokenBucket(2)  # to limit params refresh interval
-        self._outbound_counter = 0
+        self.outbound_counter = 0
 
     def log_outbound(self, n: int, wait: float, duration: float):
         if (
-            self._outbound_counter <= self.N_SKIPPED_SAMPLE
+            self.outbound_counter <= self.N_SKIPPED_SAMPLE
         ):  # skip inaccurate info at beginning
-            self._outbound_counter += 1
+            self.outbound_counter += 1
             return
 
         self.o_stat.append((n, duration, wait))
@@ -99,6 +99,8 @@ class CorkDispatcher:
         * implement CORK algorithm to cork & release calling of wrapped function
     The wrapped function should be an async function.
     """
+
+    N_TRAINING_REQUESTS = 5  # number of requests to wait for
 
     def __init__(
         self,
@@ -172,6 +174,43 @@ class CorkDispatcher:
         """
         A standalone coroutine to wait/dispatch calling.
         """
+        decay = 0.95  # the decay rate of wait time
+
+        while self.optimizer.outbound_counter <= self.N_TRAINING_REQUESTS:
+            # early loop for when the optimizer has not been trained yet
+            try:
+                async with self._wake_event:  # block until there's any request in queue
+                    await self._wake_event.wait_for(self._queue.__len__)
+
+                n = len(self._queue)
+                dt = self.tick_interval
+                now = time.time()
+                w0 = now - self._queue[0][0]
+                wn = now - self._queue[-1][0]
+                a = self.optimizer.o_a
+                b = self.optimizer.o_b
+                
+                # we do not reject waiting requests while training the optimizer
+                if self._sema.is_locked():
+                    await asyncio.sleep(self.tick_interval)
+                    continue
+                if n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay:
+                    await asyncio.sleep(self.tick_interval)
+                    continue
+
+                n_call_out = min(
+                    self.max_batch_size,
+                    n,
+                )
+                # call
+                self._sema.acquire()
+                inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
+                self._loop.create_task(self.outbound_call(inputs_info))
+            except asyncio.CancelledError:
+                break
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error(traceback.format_exc(), exc_info=e)
+
         while True:
             try:
                 async with self._wake_event:  # block until there's any request in queue
@@ -179,7 +218,6 @@ class CorkDispatcher:
 
                 n = len(self._queue)
                 dt = self.tick_interval
-                decay = 0.95  # the decay rate of wait time
                 now = time.time()
                 w0 = now - self._queue[0][0]
                 wn = now - self._queue[-1][0]

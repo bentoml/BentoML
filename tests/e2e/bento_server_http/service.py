@@ -124,7 +124,19 @@ async def echo_image(f: PILImage) -> NDArray[t.Any]:
     input=Multipart(original=Image(), compared=Image()),
     output=Multipart(img1=Image(), img2=Image()),
 )
-async def predict_multi_images(original: dict[str, Image], compared: dict[str, Image]):
+async def predict_multi_images(original: Image, compared: Image):
+    output_array = await py_model.predict_multi_ndarray.async_run(
+        np.array(original), np.array(compared)
+    )
+    img = fromarray(output_array)
+    return dict(img1=img, img2=img)
+
+
+@svc.api(
+    input=Multipart(original=Image(), compared=Image()),
+    output=Multipart(img1=Image(), img2=Image()),
+)
+async def predict_different_args(compared: Image, original: Image):
     output_array = await py_model.predict_multi_ndarray.async_run(
         np.array(original), np.array(compared)
     )

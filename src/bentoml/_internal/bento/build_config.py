@@ -15,7 +15,6 @@ import attr
 import yaml
 import psutil
 import fs.copy
-from dotenv import dotenv_values  # type: ignore
 from pathspec import PathSpec
 from pip_requirements_parser import RequirementsFile
 
@@ -31,6 +30,7 @@ from .docker import ALLOWED_CUDA_VERSION_ARGS
 from .docker import SUPPORTED_PYTHON_VERSIONS
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ..utils.dotenv import parse_dotenv
 from ..configuration import CLEAN_BENTOML_VERSION
 from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
@@ -101,8 +101,12 @@ def _convert_env(
         return None
 
     if isinstance(env, str):
-        logger.debug("Reading dot env file '%s' specified in config", env)
-        return dict(dotenv_values(env))
+        env_path = os.path.expanduser(os.path.expandvars(env))
+        if os.path.exists(env_path):
+            logger.debug("Reading dot env file '%s' specified in config", env)
+            with open(env_path) as f:
+                return parse_dotenv(f.read())
+        raise BentoMLException(f"'{env}' is not a valid '.env' file path")
 
     if isinstance(env, list):
         env_dict: dict[str, str | None] = {}

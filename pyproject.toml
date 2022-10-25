@@ -53,7 +53,6 @@ dependencies = [
   "psutil",
   "pynvml<12",
   "python-dateutil",
-  "python-dotenv>=0.20.0",
   "python-multipart",
   "python-json-logger",
   "requests",

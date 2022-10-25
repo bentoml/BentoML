@@ -700,29 +700,34 @@ that the domain is safe to pip with the ``trusted_host`` field.
 Python Options Table
 """"""""""""""""""""
 
-+-------------------+------------------------------------------------------------------------------------+
-| Field             | Description                                                                        |
-+===================+====================================================================================+
-| requirements_txt  | The path to a custom requirements.txt file                                         |
-+-------------------+------------------------------------------------------------------------------------+
-| packages          | Packages to include in this bento                                                  |
-+-------------------+------------------------------------------------------------------------------------+
-| lock_packages     | Whether to lock the packages or not                                                |
-+-------------------+------------------------------------------------------------------------------------+
-| index_url         | Inputs for the ``--index-url`` pip argument                                        |
-+-------------------+------------------------------------------------------------------------------------+
-| no_index          | Whether to include the ``--no-index`` pip argument                                 |
-+-------------------+------------------------------------------------------------------------------------+
-| trusted_host      | List of trusted hosts used as inputs using the ``--trusted-host`` pip argument     |
-+-------------------+------------------------------------------------------------------------------------+
-| find_links        | List of links to find as inputs using the ``--find-links`` pip argument            |
-+-------------------+------------------------------------------------------------------------------------+
-| extra_index_url   | List of extra index urls as inputs using the ``≈`` pip argument                    |
-+-------------------+------------------------------------------------------------------------------------+
-| pip_args          | Any additional pip arguments that you would like to add when installing a package  |
-+-------------------+------------------------------------------------------------------------------------+
-| wheels            | List of paths to wheels to include in the bento                                    |
-+-------------------+------------------------------------------------------------------------------------+
++---------------------+-----------------------------------------------------------------------------------+
+| Field               | Description                                                                       |
++=====================+===================================================================================+
+| build_isolation     | Enable isolation when building. Build dependencies                                |
+|                     | specified by PEP 518 must be already installed if build isolation is disabled.    |
++---------------------+-----------------------------------------------------------------------------------+
+| dependency_resolver | Type of resolver to use with pip. Default to ``backtracking``                     |
++---------------------+-----------------------------------------------------------------------------------+
+| extra_index_url     | List of extra index urls as inputs using the ``≈`` pip argument                   |
++---------------------+-----------------------------------------------------------------------------------+
+| find_links          | List of links to find as inputs using the ``--find-links`` pip argument           |
++---------------------+-----------------------------------------------------------------------------------+
+| index_url           | Inputs for the ``--index-url`` pip argument                                       |
++---------------------+-----------------------------------------------------------------------------------+
+| lock_packages       | Whether to lock the packages or not                                               |
++---------------------+-----------------------------------------------------------------------------------+
+| no_index            | Whether to include the ``--no-index`` pip argument                                |
++---------------------+-----------------------------------------------------------------------------------+
+| packages            | Packages to include in this bento                                                 |
++---------------------+-----------------------------------------------------------------------------------+
+| pip_args            | Any additional pip arguments that you would like to add when installing a package |
++---------------------+-----------------------------------------------------------------------------------+
+| requirements_txt    | The path to a custom requirements.txt file                                        |
++---------------------+-----------------------------------------------------------------------------------+
+| trusted_host        | List of trusted hosts used as inputs using the ``--trusted-host`` pip argument    |
++---------------------+-----------------------------------------------------------------------------------+
+| wheels              | List of paths to wheels to include in the bento                                   |
++---------------------+-----------------------------------------------------------------------------------+
 
 
 Conda Options

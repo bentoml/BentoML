@@ -114,6 +114,8 @@ python:
   requirements_txt: null
   packages: null
   lock_packages: true
+  build_isolation: true
+  dependency_resolver: backtracking
   index_url: null
   no_index: null
   trusted_host: null

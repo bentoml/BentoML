@@ -16,4 +16,5 @@ if __name__ == "__main__":
     num_round = 2
     bst = xgboost.train(param, dtrain, num_round)
 
-    bentoml.xgboost.save_model("agaricus", bst)
+    model = bentoml.xgboost.save_model("agaricus", bst)
+    print(f"Model saved: {model}")

@@ -28,6 +28,7 @@ from .docker import SUPPORTED_CUDA_VERSIONS
 from .docker import DOCKER_SUPPORTED_DISTROS
 from .docker import ALLOWED_CUDA_VERSION_ARGS
 from .docker import SUPPORTED_PYTHON_VERSIONS
+from ..utils.pkg import pkg_version_info
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..utils.dotenv import parse_dotenv
@@ -408,6 +409,19 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(bool)),
     )
+    build_isolation: bool = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(bool)),
+    )
+    dependency_resolver: str = attr.field(
+        default=None,
+        validator=attr.validators.optional(
+            attr.validators.and_(
+                attr.validators.instance_of(str),
+                attr.validators.in_(["legacy", "backtracking"]),
+            )
+        ),
+    )
     index_url: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
@@ -473,6 +487,8 @@ class PythonOptions:
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
         pip_compile_compat: t.List[str] = []
+        if not self.build_isolation:
+            pip_compile_compat.extend(["--no-build-isolation"])
         if self.index_url:
             pip_compile_compat.extend(["--index-url", self.index_url])
         if self.trusted_host:
@@ -488,6 +504,8 @@ class PythonOptions:
         # add additional pip args that does not apply to pip-compile
         pip_args: t.List[str] = []
         pip_args.extend(pip_compile_compat)
+        if self.dependency_resolver and self.dependency_resolver == "legacy":
+            pip_args.extend(["--use-deprecated", "legacy-resolver"])
         if self.no_index:
             pip_args.append("--no-index")
         if self.pip_args:
@@ -554,7 +572,7 @@ fi
                 include_nested=True,
             )
             # We need to make sure that we don't write any file references
-            # back into the final `requirements.txt` file. We've already
+            # back into the final 'requirements.txt' file. We've already
             # resolved them and included their contents so we can discard
             # them.
             for option_line in requirements_txt.options:
@@ -573,14 +591,14 @@ fi
             return
 
         if self.lock_packages and not self.is_empty():
-            # Note: "--allow-unsafe" is required for including setuptools in the
+            # NOTE: "--allow-unsafe" is required for including setuptools in the
             # generated requirements.lock.txt file, and setuptool is required by
-            # pyfilesystem2. Once pyfilesystem2 drop setuptools as dependency, we can
-            # remove the "--allow-unsafe" flag here.
+            # pyfilesystem2.
+            # pip-tools recommend to use "--allow-unsafe". Since 6.9.0, pip-compile adds '--unsafe-package'
+            # to explicitly mark unsafe packages in the generated requirements.txt file.
 
-            # Note: "--generate-hashes" is purposefully not used here because it will
+            # NOTE: "--generate-hashes" is purposefully not used here because it will
             # break if user includes PyPI package from version control system
-
             pip_compile_in = bento_fs.getsyspath(
                 fs.path.combine(py_folder, "requirements.txt")
             )
@@ -589,17 +607,31 @@ fi
             )
             pip_compile_args = [pip_compile_in]
             pip_compile_args.extend(pip_compile_compat)
+            if pkg_version_info("pip-tools") < (6, 9, 0):
+                pip_compile_args.append("--allow-unsafe")
+            else:
+                # In pip-tools 6.9.0, --unsafe-package is added to specify packages
+                # to install that is considered unsafe.
+                pip_compile_args.extend(
+                    list(map(lambda s: f"--unsafe-package={s}", ["setuptools", "pip"]))
+                )
+            if not self.build_isolation:
+                pip_compile_args.append("--no-build-isolation")
             pip_compile_args.extend(
                 [
                     "--quiet",
-                    "--allow-unsafe",
+                    "--resolver",
+                    self.dependency_resolver,
                     "--no-header",
                     f"--output-file={pip_compile_out}",
                 ]
             )
+            if self.pip_args:
+                pip_compile_args.extend(["--pip-args", self.pip_args])
             logger.info("Locking PyPI package versions.")
             cmd = [sys.executable, "-m", "piptools", "compile"]
             cmd.extend(pip_compile_args)
+            logger.debug("pip-compile command: '%s'", " ".join(cmd))
             try:
                 subprocess.check_call(cmd)
             except subprocess.CalledProcessError as e:
@@ -609,12 +641,16 @@ fi
                 )
 
     def with_defaults(self) -> PythonOptions:
-        # Convert from user provided options to actual build options with default values
         defaults: dict[str, t.Any] = {}
-
         if self.requirements_txt is None:
             if self.lock_packages is None:
                 defaults["lock_packages"] = True
+        if self.build_isolation is None:
+            # NOTE: by default, we enable build isolation when installing packages
+            # with pip.
+            defaults["build_isolation"] = True
+        if self.dependency_resolver is None:
+            defaults["dependency_resolver"] = "backtracking"
 
         return attr.evolve(self, **defaults)
 

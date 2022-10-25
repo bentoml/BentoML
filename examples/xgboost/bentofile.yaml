@@ -4,9 +4,11 @@ labels:
   owner: bentoml-team
   stage: demo
 include:
- - "*.py"
+  - "*.py"
 exclude:
- - "locustfile.py"
+  - "locustfile.py"
 python:
   packages:
-   - xgboost
+    - xgboost==1.5.0
+  build_isolation: false
+  dependency_resolver: legacy

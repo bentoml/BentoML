@@ -1,2 +1,2 @@
 bentoml>=1.0.0
-xgboost
+xgboost==1.5.0

@@ -209,7 +209,10 @@ class CorkDispatcher:
 
             if self.max_batch_size >= 2:
                 # we will attempt to keep the second request served within this time
-                step_2_wait = min(self.max_latency_in_ms * 0.95, 5 * (self.optimizer.o_a + self.optimizer.o_b))
+                step_2_wait = min(
+                    self.max_latency_in_ms * 0.95,
+                    5 * (self.optimizer.o_a + self.optimizer.o_b),
+                )
 
                 # step 2: attempt to serve 2 requests
                 while True:
@@ -228,7 +231,7 @@ class CorkDispatcher:
                         # we're being very conservative and only canceling requests if they have already timed out
                         self._queue.popleft()[2].cancel()
                         continue
-                    if n < 2 and (2*a + b) + w0 <= step_2_wait:
+                    if n < 2 and (2 * a + b) + w0 <= step_2_wait:
                         await asyncio.sleep(self.tick_interval)
                         continue
 
@@ -263,7 +266,10 @@ class CorkDispatcher:
                 # step 3: attempt to serve 3 requests
 
                 # we will attempt to keep the second request served within this time
-                step_3_wait = min(self.max_latency_in_ms * 0.95, 7 * (self.optimizer.o_a + self.optimizer.o_b))
+                step_3_wait = min(
+                    self.max_latency_in_ms * 0.95,
+                    7 * (self.optimizer.o_a + self.optimizer.o_b),
+                )
                 while True:
                     async with self._wake_event:  # block until there's any request in queue
                         await self._wake_event.wait_for(self._queue.__len__)
@@ -280,7 +286,7 @@ class CorkDispatcher:
                         # we're being very conservative and only canceling requests if they have already timed out
                         self._queue.popleft()[2].cancel()
                         continue
-                    if n < 3 and (3*a + b) + w0 <= step_3_wait:
+                    if n < 3 and (3 * a + b) + w0 <= step_3_wait:
                         await asyncio.sleep(self.tick_interval)
                         continue
 

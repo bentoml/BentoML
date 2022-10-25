@@ -238,13 +238,21 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
                 f"{self.__class__.__name__} only accepts `multipart/form-data` as Content-Type header, got {ctype} instead."
             ) from None
 
-        to_populate = zip(
-            self._inputs.values(), (await populate_multipart_requests(request)).values()
-        )
-        reqs = await asyncio.gather(
-            *tuple(io_.from_http_request(req) for io_, req in to_populate)
-        )
-        return dict(zip(self._inputs, reqs))
+        form_values = await populate_multipart_requests(request)
+
+        res = {}
+        for field, descriptor in self._inputs.items():
+            if field not in form_values:
+                break
+            res[field] = descriptor.from_http_request(form_values[field])
+        else:  # NOTE: This is similar to goto, when there is no break.
+            to_populate = zip(self._inputs.values(), form_values.values())
+            reqs = await asyncio.gather(
+                *tuple(io_.from_http_request(req) for io_, req in to_populate)
+            )
+            res = dict(zip(self._inputs, reqs))
+
+        return res
 
     async def to_http_response(
         self, obj: dict[str, t.Any], ctx: Context | None = None

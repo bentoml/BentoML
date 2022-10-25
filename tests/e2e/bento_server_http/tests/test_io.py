@@ -222,18 +222,24 @@ async def test_image(host: str, img_file: str):
     )
 
 
+@pytest.fixture(name="img_form_data")
+def fixture_img_form_data(img_file: str):
+    with open(img_file, "rb") as f1, open(img_file, "rb") as f2:
+        form = aiohttp.FormData()
+        form.add_field("original", f1.read(), content_type="image/bmp")
+        form.add_field("compared", f2.read(), content_type="image/bmp")
+    yield form
+
+
 @pytest.mark.asyncio
-async def test_multipart_image_io(host: str, img_file: str):
+async def test_multipart_image_io(host: str, img_form_data: aiohttp.FormData):
     from starlette.datastructures import UploadFile
 
-    with open(img_file, "rb") as f1:
-        with open(img_file, "rb") as f2:
-            form = aiohttp.FormData()
-            form.add_field("original", f1.read(), content_type="image/bmp")
-            form.add_field("compared", f2.read(), content_type="image/bmp")
-
     _, headers, body = await async_request(
-        "POST", f"http://{host}/predict_multi_images", data=form, assert_status=200
+        "POST",
+        f"http://{host}/predict_multi_images",
+        data=img_form_data,
+        assert_status=200,
     )
 
     form = await parse_multipart_form(headers=headers, body=body)
@@ -241,3 +247,13 @@ async def test_multipart_image_io(host: str, img_file: str):
         assert isinstance(v, UploadFile)
         img = PILImage.open(v.file)
         assert np.array(img).shape == (10, 10, 3)
+
+
+@pytest.mark.asyncio
+async def test_multipart_image_io(host: str, img_form_data: aiohttp.FormData):
+    await async_request(
+        "POST",
+        f"http://{host}/predict_different_args",
+        data=img_form_data,
+        assert_status=200,
+    )

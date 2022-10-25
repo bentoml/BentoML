@@ -56,14 +56,14 @@ class Optimizer:
         self.wait = 0.01  # the avg wait time before outbound called
 
         self._refresh_tb = TokenBucket(2)  # to limit params refresh interval
-        self._outbound_counter = 0
+        self.outbound_counter = 0
 
     def log_outbound(self, n: int, wait: float, duration: float):
-        if (
-            self._outbound_counter <= self.N_SKIPPED_SAMPLE
-        ):  # skip inaccurate info at beginning
-            self._outbound_counter += 1
-            return
+        if self.outbound_counter <= self.N_SKIPPED_SAMPLE + 4:
+            self.outbound_counter += 1
+            # skip inaccurate info at beginning
+            if self.outbound_counter <= self.N_SKIPPED_SAMPLE:
+                return
 
         self.o_stat.append((n, duration, wait))
 
@@ -172,30 +172,57 @@ class CorkDispatcher:
         """
         A standalone coroutine to wait/dispatch calling.
         """
-
-        try:
-            # step 1: attempt to serve a single request immediately
-            async with self._wake_event:  # block until there's any request in queue
-                await self._wake_event.wait_for(self._queue.__len__)
-
-            n = len(self._queue)
-
-            n_call_out = min(self.max_batch_size, n)
-            # call
-            self._sema.acquire()
-            inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
-            self._loop.create_task(self.outbound_call(inputs_info))
-
-            # ensure first request is completed
-            while True:
+        logger.debug("Starting dispatcher optimizer training...")
+        # warm up the model
+        while self.optimizer.outbound_counter <= self.optimizer.N_SKIPPED_SAMPLE:
+            try:
                 async with self._wake_event:  # block until there's any request in queue
                     await self._wake_event.wait_for(self._queue.__len__)
 
+                n = len(self._queue)
                 now = time.time()
                 w0 = now - self._queue[0][0]
 
                 # only cancel requests if there are more than enough for training
-                if n > 5 and w0 >= self.max_latency_in_ms:
+                if (
+                    n
+                    > self.optimizer.N_SKIPPED_SAMPLE
+                    - self.optimizer.outbound_counter
+                    + 6
+                    and w0 >= self.max_latency_in_ms
+                ):
+                    # we're being very conservative and only canceling requests if they have already timed out
+                    self._queue.popleft()[2].cancel()
+                    continue
+                # don't try to be smart here, just serve the first few requests
+                if self._sema.is_locked():
+                    await asyncio.sleep(self.tick_interval)
+                    continue
+
+                n_call_out = 1
+                # call
+                self._sema.acquire()
+                inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
+                self._loop.create_task(self.outbound_call(inputs_info))
+            except asyncio.CancelledError:
+                return
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error(traceback.format_exc(), exc_info=e)
+
+        logger.debug("Dispatcher finished warming up model.")
+
+        while self.optimizer.outbound_counter <= self.optimizer.N_SKIPPED_SAMPLE + 1:
+            try:
+                # step 1: attempt to serve a single request immediately
+                async with self._wake_event:  # block until there's any request in queue
+                    await self._wake_event.wait_for(self._queue.__len__)
+
+                n = len(self._queue)
+                now = time.time()
+                w0 = now - self._queue[0][0]
+
+                # only cancel requests if there are more than enough for training
+                if n > 6 and w0 >= self.max_latency_in_ms:
                     # we're being very conservative and only canceling requests if they have already timed out
                     self._queue.popleft()[2].cancel()
                     continue
@@ -203,19 +230,32 @@ class CorkDispatcher:
                     await asyncio.sleep(self.tick_interval)
                     continue
 
-                break
+                n_call_out = 1
+                # call
+                self._sema.acquire()
+                inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
+                self._loop.create_task(self.outbound_call(inputs_info))
+            except asyncio.CancelledError:
+                return
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error(traceback.format_exc(), exc_info=e)
 
-            self.optimizer.trigger_refresh()
+        logger.debug("Dispatcher finished optimizer training request 1.")
+        self.optimizer.trigger_refresh()
 
-            if self.max_batch_size >= 2:
-                # we will attempt to keep the second request served within this time
-                step_2_wait = min(
-                    self.max_latency_in_ms * 0.95,
-                    5 * (self.optimizer.o_a + self.optimizer.o_b),
-                )
+        if self.max_batch_size >= 2:
+            # we will attempt to keep the second request served within this time
+            step_2_wait = min(
+                self.max_latency_in_ms * 0.95,
+                5 * (self.optimizer.o_a + self.optimizer.o_b),
+            )
 
-                # step 2: attempt to serve 2 requests
-                while True:
+            # step 2: attempt to serve 2 requests
+            while (
+                self.optimizer.outbound_counter <= self.optimizer.N_SKIPPED_SAMPLE + 2
+            ):
+
+                try:
                     async with self._wake_event:  # block until there's any request in queue
                         await self._wake_event.wait_for(self._queue.__len__)
 
@@ -234,129 +274,99 @@ class CorkDispatcher:
                     if n < 2 and (2 * a + b) + w0 <= step_2_wait:
                         await asyncio.sleep(self.tick_interval)
                         continue
-
-                    n_call_out = 2
-                    # call
-                    self._sema.acquire()
-                    inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
-                    self._loop.create_task(self.outbound_call(inputs_info))
-                    break
-
-                while True:
-                    async with self._wake_event:  # block until there's any request in queue
-                        await self._wake_event.wait_for(self._queue.__len__)
-
-                    now = time.time()
-                    w0 = now - self._queue[0][0]
-
-                    # only cancel requests if there are more than enough for training
-                    if n > 3 and w0 >= self.max_latency_in_ms:
-                        # we're being very conservative and only canceling requests if they have already timed out
-                        self._queue.popleft()[2].cancel()
-                        continue
                     if self._sema.is_locked():
                         await asyncio.sleep(self.tick_interval)
                         continue
 
-                    break
-
-                self.optimizer.trigger_refresh()
-
-            if self.max_batch_size >= 3:
-                # step 3: attempt to serve 3 requests
-
-                # we will attempt to keep the second request served within this time
-                step_3_wait = min(
-                    self.max_latency_in_ms * 0.95,
-                    7 * (self.optimizer.o_a + self.optimizer.o_b),
-                )
-                while True:
-                    async with self._wake_event:  # block until there's any request in queue
-                        await self._wake_event.wait_for(self._queue.__len__)
-
-                    n = len(self._queue)
-                    dt = self.tick_interval
-                    now = time.time()
-                    w0 = now - self._queue[0][0]
-                    a = self.optimizer.o_a
-                    b = self.optimizer.o_b
-
-                    # only cancel requests if there are more than enough for training
-                    if n > 3 and w0 >= self.max_latency_in_ms:
-                        # we're being very conservative and only canceling requests if they have already timed out
-                        self._queue.popleft()[2].cancel()
-                        continue
-                    if n < 3 and (3 * a + b) + w0 <= step_3_wait:
-                        await asyncio.sleep(self.tick_interval)
-                        continue
-
-                    n_call_out = 3
+                    n_call_out = min(n, 2)
                     # call
                     self._sema.acquire()
                     inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
                     self._loop.create_task(self.outbound_call(inputs_info))
-                    break
+                except asyncio.CancelledError:
+                    return
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.error(traceback.format_exc(), exc_info=e)
 
-                while True:
-                    async with self._wake_event:  # block until there's any request in queue
-                        await self._wake_event.wait_for(self._queue.__len__)
+            logger.debug("Dispatcher finished optimizer training request 2.")
+            self.optimizer.trigger_refresh()
 
-                    now = time.time()
-                    w0 = now - self._queue[0][0]
+        if self.max_batch_size >= 3:
+            # step 3: attempt to serve 3 requests
 
-                    if n > 1 and w0 >= self.max_latency_in_ms:
-                        # we're being very conservative and only canceling requests if they have already timed out
-                        self._queue.popleft()[2].cancel()
-                        continue
-                    if self._sema.is_locked():
-                        await asyncio.sleep(self.tick_interval)
-                        continue
-
-                    break
-
-                self.optimizer.trigger_refresh()
-
-            if self.optimizer.o_a + self.optimizer.o_b >= self.max_latency_in_ms:
-                logger.warning(
-                    "BentoML has detected that a service has a max latency that is likely too low for serving. If many 429 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
-                )
-
-            while True:
+            # we will attempt to keep the second request served within this time
+            step_3_wait = min(
+                self.max_latency_in_ms * 0.95,
+                7 * (self.optimizer.o_a + self.optimizer.o_b),
+            )
+            while (
+                self.optimizer.outbound_counter <= self.optimizer.N_SKIPPED_SAMPLE + 3
+            ):
                 async with self._wake_event:  # block until there's any request in queue
                     await self._wake_event.wait_for(self._queue.__len__)
 
                 n = len(self._queue)
                 dt = self.tick_interval
-                decay = 0.95  # the decay rate of wait time
                 now = time.time()
                 w0 = now - self._queue[0][0]
-                wn = now - self._queue[-1][0]
                 a = self.optimizer.o_a
                 b = self.optimizer.o_b
 
-                if n > 1 and (w0 + a * n + b) >= self.max_latency_in_ms:
+                # only cancel requests if there are more than enough for training
+                if n > 3 and w0 >= self.max_latency_in_ms:
+                    # we're being very conservative and only canceling requests if they have already timed out
                     self._queue.popleft()[2].cancel()
                     continue
-                if self._sema.is_locked():
-                    if n == 1 and w0 >= self.max_latency_in_ms:
-                        self._queue.popleft()[2].cancel()
-                        continue
-                    await asyncio.sleep(self.tick_interval)
-                    continue
-                if n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay:
+                if n < 3 and (3 * a + b) + w0 <= step_3_wait:
                     await asyncio.sleep(self.tick_interval)
                     continue
 
-                n_call_out = min(self.max_batch_size, n)
+                n_call_out = min(n, 3)
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
                 self._loop.create_task(self.outbound_call(inputs_info))
 
-        except asyncio.CancelledError:
-            return
-        except Exception as e:  # pylint: disable=broad-except
-            logger.error(traceback.format_exc(), exc_info=e)
+            logger.debug("Dispatcher finished optimizer training request 3.")
+            self.optimizer.trigger_refresh()
+
+        if self.optimizer.o_a + self.optimizer.o_b >= self.max_latency_in_ms:
+            logger.warning(
+                "BentoML has detected that a service has a max latency that is likely too low for serving. If many 429 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
+            )
+        logger.debug("Dispatcher optimizer training complete.")
+
+        while True:
+            async with self._wake_event:  # block until there's any request in queue
+                await self._wake_event.wait_for(self._queue.__len__)
+
+            n = len(self._queue)
+            dt = self.tick_interval
+            decay = 0.95  # the decay rate of wait time
+            now = time.time()
+            w0 = now - self._queue[0][0]
+            wn = now - self._queue[-1][0]
+            a = self.optimizer.o_a
+            b = self.optimizer.o_b
+
+            if n > 1 and (w0 + a * n + b) >= self.max_latency_in_ms:
+                self._queue.popleft()[2].cancel()
+                continue
+            if self._sema.is_locked():
+                if n == 1 and w0 >= self.max_latency_in_ms:
+                    self._queue.popleft()[2].cancel()
+                    continue
+                await asyncio.sleep(self.tick_interval)
+                continue
+            if n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay:
+                await asyncio.sleep(self.tick_interval)
+                continue
+
+            n_call_out = min(self.max_batch_size, n)
+            # call
+            self._sema.acquire()
+            inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
+            self._loop.create_task(self.outbound_call(inputs_info))
 
     async def inbound_call(self, data: t.Any):
         now = time.time()

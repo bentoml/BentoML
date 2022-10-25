@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import logging
 
@@ -69,7 +70,7 @@ def add_serve_command(cli: click.Group) -> None:
         "--working-dir",
         type=click.Path(),
         help="When loading from source code, specify the directory to find the Service instance",
-        default=".",
+        default=None,
         show_default=True,
     )
     @click.option(
@@ -172,7 +173,11 @@ def add_serve_command(cli: click.Group) -> None:
         - all model store changes will also trigger a restart (new model saved or existing model removed)
         """
         configure_server_logging()
-
+        if working_dir is None:
+            if os.path.isdir(os.path.expanduser(bento)):
+                working_dir = os.path.expanduser(bento)
+            else:
+                working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
@@ -273,7 +278,7 @@ def add_serve_command(cli: click.Group) -> None:
         "--working-dir",
         type=click.Path(),
         help="When loading from source code, specify the directory to find the Service instance",
-        default=".",
+        default=None,
         show_default=True,
     )
     @click.option(
@@ -369,6 +374,11 @@ def add_serve_command(cli: click.Group) -> None:
         - all model store changes will also trigger a restart (new model saved or existing model removed)
         """
         configure_server_logging()
+        if working_dir is None:
+            if os.path.isdir(os.path.expanduser(bento)):
+                working_dir = os.path.expanduser(bento)
+            else:
+                working_dir = "."
         if production:
             if reload:
                 logger.warning(

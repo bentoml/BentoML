@@ -27,6 +27,7 @@ if TYPE_CHECKING:
         | LazyType[t.Any]
         | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
     )
+    OpenAPIResponse = dict[str, str | dict[str, MediaType] | dict[str, t.Any]]
 
 
 IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
@@ -52,6 +53,7 @@ class IODescriptor(ABC, t.Generic[IOType]):
     _mime_type: str
     _rpc_content_type: str = "application/grpc"
     _proto_fields: tuple[ProtoField]
+    _sample_input: IOType | None = None
     descriptor_id: str | None
 
     def __init_subclass__(cls, *, descriptor_id: str | None = None):
@@ -62,6 +64,14 @@ class IODescriptor(ABC, t.Generic[IOType]):
                 )
             IO_DESCRIPTOR_REGISTRY[descriptor_id] = cls
         cls.descriptor_id = descriptor_id
+
+    @property
+    def sample_input(self) -> IOType | None:
+        return self._sample_input
+
+    @sample_input.setter
+    def sample_input(self, value: IOType) -> None:
+        self._sample_input = value
 
     @abstractmethod
     def to_spec(self) -> dict[str, t.Any]:
@@ -111,4 +121,9 @@ class IODescriptor(ABC, t.Generic[IOType]):
 
     @abstractmethod
     async def to_proto(self, obj: IOType) -> t.Any:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def from_sample(cls, sample_input: IOType, **kwargs: t.Any) -> Self:
         ...

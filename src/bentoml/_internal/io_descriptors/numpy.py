@@ -228,8 +228,6 @@ class NumpyNdarray(
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
 
-        self._sample_input = None
-
         if self._enforce_dtype and not self._dtype:
             raise InvalidArgument(
                 "'dtype' must be specified when 'enforce_dtype=True'"
@@ -268,14 +266,6 @@ class NumpyNdarray(
             raise InvalidArgument(f"Missing args key in NumpyNdarray spec: {spec}")
         res = NumpyNdarray(**spec["args"])
         return res
-
-    @property
-    def sample_input(self) -> ext.NpNDArray | None:
-        return self._sample_input
-
-    @sample_input.setter
-    def sample_input(self, value: ext.NpNDArray) -> None:
-        self._sample_input = value
 
     def openapi_schema(self) -> Schema:
         # Note that we are yet provide
@@ -407,7 +397,7 @@ class NumpyNdarray(
         sample_input: ext.NpNDArray,
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
-    ) -> NumpyNdarray:
+    ) -> Self:
         """
         Create a :obj:`NumpyNdarray` IO Descriptor from given inputs.
 

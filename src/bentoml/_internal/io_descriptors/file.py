@@ -112,9 +112,7 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
 
     _proto_fields = ("file",)
 
-    def __new__(  # pylint: disable=arguments-differ # returning subclass from new
-        cls, kind: FileKind = "binaryio", mime_type: str | None = None
-    ) -> File:
+    def __new__(cls, kind: FileKind = "binaryio", mime_type: str | None = None) -> File:
         mime_type = mime_type if mime_type is not None else "application/octet-stream"
         if kind == "binaryio":
             res = object.__new__(BytesIOFile)
@@ -123,8 +121,14 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         res._mime_type = mime_type
         return res
 
-    def to_spec(self) -> dict[str, t.Any]:
-        raise NotImplementedError
+    @classmethod
+    def from_sample(cls, sample_input: FileType, kind: FileKind = "binaryio") -> Self:
+        import filetype
+
+        mime_type: str | None = filetype.guess_mime(sample_input)
+        kls = cls(kind=kind, mime_type=mime_type)
+        kls.sample_input = sample_input
+        return kls
 
     @classmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:
@@ -193,6 +197,9 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         raise NotImplementedError
 
     async def from_http_request(self, request: Request) -> t.IO[bytes]:
+        raise NotImplementedError
+
+    def to_spec(self) -> dict[str, t.Any]:
         raise NotImplementedError
 
 

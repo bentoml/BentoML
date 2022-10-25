@@ -45,6 +45,7 @@ dependencies = [
   "opentelemetry-sdk==1.13.0",
   "opentelemetry-semantic-conventions==0.34b0",
   "opentelemetry-util-http==0.34b0",
+  "filetype",
   "packaging>=20.0",
   "pathspec",
   "pip-tools>=6.6.2",

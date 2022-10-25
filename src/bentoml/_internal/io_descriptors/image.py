@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from .base import OpenAPIResponse
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
@@ -75,7 +76,7 @@ def initialize_pillow():
         import PIL.Image
     except ImportError:
         raise InternalServerError(
-            "`Pillow` is required to use {__name__}\n Instructions: `pip install -U Pillow`"
+            f"'Pillow' is required to use {__name__}. Install Pillow with 'pip install bentoml[io-image]'"
         )
 
     PIL.Image.init()

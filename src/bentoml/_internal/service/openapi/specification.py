@@ -187,7 +187,7 @@ class Operation:
     description: t.Optional[str] = None
     externalDocs: t.Optional[ExternalDocumentation] = None
     operationId: t.Optional[str] = None
-    requestBody: t.Optional[t.Union[RequestBody, Reference]] = None
+    requestBody: t.Optional[t.Union[RequestBody, Reference, t.Dict[str, t.Any]]] = None
 
     # Not yet supported: parameters, callbacks, deprecated, servers, security
 
@@ -252,7 +252,9 @@ class Components:
     schemas: t.Dict[str, t.Union[Schema, Reference]]
     responses: t.Optional[t.Dict[str, t.Union[Response, Reference]]] = None
     examples: t.Optional[t.Dict[str, t.Union[Example, Reference]]] = None
-    requestBodies: t.Optional[t.Dict[str, t.Union[RequestBody, Reference]]] = None
+    requestBodies: t.Optional[
+        t.Dict[str, t.Union[RequestBody, Reference, t.Dict[str, t.Any]]]
+    ] = None
     links: t.Optional[t.Dict[str, t.Union[Link, Reference]]] = None
 
     # Not yet supported: securitySchemes, callbacks, parameters, headers

@@ -254,7 +254,6 @@ class CorkDispatcher:
             while (
                 self.optimizer.outbound_counter <= self.optimizer.N_SKIPPED_SAMPLE + 2
             ):
-
                 try:
                     async with self._wake_event:  # block until there's any request in queue
                         await self._wake_event.wait_for(self._queue.__len__)
@@ -302,30 +301,35 @@ class CorkDispatcher:
             while (
                 self.optimizer.outbound_counter <= self.optimizer.N_SKIPPED_SAMPLE + 3
             ):
-                async with self._wake_event:  # block until there's any request in queue
-                    await self._wake_event.wait_for(self._queue.__len__)
+                try:
+                    async with self._wake_event:  # block until there's any request in queue
+                        await self._wake_event.wait_for(self._queue.__len__)
 
-                n = len(self._queue)
-                dt = self.tick_interval
-                now = time.time()
-                w0 = now - self._queue[0][0]
-                a = self.optimizer.o_a
-                b = self.optimizer.o_b
+                    n = len(self._queue)
+                    dt = self.tick_interval
+                    now = time.time()
+                    w0 = now - self._queue[0][0]
+                    a = self.optimizer.o_a
+                    b = self.optimizer.o_b
 
-                # only cancel requests if there are more than enough for training
-                if n > 3 and w0 >= self.max_latency_in_ms:
-                    # we're being very conservative and only canceling requests if they have already timed out
-                    self._queue.popleft()[2].cancel()
-                    continue
-                if n < 3 and (3 * a + b) + w0 <= step_3_wait:
-                    await asyncio.sleep(self.tick_interval)
-                    continue
+                    # only cancel requests if there are more than enough for training
+                    if n > 3 and w0 >= self.max_latency_in_ms:
+                        # we're being very conservative and only canceling requests if they have already timed out
+                        self._queue.popleft()[2].cancel()
+                        continue
+                    if n < 3 and (3 * a + b) + w0 <= step_3_wait:
+                        await asyncio.sleep(self.tick_interval)
+                        continue
 
-                n_call_out = min(n, 3)
-                # call
-                self._sema.acquire()
-                inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
-                self._loop.create_task(self.outbound_call(inputs_info))
+                    n_call_out = min(n, 3)
+                    # call
+                    self._sema.acquire()
+                    inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
+                    self._loop.create_task(self.outbound_call(inputs_info))
+                except asyncio.CancelledError:
+                    return
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.error(traceback.format_exc(), exc_info=e)
 
             logger.debug("Dispatcher finished optimizer training request 3.")
             self.optimizer.trigger_refresh()
@@ -337,36 +341,41 @@ class CorkDispatcher:
         logger.debug("Dispatcher optimizer training complete.")
 
         while True:
-            async with self._wake_event:  # block until there's any request in queue
-                await self._wake_event.wait_for(self._queue.__len__)
+            try:
+                async with self._wake_event:  # block until there's any request in queue
+                    await self._wake_event.wait_for(self._queue.__len__)
 
-            n = len(self._queue)
-            dt = self.tick_interval
-            decay = 0.95  # the decay rate of wait time
-            now = time.time()
-            w0 = now - self._queue[0][0]
-            wn = now - self._queue[-1][0]
-            a = self.optimizer.o_a
-            b = self.optimizer.o_b
+                n = len(self._queue)
+                dt = self.tick_interval
+                decay = 0.95  # the decay rate of wait time
+                now = time.time()
+                w0 = now - self._queue[0][0]
+                wn = now - self._queue[-1][0]
+                a = self.optimizer.o_a
+                b = self.optimizer.o_b
 
-            if n > 1 and (w0 + a * n + b) >= self.max_latency_in_ms:
-                self._queue.popleft()[2].cancel()
-                continue
-            if self._sema.is_locked():
-                if n == 1 and w0 >= self.max_latency_in_ms:
+                if n > 1 and (w0 + a * n + b) >= self.max_latency_in_ms:
                     self._queue.popleft()[2].cancel()
                     continue
-                await asyncio.sleep(self.tick_interval)
-                continue
-            if n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay:
-                await asyncio.sleep(self.tick_interval)
-                continue
+                if self._sema.is_locked():
+                    if n == 1 and w0 >= self.max_latency_in_ms:
+                        self._queue.popleft()[2].cancel()
+                        continue
+                    await asyncio.sleep(self.tick_interval)
+                    continue
+                if n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay:
+                    await asyncio.sleep(self.tick_interval)
+                    continue
 
-            n_call_out = min(self.max_batch_size, n)
-            # call
-            self._sema.acquire()
-            inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
-            self._loop.create_task(self.outbound_call(inputs_info))
+                n_call_out = min(self.max_batch_size, n)
+                # call
+                self._sema.acquire()
+                inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
+                self._loop.create_task(self.outbound_call(inputs_info))
+            except asyncio.CancelledError:
+                return
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error(traceback.format_exc(), exc_info=e)
 
     async def inbound_call(self, data: t.Any):
         now = time.time()

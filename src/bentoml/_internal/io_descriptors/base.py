@@ -53,7 +53,7 @@ class IODescriptor(ABC, t.Generic[IOType]):
     _mime_type: str
     _rpc_content_type: str = "application/grpc"
     _proto_fields: tuple[ProtoField]
-    _sample_input: IOType | None = None
+    _sample: IOType | None = None
     descriptor_id: str | None
 
     def __init_subclass__(cls, *, descriptor_id: str | None = None):
@@ -66,12 +66,12 @@ class IODescriptor(ABC, t.Generic[IOType]):
         cls.descriptor_id = descriptor_id
 
     @property
-    def sample_input(self) -> IOType | None:
-        return self._sample_input
+    def sample(self) -> IOType | None:
+        return self._sample
 
-    @sample_input.setter
-    def sample_input(self, value: IOType) -> None:
-        self._sample_input = value
+    @sample.setter
+    def sample(self, value: IOType) -> None:
+        self._sample = value
 
     @abstractmethod
     def to_spec(self) -> dict[str, t.Any]:
@@ -92,6 +92,10 @@ class IODescriptor(ABC, t.Generic[IOType]):
     @abstractmethod
     def openapi_schema(self) -> Schema | Reference:
         raise NotImplementedError
+
+    def openapi_example(self) -> t.Any:
+        if self.sample is not None:
+            return self.sample
 
     @abstractmethod
     def openapi_components(self) -> dict[str, t.Any] | None:
@@ -125,5 +129,5 @@ class IODescriptor(ABC, t.Generic[IOType]):
 
     @classmethod
     @abstractmethod
-    def from_sample(cls, sample_input: IOType, **kwargs: t.Any) -> Self:
+    def from_sample(cls, sample: IOType, **kwargs: t.Any) -> Self:
         ...

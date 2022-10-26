@@ -16,15 +16,16 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_response
 from ..service.openapi.specification import Schema
-from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from types import UnionType
 
+    from typing_extensions import Self
+
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
+    from .base import OpenAPIResponse
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
 else:
@@ -174,6 +175,10 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
     def __repr__(self) -> str:
         return f"Multipart({','.join([f'{k}={v}' for k,v in zip(self._inputs, map(repr, self._inputs.values()))])})"
 
+    @classmethod
+    def from_sample(cls, sample: dict[str, t.Any]) -> Self:
+        pass
+
     def input_type(
         self,
     ) -> dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]:
@@ -217,7 +222,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_request_body(self) -> RequestBody:
+    def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
             "required": True,

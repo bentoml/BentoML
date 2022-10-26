@@ -99,6 +99,12 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
                 f"'{self.__class__.__name__}' is not designed to take any args or kwargs during initialization."
             ) from None
 
+    @classmethod
+    def from_sample(cls, sample: str) -> Self:
+        kls = cls()
+        kls.sample = sample
+        return kls
+
     def input_type(self) -> t.Type[str]:
         return str
 

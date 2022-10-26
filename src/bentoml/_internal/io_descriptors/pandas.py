@@ -24,6 +24,7 @@ from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
+EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install with 'pip install bentoml[io-pandas]'"
 if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
@@ -32,19 +33,14 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
     from .. import external_typing as ext
+    from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
 else:
     from bentoml.grpc.utils import import_generated_stubs
 
     pb, _ = import_generated_stubs()
-    np = LazyLoader("np", globals(), "numpy")
-    pd = LazyLoader(
-        "pd",
-        globals(),
-        "pandas",
-        exc_msg='pandas" is required to use PandasDataFrame or PandasSeries. Install with "pip install bentoml[io-pandas]"',
-    )
+    pd = LazyLoader("pd", globals(), "pandas", exc_msg=EXC_MSG)
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +76,8 @@ def _openapi_types(item: str) -> str:  # pragma: no cover
 
 
 def _dataframe_openapi_schema(
-    dtype: bool | ext.PdDTypeArg | None, orient: ext.DataFrameOrient = None
+    dtype: bool | ext.PdDTypeArg | None,
+    orient: ext.DataFrameOrient = None,
 ) -> Schema:  # pragma: no cover
     if isinstance(dtype, dict):
         if orient == "records":
@@ -154,6 +151,8 @@ class SerializationFormat(Enum):
             return "parquet"
         elif self == SerializationFormat.CSV:
             return "csv"
+        else:
+            raise ValueError(f"Unknown serialization format: {self}")
 
 
 def _infer_serialization_format_from_request(
@@ -323,7 +322,7 @@ class PandasDataFrame(
         enforce_shape: bool = False,
         default_format: t.Literal["json", "parquet", "csv"] = "json",
     ):
-        self._orient = orient
+        self._orient: ext.DataFrameOrient = orient
         self._columns = columns
         self._apply_column_names = apply_column_names
         # TODO: convert dtype to numpy dtype
@@ -363,6 +362,14 @@ class PandasDataFrame(
             return None
 
     def to_spec(self) -> dict[str, t.Any]:
+        # TODO: support extension dtypes
+        dtype = None
+        if self._dtype is not None:
+            if isinstance(self._dtype, bool):
+                dtype = self._dtype
+            else:
+                dtype = self._dtype.name
+
         return {
             "id": self.descriptor_id,
             "args": {
@@ -391,6 +398,11 @@ class PandasDataFrame(
 
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
+
+    def openapi_example(self) -> t.Any:
+        if self.sample is not None:
+            return t.cast("dict[str, t.Any]", self.sample.to_dict())
+        return
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
@@ -493,18 +505,18 @@ class PandasDataFrame(
     @classmethod
     def from_sample(
         cls,
-        sample_input: ext.PdDataFrame,
+        sample: ext.PdDataFrame,
         orient: ext.DataFrameOrient = "records",
         apply_column_names: bool = True,
         enforce_shape: bool = True,
         enforce_dtype: bool = True,
         default_format: t.Literal["json", "parquet", "csv"] = "json",
-    ) -> PandasDataFrame:
+    ) -> Self:
         """
         Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
 
         Args:
-            sample_input: Given sample ``pd.DataFrame`` data
+            sample: Given sample ``pd.DataFrame`` data
             orient: Indication of expected JSON string format. Compatible JSON strings can be
                     produced by :func:`pandas.io.json.to_json()` with a corresponding orient value.
                     Possible orients are:
@@ -547,19 +559,19 @@ class PandasDataFrame(
            @svc.api(input=input_spec, output=PandasDataFrame())
            def predict(inputs: pd.DataFrame) -> pd.DataFrame: ...
         """
-        inst = cls(
+        kls = cls(
             orient=orient,
             enforce_shape=enforce_shape,
-            shape=sample_input.shape,
+            shape=sample.shape,
             apply_column_names=apply_column_names,
-            columns=[str(x) for x in list(sample_input.columns)],
+            columns=[str(x) for x in list(sample.columns)],
             enforce_dtype=enforce_dtype,
             dtype=True,  # set to True to infer from given input
             default_format=default_format,
         )
-        inst.sample_input = sample_input
+        kls.sample = sample
 
-        return inst
+        return kls
 
     def validate_dataframe(
         self, dataframe: ext.PdDataFrame, exception_cls: t.Type[Exception] = BadInput
@@ -796,7 +808,7 @@ class PandasSeries(
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
     ):
-        self._orient = orient
+        self._orient: ext.SeriesOrient = orient
         self._dtype = dtype
         self._enforce_dtype = enforce_dtype
         self._shape = shape
@@ -843,6 +855,24 @@ class PandasSeries(
         }
 
     @classmethod
+    def from_sample(
+        cls,
+        sample: ext.PdSeries,
+        orient: ext.SeriesOrient = "records",
+        enforce_shape: bool = True,
+        enforce_dtype: bool = True,
+    ) -> Self:
+        kls = cls(
+            orient=orient,
+            dtype=sample.dtype,
+            enforce_dtype=enforce_dtype,
+            shape=sample.shape,
+            enforce_shape=enforce_shape,
+        )
+        kls.sample = sample
+        return kls
+
+    @classmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in PandasSeries spec: {spec}")
@@ -854,6 +884,11 @@ class PandasSeries(
 
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
+
+    def openapi_example(self) -> t.Any:
+        if self.sample is not None:
+            return t.cast("dict[str, t.Any]", self.sample.to_dict())
+        return
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {

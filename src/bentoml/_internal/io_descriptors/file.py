@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -122,12 +123,23 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         return res
 
     @classmethod
-    def from_sample(cls, sample_input: FileType, kind: FileKind = "binaryio") -> Self:
+    def from_sample(cls, sample: FileType | str, kind: FileKind = "binaryio") -> Self:
         import filetype
 
-        mime_type: str | None = filetype.guess_mime(sample_input)
+        mime_type: str | None = filetype.guess_mime(sample)
+
         kls = cls(kind=kind, mime_type=mime_type)
-        kls.sample_input = sample_input
+
+        if isinstance(sample, FileLike):
+            kls.sample = sample
+        elif isinstance(sample, t.IO):
+            kls.sample = FileLike[bytes](sample, "<sample>")
+        elif isinstance(sample, str) and os.path.exists(sample):
+            with open(sample, "rb") as f:
+                kls.sample = FileLike[bytes](f, "<sample>")
+        else:
+            raise InvalidArgument(f"Unknown sample type: '{sample}'")
+
         return kls
 
     @classmethod
@@ -196,7 +208,7 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
     async def from_proto(self, field: pb.File | bytes) -> FileLike[bytes]:
         raise NotImplementedError
 
-    async def from_http_request(self, request: Request) -> t.IO[bytes]:
+    async def from_http_request(self, request: Request) -> FileLike[bytes]:
         raise NotImplementedError
 
     def to_spec(self) -> dict[str, t.Any]:
@@ -213,7 +225,7 @@ class BytesIOFile(File, descriptor_id=None):
             },
         }
 
-    async def from_http_request(self, request: Request) -> t.IO[bytes]:
+    async def from_http_request(self, request: Request) -> FileLike[bytes]:
         content_type, _ = parse_options_header(request.headers["content-type"])
         if content_type.decode("utf-8") == "multipart/form-data":
             form = await request.form()
@@ -235,7 +247,7 @@ class BytesIOFile(File, descriptor_id=None):
             return res  # type: ignore
         if content_type.decode("utf-8") == self._mime_type:
             body = await request.body()
-            return t.cast(t.IO[bytes], FileLike(io.BytesIO(body), "<request body>"))
+            return FileLike[bytes](io.BytesIO(body), "<request body>")
         raise BentoMLException(
             f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
         )

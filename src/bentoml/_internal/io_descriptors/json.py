@@ -23,6 +23,8 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
+EXC_MSG = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install bentoml[io-json]'."
+
 if TYPE_CHECKING:
     from types import UnionType
 
@@ -36,9 +38,8 @@ if TYPE_CHECKING:
     from ..context import InferenceApiContext as Context
 
 else:
-    _exc_msg = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install pydantic'."
-    pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=_exc_msg)
-    schema = LazyLoader("schema", globals(), "pydantic.schema", exc_msg=_exc_msg)
+    pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=EXC_MSG)
+    schema = LazyLoader("schema", globals(), "pydantic.schema", exc_msg=EXC_MSG)
     # lazy load our proto generated.
     struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
     # lazy load numpy for processing ndarray.
@@ -200,6 +201,22 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
                 "'validate_json' option from 'bentoml.io.JSON' has been deprecated. Use a Pydantic model to specify validation options instead."
             )
 
+    @classmethod
+    def from_sample(
+        cls,
+        sample: JSONType,
+        *,
+        json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
+    ) -> Self:
+        pydantic_model: t.Type[pydantic.BaseModel] | None = None
+        if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(sample):
+            pydantic_model = sample.__class__
+
+        kls = cls(pydantic_model=pydantic_model, json_encoder=json_encoder)
+
+        kls.sample = sample
+        return kls
+
     def to_spec(self) -> dict[str, t.Any]:
         return {
             "id": self.descriptor_id,
@@ -249,6 +266,25 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         from ..service.openapi.utils import pydantic_components_schema
 
         return {"schemas": pydantic_components_schema(self._pydantic_model)}
+
+    def openapi_example(self) -> t.Any:
+        if self.sample is not None:
+            if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(
+                self.sample
+            ):
+                return self.sample.dict()
+            elif isinstance(self.sample, str):
+                return json.dumps(
+                    self.sample,
+                    cls=self._json_encoder,
+                    ensure_ascii=False,
+                    allow_nan=False,
+                    indent=None,
+                    separators=(",", ":"),
+                )
+            elif isinstance(self.sample, dict):
+                return self.sample
+        return
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {

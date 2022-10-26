@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import typing as t
 import functools
 from typing import TYPE_CHECKING
@@ -22,6 +23,8 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
+PIL_EXC_MSG = "'Pillow' is required to use the Image IO descriptor. Install with 'pip install bentoml[io-image]'."
+
 if TYPE_CHECKING:
     from types import UnionType
 
@@ -30,7 +33,6 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
-    from .base import OpenAPIResponse
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
@@ -44,9 +46,8 @@ else:
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
-    _exc = "'Pillow' is required to use the Image IO descriptor. Install it with: 'pip install -U Pillow'."
-    PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
-    PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
+    PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=PIL_EXC_MSG)
+    PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=PIL_EXC_MSG)
 
     pb, _ = import_generated_stubs()
 
@@ -59,10 +60,7 @@ ImageType = t.Union["PIL.Image.Image", "ext.NpNDArray"]
 DEFAULT_PIL_MODE = "RGB"
 
 
-PIL_WRITE_ONLY_FORMATS = {
-    "PALM",
-    "PDF",
-}
+PIL_WRITE_ONLY_FORMATS = {"PALM", "PDF"}
 READABLE_MIMES: set[str] = None  # type: ignore (lazy constant)
 MIME_EXT_MAPPING: dict[str, str] = None  # type: ignore (lazy constant)
 
@@ -75,9 +73,7 @@ def initialize_pillow():
     try:
         import PIL.Image
     except ImportError:
-        raise InternalServerError(
-            f"'Pillow' is required to use {__name__}. Install Pillow with 'pip install bentoml[io-image]'"
-        )
+        raise InternalServerError(PIL_EXC_MSG)
 
     PIL.Image.init()
     MIME_EXT_MAPPING = {v: k for k, v in PIL.Image.MIME.items()}  # type: ignore (lazy constant)
@@ -214,6 +210,41 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         self._pilmode: _Mode | None = pilmode
         self._format: str = MIME_EXT_MAPPING[self._mime_type]
 
+    @classmethod
+    def from_sample(
+        cls,
+        sample: ImageType | str,
+        pilmode: _Mode | None = DEFAULT_PIL_MODE,
+        *,
+        allowed_mime_types: t.Iterable[str] | None = None,
+    ) -> Self:
+        from filetype.match import image_match
+
+        img_type = image_match(sample)
+        if img_type is None:
+            raise InvalidArgument(f"{sample} is not a valid image file type.")
+
+        kls = cls(
+            mime_type=img_type.mime,
+            pilmode=pilmode,
+            allowed_mime_types=allowed_mime_types,
+        )
+
+        if isinstance(sample, str) and os.path.exists(sample):
+            try:
+                with open(sample, "rb") as f:
+                    kls.sample = PIL.Image.open(f)
+            except PIL.UnidentifiedImageError as err:
+                raise BadInput(f"Failed to parse sample image file: {err}") from None
+        elif LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(sample):
+            kls.sample = PIL.Image.fromarray(sample, mode=pilmode)
+        elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(sample):
+            kls.sample = sample
+        else:
+            raise InvalidArgument(f"Unknown sample type: '{sample}'")
+
+        return kls
+
     def to_spec(self) -> dict[str, t.Any]:
         return {
             "id": self.descriptor_id,
@@ -318,15 +349,15 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
 
         try:
             return PIL.Image.open(io.BytesIO(bytes_))
-        except PIL.UnidentifiedImageError:  # type: ignore (bad pillow types)
-            raise BadInput("Failed to parse uploaded image file") from None
+        except PIL.UnidentifiedImageError as err:
+            raise BadInput(f"Failed to parse uploaded image file: {err}") from None
 
     async def to_http_response(
         self, obj: ImageType, ctx: Context | None = None
     ) -> Response:
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
-        elif LazyType[PIL.Image.Image]("PIL.Image.Image").isinstance(obj):
+        elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
             image = obj
         else:
             raise BadInput(

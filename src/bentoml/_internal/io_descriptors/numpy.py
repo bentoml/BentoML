@@ -280,13 +280,11 @@ class NumpyNdarray(
         pass
 
     def openapi_example(self) -> t.Any:
-        if self.sample_input is not None:
-            if isinstance(self.sample_input, np.generic):
-                raise BadInput(
-                    "NumpyNdarray: sample_input must be a numpy array."
-                ) from None
-            return self.sample_input.tolist()
-        return
+        if self.sample is not None:
+            if isinstance(self.sample, np.generic):
+                raise BadInput("NumpyNdarray: sample must be a numpy array.") from None
+            # NOTE: we only need to
+            return self.sample.ravel().tolist()
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
@@ -394,7 +392,7 @@ class NumpyNdarray(
     @classmethod
     def from_sample(
         cls,
-        sample_input: ext.NpNDArray,
+        sample: ext.NpNDArray,
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
     ) -> Self:
@@ -402,7 +400,7 @@ class NumpyNdarray(
         Create a :obj:`NumpyNdarray` IO Descriptor from given inputs.
 
         Args:
-            sample_input: Given sample ``np.ndarray`` data
+            sample: Given sample ``np.ndarray`` data
             enforce_dtype: Enforce a certain data type. :code:`dtype` must be specified at function
                            signature. If you don't want to enforce a specific dtype then change
                            :code:`enforce_dtype=False`.
@@ -436,20 +434,20 @@ class NumpyNdarray(
            async def predict(input: NDArray[np.int16]) -> NDArray[Any]:
                return await runner.async_run(input)
         """
-        if isinstance(sample_input, np.generic):
+        if isinstance(sample, np.generic):
             raise BentoMLException(
                 "'NumpyNdarray.from_sample()' expects a 'numpy.array', not 'numpy.generic'."
             ) from None
 
-        inst = cls(
-            dtype=sample_input.dtype,
-            shape=sample_input.shape,
+        kls = cls(
+            dtype=sample.dtype,
+            shape=sample.shape,
             enforce_dtype=enforce_dtype,
             enforce_shape=enforce_shape,
         )
-        inst.sample_input = sample_input
+        kls.sample = sample
 
-        return inst
+        return kls
 
     async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:
         """

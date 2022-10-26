@@ -30,7 +30,7 @@ BENTOML_MONITOR_TYPES = {"numerical", "categorical", "numerical_sequence"}
 MONITORS: dict[str, Monitor[t.Any]] = {}  # cache of monitors
 
 
-class Monitor(t.Generic[DT]):
+class Monitor(t.Generic["DT"]):
     def __init__(self, name: str):
         pass
 

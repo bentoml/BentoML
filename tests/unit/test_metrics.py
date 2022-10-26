@@ -1,22 +1,27 @@
 from __future__ import annotations
 
-import sys
-import typing as t
-
-import pytest
+from typing import TYPE_CHECKING
 
 import bentoml
 
+if TYPE_CHECKING:
+    from bentoml._internal.server.metrics.prometheus import PrometheusClient
 
-@pytest.mark.parametrize(
-    "metrics_type",
-    filter(
-        lambda x: isinstance(x, bentoml.metrics.metrics.MetricWrapperBase),
-        dir(bentoml.metrics),
-    ),
-)
-def test_metrics_initialization(
-    metrics_type: t.Type[bentoml.metrics.metrics.MetricWrapperBase],
-):
-    _ = metrics_type(name="test_metrics", documentation="test")
-    assert "prometheus_client" not in sys.modules
+
+def test_metrics_initialization():
+    o = bentoml.metrics.Gauge(name="test_metrics", documentation="test")
+    assert isinstance(o, bentoml.metrics._LazyMetric)
+    o = bentoml.metrics.Histogram(name="test_metrics", documentation="test")
+    assert isinstance(o, bentoml.metrics._LazyMetric)
+    o = bentoml.metrics.Counter(name="test_metrics", documentation="test")
+    assert isinstance(o, bentoml.metrics._LazyMetric)
+    o = bentoml.metrics.Summary(name="test_metrics", documentation="test")
+    assert isinstance(o, bentoml.metrics._LazyMetric)
+
+
+def test_metrics_type(prom_client: PrometheusClient):
+    o = bentoml.metrics.Counter(name="test_metrics", documentation="test")
+    assert o._attr == "Counter"
+    assert o._proxy is None
+    o.inc()
+    assert isinstance(o._proxy, prom_client.prometheus_client.Counter)

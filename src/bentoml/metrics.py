@@ -20,9 +20,9 @@ def __dir__() -> list[str]:
     return dir(metrics_client.prometheus_client)
 
 
-class LazyObject:
+class _LazyMetric:
     def __init__(self, attr: t.Any):
-        self.__bentoml_metrics_attr__ = attr
+        self._attr = attr
         self._proxy = None
         self._initialized = False
         self._args: tuple[t.Any, ...] = ()
@@ -45,16 +45,9 @@ class LazyObject:
         self,
         metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
     ) -> None:
-        parent = (
-            metrics_client
-            if self.__bentoml_metrics_attr__ in dir(metrics_client)
-            else metrics_client.prometheus_client
-        )
-        self._proxy = getattr(parent, self.__bentoml_metrics_attr__)(
-            *self._args, **self._kwargs
-        )
+        self._proxy = getattr(metrics_client, self._attr)(*self._args, **self._kwargs)
         self._initialized = True
 
 
 def __getattr__(item: t.Any):
-    return LazyObject(item)
+    return _LazyMetric(item)

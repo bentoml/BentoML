@@ -303,7 +303,7 @@ gRPC server:
             The following ``build.gradle`` should be able to help you get started:
 
             .. literalinclude:: ../../../grpc-client/java/build.gradle
-               :language: groovy
+               :language: text
                :caption: build.gradle
 
             To build the client, run:
@@ -386,7 +386,7 @@ gRPC server:
             The following ``build.gradle.kts`` should be able to help you get started:
 
             .. literalinclude:: ../../../grpc-client/kotlin/build.gradle.kts
-               :language: groovy
+               :language: text
                :caption: build.gradle.kts
 
             To build the client, run:

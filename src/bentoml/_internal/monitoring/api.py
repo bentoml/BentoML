@@ -31,35 +31,39 @@ MONITORS: dict[str, Monitor[t.Any]] = {}  # cache of monitors
 
 
 class Monitor(t.Generic[DT]):
-    def __init__(self, name: str):
-        pass
+    def __init__(self, name: str, **kwargs: t.Any) -> None:
+        raise NotImplementedError()
 
     def start_record(self) -> None:
-        pass
+        raise NotImplementedError()
 
     def stop_record(self) -> None:
-        pass
+        raise NotImplementedError()
 
     def export_schema(self) -> JSONSerializable:
-        pass
+        raise NotImplementedError()
 
     def export_data(self) -> JSONSerializable:
-        pass
+        raise NotImplementedError()
 
     def log(self, data: DT, name: str, role: str, data_type: str) -> None:
-        pass
+        raise NotImplementedError()
 
     def log_batch(
-        self, data_batch: t.Iterable[DT], name: str, role: str, data_type: str
+        self,
+        data_batch: t.Iterable[DT],
+        name: str,
+        role: str,
+        data_type: str,
     ) -> None:
-        pass
+        raise NotImplementedError()
 
     def log_table(
         self,
         data: t.Iterable[t.Iterable[DT]],
         schema: dict[str, str],
     ) -> None:
-        pass
+        raise NotImplementedError()
 
 
 DEFAULT_CONFIG_YAML = """
@@ -92,7 +96,6 @@ formatters:
 class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
     PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID) = ("timestamp", "request_id")
 
-    @inject
     def __init__(
         self,
         name: str,
@@ -124,12 +127,9 @@ class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
         logging_config = yaml.safe_load(logging_config_yaml)
         logging.config.dictConfig(logging_config)
 
-        self.data_logger = logging.getLogger(
-            "bentoml_monitor_data"
-        )  # pylint: disable=attribute-defined-outside-init
-        self.schema_logger = logging.getLogger(
-            "bentoml_monitor_schema"
-        )  # pylint: disable=attribute-defined-outside-init
+        # pylint: disable=attribute-defined-outside-init
+        self.data_logger = logging.getLogger("bentoml_monitor_data")
+        self.schema_logger = logging.getLogger("bentoml_monitor_schema")
 
     def start_record(self) -> None:
         """
@@ -218,7 +218,7 @@ class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
         except TypeError:
             raise ValueError(
                 "data_batch is not iterable. Please use log() to log a single data."
-            )
+            ) from None
 
     def log_table(
         self,
@@ -229,6 +229,7 @@ class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
 
 
 @contextlib.contextmanager
+@inject
 def monitor(
     name: str,
     monitor_class: t.Type[MT]

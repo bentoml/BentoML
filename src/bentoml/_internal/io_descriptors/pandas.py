@@ -31,7 +31,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
     from .. import external_typing as ext
-    from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
 else:
@@ -42,7 +41,7 @@ else:
         "pd",
         globals(),
         "pandas",
-        exc_msg='pandas" is required to use PandasDataFrame or PandasSeries. Install with "pip install -U pandas"',
+        exc_msg='pandas" is required to use PandasDataFrame or PandasSeries. Install with "pip install bentoml[io-pandas]"',
     )
 
 logger = logging.getLogger(__name__)
@@ -325,6 +324,7 @@ class PandasDataFrame(
         self._orient = orient
         self._columns = columns
         self._apply_column_names = apply_column_names
+        # TODO: convert dtype to numpy dtype
         self._dtype = dtype
         self._enforce_dtype = enforce_dtype
         self._shape = shape
@@ -344,14 +344,24 @@ class PandasDataFrame(
     def sample_input(self, value: ext.PdDataFrame) -> None:
         self._sample_input = value
 
+    def _convert_dtype(self, value: ext.PdDType) -> str | None:
+        if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(value):
+            return str(value.dtype)
+        logger.warning(f"{type(value)} is not yet supported.")
+        return None
+
     def to_spec(self) -> dict[str, t.Any]:
         # TODO: support extension dtypes
-        dtype = None
+        dtype: bool | str | dict[str, t.Any] | None = None
         if self._dtype is not None:
-            if isinstance(self._dtype, (dict, bool)):
+            if isinstance(self._dtype, bool):
                 dtype = self._dtype
-            else:
+            elif isinstance(self._dtype, dict):
+                dtype = {str(k): self._convert_dtype(v) for k, v in self._dtype.items()}
+            elif LazyType("numpy", "ndarray").isinstance(self._dtype):
                 dtype = self._dtype.name
+            else:
+                raise NotImplementedError
 
         return {
             "id": self.descriptor_id,

@@ -19,8 +19,8 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from ..types import JSONSerializable
 
-    DT = t.TypeVar("DT")
-    MT = t.TypeVar("MT", bound="Monitor[t.Any]")
+DT = t.TypeVar("DT")
+MT = t.TypeVar("MT", bound="Monitor[t.Any]")
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ BENTOML_MONITOR_TYPES = {"numerical", "categorical", "numerical_sequence"}
 MONITORS: dict[str, Monitor[t.Any]] = {}  # cache of monitors
 
 
-class Monitor(t.Generic["DT"]):
+class Monitor(t.Generic[DT]):
     def __init__(self, name: str):
         pass
 

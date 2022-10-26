@@ -35,6 +35,17 @@ py_model = bentoml.picklable_model.get("py_model.case-1.http.e2e").to_runner()
 svc = bentoml.Service(name="general_http_service.case-1.e2e", runners=[py_model])
 
 
+metric_test = bentoml.metrics.Counter(
+    name="test_metrics", documentation="Counter test metric"
+)
+
+
+@svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
+def echo_data_metric(data: str) -> str:
+    metric_test.inc()
+    return data
+
+
 @svc.api(input=JSON(), output=JSON())
 async def echo_json(json_obj: JSONSerializable) -> JSONSerializable:
     batch_ret = await py_model.echo_json.async_run([json_obj])

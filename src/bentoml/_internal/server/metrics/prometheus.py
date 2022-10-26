@@ -109,6 +109,19 @@ class PrometheusClient:
             registry=self.registry,
         )
 
+    start_wsgi_server = start_http_server
+
+    def write_to_textfile(self, path: str) -> None:
+        """
+        Write metrics to given path. This is intended to be used with
+        the Node expoerter textfile collector.
+
+        Args:
+            path: path to write the metrics to. This file must end
+                  with '.prom' for the textfile collector to process it.
+        """
+        self.prometheus_client.write_to_textfile(path, registry=self.registry)
+
     def make_wsgi_app(self) -> ext.WSGIApp:
         """
         Create a WSGI app which serves the metrics from a registry.
@@ -117,6 +130,9 @@ class PrometheusClient:
             WSGIApp: A WSGI app which serves the metrics from a registry.
         """
         return self.prometheus_client.make_wsgi_app(registry=self.registry)  # type: ignore (unfinished prometheus types)
+
+    def make_asgi_app(self) -> ext.ASGIApp:
+        return self.prometheus_client.make_asgi_app(registry=self.registry)  # type: ignore (unfinished prometheus types)
 
     def generate_latest(self):
         """

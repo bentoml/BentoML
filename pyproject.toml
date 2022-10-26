@@ -49,7 +49,8 @@ dependencies = [
   "pathspec",
   "pip-tools>=6.6.2",
   "pip-requirements-parser>=31.2.0",
-  "prometheus-client>=0.10.0",
+  # Lowest version of prometheus_client that supports 3.10
+  "prometheus-client>=0.12.0",
   "psutil",
   "pynvml<12",
   "python-dateutil",

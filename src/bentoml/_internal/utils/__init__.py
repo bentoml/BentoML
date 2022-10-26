@@ -70,6 +70,15 @@ _EXPERIMENTAL_APIS: set[str] = set()
 
 
 def warn_experimental(api_name: str) -> None:
+    """
+    Warns the user that the given API is experimental.
+    Make sure that if the API is not experimental anymore, remove this function call.
+
+    If 'api_name' requires string formatting, use %-formatting for optimization.
+
+    Args:
+        api_name: The name of the API that is experimental.
+    """
     if api_name not in _EXPERIMENTAL_APIS:
         _EXPERIMENTAL_APIS.add(api_name)
         msg = "'%s' is an EXPERIMENTAL API and is currently not yet stable. Proceed with caution!"
@@ -80,6 +89,14 @@ def warn_experimental(api_name: str) -> None:
 def experimental(
     f: t.Callable[P, t.Any] | None = None, *, api_name: str | None = None
 ) -> t.Callable[..., t.Any]:
+    """
+    Decorator to mark an API as experimental.
+
+    If 'api_name' requires string formatting, use %-formatting for optimization.
+
+    Args:
+        api_name: The name of the API that is experimental.
+    """
     if api_name is None:
         api_name = f.__name__ if inspect.isfunction(f) else repr(f)
 
@@ -97,6 +114,9 @@ def experimental(
 
 
 def add_experimental_docstring(f: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
+    """
+    Decorator to add an experimental warning to the docstring of a function.
+    """
     f.__doc__ = "[EXPERIMENTAL] " + (f.__doc__ if f.__doc__ is not None else "")
     return f
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 import asyncio
+from typing import TYPE_CHECKING
 from pathlib import Path
 
 import pytest
@@ -113,3 +114,14 @@ def test_dunder_string():
         str(svc)
         == 'bentoml.Service(name="dunder_string", runners=[py_model.case-1.http.e2e])'
     )
+
+
+@pytest.mark.asyncio
+async def test_metrics_type(host: str):
+    await async_request(
+        "POST",
+        f"http://{host}/echo_data_metric",
+        headers={"Content-Type": "application/json"},
+        data="[[1,2],[3,4]]",
+    )
+    assert "test_metrics_total" in bentoml.metrics.generate_latest().decode("utf-8")

@@ -8,6 +8,7 @@ from functools import partial
 
 import pytest
 
+from bentoml import metrics
 from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
@@ -406,3 +407,11 @@ async def test_multipart(host: str, img_file: str):
                 assert_multi_images, method="pred_multi_images", im_file=img_file
             ),
         )
+
+    # Test for metrics
+    histograms = [
+        m.name
+        for m in metrics.text_string_to_metric_families()
+        if m.type == "histogram"
+    ]
+    assert "inference_latency" in histograms

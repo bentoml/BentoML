@@ -75,3 +75,10 @@ tracing:
   otlp:
     protocol: ~
     url: ~
+
+monitoring:
+  enable: true
+  type: default
+  options:
+    log_config_file: ~
+    log_path: monitoring

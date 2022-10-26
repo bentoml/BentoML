@@ -35,13 +35,16 @@ dependencies = [
   "deepmerge",
   "fs",
   "numpy",
-  "opentelemetry-api>=1.9.0",
-  "opentelemetry-instrumentation==0.33b0",
-  "opentelemetry-instrumentation-aiohttp-client==0.33b0",
-  "opentelemetry-instrumentation-asgi==0.33b0",
-  "opentelemetry-sdk>=1.9.0",
-  "opentelemetry-semantic-conventions==0.33b0",
-  "opentelemetry-util-http==0.33b0",
+  # OpenTelemetry is the server dependencies, rather than SDK
+  # Since there are discrepancies among API and instrumentation packages,
+  # we should always pin the set version of Opentelemetry suite
+  "opentelemetry-api==1.13.0",
+  "opentelemetry-instrumentation==0.34b0",
+  "opentelemetry-instrumentation-aiohttp-client==0.34b0",
+  "opentelemetry-instrumentation-asgi==0.34b0",
+  "opentelemetry-sdk==1.13.0",
+  "opentelemetry-semantic-conventions==0.34b0",
+  "opentelemetry-util-http==0.34b0",
   "packaging>=20.0",
   "pathspec",
   "pip-tools>=6.6.2",
@@ -52,6 +55,7 @@ dependencies = [
   "python-dateutil",
   "python-dotenv>=0.20.0",
   "python-multipart",
+  "python-json-logger",
   "requests",
   "rich>=11.2.0",
   "schema",
@@ -131,7 +135,7 @@ grpc = [
   # We can't use 1.48.2 since it depends on 3.19.5
   "grpcio>=1.41.0, <1.49, !=1.48.2",
   "grpcio-health-checking>=1.41.0, <1.49, !=1.48.2",
-  "opentelemetry-instrumentation-grpc==0.33b0",
+  "opentelemetry-instrumentation-grpc==0.34b0",
 ]
 grpc-reflection = [
   "bentoml[grpc]",
@@ -146,9 +150,9 @@ tracing = [
   "bentoml[tracing-otlp]",
   "bentoml[tracing-zipkin]",
 ]
-tracing-jaeger = ["opentelemetry-exporter-jaeger"]
-tracing-zipkin = ["opentelemetry-exporter-zipkin"]
-tracing-otlp = ["opentelemetry-exporter-otlp"]
+tracing-jaeger = ["opentelemetry-exporter-jaeger==1.13.0"]
+tracing-zipkin = ["opentelemetry-exporter-zipkin==1.13.0"]
+tracing-otlp = ["opentelemetry-exporter-otlp==1.13.0"]
 
 [tool.setuptools_scm]
 write_to = "src/bentoml/_version.py"
@@ -299,7 +303,7 @@ skip_glob = [
 
 [tool.pyright]
 pythonVersion = "3.10"
-include = ["src/bentoml", "src/bentoml_cli"]
+include = ["src/", "examples/", "tests/"]
 exclude = [
   'src/bentoml/_version.py',
   'src/bentoml/__main__.py',

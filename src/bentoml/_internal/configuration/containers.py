@@ -193,6 +193,11 @@ SCHEMA = Schema(
                 "url": Or(str, None),
             },
         },
+        Optional("monitoring"): {
+            "enable": bool,
+            Optional("type"): Or(str, None),
+            Optional("options"): Or(dict, None),
+        },
         Optional("yatai"): {
             "default_server": Or(str, None),
             "servers": {

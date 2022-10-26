@@ -69,22 +69,31 @@ __all__ = [
 _EXPERIMENTAL_APIS: set[str] = set()
 
 
-def _warn_experimental(f: t.Any):
-    api_name = f.__name__ if inspect.isfunction(f) else repr(f)
+def _warn_experimental(api_name: str) -> None:
     if api_name not in _EXPERIMENTAL_APIS:
         _EXPERIMENTAL_APIS.add(api_name)
         msg = "'%s' is an EXPERIMENTAL API and is currently not yet stable. Proceed with caution!"
-        logger = logging.getLogger(f.__module__)
+        logger = logging.getLogger(__name__)
         logger.warning(msg, api_name)
 
 
-def experimental(f: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
-    @functools.wraps(f)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
-        _warn_experimental(f)
-        return f(*args, **kwargs)
+def experimental(
+    f: t.Callable[P, t.Any] | None = None, *, api_name: str | None = None
+) -> t.Callable[..., t.Any]:
+    if api_name is None:
+        api_name = f.__name__ if inspect.isfunction(f) else repr(f)
 
-    return wrapper
+    def decorator(func: t.Callable[..., t.Any]) -> t.Callable[P, t.Any]:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+            _warn_experimental(api_name)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    if f is None:
+        return decorator
+    return decorator(f)
 
 
 def add_experimental_docstring(f: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:

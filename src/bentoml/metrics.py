@@ -7,6 +7,9 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+from ._internal.utils import _warn_experimental
+from ._internal.utils import add_experimental_docstring
+
 if TYPE_CHECKING:
     from ._internal.server.metrics.prometheus import PrometheusClient
 
@@ -28,13 +31,19 @@ class _LazyMetric:
         self._args: tuple[t.Any, ...] = ()
         self._kwargs: dict[str, t.Any] = {}
 
+    @add_experimental_docstring
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        """
+        Lazily initialize the metrics object.
+        """
         # This is where we lazy load the proxy object.
         self._args = args
         self._kwargs = kwargs
         return self
 
     def __getattr__(self, item: t.Any) -> t.Any:
+        if item in ("_attr", "_proxy", "_initialized", "_args", "_kwargs"):
+            raise AttributeError(f"Attribute {item} is private to {self}.")
         if self._proxy is None:
             self._load_proxy()
         assert self._initialized

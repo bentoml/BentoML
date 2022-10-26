@@ -8,9 +8,12 @@ import collections
 import logging.config
 from typing import TYPE_CHECKING
 
+import yaml
 from simple_di import inject
 from simple_di import Provide
 
+from ..types import LazyType
+from ..context import component_context
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -59,6 +62,33 @@ class Monitor(t.Generic[DT]):
         pass
 
 
+DEFAULT_CONFIG_YAML = """
+loggers:
+  bentoml_monitor_data:
+    level: INFO
+    handlers: bentoml_monitor_data
+  bentoml_monitor_schema:
+    level: INFO
+    handlers: bentoml_monitor_schema
+handlers:
+  bentoml_monitor_data:
+    class: logging.handlers.TimedRotatingFileHandler
+    level: INFO
+    formatter: bentoml_json
+    filename: "{path}/data/data.log.{worker_id}"
+    when: "D"
+  bentoml_monitor_schema:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: bentoml_json
+    filename: "{path}/schema/schema.log.{worker_id}"
+formatters:
+  bentoml_json:
+    class: pythonjsonlogger.jsonlogger.JsonFormatter
+    format: "%(message)s"
+"""
+
+
 class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
     PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID) = ("timestamp", "request_id")
 
@@ -66,12 +96,12 @@ class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
     def __init__(
         self,
         name: str,
-        log_config: dict[str, t.Any] = Provide[BentoMLContainer.monitoring_log_config],
+        log_config_file: str | None,
+        log_path: str,
     ) -> None:
         self.name = name
-        logging.config.dictConfig(log_config)
-        self.data_logger = logging.getLogger("bentoml_monitor_data")
-        self.schema_logger = logging.getLogger("bentoml_monitor_schema")
+        self.log_config_file = log_config_file
+        self.log_path = log_path
         self._is_first_record = True
         self._is_first_column = False
         self._schema: list[dict[str, str]] = []
@@ -79,6 +109,27 @@ class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
             str,
             collections.deque[JSONSerializable],
         ] = collections.defaultdict(collections.deque)
+
+    def _init_logger(self) -> None:
+        if self.log_config_file is None:
+            logging_config_yaml = DEFAULT_CONFIG_YAML
+        else:
+            with open(self.log_config_file, "r", encoding="utf8") as f:
+                logging_config_yaml = f.read()
+
+        logging_config_yaml = logging_config_yaml.format(
+            path=self.log_path,
+            worker_id=component_context.component_index,
+        )
+        logging_config = yaml.safe_load(logging_config_yaml)
+        logging.config.dictConfig(logging_config)
+
+        self.data_logger = logging.getLogger(
+            "bentoml_monitor_data"
+        )  # pylint: disable=attribute-defined-outside-init
+        self.schema_logger = logging.getLogger(
+            "bentoml_monitor_schema"
+        )  # pylint: disable=attribute-defined-outside-init
 
     def start_record(self) -> None:
         """
@@ -90,7 +141,8 @@ class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
         """
         Stop recording data. This method should be called after logging all data.
         """
-        if not self._is_first_record:
+        if self._is_first_record:
+            self._init_logger()
             self.export_schema()
             self._is_first_record = False
 
@@ -179,7 +231,11 @@ class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
 @contextlib.contextmanager
 def monitor(
     name: str,
-    monitor_class: t.Type[MT] = BentoMLDefaultMonitor,
+    monitor_class: t.Type[MT]
+    | str
+    | None = Provide[BentoMLContainer.config.monitoring.monitor_class],
+    monitor_options: dict[str, t.Any]
+    | None = Provide[BentoMLContainer.config.monitoring.monitor_options],
 ) -> t.Generator[MT, None, None]:
     """
     Context manager for monitoring.
@@ -224,7 +280,21 @@ def monitor(
         ]
     """
     if name not in MONITORS:
-        MONITORS[name] = monitor_class(name)
+        if monitor_class is None:
+            monitor_klass = BentoMLDefaultMonitor
+        elif isinstance(monitor_class, str):
+
+            monitor_klass = LazyType["Monitor[t.Any]"](monitor_class).get_class()
+        elif isinstance(monitor_class, type):
+            monitor_klass = monitor_class
+        else:
+            raise ValueError(
+                "monitor_class must be a class, a string or None. "
+                f"Got {type(monitor_class)}"
+            )
+        if monitor_options is None:
+            monitor_options = {}
+        MONITORS[name] = monitor_klass(name, **monitor_options)
 
     mon = MONITORS[name]
     mon.start_record()

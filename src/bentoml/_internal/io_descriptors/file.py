@@ -14,18 +14,20 @@ from .base import IODescriptor
 from ..types import FileLike
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
+from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
-from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import RequestBody
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from typing_extensions import Self
+
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
+    from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
@@ -121,7 +123,7 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         res._mime_type = mime_type
         return res
 
-    def to_spec(self):
+    def to_spec(self) -> dict[str, t.Any]:
         raise NotImplementedError
 
     @classmethod
@@ -143,14 +145,14 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         return {
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
             "required": True,
-            "x-bentoml-io-descriptor": self.to_spec(),
+            "x-bentoml-descriptor": self.to_spec(),
         }
 
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
-            "x-bentoml-io-descriptor": self.to_spec(),
+            "x-bentoml-descriptor": self.to_spec(),
         }
 
     async def to_http_response(self, obj: FileType, ctx: Context | None = None):

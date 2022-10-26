@@ -36,7 +36,7 @@ dependencies = [
   "fs",
   "numpy",
   # OpenTelemetry is the server dependencies, rather than SDK
-  # Since there are discrepancy among API and instrumentation packages,
+  # Since there are discrepancies among API and instrumentation packages,
   # we should always pin the set version of Opentelemetry suite
   "opentelemetry-api==1.13.0",
   "opentelemetry-instrumentation==0.34b0",

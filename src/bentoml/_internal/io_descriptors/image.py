@@ -250,10 +250,11 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         }
 
     def openapi_responses(self) -> OpenAPIResponse:
-        return OpenAPIResponse(
-            description=SUCCESS_DESCRIPTION,
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-        )
+        return {
+            "description": SUCCESS_DESCRIPTION,
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "x-bentoml-descriptor": self.to_spec(),
+        }
 
     async def from_http_request(self, request: Request) -> ImageType:
         content_type, _ = parse_options_header(request.headers["content-type"])

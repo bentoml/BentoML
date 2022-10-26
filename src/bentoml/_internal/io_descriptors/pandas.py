@@ -348,7 +348,7 @@ class PandasDataFrame(
         # TODO: support extension dtypes
         dtype = None
         if self._dtype is not None:
-            if isinstance(self._dtype, bool):
+            if isinstance(self._dtype, (dict, bool)):
                 dtype = self._dtype
             else:
                 dtype = self._dtype.name
@@ -798,7 +798,7 @@ class PandasSeries(
         # TODO: support extension dtypes
         dtype = None
         if self._dtype is not None:
-            if isinstance(self._dtype, bool):
+            if isinstance(self._dtype, (dict, bool)):
                 dtype = self._dtype
             else:
                 dtype = self._dtype.name

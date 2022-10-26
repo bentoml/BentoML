@@ -106,11 +106,20 @@ MetadataType: t.TypeAlias = t.Union[
 
 if TYPE_CHECKING:
     MetadataDict = t.Dict[str, MetadataType]
+    JSONSerializable: t.TypeAlias = (
+        str
+        | int
+        | float
+        | bool
+        | None
+        | list["JSONSerializable"]
+        | dict[str, "JSONSerializable"]
+    )
 else:
     # NOTE: remove this when registering hook for MetadataType
     MetadataDict = dict
 
-JSONSerializable = t.NewType("JSONSerializable", object)
+    JSONSerializable = t.NewType("JSONSerializable", object)
 
 
 T = t.TypeVar("T")

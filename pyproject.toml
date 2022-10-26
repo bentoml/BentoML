@@ -55,6 +55,7 @@ dependencies = [
   "python-dateutil",
   "python-dotenv>=0.20.0",
   "python-multipart",
+  "python-json-logger",
   "requests",
   "rich>=11.2.0",
   "schema",

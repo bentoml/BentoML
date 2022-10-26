@@ -145,14 +145,14 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         return {
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
             "required": True,
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     async def to_http_response(self, obj: FileType, ctx: Context | None = None):

@@ -306,7 +306,7 @@ class NumpyNdarray(
                 )
             },
             "required": True,
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     def openapi_responses(self) -> OpenAPIResponse:
@@ -317,7 +317,7 @@ class NumpyNdarray(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     def validate_array(

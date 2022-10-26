@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
     from ..service.openapi.specification import Schema
-    from ..service.openapi.specification import MediaType
     from ..service.openapi.specification import Reference
 
     InputType = (
@@ -28,7 +27,6 @@ if TYPE_CHECKING:
         | LazyType[t.Any]
         | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
     )
-    OpenAPIResponse = dict[str, str | dict[str, MediaType] | dict[str, t.Any]]
 
 
 IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
@@ -94,7 +92,7 @@ class IODescriptor(ABC, t.Generic[IOType]):
         raise NotImplementedError
 
     @abstractmethod
-    def openapi_responses(self) -> OpenAPIResponse:
+    def openapi_responses(self) -> dict[str, t.Any]:
         raise NotImplementedError
 
     @abstractmethod

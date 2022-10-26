@@ -56,12 +56,12 @@ class Client(ABC):
         for route, spec in openapi_spec["paths"].items():
             for meth_spec in spec.values():
                 if "Service APIs" in meth_spec["tags"]:
-                    if "x-bentoml-descriptor" not in meth_spec["requestBody"]:
+                    if "x-bentoml-io-descriptor" not in meth_spec["requestBody"]:
                         # TODO: better message stating min version for from_url to work
                         raise BentoMLException(
                             f"Malformed BentoML spec received from BentoML server {server_url}"
                         )
-                    if "x-bentoml-descriptor" not in meth_spec["responses"]["200"]:
+                    if "x-bentoml-io-descriptor" not in meth_spec["responses"]["200"]:
                         raise BentoMLException(
                             f"Malformed BentoML spec received from BentoML server {server_url}"
                         )
@@ -72,10 +72,10 @@ class Client(ABC):
                     dummy_service.apis[meth_spec["x-bentoml-name"]] = InferenceAPI(
                         None,
                         bentoml.io.from_spec(
-                            meth_spec["requestBody"]["x-bentoml-descriptor"]
+                            meth_spec["requestBody"]["x-bentoml-io-descriptor"]
                         ),
                         bentoml.io.from_spec(
-                            meth_spec["responses"]["200"]["x-bentoml-descriptor"]
+                            meth_spec["responses"]["200"]["x-bentoml-io-descriptor"]
                         ),
                         name=meth_spec["x-bentoml-name"],
                         doc=meth_spec["description"],

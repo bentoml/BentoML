@@ -1,13 +1,16 @@
 package(default_visibility = ["//visibility:public"])
 
 load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+filegroup(
+    name = "pyproject",
+    srcs = ["pyproject.toml"],
+)
 
 buildifier(
     name = "buildifier",
 )
-
-# Create a generated proto library
-load("@rules_proto//proto:defs.bzl", "proto_library")
 
 proto_library(
     name = "service_v1alpha1_proto",

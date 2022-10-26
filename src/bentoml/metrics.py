@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from ._internal.utils import _warn_experimental
+from ._internal.utils import warn_experimental
 from ._internal.utils import add_experimental_docstring
 
 if TYPE_CHECKING:
@@ -35,8 +35,13 @@ class _LazyMetric:
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """
         Lazily initialize the metrics object.
+
+        Args:
+            *args: Arguments to pass to the metrics object.
+            **kwargs: Keyword arguments to pass to the metrics object.
         """
         # This is where we lazy load the proxy object.
+        warn_experimental("%s.%s" % (__name__, self._attr))
         self._args = args
         self._kwargs = kwargs
         return self

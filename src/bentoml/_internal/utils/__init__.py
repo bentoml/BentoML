@@ -69,7 +69,7 @@ __all__ = [
 _EXPERIMENTAL_APIS: set[str] = set()
 
 
-def _warn_experimental(api_name: str) -> None:
+def warn_experimental(api_name: str) -> None:
     if api_name not in _EXPERIMENTAL_APIS:
         _EXPERIMENTAL_APIS.add(api_name)
         msg = "'%s' is an EXPERIMENTAL API and is currently not yet stable. Proceed with caution!"
@@ -86,7 +86,7 @@ def experimental(
     def decorator(func: t.Callable[..., t.Any]) -> t.Callable[P, t.Any]:
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
-            _warn_experimental(api_name)
+            warn_experimental(api_name)
             return func(*args, **kwargs)
 
         return wrapper

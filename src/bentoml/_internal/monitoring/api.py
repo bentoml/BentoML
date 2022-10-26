@@ -20,17 +20,17 @@ if TYPE_CHECKING:
     from ..types import JSONSerializable
 
 DT = t.TypeVar("DT")
-MT = t.TypeVar("MT", bound="Monitor[t.Any]")
+MT = t.TypeVar("MT", bound="MonitorBase[t.Any]")
 
 logger = logging.getLogger(__name__)
 
 BENTOML_MONITOR_ROLES = {"feature", "prediction", "target"}
 BENTOML_MONITOR_TYPES = {"numerical", "categorical", "numerical_sequence"}
 
-MONITORS: dict[str, Monitor[t.Any]] = {}  # cache of monitors
+MONITOR_REGISTRY: dict[str, MonitorBase[t.Any]] = {}  # cache of monitors
 
 
-class Monitor(t.Generic[DT]):
+class MonitorBase(t.Generic[DT]):
     def __init__(self, name: str, **kwargs: t.Any) -> None:
         raise NotImplementedError()
 
@@ -66,6 +66,42 @@ class Monitor(t.Generic[DT]):
         raise NotImplementedError()
 
 
+class NoOpMonitor(MonitorBase[t.Any]):
+    def __init__(self, name: str, **kwargs: t.Any) -> None:
+        pass
+
+    def start_record(self) -> None:
+        pass
+
+    def stop_record(self) -> None:
+        pass
+
+    def export_schema(self) -> JSONSerializable:
+        pass
+
+    def export_data(self) -> JSONSerializable:
+        pass
+
+    def log(self, data: t.Any, name: str, role: str, data_type: str) -> None:
+        pass
+
+    def log_batch(
+        self,
+        data_batch: t.Iterable[t.Any],
+        name: str,
+        role: str,
+        data_type: str,
+    ) -> None:
+        pass
+
+    def log_table(
+        self,
+        data: t.Iterable[t.Iterable[t.Any]],
+        schema: dict[str, str],
+    ) -> None:
+        pass
+
+
 DEFAULT_CONFIG_YAML = """
 loggers:
   bentoml_monitor_data:
@@ -93,7 +129,7 @@ formatters:
 """
 
 
-class BentoMLDefaultMonitor(Monitor["JSONSerializable"]):
+class BentoMLDefaultMonitor(MonitorBase["JSONSerializable"]):
     PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID) = ("timestamp", "request_id")
 
     def __init__(
@@ -234,9 +270,9 @@ def monitor(
     name: str,
     monitor_class: t.Type[MT]
     | str
-    | None = Provide[BentoMLContainer.config.monitoring.monitor_class],
+    | None = Provide[BentoMLContainer.config.monitoring.type],
     monitor_options: dict[str, t.Any]
-    | None = Provide[BentoMLContainer.config.monitoring.monitor_options],
+    | None = Provide[BentoMLContainer.config.monitoring.options],
 ) -> t.Generator[MT, None, None]:
     """
     Context manager for monitoring.
@@ -280,12 +316,13 @@ def monitor(
             {"name": "prediction", "role": "prediction", "type": "numerical"},
         ]
     """
-    if name not in MONITORS:
-        if monitor_class is None:
+    if name not in MONITOR_REGISTRY:
+        if not BentoMLContainer.config.monitoring.enabled.get():
+            monitor_klass = NoOpMonitor
+        elif monitor_class is None or monitor_class == "default":
             monitor_klass = BentoMLDefaultMonitor
         elif isinstance(monitor_class, str):
-
-            monitor_klass = LazyType["Monitor[t.Any]"](monitor_class).get_class()
+            monitor_klass = LazyType["MonitorBase[t.Any]"](monitor_class).get_class()
         elif isinstance(monitor_class, type):
             monitor_klass = monitor_class
         else:
@@ -295,9 +332,9 @@ def monitor(
             )
         if monitor_options is None:
             monitor_options = {}
-        MONITORS[name] = monitor_klass(name, **monitor_options)
+        MONITOR_REGISTRY[name] = monitor_klass(name, **monitor_options)
 
-    mon = MONITORS[name]
+    mon = MONITOR_REGISTRY[name]
     mon.start_record()
     yield mon  # type: ignore
     mon.stop_record()

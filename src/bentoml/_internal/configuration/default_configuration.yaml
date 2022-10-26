@@ -77,7 +77,8 @@ tracing:
     url: ~
 
 monitoring:
-  monitor_class: ~
-  monitor_options:
+  enable: true
+  type: default
+  options:
     log_config_file: ~
     log_path: monitoring

@@ -194,8 +194,9 @@ SCHEMA = Schema(
             },
         },
         Optional("monitoring"): {
-            "monitor_class": Or(str, None),
-            Optional("monitor_options"): Or(dict, None),
+            "enable": bool,
+            Optional("type"): Or(str, None),
+            Optional("options"): Or(dict, None),
         },
         Optional("yatai"): {
             "default_server": Or(str, None),
@@ -219,13 +220,6 @@ SCHEMA = Schema(
 _WARNING_MESSAGE = (
     "field 'api_server.%s' is deprecated and has been renamed to 'api_server.http.%s'"
 )
-
-
-def _get_default_monitoring_logging_config_file() -> str:
-    """
-    Get the default monitoring logging config file path
-    """
-    return os.path.join(os.path.dirname(__file__), "default_monitoring_logging.yaml")
 
 
 class BentoMLConfiguration:

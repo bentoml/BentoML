@@ -115,13 +115,13 @@ handlers:
     class: logging.handlers.TimedRotatingFileHandler
     level: INFO
     formatter: bentoml_json
-    filename: "{path}/data/data.log.{worker_id}"
+    filename: "{path}/data/{monitor_name}/data.log.{worker_id}"
     when: "D"
   bentoml_monitor_schema:
     class: logging.handlers.RotatingFileHandler
     level: INFO
     formatter: bentoml_json
-    filename: "{path}/schema/schema.log.{worker_id}"
+    filename: "{path}/schema/{monitor_name}/schema.log.{worker_id}"
 formatters:
   bentoml_json:
     class: pythonjsonlogger.jsonlogger.JsonFormatter
@@ -165,6 +165,7 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         logging_config_yaml = logging_config_yaml.format(
             path=self.log_path,
             worker_id=component_context.component_index,
+            monitor_name=self.name,
         )
         logging_config = yaml.safe_load(logging_config_yaml)
         logging.config.dictConfig(logging_config)
@@ -270,6 +271,33 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         raise NotImplementedError("Not implemented yet")
 
 
+@t.overload
+def monitor(
+    name: str,
+    monitor_class: t.Type[MT],
+    monitor_options: dict[str, t.Any] | None,
+) -> t.Generator[MT, None, None]:
+    pass
+
+
+@t.overload
+def monitor(
+    name: str,
+    monitor_class: str,
+    monitor_options: dict[str, t.Any] | None,
+) -> t.Generator[MonitorBase[t.Any], None, None]:
+    pass
+
+
+@t.overload
+def monitor(
+    name: str,
+    monitor_class: None,
+    monitor_options: dict[str, t.Any] | None,
+) -> t.Generator[DefaultMonitor, None, None]:
+    pass
+
+
 @contextlib.contextmanager
 @inject
 def monitor(
@@ -279,7 +307,7 @@ def monitor(
     | None = Provide[BentoMLContainer.config.monitoring.type],
     monitor_options: dict[str, t.Any]
     | None = Provide[BentoMLContainer.config.monitoring.options],
-) -> t.Generator[MT, None, None]:
+) -> t.Generator[MT | MonitorBase[t.Any], None, None]:
     """
     Context manager for monitoring.
 
@@ -342,5 +370,5 @@ def monitor(
 
     mon = MONITOR_REGISTRY[name]
     mon.start_record()
-    yield mon  # type: ignore
+    yield mon
     mon.stop_record()

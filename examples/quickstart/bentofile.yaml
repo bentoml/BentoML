@@ -3,8 +3,10 @@ labels:
   owner: bentoml-team
   project: gallery
 include:
-- "*.py"
+  - "*.py"
 python:
   packages:
     - scikit-learn
     - pandas
+docker:
+  env: ./.env

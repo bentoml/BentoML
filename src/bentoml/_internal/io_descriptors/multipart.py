@@ -221,14 +221,14 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         return {
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
             "required": True,
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     async def from_http_request(self, request: Request) -> dict[str, t.Any]:

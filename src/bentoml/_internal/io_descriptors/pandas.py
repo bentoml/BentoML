@@ -22,12 +22,11 @@ from ...exceptions import MissingDependencyException
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
-from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     import pandas as pd
+    from typing_extensions import Self
 
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
@@ -42,7 +41,7 @@ else:
         "pd",
         globals(),
         "pandas",
-        exc_msg='pandas" is required to use PandasDataFrame or PandasSeries. Install with "pip install -U pandas"',
+        exc_msg='pandas" is required to use PandasDataFrame or PandasSeries. Install with "pip install bentoml[io-pandas]"',
     )
 
 logger = logging.getLogger(__name__)
@@ -325,6 +324,7 @@ class PandasDataFrame(
         self._orient = orient
         self._columns = columns
         self._apply_column_names = apply_column_names
+        # TODO: convert dtype to numpy dtype
         self._dtype = dtype
         self._enforce_dtype = enforce_dtype
         self._shape = shape
@@ -344,14 +344,31 @@ class PandasDataFrame(
     def sample_input(self, value: ext.PdDataFrame) -> None:
         self._sample_input = value
 
+    def _convert_dtype(self, value: ext.PdDType) -> str | None:
+        if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(value):
+            return str(value.dtype)
+        logger.warning(f"{type(value)} is not yet supported.")
+        return None
+
     def to_spec(self) -> dict[str, t.Any]:
         # TODO: support extension dtypes
+        dtype: bool | str | dict[str, t.Any] | None = None
+        if self._dtype is not None:
+            if isinstance(self._dtype, bool):
+                dtype = self._dtype
+            elif isinstance(self._dtype, dict):
+                dtype = {str(k): self._convert_dtype(v) for k, v in self._dtype.items()}
+            elif LazyType("numpy", "ndarray").isinstance(self._dtype):
+                dtype = self._dtype.name
+            else:
+                raise NotImplementedError
+
         return {
             "id": self.descriptor_id,
             "args": {
                 "orient": self._orient,
                 "columns": self._columns,
-                "dtype": None if self._dtype is None else self._dtype.name,
+                "dtype": dtype,
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,
@@ -375,17 +392,19 @@ class PandasDataFrame(
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_request_body(self) -> RequestBody:
-        return RequestBody(
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-            required=True,
-        )
+    def openapi_request_body(self) -> dict[str, t.Any]:
+        return {
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "required": True,
+            "x-bentoml-io-descriptor": self.to_spec(),
+        }
 
     def openapi_responses(self) -> OpenAPIResponse:
-        return OpenAPIResponse(
-            description=SUCCESS_DESCRIPTION,
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-        )
+        return {
+            "description": SUCCESS_DESCRIPTION,
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "x-bentoml-io-descriptor": self.to_spec(),
+        }
 
     async def from_http_request(self, request: Request) -> ext.PdDataFrame:
         """
@@ -787,11 +806,18 @@ class PandasSeries(
 
     def to_spec(self) -> dict[str, t.Any]:
         # TODO: support extension dtypes
+        dtype = None
+        if self._dtype is not None:
+            if isinstance(self._dtype, (dict, bool)):
+                dtype = self._dtype
+            else:
+                dtype = self._dtype.name
+
         return {
             "id": self.descriptor_id,
             "args": {
                 "orient": self._orient,
-                "dtype": None if self._dtype is None else self._dtype.name,
+                "dtype": dtype,
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,
@@ -811,18 +837,18 @@ class PandasSeries(
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_request_body(self) -> RequestBody:
+    def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
             "required": True,
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     async def from_http_request(self, request: Request) -> ext.PdSeries:

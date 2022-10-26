@@ -20,19 +20,19 @@ from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
-from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from types import UnionType
 
     import PIL
     import PIL.Image
+    from typing_extensions import Self
 
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
     from .. import external_typing as ext
+    from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
     _Mode = t.Literal[
@@ -224,7 +224,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         }
 
     @classmethod
-    def from_spec(cls) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in Image spec: {spec}")
 
@@ -239,20 +239,22 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_request_body(self) -> RequestBody:
-        return RequestBody(
-            content={
+    def openapi_request_body(self) -> dict[str, t.Any]:
+        return {
+            "content": {
                 mtype: MediaType(schema=self.openapi_schema())
                 for mtype in self._allowed_mimes
             },
-            required=True,
-        )
+            "required": True,
+            "x-bentoml-io-descriptor": self.to_spec(),
+        }
 
     def openapi_responses(self) -> OpenAPIResponse:
-        return OpenAPIResponse(
-            description=SUCCESS_DESCRIPTION,
-            content={self._mime_type: MediaType(schema=self.openapi_schema())},
-        )
+        return {
+            "description": SUCCESS_DESCRIPTION,
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "x-bentoml-io-descriptor": self.to_spec(),
+        }
 
     async def from_http_request(self, request: Request) -> ImageType:
         content_type, _ = parse_options_header(request.headers["content-type"])

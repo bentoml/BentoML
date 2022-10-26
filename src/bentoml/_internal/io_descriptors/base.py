@@ -19,9 +19,7 @@ if TYPE_CHECKING:
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
     from ..service.openapi.specification import Schema
-    from ..service.openapi.specification import Response as OpenAPIResponse
     from ..service.openapi.specification import Reference
-    from ..service.openapi.specification import RequestBody
 
     InputType = (
         UnionType
@@ -90,11 +88,11 @@ class IODescriptor(ABC, t.Generic[IOType]):
         raise NotImplementedError
 
     @abstractmethod
-    def openapi_request_body(self) -> RequestBody:
+    def openapi_request_body(self) -> dict[str, t.Any]:
         raise NotImplementedError
 
     @abstractmethod
-    def openapi_responses(self) -> OpenAPIResponse:
+    def openapi_responses(self) -> dict[str, t.Any]:
         raise NotImplementedError
 
     @abstractmethod

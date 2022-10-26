@@ -48,15 +48,15 @@ def test_invalid_pilmode():
 @pytest.mark.parametrize("mime_type", ["image/png", "image/jpeg"])
 def test_image_openapi_request_responses(mime_type: str):
     request_body = Image(mime_type=mime_type).openapi_request_body()
-    assert request_body.required
+    assert request_body["required"]
 
-    assert mime_type in request_body.content
+    assert mime_type in request_body["content"]
 
     responses = Image(mime_type=mime_type).openapi_responses()
 
-    assert responses.content
+    assert responses["content"]
 
-    assert mime_type in responses.content
+    assert mime_type in responses["content"]
 
 
 @pytest.mark.asyncio

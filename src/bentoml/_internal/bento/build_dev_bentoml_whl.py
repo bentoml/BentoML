@@ -12,7 +12,6 @@ from ..configuration import is_pypi_installed_bentoml
 logger = logging.getLogger(__name__)
 
 BENTOML_DEV_BUILD = "BENTOML_BUNDLE_LOCAL_BUILD"
-_exc_message = f"'{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package. Install development dependencies with 'pip install -r requirements/dev-requirements.txt' and try again."
 
 
 def build_bentoml_editable_wheel(target_path: str) -> None:
@@ -33,7 +32,9 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
 
         from build import ProjectBuilder
     except ModuleNotFoundError as e:
-        raise MissingDependencyException(_exc_message) from e
+        raise MissingDependencyException(
+            f"Environment variable '{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package ({e}). Install development dependencies with 'pip install -r requirements/dev-requirements.txt' and try again."
+        ) from None
 
     # Find bentoml module path
     # This will be $GIT_ROOT/src/bentoml

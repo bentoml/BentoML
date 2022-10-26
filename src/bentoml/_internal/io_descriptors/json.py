@@ -10,20 +10,18 @@ import attr
 from starlette.requests import Request
 from starlette.responses import Response
 
-from bentoml.exceptions import BadInput
-
 from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils import bentoml_cattr
 from ..utils.pkg import pkg_version_info
 from ..utils.http import set_cookies
+from ...exceptions import BadInput
+from ...exceptions import InvalidArgument
 from ..service.openapi import REF_PREFIX
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
-from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -31,8 +29,10 @@ if TYPE_CHECKING:
     import pydantic
     import pydantic.schema as schema
     from google.protobuf import struct_pb2
+    from typing_extensions import Self
 
     from .. import external_typing as ext
+    from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
 else:
@@ -250,7 +250,7 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
 
         return {"schemas": pydantic_components_schema(self._pydantic_model)}
 
-    def openapi_request_body(self) -> RequestBody:
+    def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
             "required": True,

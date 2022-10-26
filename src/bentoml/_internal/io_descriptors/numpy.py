@@ -19,16 +19,16 @@ from ...exceptions import BentoMLException
 from ...exceptions import UnprocessableEntity
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
-from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     import numpy as np
+    from typing_extensions import Self
 
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
     from .. import external_typing as ext
+    from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 else:
     from bentoml.grpc.utils import import_generated_stubs
@@ -298,7 +298,7 @@ class NumpyNdarray(
             return self.sample_input.tolist()
         return
 
-    def openapi_request_body(self) -> RequestBody:
+    def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
                 self._mime_type: MediaType(
@@ -306,7 +306,7 @@ class NumpyNdarray(
                 )
             },
             "required": True,
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     def openapi_responses(self) -> OpenAPIResponse:
@@ -317,7 +317,7 @@ class NumpyNdarray(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     def validate_array(

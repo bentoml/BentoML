@@ -361,12 +361,11 @@ You can run the docker image to start the service.
 
 .. seealso::
 
-   :ref:`Containerize Bentos <concepts/bento:Docker Options>` to learn more about our
+   :ref:`Containerize Bentos <concepts/bento:Docker Options>` describes our
    docker options and how to customize the docker image.
 
    :ref:`guides/containerization:Advanced Containerization` goes into more 
-   details about advanced containerization features that BentoML provides, for those who
-   are interested.
+   details about the advanced containerization features that BentoML provides.
 
 Deploy Bentos
 -------------

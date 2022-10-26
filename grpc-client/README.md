@@ -28,7 +28,7 @@ The following table contains command to run clients:
 
 | Language           | Command                                 |
 | ------------------ | --------------------------------------- |
-| [Python](./python) | `bazel run //grpc-client/python:client` |
+| [Python](./python) | `python client.py`                      |
 | [C++](./cpp)       | `bazel run //grpc-client/cpp:client`    |
 | [Go](./go)         | `bazel run //grpc-client/go:client`     |
 | [Java](./java)     | `bazel run //grpc-client/java:client`   |

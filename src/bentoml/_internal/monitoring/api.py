@@ -129,7 +129,13 @@ formatters:
 """
 
 
-class BentoMLDefaultMonitor(MonitorBase["JSONSerializable"]):
+class DefaultMonitor(MonitorBase["JSONSerializable"]):
+    """
+    The default monitor implementation. It uses a logger to log data and schema, and will
+    write monitor data to rotating files. The schema is logged as a JSON object, and the
+    data is logged as a JSON array.
+    """
+
     PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID) = ("timestamp", "request_id")
 
     def __init__(
@@ -320,7 +326,7 @@ def monitor(
         if not BentoMLContainer.config.monitoring.enabled.get():
             monitor_klass = NoOpMonitor
         elif monitor_class is None or monitor_class == "default":
-            monitor_klass = BentoMLDefaultMonitor
+            monitor_klass = DefaultMonitor
         elif isinstance(monitor_class, str):
             monitor_klass = LazyType["MonitorBase[t.Any]"](monitor_class).get_class()
         elif isinstance(monitor_class, type):

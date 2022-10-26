@@ -284,7 +284,7 @@ class NumpyNdarray(
             if isinstance(self.sample, np.generic):
                 raise BadInput("NumpyNdarray: sample must be a numpy array.") from None
             # NOTE: we only need to
-            return self.sample.ravel().tolist()
+            return self.sample.tolist()
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {

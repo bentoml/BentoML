@@ -1,4 +1,3 @@
-# pylint: disable=unsupported-binary-operation
 from __future__ import annotations
 
 import io
@@ -106,6 +105,7 @@ MetadataType: t.TypeAlias = t.Union[
 ]
 
 if TYPE_CHECKING:
+    # pylint: disable=unsupported-binary-operation
     MetadataDict = t.Dict[str, MetadataType]
     JSONSerializable = (
         str

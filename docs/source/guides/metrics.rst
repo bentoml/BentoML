@@ -4,85 +4,78 @@ Metrics
 
 Metrics are measurements of statistics about your service, which can provide information about the usage and performance of your bentos in production.
 
-BentoML allows users to define custom metrics with `Prometheus <https://prometheus.io/>`_ to easily enable monitoring for their Bentos.
+BentoML allows users to define custom metrics with [#prometheus]_ to easily enable monitoring for their Bentos.
  
 This article will dive into how to add custom metrics to monitor your BentoService and how you can incorporate custom metrics into 
 either a :ref:`concepts/runner:Custom Runner` or your :ref:`Service <concepts/service:Service and APIs>`.
 
-Make sure to have `Prometheus <https://prometheus.io/download/#prometheus>`_ installed and running before continuing.
+Make sure to have [#prometheus]_ installed and running before continuing.
+
+.. note::
+
+   This article assumes that you have a base understanding of a BentoService. If you
+   are new to BentoML, please start with :ref:`the quickstart tutorial <tutorial:Tutorial: Intro to BentoML>`.
+
+.. seealso::
+
+   :ref:`Metrics API <reference/metrics>` for more information on ``bentoml.metrics``.
+
 
 Tracking model latency with Prometheus
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We will build a custom histogram to track the latency of our :ref:`custom MNIST runner <concepts/runner:Custom Runner>` in this
-tutorial.
+We will build a custom histogram to track the latency of our :ref:`pretrained NLTK runner <concepts/runner:Custom Runner>`, a custom
+counter to measure the total amount of time our endpoint is invoked.
 
 .. note::
 
-   The source code for this custom runner is :github:`available on GitHub <bentoml/BentoML/tree/main/examples/custom_model_runner>`.
+   The source code for this custom runner is :github:`available on GitHub <bentoml/BentoML/tree/main/examples/custom_runner/nltk_pretrained_model>`.
 
-Initialize our Histogram to track inference duration:
+Initialize our metrics as follow:
 
-.. code-block:: python
+.. literalinclude:: ./snippets/metrics/metric_defs.py
+   :language: python
+   :caption: `service.py`
 
-   import bentoml
+``inference_duration`` is a :meth:`bentoml.metrics.Histogram`, which tracks how long it
+takes for our model to run inference.
+The :attr:`bentoml.metrics.Histogram.buckets` is a exponential bucket with a factor of 1.5 and starts at 0.001.
 
-   inference_duration = bentoml.metrics.Histogram(
-       name="inference_duration",
-       documentation="Duration of inference",
-       labelnames=["torch_version", "device_id"],
-       buckets=exponential_buckets(0.001, 1.5, 10.0),
-   )
+``num_invocation`` is a :meth:`bentoml.metrics.Counter`, which tracks the total number
+of invocation for any given endpoint.
 
-This creates a :meth:`bentoml.metrics.Histogram`, which is a metric type that tracks the distribution of events with given bucket. The
-:attr:`bentoml.metrics.Histogram.buckets` is a exponential bucket with a factor of 1.5 and starts at 0.001.
+.. epigraph::
 
-Follow with creating our custom MNIST runnable:
+   :bdg-info:`Note:` This also applies to any other metric type, including :meth:`bentoml.metrics.Gauge` and :meth:`bentoml.metrics.Summary`.
 
-.. code-block:: python
+Create our NLTK custom runner:
 
-   mnist_model = bentoml.pytorch.get("mnist_cnn:latest").
-   _BuiltinRunnable = mnist_model.to_runnable()
+.. literalinclude:: ./snippets/metrics/runner_impl.py
+   :language: python
+   :caption: `service.py`
 
-   class MNISTRunnable(_BuiltinRunnable):
-        def __init__(self):
-            super().__init__()
-            import torch
+This runnable implementation creates a custom NLTK runner, that use the ``inference_duration``
+histogram to track the latency of polatiry scores from a given sentence.
 
-            print("Running on device:", self.device_id)
-            self.torch_version = torch.__version__
-            print("Running on torch version:", self.torch_version)
-
-        @bentoml.Runnable.method(batchable=True, batch_dim=0)
-        def __call__(self, input_arr: np.ndarray) -> np.ndarray:
-            start = time.perf_counter()
-            output = super().__call__(input_arr)
-            inference_duration.labels(
-                  torch_version=self.torch_version, device_id=self.device_id
-            ).observe(time.perf_counter() - start)
-            return output.argmax(dim=1)
-
-This runnable wraps around BentoML's built-in PyTorch runnable implementation and adds aforementioned metrics.
-
-Initialize our custom runner, and add it to the service:
+Initialize our NLTK runner, and add it to the service:
 
 .. code-block:: python
 
-   mnist_runner = bentoml.Runner(
-      MNISTRunnable,
-      method_configs={"__call__": {"max_batch_size": 50, "max_latency_ms": 600}},
+   nltk_runner = t.cast(
+      "RunnerImpl", bentoml.Runner(NLTKSentimentAnalysisRunnable, name="nltk_sentiment")
    )
 
-   svc = bentoml.Service(
-      "pytorch_mnist", runners=[mnist_runner], models=[mnist_model]
-   )
+   svc = bentoml.Service("sentiment_analyzer", runners=[nltk_runner])
 
 
-   @svc.api(input=bentoml.io.Image(), output=bentoml.io.NumpyNdarray())
-   async def predict(image: PIL.Image.Image) -> np.ndarray:
-       arr = np.array(image).reshape([-1, 1, 28, 28])
-       res = await mnist_runner.async_run(arr)
-       return res.numpy()
+   @svc.api(input=bentoml.io.Text(), output=bentoml.io.JSON())
+   async def analysis(input_text: str) -> dict[str, bool]:
+       num_invocation.labels(endpoint="analysis").inc()
+       is_positive = await nltk_runner.is_positive.async_run(input_text)
+       return {"is_positive": is_positive}
+
+Our endpoint ``analysis`` uses the ``num_invocation`` counter to track the total number of
+invocation for ``analysis``.
 
 .. tab-set::
 
@@ -97,7 +90,7 @@ Initialize our custom runner, and add it to the service:
 
        Use the following ``prometheus.yml`` config:
 
-       .. literalinclude:: ../../../examples/custom_model_runner/prometheus/prometheus.http.yml
+       .. literalinclude:: ../../../examples/custom_runner/nltk_pretrained_model/prometheus/prometheus.http.yml
           :language: python
           :caption: `prometheus.yml`
 
@@ -114,7 +107,6 @@ Initialize our custom runner, and add it to the service:
           » curl -X POST -F "image=@test_image.png" \
                    http://0.0.0.0:3000/predict
 
-
     .. tab-item:: gRPC
        :sync: grpc
 
@@ -126,7 +118,7 @@ Initialize our custom runner, and add it to the service:
 
        Use the following ``prometheus.yml`` config:
 
-       .. literalinclude:: ../../../examples/custom_model_runner/prometheus/prometheus.grpc.yml
+       .. literalinclude:: ../../../examples/custom_runner/nltk_pretrained_model/prometheus/prometheus.grpc.yml
           :language: python
           :caption: `prometheus.yml`
 
@@ -167,3 +159,9 @@ Visit `http://localhost:9090/graph <http://localhost:9090/graph>`_ and use the f
     and `documentation guide <https://github.com/bentoml/BentoML/blob/main/docs/README.md>`_
     to get started.
 
+
+----
+
+.. rubric:: Notes
+
+.. [#prometheus] `Prometheus <https://prometheus.io/>`_

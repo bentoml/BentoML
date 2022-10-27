@@ -1,9 +1,9 @@
-# MNIST with custom model runner
+# Custom PyTorch MNIST runner
 
 This example showcases how one can extend BentoML's provided runner and build a custom Runner. See [our documentation][#custom-runner] on Runners.
 
-This example will also demonstrate how one can create custom metrics to monitor model's performance.
-We will provide two Prometheus configs as well as a Grafana dashboard for demonstration.
+This example will also demonstrate how one can create custom metrics to monitor the model's performance.
+We will provide two Prometheus configs to use for either HTTP or gRPC BentoServer for demonstration.
 
 ### Requirements
 
@@ -21,22 +21,69 @@ pip install -r requirements.txt
 python -m train
 ```
 
-2. Start a development server:
+2. Download test data
 
 ```bash
-bentoml serve
+wget -qO- https://github.com/myleott/mnist_png/raw/master/mnist_png.tar.gz | tar xz
 ```
 
-3. Download test data
+3. Start a development server:
+
+<table>
+<tr>
+<td> Protocol </td> <td> Command </td>
+</tr>
+<tr>
+<td> <code>HTTP</code> </td>
+<td>
 
 ```bash
-bazel run //:download_mnist_data
+bentoml serve-http service.py:svc
 ```
+
+</td>
+</tr>
+<tr>
+<td> <code>gRPC</code> </td>
+<td>
+
+```bash
+bentoml serve-grpc service.py:svc
+```
+
+</td>
+</tr>
+</table>
 
 4. Send test requests
 
+<table>
+<tr>
+<td> Protocol </td> <td> Command </td>
+</tr>
+<tr>
+<td> <code>HTTP</code> </td>
+<td>
+
 ```bash
 curl -F 'image=@mnist_png/testing/8/1007.png' http://127.0.0.1:3000/predict
+```
+
+</td>
+</tr>
+<tr>
+<td> <code>gRPC</code> </td>
+<td>
+
+```bash
+grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1alpha1.BentoService/Call <<EOM
+{
+  "apiName": "classify",
+  "file": {
+    "content": "..."  # bytes from a one of the testdata.
+  }
+}
+EOM
 ```
 
 5. Load testing

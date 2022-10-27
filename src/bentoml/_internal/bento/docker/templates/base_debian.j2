@@ -10,5 +10,5 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloa
 RUN {{ common.mount_cache(__lib_apt__) }} \
     {{ common.mount_cache(__cache_apt__) }} \
     apt-get update -y \
-    && apt-get install -q -y --no-install-recommends --allow-remove-essential ca-certificates gnupg2 bash build-essential software-properties-common {% if __options__system_packages is not none %}{{ __options__system_packages | join(' ') }}{% endif -%}
+    && apt-get install -q -y --no-install-recommends --allow-remove-essential ca-certificates gnupg2 bash build-essential {% if __options__system_packages is not none %}{{ __options__system_packages | join(' ') }}{% endif -%}
 {% endblock %}

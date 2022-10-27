@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import shlex
 import shutil
 import typing as t
 import platform
@@ -11,6 +12,30 @@ from gettext import gettext
 import click
 
 conda_packages_name = "conda_packages"
+
+_ENVVAR = [
+    "BENTOML_DEBUG",
+    "BENTOML_QUIET",
+    "BENTOML_BUNDLE_LOCAL_BUILD",
+    "BENTOML_DO_NOT_TRACK",
+    "BENTOML_CONFIG",
+    "BENTOML_CONFIG_OPTIONS",
+    "BENTOML_PORT",
+    "BENTOML_HOST",
+    "BENTOML_API_WORKERS",
+]
+_CONDITIONAL_ENVVAR = [
+    # Only print if set
+    "BENTOML_NUM_THREAD",
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "RAYON_RS_NUM_CPUS",
+    "TF_NUM_INTEROP_THREADS",
+    "TF_NUM_INTRAOP_THREADS",
+]
 
 
 def run_cmd(cmd: list[str]) -> list[str]:
@@ -32,22 +57,48 @@ def format_dropdown(title: str, content: t.Iterable[str]) -> str:
 """
 
 
-def format_keys(key: str, markdown: bool) -> str:
-    return f"`{key}`" if markdown else key
-
-
 def pretty_format(
     info_dict: dict[str, str | list[str]], output: t.Literal["md", "plain"]
 ) -> str:
     out: list[str] = []
-    for key, value in info_dict.items():
-        if isinstance(value, list):
-            if output == "md":
+    _default_env = [f'{env}={shlex.quote(os.environ.get(env, ""))}' for env in _ENVVAR]
+    _conditional_env = [
+        f'{env}={shlex.quote(os.environ.get(env, ""))}'
+        for env in _CONDITIONAL_ENVVAR
+        if os.environ.get(env) is not None
+    ]
+    # environment format
+    if output == "md":
+        out.append(
+            """\
+#### Environment variable
+
+```bash
+{env}
+```
+""".format(
+                env="\n".join(_default_env)
+            )
+        )
+        if len(_conditional_env) > 0:
+            out.extend(_conditional_env)
+        out.append("#### System information\n")
+        for key, value in info_dict.items():
+            if isinstance(value, list):
                 out.append(format_dropdown(key, value))
             else:
-                out.append(f"{key}:\n  " + "\n  ".join(value))
-        else:
-            out.append(f"{format_keys(key, markdown=output=='md')}: {value}")
+                out.append(f"`{key}`: {value}")
+    else:
+        out.extend(_default_env)
+        if len(_conditional_env) > 0:
+            out.extend(_conditional_env)
+        for key, value in info_dict.items():
+            if isinstance(value, list):
+                out.append(
+                    f"{key}=( " + " ".join(map(lambda s: f'"{s}"', value)) + " )"
+                )
+            else:
+                out.append(f'{key}="{value}"')
     return "\n".join(out)
 
 
@@ -86,7 +137,7 @@ def add_env_command(cli: click.Group) -> None:
             is_admin: bool = windll.shell32.IsUserAnAdmin() != 0
             info_dict["is_window_admin"] = str(is_admin)
         else:
-            info_dict["uid:gid"] = f"{os.geteuid()}:{os.getegid()}"
+            info_dict["uid_gid"] = f"{os.geteuid()}:{os.getegid()}"
 
         if "CONDA_PREFIX" in os.environ:
             # conda packages

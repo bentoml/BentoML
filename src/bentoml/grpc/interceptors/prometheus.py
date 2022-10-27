@@ -14,6 +14,7 @@ from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import to_http_status
 from bentoml.grpc.utils import wrap_rpc_handler
 from bentoml.grpc.utils import import_generated_stubs
+from bentoml._internal.context import trace_context
 from bentoml._internal.context import component_context
 from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -101,6 +102,21 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
         if handler and (handler.response_streaming or handler.request_streaming):
             return handler
 
+        # NOTE: Exemplars are reference to data outside
+        # of the metrics set. This is often use to link
+        # traces to given metrics.
+        exemplar: dict[str, str] = dict(
+            filter(
+                lambda tup: tup[1] is not None,
+                {
+                    "trace_id": trace_context.trace_id,
+                    "span_id": trace_context.span_id,
+                    "request_id": trace_context.request_id,
+                    "sampled": trace_context.sampled,
+                }.items(),
+            )
+        )
+
         START_TIME_VAR.set(default_timer())
 
         def wrapper(behaviour: AsyncHandlerMethod[Response]):
@@ -121,7 +137,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                     http_response_code=to_http_status(
                         t.cast(grpc.StatusCode, context.code())
                     ),
-                ).inc()
+                ).inc(exemplar=exemplar)
 
                 # instrument request duration
                 assert START_TIME_VAR.get() != 0
@@ -134,7 +150,7 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                         t.cast(grpc.StatusCode, context.code())
                     ),
                 ).observe(
-                    total_time
+                    total_time, exemplar=exemplar
                 )
                 START_TIME_VAR.set(0)
                 # instrument request in progress

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+from ...context import trace_context
 from ...context import component_context
 from ...utils.metrics import metric_name
 from ...configuration.containers import BentoMLContainer
@@ -124,6 +125,21 @@ class HTTPTrafficMetricsMiddleware:
             await response(scope, receive, send)
             return
 
+        # NOTE: Exemplars are reference to data outside
+        # of the metrics set. This is often use to link
+        # traces to given metrics.
+        exemplar: dict[str, str] = dict(
+            filter(
+                lambda tup: tup[1] is not None,
+                {
+                    "trace_id": trace_context.trace_id,
+                    "span_id": trace_context.span_id,
+                    "request_id": trace_context.request_id,
+                    "sampled": trace_context.sampled,
+                }.items(),
+            )
+        )
+
         endpoint = scope["path"]
         START_TIME_VAR.set(default_timer())
 
@@ -146,7 +162,7 @@ class HTTPTrafficMetricsMiddleware:
                         service_name=component_context.bento_name,
                         service_version=component_context.bento_version,
                         http_response_code=STATUS_VAR.get(),
-                    ).inc()
+                    ).inc(exemplar=exemplar)
 
                     # instrument request duration
                     total_time = max(default_timer() - START_TIME_VAR.get(), 0)
@@ -160,7 +176,7 @@ class HTTPTrafficMetricsMiddleware:
                         service_name=component_context.bento_name,
                         service_version=component_context.bento_version,
                         http_response_code=STATUS_VAR.get(),
-                    ).observe(total_time)
+                    ).observe(total_time, exemplar=exemplar)
 
                     START_TIME_VAR.set(0)
                     STATUS_VAR.set(0)
@@ -250,6 +266,21 @@ class RunnerTrafficMetricsMiddleware:
             await response(scope, receive, send)
             return
 
+        # NOTE: Exemplars are reference to data outside
+        # of the metrics set. This is often use to link
+        # traces to given metrics.
+        exemplar: dict[str, str] = dict(
+            filter(
+                lambda tup: tup[1] is not None,
+                {
+                    "trace_id": trace_context.trace_id,
+                    "span_id": trace_context.span_id,
+                    "request_id": trace_context.request_id,
+                    "sampled": trace_context.sampled,
+                }.items(),
+            )
+        )
+
         endpoint = scope["path"]
         START_TIME_VAR.set(default_timer())
 
@@ -268,7 +299,7 @@ class RunnerTrafficMetricsMiddleware:
                         service_version=component_context.bento_version,
                         http_response_code=STATUS_VAR.get(),
                         runner_name=component_context.component_name,
-                    ).inc()
+                    ).inc(exemplar=exemplar)
 
                     # instrument request duration
                     total_time = max(default_timer() - START_TIME_VAR.get(), 0)
@@ -278,7 +309,7 @@ class RunnerTrafficMetricsMiddleware:
                         service_version=component_context.bento_version,
                         http_response_code=STATUS_VAR.get(),
                         runner_name=component_context.component_name,
-                    ).observe(total_time)
+                    ).observe(total_time, exemplar=exemplar)
 
                     START_TIME_VAR.set(0)
                     STATUS_VAR.set(0)

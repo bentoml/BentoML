@@ -364,6 +364,8 @@ async def test_pandas_series(host: str):
             "echo_series_from_sample",
             channel=channel,
             data={"series": pb.Series(float_values=[1.0, 2.0, 3.0])},
+            assert_data=lambda resp: resp.series
+            == pb.Series(float_values=[1.0, 2.0, 3.0]),
         )
 
 

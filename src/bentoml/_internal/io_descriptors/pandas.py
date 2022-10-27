@@ -346,31 +346,27 @@ class PandasDataFrame(
     def sample_input(self, value: ext.PdDataFrame) -> None:
         self._sample_input = value
 
-    def _convert_dtype(self, value: ext.PdDType) -> str | None:
+    def _convert_dtype(
+        self, value: ext.PdDTypeArg | None
+    ) -> str | dict[str, t.Any] | None:
+        # TODO: support extension dtypes
         if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(value):
             return str(value.dtype)
-        logger.warning(f"{type(value)} is not yet supported.")
-        return None
+        elif isinstance(value, bool):
+            return str(value)
+        elif isinstance(value, dict):
+            return {str(k): self._convert_dtype(v) for k, v in value.items()}
+        else:
+            logger.warning(f"{type(value)} is not yet supported.")
+            return None
 
     def to_spec(self) -> dict[str, t.Any]:
-        # TODO: support extension dtypes
-        dtype: bool | str | dict[str, t.Any] | None = None
-        if self._dtype is not None:
-            if isinstance(self._dtype, bool):
-                dtype = self._dtype
-            elif isinstance(self._dtype, dict):
-                dtype = {str(k): self._convert_dtype(v) for k, v in self._dtype.items()}
-            elif LazyType("numpy", "ndarray").isinstance(self._dtype):
-                dtype = self._dtype.name
-            else:
-                raise NotImplementedError
-
         return {
             "id": self.descriptor_id,
             "args": {
                 "orient": self._orient,
                 "columns": self._columns,
-                "dtype": dtype,
+                "dtype": self._convert_dtype(self._dtype),
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,
@@ -401,7 +397,7 @@ class PandasDataFrame(
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
-    def openapi_responses(self) -> OpenAPIResponse:
+    def openapi_responses(self) -> dict[str, t.Any]:
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
@@ -801,8 +797,8 @@ class PandasSeries(
         self._orient = orient
         self._dtype = dtype
         self._enforce_dtype = enforce_dtype
-        shape: tuple[int, ...] | None = (None,)
-        enforce_shape: bool = (False,)
+        self._shape = shape
+        self._enforce_shape = enforce_shape
         self._sample_input = None
 
     @property
@@ -816,20 +812,26 @@ class PandasSeries(
     def input_type(self) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")
 
-    def to_spec(self) -> dict[str, t.Any]:
+    def _convert_dtype(
+        self, value: ext.PdDTypeArg | None
+    ) -> str | dict[str, t.Any] | None:
         # TODO: support extension dtypes
-        dtype = None
-        if self._dtype is not None:
-            if isinstance(self._dtype, (dict, bool)):
-                dtype = self._dtype
-            else:
-                dtype = self._dtype.name
+        if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(value):
+            return str(value.dtype)
+        elif isinstance(value, bool):
+            return str(value)
+        elif isinstance(value, dict):
+            return {str(k): self._convert_dtype(v) for k, v in value.items()}
+        else:
+            logger.warning(f"{type(value)} is not yet supported.")
+            return None
 
+    def to_spec(self) -> dict[str, t.Any]:
         return {
             "id": self.descriptor_id,
             "args": {
                 "orient": self._orient,
-                "dtype": dtype,
+                "dtype": self._convert_dtype(self._dtype),
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,
@@ -856,7 +858,7 @@ class PandasSeries(
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
-    def openapi_responses(self) -> OpenAPIResponse:
+    def openapi_responses(self) -> dict[str, t.Any]:
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {self._mime_type: MediaType(schema=self.openapi_schema())},

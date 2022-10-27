@@ -342,6 +342,10 @@ class PrometheusClient:
                s.observe(512)  # Observe 512 (bytes)
                ...
 
+        ``observe()`` will observe for given amount of time.
+        Usually, this value are positive or zero. Negative values are accepted but will
+        prevent current versions of Prometheus from properly detecting counter resets in the `sum of observations <https://prometheus.io/docs/practices/histograms/#count-and-sum-of-observations>`_.
+
         Similar to :meth:`bentoml.metrics.Histogram`, ``time()`` can also be used as a decorator or context manager.
 
         .. tab-set::

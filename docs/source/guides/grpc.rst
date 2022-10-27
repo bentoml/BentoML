@@ -792,6 +792,8 @@ A ``Request`` message takes in:
 +------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
 | :ref:`guides/grpc:Tabular data representation via ``DataFrame``` | :ref:`bentoml.io.PandasDataFrame <reference/api_io_descriptors:Tabular Data with Pandas>` |
 +------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| :ref:`guides/grpc:Series representation via ``Series```          | :ref:`bentoml.io.PandasDataFrame <reference/api_io_descriptors:Tabular Data with Pandas>` |
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
 | :ref:`guides/grpc:File-like object via ``File```                 | :ref:`bentoml.io.File <reference/api_io_descriptors:Files>`                               |
 +------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
 | |google_protobuf_string_value|_                                  | :ref:`bentoml.io.Text <reference/api_io_descriptors:Texts>`                               |
@@ -1034,6 +1036,54 @@ It accepts the following fields:
          }
 
 :bdg-primary:`API reference:` :meth:`bentoml.io.PandasDataFrame.from_proto`
+
+Series representation via ``Series``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:bdg-info:`Description:` ``Series`` portrays a series of values. This can be used for representing Series types in tabular data.
+
+It accepts the following fields:
+
+* `string_values`, `float_values`, `double_values`, `bool_values`, `int32_values`, `int64_values`
+
+  Similar to NumpyNdarray, each of the fields is a `list` of the corresponding data type. The list is a 1-D array, and will be then pass to ``pd.Series``.
+
+  Each request should only contain **ONE** of the aforementioned fields.
+
+  The interaction among the above fields and ``dtype`` from ``PandasSeries`` are as follows:
+
+  - if ``dtype`` is not present in the descriptor:
+      * All of the fields are empty, then we return an empty ``pd.Series``.
+      * We will loop through all of the provided fields, and only allows one field per message.
+
+        If here are more than one field (i.e. ``string_values`` and ``float_values``), then we will raise an error, as we don't know how to deserialize the data.
+
+  - otherwise:
+      * We will use the provided dtype-to-field map to get the data from the given message.
+
+.. grid:: 2
+
+    .. grid-item-card::  ``Python API``
+
+      .. code-block:: python
+
+         PandasSeries.from_sample([5.4, 3.4, 1.5, 0.4])
+
+    .. grid-item-card::  ``pb.Series``
+
+      .. code-block:: none
+
+         series {
+           float_values: 5.4
+           float_values: 3.4
+           float_values: 1.5
+           float_values: 0.4
+         }
+
+
+:bdg-primary:`API reference:` :meth:`bentoml.io.PandasSeries.from_proto`
+
+:raw-html:`<br />`
 
 File-like object via ``File``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

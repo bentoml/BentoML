@@ -13,6 +13,7 @@ from bentoml.io import Text
 from bentoml.io import Image
 from bentoml.io import Multipart
 from bentoml.io import NumpyNdarray
+from bentoml.io import PandasSeries
 from bentoml.io import PandasDataFrame
 from bentoml.testing.grpc import TestServiceServicer
 from bentoml._internal.utils import LazyLoader
@@ -147,6 +148,12 @@ async def echo_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 async def echo_dataframe_from_sample(df: pd.DataFrame) -> pd.DataFrame:
     assert isinstance(df, pd.DataFrame)
     return df
+
+
+@svc.api(input=PandasSeries.from_sample(pd.Series([1, 2, 3])), output=PandasSeries())
+async def echo_series_from_sample(series: pd.Series) -> pd.Series:
+    assert isinstance(series, pd.Series)
+    return series
 
 
 @svc.api(

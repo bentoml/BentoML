@@ -4,7 +4,8 @@
 
 RUN {{ common.mount_cache(__lib_apt__) }} \
     {{ common.mount_cache(__cache_apt__) }} \
-    set -eux pipefail && \
+    set -eux && \
+    apt-get install -y --no-install-recommends --allow-remove-essential software-properties-common && \
     # add deadsnakes ppa to install python
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update -y && \

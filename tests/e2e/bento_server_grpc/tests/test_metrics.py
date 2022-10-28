@@ -19,7 +19,7 @@ else:
 
 
 @pytest.mark.asyncio
-async def test_multipart(host: str, img_file: str):
+async def test_metrics_available(host: str, img_file: str):
     with open(str(img_file), "rb") as f:
         fb = f.read()
 

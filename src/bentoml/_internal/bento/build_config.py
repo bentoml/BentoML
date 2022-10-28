@@ -18,20 +18,20 @@ import fs.copy
 from pathspec import PathSpec
 from pip_requirements_parser import RequirementsFile
 
-from .gen import generate_dockerfile
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
-from .docker import DistroSpec
-from .docker import get_supported_spec
-from .docker import SUPPORTED_CUDA_VERSIONS
-from .docker import DOCKER_SUPPORTED_DISTROS
-from .docker import ALLOWED_CUDA_VERSION_ARGS
-from .docker import SUPPORTED_PYTHON_VERSIONS
+from ..container import generate_dockerfile
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..utils.dotenv import parse_dotenv
 from ..configuration import CLEAN_BENTOML_VERSION
+from ..container.dockerfile import DistroSpec
+from ..container.dockerfile import get_supported_spec
+from ..container.dockerfile import SUPPORTED_CUDA_VERSIONS
+from ..container.dockerfile import DOCKER_SUPPORTED_DISTROS
+from ..container.dockerfile import ALLOWED_CUDA_VERSION_ARGS
+from ..container.dockerfile import SUPPORTED_PYTHON_VERSIONS
 from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
 if TYPE_CHECKING:
@@ -228,7 +228,12 @@ class DockerOptions:
             )
 
         copy_file_to_fs_folder(
-            fs.path.join(os.path.dirname(__file__), "docker", "entrypoint.sh"),
+            fs.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "container",
+                "dockerfile",
+                "entrypoint.sh",
+            ),
             bento_fs,
             docker_folder,
         )

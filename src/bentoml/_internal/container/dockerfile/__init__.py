@@ -6,11 +6,14 @@ from typing import TYPE_CHECKING
 
 import attr
 
-from bentoml.exceptions import InvalidArgument
-from bentoml.exceptions import BentoMLException
+from ....exceptions import InvalidArgument
+from ....exceptions import BentoMLException
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
+    ListStr = list[str]
+else:
+    ListStr = list
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +34,7 @@ ALLOWED_CUDA_VERSION_ARGS = {
 }
 
 # Supported supported_architectures
+# TODO: early validation
 SUPPORTED_ARCHITECTURES = ["amd64", "arm64", "ppc64le", "s390x"]
 # Supported release types
 SUPPORTED_RELEASE_TYPES = ["python", "miniconda", "cuda"]
@@ -109,7 +113,7 @@ class DistroSpec:
     supported_python_versions: t.List[str] = attr.field(
         validator=attr.validators.deep_iterable(
             member_validator=attr.validators.in_(SUPPORTED_PYTHON_VERSIONS),
-            iterable_validator=attr.validators.instance_of(list),
+            iterable_validator=attr.validators.instance_of(ListStr),
         ),
     )
 

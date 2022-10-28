@@ -6,6 +6,7 @@ import logging
 from sys import version_info
 from typing import TYPE_CHECKING
 from dataclasses import asdict
+from dataclasses import replace
 from dataclasses import dataclass
 
 from jinja2 import Environment
@@ -13,7 +14,7 @@ from jinja2.loaders import FileSystemLoader
 
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
-from .docker import DistroSpec
+from .dockerfile import DistroSpec
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -21,22 +22,18 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
-    from .build_config import DockerOptions
+    from ..bento.build_config import DockerOptions
 
-    TemplateFunc = t.Callable[[DockerOptions], t.Dict[str, t.Any]]
+    TemplateFunc = t.Callable[[DockerOptions], dict[str, t.Any]]
     F = t.Callable[P, t.Any]
 
 BENTO_UID_GID = 1034
 BENTO_USER = "bentoml"
 BENTO_HOME = f"/home/{BENTO_USER}/"
 BENTO_PATH = f"{BENTO_HOME}bento"
-BLOCKS = {
-    "SETUP_BENTO_BASE_IMAGE",
-    "SETUP_BENTO_USER",
-    "SETUP_BENTO_ENVARS",
-    "SETUP_BENTO_COMPONENTS",
-    "SETUP_BENTO_ENTRYPOINT",
-}
+
+# 1.2.1 is the current docker frontend that both buildkitd and kaniko supports.
+BENTO_BUILDKIT_FRONTEND = "docker/dockerfile:1.2.1"
 
 
 def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
@@ -67,18 +64,25 @@ class ReservedEnv:
 
 
 @dataclass
-class CustomizableEnv:
+class BentoEnv:
     uid_gid: int = BENTO_UID_GID
     user: str = BENTO_USER
     home: str = BENTO_HOME
     path: str = BENTO_PATH
+    add_header: bool = True
+    # BuildKit specifics
+    buildkit_frontend: str = BENTO_BUILDKIT_FRONTEND
+    enable_buildkit: bool = True
 
     def asdict(self) -> dict[str, t.Any]:
         return {to_bento_field(k): v for k, v in asdict(self).items()}
 
+    def with_options(self, **kwargs: t.Any) -> BentoEnv:
+        return replace(self, **kwargs)
+
 
 def get_templates_variables(
-    options: DockerOptions, use_conda: bool
+    options: DockerOptions, use_conda: bool, **bento_env: str | bool
 ) -> dict[str, t.Any]:
     """
     Returns a dictionary of variables to be used in BentoML base templates.
@@ -101,8 +105,6 @@ def get_templates_variables(
             if distro in ["ubi8"]:
                 # ubi8 base images uses "py38" instead of "py3.8" in its image tag
                 python_version = python_version.replace(".", "")
-            else:
-                python_version = python_version
             base_image = spec.image.format(spec_version=python_version)
     else:
         base_image = options.base_image
@@ -111,16 +113,12 @@ def get_templates_variables(
             base_image,
         )
 
-    # environment returns are
-    # __base_image__, __python_version__, __prometheus_port__
-    # bento__uid_gid, bento__user, bento__home, bento__path
-    # __options__distros, __options__base_image, __options_env, __options_system_packages, __options_setup_script
     return {
         **{
             to_options_field(k): v
             for k, v in bentoml_cattr.unstructure(options).items()
         },
-        **CustomizableEnv().asdict(),
+        **BentoEnv().with_options(**bento_env).asdict(),
         **ReservedEnv(base_image=base_image).asdict(),
     }
 
@@ -129,16 +127,15 @@ def generate_dockerfile(
     options: DockerOptions,
     build_ctx: str,
     *,
-    use_conda: bool,
+    use_conda: bool = False,
+    **override_bento_env: t.Any,
 ) -> str:
     """
     Generate a Dockerfile that containerize a Bento.
 
     Args:
-        docker_options (:class:`DockerOptions`):
-            Docker Options class parsed from :code:`bentofile.yaml` or any arbitrary Docker options class.
-        use_conda (:code:`bool`, `required`):
-            Whether to use conda in the given Dockerfile.
+        docker_options: Docker Options class parsed from :code:`bentofile.yaml` or any arbitrary Docker options class.
+        use_conda: Whether to use conda in the given Dockerfile.
 
     Returns:
         str: The rendered Dockerfile string.
@@ -162,12 +159,13 @@ def generate_dockerfile(
         | python        | Python releases.                         |
         +---------------+------------------------------------------+
 
-        Each of the templates will be validated correctly before being rendered. This will also include the user-defined custom templates
-        if :code:`dockerfile_template` is specified.
+        All templates will have the following blocks: "SETUP_BENTO_BASE_IMAGE", "SETUP_BENTO_USER", "SETUP_BENTO_ENVARS", "SETUP_BENTO_COMPONENTS", "SETUP_BENTO_ENTRYPOINT",
+
+        Overriding templates variables: bento__uid_gid, bento__user, bento__home, bento__path, bento__enable_buildkit
 
     .. code-block:: python
 
-        from bentoml._internal.bento.gen import generate_dockerfile
+        from bentoml._internal.container import generate_dockerfile
         from bentoml._internal.bento.bento import BentoInfo
 
         docker_options = BentoInfo.from_yaml_file("{bento_path}/bento.yaml").docker
@@ -179,7 +177,9 @@ def generate_dockerfile(
     use_cuda = options.cuda_version is not None
     user_templates = options.dockerfile_template
 
-    TEMPLATES_PATH = [os.path.join(os.path.dirname(__file__), "docker", "templates")]
+    TEMPLATES_PATH = [
+        os.path.join(os.path.dirname(__file__), "dockerfile", "templates")
+    ]
     ENVIRONMENT = Environment(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
         trim_blocks=True,
@@ -213,4 +213,6 @@ def generate_dockerfile(
             globals={"bento_base_template": template, **J2_FUNCTION},
         )
 
-    return template.render(**get_templates_variables(options, use_conda=use_conda))
+    return template.render(
+        **get_templates_variables(options, use_conda=use_conda, **override_bento_env)
+    )

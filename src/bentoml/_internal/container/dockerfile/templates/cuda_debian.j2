@@ -2,8 +2,7 @@
 {% block SETUP_BENTO_BASE_IMAGE %}
 {{ super() }}
 
-RUN {{ common.mount_cache(__lib_apt__) }} \
-    {{ common.mount_cache(__cache_apt__) }} \
+{% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache(__lib_apt__) }} {{ common.mount_cache(__cache_apt__) }} {% endcall -%} \
     set -eux && \
     apt-get install -y --no-install-recommends --allow-remove-essential software-properties-common && \
     # add deadsnakes ppa to install python
@@ -20,8 +19,6 @@ RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
 
 {% endblock %}
 {% block SETUP_BENTO_ENVARS %}
-
-SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
 
 {{ super() }}
 {% endblock %}

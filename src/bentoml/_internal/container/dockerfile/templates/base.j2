@@ -2,18 +2,23 @@
 {# users can use these values #}
 {% import '_macros.j2' as common %}
 {% set bento__entrypoint = bento__entrypoint | default(expands_bento_path("env", "docker", "entrypoint.sh", bento_path=bento__path)) %}
+{% set __enable_buildkit__ = bento__enable_buildkit | default(False) -%}
+{% if __enable_buildkit__ %}
 # 1.2.1 is the current docker frontend that both buildkitd and kaniko supports.
-# syntax = docker/dockerfile:1.2.1
+# syntax = {{ bento__buildkit_frontend }}
 #
+{% endif %}
+{% if bento__add_header %}
 # ===========================================
 #
 # THIS IS A GENERATED DOCKERFILE. DO NOT EDIT
 #
 # ===========================================
+{% endif %}
 
 # Block SETUP_BENTO_BASE_IMAGE
 {% block SETUP_BENTO_BASE_IMAGE %}
-FROM {{ __base_image__ }} as base-{{ __options__distro }}
+FROM {{ __base_image__ }} as base-container
 
 ENV LANG=C.UTF-8
 
@@ -22,6 +27,7 @@ ENV LC_ALL=C.UTF-8
 ENV PYTHONIOENCODING=UTF-8
 
 ENV PYTHONUNBUFFERED=1
+
 {% endblock %}
 
 # Block SETUP_BENTO_USER
@@ -53,7 +59,7 @@ COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/pip") %}
 # install python packages with install.sh
-RUN {{ __pip_cache__ }} bash -euxo pipefail {{ __install_python_scripts__ }}
+{% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} bash -euxo pipefail {{ __install_python_scripts__ }}
 {% if __options__setup_script is not none %}
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
 RUN chmod +x {{ __setup_script__ }}

@@ -15,7 +15,7 @@ ENV \
   APP_ROOT={{ app_root }} \
   PATH={{ path_root }}
 
-RUN {{ common.mount_cache("/var/cache/yum") }} \
+{% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/yum") }} {% endcall -%} set -eux && \
     dnf install -y --setopt=tsflags=nodocs python{{ short_pyver }} && \
     ln -sf /usr/bin/python{{ __options__python_version }} /usr/bin/python3 && \
     ln -sf /usr/bin/pip{{ __options__python_version }} /usr/bin/pip3

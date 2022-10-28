@@ -1,360 +1,551 @@
 from __future__ import annotations
 
+import re
 import sys
 import typing as t
 import logging
+import itertools
 from typing import TYPE_CHECKING
+from functools import partial
+
+import click
 
 if TYPE_CHECKING:
     from click import Group
+    from click import Command
+    from click import Context
+    from click import Parameter
 
-    from bentoml._internal.bento import BentoStore
+    P = t.ParamSpec("P")
+    ClickParamType = t.Sequence[t.Any] | bool | None
+    F = t.Callable[P, t.Any]
+
+logger = logging.getLogger("bentoml")
 
 
-def containerize_transformer(
-    value: t.Iterable[str] | str | bool | None,
-) -> t.Iterable[str] | str | bool | None:
-    if value is None:
+@t.overload
+def normalize_none_type(value: t.Mapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+    ...
+
+
+@t.overload
+def normalize_none_type(value: ClickParamType) -> ClickParamType:
+    ...
+
+
+def normalize_none_type(
+    value: ClickParamType | t.Mapping[str, t.Any]
+) -> ClickParamType | t.Mapping[str, t.Any]:
+    if isinstance(value, (tuple, list, set, str)) and len(value) == 0:
         return
-    if isinstance(value, tuple) and not value:
-        return
+    if isinstance(value, dict):
+        return {k: normalize_none_type(v) for k, v in value.items()}
     return value
 
 
-def add_containerize_command(cli: Group) -> None:
-    import click
-    from simple_di import inject
-    from simple_di import Provide
+# NOTE: This is the key we use to store the transformed options in the CLI context.
+_MEMO_KEY = "_memoized"
 
-    from bentoml.bentos import FEATURES
+
+class CompatibleOption(click.Option):
+    def __init__(
+        self,
+        *param_decls: t.Any,
+        obsolete: bool = False,
+        deprecated: bool = False,
+        **attrs: t.Any,
+    ):
+        if obsolete and deprecated:
+            raise ValueError("'obsolete' and 'deprecated' are mutually exclusive.")
+        super().__init__(*param_decls, **attrs)
+
+        self.obsolete = obsolete
+        self.deprecated = deprecated
+
+
+def compatible_option(*param_decls: str, **attrs: t.Any):
+    """
+    Make a new ``@click.option`` decorator that provides backwards compatibility.
+
+    This decorator extends the default ``@click.option`` decorator by adding three
+    additional parameters:
+
+        * ``obsolete``: a bool determine whether the given option is obsolete.
+        * ``equivalent``: a tuple of (new_option, example_usage) that specifies
+                          the new option and its example usage that replaces the given option.
+
+        * ``deprecated``: a bool determine whether the given option is deprecated.
+
+    .. note::
+
+       The ``obsolete`` and ``deprecated`` options are mutually exclusive.
+    """
+    obsolete = attrs.pop("obsolete", False)
+    deprecated = attrs.pop("deprecated", False)
+    equivalent: tuple[str, str] = attrs.pop("equivalent", ())
+
+    prepend_msg = ""
+    if deprecated:
+        prepend_msg = "DEPRECATED (will be removed in future release):"
+    if obsolete:
+        assert (
+            equivalent is not None and len(equivalent) == 2
+        ), "'equivalent' must be a tuple of (new_option, usage)"
+        prepend_msg = "(Equivalent to --%s %s):" % (*equivalent,)
+
+    def obsolete_callback(ctx: Context, param: Parameter, value: ClickParamType):
+        # NOTE: We want to transform memoized options to tuple[str] | bool | None
+
+        assert param.name is not None, "argument name must be set."
+
+        opt = param.opts[0]
+        # This callback handles transformation from old args to new format value.
+        # This callback will also print a warning message to stderr.
+        assert len(equivalent) == 2, "must be a tuple of (new_option, usage)"
+        # ensure that our memoized are available under CLI context.
+        if _MEMO_KEY not in ctx.params:
+            # By default, multiple options are stored as a tuple.
+            # our memoized options are stored as a dict.
+            ctx.params[_MEMO_KEY] = {}
+
+        # default can be a callable. We only care about the result.
+        default_value = param.get_default(ctx)
+
+        # if given param.name is not in the memoized options, we need to create them.
+        if param.name not in ctx.params[_MEMO_KEY]:
+            # Initialize the memoized options with default value.
+            ctx.params[_MEMO_KEY][param.name] = default_value
+            if param.multiple:
+                # if given param is a multiple option, we need to make sure that
+                # we create an empty tuple
+                ctx.params[_MEMO_KEY][param.name] = ()
+
+        # We need to run transformation here such that we don't have to deal with
+        # nested value.
+        value = normalize_none_type(value)
+        if value is not None:
+            # Only warning if given value is different from the default.
+            # Since we are going to transform default value from old options to
+            # the kwargs map, there is no need to bloat logs.
+            if value != default_value:
+                msg = "is now obsolete, use the equivalent"
+                if isinstance(value, bool):
+                    logger.warning(
+                        "'%s' %s '--%s %s' instead.",
+                        opt,
+                        msg,
+                        equivalent[0],
+                        opt.lstrip("--"),
+                    )
+                elif isinstance(value, tuple):
+                    obsolete_format = " ".join(map(lambda s: "%s=%s" % (opt, s), value))
+                    new_format = " ".join(
+                        map(
+                            lambda s: "--%s %s=%s"
+                            % (equivalent[0], opt.lstrip("--"), s),
+                            value,
+                        )
+                    )
+                    logger.warning(
+                        "'%s' %s '%s' instead.", obsolete_format, msg, new_format
+                    )
+                else:
+                    assert isinstance(value, str)
+                    logger.warning(
+                        "'%s=%s' %s '--%s %s=%s' instead.",
+                        opt,
+                        value,
+                        msg,
+                        equivalent[0],
+                        opt.lstrip("--"),
+                        value,
+                    )
+            if isinstance(value, bool):
+                ctx.params[_MEMO_KEY][param.name] = value
+            elif isinstance(value, tuple):
+                assert param.multiple
+                ctx.params[_MEMO_KEY][param.name] += tuple(
+                    map(lambda s: "%s=%s" % (opt, s), value)
+                )
+            else:
+                assert isinstance(value, str)
+                ctx.params[_MEMO_KEY][param.name] = ("%s=%s" % (opt, value),)
+
+    def deprecated_callback(ctx: Context, param: Parameter, value: ClickParamType):
+        if value is not None and value:
+            logger.warning(
+                "'%s' is now deprecated and will be removed in future release.",
+                param.opts[0],
+            )
+
+    def decorator(f: F[t.Any]) -> t.Callable[[F[t.Any]], Command]:
+        # We will set default value to None if 'default' is not set.
+        msg = attrs.pop("help", None)
+        assert msg is not None, "'help' is required."
+        attrs.setdefault("help", " ".join([prepend_msg, msg]))
+        attrs.setdefault("expose_value", True)
+        attrs.setdefault("obsolete", obsolete)
+        attrs.setdefault("deprecated", deprecated)
+        if obsolete:
+            attrs.setdefault("callback", obsolete_callback)
+        if deprecated:
+            attrs.setdefault("callback", deprecated_callback)
+            attrs.setdefault("default", None)
+        return click.option(*param_decls, cls=CompatibleOption, **attrs)(f)
+
+    return decorator
+
+
+deprecated_option = partial(compatible_option, deprecated=True)
+obsolete_option = partial(compatible_option, obsolete=True)
+
+
+def deprecated_options_group(f: F[t.Any]):
+    deprecs = [
+        deprecated_option(
+            "--allow",
+            multiple=True,
+            help="Allow extra privileged entitlement (e.g., 'network.host', 'security.insecure').",
+        ),
+        deprecated_option(
+            "--build-context",
+            multiple=True,
+            help="Additional build contexts (e.g., name=path).",
+        ),
+        deprecated_option(
+            "--builder",
+            type=click.STRING,
+            help="Override the configured builder instance.",
+        ),
+        deprecated_option(
+            "--cache-to",
+            multiple=True,
+            help="Cache export destinations (e.g., 'user/app:cache', 'type=local,dest=path/to/dir').",
+        ),
+        deprecated_option(
+            "--load",
+            is_flag=True,
+            default=False,
+            help="Shorthand for '--output=type=docker'. Note that '--push' and '--load' are mutually exclusive.",
+        ),
+        deprecated_option(
+            "--push",
+            is_flag=True,
+            default=False,
+            help="Shorthand for '--output=type=registry'. Note that '--push' and '--load' are mutually exclusive.",
+        ),
+        deprecated_option(
+            "--no-cache-filter",
+            multiple=True,
+            help="Do not cache specified stages.",
+        ),
+        deprecated_option(
+            "--metadata-file",
+            type=click.STRING,
+            help="Write build result metadata to the file.",
+        ),
+        deprecated_option("--shm-size", help="Size of '/dev/shm'."),
+    ]
+    for options in reversed(deprecs):
+        f = options(f)
+    return f
+
+
+def obsolete_options_group(f: F[t.Any]):
+    obsoletes = [
+        obsolete_option(
+            "--add-host",
+            equivalent=("opt", "add-host=host:ip"),
+            multiple=True,
+            metavar="[HOST:IP,]",
+            help="Add a custom host-to-IP mapping.",
+        ),
+        obsolete_option(
+            "--build-arg",
+            equivalent=("opt", "build-arg=FOO=bar"),
+            multiple=True,
+            metavar="[KEY=VALUE,]",
+            help="Set build-time variables.",
+        ),
+        obsolete_option(
+            "--cache-from",
+            equivalent=("opt", "cache-from=user/app:cache"),
+            multiple=True,
+            default=None,
+            metavar="[NAME|type=TYPE[,KEY=VALUE]]",
+            help="External cache sources (e.g.: 'type=local,src=path/to/dir').",
+        ),
+        obsolete_option(
+            "--iidfile",
+            type=click.STRING,
+            equivalent=("opt", "iidfile=/path/to/file"),
+            default=None,
+            metavar="PATH",
+            help="Write the image ID to the file.",
+        ),
+        obsolete_option(
+            "--label",
+            equivalent=("opt", "label=io.container.capabilities=baz"),
+            multiple=True,
+            metavar="[NAME|[KEY=VALUE],]",
+            help="Set metadata for an image. This is equivalent to LABEL in given Dockerfile.",
+        ),
+        obsolete_option(
+            "--network",
+            type=click.STRING,
+            equivalent=("opt", "network=default"),
+            metavar="default|VALUE",
+            default=None,
+            help="Set the networking mode for the 'RUN' instructions during build (default 'default').",
+        ),
+        obsolete_option(
+            "--no-cache",
+            equivalent=("opt", "no-cache"),
+            is_flag=True,
+            default=False,
+            help="Do not use cache when building the image.",
+        ),
+        obsolete_option(
+            "--output",
+            equivalent=("opt", "output=type=local,dest=/path/to/dir"),
+            multiple=True,
+            default=None,
+            metavar="[PATH,-,type=TYPE[,KEY=VALUE]",
+            help="Output destination.",
+        ),
+        obsolete_option(
+            "--platform",
+            equivalent=("opt", "platform=linux/amd64,linux/arm/v7"),
+            default=None,
+            metavar="VALUE[,VALUE]",
+            multiple=True,
+            type=click.STRING,
+            help="Set target platform for build.",
+        ),
+        obsolete_option(
+            "--progress",
+            equivalent=("opt", "progress=auto"),
+            default="auto",
+            type=click.Choice(["auto", "tty", "plain"]),
+            metavar="VALUE",
+            help="Set type of progress output. Use plain to show container output if BENTOML_DEBUG is set.",
+        ),
+        obsolete_option(
+            "--pull",
+            equivalent=("opt", "pull"),
+            is_flag=True,
+            default=False,
+            help="Always attempt to pull all referenced images.",
+        ),
+        obsolete_option(
+            "--secret",
+            multiple=True,
+            equivalent=("opt", "secret=id=aws,src=$HOME/.aws/crendentials"),
+            metavar="[type=TYPE[,KEY=VALUE]",
+            default=None,
+            help="Secret to expose to the build.",
+        ),
+        obsolete_option(
+            "--ssh",
+            type=click.STRING,
+            equivalent=("opt", "ssh=default=$SSH_AUTH_SOCK"),
+            metavar="default|<id>[=<socket>|<key>[,<key>]]",
+            default=None,
+            help="SSH agent socket or keys to expose to the build. See https://docs.docker.com/engine/reference/commandline/buildx_build/#ssh",
+        ),
+        obsolete_option(
+            "--target",
+            equivalent=("opt", "target=release-stage"),
+            metavar="VALUE",
+            type=click.STRING,
+            default=None,
+            help="Set the target build stage to build.",
+        ),
+        obsolete_option(
+            "--cgroup-parent",
+            equivalent=("opt", "cgroup-parent=mygroup"),
+            type=click.STRING,
+            default=None,
+            help="Optional parent cgroup for the container.",
+        ),
+        obsolete_option(
+            "--ulimit",
+            equivalent=("opt", "ulimit=nofile=1024:1024"),
+            type=click.STRING,
+            metavar="<type>=<soft limit>[:<hard limit>]",
+            default=None,
+            help="Ulimit options.",
+        ),
+    ]
+    for options in reversed(obsoletes):
+        f = options(f)
+    return f
+
+
+def opt_callback(ctx: Context, param: Parameter, value: ClickParamType):
+    # NOTE: our new options implementation will have the following format:
+    #   --opt ARG[=|:]VALUE[,VALUE] (e.g., --opt key1=value1,value2 --opt key2:value3/value4:hello)
+    # Argument and values per --opt has one-to-one or one-to-many relationship,
+    # separated by '=' or ':'.
+    # TODO: We might also want to support the following format:
+    #  --opt arg1 value1 arg2 value2 --opt arg3 value3
+    #  --opt arg1=value1,arg2=value2 --opt arg3:value3
+
+    assert param.multiple, "Only use this callback when multiple=True."
+    if _MEMO_KEY not in ctx.params:
+        # By default, multiple options are stored as a tuple.
+        # our memoized options are stored as a dict.
+        ctx.params[_MEMO_KEY] = {}
+
+    if param.name not in ctx.params[_MEMO_KEY]:
+        ctx.params[_MEMO_KEY][param.name] = ()
+
+    value = normalize_none_type(value)
+    if value is not None:
+        normalized: t.Callable[[str], str] = lambda opt: opt.replace("-", "_")
+        if isinstance(value, tuple):
+            for opt in value:
+                o, *val = re.split(r"=|:", opt, maxsplit=1)
+                norm = normalized(o)
+                if len(val) == 0:
+                    # --opt bool
+                    ctx.params[_MEMO_KEY][norm] = True
+                else:
+                    # --opt key=value
+                    ctx.params[_MEMO_KEY].setdefault(norm, ())
+                    ctx.params[_MEMO_KEY][norm] += ("--%s=%s" % (o, *val),)
+        else:
+            # Note that if we weren't able to parse the value, then we memoized
+            # to _MEMO_KEY[opt]
+            logger.warning("Failed to parse '%s' with value %s", param.name, value)
+            ctx.params[_MEMO_KEY][param.name] += (value,)
+
+
+def add_containerize_command(cli: Group) -> None:
     from bentoml.bentos import containerize as containerize_bento
+    from bentoml.bentos import determine_container_tag
+    from bentoml._internal import container
     from bentoml_cli.utils import kwargs_transformers
-    from bentoml_cli.utils import validate_docker_tag
-    from bentoml._internal.configuration import get_debug_mode
+    from bentoml_cli.utils import validate_container_tag
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     @cli.command()
-    @click.argument("bento_tag", type=click.STRING)
+    @click.argument("bento_tag", type=click.STRING, metavar="BENTO:TAG")
     @click.option(
         "-t",
+        "--image-tag",
         "--docker-image-tag",
-        help="Name and optionally a tag (format: 'name:tag'), defaults to bento tag.",
+        help="Name and optionally a tag (format: 'name:tag') for building container, defaults to the bento tag.",
         required=False,
-        callback=validate_docker_tag,
+        callback=validate_container_tag,
         multiple=True,
     )
     @click.option(
-        "--add-host",
+        "--backend",
+        help=f"Define OCI backend. Available: {', '.join(container.registered_backends)}",
+        required=False,
+        default="docker",
+        type=click.Choice(container.registered_backends),
+    )
+    @click.option(
+        "--opt",
+        help="Define options for given backend. (format: '--opt target=foo --opt build_arg=foo=BAR,build_arg=baz=RAR --opt no-cache')",
+        required=False,
         multiple=True,
-        help="Add a custom host-to-IP mapping (format: 'host:ip').",
-    )
-    @click.option(
-        "--allow",
-        multiple=True,
-        default=None,
-        help="Allow extra privileged entitlement (e.g., 'network.host', 'security.insecure').",
-    )
-    @click.option("--build-arg", multiple=True, help="Set build-time variables.")
-    @click.option(
-        "--build-context",
-        multiple=True,
-        help="Additional build contexts (e.g., name=path).",
-    )
-    @click.option(
-        "--builder",
-        type=click.STRING,
-        default=None,
-        help="Override the configured builder instance.",
-    )
-    @click.option(
-        "--cache-from",
-        multiple=True,
-        default=None,
-        help="External cache sources (e.g., 'user/app:cache', 'type=local,src=path/to/dir').",
-    )
-    @click.option(
-        "--cache-to",
-        multiple=True,
-        default=None,
-        help="Cache export destinations (e.g., 'user/app:cache', 'type=local,dest=path/to/dir').",
-    )
-    @click.option(
-        "--cgroup-parent",
-        type=click.STRING,
-        default=None,
-        help="Optional parent cgroup for the container.",
-    )
-    @click.option(
-        "--iidfile",
-        type=click.STRING,
-        default=None,
-        help="Write the image ID to the file.",
-    )
-    @click.option("--label", multiple=True, help="Set metadata for an image.")
-    @click.option(
-        "--load",
-        is_flag=True,
-        default=False,
-        help="Shorthand for '--output=type=docker'. Note that '--push' and '--load' are mutually exclusive.",
-    )
-    @click.option(
-        "--metadata-file",
-        type=click.STRING,
-        default=None,
-        help="Write build result metadata to the file.",
-    )
-    @click.option(
-        "--network",
-        type=click.STRING,
-        default=None,
-        help="Set the networking mode for the 'RUN' instructions during build (default 'default').",
-    )
-    @click.option(
-        "--no-cache",
-        is_flag=True,
-        default=False,
-        help="Do not use cache when building the image.",
-    )
-    @click.option(
-        "--no-cache-filter",
-        multiple=True,
-        help="Do not cache specified stages.",
-    )
-    @click.option(
-        "--output",
-        multiple=True,
-        default=None,
-        help="Output destination (format: 'type=local,dest=path').",
-    )
-    @click.option(
-        "--platform", default=None, multiple=True, help="Set target platform for build."
-    )
-    @click.option(
-        "--progress",
-        default="auto",
-        type=click.Choice(["auto", "tty", "plain"]),
-        help="Set type of progress output ('auto', 'plain', 'tty'). Use plain to show container output.",
-    )
-    @click.option(
-        "--pull",
-        is_flag=True,
-        default=False,
-        help="Always attempt to pull all referenced images.",
-    )
-    @click.option(
-        "--push",
-        is_flag=True,
-        default=False,
-        help="Shorthand for '--output=type=registry'. Note that '--push' and '--load' are mutually exclusive.",
-    )
-    @click.option(
-        "--secret",
-        multiple=True,
-        default=None,
-        help="Secret to expose to the build (format: 'id=mysecret[,src=/local/secret]').",
-    )
-    @click.option("--shm-size", default=None, help="Size of '/dev/shm'.")
-    @click.option(
-        "--ssh",
-        type=click.STRING,
-        default=None,
-        help="SSH agent socket or keys to expose to the build (format: 'default|<id>[=<socket>|<key>[,<key>]]').",
-    )
-    @click.option(
-        "--target",
-        type=click.STRING,
-        default=None,
-        help="Set the target build stage to build.",
-    )
-    @click.option(
-        "--ulimit", type=click.STRING, default=None, help="Ulimit options (default [])."
+        callback=opt_callback,
+        metavar="ARG=VALUE[,ARG=VALUE]",
     )
     @click.option(
         "--enable-features",
         multiple=True,
         nargs=1,
-        metavar="[features,]",
-        help=f"Enable additional BentoML features. Available features are: {', '.join(FEATURES)}.",
+        metavar="FEATURE[,FEATURE]",
+        help=f"Enable additional BentoML features. Available features are: {', '.join(container.FEATURES)}.",
     )
-    @kwargs_transformers(transformer=containerize_transformer)
-    @inject
+    @obsolete_options_group
+    @deprecated_options_group
+    @kwargs_transformers(transformer=normalize_none_type)
     def containerize(  # type: ignore
         bento_tag: str,
-        docker_image_tag: tuple[str],
-        add_host: tuple[str],
-        allow: tuple[str],
-        build_arg: tuple[str],
-        build_context: tuple[str],
-        builder: str,
-        cache_from: tuple[str],
-        cache_to: tuple[str],
-        cgroup_parent: str,
-        iidfile: str,
-        label: tuple[str],
-        load: bool,
-        network: str,
-        metadata_file: str,
-        no_cache: bool,
-        no_cache_filter: tuple[str],
-        output: tuple[str],
-        platform: tuple[str],
-        progress: t.Literal["auto", "tty", "plain"],
-        pull: bool,
-        push: bool,
-        secret: tuple[str],
-        shm_size: str,
-        ssh: str,
-        target: str,
-        ulimit: str,
-        enable_features: tuple[str],
-        _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        image_tag: tuple[str] | None,
+        backend: str,
+        enable_features: tuple[str] | None,
+        _memoized: dict[str, ClickParamType],
+        **kwargs: t.Any,
     ) -> None:
-        """Containerizes given Bento into a ready-to-use Docker image.
+        """Containerizes given Bento into an OCI-compliant container, with any of your favorite OCI builder.
 
         \b
         BENTO is the target BentoService to be containerized, referenced by its name
         and version in format of name:version. For example: "iris_classifier:v1.2.0"
 
-        'bentoml containerize' command also supports the use of the 'latest' tag
+        \b
+        ``bentoml containerize`` command also supports the use of the ``latest`` tag
         which will automatically use the last built version of your Bento.
 
+        \b
         You can provide a tag for the image built by Bento using the
-        '--docker-image-tag' flag. Additionally, you can provide a '--push' flag,
-        which will push the built image to the Docker repository specified by the
-        image tag.
+        ``--image-tag`` flag.
 
+        \b
         You can also prefixing the tag with a hostname for the repository you wish
         to push to.
-        e.g. 'bentoml containerize IrisClassifier:latest --push --tag
-        repo-address.com:username/iris' would build a Docker image called
-        'username/iris:latest' and push that to docker repository at repo-address.com.
 
-        By default, the 'containerize' command will use the current credentials
-        provided by Docker daemon.
+        .. code-block:: bash
 
-        'bentoml containerize' also uses Docker Buildx as backend, in place for normal 'docker build'.
-        By doing so, BentoML will leverage Docker Buildx features such as multi-node
-        builds for cross-platform images, Full BuildKit capabilities with all of the
-        familiar UI from 'docker build'.
+           $ bentoml containerize iris_classifier:latest -t repo-address.com:username/iris
+
+        This would build an image called ``username/iris:latest`` and push it to docker repository at repo-address.com.
+
+        \b
+        By default, the ``containerize`` command will use the current credentials provided by each backend implementation.
+
+        \b
+        ``bentoml containerize`` also leverage BuildKit features such as multi-node
+        builds for cross-platform images, more efficient caching, and more secure builds.
+        BuildKit will be enabled by default by each backend implementation.
         """
-        from bentoml._internal.utils import buildx
 
-        logger = logging.getLogger("bentoml")
+        # We should already handle all options in callback to memoized, but just in case...
+        filtered = dict(filter(lambda item: item[1] is not None, kwargs.items()))
+        if len(filtered) != 0:
+            logger.debug("Unexpected arguments: %s and failed to parse them.", filtered)
+        logger.debug("Memoized: %s", _memoized)
 
-        # run health check whether buildx is install locally
-        buildx.health()
-
-        add_hosts = {}
-        if add_host:
-            for host in add_host:
-                host_name, ip = host.split(":")
-                add_hosts[host_name] = ip
-
-        allow_ = []
-        if allow:
-            allow_ = list(allow)
-
-        build_args = {}
-        if build_arg:
-            for build_arg_str in build_arg:
-                key, value = build_arg_str.split("=")
-                build_args[key] = value
-
-        build_context_ = {}
-        if build_context:
-            for build_context_str in build_context:
-                key, value = build_context_str.split("=")
-                build_context_[key] = value
-
-        labels = {}
-        if label:
-            for label_str in label:
-                key, value = label_str.split("=")
-                labels[key] = value
-
-        output_: dict[str, t.Any] | None = None
-        if output:
-            output_ = {}
-            for arg in output:
-                if "," in arg:
-                    for val in arg.split(","):
-                        k, v = val.split("=")
-                        output_[k] = v
-                key, value = arg.split("=")
-                output_[key] = value
-
-        load = True
-        if platform and len(platform) > 1:
-            if not push:
-                logger.warning(
-                    "Multiple '--platform' arguments were found. Make sure to also use '--push' to push images to a repository or generated images will not be saved. For more information, see https://docs.docker.com/engine/reference/commandline/buildx_build/#load."
+        features = None
+        if enable_features:
+            features = tuple(
+                itertools.chain.from_iterable(
+                    map(lambda s: s.split(","), enable_features)
                 )
-        if push:
-            load = False
-        if get_debug_mode():
-            progress = "plain"
-
+            )
         exit_code = not containerize_bento(
             bento_tag,
-            docker_image_tag=docker_image_tag,
-            # containerize options
-            features=enable_features,
-            # docker options
-            add_host=add_hosts,
-            allow=allow_,
-            build_args=build_args,
-            build_context=build_context_,
-            builder=builder,
-            cache_from=cache_from,
-            cache_to=cache_to,
-            cgroup_parent=cgroup_parent,
-            iidfile=iidfile,
-            labels=labels,
-            load=load,
-            metadata_file=metadata_file,
-            network=network,
-            no_cache=no_cache,
-            no_cache_filter=no_cache_filter,
-            output=output_,
-            platform=platform,
-            progress=progress,
-            pull=pull,
-            push=push,
-            quiet=logger.getEffectiveLevel() == logging.ERROR,
-            secrets=secret,
-            shm_size=shm_size,
-            ssh=ssh,
-            target=target,
-            ulimit=ulimit,
+            backend=backend,
+            image_tag=image_tag,
+            features=features,
+            **_memoized,
         )
+
         if not exit_code:
-            # Note that we have to duplicate the logic here
-            # to ensure there is a docker image tag after a successful containerize.
-            if not docker_image_tag:
-                bento = _bento_store.get(bento_tag)
-                docker_image_tag = (str(bento.tag),)
-            # This section contains some duplicate logics from containerize_bento
-            # to process log message.
-            grpc_metrics_port = BentoMLContainer.grpc.metrics.port.get()
+            tags = determine_container_tag(bento_tag, image_tag=image_tag)
+
             logger.info(
                 'Successfully built docker image for "%s" with tags "%s"',
                 bento_tag,
-                ",".join(docker_image_tag),
+                ",".join(tags),
             )
-            docker_tag = ",".join(docker_image_tag)
-            fmt = [docker_tag]
-            if len(docker_image_tag) > 1:
+
+            container_tags = ",".join(tags)
+            fmt = [container_tags]
+            if len(tags) > 1:
                 instruction = 'To run your newly built Bento container, use one of the above tags, and pass it to "docker run". For example: "docker run -it --rm -p 3000:3000 %s serve --production".'
             else:
                 instruction = 'To run your newly built Bento container, pass "%s" to "docker run". For example: "docker run -it --rm -p 3000:3000 %s serve --production".'
-                fmt.append(docker_tag)
-            if enable_features is not None:
-                # enable_features could be a tuple of comma-separated string.
-                features = [
-                    l for s in map(lambda x: x.split(","), enable_features) for l in s
-                ]
-                if "grpc" in features:
-                    instruction += '\nAdditionally, to run your Bento container as a gRPC server, do: "docker run -it --rm -p 3000:3000 -p %s:%s %s serve-grpc --production"'
-                    fmt.extend([grpc_metrics_port, grpc_metrics_port, docker_tag])
+                fmt.append(container_tags)
+            if features is not None and "grpc" in features:
+                grpc_metrics_port = BentoMLContainer.grpc.metrics.port.get()
+                instruction += '\nAdditionally, to run your Bento container as a gRPC server, do: "docker run -it --rm -p 3000:3000 -p %s:%s %s serve-grpc --production"'
+                fmt.extend([grpc_metrics_port, grpc_metrics_port, container_tags])
             logger.info(instruction, *fmt)
         sys.exit(exit_code)

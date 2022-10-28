@@ -70,8 +70,8 @@ Initialize our NLTK runner, and add it to the service:
 
    @svc.api(input=bentoml.io.Text(), output=bentoml.io.JSON())
    async def analysis(input_text: str) -> dict[str, bool]:
-       num_invocation.labels(endpoint="analysis").inc()
        is_positive = await nltk_runner.is_positive.async_run(input_text)
+       polarity_counter.labels(polarity=is_positive).inc()
        return {"is_positive": is_positive}
 
 Our endpoint ``analysis`` uses the ``num_invocation`` counter to track the total number of

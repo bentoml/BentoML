@@ -166,21 +166,27 @@ class RemoteRunnerClient(RunnerHandle):
                 },
             ) as resp:
                 body = await resp.read()
-        except aiohttp.ClientOSError:
-            # most likely the TCP connection has been closed; retry after reconnecting
-            self._reset_client()
-            async with self._client.post(
-                f"{self._addr}/{path}",
-                data=pickle.dumps(payload_params),  # FIXME: pickle inside pickle
-                headers={
-                    "Bento-Name": component_context.bento_name,
-                    "Bento-Version": component_context.bento_version,
-                    "Runner-Name": self._runner.name,
-                    "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-                    "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
-                },
-            ) as resp:
-                body = await resp.read()
+        except aiohttp.ClientOSError as e:
+            if os.getenv("BENTOML_RETRY_REQUESTS") == "on":
+                try:
+                    # most likely the TCP connection has been closed; retry after reconnecting
+                    self._reset_client()
+                    async with self._client.post(
+                        f"{self._addr}/{path}",
+                        data=pickle.dumps(payload_params),  # FIXME: pickle inside pickle
+                        headers={
+                            "Bento-Name": component_context.bento_name,
+                            "Bento-Version": component_context.bento_version,
+                            "Runner-Name": self._runner.name,
+                            "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
+                            "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+                        },
+                    ) as resp:
+                        body = await resp.read()
+                except aiohttp.ClientOSError as e:
+                    raise RemoteException(f"Failed to connect to runner server.") f
+            else:
+                raise RemoteException(f"Failed to connect to runner server.") from e
 
         try:
             content_type = resp.headers["Content-Type"]

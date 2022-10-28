@@ -46,6 +46,16 @@ def echo_data_metric(data: str) -> str:
     return data
 
 
+@svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
+def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-argument
+    counters = [
+        m.name
+        for m in bentoml.metrics.text_string_to_metric_families()
+        if m.type == "counter"
+    ]
+    assert "test_metrics" in counters
+
+
 @svc.api(input=JSON(), output=JSON())
 async def echo_json(json_obj: JSONSerializable) -> JSONSerializable:
     batch_ret = await py_model.echo_json.async_run([json_obj])

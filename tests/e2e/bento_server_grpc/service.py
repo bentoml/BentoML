@@ -206,3 +206,13 @@ async def predict_multi_images(original: Image, compared: Image):
     )
     img = PIL.Image.fromarray(output_array)
     return {"meta": "success", "result": img}
+
+
+@svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
+def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-argument
+    histograms = [
+        m.name
+        for m in bentoml.metrics.text_string_to_metric_families()
+        if m.type == "histogram"
+    ]
+    assert "inference_latency" in histograms

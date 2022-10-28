@@ -138,6 +138,8 @@ class RemoteRunnerClient(RunnerHandle):
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> R | tuple[R, ...]:
+        import aiohttp
+
         from ...runner.container import AutoContainer
 
         inp_batch_dim = __bentoml_method.config.batch_dim[0]

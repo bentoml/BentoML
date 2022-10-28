@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import time
 import asyncio
-from typing import TYPE_CHECKING
 from pathlib import Path
 
 import pytest
@@ -117,11 +116,27 @@ def test_dunder_string():
 
 
 @pytest.mark.asyncio
-async def test_metrics_type(host: str):
+async def test_metrics_type(host: str, deployment_mode: str):
     await async_request(
         "POST",
         f"http://{host}/echo_data_metric",
         headers={"Content-Type": "application/json"},
-        data="[[1,2],[3,4]]",
+        data="input_string",
     )
-    assert "test_metrics_total" in bentoml.metrics.generate_latest().decode("utf-8")
+    if deployment_mode == "docker":
+        # The reason we have to do this is that there is no way
+        # to access the metrics inside a running container.
+        await async_request(
+            "POST",
+            f"http://{host}/ensure_metrics_are_registered",
+            headers={"Content-Type": "application/json"},
+            data="input_string",
+            assert_status=200,
+        )
+    else:
+        counters = [
+            m.name
+            for m in bentoml.metrics.text_string_to_metric_families()
+            if m.type == "counter"
+        ]
+        assert "test_metrics" in counters

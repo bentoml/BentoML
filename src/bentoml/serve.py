@@ -182,6 +182,8 @@ def serve_http_development(
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
     reload: bool = False,
 ) -> None:
+    prometheus_dir = ensure_prometheus_dir()
+
     from circus.sockets import CircusSocket
 
     from bentoml import load
@@ -193,7 +195,6 @@ def serve_http_development(
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
 
-    prometheus_dir = ensure_prometheus_dir()
     watchers: list[Watcher] = []
     circus_sockets: list[CircusSocket] = [
         CircusSocket(name=API_SERVER_NAME, host=host, port=port, backlog=backlog)
@@ -301,6 +302,8 @@ def serve_http_production(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
 ) -> None:
+    prometheus_dir = ensure_prometheus_dir()
+
     from circus.sockets import CircusSocket
 
     from bentoml import load
@@ -316,7 +319,6 @@ def serve_http_production(
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
     uds_path = None
-    prometheus_dir = ensure_prometheus_dir()
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
@@ -496,6 +498,8 @@ def serve_grpc_development(
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
 ) -> None:
+    prometheus_dir = ensure_prometheus_dir()
+
     from circus.sockets import CircusSocket
 
     from bentoml import load
@@ -508,7 +512,6 @@ def serve_grpc_development(
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
 
-    prometheus_dir = ensure_prometheus_dir()
     watchers: list[Watcher] = []
     circus_sockets: list[CircusSocket] = []
 
@@ -673,6 +676,8 @@ def serve_grpc_production(
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
 ) -> None:
+    prometheus_dir = ensure_prometheus_dir()
+
     from bentoml import load
     from bentoml.exceptions import UnprocessableEntity
 
@@ -690,8 +695,6 @@ def serve_grpc_production(
     circus_socket_map: dict[str, CircusSocket] = {}
     runner_bind_map: dict[str, str] = {}
     uds_path = None
-
-    prometheus_dir = ensure_prometheus_dir()
 
     # Check whether users are running --grpc on windows
     # also raising warning if users running on MacOS or FreeBSD

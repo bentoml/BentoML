@@ -52,10 +52,14 @@ def __dir__() -> list[str]:
 
 
 def __getattr__(item: t.Any):
+    if item in _NOT_SUPPORTED:
+        raise NotImplementedError(
+            f"{item} is not supported when using '{__name__}'. See https://docs.bentoml.org/en/latest/reference/metrics.html."
+        )
     # This is the entrypoint for all bentoml.metrics.*
     if item in _PROPERTY:
         logger.warning(
-            "'%s' is a '@property', which means there is no lazy loading. See https://docs.bentoml.org/en/latest/guides/metrics.html.",
+            "'%s' is a '@property', which means there is no lazy loading. See https://docs.bentoml.org/en/latest/reference/metrics.html.",
             item,
         )
         return getattr(_LazyMetric(item), item)
@@ -66,8 +70,6 @@ class _LazyMetric:
     __slots__ = ("_attr", "_proxy", "_initialized", "_args", "_kwargs")
 
     def __init__(self, attr: str):
-        if attr in _NOT_SUPPORTED:
-            raise NotImplementedError(f"{attr} is not yet supported.")
         self._attr = attr
         self._proxy = None
         self._initialized = False

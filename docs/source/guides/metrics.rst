@@ -21,7 +21,7 @@ Make sure to have [#prometheus]_ installed and running before continuing.
    :ref:`Metrics API <reference/metrics>` for more information on ``bentoml.metrics``.
 
 
-Tracking model latency with Prometheus
+Using Metrics in a BentoService
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We will build a custom histogram to track the latency of our :ref:`pretrained NLTK runner <concepts/runner:Custom Runner>`, a custom

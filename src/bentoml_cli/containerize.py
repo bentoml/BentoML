@@ -30,11 +30,13 @@ def deprec_buildx_options(*param_decls: str, **attrs: t.Any):
     def decorator(
         f: t.Callable[..., t.Any]
     ) -> t.Callable[[t.Callable[P, t.Any]], Command]:
-        help_msg = "DEPRECATED (Will be removed in future release):"
+        help_msg = "DEPRECATED (buildx argument):"
         msg = ""
         if "help" in attrs:
             msg = attrs.pop("help")
-        attrs.setdefault("help", help_msg + " " + msg)
+        attrs.setdefault(
+            "help", help_msg + " " + msg + " (no-op, will be removed in future release)"
+        )
         attrs.setdefault("expose_value", False)
         attrs.setdefault("default", None)
         return click.option(*param_decls, **attrs)(f)
@@ -271,14 +273,6 @@ def add_containerize_command(cli: Group) -> None:
                 key, value = arg.split("=")
                 output_[key] = value
 
-        load = True
-        if platform and len(platform) > 1:
-            if not push:
-                logger.warning(
-                    "Multiple '--platform' arguments were found. Make sure to also use '--push' to push images to a repository or generated images will not be saved. For more information, see https://docs.docker.com/engine/reference/commandline/buildx_build/#load."
-                )
-        if push:
-            load = False
         if get_debug_mode():
             progress = "plain"
 

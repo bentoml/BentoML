@@ -8,3 +8,5 @@ python:
   packages:
     - scikit-learn
     - pandas
+docker:
+  env: ./.env

@@ -68,7 +68,7 @@ ensure `multiprocessing mode <https://github.com/prometheus/client_python#multip
 The following section will go over the most commonly used metrics API in
 ``bentoml.metrics``:
 
-.. currentmodule:: bentoml._internal.server.metrics
+.. currentmodule:: bentoml.metrics
 
 .. autofunction:: bentoml.metrics.generate_latest
 

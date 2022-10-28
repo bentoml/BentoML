@@ -9,7 +9,7 @@ BentoML allows users to define custom metrics with `Prometheus <https://promethe
 This article will dive into how to add custom metrics to monitor your BentoService and how you can incorporate custom metrics into 
 either a :ref:`concepts/runner:Custom Runner` or your :ref:`Service <concepts/service:Service and APIs>`.
 
-Having a `Prometheus server <https://prometheus.io/docs/prometheus/latest/getting_started/>` available will help visualize the examples in this guide.
+Having a `Prometheus server <https://prometheus.io/docs/prometheus/latest/getting_started/>`_ available will help visualize the examples in this guide.
 
 .. note::
 
@@ -18,11 +18,11 @@ Having a `Prometheus server <https://prometheus.io/docs/prometheus/latest/gettin
 
 .. seealso::
 
-   All `metrics types <https://prometheus.io/docs/concepts/metric_types/>`_ supported by Prometheus are supported in BentoML. See :ref:`Metrics API <reference/metrics:Metrics API>` for more information on ``bentoml.metrics``.
+   All `metrics types <https://prometheus.io/docs/concepts/metric_types/>`_ supported by Prometheus are supported in BentoML. See :ref:`reference/metrics:Metrics API` for more information on ``bentoml.metrics``.
 
 
 Using Metrics in a BentoService
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We will build a custom histogram to track the latency of our :ref:`pretrained NLTK runner <concepts/runner:Custom Runner>`, a custom
 counter to measure the total amount of time our endpoint is invoked.

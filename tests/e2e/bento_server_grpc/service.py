@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -17,6 +18,7 @@ from bentoml.io import PandasSeries
 from bentoml.io import PandasDataFrame
 from bentoml.testing.grpc import TestServiceServicer
 from bentoml._internal.utils import LazyLoader
+from bentoml._internal.utils.metrics import exponential_buckets
 
 if TYPE_CHECKING:
     import numpy as np
@@ -180,6 +182,14 @@ async def echo_image(f: PIL.Image.Image) -> NDArray[t.Any]:
     return np.array(f)
 
 
+histogram = bentoml.metrics.Histogram(
+    name="inference_latency",
+    documentation="Inference latency in seconds",
+    labelnames=["model_name", "model_version"],
+    buckets=exponential_buckets(0.001, 1.5, 10.0),
+)
+
+
 @svc.api(
     input=Multipart(
         original=Image(mime_type="image/bmp"), compared=Image(mime_type="image/bmp")
@@ -187,8 +197,22 @@ async def echo_image(f: PIL.Image.Image) -> NDArray[t.Any]:
     output=Multipart(meta=Text(), result=Image(mime_type="image/bmp")),
 )
 async def predict_multi_images(original: Image, compared: Image):
+    start = time.perf_counter()
     output_array = await py_model.multiply_float_ndarray.async_run(
         np.array(original), np.array(compared)
     )
+    histogram.labels(model_name=py_model.name, model_version="v1").observe(
+        time.perf_counter() - start
+    )
     img = PIL.Image.fromarray(output_array)
     return {"meta": "success", "result": img}
+
+
+@svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
+def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-argument
+    histograms = [
+        m.name
+        for m in bentoml.metrics.text_string_to_metric_families()
+        if m.type == "histogram"
+    ]
+    assert "inference_latency" in histograms

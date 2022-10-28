@@ -76,17 +76,15 @@ async def server_warmup(
     popen: subprocess.Popen[t.Any] | None = None,
     service_name: str | None = None,
 ) -> bool:
-    from bentoml.testing.grpc import create_channel
-
     start_time = time.time()
     proxy_handler = urllib.request.ProxyHandler({})
     opener = urllib.request.build_opener(proxy_handler)
     print("Waiting for host %s to be ready.." % host_url)
     while time.time() - start_time < timeout:
-        try:
-            if popen and popen.poll() is not None:
-                return False
-            elif grpc:
+        if grpc:
+            from bentoml.testing.grpc import create_channel
+
+            try:
                 if service_name is None:
                     service_name = "bentoml.grpc.v1alpha1.BentoService"
                 async with create_channel(host_url) as channel:
@@ -106,18 +104,24 @@ async def server_warmup(
                         return True
                     else:
                         await asyncio.sleep(check_interval)
-            elif opener.open(f"http://{host_url}/readyz", timeout=1).status == 200:
-                return True
-            else:
+            except aio.AioRpcError as e:
+                print(f"[{e}] Retrying to connect to the host {host_url}...")
                 await asyncio.sleep(check_interval)
-        except (
-            aio.AioRpcError,
-            ConnectionError,
-            urllib.error.URLError,
-            socket.timeout,
-        ) as e:
-            print(f"[{e}] Retrying to connect to the host {host_url}...")
-            await asyncio.sleep(check_interval)
+        else:
+            try:
+                if popen and popen.poll() is not None:
+                    return False
+                elif opener.open(f"http://{host_url}/readyz", timeout=1).status == 200:
+                    return True
+                else:
+                    await asyncio.sleep(check_interval)
+            except (
+                ConnectionError,
+                urllib.error.URLError,
+                socket.timeout,
+            ) as e:
+                print(f"[{e}] Retrying to connect to the host {host_url}...")
+                await asyncio.sleep(check_interval)
     print(f"Timed out waiting {timeout} seconds for Server {host_url} to be ready.")
     return False
 
@@ -160,7 +164,7 @@ def bentoml_containerize(
             str(bento_tag),
             docker_image_tag=(image_tag,),
             progress="plain",
-            features=["grpc"] if use_grpc else None,
+            features=["grpc", "grpc-reflection"] if use_grpc else None,
         )
         yield image_tag
     finally:
@@ -183,9 +187,11 @@ def run_bento_server_docker(
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     container_name = f"bentoml-test-{image_tag}-{hash(config_file)}"
-    with reserve_free_port(enable_so_reuseport=use_grpc) as port:
+    with reserve_free_port(enable_so_reuseport=use_grpc) as port, reserve_free_port(
+        enable_so_reuseport=use_grpc
+    ) as prom_port:
         pass
-    bind_port = "3000"
+
     cmd = [
         "docker",
         "run",
@@ -193,7 +199,7 @@ def run_bento_server_docker(
         "--name",
         container_name,
         "--publish",
-        f"{port}:{bind_port}",
+        f"{port}:3000",
     ]
     if config_file is not None:
         cmd.extend(["--env", "BENTOML_CONFIG=/home/bentoml/bentoml_config.yml"])
@@ -201,11 +207,12 @@ def run_bento_server_docker(
             ["-v", f"{os.path.abspath(config_file)}:/home/bentoml/bentoml_config.yml"]
         )
     if use_grpc:
-        bind_prom_port = BentoMLContainer.grpc.metrics.port.get()
-        cmd.extend(["--publish", f"{bind_prom_port}:{bind_prom_port}"])
+        cmd.extend(
+            ["--publish", f"{prom_port}:{BentoMLContainer.grpc.metrics.port.get()}"]
+        )
     cmd.append(image_tag)
-    if use_grpc:
-        cmd.extend(["serve-grpc", "--production"])
+    serve_cmd = "serve-grpc" if use_grpc else "serve-http"
+    cmd.extend([serve_cmd, "--production"])
     print(f"Running API server docker image: '{' '.join(cmd)}'")
     with subprocess.Popen(
         cmd,
@@ -437,15 +444,15 @@ def host_bento(
 
         BentoMLContainer.bentoml_home.set(bentoml_home)
     try:
-        print(
-            f"Starting bento server {bento_name} at '{project_path}' {'with config file '+config_file+' ' if config_file else ' '}in {deployment_mode} mode..."
-        )
         if bento_name is None or not bentoml.list(bento_name):
             bento = clean_context.enter_context(
                 bentoml_build(project_path, cleanup=clean_on_exit)
             )
         else:
             bento = bentoml.get(bento_name)
+        print(
+            f"Hosting BentoServer '{bento.tag}' in {deployment_mode} mode at '{project_path}'{' with config file '+config_file if config_file else ''}."
+        )
         if deployment_mode == "standalone":
             with run_bento_server_standalone(
                 bento.path,
@@ -457,11 +464,7 @@ def host_bento(
                 yield host_url
         elif deployment_mode == "docker":
             container_tag = clean_context.enter_context(
-                bentoml_containerize(
-                    bento.tag,
-                    use_grpc=use_grpc,
-                    cleanup=clean_on_exit,
-                )
+                bentoml_containerize(bento.tag, use_grpc=use_grpc)
             )
             with run_bento_server_docker(
                 container_tag,

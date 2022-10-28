@@ -167,5 +167,6 @@ autodoc_mock_imports = [
     "transformers.file_utils",
     "xgboost",
     "catboost",
+    "prometheus_client",
     "bentoml._internal.models.model.ModelSignatureDict",
 ]

@@ -17,4 +17,6 @@ imageio==2.22.1
 pyarrow==9.0.0
 build[virtualenv]==0.8.0
 protobuf==3.19.6
-grpcio-tools>=1.41.0,<1.49.0,!=1.48.2
+grpcio>=1.41.0, <1.49, !=1.48.2
+grpcio-health-checking>=1.41.0, <1.49, !=1.48.2
+opentelemetry-instrumentation-grpc==0.34b0

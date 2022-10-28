@@ -1,6 +1,6 @@
-=====================
-Customize BentoServer
-=====================
+============
+Bento Server
+============
 
 BentoML Server runs the Service API in an `ASGI <https://asgi.readthedocs.io/en/latest/>`_
 web serving layer and puts Runners in a separate worker process pool managed by BentoML. The ASGI web

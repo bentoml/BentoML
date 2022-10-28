@@ -13,16 +13,15 @@ into this part of the documentation.
     :titlesonly:
 
     batching
-    client
-    grpc
-    configuration
     containerization
-    metrics
-    gpu
-    logging
-    monitoring
-    performance
+    client
     server
+    configuration
+    logging
+    metrics
+    performance
+    grpc
+    gpu
     security
     tracing
     migration

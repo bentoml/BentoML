@@ -1,6 +1,6 @@
-========================
+============
 Bento Client
-========================
+============
 
 BentoML provides a client implementation that can be used to make requests to a BentoML server.
 

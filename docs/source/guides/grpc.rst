@@ -1410,7 +1410,7 @@ faster go-to-market strategy.
 Performance tuning
 ~~~~~~~~~~~~~~~~~~
 
-BentoML allows user to tune the performance of gRPC via :ref:`bentoml_configuration.yaml <guides/configuration:Configuring BentoML>` via ``api_server.grpc``.
+BentoML allows user to tune the performance of gRPC via :ref:`bentoml_configuration.yaml <guides/configuration:Configuration>` via ``api_server.grpc``.
 
 A quick overview of the available configuration for gRPC:
 

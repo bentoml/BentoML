@@ -34,6 +34,9 @@ class Client(ABC):
                 setattr(
                     self, name, functools.partial(self._sync_call, _bentoml_api=api)
                 )
+
+        for name, api in self._svc.apis.items():
+            if not hasattr(self, f"async_{name}"):
                 setattr(
                     self,
                     f"async_{name}",

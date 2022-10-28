@@ -372,8 +372,8 @@ _NOT_SUPPORTED = [
     "PROCESS_COLLECTOR",
     "ProcessCollector",
     "REGISTRY",
+    "CONTENT_TYPE_LATEST",
 ] + _NOT_IMPLEMENTED
-_PROPERTY = ["CONTENT_TYPE_LATEST"]
 _docstring = {
     "Counter": _COUNTER_DOCSTRING,
     "Histogram": _HISTOGRAM_DOCSTRING,
@@ -395,12 +395,6 @@ def __getattr__(item: t.Any):
             f"{item} is not supported when using '{__name__}'. See https://docs.bentoml.org/en/latest/reference/metrics.html."
         )
     # This is the entrypoint for all bentoml.metrics.*
-    if item in _PROPERTY:
-        logger.warning(
-            "'%s' is a '@property', which means there is no lazy loading. See https://docs.bentoml.org/en/latest/reference/metrics.html.",
-            item,
-        )
-        return getattr(_LazyMetric(item), item)
     return _LazyMetric(item, docstring=_docstring.get(item))
 
 
@@ -443,8 +437,6 @@ class _LazyMetric:
         if self._proxy is None:
             self._proxy = self._load_proxy()
         assert self._initialized and self._proxy is not None
-        if self._attr in _PROPERTY:
-            return self._proxy
         return getattr(self._proxy, item)
 
     def __dir__(self) -> list[str]:
@@ -463,8 +455,6 @@ class _LazyMetric:
             if self._attr in dir(metrics_client)
             else metrics_client.prometheus_client
         )
-        proxy = getattr(client_impl, self._attr)
-        if callable(proxy):
-            proxy = proxy(*self._args, **self._kwargs)
+        proxy = getattr(client_impl, self._attr)(*self._args, **self._kwargs)
         self._initialized = True
         return proxy

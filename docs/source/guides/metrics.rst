@@ -39,7 +39,7 @@ Initialize our metrics as follow:
 
 ``inference_duration`` is a :meth:`bentoml.metrics.Histogram`, which tracks how long it
 takes for our model to run inference.
-The :attr:`bentoml.metrics.Histogram.buckets` is a exponential bucket with a factor of 1.5 and starts at 0.001.
+The :attr:`bentoml.metrics.Histogram.buckets` argument is used to determine the granularity of histogram tracking. The range of the buckets should cover the range of values the histogram is expected track. Number of buckets is positively correlated to the the granularity of tracking. The last value of the bucket should always be the positive infinity. See Prometheus documentation on `Histogram <https://prometheus.io/docs/practices/histograms/>`_ for more details.
 
 ``num_invocation`` is a :meth:`bentoml.metrics.Counter`, which tracks the total number
 of invocation for any given endpoint.

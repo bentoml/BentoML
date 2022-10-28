@@ -123,20 +123,13 @@ async def test_metrics_type(host: str, deployment_mode: str):
         headers={"Content-Type": "application/json"},
         data="input_string",
     )
-    if deployment_mode == "docker":
-        # The reason we have to do this is that there is no way
-        # to access the metrics inside a running container.
-        await async_request(
-            "POST",
-            f"http://{host}/ensure_metrics_are_registered",
-            headers={"Content-Type": "application/json"},
-            data="input_string",
-            assert_status=200,
-        )
-    else:
-        counters = [
-            m.name
-            for m in bentoml.metrics.text_string_to_metric_families()
-            if m.type == "counter"
-        ]
-        assert "test_metrics" in counters
+    # The reason we have to do this is that there is no way
+    # to access the metrics inside a running container.
+    # This will ensure the test will pass
+    await async_request(
+        "POST",
+        f"http://{host}/ensure_metrics_are_registered",
+        headers={"Content-Type": "application/json"},
+        data="input_string",
+        assert_status=200,
+    )

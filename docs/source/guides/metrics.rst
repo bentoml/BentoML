@@ -4,7 +4,7 @@ Metrics
 
 Metrics are measurements of statistics about your service, which can provide information about the usage and performance of your bentos in production.
 
-BentoML allows users to define custom metrics with [#prometheus]_ to easily enable monitoring for their Bentos.
+BentoML allows users to define custom metrics with `Prometheus <https://prometheus.io/docs/introduction/overview/>`_ to easily enable monitoring for their Bentos.
  
 This article will dive into how to add custom metrics to monitor your BentoService and how you can incorporate custom metrics into 
 either a :ref:`concepts/runner:Custom Runner` or your :ref:`Service <concepts/service:Service and APIs>`.

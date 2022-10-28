@@ -41,7 +41,7 @@ Initialize our metrics as follow:
 takes for our model to run inference.
 The :attr:`bentoml.metrics.Histogram.buckets` argument is used to determine the granularity of histogram tracking. The range of the buckets should cover the range of values the histogram is expected track. Number of buckets is positively correlated to the the granularity of tracking. The last value of the bucket should always be the positive infinity. See Prometheus documentation on `Histogram <https://prometheus.io/docs/practices/histograms/>`_ for more details.
 
-``num_invocation`` is a :meth:`bentoml.metrics.Counter`, which tracks the total number
+``polarity_counter`` is a :meth:`bentoml.metrics.Counter`, which tracks the total number
 of analysis by the polarity scores.
 
 .. epigraph::

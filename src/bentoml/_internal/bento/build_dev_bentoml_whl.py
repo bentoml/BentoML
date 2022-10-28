@@ -29,6 +29,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
 
     try:
         from build.env import IsolatedEnvBuilder
+
         from build import ProjectBuilder
     except ModuleNotFoundError as e:
         raise MissingDependencyException(

@@ -31,8 +31,14 @@ class Client(ABC):
 
         for name, api in self._svc.apis.items():
             if not hasattr(self, name):
-                setattr(self, name, functools.partial(self._sync_call, _bentoml_api=api))
-                setattr(self, f"async_{name}", functools.partial(self._call, _bentoml_api=api))
+                setattr(
+                    self, name, functools.partial(self._sync_call, _bentoml_api=api)
+                )
+                setattr(
+                    self,
+                    f"async_{name}",
+                    functools.partial(self._call, _bentoml_api=api),
+                )
 
     def call(self, bentoml_api_name: str, inp: t.Any = None, **kwargs: t.Any) -> t.Any:
         return asyncio.run(self.async_call(bentoml_api_name, inp))
@@ -42,7 +48,9 @@ class Client(ABC):
     ) -> t.Any:
         return await self._call(inp, _bentoml_api=self._svc.apis[bentoml_api_name])
 
-    def _sync_call(self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwagrs: t.Any):
+    def _sync_call(
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwagrs: t.Any
+    ):
         return asyncio.run(self._call(inp, _bentoml_api=_bentoml_api))
 
     @abstractmethod

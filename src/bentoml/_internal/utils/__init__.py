@@ -72,7 +72,7 @@ _EXPERIMENTAL_APIS: set[str] = set()
 def warn_experimental(api_name: str) -> None:
     """
     Warns the user that the given API is experimental.
-    Make sure that if the API is not experimental anymore, remove this function call.
+    Make sure that if the API is not experimental anymore, this function call is removed.
 
     If 'api_name' requires string formatting, use %-formatting for optimization.
 

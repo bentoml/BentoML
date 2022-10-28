@@ -81,7 +81,3 @@ The following section will go over the most commonly used metrics API in
 .. autofunction:: bentoml.metrics.Summary
 
 .. autofunction:: bentoml.metrics.Gauge
-
-.. autofunction:: bentoml.metrics.make_wsgi_app
-
-.. autofunction:: bentoml.metrics.make_asgi_app

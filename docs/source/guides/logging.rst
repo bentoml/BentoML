@@ -1,6 +1,6 @@
-=================
-Customize Logging
-=================
+=======
+Logging
+=======
 
 Server Logging
 --------------

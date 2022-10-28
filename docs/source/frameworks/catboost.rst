@@ -138,7 +138,7 @@ Using GPU
 
 CatBoost Runners will automatically use ``task_type=GPU`` if a GPU is detected.
 
-This behavior can be disabled using the :ref:`BentoML configuration file<guides/configuration:Configuring BentoML>`:
+This behavior can be disabled using the :ref:`BentoML configuration file<guides/configuration:Configuration>`:
 
 access:
 

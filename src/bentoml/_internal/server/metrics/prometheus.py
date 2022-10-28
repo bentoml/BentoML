@@ -215,7 +215,7 @@ class PrometheusClient:
                          ...
 
         The default buckets are intended to cover a typical web/rpc request from milliseconds to seconds.
-        See :ref:`configuration guides <guides/configuration:Configuring BentoML>` to see how to customize the buckets.
+        See :ref:`configuration guides <guides/configuration:Configuration>` to see how to customize the buckets.
 
         Args:
             name (str): The name of the metric.

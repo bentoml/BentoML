@@ -24,13 +24,13 @@ inference_duration = bentoml.metrics.Histogram(
     name="inference_duration",
     documentation="Duration of inference",
     labelnames=["nltk_version", "sentiment_cls"],
-    buckets=exponential_buckets(0.001, 1.5, 10.0),
+    buckets=(0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0, float("inf")),
 )
 
-num_invocation = bentoml.metrics.Counter(
-    name="num_invocation",
-    documentation="Count total number of invocation for a given endpoint",
-    labelnames=["endpoint"],
+polarity_counter = bentoml.metrics.Counter(
+    name="polarity_total",
+    documentation="Count total number of analysis by polarity scores",
+    labelnames=["polarity"],
 )
 
 
@@ -63,6 +63,6 @@ svc = bentoml.Service("sentiment_analyzer", runners=[nltk_runner])
 
 @svc.api(input=Text(), output=JSON())
 async def analysis(input_text: str) -> dict[str, bool]:
-    num_invocation.labels(endpoint="analysis").inc()
     is_positive = await nltk_runner.is_positive.async_run(input_text)
+    polarity_counter.labels(polarity=is_positive).inc()
     return {"is_positive": is_positive}

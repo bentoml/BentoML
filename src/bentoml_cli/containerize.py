@@ -30,55 +30,78 @@ def deprec_buildx_options(*param_decls: str, **attrs: t.Any):
     def decorator(
         f: t.Callable[..., t.Any]
     ) -> t.Callable[[t.Callable[P, t.Any]], Command]:
-        help_msg = "DEPRECATED (buildx argument):"
+        help_msg = "DEPRECATED (buildx argument, will be removed in future release):"
         msg = ""
         if "help" in attrs:
             msg = attrs.pop("help")
-        attrs.setdefault(
-            "help", help_msg + " " + msg + " (no-op, will be removed in future release)"
-        )
-        attrs.setdefault("expose_value", False)
-        attrs.setdefault("default", None)
+        attrs.setdefault("help", help_msg + " " + msg)
+        attrs.setdefault("expose_value", True)
         return click.option(*param_decls, **attrs)(f)
 
     return decorator
 
 
 def make_deprecated_option_group(f: t.Callable[..., t.Any]):
+    import click
+
     deprecated = [
         deprec_buildx_options(
             "--allow",
+            multiple=True,
+            default=None,
             help="Allow extra privileged entitlement (e.g., 'network.host', 'security.insecure').",
         ),
         deprec_buildx_options(
-            "--build-context", help="Additional build contexts (e.g., name=path)."
+            "--build-context",
+            multiple=True,
+            help="Additional build contexts (e.g., name=path).",
         ),
         deprec_buildx_options(
-            "--builder", help="Override the configured builder instance."
+            "--builder",
+            type=click.STRING,
+            default=None,
+            help="Override the configured builder instance.",
         ),
         deprec_buildx_options(
             "--cache-to",
+            multiple=True,
+            default=None,
             help="Cache export destinations (e.g., 'user/app:cache', 'type=local,dest=path/to/dir').",
         ),
         deprec_buildx_options(
-            "--cgroup-parent", help="Optional parent cgroup for the container."
+            "--cgroup-parent",
+            type=click.STRING,
+            default=None,
+            help="Optional parent cgroup for the container.",
         ),
-        deprec_buildx_options(
-            "--metadata-file", help="Write build result metadata to the file."
-        ),
-        deprec_buildx_options("--ulimit", help="Ulimit options (default [])."),
-        deprec_buildx_options(
-            "--no-cache-filter", help="Do not cache specified stages."
-        ),
-        deprec_buildx_options("--shm-size", help="Size of '/dev/shm'."),
         deprec_buildx_options(
             "--load",
+            is_flag=True,
+            default=False,
             help="Shorthand for '--output=type=docker'. Note that '--push' and '--load' are mutually exclusive.",
         ),
         deprec_buildx_options(
             "--push",
             help="Shorthand for '--output=type=registry'. Note that '--push' and '--load' are mutually exclusive.",
         ),
+        deprec_buildx_options(
+            "--no-cache-filter",
+            multiple=True,
+            help="Do not cache specified stages.",
+        ),
+        deprec_buildx_options(
+            "--metadata-file",
+            type=click.STRING,
+            default=None,
+            help="Write build result metadata to the file.",
+        ),
+        deprec_buildx_options(
+            "--ulimit",
+            type=click.STRING,
+            default=None,
+            help="Ulimit options (default []).",
+        ),
+        deprec_buildx_options("--shm-size", default=None, help="Size of '/dev/shm'."),
     ]
     for options in reversed(deprecated):
         f = options(f)
@@ -206,6 +229,7 @@ def add_containerize_command(cli: Group) -> None:
         target: str,
         enable_features: tuple[str],
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        **kwargs: t.Any,
     ) -> None:
         """Containerizes given Bento into a ready-to-use Docker image.
 
@@ -239,8 +263,14 @@ def add_containerize_command(cli: Group) -> None:
 
         logger = logging.getLogger("bentoml")
 
-        # run health check whether buildx is install locally
         buildx.health()
+        # Deprecated kwargs
+        passed = {k: v for k, v in kwargs.items() if v}
+        if len(passed) != 0:
+            logger.warning(
+                "Deprecated options passed: '%s'",
+                ", ".join(map(lambda v: "--%s" % v, passed.keys())),
+            )
 
         add_hosts = {}
         if add_host:

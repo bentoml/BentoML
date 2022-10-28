@@ -61,4 +61,5 @@ For example, for the service API function:
 The client call would look like:
 
 .. code-block:: python
+
     res = client.combine(a="a", b="b")

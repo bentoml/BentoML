@@ -74,8 +74,8 @@ Initialize our NLTK runner, and add it to the service:
        polarity_counter.labels(polarity=is_positive).inc()
        return {"is_positive": is_positive}
 
-Our endpoint ``analysis`` uses the ``num_invocation`` counter to track the total number of
-invocation for ``analysis``.
+Our endpoint ``analysis`` uses the ``polarity_counter`` to track the total number of
+invocation for ``analysis`` by polarity scores.
 
 .. tab-set::
 

@@ -23,24 +23,11 @@ from ._internal.configuration.containers import BentoMLContainer
 # this won't work with help() or doocstring on Sphinx.
 # While this is less than optimal, we will do this since 'bentoml.metrics'
 # is a public API.
-_START_HTTP_SERVER_DOCSTRING = """\
-Starts a WSGI server for prometheus metrics as a daemon thread.
-
-Args:
-    port: Port to listen on.
-    addr: Address to listen on.
-"""
 _MAKE_WSGI_APP_DOCSTRING = """\
 Create a WSGI app which serves the metrics from a registry.
 
 Returns:
     WSGIApp: A WSGI app which serves the metrics from a registry.
-"""
-_MAKE_ASGI_APP_DOCSTRING = """\
-Create a ASGI app which serves the metrics from a registry.
-
-Returns:
-    ASGIApp: A ASGI app which serves the metrics from a registry.
 """
 _GENERATE_LATEST_DOCSTRING = """\
 Returns metrics from the registry in latest text format as a string.
@@ -55,14 +42,6 @@ Parse Prometheus text format from a unicode string.
 
 Returns:
     Generator[Metric, None, None]: A generator of `Metric <https://prometheus.io/docs/concepts/metric_types/>`_ objects.
-"""
-_WRITE_TO_TEXTFILE_DOCSTRING = """\
-Write metrics to given path. This is intended to be used with
-the Node expoerter textfile collector.
-
-Args:
-    path: path to write the metrics to. This file must end
-          with '.prom' for the textfile collector to process it.
 """
 _HISTOGRAM_DOCSTRING = """\
 A Histogram tracks the size and number of events in a given bucket.
@@ -350,13 +329,9 @@ Args:
 
 # This sets of functions are implemented in the PrometheusClient class
 _INTERNAL_FN_IMPL = {
-    "start_http_server": _START_HTTP_SERVER_DOCSTRING,
-    "start_wsgi_server": _START_HTTP_SERVER_DOCSTRING,
     "make_wsgi_app": _MAKE_WSGI_APP_DOCSTRING,
-    "make_asgi_app": _MAKE_ASGI_APP_DOCSTRING,
     "generate_latest": _GENERATE_LATEST_DOCSTRING,
     "text_string_to_metric_families": _TEXT_STRING_TO_METRIC_DOCSTRING,
-    "write_to_textfile": _WRITE_TO_TEXTFILE_DOCSTRING,
 }
 _NOT_IMPLEMENTED = [
     "delete_from_gateway",
@@ -373,6 +348,10 @@ _NOT_SUPPORTED = [
     "ProcessCollector",
     "REGISTRY",
     "CONTENT_TYPE_LATEST",
+    "start_http_server",
+    "start_wsgi_server",
+    "make_asgi_app",
+    "write_to_textfile",
 ] + _NOT_IMPLEMENTED
 _docstring = {
     "Counter": _COUNTER_DOCSTRING,

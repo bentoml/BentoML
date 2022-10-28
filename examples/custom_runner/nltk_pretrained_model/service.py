@@ -1,11 +1,37 @@
+from __future__ import annotations
+
+import time
+import typing as t
+from typing import TYPE_CHECKING
 from statistics import mean
 
 import nltk
+from utils import exponential_buckets
 from nltk.sentiment import SentimentIntensityAnalyzer
 
 import bentoml
 from bentoml.io import JSON
 from bentoml.io import Text
+
+if TYPE_CHECKING:
+    from bentoml._internal.runner.runner import RunnerMethod
+
+    class RunnerImpl(bentoml.Runner):
+        is_positive: RunnerMethod
+
+
+inference_duration = bentoml.metrics.Histogram(
+    name="inference_duration",
+    documentation="Duration of inference",
+    labelnames=["nltk_version", "sentiment_cls"],
+    buckets=exponential_buckets(0.001, 1.5, 10.0),
+)
+
+num_invocation = bentoml.metrics.Counter(
+    name="num_invocation",
+    documentation="Count total number of invocation for a given endpoint",
+    labelnames=["endpoint"],
+)
 
 
 class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
@@ -16,20 +42,27 @@ class NLTKSentimentAnalysisRunnable(bentoml.Runnable):
         self.sia = SentimentIntensityAnalyzer()
 
     @bentoml.Runnable.method(batchable=False)
-    def is_positive(self, input_text):
+    def is_positive(self, input_text: str) -> bool:
+        start = time.perf_counter()
         scores = [
             self.sia.polarity_scores(sentence)["compound"]
             for sentence in nltk.sent_tokenize(input_text)
         ]
+        inference_duration.labels(
+            nltk_version=nltk.__version__, sentiment_cls=self.sia.__class__.__name__
+        ).observe(time.perf_counter() - start)
         return mean(scores) > 0
 
 
-nltk_runner = bentoml.Runner(NLTKSentimentAnalysisRunnable, name="nltk_sentiment")
+nltk_runner = t.cast(
+    "RunnerImpl", bentoml.Runner(NLTKSentimentAnalysisRunnable, name="nltk_sentiment")
+)
 
 svc = bentoml.Service("sentiment_analyzer", runners=[nltk_runner])
 
 
 @svc.api(input=Text(), output=JSON())
-async def analysis(input_text):
+async def analysis(input_text: str) -> dict[str, bool]:
+    num_invocation.labels(endpoint="analysis").inc()
     is_positive = await nltk_runner.is_positive.async_run(input_text)
     return {"is_positive": is_positive}

@@ -16,6 +16,7 @@ into this part of the documentation.
     grpc
     configuration
     containerization
+    metrics
     gpu
     logging
     monitoring

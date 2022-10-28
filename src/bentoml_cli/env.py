@@ -42,7 +42,7 @@ def run_cmd(cmd: list[str]) -> list[str]:
     return subprocess.check_output(cmd).decode("utf-8").split("\n")[:-1]
 
 
-def format_dropdown(title: str, content: t.Iterable[str]) -> str:
+def _format_dropdown(title: str, content: t.Iterable[str]) -> str:
     processed = "\n".join(content)
     return f"""\
 <details><summary><code>{title}</code></summary>
@@ -57,49 +57,48 @@ def format_dropdown(title: str, content: t.Iterable[str]) -> str:
 """
 
 
-def pretty_format(
-    info_dict: dict[str, str | list[str]], output: t.Literal["md", "plain"]
-) -> str:
+def _format_env(env: list[str]) -> list[str]:
+    return [f"{e}={shlex.quote(os.environ.get(e, ''))}" for e in env]
+
+
+def format_md(env: list[str], info_dict: dict[str, str | list[str]]) -> list[str]:
     out: list[str] = []
-    _default_env = [f'{env}={shlex.quote(os.environ.get(env, ""))}' for env in _ENVVAR]
-    _conditional_env = [
-        f'{env}={shlex.quote(os.environ.get(env, ""))}'
-        for env in _CONDITIONAL_ENVVAR
-        if os.environ.get(env) is not None
-    ]
-    # environment format
-    if output == "md":
-        out.append(
-            """\
+    out.append(
+        """\
 #### Environment variable
 
 ```bash
 {env}
 ```
 """.format(
-                env="\n".join(_default_env)
-            )
+            env="\n".join(_format_env(env))
         )
-        if len(_conditional_env) > 0:
-            out.extend(_conditional_env)
-        out.append("#### System information\n")
-        for key, value in info_dict.items():
-            if isinstance(value, list):
-                out.append(format_dropdown(key, value))
-            else:
-                out.append(f"`{key}`: {value}")
-    else:
-        out.extend(_default_env)
-        if len(_conditional_env) > 0:
-            out.extend(_conditional_env)
-        for key, value in info_dict.items():
-            if isinstance(value, list):
-                out.append(
-                    f"{key}=( " + " ".join(map(lambda s: f'"{s}"', value)) + " )"
-                )
-            else:
-                out.append(f'{key}="{value}"')
-    return "\n".join(out)
+    )
+    out.append("#### System information\n")
+    for key, value in info_dict.items():
+        if isinstance(value, list):
+            out.append(_format_dropdown(key, value))
+        else:
+            out.append(f"`{key}`: {value}")
+    return out
+
+
+def format_bash(env: list[str], info_dict: dict[str, str | list[str]]) -> list[str]:
+    out: list[str] = []
+    out.extend(_format_env(env))
+    for key, value in info_dict.items():
+        if isinstance(value, list):
+            out.append(f"{key}=( " + " ".join(map(lambda s: f'"{s}"', value)) + " )")
+        else:
+            out.append(f'{key}="{value}"')
+    return out
+
+
+def pretty_format(
+    info_dict: dict[str, str | list[str]], output: t.Literal["md", "bash"]
+) -> str:
+    env = _ENVVAR + list(filter(lambda e: e in os.environ, _CONDITIONAL_ENVVAR))
+    return "\n".join({"md": format_md, "bash": format_bash}[output](env, info_dict))
 
 
 def add_env_command(cli: click.Group) -> None:
@@ -112,14 +111,14 @@ def add_env_command(cli: click.Group) -> None:
     @click.option(
         "-o",
         "--output",
-        type=click.Choice(["md", "plain"]),
+        type=click.Choice(["md", "bash"]),
         default="md",
         show_default=True,
-        help="Output format. '-o plain' to display without format.",
+        help="Output format. '-o bash' to display without format.",
     )
     @click.pass_context
-    def env(ctx: click.Context, output: t.Literal["md", "plain"]) -> None:  # type: ignore (unused warning)
-        if output not in ["md", "plain"]:
+    def env(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:  # type: ignore (unused warning)
+        if output not in ["md", "bash"]:
             raise CLIException(f"Unknown output format: {output}")
 
         is_windows = sys.platform == "win32"

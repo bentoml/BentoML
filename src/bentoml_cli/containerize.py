@@ -7,8 +7,11 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from click import Group
+    from click import Command
 
     from bentoml._internal.bento import BentoStore
+
+    P = t.ParamSpec("P")
 
 
 def containerize_transformer(
@@ -19,6 +22,65 @@ def containerize_transformer(
     if isinstance(value, tuple) and not value:
         return
     return value
+
+
+def deprec_buildx_options(*param_decls: str, **attrs: t.Any):
+    import click
+
+    def decorator(
+        f: t.Callable[..., t.Any]
+    ) -> t.Callable[[t.Callable[P, t.Any]], Command]:
+        help_msg = "DEPRECATED (Will be removed in future release):"
+        msg = ""
+        if "help" in attrs:
+            msg = attrs.pop("help")
+        attrs.setdefault("help", help_msg + " " + msg)
+        attrs.setdefault("expose_value", False)
+        attrs.setdefault("default", None)
+        return click.option(*param_decls, **attrs)(f)
+
+    return decorator
+
+
+def make_deprecated_option_group(f: t.Callable[..., t.Any]):
+    deprecated = [
+        deprec_buildx_options(
+            "--allow",
+            help="Allow extra privileged entitlement (e.g., 'network.host', 'security.insecure').",
+        ),
+        deprec_buildx_options(
+            "--build-context", help="Additional build contexts (e.g., name=path)."
+        ),
+        deprec_buildx_options(
+            "--builder", help="Override the configured builder instance."
+        ),
+        deprec_buildx_options(
+            "--cache-to",
+            help="Cache export destinations (e.g., 'user/app:cache', 'type=local,dest=path/to/dir').",
+        ),
+        deprec_buildx_options(
+            "--cgroup-parent", help="Optional parent cgroup for the container."
+        ),
+        deprec_buildx_options(
+            "--metadata-file", help="Write build result metadata to the file."
+        ),
+        deprec_buildx_options("--ulimit", help="Ulimit options (default [])."),
+        deprec_buildx_options(
+            "--no-cache-filter", help="Do not cache specified stages."
+        ),
+        deprec_buildx_options("--shm-size", help="Size of '/dev/shm'."),
+        deprec_buildx_options(
+            "--load",
+            help="Shorthand for '--output=type=docker'. Note that '--push' and '--load' are mutually exclusive.",
+        ),
+        deprec_buildx_options(
+            "--push",
+            help="Shorthand for '--output=type=registry'. Note that '--push' and '--load' are mutually exclusive.",
+        ),
+    ]
+    for options in reversed(deprecated):
+        f = options(f)
+    return f
 
 
 def add_containerize_command(cli: Group) -> None:
@@ -48,41 +110,12 @@ def add_containerize_command(cli: Group) -> None:
         multiple=True,
         help="Add a custom host-to-IP mapping (format: 'host:ip').",
     )
-    @click.option(
-        "--allow",
-        multiple=True,
-        default=None,
-        help="Allow extra privileged entitlement (e.g., 'network.host', 'security.insecure').",
-    )
     @click.option("--build-arg", multiple=True, help="Set build-time variables.")
-    @click.option(
-        "--build-context",
-        multiple=True,
-        help="Additional build contexts (e.g., name=path).",
-    )
-    @click.option(
-        "--builder",
-        type=click.STRING,
-        default=None,
-        help="Override the configured builder instance.",
-    )
     @click.option(
         "--cache-from",
         multiple=True,
         default=None,
         help="External cache sources (e.g., 'user/app:cache', 'type=local,src=path/to/dir').",
-    )
-    @click.option(
-        "--cache-to",
-        multiple=True,
-        default=None,
-        help="Cache export destinations (e.g., 'user/app:cache', 'type=local,dest=path/to/dir').",
-    )
-    @click.option(
-        "--cgroup-parent",
-        type=click.STRING,
-        default=None,
-        help="Optional parent cgroup for the container.",
     )
     @click.option(
         "--iidfile",
@@ -91,18 +124,6 @@ def add_containerize_command(cli: Group) -> None:
         help="Write the image ID to the file.",
     )
     @click.option("--label", multiple=True, help="Set metadata for an image.")
-    @click.option(
-        "--load",
-        is_flag=True,
-        default=False,
-        help="Shorthand for '--output=type=docker'. Note that '--push' and '--load' are mutually exclusive.",
-    )
-    @click.option(
-        "--metadata-file",
-        type=click.STRING,
-        default=None,
-        help="Write build result metadata to the file.",
-    )
     @click.option(
         "--network",
         type=click.STRING,
@@ -114,11 +135,6 @@ def add_containerize_command(cli: Group) -> None:
         is_flag=True,
         default=False,
         help="Do not use cache when building the image.",
-    )
-    @click.option(
-        "--no-cache-filter",
-        multiple=True,
-        help="Do not cache specified stages.",
     )
     @click.option(
         "--output",
@@ -142,18 +158,11 @@ def add_containerize_command(cli: Group) -> None:
         help="Always attempt to pull all referenced images.",
     )
     @click.option(
-        "--push",
-        is_flag=True,
-        default=False,
-        help="Shorthand for '--output=type=registry'. Note that '--push' and '--load' are mutually exclusive.",
-    )
-    @click.option(
         "--secret",
         multiple=True,
         default=None,
         help="Secret to expose to the build (format: 'id=mysecret[,src=/local/secret]').",
     )
-    @click.option("--shm-size", default=None, help="Size of '/dev/shm'.")
     @click.option(
         "--ssh",
         type=click.STRING,
@@ -167,45 +176,32 @@ def add_containerize_command(cli: Group) -> None:
         help="Set the target build stage to build.",
     )
     @click.option(
-        "--ulimit", type=click.STRING, default=None, help="Ulimit options (default [])."
-    )
-    @click.option(
         "--enable-features",
         multiple=True,
         nargs=1,
         metavar="[features,]",
         help=f"Enable additional BentoML features. Available features are: {', '.join(FEATURES)}.",
     )
+    @make_deprecated_option_group
     @kwargs_transformers(transformer=containerize_transformer)
     @inject
     def containerize(  # type: ignore
         bento_tag: str,
         docker_image_tag: tuple[str],
         add_host: tuple[str],
-        allow: tuple[str],
         build_arg: tuple[str],
-        build_context: tuple[str],
-        builder: str,
         cache_from: tuple[str],
-        cache_to: tuple[str],
-        cgroup_parent: str,
         iidfile: str,
         label: tuple[str],
-        load: bool,
         network: str,
-        metadata_file: str,
         no_cache: bool,
-        no_cache_filter: tuple[str],
         output: tuple[str],
         platform: tuple[str],
         progress: t.Literal["auto", "tty", "plain"],
         pull: bool,
-        push: bool,
         secret: tuple[str],
-        shm_size: str,
         ssh: str,
         target: str,
-        ulimit: str,
         enable_features: tuple[str],
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> None:
@@ -250,22 +246,14 @@ def add_containerize_command(cli: Group) -> None:
                 host_name, ip = host.split(":")
                 add_hosts[host_name] = ip
 
-        allow_ = []
-        if allow:
-            allow_ = list(allow)
-
         build_args = {}
         if build_arg:
             for build_arg_str in build_arg:
                 key, value = build_arg_str.split("=")
                 build_args[key] = value
 
-        build_context_ = {}
-        if build_context:
-            for build_context_str in build_context:
-                key, value = build_context_str.split("=")
-                build_context_[key] = value
-
+        if get_debug_mode():
+            progress = "plain"
         labels = {}
         if label:
             for label_str in label:
@@ -301,31 +289,20 @@ def add_containerize_command(cli: Group) -> None:
             features=enable_features,
             # docker options
             add_host=add_hosts,
-            allow=allow_,
             build_args=build_args,
-            build_context=build_context_,
-            builder=builder,
             cache_from=cache_from,
-            cache_to=cache_to,
-            cgroup_parent=cgroup_parent,
             iidfile=iidfile,
             labels=labels,
-            load=load,
-            metadata_file=metadata_file,
             network=network,
             no_cache=no_cache,
-            no_cache_filter=no_cache_filter,
             output=output_,
             platform=platform,
             progress=progress,
             pull=pull,
-            push=push,
             quiet=logger.getEffectiveLevel() == logging.ERROR,
             secrets=secret,
-            shm_size=shm_size,
             ssh=ssh,
             target=target,
-            ulimit=ulimit,
         )
         if not exit_code:
             # Note that we have to duplicate the logic here

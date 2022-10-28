@@ -112,7 +112,6 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                     "trace_id": trace_context.trace_id,
                     "span_id": trace_context.span_id,
                     "request_id": trace_context.request_id,
-                    "sampled": trace_context.sampled,
                 }.items(),
             )
         )

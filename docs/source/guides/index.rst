@@ -17,11 +17,11 @@ into this part of the documentation.
     client
     server
     configuration
-    grpc
     logging
     metrics
-    gpu
     performance
+    grpc
+    gpu
     security
     tracing
     migration

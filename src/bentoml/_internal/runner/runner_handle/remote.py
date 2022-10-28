@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import json
 import pickle
 import typing as t
@@ -21,6 +22,7 @@ from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import yarl
+    import aiohttp
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
 
@@ -126,10 +128,10 @@ class RemoteRunnerClient(RunnerHandle):
             )
         return self._client_cache
 
-    def _reset_client(self):
+    async def _reset_client(self):
         self._close_conn()
         if self._client_cache is not None:
-            self._client_cache.close()
+            await self._client_cache.close()
             self._client_cache = None
 
     async def async_run_method(
@@ -170,10 +172,12 @@ class RemoteRunnerClient(RunnerHandle):
             if os.getenv("BENTOML_RETRY_REQUESTS") == "on":
                 try:
                     # most likely the TCP connection has been closed; retry after reconnecting
-                    self._reset_client()
+                    await self._reset_client()
                     async with self._client.post(
                         f"{self._addr}/{path}",
-                        data=pickle.dumps(payload_params),  # FIXME: pickle inside pickle
+                        data=pickle.dumps(
+                            payload_params
+                        ),  # FIXME: pickle inside pickle
                         headers={
                             "Bento-Name": component_context.bento_name,
                             "Bento-Version": component_context.bento_version,
@@ -184,7 +188,7 @@ class RemoteRunnerClient(RunnerHandle):
                     ) as resp:
                         body = await resp.read()
                 except aiohttp.ClientOSError as e:
-                    raise RemoteException(f"Failed to connect to runner server.") f
+                    raise RemoteException(f"Failed to connect to runner server.")
             else:
                 raise RemoteException(f"Failed to connect to runner server.") from e
 

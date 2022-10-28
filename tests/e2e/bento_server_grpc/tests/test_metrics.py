@@ -7,10 +7,14 @@ import pytest
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
+from bentoml._internal.utils import LazyLoader
 
 if TYPE_CHECKING:
+    from google.protobuf import wrappers_pb2
+
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 else:
+    wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
     pb, _ = import_generated_stubs()
 
 
@@ -39,5 +43,5 @@ async def test_multipart(host: str, img_file: str):
         await async_client_call(
             "ensure_metrics_are_registered",
             channel=channel,
-            data={"text": "input_string"},
+            data={"text": wrappers_pb2.StringValue(value="input_string")},
         )

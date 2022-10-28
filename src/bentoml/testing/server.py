@@ -76,17 +76,15 @@ async def server_warmup(
     popen: subprocess.Popen[t.Any] | None = None,
     service_name: str | None = None,
 ) -> bool:
-    from bentoml.testing.grpc import create_channel
-
     start_time = time.time()
     proxy_handler = urllib.request.ProxyHandler({})
     opener = urllib.request.build_opener(proxy_handler)
     print("Waiting for host %s to be ready.." % host_url)
     while time.time() - start_time < timeout:
-        try:
-            if popen and popen.poll() is not None:
-                return False
-            elif grpc:
+        if grpc:
+            from bentoml.testing.grpc import create_channel
+
+            try:
                 if service_name is None:
                     service_name = "bentoml.grpc.v1alpha1.BentoService"
                 async with create_channel(host_url) as channel:
@@ -106,18 +104,24 @@ async def server_warmup(
                         return True
                     else:
                         await asyncio.sleep(check_interval)
-            elif opener.open(f"http://{host_url}/readyz", timeout=1).status == 200:
-                return True
-            else:
+            except aio.AioRpcError as e:
+                print(f"[{e}] Retrying to connect to the host {host_url}...")
                 await asyncio.sleep(check_interval)
-        except (
-            aio.AioRpcError,
-            ConnectionError,
-            urllib.error.URLError,
-            socket.timeout,
-        ) as e:
-            print(f"[{e}] Retrying to connect to the host {host_url}...")
-            await asyncio.sleep(check_interval)
+        else:
+            try:
+                if popen and popen.poll() is not None:
+                    return False
+                elif opener.open(f"http://{host_url}/readyz", timeout=1).status == 200:
+                    return True
+                else:
+                    await asyncio.sleep(check_interval)
+            except (
+                ConnectionError,
+                urllib.error.URLError,
+                socket.timeout,
+            ) as e:
+                print(f"[{e}] Retrying to connect to the host {host_url}...")
+                await asyncio.sleep(check_interval)
     print(f"Timed out waiting {timeout} seconds for Server {host_url} to be ready.")
     return False
 

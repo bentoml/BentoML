@@ -18,7 +18,7 @@ Having a `Prometheus server <https://prometheus.io/docs/prometheus/latest/gettin
 
 .. seealso::
 
-   :ref:`Metrics API <reference/metrics>` for more information on ``bentoml.metrics``.
+   All `metrics types <https://prometheus.io/docs/concepts/metric_types/>`_ supported by Prometheus are supported in BentoML. See :ref:`Metrics API <reference/metrics:Metrics API>` for more information on ``bentoml.metrics``.
 
 
 Using Metrics in a BentoService

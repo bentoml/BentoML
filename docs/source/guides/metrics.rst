@@ -22,7 +22,7 @@ Having a `Prometheus server <https://prometheus.io/docs/prometheus/latest/gettin
 
 
 Using Metrics in a BentoService
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We will build a custom histogram to track the latency of our :ref:`pretrained NLTK runner <concepts/runner:Custom Runner>`, a custom
 counter to measure the total amount of time our endpoint is invoked.

@@ -86,6 +86,4 @@ The following section will go over the most commonly used metrics API in
 
 .. autofunction:: bentoml.metrics.make_asgi_app
 
-.. autofunction:: bentoml.metrics.start_http_server
-
 .. autofunction:: bentoml.metrics.write_to_textfile

@@ -55,7 +55,7 @@ Create our NLTK custom runner:
    :caption: `service.py`
 
 This runnable implementation creates a custom NLTK runner, that use the ``inference_duration``
-histogram to track the latency of polatiry scores from a given sentence.
+histogram to track the latency of polarity scores from a given sentence.
 
 Initialize our NLTK runner, and add it to the service:
 

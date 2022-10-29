@@ -132,9 +132,10 @@ class HTTPTrafficMetricsMiddleware:
             filter(
                 lambda tup: tup[1] is not None,
                 {
-                    "trace_id": trace_context.trace_id,
-                    "span_id": trace_context.span_id,
-                    "request_id": trace_context.request_id,
+                    "trace_id": "%s" % trace_context.trace_id,
+                    "span_id": "%s" % trace_context.span_id,
+                    "request_id": "%s" % trace_context.request_id,
+                    "sampled": "%s" % trace_context.sampled,
                 }.items(),
             )
         )
@@ -272,9 +273,10 @@ class RunnerTrafficMetricsMiddleware:
             filter(
                 lambda tup: tup[1] is not None,
                 {
-                    "trace_id": trace_context.trace_id,
-                    "span_id": trace_context.span_id,
-                    "request_id": trace_context.request_id,
+                    "trace_id": "%s" % trace_context.trace_id,
+                    "span_id": "%s" % trace_context.span_id,
+                    "request_id": "%s" % trace_context.request_id,
+                    "sampled": "%s" % trace_context.sampled,
                 }.items(),
             )
         )

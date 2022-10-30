@@ -285,9 +285,9 @@ def conda_dependencies_validator(
 
 
 if TYPE_CHECKING:
-    L: t.TypeAlias = list[str]
+    ListStr: t.TypeAlias = list[str]
 else:
-    L = list
+    ListStr = list
 
 
 @attr.frozen
@@ -301,14 +301,14 @@ class CondaOptions:
     environment_yml: t.Optional[str] = None
     channels: t.Optional[t.List[str]] = attr.field(
         default=None,
-        validator=attr.validators.optional(attr.validators.instance_of(L)),
+        validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
     dependencies: t.Optional[DependencyType] = attr.field(
         default=None, validator=attr.validators.optional(conda_dependencies_validator)
     )
     pip: t.Optional[t.List[str]] = attr.field(
         default=None,
-        validator=attr.validators.optional(attr.validators.instance_of(L)),
+        validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
 
     def __attrs_post_init__(self):
@@ -408,7 +408,7 @@ class PythonOptions:
     )
     packages: t.Optional[t.List[str]] = attr.field(
         default=None,
-        validator=attr.validators.optional(attr.validators.instance_of(L)),
+        validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
     lock_packages: t.Optional[bool] = attr.field(
         default=None,
@@ -424,15 +424,15 @@ class PythonOptions:
     )
     trusted_host: t.Optional[t.List[str]] = attr.field(
         default=None,
-        validator=attr.validators.optional(attr.validators.instance_of(L)),
+        validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
     find_links: t.Optional[t.List[str]] = attr.field(
         default=None,
-        validator=attr.validators.optional(attr.validators.instance_of(L)),
+        validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
     extra_index_url: t.Optional[t.List[str]] = attr.field(
         default=None,
-        validator=attr.validators.optional(attr.validators.instance_of(L)),
+        validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
     pip_args: t.Optional[str] = attr.field(
         default=None,
@@ -440,7 +440,7 @@ class PythonOptions:
     )
     wheels: t.Optional[t.List[str]] = attr.field(
         default=None,
-        validator=attr.validators.optional(attr.validators.instance_of(L)),
+        validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
 
     def __attrs_post_init__(self):

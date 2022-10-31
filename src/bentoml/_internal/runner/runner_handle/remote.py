@@ -171,7 +171,7 @@ class RemoteRunnerClient(RunnerHandle):
             ) as resp:
                 body = await resp.read()
         except aiohttp.ClientOSError as e:
-            if os.getenv("BENTOML_RETRY_RUNNER_REQUESTS").lower() == "true":
+            if os.getenv("BENTOML_RETRY_RUNNER_REQUESTS", "").lower() == "true":
                 try:
                     # most likely the TCP connection has been closed; retry after reconnecting
                     await self._reset_client()

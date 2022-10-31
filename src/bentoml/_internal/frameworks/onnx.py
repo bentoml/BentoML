@@ -20,6 +20,7 @@ from bentoml.exceptions import MissingDependencyException
 from ..types import LazyType
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import PackageNotFoundError
+from ..utils.onnx import gen_input_casting_func
 from ..runner.utils import Params
 
 if TYPE_CHECKING:
@@ -32,11 +33,14 @@ if TYPE_CHECKING:
     from ..external_typing import tensorflow as tf_ext  # noqa
 
     ProvidersType = list[str | tuple[str, dict[str, t.Any]]]
-    ONNXArgType = ext.NpNDArray | ext.PdDataFrame | torch.Tensor | tf_ext.Tensor
+    from ..utils.onnx import ONNXArgType
+    from ..utils.onnx import ONNXArgCastedType
 
 
 try:
     import onnx
+    from google.protobuf.json_format import MessageToDict
+
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "onnx is required in order to use module 'bentoml.onnx', install onnx with 'pip install onnx'. For more information, refer to https://onnx.ai/get-started.html"
@@ -51,7 +55,7 @@ except ImportError:  # pragma: no cover
 
 MODULE_NAME = "bentoml.onnx"
 MODEL_FILENAME = "saved_model.onnx"
-API_VERSION = "v1"
+API_VERSION = "v2"
 
 logger = logging.getLogger(__name__)
 
@@ -265,6 +269,9 @@ def save_model(
     ), "Failed to find onnxruntime package version."
 
     assert _onnxruntime_version is not None, "onnxruntime is not installed"
+    if not isinstance(model, onnx.ModelProto):
+        raise TypeError(f"Given model ({model}) is not a onnx.ModelProto.")
+
     context = ModelContext(
         framework_name="onnx",
         framework_versions={
@@ -289,13 +296,16 @@ def save_model(
                 f"Provided method names {[m for m  in provided_methods if m != 'run']} are invalid. 'bentoml.onnx' will load ONNX model into an 'onnxruntime.InferenceSession' for inference, so the only supported method name is 'run'."
             )
 
-    if not isinstance(model, onnx.ModelProto):
-        raise TypeError(f"Given model ({model}) is not a onnx.ModelProto.")
+    run_sig: ModelSignature | ModelSignatureDict = signatures["run"] or {}
+    run_sig_dict: ModelSignatureDict = (
+        run_sig
+        if isinstance(run_sig, dict)
+        else t.cast(ModelSignatureDict, attr.asdict(run_sig))
+    )
 
-    if len(model.graph.output) > 1:
-        logger.warning(
-            "The model you are attempting to save has more than one output. The ONNX runner will only return the first output."
-        )
+    run_sig_dict["input_spec"] = [MessageToDict(inp) for inp in model.graph.input]
+    run_sig_dict["output_spec"] = [MessageToDict(out) for out in model.graph.output]
+    sig_dict = {"run": run_sig_dict}
 
     options = ONNXOptions()
 
@@ -303,7 +313,7 @@ def save_model(
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
-        signatures=signatures,
+        signatures=sig_dict,
         labels=labels,
         options=options,
         custom_objects=custom_objects,
@@ -376,37 +386,33 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             for method_name in bento_model.info.signatures:
                 self.predict_fns[method_name] = getattr(self.model, method_name)
 
-    def _mapping(item: ONNXArgType) -> ext.NpNDArray:
-
-        # currently ort only support np.float32
-        # https://onnxruntime.ai/docs/api/python/auto_examples/plot_common_errors.html
-        # TODO @larme: what dtype of input to use if we use FP16? ref: onnxruntime issue 11768
-        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
-            if item.dtype != np.float32:
-                item = item.astype(np.float32, copy=False)
-        elif LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
-            item = item.to_numpy(dtype=np.float32)
-        elif LazyType["tf.Tensor"]("tensorflow.Tensor").isinstance(item):
-            item = np.array(memoryview(item)).astype(np.float32, copy=False)
-        elif LazyType["torch.Tensor"]("torch.Tensor").isinstance(item):
-            item = item.numpy().astype(np.float32, copy=False)
-        else:
-            raise TypeError(
-                "'run' of ONNXRunnable only takes 'numpy.ndarray' or 'pd.DataFrame', 'tf.Tensor', or 'torch.Tensor' as input parameters."
-            )
-        # This cast is safe since we have already checked the type of item
-        return t.cast("ext.NpNDArray", item)
-
     def add_runnable_method(method_name: str, options: ModelSignature):
-        def _run(self: ONNXRunnable, *args: ONNXArgType) -> t.Any:
-            params = Params["ONNXArgType"](*args)
-            params = params.map(_mapping)
 
-            input_names: dict[str, ext.NpNDArray] = {
-                i.name: val for i, val in zip(self.model.get_inputs(), params.args)
+        input_specs = options.input_spec
+        casting_funcs = [gen_input_casting_func(spec) for spec in input_specs]
+
+        output_specs = options.output_spec
+        if len(output_specs) > 1:
+
+            def _process_output(outs):
+                return tuple(outs)
+
+        else:
+
+            def _process_output(outs):
+                return outs[0]
+
+        def _run(self: ONNXRunnable, *args: ONNXArgType) -> t.Any:
+            casted_args = [
+                casting_funcs[idx](args[idx]) for idx in range(len(casting_funcs))
+            ]
+
+            input_names: dict[str, ONNXArgCastedType] = {
+                i.name: val for i, val in zip(self.model.get_inputs(), casted_args)
             }
             output_names: list[str] = [o.name for o in self.model.get_outputs()]
-            return self.predict_fns[method_name](output_names, input_names)[0]
+            raw_outs = self.predict_fns[method_name](output_names, input_names)
+            return _process_output(raw_outs)
 
         ONNXRunnable.add_method(
             _run,

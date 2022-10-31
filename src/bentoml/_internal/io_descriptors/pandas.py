@@ -356,6 +356,8 @@ class PandasDataFrame(
             return str(value)
         elif isinstance(value, dict):
             return {str(k): self._convert_dtype(v) for k, v in value.items()}
+        elif value is None:
+            return "null"
         else:
             logger.warning(f"{type(value)} is not yet supported.")
             return None
@@ -822,6 +824,8 @@ class PandasSeries(
             return str(value)
         elif isinstance(value, dict):
             return {str(k): self._convert_dtype(v) for k, v in value.items()}
+        elif value is None:
+            return "null"
         else:
             logger.warning(f"{type(value)} is not yet supported.")
             return None

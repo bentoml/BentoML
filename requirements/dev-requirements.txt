@@ -2,6 +2,5 @@
 -e .[all]
 -r tests-requirements.txt
 -r docs-requirements.txt
--r frameworks-requirements.txt
 twine
 wheel

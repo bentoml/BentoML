@@ -18,5 +18,5 @@ if __name__ == "__main__":
     clf.fit(X, y)
 
     # Save model to BentoML local model store
-    saved_model = bentoml.sklearn.save_model("iris_clf", clf)
+    saved_model = bentoml.sklearn.save_model("iris_clf", clf, signatures={"predict": {"batchable": True, "batch_dim": 0}})
     print(f"Model saved: {saved_model}")

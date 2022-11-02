@@ -110,6 +110,8 @@ def _component_name():
 
 def trace_record_factory(*args: t.Any, **kwargs: t.Any):
     record = default_factory(*args, **kwargs)
+    if record.name in ("bentoml_monitor_data", "bentoml_monitor_schema"):
+        return record
     record.levelname_bracketed = f"[{record.levelname}]"  # type: ignore (adding fields to record)
     record.component = f"[{_component_name()}]"  # type: ignore (adding fields to record)
     trace_id = trace_context.trace_id
@@ -140,6 +142,5 @@ def configure_server_logging():
     else:
         SERVER_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.INFO
         SERVER_LOGGING_CONFIG["root"]["level"] = logging.WARNING
-
     logging.setLogRecordFactory(trace_record_factory)
     logging.config.dictConfig(SERVER_LOGGING_CONFIG)

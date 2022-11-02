@@ -7,6 +7,7 @@ import contextlib
 import collections
 import logging.config
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import yaml
 from simple_di import inject
@@ -103,29 +104,31 @@ class NoOpMonitor(MonitorBase[t.Any]):
 
 
 DEFAULT_CONFIG_YAML = """
+version: 1
+incremental: false
 loggers:
   bentoml_monitor_data:
     level: INFO
-    handlers: bentoml_monitor_data
+    handlers: [bentoml_monitor_data]
   bentoml_monitor_schema:
     level: INFO
-    handlers: bentoml_monitor_schema
+    handlers: [bentoml_monitor_schema]
 handlers:
   bentoml_monitor_data:
     class: logging.handlers.TimedRotatingFileHandler
     level: INFO
     formatter: bentoml_json
-    filename: "{path}/data/{monitor_name}/data.log.{worker_id}"
+    filename: "{data_filename}"
     when: "D"
   bentoml_monitor_schema:
     class: logging.handlers.RotatingFileHandler
     level: INFO
     formatter: bentoml_json
-    filename: "{path}/schema/{monitor_name}/schema.log.{worker_id}"
+    filename: "{schema_filename}"
 formatters:
   bentoml_json:
     class: pythonjsonlogger.jsonlogger.JsonFormatter
-    format: "%(message)s"
+    format: " "
 """
 
 
@@ -141,15 +144,15 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
     def __init__(
         self,
         name: str,
-        log_config_file: str | None,
         log_path: str,
+        log_config_file: str | None = None,
     ) -> None:
         self.name = name
         self.log_config_file = log_config_file
         self.log_path = log_path
         self._is_first_record = True
         self._is_first_column = False
-        self._schema: list[dict[str, str]] = []
+        self._column_meta: dict[str, dict[str, str]] = {}
         self._columns: dict[
             str,
             collections.deque[JSONSerializable],
@@ -162,17 +165,27 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
             with open(self.log_config_file, "r", encoding="utf8") as f:
                 logging_config_yaml = f.read()
 
+        worker_id = component_context.component_index
+        schema_path = Path(f"{self.log_path}/{self.name}/schema/schema.{worker_id}.log")
+        data_path = Path(f"{self.log_path}/{self.name}/data/data.{worker_id}.log")
+
+        schema_path.parent.mkdir(parents=True, exist_ok=True)
+        data_path.parent.mkdir(parents=True, exist_ok=True)
+
         logging_config_yaml = logging_config_yaml.format(
-            path=self.log_path,
-            worker_id=component_context.component_index,
+            schema_filename=str(schema_path.absolute()),
+            data_filename=str(data_path.absolute()),
+            worker_id=worker_id,
             monitor_name=self.name,
         )
+
         logging_config = yaml.safe_load(logging_config_yaml)
         logging.config.dictConfig(logging_config)
-
         # pylint: disable=attribute-defined-outside-init
         self.data_logger = logging.getLogger("bentoml_monitor_data")
         self.schema_logger = logging.getLogger("bentoml_monitor_schema")
+        self.data_logger.propagate = False
+        self.schema_logger.propagate = False
 
     def start_record(self) -> None:
         """
@@ -198,7 +211,17 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         """
         Export schema of the data. This method should be called after all data is logged.
         """
-        self.schema_logger.info(self._schema)
+        from bentoml._internal.context import component_context
+
+        self.schema_logger.info(
+            dict(
+                meta_data={
+                    "bento_name": component_context.bento_name,
+                    "bento_version": component_context.bento_version,
+                },
+                columns=list(self._column_meta.values()),
+            )
+        )
 
     def export_data(self):
         """
@@ -220,6 +243,7 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         name: str,
         role: str,
         data_type: str,
+        ignore_existing: bool = False,
     ) -> None:
         """
         log a data with column name, role and type to the current record
@@ -233,7 +257,16 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         assert data_type in BENTOML_MONITOR_TYPES, f"Invalid data type {data_type}"
 
         if self._is_first_record:
-            self._schema.append({"name": name, "role": role, "type": data_type})
+            if name not in self._column_meta:
+                self._column_meta[name] = {
+                    "name": name,
+                    "role": role,
+                    "type": data_type,
+                }
+            elif not ignore_existing:
+                raise ValueError(
+                    f"Column {name} already exists. Please use a different name."
+                )
         if self._is_first_column:
             self._is_first_column = False
 
@@ -257,7 +290,7 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         """
         try:
             for data in data_batch:
-                self.log(data, name, role, data_type)
+                self.log(data, name, role, data_type, ignore_existing=True)
         except TypeError:
             raise ValueError(
                 "data_batch is not iterable. Please use log() to log a single data."
@@ -294,7 +327,7 @@ def monitor(
     name: str,
     monitor_class: None,
     monitor_options: dict[str, t.Any] | None,
-) -> t.Generator[DefaultMonitor, None, None]:
+) -> t.Generator[MonitorBase[t.Any], None, None]:
     pass
 
 

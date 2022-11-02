@@ -201,7 +201,6 @@ class Info:
 
     title: str
     version: str
-    summary: t.Optional[str] = None
     description: t.Optional[str] = None
     contact: t.Optional[Contact] = None
 

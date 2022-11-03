@@ -103,7 +103,6 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
         components=generate_service_components(svc),
         info=Info(
             title=svc.name,
-            summary="A ML Service created with BentoML",
             description=svc.doc,
             version=svc.tag.version if svc.tag and svc.tag.version else "None",
             contact=Contact(name="BentoML Team", email="contact@bentoml.ai"),

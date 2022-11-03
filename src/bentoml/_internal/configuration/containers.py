@@ -194,7 +194,7 @@ SCHEMA = Schema(
             },
         },
         Optional("monitoring"): {
-            "enable": bool,
+            "enabled": bool,
             Optional("type"): Or(str, None),
             Optional("options"): Or(dict, None),
         },

@@ -9,11 +9,11 @@
 {% set __conda_exec__ = [conda_path, "bin", "conda"] | join("/") %}
 {% set __conda_pkg__ = [conda_path, "pkg"] | join("/") %}
 
-RUN {{ mount_cache(__conda_pkg__) }} set -euxo pipefail && \
-    echo "Installing Python $PYTHON_VERSION with conda..." && \
+RUN {{ mount_cache(__conda_pkg__) }} set -eux && \
+    echo "Installing Python {{ python_version }} with conda..." && \
     {{ __conda_exec__ }} install -y -n base pkgs/main::python={{ python_version }} pip
 
-RUN {{ mount_cache(__conda_pkg__) }} set -euxo pipefail && \
+RUN {{ mount_cache(__conda_pkg__) }} set -eux && \
     if [ -f {{ environment_yml }} ]; then \
       # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
       # pip-installed packages to satisfy dependencies.

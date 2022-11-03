@@ -43,11 +43,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         raise BentoMLException("Could not find bentoml module location.")
     bentoml_path = Path(module_location)
 
-    try:
-        from importlib import import_module
-
-        _ = import_module("bentoml.grpc.v1alpha1.service_pb2")
-    except ModuleNotFoundError:
+    if not Path(module_location, "grpc", "v1alpha1", "service_pb2.py").exists():
         raise ModuleNotFoundError(
             f"Generated stubs are not found. Make sure to run '{bentoml_path.as_posix()}/scripts/generate_grpc_stubs.sh' beforehand to generate gRPC stubs."
         ) from None

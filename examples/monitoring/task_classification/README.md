@@ -55,8 +55,8 @@ svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 )
 async def classify(input_series: np.ndarray) -> np.ndarray:
     with bentoml.monitor("iris_classifier_prediction") as mon:
-        mon.log_batch(
-            data=input_series[0],
+        mon.log(
+            input_series[0],
             name="sepal length",
             role="feature",
             data_type="numerical",

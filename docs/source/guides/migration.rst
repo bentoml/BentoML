@@ -2,9 +2,9 @@
 1.0 Migration Guide
 ===================
 
-BentoML version 1.0.0 APIs are backward incompatible with version 0.13.1. However, most of the common 
-functionality can be achieved with the new version. We will guide and demonstrate the migration by 
-transforming the `quickstart <https://github.com/bentoml/BentoML/tree/main/examples/quickstart>`_ gallery project 
+BentoML version 1.0.0 APIs are backward incompatible with version 0.13.1. However, most of the common
+functionality can be achieved with the new version. We will guide and demonstrate the migration by
+transforming the `quickstart <https://github.com/bentoml/BentoML/tree/main/examples/quickstart>`_ gallery project
 from BentoML version 0.13.1 to 1.0.0. Complete every migration action denoted like the section below.
 
 .. admonition:: 💡 Migration Task
@@ -20,7 +20,7 @@ from BentoML version 0.13.1 to 1.0.0. Complete every migration action denoted li
 Train Models
 ------------
 
-First, the quickstart project begins by training a classifier Scikit-Learn model from the iris datasets. 
+First, the quickstart project begins by training a classifier Scikit-Learn model from the iris datasets.
 By running :code:`python train.py`, we obtain a trained classifier model.
 
 .. code-block:: python
@@ -37,10 +37,10 @@ By running :code:`python train.py`, we obtain a trained classifier model.
     clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
 
-BentoML version 1.0.0 introduces the model store concept to help improve model management during development. 
-Once we are happy with the model trained, we can save the  model instance with the :code:`save_model()` 
-framework API to persist it in the model store. Optionally, you may attach custom labels, metadata, or custom 
-objects like tokenizers to be saved alongside the model. See 
+BentoML version 1.0.0 introduces the model store concept to help improve model management during development.
+Once we are happy with the model trained, we can save the  model instance with the :code:`save_model()`
+framework API to persist it in the model store. Optionally, you may attach custom labels, metadata, or custom
+objects like tokenizers to be saved alongside the model. See
 :ref:`Save A Trained Model <concepts/model:Save A Trained Model>` to learn more.
 
 .. admonition:: 💡 Migration Task
@@ -113,18 +113,18 @@ Next, we will transform the service definition module and breakdown each section
 Environment
 ~~~~~~~~~~~
 
-BentoML version 0.13.1 relies on the :code:`@env` 
-`decorator API <https://docs.bentoml.org/en/0.13-lts/concepts.html#defining-service-environment>`_ for defining the 
-environment settings and dependencies of the service. Typical arguments of the environment decorator includes Python 
-dependencies (e.g. :code:`pip_packages`, :code:`pip_index_url`), Conda dependencies (e.g. :code:`conda_channels`, 
+BentoML version 0.13.1 relies on the :code:`@env`
+`decorator API <https://docs.bentoml.org/en/0.13-lts/concepts.html#defining-service-environment>`_ for defining the
+environment settings and dependencies of the service. Typical arguments of the environment decorator includes Python
+dependencies (e.g. :code:`pip_packages`, :code:`pip_index_url`), Conda dependencies (e.g. :code:`conda_channels`,
 :code:`conda_dependencies`), and Docker options (e.g. :code:`setup_sh`, :code:`docker_base_image`).
 
 .. code-block:: python
 
     @env(pip_packages=["scikit-learn", "pandas"])
 
-BentoML version 1.0.0 no longer relies on the environment decorator. Environment settings and service dependencies are 
-defined in the :code:`bentofile.yaml` file in the project directory. The contents are used to specify the 
+BentoML version 1.0.0 no longer relies on the environment decorator. Environment settings and service dependencies are
+defined in the :code:`bentofile.yaml` file in the project directory. The contents are used to specify the
 :code:`bentoml build` opations when :ref:`building bentos <concepts/bento:Bento Build Options>`.
 
 .. admonition:: 💡 Migration Task
@@ -147,18 +147,18 @@ defined in the :code:`bentofile.yaml` file in the project directory. The content
 Artifacts
 ~~~~~~~~~
 
-BentoML version 0.13.1 provides the :code:`@artifacts` 
-`decorator API <https://docs.bentoml.org/en/0.13-lts/concepts.html#packaging-model-artifacts>`_ for users to specify 
-the trained models required by a BentoService. The specified artifacts are automatically serialized and deserialized 
+BentoML version 0.13.1 provides the :code:`@artifacts`
+`decorator API <https://docs.bentoml.org/en/0.13-lts/concepts.html#packaging-model-artifacts>`_ for users to specify
+the trained models required by a BentoService. The specified artifacts are automatically serialized and deserialized
 when saving and loading a BentoService.
 
 .. code-block:: python
 
     @artifacts([SklearnModelArtifact('model')])
 
-BentoML 1.0.0 leverages a combination of :ref:`model store <concepts/model:Managing Models>` and 
-:ref:`runners <concepts/runner:What is Runner?>` APIs for specifying the required models at runtime. Methods on the 
-model can be invoked by calling the run function on the runner. Runner represents a unit of computation that can be 
+BentoML 1.0.0 leverages a combination of :ref:`model store <concepts/model:Managing Models>` and
+:ref:`runners <concepts/runner:What is Runner?>` APIs for specifying the required models at runtime. Methods on the
+model can be invoked by calling the run function on the runner. Runner represents a unit of computation that can be
 executed on a remote Python worker and scales independently.
 
 .. code-block:: python
@@ -168,9 +168,9 @@ executed on a remote Python worker and scales independently.
 API
 ~~~
 
-BentoML version 0.13.1 defines the inference API through the :code:`@api` 
-`decorator <https://docs.bentoml.org/en/0.13-lts/concepts.html#api-function-and-adapters>`_. 
-Input and output types can be specified through the adapters. The service will convert the inference request from 
+BentoML version 0.13.1 defines the inference API through the :code:`@api`
+`decorator <https://docs.bentoml.org/en/0.13-lts/concepts.html#api-function-and-adapters>`_.
+Input and output types can be specified through the adapters. The service will convert the inference request from
 HTTP to the desired format specified by the input adaptor, in this case, a :code:`pandas.DataFrame` object.
 
 .. code-block:: python
@@ -179,12 +179,12 @@ HTTP to the desired format specified by the input adaptor, in this case, a :code
     def predict(self, df: pd.DataFrame):
         return self.artifacts.model.predict(df)
 
-BentoML version 1.0.0 also provides a similar :code:`@svc.api` :ref:`decorator <concepts/service:Service APIs>`. 
-The inference API is no longer defined within the service class. The association with the service is declared with the 
-:code:`@svc.api` decorator from the :code:`bentoml.Service` class. Input and output specifications are defined by IO 
-descriptor arguments passed to the :code:`@src.api` decorator. Similar to the adaptors, they help describe the expected 
-data types, validate that the input and output conform to the expected format and schema, and convert them from and to 
-the specified native types. In addition, multiple input and output can be defined using the tuple syntax, 
+BentoML version 1.0.0 also provides a similar :code:`@svc.api` :ref:`decorator <concepts/service:Service APIs>`.
+The inference API is no longer defined within the service class. The association with the service is declared with the
+:code:`@svc.api` decorator from the :code:`bentoml.Service` class. Input and output specifications are defined by IO
+descriptor arguments passed to the :code:`@src.api` decorator. Similar to the adaptors, they help describe the expected
+data types, validate that the input and output conform to the expected format and schema, and convert them from and to
+the specified native types. In addition, multiple input and output can be defined using the tuple syntax,
 e.g. :code:`input=(image=Image(), metadata=JSON())`.
 
 .. code-block:: python
@@ -194,22 +194,22 @@ e.g. :code:`input=(image=Image(), metadata=JSON())`.
         result = iris_clf_runner.predict.run(input_series)
         return result
 
-BentoML version 1.0.0 supports defining inference API as an asynchronous coroutine. Asynchronous APIs are preferred if 
-the processing logic is IO-bound or invokes multiple runners simultaneously which is ideal for fetching features and 
+BentoML version 1.0.0 supports defining inference API as an asynchronous coroutine. Asynchronous APIs are preferred if
+the processing logic is IO-bound or invokes multiple runners simultaneously which is ideal for fetching features and
 calling remote APIs.
 
 Test Services
 ~~~~~~~~~~~~~
 
-To improve development agility, BentoML version 1.0.0 adds the capability to test the service in development before 
-saving. Executing the :code:`bentoml serve` command will bring up an API server for rapid development iterations. The 
+To improve development agility, BentoML version 1.0.0 adds the capability to test the service in development before
+saving. Executing the :code:`bentoml serve` command will bring up an API server for rapid development iterations. The
 :code:`--reload` option allows the development API server to reload upon every change of the service module.
 
 .. code-block:: bash
 
     > bentoml serve --reload
 
-To bring up the API server and runners in a production like setting, use the :code:`--production` option. In production 
+To bring up the API server and runners in a production like setting, use the :code:`--production` option. In production
 mode, API servers and runners will run in separate processes to maximize server utility and parallelism.
 
 .. code-block:: bash
@@ -220,8 +220,8 @@ mode, API servers and runners will run in separate processes to maximize server 
 Building Bentos
 ---------------
 
-Next, we will build the service into a bento and save it to the bento store. Building a service to bento is to persist 
-the service for distribution. This operation is unique to BentoML version 1.0.0. The comparable operation in version 
+Next, we will build the service into a bento and save it to the bento store. Building a service to bento is to persist
+the service for distribution. This operation is unique to BentoML version 1.0.0. The comparable operation in version
 0.13.1 is to save a service to disk by calling the :code:`save()` function on the service instance.
 
 .. admonition:: 💡 Migration Task
@@ -290,7 +290,7 @@ You can view and manage all saved models via the :code:`bentoml` CLI command.
 Serve Bentos
 ~~~~~~~~~~~~
 
-We can serve the saved bentos by running the :code:`bentoml serve` command. We can add :code:`--production` to have 
+We can serve the saved bentos by running the :code:`bentoml serve` command. We can add :code:`--production` to have
 API servers and runners will run in separate processes to maximize server utility and parallelism.
 
 .. code-block:: bash
@@ -303,7 +303,7 @@ API servers and runners will run in separate processes to maximize server utilit
 Generate Docker Images
 ----------------------
 
-Similar to version 0.13.1, we can generate docker images from bentos using the :code:`bentoml containerize` command in BentoML 
+Similar to version 0.13.1, we can generate docker images from bentos using the :code:`bentoml containerize` command in BentoML
 version 1.0.0, see :ref:`Containerize Bentos <concepts/deploy:Containerize Bentos>` to learn more.
 
 .. code-block:: bash
@@ -331,19 +331,19 @@ You can run the docker image to start the service.
 Deploy Bentos
 -------------
 
-BentoML version 0.13.1 supports deployment of Bentos to various cloud providers, including Google Cloud Platform, Amazon Web Services, 
-and Microsoft Azure. To better support the devops workflows, cloud deployment of Bentos has been moved to a separate project, 
-`🚀 bentoctl <https://github.com/bentoml/bentoctl>`_, to better focus on the deployment tasks. :code:`bentoctl` is a CLI tool for 
+BentoML version 0.13.1 supports deployment of Bentos to various cloud providers, including Google Cloud Platform, Amazon Web Services,
+and Microsoft Azure. To better support the devops workflows, cloud deployment of Bentos has been moved to a separate project,
+`🚀 bentoctl <https://github.com/bentoml/bentoctl>`_, to better focus on the deployment tasks. :code:`bentoctl` is a CLI tool for
 deploying your machine-learning models to any cloud platforms.
 
 Manage Bentos
 -------------
 
 BentoML version 0.13.1 relies on Yatai as a bento registry to help teams collaborate and manage bentos. In addition to bento management,
-`🦄️ Yatai <https://github.com/bentoml/Yatai>`_ project has since been expanded into a platform for deploying large scale model 
-serving workloads on Kubernetes. Yatai standardizes BentoML deployment and provides UI for managing all your ML models and deployments 
+`🦄️ Yatai <https://github.com/bentoml/Yatai>`_ project has since been expanded into a platform for deploying large scale model
+serving workloads on Kubernetes. Yatai standardizes BentoML deployment and provides UI for managing all your ML models and deployments
 in one place, and enables advanced GitOps and CI/CD workflow.
 
 
-🎉 Ta-da, you have migrated your project to BentoML 1.0.0. Have more questions? 
+🎉 Ta-da, you have migrated your project to BentoML 1.0.0. Have more questions?
 `Join the BentoML Slack community <https://l.linklyhq.com/l/ktPp>`_.

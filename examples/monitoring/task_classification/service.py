@@ -40,7 +40,8 @@ async def classify(input_series: np.ndarray) -> np.ndarray:
             role="feature",
             data_type="numerical",
         )
-        result = await iris_clf_runner.predict.async_run([input_series])[0]
+        results = await iris_clf_runner.predict.async_run([input_series])
+        result = results[0]
         category = CLASS_NAMES[result]
         mon.log(
             category,

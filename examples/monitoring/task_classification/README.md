@@ -15,7 +15,7 @@ pip install -r ./requirements.txt
 
 ### Model Training
 
-Just a simple Iris classification example.
+Create an Iris classifier and save it with `bentoml.sklearn`:
 
 ```bash
 import bentoml

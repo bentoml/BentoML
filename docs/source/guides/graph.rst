@@ -17,7 +17,7 @@ As illustrated in the diagram above, the service performs the following tasks.
 4. Returns the list of generated texts and classification results in a JSON output.
 
 .. code-block:: json
-    :caption: ``Sample JSON Output``
+    :caption: Sample JSON Output
 
     [
         {

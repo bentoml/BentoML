@@ -17,6 +17,7 @@ into this part of the documentation.
     client
     server
     configuration
+    graph
     logging
     metrics
     performance

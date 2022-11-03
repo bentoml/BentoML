@@ -135,12 +135,12 @@ defined in the :code:`bentofile.yaml` file in the project directory. The content
 
     service: "service.py:svc"
     labels:
-    owner: bentoml-team
-    project: gallery
+        owner: bentoml-team
+        project: gallery
     include:
     - "*.py"
     python:
-    packages:
+        packages:
         - scikit-learn
         - pandas
 

@@ -14,39 +14,16 @@ svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
     input=NumpyNdarray.from_sample(np.array([4.9, 3.0, 1.4, 0.2], dtype=np.double)),
     output=Text(),
 )
-async def classify(input_series: np.ndarray) -> np.ndarray:
+async def classify(features: np.ndarray) -> str:
     with bentoml.monitor("iris_classifier_prediction") as mon:
-        mon.log(
-            input_series[0],
-            name="sepal length",
-            role="feature",
-            data_type="numerical",
-        )
-        mon.log(
-            input_series[1],
-            name="sepal width",
-            role="feature",
-            data_type="numerical",
-        )
-        mon.log(
-            input_series[2],
-            name="petal length",
-            role="feature",
-            data_type="numerical",
-        )
-        mon.log(
-            input_series[3],
-            name="petal width",
-            role="feature",
-            data_type="numerical",
-        )
-        results = await iris_clf_runner.predict.async_run([input_series])
+        mon.log(features[0], name="sepal length", role="feature", data_type="numerical")
+        mon.log(features[1], name="sepal width", role="feature", data_type="numerical")
+        mon.log(features[2], name="petal length", role="feature", data_type="numerical")
+        mon.log(features[3], name="petal width", role="feature", data_type="numerical")
+
+        results = await iris_clf_runner.predict.async_run([features])
         result = results[0]
         category = CLASS_NAMES[result]
-        mon.log(
-            category,
-            name="pred",
-            role="prediction",
-            data_type="categorical",
-        )
+
+        mon.log(category, name="pred", role="prediction", data_type="categorical")
     return category

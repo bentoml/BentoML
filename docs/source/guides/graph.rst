@@ -10,15 +10,35 @@ source code can be found in the BentoML `inference graph <https://github.com/ben
 .. image:: ../_static/img/inference-graph-diagram.png
 
 As illustrated in the diagram above, the service performs the following tasks.
-# Accepts a text input.
-# Passes the input to three text generation models in parallel and receives a list of three generated texts.
-# Passes the list of generated texts to a text classification model iteratively and receives a list of three classification results.
-# Returns the list of generated texts and classification results in a JSON output.
+
+1. Accepts a text input.
+2. Passes the input to three text generation models in parallel and receives a list of three generated texts.
+3. Passes the list of generated texts to a text classification model iteratively and receives a list of three classification results.
+4. Returns the list of generated texts and classification results in a JSON output.
+
+.. code-block:: json
+    :caption: ``Sample JSON Output``
+
+    [
+        {
+            "generated": "I have an idea! Please share with, like and subscribe and leave a comment below!\n\nIf you like this post, please consider becoming a patron of Reddit or becoming a patron of the author.",
+            "score": 0.5149753093719482
+        },
+        {
+            "generated": "I have an idea! One that won't break your heart but will leave you gasping in awe. A book about the history of magic. And because what's better than magic? Some. It's a celebration of our ancient, universal gift of awe.\"\n\nThe result was the \"Vox Populi: A Memoir of the Ancient World\" by E.V. Okello (Ace Books), published in 1999.\n\nIn the past 20 years, Okello, professor of history at Ohio State University and author of such titles as \"The American Imagination\" and \"Walking With Elephants",
+            "score": 0.502700924873352
+        },
+        {
+            "generated": "I have an idea! I've been wondering what the name of this thing is. What's the point?\" - The Simpsons\n\n\n\"It's bigger, bigger than she needs!\" - SpongeBob SquarePants\n\n\n\"That's a funny thing. It's like my brain is the most gigantic living thing. I just like thinking big.\" - Simpsons\n\n\n\"Ooookay! Here comes Barty-Icarus himself! (pause)\" - A Christmas Tale\n\n\nBackground information Edit\n\nFormal name: Homer's Brain.\n\nHomer's Brain. Special name: Brain.\n\nAppearances Edit",
+            "score": 0.536346971988678
+        }
+    ]
+
 
 Declare Runners
 ###############
 
-Create :ref:`Runners <concepts/runner:Using Runners>` the three text generation models and the text classification model using the ``to_runner`` function.
+Create :ref:`Runners <concepts/runner:Using Runners>` for the three text generation models and the one text classification model using the ``to_runner`` function.
 
 .. code-block:: python
 
@@ -31,7 +51,7 @@ Create :ref:`Runners <concepts/runner:Using Runners>` the three text generation 
 Create Service
 ##############
 
-Create a :ref:`Service <concept/service:Service and APIs>` named ``inference_graph`` and passes the runners created earlier in the ``runners`` argument.
+Create a :ref:`Service <concept/service:Service and APIs>` named ``inference_graph`` and specify the runners created earlier in the ``runners`` argument.
 
 .. code-block:: python
 
@@ -50,9 +70,9 @@ Define API
 
 First, define an async :ref:`API <concepts/service:Service and APIs>` named ``classify_generated_texts`` that accepts a :ref:`Text <reference/api_io_descriptors:Texts>`
 input and returns :ref:`JSON <reference/api_io_descriptors:Structured Data with JSON>` output. Second, pass the input simultaneously to all three text generation
-model runners through ``asyncio.gather`` and receive a list of three generated texts. Using ``asyncio.gather`` and Runner's ``async_run`` allows the
-inferences to happen in parallel. Third, pass the list of generated texts to the text classification iteratively using a ``for loop`` to get the classification
-score of each generated text. Finally, return the list of generated texts and classification results in a dictionary.
+runners through ``asyncio.gather`` and receive a list of three generated texts. Using ``asyncio.gather`` and Runner's ``async_run`` allows the inferences to happen
+in parallel. Third, pass the list of generated texts to the text classification runner iteratively using a loop to get the classification score of each generated text.
+Finally, return the list of generated texts and classification results in a dictionary.
 
 .. tip::
 

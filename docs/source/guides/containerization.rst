@@ -129,7 +129,10 @@ Let's start with an example that builds a `custom TensorFlow op <https://www.ten
 
 Define the following :code:`Dockerfile.template`:
 
-.. code-block:: jinja
+.. literalinclude:: ./snippets/containerization/tf_ops.template
+   :language: jinja
+   :caption: `Dockerfile.template`
+
 
 Then add the following to your :code:`bentofile.yaml`:
 

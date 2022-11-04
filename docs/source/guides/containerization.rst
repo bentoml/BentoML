@@ -131,34 +131,6 @@ Define the following :code:`Dockerfile.template`:
 
 .. code-block:: jinja
 
-   {% extends bento_base_template %}
-   {% block SETUP_BENTO_BASE_IMAGE %}
-
-   {{ super() }}
-
-   WORKDIR /tmp
-
-   SHELL [ "bash", "-exo", "pipefail", "-c" ]
-
-   COPY ./src/tfops/zero_out.cc .
-
-   RUN pip3 install tensorflow
-   RUN bash <<EOF
-   set -ex
-
-   TF_CFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') )
-   TF_LFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))') )
-
-   g++ --std=c++14 -shared zero_out.cc -o zero_out.so -fPIC ${TF_CFLAGS[@]} ${TF_LFLAGS[@]} -I$(python -c 'import tensorflow as tf; print(tf.sysconfig.get_include());') -D_GLIBCXX_USE_CXX11_ABI=0 -O2
-   EOF
-
-   {% endblock %}
-   {% block SETUP_BENTO_COMPONENTS %}
-   {{ super() }}
-   RUN stat /usr/lib/zero_out.so
-   {% endblock %}
-
-
 Then add the following to your :code:`bentofile.yaml`:
 
 .. code-block:: yaml
@@ -537,96 +509,9 @@ If you need to use conda for CUDA images, use the following template ( *partiall
    :class-title: sd-text-primary
    :icon: code
 
-   .. code-block:: jinja
-
-      {% import '_macros.j2' as common %}
-      {% extends bento_base_template %}
-      {# Make sure to change the correct python_version and conda version accordingly. #}
-      {# example: py38_4.10.3 #}
-      {# refers to https://repo.anaconda.com/miniconda/ for miniconda3 base #}
-      {% set conda_version="py39_4.11.0" %}
-      {% set conda_path="/opt/conda" %}
-      {% set conda_exec=[conda_path, "bin", "conda"] | join("/") %}
-      {% block SETUP_BENTO_BASE_IMAGE %}
-      FROM debian:bullseye-slim as conda-build
-
-      RUN --mount=type=cache,target=/var/cache/apt \
-          --mount=type=cache,target=/var/lib/apt \
-          apt-get update -y && \
-          apt-get install -y --no-install-recommends --allow-remove-essential \
-                      software-properties-common \
-              bzip2 \
-              ca-certificates \
-              git \
-              libglib2.0-0 \
-              libsm6 \
-              libxext6 \
-              libxrender1 \
-              mercurial \
-              openssh-client \
-              procps \
-              subversion \
-              wget && \
-          apt-get clean
-
-      ENV PATH {{ conda_path }}/bin:$PATH
-
-      SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
-
-      ARG CONDA_VERSION={{ conda_version }}
-
-      RUN bash <<EOF
-      set -ex
-
-      UNAME_M=$(uname -m)
-
-      if [ "${UNAME_M}" = "x86_64" ]; then
-          MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh";
-          SHA256SUM="4ee9c3aa53329cd7a63b49877c0babb49b19b7e5af29807b793a76bdb1d362b4";
-      elif [ "${UNAME_M}" = "s390x" ]; then
-          MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-s390x.sh";
-          SHA256SUM="e5e5e89cdcef9332fe632cd25d318cf71f681eef029a24495c713b18e66a8018";
-      elif [ "${UNAME_M}" = "aarch64" ]; then
-          MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-aarch64.sh";
-          SHA256SUM="00c7127a8a8d3f4b9c2ab3391c661239d5b9a88eafe895fd0f3f2a8d9c0f4556";
-      elif [ "${UNAME_M}" = "ppc64le" ]; then
-          MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-ppc64le.sh";
-          SHA256SUM="8ee1f8d17ef7c8cb08a85f7d858b1cb55866c06fcf7545b98c3b82e4d0277e66";
-      fi
-
-      wget "${MINICONDA_URL}" -O miniconda.sh -q && echo "${SHA256SUM} miniconda.sh" > shasum
-
-      if [ "${CONDA_VERSION}" != "latest" ]; then 
-          sha256sum --check --status shasum; 
-      fi
-
-      mkdir -p /opt
-      sh miniconda.sh -b -p {{ conda_path }} && rm miniconda.sh shasum
-
-      find {{ conda_path }}/ -follow -type f -name '*.a' -delete
-      find {{ conda_path }}/ -follow -type f -name '*.js.map' -delete
-      {{ conda_exec }} clean -afy
-      EOF
-
-      {{ super() }}
-
-      ENV PATH {{ conda_path }}/bin:$PATH
-
-      COPY --from=conda-build {{ conda_path }} {{ conda_path }}
-
-      RUN bash <<EOF
-      ln -s {{ conda_path }}/etc/profile.d/conda.sh /etc/profile.d/conda.sh
-      echo ". {{ conda_path }}/etc/profile.d/conda.sh" >> ~/.bashrc
-      echo "{{ conda_exec }} activate base" >> ~/.bashrc
-      EOF
-
-      {% endblock %}
-      {% block SETUP_BENTO_ENVARS %}
-
-      SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
-      {{ super() }}
-      {{ common.setup_conda(__python_version__, bento__path, conda_path=conda_path) }}
-      {% endblock %}
+   .. literalinclude:: ./snippets/containerization/conda_cuda.template
+      :language: jinja
+      :caption: `Dockerfile.template`
 
 .. _conda_docker: https://github.com/ContinuumIO/docker-images/blob/master/miniconda3/debian/Dockerfile
 

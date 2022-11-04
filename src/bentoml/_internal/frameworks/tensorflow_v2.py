@@ -38,12 +38,12 @@ if TYPE_CHECKING:
 
 try:
     import tensorflow as tf
+    TFModelOutputType = tf_ext.EagerTensor | tuple[tf_ext.EagerTensor]
+    TFRunnableOutputType = ext.NpNDArray | tuple[ext.NpNDArray]
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'tensorflow' is required in order to use module 'bentoml.tensorflow', install tensorflow with 'pip install tensorflow'. For more information, refer to https://www.tensorflow.org/install"
     )
-    TFModelOutputType = tf_ext.EagerTensor | tuple[tf_ext.EagerTensor]
-    TFRunnableOutputType = ext.NpNDArray | tuple[ext.NpNDArray]
 
 MODULE_NAME = "bentoml.tensorflow"
 API_VERSION = "v1"

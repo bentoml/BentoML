@@ -138,7 +138,7 @@ defined in the :code:`bentofile.yaml` file in the project directory. The content
         owner: bentoml-team
         project: gallery
     include:
-    - "*.py"
+        - "*.py"
     python:
         packages:
         - scikit-learn

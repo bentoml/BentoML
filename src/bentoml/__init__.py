@@ -17,8 +17,9 @@ And join us in the BentoML slack community: https://l.linklyhq.com/l/ktOh
 
 from typing import TYPE_CHECKING
 
-from ._internal.configuration import BENTOML_VERSION as __version__
 from ._internal.configuration import load_config
+from ._internal.configuration import save_config
+from ._internal.configuration import BENTOML_VERSION as __version__
 
 # Inject dependencies and configurations
 load_config()
@@ -175,4 +176,6 @@ __all__ = [
     "transformers",
     "xgboost",
     "monitor",
+    "load_config",
+    "save_config",
 ]

@@ -124,7 +124,7 @@ grpc-client/cpp/bentoml
 grpc-client/go/bentoml
 grpc-client/node/bentoml
 node_modules
-grpc-client/thirdparty
+thirdparty
 
 # Swift-related
 **/*/Sources/bentoml

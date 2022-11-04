@@ -177,8 +177,6 @@ omit = [
   "src/bentoml/io.py",
   "src/bentoml/serve.py",
   "src/bentoml/start.py",
-  "src/bentoml/types.py",
-  "src/bentoml/grpc/types.py",
   "src/bentoml/_internal/types.py",
   "src/bentoml/testing/*",
   "src/bentoml/grpc/v1alpha1/*",
@@ -192,12 +190,10 @@ omit = [
 show_missing = true
 precision = 2
 omit = [
-  "src/bentoml/__main__.py",
+  'src/bentoml/__main__.py',
   "src/bentoml/io.py",
   "src/bentoml/serve.py",
   "src/bentoml/start.py",
-  "src/bentoml/types.py",
-  "src/bentoml/grpc/types.py",
   "src/bentoml/_internal/types.py",
   "src/bentoml/testing/*",
   "src/bentoml/grpc/v1alpha1/*",
@@ -240,7 +236,6 @@ exclude = '''
     | src/bentoml/grpc/v1
     | tests/proto
     | grpc-client/thirdparty
-    | grpc-client/bentoml
   )/
   | src/bentoml/_version.py
 )

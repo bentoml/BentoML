@@ -1,11 +1,10 @@
-version: 1
 api_server:
   http:
     cors: # standard: https://fetch.spec.whatwg.org/#http-cors-protocol
-      enabled: true
-      allow_origin: "*"
-      allow_methods: ["GET", "OPTIONS", "POST", "HEAD", "PUT"]
-      allow_credentials: true
-      allow_headers: ~
-      max_age: ~
-      expose_headers: ["Content-Length"]
+      enabled: True
+      access_control_allow_origin: "*"
+      access_control_allow_methods: ["GET", "OPTIONS", "POST", "HEAD", "PUT"]
+      access_control_allow_credentials: True
+      access_control_allow_headers: Null
+      access_control_max_age: Null
+      access_control_expose_headers: ["Content-Length"]

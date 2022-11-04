@@ -17,7 +17,7 @@ from ..helpers import ensure_larger_than_zero
 from ...utils.metrics import DEFAULT_BUCKET
 from ...utils.unflatten import unflatten
 
-__all__ = ["SCHEMA", "compat_layer"]
+__all__ = ["SCHEMA", "migration"]
 
 TRACING_CFG = {
     "exporter_type": s.Or(s.And(str, s.Use(str.lower), validate_tracing_type), None),
@@ -176,7 +176,7 @@ SCHEMA = s.Schema(
 )
 
 
-def compat_layer(*, override_config: dict[str, t.Any]):
+def migration(*, override_config: dict[str, t.Any]):
     # We will use a flattened config to make it easier to migrate,
     # Then we will convert it back to a nested config.
     if depth(override_config) > 1:

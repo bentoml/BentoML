@@ -76,10 +76,10 @@ class BentoMLConfiguration:
                 current = use_version
             else:
                 current = override["version"]
-            compat = getattr(import_configuration_spec(current), "compat_layer", None)
-            # Running compatibliity layer if it exists
-            if compat:
-                override = compat(override_config=dict(flatten_dict(override)))
+            migration = getattr(import_configuration_spec(current), "migration", None)
+            # Running migration layer if it exists
+            if migration is not None:
+                override = migration(override_config=dict(flatten_dict(override)))
             config_merger.merge(self.config, override)
 
         if override_config_values is not None:
@@ -108,12 +108,12 @@ class BentoMLConfiguration:
                     "Found defined 'version=%d' in BENTOML_CONFIG_OPTIONS."
                     % override_version
                 )
-                compat = getattr(
-                    import_configuration_spec(override_version), "compat_layer", None
+                migration = getattr(
+                    import_configuration_spec(override_version), "migration", None
                 )
-                # Running compatibliity layer if it exists
-                if compat:
-                    override_config_map = compat(override_config=override_config_map)
+                # Running migration layer if it exists
+                if migration is not None:
+                    override_config_map = migration(override_config=override_config_map)
             # Previous behaviour, before configuration versioning.
             try:
                 override = unflatten(override_config_map)

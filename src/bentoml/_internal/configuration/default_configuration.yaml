@@ -16,7 +16,6 @@ api_server:
         trace_id: 032x
         span_id: 016x
   ssl:
-    enabled: false
     certfile: ~
     keyfile: ~
     keyfile_password: ~

@@ -119,11 +119,6 @@ _API_SERVER_CONFIG = {
         "maximum_concurrent_rpcs": s.Or(int, None),
     },
     "tracing": TRACING_CFG,
-    s.Optional("monitoring"): {
-        "enabled": bool,
-        s.Optional("type"): s.Or(str, None),
-        s.Optional("options"): s.Or(dict, None),
-    },
     s.Optional("ssl"): {
         "enabled": bool,
         s.Optional("certfile"): s.Or(str, None),
@@ -171,6 +166,11 @@ SCHEMA = s.Schema(
         "runners": {
             **_RUNNER_CONFIG,
             s.Optional(str): _RUNNER_CONFIG,
+        },
+        s.Optional("monitoring"): {
+            "enabled": bool,
+            s.Optional("type"): s.Or(str, None),
+            s.Optional("options"): s.Or(dict, None),
         },
     }
 )

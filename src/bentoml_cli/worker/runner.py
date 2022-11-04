@@ -131,6 +131,10 @@ def main(
     }
 
     if psutil.WINDOWS:
+        # 1. uvloop doesn't support Windows
+        # 2. the default policy after Python3.8 on Windows is ProactorEventLoop, which doesn't 
+        #    support listen on a existing socket file descriptors
+        # about the cons and more details, see https://docs.python.org/3.8/library/asyncio-platforms.html#windows
         uvicorn_options["loop"] = "asyncio"
         import asyncio
 

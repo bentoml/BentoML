@@ -15,7 +15,14 @@ api_server:
       format:
         trace_id: 032x
         span_id: 016x
-
+  ssl:
+    certfile: ~
+    keyfile: ~
+    keyfile_password: ~
+    ca_certs: ~
+    version: 17 # ssl.PROTOCOL_TLS_SERVER
+    cert_reqs: 0 # ssl.CERT_NONE
+    ciphers: TLSv1 # default ciphers
   http:
     host: 0.0.0.0
     port: 3000

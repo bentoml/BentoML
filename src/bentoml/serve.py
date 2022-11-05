@@ -387,7 +387,6 @@ def serve_http_production(
                             f"$(circus.sockets.{runner.name})",
                             "--working-dir",
                             working_dir,
-                            "--no-access-log",
                             "--worker-id",
                             "$(CIRCUS.WID)",
                             "--worker-env-map",

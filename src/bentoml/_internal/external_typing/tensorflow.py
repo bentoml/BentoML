@@ -20,6 +20,16 @@ from tensorflow.python.framework.composite_tensor import CompositeTensor
 from tensorflow.python.training.tracking.tracking import AutoTrackable
 from tensorflow.python.saved_model.function_deserialization import RestoredFunction
 
+# NOTE: FunctionSpec moved from eager.function to eager.function_spec
+# and then to eager.polymorphic_function
+try:
+    from tensorflow.python.eager.function import FunctionSpec
+except ImportError:
+    try:
+        from tensorflow.python.eager.function_spec import FunctionSpec
+    except ImportError:
+        from tensorflow.python.eager.polymorphic_function import FunctionSpec
+
 try:
     from tensorflow.python.types.core import GenericFunction
     from tensorflow.python.types.core import ConcreteFunction
@@ -84,6 +94,7 @@ InputSignature = t.Tuple[TensorSignature, t.Dict[str, TypeSpec]]
 KerasModel = t.Union[Model, Sequential]
 
 __all__ = [
+    "EagerTensor",
     "CastableTensorType",
     "TensorLike",
     "InputSignature",

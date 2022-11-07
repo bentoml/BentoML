@@ -73,9 +73,7 @@ bento build process. For example:
             provide_context=True,
         )
         def build_bento(**context):
-            """
-            Perform Bento build in a virtual environment.
-            """
+            """Perform Bento build in a virtual environment."""
             import bentoml
 
             bento = bentoml.bentos.build(

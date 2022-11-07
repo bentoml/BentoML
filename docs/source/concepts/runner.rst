@@ -31,7 +31,7 @@ They handle working with GPU when GPU is available, set the number of threads an
 of workers automatically, and convert the model signatures to corresponding Runnable
 methods.
 
-.. code:: python
+.. code-block:: python
 
     trained_model = train()
 
@@ -80,7 +80,8 @@ CPU multi-threading.
 
 .. tip::
 
-    Neither constant can be set inside of the runner's ``__init__`` or ``__new__`` methods, as they are class-level attributes. The reason being BentoML’s scheduling policy is not invoked in runners’ initialization code, as instantiating runners can be quite expensive.
+    Neither constant can be set inside of the runner's ``__init__`` or ``__new__`` methods, as they are class-level attributes.
+    The reason being BentoML’s scheduling policy is not invoked in runners’ initialization code, as instantiating runners can be quite expensive.
 
 Since NLTK library doesn't support utilizing GPU or multiple CPU cores natively, supported resources
 is specified as :code:`("cpu",)`, and ``SUPPORTS_CPU_MULTI_THREADING`` is set to False. This is the default configuration.
@@ -123,6 +124,7 @@ and used in the same service. For example:
             "model_file": "./saved_model_1.pt",
         }
     )
+
     my_runner_2 = bentoml.Runner(
         MyModelRunnable,
         name="my_runner_2",
@@ -134,6 +136,7 @@ and used in the same service. For example:
     svc = bentoml.Service(__name__, runners=[my_runner_1, my_runner_2])
 
 .. epigraph::
+
     All runners presented in one ``bentoml.Service`` object must have unique names.
 
 .. note::
@@ -150,7 +153,7 @@ Custom Model Runner
 
 Custom Runnable built with Model from BentoML's model store:
 
-.. code::
+.. code-block:: python
 
     from typing import Any
 
@@ -184,13 +187,15 @@ Custom Runnable built with Model from BentoML's model store:
 Serving Multiple Models via Runner
 ----------------------------------
 
-Serving multiple models in the same workflow is also a common pattern in BentoML’s prediction framework. This pattern can be achieved by simply instantiating multiple runners up front and passing them to the service that’s being created. Each runner/model will be configured with its’ own resources and run autonomously. If no configuration is passed, BentoML will then determine the optimal resources to allocate to each runner.
+Serving multiple models in the same workflow is also a common pattern in BentoML’s prediction framework.
+This pattern can be achieved by simply instantiating multiple runners up front and passing them to the service that’s being created.
+Each runner/model will be configured with its’ own resources and run autonomously. If no configuration is passed, BentoML will then determine the optimal resources to allocate to each runner.
 
 
 Sequential Runs
 ^^^^^^^^^^^^^^^
 
-.. code:: python
+.. code-block:: python
 
     import asyncio
     import bentoml
@@ -214,7 +219,7 @@ It’s as simple as creating two runners and invoking them synchronously in your
 For example, the same API above can be achieved as an ``async`` endpoint:
 
 
-.. code:: python
+.. code-block:: python
 
     @svc.api(input=Image(),output=Text())
     async def classify_async(input: PIL.Image.Image) -> str:
@@ -268,9 +273,10 @@ Runner Definition
 -----------------
 
 .. TODO::
+
     Document detailed list of Runner options
 
-    .. code:: python
+    .. code-block:: python
 
         my_runner = bentoml.Runner(
             MyRunnable,
@@ -440,7 +446,7 @@ Runner separately based on their workloads.
 
 Sample :code:`BentoDeployment` definition file for deploying in Kubernetes:
 
-.. code:: yaml
+.. code-block:: yaml
 
     apiVersion: yatai.bentoml.org/v1beta1
     kind: BentoDeployment
@@ -466,4 +472,5 @@ Sample :code:`BentoDeployment` definition file for deploying in Kubernetes:
             ...
 
 .. TODO::
+
     add graph explaining Yatai Runner architecture

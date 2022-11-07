@@ -211,11 +211,11 @@ XGBoost's ``booster.predict`` supports taking batch input for inference. This is
 disabled by default, but can be enabled using the appropriate signature when saving your
 booster.
 
-..
-    note
+.. note::
 
-    BentoML does not currently support adaptive batching for ``DMatrix`` input. In order to enable
-    batching, use either a NumPy ``ndarray`` or a Pandas ``DataFrame`` instead.
+    BentoML does not currently support adaptive batching for ``DMatrix`` input. In order
+    to enable batching, use either a NumPy ``ndarray`` or a Pandas ``DataFrame``
+    instead.
 
 .. code-block:: python
 

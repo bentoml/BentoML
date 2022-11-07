@@ -13,7 +13,6 @@ Creating a Service
 
 A BentoML service is composed of Runners and APIs. Consider the following service
 definition from the :doc:`tutorial </tutorial>`:
-
 .. code-block:: python
 
     import numpy as np

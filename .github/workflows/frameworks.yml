@@ -259,7 +259,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install .
-          pip install flax jax jaxlib chex
+          pip install flax jax jaxlib chex tensorflow
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report

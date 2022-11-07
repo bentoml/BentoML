@@ -80,6 +80,8 @@ def flatten_list(lst: t.List[t.Any]) -> t.List[str]:  # pragma: no cover
 class ONNXOptions(ModelOptions):
     """Options for the ONNX model"""
 
+    input_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
+    output_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
     providers: t.Optional[list[str]] = attr.field(default=None)
     session_options: t.Optional["ort.SessionOptions"] = attr.field(default=None)
 
@@ -166,7 +168,7 @@ def save_model(
     name: str,
     model: onnx.ModelProto,
     *,
-    signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
+    signatures: dict[str, ModelSignatureDict] | dict[str, ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,
@@ -296,24 +298,18 @@ def save_model(
                 f"Provided method names {[m for m  in provided_methods if m != 'run']} are invalid. 'bentoml.onnx' will load ONNX model into an 'onnxruntime.InferenceSession' for inference, so the only supported method name is 'run'."
             )
 
-    run_sig: ModelSignature | ModelSignatureDict = signatures["run"] or {}
-    run_sig_dict: ModelSignatureDict = (
-        run_sig
-        if isinstance(run_sig, dict)
-        else t.cast(ModelSignatureDict, attr.asdict(run_sig))
-    )
+    run_input_specs = [MessageToDict(inp) for inp in model.graph.input]
+    run_output_specs = [MessageToDict(out) for out in model.graph.output]
+    input_specs = {"run": run_input_specs}
+    output_specs = {"run": run_output_specs}
 
-    run_sig_dict["input_spec"] = [MessageToDict(inp) for inp in model.graph.input]
-    run_sig_dict["output_spec"] = [MessageToDict(out) for out in model.graph.output]
-    sig_dict = {"run": run_sig_dict}
-
-    options = ONNXOptions()
+    options = ONNXOptions(input_specs=input_specs, output_specs=output_specs)
 
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
-        signatures=sig_dict,
+        signatures=signatures,
         labels=labels,
         options=options,
         custom_objects=custom_objects,
@@ -386,12 +382,15 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             for method_name in bento_model.info.signatures:
                 self.predict_fns[method_name] = getattr(self.model, method_name)
 
-    def add_runnable_method(method_name: str, options: ModelSignature):
+    def add_runnable_method(
+        method_name: str,
+        signatures: ModelSignature,
+        input_specs: list[dict[str, t.Any]],
+        output_specs: list[dict[str, t.Any]],
+    ):
 
-        input_specs = options.input_spec
         casting_funcs = [gen_input_casting_func(spec) for spec in input_specs]
 
-        output_specs = options.output_spec
         if len(output_specs) > 1:
 
             def _process_output(outs):
@@ -417,13 +416,16 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         ONNXRunnable.add_method(
             _run,
             name=method_name,
-            batchable=options.batchable,
-            batch_dim=options.batch_dim,
-            input_spec=options.input_spec,
-            output_spec=options.output_spec,
+            batchable=signatures.batchable,
+            batch_dim=signatures.batch_dim,
+            input_spec=signatures.input_spec,
+            output_spec=signatures.output_spec,
         )
 
-    for method_name, options in bento_model.info.signatures.items():
-        add_runnable_method(method_name, options)
+    for method_name, signatures in bento_model.info.signatures.items():
+        options = t.cast(ONNXOptions, bento_model.info.options)
+        input_specs = options.input_specs[method_name]
+        output_specs = options.output_specs[method_name]
+        add_runnable_method(method_name, signatures, input_specs, output_specs)
 
     return ONNXRunnable

@@ -300,6 +300,24 @@ skip_glob = [
   "bazel-*",
 ]
 
+[tool.interrogate]
+ignore-semiprivate = true
+ignore-private = true
+ignore-setters = true
+fail-under = 90
+ignore-regex = [
+  "^get$",
+  "^mock_.*",
+  ".*BaseClass.*",
+  ".*_pb2.py",
+  ".*_pb2_grpc.py",
+]
+whitelist-regex = ["test_.*"]
+exclude = ["setup.py", "docs", "tests", "grpc-client", "examples"]
+verbose = 2
+quiet = false
+color = true
+
 [tool.pyright]
 pythonVersion = "3.10"
 include = ["src/", "examples/", "tests/"]

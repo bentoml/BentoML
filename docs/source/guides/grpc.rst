@@ -728,7 +728,7 @@ After successfully running the client, proceed to build the bento as usual:
 :raw-html:`<br />`
 
 Containerize your Bento 🍱 with gRPC support
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To containerize the Bento with gRPC features, pass in ``--enable-features=grpc`` to
 :ref:`bentoml containerize <reference/cli:containerize>` to add additional gRPC
@@ -798,7 +798,7 @@ A ``Request`` message takes in:
 
 ================================================================ ================================================================================
 Protobuf definition                                              IO Descriptor
-:ref:`guides/grpc:Array representation via ``NDArray```          :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy ``ndarray``>`
+:ref:`guides/grpc:Array representation via ``NDArray```          :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy ``ndarray``>
 :ref:`guides/grpc:Tabular data representation via ``DataFrame``` :ref:`bentoml.io.PandasDataFrame <reference/api_io_descriptors:Tabular Data with
                                                                  Pandas>`
 :ref:`guides/grpc:Series representation via ``Series```          :ref:`bentoml.io.PandasDataFrame <reference/api_io_descriptors:Tabular Data with

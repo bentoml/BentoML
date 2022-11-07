@@ -2,6 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
 load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//bazel:utils.bzl", "run_shell")
 
 filegroup(
     name = "pyproject",
@@ -20,4 +21,25 @@ proto_library(
         "@com_google_protobuf//:struct_proto",
         "@com_google_protobuf//:wrappers_proto",
     ],
+)
+
+run_shell(
+    name="format",
+    content = [
+        "black .",
+        "black --pyi typings/ src/**/*.pyi",
+        "isort .",
+        "docstrfmt docs",
+        "docformatter docs/**/*.py --wrap-summaries 88 -i"
+    ]
+)
+
+run_shell(
+    name="lint",
+    content = [
+        "black--check .",
+        "isort --check .",
+        "docstrfmt -c -t rst docs",
+        "pylint --fail-under 9.0 --exit-zero"
+    ]
 )

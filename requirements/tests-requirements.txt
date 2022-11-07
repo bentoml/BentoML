@@ -20,3 +20,6 @@ protobuf==3.19.6
 grpcio>=1.41.0, <1.49, !=1.48.2
 grpcio-health-checking>=1.41.0, <1.49, !=1.48.2
 opentelemetry-instrumentation-grpc==0.34b0
+# Patch for custom directives
+git+https://github.com/aarnphm/docstrfmt.git@feat/ext
+docformatter[tomli]

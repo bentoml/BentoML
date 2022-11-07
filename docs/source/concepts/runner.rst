@@ -11,12 +11,12 @@ Python worker and scales independently.
 Runner allows :ref:`bentoml.Service <reference/core:bentoml.Service>` to parallelize
 multiple instances of a :ref:`bentoml.Runnable <reference/core:bentoml.Runnable>` class,
 each on its own Python worker. When a BentoServer is launched, a group of runner worker
-processes will be created, and :code:`run` method calls made from the
-:code:`bentoml.Service` code will be scheduled among those runner workers.
+processes will be created, and ``run`` method calls made from the
+``bentoml.Service`` code will be scheduled among those runner workers.
 
 Runner also supports :doc:`/guides/batching`. For a
 :ref:`bentoml.Runnable <reference/core:bentoml.Runnable>` configured with batching,
-multiple :code:`run` method invocations made from other processes can be dynamically
+multiple ``run`` method invocations made from other processes can be dynamically
 grouped into one batch execution in real-time. This is especially beneficial for compute
 intensive workloads such as model inference, helps to bring better performance through
 vectorization or multi-threading.
@@ -58,7 +58,7 @@ Creating a Runnable
 ^^^^^^^^^^^^^^^^^^^
 
 Runner can be created from a :ref:`bentoml.Runnable <reference/core:bentoml.Runnable>`
-class. By implementing a :code:`Runnable` class, users can create Runner instances that
+class. By implementing a ``Runnable`` class, users can create Runner instances that
 runs custom logic. Here's an example, creating an NLTK runner that does sentiment
 analysis with a pre-trained model:
 
@@ -84,19 +84,19 @@ CPU multi-threading.
     The reason being BentoML’s scheduling policy is not invoked in runners’ initialization code, as instantiating runners can be quite expensive.
 
 Since NLTK library doesn't support utilizing GPU or multiple CPU cores natively, supported resources
-is specified as :code:`("cpu",)`, and ``SUPPORTS_CPU_MULTI_THREADING`` is set to False. This is the default configuration.
+is specified as ``("cpu",)``, and ``SUPPORTS_CPU_MULTI_THREADING`` is set to False. This is the default configuration.
 This information is then used by the BentoServer scheduler to determine the worker pool size for this runner.
 
-The :code:`bentoml.Runnable.method` decorator is used for creating
-:code:`RunnableMethod` - the decorated method will be exposed as the runner interface
-for accessing remotely. :code:`RunnableMethod` can be configured with a signature,
+The ``bentoml.Runnable.method`` decorator is used for creating
+``RunnableMethod`` - the decorated method will be exposed as the runner interface
+for accessing remotely. ``RunnableMethod`` can be configured with a signature,
 which is defined same as the :ref:`concepts/model:Model Signatures`.
 
 
 Reusable Runnable
 ^^^^^^^^^^^^^^^^^
 
-Runnable class can also take :code:`__init__` parameters to customize its behavior for
+Runnable class can also take ``__init__`` parameters to customize its behavior for
 different scenarios. The same Runnable class can also be used to create multiple runners
 and used in the same service. For example:
 
@@ -230,7 +230,7 @@ For example, the same API above can be achieved as an ``async`` endpoint:
 Concurrent Runs
 ^^^^^^^^^^^^^^^
 
-In cases where certain steps can be executed concurrently, :code:`asyncio.gather` can be used to aggregate results from multiple concurrent runs. For instance, if you are running two models simultaneously, you could invoke ``asyncio.gather`` as follows:
+In cases where certain steps can be executed concurrently, ``asyncio.gather` can be used to aggregate results from multiple concurrent runs. For instance, if you are running two models simultaneously, you could invoke ``asyncio.gather``` as follows:
 
 .. code-block:: python
 
@@ -320,19 +320,19 @@ To explicitly disable or control adaptive batching behaviors at runtime, configu
         :sync: all_runners
 
         .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+           :caption: ⚙️ `configuration.yml`
 
             runners:
                 batching:
                     enabled: true
                     max_batch_size: 100
                     max_latency_ms: 500
-    
+
     .. tab-item:: Individual Runner
         :sync: individual_runner
-        
+
         .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+           :caption: ⚙️ `configuration.yml`
 
             runners:
                 iris_clf:
@@ -353,18 +353,18 @@ through configuration, with a `float` value for ``cpu`` and an `int` value for `
         :sync: all_runners
 
         .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+           :caption: ⚙️ `configuration.yml`
 
             runners:
                 resources:
                     cpu: 0.5
                     nvidia.com/gpu: 1
-    
+
     .. tab-item:: Individual Runner
         :sync: individual_runner
-        
+
         .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+           :caption: ⚙️ `configuration.yml`
 
             runners:
                 iris_clf:
@@ -381,17 +381,17 @@ can be specified for the ``nvidia.com/gpu`` key. For example, the following conf
         :sync: all_runners
 
         .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+           :caption: ⚙️ `configuration.yml`
 
             runners:
                 resources:
                     nvidia.com/gpu: [2, 4]
-    
+
     .. tab-item:: Individual Runner
         :sync: individual_runner
-        
+
         .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+           :caption: ⚙️ `configuration.yml`
 
             runners:
                 iris_clf:
@@ -409,16 +409,16 @@ Runner timeout defines the amount of time in seconds to wait before calls a runn
         :sync: all_runners
 
         .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+           :caption: ⚙️ `configuration.yml`
 
             runners:
                 timeout: 60
-    
+ 
     .. tab-item:: Individual Runner
         :sync: individual_runner
-        
+
         .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+           :caption: ⚙️ `configuration.yml`
 
             runners:
                 iris_clf:
@@ -437,16 +437,17 @@ Distributed Runner with Yatai
 architecture specifically designed for running large scale inference workloads on a
 Kubernetes cluster.
 
-While the standalone :code:`BentoServer` schedules Runner workers on their own Python
-processes, the :code:`BentoDeployment` created by Yatai, scales Runner workers in their
+While the standalone ``BentoServer`` schedules Runner workers on their own Python
+processes, the ``BentoDeployment`` created by Yatai, scales Runner workers in their
 own group of `Pods <https://kubernetes.io/docs/concepts/workloads/pods/>`_ and made it
 possible to set a different resource requirement for each Runner, and auto-scaling each
 Runner separately based on their workloads.
 
 
-Sample :code:`BentoDeployment` definition file for deploying in Kubernetes:
+Sample ``BentoDeployment`` definition file for deploying in Kubernetes:
 
 .. code-block:: yaml
+   :caption: `deployment.yaml`
 
     apiVersion: yatai.bentoml.org/v1beta1
     kind: BentoDeployment

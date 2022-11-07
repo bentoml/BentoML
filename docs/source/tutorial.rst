@@ -380,7 +380,7 @@ creating the service object.
            return result
 
 Building a Bento 🍱
-------------------
+-------------------
 
 Once the service definition is finalized, we can build the model and service into a
 ``bento``. Bento is the distribution format for a service. It is a self-contained

@@ -209,7 +209,7 @@ To try out the full example, visit `bentoml/examples: MLflow Pytorch Example
 <https://github.com/bentoml/BentoML/tree/main/examples/mlflow/pytorch>`_.
 
 MLflow 🤝 BentoML Workflow
--------------------------
+--------------------------
 
 There are numerous ways you can integrate BentoML with your MLflow workflow for model
 serving and deployment.

@@ -57,7 +57,6 @@ __all__ = [
     "cached_property",
     "cached_contextmanager",
     "reserve_free_port",
-    "catch_exceptions",
     "LazyLoader",
     "validate_or_create_dir",
     "display_path_under_home",
@@ -175,34 +174,6 @@ def human_readable_size(size: t.Union[int, float], decimal_places: int = 2) -> s
     else:
         raise ValueError("size is too large")
     return f"{size:.{decimal_places}f} {unit}"
-
-
-class catch_exceptions(t.Generic[_T_co], object):
-    def __init__(
-        self,
-        catch_exc: t.Union[t.Type[BaseException], t.Tuple[t.Type[BaseException], ...]],
-        throw_exc: t.Callable[[str], BaseException],
-        msg: str = "",
-        fallback: t.Optional[_T_co] = None,
-        raises: t.Optional[bool] = True,
-    ) -> None:
-        self._catch_exc = catch_exc
-        self._throw_exc = throw_exc
-        self._msg = msg
-        self._fallback = fallback
-        self._raises = raises
-
-    def __call__(self, func: t.Callable[P, _T_co]) -> t.Callable[P, t.Optional[_T_co]]:
-        @functools.wraps(func)
-        def _(*args: P.args, **kwargs: P.kwargs) -> t.Optional[_T_co]:
-            try:
-                return func(*args, **kwargs)
-            except self._catch_exc:
-                if self._raises:
-                    raise self._throw_exc(self._msg)
-                return self._fallback
-
-        return _
 
 
 def split_with_quotes(

@@ -28,9 +28,15 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         return
 
     try:
+        # NOTE: build.env is a standalone library,
+        # different from build. However, isort sometimes
+        # incorrectly re-order the imports order.
+        # isort: off
         from build.env import IsolatedEnvBuilder
 
         from build import ProjectBuilder
+
+        # isort: on
     except ModuleNotFoundError as e:
         raise MissingDependencyException(
             f"Environment variable '{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package ({e}). Install development dependencies with 'pip install -r requirements/dev-requirements.txt' and try again."

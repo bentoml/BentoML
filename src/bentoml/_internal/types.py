@@ -13,8 +13,6 @@ from datetime import datetime
 from datetime import timedelta
 from dataclasses import dataclass
 
-from .utils.dataclasses import json_serializer
-
 if sys.version_info < (3, 8):
     import collections
 
@@ -284,7 +282,6 @@ def is_compatible_type(t1: AnyType, t2: AnyType) -> bool:
     return True
 
 
-@json_serializer(fields=["uri", "name"], compat=True)
 @dataclass(frozen=False)
 class FileLike(t.Generic[t.AnyStr], io.IOBase):
     """

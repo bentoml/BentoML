@@ -74,15 +74,14 @@ def flatten_list(lst: t.List[t.Any]) -> t.List[str]:  # pragma: no cover
 
 @attr.define
 class ONNXOptions(ModelOptions):
-    """Options for the ONNX model"""
+    """Options for the ONNX model."""
 
     providers: t.Optional[list[str]] = attr.field(default=None)
     session_options: t.Optional["ort.SessionOptions"] = attr.field(default=None)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
-    """
-    Get the BentoML model with the given tag.
+    """Get the BentoML model with the given tag.
 
     Args:
         tag_like: The tag of the model to retrieve from the model store.
@@ -112,8 +111,7 @@ def load_model(
     providers: ProvidersType | None = None,
     session_options: ort.SessionOptions | None = None,
 ) -> ort.InferenceSession:
-    """
-    Load the onnx model with the given tag from the local BentoML model store.
+    """Load the onnx model with the given tag from the local BentoML model store.
 
     Args:
         bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
@@ -246,7 +244,6 @@ def save_model(
         )
 
         bento_model = bentoml.onnx.save_model("onnx_model", model_path, signatures={"run": "batchable": True})
-
     """
 
     # prefer "onnxruntime-gpu" over "onnxruntime" for framework versioning
@@ -317,9 +314,7 @@ def save_model(
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
-    """
-    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
-    """
+    """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
 
     class ONNXRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")

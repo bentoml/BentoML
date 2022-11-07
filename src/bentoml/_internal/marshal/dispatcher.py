@@ -34,9 +34,7 @@ class NonBlockSema:
 
 
 class Optimizer:
-    """
-    Analyse historical data to optimize CorkDispatcher.
-    """
+    """Analyse historical data to optimize CorkDispatcher."""
 
     N_KEPT_SAMPLE = 50  # amount of outbound info kept for inferring params
     N_SKIPPED_SAMPLE = 2  # amount of outbound info skipped after init
@@ -93,8 +91,8 @@ T_OUT = t.TypeVar("T_OUT")
 
 
 class CorkDispatcher:
-    """
-    A decorator that:
+    """A decorator that:
+
         * wrap batch function
         * implement CORK algorithm to cork & release calling of wrapped function
     The wrapped function should be an async function.
@@ -169,9 +167,7 @@ class CorkDispatcher:
         return _func
 
     async def controller(self):
-        """
-        A standalone coroutine to wait/dispatch calling.
-        """
+        """A standalone coroutine to wait/dispatch calling."""
         logger.debug("Starting dispatcher optimizer training...")
         # warm up the model
         while self.optimizer.outbound_counter <= self.optimizer.N_SKIPPED_SAMPLE:

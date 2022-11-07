@@ -36,10 +36,8 @@ response_content_type: ContextVar[bytes] = ContextVar(
 
 
 class AccessLogMiddleware:
-    """
-    ASGI Middleware implementation that intercepts and decorates the send
-    and receive callables to generate the BentoML access log.
-    """
+    """ASGI Middleware implementation that intercepts and decorates the send and receive
+    callables to generate the BentoML access log."""
 
     def __init__(
         self,

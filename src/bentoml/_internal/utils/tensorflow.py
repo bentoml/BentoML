@@ -142,7 +142,7 @@ def check_tensor_spec(
 
 
 def normalize_spec(value: t.Any) -> "tf_ext.TypeSpec":
-    """normalize tensor spec"""
+    """normalize tensor spec."""
     if not check_tensor_spec(value, TENSOR_CLASS_NAMES):
         return value
     if check_tensor_spec(value, "RaggedTensor"):
@@ -161,8 +161,7 @@ def cast_py_args_to_tf_function_args(
     *args: t.Any,
     **kwargs: t.Any,
 ) -> tuple[t.Any, ...]:
-    """
-    Cast python arguments (args, kwargs) to tensorflow function arguments.
+    """Cast python arguments (args, kwargs) to tensorflow function arguments.
 
     Args:
         signature (:code:`list[tf.TensorSpec]`):
@@ -394,9 +393,7 @@ def pretty_format_restored_model(model: "tf_ext.AutoTrackable") -> str:
 def cast_tensor_by_spec(
     _input: tf_ext.TensorLike, spec: tf_ext.TypeSpec
 ) -> tf_ext.TensorLike:
-    """
-    transform dtype & shape following spec
-    """
+    """transform dtype & shape following spec."""
     if not LazyType["tf_ext.TensorSpec"](
         "tensorflow.python.framework.tensor_spec.TensorSpec"
     ).isinstance(spec):

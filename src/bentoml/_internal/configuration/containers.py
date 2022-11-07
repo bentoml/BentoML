@@ -595,10 +595,11 @@ class _BentoMLContainerClass:
     def duration_buckets(
         metrics: dict[str, t.Any] = Provide[api_server_config.metrics]
     ) -> tuple[float, ...]:
-        """
-        Returns a tuple of duration buckets in seconds. If not explicitly configured,
-        the Prometheus default is returned; otherwise, a set of exponential buckets
-        generated based on the configuration is returned.
+        """Returns a tuple of duration buckets in seconds.
+
+        If not explicitly configured, the Prometheus default is
+        returned; otherwise, a set of exponential buckets generated
+        based on the configuration is returned.
         """
         from ..utils.metrics import DEFAULT_BUCKET
         from ..utils.metrics import exponential_buckets

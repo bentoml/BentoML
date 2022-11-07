@@ -78,10 +78,10 @@ class Service:
     and the core building block in BentoML where users define the service runtime
     architecture and model serving logic.
 
-    A BentoML service is defined via instantiate this Service class. When creating a
-    Service instance, user must provide a Service name and list of runners that are
-    required by this Service. The instance can then be used to define InferenceAPIs via
-    the `api` decorator.
+    A BentoML service is defined via instantiate this Service class.
+    When creating a Service instance, user must provide a Service name
+    and list of runners that are required by this Service. The instance
+    can then be used to define InferenceAPIs via the `api` decorator.
     """
 
     name: str
@@ -167,7 +167,7 @@ class Service:
         doc: t.Optional[str] = None,
         route: t.Optional[str] = None,
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
-        """Decorator for adding InferenceAPI to this service"""
+        """Decorator for adding InferenceAPI to this service."""
 
         D = t.TypeVar("D", bound=t.Callable[..., t.Any])
 

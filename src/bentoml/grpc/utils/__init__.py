@@ -106,16 +106,12 @@ def mimetype_to_filetype_pb_map() -> dict[str, pb.File.FileType.ValueType]:
 
 
 def grpc_status_code(err: BentoMLException) -> grpc.StatusCode:
-    """
-    Convert BentoMLException.error_code to grpc.StatusCode.
-    """
+    """Convert BentoMLException.error_code to grpc.StatusCode."""
     return http_status_to_grpc_status_map().get(err.error_code, grpc.StatusCode.UNKNOWN)
 
 
 def to_http_status(status_code: grpc.StatusCode) -> int:
-    """
-    Convert grpc.StatusCode to HTTPStatus.
-    """
+    """Convert grpc.StatusCode to HTTPStatus."""
     status = grpc_status_to_http_status_map().get(
         status_code, HTTPStatus.INTERNAL_SERVER_ERROR
     )
@@ -125,8 +121,7 @@ def to_http_status(status_code: grpc.StatusCode) -> int:
 
 @dataclass
 class MethodName:
-    """
-    Represents a gRPC method name.
+    """Represents a gRPC method name.
 
     Attributes:
         package: This is defined by `package foo.bar`, designation in the protocol buffer definition
@@ -140,13 +135,13 @@ class MethodName:
 
     @property
     def fully_qualified_service(self):
-        """return the service name prefixed with package"""
+        """return the service name prefixed with package."""
         return f"{self.package}.{self.service}" if self.package else self.service
 
 
 def parse_method_name(method_name: str) -> tuple[MethodName, bool]:
-    """
-    Infers the grpc service and method name from the handler_call_details.
+    """Infers the grpc service and method name from the handler_call_details.
+
     e.g. /package.ServiceName/MethodName
     """
     method = method_name.split("/", maxsplit=2)

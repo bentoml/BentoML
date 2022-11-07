@@ -390,8 +390,7 @@ class _LazyMetric:
 
     @add_experimental_docstring
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        """
-        Lazily initialize the metrics object.
+        """Lazily initialize the metrics object.
 
         Args:
             *args: Arguments to pass to the metrics object.

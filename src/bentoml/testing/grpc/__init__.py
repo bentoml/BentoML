@@ -82,8 +82,7 @@ async def async_client_call(
     assert_details: str | None = None,
     assert_trailing_metadata: aio.Metadata | None = None,
 ) -> pb.Response | None:
-    """
-    Invoke a given API method via a client.
+    """Invoke a given API method via a client.
 
     Args:
         method: The method name to call.
@@ -146,8 +145,7 @@ async def create_channel(
     host_url: str,
     interceptors: t.Sequence[aio.ClientInterceptor] | None = None,
 ) -> t.AsyncGenerator[Channel, None]:
-    """
-    Create an async channel with given host_url and client interceptors.
+    """Create an async channel with given host_url and client interceptors.
 
     Args:
         host_url: The host url to connect to.
@@ -176,8 +174,7 @@ def make_standalone_server(
     interceptors: t.Sequence[aio.ServerInterceptor] | None = None,
     host: str = "0.0.0.0",
 ) -> t.Generator[tuple[aio.Server, str], None, None]:
-    """
-    Create a standalone aio.Server for testing.
+    """Create a standalone aio.Server for testing.
 
     Args:
         interceptors: The interceptors to use for the server, default to None.

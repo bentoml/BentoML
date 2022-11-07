@@ -50,9 +50,10 @@ formatters:
 
 
 class DefaultMonitor(MonitorBase["JSONSerializable"]):
-    """
-    The default monitor implementation. It uses a logger to log data and schema, and will
-    write monitor data to rotating files. The schema is logged as a JSON object, and the
+    """The default monitor implementation.
+
+    It uses a logger to log data and schema, and will write monitor data
+    to rotating files. The schema is logged as a JSON object, and the
     data is logged as a JSON array.
     """
 
@@ -98,8 +99,9 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         self.schema_logger = logging.getLogger("bentoml_monitor_schema")
 
     def export_schema(self, columns_schema: dict[str, dict[str, str]]) -> None:
-        """
-        Export columns_schema of the data. This method should be called after all data is logged.
+        """Export columns_schema of the data.
+
+        This method should be called after all data is logged.
         """
         if self.schema_logger is None:
             self._init_logger()
@@ -119,8 +121,9 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         self,
         datas: t.Dict[str, collections.deque[JSONSerializable]],
     ) -> None:
-        """
-        Export data. This method should be called after all data is logged.
+        """Export data.
+
+        This method should be called after all data is logged.
         """
         if self.data_logger is None:
             self._init_logger()

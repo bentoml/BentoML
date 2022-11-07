@@ -76,17 +76,15 @@ class ObjectWrapper(object):
         return setattr(self._wrapped, name, value)
 
     def wrapper_getattr(self, name: str):
-        """Actual `self.getattr` rather than self._wrapped.getattr"""
+        """Actual `self.getattr` rather than self._wrapped.getattr."""
         return getattr(self, name)
 
     def wrapper_setattr(self, name: str, value: t.Any) -> None:
-        """Actual `self.setattr` rather than self._wrapped.setattr"""
+        """Actual `self.setattr` rather than self._wrapped.setattr."""
         return object.__setattr__(self, name, value)
 
     def __init__(self, wrapped: t.Any):
-        """
-        Thin wrapper around a given object
-        """
+        """Thin wrapper around a given object."""
         self.wrapper_setattr("_wrapped", wrapped)
 
 
@@ -97,10 +95,8 @@ class _CallbackIOWrapper(ObjectWrapper):
         stream: t.BinaryIO,
         method: Literal["read", "write"] = "read",
     ):
-        """
-        Wrap a given `file`-like object's `read()` or `write()` to report
-        lengths to the given `callback`
-        """
+        """Wrap a given `file`-like object's `read()` or `write()` to report lengths to
+        the given `callback`"""
         super().__init__(stream)
         func = getattr(stream, method)
         if method == "write":

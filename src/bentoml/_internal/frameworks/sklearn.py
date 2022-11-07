@@ -58,8 +58,8 @@ def get(tag_like: str | Tag) -> Model:
 def load_model(
     bento_model: str | Tag | Model,
 ) -> SklearnModel:
-    """
-    Load the scikit-learn model with the given tag from the local BentoML model store.
+    """Load the scikit-learn model with the given tag from the local BentoML model
+    store.
 
     Args:
         bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
@@ -96,8 +96,7 @@ def save_model(
     external_modules: t.List[ModuleType] | None = None,
     metadata: t.Dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
-    """
-    Save a model instance to BentoML modelstore.
+    """Save a model instance to BentoML modelstore.
 
     Args:
         name (:code:`str`):
@@ -178,9 +177,7 @@ def save_model(
 
 
 def get_runnable(bento_model: Model):
-    """
-    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
-    """
+    """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
 
     class SklearnRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("cpu",)

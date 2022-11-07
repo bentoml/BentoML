@@ -185,9 +185,9 @@ def get_metrics_report(
     metrics_client: PrometheusClient,
     serve_kind: str,
 ) -> list[dict[str, str | float]]:
-    """
-    Get Prometheus metrics reports from the metrics client. This will be used to determine tracking events.
-    If the return metrics are legacy metrics, the metrics will have prefix BENTOML_, otherwise they will have prefix bentoml_
+    """Get Prometheus metrics reports from the metrics client. This will be used to
+    determine tracking events. If the return metrics are legacy metrics, the metrics
+    will have prefix BENTOML_, otherwise they will have prefix bentoml_
 
     Args:
         metrics_client: Instance of bentoml._internal.server.metrics.prometheus.PrometheusClient

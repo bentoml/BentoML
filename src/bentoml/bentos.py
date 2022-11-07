@@ -1,7 +1,5 @@
 # pylint: disable=unused-argument
-"""
-User facing python APIs for managing local bentos and build new bentos
-"""
+"""User facing python APIs for managing local bentos and build new bentos."""
 
 from __future__ import annotations
 
@@ -85,8 +83,7 @@ def import_bento(
     subpath: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
-    """
-    Import a bento.
+    """Import a bento.
 
     Examples:
 
@@ -159,8 +156,7 @@ def export_bento(
     subpath: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> str:
-    """
-    Export a bento.
+    """Export a bento.
 
     To export a bento to S3, you must install BentoML with extras ``aws``:
 
@@ -276,9 +272,8 @@ def build(
     build_ctx: t.Optional[str] = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> "Bento":
-    """
-    User-facing API for building a Bento. The available build options are identical to the keys of a
-    valid 'bentofile.yaml' file.
+    """User-facing API for building a Bento. The available build options are identical
+    to the keys of a valid 'bentofile.yaml' file.
 
     This API will not respect any 'bentofile.yaml' files. Build options should instead be provided
     via function call parameters.
@@ -337,7 +332,6 @@ def build(
                    python_version="3.8",
                ),
            )
-
     """
     build_config = BentoBuildConfig(
         service=service,
@@ -368,8 +362,7 @@ def build_bentofile(
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> "Bento":
-    """
-    Build a Bento base on options specified in a bentofile.yaml file.
+    """Build a Bento base on options specified in a bentofile.yaml file.
 
     By default, this function will look for a `bentofile.yaml` file in current working
     directory.

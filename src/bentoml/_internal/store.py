@@ -53,9 +53,8 @@ Item = t.TypeVar("Item", bound=StoreItem)
 class Store(ABC, t.Generic[Item]):
     """An FsStore manages items under the given base filesystem.
 
-    Note that FsStore has no consistency checks; it assumes that no direct modification
-    of the files in its directory has occurred.
-
+    Note that FsStore has no consistency checks; it assumes that no
+    direct modification of the files in its directory has occurred.
     """
 
     _fs: FS
@@ -96,9 +95,7 @@ class Store(ABC, t.Generic[Item]):
             return [self._get_item(_tag)] if self._fs.isdir(_tag.path()) else []
 
     def _get_item(self, tag: Tag) -> Item:
-        """
-        Creates a new instance of Item that represents the item with tag `tag`.
-        """
+        """Creates a new instance of Item that represents the item with tag `tag`."""
         return self._item_type.from_fs(self._fs.opendir(tag.path()))
 
     def _recreate_latest(self, tag: Tag):
@@ -122,9 +119,19 @@ class Store(ABC, t.Generic[Item]):
 
     def get(self, tag: t.Union[Tag, str]) -> Item:
         """
-        store.get("my_bento")
-        store.get("my_bento:v1.0.0")
-        store.get(Tag("my_bento", "latest"))
+        Returns the item with the given tag.
+
+        Args:
+            tag: The tag of the item to retrieve.
+
+        Returns:
+            The item with the given tag.
+
+        .. code-block:: python
+
+            store.get("my_bento")
+            store.get("my_bento:v1.0.0")
+            store.get(Tag("my_bento", "latest"))
         """
         _tag = Tag.from_taglike(tag)
         if _tag.version is None or _tag.version == "latest":

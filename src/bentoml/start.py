@@ -32,9 +32,7 @@ def start_runner_server(
     host: str | None = None,
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
 ) -> None:
-    """
-    Experimental API for serving a BentoML runner.
-    """
+    """Experimental API for serving a BentoML runner."""
     from .serve import ensure_prometheus_dir
 
     prometheus_dir = ensure_prometheus_dir()

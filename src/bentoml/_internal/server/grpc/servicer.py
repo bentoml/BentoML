@@ -112,9 +112,10 @@ class Servicer:
 
 
 def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
-    """
-    This is the actual implementation of BentoServicer.
-    Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Call
+    """This is the actual implementation of BentoServicer.
+
+    Main inference entrypoint will be invoked via
+    /bentoml.grpc.<version>.BentoService/Call
     """
 
     class BentoServiceImpl(services.BentoServiceServicer):

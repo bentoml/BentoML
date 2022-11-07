@@ -357,8 +357,7 @@ class NumpyNdarray(
         return arr
 
     async def from_http_request(self, request: Request) -> ext.NpNDArray:
-        """
-        Process incoming requests and convert incoming objects to ``numpy.ndarray``.
+        """Process incoming requests and convert incoming objects to ``numpy.ndarray``.
 
         Args:
             request: Incoming Requests
@@ -376,8 +375,7 @@ class NumpyNdarray(
         return self.validate_array(res)
 
     async def to_http_response(self, obj: ext.NpNDArray, ctx: Context | None = None):
-        """
-        Process given objects and convert it to HTTP response.
+        """Process given objects and convert it to HTTP response.
 
         Args:
             obj: ``np.ndarray`` that will be serialized to JSON
@@ -408,8 +406,7 @@ class NumpyNdarray(
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
     ) -> NumpyNdarray:
-        """
-        Create a :obj:`NumpyNdarray` IO Descriptor from given inputs.
+        """Create a :obj:`NumpyNdarray` IO Descriptor from given inputs.
 
         Args:
             sample_input: Given sample ``np.ndarray`` data
@@ -462,8 +459,7 @@ class NumpyNdarray(
         return inst
 
     async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:
-        """
-        Process incoming protobuf request and convert it to ``numpy.ndarray``
+        """Process incoming protobuf request and convert it to ``numpy.ndarray``
 
         Args:
             request: Incoming RPC request message.
@@ -552,8 +548,7 @@ class NumpyNdarray(
         return self.validate_array(array)
 
     async def to_proto(self, obj: ext.NpNDArray) -> pb.NDArray:
-        """
-        Process given objects and convert it to grpc protobuf response.
+        """Process given objects and convert it to grpc protobuf response.
 
         Args:
             obj: ``np.array`` that will be serialized to protobuf.

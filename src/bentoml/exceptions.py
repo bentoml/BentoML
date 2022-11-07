@@ -4,8 +4,8 @@ from http import HTTPStatus
 
 
 class BentoMLException(Exception):
-    """
-    Base class for all BentoML's errors.
+    """Base class for all BentoML's errors.
+
     Each custom exception should be derived from this class
     """
 
@@ -17,17 +17,13 @@ class BentoMLException(Exception):
 
 
 class StateException(Exception):
-    """
-    Raise when the state of an object is not valid
-    """
+    """Raise when the state of an object is not valid."""
 
     error_code = HTTPStatus.BAD_REQUEST
 
 
 class RemoteException(BentoMLException):
-    """
-    A special exception that is used to wrap the exception from remote server
-    """
+    """A special exception that is used to wrap the exception from remote server."""
 
     def __init__(self, message: str, payload: BentoMLException | None = None):
         self.payload = payload
@@ -35,62 +31,52 @@ class RemoteException(BentoMLException):
 
 
 class InvalidArgument(BentoMLException):
-    """
-    Raise when BentoML received unexpected/invalid arguments from CLI arguments, HTTP
-    Request, or python API function parameters
-    """
+    """Raise when BentoML received unexpected/invalid arguments from CLI arguments, HTTP
+    Request, or python API function parameters."""
 
     error_code = HTTPStatus.BAD_REQUEST
 
 
 class InternalServerError(BentoMLException):
-    """
-    Raise when BentoML received valid arguments from CLI arguments, HTTP
-    Request, or python API function parameters, but got internal issues while
-    processing.
+    """Raise when BentoML received valid arguments from CLI arguments, HTTP Request, or
+    python API function parameters, but got internal issues while processing.
+
     * Note to BentoML org developers: raise this exception only when exceptions happend
     in the users' code (runner or service) and want to surface it to the user.
     """
 
 
 class APIDeprecated(BentoMLException):
-    """
-    Raise when trying to use deprecated APIs of BentoML
-    """
+    """Raise when trying to use deprecated APIs of BentoML."""
 
 
 class BadInput(InvalidArgument):
-    """Raise when API server receiving bad input request"""
+    """Raise when API server receiving bad input request."""
 
     error_code = HTTPStatus.BAD_REQUEST
 
 
 class NotFound(BentoMLException):
-    """
-    Raise when specified resource or name not found
-    """
+    """Raise when specified resource or name not found."""
 
     error_code = HTTPStatus.NOT_FOUND
 
 
 class UnprocessableEntity(BentoMLException):
-    """
-    Raise when API server receiving unprocessable entity request
-    """
+    """Raise when API server receiving unprocessable entity request."""
 
     error_code = HTTPStatus.UNPROCESSABLE_ENTITY
 
 
 class ServiceUnavailable(BentoMLException):
-    """
-    Raise when incoming requests exceeds the capacity of a server
-    """
+    """Raise when incoming requests exceeds the capacity of a server."""
 
     error_code = HTTPStatus.SERVICE_UNAVAILABLE
 
 
 class BentoMLConfigException(BentoMLException):
-    """Raise when BentoML is mis-configured or when required configuration is missing"""
+    """Raise when BentoML is mis-configured or when required configuration is
+    missing."""
 
 
 class MissingDependencyException(BentoMLException):
@@ -103,7 +89,7 @@ class MissingDependencyException(BentoMLException):
 
 
 class CLIException(BentoMLException):
-    """Raise when CLI encounters an issue"""
+    """Raise when CLI encounters an issue."""
 
 
 class YataiRESTApiClientError(BentoMLException):

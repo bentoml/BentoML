@@ -22,8 +22,8 @@ class PrometheusClient:
         multiproc: bool = True,
         multiproc_dir: str | None = None,
     ):
-        """
-        PrometheusClient is BentoML's own prometheus client that extends the official Python client.
+        """PrometheusClient is BentoML's own prometheus client that extends the official
+        Python client.
 
         It sets up a multiprocess dir for Prometheus to work in multiprocess mode, which is required
         for BentoML to work in production.
@@ -107,9 +107,8 @@ class PrometheusClient:
     start_wsgi_server = start_http_server
 
     def write_to_textfile(self, path: str) -> None:
-        """
-        Write metrics to given path. This is intended to be used with
-        the Node expoerter textfile collector.
+        """Write metrics to given path. This is intended to be used with the Node
+        expoerter textfile collector.
 
         Args:
             path: path to write the metrics to. This file must end
@@ -172,8 +171,7 @@ class PrometheusClient:
 
     @property
     def Metric(self):
-        """
-        A Metric family and its samples.
+        """A Metric family and its samples.
 
         This is a base class to be used by instrumentation client. Custom collectors should use ``bentoml.metrics.metrics_core.GaugeMetricFamily``, ``bentoml.metrics.metrics_core.CounterMetricFamily``, ``bentoml.metrics.metrics_core.SummaryMetricFamily`` instead.
         """

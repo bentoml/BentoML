@@ -1,5 +1,4 @@
-"""
-Python representation of the OpenAPI Specification.
+"""Python representation of the OpenAPI Specification.
 
 Specs can be found at https://spec.openapis.org/oas/v<semver>#openapi-specification (semver := 3.x.x | 2.x.x)
 

@@ -407,9 +407,7 @@ class PandasDataFrame(
         }
 
     async def from_http_request(self, request: Request) -> ext.PdDataFrame:
-        """
-        Process incoming requests and convert incoming
-        objects to `pd.DataFrame`
+        """Process incoming requests and convert incoming objects to `pd.DataFrame`
 
         Args:
             request (`starlette.requests.Requests`):
@@ -447,8 +445,7 @@ class PandasDataFrame(
     async def to_http_response(
         self, obj: ext.PdDataFrame, ctx: Context | None = None
     ) -> Response:
-        """
-        Process given objects and convert it to HTTP response.
+        """Process given objects and convert it to HTTP response.
 
         Args:
             obj (`pd.DataFrame`):
@@ -500,8 +497,7 @@ class PandasDataFrame(
         enforce_dtype: bool = True,
         default_format: t.Literal["json", "parquet", "csv"] = "json",
     ) -> PandasDataFrame:
-        """
-        Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
+        """Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
 
         Args:
             sample_input: Given sample ``pd.DataFrame`` data
@@ -599,8 +595,7 @@ class PandasDataFrame(
         return dataframe
 
     async def from_proto(self, field: pb.DataFrame | bytes) -> ext.PdDataFrame:
-        """
-        Process incoming protobuf request and convert it to ``pandas.DataFrame``
+        """Process incoming protobuf request and convert it to ``pandas.DataFrame``
 
         Args:
             request: Incoming RPC request message.
@@ -648,8 +643,7 @@ class PandasDataFrame(
         return self.validate_dataframe(dataframe)
 
     async def to_proto(self, obj: ext.PdDataFrame) -> pb.DataFrame:
-        """
-        Process given objects and convert it to grpc protobuf response.
+        """Process given objects and convert it to grpc protobuf response.
 
         Args:
             obj: ``pandas.DataFrame`` that will be serialized to protobuf
@@ -870,8 +864,7 @@ class PandasSeries(
         }
 
     async def from_http_request(self, request: Request) -> ext.PdSeries:
-        """
-        Process incoming requests and convert incoming objects to ``pd.Series``.
+        """Process incoming requests and convert incoming objects to ``pd.Series``.
 
         Args:
             request: Incoming Requests
@@ -890,8 +883,7 @@ class PandasSeries(
     async def to_http_response(
         self, obj: t.Any, ctx: Context | None = None
     ) -> Response:
-        """
-        Process given objects and convert it to HTTP response.
+        """Process given objects and convert it to HTTP response.
 
         Args:
             obj: `pd.Series` that will be serialized to JSON
@@ -947,8 +939,7 @@ class PandasSeries(
         return series
 
     async def from_proto(self, field: pb.Series | bytes) -> ext.PdSeries:
-        """
-        Process incoming protobuf request and convert it to ``pandas.Series``
+        """Process incoming protobuf request and convert it to ``pandas.Series``
 
         Args:
             request: Incoming RPC request message.
@@ -997,8 +988,7 @@ class PandasSeries(
         return self.validate_series(series)
 
     async def to_proto(self, obj: ext.PdSeries) -> pb.Series:
-        """
-        Process given objects and convert it to grpc protobuf response.
+        """Process given objects and convert it to grpc protobuf response.
 
         Args:
             obj: ``pandas.Series`` that will be serialized to protobuf
@@ -1037,8 +1027,7 @@ class PandasSeries(
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
     ) -> PandasSeries:
-        """
-        Create a :obj:`PandasSeries` IO Descriptor from given inputs.
+        """Create a :obj:`PandasSeries` IO Descriptor from given inputs.
 
         Args:
             sample_input: Given sample ``pd.DataFrame`` data

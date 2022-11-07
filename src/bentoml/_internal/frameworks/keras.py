@@ -51,8 +51,7 @@ class KerasOptions(ModelOptions):
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
-    """
-    Get the BentoML model with the given tag.
+    """Get the BentoML model with the given tag.
 
     Args:
         tag_like: The tag of the model to retrieve from the model store.
@@ -80,8 +79,7 @@ def load_model(
     bento_model: str | Tag | bentoml.Model,
     device_name: str = "/device:CPU:0",
 ) -> "tf_ext.KerasModel":
-    """
-    Load a model from BentoML local modelstore with given name.
+    """Load a model from BentoML local modelstore with given name.
 
     Args:
         bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
@@ -102,7 +100,6 @@ def load_model(
 
         # load a model back into memory:
         loaded = bentoml.keras.load_model("keras_model")
-
     """  # noqa
 
     if not isinstance(bento_model, bentoml.Model):
@@ -145,8 +142,7 @@ def save_model(
     external_modules: t.Optional[t.List[ModuleType]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
 ) -> bentoml.Model:
-    """
-    Save a model instance to BentoML modelstore.
+    """Save a model instance to BentoML modelstore.
 
     Args:
         name (:code:`str`):
@@ -233,7 +229,6 @@ def save_model(
             "custom_activation": custom_activation,
         },
         custom_bento_model = bentoml.keras.save_model("custom_obj_keras", custom_objects=custom_objects)
-
     """  # noqa
 
     if not isinstance(
@@ -291,9 +286,7 @@ def save_model(
 def get_runnable(
     bento_model: bentoml.Model,
 ):
-    """
-    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
-    """
+    """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 

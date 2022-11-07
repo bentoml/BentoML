@@ -40,9 +40,10 @@ BLOCKS = {
 
 
 def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
-    """
-    Expand a given paths with respect to :code:`BENTO_PATH`.
-    Note on using "/": the returned path is meant to be used in the generated Dockerfile.
+    """Expand a given paths with respect to :code:`BENTO_PATH`.
+
+    Note on using "/": the returned path is meant to be used in the
+    generated Dockerfile.
     """
     return "/".join([bento_path, *path])
 
@@ -80,9 +81,7 @@ class CustomizableEnv:
 def get_templates_variables(
     options: DockerOptions, use_conda: bool
 ) -> dict[str, t.Any]:
-    """
-    Returns a dictionary of variables to be used in BentoML base templates.
-    """
+    """Returns a dictionary of variables to be used in BentoML base templates."""
 
     if options.base_image is None:
         distro = options.distro
@@ -131,8 +130,7 @@ def generate_dockerfile(
     *,
     use_conda: bool,
 ) -> str:
-    """
-    Generate a Dockerfile that containerize a Bento.
+    """Generate a Dockerfile that containerize a Bento.
 
     Args:
         docker_options (:class:`DockerOptions`):
@@ -173,7 +171,6 @@ def generate_dockerfile(
         docker_options = BentoInfo.from_yaml_file("{bento_path}/bento.yaml").docker
         docker_options.dockerfile_template = "./override_template.j2"
         dockerfile = generate_dockerfile(docker_options, use_conda=False)
-
     """
     distro = options.distro
     use_cuda = options.cuda_version is not None

@@ -37,8 +37,7 @@ GRPC_DEBUG_ENV_VAR = "GRPC_VERBOSITY"
 
 def expand_env_var(env_var: str) -> str:
     """Expands potentially nested env var by repeatedly applying `expandvars` and
-    `expanduser` until interpolation stops having any effect.
-    """
+    `expanduser` until interpolation stops having any effect."""
     while True:
         interpolated = os.path.expanduser(os.path.expandvars(str(env_var)))
         if interpolated == env_var:
@@ -64,8 +63,8 @@ CLEAN_BENTOML_VERSION: str = clean_bentoml_version(BENTOML_VERSION)
 @lru_cache(maxsize=1)
 def is_pypi_installed_bentoml() -> bool:
     """Returns true if BentoML is installed via PyPI official release or installed from
-     source with a release tag, which should come with pre-built docker base image on
-     dockerhub.
+    source with a release tag, which should come with pre-built docker base image on
+    dockerhub.
 
     BentoML uses setuptools_scm to manage its versions, it looks at three things:
 
@@ -134,7 +133,7 @@ def get_quiet_mode() -> bool:
 
 
 def load_global_config(bentoml_config_file: t.Optional[str] = None):
-    """Load global configuration of BentoML"""
+    """Load global configuration of BentoML."""
 
     from .containers import BentoMLContainer
     from .containers import BentoMLConfiguration

@@ -26,8 +26,8 @@ def _get_parent_trace_state(parent_context: "Context") -> t.Optional["TraceState
 
 
 class TraceIdRatioBasedAlwaysRecording(TraceIdRatioBased):
-    """
-    A trace Sampler that:
+    """A trace Sampler that:
+
     * always recording (so that we can get the trace_id)
     * respect the parent's trace_state
     * ratio sampling
@@ -57,10 +57,8 @@ class TraceIdRatioBasedAlwaysRecording(TraceIdRatioBased):
 
 
 class ParentBasedTraceIdRatio(ParentBased):
-    """
-    Sampler that respects its parent span's sampling decision, but otherwise
-    samples probabalistically based on `rate`.
-    """
+    """Sampler that respects its parent span's sampling decision, but otherwise samples
+    probabalistically based on `rate`."""
 
     def __init__(self, rate: float):
         root = TraceIdRatioBasedAlwaysRecording(rate=rate)

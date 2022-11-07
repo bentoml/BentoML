@@ -69,9 +69,8 @@ _EXPERIMENTAL_APIS: set[str] = set()
 
 
 def warn_experimental(api_name: str) -> None:
-    """
-    Warns the user that the given API is experimental.
-    Make sure that if the API is not experimental anymore, this function call is removed.
+    """Warns the user that the given API is experimental. Make sure that if the API is
+    not experimental anymore, this function call is removed.
 
     If 'api_name' requires string formatting, use %-formatting for optimization.
 
@@ -88,8 +87,7 @@ def warn_experimental(api_name: str) -> None:
 def experimental(
     f: t.Callable[P, t.Any] | None = None, *, api_name: str | None = None
 ) -> t.Callable[..., t.Any]:
-    """
-    Decorator to mark an API as experimental.
+    """Decorator to mark an API as experimental.
 
     If 'api_name' requires string formatting, use %-formatting for optimization.
 
@@ -113,9 +111,7 @@ def experimental(
 
 
 def add_experimental_docstring(f: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
-    """
-    Decorator to add an experimental warning to the docstring of a function.
-    """
+    """Decorator to add an experimental warning to the docstring of a function."""
     f.__doc__ = "[EXPERIMENTAL] " + (f.__doc__ if f.__doc__ is not None else "")
     return f
 
@@ -131,9 +127,7 @@ def first_not_none(*args: T | None) -> T | None:
 
 
 def first_not_none(*args: T | None, default: None | T = None) -> T | None:
-    """
-    Returns the first argument that is not None.
-    """
+    """Returns the first argument that is not None."""
     return next((arg for arg in args if arg is not None), default)
 
 
@@ -182,8 +176,8 @@ def split_with_quotes(
     quote: str = '"',
     use_regex: bool = False,
 ) -> list[str]:
-    """
-    Split a string with quotes, e.g.:
+    """Split a string with quotes, e.g.:
+
     >>> split_with_quotes('a,b,"c,d",e')
     ['a', 'b', 'c,d', 'e']
     """
@@ -222,9 +216,7 @@ def reserve_free_port(
     max_retry: int = 50,
     enable_so_reuseport: bool = False,
 ) -> t.Iterator[int]:
-    """
-    detect free port and reserve until exit the context
-    """
+    """detect free port and reserve until exit the context."""
     import psutil
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -271,8 +263,9 @@ def copy_file_to_fs_folder(
     dst_filename: t.Optional[str] = None,
 ):
     """Copy the given file at src_path to dst_fs filesystem, under its dst_folder_path
-    folder with dst_filename as file name. When dst_filename is None, keep the original
-    file name.
+    folder with dst_filename as file name.
+
+    When dst_filename is None, keep the original file name.
     """
     src_path = os.path.realpath(os.path.expanduser(src_path))
     dir_name, file_name = os.path.split(src_path)
@@ -285,6 +278,7 @@ def copy_file_to_fs_folder(
 
 def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
     """Resolve the abspath of a filepath provided by user. User provided file path can:
+
     * be a relative path base on ctx dir
     * contain leading "~" for HOME directory
     * contain environment variables such as "$HOME/workspace"
@@ -390,8 +384,7 @@ VT = t.TypeVar("VT")
 
 
 class cached_contextmanager:
-    """
-    Just like contextlib.contextmanager, but will cache the yield value for the same
+    """Just like contextlib.contextmanager, but will cache the yield value for the same
     arguments. When all instances of the same contextmanager exits, the cache value will
     be dropped.
 
@@ -437,9 +430,8 @@ class cached_contextmanager:
 
 
 class compose:
-    """
-    Function composition: compose(f, g)(...) is equivalent to f(g(...)).
-    Refer to https://github.com/mentalisttraceur/python-compose for original implementation.
+    """Function composition: compose(f, g)(...) is equivalent to f(g(...)). Refer to
+    https://github.com/mentalisttraceur/python-compose for original implementation.
 
     Args:
         *functions: Functions (or other callables) to compose.

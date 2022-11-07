@@ -7,9 +7,7 @@ T = t.TypeVar("T")
 
 
 class FixedBucket(t.Generic[T]):
-    """
-    Fixed size FIFO container.
-    """
+    """Fixed size FIFO container."""
 
     def __init__(self, size: int):
         self._data: list[T | None] = [None] * size
@@ -42,9 +40,7 @@ class FixedBucket(t.Generic[T]):
 
 
 class TokenBucket:
-    """
-    Dynamic token bucket
-    """
+    """Dynamic token bucket."""
 
     def __init__(self, init_amount: int = 0):
         self._amount = init_amount

@@ -40,9 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 class PrometheusServerInterceptor(aio.ServerInterceptor):
-    """
-    An async interceptor for Prometheus metrics.
-    """
+    """An async interceptor for Prometheus metrics."""
 
     def __init__(self, *, namespace: str = "bentoml_api_server"):
         self._is_setup = False

@@ -75,8 +75,9 @@ DEFAULT_INDEX_HTML = """\
 
 
 def log_exception(request: Request, exc_info: t.Any) -> None:
-    """
-    Logs an exception.  This is called by :meth:`handle_exception`
+    """Logs an exception.
+
+    This is called by :meth:`handle_exception`
     if debugging is disabled and right before the handler is called.
     The default implementation logs the exception as error on the
     :attr:`logger`.
@@ -87,12 +88,13 @@ def log_exception(request: Request, exc_info: t.Any) -> None:
 
 
 class HTTPAppFactory(BaseAppFactory):
-    """
-    HTTPApp creates a REST API server based on APIs defined with a BentoService
-    via BentoService#apis. Each InferenceAPI will become one
-    endpoint exposed on the REST server, and the RequestHandler defined on each
-    InferenceAPI object will be used to handle Request object before feeding the
-    request data into a Service API function
+    """HTTPApp creates a REST API server based on APIs defined with a BentoService via
+    BentoService#apis.
+
+    Each InferenceAPI will become one endpoint exposed on the REST
+    server, and the RequestHandler defined on each InferenceAPI object
+    will be used to handle Request object before feeding the request
+    data into a Service API function
     """
 
     @inject
@@ -117,9 +119,9 @@ class HTTPAppFactory(BaseAppFactory):
         return self.bento_service.name
 
     async def index_view_func(self, _: Request) -> Response:
-        """
-        The default index view for BentoML API server. This includes the readme
-        generated from docstring and swagger UI
+        """The default index view for BentoML API server.
+
+        This includes the readme generated from docstring and swagger UI
         """
         from starlette.responses import Response
 
@@ -137,8 +139,7 @@ class HTTPAppFactory(BaseAppFactory):
 
     @property
     def routes(self) -> list[BaseRoute]:
-        """
-        Setup routes for bento model server, including:
+        """Setup routes for bento model server, including:
 
         /               Index Page, shows readme docs, metadata, and Swagger UI
         /docs.json      Returns Swagger/OpenAPI definition file in json format
@@ -298,10 +299,8 @@ class HTTPAppFactory(BaseAppFactory):
     def _create_api_endpoint(
         api: InferenceAPI,
     ) -> t.Callable[[Request], t.Coroutine[t.Any, t.Any, Response]]:
-        """
-        Create api function for flask route, it wraps around user defined API
-        callback and adapter class, and adds request logging and instrument metrics
-        """
+        """Create api function for flask route, it wraps around user defined API
+        callback and adapter class, and adds request logging and instrument metrics."""
         from starlette.responses import JSONResponse
         from starlette.concurrency import run_in_threadpool  # type: ignore
 

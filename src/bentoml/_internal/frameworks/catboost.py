@@ -42,8 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
-    """
-    Get the BentoML model with the given tag.
+    """Get the BentoML model with the given tag.
 
     Args:
         tag_like (``str`` ``|`` :obj:`~bentoml.Tag`):
@@ -69,8 +68,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 
 
 def load_model(bento_model: str | Tag | bentoml.Model) -> cb.CatBoost:
-    """
-    Load the CatBoost model with the given tag from the local BentoML model store.
+    """Load the CatBoost model with the given tag from the local BentoML model store.
 
     Args:
         bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
@@ -121,8 +119,7 @@ def save_model(
     external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
-    """
-    Save an CatBoost model instance to the BentoML model store.
+    """Save an CatBoost model instance to the BentoML model store.
 
     Args:
         name:
@@ -223,9 +220,7 @@ def save_model(
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
-    """
-    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
-    """
+    """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
 
     class CatBoostRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")

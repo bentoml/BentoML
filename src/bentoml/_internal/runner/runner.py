@@ -226,9 +226,7 @@ class Runner:
         self._init(LocalRunnerRef)
 
     def init_local(self, quiet: bool = False) -> None:
-        """
-        init local runnable instance, for testing and debugging only
-        """
+        """init local runnable instance, for testing and debugging only."""
         if not quiet:
             logger.warning(
                 "'Runner.init_local' is for debugging and testing only. Make sure to remove it before deploying to production."
@@ -237,9 +235,7 @@ class Runner:
         self._init_local()
 
     def init_client(self):
-        """
-        init client for a remote runner instance
-        """
+        """init client for a remote runner instance."""
         from .runner_handle.remote import RemoteRunnerClient
 
         self._init(RemoteRunnerClient)

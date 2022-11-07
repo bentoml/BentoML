@@ -32,9 +32,9 @@ MON_DATAS_VAR = contextvars.ContextVar["dict[str, collections.deque[DT]] | None"
 
 
 class MonitorBase(t.Generic[DT]):
-    """
-    The base monitor class. All monitors should inherit from this class.
-    Subclasses should implement the following methods:
+    """The base monitor class. All monitors should inherit from this class. Subclasses
+    should implement the following methods:
+
     - export_schema
     - export_data
     to export the schema and data to the desired format.
@@ -51,8 +51,9 @@ class MonitorBase(t.Generic[DT]):
         self.columns_schema: dict[str, dict[str, str]] | None = None
 
     def start_record(self):
-        """
-        Start recording data. This method should be called before logging any data.
+        """Start recording data.
+
+        This method should be called before logging any data.
         """
         if self.columns_schema is None:
             assert MON_COLUMN_VAR.get() is None
@@ -62,8 +63,9 @@ class MonitorBase(t.Generic[DT]):
         MON_DATAS_VAR.set(collections.defaultdict(collections.deque))
 
     def stop_record(self) -> None:
-        """
-        Stop recording data. This method should be called after logging all data.
+        """Stop recording data.
+
+        This method should be called after logging all data.
         """
         datas: dict[str, collections.deque[DT]] = MON_DATAS_VAR.get()  # type: ignore
         assert datas is not None
@@ -86,14 +88,16 @@ class MonitorBase(t.Generic[DT]):
         MON_DATAS_VAR.set(None)
 
     def export_schema(self, columns_schema: dict[str, dict[str, str]]) -> None:
-        """
-        Export schema of the data. This method should be called after all data is logged.
+        """Export schema of the data.
+
+        This method should be called after all data is logged.
         """
         raise NotImplementedError()
 
     def export_data(self, datas: dict[str, collections.deque[DT]]) -> None:
-        """
-        Export data. This method should be called after all data is logged.
+        """Export data.
+
+        This method should be called after all data is logged.
         """
         raise NotImplementedError()
 
@@ -104,9 +108,7 @@ class MonitorBase(t.Generic[DT]):
         role: str,
         data_type: str,
     ) -> None:
-        """
-        log a data with column name, role and type to the current record
-        """
+        """log a data with column name, role and type to the current record."""
         if name in self.PRESERVED_COLUMNS:
             logger.warning(
                 "Column name %s is reserved, will be renamed to %s", name, name + "_"
@@ -147,8 +149,9 @@ class MonitorBase(t.Generic[DT]):
         role: str,
         data_type: str,
     ) -> None:
-        """
-        Log a batch of data. The data will be logged as a single column.
+        """Log a batch of data.
+
+        The data will be logged as a single column.
         """
         try:
             for data in data_batch:
@@ -242,8 +245,7 @@ def monitor(
     monitor_options: dict[str, t.Any]
     | None = Provide[BentoMLContainer.config.monitoring.options],
 ) -> t.Generator[MT | MonitorBase[t.Any], None, None]:
-    """
-    Context manager for monitoring.
+    """Context manager for monitoring.
 
     :param name: name of the monitor
     :param monitor_class: class of the monitor

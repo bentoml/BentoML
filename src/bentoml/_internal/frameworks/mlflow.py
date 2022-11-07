@@ -38,8 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
-    """
-    Get the BentoML model with the given tag.
+    """Get the BentoML model with the given tag.
 
     Args:
         tag_like: The tag of the model to retrieve from the model store.
@@ -66,8 +65,9 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 def load_model(
     bento_model: str | Tag | bentoml.Model,
 ) -> mlflow.pyfunc.PyFuncModel:
-    """
-    Load the MLflow `PyFunc <https://www.mlflow.org/docs/latest/python_api/mlflow.pyfunc.html#mlflow.pyfunc.PyFuncModel>`_ model with the given tag from the local BentoML model store.
+    """Load the MLflow `PyFunc <https://www.mlflow.org/docs/latest/python_api/mlflow.pyf
+    unc.html#mlflow.pyfunc.PyFuncModel>`_ model with the given tag from the local
+    BentoML model store.
 
     Args:
         bento_model: Either the tag of the model to get from the store, or a BentoML
@@ -106,8 +106,7 @@ def import_model(
     metadata: dict[str, t.Any] | None = None,
     # ...
 ) -> bentoml.Model:
-    """
-    Import MLflow model from a artifact URI to the BentoML model store.
+    """Import MLflow model from a artifact URI to the BentoML model store.
 
     Args:
         name:
@@ -231,9 +230,7 @@ def import_model(
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
-    """
-    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
-    """
+    """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
     assert "predict" in bento_model.info.signatures
     predict_signature = bento_model.info.signatures["predict"]
 

@@ -54,31 +54,27 @@ class Resource(t.Generic[T], ABC):
     @classmethod
     @abstractmethod
     def from_spec(cls, spec: t.Any) -> T:
-        """
-        Get an instance of this resource from user input. For example, a CPU resource
-        might parse "10m" and return a CPU resource with 0.01 CPUs.
+        """Get an instance of this resource from user input.
+
+        For example, a CPU resource might parse "10m" and return a CPU
+        resource with 0.01 CPUs.
         """
 
     @classmethod
     @abstractmethod
     def from_system(cls) -> T:
-        """
-        Infer resource value from the system.
-        """
+        """Infer resource value from the system."""
 
     @classmethod
     @abstractmethod
     def validate(cls, val: T):
-        """
-        Validate that the resources are available on the current system.
-        """
+        """Validate that the resources are available on the current system."""
 
 
 class CpuResource(Resource[float], resource_id="cpu"):
     @classmethod
     def from_spec(cls, spec: t.Any) -> float:
-        """
-        Convert spec to CpuResource.
+        """Convert spec to CpuResource.
 
         spec can be a float, int or string.
         - 1.0 -> 1.0
@@ -239,9 +235,7 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
     @classmethod
     @functools.lru_cache(maxsize=1)
     def from_system(cls) -> list[int]:
-        """
-        query nvidia gpu count, available on Windows and Linux
-        """
+        """query nvidia gpu count, available on Windows and Linux."""
         import pynvml  # type: ignore
 
         try:
@@ -268,8 +262,9 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
 
 
 def get_gpu_memory(dev: int) -> t.Tuple[float, float]:
-    """
-    Return Total Memory and Free Memory in given GPU device. in MiB
+    """Return Total Memory and Free Memory in given GPU device.
+
+    in MiB
     """
     import pynvml.nvml  # type: ignore
     from pynvml.smi import nvidia_smi  # type: ignore

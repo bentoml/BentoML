@@ -20,56 +20,47 @@ if TYPE_CHECKING:
 class Metadata(t.Mapping[str, str], ABC):
     @abstractmethod
     def __setitem__(self, key: str, value: str) -> None:
-        """
-        Set the header ``key`` to ``value``, removing any duplicate entries.
+        """Set the header ``key`` to ``value``, removing any duplicate entries.
+
         Retains insertion order.
         """
 
     @abstractmethod
     def __delitem__(self, key: str) -> None:
-        """
-        Remove the header ``key``.
-        """
+        """Remove the header ``key``."""
 
     @abstractmethod
     def __ior__(self, other: t.Mapping[t.Any, t.Any]) -> Metadata:
-        """
-        Updates this metadata with the contents of ``other``
-        """
+        """Updates this metadata with the contents of ``other``"""
 
     @abstractmethod
     def __or__(self, other: t.Mapping[t.Any, t.Any]) -> Metadata:
-        """
-        Returns a new metadata object with the contents of this metadata object updated with the contents of ``other``
-        """
+        """Returns a new metadata object with the contents of this metadata object
+        updated with the contents of ``other``"""
 
     @abstractmethod
     def update(self, other: t.Mapping[t.Any, t.Any]) -> None:
-        """
-        Sets all the headers in ``other`` in this object.
+        """Sets all the headers in ``other`` in this object.
 
-        For example, if this object is ``{"my-header": "my-value", "my-other-header": "my-other-value"}``
-        and other is {"my-header": 3¸ "other-header": 4}
+        For example, if this object is ``{"my-header": "my-value", "my-
+        other-header": "my-other-value"}`` and other is {"my-header": 3¸
+        "other-header": 4}
         """
 
     @abstractmethod
     def setdefault(self, key: str, value: str) -> str:
-        """
-        If the header ``key`` does not exist, then set it to ``value``.
+        """If the header ``key`` does not exist, then set it to ``value``.
+
         Returns the header value.
         """
 
     @abstractmethod
     def append(self, key: str, value: str) -> None:
-        """
-        Append a header, preserving any duplicate entries.
-        """
+        """Append a header, preserving any duplicate entries."""
 
     @abstractmethod
     def mutablecopy(self) -> Metadata:
-        """
-        Returns a copy of this metadata object.
-        """
+        """Returns a copy of this metadata object."""
 
 
 @attr.define
@@ -177,9 +168,7 @@ class _ServiceTraceContext:
 
     @property
     def request_id(self) -> t.Optional[int]:
-        """
-        Different from span_id, request_id is unique for each inbound request.
-        """
+        """Different from span_id, request_id is unique for each inbound request."""
         return self._request_id_var.get()
 
     @request_id.setter

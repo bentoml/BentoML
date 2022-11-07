@@ -657,11 +657,13 @@ def dict_options_converter(
 @attr.frozen
 class BentoBuildConfig:
     """This class is intended for modeling the bentofile.yaml file where user will
-    provide all the options for building a Bento. All optional build options should be
-    default to None so it knows which fields are NOT SET by the user provided config,
-    which makes it possible to omitted unset fields when writing a BentoBuildOptions to
-    a yaml file for future use. This also applies to nested options such as the
-    DockerOptions class and the PythonOptions class.
+    provide all the options for building a Bento.
+
+    All optional build options should be default to None so it knows
+    which fields are NOT SET by the user provided config, which makes it
+    possible to omitted unset fields when writing a BentoBuildOptions to
+    a yaml file for future use. This also applies to nested options such
+    as the DockerOptions class and the PythonOptions class.
     """
 
     # User shouldn't add new fields under yaml file.
@@ -749,8 +751,7 @@ class BentoBuildConfig:
                         )
 
     def with_defaults(self) -> FilledBentoBuildConfig:
-        """
-        Convert from user provided options to actual build options with defaults
+        """Convert from user provided options to actual build options with defaults
         values filled in.
 
         Returns:
@@ -826,9 +827,7 @@ class BentoPathSpec:
         return False
 
     def from_path(self, path: str) -> t.Generator[t.Tuple[str, PathSpec], None, None]:
-        """
-        yield (parent, exclude_spec) from .bentoignore file of a given path
-        """
+        """yield (parent, exclude_spec) from .bentoignore file of a given path."""
         fs_ = fs.open_fs(path)
         for file in fs_.walk.files(filter=[".bentoignore"]):
             dir_path = "".join(fs.path.parts(file)[:-1])

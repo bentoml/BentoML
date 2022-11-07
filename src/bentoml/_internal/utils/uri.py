@@ -8,8 +8,7 @@ import psutil
 
 
 def path_to_uri(path: str) -> str:
-    """
-    Convert a path to a URI.
+    """Convert a path to a URI.
 
     Args:
         path: Path to convert to URI.
@@ -26,8 +25,7 @@ def path_to_uri(path: str) -> str:
 
 
 def uri_to_path(uri: str) -> str:
-    """
-    Convert a file URI to a path.
+    """Convert a file URI to a path.
 
     Args:
         uri: URI to convert to path.

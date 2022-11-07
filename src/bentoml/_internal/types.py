@@ -124,10 +124,9 @@ T = t.TypeVar("T")
 
 
 class LazyType(t.Generic[T]):
-    """
-    LazyType provides solutions for several conflicts when applying lazy dependencies,
-        type annotations and runtime class checking.
-    It works both for runtime and type checking phases.
+    """LazyType provides solutions for several conflicts when applying lazy
+    dependencies, type annotations and runtime class checking. It works both for runtime
+    and type checking phases.
 
     * conflicts 1
 
@@ -207,9 +206,7 @@ class LazyType(t.Generic[T]):
         return cls(typ_)
 
     def __eq__(self, o: object) -> bool:
-        """
-        LazyType("numpy", "ndarray") == np.ndarray
-        """
+        """LazyType("numpy", "ndarray") == np.ndarray."""
         if isinstance(o, type):
             o = self.__class__(o)
 
@@ -256,9 +253,8 @@ else:
 
 
 def is_compatible_type(t1: AnyType, t2: AnyType) -> bool:
-    """
-    A very loose check that it is possible for an object to be both an instance of ``t1``
-    and an instance of ``t2``.
+    """A very loose check that it is possible for an object to be both an instance of
+    ``t1`` and an instance of ``t2``.
 
     Note: this will resolve ``LazyType``s, so should not be used in any
     peformance-critical contexts.
@@ -284,9 +280,7 @@ def is_compatible_type(t1: AnyType, t2: AnyType) -> bool:
 
 @dataclass(frozen=False)
 class FileLike(t.Generic[t.AnyStr], io.IOBase):
-    """
-    A wrapper for file-like objects that includes a custom name.
-    """
+    """A wrapper for file-like objects that includes a custom name."""
 
     _wrapped: t.IO[t.AnyStr]
     _name: str

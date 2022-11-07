@@ -72,8 +72,7 @@ def load_model(
     bento_model: str | Tag | bentoml.Model,
     device_name: str = "/device:CPU:0",
 ) -> tf_ext.AutoTrackable | tf_ext.Module:
-    """
-    Load a tensorflow model from BentoML local modelstore with given name.
+    """Load a tensorflow model from BentoML local modelstore with given name.
 
     Args:
         bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
@@ -94,7 +93,6 @@ def load_model(
 
         # load a model back into memory
         model = bentoml.tensorflow.load_model("my_tensorflow_model")
-
     """  # noqa: LN001
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
@@ -132,8 +130,7 @@ def save_model(
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
 
-    """
-    Save a model instance to BentoML modelstore.
+    """Save a model instance to BentoML modelstore.
 
     Args:
         name (:code:`str`):
@@ -194,7 +191,6 @@ def save_model(
 
        :code:`bentoml.tensorflow.save_model` API also support saving `RaggedTensor <https://www.tensorflow.org/guide/ragged_tensor>`_ model and Keras model. If you choose to save a Keras model
        with :code:`bentoml.tensorflow.save_model`, then the model will be saved under a :obj:`SavedModel` format instead of :obj:`.h5`.
-
     """
     context = ModelContext(
         framework_name="tensorflow",
@@ -244,9 +240,7 @@ def save_model(
 def get_runnable(
     bento_model: bentoml.Model,
 ):
-    """
-    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
-    """
+    """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs
 

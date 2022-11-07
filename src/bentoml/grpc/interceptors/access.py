@@ -30,9 +30,7 @@ else:
 
 
 class AccessLogServerInterceptor(aio.ServerInterceptor):
-    """
-    An asyncio interceptor for access logging.
-    """
+    """An asyncio interceptor for access logging."""
 
     async def intercept_service(
         self,

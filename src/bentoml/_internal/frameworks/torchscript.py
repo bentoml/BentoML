@@ -37,8 +37,7 @@ def load_model(
     bentoml_model: str | Tag | Model,
     device_id: t.Optional[str] = "cpu",
 ) -> torch.ScriptModule:
-    """
-    Load a model from BentoML local modelstore with given name.
+    """Load a model from BentoML local modelstore with given name.
 
     Args:
         tag (:code:`Union[str, Tag]`):
@@ -82,8 +81,7 @@ def save_model(
     _framework_name: str = "torchscript",
     _module_name: str = MODULE_NAME,
 ) -> bentoml.Model:
-    """
-    Save a model instance to BentoML modelstore.
+    """Save a model instance to BentoML modelstore.
 
     Args:
         name (:code:`str`):
@@ -157,9 +155,7 @@ def save_model(
 
 
 def get_runnable(bento_model: Model):
-    """
-    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
-    """
+    """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
     from .common.pytorch import partial_class
     from .common.pytorch import PytorchModelRunnable
     from .common.pytorch import make_pytorch_runnable_method

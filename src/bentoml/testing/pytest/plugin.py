@@ -98,9 +98,8 @@ def pytest_runtest_setup(item: Item) -> None:
 
 
 def _setup_deployment_mode(metafunc: Metafunc):
-    """
-    Setup deployment mode for test session.
-    We will dynamically add this fixture to tests functions that has ``deployment_mode`` fixtures.
+    """Setup deployment mode for test session. We will dynamically add this fixture to
+    tests functions that has ``deployment_mode`` fixtures.
 
     Current matrix:
     - deployment_mode: ["docker", "distributed", "standalone"]
@@ -197,7 +196,8 @@ def _setup_test_directory() -> tuple[str, str]:
 
 @pytest.mark.tryfirst
 def pytest_sessionstart(session: Session) -> None:
-    """Create a temporary directory for the BentoML home directory, then monkey patch to config."""
+    """Create a temporary directory for the BentoML home directory, then monkey patch to
+    config."""
     from bentoml._internal.utils import analytics
 
     # We need to clear analytics cache before running tests.
@@ -255,8 +255,8 @@ def pytest_sessionfinish(session: Session, exitstatus: int | ExitCode) -> None:
 
 @pytest.fixture(scope="session")
 def bentoml_home() -> str:
-    """
-    Return the BentoML home directory for the test session.
+    """Return the BentoML home directory for the test session.
+
     This directory is created via ``pytest_sessionstart``.
     """
     return BentoMLContainer.bentoml_home.get()
@@ -264,8 +264,8 @@ def bentoml_home() -> str:
 
 @pytest.fixture(scope="session", autouse=True)
 def clean_context() -> t.Generator[contextlib.ExitStack, None, None]:
-    """
-    Create a ExitStack to cleanup contextmanager.
+    """Create a ExitStack to cleanup contextmanager.
+
     This fixture is available to all tests.
     """
     stack = contextlib.ExitStack()
@@ -301,7 +301,8 @@ def fixture_metrics_client() -> PrometheusClient:
 
 @pytest.fixture(scope="function", name="change_test_dir")
 def fixture_change_dir(request: FixtureRequest) -> t.Generator[None, None, None]:
-    """A fixture to change given test directory to the directory of the current running test."""
+    """A fixture to change given test directory to the directory of the current running
+    test."""
     os.chdir(request.fspath.dirname)  # type: ignore (bad pytest stubs)
     yield
     os.chdir(request.config.invocation_dir)  # type: ignore (bad pytest stubs)

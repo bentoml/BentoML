@@ -56,8 +56,7 @@ __all__ = ["load_model", "save_model", "get_runnable", "get"]
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
-    """
-    Get the BentoML model with the given tag.
+    """Get the BentoML model with the given tag.
 
     Args:
         tag_like: The tag of the model to retrieve from the model store.
@@ -82,8 +81,8 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 
 
 def load_model(bento_model: str | Tag | bentoml.Model) -> learner.Learner:
-    """
-    Load the ``fastai.learner.Learner`` model instance with the given tag from the local BentoML model store.
+    """Load the ``fastai.learner.Learner`` model instance with the given tag from the
+    local BentoML model store.
 
     If the model uses ``mixed_precision``, then the loaded model will also be converted to FP32. Learn more about `mixed precision <https://docs.fast.ai/callback.fp16.html>`_.
 
@@ -127,8 +126,7 @@ def save_model(
     external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
-    """
-    Save a :code:`fastai.learner.Learner` model instance to the BentoML model store.
+    """Save a :code:`fastai.learner.Learner` model instance to the BentoML model store.
 
     If the :func:`save_model` method failed while saving a given learner,
     your learner may contain a :obj:`~fastai.callback.core.Callback` that is not picklable.
@@ -226,9 +224,7 @@ def save_model(
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
-    """
-    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
-    """
+    """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
     logger.warning(
         "Runners created from FastAIRunnable will not be optimized for performance. If performance is critical to your usecase, please access the PyTorch model directly via 'learn.model' and use 'bentoml.pytorch.get_runnable()' instead."
     )

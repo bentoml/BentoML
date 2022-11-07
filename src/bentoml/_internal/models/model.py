@@ -150,7 +150,7 @@ class Model(StoreItem):
         context: ModelContext,
     ) -> Model:
         """Create a new Model instance in temporary filesystem used for serializing
-        model artifacts and save to model store
+        model artifacts and save to model store.
 
         Args:
             name: model name in target model store, model version will be automatically
@@ -252,8 +252,8 @@ class Model(StoreItem):
         external_modules: list[ModuleType],
         imported_modules: list[ModuleType],
     ) -> list[ModuleType]:
-        """
-        Enter a context for cloudpickle to pickle custom objects defined in external modules.
+        """Enter a context for cloudpickle to pickle custom objects defined in external
+        modules.
 
         Args:
             external_modules: list of external modules to pickle
@@ -279,8 +279,7 @@ class Model(StoreItem):
 
     @classmethod
     def exit_cloudpickle_context(cls, imported_modules: list[ModuleType]) -> None:
-        """
-        Exit the context for cloudpickle, unregister imported external modules.
+        """Exit the context for cloudpickle, unregister imported external modules.
 
         Needs to be called after self.flush
         """
@@ -392,8 +391,7 @@ class ModelContext:
 
 @attr.frozen
 class ModelSignature:
-    """
-    A model signature represents a method on a model object that can be called.
+    """A model signature represents a method on a model object that can be called.
 
     This information is used when creating BentoML runners for this model.
 
@@ -695,8 +693,7 @@ def copy_model(
     target_model_store: ModelStore,
 ):
     """copy a model from src model store to target modelstore, and do nothing if the
-    model tag already exist in target model store
-    """
+    model tag already exist in target model store."""
     try:
         target_model_store.get(model_tag)  # if model tag already found in target
         return

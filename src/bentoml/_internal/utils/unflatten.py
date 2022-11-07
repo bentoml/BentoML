@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-""" Unflatten nested dict/array data
+"""Unflatten nested dict/array data.
+
 *** This is a modified version of the original unflatten.py from https://github.com/dairiki/unflatten, which is
 published under the license ***
 
@@ -33,7 +34,6 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
 IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-
 """
 from __future__ import annotations
 from __future__ import absolute_import
@@ -80,7 +80,6 @@ def unflatten(arg: dict[str, t.Any]) -> dict[str, t.Any]:
     >>> unflatten({'foo[0].bar': 'val',
     ...            'foo[1].baz': 'x'})
     {'foo': [{'bar': 'val'}, {'baz': 'x'}]}
-
     """
     if hasattr(arg, "items"):
         items = arg.items()

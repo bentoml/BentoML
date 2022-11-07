@@ -19,9 +19,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""
-This module is a port of jpadilla/django-dotenv. Refer to https://github.com/jpadilla/django-dotenv
-for original implementation
+"""This module is a port of jpadilla/django-dotenv.
+
+Refer to https://github.com/jpadilla/django-dotenv for original
+implementation
 """
 from __future__ import annotations
 

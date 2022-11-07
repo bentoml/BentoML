@@ -28,9 +28,7 @@ UNAME_M_TO_PLATFORM_MAPPING = {
 
 
 def health() -> None:
-    """
-    Check whether buildx is available in given system.
-    """
+    """Check whether buildx is available in given system."""
     cmds = DOCKER_BUILDX_CMD + ["--help"]
     try:
         output = subprocess.check_output(cmds)
@@ -82,8 +80,8 @@ def create(
     platform: list[str] | None = None,
     use: bool = False,
 ) -> None:
-    """
-    Create a new buildx instance.
+    """Create a new buildx instance.
+
     Args:
         context_or_endpoints: Custom docker context or endpoints (DOCKER_HOSTS).
         buildkitd_flags: Flags to pass to buildkitd.

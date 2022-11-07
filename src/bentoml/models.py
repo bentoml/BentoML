@@ -138,8 +138,7 @@ def export_model(
     subpath: t.Optional[str] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
-    """
-    Export a BentoML model.
+    """Export a BentoML model.
 
     Examples:
 

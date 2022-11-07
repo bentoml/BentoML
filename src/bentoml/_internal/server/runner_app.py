@@ -123,8 +123,7 @@ class RunnerAppFactory(BaseAppFactory):
 
     @property
     def routes(self) -> t.List[BaseRoute]:
-        """
-        Setup routes for Runner server, including:
+        """Setup routes for Runner server, including:
 
         /healthz        liveness probe endpoint
         /readyz         Readiness probe endpoint

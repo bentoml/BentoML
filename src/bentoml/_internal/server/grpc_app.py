@@ -24,11 +24,12 @@ if TYPE_CHECKING:
 
 
 class GRPCAppFactory:
-    """
-    GRPCApp creates an async gRPC API server based on APIs defined with a BentoService via BentoService#apis.
-    This is a light wrapper around GRPCServer with addition to `on_startup` and `on_shutdown` hooks.
+    """GRPCApp creates an async gRPC API server based on APIs defined with a
+    BentoService via BentoService#apis. This is a light wrapper around GRPCServer with
+    addition to `on_startup` and `on_shutdown` hooks.
 
-    Note that even though the code are similar with BaseAppFactory, gRPC protocol is different from ASGI.
+    Note that even though the code are similar with BaseAppFactory, gRPC
+    protocol is different from ASGI.
     """
 
     @inject

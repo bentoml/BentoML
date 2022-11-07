@@ -15,10 +15,11 @@ BENTOML_DEV_BUILD = "BENTOML_BUNDLE_LOCAL_BUILD"
 
 
 def build_bentoml_editable_wheel(target_path: str) -> None:
-    """
-    This is for BentoML developers to create Bentos that contains the local bentoml
-    build based on their development branch. To enable this behavior, one must
-    set envar :code:`BENTOML_BUNDLE_LOCAL_BUILD=True` before building a Bento.
+    """This is for BentoML developers to create Bentos that contains the local bentoml
+    build based on their development branch.
+
+    To enable this behavior, one must set envar
+    :code:`BENTOML_BUNDLE_LOCAL_BUILD=True` before building a Bento.
     """
     if str(os.environ.get(BENTOML_DEV_BUILD, False)).lower() != "true":
         return

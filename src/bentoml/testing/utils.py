@@ -16,9 +16,7 @@ if TYPE_CHECKING:
 
 
 async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":
-    """
-    parse starlette forms from headers and body
-    """
+    """parse starlette forms from headers and body."""
 
     from starlette.formparsers import MultiPartParser
 
@@ -101,9 +99,7 @@ def assert_distributed_header(headers: multidict.CIMultiDict[str]) -> None:
 
 
 async def http_proxy_app(scope: Scope, receive: Receive, send: Send):
-    """
-    A simple HTTP proxy app that simulate the behavior of Yatai.
-    """
+    """A simple HTTP proxy app that simulate the behavior of Yatai."""
     if scope["type"] == "lifespan":
         return
 

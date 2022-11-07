@@ -78,9 +78,9 @@ def _deep_convert_to_tuple(dct: dict[str, t.Any]) -> dict[str, tuple[str, str | 
 
 
 def _validate_type(_: t.Any, attribute: attr.Attribute[t.Any], value: t.Any) -> None:
-    """
-    Validate the type of the given pipeline definition. The value is expected to be a `str`.
-    `list` type is also allowed here to maintain compatibility with an earlier introduced bug.
+    """Validate the type of the given pipeline definition. The value is expected to be a
+    `str`. `list` type is also allowed here to maintain compatibility with an earlier
+    introduced bug.
 
     TODO: disallow list type in the next minor version release.
     """
@@ -131,8 +131,7 @@ def _convert_to_auto_class(cls_name: str) -> ext.BaseAutoModelClass:
 
 
 def get(tag_like: str | Tag) -> Model:
-    """
-    Get the BentoML model with the given tag.
+    """Get the BentoML model with the given tag.
 
     Args:
         tag_like: The tag of the model to retrieve from the model store.
@@ -160,8 +159,7 @@ def load_model(
     bento_model: str | Tag | Model,
     **kwargs: t.Any,
 ) -> ext.TransformersPipeline:
-    """
-    Load the Transformers model from BentoML local modelstore with given name.
+    """Load the Transformers model from BentoML local modelstore with given name.
 
     Args:
         bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
@@ -246,8 +244,7 @@ def save_model(
     external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
-    """
-    Save a model instance to BentoML modelstore.
+    """Save a model instance to BentoML modelstore.
 
     Args:
         name: Name for given model instance. This should pass Python identifier check.
@@ -444,9 +441,7 @@ def save_model(
 def get_runnable(
     bento_model: bentoml.Model,
 ) -> t.Type[bentoml.Runnable]:
-    """
-    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
-    """
+    """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
 
     class TransformersRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")

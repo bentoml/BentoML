@@ -26,9 +26,10 @@ def pass_through(i: T) -> T:
 
 
 class Params(t.Generic[T]):
-    """
-    A container for */** parameters. It helps to perform an operation on all the params
-    values at the same time.
+    """A container for */** parameters.
+
+    It helps to perform an operation on all the params values at the
+    same time.
     """
 
     args: tuple[T, ...]
@@ -58,18 +59,16 @@ class Params(t.Generic[T]):
         return all(v == first for _, v in value_iter)
 
     def map(self, function: t.Callable[[T], To]) -> Params[To]:
-        """
-        Apply a function to all the values in the Params and return a Params of the
-        return values.
-        """
+        """Apply a function to all the values in the Params and return a Params of the
+        return values."""
         args = tuple(function(a) for a in self.args)
         kwargs = {k: function(v) for k, v in self.kwargs.items()}
         return Params[To](*args, **kwargs)
 
     def iter(self: Params[tuple[t.Any, ...]]) -> t.Iterator[Params[t.Any]]:
-        """
-        Iter over a Params of iterable values into a list of Params. All values should
-        have the same length.
+        """Iter over a Params of iterable values into a list of Params.
+
+        All values should have the same length.
         """
 
         iter_params = self.map(iter)
@@ -87,10 +86,8 @@ class Params(t.Generic[T]):
         params_list: t.Sequence[Params[T]],
         agg_func: t.Callable[[t.Sequence[T]], To] = pass_through,
     ) -> Params[To]:
-        """
-        Aggregate a list of Params into a single Params by performing the aggregate
-        function on the list of values at the same position.
-        """
+        """Aggregate a list of Params into a single Params by performing the aggregate
+        function on the list of values at the same position."""
         if not params_list:
             return Params()
 
@@ -106,10 +103,8 @@ class Params(t.Generic[T]):
 
     @property
     def sample(self) -> T:
-        """
-        Return a sample value (the first value of args or kwargs if args is empty)
-        of the Params.
-        """
+        """Return a sample value (the first value of args or kwargs if args is empty) of
+        the Params."""
         if self.args:
             return self.args[0]
         return next(iter(self.kwargs.values()))

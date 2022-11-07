@@ -10,8 +10,7 @@ def import_generated_stubs(
     version: str = "v1alpha1",
     file: str = "service.proto",
 ) -> tuple[types.ModuleType, types.ModuleType]:
-    """
-    Import generated stubs.
+    """Import generated stubs.
 
     Args:
         version: The version of the proto file to import.

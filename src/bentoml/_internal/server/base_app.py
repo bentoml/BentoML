@@ -37,8 +37,8 @@ class BaseAppFactory(abc.ABC):
         self._is_ready = True
 
     async def livez(self, _: "Request") -> "Response":
-        """
-        Health check for BentoML API server.
+        """Health check for BentoML API server.
+
         Make sure it works with Kubernetes liveness probe
         """
         return PlainTextResponse("\n", status_code=200)

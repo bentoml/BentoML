@@ -39,9 +39,7 @@ else:
 
 
 async def parse_multipart_form(headers: Headers, body: bytes) -> FormData:
-    """
-    parse starlette forms from headers and body
-    """
+    """parse starlette forms from headers and body."""
 
     from starlette.formparsers import MultiPartParser
 
@@ -130,9 +128,7 @@ async def server_warmup(
 def bentoml_build(
     project_path: str, cleanup: bool = True
 ) -> t.Generator[Bento, None, None]:
-    """
-    Build a BentoML project.
-    """
+    """Build a BentoML project."""
     from bentoml import bentos
 
     print(f"Building bento: {project_path}")
@@ -150,9 +146,7 @@ def bentoml_containerize(
     cleanup: bool = True,
     use_grpc: bool = False,
 ) -> t.Generator[str, None, None]:
-    """
-    Build the docker image from a saved bento, yield the docker image tag
-    """
+    """Build the docker image from a saved bento, yield the docker image tag."""
     from bentoml import bentos
 
     bento_tag = Tag.from_taglike(bento_tag)
@@ -181,9 +175,7 @@ def run_bento_server_docker(
     timeout: float = 90,
     host: str = "127.0.0.1",
 ):
-    """
-    Launch a bentoml service container from a docker image, yield the host URL
-    """
+    """Launch a bentoml service container from a docker image, yield the host URL."""
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     container_name = f"bentoml-test-{image_tag}-{hash(config_file)}"
@@ -243,9 +235,7 @@ def run_bento_server_standalone(
     timeout: float = 90,
     host: str = "127.0.0.1",
 ):
-    """
-    Launch a bentoml service directly by the bentoml CLI, yields the host URL.
-    """
+    """Launch a bentoml service directly by the bentoml CLI, yields the host URL."""
     copied = os.environ.copy()
     if config_file is not None:
         copied["BENTOML_CONFIG"] = os.path.abspath(config_file)
@@ -298,9 +288,8 @@ def run_bento_server_distributed(
     timeout: float = 90,
     host: str = "127.0.0.1",
 ):
-    """
-    Launch a bentoml service as a simulated distributed environment(Yatai), yields the host URL.
-    """
+    """Launch a bentoml service as a simulated distributed environment(Yatai), yields
+    the host URL."""
     import yaml
 
     import bentoml
@@ -412,8 +401,7 @@ def host_bento(
     host: str = "127.0.0.1",
     timeout: float = 120,
 ) -> t.Generator[str, None, None]:
-    """
-    Host a bentoml service, yields the host URL.
+    """Host a bentoml service, yields the host URL.
 
     Args:
         bento: a bento tag or :code:`module_path:service`

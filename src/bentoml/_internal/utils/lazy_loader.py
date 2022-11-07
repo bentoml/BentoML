@@ -10,15 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 class LazyLoader(types.ModuleType):
-    """
-    LazyLoader module borrowed from Tensorflow
-     https://github.com/tensorflow/tensorflow/blob/v2.2.0/tensorflow/python/util/lazy_loader.py
-     with a addition of "module caching". This will throw an
-     exception if module cannot be imported.
+    """LazyLoader module borrowed from Tensorflow https://github.com/tensorflow/tensorfl
+    ow/blob/v2.2.0/tensorflow/python/util/lazy_loader.py with a addition of "module
+    caching". This will throw an exception if module cannot be imported.
 
-    Lazily import a module, mainly to avoid pulling in large dependencies.
-     `contrib`, and `ffmpeg` are examples of modules that are large and not always
-     needed, and this allows them to only be loaded when they are used.
+    Lazily import a module, mainly to avoid pulling in large
+    dependencies.  `contrib`, and `ffmpeg` are examples of modules that
+    are large and not always  needed, and this allows them to only be
+    loaded when they are used.
     """
 
     def __init__(

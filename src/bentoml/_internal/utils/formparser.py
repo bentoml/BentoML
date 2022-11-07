@@ -34,9 +34,7 @@ def user_safe_decode(src: bytes, codec: str) -> str:
 
 
 class MultiPartParser:
-    """
-    An modified version of starlette MultiPartParser.
-    """
+    """An modified version of starlette MultiPartParser."""
 
     def __init__(self, headers: Headers, stream: t.AsyncGenerator[bytes, None]) -> None:
         assert (

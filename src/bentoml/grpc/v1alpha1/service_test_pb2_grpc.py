@@ -6,8 +6,7 @@ from bentoml.grpc.v1alpha1 import service_test_pb2 as bentoml_dot_grpc_dot_v1alp
 
 
 class TestServiceStub(object):
-    """Use for testing interceptors per RPC call.
-    """
+    """Use for testing interceptors per RPC call."""
 
     def __init__(self, channel):
         """Constructor.
@@ -23,12 +22,10 @@ class TestServiceStub(object):
 
 
 class TestServiceServicer(object):
-    """Use for testing interceptors per RPC call.
-    """
+    """Use for testing interceptors per RPC call."""
 
     def Execute(self, request, context):
-        """Unary API
-        """
+        """Unary API."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -49,8 +46,7 @@ def add_TestServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class TestService(object):
-    """Use for testing interceptors per RPC call.
-    """
+    """Use for testing interceptors per RPC call."""
 
     @staticmethod
     def Execute(request,

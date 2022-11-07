@@ -1,7 +1,5 @@
 # pragma: no cover
-"""
-Specific types for BentoService gRPC server.
-"""
+"""Specific types for BentoService gRPC server."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

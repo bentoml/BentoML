@@ -42,7 +42,7 @@ def import_service(
 ) -> Service:
     """Import a Service instance from source code, by providing the svc_import_path
     which represents the module where the Service instance is created and optionally
-    what attribute can be used to access this Service instance in that module
+    what attribute can be used to access this Service instance in that module.
 
     Example usage:
         # When multiple service defined in the same module
@@ -191,7 +191,8 @@ def load_bento(
 ) -> "Service":
     """Load a Service instance from a bento found in local bento store:
 
-    Example usage:
+    .. code-block:: python
+
         load_bento("FraudDetector:latest")
         load_bento("FraudDetector:20210709_DE14C9")
     """
@@ -222,7 +223,7 @@ def load_bento(
 
 
 def load_bento_dir(path: str, standalone_load: bool = False) -> "Service":
-    """Load a Service instance from a bento directory
+    """Load a Service instance from a bento directory.
 
     Example usage:
         load_bento_dir("~/bentoml/bentos/iris_classifier/4tht2icroji6zput3suqi5nl2")
@@ -259,7 +260,7 @@ def load(
     working_dir: t.Optional[str] = None,
     standalone_load: bool = False,
 ) -> "Service":
-    """Load a Service instance by the bento_identifier
+    """Load a Service instance by the bento_identifier.
 
     Args:
         bento_identifier: target Service to import or Bento to load

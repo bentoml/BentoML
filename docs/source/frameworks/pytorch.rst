@@ -21,7 +21,7 @@ For common PyTorch models with single input:
 
 .. code-block:: python
     :caption: `train.py`
-    
+
     import bentoml
     import torch
     import torch.nn as nn
@@ -97,7 +97,7 @@ For common PyTorch models with single input:
     bentoml.pytorch.save(
         model,
         "my_torch_model",
-        signatures={"__call__": {"batchable": True, "batchdim": 0}},
+        signatures={"__call__": {"batchable": True, "batch_dim": 0}},
     )
 
 
@@ -126,7 +126,7 @@ For common PyTorch models with single input:
     bentoml.pytorch.save(
         model,
         "my_torch_model",
-        signatures={"__call__": {"batchable": True, "batchdim": 0}},
+        signatures={"__call__": {"batchable": True, "batch_dim": 0}},
     )
 
 .. note::
@@ -136,7 +136,7 @@ For common PyTorch models with single input:
     .. code-block:: python
        :caption: `train.py`
        :emphasize-lines: 1,8
-        
+
        import my_models
 
        model = my_models.MyModel()
@@ -146,9 +146,9 @@ For common PyTorch models with single input:
            signatures={"__call__": {"batchable": True, "batch_dim": 0}},
            external_modules=[my_models],
        )
-    
+
     This is due to a limitation from PyTorch model serialisation, where PyTorch requires the model's source code to restore it.
-    
+
     A better practice is to compile your model to `TorchScript <https://pytorch.org/docs/stable/jit.html>`_ format.
 
 .. note::

@@ -45,7 +45,6 @@ dependencies = [
   "opentelemetry-sdk==1.13.0",
   "opentelemetry-semantic-conventions==0.34b0",
   "opentelemetry-util-http==0.34b0",
-  "filetype",
   "packaging>=20.0",
   "pathspec",
   "pip-tools>=6.6.2",
@@ -113,15 +112,20 @@ include = [
 [project.optional-dependencies]
 all = [
   "bentoml[aws]",
-  "bentoml[io-json]",
-  "bentoml[io-image]",
-  "bentoml[io-pandas]",
+  "bentoml[io]",
   "bentoml[grpc]",
   "bentoml[grpc-reflection]",
   "bentoml[grpc-channelz]",
   "bentoml[tracing]",
 ]
 aws = ["fs-s3fs"]
+io = [
+  "bentoml[io-json]",
+  "bentoml[io-image]",
+  "bentoml[io-pandas]",
+  "bentoml[io-file]",
+] # syntatic sugar for bentoml[io-json,io-image,io-pandas,io-file]
+io-file = ["filetype"] # Currently use for from_sample
 io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["Pillow"]
 io-pandas = ["pandas", "pyarrow"]

@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from ..context import InferenceApiContext as Context
     from ..service.openapi.specification import Schema
     from ..service.openapi.specification import Reference
+    from ..service.openapi.specification import MediaType
 
     InputType = (
         UnionType

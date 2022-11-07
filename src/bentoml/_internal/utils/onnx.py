@@ -16,7 +16,13 @@ if TYPE_CHECKING:
     from .. import external_typing as ext
     from ..external_typing import tensorflow as tf_ext  # noqa
 
-    ONNXArgTensorType = ext.NpNDArray | ext.PdDataFrame | torch.Tensor | tf_ext.Tensor
+    ONNXArgTensorType = (
+        ext.NpNDArray
+        | ext.PdDataFrame
+        | torch.Tensor
+        | tf_ext.Tensor
+        | list[int | float | str]
+    )
     ONNXArgSequenceType = list["ONNXArgType"]
     ONNXArgMapKeyType = int | str
     ONNXArgMapType = dict[ONNXArgMapKeyType, "ONNXArgType"]
@@ -94,6 +100,8 @@ def _gen_input_casting_func_for_tensor(
     def _mapping(item: ONNXArgTensorType) -> ext.NpNDArray:
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
             item = item.astype(to_dtype, copy=False)
+        elif isinstance(item, list):
+            item = np.array(item).astype(to_dtype, copy=False)
         elif LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
             item = item.to_numpy(dtype=to_dtype)
         elif LazyType["tf.Tensor"]("tensorflow.Tensor").isinstance(item):
@@ -102,7 +110,7 @@ def _gen_input_casting_func_for_tensor(
             item = item.numpy().astype(to_dtype, copy=False)
         else:
             raise TypeError(
-                "`run` of ONNXRunnable only takes `numpy.ndarray` or `pd.DataFrame`, `tf.Tensor`, or `torch.Tensor` as input Tensor type"
+                "`run` of ONNXRunnable only takes `numpy.ndarray`, `pd.DataFrame`, `tf.Tensor`, `torch.Tensor` or a list as input Tensor type"
             )
         return t.cast("ext.NpNDArray", item)
 

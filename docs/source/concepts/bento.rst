@@ -15,6 +15,7 @@ serving logic, runners initialization and API input, output types.
 ``bentoml.Service`` in production.
 
 .. note::
+
     "Bento Build" is essentially the build process in traditional software development,
     where source code files were converted into standalone artifacts that are ready to
     deploy. BentoML reimagined this process for Machine Learning model delivery, and
@@ -179,13 +180,13 @@ Bentos between teams or moving between different deployment stages. For example:
 
 .. code:: bash
 
-    > bentoml export iris_classifier:latest .
+    » bentoml export iris_classifier:latest .
 
     INFO [cli] Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") exported to ./iris_classifier-nvjtj7wwfgsafuqj.bento
 
 .. code:: bash
 
-    > bentoml import ./iris_classifier-nvjtj7wwfgsafuqj.bento
+    » bentoml import ./iris_classifier-nvjtj7wwfgsafuqj.bento
 
     INFO [cli] Bento(tag="iris_classifier:nvjtj7wwfgsafuqj") imported
 

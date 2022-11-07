@@ -1,4 +1,3 @@
-===============
 Core Components
 ===============
 
@@ -12,6 +11,7 @@ bentoml.Service
 .. autofunction:: bentoml.load
 
 .. TODO::
+
     Add docstring to the following classes/functions
 
 bentoml.build
@@ -22,7 +22,6 @@ bentoml.build
 .. autofunction:: bentoml.bentos.build_bentofile
 
 .. autofunction:: bentoml.bentos.containerize
-
 
 bentoml.Bento
 -------------
@@ -54,7 +53,6 @@ Model
 .. autoclass:: bentoml.Model
     :members: to_runner, to_runnable, info, path, path_of, with_options
     :undoc-members:
-
 
 YataiClient
 -----------

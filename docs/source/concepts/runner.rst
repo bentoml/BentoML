@@ -51,8 +51,6 @@ methods.
     runner.predict.run( MODEL_INPUT )
 
 
-.. _custom-runner:
-
 Custom Runner
 -------------
 

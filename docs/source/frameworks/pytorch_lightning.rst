@@ -1,18 +1,19 @@
-=================
 PyTorch Lightning
 =================
 
 Here's a simple example of using PyTorch Lightning with BentoML:
 
-.. code:: python
+.. code-block:: python
 
     import bentoml
     import torch
     import pytorch_lightning as pl
 
+
     class AdditionModel(pl.LightningModule):
         def forward(self, inputs):
             return inputs.add(1)
+
 
     # `save` a given classifier and retrieve coresponding tag:
     tag = bentoml.pytorch_lightning.save_model("addition_model", AdditionModel())
@@ -26,12 +27,12 @@ Here's a simple example of using PyTorch Lightning with BentoML:
     # Run a given model under `Runner` abstraction with `to_runner`
     runner = bentoml.pytorch_lightning.get(tag).to_runner()
     runner.init_local()
-    runner.run(torch.from_numpy(np.array([[1,2,3,4]])))
+    runner.run(torch.from_numpy(np.array([[1, 2, 3, 4]])))
 
 .. note::
 
-   You can find more examples for **PyTorch Lightning** in our :github:`bentoml/examples <tree/main/examples>` directory.
-
+    You can find more examples for **PyTorch Lightning** in our
+    :github:`bentoml/examples <tree/main/examples>` directory.
 
 .. currentmodule:: bentoml.pytorch_lightning
 
@@ -40,4 +41,3 @@ Here's a simple example of using PyTorch Lightning with BentoML:
 .. autofunction:: bentoml.pytorch_lightning.load_model
 
 .. autofunction:: bentoml.pytorch_lightning.get
-

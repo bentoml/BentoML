@@ -1,62 +1,64 @@
-============
 Transformers
 ============
 
-`🤗 Transformers <https://huggingface.co/docs/transformers/main/en/index>`_ is a library that helps download and fine-tune popular 
-pretrained models for common machine learning tasks. BentoML provides native support for serving and deploying models trained from 
+`🤗 Transformers <https://huggingface.co/docs/transformers/main/en/index>`_ is a library
+that helps download and fine-tune popular pretrained models for common machine learning
+tasks. BentoML provides native support for serving and deploying models trained from
 Transformers.
 
-Compatibility 
+Compatibility
 -------------
 
-BentoML requires Transformers version 4 or above. For other versions of Transformers, consider using a 
-:ref:`concepts/runner:Custom Runner`.
+BentoML requires Transformers version 4 or above. For other versions of Transformers,
+consider using a :ref:`concepts/runner:Custom Runner`.
 
-When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`, include ``transformers`` and the machine learning 
-framework of the model, e.g. ``pytorch``, ``tensorflow``, or ``jax``.
+When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`, include
+``transformers`` and the machine learning framework of the model, e.g. ``pytorch``,
+``tensorflow``, or ``jax``.
 
 .. tab-set::
 
-   .. tab-item:: PyTorch
+    .. tab-item:: PyTorch
 
-      .. code-block:: yaml
-         :caption: `bentofile.yaml`
+        .. code-block:: yaml
+            :caption: `bentofile.yaml`
 
-         service: "service.py:svc"
-         labels:
-         owner: bentoml-team
-         project: gallery
-         include:
-         - "*.py"
-         python:
-           packages:
-           - transformers
-           - torch
+            service: "service.py:svc"
+            labels:
+            owner: bentoml-team
+            project: gallery
+            include:
+            - "*.py"
+            python:
+              packages:
+              - transformers
+              - torch
 
-   .. tab-item:: TensorFlow
+    .. tab-item:: TensorFlow
 
-      .. code-block:: yaml
-          :caption: `bentofile.yaml`
+        .. code-block:: yaml
+            :caption: `bentofile.yaml`
 
-          service: "service.py:svc"
-          labels:
-          owner: bentoml-team
-          project: gallery
-          include:
-          - "*.py"
-          python:
-            packages:
-            - transformers
-            - tensorflow
-
+            service: "service.py:svc"
+            labels:
+            owner: bentoml-team
+            project: gallery
+            include:
+            - "*.py"
+            python:
+              packages:
+              - transformers
+              - tensorflow
 
 Fined-tuned Models
 ------------------
 
-Fine-tuning pretrained models is a powerful practice that allows users to save computation cost and adapt state-of-the-art models to their 
-domain specific dataset. Transformers offers a variety of libraries for fine-tuning pretrained models. The example below fine-tunes a BERT 
-model with Yelp review dataset. To learn more, refer to the Transformers guide on 
-`fine-tuning pretrained models <https://huggingface.co/docs/transformers/main/en/training>`_.
+Fine-tuning pretrained models is a powerful practice that allows users to save
+computation cost and adapt state-of-the-art models to their domain specific dataset.
+Transformers offers a variety of libraries for fine-tuning pretrained models. The
+example below fine-tunes a BERT model with Yelp review dataset. To learn more, refer to
+the Transformers guide on `fine-tuning pretrained models
+<https://huggingface.co/docs/transformers/main/en/training>`_.
 
 .. code-block:: python
     :caption: `train.py`
@@ -91,11 +93,13 @@ model with Yelp review dataset. To learn more, refer to the Transformers guide o
 Saving a Fine-tuned Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Once the model is fine-tuned, create a Transformers 
-`Pipeline <https://huggingface.co/docs/transformers/main/en/pipeline_tutorial>`_ with the model and save to the BentoML model 
-store. By design, only Pipelines can be saved with the BentoML Transformers framework APIs. Models, tokenizers, feature extractors, 
-and processors, need to be a part of the pipeline first before they can be saved. Transformers pipelines are callable objects therefore 
-the signatures of the model are saved as :code:`__call__` by default.
+Once the model is fine-tuned, create a Transformers `Pipeline
+<https://huggingface.co/docs/transformers/main/en/pipeline_tutorial>`_ with the model
+and save to the BentoML model store. By design, only Pipelines can be saved with the
+BentoML Transformers framework APIs. Models, tokenizers, feature extractors, and
+processors, need to be a part of the pipeline first before they can be saved.
+Transformers pipelines are callable objects therefore the signatures of the model are
+saved as ``__call__`` by default.
 
 .. code-block:: python
     :caption: `train.py`
@@ -107,16 +111,19 @@ the signatures of the model are saved as :code:`__call__` by default.
 
     bentoml.transformers.save_model(name="unmasker", pipeline=unmasker)
 
-To load the model for testing and debugging, use :code:`bentoml.transformers.load_model` with the :code:`unmasker:latest` tag.
+To load the model for testing and debugging, use ``bentoml.transformers.load_model``
+with the ``unmasker:latest`` tag.
 
 Serving a Fined-tuned Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Create a BentoML service with the previously saved `unmasker` pipeline using the Transformers framework APIs.
+Create a BentoML service with the previously saved `unmasker` pipeline using the
+Transformers framework APIs.
 
 .. seealso::
 
-   See :ref:`Building a Service <concepts/service:Service and APIs>` to learn more on creating a prediction service with BentoML.
+    See :ref:`Building a Service <concepts/service:Service and APIs>` to learn more on
+    creating a prediction service with BentoML.
 
 .. code-block:: python
     :caption: `service.py`
@@ -136,12 +143,13 @@ Create a BentoML service with the previously saved `unmasker` pipeline using the
 Pretrained Models
 -----------------
 
-Using pretrained models from the Hugging Face does not require saving the model first in the BentoML model store. A custom runner 
-can be implemented to download and run pretrained models at runtime.
+Using pretrained models from the Hugging Face does not require saving the model first in
+the BentoML model store. A custom runner can be implemented to download and run
+pretrained models at runtime.
 
 .. seealso::
 
-   See :ref:`Custom Runner <concepts/runner:Custom Runner>` to learn more.
+    See :ref:`Custom Runner <concepts/runner:Custom Runner>` to learn more.
 
 Serving a Pretrained Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -176,16 +184,18 @@ Serving a Pretrained Model
 Custom Pipelines
 ----------------
 
-Transformers custom pipelines allow users to define their own pre and post-process logic and customize how input data is forwarded to 
-the model for inference.
+Transformers custom pipelines allow users to define their own pre and post-process logic
+and customize how input data is forwarded to the model for inference.
 
 .. seealso::
 
-    `How to add a pipeline <https://huggingface.co/docs/transformers/main/en/add_new_pipeline>`_ from Hugging Face to learn more.
+    `How to add a pipeline
+    <https://huggingface.co/docs/transformers/main/en/add_new_pipeline>`_ from Hugging
+    Face to learn more.
 
 .. code-block:: python
     :caption: `train.py`
-    
+
     from transformers import Pipeline
 
     class MyClassificationPipeline(Pipeline):
@@ -209,12 +219,12 @@ the model for inference.
 Saving a Custom Pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-A custom pipeline first needs to be added to the Transformers supported tasks, :code:`SUPPORTED_TASKS` before it can be created with 
-the Transformers :code:`pipeline` API.
+A custom pipeline first needs to be added to the Transformers supported tasks,
+``SUPPORTED_TASKS`` before it can be created with the Transformers ``pipeline`` API.
 
 .. code-block:: python
     :caption: `train.py`
-    
+
     from transformers import pipeline
     from transformers import AutoTokenizer
     from transformers import AutoModelForSequenceClassification
@@ -240,31 +250,34 @@ the Transformers :code:`pipeline` API.
         ),
     )
 
-Once a new pipeline is added to the Transformers supported tasks, it can be saved to the BentoML model store with the additional 
-arguments of :code:`task_name` and :code:`task_definition`, the same arguments that were added to the Transformers :code:`SUPPORTED_TASKS` 
-when creating the pipeline. :code:`task_name` and :code:`task_definition` will be saved as model options alongside the model.
+Once a new pipeline is added to the Transformers supported tasks, it can be saved to the
+BentoML model store with the additional arguments of ``task_name`` and
+``task_definition``, the same arguments that were added to the Transformers
+``SUPPORTED_TASKS`` when creating the pipeline. ``task_name`` and ``task_definition``
+will be saved as model options alongside the model.
 
 .. code-block:: python
-   :caption: `train.py`
-    
-    import bentoml
+    :caption: `train.py`
 
-    bentoml.transformers.save_model(
-        "my_classification_model",
-        pipeline=classifier,
-        task_name=TASK_NAME,
-        task_definition=TASK_DEFINITION,
-    )
+     import bentoml
+
+     bentoml.transformers.save_model(
+         "my_classification_model",
+         pipeline=classifier,
+         task_name=TASK_NAME,
+         task_definition=TASK_DEFINITION,
+     )
 
 Serving a Custom Pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To serve a custom pipeline, simply create a runner and service with the previously saved pipeline. :code:`task_name` and 
-:code:`task_definition` will be automatically applied when initializing the runner.
+To serve a custom pipeline, simply create a runner and service with the previously saved
+pipeline. ``task_name`` and ``task_definition`` will be automatically applied when
+initializing the runner.
 
 .. code-block:: python
     :caption: `service.py`
-    
+
     import bentoml
 
     from bentoml.io import Text, JSON
@@ -280,13 +293,14 @@ To serve a custom pipeline, simply create a runner and service with the previous
 Adaptive Batching
 -----------------
 
-If the model supports batched interence, it is recommended to enable batching to take advantage of the adaptive batching capability 
-in BentoML by overriding the :code:`signatures` argument with the method name (:code:`__call__`), :code:`batchable`, and :code:`batch_dim` 
-configurations when saving the model to the model store . 
+If the model supports batched interence, it is recommended to enable batching to take
+advantage of the adaptive batching capability in BentoML by overriding the
+``signatures`` argument with the method name (``__call__``), ``batchable``, and
+``batch_dim`` configurations when saving the model to the model store .
 
 .. seealso::
 
-   See :ref:`Adaptive Batching <guides/batching:Adaptive Batching>` to learn more.
+    See :ref:`Adaptive Batching <guides/batching:Adaptive Batching>` to learn more.
 
 .. code-block:: python
     :caption: `train.py`
@@ -304,11 +318,17 @@ configurations when saving the model to the model store .
         },
     )
 
-.. Serving on GPU
-.. --------------
+..
+    Serving on GPU
 
-.. BentoML Transformers framework will enable inference on GPU if the hardware is available.
+..
+    --------------
 
-.. .. seealso::
+..
+    BentoML Transformers framework will enable inference on GPU if the hardware is available.
 
-..    See :ref:`Serving with GPU <guides/gpu:Serving with GPU>` to learn more.
+..
+    .. seealso::
+
+..
+    See :ref:`Serving with GPU <guides/gpu:Serving with GPU>` to learn more.

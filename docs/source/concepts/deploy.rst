@@ -75,7 +75,7 @@ Run the generated docker image:
 
     > docker run -p 3000:3000 iris_classifier:ejwnswg5kw6qnuqj
 
-.. todo::
+.. TODO::
 
     - Add sample code for working with GPU and --gpu flag
     - Add a further reading section

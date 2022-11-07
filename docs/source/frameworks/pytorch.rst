@@ -1,18 +1,26 @@
-=======
 PyTorch
 =======
 
-BentoML provides native support for serving and deploying models trained from PyTorch. For more in-depth tutorials about PyTorch, please visit `PyTorch's official documentation <https://pytorch.org/tutorials/>`_
+BentoML provides native support for serving and deploying models trained from PyTorch.
+For more in-depth tutorials about PyTorch, please visit `PyTorch's official
+documentation <https://pytorch.org/tutorials/>`_
 
 Preface
 -------
 
-If you have already compiled your PyTorch model to TorchScript, you might consider to use :doc:`bentoml.torchscript </reference/frameworks/torchscript>`. BentoML provides first-class support for TorchScript, hence using ``bentoml.torchscript`` is less prone to compatibility issues during production.
+If you have already compiled your PyTorch model to TorchScript, you might consider to
+use :doc:`bentoml.torchscript </reference/frameworks/torchscript>`. BentoML provides
+first-class support for TorchScript, hence using ``bentoml.torchscript`` is less prone
+to compatibility issues during production.
 
 .. note::
 
-    :bdg-info:`Remarks:` We recommend users to apply model optimization techniques such as `distillation <https://arxiv.org/abs/1503.02531>`_ or `quantization <https://pytorch.org/docs/stable/quantization.html#general-quantization-flow>`_ . Alternatively, PyTorch models can also be converted to :doc:`/frameworks/onnx` models and leverage different runtimes (e.g. TensorRT, Apache TVM, etc.) for better performance.
-
+    Remarks: We recommend users to apply model optimization techniques such as
+    `distillation <https://arxiv.org/abs/1503.02531>`_ or `quantization
+    <https://pytorch.org/docs/stable/quantization.html#general-quantization-flow>`_ .
+    Alternatively, PyTorch models can also be converted to :doc:`/frameworks/onnx`
+    models and leverage different runtimes (e.g. TensorRT, Apache TVM, etc.) for better
+    performance.
 
 Saving a Trained Model
 ----------------------
@@ -100,7 +108,6 @@ For common PyTorch models with single input:
         signatures={"__call__": {"batchable": True, "batch_dim": 0}},
     )
 
-
 ``bentoml.pytorch`` also supports saving models that take multiple tensors as input:
 
 .. code-block:: python
@@ -131,45 +138,53 @@ For common PyTorch models with single input:
 
 .. note::
 
-    :bdg-info:`Remarks:` External python classes or utility functions required by the model must be referenced in ``<module>.<class>`` format, and such modules should be passed to ``bentoml.pytorch.save`` via ``external_modules``. For example:
+    Remarks: External python classes or utility functions required by the model must be
+    referenced in ``<module>.<class>`` format, and such modules should be passed to
+    ``bentoml.pytorch.save`` via ``external_modules``. For example:
 
     .. code-block:: python
-       :caption: `train.py`
-       :emphasize-lines: 1,8
+        :caption: `train.py`
+        :emphasize-lines: 1,8
 
-       import my_models
+        import my_models
 
-       model = my_models.MyModel()
-       bentoml.pytorch.save(
-           model,
-           "my_torch_model",
-           signatures={"__call__": {"batchable": True, "batch_dim": 0}},
-           external_modules=[my_models],
-       )
+        model = my_models.MyModel()
+        bentoml.pytorch.save(
+            model,
+            "my_torch_model",
+            signatures={"__call__": {"batchable": True, "batch_dim": 0}},
+            external_modules=[my_models],
+        )
 
-    This is due to a limitation from PyTorch model serialisation, where PyTorch requires the model's source code to restore it.
+    This is due to a limitation from PyTorch model serialisation, where PyTorch requires
+    the model's source code to restore it.
 
-    A better practice is to compile your model to `TorchScript <https://pytorch.org/docs/stable/jit.html>`_ format.
+    A better practice is to compile your model to `TorchScript
+    <https://pytorch.org/docs/stable/jit.html>`_ format.
 
 .. note::
 
-    :code:`bentoml.pytorch.save_model` has parameter ``signatures``.
-    The ``signatures`` argument of type :ref:`Model Signatures <concepts/model:Model Signatures>` in :obj:`bentoml.pytorch.save_model` is used to determine which methods will be used for inference and exposed in the Runner. The signatures dictionary will then be used during the creation process of a Runner instance.
+    ``bentoml.pytorch.save_model`` has parameter ``signatures``. The ``signatures``
+    argument of type :ref:`Model Signatures <concepts/model:Model Signatures>` in
+    :obj:`bentoml.pytorch.save_model` is used to determine which methods will be used
+    for inference and exposed in the Runner. The signatures dictionary will then be used
+    during the creation process of a Runner instance.
 
-The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML’s `Adaptive Batching <guides/batching:Adaptive Batching>`_ is disabled when using :obj:`~bentoml.pytorch.save_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow: 
-
-
+The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``.
+This means by default, BentoML’s `Adaptive Batching <guides/batching:AdaptiveBatching>`_
+is disabled when using :obj:`~bentoml.pytorch.save_model()`. If you want to utilize
+adaptive batching behavior and know your model's dynamic batching dimension, make sure
+to pass in ``signatures`` as follow:
 
 .. code-block:: python
 
     bentoml.pytorch.save(model, "my_model", signatures={"__call__": {"batch_dim": 0, "batchable": True}})
 
-
-
 Building a Service
 ------------------
 
-Create a BentoML service with the previously saved `my_torch_model` pipeline using the :code:`bentoml.pytorch` framework APIs.
+Create a BentoML service with the previously saved `my_torch_model` pipeline using the
+``bentoml.pytorch`` framework APIs.
 
 .. code-block:: python
     :caption: `service.py`
@@ -185,26 +200,27 @@ Create a BentoML service with the previously saved `my_torch_model` pipeline usi
 
 .. note::
 
-    Follow the steps to get the best performance out of your PyTorch model.
-    #. Apply adaptive batching if possible.
-    #. Serve on GPUs if applicable.
-    #. See performance guide from `PyTorch Model Opt Doc <https://pytorch.org/tutorials/beginner/profiler.html>`_
-
+    Follow the steps to get the best performance out of your PyTorch model. #. Apply
+    adaptive batching if possible. #. Serve on GPUs if applicable. #. See performance
+    guide from `PyTorch Model Opt Doc
+    <https://pytorch.org/tutorials/beginner/profiler.html>`_
 
 Adaptive Batching
 -----------------
 
-Most PyTorch models can accept batched data as input. If batched interence is supported, it is recommended to enable batching to take advantage of 
-the adaptive batching capability to improve the throughput and efficiency of the model. Enable adaptive batching by overriding the :code:`signatures` 
-argument with the method name and providing :code:`batchable` and :code:`batch_dim` configurations when saving the model to the model store.
+Most PyTorch models can accept batched data as input. If batched interence is supported,
+it is recommended to enable batching to take advantage of the adaptive batching
+capability to improve the throughput and efficiency of the model. Enable adaptive
+batching by overriding the ``signatures`` argument with the method name and providing
+``batchable`` and ``batch_dim`` configurations when saving the model to the model store.
 
 .. seealso::
 
-   See :ref:`Adaptive Batching <guides/batching:Adaptive Batching>` to learn more.
-
+    See :ref:`Adaptive Batching <guides/batching:Adaptive Batching>` to learn more.
 
 .. note::
 
-   You can find more examples for **PyTorch** in our `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_ directory.
+    You can find more examples for **PyTorch** in our `bentoml/examples
+    <https://github.com/bentoml/BentoML/tree/main/examples>`_ directory.
 
 .. currentmodule:: bentoml.pytorch

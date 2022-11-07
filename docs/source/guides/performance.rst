@@ -1,8 +1,10 @@
-=================
 Performance Guide
 =================
 
-This guide is intended to aid advanced BentoML users with a better understanding of the costs and performance overhead of their model serving workload. This guide will also demonstrate BentoML's architecture and provide insights into how users can fine-tune its performance.
+This guide is intended to aid advanced BentoML users with a better understanding of the
+costs and performance overhead of their model serving workload. This guide will also
+demonstrate BentoML's architecture and provide insights into how users can fine-tune its
+performance.
 
 .. TODO::
 
@@ -30,8 +32,7 @@ This guide is intended to aid advanced BentoML users with a better understanding
 .. admonition:: Help us improve the project!
 
     Found an issue or a TODO item? You're always welcome to make contributions to the
-    project and its documentation. Check out the
-    `BentoML development guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_
-    and `documentation guide <https://github.com/bentoml/BentoML/blob/main/docs/README.md>`_
-    to get started.
-
+    project and its documentation. Check out the `BentoML development guide
+    <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_ and `documentation
+    guide <https://github.com/bentoml/BentoML/blob/main/docs/README.md>`_ to get
+    started.

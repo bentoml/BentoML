@@ -1,4 +1,3 @@
-=============
 Main Concepts
 =============
 
@@ -39,8 +38,6 @@ This is a step-by-step tour that help you dive into the main concepts in BentoML
 
         Understand different deployment options provided by BentoML
 
-
-
 .. toctree::
     :maxdepth: 1
     :titlesonly:
@@ -51,4 +48,3 @@ This is a step-by-step tour that help you dive into the main concepts in BentoML
     bento
     runner
     deploy
-

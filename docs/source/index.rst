@@ -153,8 +153,6 @@ contributing to the project, helping other users and discuss all things MLOps.
    Blog <https://modelserving.com>
 
 
-.. spelling::
-
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML
 .. |downloads| image:: https://pepy.tech/badge/bentoml?style=flat-square
@@ -166,4 +164,3 @@ contributing to the project, helping other users and discuss all things MLOps.
 .. |join_slack| image:: https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack&style=flat-square
    :target: https://l.linklyhq.com/l/ktOX
 .. |github_stars| image:: https://img.shields.io/github/stars/bentoml/BentoML?color=%23c9378a&label=github&logo=github&style=flat-square
-   :target: https://github.com/bentoml/bentoml

@@ -1,10 +1,9 @@
-================
 Framework Guides
 ================
 
-Here is the list of supported ML libraries and formats in BentoML. You can also find example
-projects in the `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_ directory.
-
+Here is the list of supported ML libraries and formats in BentoML. You can also find
+example projects in the `bentoml/examples
+<https://github.com/bentoml/BentoML/tree/main/examples>`_ directory.
 
 .. grid:: 1 2 2 2
     :gutter: 3
@@ -59,7 +58,6 @@ projects in the `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/
         :link: /frameworks/xgboost
         :link-type: doc
 
-
 Custom Models
 -------------
 
@@ -76,11 +74,12 @@ Custom Models
         :link: custom-runner
         :link-type: ref
 
-
 Roadmap
 -------
 
-The following frameworks are supported in pre-1.0 BentoML versions and are being migrated to the new 1.0 API. In the meantime, users may use :ref:`Custom Models <frameworks/index:Custom Models>` as a workaround.
+The following frameworks are supported in pre-1.0 BentoML versions and are being
+migrated to the new 1.0 API. In the meantime, users may use :ref:`Custom Models
+<frameworks/index:Custom Models>` as a workaround.
 
 - Detectron
 - EasyOCR
@@ -100,15 +99,13 @@ The following frameworks are supported in pre-1.0 BentoML versions and are being
 - Spark MLlib
 - Statsmodels
 
-
 .. admonition:: Help us improve the project!
 
     Found an issue or a TODO item? You're always welcome to make contributions to the
-    project and its documentation. Check out the
-    `BentoML development guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_
-    and `documentation guide <https://github.com/bentoml/BentoML/blob/main/docs/README.md>`_
-    to get started.
-
+    project and its documentation. Check out the `BentoML development guide
+    <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_ and `documentation
+    guide <https://github.com/bentoml/BentoML/blob/main/docs/README.md>`_ to get
+    started.
 
 .. toctree::
     :hidden:

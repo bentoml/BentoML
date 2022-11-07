@@ -1,10 +1,9 @@
-============
 Scikit-Learn
 ============
 
 Below is a simple example of using scikit-learn with BentoML:
 
-.. code:: python
+.. code-block:: python
 
     import bentoml
 
@@ -18,7 +17,7 @@ Below is a simple example of using scikit-learn with BentoML:
     model.fit(X, Y)
 
     # `save` a given classifier and retrieve coresponding tag:
-    tag = bentoml.sklearn.save_model('kneighbors', model)
+    tag = bentoml.sklearn.save_model("kneighbors", model)
 
     # retrieve metadata with `bentoml.models.get`:
     metadata = bentoml.models.get(tag)
@@ -29,8 +28,9 @@ Below is a simple example of using scikit-learn with BentoML:
     # Run a given model under `Runner` abstraction with `to_runner`
     runner = bentoml.sklearn.get(tag).to_runner()
     runner.init_local()
-    runner.run([[1,2,3,4,5]])
+    runner.run([[1, 2, 3, 4, 5]])
 
 .. note::
 
-   You can find more examples for **scikit-learn** in our `bentoml/examples https://github.com/bentoml/BentoML/tree/main/examples`_ directory.
+    You can find more examples for **scikit-learn** in our `bentoml/examples
+    https://github.com/bentoml/BentoML/tree/main/examples`_ directory.

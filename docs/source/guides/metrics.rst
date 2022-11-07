@@ -4,12 +4,12 @@ Metrics
 
 Metrics are measurements of statistics about your service, which can provide information about the usage and performance of your bentos in production.
 
-BentoML allows users to define custom metrics with `Prometheus <https://prometheus.io/docs/introduction/overview/>`_ to easily enable monitoring for their Bentos.
+BentoML allows users to define custom metrics with [#prometheus]_ to easily enable monitoring for their Bentos.
  
 This article will dive into how to add custom metrics to monitor your BentoService and how you can incorporate custom metrics into 
 either a :ref:`concepts/runner:Custom Runner` or your :ref:`Service <concepts/service:Service and APIs>`.
 
-Having a `Prometheus server <https://prometheus.io/docs/prometheus/latest/getting_started/>`_ available will help visualize the examples in this guide.
+Having a [#prometheus]_ server available will help visualize the examples in this guide.
 
 .. note::
 
@@ -39,7 +39,9 @@ Initialize our metrics as follow:
 
 ``inference_duration`` is a :meth:`bentoml.metrics.Histogram`, which tracks how long it
 takes for our model to run inference.
-The :attr:`bentoml.metrics.Histogram.buckets` argument is used to determine the granularity of histogram tracking. The range of the buckets should cover the range of values the histogram is expected track. Number of buckets is positively correlated to the the granularity of tracking. The last value of the bucket should always be the positive infinity. See Prometheus documentation on `Histogram <https://prometheus.io/docs/practices/histograms/>`_ for more details.
+The :attr:`bentoml.metrics.Histogram.buckets` argument is used to determine the granularity of histogram tracking.
+The range of the buckets should cover the range of values the histogram is expected track. Number of buckets is positively correlated to the the granularity of tracking.
+The last value of the bucket should always be the positive infinity. See Prometheus documentation on `Histogram <https://prometheus.io/docs/practices/histograms/>`_ for more details.
 
 ``polarity_counter`` is a :meth:`bentoml.metrics.Counter`, which tracks the total number
 of analysis by the polarity scores.
@@ -61,9 +63,7 @@ Initialize our NLTK runner, and add it to the service:
 
 .. code-block:: python
 
-   nltk_runner = t.cast(
-      "RunnerImpl", bentoml.Runner(NLTKSentimentAnalysisRunnable, name="nltk_sentiment")
-   )
+   nltk_runner = bentoml.Runner(NLTKSentimentAnalysisRunnable, name="nltk_sentiment")
 
    svc = bentoml.Service("sentiment_analyzer", runners=[nltk_runner])
 

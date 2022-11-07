@@ -127,6 +127,7 @@ def main(
     uvicorn_options: dict[str, int | None | str] = {
         "log_config": None,
         "workers": 1,
+        "timeout_keep_alive": 1800,
     }
 
     if psutil.WINDOWS:

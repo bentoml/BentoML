@@ -103,17 +103,17 @@ def _setup_deployment_mode(metafunc: Metafunc):
     We will dynamically add this fixture to tests functions that has ``deployment_mode`` fixtures.
 
     Current matrix:
-    - deployment_mode: ["docker", "distributed", "standalone"]
+    - deployment_mode: ["container", "distributed", "standalone"]
     """
     if os.getenv("VSCODE_IPC_HOOK_CLI") and not os.getenv("GITHUB_CODESPACE_TOKEN"):
         # When running inside VSCode remote container locally, we don't have access to
-        # exposed reserved ports, so we can't run docker-based tests. However on GitHub
-        # Codespaces, we can run docker-based tests.
+        # exposed reserved ports, so we can't run container-based tests. However on GitHub
+        # Codespaces, we can run container-based tests.
         # Note that inside the remote container, it is already running as a Linux container.
         deployment_mode = ["distributed", "standalone"]
     else:
         if os.environ.get("GITHUB_ACTIONS") and (psutil.WINDOWS or psutil.MACOS):
-            # Due to GitHub Actions' limitation, we can't run docker-based tests
+            # Due to GitHub Actions' limitation, we can't run container-based tests
             # on Windows and macOS. However, we can still running those tests on
             # local development.
             if psutil.MACOS:
@@ -122,9 +122,9 @@ def _setup_deployment_mode(metafunc: Metafunc):
                 deployment_mode = ["standalone"]
         else:
             if psutil.WINDOWS:
-                deployment_mode = ["standalone", "docker"]
+                deployment_mode = ["standalone", "container"]
             else:
-                deployment_mode = ["distributed", "standalone", "docker"]
+                deployment_mode = ["distributed", "standalone", "container"]
     metafunc.parametrize("deployment_mode", deployment_mode, scope="session")
 
 

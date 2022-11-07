@@ -251,7 +251,11 @@ def save_model(
     )
 
     if signatures is None:
-        signatures = {"predict": {"batchable": False}}
+        signatures = {
+            "predict": {
+                "batchable": False,
+            }
+        }
         logger.info(
             'Using the default model signature for Keras (%s) for model "%s".',
             signatures,

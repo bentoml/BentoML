@@ -35,8 +35,8 @@ def img():
 
 @pytest.fixture(name="client")
 @pytest.mark.asyncio
-async def fixture_client(host: str):
-    return await bentoml.client.from_url(host)
+def fixture_client(host: str):
+    return bentoml.client.Client.from_url(host)
 
 
 # TODO: update with bentoml.client once

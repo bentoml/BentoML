@@ -27,15 +27,6 @@ if t.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-async def from_url(url: str) -> Client:
-    """
-    Creates a client from a URL.
-
-    This function is a proxy to :meth:`Client.from_url` for convenience.
-    """
-    return await Client.from_url(url)
-
-
 class Client(ABC):
     server_url: str
     endpoints: list[str]

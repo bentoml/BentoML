@@ -134,11 +134,11 @@ def load_model(
         raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, failed loading with {MODULE_NAME}."
         )
-    if "_flax_module" not in bento_model.custom_objects:
+    if "_module" not in bento_model.custom_objects:
         raise BentoMLException(
             f"Model {bento_model.tag} was either corrupt or not saved with 'bentoml.flax.save_model()'."
         )
-    module: nn.Module = bento_model.custom_objects["_flax_module"]
+    module: nn.Module = bento_model.custom_objects["_module"]
 
     serialized = bento_model.path_of(MODEL_FILENAME)
     try:
@@ -242,7 +242,7 @@ def save_model(
             name,
         )
     custom_objects = {} if custom_objects is None else custom_objects
-    custom_objects["_flax_module"] = module
+    custom_objects["_module"] = module
 
     with bentoml.models.create(
         name,

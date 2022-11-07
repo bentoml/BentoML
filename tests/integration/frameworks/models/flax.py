@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import typing as t
+
+import chex
 import numpy as np
 import jax.numpy as jnp
 from jax import random
 from flax import linen as nn
 from jax.nn import initializers
-from flax.core import Scope
 
 import bentoml
 
@@ -50,21 +52,29 @@ class MultiInputPerceptron(nn.Module):
 
 
 ones_array = jnp.ones((10,))
+prngkey = random.PRNGKey(42)
 
 
-def make_mlp_model():
-    rngkey = random.PRNGKey(0)
-    scope = Scope({}, {"params": rngkey}, mutable=["params"])
-    net = MLP(parent=scope)
-    print(net(ones_array))
-    return net
+def init_mlp_state():
+    net = MLP()
+    params = net.init({"params": prngkey}, ones_array)
+    return params
+
+
+def is_close(model: nn.Module, state_dict: dict[str, t.Any], arr: jnp.ndarray):
+    def check(out: jnp.ndarray) -> bool:
+        logit = model.apply({"params": state_dict["params"]}, arr)
+        chex.assert_equal_shape([logit, out])
+        return True
+
+    return check
 
 
 mlp = FrameworkTestModel(
     name="mlp",
-    model=make_mlp_model(),
+    model=MLP(),
     save_kwargs={
-        "state": make_mlp_model()(ones_array),
+        "state": init_mlp_state(),
         "signatures": {"__call__": {"batchable": True, "batch_dim": 0}},
     },
     configurations=[
@@ -73,10 +83,8 @@ mlp = FrameworkTestModel(
             test_inputs={
                 "__call__": [
                     Input(
-                        input_args=[[ones_array]],
-                        expected=lambda out: np.testing.assert_allclose(
-                            out, jnp.array([2.0])
-                        ),
+                        input_args=[ones_array],
+                        expected=is_close(MLP(), init_mlp_state(), ones_array),
                     )
                 ]
             },

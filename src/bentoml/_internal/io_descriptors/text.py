@@ -9,6 +9,7 @@ from starlette.responses import Response
 from bentoml.exceptions import BentoMLException
 
 from .base import IODescriptor
+from .base import create_sample
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.lazy_loader import LazyLoader
@@ -100,10 +101,18 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
             ) from None
 
     @classmethod
-    def from_sample(cls, sample: str) -> Self:
-        kls = cls()
-        kls.sample = sample
-        return kls
+    def from_sample(cls, sample: str | bytes) -> Self:
+        return super().from_sample(sample)
+
+    @create_sample.register(str)
+    def _(self, sample: str):
+        if isinstance(self, Text):
+            self.sample = sample
+
+    @create_sample.register(bytes)
+    def _(self, sample: bytes):
+        if isinstance(self, Text):
+            self.sample = sample.decode("utf-8")
 
     def input_type(self) -> t.Type[str]:
         return str

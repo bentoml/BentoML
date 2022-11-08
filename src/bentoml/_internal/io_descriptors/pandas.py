@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import typing as t
 import logging
 import functools
@@ -12,6 +13,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
+from .base import create_sample
 from ..types import LazyType
 from ..utils.pkg import find_spec
 from ..utils.http import set_cookies
@@ -25,6 +27,7 @@ from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
 EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install with 'pip install bentoml[io-pandas]'"
+
 if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
@@ -33,7 +36,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
     from .. import external_typing as ext
-    from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
 else:
@@ -41,6 +43,7 @@ else:
 
     pb, _ = import_generated_stubs()
     pd = LazyLoader("pd", globals(), "pandas", exc_msg=EXC_MSG)
+    np = LazyLoader("np", globals(), "numpy")
 
 logger = logging.getLogger(__name__)
 
@@ -335,15 +338,122 @@ class PandasDataFrame(
         _validate_serialization_format(self._default_format)
         self._mime_type = self._default_format.mime_type
 
-        self._sample_input = None
+    @classmethod
+    def from_sample(
+        cls,
+        sample: ext.PdDataFrame,
+        *,
+        orient: ext.DataFrameOrient = "records",
+        apply_column_names: bool = True,
+        enforce_shape: bool = True,
+        enforce_dtype: bool = True,
+        default_format: t.Literal["json", "parquet", "csv"] = "json",
+    ) -> Self:
+        """
+        Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
 
-    @property
-    def sample_input(self) -> ext.PdDataFrame | None:
-        return self._sample_input
+        Args:
+            sample: Given sample ``pd.DataFrame`` data
+            orient: Indication of expected JSON string format. Compatible JSON strings can be
+                    produced by :func:`pandas.io.json.to_json()` with a corresponding orient value.
+                    Possible orients are:
 
-    @sample_input.setter
-    def sample_input(self, value: ext.PdDataFrame) -> None:
-        self._sample_input = value
+                    - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
+                    - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
+                    - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
+                    - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
+                    - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
+                    - :obj:`table` - :code:`dict[str, Any]` ↦ {``schema``: { schema }, ``data``: { data }}
+            apply_column_names: Update incoming DataFrame columns. ``columns`` must be specified at
+                                function signature. If you don't want to enforce a specific columns
+                                name then change ``apply_column_names=False``.
+            enforce_dtype: Enforce a certain data type. `dtype` must be specified at function
+                           signature. If you don't want to enforce a specific dtype then change
+                           ``enforce_dtype=False``.
+            enforce_shape: Enforce a certain shape. ``shape`` must be specified at function
+                           signature. If you don't want to enforce a specific shape then change
+                           ``enforce_shape=False``.
+            default_format: The default serialization format to use if the request does not specify a ``Content-Type`` Headers.
+                            It is also the serialization format used for the response. Possible values are:
+
+                            - :obj:`json` - JSON text format (inferred from content-type ``"application/json"``)
+                            - :obj:`parquet` - Parquet binary format (inferred from content-type ``"application/octet-stream"``)
+                            - :obj:`csv` - CSV text format (inferred from content-type ``"text/csv"``)
+
+        Returns:
+            :obj:`PandasDataFrame`: :code:`PandasDataFrame` IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           import pandas as pd
+           from bentoml.io import PandasDataFrame
+           arr = [[1,2,3]]
+           input_spec = PandasDataFrame.from_sample(pd.DataFrame(arr))
+
+           @svc.api(input=input_spec, output=PandasDataFrame())
+           def predict(inputs: pd.DataFrame) -> pd.DataFrame: ...
+        """
+        if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(sample):
+
+            columns = [i for i in range(sample.shape[1])]
+
+            @create_sample.register(np.ndarray)
+            def _(self: Self, sample: ext.NpNDArray):
+                if isinstance(self, PandasDataFrame):
+                    self.sample = pd.DataFrame(sample)
+
+        else:
+            columns = [str(x) for x in list(sample.columns)]
+
+        return super().from_sample(
+            sample,
+            orient=orient,
+            enforce_shape=enforce_shape,
+            shape=sample.shape,
+            apply_column_names=apply_column_names,
+            columns=columns,
+            enforce_dtype=enforce_dtype,
+            dtype=True,  # set to True to infer from given input
+            default_format=default_format,
+        )
+
+    @create_sample.register(pd.DataFrame)
+    def _(self, sample: pd.DataFrame):
+        if isinstance(self, PandasDataFrame):
+            self.sample = sample
+
+    @create_sample.register(str)
+    @create_sample.register(os.PathLike)
+    def _(self, sample: str):
+        if isinstance(self, PandasDataFrame):
+            if os.path.exists(sample):
+                try:
+                    ext = os.path.splitext(sample)[-1].strip(".")
+                    self.sample = getattr(
+                        pd,
+                        {
+                            "json": "read_json",
+                            "csv": "read_csv",
+                            "html": "read_html",
+                            "xls": "read_excel",
+                            "xlsx": "read_excel",
+                            "hdf5": "read_hdf",
+                            "parquet": "read_parquet",
+                            "pickle": "read_pickle",
+                            "sql": "read_sql",
+                        }[ext],
+                    )(sample)
+                except KeyError:
+                    raise InvalidArgument(f"Unsupported sample '{sample}' format.")
+                except ValueError as e:
+                    raise InvalidArgument(
+                        f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
+                    ) from None
+            else:
+                self.sample = pd.read_json(sample)
 
     def _convert_dtype(
         self, value: ext.PdDTypeArg | None
@@ -375,7 +485,7 @@ class PandasDataFrame(
             "args": {
                 "orient": self._orient,
                 "columns": self._columns,
-                "dtype": self._convert_dtype(self._dtype),
+                "dtype": self._convert_dtype(dtype),
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,
@@ -501,77 +611,6 @@ class PandasDataFrame(
             return res
         else:
             return Response(resp, media_type=serialization_format.mime_type)
-
-    @classmethod
-    def from_sample(
-        cls,
-        sample: ext.PdDataFrame,
-        orient: ext.DataFrameOrient = "records",
-        apply_column_names: bool = True,
-        enforce_shape: bool = True,
-        enforce_dtype: bool = True,
-        default_format: t.Literal["json", "parquet", "csv"] = "json",
-    ) -> Self:
-        """
-        Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
-
-        Args:
-            sample: Given sample ``pd.DataFrame`` data
-            orient: Indication of expected JSON string format. Compatible JSON strings can be
-                    produced by :func:`pandas.io.json.to_json()` with a corresponding orient value.
-                    Possible orients are:
-
-                    - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
-                    - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
-                    - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
-                    - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
-                    - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
-                    - :obj:`table` - :code:`dict[str, Any]` ↦ {``schema``: { schema }, ``data``: { data }}
-            apply_column_names: Update incoming DataFrame columns. ``columns`` must be specified at
-                                function signature. If you don't want to enforce a specific columns
-                                name then change ``apply_column_names=False``.
-            enforce_dtype: Enforce a certain data type. `dtype` must be specified at function
-                           signature. If you don't want to enforce a specific dtype then change
-                           ``enforce_dtype=False``.
-            enforce_shape: Enforce a certain shape. ``shape`` must be specified at function
-                           signature. If you don't want to enforce a specific shape then change
-                           ``enforce_shape=False``.
-            default_format: The default serialization format to use if the request does not specify a ``Content-Type`` Headers.
-                            It is also the serialization format used for the response. Possible values are:
-
-                            - :obj:`json` - JSON text format (inferred from content-type ``"application/json"``)
-                            - :obj:`parquet` - Parquet binary format (inferred from content-type ``"application/octet-stream"``)
-                            - :obj:`csv` - CSV text format (inferred from content-type ``"text/csv"``)
-
-        Returns:
-            :obj:`PandasDataFrame`: :code:`PandasDataFrame` IODescriptor from given users inputs.
-
-        Example:
-
-        .. code-block:: python
-           :caption: `service.py`
-
-           import pandas as pd
-           from bentoml.io import PandasDataFrame
-           arr = [[1,2,3]]
-           input_spec = PandasDataFrame.from_sample(pd.DataFrame(arr))
-
-           @svc.api(input=input_spec, output=PandasDataFrame())
-           def predict(inputs: pd.DataFrame) -> pd.DataFrame: ...
-        """
-        kls = cls(
-            orient=orient,
-            enforce_shape=enforce_shape,
-            shape=sample.shape,
-            apply_column_names=apply_column_names,
-            columns=[str(x) for x in list(sample.columns)],
-            enforce_dtype=enforce_dtype,
-            dtype=True,  # set to True to infer from given input
-            default_format=default_format,
-        )
-        kls.sample = sample
-
-        return kls
 
     def validate_dataframe(
         self, dataframe: ext.PdDataFrame, exception_cls: t.Type[Exception] = BadInput
@@ -813,15 +852,80 @@ class PandasSeries(
         self._enforce_dtype = enforce_dtype
         self._shape = shape
         self._enforce_shape = enforce_shape
-        self._sample_input = None
 
-    @property
-    def sample_input(self) -> ext.PdSeries | None:
-        return self._sample_input
+    @classmethod
+    def from_sample(
+        cls,
+        sample: ext.PdSeries,
+        *,
+        orient: ext.SeriesOrient = "records",
+        enforce_shape: bool = True,
+        enforce_dtype: bool = True,
+    ) -> Self:
+        """
+        Create a :obj:`PandasSeries` IO Descriptor from given inputs.
 
-    @sample_input.setter
-    def sample_input(self, value: ext.PdSeries) -> None:
-        self._sample_input = value
+        Args:
+            sample_input: Given sample ``pd.DataFrame`` data
+            orient: Indication of expected JSON string format. Compatible JSON strings can be
+                    produced by :func:`pandas.io.json.to_json()` with a corresponding orient value.
+                    Possible orients are:
+
+                    - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
+                    - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
+                    - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
+                    - :obj:`table` - :code:`dict[str, Any]` ↦ {``schema``: { schema }, ``data``: { data }}
+            enforce_dtype: Enforce a certain data type. `dtype` must be specified at function
+                           signature. If you don't want to enforce a specific dtype then change
+                           ``enforce_dtype=False``.
+            enforce_shape: Enforce a certain shape. ``shape`` must be specified at function
+                           signature. If you don't want to enforce a specific shape then change
+                           ``enforce_shape=False``.
+
+        Returns:
+            :obj:`PandasSeries`: :code:`PandasSeries` IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           import pandas as pd
+           from bentoml.io import PandasSeries
+
+           arr = [1,2,3]
+           input_spec = PandasSeries.from_sample(pd.DataFrame(arr))
+
+           @svc.api(input=input_spec, output=PandasSeries())
+           def predict(inputs: pd.Series) -> pd.Series: ...
+        """
+        if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(sample):
+
+            @create_sample.register(np.ndarray)
+            def _(self: Self, sample: ext.NpNDArray):
+                if isinstance(self, PandasSeries):
+                    self.sample = pd.Series(sample)
+
+        return super().from_sample(
+            sample,
+            orient=orient,
+            dtype=sample.dtype,
+            enforce_dtype=enforce_dtype,
+            shape=sample.shape,
+            enforce_shape=enforce_shape,
+        )
+
+    @create_sample.register(pd.Series)
+    def _(self, sample: ext.PdSeries):
+        if isinstance(self, PandasSeries):
+            self.sample = sample
+
+    @create_sample.register(list)
+    @create_sample.register(tuple)
+    @create_sample.register(set)
+    def _(self, sample: t.Sequence[t.Any]):
+        if isinstance(self, PandasSeries):
+            self.sample = pd.Series(sample)
 
     def input_type(self) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")
@@ -853,24 +957,6 @@ class PandasSeries(
                 "enforce_shape": self._enforce_shape,
             },
         }
-
-    @classmethod
-    def from_sample(
-        cls,
-        sample: ext.PdSeries,
-        orient: ext.SeriesOrient = "records",
-        enforce_shape: bool = True,
-        enforce_dtype: bool = True,
-    ) -> Self:
-        kls = cls(
-            orient=orient,
-            dtype=sample.dtype,
-            enforce_dtype=enforce_dtype,
-            shape=sample.shape,
-            enforce_shape=enforce_shape,
-        )
-        kls.sample = sample
-        return kls
 
     @classmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:
@@ -1063,59 +1149,3 @@ class PandasSeries(
             raise InvalidArgument(
                 f"Unsupported dtype '{obj.dtype}' for response message."
             ) from None
-
-    @classmethod
-    def from_sample(
-        cls,
-        sample_input: ext.PdSeries,
-        orient: ext.SeriesOrient = "records",
-        enforce_dtype: bool = True,
-        enforce_shape: bool = True,
-    ) -> PandasSeries:
-        """
-        Create a :obj:`PandasSeries` IO Descriptor from given inputs.
-
-        Args:
-            sample_input: Given sample ``pd.DataFrame`` data
-            orient: Indication of expected JSON string format. Compatible JSON strings can be
-                    produced by :func:`pandas.io.json.to_json()` with a corresponding orient value.
-                    Possible orients are:
-
-                    - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
-                    - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
-                    - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
-                    - :obj:`table` - :code:`dict[str, Any]` ↦ {``schema``: { schema }, ``data``: { data }}
-            enforce_dtype: Enforce a certain data type. `dtype` must be specified at function
-                           signature. If you don't want to enforce a specific dtype then change
-                           ``enforce_dtype=False``.
-            enforce_shape: Enforce a certain shape. ``shape`` must be specified at function
-                           signature. If you don't want to enforce a specific shape then change
-                           ``enforce_shape=False``.
-
-        Returns:
-            :obj:`PandasSeries`: :code:`PandasSeries` IODescriptor from given users inputs.
-
-        Example:
-
-        .. code-block:: python
-           :caption: `service.py`
-
-           import pandas as pd
-           from bentoml.io import PandasSeries
-
-           arr = [1,2,3]
-           input_spec = PandasSeries.from_sample(pd.DataFrame(arr))
-
-           @svc.api(input=input_spec, output=PandasSeries())
-           def predict(inputs: pd.Series) -> pd.Series: ...
-        """
-        inst = cls(
-            orient=orient,
-            dtype=sample_input.dtype,
-            enforce_dtype=enforce_dtype,
-            shape=sample_input.shape,
-            enforce_shape=enforce_shape,
-        )
-        inst.sample_input = sample_input
-
-        return inst

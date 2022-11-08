@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import os
 import typing as t
 import functools
 from typing import TYPE_CHECKING
@@ -13,12 +12,15 @@ from starlette.responses import Response
 from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
+from .base import create_sample
 from ..types import LazyType
 from ..utils import LazyLoader
+from ..utils import resolve_user_filepath
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
+from ...exceptions import MissingDependencyException
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
@@ -29,6 +31,7 @@ if TYPE_CHECKING:
     from types import UnionType
 
     import PIL
+    import numpy as np
     import PIL.Image
     from typing_extensions import Self
 
@@ -49,8 +52,8 @@ else:
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=PIL_EXC_MSG)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=PIL_EXC_MSG)
 
+    np = LazyLoader("np", globals(), "numpy")
     pb, _ = import_generated_stubs()
-
 
 # NOTES: we will keep type in quotation to avoid backward compatibility
 #  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
@@ -214,36 +217,51 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
     def from_sample(
         cls,
         sample: ImageType | str,
-        pilmode: _Mode | None = DEFAULT_PIL_MODE,
         *,
+        pilmode: _Mode | None = DEFAULT_PIL_MODE,
         allowed_mime_types: t.Iterable[str] | None = None,
     ) -> Self:
-        from filetype.match import image_match
+        try:
+            from filetype.match import image_match
+        except ModuleNotFoundError:
+            raise MissingDependencyException(
+                "'filetype' is required to use 'from_sample'. Install it with 'pip install bentoml[io-image]'."
+            )
 
         img_type = image_match(sample)
         if img_type is None:
             raise InvalidArgument(f"{sample} is not a valid image file type.")
 
-        kls = cls(
-            mime_type=img_type.mime,
+        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(sample):
+
+            @create_sample.register(np.ndarray)
+            def _(self: Self, sample: ext.NpNDArray) -> None:
+                if isinstance(self, Image):
+                    self.sample = PIL.Image.fromarray(sample, mode=self._pilmode)
+
+        elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(sample):
+
+            @create_sample.register(PIL.Image.Image)
+            def _(self: Self, sample: PIL.Image.Image) -> None:
+                if isinstance(self, Image):
+                    self.sample = sample
+
+        return super().from_sample(
+            sample,
             pilmode=pilmode,
+            mime_type=img_type.mime,
             allowed_mime_types=allowed_mime_types,
         )
 
-        if isinstance(sample, str) and os.path.exists(sample):
+    @create_sample.register(str)
+    def _(self, sample: str) -> None:
+        if isinstance(self, Image):
+            p = resolve_user_filepath(sample, ctx=None)
             try:
-                with open(sample, "rb") as f:
-                    kls.sample = PIL.Image.open(f)
+                with open(p, "rb") as f:
+                    self.sample = PIL.Image.open(f)
             except PIL.UnidentifiedImageError as err:
                 raise BadInput(f"Failed to parse sample image file: {err}") from None
-        elif LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(sample):
-            kls.sample = PIL.Image.fromarray(sample, mode=pilmode)
-        elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(sample):
-            kls.sample = sample
-        else:
-            raise InvalidArgument(f"Unknown sample type: '{sample}'")
-
-        return kls
 
     def to_spec(self) -> dict[str, t.Any]:
         return {

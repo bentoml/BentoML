@@ -10,6 +10,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
+from .base import create_sample
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
@@ -439,15 +440,24 @@ class NumpyNdarray(
                 "'NumpyNdarray.from_sample()' expects a 'numpy.array', not 'numpy.generic'."
             ) from None
 
-        kls = cls(
+        return super().from_sample(
+            sample,
             dtype=sample.dtype,
             shape=sample.shape,
             enforce_dtype=enforce_dtype,
             enforce_shape=enforce_shape,
         )
-        kls.sample = sample
 
-        return kls
+    @create_sample.register(np.ndarray)
+    def _(self, sample: ext.NpNDArray):
+        if isinstance(self, NumpyNdarray):
+            self.sample = sample
+
+    @create_sample.register(list)
+    @create_sample.register(tuple)
+    def _(self, sample: t.Sequence[t.Any]):
+        if isinstance(self, NumpyNdarray):
+            self.sample = np.array(sample)
 
     async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:
         """

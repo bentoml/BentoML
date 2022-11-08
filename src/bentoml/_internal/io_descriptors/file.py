@@ -12,11 +12,14 @@ from starlette.responses import Response
 from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
+from .base import create_sample
 from ..types import FileLike
+from ..utils import resolve_user_filepath
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
@@ -113,10 +116,12 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
 
     _proto_fields = ("file",)
 
-    def __new__(cls, kind: FileKind = "binaryio", mime_type: str | None = None) -> File:
+    def __new__(
+        cls, kind: FileKind = "binaryio", mime_type: str | None = None, **kwargs: t.Any
+    ) -> File:
         mime_type = mime_type if mime_type is not None else "application/octet-stream"
         if kind == "binaryio":
-            res = object.__new__(BytesIOFile)
+            res = super().__new__(BytesIOFile, **kwargs)
         else:
             raise ValueError(f"invalid File kind '{kind}'")
         res._mime_type = mime_type
@@ -124,23 +129,35 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
 
     @classmethod
     def from_sample(cls, sample: FileType | str, kind: FileKind = "binaryio") -> Self:
-        import filetype
+        try:
+            import filetype
+        except ModuleNotFoundError:
+            raise MissingDependencyException(
+                "'filetype' is required to use 'from_sample'. Install it with 'pip install bentoml[io-file]'."
+            )
 
-        mime_type: str | None = filetype.guess_mime(sample)
+        return super().from_sample(
+            sample, kind=kind, mime_type=filetype.guess_mime(sample)
+        )
 
-        kls = cls(kind=kind, mime_type=mime_type)
+    @create_sample.register(type(FileLike))
+    def _(self, sample: FileLike[bytes]) -> None:
+        self.sample = sample
 
-        if isinstance(sample, FileLike):
-            kls.sample = sample
-        elif isinstance(sample, t.IO):
-            kls.sample = FileLike[bytes](sample, "<sample>")
-        elif isinstance(sample, str) and os.path.exists(sample):
-            with open(sample, "rb") as f:
-                kls.sample = FileLike[bytes](f, "<sample>")
-        else:
-            raise InvalidArgument(f"Unknown sample type: '{sample}'")
+    @create_sample.register(t.IO)
+    def _(self, sample: t.IO[t.Any]) -> None:
+        if isinstance(self, File):
+            self.sample = FileLike[bytes](sample, "<sample>")
 
-        return kls
+    @create_sample.register(str)
+    @create_sample.register(os.PathLike)
+    def _(self, sample: str) -> None:
+        # This is to ensure we can register same type with different
+        # implementation across different IO descriptors.
+        if isinstance(self, File):
+            p = resolve_user_filepath(sample, ctx=None)
+            with open(p, "rb") as f:
+                self.sample = FileLike[bytes](f, "<sample>")
 
     @classmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:

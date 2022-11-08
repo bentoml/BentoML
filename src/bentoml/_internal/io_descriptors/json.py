@@ -11,6 +11,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
+from .base import create_sample
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils import bentoml_cattr
@@ -212,10 +213,24 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(sample):
             pydantic_model = sample.__class__
 
-        kls = cls(pydantic_model=pydantic_model, json_encoder=json_encoder)
+            @create_sample.register(pydantic.BaseModel)
+            def _(self: Self, sample: pydantic.BaseModel):
+                if isinstance(self, JSON):
+                    self.sample = sample
 
-        kls.sample = sample
-        return kls
+        return super().from_sample(
+            sample, pydantic_model=pydantic_model, json_encoder=json_encoder
+        )
+
+    @create_sample.register(dict)
+    def _(self, sample: dict[str, t.Any]):
+        if isinstance(self, JSON):
+            self.sample = sample
+
+    @create_sample.register(str)
+    def _(self, sample: str):
+        if isinstance(self, JSON):
+            self.sample = json.loads(sample)
 
     def to_spec(self) -> dict[str, t.Any]:
         return {

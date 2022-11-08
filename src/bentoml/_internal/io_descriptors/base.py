@@ -5,6 +5,7 @@ from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from ..utils import singledispatchmethod
 from ...exceptions import InvalidArgument
 
 if TYPE_CHECKING:
@@ -19,8 +20,8 @@ if TYPE_CHECKING:
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
     from ..service.openapi.specification import Schema
-    from ..service.openapi.specification import Reference
     from ..service.openapi.specification import MediaType
+    from ..service.openapi.specification import Reference
 
     InputType = (
         UnionType
@@ -34,6 +35,13 @@ if TYPE_CHECKING:
 IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
 
 IOType = t.TypeVar("IOType")
+
+
+@singledispatchmethod
+def create_sample(self: IODescriptor[t.Any], value: t.Any) -> None:
+    raise InvalidArgument(
+        f"Unsupported sample type: '{type(value)}' (value: {value}). To register type '{type(value)}' to {self.__class__.__name__} implement a dispatch function and register types to 'create_sample.register'"
+    )
 
 
 def from_spec(spec: dict[str, str]) -> IODescriptor[t.Any]:
@@ -51,11 +59,13 @@ class IODescriptor(ABC, t.Generic[IOType]):
 
     HTTP_METHODS = ["POST"]
 
+    descriptor_id: str | None
+
     _mime_type: str
     _rpc_content_type: str = "application/grpc"
     _proto_fields: tuple[ProtoField]
     _sample: IOType | None = None
-    descriptor_id: str | None
+    _create_sample: singledispatchmethod[None] = create_sample
 
     def __init_subclass__(cls, *, descriptor_id: str | None = None):
         if descriptor_id is not None:
@@ -66,6 +76,13 @@ class IODescriptor(ABC, t.Generic[IOType]):
             IO_DESCRIPTOR_REGISTRY[descriptor_id] = cls
         cls.descriptor_id = descriptor_id
 
+    def __new__(cls, *args: t.Any, **kwargs: t.Any):
+        sample = kwargs.pop("_sample", None)
+        kls = super().__new__(cls)
+        if sample is not None:
+            kls._create_sample(sample)
+        return kls
+
     @property
     def sample(self) -> IOType | None:
         return self._sample
@@ -73,6 +90,13 @@ class IODescriptor(ABC, t.Generic[IOType]):
     @sample.setter
     def sample(self, value: IOType) -> None:
         self._sample = value
+
+    # NOTE: for custom types handle, use 'create_sample.register' to register
+    # custom types for 'from_sample'
+    @classmethod
+    @abstractmethod
+    def from_sample(cls, sample: IOType | t.Any, **kwargs: t.Any) -> Self:
+        return cls.__new__(cls, _sample=sample, **kwargs)
 
     @abstractmethod
     def to_spec(self) -> dict[str, t.Any]:
@@ -126,9 +150,4 @@ class IODescriptor(ABC, t.Generic[IOType]):
 
     @abstractmethod
     async def to_proto(self, obj: IOType) -> t.Any:
-        ...
-
-    @classmethod
-    @abstractmethod
-    def from_sample(cls, sample: IOType, **kwargs: t.Any) -> Self:
         ...

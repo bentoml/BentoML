@@ -262,7 +262,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         for field, descriptor in self._inputs.items():
             if field not in form_values:
                 break
-            res[field] = await descriptor.from_http_request(form_values[field])
+            res[field] = descriptor.from_http_request(form_values[field])
         else:  # NOTE: This is similar to goto, when there is no break.
             to_populate = zip(self._inputs.values(), form_values.values())
             reqs = await asyncio.gather(

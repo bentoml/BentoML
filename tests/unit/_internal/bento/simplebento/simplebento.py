@@ -1,19 +1,18 @@
 import bentoml
+import pyspark
+import pandas as pd
+from bentoml.io import PandasSeries
 
-# import bentoml.sklearn
-# from bentoml.io import NumpyNdarray
+svc = bentoml.Service("test.simplebento")
 
-# iris_model_runner = bentoml.sklearn.get('iris_classifier:latest').to_runner()
-svc = bentoml.Service(
-    "test.simplebento",
-    # runners=[iris_model_runner]
-)
+@svc.api(input=PandasSeries(), output=PandasSeries())
+def increment(input: pd.Series[int]) -> pd.Series[int]:
+    for i in input:
+        i += 1
+    return input
 
-# @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-# def predict(request_data: np.ndarray):
-#     return iris_model_runner.predict(request_data)
-
-# For simple use cases, only models list is required:
-# svc.bento_options.models = []
-# svc.bento_files.include = ["*"]
-# svc.bento_env.pip_install = "./requirements.txt"
+@svc.api(input=PandasSeries(), output=PandasSeries())
+def uppercase(input: pd.Series[str]) -> pd.Series[str]:
+    for i in input:
+        i.upper()
+    return input

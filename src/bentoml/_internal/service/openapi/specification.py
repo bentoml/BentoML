@@ -104,7 +104,7 @@ class Schema:
     anyOf: t.Optional[t.List[Schema]] = None
     not_: t.Optional[Schema] = None
     items: t.Optional[t.Union[Schema, t.List[Schema]]] = None
-    properties: t.Optional[t.Dict[str, Schema | Reference]] = None
+    properties: t.Optional[t.Dict[str, t.Union[Schema, Reference]]] = None
     additionalProperties: t.Optional[t.Union[Schema, Reference, bool]] = None
     description: t.Optional[str] = None
     format: t.Optional[str] = None

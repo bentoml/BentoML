@@ -442,7 +442,6 @@ class NumpyNdarray(
             cls.sample = sample
             cls._shape = sample.shape
             cls._dtype = sample.dtype
-        return cls
 
     @set_sample.register(list)
     @set_sample.register(tuple)
@@ -452,7 +451,6 @@ class NumpyNdarray(
             cls.sample = __
             cls._shape = __.shape
             cls._dtype = __.dtype
-        return cls
 
     async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:
         """

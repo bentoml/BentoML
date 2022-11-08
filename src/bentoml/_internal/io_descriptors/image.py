@@ -240,7 +240,6 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
             def _(cls: Self, sample: ext.NpNDArray):
                 if isinstance(cls, Image):
                     cls.sample = PIL.Image.fromarray(sample, mode=pilmode)
-                return cls
 
         elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(sample):
 
@@ -248,7 +247,6 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
             def _(cls: Self, sample: PIL.Image.Image):
                 if isinstance(cls, Image):
                     cls.sample = sample
-                return cls
 
         return super().from_sample(
             sample,
@@ -266,7 +264,6 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
                     cls.sample = PIL.Image.open(f)
             except PIL.UnidentifiedImageError as err:
                 raise BadInput(f"Failed to parse sample image file: {err}") from None
-        return cls
 
     def to_spec(self) -> dict[str, t.Any]:
         return {

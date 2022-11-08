@@ -217,7 +217,6 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
             def _(cls: Self, sample: pydantic.BaseModel):
                 if isinstance(cls, JSON):
                     cls.sample = sample
-                return cls
 
         return super().from_sample(
             sample, pydantic_model=pydantic_model, json_encoder=json_encoder
@@ -227,13 +226,11 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
     def _(cls, sample: dict[str, t.Any]):
         if isinstance(cls, JSON):
             cls.sample = sample
-        return cls
 
     @set_sample.register(str)
     def _(cls, sample: str):
         if isinstance(cls, JSON):
             cls.sample = json.loads(sample)
-        return cls
 
     def to_spec(self) -> dict[str, t.Any]:
         return {

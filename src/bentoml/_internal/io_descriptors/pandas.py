@@ -408,8 +408,6 @@ class PandasDataFrame(
                     cls._shape = __.shape
                     cls._columns = [str(i) for i in range(sample.shape[1])]
 
-                return cls
-
         return super().from_sample(
             sample,
             dtype=True,  # set to True to infer from given input
@@ -426,7 +424,6 @@ class PandasDataFrame(
             cls.sample = sample
             cls._shape = sample.shape
             cls._columns = [str(x) for x in list(sample.columns)]
-        return cls
 
     @set_sample.register(str)
     @set_sample.register(os.PathLike)
@@ -464,7 +461,6 @@ class PandasDataFrame(
                 raise InvalidArgument(
                     f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
                 ) from None
-        return cls
 
     def _convert_dtype(
         self, value: ext.PdDTypeArg | None
@@ -926,7 +922,6 @@ class PandasSeries(
                     cls.sample = __
                     cls._dtype = __.dtype
                     cls._shape = __.shape
-                return cls
 
         return super().from_sample(
             sample,
@@ -941,7 +936,6 @@ class PandasSeries(
             cls.sample = sample
             cls._dtype = sample.dtype
             cls._shape = sample.shape
-        return cls
 
     @set_sample.register(list)
     @set_sample.register(tuple)
@@ -952,7 +946,6 @@ class PandasSeries(
             cls.sample = __
             cls._dtype = __.dtype
             cls._shape = __.shape
-        return cls
 
     def input_type(self) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")

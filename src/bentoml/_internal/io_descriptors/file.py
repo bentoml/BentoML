@@ -143,13 +143,11 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
     @set_sample.register(type(FileLike))
     def _(cls, sample: FileLike[bytes]):
         cls.sample = sample
-        return cls
 
     @set_sample.register(t.IO)
     def _(cls, sample: t.IO[t.Any]):
         if isinstance(cls, File):
             cls.sample = FileLike[bytes](sample, "<sample>")
-        return cls
 
     @set_sample.register(str)
     @set_sample.register(os.PathLike)
@@ -160,7 +158,6 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
             p = resolve_user_filepath(sample, ctx=None)
             with open(p, "rb") as f:
                 cls.sample = FileLike[bytes](f, "<sample>")
-        return cls
 
     @classmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:

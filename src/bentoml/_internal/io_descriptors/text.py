@@ -108,13 +108,11 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
     def _(cls, sample: str):
         if isinstance(cls, Text):
             cls.sample = sample
-        return cls
 
     @set_sample.register(bytes)
     def _(cls, sample: bytes):
         if isinstance(cls, Text):
             cls.sample = sample.decode("utf-8")
-        return cls
 
     def input_type(self) -> t.Type[str]:
         return str

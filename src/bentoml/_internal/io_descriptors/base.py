@@ -38,7 +38,7 @@ IOType = t.TypeVar("IOType")
 
 
 @singledispatchmethod
-def set_sample(self: IODescriptor[t.Any], value: t.Any) -> IODescriptor[t.Any]:
+def set_sample(self: IODescriptor[t.Any], value: t.Any) -> None:
     raise InvalidArgument(
         f"Unsupported sample type: '{type(value)}' (value: {value}). To register type '{type(value)}' to {self.__class__.__name__} implement a dispatch function and register types to 'set_sample.register'"
     )
@@ -79,14 +79,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     endpoint IO descriptor types in BentoServer.
     """
 
-    __slots__ = (
-        "_initialized",
-        "_args",
-        "_kwargs",
-        "_proto_fields",
-        "_mime_type",
-        "descriptor_id",
-    )
+    __slots__ = ("_args", "_kwargs", "_proto_fields", "_mime_type", "descriptor_id")
 
     HTTP_METHODS = ["POST"]
 
@@ -96,7 +89,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     _rpc_content_type: str = "application/grpc"
     _proto_fields: tuple[ProtoField]
     _sample: IOType | None = None
-    _initialized: bool
+    _initialized: bool = False
     _args: t.Sequence[t.Any]
     _kwargs: dict[str, t.Any]
 
@@ -108,23 +101,22 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
                 )
             IO_DESCRIPTOR_REGISTRY[descriptor_id] = cls
         cls.descriptor_id = descriptor_id
-        cls._initialized = False
 
     def __new__(cls, *args: t.Any, **kwargs: t.Any) -> Self:
         sample = kwargs.pop("_sample", None)
         klass = object.__new__(cls)
         if sample is None:
             set_sample.register(type(None), lambda self, _: self)
-        kls = klass._set_sample(sample)
-        kls._args = args
-        kls._kwargs = kwargs
-        return kls
+        klass._set_sample(sample)
+        klass._args = args
+        klass._kwargs = kwargs
+        return klass
 
     def __getattr__(self, name: str) -> t.Any:
         if not self._initialized:
             self._lazy_init()
         assert self._initialized
-        return getattr(self, name)
+        return object.__getattribute__(self, name)
 
     def __repr__(self) -> str:
         return self.__class__.__qualname__
@@ -135,7 +127,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
         del self._args
         del self._kwargs
 
-    _set_sample: singledispatchmethod[IODescriptor[t.Any]] = set_sample
+    _set_sample: singledispatchmethod[None] = set_sample
 
     @property
     def sample(self) -> IOType | None:

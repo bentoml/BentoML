@@ -108,7 +108,6 @@ jobs:
         id: get-current-branch
         run: echo "branch=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
       - name: (buf) Linting proto files.
-        if: ${{ steps.get-current-branch.output.branch != 'main' }}
         run: buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs src
       - name: (pylint) Linting source.
         if: ${{ steps.get-current-branch.output.branch != 'main' }}

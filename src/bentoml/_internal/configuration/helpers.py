@@ -36,7 +36,7 @@ def depth(_: t.Any, _level: int = 0):  # pragma: no cover
 
 
 @depth.register(dict)
-def _dict_depth(d: dict[str, t.Any], level: int = 0, **kw: t.Any):  # type: ignore # pylint: disable
+def _(d: dict[str, t.Any], level: int = 0, **kw: t.Any):
     return max(depth(v, level + 1, **kw) for v in d.values())
 
 

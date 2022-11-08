@@ -236,6 +236,7 @@ exclude = '''
     | src/bentoml/grpc/v1
     | tests/proto
     | grpc-client/thirdparty
+    | grpc-client/bentoml
   )/
   | src/bentoml/_version.py
 )

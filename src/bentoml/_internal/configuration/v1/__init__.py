@@ -96,13 +96,15 @@ _API_SERVER_CONFIG = {
         "port": s.And(int, ensure_larger_than_zero),
         "cors": {
             "enabled": bool,
-            "allow_origin": s.Or(str, None),
-            "allow_origin_regex": s.Or(s.And(str, s.Use(re.compile)), None),
-            "allow_credentials": s.Or(bool, None),
-            "allow_headers": s.Or([str], str, None),
-            "allow_methods": s.Or([str], str, None),
-            "max_age": s.Or(int, None),
-            "expose_headers": s.Or([str], str, None),
+            "access_control_allow_origin": s.Or(str, None),
+            "access_control_allow_origin_regex": s.Or(
+                s.And(str, s.Use(re.compile)), None
+            ),
+            "access_control_allow_credentials": s.Or(bool, None),
+            "access_control_allow_headers": s.Or([str], str, None),
+            "access_control_allow_methods": s.Or([str], str, None),
+            "access_control_max_age": s.Or(int, None),
+            "access_control_expose_headers": s.Or([str], str, None),
         },
     },
     "grpc": {
@@ -118,7 +120,6 @@ _API_SERVER_CONFIG = {
         "max_message_length": s.Or(int, None),
         "maximum_concurrent_rpcs": s.Or(int, None),
     },
-    "tracing": TRACING_CFG,
     s.Optional("ssl"): {
         "enabled": bool,
         s.Optional("certfile"): s.Or(str, None),
@@ -167,6 +168,7 @@ SCHEMA = s.Schema(
             **_RUNNER_CONFIG,
             s.Optional(str): _RUNNER_CONFIG,
         },
+        "tracing": TRACING_CFG,
         s.Optional("monitoring"): {
             "enabled": bool,
             s.Optional("type"): s.Or(str, None),
@@ -216,7 +218,7 @@ def migration(*, override_config: dict[str, t.Any]):
         rename_fields(
             override_config,
             current=f"api_server.cors.access_control_{f}",
-            replace_with=f"api_server.http.cors.{f}",
+            replace_with=f"api_server.http.cors.access_control_{f}",
         )
 
     # 4. if ssl is present, in version 2 we introduce a api_server.ssl.enabled field to determine
@@ -229,31 +231,25 @@ def migration(*, override_config: dict[str, t.Any]):
     rename_fields(
         override_config,
         current="tracing.type",
-        replace_with="api_server.tracing.exporter_type",
+        replace_with="tracing.exporter_type",
     )
-    for f in ["sample_rate", "excluded_urls"]:
-        rename_fields(
-            override_config,
-            current=f"tracing.{f}",
-            replace_with=f"api_server.tracing.{f}",
-        )
     # 5.2. for Zipkin and OTLP, migrate tracing.[exporter].url -> api_server.tracing.[exporter].endpoint
     for exporter in ["zipkin", "otlp"]:
         rename_fields(
             override_config,
             current=f"tracing.{exporter}.url",
-            replace_with=f"api_server.tracing.{exporter}.endpoint",
+            replace_with=f"tracing.{exporter}.endpoint",
         )
     # 5.3. For Jaeger, migrate tracing.jaeger.[address|port] -> api_server.tracing.jaeger.thrift.[agent_host_name|agent_port]
     rename_fields(
         override_config,
         current="tracing.jaeger.address",
-        replace_with="api_server.tracing.jaeger.thrift.agent_host_name",
+        replace_with="tracing.jaeger.thrift.agent_host_name",
     )
     rename_fields(
         override_config,
         current="tracing.jaeger.port",
-        replace_with="api_server.tracing.jaeger.thrift.agent_port",
+        replace_with="tracing.jaeger.thrift.agent_port",
     )
     # we also need to choose which protocol to use for jaeger.
     if (
@@ -266,7 +262,7 @@ def migration(*, override_config: dict[str, t.Any]):
         )
         != 0
     ):
-        override_config["api_server.tracing.jaeger.protocol"] = "thrift"
+        override_config["tracing.jaeger.protocol"] = "thrift"
     # 6. Last but not least, moving logging.formatting.* -> api_server.logging.access.format.*
     for f in ["trace_id", "span_id"]:
         rename_fields(

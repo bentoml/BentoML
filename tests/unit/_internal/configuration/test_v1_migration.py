@@ -46,10 +46,10 @@ def test_backward_from_envvar(
     with caplog.at_level(logging.WARNING):
         bentoml_cfg = container_from_envvar(envvar)
     assert bentoml_cfg["version"] == 1
-    assert bentoml_cfg["api_server"]["tracing"]["exporter_type"] == "jaeger"
+    assert bentoml_cfg["tracing"]["exporter_type"] == "jaeger"
 
     assert (
-        "Field 'tracing.jaeger.address' is deprecated and has been renamed to 'api_server.tracing.jaeger.thrift.agent_host_name'"
+        "Field 'tracing.jaeger.address' is deprecated and has been renamed to 'tracing.jaeger.thrift.agent_host_name'"
         in caplog.text
     )
 
@@ -130,7 +130,7 @@ tracing:
     with caplog.at_level(logging.WARNING):
         container_from_file(OLD_ZIPKIN_URL)
     assert (
-        "Field 'tracing.zipkin.url' is deprecated and has been renamed to 'api_server.tracing.zipkin.endpoint'"
+        "Field 'tracing.zipkin.url' is deprecated and has been renamed to 'tracing.zipkin.endpoint'"
         in caplog.text
     )
     caplog.clear()
@@ -144,7 +144,7 @@ tracing:
     with caplog.at_level(logging.WARNING):
         container_from_file(OLD_OTLP_URL)
     assert (
-        "Field 'tracing.otlp.url' is deprecated and has been renamed to 'api_server.tracing.otlp.endpoint'"
+        "Field 'tracing.otlp.url' is deprecated and has been renamed to 'tracing.otlp.endpoint'"
         in caplog.text
     )
     caplog.clear()

@@ -30,7 +30,7 @@ class LazyLoader(types.ModuleType):
         name: str,
         warning: str | None = None,
         exc_msg: str | None = None,
-        exc: t.Type[Exception] = MissingDependencyException,
+        exc: type[Exception] = MissingDependencyException,
     ):
         self._local_name = local_name
         self._parent_module_globals = parent_module_globals

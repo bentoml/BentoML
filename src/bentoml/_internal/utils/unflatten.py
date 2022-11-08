@@ -39,47 +39,48 @@ from __future__ import annotations
 from __future__ import absolute_import
 
 import re
+import sys
 import typing as t
 from operator import itemgetter
+
+if sys.version_info[0] == 2:
+    string_type = basestring  # noqa: F821
+else:
+    string_type = str
 
 
 def unflatten(arg: dict[str, t.Any]) -> dict[str, t.Any]:
     """Unflatten nested dict/array data.
 
     This function takes a single argument which may either be a
-    ``dict`` (or any object having a dict-like ``.items()``) or
-    a sequence of ``(key, value)`` pairs.
+    ``dict`` (or any object having a dict-like ``.items()`` or
+    ``.iteritems()`` method) or a sequence of ``(key, value)`` pairs.
     The keys in the ``dict`` or sequence should must all be strings.
 
-    Examples:
+    Examples
+    --------
 
-    Nested ``dict``:
+    Nested ``dict``\\s::
 
-    .. code-block:: python
+    >>> unflatten({'foo.bar': 'val'})
+    {'foo': {'bar': 'val'}}
 
-       unflatten({'foo.bar': 'val'})
-       # {'foo': {'bar': 'val'}}
+    Nested ``list``::
 
-    Nested ``list``:
+    >>> unflatten({'foo[0]': 'val', 'foo[1]': 'bar'})
+    {'foo': ['val', 'bar']}
 
-    .. code-block:: python
+    Nested ``list``\\s::
 
-       unflatten({'foo[0]': 'val', 'foo[1]': 'bar'})
-       # {'foo': ['val', 'bar']}
+    >>> unflatten({'foo[0][0]': 'val'})
+    {'foo': [['val']]}
 
-    Nested ``list``:
+    Lists of ``dict``\\s::
 
-    .. code-block:: python
+    >>> unflatten({'foo[0].bar': 'val',
+    ...            'foo[1].baz': 'x'})
+    {'foo': [{'bar': 'val'}, {'baz': 'x'}]}
 
-       unflatten({'foo[0][0]': 'val'})
-       # {'foo': [['val']]}
-
-    Lists of ``dict``:
-
-    .. code-block:: python
-
-       unflatten({'foo[0].bar': 'val', 'foo[1].baz': 'x'})
-       # {'foo': [{'bar': 'val'}, {'baz': 'x'}]}
     """
     if hasattr(arg, "items"):
         items = arg.items()
@@ -92,7 +93,7 @@ def unflatten(arg: dict[str, t.Any]) -> dict[str, t.Any]:
         parsed_key = _parse_key(flat_key)
         obj = data
         for depth, (key, next_key) in enumerate(zip(parsed_key, parsed_key[1:]), 1):
-            if isinstance(next_key, str):
+            if isinstance(next_key, string_type):
                 holder_type = _dict_holder
             else:
                 holder_type = _list_holder
@@ -178,7 +179,7 @@ _dot_or_indexes_re = re.compile(r"(\.?\"[^\"]*\")|(\[\d+\])|(\.\w*)|(^\w*)")
 
 
 def _parse_key(flat_key: str):
-    if not isinstance(flat_key, str):
+    if not isinstance(flat_key, string_type):
         raise TypeError("keys must be strings")
 
     split_key = _dot_or_indexes_re.split(flat_key)
@@ -233,7 +234,7 @@ def _parse_key(flat_key: str):
 def _unparse_key(parsed: list[t.Any]) -> str:
     bits: list[str] = []
     for part in parsed:
-        if isinstance(part, str):
+        if isinstance(part, string_type):
             if part.isidentifier():
                 fmt = ".%s" if bits else "%s"
             elif part == "":

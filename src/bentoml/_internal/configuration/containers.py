@@ -228,13 +228,20 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origin: str | None = Provide[cors.allow_origin],
-        allow_origin_regex: str | None = Provide[cors.allow_origin_regex],
-        allow_credentials: bool | None = Provide[cors.allow_credentials],
-        allow_methods: list[str] | str | None = Provide[cors.allow_methods],
-        allow_headers: list[str] | str | None = Provide[cors.allow_headers],
-        max_age: int | None = Provide[cors.max_age],
-        expose_headers: list[str] | str | None = Provide[cors.expose_headers],
+        allow_origin: str | None = Provide[cors.access_control_allow_origin],
+        allow_origin_regex: str
+        | None = Provide[cors.access_control_allow_origin_regex],
+        allow_credentials: bool | None = Provide[cors.access_control_allow_credentials],
+        allow_methods: list[str]
+        | str
+        | None = Provide[cors.access_control_allow_methods],
+        allow_headers: list[str]
+        | str
+        | None = Provide[cors.access_control_allow_headers],
+        max_age: int | None = Provide[cors.access_control_max_age],
+        expose_headers: list[str]
+        | str
+        | None = Provide[cors.access_control_expose_headers],
     ) -> dict[str, list[str] | str | int]:
         return {
             k: v
@@ -270,7 +277,7 @@ class _BentoMLContainerClass:
 
         return PrometheusClient(multiproc_dir=multiproc_dir)
 
-    tracing = api_server_config.tracing
+    tracing = config.tracing
 
     @providers.SingletonFactory
     @staticmethod
@@ -299,8 +306,8 @@ class _BentoMLContainerClass:
         if sample_rate is None:
             sample_rate = 0.0
         if sample_rate == 0.0:
-            logger.warning(
-                "'api_server.tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
+            logger.debug(
+                "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
             )
         resource = {}
         # User can optionally configure the resource with the following environment variables. Only

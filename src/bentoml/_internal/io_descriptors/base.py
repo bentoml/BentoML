@@ -5,7 +5,6 @@ from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from ..utils import singledispatchmethod
 from ...exceptions import InvalidArgument
 
 if TYPE_CHECKING:
@@ -35,13 +34,6 @@ if TYPE_CHECKING:
 IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
 
 IOType = t.TypeVar("IOType")
-
-
-@singledispatchmethod
-def set_sample(self: IODescriptor[t.Any], value: t.Any) -> None:
-    raise InvalidArgument(
-        f"Unsupported sample type: '{type(value)}' (value: {value}). To register type '{type(value)}' to {self.__class__.__name__} implement a dispatch function and register types to 'set_sample.register'"
-    )
 
 
 def from_spec(spec: dict[str, str]) -> IODescriptor[t.Any]:
@@ -103,13 +95,10 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
         cls.descriptor_id = descriptor_id
 
     def __new__(cls, *args: t.Any, **kwargs: t.Any) -> Self:
-        sample = kwargs.pop("_sample", None)
         klass = object.__new__(cls)
-        if sample is None:
-            set_sample.register(type(None), lambda self, _: self)
-        klass._set_sample(sample)
-        klass._args = args
-        klass._kwargs = kwargs
+        klass.sample = t.cast(IOType, kwargs.pop("_sample", None))
+        klass._args = args or ()
+        klass._kwargs = kwargs or {}
         return klass
 
     def __getattr__(self, name: str) -> t.Any:
@@ -118,16 +107,20 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
         assert self._initialized
         return object.__getattribute__(self, name)
 
+    def __dir__(self) -> t.Iterable[str]:
+        if not self._initialized:
+            self._lazy_init()
+        assert self._initialized
+        return object.__dir__(self)
+
     def __repr__(self) -> str:
         return self.__class__.__qualname__
 
     def _lazy_init(self) -> None:
-        self.__init__(*self._args, **self._kwargs)
         self._initialized = True
+        self.__init__(*self._args, **self._kwargs)
         del self._args
         del self._kwargs
-
-    _set_sample: singledispatchmethod[None] = set_sample
 
     @property
     def sample(self) -> IOType | None:
@@ -163,18 +156,18 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
 
     @abstractmethod
     async def from_http_request(self, request: Request) -> IOType:
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     async def to_http_response(
         self, obj: IOType, ctx: Context | None = None
     ) -> Response:
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     async def from_proto(self, field: t.Any) -> IOType:
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     async def to_proto(self, obj: IOType) -> t.Any:
-        ...
+        raise NotImplementedError

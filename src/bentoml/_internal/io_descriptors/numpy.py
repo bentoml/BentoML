@@ -9,7 +9,6 @@ from functools import lru_cache
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .base import set_sample
 from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
@@ -217,6 +216,15 @@ class NumpyNdarray(
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
     ):
+        if enforce_dtype and not dtype:
+            raise InvalidArgument(
+                "'dtype' must be specified when 'enforce_dtype=True'"
+            ) from None
+        if enforce_shape and not shape:
+            raise InvalidArgument(
+                "'shape' must be specified when 'enforce_shape=True'"
+            ) from None
+
         if dtype and not isinstance(dtype, np.dtype):
             # Convert from primitive type or type string, e.g.: np.dtype(float) or np.dtype("float64")
             try:
@@ -429,28 +437,21 @@ class NumpyNdarray(
             raise BentoMLException(
                 "'NumpyNdarray.from_sample()' expects a 'numpy.array', not 'numpy.generic'."
             ) from None
+        try:
+            if not isinstance(sample, np.ndarray):
+                sample = np.array(sample)
+        except ValueError:
+            raise BentoMLException(
+                f"Failed to create a 'numpy.ndarray' from given sample {sample}"
+            ) from None
 
         return super().from_sample(
             sample,
+            shape=sample.shape,
+            dtype=sample.dtype,
             enforce_dtype=enforce_dtype,
             enforce_shape=enforce_shape,
         )
-
-    @set_sample.register(np.ndarray)
-    def _(cls, sample: ext.NpNDArray):
-        if isinstance(cls, NumpyNdarray):
-            cls.sample = sample
-            cls._shape = sample.shape
-            cls._dtype = sample.dtype
-
-    @set_sample.register(list)
-    @set_sample.register(tuple)
-    def _(cls, sample: t.Sequence[t.Any]):
-        if isinstance(cls, NumpyNdarray):
-            __ = np.array(sample)
-            cls.sample = __
-            cls._shape = __.shape
-            cls._dtype = __.dtype
 
     async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:
         """

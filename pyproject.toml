@@ -170,6 +170,7 @@ source = ["src"]
 
 [tool.coverage.run]
 branch = true
+parallel = true
 source = ["src/bentoml/"]
 omit = [
   "src/bentoml/__main__.py",
@@ -208,7 +209,8 @@ exclude_lines = [
   "^\\s*except ImportError",
   "if __name__ == .__main__.:",
   "^\\s*if TYPE_CHECKING:",
-  "^\\s*@overload( |$)",
+  "^\\s*@(t\\.)?overload( |$)",
+  "@(abc\\.)?abstractmethod",
 ]
 
 [tool.black]

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import io
-import os
 import typing as t
-import tempfile
 import functools
 from typing import TYPE_CHECKING
 from urllib.parse import quote
@@ -13,7 +11,6 @@ from multipart.multipart import parse_options_header
 from starlette.responses import Response
 from starlette.datastructures import UploadFile
 
-from .base import set_sample
 from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
@@ -33,7 +30,6 @@ if TYPE_CHECKING:
     from types import UnionType
 
     import PIL
-    import numpy as np
     import PIL.Image
     from typing_extensions import Self
 
@@ -54,7 +50,6 @@ else:
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=PIL_EXC_MSG)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=PIL_EXC_MSG)
 
-    np = LazyLoader("np", globals(), "numpy")
     pb, _ = import_generated_stubs()
 
 # NOTES: we will keep type in quotation to avoid backward compatibility
@@ -235,18 +230,16 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
             raise InvalidArgument(f"{sample} is not a valid image file type.")
 
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(sample):
-
-            @set_sample.register(np.ndarray)
-            def _(cls: Self, sample: ext.NpNDArray):
-                if isinstance(cls, Image):
-                    cls.sample = PIL.Image.fromarray(sample, mode=pilmode)
-
+            sample = PIL.Image.fromarray(sample, mode=pilmode)
         elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(sample):
-
-            @set_sample.register(PIL.Image.Image)
-            def _(cls: Self, sample: PIL.Image.Image):
-                if isinstance(cls, Image):
-                    cls.sample = sample
+            sample = sample
+        elif isinstance(sample, str):
+            p = resolve_user_filepath(sample, ctx=None)
+            try:
+                with open(p, "rb") as f:
+                    cls.sample = PIL.Image.open(f)
+            except PIL.UnidentifiedImageError as err:
+                raise BadInput(f"Failed to parse sample image file: {err}") from None
 
         return super().from_sample(
             sample,
@@ -254,16 +247,6 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
             mime_type=img_type.mime,
             allowed_mime_types=allowed_mime_types,
         )
-
-    @set_sample.register(str)
-    def _(cls, sample: str):
-        if isinstance(cls, Image):
-            p = resolve_user_filepath(sample, ctx=None)
-            try:
-                with open(p, "rb") as f:
-                    cls.sample = PIL.Image.open(f)
-            except PIL.UnidentifiedImageError as err:
-                raise BadInput(f"Failed to parse sample image file: {err}") from None
 
     def to_spec(self) -> dict[str, t.Any]:
         return {

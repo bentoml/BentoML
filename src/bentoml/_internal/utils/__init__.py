@@ -27,10 +27,8 @@ from rich.console import Console
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
-    from functools import singledispatchmethod
 else:
     from backports.cached_property import cached_property
-    from singledispatchmethod import singledispatchmethod
 
 from .cattr import bentoml_cattr
 from ..types import LazyType
@@ -57,7 +55,6 @@ rich_console = Console(theme=None)
 __all__ = [
     "bentoml_cattr",
     "cached_property",
-    "singledispatchmethod",
     "cached_contextmanager",
     "reserve_free_port",
     "LazyLoader",

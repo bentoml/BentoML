@@ -10,7 +10,6 @@ import attr
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .base import set_sample
 from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
@@ -212,25 +211,28 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         pydantic_model: t.Type[pydantic.BaseModel] | None = None
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(sample):
             pydantic_model = sample.__class__
-
-            @set_sample.register(pydantic.BaseModel)
-            def _(cls: Self, sample: pydantic.BaseModel):
-                if isinstance(cls, JSON):
-                    cls.sample = sample
+        elif isinstance(sample, str):
+            try:
+                sample = json.loads(sample)
+            except json.JSONDecodeError as e:
+                raise BadInput(
+                    f"Unable to parse JSON string. Please make sure the input is a valid JSON string: {e}"
+                ) from None
+        elif isinstance(sample, bytes):
+            try:
+                sample = json.loads(sample.decode())
+            except json.JSONDecodeError as e:
+                raise BadInput(
+                    f"Unable to parse JSON bytes. Please make sure the input is a valid JSON bytes: {e}"
+                ) from None
+        elif not isinstance(sample, (dict, list)):
+            raise BadInput(
+                f"Unable to infer JSON type from sample: {sample}. Please make sure the input is a valid JSON object."
+            )
 
         return super().from_sample(
             sample, pydantic_model=pydantic_model, json_encoder=json_encoder
         )
-
-    @set_sample.register(dict)
-    def _(cls, sample: dict[str, t.Any]):
-        if isinstance(cls, JSON):
-            cls.sample = sample
-
-    @set_sample.register(str)
-    def _(cls, sample: str):
-        if isinstance(cls, JSON):
-            cls.sample = json.loads(sample)
 
     def to_spec(self) -> dict[str, t.Any]:
         return {

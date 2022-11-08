@@ -10,6 +10,7 @@ import pytest
 
 from bentoml.io import NumpyNdarray
 from bentoml.exceptions import BadInput
+from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.service.openapi.specification import Schema
 
@@ -40,6 +41,15 @@ def test_invalid_dtype():
     with pytest.raises(BentoMLException) as e:
         _ = NumpyNdarray.from_sample(generic)  # type: ignore (test exception)
     assert "expects a 'numpy.array'" in str(e.value)
+
+
+def test_invalid_init():
+    with pytest.raises(InvalidArgument) as exc_info:
+        NumpyNdarray(enforce_dtype=True)
+    assert "'dtype' must be specified" in str(exc_info.value)
+    with pytest.raises(InvalidArgument) as exc_info:
+        NumpyNdarray(enforce_shape=True)
+    assert "'shape' must be specified" in str(exc_info.value)
 
 
 @pytest.mark.parametrize("dtype, expected", [("float", "number"), (">U8", "integer")])
@@ -73,11 +83,6 @@ def test_numpy_openapi_request_body():
     assert ndarray["content"]
     assert ndarray["content"]["application/json"].example == example.tolist()
 
-    nparray = NumpyNdarray(dtype="float")
-    nparray.sample_input = ExampleGeneric("asdf")  # type: ignore (test exception)
-    with pytest.raises(BadInput):
-        nparray.openapi_example()
-
 
 def test_numpy_openapi_responses():
     responses = NumpyNdarray().openapi_responses()
@@ -87,22 +92,41 @@ def test_numpy_openapi_responses():
     assert "application/json" in responses["content"]
     assert not responses["content"]["application/json"].example
 
+    ndarray = from_example.openapi_request_body()
+    assert ndarray["content"]
+    assert ndarray["content"]["application/json"].example == example.tolist()
+
+
+def test_numpy_openapi_example():
+    r = NumpyNdarray().openapi_example()
+    assert r is None
+
+    r = from_example.openapi_example()
+    assert r == example.tolist()
+
+    nparray = NumpyNdarray(dtype="float")
+    nparray.sample = ExampleGeneric("asdf")
+    with pytest.raises(BadInput):
+        nparray.openapi_example()
+
 
 def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
     partial_check = partial(from_example.validate_array, exception_cls=BentoMLException)
 
     with pytest.raises(BentoMLException) as ex:
         partial_check(np.array(["asdf"]))
-    assert f'Expecting ndarray of dtype "{from_example._dtype}"' in str(ex.value)  # type: ignore (testing message)
+    assert f'Expecting ndarray of dtype "{from_example._dtype}"' in str(ex.value)
 
     with pytest.raises(BentoMLException) as e:
         partial_check(np.array([[1]]))
-    assert f'Expecting ndarray of shape "{from_example._shape}"' in str(e.value)  # type: ignore (testing message)
+    assert f'Expecting ndarray of shape "{from_example._shape}"' in str(e.value)
 
     # test cases where reshape is failed
     example = NumpyNdarray.from_sample(np.ones((2, 2, 3)))
-    example._enforce_shape = False  # type: ignore (test internal check)
-    example._enforce_dtype = False  # type: ignore (test internal check)
+    # Note that from_sample now lazy load the IO descriptor
+    example._lazy_init()
+    example._enforce_shape = False
+    example._enforce_dtype = False
     with caplog.at_level(logging.DEBUG):
         example.validate_array(np.array("asdf"))
     assert "Failed to reshape" in caplog.text

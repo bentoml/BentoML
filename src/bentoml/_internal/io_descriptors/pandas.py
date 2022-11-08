@@ -12,7 +12,6 @@ from concurrent.futures import ThreadPoolExecutor
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .base import set_sample
 from .base import IODescriptor
 from ..types import LazyType
 from ..utils.pkg import find_spec
@@ -37,7 +36,6 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
-    from ..types import PathType
     from ..context import InferenceApiContext as Context
 
 else:
@@ -327,6 +325,19 @@ class PandasDataFrame(
         enforce_shape: bool = False,
         default_format: t.Literal["json", "parquet", "csv"] = "json",
     ):
+        if enforce_dtype and dtype is None:
+            raise ValueError(
+                "'dtype' must be specified if 'enforce_dtype' is True"
+            ) from None
+        if enforce_shape and shape is None:
+            raise ValueError(
+                "'shape' must be specified if 'enforce_shape' is True"
+            ) from None
+        if apply_column_names and columns is None:
+            raise ValueError(
+                "'columns' must be specified if 'apply_column_names' is True"
+            ) from None
+
         self._orient: ext.DataFrameOrient = orient
         self._columns = columns
         self._apply_column_names = apply_column_names
@@ -343,7 +354,7 @@ class PandasDataFrame(
     @classmethod
     def from_sample(
         cls,
-        sample: ext.PdDataFrame | PathType | ext.NpNDArray,
+        sample: ext.PdDataFrame,
         *,
         orient: ext.DataFrameOrient = "records",
         apply_column_names: bool = True,
@@ -399,41 +410,13 @@ class PandasDataFrame(
            def predict(inputs: pd.DataFrame) -> pd.DataFrame: ...
         """
         if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(sample):
-
-            @set_sample.register(np.ndarray)
-            def _(cls: Self, sample: ext.NpNDArray):
-                if isinstance(cls, PandasDataFrame):
-                    __ = pd.DataFrame(sample)
-                    cls.sample = __
-                    cls._shape = __.shape
-                    cls._columns = [str(i) for i in range(sample.shape[1])]
-
-        return super().from_sample(
-            sample,
-            dtype=True,  # set to True to infer from given input
-            orient=orient,
-            enforce_shape=enforce_shape,
-            enforce_dtype=enforce_dtype,
-            apply_column_names=apply_column_names,
-            default_format=default_format,
-        )
-
-    @set_sample.register(pd.DataFrame)
-    def _(cls, sample: pd.DataFrame):
-        if isinstance(cls, PandasDataFrame):
-            cls.sample = sample
-            cls._shape = sample.shape
-            cls._columns = [str(x) for x in list(sample.columns)]
-
-    @set_sample.register(str)
-    @set_sample.register(os.PathLike)
-    def _(cls, sample: str):
-        if isinstance(cls, PandasDataFrame):
+            sample = pd.DataFrame(sample)
+        elif isinstance(sample, str):
             try:
                 if os.path.exists(sample):
                     try:
                         ext = os.path.splitext(sample)[-1].strip(".")
-                        __ = getattr(
+                        sample = getattr(
                             pd,
                             {
                                 "json": "read_json",
@@ -447,20 +430,27 @@ class PandasDataFrame(
                                 "sql": "read_sql",
                             }[ext],
                         )(sample)
-                        cls.sample = __
-                        cls._shape = __.shape
-                        cls._columns = [str(x) for x in list(__.columns)]
                     except KeyError:
                         raise InvalidArgument(f"Unsupported sample '{sample}' format.")
                 else:
-                    __ = pd.read_json(sample)
-                    cls.sample = __
-                    cls._shape = __.shape
-                    cls._columns = [str(x) for x in list(__.columns)]
+                    # Try to load the string as json.
+                    sample = pd.read_json(sample)
             except ValueError as e:
                 raise InvalidArgument(
                     f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
                 ) from None
+
+        return super().from_sample(
+            sample,
+            dtype=True,  # set to True to infer from given input
+            orient=orient,
+            shape=sample.shape,
+            columns=[str(i) for i in list(sample.columns)],
+            enforce_shape=enforce_shape,
+            enforce_dtype=enforce_dtype,
+            apply_column_names=apply_column_names,
+            default_format=default_format,
+        )
 
     def _convert_dtype(
         self, value: ext.PdDTypeArg | None
@@ -861,6 +851,15 @@ class PandasSeries(
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
     ):
+        if enforce_dtype and dtype is None:
+            raise ValueError(
+                "'dtype' must be specified if 'enforce_dtype' is True"
+            ) from None
+        if enforce_shape and shape is None:
+            raise ValueError(
+                "'shape' must be specified if 'enforce_shape' is True"
+            ) from None
+
         self._orient: ext.SeriesOrient = orient
         self._dtype = dtype
         self._enforce_dtype = enforce_dtype
@@ -913,39 +912,17 @@ class PandasSeries(
            @svc.api(input=input_spec, output=PandasSeries())
            def predict(inputs: pd.Series) -> pd.Series: ...
         """
-        if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(sample):
-
-            @set_sample.register(np.ndarray)
-            def _(cls: Self, sample: ext.NpNDArray):
-                if isinstance(cls, PandasSeries):
-                    __ = pd.Series(sample)
-                    cls.sample = __
-                    cls._dtype = __.dtype
-                    cls._shape = __.shape
+        if not isinstance(sample, pd.Series):
+            sample = pd.Series(sample)
 
         return super().from_sample(
             sample,
+            dtype=sample.dtype,
+            shape=sample.shape,
             orient=orient,
             enforce_dtype=enforce_dtype,
             enforce_shape=enforce_shape,
         )
-
-    @set_sample.register(pd.Series)
-    def _(cls, sample: ext.PdSeries):
-        if isinstance(cls, PandasSeries):
-            cls.sample = sample
-            cls._dtype = sample.dtype
-            cls._shape = sample.shape
-
-    @set_sample.register(list)
-    @set_sample.register(tuple)
-    @set_sample.register(set)
-    def _(cls, sample: t.Sequence[t.Any]):
-        if isinstance(cls, PandasSeries):
-            __ = pd.Series(sample)
-            cls.sample = __
-            cls._dtype = __.dtype
-            cls._shape = __.shape
 
     def input_type(self) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")

@@ -11,7 +11,6 @@ from multipart.multipart import parse_options_header
 from starlette.responses import Response
 from starlette.datastructures import UploadFile
 
-from .base import set_sample
 from .base import IODescriptor
 from ..types import FileLike
 from ..utils import resolve_user_filepath
@@ -135,29 +134,16 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
             raise MissingDependencyException(
                 "'filetype' is required to use 'from_sample'. Install it with 'pip install bentoml[io-file]'."
             )
+        if isinstance(sample, t.IO):
+            sample = FileLike[bytes](sample, "<sample>")
+        elif isinstance(sample, (str, os.PathLike)):
+            p = resolve_user_filepath(sample, ctx=None)
+            with open(p, "rb") as f:
+                sample = FileLike[bytes](f, "<sample>")
 
         return super().from_sample(
             sample, kind=kind, mime_type=filetype.guess_mime(sample)
         )
-
-    @set_sample.register(type(FileLike))
-    def _(cls, sample: FileLike[bytes]):
-        cls.sample = sample
-
-    @set_sample.register(t.IO)
-    def _(cls, sample: t.IO[t.Any]):
-        if isinstance(cls, File):
-            cls.sample = FileLike[bytes](sample, "<sample>")
-
-    @set_sample.register(str)
-    @set_sample.register(os.PathLike)
-    def _(cls, sample: str):
-        # This is to ensure we can register same type with different
-        # implementation across different IO descriptors.
-        if isinstance(cls, File):
-            p = resolve_user_filepath(sample, ctx=None)
-            with open(p, "rb") as f:
-                cls.sample = FileLike[bytes](f, "<sample>")
 
     @classmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:

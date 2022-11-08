@@ -8,7 +8,6 @@ from starlette.responses import Response
 
 from bentoml.exceptions import BentoMLException
 
-from .base import set_sample
 from .base import IODescriptor
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
@@ -102,17 +101,9 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
 
     @classmethod
     def from_sample(cls, sample: str | bytes) -> Self:
+        if isinstance(sample, bytes):
+            sample = sample.decode("utf-8")
         return super().from_sample(sample)
-
-    @set_sample.register(str)
-    def _(cls, sample: str):
-        if isinstance(cls, Text):
-            cls.sample = sample
-
-    @set_sample.register(bytes)
-    def _(cls, sample: bytes):
-        if isinstance(cls, Text):
-            cls.sample = sample.decode("utf-8")
 
     def input_type(self) -> t.Type[str]:
         return str

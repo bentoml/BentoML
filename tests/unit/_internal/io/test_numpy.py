@@ -10,7 +10,6 @@ import pytest
 
 from bentoml.io import NumpyNdarray
 from bentoml.exceptions import BadInput
-from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.service.openapi.specification import Schema
 
@@ -41,15 +40,6 @@ def test_invalid_dtype():
     with pytest.raises(BentoMLException) as e:
         _ = NumpyNdarray.from_sample(generic)  # type: ignore (test exception)
     assert "expects a 'numpy.array'" in str(e.value)
-
-
-def test_invalid_init():
-    with pytest.raises(InvalidArgument) as exc_info:
-        NumpyNdarray(enforce_dtype=True)
-    assert "'dtype' must be specified" in str(exc_info.value)
-    with pytest.raises(InvalidArgument) as exc_info:
-        NumpyNdarray(enforce_shape=True)
-    assert "'shape' must be specified" in str(exc_info.value)
 
 
 @pytest.mark.parametrize("dtype, expected", [("float", "number"), (">U8", "integer")])

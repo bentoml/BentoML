@@ -65,7 +65,6 @@ dependencies = [
   "backports.cached-property;python_version<'3.8'",
   "backports.shutil_copytree;python_version<'3.8'",
   "importlib-metadata;python_version<'3.8'",
-  "singledispatchmethod;python_version<'3.8'",
 ]
 dynamic = ["version"]
 

@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import typing as t
 from typing import TYPE_CHECKING
-from bentoml.io import IODescriptor
+
 import pytest
+
+from bentoml.io import IODescriptor
 
 if TYPE_CHECKING:
 
     from typing_extensions import Self
+
     from bentoml._internal.context import InferenceApiContext as Context
 
 

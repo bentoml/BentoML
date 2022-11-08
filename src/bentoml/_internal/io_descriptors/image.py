@@ -231,8 +231,6 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
 
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(sample):
             sample = PIL.Image.fromarray(sample, mode=pilmode)
-        elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(sample):
-            sample = sample
         elif isinstance(sample, str):
             p = resolve_user_filepath(sample, ctx=None)
             try:

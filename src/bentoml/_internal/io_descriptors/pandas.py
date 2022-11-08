@@ -469,20 +469,12 @@ class PandasDataFrame(
             return None
 
     def to_spec(self) -> dict[str, t.Any]:
-        # TODO: support extension dtypes
-        dtype = None
-        if self._dtype is not None:
-            if isinstance(self._dtype, bool):
-                dtype = self._dtype
-            else:
-                dtype = self._dtype.name
-
         return {
             "id": self.descriptor_id,
             "args": {
                 "orient": self._orient,
                 "columns": self._columns,
-                "dtype": self._convert_dtype(dtype),
+                "dtype": self._convert_dtype(self._dtype),
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,

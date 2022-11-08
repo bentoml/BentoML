@@ -85,8 +85,6 @@ def test_numpy_openapi_request_body():
 
     nparray = NumpyNdarray(dtype="float")
     nparray.sample_input = ExampleGeneric("asdf")  # type: ignore (test exception)
-    with pytest.raises(BadInput):
-        nparray.openapi_example()
 
 
 def test_numpy_openapi_responses():

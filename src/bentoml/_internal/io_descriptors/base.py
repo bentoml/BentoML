@@ -38,9 +38,9 @@ IOType = t.TypeVar("IOType")
 
 
 @singledispatchmethod
-def create_sample(self: IODescriptor[t.Any], value: t.Any) -> None:
+def set_sample(self: IODescriptor[t.Any], value: t.Any) -> IODescriptor[t.Any]:
     raise InvalidArgument(
-        f"Unsupported sample type: '{type(value)}' (value: {value}). To register type '{type(value)}' to {self.__class__.__name__} implement a dispatch function and register types to 'create_sample.register'"
+        f"Unsupported sample type: '{type(value)}' (value: {value}). To register type '{type(value)}' to {self.__class__.__name__} implement a dispatch function and register types to 'set_sample.register'"
     )
 
 
@@ -65,7 +65,7 @@ class IODescriptor(ABC, t.Generic[IOType]):
     _rpc_content_type: str = "application/grpc"
     _proto_fields: tuple[ProtoField]
     _sample: IOType | None = None
-    _create_sample: singledispatchmethod[None] = create_sample
+    _set_sample: singledispatchmethod["IODescriptor[t.Any]"] = set_sample
 
     def __init_subclass__(cls, *, descriptor_id: str | None = None):
         if descriptor_id is not None:
@@ -76,11 +76,14 @@ class IODescriptor(ABC, t.Generic[IOType]):
             IO_DESCRIPTOR_REGISTRY[descriptor_id] = cls
         cls.descriptor_id = descriptor_id
 
-    def __new__(cls, *args: t.Any, **kwargs: t.Any):
+    def __new__(cls, *args: t.Any, **kwargs: t.Any) -> Self:
         sample = kwargs.pop("_sample", None)
-        kls = super().__new__(cls)
-        if sample is not None:
-            kls._create_sample(sample)
+        kls = object.__new__(cls)
+        if sample is None:
+            set_sample.register(type(None), lambda self, _: self)
+        kls = kls._set_sample(sample)
+        # TODO: lazy init
+        kls.__init__(*args, **kwargs)
         return kls
 
     @property
@@ -97,6 +100,10 @@ class IODescriptor(ABC, t.Generic[IOType]):
     @abstractmethod
     def from_sample(cls, sample: IOType | t.Any, **kwargs: t.Any) -> Self:
         return cls.__new__(cls, _sample=sample, **kwargs)
+
+    @property
+    def mime_type(self) -> str:
+        return self._mime_type
 
     @abstractmethod
     def to_spec(self) -> dict[str, t.Any]:
@@ -118,12 +125,12 @@ class IODescriptor(ABC, t.Generic[IOType]):
     def openapi_schema(self) -> Schema | Reference:
         raise NotImplementedError
 
-    def openapi_example(self) -> t.Any:
-        if self.sample is not None:
-            return self.sample
-
     @abstractmethod
     def openapi_components(self) -> dict[str, t.Any] | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def openapi_example(self) -> t.Any | None:
         raise NotImplementedError
 
     @abstractmethod

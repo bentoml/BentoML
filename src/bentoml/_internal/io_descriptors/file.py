@@ -11,8 +11,8 @@ from multipart.multipart import parse_options_header
 from starlette.responses import Response
 from starlette.datastructures import UploadFile
 
+from .base import set_sample
 from .base import IODescriptor
-from .base import create_sample
 from ..types import FileLike
 from ..utils import resolve_user_filepath
 from ..utils.http import set_cookies
@@ -140,24 +140,27 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
             sample, kind=kind, mime_type=filetype.guess_mime(sample)
         )
 
-    @create_sample.register(type(FileLike))
-    def _(self, sample: FileLike[bytes]) -> None:
-        self.sample = sample
+    @set_sample.register(type(FileLike))
+    def _(cls, sample: FileLike[bytes]):
+        cls.sample = sample
+        return cls
 
-    @create_sample.register(t.IO)
-    def _(self, sample: t.IO[t.Any]) -> None:
-        if isinstance(self, File):
-            self.sample = FileLike[bytes](sample, "<sample>")
+    @set_sample.register(t.IO)
+    def _(cls, sample: t.IO[t.Any]):
+        if isinstance(cls, File):
+            cls.sample = FileLike[bytes](sample, "<sample>")
+        return cls
 
-    @create_sample.register(str)
-    @create_sample.register(os.PathLike)
-    def _(self, sample: str) -> None:
+    @set_sample.register(str)
+    @set_sample.register(os.PathLike)
+    def _(cls, sample: str):
         # This is to ensure we can register same type with different
         # implementation across different IO descriptors.
-        if isinstance(self, File):
+        if isinstance(cls, File):
             p = resolve_user_filepath(sample, ctx=None)
             with open(p, "rb") as f:
-                self.sample = FileLike[bytes](f, "<sample>")
+                cls.sample = FileLike[bytes](f, "<sample>")
+        return cls
 
     @classmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:
@@ -172,6 +175,9 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         return Schema(type="string", format="binary")
 
     def openapi_components(self) -> dict[str, t.Any] | None:
+        pass
+
+    def openapi_example(self):
         pass
 
     def openapi_request_body(self) -> dict[str, t.Any]:

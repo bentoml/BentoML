@@ -9,8 +9,8 @@ from functools import lru_cache
 from starlette.requests import Request
 from starlette.responses import Response
 
+from .base import set_sample
 from .base import IODescriptor
-from .base import create_sample
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
@@ -229,15 +229,6 @@ class NumpyNdarray(
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
 
-        if self._enforce_dtype and not self._dtype:
-            raise InvalidArgument(
-                "'dtype' must be specified when 'enforce_dtype=True'"
-            ) from None
-        if self._enforce_shape and not self._shape:
-            raise InvalidArgument(
-                "'shape' must be specified when 'enforce_shape=True'"
-            ) from None
-
     def _openapi_types(self) -> str:
         # convert numpy dtypes to openapi compatible types.
         var_type = "integer"
@@ -280,11 +271,10 @@ class NumpyNdarray(
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_example(self) -> t.Any:
+    def openapi_example(self):
         if self.sample is not None:
             if isinstance(self.sample, np.generic):
                 raise BadInput("NumpyNdarray: sample must be a numpy array.") from None
-            # NOTE: we only need to
             return self.sample.tolist()
 
     def openapi_request_body(self) -> dict[str, t.Any]:
@@ -393,7 +383,7 @@ class NumpyNdarray(
     @classmethod
     def from_sample(
         cls,
-        sample: ext.NpNDArray,
+        sample: ext.NpNDArray | t.Sequence[t.Any],
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
     ) -> Self:
@@ -442,22 +432,27 @@ class NumpyNdarray(
 
         return super().from_sample(
             sample,
-            dtype=sample.dtype,
-            shape=sample.shape,
             enforce_dtype=enforce_dtype,
             enforce_shape=enforce_shape,
         )
 
-    @create_sample.register(np.ndarray)
-    def _(self, sample: ext.NpNDArray):
-        if isinstance(self, NumpyNdarray):
-            self.sample = sample
+    @set_sample.register(np.ndarray)
+    def _(cls, sample: ext.NpNDArray):
+        if isinstance(cls, NumpyNdarray):
+            cls.sample = sample
+            cls._shape = sample.shape
+            cls._dtype = sample.dtype
+        return cls
 
-    @create_sample.register(list)
-    @create_sample.register(tuple)
-    def _(self, sample: t.Sequence[t.Any]):
-        if isinstance(self, NumpyNdarray):
-            self.sample = np.array(sample)
+    @set_sample.register(list)
+    @set_sample.register(tuple)
+    def _(cls, sample: t.Sequence[t.Any]):
+        if isinstance(cls, NumpyNdarray):
+            __ = np.array(sample)
+            cls.sample = __
+            cls._shape = __.shape
+            cls._dtype = __.dtype
+        return cls
 
     async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:
         """

@@ -12,8 +12,8 @@ from concurrent.futures import ThreadPoolExecutor
 from starlette.requests import Request
 from starlette.responses import Response
 
+from .base import set_sample
 from .base import IODescriptor
-from .base import create_sample
 from ..types import LazyType
 from ..utils.pkg import find_spec
 from ..utils.http import set_cookies
@@ -36,6 +36,8 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
     from .. import external_typing as ext
+    from .base import OpenAPIResponse
+    from ..types import PathType
     from ..context import InferenceApiContext as Context
 
 else:
@@ -341,7 +343,7 @@ class PandasDataFrame(
     @classmethod
     def from_sample(
         cls,
-        sample: ext.PdDataFrame,
+        sample: ext.PdDataFrame | PathType | ext.NpNDArray,
         *,
         orient: ext.DataFrameOrient = "records",
         apply_column_names: bool = True,
@@ -398,62 +400,71 @@ class PandasDataFrame(
         """
         if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(sample):
 
-            columns = [i for i in range(sample.shape[1])]
+            @set_sample.register(np.ndarray)
+            def _(cls: Self, sample: ext.NpNDArray):
+                if isinstance(cls, PandasDataFrame):
+                    __ = pd.DataFrame(sample)
+                    cls.sample = __
+                    cls._shape = __.shape
+                    cls._columns = [str(i) for i in range(sample.shape[1])]
 
-            @create_sample.register(np.ndarray)
-            def _(self: Self, sample: ext.NpNDArray):
-                if isinstance(self, PandasDataFrame):
-                    self.sample = pd.DataFrame(sample)
-
-        else:
-            columns = [str(x) for x in list(sample.columns)]
+                return cls
 
         return super().from_sample(
             sample,
+            dtype=True,  # set to True to infer from given input
             orient=orient,
             enforce_shape=enforce_shape,
-            shape=sample.shape,
-            apply_column_names=apply_column_names,
-            columns=columns,
             enforce_dtype=enforce_dtype,
-            dtype=True,  # set to True to infer from given input
+            apply_column_names=apply_column_names,
             default_format=default_format,
         )
 
-    @create_sample.register(pd.DataFrame)
-    def _(self, sample: pd.DataFrame):
-        if isinstance(self, PandasDataFrame):
-            self.sample = sample
+    @set_sample.register(pd.DataFrame)
+    def _(cls, sample: pd.DataFrame):
+        if isinstance(cls, PandasDataFrame):
+            cls.sample = sample
+            cls._shape = sample.shape
+            cls._columns = [str(x) for x in list(sample.columns)]
+        return cls
 
-    @create_sample.register(str)
-    @create_sample.register(os.PathLike)
-    def _(self, sample: str):
-        if isinstance(self, PandasDataFrame):
-            if os.path.exists(sample):
-                try:
-                    ext = os.path.splitext(sample)[-1].strip(".")
-                    self.sample = getattr(
-                        pd,
-                        {
-                            "json": "read_json",
-                            "csv": "read_csv",
-                            "html": "read_html",
-                            "xls": "read_excel",
-                            "xlsx": "read_excel",
-                            "hdf5": "read_hdf",
-                            "parquet": "read_parquet",
-                            "pickle": "read_pickle",
-                            "sql": "read_sql",
-                        }[ext],
-                    )(sample)
-                except KeyError:
-                    raise InvalidArgument(f"Unsupported sample '{sample}' format.")
-                except ValueError as e:
-                    raise InvalidArgument(
-                        f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
-                    ) from None
-            else:
-                self.sample = pd.read_json(sample)
+    @set_sample.register(str)
+    @set_sample.register(os.PathLike)
+    def _(cls, sample: str):
+        if isinstance(cls, PandasDataFrame):
+            try:
+                if os.path.exists(sample):
+                    try:
+                        ext = os.path.splitext(sample)[-1].strip(".")
+                        __ = getattr(
+                            pd,
+                            {
+                                "json": "read_json",
+                                "csv": "read_csv",
+                                "html": "read_html",
+                                "xls": "read_excel",
+                                "xlsx": "read_excel",
+                                "hdf5": "read_hdf",
+                                "parquet": "read_parquet",
+                                "pickle": "read_pickle",
+                                "sql": "read_sql",
+                            }[ext],
+                        )(sample)
+                        cls.sample = __
+                        cls._shape = __.shape
+                        cls._columns = [str(x) for x in list(__.columns)]
+                    except KeyError:
+                        raise InvalidArgument(f"Unsupported sample '{sample}' format.")
+                else:
+                    __ = pd.read_json(sample)
+                    cls.sample = __
+                    cls._shape = __.shape
+                    cls._columns = [str(x) for x in list(__.columns)]
+            except ValueError as e:
+                raise InvalidArgument(
+                    f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
+                ) from None
+        return cls
 
     def _convert_dtype(
         self, value: ext.PdDTypeArg | None
@@ -509,22 +520,29 @@ class PandasDataFrame(
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_example(self) -> t.Any:
+    def openapi_example(self):
         if self.sample is not None:
-            return t.cast("dict[str, t.Any]", self.sample.to_dict())
-        return
+            return self.sample.to_json(orient=self._orient)
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "required": True,
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
-    def openapi_responses(self) -> dict[str, t.Any]:
+    def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
@@ -856,7 +874,7 @@ class PandasSeries(
     @classmethod
     def from_sample(
         cls,
-        sample: ext.PdSeries,
+        sample: ext.PdSeries | t.Sequence[t.Any],
         *,
         orient: ext.SeriesOrient = "records",
         enforce_shape: bool = True,
@@ -901,31 +919,40 @@ class PandasSeries(
         """
         if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(sample):
 
-            @create_sample.register(np.ndarray)
-            def _(self: Self, sample: ext.NpNDArray):
-                if isinstance(self, PandasSeries):
-                    self.sample = pd.Series(sample)
+            @set_sample.register(np.ndarray)
+            def _(cls: Self, sample: ext.NpNDArray):
+                if isinstance(cls, PandasSeries):
+                    __ = pd.Series(sample)
+                    cls.sample = __
+                    cls._dtype = __.dtype
+                    cls._shape = __.shape
+                return cls
 
         return super().from_sample(
             sample,
             orient=orient,
-            dtype=sample.dtype,
             enforce_dtype=enforce_dtype,
-            shape=sample.shape,
             enforce_shape=enforce_shape,
         )
 
-    @create_sample.register(pd.Series)
-    def _(self, sample: ext.PdSeries):
-        if isinstance(self, PandasSeries):
-            self.sample = sample
+    @set_sample.register(pd.Series)
+    def _(cls, sample: ext.PdSeries):
+        if isinstance(cls, PandasSeries):
+            cls.sample = sample
+            cls._dtype = sample.dtype
+            cls._shape = sample.shape
+        return cls
 
-    @create_sample.register(list)
-    @create_sample.register(tuple)
-    @create_sample.register(set)
-    def _(self, sample: t.Sequence[t.Any]):
-        if isinstance(self, PandasSeries):
-            self.sample = pd.Series(sample)
+    @set_sample.register(list)
+    @set_sample.register(tuple)
+    @set_sample.register(set)
+    def _(cls, sample: t.Sequence[t.Any]):
+        if isinstance(cls, PandasSeries):
+            __ = pd.Series(sample)
+            cls.sample = __
+            cls._dtype = __.dtype
+            cls._shape = __.shape
+        return cls
 
     def input_type(self) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")
@@ -971,22 +998,29 @@ class PandasSeries(
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_example(self) -> t.Any:
+    def openapi_example(self):
         if self.sample is not None:
-            return t.cast("dict[str, t.Any]", self.sample.to_dict())
-        return
+            return self.sample.to_json(orient=self._orient)
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "required": True,
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
-    def openapi_responses(self) -> dict[str, t.Any]:
+    def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 

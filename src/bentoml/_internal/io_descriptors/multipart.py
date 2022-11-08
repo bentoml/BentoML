@@ -177,7 +177,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
 
     @classmethod
     def from_sample(cls, sample: dict[str, t.Any]) -> Self:
-        pass
+        return cls(**sample)
 
     def input_type(
         self,
@@ -222,9 +222,16 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
+    def openapi_example(self) -> t.Any:
+        return {args: io.openapi_example() for args, io in self._inputs.items()}
+
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "required": True,
             "x-bentoml-io-descriptor": self.to_spec(),
         }
@@ -232,7 +239,11 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
@@ -249,7 +260,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         for field, descriptor in self._inputs.items():
             if field not in form_values:
                 break
-            res[field] = descriptor.from_http_request(form_values[field])
+            res[field] = await descriptor.from_http_request(form_values[field])
         else:  # NOTE: This is similar to goto, when there is no break.
             to_populate = zip(self._inputs.values(), form_values.values())
             reqs = await asyncio.gather(

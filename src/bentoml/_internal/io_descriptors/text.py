@@ -8,8 +8,8 @@ from starlette.responses import Response
 
 from bentoml.exceptions import BentoMLException
 
+from .base import set_sample
 from .base import IODescriptor
-from .base import create_sample
 from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.lazy_loader import LazyLoader
@@ -104,15 +104,17 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
     def from_sample(cls, sample: str | bytes) -> Self:
         return super().from_sample(sample)
 
-    @create_sample.register(str)
-    def _(self, sample: str):
-        if isinstance(self, Text):
-            self.sample = sample
+    @set_sample.register(str)
+    def _(cls, sample: str):
+        if isinstance(cls, Text):
+            cls.sample = sample
+        return cls
 
-    @create_sample.register(bytes)
-    def _(self, sample: bytes):
-        if isinstance(self, Text):
-            self.sample = sample.decode("utf-8")
+    @set_sample.register(bytes)
+    def _(cls, sample: bytes):
+        if isinstance(cls, Text):
+            cls.sample = sample.decode("utf-8")
+        return cls
 
     def input_type(self) -> t.Type[str]:
         return str
@@ -130,9 +132,16 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
+    def openapi_example(self):
+        return str(self.sample)
+
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "required": True,
             "x-bentoml-io-descriptor": self.to_spec(),
         }
@@ -140,7 +149,11 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 

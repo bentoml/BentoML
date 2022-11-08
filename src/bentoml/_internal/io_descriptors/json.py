@@ -10,8 +10,8 @@ import attr
 from starlette.requests import Request
 from starlette.responses import Response
 
+from .base import set_sample
 from .base import IODescriptor
-from .base import create_sample
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils import bentoml_cattr
@@ -213,24 +213,27 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(sample):
             pydantic_model = sample.__class__
 
-            @create_sample.register(pydantic.BaseModel)
-            def _(self: Self, sample: pydantic.BaseModel):
-                if isinstance(self, JSON):
-                    self.sample = sample
+            @set_sample.register(pydantic.BaseModel)
+            def _(cls: Self, sample: pydantic.BaseModel):
+                if isinstance(cls, JSON):
+                    cls.sample = sample
+                return cls
 
         return super().from_sample(
             sample, pydantic_model=pydantic_model, json_encoder=json_encoder
         )
 
-    @create_sample.register(dict)
-    def _(self, sample: dict[str, t.Any]):
-        if isinstance(self, JSON):
-            self.sample = sample
+    @set_sample.register(dict)
+    def _(cls, sample: dict[str, t.Any]):
+        if isinstance(cls, JSON):
+            cls.sample = sample
+        return cls
 
-    @create_sample.register(str)
-    def _(self, sample: str):
-        if isinstance(self, JSON):
-            self.sample = json.loads(sample)
+    @set_sample.register(str)
+    def _(cls, sample: str):
+        if isinstance(cls, JSON):
+            cls.sample = json.loads(sample)
+        return cls
 
     def to_spec(self) -> dict[str, t.Any]:
         return {
@@ -282,7 +285,7 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
 
         return {"schemas": pydantic_components_schema(self._pydantic_model)}
 
-    def openapi_example(self) -> t.Any:
+    def openapi_example(self):
         if self.sample is not None:
             if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(
                 self.sample
@@ -299,11 +302,14 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
                 )
             elif isinstance(self.sample, dict):
                 return self.sample
-        return
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "required": True,
             "x-bentoml-io-descriptor": self.to_spec(),
         }
@@ -311,7 +317,11 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 

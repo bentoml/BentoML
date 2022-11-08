@@ -381,7 +381,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install .
-          pip install onnx onnxruntime
+          pip install onnx onnxruntime skl2onnx
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report

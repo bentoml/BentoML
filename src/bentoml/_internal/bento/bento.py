@@ -232,9 +232,11 @@ class Bento(StoreItem):
                     target_fs.makedirs(dir_path, recreate=True)
                     copy_file(ctx_fs, path, target_fs, path)
 
-        build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
+        # NOTE: we need to generate both Python and Conda
+        # first to make sure we can generate the Dockerfile correctly.
         build_config.python.write_to_bento(bento_fs, build_ctx)
         build_config.conda.write_to_bento(bento_fs, build_ctx)
+        build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
 
         # Create `readme.md` file
         if build_config.description is None:

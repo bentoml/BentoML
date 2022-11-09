@@ -8,8 +8,9 @@ import logging
 import importlib
 import contextlib
 from typing import TYPE_CHECKING
-from tempfile import TemporaryDirectory
 
+import fs
+import fs.mirror
 from simple_di import inject
 from simple_di import Provide
 
@@ -17,12 +18,6 @@ from .base import OCIBuilder
 from .generate import generate_dockerfile
 from ...exceptions import InvalidArgument
 from ..configuration.containers import BentoMLContainer
-
-if sys.version_info >= (3, 8):
-    from shutil import copytree
-else:
-    from backports.shutil_copytree import copytree
-
 
 if TYPE_CHECKING:
     from ..tag import Tag
@@ -149,20 +144,23 @@ def construct_dockerfile(
 
     dockerfile_path = os.path.join("env", "docker", "Dockerfile")
     instruction: list[str] = []
-    with TemporaryDirectory(
-        f"bento_{str(bento.tag).replace(':', '_')}"
-    ) as tmpdir, open(bento.path_of("bento.yaml"), "rb") as bento_yaml:
+
+    with fs.open_fs("temp://") as temp_fs, open(
+        bento.path_of("bento.yaml"), "rb"
+    ) as bento_yaml:
+        tempdir = temp_fs.getsyspath("/")
         options = BentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
-        copytree(bento.path, tmpdir, dirs_exist_ok=True)
-        tmp_dockerfile = generate_dockerfile(
-            options=options.docker,
-            build_ctx=tmpdir,
-            use_conda=not options.conda.is_empty(),
+        fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
+        dockerfile = generate_dockerfile(
+            docker=options.docker,
+            build_ctx=tempdir,
+            conda=options.conda,
+            bento_fs=temp_fs,
             enable_buildkit=enable_buildkit,
             add_header=False,
         )
-        instruction.append(tmp_dockerfile)
+        instruction.append(dockerfile)
         if features is not None:
             diff = set(features).difference(FEATURES)
             if len(diff) > 0:
@@ -175,9 +173,8 @@ def construct_dockerfile(
             instruction.append(
                 "RUN %spip install bentoml[%s]" % (PIP_CACHE_MOUNT, ",".join(features))
             )
-        with open(os.path.join(tmpdir, dockerfile_path), "w") as dockerfile:
-            dockerfile.write("\n".join(instruction))
-        yield tmpdir, dockerfile.name
+        temp_fs.writetext(dockerfile_path, "\n".join(instruction))
+        yield tempdir, temp_fs.getsyspath(dockerfile_path)
 
 
 @inject

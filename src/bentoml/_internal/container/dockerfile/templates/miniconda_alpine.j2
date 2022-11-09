@@ -1,6 +1,6 @@
 {% extends "base_alpine.j2" %}
 {% block SETUP_BENTO_COMPONENTS %}
-{{ common.setup_conda(__python_version__, bento__path, enable_buildkit=__enable_buildkit__) }}
+{{ common.setup_conda(__conda_python_version__, bento__path, enable_buildkit=__enable_buildkit__) }}
 {{ super() }}
 {% endblock %}
 {% block SETUP_BENTO_ENTRYPOINT %}

@@ -3,12 +3,12 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
-from sys import version_info
 from typing import TYPE_CHECKING
 from dataclasses import asdict
 from dataclasses import replace
 from dataclasses import dataclass
 
+import fs
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
+    from fs.base import FS
+
+    from ..bento.build_config import CondaOptions
     from ..bento.build_config import DockerOptions
 
     TemplateFunc = t.Callable[[DockerOptions], dict[str, t.Any]]
@@ -46,21 +49,8 @@ def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
 
 J2_FUNCTION: dict[str, F[t.Any]] = {"expands_bento_path": expands_bento_path}
 
-to_preserved_field: t.Callable[[str], str] = lambda s: f"__{s}__"
 to_bento_field: t.Callable[[str], str] = lambda s: f"bento__{s}"
 to_options_field: t.Callable[[str], str] = lambda s: f"__options__{s}"
-
-
-@dataclass
-class ReservedEnv:
-    base_image: str
-    python_version: str = f"{version_info.major}.{version_info.minor}"
-
-    def asdict(self) -> dict[str, t.Any]:
-        return {
-            **{to_preserved_field(k): v for k, v in asdict(self).items()},
-            "__prometheus_port__": BentoMLContainer.grpc.metrics.port.get(),
-        }
 
 
 @dataclass
@@ -82,31 +72,23 @@ class BentoEnv:
 
 
 def get_templates_variables(
-    options: DockerOptions, use_conda: bool, **bento_env: str | bool
+    options: DockerOptions,
+    spec: DistroSpec,
+    conda_python_version: str,
+    **bento_env: str | bool,
 ) -> dict[str, t.Any]:
     """
     Returns a dictionary of variables to be used in BentoML base templates.
     """
 
-    if options.base_image is None:
-        distro = options.distro
-        cuda_version = options.cuda_version
-        python_version = options.python_version
-
-        # these values will be set at with_defaults() if not provided
-        # so distro and python_version won't be None here.
-        assert distro and python_version
-        spec = DistroSpec.from_distro(
-            distro, cuda=cuda_version is not None, conda=use_conda
-        )
-        if cuda_version is not None:
-            base_image = spec.image.format(spec_version=cuda_version)
-        else:
-            if distro in ["ubi8"]:
-                # ubi8 base images uses "py38" instead of "py3.8" in its image tag
-                python_version = python_version.replace(".", "")
-            base_image = spec.image.format(spec_version=python_version)
-    else:
+    python_version = options.python_version
+    if options.distro in ("ubi8"):
+        # ubi8 base images uses "py38" instead of "py3.8" in its image tag
+        python_version = python_version.replace(".", "")
+    base_image = spec.image.format(spec_version=python_version)
+    if options.cuda_version is not None:
+        base_image = spec.image.format(spec_version=options.cuda_version)
+    if options.base_image is not None:
         base_image = options.base_image
         logger.info(
             "BentoML will not install Python to custom base images; ensure the base image '%s' has Python installed.",
@@ -119,23 +101,26 @@ def get_templates_variables(
             for k, v in bentoml_cattr.unstructure(options).items()
         },
         **BentoEnv().with_options(**bento_env).asdict(),
-        **ReservedEnv(base_image=base_image).asdict(),
+        "__prometheus_port__": BentoMLContainer.grpc.metrics.port.get(),
+        "__base_image__": base_image,
+        "__conda_python_version__": conda_python_version,
     }
 
 
 def generate_dockerfile(
-    options: DockerOptions,
+    docker: DockerOptions,
     build_ctx: str,
     *,
-    use_conda: bool = False,
+    conda: CondaOptions,
+    bento_fs: FS,
     **override_bento_env: t.Any,
 ) -> str:
     """
     Generate a Dockerfile that containerize a Bento.
 
-    Args:
-        docker_options: Docker Options class parsed from :code:`bentofile.yaml` or any arbitrary Docker options class.
-        use_conda: Whether to use conda in the given Dockerfile.
+    .. note::
+
+        You should use ``construct_dockerfile`` instead of this function.
 
     Returns:
         str: The rendered Dockerfile string.
@@ -162,20 +147,25 @@ def generate_dockerfile(
         All templates will have the following blocks: "SETUP_BENTO_BASE_IMAGE", "SETUP_BENTO_USER", "SETUP_BENTO_ENVARS", "SETUP_BENTO_COMPONENTS", "SETUP_BENTO_ENTRYPOINT",
 
         Overriding templates variables: bento__uid_gid, bento__user, bento__home, bento__path, bento__enable_buildkit
-
-    .. code-block:: python
-
-        from bentoml._internal.container import generate_dockerfile
-        from bentoml._internal.bento.bento import BentoInfo
-
-        docker_options = BentoInfo.from_yaml_file("{bento_path}/bento.yaml").docker
-        docker_options.dockerfile_template = "./override_template.j2"
-        dockerfile = generate_dockerfile(docker_options, use_conda=False)
-
     """
-    distro = options.distro
-    use_cuda = options.cuda_version is not None
-    user_templates = options.dockerfile_template
+    from ..bento.build_config import CONDA_ENV_YAML_FILE_NAME
+
+    distro = docker.distro
+    environment_yml = bento_fs.getsyspath(
+        fs.path.join(
+            "env",
+            "conda",
+            CONDA_ENV_YAML_FILE_NAME,
+        )
+    )
+    conda_python_version = conda.get_python_version(environment_yml)
+    if conda_python_version is None:
+        logger.debug(
+            "No python version is specified under '%s'. Using the current Python%s",
+            environment_yml,
+            docker.python_version,
+        )
+        conda_python_version = docker.python_version
 
     TEMPLATES_PATH = [
         os.path.join(os.path.dirname(__file__), "dockerfile", "templates")
@@ -187,12 +177,11 @@ def generate_dockerfile(
         loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),
     )
 
-    if options.base_image is not None:
+    spec = DistroSpec.from_options(docker, conda)
+    base = f"{spec.release_type}_{distro}.j2"
+    if docker.base_image is not None:
+        # If base_image is specified, then use the base template instead.
         base = "base.j2"
-    else:
-        assert distro  # distro will be set via 'with_defaults()'
-        spec = DistroSpec.from_distro(distro, cuda=use_cuda, conda=use_conda)
-        base = f"{spec.release_type}_{distro}.j2"
 
     template = ENVIRONMENT.get_template(base, globals=J2_FUNCTION)
     logger.debug(
@@ -201,18 +190,24 @@ def generate_dockerfile(
         os.path.join(TEMPLATES_PATH[0], base),
     )
 
+    user_templates = docker.dockerfile_template
     if user_templates is not None:
-        dir_path = os.path.dirname(resolve_user_filepath(user_templates, build_ctx))
-        user_templates = os.path.basename(user_templates)
-        TEMPLATES_PATH.append(dir_path)
-        new_loader = FileSystemLoader(TEMPLATES_PATH, followlinks=True)
-
-        environment = ENVIRONMENT.overlay(loader=new_loader)
+        TEMPLATES_PATH.append(
+            os.path.dirname(resolve_user_filepath(user_templates, build_ctx))
+        )
+        environment = ENVIRONMENT.overlay(
+            loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True)
+        )
         template = environment.get_template(
-            user_templates,
+            os.path.basename(user_templates),
             globals={"bento_base_template": template, **J2_FUNCTION},
         )
 
     return template.render(
-        **get_templates_variables(options, use_conda=use_conda, **override_bento_env)
+        **get_templates_variables(
+            docker,
+            spec=spec,
+            conda_python_version=conda_python_version,
+            **override_bento_env,
+        )
     )

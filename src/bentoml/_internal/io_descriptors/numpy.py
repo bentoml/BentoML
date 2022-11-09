@@ -216,15 +216,6 @@ class NumpyNdarray(
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
     ):
-        if enforce_dtype and not dtype:
-            raise InvalidArgument(
-                "'dtype' must be specified when 'enforce_dtype=True'"
-            ) from None
-        if enforce_shape and not shape:
-            raise InvalidArgument(
-                "'shape' must be specified when 'enforce_shape=True'"
-            ) from None
-
         if dtype and not isinstance(dtype, np.dtype):
             # Convert from primitive type or type string, e.g.: np.dtype(float) or np.dtype("float64")
             try:
@@ -440,8 +431,6 @@ class NumpyNdarray(
             ) from None
         self._dtype = sample.dtype
         self._shape = sample.shape
-        self._enforce_dtype = True
-        self._enforce_shape = True
         return sample
 
     async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:

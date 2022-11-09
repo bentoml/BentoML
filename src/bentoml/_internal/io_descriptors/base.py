@@ -81,7 +81,6 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     _rpc_content_type: str = "application/grpc"
     _proto_fields: tuple[ProtoField]
     _sample: IOType | None = None
-    _initialized: bool = False
     _args: t.Sequence[t.Any]
     _kwargs: dict[str, t.Any]
 
@@ -99,26 +98,8 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
         def __init__(self, **kwargs: t.Any) -> None:
             ...
 
-    def __getattr__(self, name: str) -> t.Any:
-        if not self._initialized:
-            self._lazy_init()
-        assert self._initialized
-        return object.__getattribute__(self, name)
-
-    def __dir__(self) -> t.Iterable[str]:
-        if not self._initialized:
-            self._lazy_init()
-        assert self._initialized
-        return object.__dir__(self)
-
     def __repr__(self) -> str:
         return self.__class__.__qualname__
-
-    def _lazy_init(self) -> None:
-        self._initialized = True
-        self.__init__(*self._args, **self._kwargs)
-        del self._args
-        del self._kwargs
 
     @property
     def sample(self) -> IOType | None:
@@ -131,8 +112,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     @classmethod
     def from_sample(cls, sample: IOType | t.Any, **kwargs: t.Any) -> Self:
         klass = cls(**kwargs)
-        sample = klass._from_sample(sample)
-        klass.sample = sample
+        klass.sample = klass._from_sample(sample)
         return klass
 
     @abstractmethod

@@ -325,19 +325,6 @@ class PandasDataFrame(
         enforce_shape: bool = False,
         default_format: t.Literal["json", "parquet", "csv"] = "json",
     ):
-        if enforce_dtype and dtype is None:
-            raise ValueError(
-                "'dtype' must be specified if 'enforce_dtype' is True"
-            ) from None
-        if enforce_shape and shape is None:
-            raise ValueError(
-                "'shape' must be specified if 'enforce_shape' is True"
-            ) from None
-        if apply_column_names and columns is None:
-            raise ValueError(
-                "'columns' must be specified if 'apply_column_names' is True"
-            ) from None
-
         self._orient: ext.DataFrameOrient = orient
         self._columns = columns
         self._apply_column_names = apply_column_names
@@ -431,10 +418,8 @@ class PandasDataFrame(
                 ) from None
         self._shape = sample.shape
         self._columns = [str(i) for i in list(sample.columns)]
-        self._dtype = True
-        self._enforce_dtype = True
-        self._enforce_shape = True
-        self._apply_column_names = True
+        if self._dtype is None:
+            self._dtype = True  # infer dtype automatically
         return sample
 
     def _convert_dtype(
@@ -828,15 +813,6 @@ class PandasSeries(
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
     ):
-        if enforce_dtype and dtype is None:
-            raise ValueError(
-                "'dtype' must be specified if 'enforce_dtype' is True"
-            ) from None
-        if enforce_shape and shape is None:
-            raise ValueError(
-                "'shape' must be specified if 'enforce_shape' is True"
-            ) from None
-
         self._orient: ext.SeriesOrient = orient
         self._dtype = dtype
         self._enforce_dtype = enforce_dtype
@@ -885,8 +861,6 @@ class PandasSeries(
             sample = pd.Series(sample)
         self._dtype = sample.dtype
         self._shape = sample.shape
-        self._enforce_dtype = True
-        self._enforce_shape = True
         return sample
 
     def input_type(self) -> LazyType[ext.PdSeries]:

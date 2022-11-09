@@ -231,6 +231,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
                     sample = PIL.Image.open(f)
             except PIL.UnidentifiedImageError as err:
                 raise BadInput(f"Failed to parse sample image file: {err}") from None
+        self._mime_type = img_type.mime
         return sample
 
     def to_spec(self) -> dict[str, t.Any]:

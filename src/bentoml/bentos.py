@@ -445,6 +445,8 @@ FEATURES = [
     "grpc-channelz",
     "aws",
     "all",
+    "io",
+    "io-file",
     "io-image",
     "io-pandas",
     "io-json",

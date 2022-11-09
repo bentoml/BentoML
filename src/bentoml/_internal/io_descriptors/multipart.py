@@ -16,15 +16,16 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_response
 from ..service.openapi.specification import Schema
-from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from types import UnionType
 
+    from typing_extensions import Self
+
     from bentoml.grpc.v1alpha1 import service_pb2 as pb
 
+    from .base import OpenAPIResponse
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
 else:
@@ -174,6 +175,9 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
     def __repr__(self) -> str:
         return f"Multipart({','.join([f'{k}={v}' for k,v in zip(self._inputs, map(repr, self._inputs.values()))])})"
 
+    def _from_sample(cls, sample: dict[str, t.Any]) -> t.Any:
+        raise NotImplementedError("'from_sample' is not supported for Multipart.")
+
     def input_type(
         self,
     ) -> dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]:
@@ -217,9 +221,16 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_request_body(self) -> RequestBody:
+    def openapi_example(self) -> t.Any:
+        return {args: io.openapi_example() for args, io in self._inputs.items()}
+
+    def openapi_request_body(self) -> dict[str, t.Any]:
         return {
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "required": True,
             "x-bentoml-io-descriptor": self.to_spec(),
         }
@@ -227,7 +238,11 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 

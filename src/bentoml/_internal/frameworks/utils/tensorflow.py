@@ -6,8 +6,9 @@ import importlib.util
 from typing import TYPE_CHECKING
 
 from bentoml.exceptions import BentoMLException
-from bentoml._internal.types import LazyType
-from bentoml._internal.utils.lazy_loader import LazyLoader
+
+from ...types import LazyType
+from ...utils.lazy_loader import LazyLoader
 
 try:
     import importlib.metadata as importlib_metadata
@@ -17,7 +18,7 @@ except ImportError:
 if TYPE_CHECKING:
     import tensorflow as tf
 
-    from bentoml._internal.external_typing import tensorflow as tf_ext
+    from ...external_typing import tensorflow as tf_ext
 else:
     tf = LazyLoader(
         "tf",

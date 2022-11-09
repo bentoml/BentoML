@@ -5,6 +5,7 @@ User facing python APIs for building a OCI-complicant image.
 from __future__ import annotations
 
 import os
+import sys
 import shutil
 import typing as t
 import logging
@@ -452,20 +453,27 @@ def get_containerfile(
     enable_buildkit: bool = True,
     features: t.Sequence[str] | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-) -> str:
+):
     bento = _bento_store.get(bento_tag)
-    if output_path is None:
-        output_path = os.path.join(
-            os.getcwd(), f"{bento.tag.path().replace(os.sep,'_')}.dockerfile"
-        )
     with _internal_construct_containerfile(
         bento,
         enable_buildkit=enable_buildkit,
         features=features,
         add_header=True,
     ) as (_, final_containerfile):
-        shutil.copyfile(final_containerfile, output_path)
-    return output_path
+        if output_path is not None:
+            if os.path.isdir(output_path):
+                output_path = output_path = os.path.join(
+                    output_path, f"{bento.tag.path().replace(os.sep,'_')}.dockerfile"
+                )
+            logger.info(
+                "Writting Containerfile for '%s' to '%s'.", bento.tag, output_path
+            )
+            shutil.copyfile(final_containerfile, output_path)
+            return
+        # otherwise we will just write this to stderr.
+        with open(final_containerfile, "r") as f:
+            sys.stderr.write(f.read())
 
 
 __all__ = ["build", "health", "register_backend", "get_backend", "get_containerfile"]

@@ -6,12 +6,16 @@ import contextlib
 import collections
 import contextvars
 import logging.config
+from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
 
 from ..types import LazyType
 from ..configuration.containers import BentoMLContainer
+
+if TYPE_CHECKING:
+    from .default import DefaultMonitor
 
 DT = t.TypeVar("DT")
 MT = t.TypeVar("MT", bound="MonitorBase[t.Any]")
@@ -206,30 +210,33 @@ class NoOpMonitor(MonitorBase[t.Any]):
 
 
 @t.overload
+@contextlib.contextmanager
 def monitor(
-    name: str,
-    monitor_class: t.Type[MT],
-    monitor_options: dict[str, t.Any] | None,
-) -> t.Generator[MT, None, None]:
-    pass
+    name: str | t.Any,
+    monitor_class: DefaultMonitor = ...,
+    monitor_options: dict[str, t.Any] | None = ...,
+) -> t.Generator[DefaultMonitor, None, None]:
+    ...
 
 
 @t.overload
+@contextlib.contextmanager
 def monitor(
-    name: str,
-    monitor_class: str,
-    monitor_options: dict[str, t.Any] | None,
+    name: str | t.Any,
+    monitor_class: str = ...,
+    monitor_options: dict[str, t.Any] | None = ...,
 ) -> t.Generator[MonitorBase[t.Any], None, None]:
-    pass
+    ...
 
 
 @t.overload
+@contextlib.contextmanager
 def monitor(
-    name: str,
-    monitor_class: None,
-    monitor_options: dict[str, t.Any] | None,
+    name: str | t.Any,
+    monitor_class: None = ...,
+    monitor_options: dict[str, t.Any] | None = ...,
 ) -> t.Generator[MonitorBase[t.Any], None, None]:
-    pass
+    ...
 
 
 @contextlib.contextmanager

@@ -43,7 +43,7 @@ dependencies = [
   "opentelemetry-instrumentation-aiohttp-client==0.34b0",
   "opentelemetry-instrumentation-asgi==0.34b0",
   "opentelemetry-sdk==1.13.0",
-  "opentelemetry-semantic-conventions==0.34b0",
+  "opentelemetry-semantic-conventions==0.35b0",
   "opentelemetry-util-http==0.34b0",
   "packaging>=20.0",
   "pathspec",

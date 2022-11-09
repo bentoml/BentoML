@@ -19,7 +19,7 @@ from bentoml.exceptions import MissingDependencyException
 from ..types import LazyType
 from ..models.model import ModelSignature
 from ..runner.utils import Params
-from ..utils.tensorflow import get_tf_version
+from .utils.tensorflow import get_tf_version
 
 logger = logging.getLogger(__name__)
 

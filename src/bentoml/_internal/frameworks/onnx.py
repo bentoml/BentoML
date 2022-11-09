@@ -18,15 +18,15 @@ from bentoml.exceptions import MissingDependencyException
 
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import PackageNotFoundError
-from ..utils.onnx import gen_input_casting_func
+from .utils.onnx import gen_input_casting_func
 
 if TYPE_CHECKING:
 
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
-    from ..utils.onnx import ONNXArgType
-    from ..utils.onnx import ONNXArgCastedType
+    from .utils.onnx import ONNXArgType
+    from .utils.onnx import ONNXArgCastedType
 
     ProvidersType = list[str | tuple[str, dict[str, t.Any]]]
 

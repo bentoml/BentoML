@@ -173,7 +173,8 @@ class Bento(StoreItem):
             if build_ctx is None
             else os.path.realpath(os.path.expanduser(build_ctx))
         )
-        assert os.path.isdir(build_ctx), f"build ctx {build_ctx} does not exist"
+        if not os.path.isdir(build_ctx):
+            raise InvalidArgument(f"Bento build context {build_ctx} does not exist or is not a directory.")
 
         # This also verifies that svc can be imported correctly
         svc = import_service(

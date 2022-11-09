@@ -112,6 +112,8 @@ def test_numpy_openapi_example():
 
 def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
     partial_check = partial(from_example.validate_array, exception_cls=BentoMLException)
+    from_example._enforce_dtype = True
+    from_example._enforce_shape = True
 
     with pytest.raises(BentoMLException) as ex:
         partial_check(np.array(["asdf"]))

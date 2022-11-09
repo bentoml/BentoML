@@ -126,8 +126,7 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         res._mime_type = mime_type
         return res
 
-    @classmethod
-    def from_sample(cls, sample: FileType | str, kind: FileKind = "binaryio") -> Self:
+    def _from_sample(self, sample: FileType | str) -> FileType:
         try:
             import filetype
         except ModuleNotFoundError:
@@ -136,14 +135,13 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
             )
         if isinstance(sample, t.IO):
             sample = FileLike[bytes](sample, "<sample>")
+            self._mime_type = filetype.guess_mime(sample)
         elif isinstance(sample, (str, os.PathLike)):
             p = resolve_user_filepath(sample, ctx=None)
+            self._mime_type = filetype.guess_mime(p)
             with open(p, "rb") as f:
                 sample = FileLike[bytes](f, "<sample>")
-
-        return super().from_sample(
-            sample, kind=kind, mime_type=filetype.guess_mime(sample)
-        )
+        return sample
 
     @classmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:

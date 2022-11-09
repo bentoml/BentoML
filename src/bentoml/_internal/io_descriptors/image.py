@@ -210,14 +210,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         self._pilmode: _Mode | None = pilmode
         self._format: str = MIME_EXT_MAPPING[self._mime_type]
 
-    @classmethod
-    def from_sample(
-        cls,
-        sample: ImageType | str,
-        *,
-        pilmode: _Mode | None = DEFAULT_PIL_MODE,
-        allowed_mime_types: t.Iterable[str] | None = None,
-    ) -> Self:
+    def _from_sample(self, sample: ImageType | str) -> ImageType:
         try:
             from filetype.match import image_match
         except ModuleNotFoundError:
@@ -230,21 +223,15 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
             raise InvalidArgument(f"{sample} is not a valid image file type.")
 
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(sample):
-            sample = PIL.Image.fromarray(sample, mode=pilmode)
+            sample = PIL.Image.fromarray(sample)
         elif isinstance(sample, str):
             p = resolve_user_filepath(sample, ctx=None)
             try:
                 with open(p, "rb") as f:
-                    cls.sample = PIL.Image.open(f)
+                    sample = PIL.Image.open(f)
             except PIL.UnidentifiedImageError as err:
                 raise BadInput(f"Failed to parse sample image file: {err}") from None
-
-        return super().from_sample(
-            sample,
-            pilmode=pilmode,
-            mime_type=img_type.mime,
-            allowed_mime_types=allowed_mime_types,
-        )
+        return sample
 
     def to_spec(self) -> dict[str, t.Any]:
         return {

@@ -201,16 +201,9 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
                 "'validate_json' option from 'bentoml.io.JSON' has been deprecated. Use a Pydantic model to specify validation options instead."
             )
 
-    @classmethod
-    def from_sample(
-        cls,
-        sample: JSONType,
-        *,
-        json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
-    ) -> Self:
-        pydantic_model: t.Type[pydantic.BaseModel] | None = None
+    def _from_sample(self, sample: JSONType) -> JSONType:
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(sample):
-            pydantic_model = sample.__class__
+            self._pydantic_model = sample.__class__
         elif isinstance(sample, str):
             try:
                 sample = json.loads(sample)
@@ -229,10 +222,7 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
             raise BadInput(
                 f"Unable to infer JSON type from sample: {sample}. Please make sure the input is a valid JSON object."
             )
-
-        return super().from_sample(
-            sample, pydantic_model=pydantic_model, json_encoder=json_encoder
-        )
+        return sample
 
     def to_spec(self) -> dict[str, t.Any]:
         return {

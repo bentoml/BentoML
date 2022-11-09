@@ -351,17 +351,7 @@ class PandasDataFrame(
         _validate_serialization_format(self._default_format)
         self._mime_type = self._default_format.mime_type
 
-    @classmethod
-    def from_sample(
-        cls,
-        sample: ext.PdDataFrame,
-        *,
-        orient: ext.DataFrameOrient = "records",
-        apply_column_names: bool = True,
-        enforce_shape: bool = True,
-        enforce_dtype: bool = True,
-        default_format: t.Literal["json", "parquet", "csv"] = "json",
-    ) -> Self:
+    def _from_sample(self, sample: ext.PdDataFrame) -> ext.PdDataFrame:
         """
         Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
 
@@ -439,18 +429,13 @@ class PandasDataFrame(
                 raise InvalidArgument(
                     f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
                 ) from None
-
-        return super().from_sample(
-            sample,
-            dtype=True,  # set to True to infer from given input
-            orient=orient,
-            shape=sample.shape,
-            columns=[str(i) for i in list(sample.columns)],
-            enforce_shape=enforce_shape,
-            enforce_dtype=enforce_dtype,
-            apply_column_names=apply_column_names,
-            default_format=default_format,
-        )
+        self._shape = sample.shape
+        self._columns = [str(i) for i in list(sample.columns)]
+        self._dtype = True
+        self._enforce_dtype = True
+        self._enforce_shape = True
+        self._apply_column_names = True
+        return sample
 
     def _convert_dtype(
         self, value: ext.PdDTypeArg | None
@@ -858,15 +843,7 @@ class PandasSeries(
         self._shape = shape
         self._enforce_shape = enforce_shape
 
-    @classmethod
-    def from_sample(
-        cls,
-        sample: ext.PdSeries | t.Sequence[t.Any],
-        *,
-        orient: ext.SeriesOrient = "records",
-        enforce_shape: bool = True,
-        enforce_dtype: bool = True,
-    ) -> Self:
+    def _from_sample(self, sample: ext.PdSeries | t.Sequence[t.Any]) -> ext.PdSeries:
         """
         Create a :obj:`PandasSeries` IO Descriptor from given inputs.
 
@@ -906,15 +883,11 @@ class PandasSeries(
         """
         if not isinstance(sample, pd.Series):
             sample = pd.Series(sample)
-
-        return super().from_sample(
-            sample,
-            dtype=sample.dtype,
-            shape=sample.shape,
-            orient=orient,
-            enforce_dtype=enforce_dtype,
-            enforce_shape=enforce_shape,
-        )
+        self._dtype = sample.dtype
+        self._shape = sample.shape
+        self._enforce_dtype = True
+        self._enforce_shape = True
+        return sample
 
     def input_type(self) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")

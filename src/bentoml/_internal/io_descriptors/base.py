@@ -94,12 +94,10 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
             IO_DESCRIPTOR_REGISTRY[descriptor_id] = cls
         cls.descriptor_id = descriptor_id
 
-    def __new__(cls, *args: t.Any, **kwargs: t.Any) -> Self:
-        klass = object.__new__(cls)
-        klass.sample = t.cast(IOType, kwargs.pop("_sample", None))
-        klass._args = args or ()
-        klass._kwargs = kwargs or {}
-        return klass
+    if TYPE_CHECKING:
+
+        def __init__(self, **kwargs: t.Any) -> None:
+            ...
 
     def __getattr__(self, name: str) -> t.Any:
         if not self._initialized:
@@ -130,12 +128,16 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     def sample(self, value: IOType) -> None:
         self._sample = value
 
-    # NOTE: for custom types handle, use 'create_sample.register' to register
-    # custom types for 'from_sample'
     @classmethod
-    @abstractmethod
     def from_sample(cls, sample: IOType | t.Any, **kwargs: t.Any) -> Self:
-        return cls.__new__(cls, _sample=sample, **kwargs)
+        klass = cls(**kwargs)
+        sample = klass._from_sample(sample)
+        klass.sample = sample
+        return klass
+
+    @abstractmethod
+    def _from_sample(self, sample: t.Any) -> IOType:
+        raise NotImplementedError
 
     @property
     def mime_type(self) -> str:

@@ -175,10 +175,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
     def __repr__(self) -> str:
         return f"Multipart({','.join([f'{k}={v}' for k,v in zip(self._inputs, map(repr, self._inputs.values()))])})"
 
-    @classmethod
-    def from_sample(
-        cls, sample: dict[str, t.Any]  # pylint: disable=unused-argument
-    ) -> Self:
+    def _from_sample(cls, sample: dict[str, t.Any]) -> t.Any:
         raise NotImplementedError("'from_sample' is not supported for Multipart.")
 
     def input_type(

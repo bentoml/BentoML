@@ -124,7 +124,6 @@ def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
     # test cases where reshape is failed
     example = NumpyNdarray.from_sample(np.ones((2, 2, 3)))
     # Note that from_sample now lazy load the IO descriptor
-    example._lazy_init()
     example._enforce_shape = False
     example._enforce_dtype = False
     with caplog.at_level(logging.DEBUG):

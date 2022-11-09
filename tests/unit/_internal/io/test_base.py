@@ -57,9 +57,8 @@ class DummyDescriptor(IODescriptor[t.Any], descriptor_id="bentoml.io.Dummy"):
     async def to_proto(self, obj: t.Any) -> t.Any:
         return obj
 
-    @classmethod
-    def from_sample(cls, sample: t.Any, **kwargs: t.Any):
-        return super().from_sample(sample, **kwargs)
+    def _from_sample(cls, sample: t.Any, **kwargs: t.Any):
+        return sample
 
 
 @pytest.mark.parametrize(
@@ -72,13 +71,3 @@ class DummyDescriptor(IODescriptor[t.Any], descriptor_id="bentoml.io.Dummy"):
 def test_raise_not_implemented_openapi(fn: str):
     with pytest.raises(NotImplementedError):
         getattr(DummyDescriptor(), fn)()
-
-
-@pytest.mark.asyncio
-async def test_lazy_init():
-    d = DummyDescriptor.from_sample("asdf", foo="bar", baz="qux")
-    assert not d._initialized
-    assert d.sample == "asdf"
-    assert d.foo == "bar"
-    r = await d.from_http_request("asdf")
-    assert r and d._initialized

@@ -388,13 +388,7 @@ class NumpyNdarray(
         else:
             return Response(json.dumps(obj.tolist()), media_type=self._mime_type)
 
-    @classmethod
-    def from_sample(
-        cls,
-        sample: ext.NpNDArray | t.Sequence[t.Any],
-        enforce_dtype: bool = True,
-        enforce_shape: bool = True,
-    ) -> Self:
+    def _from_sample(self, sample: ext.NpNDArray | t.Sequence[t.Any]) -> ext.NpNDArray:
         """
         Create a :obj:`NumpyNdarray` IO Descriptor from given inputs.
 
@@ -444,14 +438,11 @@ class NumpyNdarray(
             raise BentoMLException(
                 f"Failed to create a 'numpy.ndarray' from given sample {sample}"
             ) from None
-
-        return super().from_sample(
-            sample,
-            shape=sample.shape,
-            dtype=sample.dtype,
-            enforce_dtype=enforce_dtype,
-            enforce_shape=enforce_shape,
-        )
+        self._dtype = sample.dtype
+        self._shape = sample.shape
+        self._enforce_dtype = True
+        self._enforce_shape = True
+        return sample
 
     async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:
         """

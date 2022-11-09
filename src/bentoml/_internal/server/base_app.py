@@ -51,7 +51,7 @@ class BaseAppFactory(abc.ABC):
     def __call__(self) -> "Starlette":
         from starlette.applications import Starlette
 
-        from bentoml._internal.configuration import get_debug_mode
+        from ..configuration import get_debug_mode
 
         return Starlette(
             debug=get_debug_mode(),

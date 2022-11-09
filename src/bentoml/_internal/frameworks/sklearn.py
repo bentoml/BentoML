@@ -20,9 +20,9 @@ if TYPE_CHECKING:
     from sklearn.pipeline import Pipeline
 
     from bentoml.types import ModelSignature
-    from bentoml._internal.models.model import ModelSignaturesType
 
     from .. import external_typing as ext
+    from ..models.model import ModelSignaturesType
 
     SklearnModel: t.TypeAlias = BaseEstimator | Pipeline
 

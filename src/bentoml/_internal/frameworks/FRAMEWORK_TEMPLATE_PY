@@ -10,10 +10,11 @@ import attr
 
 import bentoml
 from bentoml import Tag
-from bentoml._internal.models.model import MODEL_YAML_FILENAME
 from bentoml.exceptions import NotFound
 from bentoml.models import ModelContext
 from bentoml.models import ModelOptions
+
+from ..models.model import MODEL_YAML_FILENAME
 
 if TYPE_CHECKING:
     from bentoml.types import ModelSignatureDict

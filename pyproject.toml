@@ -143,7 +143,7 @@ grpc = [
 ]
 grpc-reflection = [
   "bentoml[grpc]",
-  "grpcio-reflection>=1.41.0, <1.49, !=1.48.2",
+  "grpcio-reflection>=1.41.0, !=1.48.2, <1.51",
 ]
 grpc-channelz = ["bentoml[grpc]", "grpcio-channelz>=1.41.0, <1.49, !=1.48.2"]
 # We kept for compatibility with previous

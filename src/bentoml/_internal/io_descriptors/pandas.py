@@ -340,7 +340,7 @@ class PandasDataFrame(
 
     def _from_sample(self, sample: ext.PdDataFrame) -> ext.PdDataFrame:
         """
-        Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
+        Create a :class:`PandasDataFrame` IO Descriptor from given inputs.
 
         Args:
             sample: Given sample ``pd.DataFrame`` data
@@ -371,7 +371,7 @@ class PandasDataFrame(
                             - :obj:`csv` - CSV text format (inferred from content-type ``"text/csv"``)
 
         Returns:
-            :obj:`PandasDataFrame`: :code:`PandasDataFrame` IODescriptor from given users inputs.
+            :class:`PandasDataFrame`: :class:`PandasDataFrame` IODescriptor from given users inputs.
 
         Example:
 
@@ -821,7 +821,7 @@ class PandasSeries(
 
     def _from_sample(self, sample: ext.PdSeries | t.Sequence[t.Any]) -> ext.PdSeries:
         """
-        Create a :obj:`PandasSeries` IO Descriptor from given inputs.
+        Create a :class:`PandasSeries` IO Descriptor from given inputs.
 
         Args:
             sample_input: Given sample ``pd.DataFrame`` data
@@ -841,7 +841,7 @@ class PandasSeries(
                            ``enforce_shape=False``.
 
         Returns:
-            :obj:`PandasSeries`: :code:`PandasSeries` IODescriptor from given users inputs.
+            :class:`PandasSeries`: :class:`PandasSeries` IODescriptor from given users inputs.
 
         Example:
 

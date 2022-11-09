@@ -211,6 +211,45 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         self._format: str = MIME_EXT_MAPPING[self._mime_type]
 
     def _from_sample(self, sample: ImageType | str) -> ImageType:
+        """
+        Create a class:`Image` IO Descriptor from given inputs.
+
+        Args:
+            sample: Given File-like object, or a path to a file.
+            pilmode: Optional color mode for PIL. Default to ``RGB``.
+            mime_type: The MIME type of the file type that this descriptor should return.
+                       If not specified, then ``from_sample`` will try to infer the MIME type
+                       from file extension.
+            allowed_mime_types: An optional list of MIME types to restrict input to.
+
+        Returns:
+            :class:`Image`: :class:`Image` IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           from __future__ import annotations
+
+           from typing import Any
+
+           import bentoml
+           from bentoml.io import Image
+
+           import numpy as np
+
+           input_spec = Image.from_sample("/path/to/image.jpg")
+
+           @svc.api(input=input_spec, output=Image())
+           async def predict(input: t.IO[t.Any]) -> t.IO[t.Any]:
+               return await runner.async_run(input)
+
+        Raises:
+            InvalidArgument: If the given sample is not a valid image type.
+            MissingDependencyException: If 'filetype' is not installed.
+            BadInput: Given sample from file can't be parsed.
+        """
         try:
             from filetype.match import image_match
         except ModuleNotFoundError:

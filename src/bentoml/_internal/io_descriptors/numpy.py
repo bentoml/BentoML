@@ -381,7 +381,7 @@ class NumpyNdarray(
 
     def _from_sample(self, sample: ext.NpNDArray | t.Sequence[t.Any]) -> ext.NpNDArray:
         """
-        Create a :obj:`NumpyNdarray` IO Descriptor from given inputs.
+        Create a :class:`NumpyNdarray` IO Descriptor from given inputs.
 
         Args:
             sample: Given sample ``np.ndarray`` data
@@ -393,7 +393,7 @@ class NumpyNdarray(
                            :code:`enforce_shape=False`.
 
         Returns:
-            :obj:`NumpyNdarray`: :code:`NumpyNdarray` IODescriptor from given users inputs.
+            :class:`NumpyNdarray`: :class:`NumpyNdarray` IODescriptor from given users inputs.
 
         Example:
 

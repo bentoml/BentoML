@@ -127,6 +127,39 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         return res
 
     def _from_sample(self, sample: FileType | str) -> FileType:
+        """
+        Create a class:`File` IO Descriptor from given inputs.
+
+        Args:
+            sample: Given File-like object, or a path to a file.
+            kind: The kind of file-like object to be used. Currently, the only accepted value is ``binaryio``.
+            mime_type: Optional MIME type for the descriptor. If not provided, ``from_sample``
+                       will try to infer the MIME type from the file extension.
+
+        Returns:
+            :class:`File`: :class:`File` IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           from __future__ import annotations
+
+           from typing import Any
+
+           import bentoml
+           from bentoml.io import File
+
+           input_spec = File.from_sample("/path/to/file.pdf")
+
+           @svc.api(input=input_spec, output=File())
+           async def predict(input: t.IO[t.Any]) -> t.IO[t.Any]:
+               return await runner.async_run(input)
+
+        Raises:
+            MissingDependencyException: If 'filetype' is not installed.
+        """
         try:
             import filetype
         except ModuleNotFoundError:

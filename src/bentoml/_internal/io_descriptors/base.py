@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import typing as t
-from abc import ABC
+import inspect
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from functools import update_wrapper
 
 from ...exceptions import InvalidArgument
 
@@ -18,22 +19,23 @@ if TYPE_CHECKING:
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
-    from ..service.openapi.specification import Schema
     from ..service.openapi.specification import MediaType
-    from ..service.openapi.specification import Reference
 
     InputType = (
         UnionType
-        | t.Type[t.Any]
+        | type[t.Any]
         | LazyType[t.Any]
-        | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
+        | dict[str, type[t.Any] | UnionType | LazyType[t.Any]]
     )
     OpenAPIResponse = dict[str, str | dict[str, MediaType] | dict[str, t.Any]]
+
+    F = t.Callable[..., t.Any]
 
 
 IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
 
 IOType = t.TypeVar("IOType")
+T = t.TypeVar("T")
 
 
 def from_spec(spec: dict[str, str]) -> IODescriptor[t.Any]:
@@ -42,47 +44,114 @@ def from_spec(spec: dict[str, str]) -> IODescriptor[t.Any]:
     return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)
 
 
-class _OpenAPIMeta:
-    @abstractmethod
-    def openapi_schema(self) -> Schema | Reference:
-        raise NotImplementedError
+# The following OpenAPI function must be implemented
+# It is a frozen set of the OpenAPI components with its return types
+# OpenAPI function shouldn't take in any arguments, rather than getting those
+# via self implementation of the respective IODescriptor.
+OPENAPI_METHODS = frozenset(
+    {
+        ("schema", "Schema | Reference"),
+        ("components", "dict[str, t.Any] | None"),
+        ("example", "t.Any | None"),
+        ("request_body", "dict[str, t.Any]"),
+        ("responses", "dict[str, t.Any]"),
+    }
+)
 
-    @abstractmethod
-    def openapi_components(self) -> dict[str, t.Any] | None:
-        raise NotImplementedError
+DEFAULT_FROM_SAMPLE_DOCSTRING = """\
+Creates an instance of {name} from given sample. Note that ``from_sample`` does not
+take positional arguments.
 
-    @abstractmethod
-    def openapi_example(self) -> t.Any | None:
-        raise NotImplementedError
+Args:
+    sample: The sample to create the instance from.
+    kwargs: Additional keyword arguments to pass to the constructor.
 
-    @abstractmethod
-    def openapi_request_body(self) -> dict[str, t.Any]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def openapi_responses(self) -> dict[str, t.Any]:
-        raise NotImplementedError
+Returns:
+    {name}: The instance created from the sample.
+"""
 
 
-class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
+class DescriptorMetaclass(type):
+    def __new__(
+        mcls: type[type[T]],  # type: ignore
+        name: str,
+        bases: tuple[type[t.Any], ...],
+        attrs: dict[str, t.Any],
+        **kwargs: t.Any,
+    ) -> type[T]:
+        # HTTP_METHODS will be the default attrs for all IODescriptor
+        attrs["HTTP_METHODS"] = ("POST",)
+
+        for base in bases:
+            # This case is reserved for implementation such as File where we have a `_from_sample`
+            # in the base class, and each subsequent IO descriptor that extends File won't
+            # have to implement it again.
+            # NOTE that we also have to check if given `_from_sample` is an abstract class.
+            # This is because we want to avoid the from_sample abstractmethod.
+            if "_from_sample" in base.__dict__ and not getattr(
+                base.__dict__["_from_sample"], "__isabstractmethod__", False
+            ):
+                _from_sample_impl = base.__dict__["_from_sample"]
+                break
+        else:
+            # GOTO, this is the case where each subsequent IO descriptor will have to implement
+            # its own `_from_sample` method.
+            if "_from_sample" not in attrs:
+                raise NotImplementedError(f"{name} must implement '_from_sample'.")
+            _from_sample_impl = attrs["_from_sample"]
+
+        # By default, the documentation for `from_sample` can be specified under `_from_sample`.
+        # We will try to get the docstring from `_from_sample` and patch it to `from_sample`.
+        # If there is no docstring, we will use the default docstring.
+        from_sample_docstring = inspect.getdoc(_from_sample_impl)
+        if not from_sample_docstring:
+            from_sample_docstring = DEFAULT_FROM_SAMPLE_DOCSTRING.format(name=name)
+        # This is `from_sample` implementation, where we will update the docstring to.
+        def _(impl: F) -> F:
+            def __from_sample(
+                cls: type[IODescriptor[t.Any]], sample: t.Any, **kwargs: t.Any
+            ) -> IODescriptor[t.Any]:
+                klass = cls(**kwargs)
+                klass.sample = impl(klass, sample)
+                return klass
+
+            __from_sample.__doc__ = from_sample_docstring
+            return update_wrapper(__from_sample, impl)
+
+        # Ensure that `from_sample` is the classmethod of any given IO descriptor.
+        if "from_sample" not in attrs:
+            attrs["from_sample"] = classmethod(_(_from_sample_impl))
+
+        # Each of the OpenAPI functions will be appended to the class
+        # with full annotations supported.
+        def __oapi_method(self: t.Type[T]) -> t.Any:
+            raise NotImplementedError
+
+        for (oapi, ann) in OPENAPI_METHODS:
+            __oapi_key = f"openapi_{oapi}"
+            if __oapi_key not in attrs:
+                __annotations = t.get_type_hints(__oapi_method)
+                __annotations.update({"return": ann})
+                attrs[__oapi_key] = __oapi_method
+
+        return super().__new__(mcls, name, bases, attrs, **kwargs)
+
+
+class IODescriptor(t.Generic[IOType], metaclass=DescriptorMetaclass):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
     in a :code:`bentoml.Service`. This is an abstract base class for extending new HTTP
     endpoint IO descriptor types in BentoServer.
     """
 
-    __slots__ = ("_args", "_kwargs", "_proto_fields", "_mime_type", "descriptor_id")
-
-    HTTP_METHODS = ["POST"]
+    __slots__ = ("_proto_fields", "_mime_type", "descriptor_id")
 
     descriptor_id: str | None
-
     _mime_type: str
-    _rpc_content_type: str = "application/grpc"
     _proto_fields: tuple[ProtoField]
+
+    _rpc_content_type: str = "application/grpc"
     _sample: IOType | None = None
-    _args: t.Sequence[t.Any]
-    _kwargs: dict[str, t.Any]
 
     def __init_subclass__(cls, *, descriptor_id: str | None = None):
         if descriptor_id is not None:
@@ -108,12 +177,6 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     @sample.setter
     def sample(self, value: IOType) -> None:
         self._sample = value
-
-    @classmethod
-    def from_sample(cls, sample: IOType | t.Any, **kwargs: t.Any) -> Self:
-        klass = cls(**kwargs)
-        klass.sample = klass._from_sample(sample)
-        return klass
 
     @abstractmethod
     def _from_sample(self, sample: t.Any) -> IOType:

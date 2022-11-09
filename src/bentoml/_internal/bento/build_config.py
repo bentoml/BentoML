@@ -26,13 +26,13 @@ from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..utils.dotenv import parse_dotenv
 from ..configuration import CLEAN_BENTOML_VERSION
-from ..container.dockerfile import DistroSpec
-from ..container.dockerfile import get_supported_spec
-from ..container.dockerfile import SUPPORTED_CUDA_VERSIONS
-from ..container.dockerfile import DOCKER_SUPPORTED_DISTROS
-from ..container.dockerfile import ALLOWED_CUDA_VERSION_ARGS
-from ..container.dockerfile import SUPPORTED_PYTHON_VERSIONS
 from .build_dev_bentoml_whl import build_bentoml_editable_wheel
+from ..container.frontend.dockerfile import DistroSpec
+from ..container.frontend.dockerfile import get_supported_spec
+from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
+from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
+from ..container.frontend.dockerfile import SUPPORTED_PYTHON_VERSIONS
+from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
 
 if TYPE_CHECKING:
     from attr import Attribute
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 # Docker defaults
 DEFAULT_CUDA_VERSION = "11.6.2"
-DEFAULT_DOCKER_DISTRO = "debian"
+DEFAULT_CONTAINER_DISTRO = "debian"
 
 CONDA_ENV_YAML_FILE_NAME = "environment.yml"
 
@@ -140,7 +140,7 @@ class DockerOptions:
     distro: str = attr.field(
         default=None,
         validator=attr.validators.optional(
-            attr.validators.in_(DOCKER_SUPPORTED_DISTROS)
+            attr.validators.in_(CONTAINER_SUPPORTED_DISTROS)
         ),
     )
     python_version: str = attr.field(
@@ -206,7 +206,7 @@ class DockerOptions:
 
         if self.base_image is None:
             if self.distro is None:
-                defaults["distro"] = DEFAULT_DOCKER_DISTRO
+                defaults["distro"] = DEFAULT_CONTAINER_DISTRO
             if self.python_version is None:
                 python_version = f"{version_info.major}.{version_info.minor}"
                 defaults["python_version"] = python_version
@@ -226,6 +226,7 @@ class DockerOptions:
             fs.path.join(
                 os.path.dirname(os.path.dirname(__file__)),
                 "container",
+                "frontend",
                 "dockerfile",
                 "entrypoint.sh",
             ),

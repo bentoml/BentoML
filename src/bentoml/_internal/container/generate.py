@@ -9,7 +9,7 @@ from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
 from ..utils import resolve_user_filepath
-from .dockerfile import DistroSpec
+from .frontend.dockerfile import DistroSpec
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -99,6 +99,7 @@ def generate_containerfile(
     *,
     conda: CondaOptions,
     bento_fs: FS,
+    frontend: str = "dockerfile",
     **override_bento_env: t.Any,
 ) -> str:
     """
@@ -135,7 +136,7 @@ def generate_containerfile(
         Overriding templates variables: bento__uid_gid, bento__user, bento__home, bento__path, bento__enable_buildkit
     """
     TEMPLATES_PATH = [
-        os.path.join(os.path.dirname(__file__), "dockerfile", "templates")
+        os.path.join(os.path.dirname(__file__), "frontend", frontend, "templates")
     ]
     ENVIRONMENT = Environment(
         extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],

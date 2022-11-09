@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 
 import attr
 
-from ....exceptions import InvalidArgument
-from ....exceptions import BentoMLException
+from .....exceptions import InvalidArgument
+from .....exceptions import BentoMLException
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
     ListStr = list[str]
-    from ...bento.build_config import CondaOptions
-    from ...bento.build_config import DockerOptions
+    from ....bento.build_config import CondaOptions
+    from ....bento.build_config import DockerOptions
 else:
     ListStr = list
 
@@ -43,7 +43,7 @@ SUPPORTED_RELEASE_TYPES = ["python", "miniconda", "cuda"]
 # BentoML supported distros mapping spec with
 # keys represents distros, and value is a tuple of list for supported python
 # versions and list of supported CUDA versions.
-DOCKER_METADATA: dict[str, dict[str, t.Any]] = {
+CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
     "amazonlinux": {
         "supported_python_versions": ["3.7", "3.8"],
         "supported_cuda_versions": None,
@@ -94,7 +94,7 @@ DOCKER_METADATA: dict[str, dict[str, t.Any]] = {
     },
 }
 
-DOCKER_SUPPORTED_DISTROS = list(DOCKER_METADATA.keys())
+CONTAINER_SUPPORTED_DISTROS = list(CONTAINER_METADATA.keys())
 
 
 def get_supported_spec(spec: t.Literal["python", "miniconda", "cuda"]) -> list[str]:
@@ -102,7 +102,7 @@ def get_supported_spec(spec: t.Literal["python", "miniconda", "cuda"]) -> list[s
         raise InvalidArgument(
             f"Unknown release type: {spec}, supported spec: {SUPPORTED_RELEASE_TYPES}"
         )
-    return [v for v in DOCKER_METADATA if spec in DOCKER_METADATA[v]]
+    return [v for v in CONTAINER_METADATA if spec in CONTAINER_METADATA[v]]
 
 
 @attr.frozen
@@ -138,9 +138,9 @@ class DistroSpec:
         if not docker.distro:
             raise BentoMLException("Distro is required, got None instead.")
 
-        if docker.distro not in DOCKER_METADATA:
+        if docker.distro not in CONTAINER_METADATA:
             raise BentoMLException(
-                f"{docker.distro} is not supported. Supported distros are: {', '.join(DOCKER_METADATA.keys())}."
+                f"{docker.distro} is not supported. Supported distros are: {', '.join(CONTAINER_METADATA.keys())}."
             )
 
         if docker.cuda_version is not None:
@@ -150,7 +150,7 @@ class DistroSpec:
         else:
             release_type = "python"
 
-        meta = DOCKER_METADATA[docker.distro]
+        meta = CONTAINER_METADATA[docker.distro]
 
         return cls(
             **meta[release_type],

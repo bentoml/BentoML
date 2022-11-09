@@ -443,6 +443,13 @@ request awaits the results of the method. In addition, BentoML will automaticall
 configure the ideal amount of parallelism based on the available number of CPU cores.
 Further tuning of event loop configuration is not needed under common use cases.
 
+.. tip::
+    Blocking logic such as communicating with an API or database without the `await`
+    keyword will block the event loop and prevent it from completing other IO tasks.
+    If you must use a library that does not support asynchronous IO with `await`, you
+    should use the synchronous API instead. If you are not sure, also use the synchronous
+    API to prevent unexpected errors.
+
 
 .. TODO:
 

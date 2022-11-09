@@ -112,17 +112,22 @@ include = [
 [project.optional-dependencies]
 all = [
   "bentoml[aws]",
-  "bentoml[io-json]",
-  "bentoml[io-image]",
-  "bentoml[io-pandas]",
+  "bentoml[io]",
   "bentoml[grpc]",
   "bentoml[grpc-reflection]",
   "bentoml[grpc-channelz]",
   "bentoml[tracing]",
 ]
 aws = ["fs-s3fs"]
+io = [
+  "bentoml[io-json]",
+  "bentoml[io-image]",
+  "bentoml[io-pandas]",
+  "bentoml[io-file]",
+] # syntatic sugar for bentoml[io-json,io-image,io-pandas,io-file]
+io-file = ["filetype"] # Currently use for from_sample
 io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
-io-image = ["Pillow"]
+io-image = ["bentoml[io-file]", "Pillow"]
 io-pandas = ["pandas", "pyarrow"]
 grpc = [
   # Restrict maximum version due to breaking protobuf 4.21.0 changes
@@ -164,6 +169,7 @@ source = ["src"]
 
 [tool.coverage.run]
 branch = true
+parallel = true
 source = ["src/bentoml/"]
 omit = [
   "src/bentoml/__main__.py",
@@ -202,7 +208,8 @@ exclude_lines = [
   "^\\s*except ImportError",
   "if __name__ == .__main__.:",
   "^\\s*if TYPE_CHECKING:",
-  "^\\s*@overload( |$)",
+  "^\\s*@(t\\.)?overload( |$)",
+  "@(abc\\.)?abstractmethod",
 ]
 
 [tool.black]

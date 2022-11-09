@@ -104,7 +104,7 @@ class Schema:
     anyOf: t.Optional[t.List[Schema]] = None
     not_: t.Optional[Schema] = None
     items: t.Optional[t.Union[Schema, t.List[Schema]]] = None
-    properties: t.Optional[t.Dict[str, Schema]] = None
+    properties: t.Optional[t.Dict[str, t.Union[Schema, Reference]]] = None
     additionalProperties: t.Optional[t.Union[Schema, Reference, bool]] = None
     description: t.Optional[str] = None
     format: t.Optional[str] = None
@@ -187,7 +187,7 @@ class Operation:
     description: t.Optional[str] = None
     externalDocs: t.Optional[ExternalDocumentation] = None
     operationId: t.Optional[str] = None
-    requestBody: t.Optional[t.Union[RequestBody, Reference]] = None
+    requestBody: t.Optional[t.Union[RequestBody, Reference, t.Dict[str, t.Any]]] = None
 
     # Not yet supported: parameters, callbacks, deprecated, servers, security
 
@@ -219,14 +219,14 @@ class PathItem:
     ref: t.Optional[str] = None
     summary: t.Optional[str] = None
     description: t.Optional[str] = None
-    get: t.Optional[Operation] = None
-    put: t.Optional[Operation] = None
-    post: t.Optional[Operation] = None
-    delete: t.Optional[Operation] = None
-    options: t.Optional[Operation] = None
-    head: t.Optional[Operation] = None
-    patch: t.Optional[Operation] = None
-    trace: t.Optional[Operation] = None
+    get: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
+    put: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
+    post: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
+    delete: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
+    options: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
+    head: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
+    patch: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
+    trace: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
     # not yet supported: servers, parameters
 
 
@@ -252,7 +252,9 @@ class Components:
     schemas: t.Dict[str, t.Union[Schema, Reference]]
     responses: t.Optional[t.Dict[str, t.Union[Response, Reference]]] = None
     examples: t.Optional[t.Dict[str, t.Union[Example, Reference]]] = None
-    requestBodies: t.Optional[t.Dict[str, t.Union[RequestBody, Reference]]] = None
+    requestBodies: t.Optional[
+        t.Dict[str, t.Union[RequestBody, Reference, t.Dict[str, t.Any]]]
+    ] = None
     links: t.Optional[t.Dict[str, t.Union[Link, Reference]]] = None
 
     # Not yet supported: securitySchemes, callbacks, parameters, headers

@@ -712,7 +712,7 @@ class BentoBuildConfig:
         use_cuda = self.docker.cuda_version is not None
 
         if use_cuda and use_conda:
-            raise BentoMLException(
+            logger.warning(
                 "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced"
             )
 

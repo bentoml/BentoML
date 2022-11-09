@@ -12,9 +12,9 @@ from bentoml import Tag
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
-from bentoml._internal.models.model import ModelContext
 
 from ..utils.pkg import get_pkg_version
+from ..models.model import ModelContext
 
 if TYPE_CHECKING:
     from bentoml.types import ModelSignature

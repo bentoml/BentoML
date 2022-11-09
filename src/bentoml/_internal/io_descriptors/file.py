@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -12,10 +13,12 @@ from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
 from ..types import FileLike
+from ..utils import resolve_user_filepath
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
@@ -112,19 +115,32 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
 
     _proto_fields = ("file",)
 
-    def __new__(  # pylint: disable=arguments-differ # returning subclass from new
-        cls, kind: FileKind = "binaryio", mime_type: str | None = None
+    def __new__(
+        cls, kind: FileKind = "binaryio", mime_type: str | None = None, **kwargs: t.Any
     ) -> File:
         mime_type = mime_type if mime_type is not None else "application/octet-stream"
         if kind == "binaryio":
-            res = object.__new__(BytesIOFile)
+            res = super().__new__(BytesIOFile, **kwargs)
         else:
             raise ValueError(f"invalid File kind '{kind}'")
         res._mime_type = mime_type
         return res
 
-    def to_spec(self) -> dict[str, t.Any]:
-        raise NotImplementedError
+    def _from_sample(self, sample: FileType | str) -> FileType:
+        try:
+            import filetype
+        except ModuleNotFoundError:
+            raise MissingDependencyException(
+                "'filetype' is required to use 'from_sample'. Install it with 'pip install bentoml[io-file]'."
+            )
+        if isinstance(sample, t.IO):
+            sample = FileLike[bytes](sample, "<sample>")
+        elif isinstance(sample, (str, os.PathLike)):
+            p = resolve_user_filepath(sample, ctx=None)
+            self._mime_type = filetype.guess_mime(p)
+            with open(p, "rb") as f:
+                sample = FileLike[bytes](f, "<sample>")
+        return sample
 
     @classmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:
@@ -139,6 +155,9 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         return Schema(type="string", format="binary")
 
     def openapi_components(self) -> dict[str, t.Any] | None:
+        pass
+
+    def openapi_example(self):
         pass
 
     def openapi_request_body(self) -> dict[str, t.Any]:
@@ -192,7 +211,10 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
     async def from_proto(self, field: pb.File | bytes) -> FileLike[bytes]:
         raise NotImplementedError
 
-    async def from_http_request(self, request: Request) -> t.IO[bytes]:
+    async def from_http_request(self, request: Request) -> FileLike[bytes]:
+        raise NotImplementedError
+
+    def to_spec(self) -> dict[str, t.Any]:
         raise NotImplementedError
 
 
@@ -206,7 +228,7 @@ class BytesIOFile(File, descriptor_id=None):
             },
         }
 
-    async def from_http_request(self, request: Request) -> t.IO[bytes]:
+    async def from_http_request(self, request: Request) -> FileLike[bytes]:
         content_type, _ = parse_options_header(request.headers["content-type"])
         if content_type.decode("utf-8") == "multipart/form-data":
             form = await request.form()
@@ -228,7 +250,7 @@ class BytesIOFile(File, descriptor_id=None):
             return res  # type: ignore
         if content_type.decode("utf-8") == self._mime_type:
             body = await request.body()
-            return t.cast(t.IO[bytes], FileLike(io.BytesIO(body), "<request body>"))
+            return FileLike[bytes](io.BytesIO(body), "<request body>")
         raise BentoMLException(
             f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
         )

@@ -6,11 +6,10 @@ from typing import TYPE_CHECKING
 
 import anyio
 
-from bentoml._internal.runner.utils import Params
-from bentoml._internal.runner.container import Payload
-from bentoml._internal.runner.container import AutoContainer
-
 from . import RunnerHandle
+from ..utils import Params
+from ..container import Payload
+from ..container import AutoContainer
 
 if TYPE_CHECKING:
     from ..runner import Runner

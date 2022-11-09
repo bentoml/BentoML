@@ -23,10 +23,10 @@ BENTOML_MONITOR_TYPES = {"numerical", "categorical", "numerical_sequence"}
 
 MONITOR_REGISTRY: dict[str, MonitorBase[t.Any]] = {}  # cache of monitors
 
-MON_COLUMN_VAR = contextvars.ContextVar["dict[str, dict[str, str]] | None"](
+MON_COLUMN_VAR: contextvars.ContextVar["dict[str, dict[str, str]] | None"] = contextvars.ContextVar(
     "MON_COLUMN_VAR", default=None
 )
-MON_DATAS_VAR = contextvars.ContextVar["dict[str, collections.deque[DT]] | None"](
+MON_DATAS_VAR: contextvars.ContextVar["dict[str, collections.deque[t.Any]] | None"] = contextvars.ContextVar(
     "MON_DATAS_VAR", default=None
 )
 

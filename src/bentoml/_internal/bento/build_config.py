@@ -21,7 +21,7 @@ from pip_requirements_parser import RequirementsFile
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
-from ..container import generate_dockerfile
+from ..container import generate_containerfile
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..utils.dotenv import parse_dotenv
@@ -213,23 +213,15 @@ class DockerOptions:
 
         return attr.evolve(self, **defaults)
 
-    def write_to_bento(
-        self, bento_fs: FS, build_ctx: str, conda_options: CondaOptions
-    ) -> None:
+    def write_to_bento(self, bento_fs: FS, build_ctx: str, conda: CondaOptions) -> None:
         docker_folder = fs.path.combine("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
-        dockerfile = fs.path.combine(docker_folder, "Dockerfile")
+        dockerfile_path = fs.path.combine(docker_folder, "Dockerfile")
 
-        with bento_fs.open(dockerfile, "w") as dockerfile:
-            dockerfile.write(
-                generate_dockerfile(
-                    self,
-                    build_ctx=build_ctx,
-                    conda=conda_options,
-                    bento_fs=bento_fs,
-                )
-            )
-
+        bento_fs.writetext(
+            dockerfile_path,
+            generate_containerfile(self, build_ctx, conda=conda, bento_fs=bento_fs),
+        )
         copy_file_to_fs_folder(
             fs.path.join(
                 os.path.dirname(os.path.dirname(__file__)),
@@ -256,6 +248,9 @@ class DockerOptions:
             copy_file_to_fs_folder(
                 setup_script, bento_fs, docker_folder, "setup_script"
             )
+
+    def to_dict(self) -> dict[str, t.Any]:
+        return bentoml_cattr.unstructure(self)
 
 
 if TYPE_CHECKING:
@@ -380,13 +375,26 @@ class CondaOptions:
             ) as f:
                 yaml.dump(yaml_content, f)
 
-    def get_python_version(self, environment_yml_path: str) -> str | None:
+    def get_python_version(self, bento_fs: FS) -> str | None:
         # Get the python version from given environment.yml file
-        with open(environment_yml_path, "r") as f:
-            for line in f:
-                match = re.search(r"(?:python=)(\d+.\d+)$", line)
-                if match:
-                    return match.group().split("=")[-1]
+
+        environment_yml = bento_fs.getsyspath(
+            fs.path.join(
+                "env",
+                "conda",
+                CONDA_ENV_YAML_FILE_NAME,
+            )
+        )
+        if os.path.exists(environment_yml):
+            with open(environment_yml, "r") as f:
+                for line in f:
+                    match = re.search(r"(?:python=)(\d+.\d+)$", line)
+                    if match:
+                        return match.group().split("=")[-1]
+            logger.debug(
+                "No python version is specified under '%s'. Using the Python options specified under 'docker'.",
+                environment_yml,
+            )
 
     def with_defaults(self) -> CondaOptions:
         # Convert from user provided options to actual build options with default values
@@ -740,25 +748,25 @@ class BentoBuildConfig:
                     f"{self.docker.distro} does not supports conda. BentoML will only support conda with the following distros: {get_supported_spec('miniconda')}."
                 )
 
-            _spec = DistroSpec.from_options(self.docker, self.conda)
+            spec = DistroSpec.from_options(self.docker, self.conda)
             if (
                 self.docker.python_version is not None
-                and self.docker.python_version not in _spec.supported_python_versions
+                and self.docker.python_version not in spec.supported_python_versions
             ):
                 raise BentoMLException(
-                    f"{self.docker.python_version} is not supported for {self.docker.distro}. Supported python versions are: {', '.join(_spec.supported_python_versions)}."
+                    f"{self.docker.python_version} is not supported for {self.docker.distro}. Supported python versions are: {', '.join(spec.supported_python_versions)}."
                 )
 
             if self.docker.cuda_version is not None:
-                if _spec.supported_cuda_versions is None:
+                if spec.supported_cuda_versions is None:
                     raise BentoMLException(
                         f"{self.docker.distro} does not support CUDA, while 'docker.cuda_version={self.docker.cuda_version}' is provided."
                     )
                 if self.docker.cuda_version != "default" and (
-                    self.docker.cuda_version not in _spec.supported_cuda_versions
+                    self.docker.cuda_version not in spec.supported_cuda_versions
                 ):
                     raise BentoMLException(
-                        f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(_spec.supported_cuda_versions)}."
+                        f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(spec.supported_cuda_versions)}."
                     )
 
     def with_defaults(self) -> FilledBentoBuildConfig:

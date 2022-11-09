@@ -4,6 +4,8 @@ User facing python APIs for building a OCI-complicant image.
 
 from __future__ import annotations
 
+import os
+import shutil
 import typing as t
 import logging
 from typing import TYPE_CHECKING
@@ -17,6 +19,9 @@ from ._internal.container import build as _internal_build
 from ._internal.container import health
 from ._internal.container import get_backend
 from ._internal.container import register_backend
+from ._internal.container import (
+    construct_containerfile as _internal_construct_containerfile,
+)
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -440,4 +445,27 @@ def build(
     return _internal_build(bento_tag, backend, features=features, **kwargs)
 
 
-__all__ = ["build", "health", "register_backend", "get_backend"]
+@inject
+def get_containerfile(
+    bento_tag: Tag | str,
+    output_path: str | None = None,
+    enable_buildkit: bool = True,
+    features: t.Sequence[str] | None = None,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+) -> str:
+    bento = _bento_store.get(bento_tag)
+    if output_path is None:
+        output_path = os.path.join(
+            os.getcwd(), f"{bento.tag.path().replace(os.sep,'_')}.dockerfile"
+        )
+    with _internal_construct_containerfile(
+        bento,
+        enable_buildkit=enable_buildkit,
+        features=features,
+        add_header=True,
+    ) as (_, final_containerfile):
+        shutil.copyfile(final_containerfile, output_path)
+    return output_path
+
+
+__all__ = ["build", "health", "register_backend", "get_backend", "get_containerfile"]

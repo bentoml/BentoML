@@ -15,7 +15,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from .base import OCIBuilder
-from .generate import generate_dockerfile
+from .generate import generate_containerfile
 from ...exceptions import InvalidArgument
 from ..configuration.containers import BentoMLContainer
 
@@ -134,11 +134,12 @@ FEATURES = frozenset(
 
 
 @contextlib.contextmanager
-def construct_dockerfile(
+def construct_containerfile(
     bento: Bento,
     enable_buildkit: bool = True,
     *,
     features: t.Sequence[str] | None = None,
+    add_header: bool = False,
 ) -> t.Generator[tuple[str, str], None, None]:
     from ..bento.bento import BentoInfo
 
@@ -152,13 +153,13 @@ def construct_dockerfile(
         options = BentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
         fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
-        dockerfile = generate_dockerfile(
+        dockerfile = generate_containerfile(
             docker=options.docker,
             build_ctx=tempdir,
             conda=options.conda,
             bento_fs=temp_fs,
             enable_buildkit=enable_buildkit,
-            add_header=False,
+            add_header=add_header,
         )
         instruction.append(dockerfile)
         if features is not None:
@@ -204,7 +205,7 @@ def build(
 
     builder = get_backend(backend)
     context_path, dockerfile = clean_context.enter_context(
-        construct_dockerfile(
+        construct_containerfile(
             bento,
             features=features,
             enable_buildkit=enable_buildkit(builder=builder),

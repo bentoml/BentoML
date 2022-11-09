@@ -109,7 +109,6 @@ def get_supported_spec(spec: t.Literal["python", "miniconda", "cuda"]) -> list[s
 class DistroSpec:
     name: str = attr.field()
     image: str = attr.field(kw_only=True)
-    release_type: str = attr.field(kw_only=True)
 
     supported_python_versions: list[str] = attr.field(
         validator=attr.validators.deep_iterable(
@@ -136,8 +135,6 @@ class DistroSpec:
 
     @classmethod
     def from_options(cls, docker: DockerOptions, conda: CondaOptions) -> DistroSpec:
-        use_cuda = docker.cuda_version is not None
-        use_conda = not conda.is_empty()
         if not docker.distro:
             raise BentoMLException("Distro is required, got None instead.")
 
@@ -146,9 +143,9 @@ class DistroSpec:
                 f"{docker.distro} is not supported. Supported distros are: {', '.join(DOCKER_METADATA.keys())}."
             )
 
-        if use_cuda:
+        if docker.cuda_version is not None:
             release_type = "cuda"
-        elif use_conda:
+        elif not conda.is_empty():
             release_type = "miniconda"
         else:
             release_type = "python"
@@ -158,7 +155,6 @@ class DistroSpec:
         return cls(
             **meta[release_type],
             name=docker.distro,
-            release_type=release_type,
             supported_python_versions=meta["supported_python_versions"],
             supported_cuda_versions=meta["supported_cuda_versions"],
         )

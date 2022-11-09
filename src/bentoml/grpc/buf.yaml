@@ -10,11 +10,8 @@ lint:
     - DIRECTORY_SAME_PACKAGE
     - RPC_REQUEST_STANDARD_NAME
     - RPC_RESPONSE_STANDARD_NAME
-  ignore_only:
-    DEFAULT:
-      - src/bentoml/grpc/v1alpha1/service_test.proto
-    ENUM_VALUE_PREFIX:
-      - src/bentoml/grpc/v1alpha1/service.proto
+    - ENUM_VALUE_PREFIX
+    - PACKAGE_DIRECTORY_MATCH
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_same_request_response: true
   rpc_allow_google_protobuf_empty_requests: true

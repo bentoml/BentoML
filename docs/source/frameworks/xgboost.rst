@@ -145,7 +145,7 @@ GPU Inference
 
 If there is a GPU available, the XGBoost Runner will automatically use ``gpu_predictor`` by default.
 This can be disabled by using the
-:ref:`BentoML configuration file <guides/configuration:Configuring BentoML>` to disable Runner GPU
+:ref:`BentoML configuration file <guides/configuration:Configuration>` to disable Runner GPU
 access:
 
 .. code-block:: yaml

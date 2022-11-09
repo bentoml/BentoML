@@ -23,12 +23,18 @@ class PrometheusClient:
         multiproc_dir: str | None = None,
     ):
         """
-        Set up multiproc_dir for prometheus to work in multiprocess mode,
-        which is required when working with Gunicorn server
+        PrometheusClient is BentoML's own prometheus client that extends the official Python client.
 
-        Warning: for this to work, prometheus_client library must be imported after
-        this function is called. It relies on the os.environ['PROMETHEUS_MULTIPROC_DIR']
-        to properly setup for multiprocess mode
+        It sets up a multiprocess dir for Prometheus to work in multiprocess mode, which is required
+        for BentoML to work in production.
+
+        .. note::
+
+           For Prometheus to behave properly, ``prometheus_client`` must be imported after this client
+           is called. This has to do with ``prometheus_client`` relies on ``PROMEHEUS_MULTIPROC_DIR``, which
+           will be set by this client.
+
+        For API documentation, refer to https://docs.bentoml.org/en/latest/reference/metrics.html.
         """
         if multiproc:
             assert multiproc_dir is not None, "multiproc_dir must be provided"
@@ -58,6 +64,8 @@ class PrometheusClient:
         import prometheus_client
         import prometheus_client.parser
         import prometheus_client.metrics
+        import prometheus_client.exposition
+        import prometheus_client.metrics_core
         import prometheus_client.multiprocess
 
         self._imported = True
@@ -96,7 +104,21 @@ class PrometheusClient:
             registry=self.registry,
         )
 
+    start_wsgi_server = start_http_server
+
+    def write_to_textfile(self, path: str) -> None:
+        """
+        Write metrics to given path. This is intended to be used with
+        the Node expoerter textfile collector.
+
+        Args:
+            path: path to write the metrics to. This file must end
+                with '.prom' for the textfile collector to process it.
+        """
+        self.prometheus_client.write_to_textfile(path, registry=self.registry)
+
     def make_wsgi_app(self) -> ext.WSGIApp:
+        # Used by gRPC prometheus server.
         return self.prometheus_client.make_wsgi_app(registry=self.registry)  # type: ignore (unfinished prometheus types)
 
     def generate_latest(self):
@@ -114,53 +136,45 @@ class PrometheusClient:
 
     @property
     def CONTENT_TYPE_LATEST(self) -> str:
+        """
+        Returns:
+            str: Content type of the latest text format
+        """
         return self.prometheus_client.CONTENT_TYPE_LATEST
+
+    # For all of the documentation for instruments metrics below, we will extend
+    # upon prometheus_client's documentation, since their code segment aren't rst friendly, and
+    # not that easy to read.
 
     @property
     def Histogram(self):
-        return partial(
-            self.prometheus_client.Histogram,
-            registry=self.registry,
-        )
+        return partial(self.prometheus_client.Histogram, registry=self.registry)
 
     @property
     def Counter(self):
-        return partial(
-            self.prometheus_client.Counter,
-            registry=self.registry,
-        )
+        return partial(self.prometheus_client.Counter, registry=self.registry)
 
     @property
     def Summary(self):
-        return partial(
-            self.prometheus_client.Summary,
-            registry=self.registry,
-        )
+        return partial(self.prometheus_client.Summary, registry=self.registry)
 
     @property
     def Gauge(self):
-        return partial(
-            self.prometheus_client.Gauge,
-            registry=self.registry,
-        )
+        return partial(self.prometheus_client.Gauge, registry=self.registry)
 
     @property
     def Info(self):
-        return partial(
-            self.prometheus_client.Info,
-            registry=self.registry,
-        )
+        raise RuntimeError("Info is not supported in Prometheus multiprocess mode.")
 
     @property
     def Enum(self):
-        return partial(
-            self.prometheus_client.Enum,
-            registry=self.registry,
-        )
+        raise RuntimeError("Enum is not supported in Prometheus multiprocess mode.")
 
     @property
     def Metric(self):
-        return partial(
-            self.prometheus_client.Metric,
-            registry=self.registry,
-        )
+        """
+        A Metric family and its samples.
+
+        This is a base class to be used by instrumentation client. Custom collectors should use ``bentoml.metrics.metrics_core.GaugeMetricFamily``, ``bentoml.metrics.metrics_core.CounterMetricFamily``, ``bentoml.metrics.metrics_core.SummaryMetricFamily`` instead.
+        """
+        return partial(self.prometheus_client.Metric, registry=self.registry)

@@ -20,25 +20,14 @@ from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..models.model import ModelSignature
+from .utils.tensorflow import get_tf_version
+from .utils.tensorflow import get_input_signatures_v2
+from .utils.tensorflow import get_output_signatures_v2
+from .utils.tensorflow import get_restorable_functions
+from .utils.tensorflow import cast_py_args_to_tf_function_args
 from ..runner.container import Payload
 from ..runner.container import DataContainer
 from ..runner.container import DataContainerRegistry
-from ..utils.tensorflow import get_tf_version
-from ..utils.tensorflow import get_input_signatures_v2
-from ..utils.tensorflow import get_restorable_functions
-from ..utils.tensorflow import cast_py_args_to_tf_function_args
-
-logger = logging.getLogger(__name__)
-
-try:
-    import tensorflow as tf  # type: ignore
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "`tensorflow` is required in order to use module `bentoml.tensorflow`, install "
-        "tensorflow with `pip install tensorflow`. For more information, refer to "
-        "https://www.tensorflow.org/install"
-    )
-
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
@@ -46,9 +35,21 @@ if TYPE_CHECKING:
     from ..external_typing import tensorflow as tf_ext
 
     TFArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
+    TFModelOutputType = tf_ext.EagerTensor | tuple[tf_ext.EagerTensor]
+    TFRunnableOutputType = ext.NpNDArray | tuple[ext.NpNDArray]
+
+
+try:
+    import tensorflow as tf
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        "'tensorflow' is required in order to use module 'bentoml.tensorflow', install tensorflow with 'pip install tensorflow'. For more information, refer to https://www.tensorflow.org/install"
+    )
 
 MODULE_NAME = "bentoml.tensorflow"
 API_VERSION = "v1"
+
+logger = logging.getLogger(__name__)
 
 
 @attr.define
@@ -70,7 +71,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 def load_model(
     bento_model: str | Tag | bentoml.Model,
     device_name: str = "/device:CPU:0",
-) -> "tf_ext.AutoTrackable" | "tf_ext.Module":
+) -> tf_ext.AutoTrackable | tf_ext.Module:
     """
     Load a tensorflow model from BentoML local modelstore with given name.
 
@@ -113,24 +114,22 @@ def load_model(
         except RuntimeError:
             pass
 
-    with tf.device(device_name):
-        tf_model: "tf_ext.AutoTrackable" = tf.saved_model.load(bento_model.path)  # type: ignore
+    with tf.device(device_name):  # type: ignore (tf.device is a context manager)
+        tf_model: tf_ext.AutoTrackable = tf.saved_model.load(bento_model.path)
         return tf_model
 
 
 def save_model(
     name: str,
-    model: t.Union["tf_ext.KerasModel", "tf_ext.Module"],
+    model: tf_ext.KerasModel | tf_ext.Module,
     *,
-    tf_signatures: "tf_ext.ConcreteFunction" | None = None,
-    tf_save_options: "tf_ext.SaveOptions" | None = None,
-    signatures: t.Dict[str, ModelSignature]
-    | t.Dict[str, ModelSignatureDict]
-    | None = None,
-    labels: t.Dict[str, str] | None = None,
-    custom_objects: t.Dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
-    metadata: t.Dict[str, t.Any] | None = None,
+    tf_signatures: tf_ext.ConcreteFunction | None = None,
+    tf_save_options: tf_ext.SaveOptions | None = None,
+    signatures: dict[str, ModelSignature] | dict[str, ModelSignatureDict] | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: list[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
 
     """
@@ -142,7 +141,7 @@ def save_model(
         model (``keras.Model`` | ``tf.Module``):
             Instance of model to be saved
         tf_signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
-            Refers to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
+            Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
             from Tensorflow documentation for more information.
         tf_save_options (`tf.saved_model.SaveOptions`, `optional`, default to :code:`None`):
             :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
@@ -213,9 +212,10 @@ def save_model(
             }
         else:
             signatures = {"__call__": {"batchable": False}}
-
         logger.info(
-            f"Using the default model signature {signatures} for TensorFlow models."
+            'Using the default model signature for Tensorflow (%s) for model "%s".',
+            signatures,
+            name,
         )
 
     with bentoml.models.create(
@@ -279,11 +279,44 @@ def get_runnable(
         raw_method = getattr(runnable_self.model, method_name)
         method_partial_kwargs = partial_kwargs.get(method_name)
 
+        output_sigs = get_output_signatures_v2(raw_method)
+
+        if len(output_sigs) == 1:
+
+            # if there's only one output signatures, then we can
+            # define the _postprocess function without doing
+            # conditional casting each time
+
+            sig = output_sigs[0]
+            if isinstance(sig, tuple):
+
+                def _postprocess(
+                    res: tuple[tf_ext.EagerTensor],
+                ) -> TFRunnableOutputType:
+                    return tuple(t.cast("ext.NpNDArray", r.numpy()) for r in res)
+
+            else:
+
+                def _postprocess(res: tf_ext.EagerTensor) -> TFRunnableOutputType:
+                    return t.cast("ext.NpNDArray", res.numpy())
+
+        else:
+
+            # if there are no output signature or more than one output
+            # signatures, the post process function need to do casting
+            # depends on the real output value each time
+
+            def _postprocess(res: TFModelOutputType) -> TFRunnableOutputType:
+                if isinstance(res, tuple):
+                    return tuple(t.cast("ext.NpNDArray", r.numpy()) for r in res)
+                else:
+                    return t.cast("ext.NpNDArray", res.numpy())
+
         def _run_method(
             _runnable_self: TensorflowRunnable,
-            *args: "TFArgType",
-            **kwargs: "TFArgType",
-        ) -> "ext.NpNDArray":
+            *args: TFArgType,
+            **kwargs: TFArgType,
+        ) -> TFRunnableOutputType:
             if method_partial_kwargs is not None:
                 kwargs = dict(method_partial_kwargs, **kwargs)
 
@@ -305,14 +338,14 @@ def get_runnable(
                     raise
 
                 res = raw_method(*casted_args)
-            return t.cast("ext.NpNDArray", res.numpy())
+            return _postprocess(res)
 
         return _run_method
 
     def add_run_method(method_name: str, options: ModelSignature):
         def run_method(
-            runnable_self: TensorflowRunnable, *args: "TFArgType", **kwargs: "TFArgType"
-        ) -> "ext.NpNDArray":
+            runnable_self: TensorflowRunnable, *args: TFArgType, **kwargs: TFArgType
+        ) -> TFRunnableOutputType:
             _run_method = runnable_self.methods_cache.get(
                 method_name
             )  # is methods_cache nessesary?
@@ -342,9 +375,9 @@ class TensorflowTensorContainer(
 ):
     @classmethod
     def batches_to_batch(
-        cls, batches: t.Sequence["tf_ext.EagerTensor"], batch_dim: int = 0
-    ) -> t.Tuple["tf_ext.EagerTensor", list[int]]:
-        batch: "tf_ext.EagerTensor" = tf.concat(batches, axis=batch_dim)
+        cls, batches: t.Sequence[tf_ext.EagerTensor], batch_dim: int = 0
+    ) -> t.Tuple[tf_ext.EagerTensor, list[int]]:
+        batch: tf_ext.EagerTensor = tf.concat(batches, axis=batch_dim)
         # TODO: fix typing mismatch @larme
         indices: list[int] = list(
             itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
@@ -354,15 +387,15 @@ class TensorflowTensorContainer(
 
     @classmethod
     def batch_to_batches(
-        cls, batch: "tf_ext.EagerTensor", indices: t.Sequence[int], batch_dim: int = 0
-    ) -> t.List["tf_ext.EagerTensor"]:
+        cls, batch: tf_ext.EagerTensor, indices: t.Sequence[int], batch_dim: int = 0
+    ) -> t.List[tf_ext.EagerTensor]:
         size_splits = [indices[i + 1] - indices[i] for i in range(len(indices) - 1)]
         return tf.split(batch, size_splits, axis=batch_dim)  # type: ignore
 
     @classmethod
     def to_payload(
         cls,
-        batch: "tf_ext.EagerTensor",
+        batch: tf_ext.EagerTensor,
         batch_dim: int = 0,
     ) -> Payload:
 
@@ -375,14 +408,14 @@ class TensorflowTensorContainer(
     def from_payload(
         cls,
         payload: Payload,
-    ) -> "tf_ext.EagerTensor":
+    ) -> tf_ext.EagerTensor:
 
         return pickle.loads(payload.data)
 
     @classmethod
     def batch_to_payloads(
         cls,
-        batch: "tf_ext.EagerTensor",
+        batch: tf_ext.EagerTensor,
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> t.List[Payload]:
@@ -397,7 +430,7 @@ class TensorflowTensorContainer(
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-    ) -> t.Tuple["tf_ext.EagerTensor", t.List[int]]:
+    ) -> t.Tuple[tf_ext.EagerTensor, t.List[int]]:
         batches = [cls.from_payload(payload) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
 

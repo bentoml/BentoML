@@ -18,21 +18,20 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
-from ..utils import LazyLoader
 from ..utils.pkg import find_spec
 from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
-    import transformers
-
     from bentoml.types import ModelSignature
 
     from ..models.model import ModelSignaturesType
     from ..external_typing import transformers as ext
-else:
-    exc_msg = "transformers is required in order to use module `bentoml.transformers`. Install transformers with `pip install transformers`."
-    transformers = LazyLoader(
-        "transformers", globals(), "transformers", exc_msg=exc_msg
+
+try:
+    import transformers
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        "'transformers' is required in order to use module 'bentoml.transformers'. Install transformers with 'pip install transformers'."
     )
 
 
@@ -52,11 +51,8 @@ def _check_flax_supported() -> None:  # pragma: no cover
 
     if not _supported:
         logger.warning(
-            "Detected transformers version: "
-            f"{get_pkg_version('transformers')}, which "
-            "doesn't have supports for Flax. "
-            "Update `transformers` to 4.x and "
-            "above to have Flax supported."
+            "Detected transformers version: %s, which doesn't have supports for Flax. Update 'transformers' to 4.x and above to have Flax supported.",
+            get_pkg_version("transformers"),
         )
     else:
         _flax_available = find_spec("jax") is not None and find_spec("flax") is not None
@@ -64,15 +60,13 @@ def _check_flax_supported() -> None:  # pragma: no cover
             _jax_version = get_pkg_version("jax")
             _flax_version = get_pkg_version("flax")
             logger.info(
-                f"Jax version {_jax_version}, "
-                f"Flax version {_flax_version} available."
+                "Jax version %s, Flax version %s available.",
+                _jax_version,
+                _flax_version,
             )
         else:
             logger.warning(
-                "No versions of Flax or Jax are found under "
-                "the current machine. In order to use "
-                "Flax with transformers 4.x and above, "
-                "refers to https://github.com/google/flax#quick-install"
+                "No versions of Flax or Jax found on the current machine. In order to use Flax with transformers 4.x and above, refer to https://github.com/google/flax#quick-install"
             )
 
 
@@ -186,7 +180,7 @@ def load_model(
 
         import bentoml
         pipeline = bentoml.transformers.load_model('my_model:latest')
-    """  # noqa
+    """
     _check_flax_supported()
 
     if not isinstance(bento_model, Model):
@@ -232,7 +226,10 @@ def load_model(
     extra_kwargs.update(kwargs)
     if len(extra_kwargs) > 0:
         logger.info(
-            f"Loading '{task}' pipeline '{bento_model.tag}' with kwargs {extra_kwargs}."
+            "Loading '%s' pipeline '%s' with kwargs %s.",
+            task,
+            bento_model.tag,
+            extra_kwargs,
         )
     return transformers.pipeline(task=task, model=bento_model.path, **extra_kwargs)
 
@@ -317,13 +314,13 @@ def save_model(
         LazyType["ext.TransformersPipeline"]("transformers.pipelines.base.Pipeline"),  # type: ignore
     ):
         raise BentoMLException(
-            "`pipeline` must be an instance of `transformers.pipelines.base.Pipeline`. "
+            "'pipeline' must be an instance of 'transformers.pipelines.base.Pipeline'. "
             "To save other Transformers types like models, tokenizers, configs, feature "
             "extractors, construct a pipeline with the model, tokenizer, config, or feature "
             "extractor specified as arguments, then call save_model with the pipeline. "
             "Refer to https://huggingface.co/docs/transformers/main_classes/pipelines "
             "for more information on pipelines. If transformers doesn't provide a task you "
-            "need, refers to the custom pipeline section to create your own pipelines."
+            "need, refer to the custom pipeline section to create your own pipelines."
             """
             ```python
             import bentoml
@@ -348,7 +345,9 @@ def save_model(
             "__call__": {"batchable": False},
         }
         logger.info(
-            f"Using the default model signature for Transformers ({signatures}) for model {name}."
+            'Using the default model signature for Transformers (%s) for model "%s".',
+            signatures,
+            name,
         )
 
     if task_name is not None and task_definition is not None:
@@ -363,19 +362,20 @@ def save_model(
             )
 
         logger.info(
-            f"Arguments `task_name` and `task_definition` are provided. Saving model with pipeline "
-            f"task name '{task_name}' and task definition '{task_definition}'."
+            "Arguments 'task_name' and 'task_definition' are provided. Saving model with pipeline task name '%s' and task definition '%s'.",
+            task_name,
+            task_definition,
         )
 
         if pipeline.task is None or pipeline.task != task_name:
             raise BentoMLException(
-                f"Argument `task_name` '{task_name}' does not match pipeline task name '{pipeline.task}'."
+                f"Argument 'task_name' '{task_name}' does not match pipeline task name '{pipeline.task}'."
             )
 
         impl: type = task_definition["impl"]
         if type(pipeline) != impl:
             raise BentoMLException(
-                f"Argument `pipeline` is not an instance of {impl}. It is an instance of {type(pipeline)}."
+                f"Argument 'pipeline' is not an instance of {impl}. It is an instance of {type(pipeline)}."
             )
 
         if task_name in TASK_ALIASES:

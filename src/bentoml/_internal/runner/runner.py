@@ -100,14 +100,14 @@ class Runner:
         if name is None:
             lname = runnable_class.__name__.lower()
             logger.warning(
-                f"Using lowercased runnable class name '{lname}' for runner."
+                "Using lowercased runnable class name '%s' for runner.", lname
             )
         else:
             lname = name.lower()
 
             if name != lname:
                 logger.warning(
-                    f"Converting runner name '{name}' to lowercase: '{lname}'"
+                    "Converting runner name '%s' to lowercase: '%s'", name, lname
                 )
 
         try:
@@ -188,17 +188,20 @@ class Runner:
         if len(runner_method_map) == 1:
             default_method = next(iter(runner_method_map.values()))
             logger.debug(
-                f"Default runner method set to `{default_method.name}`, it can be accessed both via `runner.run` and `runner.{default_method.name}.async_run`"
+                "Default runner method set to '%s', it can be accessed both via 'runner.run' and 'runner.%s.async_run'.",
+                default_method.name,
+                default_method.name,
             )
         elif "__call__" in runner_method_map:
             default_method = runner_method_map["__call__"]
             logger.debug(
-                "Default runner method set to `__call__`, it can be accessed via `runner.run` or `runner.async_run`"
+                "Default runner method set to '__call__', it can be accessed via 'runner.run' or 'runner.async_run'."
             )
         else:
             default_method = None
             logger.debug(
-                f'No default method found for Runner "{name}", all method access needs to be in the form of `runner.{{method}}.run`'
+                "No default method found for Runner '%s', all method access needs to be in the form of 'runner.{method}.run'.",
+                name,
             )
 
         # set default run method entrypoint
@@ -227,7 +230,9 @@ class Runner:
         init local runnable instance, for testing and debugging only
         """
         if not quiet:
-            logger.warning("'Runner.init_local' is for debugging and testing only.")
+            logger.warning(
+                "'Runner.init_local' is for debugging and testing only. Make sure to remove it before deploying to production."
+            )
 
         self._init_local()
 

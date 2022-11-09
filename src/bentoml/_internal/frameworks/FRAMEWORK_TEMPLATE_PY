@@ -10,10 +10,11 @@ import attr
 
 import bentoml
 from bentoml import Tag
-from bentoml._internal.models.model import MODEL_YAML_FILENAME
 from bentoml.exceptions import NotFound
 from bentoml.models import ModelContext
 from bentoml.models import ModelOptions
+
+from ..models.model import MODEL_YAML_FILENAME
 
 if TYPE_CHECKING:
     from bentoml.types import ModelSignatureDict
@@ -142,7 +143,9 @@ def save_model(
             DEFAULT_MODEL_METHOD: {"batchable": False},
         }
         logger.info(
-            f"Using the default model signature for <FRAMEWORK> ({signatures}) for model {name}."
+            'Using the default model signature for <FRAMEWORK> (%s) for model "%s".',
+            signatures,
+            name,
         )
 
     if not isinstance(model, FrameworkModelType):

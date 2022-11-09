@@ -29,7 +29,7 @@ TEST_PYTHON_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 expected_yaml = """\
 name: test
 version: v1
-module: tests.unit._internal.models.test_model
+module: test_model
 labels:
   label: stringvalue
 options:

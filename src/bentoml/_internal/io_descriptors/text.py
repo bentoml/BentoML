@@ -13,13 +13,13 @@ from ..utils.http import set_cookies
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
-from ..service.openapi.specification import Response as OpenAPIResponse
 from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import RequestBody
 
 if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
+    from typing_extensions import Self
 
+    from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 else:
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
@@ -99,6 +99,11 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
                 f"'{self.__class__.__name__}' is not designed to take any args or kwargs during initialization."
             ) from None
 
+    def _from_sample(self, sample: str | bytes) -> str:
+        if isinstance(sample, bytes):
+            sample = sample.decode("utf-8")
+        return sample
+
     def input_type(self) -> t.Type[str]:
         return str
 
@@ -115,18 +120,29 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
     def openapi_components(self) -> dict[str, t.Any] | None:
         pass
 
-    def openapi_request_body(self) -> RequestBody:
+    def openapi_example(self):
+        return str(self.sample)
+
+    def openapi_request_body(self) -> dict[str, t.Any]:
         return {
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
             "required": True,
-            "x-bentoml-descriptor": self.to_spec(),
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
-            "x-bentoml-descriptor": self.to_spec(),
+            "content": {
+                self._mime_type: MediaType(
+                    schema=self.openapi_schema(), example=self.openapi_example()
+                )
+            },
+            "x-bentoml-io-descriptor": self.to_spec(),
         }
 
     async def from_http_request(self, request: Request) -> str:

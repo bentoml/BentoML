@@ -14,7 +14,7 @@ NumPy ``ndarray``
 
    Install it with ``pip install numpy`` and add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
-   Refers to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
 
    .. tab-set::
 
@@ -65,7 +65,7 @@ To use the IO descriptor, install bentoml with extra ``io-pandas`` dependency:
 
    Install it with ``pip install pandas`` and add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
-   Refers to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
 
    .. tab-set::
 
@@ -98,6 +98,11 @@ To use the IO descriptor, install bentoml with extra ``io-pandas`` dependency:
 .. automethod:: bentoml.io.PandasDataFrame.to_proto
 .. automethod:: bentoml.io.PandasDataFrame.to_http_response
 .. autoclass:: bentoml.io.PandasSeries
+.. automethod:: bentoml.io.PandasSeries.from_sample
+.. automethod:: bentoml.io.PandasSeries.from_proto
+.. automethod:: bentoml.io.PandasSeries.from_http_request
+.. automethod:: bentoml.io.PandasSeries.to_proto
+.. automethod:: bentoml.io.PandasSeries.to_http_response
 
 
 Structured Data with JSON
@@ -109,8 +114,42 @@ Structured Data with JSON
    `Pydantic <https://pydantic-docs.helpmanual.io/>`_ model, and use it to for data
    validation.
 
-   Make sure to install `Pydantic <https://pydantic-docs.helpmanual.io/>`_ with ``pip install pydantic`` if you want to use ``pydantic``.
+   To use the IO descriptor with pydantic, install bentoml with extra ``io-json`` dependency:
+
+   .. code-block:: bash
+
+      pip install "bentoml[io-json]"
+
+   This will include BentoML with `Pydantic <https://pydantic-docs.helpmanual.io/>`_
+   alongside with BentoML
+
    Then proceed to add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
+
+   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+
+   .. tab-set::
+
+      .. tab-item:: pip
+
+         .. code-block:: yaml
+            :caption: `bentofile.yaml`
+
+            ...
+            python:
+              packages:
+                - pydantic
+
+      .. tab-item:: conda
+
+         .. code-block:: yaml
+            :caption: `bentofile.yaml`
+
+            ...
+            conda:
+              channels:
+                - conda-forge
+              dependencies:
+                - pydantic
 
    Refers to :ref:`Build Options <concepts/bento:Bento Build Options>`.
 
@@ -139,6 +178,11 @@ Structured Data with JSON
                 - pydantic
 
 .. autoclass:: bentoml.io.JSON
+.. automethod:: bentoml.io.JSON.from_sample
+.. automethod:: bentoml.io.JSON.from_proto
+.. automethod:: bentoml.io.JSON.from_http_request
+.. automethod:: bentoml.io.JSON.to_proto
+.. automethod:: bentoml.io.JSON.to_http_response
 
 Texts
 -----
@@ -166,7 +210,7 @@ To use the IO descriptor, install bentoml with extra ``io-image`` dependency:
 
    Install it with ``pip install Pillow`` and add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
-   Refers to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
 
    .. tab-set::
 

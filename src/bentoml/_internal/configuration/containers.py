@@ -30,9 +30,8 @@ from ...exceptions import BentoMLConfigException
 from ..utils.unflatten import unflatten
 
 if TYPE_CHECKING:
-    from bentoml._internal.models import ModelStore
-
     from .. import external_typing as ext
+    from ..models import ModelStore
     from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
 
@@ -192,6 +191,11 @@ SCHEMA = Schema(
                 "protocol": Or(And(str, Use(str.lower), _check_otlp_protocol), None),
                 "url": Or(str, None),
             },
+        },
+        Optional("monitoring"): {
+            "enabled": bool,
+            Optional("type"): Or(str, None),
+            Optional("options"): Or(dict, None),
         },
         Optional("yatai"): {
             "default_server": Or(str, None),

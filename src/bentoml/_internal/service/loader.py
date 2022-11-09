@@ -204,9 +204,20 @@ def load_bento(
 
     # not in validate as it's only really necessary when getting bentos from disk
     if bento.info.bentoml_version != BENTOML_VERSION:
-        logger.warning(
-            f'Bento "{bento.tag}" was built with BentoML version {bento.info.bentoml_version}, which does not match the current BentoML version {BENTOML_VERSION}'
-        )
+        info_bentoml_version = bento.info.bentoml_version
+        if tuple(info_bentoml_version.split(".")) > tuple(BENTOML_VERSION.split(".")):
+            logger.warning(
+                "%s was built with newer version of BentoML, which does not match with current running BentoML version %s",
+                bento,
+                BENTOML_VERSION,
+            )
+        else:
+            logger.debug(
+                "%s was built with BentoML version %s, which does not match the current BentoML version %s",
+                bento,
+                info_bentoml_version,
+                BENTOML_VERSION,
+            )
     return _load_bento(bento, standalone_load)
 
 
@@ -337,7 +348,7 @@ def load(
                 raise BentoMLException(
                     f"Failed loading Bento from directory {bento_path}: {e}"
                 )
-            logger.debug(f"'{svc.name}' loaded from '{bento_path}': {svc}")
+            logger.debug("'%s' loaded from '%s': %s", svc.name, bento_path, svc)
         else:
             raise BentoMLException(
                 f"Failed loading service from path {bento_path}. When loading from a path, it must be either a Bento containing bento.yaml or a project directory containing bentofile.yaml"
@@ -350,17 +361,16 @@ def load(
                 working_dir=working_dir,
                 standalone_load=standalone_load,
             )
-            logger.debug(f"'{svc.name}' imported from source: {svc}")
+            logger.debug("'%s' imported from source: %s", svc.name, svc)
         except ImportServiceError as e1:
             try:
                 # Loading from local bento store by tag, e.g. "iris_classifier:latest"
                 svc = load_bento(bento_identifier, standalone_load=standalone_load)
-                logger.debug(f"'{svc.name}' loaded from Bento store: {svc}")
+                logger.debug("'%s' loaded from Bento store: %s", svc.name, svc)
             except (NotFound, ImportServiceError) as e2:
                 raise BentoMLException(
-                    f"Failed to load bento or import service "
-                    f"'{bento_identifier}'. If you are attempting to "
-                    f"import bento in local store: `{e1}`, or if you are importing by "
-                    f"python module path: `{e2}`"
+                    f"Failed to load bento or import service '{bento_identifier}'.\n"
+                    f"If you are attempting to import bento in local store: '{e1}'.\n"
+                    f"If you are importing by python module path: '{e2}'."
                 )
     return svc

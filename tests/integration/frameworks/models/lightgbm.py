@@ -13,6 +13,8 @@ from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.lightgbm
 
+backward_compatible = True
+
 # read in data
 cancer = load_breast_cancer()  # type: ignore (incomplete sklearn types)
 dt = lgb.basic.Dataset(cancer.data, label=cancer.target)  # type: ignore

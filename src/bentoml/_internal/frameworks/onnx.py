@@ -7,7 +7,6 @@ from types import ModuleType
 from typing import TYPE_CHECKING
 
 import attr
-import numpy as np
 
 import bentoml
 from bentoml import Tag
@@ -17,50 +16,42 @@ from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 
-from ..types import LazyType
 from ..utils.pkg import get_pkg_version
-from ..runner.utils import Params
+from ..utils.pkg import PackageNotFoundError
+from .utils.onnx import gen_input_casting_func
 
 if TYPE_CHECKING:
+
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
+
+    from .utils.onnx import ONNXArgType
+    from .utils.onnx import ONNXArgCastedType
+
+    ProvidersType = list[str | tuple[str, dict[str, t.Any]]]
 
 
 try:
     import onnx
-except ImportError:  # pragma: no cover (trivial error checking)
+    from google.protobuf.json_format import MessageToDict
+
+except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "onnx is required in order to use module `bentoml.onnx`, install "
-        "onnx with `pip install onnx`. For more information, refer to "
-        "https://onnx.ai/get-started.html"
+        "onnx is required in order to use module 'bentoml.onnx', install onnx with 'pip install onnx'. For more information, refer to https://onnx.ai/get-started.html"
     )
 
 try:
     import onnxruntime as ort
-except ImportError:  # pragma: no cover (trivial error checking)
+except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "`onnxruntime` or `onnxruntime-gpu` is required by `bentoml.onnx`, "
-        "install onnxruntime or onnxruntime-gpu with `pip install onnxruntime` "
-        "or `pip install onnxruntime-gpu`. For more information, refer to "
-        "https://onnxruntime.ai/"
+        "'onnxruntime' or 'onnxruntime-gpu' is required by 'bentoml.onnx', install onnxruntime or onnxruntime-gpu with 'pip install onnxruntime' or 'pip install onnxruntime-gpu'. For more information, refer to https://onnxruntime.ai/"
     )
 
 MODULE_NAME = "bentoml.onnx"
 MODEL_FILENAME = "saved_model.onnx"
-API_VERSION = "v1"
+API_VERSION = "v2"
 
 logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-    import torch  # noqa
-
-    from .. import external_typing as ext
-    from ..external_typing import tensorflow as tf_ext  # noqa
-
-    ProvidersType = list[str | t.Tuple[str, t.Dict[str, t.Any]]]
-    ONNXArgType = t.Union[
-        "ext.NpNDArray", "ext.PdDataFrame", "torch.Tensor", "tf_ext.Tensor"
-    ]
 
 
 # helper methods
@@ -83,8 +74,10 @@ def flatten_list(lst: t.List[t.Any]) -> t.List[str]:  # pragma: no cover
 class ONNXOptions(ModelOptions):
     """Options for the ONNX model"""
 
-    providers: list[str] | None = attr.field(default=None)
-    session_options: "ort.SessionOptions" | None = attr.field(default=None)
+    input_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
+    output_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
+    providers: t.Optional[list[str]] = attr.field(default=None)
+    session_options: t.Optional["ort.SessionOptions"] = attr.field(default=None)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -113,11 +106,21 @@ def get(tag_like: str | Tag) -> bentoml.Model:
     return model
 
 
+def _load_raw_model(bento_model: str | Tag | bentoml.Model) -> onnx.ModelProto:
+
+    if not isinstance(bento_model, bentoml.Model):
+        bento_model = get(bento_model)
+
+    model_path = bento_model.path_of(MODEL_FILENAME)
+    raw_model = onnx.load(model_path)
+    return raw_model
+
+
 def load_model(
     bento_model: str | Tag | bentoml.Model,
     *,
     providers: ProvidersType | None = None,
-    session_options: "ort.SessionOptions" | None = None,
+    session_options: ort.SessionOptions | None = None,
 ) -> ort.InferenceSession:
     """
     Load the onnx model with the given tag from the local BentoML model store.
@@ -169,7 +172,7 @@ def save_model(
     name: str,
     model: onnx.ModelProto,
     *,
-    signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
+    signatures: dict[str, ModelSignatureDict] | dict[str, ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,
@@ -256,20 +259,24 @@ def save_model(
 
     """
 
-    try:
-        import importlib.metadata as importlib_metadata
-    except ImportError:
-        import importlib_metadata
-
     # prefer "onnxruntime-gpu" over "onnxruntime" for framework versioning
+    _onnxruntime_version = None
+    _onnxruntime_pkg = None
     _PACKAGE = ["onnxruntime-gpu", "onnxruntime", "onnxruntime-silicon"]
     for p in _PACKAGE:
         try:
             _onnxruntime_version = get_pkg_version(p)
             _onnxruntime_pkg = p
             break
-        except importlib_metadata.PackageNotFoundError:
+        except PackageNotFoundError:
             pass
+    assert (
+        _onnxruntime_pkg is not None and _onnxruntime_version is not None
+    ), "Failed to find onnxruntime package version."
+
+    assert _onnxruntime_version is not None, "onnxruntime is not installed"
+    if not isinstance(model, onnx.ModelProto):
+        raise TypeError(f"Given model ({model}) is not a onnx.ModelProto.")
 
     context = ModelContext(
         framework_name="onnx",
@@ -284,26 +291,23 @@ def save_model(
             "run": {"batchable": False},
         }
         logger.info(
-            f"Using the default model signature for onnx ({signatures}) for model {name}."
+            'Using the default model signature for ONNX (%s) for model "%s".',
+            signatures,
+            name,
         )
     else:
         provided_methods = list(signatures.keys())
         if provided_methods != ["run"]:
             raise BentoMLException(
-                "bentoml.onnx will load onnx model into an "
-                "`onnxruntime.InferenceSession` for inference, hence the only "
-                f"allowed method name is `run` instead of provided {provided_methods}"
+                f"Provided method names {[m for m  in provided_methods if m != 'run']} are invalid. 'bentoml.onnx' will load ONNX model into an 'onnxruntime.InferenceSession' for inference, so the only supported method name is 'run'."
             )
 
-    if not isinstance(model, onnx.ModelProto):
-        raise TypeError(f"Given model ({model}) is not a onnx.ModelProto.")
+    run_input_specs = [MessageToDict(inp) for inp in model.graph.input]
+    run_output_specs = [MessageToDict(out) for out in model.graph.output]
+    input_specs = {"run": run_input_specs}
+    output_specs = {"run": run_output_specs}
 
-    if len(model.graph.output) > 1:
-        logger.warning(
-            "The model you are attempting to save has more than one output. The ONNX runner will only return the first output."
-        )
-
-    options = ONNXOptions()
+    options = ONNXOptions(input_specs=input_specs, output_specs=output_specs)
 
     with bentoml.models.create(
         name,
@@ -326,6 +330,25 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
+
+    # backward compatibility for v1, load raw model to infer
+    # input_specs/output_specs for onnx model
+    if bento_model.info.api_version == "v1":
+
+        raw_model: onnx.ModelProto | None = None
+        options = t.cast(ONNXOptions, bento_model.info.options)
+
+        if not options.input_specs:
+            raw_model = _load_raw_model(bento_model)
+            run_input_specs = [MessageToDict(inp) for inp in raw_model.graph.input]
+            input_specs = {"run": run_input_specs}
+            bento_model = bento_model.with_options(input_specs=input_specs)
+
+        if not options.output_specs:
+            raw_model = raw_model or _load_raw_model(bento_model)
+            run_output_specs = [MessageToDict(out) for out in raw_model.graph.output]
+            output_specs = {"run": run_output_specs}
+            bento_model = bento_model.with_options(output_specs=output_specs)
 
     class ONNXRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
@@ -365,18 +388,12 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 session_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL
                 if session_options.intra_op_num_threads != 0:
                     logger.warning(
-                        "You have modified default setting of "
-                        "onnxruntime.InferenceSession's `intra_op_num_threads` "
-                        "setting, bentoml.onnx will try to manage CPU resource "
-                        "for you and override this setting"
+                        "Overriding specified 'session_options.intra_op_num_threads'."
                     )
                 session_options.intra_op_num_threads = thread_count
                 if session_options.inter_op_num_threads != 0:
                     logger.warning(
-                        "You have modified default setting of "
-                        "onnxruntime.InferenceSession's `inter_op_num_threads` "
-                        "setting, bentoml.onnx will try to manage CPU resource "
-                        "for you and override this setting"
+                        "Overriding specified 'session_options.inter_op_num_threads'."
                     )
                 session_options.inter_op_num_threads = thread_count
 
@@ -388,48 +405,50 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             for method_name in bento_model.info.signatures:
                 self.predict_fns[method_name] = getattr(self.model, method_name)
 
-    def _mapping(item: ONNXArgType) -> "ext.NpNDArray":
+    def add_runnable_method(
+        method_name: str,
+        signatures: ModelSignature,
+        input_specs: list[dict[str, t.Any]],
+        output_specs: list[dict[str, t.Any]],
+    ):
 
-        # currently ort only support np.float32
-        # https://onnxruntime.ai/docs/api/python/auto_examples/plot_common_errors.html
-        # TODO @larme: what dtype of input to use if we use FP16? ref: onnxruntime issue 11768
-        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
-            if item.dtype != np.float32:
-                item = item.astype(np.float32, copy=False)
-        elif LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
-            item = item.to_numpy(dtype=np.float32)
-        elif LazyType["tf.Tensor"]("tensorflow.Tensor").isinstance(item):
-            item = np.array(memoryview(item)).astype(np.float32, copy=False)  # type: ignore
-        elif LazyType["torch.Tensor"]("torch.Tensor").isinstance(item):
-            item = item.numpy().astype(np.float32, copy=False)
+        casting_funcs = [gen_input_casting_func(spec) for spec in input_specs]
+
+        if len(output_specs) > 1:
+
+            def _process_output(outs):
+                return tuple(outs)
+
         else:
-            raise TypeError(
-                "`run` of ONNXRunnable only takes "
-                "`numpy.ndarray` or `pd.DataFrame`, `tf.Tensor`, or `torch.Tensor` as input parameters"
-            )
-        return item
 
-    def add_runnable_method(method_name: str, options: ModelSignature):
-        def _run(self, *args: ONNXArgType) -> t.Any:
-            params = Params["ONNXArgType"](*args)
-            params = params.map(_mapping)
+            def _process_output(outs):
+                return outs[0]
 
-            input_names = {
-                i.name: val for i, val in zip(self.model.get_inputs(), params.args)
+        def _run(self: ONNXRunnable, *args: ONNXArgType) -> t.Any:
+            casted_args = [
+                casting_funcs[idx](args[idx]) for idx in range(len(casting_funcs))
+            ]
+
+            input_names: dict[str, ONNXArgCastedType] = {
+                i.name: val for i, val in zip(self.model.get_inputs(), casted_args)
             }
-            output_names = [o.name for o in self.model.get_outputs()]
-            return self.predict_fns[method_name](output_names, input_names)[0]
+            output_names: list[str] = [o.name for o in self.model.get_outputs()]
+            raw_outs = self.predict_fns[method_name](output_names, input_names)
+            return _process_output(raw_outs)
 
         ONNXRunnable.add_method(
             _run,
             name=method_name,
-            batchable=options.batchable,
-            batch_dim=options.batch_dim,
-            input_spec=options.input_spec,
-            output_spec=options.output_spec,
+            batchable=signatures.batchable,
+            batch_dim=signatures.batch_dim,
+            input_spec=signatures.input_spec,
+            output_spec=signatures.output_spec,
         )
 
-    for method_name, options in bento_model.info.signatures.items():
-        add_runnable_method(method_name, options)
+    for method_name, signatures in bento_model.info.signatures.items():
+        options = t.cast(ONNXOptions, bento_model.info.options)
+        input_specs = options.input_specs[method_name]
+        output_specs = options.output_specs[method_name]
+        add_runnable_method(method_name, signatures, input_specs, output_specs)
 
     return ONNXRunnable

@@ -19,7 +19,7 @@ from bentoml.exceptions import MissingDependencyException
 from ..types import LazyType
 from ..models.model import ModelSignature
 from ..runner.utils import Params
-from ..utils.tensorflow import get_tf_version
+from .utils.tensorflow import get_tf_version
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +31,11 @@ if TYPE_CHECKING:  # pragma: no cover
     KerasArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
 
 try:
+    import keras
     import tensorflow as tf
-    import tensorflow.keras as keras
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "Tensorflow is required in order to use module `bentoml.keras`, since BentoML "
-        "uses Tensorflow as Keras backend. Install Tensorflow with `pip install "
-        "tensorflow`. For more information, refer to https://www.tensorflow.org/install"
+        "Tensorflow is required in order to use module 'bentoml.keras', since BentoML uses Tensorflow as Keras backend. Install Tensorflow with 'pip install tensorflow'. For more information, refer to https://www.tensorflow.org/install"
     )
 
 MODULE_NAME = "bentoml.keras"
@@ -156,7 +154,7 @@ def save_model(
         model (:obj:`tensorflow.keras.Model` | :obj:`tensorflow.keras.engine.sequential.Sequential`):
             Instance of the Keras model to be saved to BentoML modelstore.
         tf_signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
-            Refers to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
+            Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
             from Tensorflow documentation for more information.
         tf_save_options (`tf.saved_model.SaveOptions`, `optional`, default to :code:`None`):
             :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
@@ -241,8 +239,8 @@ def save_model(
     if not isinstance(
         model,
         (
-            LazyType("tensorflow.keras.Model"),
-            LazyType("tensorflow.keras.sequential", "Sequential"),
+            t.cast("t.Type[keras.Model]", LazyType("keras.Model")),
+            t.cast("t.Type[keras.Sequential]", LazyType("keras.Sequential")),
         ),
     ):
         raise TypeError(
@@ -259,8 +257,11 @@ def save_model(
                 "batchable": False,
             }
         }
-
-        logger.info(f"Using the default model signature {signatures} for Keras models.")
+        logger.info(
+            'Using the default model signature for Keras (%s) for model "%s".',
+            signatures,
+            name,
+        )
 
     options = KerasOptions(include_optimizer=include_optimizer)
 

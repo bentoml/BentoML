@@ -299,7 +299,7 @@ Runner Definition
 Runner Configuration
 --------------------
 
-Runner behaviors and resource allocation can be specified via BentoML :ref:`configuration <guides/configuration:Configuring BentoML>`.
+Runner behaviors and resource allocation can be specified via BentoML :ref:`configuration <guides/configuration:Configuration>`.
 Runners can be both configured individually or in aggregate under the ``runners`` configuration key. To configure a specific runner, specify its name
 under the ``runners`` configuration key. Otherwise, the configuration will be applied to all runners. The examples below demonstrate both
 the configuration for all runners in aggregate and for an individual runner (``iris_clf``).
@@ -307,7 +307,7 @@ the configuration for all runners in aggregate and for an individual runner (``i
 Adaptive Batching
 ^^^^^^^^^^^^^^^^^
 
-If a model or custom runner supports batching, the :ref:`adaptive batching <guides/configuration:Configuring BentoML>` mechanism is enabled by default.
+If a model or custom runner supports batching, the :ref:`adaptive batching <guides/configuration:Configuration>` mechanism is enabled by default.
 To explicitly disable or control adaptive batching behaviors at runtime, configuration can be specified under the ``batching`` key.
 
 .. tab-set::

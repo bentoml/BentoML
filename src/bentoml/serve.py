@@ -55,7 +55,7 @@ def ensure_prometheus_dir(
                     return str(path.absolute())
                 else:
                     raise RuntimeError(
-                        "Prometheus multiproc directory {} is not empty".format(path)
+                        f"Prometheus multiproc directory {path} is not empty."
                     )
             else:
                 return str(path.absolute())
@@ -65,21 +65,26 @@ def ensure_prometheus_dir(
     except shutil.Error as e:
         if not use_alternative:
             raise RuntimeError(
-                f"Failed to clean the prometheus multiproc directory {directory}: {e}"
+                f"Failed to clean the Prometheus multiproc directory {directory}: {e}"
             )
-    except OSError as e:
+    except Exception as e:  # pylint: disable=broad-except
         if not use_alternative:
             raise RuntimeError(
-                f"Failed to create the prometheus multiproc directory {directory}: {e}"
-            )
-    assert use_alternative
-    alternative = tempfile.mkdtemp()
-    logger.warning(
-        f"Failed to ensure the prometheus multiproc directory {directory}, "
-        f"using alternative: {alternative}",
-    )
-    BentoMLContainer.prometheus_multiproc_dir.set(alternative)
-    return alternative
+                f"Failed to create the Prometheus multiproc directory {directory}: {e}"
+            ) from None
+    try:
+        alternative = tempfile.mkdtemp()
+        logger.debug(
+            "Failed to create the Prometheus multiproc directory %s, using temporary alternative: %s",
+            directory,
+            alternative,
+        )
+        BentoMLContainer.prometheus_multiproc_dir.set(alternative)
+        return alternative
+    except Exception as e:  # pylint: disable=broad-except
+        raise RuntimeError(
+            f"Failed to create temporary Prometheus multiproc directory {directory}: {e}"
+        ) from None
 
 
 def create_watcher(
@@ -177,6 +182,8 @@ def serve_http_development(
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
     reload: bool = False,
 ) -> None:
+    prometheus_dir = ensure_prometheus_dir()
+
     from circus.sockets import CircusSocket
 
     from bentoml import load
@@ -188,7 +195,6 @@ def serve_http_development(
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
 
-    prometheus_dir = ensure_prometheus_dir()
     watchers: list[Watcher] = []
     circus_sockets: list[CircusSocket] = [
         CircusSocket(name=API_SERVER_NAME, host=host, port=port, backlog=backlog)
@@ -296,6 +302,8 @@ def serve_http_production(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
 ) -> None:
+    prometheus_dir = ensure_prometheus_dir()
+
     from circus.sockets import CircusSocket
 
     from bentoml import load
@@ -311,7 +319,6 @@ def serve_http_production(
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
     uds_path = None
-    prometheus_dir = ensure_prometheus_dir()
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
@@ -380,7 +387,6 @@ def serve_http_production(
                             f"$(circus.sockets.{runner.name})",
                             "--working-dir",
                             working_dir,
-                            "--no-access-log",
                             "--worker-id",
                             "$(CIRCUS.WID)",
                             "--worker-env-map",
@@ -396,7 +402,7 @@ def serve_http_production(
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
-    logger.debug(f"Runner map: {runner_bind_map}")
+    logger.debug("Runner map: %s", runner_bind_map)
 
     circus_socket_map[API_SERVER_NAME] = CircusSocket(
         name=API_SERVER_NAME,
@@ -491,6 +497,8 @@ def serve_grpc_development(
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
 ) -> None:
+    prometheus_dir = ensure_prometheus_dir()
+
     from circus.sockets import CircusSocket
 
     from bentoml import load
@@ -503,7 +511,6 @@ def serve_grpc_development(
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
 
-    prometheus_dir = ensure_prometheus_dir()
     watchers: list[Watcher] = []
     circus_sockets: list[CircusSocket] = []
 
@@ -668,6 +675,8 @@ def serve_grpc_production(
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
 ) -> None:
+    prometheus_dir = ensure_prometheus_dir()
+
     from bentoml import load
     from bentoml.exceptions import UnprocessableEntity
 
@@ -685,8 +694,6 @@ def serve_grpc_production(
     circus_socket_map: dict[str, CircusSocket] = {}
     runner_bind_map: dict[str, str] = {}
     uds_path = None
-
-    prometheus_dir = ensure_prometheus_dir()
 
     # Check whether users are running --grpc on windows
     # also raising warning if users running on MacOS or FreeBSD
@@ -782,7 +789,7 @@ def serve_grpc_production(
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
-    logger.debug(f"Runner map: {runner_bind_map}")
+    logger.debug("Runner map: %s", runner_bind_map)
     ssl_args = construct_ssl_args(
         ssl_certfile=ssl_certfile,
         ssl_keyfile=ssl_keyfile,

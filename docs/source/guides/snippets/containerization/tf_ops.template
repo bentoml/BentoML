@@ -1,0 +1,20 @@
+{% extends bento_base_template %}
+{% block SETUP_BENTO_BASE_IMAGE %}
+
+{{ super() }}
+
+WORKDIR /tmp
+
+COPY ./src/tfops/zero_out.cc .
+
+RUN pip3 install tensorflow
+RUN set -ex && \
+	TF_CFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') ) && \
+	TF_LFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))') ) && \
+	g++ --std=c++14 -shared zero_out.cc -o zero_out.so -fPIC ${TF_CFLAGS[@]} ${TF_LFLAGS[@]} -I$(python -c 'import tensorflow as tf; print(tf.sysconfig.get_include());') -D_GLIBCXX_USE_CXX11_ABI=0 -O2
+
+{% endblock %}
+{% block SETUP_BENTO_COMPONENTS %}
+{{ super() }}
+RUN stat /usr/lib/zero_out.so
+{% endblock %}

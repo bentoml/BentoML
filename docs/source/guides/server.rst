@@ -1,6 +1,6 @@
-=====================
-Customize BentoServer
-=====================
+============
+Bento Server
+============
 
 BentoML Server runs the Service API in an `ASGI <https://asgi.readthedocs.io/en/latest/>`_
 web serving layer and puts Runners in a separate worker process pool managed by BentoML. The ASGI web
@@ -27,7 +27,7 @@ will be used as the REST API URL ``/classify``:
         ...
 
 However, user can customize this URL endpoint via the ``route`` option in the
-``bentoml.Service#api`` decorator. For example, the following code will assign the 
+``bentoml.Service#api`` decorator. For example, the following code will assign the
 endpoint with URL ``/v1/models/iris_classifier/predict``, regardless of the API function name:
 
 

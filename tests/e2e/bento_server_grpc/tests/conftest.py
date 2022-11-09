@@ -24,6 +24,9 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def pytest_collection_modifyitems(
     session: Session, config: Config, items: list[Item]
 ) -> None:
+    subprocess.check_call(
+        ["pip", "install", "-r", f"{os.path.join(PROJECT_DIR, 'requirements.txt')}"]
+    )
     subprocess.check_call([sys.executable, f"{os.path.join(PROJECT_DIR, 'train.py')}"])
 
 

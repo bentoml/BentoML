@@ -29,28 +29,32 @@ dependencies = [
   "aiohttp",
   "attrs>=21.1.0",
   "cattrs>=22.1.0",
-  "circus",
+  "circus>=0.17.0,!=0.17.2",
   "click>=7.0",
   "cloudpickle",
   "deepmerge",
   "fs",
   "numpy",
-  "opentelemetry-api>=1.9.0",
-  "opentelemetry-instrumentation==0.33b0",
-  "opentelemetry-instrumentation-aiohttp-client==0.33b0",
-  "opentelemetry-instrumentation-asgi==0.33b0",
-  "opentelemetry-sdk>=1.9.0",
-  "opentelemetry-semantic-conventions==0.33b0",
-  "opentelemetry-util-http==0.33b0",
+  # OpenTelemetry is the server dependencies, rather than SDK
+  # Since there are discrepancies among API and instrumentation packages,
+  # we should always pin the set version of Opentelemetry suite
+  "opentelemetry-api==1.13.0",
+  "opentelemetry-instrumentation==0.34b0",
+  "opentelemetry-instrumentation-aiohttp-client==0.34b0",
+  "opentelemetry-instrumentation-asgi==0.34b0",
+  "opentelemetry-sdk==1.13.0",
+  "opentelemetry-semantic-conventions==0.34b0",
+  "opentelemetry-util-http==0.34b0",
   "packaging>=20.0",
   "pathspec",
   "pip-tools>=6.6.2",
+  "pip-requirements-parser>=31.2.0",
   "prometheus-client>=0.10.0",
   "psutil",
   "pynvml<12",
   "python-dateutil",
-  "python-dotenv>=0.20.0",
   "python-multipart",
+  "python-json-logger",
   "requests",
   "rich>=11.2.0",
   "schema",
@@ -108,15 +112,22 @@ include = [
 [project.optional-dependencies]
 all = [
   "bentoml[aws]",
-  "bentoml[io-image]",
-  "bentoml[io-pandas]",
+  "bentoml[io]",
   "bentoml[grpc]",
   "bentoml[grpc-reflection]",
   "bentoml[grpc-channelz]",
   "bentoml[tracing]",
 ]
 aws = ["fs-s3fs"]
-io-image = ["Pillow"]
+io = [
+  "bentoml[io-json]",
+  "bentoml[io-image]",
+  "bentoml[io-pandas]",
+  "bentoml[io-file]",
+] # syntatic sugar for bentoml[io-json,io-image,io-pandas,io-file]
+io-file = ["filetype"] # Currently use for from_sample
+io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
+io-image = ["bentoml[io-file]", "Pillow"]
 io-pandas = ["pandas", "pyarrow"]
 grpc = [
   # Restrict maximum version due to breaking protobuf 4.21.0 changes
@@ -128,7 +139,7 @@ grpc = [
   # We can't use 1.48.2 since it depends on 3.19.5
   "grpcio>=1.41.0, <1.49, !=1.48.2",
   "grpcio-health-checking>=1.41.0, <1.49, !=1.48.2",
-  "opentelemetry-instrumentation-grpc==0.33b0",
+  "opentelemetry-instrumentation-grpc==0.34b0",
 ]
 grpc-reflection = [
   "bentoml[grpc]",
@@ -143,9 +154,9 @@ tracing = [
   "bentoml[tracing-otlp]",
   "bentoml[tracing-zipkin]",
 ]
-tracing-jaeger = ["opentelemetry-exporter-jaeger"]
-tracing-zipkin = ["opentelemetry-exporter-zipkin"]
-tracing-otlp = ["opentelemetry-exporter-otlp"]
+tracing-jaeger = ["opentelemetry-exporter-jaeger==1.13.0"]
+tracing-zipkin = ["opentelemetry-exporter-zipkin==1.13.0"]
+tracing-otlp = ["opentelemetry-exporter-otlp==1.13.0"]
 
 [tool.setuptools_scm]
 write_to = "src/bentoml/_version.py"
@@ -158,7 +169,8 @@ source = ["src"]
 
 [tool.coverage.run]
 branch = true
-source = ["src"]
+parallel = true
+source = ["src/bentoml/"]
 omit = [
   "src/bentoml/__main__.py",
   "src/bentoml/io.py",
@@ -196,7 +208,8 @@ exclude_lines = [
   "^\\s*except ImportError",
   "if __name__ == .__main__.:",
   "^\\s*if TYPE_CHECKING:",
-  "^\\s*@overload( |$)",
+  "^\\s*@(t\\.)?overload( |$)",
+  "@(abc\\.)?abstractmethod",
 ]
 
 [tool.black]
@@ -224,10 +237,7 @@ exclude = '''
 '''
 
 [tool.pytest.ini_options]
-addopts = [
-  "-rfEX",
-  "-pbentoml.testing.pytest.plugin"
-]
+addopts = ["-rfEX", "-pbentoml.testing.pytest.plugin"]
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 
@@ -243,93 +253,10 @@ extension-pkg-allow-list = [
   "pydantic.schema",
 ]
 ignore-paths = [
-  "typings",
   "src/bentoml/_internal/external_typing",
   "src/bentoml/grpc/v1alpha1",
 ]
-disable = [
-  "import-error",
-  "print-statement",
-  "parameter-unpacking",
-  "unpacking-in-except",
-  "old-raise-syntax",
-  "backtick",
-  "raw-checker-failed",
-  "bad-inline-option",
-  "locally-disabled",
-  "file-ignored",
-  "suppressed-message",
-  "useless-suppression",
-  "deprecated-pragma",
-  "apply-builtin",
-  "basestring-builtin",
-  "buffer-builtin",
-  "cmp-builtin",
-  "coerce-builtin",
-  "execfile-builtin",
-  "file-builtin",
-  "long-builtin",
-  "raw_input-builtin",
-  "reduce-builtin",
-  "standarderror-builtin",
-  "coerce-method",
-  "delslice-method",
-  "getslice-method",
-  "setslice-method",
-  "no-absolute-import",
-  "old-division",
-  "dict-iter-method",
-  "dict-view-method",
-  "next-method-called",
-  "metaclass-assignment",
-  "indexing-exception",
-  "raising-string",
-  "reload-builtin",
-  "oct-method",
-  "hex-method",
-  "nonzero-method",
-  "cmp-method",
-  "input-builtin",
-  "round-builtin",
-  "intern-builtin",
-  "unichr-builtin",
-  "map-builtin-not-iterating",
-  "zip-builtin-not-iterating",
-  "range-builtin-not-iterating",
-  "filter-builtin-not-iterating",
-  "using-cmp-argument",
-  "exception-message-attribute",
-  "invalid-str-codec",
-  "sys-max-int",
-  "bad-python3-import",
-  "deprecated-string-function",
-  "deprecated-str-translate-call",
-  "deprecated-itertools-function",
-  "deprecated-types-field",
-  "next-method-defined",
-  "dict-items-not-iterating",
-  "dict-keys-not-iterating",
-  "dict-values-not-iterating",
-  "deprecated-operator-function",
-  "deprecated-urllib-function",
-  "xreadlines-attribute",
-  "deprecated-sys-function",
-  "exception-escape",
-  "comprehension-escape",
-  "logging-fstring-interpolation",
-  "logging-format-interpolation",
-  "logging-not-lazy",
-  "C",
-  "R",
-  "fixme",
-  "protected-access",
-  "no-member",
-  "unsubscriptable-object",
-  "raise-missing-from",
-  "isinstance-second-argument-not-valid-type",
-  "attribute-defined-outside-init",
-  "relative-beyond-top-level",
-]
+disable = ["coerce-builtin", "no-absolute-import", "C", "R"]
 enable = ["c-extension-no-member"]
 evaluation = "10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)"
 msg-template = "{msg_id}:{symbol} [{line:0>3d}:{column:0>2d}] {obj}: {msg}"
@@ -382,7 +309,7 @@ skip_glob = [
 
 [tool.pyright]
 pythonVersion = "3.10"
-include = ["src/bentoml", "src/bentoml_cli"]
+include = ["src/", "examples/", "tests/"]
 exclude = [
   'src/bentoml/_version.py',
   'src/bentoml/__main__.py',

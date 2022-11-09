@@ -559,6 +559,14 @@ validation, specify the desired variant in the under ``python.packages`` field:
            packages:
            - "bentoml[aws]"
 
+   .. tab-item:: JSON IO
+
+      .. code-block:: yaml
+
+         python:
+           packages:
+           - "bentoml[io-json]"
+
    .. tab-item:: Image IO
 
       .. code-block:: yaml
@@ -574,6 +582,14 @@ validation, specify the desired variant in the under ``python.packages`` field:
          python:
            packages:
            - "bentoml[io-pandas]"
+
+   .. tab-item:: JSON IO
+
+      .. code-block:: yaml
+
+         python:
+           packages:
+           - "bentoml[io-json]"
 
    .. tab-item:: Jaeger
 
@@ -591,7 +607,7 @@ validation, specify the desired variant in the under ``python.packages`` field:
            packages:
            - "bentoml[tracing-zipkin]"
 
-   .. tab-item:: OpenTelemetry Protocol
+   .. tab-item:: OTLP
 
       .. code-block:: yaml
 
@@ -964,6 +980,36 @@ In the ``setup.py`` file:
 Setup script is always executed after the specified Python packages, conda dependencies,
 and system packages are installed. Thus user can import and utilize those libraries in
 their setup script for the initialization process.
+
+Enable features for your Bento
+""""""""""""""""""""""""""""""
+
+Users can optionally pass in the ``--enable-features`` flag to ``bentoml containerize`` to
+enable additional features for the generated Bento container image.
+
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features``                 | Feature                                                                                                                 |
++=======================================+=========================================================================================================================+
+| ``--enable-features=aws``             | adding AWS interop (currently file upload to S3)                                                                        |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=grpc``            | enable gRPC functionalities in BentoML                                                                                  |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=grpc-channelz``   | enable `gRPC Channelz <https://grpc.io/blog/a-short-introduction-to-channelz/>`_ for debugging purposes                 |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=grpc-reflection`` | enable :github:`gRPC Reflection <grpc/grpc/blob/master/doc/server-reflection.md>`                                       |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=io-image``        | adding Pillow dependencies to :ref:`Image IO descriptor <reference/api_io_descriptors:Images>`                          |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=io-json``         | adding Pydantic validation to :ref:`JSON IO descriptor <reference/api_io_descriptors:Structured Data with JSON>`        |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=io-pandas``       | adding Pandas dependencies to :ref:`PandasDataFrame descriptor <reference/api_io_descriptors:Tabular Data with Pandas>` |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=tracing-jaeger``  | enable :ref:`Jaeger Exporter <guides/tracing:Tracing>` for distributed tracing                                          |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=tracing-otlp``    | enable :ref:`OTLP Exporter <guides/tracing:Tracing>`   for distributed tracing                                          |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=tracing-zipkin``  | enable :ref:`Zipkin Exporter <guides/tracing:Tracing>`  for distributed tracing                                         |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 
 Advanced Options
 """"""""""""""""

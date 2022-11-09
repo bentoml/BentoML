@@ -13,14 +13,16 @@ into this part of the documentation.
     :titlesonly:
 
     batching
-    grpc
-    configuration
     containerization
-    gpu
-    logging
-    monitoring
-    performance
+    client
     server
+    configuration
+    graph
+    logging
+    metrics
+    performance
+    grpc
+    gpu
     security
     tracing
     migration
@@ -32,4 +34,3 @@ into this part of the documentation.
     `BentoML development guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_
     and `documentation guide <https://github.com/bentoml/BentoML/blob/main/docs/README.md>`_
     to get started.
-

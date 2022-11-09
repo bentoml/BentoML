@@ -300,40 +300,23 @@ Run all unit tests directly with pytest:
 
 ```bash
 # GIT_ROOT=$(git rev-parse --show-toplevel)
-pytest tests/unit --cov=bentoml --cov-config="$GIT_ROOT"/pyproject.toml
-```
-
-Run all unit tests via `./scripts/ci/run_tests.sh`:
-
-```bash
-./scripts/ci/run_tests.sh unit
-
-# Or on UNIX-based system
-make tests-unit
+pytest tests/unit
 ```
 
 ### Integration tests
 
-Run given tests after defining a target under `scripts/ci/config.yml` with `run_tests.sh`:
+Write a general framework tests under `./tests/integration/frameworks/models`, and the
+run the following command
 
 ```bash
-# example: run Keras TF1 integration tests
-./scripts/ci/run_tests.sh keras_tf1
+pytest tests/integration/frameworks/test_frameworks.py --framework pytorch
 ```
 
 ### E2E tests
 
 ```bash
 # example: run e2e tests to check for http general features
-./scripts/ci/run_tests.sh http_server
-```
-
-### Running the whole suite
-
-To run the whole test suite, minus frameworks integration, you can use:
-
-```bash
-make tests-suite
+pytest tests/e2e/bento_server_grpc
 ```
 
 ### Adding new test suite
@@ -342,75 +325,7 @@ If you are adding new ML framework support, it is recommended that you also add 
 
 We recommend using [`nektos/act`](https://github.com/nektos/act) to run and test Actions locally.
 
-The following tests script [run_tests.sh](./scripts/ci/run_tests.sh) can be used to run tests locally.
-
-```bash
-./scripts/ci/run_tests.sh -h
-Running unit/integration tests with pytest and generate coverage reports. Make sure that given testcases is defined under ./scripts/ci/config.yml.
-
-Usage:
-  ./scripts/ci/run_tests.sh [-h|--help] [-v|--verbose] <target> <pytest_additional_arguments>
-
-Flags:
-  -h, --help            show this message
-  -v, --verbose         set verbose scripts
-
-
-If `pytest_additional_arguments` is given, the additional arguments will be passed to all of the tests run by the tests script.
-
-Example:
-  $ ./scripts/ci/run_tests.sh pytorch --run-gpus-tests --capture=tee-sys
-```
-
-All tests are then defined under [config.yml](./scripts/ci/config.yml) where each field follows the following format:
-
-```yaml
-<target>: &tmpl
-  root_test_dir: "tests/integration/frameworks"
-  is_dir: false
-  override_name_or_path:
-  dependencies: []
-  external_scripts:
-  type_tests: "integration"
-```
-
-By default, each of our frameworks tests files with the format: `test_<frameworks>_impl.py`. If `is_dir` set to `true` we will try to match the given `<target>` under `root_test_dir` to run tests from.
-
-| Keys                    | Type                                    | Defintions                                                                                       |
-| ----------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `root_test_dir`         | `<str>`                                 | root directory to run a given tests                                                              |
-| `is_dir`                | `<bool>`                                | whether `target` is a directory instead of a file                                                |
-| `override_name_or_path` | `<str>`                                 | optional way to override a tests file name if doesn't match our convention                       |
-| `dependencies`          | `<List[str]>`                           | define additional dependencies required to run the tests, accepts `requirements.txt` format      |
-| `external_scripts`      | `<str>`                                 | optional shell scripts that can be run on top of `./scripts/ci/run_tests.sh` for given testsuite |
-| `type_tests`            | `<Literal["e2e","unit","integration"]>` | define type of tests for given `target`                                                          |
-
-When `type_tests` is set to `e2e`, `./scripts/ci/run_tests.sh` will change current directory into the given `root_test_dir`, and will run the testsuite from there.
-
-The reason why we encourage developers to use the scripts in CI is that under the hood when we use pytest, we will create a custom report for the given tests. This report can then be used as carryforward flags on codecov for consistent reporting.
-
-Example:
-
-```yaml
-# e2e tests
-http:
-  root_test_dir: "tests/e2e/bento_server_http"
-  is_dir: true
-  type_tests: "e2e"
-  dependencies:
-    - "Pillow"
-
-# framework
-pytorch_lightning:
-  <<: *tmpl
-  dependencies:
-    - "pytorch-lightning"
-    - "-f https://download.pytorch.org/whl/torch_stable.html"
-    - "torch==1.9.0+cpu"
-    - "torchvision==0.10.0+cpu"
-```
-
-Refer to [config.yml](./scripts/ci/config.yml) for more examples.
+Add a new job for your new framework under [framework.yml](./.github/workflows/frameworks.yml)
 
 ## Python tools ecosystem
 
@@ -419,14 +334,6 @@ Currently, BentoML is [PEP518](https://www.python.org/dev/peps/pep-0518/) compat
 ## Benchmark
 
 BentoML has moved its benchmark to [`bentoml/benchmark`](https://github.com/bentoml/benchmark).
-
-## Optional: git hooks
-
-BentoML also provides git hooks that developers can install with:
-
-```bash
-make hooks
-```
 
 ## Creating Pull Requests on GitHub
 

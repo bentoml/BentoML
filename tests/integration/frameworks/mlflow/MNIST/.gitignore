@@ -1,0 +1,4 @@
+dataset
+*.ckpt
+lightning_logs
+mlruns

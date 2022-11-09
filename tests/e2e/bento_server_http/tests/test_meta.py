@@ -113,3 +113,23 @@ def test_dunder_string():
         str(svc)
         == 'bentoml.Service(name="dunder_string", runners=[py_model.case-1.http.e2e])'
     )
+
+
+@pytest.mark.asyncio
+async def test_metrics_type(host: str, deployment_mode: str):
+    await async_request(
+        "POST",
+        f"http://{host}/echo_data_metric",
+        headers={"Content-Type": "application/json"},
+        data="input_string",
+    )
+    # The reason we have to do this is that there is no way
+    # to access the metrics inside a running container.
+    # This will ensure the test will pass
+    await async_request(
+        "POST",
+        f"http://{host}/ensure_metrics_are_registered",
+        headers={"Content-Type": "application/json"},
+        data="input_string",
+        assert_status=200,
+    )

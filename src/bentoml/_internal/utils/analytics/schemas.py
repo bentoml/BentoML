@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     P = t.ParamSpec("P")
     GenericFunction = t.Callable[P, t.Any]
 
-# Refers to bentoml/yatai-deployment-operator/common/consts/consts.go
+# Refer to bentoml/yatai-deployment-operator/common/consts/consts.go
 ENV_YATAI_VERSION = "YATAI_T_VERSION"
 ENV_YATAI_ORG_UID = "YATAI_T_ORG_UID"
 ENV_YATAI_DEPLOYMENT_UID = "YATAI_T_DEPLOYMENT_UID"

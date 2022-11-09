@@ -336,6 +336,10 @@ class HTTPAppFactory(BaseAppFactory):
                             output = await run_in_threadpool(api.func, input_data)
 
                 response = await api.output.to_http_response(output, ctx)
+                if trace_context.request_id is not None:
+                    response.headers["X-BentoML-Request-ID"] = str(
+                        trace_context.request_id
+                    )
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
 

@@ -285,7 +285,7 @@ This means by default, BentoML's :ref:`guides/batching:Adaptive Batching` is dis
 If you want to enable adaptive batching, provide a signature similar to the
 aboved example.
 
-Refers to :ref:`concepts/model:Model Signatures` and :ref:`Batching behaviour <concepts/model:Batching>` for more information.
+Refer to :ref:`concepts/model:Model Signatures` and :ref:`Batching behaviour <concepts/model:Batching>` for more information.
 
 
 Building a Service for **ONNX**

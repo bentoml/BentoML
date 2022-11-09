@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING
 
 import bentoml
 
-from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
 
 # register PyTorchTensorContainer as import side effect.
@@ -24,29 +24,32 @@ API_VERSION = "v1"
 
 logger = logging.getLogger(__name__)
 
-_FASTAI_EXCEPTION_MESSAGE = "fastai is required in order to use module 'bentoml.fastai'. Install fastai with 'pip install fastai'. For more information, refer to https://docs.fast.ai/#Installing."
-_TORCH_EXCEPTION_MESSAGE = "fastai requires `torch` as a dependency. Please follow PyTorch instruction at https://pytorch.org/ in order to use `fastai`."
-
 
 if TYPE_CHECKING:
-    import torch
-    import torch.nn as nn
-    import fastai.learner as learner
-
     from .. import external_typing as ext
     from ..tag import Tag
     from ...types import ModelSignature
     from ..models.model import ModelSignaturesType
-else:
-    _ = LazyLoader(
-        "fastai.basics",
-        globals(),
-        "fastai.basics",
-        exc_msg="BentoML only supports fastai v2 onwards.",
+
+try:
+    import torch
+    import torch.nn as nn
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        "fastai requires 'torch' as a dependency. Please follow PyTorch instruction at https://pytorch.org/get-started/locally/ in order to use 'fastai'."
     )
-    torch = LazyLoader("torch", globals(), "torch", exc_msg=_TORCH_EXCEPTION_MESSAGE)
-    nn = LazyLoader("nn", globals(), "torch.nn", exc_msg=_TORCH_EXCEPTION_MESSAGE)
-    learner = LazyLoader("learner", globals(), "fastai.learner")
+
+try:
+    import fastai.learner as learner
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        "'fastai' is required in order to use module 'bentoml.fastai'. Install fastai with 'pip install fastai'. For more information, refer to https://docs.fast.ai/#Installing."
+    )
+
+try:
+    import fastai.basics as _
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException("BentoML only supports fastai v2 onwards.")
 
 
 __all__ = ["load_model", "save_model", "get_runnable", "get"]
@@ -197,7 +200,9 @@ def save_model(
     if signatures is None:
         signatures = {"predict": {"batchable": False}}
         logger.info(
-            f"Using the default model signature ({signatures}) for model {name}."
+            'Using the default model signature for fastai (%s) for model "%s".',
+            signatures,
+            name,
         )
     batchable_enabled_signatures = [v for v in signatures if signatures[v]["batchable"]]
     if len(batchable_enabled_signatures) > 0:

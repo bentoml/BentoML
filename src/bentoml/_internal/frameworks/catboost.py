@@ -30,9 +30,7 @@ try:
     import catboost as cb
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        '"catboost" is required in order to use module `bentoml.catboost`, install '
-        "catboost with `pip install catboost`. For more information, refers to "
-        "https://catboost.ai/en/docs/concepts/installation"
+        "'catboost' is required in order to use module 'bentoml.catboost', install catboost with 'pip install catboost'. For more information, refer to https://catboost.ai/en/docs/concepts/installation."
     )
 
 MODULE_NAME = "bentoml.catboost"
@@ -184,7 +182,7 @@ def save_model(
 
         # save the model to the BentoML model store
         bento_model = bentoml.catboost.save_model("my_catboost_model", model)
-    """  # noqa: LN001
+    """
     if not isinstance(model, cb.CatBoost):
         raise TypeError(f"Given model ({model}) is not a catboost.CatBoost.")
 
@@ -194,12 +192,14 @@ def save_model(
     )
 
     if signatures is None:
-        logger.info(
-            'Using default model signature `{"predict": {"batchable": False}}` for CatBoost model'
-        )
         signatures = {
             "predict": {"batchable": False},
         }
+        logger.info(
+            'Using the default model signature for CatBoost (%s) for model "%s".',
+            signatures,
+            name,
+        )
 
     options = CatBoostOptions(
         training_class_name=model.__class__.__name__,

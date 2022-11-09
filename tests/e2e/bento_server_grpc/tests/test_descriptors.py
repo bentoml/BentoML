@@ -13,7 +13,7 @@ from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import randomize_pb_ndarray
-from bentoml._internal.utils import LazyType
+from bentoml._internal.types import LazyType
 from bentoml._internal.utils import LazyLoader
 
 if TYPE_CHECKING:
@@ -354,6 +354,18 @@ async def test_pandas(host: str):
                 ),
             },
             assert_code=grpc.StatusCode.INVALID_ARGUMENT,
+        )
+
+
+@pytest.mark.asyncio
+async def test_pandas_series(host: str):
+    async with create_channel(host) as channel:
+        await async_client_call(
+            "echo_series_from_sample",
+            channel=channel,
+            data={"series": pb.Series(float_values=[1.0, 2.0, 3.0])},
+            assert_data=lambda resp: resp.series
+            == pb.Series(float_values=[1.0, 2.0, 3.0]),
         )
 
 

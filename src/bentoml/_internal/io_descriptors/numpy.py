@@ -440,8 +440,6 @@ class NumpyNdarray(
             ) from None
         self._dtype = sample.dtype
         self._shape = sample.shape
-        self._enforce_dtype = True
-        self._enforce_shape = True
         return sample
 
     async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:

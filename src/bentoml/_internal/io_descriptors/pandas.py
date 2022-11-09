@@ -431,10 +431,8 @@ class PandasDataFrame(
                 ) from None
         self._shape = sample.shape
         self._columns = [str(i) for i in list(sample.columns)]
-        self._dtype = True
-        self._enforce_dtype = True
-        self._enforce_shape = True
-        self._apply_column_names = True
+        if self._dtype is None:
+            self._dtype = True  # infer dtype automatically
         return sample
 
     def _convert_dtype(
@@ -885,8 +883,6 @@ class PandasSeries(
             sample = pd.Series(sample)
         self._dtype = sample.dtype
         self._shape = sample.shape
-        self._enforce_dtype = True
-        self._enforce_shape = True
         return sample
 
     def input_type(self) -> LazyType[ext.PdSeries]:

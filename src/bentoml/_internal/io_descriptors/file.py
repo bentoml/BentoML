@@ -135,7 +135,6 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
             )
         if isinstance(sample, t.IO):
             sample = FileLike[bytes](sample, "<sample>")
-            self._mime_type = filetype.guess_mime(sample)
         elif isinstance(sample, (str, os.PathLike)):
             p = resolve_user_filepath(sample, ctx=None)
             self._mime_type = filetype.guess_mime(p)

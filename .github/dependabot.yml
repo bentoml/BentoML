@@ -1,8 +1,21 @@
 version: 2
 updates:
-- package-ecosystem: github-actions
-  directory: "/"
-  schedule:
-    interval: "weekly"
-    day: "monday"
-    time: "09:00"
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+  # maintain required dependencies
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+  # maintain requirements/*.txt files
+  - package-ecosystem: pip
+    directory: "/requirements"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    versioning-strategy: increase-if-necessary

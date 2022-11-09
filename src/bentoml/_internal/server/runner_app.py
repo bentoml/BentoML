@@ -12,8 +12,8 @@ from simple_di import Provide
 
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
-from bentoml._internal.types import LazyType
 
+from ..types import LazyType
 from ..context import trace_context
 from ..context import component_context
 from ..runner.utils import Params

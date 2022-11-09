@@ -30,9 +30,8 @@ from ...exceptions import BentoMLConfigException
 from ..utils.unflatten import unflatten
 
 if TYPE_CHECKING:
-    from bentoml._internal.models import ModelStore
-
     from .. import external_typing as ext
+    from ..models import ModelStore
     from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
 

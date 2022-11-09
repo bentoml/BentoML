@@ -186,19 +186,6 @@ def build(
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     **kwargs: t.Any,
 ):
-    """
-    Build a BentoML service into a OCI-compliant image.
-    Uses the specified backend to build the image (docker, buildah, podman, nerdctl, buildx).
-
-    Args:
-        bento: A Bento or a tag for a given Bento.
-        backend: The name of the backend.
-        features: A list of additional BentoML features to install. See https://docs.bentoml.org/en/latest/concepts/bento.html#enable-features-for-your-bento
-        kwargs: Additional keyword arguments to pass to the backend.
-
-    Returns:
-        True if the build is successful, False otherwise.
-    """
     clean_context = contextlib.ExitStack()
 
     bento = _bento_store.get(bento_tag)
@@ -327,6 +314,12 @@ def get_backend(backend: str) -> OCIBuilder:
 
 
 def get_backend(backend: str) -> OCIBuilder:
+    """
+    Get a given backend.
+
+    Raises:
+        ``ValueError``: If given backend is not available in backend registry.
+    """
     if backend not in BUILDER_REGISTRY:
         raise ValueError(
             f"Backend {backend} not registered. Available backends: {REGISTERED_BACKENDS}."

@@ -422,6 +422,29 @@ def build(
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     **kwargs: t.Any,
 ):
+    """
+    Build any given BentoML into a OCI-compliant image.
+
+    .. code-block:: python
+
+        import bentoml
+
+        bento = bentoml.get("pytorch_vgg:latest")
+        bentoml.container.build(bento, backend='podman', features=["grpc", "tracing"])
+
+    Args:
+        bento_tag: Bento tag in format of ``NAME:VERSION``
+        backend: The backend to use for building the image. Current supported builder backends
+                 include ``docker``, ``podman``, ``kaniko``, ``buildah``, ``nerdctl``, ``buildctl``, and ``buildx``.
+
+                 .. note::
+
+                     ``buildx`` is a syntatic sugar for ``docker buildx build``. See https://docs.docker.com/build/.
+                     The reason for this is that ``buildx`` used to be the default behaviour of ``bentoml containerize``.
+        image_tag: Optional additional image tag to apply to the built image.
+        features: Optional features to include in the container file. See https://docs.bentoml.org/en/latest/concepts/bento.html#python-packages
+                  for additional BentoML features.
+    """
     from ._internal.container import determine_container_tag
 
     # Run healthcheck
@@ -454,6 +477,28 @@ def get_containerfile(
     features: t.Sequence[str] | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ):
+    """
+    Returns the generated container file for a given Bento.
+
+    Note that the container file (Dockerfile) inside the Bento is minimal, whereas
+    this utility functions returns the container file that 'bentoml containerize' will
+    be using.
+
+    .. note::
+
+        If ``output_path`` is not specified, then the contents of the container file
+        will be printed out to ``sys.stderr``. If provided, then the final container file
+        will be written to that given path.
+
+    Args:
+        bento_tag: Given tag for the bento.
+        output_path: Optional output path to write the final container file to.
+                     Note that if ``output_path`` is a directory, then the targeted file
+                     will be ``output_path + os.sep + "<bento_tag>.dockerfile"``.
+        enable_buildkit: Whether the container file contains BuildKit syntax.
+        features: Optional features to include in the container file. See https://docs.bentoml.org/en/latest/concepts/bento.html#python-packages
+                  for additional BentoML features.
+    """
     bento = _bento_store.get(bento_tag)
     with _internal_construct_containerfile(
         bento,

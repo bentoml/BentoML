@@ -6,15 +6,15 @@ from typing import TYPE_CHECKING
 
 from bentoml.exceptions import BentoMLException
 
-from ..types import LazyType
-from .lazy_loader import LazyLoader
+from ...types import LazyType
+from ...utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
     import onnx
     import torch
 
-    from .. import external_typing as ext
-    from ..external_typing import tensorflow as tf_ext  # noqa
+    from ... import external_typing as ext
+    from ...external_typing import tensorflow as tf_ext
 
     ONNXArgTensorType = (
         ext.NpNDArray

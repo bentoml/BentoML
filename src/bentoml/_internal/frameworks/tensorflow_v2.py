@@ -20,14 +20,14 @@ from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..models.model import ModelSignature
+from .utils.tensorflow import get_tf_version
+from .utils.tensorflow import get_input_signatures_v2
+from .utils.tensorflow import get_output_signatures_v2
+from .utils.tensorflow import get_restorable_functions
+from .utils.tensorflow import cast_py_args_to_tf_function_args
 from ..runner.container import Payload
 from ..runner.container import DataContainer
 from ..runner.container import DataContainerRegistry
-from ..utils.tensorflow import get_tf_version
-from ..utils.tensorflow import get_input_signatures_v2
-from ..utils.tensorflow import get_output_signatures_v2
-from ..utils.tensorflow import get_restorable_functions
-from ..utils.tensorflow import cast_py_args_to_tf_function_args
 
 if TYPE_CHECKING:
     from .. import external_typing as ext

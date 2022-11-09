@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import typing as t
-from typing import TYPE_CHECKING
 import logging
 import contextlib
 import collections
 import contextvars
 import logging.config
+from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide

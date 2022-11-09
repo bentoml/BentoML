@@ -216,15 +216,6 @@ class NumpyNdarray(
         shape: tuple[int, ...] | None = None,
         enforce_shape: bool = False,
     ):
-        if enforce_dtype and not dtype:
-            raise InvalidArgument(
-                "'dtype' must be specified when 'enforce_dtype=True'"
-            ) from None
-        if enforce_shape and not shape:
-            raise InvalidArgument(
-                "'shape' must be specified when 'enforce_shape=True'"
-            ) from None
-
         if dtype and not isinstance(dtype, np.dtype):
             # Convert from primitive type or type string, e.g.: np.dtype(float) or np.dtype("float64")
             try:

@@ -126,7 +126,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -138,7 +138,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -153,14 +153,14 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
         if ctx is not None:
             res = Response(
                 obj,
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(obj, media_type=self._mime_type)
+            return Response(obj, media_type=self.mime_type)
 
     async def from_proto(self, field: wrappers_pb2.StringValue | bytes) -> str:
         if isinstance(field, bytes):

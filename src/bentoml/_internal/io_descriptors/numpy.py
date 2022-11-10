@@ -279,7 +279,7 @@ class NumpyNdarray(
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -291,7 +291,7 @@ class NumpyNdarray(
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -370,14 +370,14 @@ class NumpyNdarray(
         if ctx is not None:
             res = Response(
                 json.dumps(obj.tolist()),
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(json.dumps(obj.tolist()), media_type=self._mime_type)
+            return Response(json.dumps(obj.tolist()), media_type=self.mime_type)
 
     def _from_sample(self, sample: ext.NpNDArray | t.Sequence[t.Any]) -> ext.NpNDArray:
         """

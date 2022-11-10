@@ -183,7 +183,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
                 f"Invalid Image pilmode '{pilmode}'. Supported PIL modes are {', '.join(PIL.Image.MODES)}."
             ) from None
 
-        self._mime_type = mime_type.lower()
+        self.mime_type = mime_type.lower()
         self._allowed_mimes: set[str] = (
             READABLE_MIMES
             if allowed_mime_types is None
@@ -191,7 +191,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         )
         self._allow_all_images = allowed_mime_types is None
 
-        if self._mime_type not in MIME_EXT_MAPPING:  # pragma: no cover
+        if self.mime_type not in MIME_EXT_MAPPING:  # pragma: no cover
             raise InvalidArgument(
                 f"Invalid Image mime_type '{mime_type}'; supported mime types are {', '.join(PIL.Image.MIME.values())} "
             )
@@ -208,7 +208,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
                 )
 
         self._pilmode: _Mode | None = pilmode
-        self._format: str = MIME_EXT_MAPPING[self._mime_type]
+        self._format: str = MIME_EXT_MAPPING[self.mime_type]
 
     def _from_sample(self, sample: ImageType | str) -> ImageType:
         """
@@ -270,7 +270,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
                     sample = PIL.Image.open(f)
             except PIL.UnidentifiedImageError as err:
                 raise BadInput(f"Failed to parse sample image file: {err}") from None
-        self._mime_type = img_type.mime
+        self.mime_type = img_type.mime
         return sample
 
     def to_spec(self) -> dict[str, t.Any]:
@@ -278,7 +278,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
             "id": self.descriptor_id,
             "args": {
                 "pilmode": self._pilmode,
-                "mime_type": self._mime_type,
+                "mime_type": self.mime_type,
                 "allowed_mime_types": list(self._allowed_mimes),
             },
         }
@@ -315,7 +315,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {self.mime_type: MediaType(schema=self.openapi_schema())},
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
@@ -413,7 +413,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
                 ctx.response.headers["content-disposition"] = content_disposition
             res = Response(
                 ret.getvalue(),
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers=ctx.response.headers,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
@@ -422,7 +422,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         else:
             return Response(
                 ret.getvalue(),
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers={"content-disposition": content_disposition},
             )
 
@@ -438,9 +438,9 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
             if field.kind:
                 try:
                     mime_type = mapping[field.kind]
-                    if mime_type != self._mime_type:
+                    if mime_type != self.mime_type:
                         raise BadInput(
-                            f"Inferred mime_type from 'kind' is '{mime_type}', while '{self!r}' is expecting '{self._mime_type}'",
+                            f"Inferred mime_type from 'kind' is '{mime_type}', while '{self!r}' is expecting '{self.mime_type}'",
                         )
                 except KeyError:
                     raise BadInput(
@@ -467,10 +467,10 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         image.save(ret, format=self._format)
 
         try:
-            kind = mimetype_to_filetype_pb_map()[self._mime_type]
+            kind = mimetype_to_filetype_pb_map()[self.mime_type]
         except KeyError:
             raise BadInput(
-                f"{self._mime_type} doesn't have a corresponding File 'kind'",
+                f"{self.mime_type} doesn't have a corresponding File 'kind'",
             ) from None
 
         return pb.File(kind=kind, content=ret.getvalue())

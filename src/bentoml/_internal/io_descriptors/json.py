@@ -345,7 +345,7 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -357,7 +357,7 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -404,14 +404,14 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         if ctx is not None:
             res = Response(
                 json_str,
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(json_str, media_type=self._mime_type)
+            return Response(json_str, media_type=self.mime_type)
 
     async def from_proto(self, field: struct_pb2.Value | bytes) -> JSONType:
         from google.protobuf.json_format import MessageToDict

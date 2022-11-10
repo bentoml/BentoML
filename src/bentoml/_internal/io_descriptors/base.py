@@ -19,7 +19,9 @@ if TYPE_CHECKING:
 
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
+    from ..service.openapi.specification import Schema
     from ..service.openapi.specification import MediaType
+    from ..service.openapi.specification import Reference
 
     InputType = (
         UnionType
@@ -43,20 +45,6 @@ def from_spec(spec: dict[str, str]) -> IODescriptor[t.Any]:
         raise InvalidArgument(f"IO descriptor spec ({spec}) missing ID.")
     return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)
 
-
-# The following OpenAPI function must be implemented
-# It is a frozen set of the OpenAPI components with its return types
-# OpenAPI function shouldn't take in any arguments, rather than getting those
-# via self implementation of the respective IODescriptor.
-OPENAPI_METHODS = frozenset(
-    {
-        ("schema", "Schema | Reference"),
-        ("components", "dict[str, t.Any] | None"),
-        ("example", "t.Any | None"),
-        ("request_body", "dict[str, t.Any]"),
-        ("responses", "dict[str, t.Any]"),
-    }
-)
 
 DEFAULT_FROM_SAMPLE_DOCSTRING = """\
 Creates an instance of {name} from given sample. Note that ``from_sample`` does not
@@ -122,22 +110,32 @@ class DescriptorMetaclass(type):
         if "from_sample" not in attrs:
             attrs["from_sample"] = classmethod(_(_from_sample_impl))
 
-        # Each of the OpenAPI functions will be appended to the class
-        # with full annotations supported.
-        def __oapi_method(self: t.Type[T]) -> t.Any:
-            raise NotImplementedError
-
-        for (oapi, ann) in OPENAPI_METHODS:
-            __oapi_key = f"openapi_{oapi}"
-            if __oapi_key not in attrs:
-                __annotations = t.get_type_hints(__oapi_method)
-                __annotations.update({"return": ann})
-                attrs[__oapi_key] = __oapi_method
-
         return super().__new__(mcls, name, bases, attrs, **kwargs)
 
 
-class IODescriptor(t.Generic[IOType], metaclass=DescriptorMetaclass):
+class _OpenAPIMeta:
+    @abstractmethod
+    def openapi_schema(self) -> Schema | Reference:
+        raise NotImplementedError
+
+    @abstractmethod
+    def openapi_components(self) -> dict[str, t.Any] | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def openapi_example(self) -> t.Any | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def openapi_request_body(self) -> dict[str, t.Any]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def openapi_responses(self) -> dict[str, t.Any]:
+        raise NotImplementedError
+
+
+class IODescriptor(t.Generic[IOType], _OpenAPIMeta, metaclass=DescriptorMetaclass):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
     in a :code:`bentoml.Service`. This is an abstract base class for extending new HTTP
@@ -150,7 +148,6 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMetaclass):
     _mime_type: str
     _proto_fields: tuple[ProtoField]
 
-    _rpc_content_type: str = "application/grpc"
     _sample: IOType | None = None
 
     def __init_subclass__(cls, *, descriptor_id: str | None = None):
@@ -178,13 +175,17 @@ class IODescriptor(t.Generic[IOType], metaclass=DescriptorMetaclass):
     def sample(self, value: IOType) -> None:
         self._sample = value
 
-    @abstractmethod
-    def _from_sample(self, sample: t.Any) -> IOType:
-        raise NotImplementedError
-
     @property
     def mime_type(self) -> str:
         return self._mime_type
+
+    @mime_type.setter
+    def mime_type(self, value: str) -> None:
+        self._mime_type = value
+
+    @abstractmethod
+    def _from_sample(self, sample: t.Any) -> IOType:
+        raise NotImplementedError
 
     @abstractmethod
     def to_spec(self) -> dict[str, t.Any]:

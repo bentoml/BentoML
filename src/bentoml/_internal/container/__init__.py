@@ -44,7 +44,7 @@ if TYPE_CHECKING:
             ...
 
     DefaultBuilder: t.TypeAlias = t.Literal[
-        "docker", "podman", "buildah", "buildx", "nerdctl", "buildctl", "kaniko"
+        "docker", "podman", "buildah", "buildx", "nerdctl", "buildctl"
     ]
 
 
@@ -54,7 +54,7 @@ BUILDER_REGISTRY: dict[str, OCIBuilder] = {}
 
 
 DEFAULT_BACKENDS = frozenset(
-    {"docker", "buildx", "buildah", "podman", "nerdctl", "buildctl", "kaniko"}
+    {"docker", "buildx", "buildah", "podman", "nerdctl", "buildctl"}
 )
 
 
@@ -291,16 +291,7 @@ def health(backend: str) -> bool:
     Returns:
         True if the backend is healthy, False otherwise.
     """
-    try:
-        return get_backend(backend).health()
-    except Exception as e:  # pylint: disable=broad-except
-        logger.error(
-            "Backend '%s' failed to health check: %s",
-            backend,
-            e,
-            exc_info=sys.exc_info(),
-        )
-        return False
+    return get_backend(backend).health()
 
 
 @t.overload

@@ -596,28 +596,6 @@ def add_containerize_command(cli: Group) -> None:
                     sys.exit(0)
                 o = subprocess.check_output([container_runtime, "load"], input=result)
                 logger.info(o.decode("utf-8").strip())
-            elif backend == "kaniko":
-                if "destination" not in _memoized:
-                    logger.info(
-                        "Image built with kaniko will be saved to local tarball: %s",
-                        os.path.join(os.getcwd(), f'{tags[0].replace(":", "_")}.tar'),
-                    )
-                    sys.exit(0)
-                else:
-                    assert "destination" in _memoized
-                    dest = ",".join(_memoized["destination"])
-                    logger.info(
-                        "%s is pushed to %s. Feel free to use any of the available container runtime (%s) to pull the image.",
-                        tags[0],
-                        dest,
-                        ",".join(
-                            crt
-                            for c in ("docker", "podman", "nerdctl")
-                            for crt in [shutil.which(c)]
-                            if crt is not None
-                        ),
-                    )
-                    sys.exit(0)
 
             multiple_tags = len(tags) > 1
             example_tag = random.choice(tags)

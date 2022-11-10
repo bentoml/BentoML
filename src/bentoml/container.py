@@ -355,64 +355,6 @@ def build(
     ...
 
 
-@t.overload
-def build(
-    bento_tag: Tag | str,
-    backend: t.Literal["kaniko"] = ...,
-    image_tag: tuple[str] | None = ...,
-    features: t.Sequence[str] | None = ...,
-    *,
-    context_path: PathType = ...,
-    file: PathType | None = ...,
-    build_arg: dict[str, str] | ArgType = ...,
-    cache: t.Literal[True, False, "true", "false"] = ...,
-    cache_copy_layers: t.Literal[True, False] = ...,
-    cache_dir: PathType | None = ...,
-    cache_repo: str | None = ...,
-    cache_run_layers: t.Literal[True, False] = ...,
-    cache_ttl: str | None = ...,
-    cleanup: t.Literal[True, False] = ...,
-    compressed_caching: t.Literal[True, False] = ...,
-    context_sub_path: str | None = ...,
-    custom_platform: str | None = ...,
-    destination: str | ArgType = ...,
-    digest_file: PathType | None = ...,
-    force: t.Literal[True, False] = ...,
-    force_build_metadata: t.Literal[True, False] = ...,
-    git: str | dict[str, str] | ArgType = ...,
-    ignore_path: ArgType | None = ...,
-    ignore_var_run: t.Literal[True, False] = ...,
-    image_fs_extract_retry: str | None = ...,
-    image_name_tag_with_digest_file: PathType | None = ...,
-    insecure: t.Literal[True, False] = ...,
-    insecure_pull: t.Literal[True, False] = ...,
-    insecure_registry: ArgType | None = ...,
-    kaniko_dir: PathType | None = ...,
-    label: dict[str, str] | ArgType = ...,
-    log_format: str | None = ...,
-    log_timestamp: t.Literal[True, False] = ...,
-    no_push: t.Literal[True, False] = ...,
-    no_push_cache: t.Literal[True, False] = ...,
-    oci_layout_path: PathType | None = ...,
-    push_retry: str | None = ...,
-    registry_certificate: ArgType = ...,
-    registry_mirror: ArgType = ...,
-    reproducible: t.Literal[True, False] = ...,
-    single_snapshot: t.Literal[True, False] = ...,
-    skip_tls_verify: t.Literal[True, False] = ...,
-    skip_tls_verify_pull: t.Literal[True, False] = ...,
-    skip_tls_verify_registry: ArgType = ...,
-    skip_unused_stages: t.Literal[True, False] = ...,
-    snapshot_mode: str | None = ...,
-    tar_path: PathType | None = ...,
-    target: str | None = ...,
-    use_new_run: t.Literal[True, False] = ...,
-    verbosity: str | None = ...,
-    in_k8s: t.Literal[True, False] = ...,
-):
-    ...
-
-
 @inject
 def build(
     bento_tag: Tag | str,
@@ -435,7 +377,7 @@ def build(
     Args:
         bento_tag: Bento tag in format of ``NAME:VERSION``
         backend: The backend to use for building the image. Current supported builder backends
-                 include ``docker``, ``podman``, ``kaniko``, ``buildah``, ``nerdctl``, ``buildctl``, and ``buildx``.
+                 include ``docker``, ``podman``, ``buildah``, ``nerdctl``, ``buildctl``, and ``buildx``.
 
                  .. note::
 

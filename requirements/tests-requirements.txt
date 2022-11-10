@@ -14,7 +14,7 @@ pytest==7.1.3
 pytest-xdist[psutil]==2.5.0
 pytest-asyncio==0.20.1
 imageio==2.22.4
-pyarrow==9.0.0
+pyarrow==10.0.0
 build[virtualenv]==0.8.0
 protobuf==3.19.6
 grpcio>=1.41.0, <1.49, !=1.48.2

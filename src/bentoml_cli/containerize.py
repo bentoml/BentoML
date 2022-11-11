@@ -338,27 +338,23 @@ def add_containerize_command(cli: Group) -> None:
             grpc_metrics_port = BentoMLContainer.grpc.metrics.port.get()
             logger.info(
                 'Successfully built docker image for "%s" with tags "%s"',
-                str(bento_tag),
+                bento_tag,
                 ",".join(docker_image_tag),
             )
             docker_tag = ",".join(docker_image_tag)
+            fmt = [docker_tag]
             if len(docker_image_tag) > 1:
-                instruction = 'To run your newly built Bento container, use one of the above tags, and pass it to "docker run". %s'
+                instruction = 'To run your newly built Bento container, use one of the above tags, and pass it to "docker run". For example: "docker run -it --rm -p 3000:3000 %s serve --production".'
             else:
-                instruction = f'To run your newly built Bento container, pass "{docker_tag}" to "docker run". %s'
-            instruction %= (
-                'For example: "docker run -it --rm -p 3000:3000 %s serve --production".'
-                % docker_tag
-            )
+                instruction = 'To run your newly built Bento container, pass "%s" to "docker run". For example: "docker run -it --rm -p 3000:3000 %s serve --production".'
+                fmt.append(docker_tag)
             if enable_features is not None:
                 # enable_features could be a tuple of comma-separated string.
                 features = [
                     l for s in map(lambda x: x.split(","), enable_features) for l in s
                 ]
                 if "grpc" in features:
-                    instruction += (
-                        '\nAdditionally, to run your Bento container as a gRPC server, do: "docker run -it --rm -p 3000:3000 -p %s:%s %s serve-grpc --production"'
-                        % (grpc_metrics_port, grpc_metrics_port, docker_tag)
-                    )
-            logger.info(instruction)
+                    instruction += '\nAdditionally, to run your Bento container as a gRPC server, do: "docker run -it --rm -p 3000:3000 -p %s:%s %s serve-grpc --production"'
+                    fmt.extend([grpc_metrics_port, grpc_metrics_port, docker_tag])
+            logger.info(instruction, *fmt)
         sys.exit(exit_code)

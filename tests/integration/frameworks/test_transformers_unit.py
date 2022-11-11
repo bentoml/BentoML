@@ -71,7 +71,7 @@ def test_raise_does_not_match_task_name():
     # pipeline task does not match given task name or pipeline.task is None
     with pytest.raises(
         BentoMLException,
-        match=f"Argument `task_name` 'custom' does not match pipeline task name '{sentiment.task}'.",
+        match=f"Argument 'task_name' 'custom' does not match pipeline task name '{sentiment.task}'.",
     ):
         _ = bentoml.transformers.save_model(
             "forbidden_override",
@@ -87,7 +87,7 @@ def test_raise_does_not_match_impl_field():
     try:
         with pytest.raises(
             BentoMLException,
-            match=f"Argument `pipeline` is not an instance of {AudioClassificationPipeline}. It is an instance of {type(sentiment)}.",
+            match=f"Argument 'pipeline' is not an instance of {AudioClassificationPipeline}. It is an instance of {type(sentiment)}.",
         ):
             original_task["impl"] = AudioClassificationPipeline
             _ = bentoml.transformers.save_model(
@@ -106,7 +106,7 @@ def test_raises_is_not_pipeline_instance():
             "not_pipeline_type", AudioClassificationPipeline  # type: ignore (testing invalid type)
         )
     assert (
-        "`pipeline` must be an instance of `transformers.pipelines.base.Pipeline`. "
+        "'pipeline' must be an instance of 'transformers.pipelines.base.Pipeline'. "
         in str(exc_info.value)
     )
 
@@ -120,7 +120,7 @@ def test_logs_custom_task_definition(caplog: pytest.LogCaptureFixture):
             task_definition=original_task,  # type: ignore (unfinished transformers type)
         )
     assert (
-        "Arguments `task_name` and `task_definition` are provided. Saving model with pipeline "
+        "Arguments 'task_name' and 'task_definition' are provided. Saving model with pipeline "
         in caplog.text
     )
 

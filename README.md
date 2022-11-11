@@ -8,9 +8,13 @@
 [![actions_status](https://github.com/bentoml/bentoml/workflows/CI/badge.svg)](https://github.com/bentoml/bentoml/actions)
 [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
 [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://join.slack.bentoml.org)
-[![codecov](https://codecov.io/gh/bentoml/BentoML/branch/main/graph/badge.svg?token=GMzgXdpE5b)](https://codecov.io/gh/bentoml/BentoML)
 
 BentoML makes it easy to create Machine Learning services that are ready to deploy and scale.
+
+👉 [Join our Slack community today!](https://l.bentoml.com/join-slack)
+
+✨ Looking deploy your ML service quickly? Checkout [BentoML Cloud](https://www.bentoml.com/bentoml-cloud/)
+for the easiest and fastest way to deploy your bento.
 
 ## Getting Started
 
@@ -49,7 +53,7 @@ BentoML makes it easy to create Machine Learning services that are ready to depl
 🎯 Deploy anywhere in a **DevOps-friendly** way
 
 - Streamline production deployment workflow via:
-  - [☁️ BentoML Cloud](https://bentoml.com/): the fastest way to deploy your bento, simple and at scale
+  - [☁️ BentoML Cloud](https://www.bentoml.com/bentoml-cloud/): the fastest way to deploy your bento, simple and at scale
   - [🦄️ Yatai](https://github.com/bentoml/yatai): Model Deployment at scale on Kubernetes
   - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on AWS SageMaker, Lambda, ECE, GCP, Azure, Heroku, and more!
 - Run offline batch inference jobs with Spark or Dask

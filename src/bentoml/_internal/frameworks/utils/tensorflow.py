@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 from bentoml.exceptions import BentoMLException
 
-from ..types import LazyType
-from .lazy_loader import LazyLoader
+from ...types import LazyType
+from ...utils.lazy_loader import LazyLoader
 
 try:
     import importlib.metadata as importlib_metadata
@@ -18,13 +18,13 @@ except ImportError:
 if TYPE_CHECKING:
     import tensorflow as tf
 
-    from ..external_typing import tensorflow as tf_ext
+    from ...external_typing import tensorflow as tf_ext
 else:
     tf = LazyLoader(
         "tf",
         globals(),
         "tensorflow",
-        exc_msg="`tensorflow` is required to use bentoml.tensorflow module.",
+        exc_msg="'tensorflow' is missing. Install with 'pip install tensorflow'",
     )
 
 logger = logging.getLogger(__name__)
@@ -50,23 +50,14 @@ __all__ = [
     "hook_loaded_model",
 ]
 
-TF_FUNCTION_WARNING: str = """\
-Due to TensorFlow's internal mechanism, only methods
- wrapped under `@tf.function` decorator and the Keras default function
- `__call__(inputs, training=False)` can be restored after a save & load.\n
-You can test the restored model object via `bentoml.tensorflow.load(path)`
-"""
+TF_FUNCTION_WARNING = "Due to TensorFlow's internal mechanism, only methods wrapped under '@tf.function' decorator and the Keras default function '__call__(inputs, training=False)' can be restored after a save & load. You can test the restored model object via 'bentoml.tensorflow.load_model(tag)'."
 
-KERAS_MODEL_WARNING: str = """\
-BentoML detected that {name} is being used to pack a Keras API
- based model. In order to get optimal serving performance, we recommend
- to wrap your keras model `call()` methods with `@tf.function` decorator.
-"""
+KERAS_MODEL_WARNING = "BentoML detected that %s is being used to pack a Keras API based model. In order to get optimal serving performance, we recommend to wrap your keras model 'call()' methods with '@tf.function' decorator."
 
 
 def hook_loaded_model(
-    tf_model: "tf_ext.AutoTrackable", module_name: str
-) -> "tf_ext.AutoTrackable":
+    tf_model: tf_ext.AutoTrackable, module_name: str
+) -> tf_ext.AutoTrackable:
     """
     deprecated: bentoml now requires signatures before saving a tf model
     reserve for now because tensorflow v1 has not been adopted yet
@@ -76,7 +67,7 @@ def hook_loaded_model(
     # pretty format loaded model
     logger.info(pretty_format_restored_model(tf_model))
     if hasattr(tf_model, "keras_api"):
-        logger.warning(KERAS_MODEL_WARNING.format(name=module_name))
+        logger.warning(KERAS_MODEL_WARNING, module_name)
     return tf_model
 
 
@@ -222,6 +213,23 @@ def get_input_signatures_v2(
     return []
 
 
+def get_output_signatures_v2(
+    func: tf_ext.RestoredFunction,
+) -> list[tuple[tf_ext.TensorSpec, ...] | tf_ext.TensorSpec]:
+    if hasattr(func, "concrete_functions") and func.concrete_functions:
+        return [
+            s
+            for conc in func.concrete_functions
+            for s in get_output_signatures_v2(conc)
+        ]
+
+    if hasattr(func, "structured_outputs"):
+        # for concrete_functions
+        return [func.structured_outputs]
+
+    return []
+
+
 def get_input_signatures(
     func: tf_ext.DecoratedFunction,
 ) -> list[tuple[tf_ext.InputSignature, ...]]:
@@ -292,11 +300,11 @@ def get_arg_names(func: "tf_ext.DecoratedFunction") -> t.Optional[t.List[str]]:
 
 
 def get_restorable_functions(
-    m: "tf_ext.Trackable",
-) -> t.Dict[str, "tf_ext.RestoredFunction"]:
+    m: tf_ext.Trackable,
+) -> dict[str, tf_ext.RestoredFunction]:
     function_map = {k: getattr(m, k, None) for k in dir(m)}
     return {
-        k: v
+        k: t.cast("tf_ext.RestoredFunction", v)
         for k, v in function_map.items()
         if k not in TF_KERAS_DEFAULT_FUNCTIONS and hasattr(v, "function_spec")
     }
@@ -334,7 +342,7 @@ def _pretty_format_positional(positional: t.Optional["tf_ext.TensorSignature"]) 
 
 
 def pretty_format_function(
-    function: "tf_ext.DecoratedFunction",
+    function: tf_ext.DecoratedFunction,
     obj: str = "<object>",
     name: str = "<function>",
 ) -> str:
@@ -351,7 +359,7 @@ def pretty_format_function(
     ret += _pretty_format_function_call(obj, name, arg_names)
     ret += "\n------------\n"
 
-    signature_descriptions = []  # type: t.List[str]
+    signature_descriptions: list[str] = []
 
     for index, sig in enumerate(sigs):
         positional, keyword = sig
@@ -384,8 +392,8 @@ def pretty_format_restored_model(model: "tf_ext.AutoTrackable") -> str:
 
 
 def cast_tensor_by_spec(
-    _input: "tf_ext.TensorLike", spec: "tf_ext.TypeSpec"
-) -> "tf_ext.TensorLike":
+    _input: tf_ext.TensorLike, spec: tf_ext.TypeSpec
+) -> tf_ext.TensorLike:
     """
     transform dtype & shape following spec
     """
@@ -404,11 +412,13 @@ def cast_tensor_by_spec(
         # TensorFlow Issues #43038
         # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
         return t.cast(
-            "tf_ext.TensorLike", tf.cast(_input, dtype=spec.dtype, name=spec.name)
+            "tf_ext.TensorLike",
+            tf.cast(_input, dtype=spec.dtype, name=t.cast(str, spec.name)),
         )
     else:
         return t.cast(
-            "tf_ext.TensorLike", tf.constant(_input, dtype=spec.dtype, name=spec.name)
+            "tf_ext.TensorLike",
+            tf.constant(_input, dtype=spec.dtype, name=t.cast(str, spec.name)),
         )
 
 

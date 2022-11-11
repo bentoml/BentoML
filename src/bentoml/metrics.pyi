@@ -6,8 +6,6 @@ import prometheus_client
 
 from bentoml._internal import external_typing as ext
 
-__dir__: list[str] = dir(prometheus_client)
-
 CONTENT_TYPE_LATEST = prometheus_client.CONTENT_TYPE_LATEST
 Counter = prometheus_client.Counter
 Histogram = prometheus_client.Histogram

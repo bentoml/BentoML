@@ -1,21 +1,22 @@
 # Tests dependencies
-black[jupyter]==22.8.0
-codecov
-coverage>=4.4
+pandas
+pydantic
+scikit-learn
+yamllint==1.28.0
+black[jupyter]==22.10.0
+codecov==2.1.12
+coverage[toml]==6.5.0
 setuptools>=63
 isort==5.10.1
-pydantic
-pylint>=2.14.0
-pytest-cov>=3.0.0
-pytest>=6.2.0
-pytest-xdist[psutil]
-pytest-asyncio
-pandas
-scikit-learn
-imageio>=2.5.0
-pyarrow
-build[virtualenv] >=0.8.0
-yamllint
-protobuf>=3.5.0, <3.20,!=3.19.5
-grpcio-tools>=1.41.0,<1.49.0,!=1.48.2
-opentelemetry-test-utils==0.33b0
+pylint==2.15.5
+pytest-cov==4.0.0
+pytest==7.1.3
+pytest-xdist[psutil]==2.5.0
+pytest-asyncio==0.20.1
+imageio==2.22.4
+pyarrow==10.0.0
+build[virtualenv]==0.8.0
+protobuf==3.19.6
+grpcio>=1.41.0, <1.49, !=1.48.2
+grpcio-health-checking>=1.41.0, <1.49, !=1.48.2
+opentelemetry-instrumentation-grpc==0.34b0

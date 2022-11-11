@@ -303,7 +303,7 @@ gRPC server:
             The following ``build.gradle`` should be able to help you get started:
 
             .. literalinclude:: ../../../grpc-client/java/build.gradle
-               :language: groovy
+               :language: text
                :caption: build.gradle
 
             To build the client, run:
@@ -386,7 +386,7 @@ gRPC server:
             The following ``build.gradle.kts`` should be able to help you get started:
 
             .. literalinclude:: ../../../grpc-client/kotlin/build.gradle.kts
-               :language: groovy
+               :language: text
                :caption: build.gradle.kts
 
             To build the client, run:
@@ -734,7 +734,7 @@ dependencies to your Bento
 
    » bentoml containerize iris_classifier:latest --enable-features=grpc
 
-``--enable-features`` allows users to containerize any of the existing Bentos with :ref:`additional features </installation:Additional features>` without having to rebuild the Bento.
+``--enable-features`` allows users to containerize any of the existing Bentos with :ref:`additional features <concepts/bento:Enable features for your Bento>` that BentoML provides without having to rebuild the Bento.
 
 .. note::
 
@@ -775,7 +775,7 @@ Let's take a quick look at `protobuf <https://developers.google.com/protocol-buf
 
       .. tab-item:: v1alpha1
 
-         .. literalinclude:: ../../../bentoml/grpc/v1alpha1/service.proto
+         .. literalinclude:: ../../../src/bentoml/grpc/v1alpha1/service.proto
             :language: protobuf
 
 As you can see, BentoService defines a `simple rpc` ``Call`` that sends a ``Request`` message and returns a ``Response`` message.
@@ -791,6 +791,8 @@ A ``Request`` message takes in:
 | :ref:`guides/grpc:Array representation via ``NDArray```          | :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`       |
 +------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
 | :ref:`guides/grpc:Tabular data representation via ``DataFrame``` | :ref:`bentoml.io.PandasDataFrame <reference/api_io_descriptors:Tabular Data with Pandas>` |
++------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
+| :ref:`guides/grpc:Series representation via ``Series```          | :ref:`bentoml.io.PandasDataFrame <reference/api_io_descriptors:Tabular Data with Pandas>` |
 +------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
 | :ref:`guides/grpc:File-like object via ``File```                 | :ref:`bentoml.io.File <reference/api_io_descriptors:Files>`                               |
 +------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
@@ -1034,6 +1036,54 @@ It accepts the following fields:
          }
 
 :bdg-primary:`API reference:` :meth:`bentoml.io.PandasDataFrame.from_proto`
+
+Series representation via ``Series``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:bdg-info:`Description:` ``Series`` portrays a series of values. This can be used for representing Series types in tabular data.
+
+It accepts the following fields:
+
+* `string_values`, `float_values`, `double_values`, `bool_values`, `int32_values`, `int64_values`
+
+  Similar to NumpyNdarray, each of the fields is a `list` of the corresponding data type. The list is a 1-D array, and will be then pass to ``pd.Series``.
+
+  Each request should only contain **ONE** of the aforementioned fields.
+
+  The interaction among the above fields and ``dtype`` from ``PandasSeries`` are as follows:
+
+  - if ``dtype`` is not present in the descriptor:
+      * All of the fields are empty, then we return an empty ``pd.Series``.
+      * We will loop through all of the provided fields, and only allows one field per message.
+
+        If here are more than one field (i.e. ``string_values`` and ``float_values``), then we will raise an error, as we don't know how to deserialize the data.
+
+  - otherwise:
+      * We will use the provided dtype-to-field map to get the data from the given message.
+
+.. grid:: 2
+
+    .. grid-item-card::  ``Python API``
+
+      .. code-block:: python
+
+         PandasSeries.from_sample([5.4, 3.4, 1.5, 0.4])
+
+    .. grid-item-card::  ``pb.Series``
+
+      .. code-block:: none
+
+         series {
+           float_values: 5.4
+           float_values: 3.4
+           float_values: 1.5
+           float_values: 0.4
+         }
+
+
+:bdg-primary:`API reference:` :meth:`bentoml.io.PandasSeries.from_proto`
+
+:raw-html:`<br />`
 
 File-like object via ``File``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1360,7 +1410,7 @@ faster go-to-market strategy.
 Performance tuning
 ~~~~~~~~~~~~~~~~~~
 
-BentoML allows user to tune the performance of gRPC via :ref:`bentoml_configuration.yaml <guides/configuration:Configuring BentoML>` via ``api_server.grpc``.
+BentoML allows user to tune the performance of gRPC via :ref:`bentoml_configuration.yaml <guides/configuration:Configuration>` via ``api_server.grpc``.
 
 A quick overview of the available configuration for gRPC:
 

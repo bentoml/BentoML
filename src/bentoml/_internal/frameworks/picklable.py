@@ -122,10 +122,12 @@ def save_model(
     )
 
     if signatures is None:
-        logger.info(
-            'Using default model signature `{"__call__": {"batchable": False}}` for picklable model'
-        )
         signatures = {"__call__": ModelSignature(batchable=False)}
+        logger.info(
+            'Using the default model signature for pickable model (%s) for model "%s".',
+            signatures,
+            name,
+        )
 
     with bentoml.models.create(
         name,

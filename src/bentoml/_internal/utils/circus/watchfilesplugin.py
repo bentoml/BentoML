@@ -49,11 +49,11 @@ class ServiceReloaderPlugin(CircusPlugin):
         if not is_pypi_installed_bentoml():
             # bentoml src from this __file__
             logger.info(
-                "BentoML is installed via development mode, adding source root to 'watch_dirs'"
+                "BentoML is installed via development mode, adding source root to 'watch_dirs'."
             )
             watch_dirs.append(t.cast(str, source_locations("bentoml")))
 
-        logger.info(f"Watching directories: {watch_dirs}")
+        logger.info("Watching directories: %s", watch_dirs)
         self.watch_dirs = watch_dirs
 
         self.create_spec()
@@ -104,13 +104,13 @@ class ServiceReloaderPlugin(CircusPlugin):
             filtered = [c for c in uniq_paths if self.should_include(c)]
             if filtered:
                 change_type, path = self.display_path(changes)
-                logger.warning(f"{change_type.upper()}: {path}")
+                logger.warning("%s: %s", change_type.upper(), path)
                 return True
         return False
 
     def look_after(self):
         if self.has_modification():
-            logger.warning(f"{self.__class__.__name__} detected changes. Reloading...")
+            logger.warning("Detected changes. Reloading...")
             self.call("restart", name="*")
 
     def handle_init(self):

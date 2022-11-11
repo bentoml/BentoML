@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 tag_fmt = "[a-z0-9]([-._a-z0-9]*[a-z0-9])?"
 tag_max_length = 63
 tag_max_length_error_msg = (
-    "a tag's name or version must be at most {tag_max_length} characters in length"
+    f"a tag's name or version must be at most {tag_max_length} characters in length"
 )
 tag_invalid_error_msg = "a tag's name or version must consist of alphanumeric characters, '_', '-', or '.', and must start and end with an alphanumeric character"
 tag_regex = re.compile(f"^{tag_fmt}$")
@@ -50,7 +50,7 @@ class Tag:
     def __init__(self, name: str, version: t.Optional[str] = None):
         lname = name.lower()
         if name != lname:
-            logger.warning(f"converting '{name}' to lowercase: '{lname}'")
+            logger.warning("Converting '%s' to lowercase: '%s'.", name, lname)
 
         validate_tag_str(lname)
 
@@ -59,7 +59,7 @@ class Tag:
         if version is not None:
             lversion = version.lower()
             if version != lversion:
-                logger.warning(f"converting '{version}' to lowercase: '{lversion}'")
+                logger.warning("Converting '%s' to lowercase: '%s'.", version, lversion)
             validate_tag_str(lversion)
             self.version = lversion
         else:

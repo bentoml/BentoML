@@ -12,8 +12,8 @@ from simple_di import Provide
 
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
-from bentoml._internal.types import LazyType
 
+from ..types import LazyType
 from ..context import trace_context
 from ..context import component_context
 from ..runner.utils import Params
@@ -60,7 +60,9 @@ class RunnerAppFactory(BaseAppFactory):
             self.dispatchers[method.name] = CorkDispatcher(
                 max_latency_in_ms=method.max_latency_ms,
                 max_batch_size=method.max_batch_size,
-                fallback=ServiceUnavailable,
+                fallback=functools.partial(
+                    ServiceUnavailable, message="process is overloaded"
+                ),
             )
 
     @property
@@ -329,7 +331,9 @@ class RunnerAppFactory(BaseAppFactory):
                 ret = await runner_method.async_run(*params.args, **params.kwargs)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.error(
-                    f"Exception on runner '{runner_method.runner.name}' method '{runner_method.name}'",
+                    "Exception on runner '%s' method '%s'",
+                    runner_method.runner.name,
+                    runner_method.name,
                     exc_info=exc,
                 )
                 return Response(

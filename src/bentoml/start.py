@@ -35,9 +35,12 @@ def start_runner_server(
     """
     Experimental API for serving a BentoML runner.
     """
+    from .serve import ensure_prometheus_dir
+
+    prometheus_dir = ensure_prometheus_dir()
+
     from bentoml import load
 
-    from .serve import ensure_prometheus_dir
     from ._internal.utils import reserve_free_port
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
@@ -50,8 +53,6 @@ def start_runner_server(
 
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
-
-    ensure_prometheus_dir()
 
     with contextlib.ExitStack() as port_stack:
         for runner in svc.runners:
@@ -84,6 +85,8 @@ def start_runner_server(
                             "--no-access-log",
                             "--worker-id",
                             "$(circus.wid)",
+                            "--prometheus-dir",
+                            prometheus_dir,
                         ],
                         copy_env=True,
                         stop_children=True,
@@ -130,6 +133,10 @@ def start_http_server(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
 ) -> None:
+    from .serve import ensure_prometheus_dir
+
+    prometheus_dir = ensure_prometheus_dir()
+
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
 
@@ -139,7 +146,6 @@ def start_http_server(
     from .serve import API_SERVER_NAME
     from .serve import construct_ssl_args
     from .serve import PROMETHEUS_MESSAGE
-    from .serve import ensure_prometheus_dir
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
 
@@ -152,10 +158,7 @@ def start_http_server(
         )
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
-    prometheus_dir = ensure_prometheus_dir()
-
     logger.debug("Runner map: %s", runner_map)
-
     circus_socket_map[API_SERVER_NAME] = CircusSocket(
         name=API_SERVER_NAME,
         host=host,
@@ -239,6 +242,10 @@ def start_grpc_server(
     ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
 ) -> None:
+    from .serve import ensure_prometheus_dir
+
+    prometheus_dir = ensure_prometheus_dir()
+
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
 
@@ -247,7 +254,6 @@ def start_grpc_server(
     from .serve import create_watcher
     from .serve import construct_ssl_args
     from .serve import PROMETHEUS_MESSAGE
-    from .serve import ensure_prometheus_dir
     from .serve import PROMETHEUS_SERVER_NAME
     from ._internal.utils import reserve_free_port
     from ._internal.utils.circus import create_standalone_arbiter
@@ -262,7 +268,6 @@ def start_grpc_server(
         )
     watchers: list[Watcher] = []
     circus_socket_map: dict[str, CircusSocket] = {}
-    prometheus_dir = ensure_prometheus_dir()
     logger.debug("Runner map: %s", runner_map)
     ssl_args = construct_ssl_args(
         ssl_certfile=ssl_certfile,

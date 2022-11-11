@@ -57,7 +57,6 @@ __all__ = [
     "cached_property",
     "cached_contextmanager",
     "reserve_free_port",
-    "catch_exceptions",
     "LazyLoader",
     "validate_or_create_dir",
     "display_path_under_home",
@@ -69,25 +68,54 @@ __all__ = [
 _EXPERIMENTAL_APIS: set[str] = set()
 
 
-def _warn_experimental(f: t.Any):
-    api_name = f.__name__ if inspect.isfunction(f) else repr(f)
+def warn_experimental(api_name: str) -> None:
+    """
+    Warns the user that the given API is experimental.
+    Make sure that if the API is not experimental anymore, this function call is removed.
+
+    If 'api_name' requires string formatting, use %-formatting for optimization.
+
+    Args:
+        api_name: The name of the API that is experimental.
+    """
     if api_name not in _EXPERIMENTAL_APIS:
         _EXPERIMENTAL_APIS.add(api_name)
         msg = "'%s' is an EXPERIMENTAL API and is currently not yet stable. Proceed with caution!"
-        logger = logging.getLogger(f.__module__)
+        logger = logging.getLogger(__name__)
         logger.warning(msg, api_name)
 
 
-def experimental(f: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
-    @functools.wraps(f)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
-        _warn_experimental(f)
-        return f(*args, **kwargs)
+def experimental(
+    f: t.Callable[P, t.Any] | None = None, *, api_name: str | None = None
+) -> t.Callable[..., t.Any]:
+    """
+    Decorator to mark an API as experimental.
 
-    return wrapper
+    If 'api_name' requires string formatting, use %-formatting for optimization.
+
+    Args:
+        api_name: The name of the API that is experimental.
+    """
+    if api_name is None:
+        api_name = f.__name__ if inspect.isfunction(f) else repr(f)
+
+    def decorator(func: t.Callable[..., t.Any]) -> t.Callable[P, t.Any]:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+            warn_experimental(api_name)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    if f is None:
+        return decorator
+    return decorator(f)
 
 
 def add_experimental_docstring(f: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
+    """
+    Decorator to add an experimental warning to the docstring of a function.
+    """
     f.__doc__ = "[EXPERIMENTAL] " + (f.__doc__ if f.__doc__ is not None else "")
     return f
 
@@ -146,34 +174,6 @@ def human_readable_size(size: t.Union[int, float], decimal_places: int = 2) -> s
     else:
         raise ValueError("size is too large")
     return f"{size:.{decimal_places}f} {unit}"
-
-
-class catch_exceptions(t.Generic[_T_co], object):
-    def __init__(
-        self,
-        catch_exc: t.Union[t.Type[BaseException], t.Tuple[t.Type[BaseException], ...]],
-        throw_exc: t.Callable[[str], BaseException],
-        msg: str = "",
-        fallback: t.Optional[_T_co] = None,
-        raises: t.Optional[bool] = True,
-    ) -> None:
-        self._catch_exc = catch_exc
-        self._throw_exc = throw_exc
-        self._msg = msg
-        self._fallback = fallback
-        self._raises = raises
-
-    def __call__(self, func: t.Callable[P, _T_co]) -> t.Callable[P, t.Optional[_T_co]]:
-        @functools.wraps(func)
-        def _(*args: P.args, **kwargs: P.kwargs) -> t.Optional[_T_co]:
-            try:
-                return func(*args, **kwargs)
-            except self._catch_exc:
-                if self._raises:
-                    raise self._throw_exc(self._msg)
-                return self._fallback
-
-        return _
 
 
 def split_with_quotes(
@@ -279,6 +279,7 @@ def copy_file_to_fs_folder(
     src_fs = fs.open_fs(dir_name)
     dst_filename = file_name if dst_filename is None else dst_filename
     dst_path = fs.path.join(dst_folder_path, dst_filename)
+    dst_fs.makedir(dst_folder_path, recreate=True)
     fs.copy.copy_file(src_fs, file_name, dst_fs, dst_path)
 
 
@@ -438,7 +439,7 @@ class cached_contextmanager:
 class compose:
     """
     Function composition: compose(f, g)(...) is equivalent to f(g(...)).
-    Refers to https://github.com/mentalisttraceur/python-compose for original implementation.
+    Refer to https://github.com/mentalisttraceur/python-compose for original implementation.
 
     Args:
         *functions: Functions (or other callables) to compose.

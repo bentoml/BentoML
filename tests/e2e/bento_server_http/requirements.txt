@@ -1,6 +1,4 @@
-pandas
+-r nested/requirements.txt
 pydantic
 Pillow
-scikit-learn
-pyarrow
 fastapi

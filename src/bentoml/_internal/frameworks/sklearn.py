@@ -20,9 +20,9 @@ if TYPE_CHECKING:
     from sklearn.pipeline import Pipeline
 
     from bentoml.types import ModelSignature
-    from bentoml._internal.models.model import ModelSignaturesType
 
     from .. import external_typing as ext
+    from ..models.model import ModelSignaturesType
 
     SklearnModel: t.TypeAlias = BaseEstimator | Pipeline
 
@@ -36,9 +36,7 @@ except ImportError:  # pragma: no cover
         from sklearn.utils._joblib import parallel_backend
     except ImportError:
         raise MissingDependencyException(
-            "sklearn is required in order to use the module `bentoml.sklearn`, install "
-            "sklearn with `pip install sklearn`. For more information, refer to "
-            "https://scikit-learn.org/stable/install.html"
+            "scikit-learn is required in order to use the module 'bentoml.sklearn', install sklearn with 'pip install sklearn'. For more information, refer to https://scikit-learn.org/stable/install.html"
         )
 
 MODULE_NAME = "bentoml.sklearn"
@@ -157,7 +155,9 @@ def save_model(
     if signatures is None:
         signatures = {"predict": {"batchable": False}}
         logger.info(
-            f"Using the default model signature for sklearn ({signatures}) for model {name}."
+            'Using the default model signature for scikit-learn (%s) for model "%s".',
+            signatures,
+            name,
         )
 
     with bentoml.models.create(

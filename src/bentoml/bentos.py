@@ -338,16 +338,16 @@ def build(
                ),
            )
 
-    """  # noqa: LN001
+    """
     build_config = BentoBuildConfig(
         service=service,
         description=description,
         labels=labels,
         include=include,
         exclude=exclude,
-        docker=docker,  # type: ignore
-        python=python,  # type: ignore
-        conda=conda,  # type: ignore
+        docker=docker,
+        python=python,
+        conda=conda,
     )
 
     bento = Bento.create(
@@ -356,7 +356,7 @@ def build(
         build_ctx=build_ctx,
     ).save(_bento_store)
     logger.info(BENTOML_FIGLET)
-    logger.info(f"Successfully built {bento}")
+    logger.info("Successfully built %s.", bento)
     return bento
 
 
@@ -394,7 +394,7 @@ def build_bentofile(
         build_ctx=build_ctx,
     ).save(_bento_store)
     logger.info(BENTOML_FIGLET)
-    logger.info(f"Successfully built {bento}")
+    logger.info("Successfully built %s.", bento)
     return bento
 
 
@@ -445,8 +445,11 @@ FEATURES = [
     "grpc-channelz",
     "aws",
     "all",
+    "io",
+    "io-file",
     "io-image",
     "io-pandas",
+    "io-json",
     "tracing-zipkin",
     "tracing-jaeger",
     "tracing-otlp",
@@ -549,7 +552,7 @@ def containerize(
         run_buildx(cwd=build_path, file=dockerfile_path)
         return True
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed building docker image: {e}")
+        logger.error("Failed building docker image: %s", e)
         return False
     finally:
         clean_context.close()

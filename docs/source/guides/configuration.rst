@@ -1,6 +1,6 @@
-===================
-Configuring BentoML
-===================
+=============
+Configuration
+=============
 
 BentoML starts with an out-of-the-box configuration that works for common use cases. For advanced users, many
 features can be customized through configuration. Both BentoML CLI and Python APIs can be customized 

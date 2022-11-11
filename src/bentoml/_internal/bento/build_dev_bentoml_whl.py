@@ -12,7 +12,6 @@ from ..configuration import is_pypi_installed_bentoml
 logger = logging.getLogger(__name__)
 
 BENTOML_DEV_BUILD = "BENTOML_BUNDLE_LOCAL_BUILD"
-_exc_message = f"'{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package. Install development dependencies with 'pip install -r requirements/dev-requirements.txt' and try again."
 
 
 def build_bentoml_editable_wheel(target_path: str) -> None:
@@ -29,11 +28,19 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         return
 
     try:
+        # NOTE: build.env is a standalone library,
+        # different from build. However, isort sometimes
+        # incorrectly re-order the imports order.
+        # isort: off
         from build.env import IsolatedEnvBuilder
 
         from build import ProjectBuilder
+
+        # isort: on
     except ModuleNotFoundError as e:
-        raise MissingDependencyException(_exc_message) from e
+        raise MissingDependencyException(
+            f"Environment variable '{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package ({e}). Install development dependencies with 'pip install -r requirements/dev-requirements.txt' and try again."
+        ) from None
 
     # Find bentoml module path
     # This will be $GIT_ROOT/src/bentoml
@@ -42,11 +49,7 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         raise BentoMLException("Could not find bentoml module location.")
     bentoml_path = Path(module_location)
 
-    try:
-        from importlib import import_module
-
-        _ = import_module("bentoml.grpc.v1alpha1.service_pb2")
-    except ModuleNotFoundError:
+    if not Path(module_location, "grpc", "v1alpha1", "service_pb2.py").exists():
         raise ModuleNotFoundError(
             f"Generated stubs are not found. Make sure to run '{bentoml_path.as_posix()}/scripts/generate_grpc_stubs.sh' beforehand to generate gRPC stubs."
         ) from None

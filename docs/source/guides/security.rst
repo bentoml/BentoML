@@ -38,6 +38,17 @@ Here's an example with starlette-authlib:
     svc.add_asgi_middleware(SessionMiddleware, secret_key='you_secret')
 
 
+Certificates
+^^^^^^^^^^^^
+
+BentoML supports HTTPS with self-signed certificates. To enable HTTPS, you can to provide SSL certificate and key files as arguments
+to the :code:`bentoml serve` command. Use :code:`bentoml serve --help` to see the full list of options.
+
+.. code::
+    
+    bentoml serve iris_classifier:latest --ssl-certfile /path/to/cert.pem --ssl-keyfile /path/to/key.pem
+
+
 Reverse Proxy
 ^^^^^^^^^^^^^
 

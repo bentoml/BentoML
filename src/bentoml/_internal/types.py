@@ -13,8 +13,6 @@ from datetime import datetime
 from datetime import timedelta
 from dataclasses import dataclass
 
-from .utils.dataclasses import json_serializer
-
 if sys.version_info < (3, 8):
     import collections
 
@@ -106,11 +104,20 @@ MetadataType: t.TypeAlias = t.Union[
 
 if TYPE_CHECKING:
     MetadataDict = t.Dict[str, MetadataType]
+    JSONSerializable: t.TypeAlias = (
+        str
+        | int
+        | float
+        | bool
+        | None
+        | list["JSONSerializable"]
+        | dict[str, "JSONSerializable"]
+    )
 else:
     # NOTE: remove this when registering hook for MetadataType
     MetadataDict = dict
 
-JSONSerializable = t.NewType("JSONSerializable", object)
+    JSONSerializable = t.NewType("JSONSerializable", object)
 
 
 T = t.TypeVar("T")
@@ -275,7 +282,6 @@ def is_compatible_type(t1: AnyType, t2: AnyType) -> bool:
     return True
 
 
-@json_serializer(fields=["uri", "name"], compat=True)
 @dataclass(frozen=False)
 class FileLike(t.Generic[t.AnyStr], io.IOBase):
     """

@@ -103,10 +103,9 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
         components=generate_service_components(svc),
         info=Info(
             title=svc.name,
-            summary="A ML Service created with BentoML",
             description=svc.doc,
             version=svc.tag.version if svc.tag and svc.tag.version else "None",
-            contact=Contact(name="BentoML Team", email="contact@bentoml.ai"),
+            contact=Contact(name="BentoML Team", email="contact@bentoml.com"),
         ),
         paths={
             # setup infra endpoints
@@ -137,6 +136,8 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
                             },
                         },
                         "tags": [APP_TAG.name],
+                        "consumes": [api.input.mime_type],
+                        "produces": [api.output.mime_type],
                         "x-bentoml-name": api.name,
                         "summary": str(api),
                         "description": api.doc or "",

@@ -8,8 +8,8 @@ from bentoml.grpc.utils import import_generated_stubs
 if TYPE_CHECKING:
     from grpc import aio
 
-    from bentoml.grpc.v1alpha2 import service_test_pb2 as pb
-    from bentoml.grpc.v1alpha2 import service_test_pb2_grpc as services
+    from bentoml.grpc.v1 import service_test_pb2 as pb
+    from bentoml.grpc.v1 import service_test_pb2_grpc as services
 else:
     pb, services = import_generated_stubs(file="service_test.proto")
 

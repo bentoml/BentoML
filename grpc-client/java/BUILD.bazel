@@ -44,7 +44,7 @@ java_binary(
 
 proto_library(
     name = "service_proto",
-    srcs = ["src/main/proto/v1alpha2/service.proto"],
+    srcs = ["src/main/proto/v1/service.proto"],
     deps = [
         "@com_google_protobuf//:struct_proto",
         "@com_google_protobuf//:wrappers_proto",

@@ -12,13 +12,13 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/credentials.h>
 
-#include "bentoml/grpc/v1alpha2/service.grpc.pb.h"
-#include "bentoml/grpc/v1alpha2/service.pb.h"
+#include "bentoml/grpc/v1/service.grpc.pb.h"
+#include "bentoml/grpc/v1/service.pb.h"
 
-using bentoml::grpc::v1alpha2::BentoService;
-using bentoml::grpc::v1alpha2::NDArray;
-using bentoml::grpc::v1alpha2::Request;
-using bentoml::grpc::v1alpha2::Response;
+using bentoml::grpc::v1::BentoService;
+using bentoml::grpc::v1::NDArray;
+using bentoml::grpc::v1::Request;
+using bentoml::grpc::v1::Response;
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
 using grpc::ClientContext;

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from grpc_health.v1 import health_pb2 as pb_health
     from grpc_health.v1 import health_pb2_grpc as services_health
 
-    from bentoml.grpc.v1alpha2 import service_pb2_grpc as services
+    from bentoml.grpc.v1 import service_pb2_grpc as services
 
     from .servicer import Servicer
 else:

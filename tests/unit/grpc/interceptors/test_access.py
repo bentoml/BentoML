@@ -32,9 +32,9 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import AsyncHandlerMethod
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.v1alpha2 import service_pb2_grpc as services
-    from bentoml.grpc.v1alpha2 import service_test_pb2 as pb_test
-    from bentoml.grpc.v1alpha2 import service_test_pb2_grpc as services_test
+    from bentoml.grpc.v1 import service_pb2_grpc as services
+    from bentoml.grpc.v1 import service_test_pb2 as pb_test
+    from bentoml.grpc.v1 import service_test_pb2_grpc as services_test
 else:
     _, services = import_generated_stubs()
     pb_test, services_test = import_generated_stubs(file="service_test.proto")
@@ -86,7 +86,7 @@ async def test_success_logs(caplog: LogCaptureFixture):
                     stub = services_test.TestServiceStub(channel)
                     await stub.Execute(pb_test.ExecuteRequest(input="BentoML"))
             assert (
-                "(scheme=http,path=/bentoml.testing.v1alpha2.TestService/Execute,type=application/grpc,size=9) (http_status=200,grpc_status=0,type=application/grpc,size=17)"
+                "(scheme=http,path=/bentoml.testing.v1.TestService/Execute,type=application/grpc,size=9) (http_status=200,grpc_status=0,type=application/grpc,size=17)"
                 in caplog.text
             )
 
@@ -142,7 +142,7 @@ async def test_access_log_exception(caplog: LogCaptureFixture, simple_service: S
                         assert_code=grpc.StatusCode.INTERNAL,
                     )
             assert (
-                "(scheme=http,path=/bentoml.grpc.v1alpha2.BentoService/Call,type=application/grpc,size=17) (http_status=500,grpc_status=13,type=application/grpc,size=0)"
+                "(scheme=http,path=/bentoml.grpc.v1.BentoService/Call,type=application/grpc,size=17) (http_status=500,grpc_status=13,type=application/grpc,size=0)"
                 in caplog.text
             )
         finally:

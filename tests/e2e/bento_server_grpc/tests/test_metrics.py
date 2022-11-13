@@ -12,7 +12,7 @@ from bentoml._internal.utils import LazyLoader
 if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
-    from bentoml.grpc.v1alpha2 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_pb2 as pb
 else:
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
     pb, _ = import_generated_stubs()

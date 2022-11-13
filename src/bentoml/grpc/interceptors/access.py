@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import AsyncHandlerMethod
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.v1alpha2 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_pb2 as pb
 else:
     pb, _ = import_generated_stubs()
     grpc, aio = import_grpc()

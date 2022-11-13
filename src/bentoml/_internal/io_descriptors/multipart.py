@@ -22,8 +22,7 @@ if TYPE_CHECKING:
     from types import UnionType
 
     from typing_extensions import Self
-
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_pb2 as pb
 
     from .base import OpenAPIResponse
     from ..types import LazyType

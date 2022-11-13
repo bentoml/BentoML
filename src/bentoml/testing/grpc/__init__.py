@@ -25,8 +25,8 @@ if TYPE_CHECKING:
     from grpc.aio._channel import Channel
     from google.protobuf.message import Message
 
-    from bentoml.grpc.v1alpha2 import service_pb2 as pb
-    from bentoml.grpc.v1alpha2 import service_test_pb2_grpc as services_test
+    from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_test_pb2_grpc as services_test
 else:
     pb, _ = import_generated_stubs()
     _, services_test = import_generated_stubs(file="service_test.proto")
@@ -81,7 +81,7 @@ async def async_client_call(
     assert_code: grpc.StatusCode | None = None,
     assert_details: str | None = None,
     assert_trailing_metadata: aio.Metadata | None = None,
-    _internal_stubs_version: str = "v1alpha2",
+    _internal_stubs_version: str = "v1",
 ) -> pb.Response | None:
     """
     Invoke a given API method via a client.

@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-package bentoml.testing.v1alpha2;
+package bentoml.testing.v1;
 
 option cc_enable_arenas = true;
-option go_package = "github.com/bentoml/testing/v1alpha2";
+option go_package = "github.com/bentoml/testing/v1";
 option optimize_for = SPEED;
 option py_generic_services = true;
 

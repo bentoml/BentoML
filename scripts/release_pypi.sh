@@ -55,7 +55,7 @@ cd "$GIT_ROOT" || exit 1
 
 # generate gRPC stubs
 ./scripts/generate_grpc_stubs.sh v1alpha1
-./scripts/generate_grpc_stubs.sh v1alpha2
+./scripts/generate_grpc_stubs.sh v1
 
 python3 -m build -s -w
 

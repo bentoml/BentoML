@@ -24,8 +24,8 @@ if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
     from bentoml import Service
-    from bentoml.grpc.v1alpha2 import service_pb2_grpc as services
-    from bentoml.grpc.v1alpha2 import service_test_pb2 as pb_test
+    from bentoml.grpc.v1 import service_pb2_grpc as services
+    from bentoml.grpc.v1 import service_test_pb2 as pb_test
 else:
 
     _, services = import_generated_stubs()
@@ -73,7 +73,7 @@ async def test_empty_metrics():
             await server.start()
             async with create_channel(host_url) as channel:
                 Execute = channel.unary_unary(
-                    "/bentoml.testing.v1alpha2.TestService/Execute",
+                    "/bentoml.testing.v1.TestService/Execute",
                     request_serializer=pb_test.ExecuteRequest.SerializeToString,
                     response_deserializer=pb_test.ExecuteResponse.FromString,
                 )

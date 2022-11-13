@@ -22,14 +22,14 @@ go_binary(
 
 go_grpc_library(
     name = "service_grpc",
-    importpath = "github.com/bentoml/bentoml/grpc/v1alpha2",
-    protos = ["//:service_v1alpha2_proto"],
+    importpath = "github.com/bentoml/bentoml/grpc/v1",
+    protos = ["//:service_v1_proto"],
 )
 
 go_binary(
     name = "client",
     srcs = ["client.go"],
-    importpath = "github.com/bentoml/bentoml/grpc/v1alpha2",
+    importpath = "github.com/bentoml/bentoml/grpc/v1",
     deps = [
         ":service_grpc",
         "@com_github_golang_protobuf//proto:go_default_library",

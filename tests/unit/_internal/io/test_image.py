@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     import numpy as np
     import PIL.Image as PILImage
 
-    from bentoml.grpc.v1alpha2 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_pb2 as pb
 else:
     from bentoml.grpc.utils import import_generated_stubs
     from bentoml._internal.utils import LazyLoader

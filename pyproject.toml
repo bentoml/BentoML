@@ -179,7 +179,7 @@ omit = [
   "src/bentoml/_internal/types.py",
   "src/bentoml/testing/*",
   "src/bentoml/grpc/v1alpha1/*",
-  "src/bentoml/grpc/v1alpha2/*",
+  "src/bentoml/grpc/v1/*",
   "src/bentoml/_internal/external_typing/*",
   "src/bentoml/_internal/yatai_client/*",
   "src/bentoml/_internal/yatai_rest_api_client/*",
@@ -196,7 +196,7 @@ omit = [
   "src/bentoml/_internal/types.py",
   "src/bentoml/testing/*",
   "src/bentoml/grpc/v1alpha1/*",
-  "src/bentoml/grpc/v1alpha2/*",
+  "src/bentoml/grpc/v1/*",
   "src/bentoml/_internal/external_typing/*",
   "src/bentoml/_internal/yatai_client/*",
   "src/bentoml/_internal/yatai_rest_api_client/*",
@@ -232,7 +232,7 @@ exclude = '''
     | dist
     | typings
     | src/bentoml/grpc/v1alpha1
-    | src/bentoml/grpc/v1alpha2
+    | src/bentoml/grpc/v1
     | grpc-client/thirdparty
     | grpc-client/bentoml
   )/
@@ -259,7 +259,7 @@ extension-pkg-allow-list = [
 ignore-paths = [
   "src/bentoml/_internal/external_typing",
   "src/bentoml/grpc/v1alpha1",
-  "src/bentoml/grpc/v1alpha2",
+  "src/bentoml/grpc/v1",
 ]
 disable = ["coerce-builtin", "no-absolute-import", "C", "R"]
 enable = ["c-extension-no-member"]

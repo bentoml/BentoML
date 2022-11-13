@@ -268,7 +268,7 @@ Send prediction request to the service:
 
                   .. code-block:: bash
 
-                     » docker run -i --rm fullstorydev/grpcurl -d @ -plaintext host.docker.internal:3000 bentoml.grpc.v1alpha2.BentoService/Call <<EOM
+                     » docker run -i --rm fullstorydev/grpcurl -d @ -plaintext host.docker.internal:3000 bentoml.grpc.v1.BentoService/Call <<EOM
                      {
                         "apiName": "classify",
                         "ndarray": {
@@ -283,7 +283,7 @@ Send prediction request to the service:
 
                   .. code-block:: bash
 
-                     » docker run -i --rm --network=host fullstorydev/grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1alpha2.BentoService/Call <<EOM
+                     » docker run -i --rm --network=host fullstorydev/grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1.BentoService/Call <<EOM
                      {
                         "apiName": "classify",
                         "ndarray": {

@@ -75,7 +75,7 @@ async def server_warmup(
     check_interval: float = 1,
     popen: subprocess.Popen[t.Any] | None = None,
     service_name: str | None = None,
-    _internal_stubs_version: str = "v1alpha2",
+    _internal_stubs_version: str = "v1",
 ) -> bool:
     start_time = time.time()
     proxy_handler = urllib.request.ProxyHandler({})

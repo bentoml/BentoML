@@ -1,4 +1,4 @@
-apiVersion: serving.yatai.ai/v1alpha2
+apiVersion: serving.yatai.ai/v1
 kind: BentoDeployment
 metadata:
   name: inference-graph-demo
@@ -9,45 +9,45 @@ spec:
     enabled: true
   resources:
     requests:
-        cpu: 500m
-        memory: "500m"
+      cpu: 500m
+      memory: "500m"
     limits:
-        cpu: 1000m
-        memory: "1Gi"
+      cpu: 1000m
+      memory: "1Gi"
   autoscaling:
     max_replicas: 5
     min_replicas: 1
   runners:
-  - name: bert-base-uncased
-    resources:
-      limits:
-        cpu: 2000m
-        memory: "4Gi"
-      requests:
-        cpu: 1000m
-        memory: "2Gi"
-    autoscaling:
-      max_replicas: 4
-      min_replicas: 1
-  - name: distilbert
-    resources:
-      limits:
-        cpu: 2000m
-        memory: "4Gi"
-      requests:
-        cpu: 1000m
-        memory: "2Gi"
-    autoscaling:
-      max_replicas: 4
-      min_replicas: 1
-  - name: prosusai-finbert
-    resources:
-      limits:
-        cpu: 2000m
-        memory: "4Gi"
-      requests:
-        cpu: 1000m
-        memory: "2Gi"
-    autoscaling:
-      max_replicas: 4
-      min_replicas: 1
+    - name: bert-base-uncased
+      resources:
+        limits:
+          cpu: 2000m
+          memory: "4Gi"
+        requests:
+          cpu: 1000m
+          memory: "2Gi"
+      autoscaling:
+        max_replicas: 4
+        min_replicas: 1
+    - name: distilbert
+      resources:
+        limits:
+          cpu: 2000m
+          memory: "4Gi"
+        requests:
+          cpu: 1000m
+          memory: "2Gi"
+      autoscaling:
+        max_replicas: 4
+        min_replicas: 1
+    - name: prosusai-finbert
+      resources:
+        limits:
+          cpu: 2000m
+          memory: "4Gi"
+        requests:
+          cpu: 1000m
+          memory: "2Gi"
+      autoscaling:
+        max_replicas: 4
+        min_replicas: 1

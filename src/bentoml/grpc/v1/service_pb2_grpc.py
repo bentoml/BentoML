@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from bentoml.grpc.v1alpha2 import service_pb2 as bentoml_dot_grpc_dot_v1alpha2_dot_service__pb2
+from bentoml.grpc.v1 import service_pb2 as bentoml_dot_grpc_dot_v1_dot_service__pb2
 
 
 class BentoServiceStub(object):
@@ -16,9 +16,9 @@ class BentoServiceStub(object):
             channel: A grpc.Channel.
         """
         self.Call = channel.unary_unary(
-                '/bentoml.grpc.v1alpha2.BentoService/Call',
-                request_serializer=bentoml_dot_grpc_dot_v1alpha2_dot_service__pb2.Request.SerializeToString,
-                response_deserializer=bentoml_dot_grpc_dot_v1alpha2_dot_service__pb2.Response.FromString,
+                '/bentoml.grpc.v1.BentoService/Call',
+                request_serializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.Request.SerializeToString,
+                response_deserializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.Response.FromString,
                 )
 
 
@@ -38,12 +38,12 @@ def add_BentoServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Call': grpc.unary_unary_rpc_method_handler(
                     servicer.Call,
-                    request_deserializer=bentoml_dot_grpc_dot_v1alpha2_dot_service__pb2.Request.FromString,
-                    response_serializer=bentoml_dot_grpc_dot_v1alpha2_dot_service__pb2.Response.SerializeToString,
+                    request_deserializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.Request.FromString,
+                    response_serializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.Response.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'bentoml.grpc.v1alpha2.BentoService', rpc_method_handlers)
+            'bentoml.grpc.v1.BentoService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
@@ -63,8 +63,8 @@ class BentoService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/bentoml.grpc.v1alpha2.BentoService/Call',
-            bentoml_dot_grpc_dot_v1alpha2_dot_service__pb2.Request.SerializeToString,
-            bentoml_dot_grpc_dot_v1alpha2_dot_service__pb2.Response.FromString,
+        return grpc.experimental.unary_unary(request, target, '/bentoml.grpc.v1.BentoService/Call',
+            bentoml_dot_grpc_dot_v1_dot_service__pb2.Request.SerializeToString,
+            bentoml_dot_grpc_dot_v1_dot_service__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

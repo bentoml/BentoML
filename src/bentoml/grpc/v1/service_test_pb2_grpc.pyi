@@ -3,7 +3,7 @@
 isort:skip_file
 """
 import abc
-import bentoml.grpc.v1alpha2.service_test_pb2
+import bentoml.grpc.v1.service_test_pb2
 import grpc
 
 class TestServiceStub:
@@ -11,8 +11,8 @@ class TestServiceStub:
 
     def __init__(self, channel: grpc.Channel) -> None: ...
     Execute: grpc.UnaryUnaryMultiCallable[
-        bentoml.grpc.v1alpha2.service_test_pb2.ExecuteRequest,
-        bentoml.grpc.v1alpha2.service_test_pb2.ExecuteResponse,
+        bentoml.grpc.v1.service_test_pb2.ExecuteRequest,
+        bentoml.grpc.v1.service_test_pb2.ExecuteResponse,
     ]
     """Unary API"""
 
@@ -22,9 +22,9 @@ class TestServiceServicer(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def Execute(
         self,
-        request: bentoml.grpc.v1alpha2.service_test_pb2.ExecuteRequest,
+        request: bentoml.grpc.v1.service_test_pb2.ExecuteRequest,
         context: grpc.ServicerContext,
-    ) -> bentoml.grpc.v1alpha2.service_test_pb2.ExecuteResponse:
+    ) -> bentoml.grpc.v1.service_test_pb2.ExecuteResponse:
         """Unary API"""
 
 def add_TestServiceServicer_to_server(servicer: TestServiceServicer, server: grpc.Server) -> None: ...

@@ -15,7 +15,7 @@ BENTOML_DEV_BUILD = "BENTOML_BUNDLE_LOCAL_BUILD"
 
 
 def build_bentoml_editable_wheel(
-    target_path: str, *, _internal_stubs_version: str = "v1alpha2"
+    target_path: str, *, _internal_stubs_version: str = "v1"
 ) -> None:
     """
     This is for BentoML developers to create Bentos that contains the local bentoml

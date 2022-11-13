@@ -85,6 +85,7 @@ grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1alpha1.BentoService/Call <<E
 }
 EOM
 ```
+</table>
 
 5. Load testing
 

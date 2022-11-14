@@ -16,11 +16,11 @@ if TYPE_CHECKING:
 
     import grpc
 
+    from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.exceptions import BentoMLException
     from bentoml.grpc.types import ProtoField
     from bentoml.grpc.types import RpcMethodHandler
     from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml._internal.io_descriptors import IODescriptor
 
 else:

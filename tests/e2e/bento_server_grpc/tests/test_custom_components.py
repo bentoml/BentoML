@@ -7,11 +7,11 @@ from grpc import aio
 from grpc_health.v1 import health_pb2 as pb_health
 from google.protobuf import wrappers_pb2
 
-from bentoml.testing.grpc import create_channel
-from bentoml.testing.grpc import async_client_call
 from bentoml.grpc.v1 import service_pb2 as pb
 from bentoml.grpc.v1 import service_test_pb2 as pb_test
 from bentoml.grpc.v1 import service_test_pb2_grpc as services_test
+from bentoml.testing.grpc import create_channel
+from bentoml.testing.grpc import async_client_call
 
 
 @pytest.mark.asyncio

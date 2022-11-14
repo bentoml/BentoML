@@ -26,15 +26,15 @@ if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
     from bentoml import Service
+    from bentoml.grpc.v1 import service_pb2_grpc as services
+    from bentoml.grpc.v1 import service_test_pb2 as pb_test
+    from bentoml.grpc.v1 import service_test_pb2_grpc as services_test
     from bentoml.grpc.types import Request
     from bentoml.grpc.types import Response
     from bentoml.grpc.types import RpcMethodHandler
     from bentoml.grpc.types import AsyncHandlerMethod
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.v1 import service_pb2_grpc as services
-    from bentoml.grpc.v1 import service_test_pb2 as pb_test
-    from bentoml.grpc.v1 import service_test_pb2_grpc as services_test
 else:
     _, services = import_generated_stubs()
     pb_test, services_test = import_generated_stubs(file="service_test.proto")

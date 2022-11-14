@@ -28,12 +28,12 @@ if TYPE_CHECKING:
     from grpc_health.v1 import health
     from typing_extensions import Self
 
+    from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_pb2_grpc as services
     from bentoml.grpc.types import Interceptors
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
     from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.grpc.v1 import service_pb2_grpc as services
 
     from ...service.service import Service
 

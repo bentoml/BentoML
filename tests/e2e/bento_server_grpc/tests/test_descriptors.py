@@ -24,8 +24,8 @@ if TYPE_CHECKING:
     from google.protobuf import struct_pb2
     from google.protobuf import wrappers_pb2
 
-    from bentoml._internal import external_typing as ext
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml._internal import external_typing as ext
 else:
     pb, _ = import_generated_stubs()
     grpc, _ = import_grpc()

@@ -17,13 +17,13 @@ if TYPE_CHECKING:
     from grpc import aio
     from grpc.aio._typing import MetadataType  # pylint: disable=unused-import
 
+    from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.types import Request
     from bentoml.grpc.types import Response
     from bentoml.grpc.types import RpcMethodHandler
     from bentoml.grpc.types import AsyncHandlerMethod
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.v1 import service_pb2 as pb
 else:
     pb, _ = import_generated_stubs()
     grpc, aio = import_grpc()

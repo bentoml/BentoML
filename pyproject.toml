@@ -38,13 +38,13 @@ dependencies = [
   # OpenTelemetry is the server dependencies, rather than SDK
   # Since there are discrepancies among API and instrumentation packages,
   # we should always pin the set version of Opentelemetry suite
-  "opentelemetry-api==1.13.0",
-  "opentelemetry-instrumentation==0.34b0",
-  "opentelemetry-instrumentation-aiohttp-client==0.34b0",
-  "opentelemetry-instrumentation-asgi==0.34b0",
-  "opentelemetry-sdk==1.13.0",
-  "opentelemetry-semantic-conventions==0.34b0",
-  "opentelemetry-util-http==0.34b0",
+  "opentelemetry-api==1.14.0",
+  "opentelemetry-instrumentation==0.35b0",
+  "opentelemetry-instrumentation-aiohttp-client==0.35b0",
+  "opentelemetry-instrumentation-asgi==0.35b0",
+  "opentelemetry-sdk==1.14.0",
+  "opentelemetry-semantic-conventions==0.35b0",
+  "opentelemetry-util-http==0.35b0",
   "packaging>=20.0",
   "pathspec",
   "pip-tools>=6.6.2",
@@ -135,17 +135,15 @@ grpc = [
   # 3.19.5 is currently breaking on a lot of system.
   "protobuf>=3.5.0, <3.20, !=3.19.5",
   # Lowest version that support 3.10. We need to set an upper bound
-  # since grpcio >=1.49.0 uses protbuf >=3.20.0, which breaks compatibility.
   # We can't use 1.48.2 since it depends on 3.19.5
-  "grpcio>=1.41.0, <1.49, !=1.48.2",
-  "grpcio-health-checking>=1.41.0, <1.49, !=1.48.2",
-  "opentelemetry-instrumentation-grpc==0.34b0",
+  "grpcio>=1.41.0,!=1.48.2",
+  # grpcio>=1.48.0 provides a pre-built M1 wheel.
+  "grpcio>=1.48.0,!=1.48.2;platform_machine=='arm64' and platform_system=='Darwin'",
+  "grpcio-health-checking>=1.41.0,!=1.48.2",
+  "opentelemetry-instrumentation-grpc==0.35b0",
 ]
-grpc-reflection = [
-  "bentoml[grpc]",
-  "grpcio-reflection>=1.41.0, <1.49, !=1.48.2",
-]
-grpc-channelz = ["bentoml[grpc]", "grpcio-channelz>=1.41.0, <1.49, !=1.48.2"]
+grpc-reflection = ["bentoml[grpc]", "grpcio-reflection>=1.41.0,!=1.48.2"]
+grpc-channelz = ["bentoml[grpc]", "grpcio-channelz>=1.41.0,!=1.48.2"]
 # We kept for compatibility with previous
 # versions of BentoML. It is discouraged to use this, instead use any
 # of the above tracing.* extras.
@@ -154,9 +152,9 @@ tracing = [
   "bentoml[tracing-otlp]",
   "bentoml[tracing-zipkin]",
 ]
-tracing-jaeger = ["opentelemetry-exporter-jaeger==1.13.0"]
-tracing-zipkin = ["opentelemetry-exporter-zipkin==1.13.0"]
-tracing-otlp = ["opentelemetry-exporter-otlp==1.13.0"]
+tracing-jaeger = ["opentelemetry-exporter-jaeger==1.14.0"]
+tracing-zipkin = ["opentelemetry-exporter-zipkin==1.14.0"]
+tracing-otlp = ["opentelemetry-exporter-otlp==1.14.0"]
 
 [tool.setuptools_scm]
 write_to = "src/bentoml/_version.py"

@@ -62,7 +62,7 @@ __all__ = ["load_model", "save_model", "get_runnable", "get", "JaxArrayContainer
 
 @attr.define
 class FlaxOptions(ModelOptions):
-    """Options for the Keras model."""
+    """Options for the Flax model."""
 
     partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
     device: str = attr.field(default="cpu")

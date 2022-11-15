@@ -61,7 +61,9 @@ def init_mlp_state():
     return params
 
 
-def is_close(model: nn.Module, state_dict: dict[str, t.Any], arr: jnp.ndarray):
+def assert_equal_shape(
+    model: nn.Module, state_dict: dict[str, t.Any], arr: jnp.ndarray
+):
     def check(out: jnp.ndarray) -> bool:
         logit = model.apply({"params": state_dict["params"]}, arr)
         chex.assert_equal_shape([logit, out])
@@ -84,7 +86,9 @@ mlp = FrameworkTestModel(
                 "__call__": [
                     Input(
                         input_args=[ones_array],
-                        expected=is_close(MLP(), init_mlp_state(), ones_array),
+                        expected=assert_equal_shape(
+                            MLP(), init_mlp_state(), ones_array
+                        ),
                     )
                 ]
             },

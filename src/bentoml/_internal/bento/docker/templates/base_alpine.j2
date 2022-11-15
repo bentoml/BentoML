@@ -5,7 +5,7 @@
 # Install helpers
 RUN {{ common.mount_cache("/var/cache/apk") }} \
     apk add --update bash gcc libc-dev shadow musl-dev build-base \
-		linux-headers g++
+		linux-headers g++ git
 
 ENV ENV /root/.bashrc
 

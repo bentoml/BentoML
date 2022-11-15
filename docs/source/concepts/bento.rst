@@ -399,7 +399,7 @@ Description
 
 ``description`` field allows user to customize documentation for any given Bento.
 
-The description contents must be plain text, optionally in `Markdown <https://daringfireball.net/projects/markdown/syntax>`_ format. Description
+The description contents support Jinja2 Template, optionally in `Markdown <https://daringfireball.net/projects/markdown/syntax>`_ format. Description
 can be specified either inline in the ``bentofile.yaml``, or via a file path to an
 existing text file:
 
@@ -411,6 +411,8 @@ existing text file:
 
           service: "service.py:svc"
           description: |
+              # {{ svc.name }}:{{ svc_version }}
+              [![pypi_status](https://img.shields.io/badge/BentoML-{{ bentoml_version }}-informational)](https://pypi.org/project/BentoML)
               ## Description For My Bento 🍱
 
               Use **any markdown syntax** here!

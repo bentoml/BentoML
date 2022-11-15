@@ -13,7 +13,7 @@ from ..tag import Tag
 from ..models import Model
 from ..runner import Runner
 from ...grpc.utils import import_grpc
-from ..bento.bento import get_default_svc_readme
+from ..bento.bento import get_svc_readme
 from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
 
@@ -200,7 +200,7 @@ class Service:
         if self.bento is not None:
             return self.bento.doc
 
-        return get_default_svc_readme(self)
+        return get_svc_readme(self)
 
     @property
     def openapi_spec(self) -> OpenAPISpecification:

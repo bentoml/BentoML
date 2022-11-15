@@ -13,6 +13,7 @@ import yaml
 import fs.osfs
 import fs.errors
 import fs.mirror
+from jinja2 import Template
 from fs.copy import copy_file
 from cattr.gen import override
 from cattr.gen import make_dict_structure_fn
@@ -25,7 +26,6 @@ from ..store import Store
 from ..store import StoreItem
 from ..types import PathType
 from ..utils import bentoml_cattr
-from ..utils import copy_file_to_fs_folder
 from ..models import ModelStore
 from ..runner import Runner
 from ...exceptions import InvalidArgument
@@ -36,6 +36,7 @@ from .build_config import DockerOptions
 from .build_config import PythonOptions
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
+from .default_svc_readme import readme_template
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -76,7 +77,9 @@ def create_inference_api_table(svc: Service) -> str:
     return INFERENCE_TABLE_MD.format(content="\n".join(contents))
 
 
-def get_default_svc_readme(svc: Service, svc_version: str | None = None) -> str:
+def get_svc_readme(
+    svc: Service, readme: str = readme_template, svc_version: str | None = None
+) -> str:
     if svc.bento:
         bentoml_version = svc.bento.info.bentoml_version
     else:
@@ -88,29 +91,14 @@ def get_default_svc_readme(svc: Service, svc_version: str | None = None) -> str:
         else:
             svc_version = "None"
 
-    doc = f"""\
-# {svc.name}:{svc_version}
+    template = Template(readme)
+    doc = template.render(
+        svc=svc,
+        svc_version=svc_version,
+        create_inference_api_table=create_inference_api_table,
+        bentoml_version=bentoml_version,
+    )
 
-[![pypi_status](https://img.shields.io/badge/BentoML-{bentoml_version}-informational)](https://pypi.org/project/BentoML)
-[![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
-[![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://l.bentoml.com/join-slack-swagger)
-[![BentoML GitHub Repo](https://img.shields.io/github/stars/bentoml/bentoml?style=social)](https://github.com/bentoml/BentoML)
-[![Twitter Follow](https://img.shields.io/twitter/follow/bentomlai?label=Follow%20BentoML&style=social)](https://twitter.com/bentomlai)
-
-This is a Machine Learning Service created with BentoML."""
-
-    if svc.apis:
-        doc += f"\n{create_inference_api_table(svc)}\n\n"
-
-    doc += """
-
-## Help
-
-* [📖 Documentation](https://docs.bentoml.org/en/latest/): Learn how to use BentoML.
-* [💬 Community](https://l.bentoml.com/join-slack-swagger): Join the BentoML Slack community.
-* [🐛 GitHub Issues](https://github.com/bentoml/BentoML/issues): Report bugs and feature requests.
-* Tip: you can also [customize this README](https://docs.bentoml.org/en/latest/concepts/bento.html#description).
-"""
     # TODO: add links to documentation that may help with API client development
     return doc
 
@@ -238,20 +226,32 @@ class Bento(StoreItem):
         build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
         build_config.python.write_to_bento(bento_fs, build_ctx)
         build_config.conda.write_to_bento(bento_fs, build_ctx)
-
         # Create `readme.md` file
         if build_config.description is None:
             with bento_fs.open(BENTO_README_FILENAME, "w", encoding="utf-8") as f:
-                f.write(get_default_svc_readme(svc, svc_version=tag.version))
+                f.write(get_svc_readme(svc, svc_version=tag.version))
         else:
             if build_config.description.startswith("file:"):
                 file_name = build_config.description[5:].strip()
-                copy_file_to_fs_folder(
-                    file_name, bento_fs, dst_filename=BENTO_README_FILENAME
-                )
+                src_path = os.path.realpath(os.path.expanduser(file_name))
+                dir_name, file_name = os.path.split(src_path)
+                src_fs = fs.open_fs(dir_name)
+                custom_readme = src_fs.open(file_name).read()
+                with bento_fs.open(BENTO_README_FILENAME, "w") as f:
+                    f.write(
+                        get_svc_readme(
+                            svc, readme=custom_readme, svc_version=tag.version
+                        )
+                    )
             else:
                 with bento_fs.open(BENTO_README_FILENAME, "w") as f:
-                    f.write(build_config.description)
+                    f.write(
+                        get_svc_readme(
+                            svc,
+                            readme=build_config.description,
+                            svc_version=tag.version,
+                        )
+                    )
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")

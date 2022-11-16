@@ -13,7 +13,9 @@ import yaml
 import fs.osfs
 import fs.errors
 import fs.mirror
-from jinja2 import Template
+from jinja2 import Environment
+from jinja2 import PackageLoader
+from jinja2 import select_autoescape
 from fs.copy import copy_file
 from cattr.gen import override
 from cattr.gen import make_dict_structure_fn
@@ -36,7 +38,6 @@ from .build_config import DockerOptions
 from .build_config import PythonOptions
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
-from .default_svc_readme import readme_template
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -61,6 +62,11 @@ INFERENCE_TABLE_MD = """\
 {content}
 """
 
+env = Environment(
+    loader=PackageLoader("bentoml._internal.bento", "templates"),
+    autoescape=select_autoescape(),
+)
+
 
 def create_inference_api_table(svc: Service) -> str:
     from ..service.openapi import APP_TAG
@@ -78,7 +84,7 @@ def create_inference_api_table(svc: Service) -> str:
 
 
 def get_svc_readme(
-    svc: Service, readme: str = readme_template, svc_version: str | None = None
+    svc: Service, custom_readme: str = None, svc_version: str | None = None
 ) -> str:
     if svc.bento:
         bentoml_version = svc.bento.info.bentoml_version
@@ -91,13 +97,38 @@ def get_svc_readme(
         else:
             svc_version = "None"
 
-    template = Template(readme)
-    doc = template.render(
-        svc=svc,
-        svc_version=svc_version,
-        create_inference_api_table=create_inference_api_table,
-        bentoml_version=bentoml_version,
-    )
+    if custom_readme:
+        _template = env.from_string(custom_readme)
+        doc = _template.render(
+            svc=svc,
+            svc_version=svc_version,
+            create_inference_api_table=create_inference_api_table,
+            bentoml_version=bentoml_version,
+        )
+    else:
+        doc = f"""\
+        # {svc.name}:{svc_version}
+    
+        [![pypi_status](https://img.shields.io/badge/BentoML-{bentoml_version}-informational)](https://pypi.org/project/BentoML)
+        [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
+        [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://l.bentoml.com/join-slack-swagger)
+        [![BentoML GitHub Repo](https://img.shields.io/github/stars/bentoml/bentoml?style=social)](https://github.com/bentoml/BentoML)
+        [![Twitter Follow](https://img.shields.io/twitter/follow/bentomlai?label=Follow%20BentoML&style=social)](https://twitter.com/bentomlai)
+    
+        This is a Machine Learning Service created with BentoML."""
+
+        if svc.apis:
+            doc += f"\n{create_inference_api_table(svc)}\n\n"
+
+        doc += """
+    
+        ## Help
+    
+        * [📖 Documentation](https://docs.bentoml.org/en/latest/): Learn how to use BentoML.
+        * [💬 Community](https://l.bentoml.com/join-slack-swagger): Join the BentoML Slack community.
+        * [🐛 GitHub Issues](https://github.com/bentoml/BentoML/issues): Report bugs and feature requests.
+        * Tip: you can also [customize this README](https://docs.bentoml.org/en/latest/concepts/bento.html#description).
+        """
 
     # TODO: add links to documentation that may help with API client development
     return doc
@@ -240,7 +271,7 @@ class Bento(StoreItem):
                 with bento_fs.open(BENTO_README_FILENAME, "w") as f:
                     f.write(
                         get_svc_readme(
-                            svc, readme=custom_readme, svc_version=tag.version
+                            svc, custom_readme=custom_readme, svc_version=tag.version
                         )
                     )
             else:
@@ -248,7 +279,7 @@ class Bento(StoreItem):
                     f.write(
                         get_svc_readme(
                             svc,
-                            readme=build_config.description,
+                            custom_readme=build_config.description,
                             svc_version=tag.version,
                         )
                     )

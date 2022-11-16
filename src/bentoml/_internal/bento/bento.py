@@ -63,7 +63,7 @@ INFERENCE_TABLE_MD = """\
 """
 
 env = Environment(
-    loader=PackageLoader("bentoml._internal.bento", "templates"),
+    loader=PackageLoader("bentoml", "_internal/bento/templates"),
     autoescape=select_autoescape(),
 )
 

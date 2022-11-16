@@ -430,6 +430,34 @@ existing text file:
           include:
               ...
 
+This is an example of a README.md written by Markdown & Simple Jinja2
+.. code-block:: Jinja
+   # {{ svc.name }}:{{ svc_version }}
+   [![pypi_status](https://img.shields.io/badge/BentoML-{{ bentoml_version }}-informational)](https://pypi.org/project/BentoML)
+   [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
+   [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://l.bentoml.com/join-slack-swagger)
+   [![BentoML GitHub Repo](https://img.shields.io/github/stars/bentoml/bentoml?style=social)](https://github.com/bentoml/BentoML)
+   [![Twitter Follow](https://img.shields.io/twitter/follow/bentomlai?label=Follow%20BentoML&style=social)](https://twitter.com/bentomlai)
+   {% endblock %}
+   {% block inference_table %} This is a Machine Learning Service created with BentoML. {% if svc.apis %} {{ create_inference_api_table(svc) }} {% endif %} {% endblock %}
+   {% block help %}## Help
+
+   * [📖 Documentation](https://docs.bentoml.org/en/latest/): Learn how to use BentoML.
+   * [💬 Community](https://l.bentoml.com/join-slack-swagger): Join the BentoML Slack community.
+   * [🐛 GitHub Issues](https://github.com/bentoml/BentoML/issues): Report bugs and feature requests.
+   * Tip: you can also [customize this README](https://docs.bentoml.org/en/latest/concepts/bento.html#description).
+   #### I am custom description... blabla
+
+This is an example of a README.md which reuse base.md template
+.. code-block:: Jinja
+   {% extends "base.md" %}
+   {% block badge %}{{ super() }}{% endblock %}
+   {% block inference_table %}{{ super() }}{% endblock %}
+   {% block help %}{{ super() }}{% endblock %}
+   {% block other_content %}
+   #### I am custom description... blabla
+   {% endblock %}
+
 .. tip::
     When pointing to a description file, it can be either an absolute path or a relative
     path. The file must exist on the given path upon ``bentoml build`` command run,

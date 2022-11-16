@@ -17,5 +17,3 @@ pytorch-lightning
 # huggingface dependencies
 transformers
 tokenizer
-# bento description dependencies
-Jinja2>=3.1

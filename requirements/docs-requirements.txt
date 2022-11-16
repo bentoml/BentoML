@@ -13,5 +13,6 @@ sphinx-copybutton
 sphinx-issues
 sphinx-design
 pyenchant
+Jinja2>=3.1
 sphinx-autobuild
 sphinx-hoverxref

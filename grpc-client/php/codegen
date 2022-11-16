@@ -19,5 +19,6 @@ PLUGIN=protoc-gen-grpc=$(pwd)/bazel-bin/external/com_github_grpc_grpc/src/compil
 
 echo "Generate PHP stubs."
 bazel run @com_google_protobuf//:protoc -- -I ./grpc-client -I ./grpc-client/thirdparty/protobuf/src --php_out=grpc-client/php --grpc_out=grpc-client/php --plugin="$PLUGIN" grpc-client/bentoml/grpc/v1alpha1/service.proto
+bazel run @com_google_protobuf//:protoc -- -I ./grpc-client -I ./grpc-client/thirdparty/protobuf/src --php_out=grpc-client/php --grpc_out=grpc-client/php --plugin="$PLUGIN" grpc-client/bentoml/grpc/v1/service.proto
 
 popd >/dev/null

@@ -1,4 +1,4 @@
-const pb = require("./bentoml/grpc/v1alpha1/service_pb");
+const pb = require("./bentoml/grpc/v1/service_pb");
 
 var ndarray = new pb.NDArray();
 ndarray

@@ -1,7 +1,7 @@
 package main
 
 import (
-	pb "github.com/bentoml/bentoml/grpc/v1alpha1"
+	pb "github.com/bentoml/bentoml/grpc/v1"
 )
 
 var req = &pb.Request{

@@ -26,8 +26,8 @@ if TYPE_CHECKING:
     import PIL.Image
     from numpy.typing import NDArray
 
-    from bentoml.grpc.v1alpha1 import service_test_pb2 as pb_test
-    from bentoml.grpc.v1alpha1 import service_test_pb2_grpc as services_test
+    from bentoml.grpc.v1 import service_test_pb2 as pb_test
+    from bentoml.grpc.v1 import service_test_pb2_grpc as services_test
     from bentoml._internal.types import FileLike
     from bentoml._internal.types import JSONSerializable
     from bentoml.picklable_model import get_runnable

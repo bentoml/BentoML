@@ -6,7 +6,7 @@ STUBS_GENERATOR="bentoml/stubs-generator"
 cd "$GIT_ROOT/src" || exit 1
 
 main() {
-	local VERSION="${1:-v1alpha1}"
+	local VERSION="${1:-v1}"
 	# Use inline heredoc for even faster build
 	# Keeping image as cache should be fine since we only want to generate the stubs.
 	if [[ $(docker images --filter=reference="$STUBS_GENERATOR" -q) == "" ]] || test "$(git diff --name-only --diff-filter=d -- "$0")"; then
@@ -43,7 +43,7 @@ EOF
 }
 
 if [ "${#}" -gt 1 ]; then
-	echo "$0 takes one optional argument. Usage: $0 [v1alpha2]"
+	echo "$0 takes one optional argument. Usage: $0 [v1]"
 	exit 1
 fi
 main "$@"

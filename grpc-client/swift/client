@@ -18,6 +18,10 @@ if ! [[ -d "swift/Sources/bentoml" ]]; then
 		--swift_out=swift/Sources --swift_opt=Visibility=Public \
 		--grpc-swift_out=swift/Sources --grpc-swift_opt=Visibility=Public \
 		bentoml/grpc/v1alpha1/service.proto
+	protoc -I . -I ./thirdparty/protobuf/src \
+		--swift_out=swift/Sources --swift_opt=Visibility=Public \
+		--grpc-swift_out=swift/Sources --grpc-swift_opt=Visibility=Public \
+		bentoml/grpc/v1/service.proto
 fi
 
 popd >/dev/null

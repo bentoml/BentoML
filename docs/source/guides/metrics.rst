@@ -132,7 +132,7 @@ invocation for ``analysis`` by polarity scores.
 
        .. code-block:: bash
 
-          » grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1alpha1.BentoService/Call <<EOT
+          » grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1.BentoService/Call <<EOT
             {
               "apiName": "predict",
               "serializedBytes": "..."

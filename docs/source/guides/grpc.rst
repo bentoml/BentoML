@@ -156,9 +156,9 @@ gRPC server:
 
             .. code-block:: go
 
-               require github.com/bentoml/bentoml/grpc/v1alpha1 v0.0.0-unpublished
+               require github.com/bentoml/bentoml/grpc/v1 v0.0.0-unpublished
 
-               replace github.com/bentoml/bentoml/grpc/v1alpha1 v0.0.0-unpublished => ./github.com/bentoml/bentoml/grpc/v1alpha1
+               replace github.com/bentoml/bentoml/grpc/v1 v0.0.0-unpublished => ./github.com/bentoml/bentoml/grpc/v1
 
             By using `replace directive <https://go.dev/ref/mod#go-mod-file-replace>`_, we
             ensure that Go will know where our generated stubs to be imported from. (since we don't host the generate gRPC stubs on `pkg.go.dev` 😄)
@@ -172,14 +172,14 @@ gRPC server:
                » protoc -I. -I thirdparty/protobuf/src  \
                         --go_out=. --go_opt=paths=import \
                         --go-grpc_out=. --go-grpc_opt=paths=import \
-                        bentoml/grpc/v1alpha1/service.proto
+                        bentoml/grpc/v1/service.proto
 
             Then run the following to make sure the generated stubs are importable:
 
             .. code-block:: bash
 
-               » pushd github.com/bentoml/bentoml/grpc/v1alpha1
-               » go mod init v1alpha1 && go mod tidy
+               » pushd github.com/bentoml/bentoml/grpc/v1
+               » go mod init v1 && go mod tidy
                » popd
 
       Create a ``client.go`` file with the following content:
@@ -233,7 +233,7 @@ gRPC server:
                » protoc -I . -I ./thirdparty/protobuf/src \
                         --cpp_out=. --grpc_out=. \
                         --plugin=protoc-gen-grpc=$(which grpc_cpp_plugin) \
-                        bentoml/grpc/v1alpha1/service.proto
+                        bentoml/grpc/v1/service.proto
 
       Create a ``client.cpp`` file with the following content:
 
@@ -331,7 +331,7 @@ gRPC server:
                      -I ./thirdparty/protobuf/src \
                      --java_out=./src/main/java \
                      --grpc-java_out=./src/main/java \
-                     bentoml/grpc/v1alpha1/service.proto
+                     bentoml/grpc/v1/service.proto
 
    .. tab-item:: Kotlin
       :sync: kotlin
@@ -414,7 +414,7 @@ gRPC server:
                      --kotlin_out ./kotlin/src/main/kotlin/ \
                      --grpc-kotlin_out ./kotlin/src/main/kotlin \
                      --plugin=protoc-gen-grpc-kotlin=$(which protoc-gen-grpc-kotlin) \
-                     bentoml/grpc/v1alpha1/service.proto
+                     bentoml/grpc/v1/service.proto
 
    .. tab-item:: Node.js
       :sync: nodejs
@@ -459,7 +459,7 @@ gRPC server:
                   -I . -I ./thirdparty/protobuf/src \
                   --js_out=import_style=commonjs,binary:. \
                   --grpc_out=grpc_js:js \
-                  bentoml/grpc/v1alpha1/service.proto
+                  bentoml/grpc/v1/service.proto
 
       Proceed to create a ``client.js`` file with the following content:
 
@@ -501,7 +501,7 @@ gRPC server:
                   --swift_out=Sources --swift_opt=Visibility=Public \
                   --grpc-swift_out=Sources --grpc-swift_opt=Visibility=Public \
                   --plugin=protoc-gen-grpc-swift=$(which protoc-gen-grpc-swift) \
-                  bentoml/grpc/v1alpha1/service.proto
+                  bentoml/grpc/v1/service.proto
 
       Proceed to create a ``Sources/BentoServiceClient/main.swift`` file with the following content:
 
@@ -549,7 +549,7 @@ gRPC server:
                   --php_out=. \
                   --grpc_out=. \
                   --plugin=protoc-gen-grpc=$(which grpc_php_plugin) \
-                  bentoml/grpc/v1alpha1/service.proto
+                  bentoml/grpc/v1/service.proto
 
       Proceed to create a ``BentoServiceClient.php`` file with the following content:
 
@@ -772,6 +772,11 @@ Let's take a quick look at `protobuf <https://developers.google.com/protocol-buf
    :icon: code
 
    .. tab-set::
+
+      .. tab-item:: v1
+
+         .. literalinclude:: ../../../src/bentoml/grpc/v1/service.proto
+            :language: protobuf
 
       .. tab-item:: v1alpha1
 
@@ -1102,10 +1107,47 @@ It accepts the following fields:
 
   A `bytes` field that represents the content of the file.
 
-.. TODO::
+* `kind`
 
-   - Document ``kind`` once enum was dropped.
-   - Demonstrate python API to protobuf representation
+  An optional `string` field that represents the file type. If specified, it will raise an error if
+  ``mime_type`` specified in :ref:`bentoml.io.File <reference/api_io_descriptors:Files>` is not matched.
+
+.. grid:: 2
+
+    .. grid-item-card::  ``Python API``
+
+      .. code-block:: python
+
+         Image(mime_type="application/pdf")
+
+    .. grid-item-card::  ``pb.File``
+
+      .. code-block:: none
+
+         file {
+           kind: "application/pdf"
+           content: <bytes>
+         }
+
+
+:ref:`bentoml.io.Image <reference/api_io_descriptors:Images>` will also be using ``pb.File``.
+
+.. grid:: 2
+
+    .. grid-item-card::  ``Python API``
+
+      .. code-block:: python
+
+         File(mime_type="image/png")
+
+    .. grid-item-card::  ``pb.File``
+
+      .. code-block:: none
+
+         file {
+           kind: "image/png"
+           content: <bytes>
+         }
 
 
 Complex payload via ``Multipart``

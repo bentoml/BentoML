@@ -16,11 +16,11 @@ if TYPE_CHECKING:
 
     import grpc
 
+    from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.exceptions import BentoMLException
     from bentoml.grpc.types import ProtoField
     from bentoml.grpc.types import RpcMethodHandler
     from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
     from bentoml._internal.io_descriptors import IODescriptor
 
 else:
@@ -80,29 +80,6 @@ def http_status_to_grpc_status_map() -> dict[Enum, grpc.StatusCode]:
 @lru_cache(maxsize=1)
 def grpc_status_to_http_status_map() -> dict[grpc.StatusCode, Enum]:
     return {v: k for k, v in http_status_to_grpc_status_map().items()}
-
-
-@lru_cache(maxsize=1)
-def filetype_pb_to_mimetype_map() -> dict[pb.File.FileType.ValueType, str]:
-    return {
-        pb.File.FILE_TYPE_CSV: "text/csv",
-        pb.File.FILE_TYPE_PLAINTEXT: "text/plain",
-        pb.File.FILE_TYPE_JSON: "application/json",
-        pb.File.FILE_TYPE_BYTES: "application/octet-stream",
-        pb.File.FILE_TYPE_PDF: "application/pdf",
-        pb.File.FILE_TYPE_PNG: "image/png",
-        pb.File.FILE_TYPE_JPEG: "image/jpeg",
-        pb.File.FILE_TYPE_GIF: "image/gif",
-        pb.File.FILE_TYPE_TIFF: "image/tiff",
-        pb.File.FILE_TYPE_BMP: "image/bmp",
-        pb.File.FILE_TYPE_WEBP: "image/webp",
-        pb.File.FILE_TYPE_SVG: "image/svg+xml",
-    }
-
-
-@lru_cache(maxsize=1)
-def mimetype_to_filetype_pb_map() -> dict[str, pb.File.FileType.ValueType]:
-    return {v: k for k, v in filetype_pb_to_mimetype_map().items()}
 
 
 def grpc_status_code(err: BentoMLException) -> grpc.StatusCode:

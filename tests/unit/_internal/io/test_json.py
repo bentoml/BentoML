@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture
     from google.protobuf import struct_pb2
 
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml._internal.service.openapi.specification import Schema
 else:
     from bentoml.grpc.utils import import_generated_stubs

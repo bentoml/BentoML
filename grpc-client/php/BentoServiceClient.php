@@ -1,8 +1,8 @@
 <?php
 
-use Bentoml\Grpc\V1alpha1\BentoServiceClient;
-use Bentoml\Grpc\V1alpha1\NDArray;
-use Bentoml\Grpc\V1alpha1\Request;
+use Bentoml\Grpc\v1\BentoServiceClient;
+use Bentoml\Grpc\v1\NDArray;
+use Bentoml\Grpc\v1\Request;
 
 require dirname(__FILE__) . '/vendor/autoload.php';
 
@@ -21,7 +21,7 @@ function call()
     $payload = new NDArray();
     $payload->setShape($shape);
     $payload->setFloatValues($data);
-    $payload->setDtype(\Bentoml\Grpc\V1alpha1\NDArray\DType::DTYPE_FLOAT);
+    $payload->setDtype(\Bentoml\Grpc\v1\NDArray\DType::DTYPE_FLOAT);
 
     list($response, $status) = $client->Call($request)->wait();
     if ($status->code !== Grpc\STATUS_OK) {

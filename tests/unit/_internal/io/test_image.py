@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     import numpy as np
     import PIL.Image as PILImage
 
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_pb2 as pb
 else:
     from bentoml.grpc.utils import import_generated_stubs
     from bentoml._internal.utils import LazyLoader
@@ -75,16 +75,11 @@ async def test_exception_from_proto():
         await Image().from_proto("")  # type: ignore (testing exception)
     with pytest.raises(BadInput) as exc_info:
         await Image(mime_type="image/jpeg").from_proto(
-            pb.File(kind=pb.File.FILE_TYPE_BYTES, content=b"asdf")
+            pb.File(kind="application/octet-stream", content=b"asdf")
         )
-    assert "Inferred mime_type from 'kind' is" in str(exc_info.value)
+    assert "MIME type from 'kind'" in str(exc_info.value)
     with pytest.raises(BadInput) as exc_info:
-        await Image(mime_type="image/jpeg").from_proto(pb.File(kind=123, content=b"asdf"))  # type: ignore (testing exception)
-    assert "is not a valid File kind." in str(exc_info.value)
-    with pytest.raises(BadInput) as exc_info:
-        await Image(mime_type="image/jpeg").from_proto(
-            pb.File(kind=pb.File.FILE_TYPE_JPEG)
-        )
+        await Image(mime_type="image/jpeg").from_proto(pb.File(kind="image/jpeg"))
     assert "Content is empty!" == str(exc_info.value)
 
 
@@ -93,10 +88,6 @@ async def test_exception_to_proto():
     with pytest.raises(BadInput) as exc_info:
         await Image().to_proto(io.BytesIO(b"asdf"))  # type: ignore (testing exception)
     assert "Unsupported Image type received:" in str(exc_info.value)
-    with pytest.raises(BadInput) as exc_info:
-        example = np.random.rand(255, 255, 3)
-        await Image(mime_type="image/sgi").to_proto(example)
-    assert "doesn't have a corresponding File 'kind'" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -105,4 +96,4 @@ async def test_to_proto(img_file: str) -> None:
         content = f.read()
     img = PILImage.open(io.BytesIO(content))
     res = await Image(mime_type="image/bmp").to_proto(img)
-    assert res.kind == pb.File.FILE_TYPE_BMP
+    assert res.kind == "image/bmp"

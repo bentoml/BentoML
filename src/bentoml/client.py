@@ -44,17 +44,19 @@ class Client(ABC):
                 )
 
     def call(self, bentoml_api_name: str, inp: t.Any = None, **kwargs: t.Any) -> t.Any:
-        return asyncio.run(self.async_call(bentoml_api_name, inp))
+        return asyncio.run(self.async_call(bentoml_api_name, inp, **kwargs))
 
     async def async_call(
         self, bentoml_api_name: str, inp: t.Any = None, **kwargs: t.Any
     ) -> t.Any:
-        return await self._call(inp, _bentoml_api=self._svc.apis[bentoml_api_name])
+        return await self._call(
+            inp, _bentoml_api=self._svc.apis[bentoml_api_name], **kwargs
+        )
 
     def _sync_call(
-        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwagrs: t.Any
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
     ):
-        return asyncio.run(self._call(inp, _bentoml_api=_bentoml_api))
+        return asyncio.run(self._call(inp, _bentoml_api=_bentoml_api, **kwargs))
 
     @abstractmethod
     async def _call(
@@ -123,7 +125,9 @@ class HTTPClient(Client):
                 raise BentoMLException(
                     f"'{api.name}' takes multiple inputs; all inputs must be passed as keyword arguments."
                 )
-        fake_resp = await api.input.to_http_response(inp, None)
+            fake_resp = await api.input.to_http_response(kwargs, None)
+        else:
+            fake_resp = await api.input.to_http_response(inp, None)
         req_body = fake_resp.body
 
         async with aiohttp.ClientSession(self.server_url) as sess:

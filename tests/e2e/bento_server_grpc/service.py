@@ -26,8 +26,6 @@ if TYPE_CHECKING:
     import PIL.Image
     from numpy.typing import NDArray
 
-    from bentoml.grpc.v1 import service_test_pb2 as pb_test
-    from bentoml.grpc.v1 import service_test_pb2_grpc as services_test
     from bentoml._internal.types import FileLike
     from bentoml._internal.types import JSONSerializable
     from bentoml.picklable_model import get_runnable
@@ -55,7 +53,6 @@ if TYPE_CHECKING:
 else:
     from bentoml.grpc.utils import import_generated_stubs
 
-    pb_test, services_test = import_generated_stubs(file="service_test.proto")
     np = LazyLoader("np", globals(), "numpy")
     pd = LazyLoader("pd", globals(), "pandas")
     PIL = LazyLoader("PIL", globals(), "PIL")
@@ -69,11 +66,6 @@ py_model = t.cast(
 
 svc = bentoml.Service(name="general_grpc_service.case-1.e2e", runners=[py_model])
 
-svc.mount_grpc_servicer(
-    TestServiceServicer,
-    add_servicer_fn=services_test.add_TestServiceServicer_to_server,
-    service_names=[v.full_name for v in pb_test.DESCRIPTOR.services_by_name.values()],
-)
 svc.add_grpc_interceptor(AsyncContextInterceptor, usage="NLP", accuracy_score=0.8247)
 
 

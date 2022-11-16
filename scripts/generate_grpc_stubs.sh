@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -ex
+
 GIT_ROOT=$(git rev-parse --show-toplevel)
 STUBS_GENERATOR="bentoml/stubs-generator"
 
@@ -13,7 +15,7 @@ main() {
 		docker buildx build --platform=linux/amd64 -t "$STUBS_GENERATOR" --load -f- . <<EOF
 # syntax=docker/dockerfile:1.4-labs
 
-FROM --platform=linux/amd64 python:3-slim-bullseye
+FROM --platform=linux/amd64 python:3.10-slim
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -40,6 +42,9 @@ EOF
 
 	echo "Generating gRPC stubs..."
 	find "bentoml/grpc/$VERSION" -type f -name "*.proto" -exec docker run --rm -it -v "$GIT_ROOT/src":/workspace --platform=linux/amd64 "$STUBS_GENERATOR" python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. "{}" \;
+	pushd "$GIT_ROOT" &>/dev/null
+	find "tests/proto" -type f -name "*.proto" -exec docker run --rm -it -v "$GIT_ROOT":/workspace --platform=linux/amd64 "$STUBS_GENERATOR" python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. "{}" \;
+	popd &>/dev/null
 }
 
 if [ "${#}" -gt 1 ]; then

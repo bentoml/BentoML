@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from bentoml.grpc.v1alpha1 import service_test_pb2 as bentoml_dot_grpc_dot_v1alpha1_dot_service__test__pb2
+from tests.proto import service_test_pb2 as tests_dot_proto_dot_service__test__pb2
 
 
 class TestServiceStub(object):
@@ -16,9 +16,9 @@ class TestServiceStub(object):
             channel: A grpc.Channel.
         """
         self.Execute = channel.unary_unary(
-                '/bentoml.testing.v1alpha1.TestService/Execute',
-                request_serializer=bentoml_dot_grpc_dot_v1alpha1_dot_service__test__pb2.ExecuteRequest.SerializeToString,
-                response_deserializer=bentoml_dot_grpc_dot_v1alpha1_dot_service__test__pb2.ExecuteResponse.FromString,
+                '/tests.proto.TestService/Execute',
+                request_serializer=tests_dot_proto_dot_service__test__pb2.ExecuteRequest.SerializeToString,
+                response_deserializer=tests_dot_proto_dot_service__test__pb2.ExecuteResponse.FromString,
                 )
 
 
@@ -38,12 +38,12 @@ def add_TestServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Execute': grpc.unary_unary_rpc_method_handler(
                     servicer.Execute,
-                    request_deserializer=bentoml_dot_grpc_dot_v1alpha1_dot_service__test__pb2.ExecuteRequest.FromString,
-                    response_serializer=bentoml_dot_grpc_dot_v1alpha1_dot_service__test__pb2.ExecuteResponse.SerializeToString,
+                    request_deserializer=tests_dot_proto_dot_service__test__pb2.ExecuteRequest.FromString,
+                    response_serializer=tests_dot_proto_dot_service__test__pb2.ExecuteResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'bentoml.testing.v1alpha1.TestService', rpc_method_handlers)
+            'tests.proto.TestService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
@@ -63,8 +63,8 @@ class TestService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/bentoml.testing.v1alpha1.TestService/Execute',
-            bentoml_dot_grpc_dot_v1alpha1_dot_service__test__pb2.ExecuteRequest.SerializeToString,
-            bentoml_dot_grpc_dot_v1alpha1_dot_service__test__pb2.ExecuteResponse.FromString,
+        return grpc.experimental.unary_unary(request, target, '/tests.proto.TestService/Execute',
+            tests_dot_proto_dot_service__test__pb2.ExecuteRequest.SerializeToString,
+            tests_dot_proto_dot_service__test__pb2.ExecuteResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -19,6 +19,11 @@ from bentoml._internal.utils import LazyLoader
 from bentoml.grpc.interceptors.access import AccessLogServerInterceptor
 from bentoml.grpc.interceptors.opentelemetry import AsyncOpenTelemetryServerInterceptor
 
+from tests.proto import service_test_pb2_grpc as services_test
+from tests.proto import service_test_pb2 as pb_test
+from tests.unit.grpc.conftest import TestServiceServicer
+
+
 if TYPE_CHECKING:
     import grpc
     from grpc import aio
@@ -27,8 +32,6 @@ if TYPE_CHECKING:
 
     from bentoml import Service
     from bentoml.grpc.v1 import service_pb2_grpc as services
-    from bentoml.grpc.v1 import service_test_pb2 as pb_test
-    from bentoml.grpc.v1 import service_test_pb2_grpc as services_test
     from bentoml.grpc.types import Request
     from bentoml.grpc.types import Response
     from bentoml.grpc.types import RpcMethodHandler
@@ -37,7 +40,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import BentoServicerContext
 else:
     _, services = import_generated_stubs()
-    pb_test, services_test = import_generated_stubs(file="service_test.proto")
     grpc, aio = import_grpc()
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
 
@@ -80,13 +82,16 @@ async def test_success_logs(caplog: LogCaptureFixture):
         ]
     ) as (server, host_url):
         try:
+            services_test.add_TestServiceServicer_to_server(
+                TestServiceServicer(), server
+            )
             await server.start()
             with caplog.at_level(logging.INFO, "bentoml.access"):
                 async with create_channel(host_url) as channel:
                     stub = services_test.TestServiceStub(channel)
                     await stub.Execute(pb_test.ExecuteRequest(input="BentoML"))
             assert (
-                "(scheme=http,path=/bentoml.testing.v1.TestService/Execute,type=application/grpc,size=9) (http_status=200,grpc_status=0,type=application/grpc,size=17)"
+                "(scheme=http,path=/tests.proto.TestService/Execute,type=application/grpc,size=9) (http_status=200,grpc_status=0,type=application/grpc,size=17)"
                 in caplog.text
             )
 
@@ -107,6 +112,9 @@ async def test_trailing_metadata(caplog: LogCaptureFixture):
         ]
     ) as (server, host_url):
         try:
+            services_test.add_TestServiceServicer_to_server(
+                TestServiceServicer(), server
+            )
             await server.start()
             with caplog.at_level(logging.INFO, "bentoml.access"):
                 async with create_channel(host_url) as channel:

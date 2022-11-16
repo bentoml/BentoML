@@ -19,17 +19,19 @@ from bentoml._internal.utils import LazyLoader
 from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
 from bentoml._internal.configuration.containers import BentoMLContainer
 
+from tests.proto import service_test_pb2_grpc as services_test
+from tests.proto import service_test_pb2 as pb_test
+from tests.unit.grpc.conftest import TestServiceServicer
+
 if TYPE_CHECKING:
     import grpc
     from google.protobuf import wrappers_pb2
 
     from bentoml import Service
     from bentoml.grpc.v1 import service_pb2_grpc as services
-    from bentoml.grpc.v1 import service_test_pb2 as pb_test
 else:
 
     _, services = import_generated_stubs()
-    pb_test, _ = import_generated_stubs(file="service_test.proto")
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
     grpc, aio = import_grpc()
 
@@ -70,10 +72,13 @@ async def test_empty_metrics():
         host_url,
     ):
         try:
+            services_test.add_TestServiceServicer_to_server(
+                TestServiceServicer(), server
+            )
             await server.start()
             async with create_channel(host_url) as channel:
                 Execute = channel.unary_unary(
-                    "/bentoml.testing.v1.TestService/Execute",
+                    "/tests.proto.TestService/Execute",
                     request_serializer=pb_test.ExecuteRequest.SerializeToString,
                     response_deserializer=pb_test.ExecuteResponse.FromString,
                 )

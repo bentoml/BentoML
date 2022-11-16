@@ -5,7 +5,7 @@ import argparse
 
 import numpy as np
 import torch
-from model import SimpleConvNet
+import model as models
 from torch import nn
 from torchvision import transforms
 from torchvision.datasets import MNIST
@@ -113,7 +113,7 @@ def cross_validate(dataset, epochs=NUM_EPOCHS, k_folds=K_FOLDS, device="cpu"):
         )
 
         # Train this fold
-        model = SimpleConvNet().to(device)
+        model = models.SimpleConvNet()
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
         loss_function = nn.CrossEntropyLoss()
         for epoch in range(epochs):
@@ -150,7 +150,7 @@ def train(dataset, epochs=NUM_EPOCHS, device="cpu"):
         sampler=train_sampler,
         worker_init_fn=_dataloader_init_fn,
     )
-    model = SimpleConvNet().to(device)
+    model = models.SimpleConvNet()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     loss_function = nn.CrossEntropyLoss()
     for epoch in range(epochs):
@@ -219,5 +219,6 @@ if __name__ == "__main__":
         trained_model,
         signatures=signatures,
         metadata=metadata,
+        external_modules=[models],
     )
     print(f"Saved model: {saved_model}")

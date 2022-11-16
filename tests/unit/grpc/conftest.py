@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 from unittest.mock import PropertyMock
-from bentoml._internal.utils.lazy_loader import LazyLoader
 
 import pytest
+
+from bentoml._internal.utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
     import grpc

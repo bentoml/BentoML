@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from tests.proto import service_test_pb2 as pb_test
+from tests.proto import service_test_pb2_grpc as services_test
 from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import wrap_rpc_handler
 from bentoml.grpc.utils import import_generated_stubs
@@ -16,13 +18,9 @@ from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import create_bento_servicer
 from bentoml.testing.grpc import make_standalone_server
 from bentoml._internal.utils import LazyLoader
+from tests.unit.grpc.conftest import TestServiceServicer
 from bentoml.grpc.interceptors.access import AccessLogServerInterceptor
 from bentoml.grpc.interceptors.opentelemetry import AsyncOpenTelemetryServerInterceptor
-
-from tests.proto import service_test_pb2_grpc as services_test
-from tests.proto import service_test_pb2 as pb_test
-from tests.unit.grpc.conftest import TestServiceServicer
-
 
 if TYPE_CHECKING:
     import grpc

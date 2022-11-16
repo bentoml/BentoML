@@ -16,7 +16,6 @@ from bentoml.io import Multipart
 from bentoml.io import NumpyNdarray
 from bentoml.io import PandasSeries
 from bentoml.io import PandasDataFrame
-from bentoml.testing.grpc import TestServiceServicer
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils.metrics import exponential_buckets
 

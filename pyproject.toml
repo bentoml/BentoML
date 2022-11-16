@@ -231,6 +231,7 @@ exclude = '''
     | typings
     | src/bentoml/grpc/v1alpha1
     | src/bentoml/grpc/v1
+    | tests/proto
     | grpc-client/thirdparty
     | grpc-client/bentoml
   )/

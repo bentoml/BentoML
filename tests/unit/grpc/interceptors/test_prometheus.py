@@ -9,6 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from tests.proto import service_test_pb2 as pb_test
+from tests.proto import service_test_pb2_grpc as services_test
 from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
@@ -16,12 +18,9 @@ from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import create_bento_servicer
 from bentoml.testing.grpc import make_standalone_server
 from bentoml._internal.utils import LazyLoader
+from tests.unit.grpc.conftest import TestServiceServicer
 from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
 from bentoml._internal.configuration.containers import BentoMLContainer
-
-from tests.proto import service_test_pb2_grpc as services_test
-from tests.proto import service_test_pb2 as pb_test
-from tests.unit.grpc.conftest import TestServiceServicer
 
 if TYPE_CHECKING:
     import grpc

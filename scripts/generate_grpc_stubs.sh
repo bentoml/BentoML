@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -ex
-
 GIT_ROOT=$(git rev-parse --show-toplevel)
 STUBS_GENERATOR="bentoml/stubs-generator"
 

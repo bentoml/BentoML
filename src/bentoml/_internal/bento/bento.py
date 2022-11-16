@@ -62,11 +62,6 @@ INFERENCE_TABLE_MD = """\
 {content}
 """
 
-env = Environment(
-    loader=PackageLoader("bentoml", "_internal/bento/templates"),
-    autoescape=select_autoescape(),
-)
-
 
 def create_inference_api_table(svc: Service) -> str:
     from ..service.openapi import APP_TAG
@@ -98,6 +93,10 @@ def get_svc_readme(
             svc_version = "None"
 
     if custom_readme:
+        env = Environment(
+            loader=PackageLoader("bentoml", "_internal/bento/templates"),
+            autoescape=select_autoescape(),
+        )
         _template = env.from_string(custom_readme)
         doc = _template.render(
             svc=svc,

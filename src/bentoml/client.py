@@ -49,7 +49,9 @@ class Client(ABC):
     async def async_call(
         self, bentoml_api_name: str, inp: t.Any = None, **kwargs: t.Any
     ) -> t.Any:
-        return await self._call(inp, _bentoml_api=self._svc.apis[bentoml_api_name], **kwargs)
+        return await self._call(
+            inp, _bentoml_api=self._svc.apis[bentoml_api_name], **kwargs
+        )
 
     def _sync_call(
         self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any

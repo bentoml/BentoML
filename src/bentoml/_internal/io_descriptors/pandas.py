@@ -9,8 +9,10 @@ from enum import Enum
 from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
+import pyarrow
 from starlette.requests import Request
 from starlette.responses import Response
+from pyspark.sql.dataframe import DataFrame
 
 from .base import IODescriptor
 from ..types import LazyType
@@ -444,7 +446,9 @@ class PandasDataFrame(
             "args": {
                 "orient": self._orient,
                 "columns": self._columns,
-                "dtype": self._dtype.name if LazyType["np.dtype[t.Any]"]("numpy.dtype").isinstance(self._dtype) else self._dtype,
+                "dtype": self._dtype.name
+                if LazyType["np.dtype[t.Any]"]("numpy.dtype").isinstance(self._dtype)
+                else self._dtype,
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,
@@ -713,6 +717,7 @@ class PandasDataFrame(
 
         return t.cast("pd.Series[t.Any]", obj.iloc[0])
 
+
 class PandasSeries(
     IODescriptor["ext.PdSeries[t.Any]"], descriptor_id="bentoml.io.PandasSeries"
 ):
@@ -895,7 +900,9 @@ class PandasSeries(
             "id": self.descriptor_id,
             "args": {
                 "orient": self._orient,
-                "dtype": self._dtype.name if LazyType["np.dtype[t.Any]"]("numpy.dtype").isinstance(self._dtype) else self._dtype,
+                "dtype": self._dtype.name
+                if LazyType["np.dtype[t.Any]"]("numpy.dtype").isinstance(self._dtype)
+                else self._dtype,
                 "shape": self._shape,
                 "enforce_dtype": self._enforce_dtype,
                 "enforce_shape": self._enforce_shape,
@@ -1100,13 +1107,31 @@ class PandasSeries(
             raise InvalidArgument(
                 f"Unsupported dtype '{obj.dtype}' for response message."
             ) from None
-            
+
     def from_pandas_series(self, series: tuple[pd.Series[t.Any]]) -> pd.Series[t.Any]:
         if len(series) == 0:
-            raise InvalidArgument(f"No series passed, cannot construct a series from no data.")
+            raise InvalidArgument(
+                f"No series passed, cannot construct a series from no data."
+            )
         elif len(series) > 1:
             raise InvalidArgument(f"Multiple series passed when only one was expected.")
         return series[0]
 
     def to_pandas_series(self, obj: pd.Series[t.Any]) -> pd.Series[t.Any]:
         return obj
+
+    def from_arrow(self, batch: pyarrow.RecordBatch) -> pd.Series[t.Any]:
+        res = batch.to_pandas()
+        if isinstance(res, pd.Series):
+            return res
+        if isinstance(res, pd.DataFrame):
+            if len(res.columns) == 1:
+                return res.squeeze()
+            else:
+                raise InvalidArgument(
+                    "Multi-column dataframe was passed when trying to convert to a series."
+                )
+
+    def to_arrow(self, series: pd.Series[t.Any]) -> pyarrow.RecordBatch:
+        df = series.to_frame()
+        return pyarrow.RecordBatch.from_pandas(df)

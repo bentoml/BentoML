@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import random
 import typing as t
 import logging
 import datetime
@@ -19,7 +20,7 @@ from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_INSECURE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_CERTIFICATE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_COMPRESSION
-from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
+from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 
 from .api import MonitorBase
 from ..context import trace_context
@@ -47,11 +48,10 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
     * https://opentelemetry.io/docs/concepts/sdk-configuration/otlp-exporter-configuration/
     """
 
-    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_META, COLUMN_SCHEMA) = (
+    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_META) = (
         "timestamp",
         "request_id",
         "bento_meta",
-        "schema",
     )
 
     def __init__(
@@ -63,6 +63,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         headers: str | None = None,
         timeout: int | str | None = None,
         compression: str | None = None,
+        meta_sample_rate: float = 1.0,
         **_: t.Any,
     ) -> None:
         """
@@ -85,10 +86,12 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         self.headers = headers
         self.timeout = timeout
         self.compression = compression
+        self.meta_sample_rate = meta_sample_rate
 
         self.logger_provider: LoggerProvider | None = None
         self.data_logger: logging.Logger | None = None
         self._schema: dict[str, dict[str, str]] = {}
+        self._will_export_schema = False
 
     def _init_logger(self) -> None:
         self.logger_provider = LoggerProvider(
@@ -126,13 +129,14 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
                 "loggers": {
                     "bentoml_monitor_data": {
                         "level": "INFO",
-                        "handlers": [handler],
+                        "handlers": [],
                         "propagate": False,
                     }
                 },
             }
         )
-        self.data_logger = logging.getLogger("bentoml_monitor_schema")
+        self.data_logger = logging.getLogger("bentoml_monitor_data")
+        self.data_logger.addHandler(handler)
 
     def __del__(self) -> None:
         if self.logger_provider is not None:
@@ -143,6 +147,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         Export columns_schema of the data. This method should be called after all data is logged.
         """
         self._schema = columns_schema
+        self._will_export_schema = True
 
     def export_data(
         self,
@@ -155,16 +160,23 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
             self._init_logger()
             assert self.data_logger is not None
 
-        extra_columns = {
-            self.COLUMN_TIME: datetime.datetime.now().timestamp(),
-            self.COLUMN_RID: str(trace_context.request_id),
-            self.COLUMN_META: {
-                "bento_name": component_context.bento_name,
-                "bento_version": component_context.bento_version,
-                "monitor_name": self.name,
-            },
-            self.COLUMN_SCHEMA: self._schema,
-        }
+        if self._will_export_schema or random.random() < self.meta_sample_rate:
+            extra_columns = {
+                self.COLUMN_TIME: datetime.datetime.now().timestamp(),
+                self.COLUMN_RID: str(trace_context.request_id),
+                self.COLUMN_META: {
+                    "bento_name": component_context.bento_name,
+                    "bento_version": component_context.bento_version,
+                    "monitor_name": self.name,
+                    "schema": self._schema,
+                },
+            }
+            self._will_export_schema = False
+        else:
+            extra_columns = {
+                self.COLUMN_TIME: datetime.datetime.now().timestamp(),
+                self.COLUMN_RID: str(trace_context.request_id),
+            }
         while True:
             try:
                 record = {k: v.popleft() for k, v in datas.items()}

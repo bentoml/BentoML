@@ -1,18 +1,15 @@
-import bentoml
-import pyspark
+from __future__ import annotations
+
 import pandas as pd
+import pyspark
+
+import bentoml
 from bentoml.io import PandasSeries
 
 svc = bentoml.Service("test.simplebento")
 
-@svc.api(input=PandasSeries(), output=PandasSeries())
-def increment(input: pd.Series[int]) -> pd.Series[int]:
-    for i in input:
-        i += 1
-    return input
 
-@svc.api(input=PandasSeries(), output=PandasSeries())
-def uppercase(input: pd.Series[str]) -> pd.Series[str]:
-    for i in input:
-        i.upper()
-    return input
+@svc.api(input=PandasSeries(), output=PandasSeries(dtype="int"))
+def increment(series: pd.Series[int]) -> pd.Series[int]:
+    series += 1
+    return series

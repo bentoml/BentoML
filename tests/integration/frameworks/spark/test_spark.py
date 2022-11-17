@@ -1,69 +1,43 @@
-import pytest
-
-from bentoml._internal.bento.bento import Bento
-import bentoml._internal.spark
-from bentoml._internal.spark import _distribute_bento, _load_bento
-
-from pyspark.sql.session import SparkSession
-from pyspark.sql.functions import col
-
 import pandas as pd
+import pytest
+from pyspark.sql.session import SparkSession
 
-def test_simplebento1(spark: SparkSession, simplebento1: Bento) -> None:
+import bentoml._internal.spark
+from bentoml._internal.spark import _distribute_bento
+from bentoml._internal.bento.bento import Bento
+from bentoml._internal.bento.bento import BentoStore
+from bentoml._internal.configuration.containers import BentoMLContainer
 
-    # get properties of the simple bento before it gets distributed 
-    bento_tag = simplebento1.info.tag
-    bento_service = simplebento1.info.service
-    bento_apis = simplebento1.info.apis
 
-    # distribute bento file to the worker nodes
-    _distribute_bento(spark, simplebento1)
+def test_simplebento(
+    spark: SparkSession, simplebento: Bento, bento_store: BentoStore
+) -> None:
 
-    # create df
-    data: pd.Series[int] = pd.Series([1, 2, 3])
-    df = spark.createDataFrame(pd.DataFrame(data, columns=["data"]))
+    # get properties of the simple bento before it gets distributed
+    bento_tag = simplebento.info.tag
+    bento_service = simplebento.info.service
+    bento_apis = simplebento.info.apis
 
-    # create a udf from the service api function
-    udf = bentoml._internal.spark.get_udf(spark, "test.simplebento:latest", "increment")
-
-    # apply the udf on the df and retrieve it to driver program
-    df.select(udf(col("data"))).show()
-   
-   # load bento from the worker nodes
-    _load_bento(simplebento1.tag)
-
-    # compare properties between the distributed and returned bentos
-    assert bento_tag == simplebento1.info.tag
-    assert bento_service == simplebento1.info.service
-    assert bento_apis == simplebento1.info.apis
-
-def test_simplebento2(spark: SparkSession, simplebento2: Bento) -> None:
-
-    # get properties of the simple bento before it gets distributed 
-    bento_tag = simplebento2.info.tag
-    bento_service = simplebento2.info.service
-    bento_apis = simplebento2.info.apis
+    BentoMLContainer.bento_store.set(bento_store)
 
     # distribute bento file to the worker nodes
-    _distribute_bento(spark, simplebento2)
+    _distribute_bento(spark, simplebento)
 
-    # create df
-    data: pd.Series[int] = pd.Series(["a", "b", "c"])
-    df = spark.createDataFrame(pd.DataFrame(data, columns=["data"]))
-
-    # create a udf from the service api function
-    udf = bentoml._internal.spark.get_udf(spark, "test.simplebento:latest", "uppercase")
-
-    # apply the udf on the df and retrieve it to driver program
-    df.select(udf(col("data"))).show()
-   
-   # load bento from the worker nodes
-    _load_bento(simplebento2.tag)
+    data1: pd.Series[int] = pd.Series([1, 2, 3])
+    df1 = spark.createDataFrame(pd.DataFrame(data1, columns=["data"]))
+    df1 = bentoml._internal.spark.run_in_spark(spark, df1, simplebento, "increment")
+    pd.testing.assert_frame_equal(
+        df1.select("*").toPandas(), pd.DataFrame([2, 3, 4], columns=["data"])
+    )
 
     # compare properties between the distributed and returned bentos
-    assert bento_tag == simplebento2.info.tag
-    assert bento_service == simplebento2.info.service
-    assert bento_apis == simplebento2.info.apis
+    assert bento_tag == simplebento.info.tag
+    assert bento_service == simplebento.info.service
+    assert bento_apis == simplebento.info.apis
 
-
-
+    # test that passing in a multi-column df would cause an exception
+    data2 = [["a", 1], ["b", 2], ["c", 3]]
+    df2 = spark.createDataFrame(pd.DataFrame(data2, columns=["char", "int"]))
+    df2 = bentoml._internal.spark.run_in_spark(spark, df2, simplebento, "increment")
+    with pytest.raises(Exception):
+        assert df2.select("*") == pd.DataFrame([["a", 2], ["b", 3], ["c", 4]])

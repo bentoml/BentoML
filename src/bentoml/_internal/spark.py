@@ -6,16 +6,20 @@ import os.path
 import tempfile
 from typing import TYPE_CHECKING
 
-from ..bentos import import_bento
-from ..bentos import get as get_bento
-from .service.loader import load as load_service
+import pyarrow
+from pyspark.sql.dataframe import DataFrame
+
+from .tag import Tag
 from .bento import Bento
+from ..bentos import get as get_bento
+from ..bentos import import_bento
+from .service import Service
 from ..exceptions import NotFound
 from ..exceptions import BentoMLException
 from ..exceptions import MissingDependencyException
-from .tag import Tag
+from .service.loader import load as load_service
 from .service.loader import load_bento
-from .service import Service
+from .service.loader import _load_bento as load_bento_service
 
 try:
     import pyspark
@@ -109,11 +113,18 @@ def _load_bento(bento_tag: Tag):
 # Out -> pd.Series[str]
 # Return Type -> Str
 
-def _get_process(bento_tag: Tag, api_name: str) -> t.Callable[[t.Iterator[tuple[pd.Series[t.Any]]]], t.Iterator[pd.Series[t.Any]]]:
+
+def _get_process(
+    bento_tag: Tag, api_name: str
+) -> t.Callable[[t.Iterator[pyarrow.RecordBatch]], t.Generator]:
     # def process(
     #     iterator: t.Iterator[api.input.spark_udf_input_type()]
     # ) -> t.Iterator[api.output.spark_udf_output_type()]:
-    def process(iterator: t.Iterator[t.Tuple[pd.Series]]) -> t.Iterator[pd.Series]:  # type: ignore  # this type annotation is evaluated at runtime by 
+    def process(
+        iterator: t.Iterator[pyarrow.RecordBatch],
+    ) -> t.Generator[
+        pyarrow.RecordBatch, None, None
+    ]:  # this type annotation is evaluated at runtime by
         # Initialize local service instance
         # TODO: support inference via remote bento server
         svc = _load_bento(bento_tag)
@@ -126,62 +137,42 @@ def _get_process(bento_tag: Tag, api_name: str) -> t.Callable[[t.Iterator[tuple[
         inference_api = svc.apis[api_name]
         assert inference_api.func is not None, "Inference API function not defined"
 
-        for input_args in t.cast("t.Iterator[tuple[pd.Series[t.Any]]]", iterator):
+        for batch in iterator:
             # default batch size = 10,000
-            func_input = inference_api.input.from_pandas_series(input_args)
+            func_input = inference_api.input.from_arrow(batch)
             func_output = inference_api.func(func_input)
             assert isinstance(func_output, pd.Series), f"type is {type(func_output)}"
-            yield inference_api.output.to_pandas_series(func_output)
+            yield inference_api.output.to_arrow(func_output)
 
     return process  # type: ignore  # process type evaluated at runtime
-    
-    
-def get_udf(
-    spark: SparkSession, bento_tag: Tag | str, api_name: str | None
-) -> UserDefinedFunctionLike:
-    """
-    Example Usage:
 
-    bento_udf = bentoml.spark.get_udf(spark, "iris_classifier:latest", "predict", )
 
-    Args:
-        spark: the Spark session for registering the UDF
-        bento_tag: target Bento to run, the tag must be found in driver's local Bento store
-        api_name: specify which API to run, a Bento Service may contain multiple APIs
-
-    Returns:
-        A pandas_udf for running target Bento on Spark DataFrame
-    """
-    svc2 = load_service(str(bento_tag))
-    assert svc2.tag is not None
-    bento_tag = svc2.tag  # resolved tag, no more "latest" here
+def run_in_spark(
+    spark: SparkSession, df: DataFrame, bento: Bento, api_name: str | None
+) -> DataFrame:
+    svc = load_bento_service(bento, False)
 
     if api_name is None:
-        if len(svc2.apis) != 1:
+        if len(svc.apis) != 1:
             raise BentoMLException(
-                f'Bento "{bento_tag}" has multiple APIs ({svc2.apis.keys()}), specify which API should be used for registering the UDF, e.g.: bentoml.spark.get_udf(spark, "my_service:latest", "predict")'
+                f'Bento "{bento.tag}" has multiple APIs ({svc.apis.keys()}), specify which API should be used for registering the UDF, e.g.: bentoml.spark.get_udf(spark, "my_service:latest", "predict")'
             )
-        api_name = next(iter(svc2.apis))
+        api_name = next(iter(svc.apis))
     else:
-        if api_name not in svc2.apis:
+        if api_name not in svc.apis:
             raise BentoMLException(
-                f"API name '{api_name}' not found in Bento '{bento_tag}', available APIs are {svc2.apis.keys()}"
+                f"API name '{api_name}' not found in Bento '{bento.tag}', available APIs are {svc.apis.keys()}"
             )
 
-    api = svc2.apis[api_name]
+    api = svc.apis[api_name]
 
-    # Validate API io descriptors are supported for Spark UDF
-    # if api.input.__class__ not in SUPPORT_INPUT_IO_DESCRIPTORS:
-    #     raise BentoMLException(f"Service API input type {api.input.__class__} is not supported for Spark UDF conversion")
-    # if api.output.__class__ not in SUPPORT_OUTPUT_IO_DESCRIPTORS:
-    #     raise BentoMLException(f"Service API output type {api.output.__class__} is not supported for Spark UDF conversion")
+    _distribute_bento(spark, bento)
 
-    # Distribute Bento file to worker nodes
-    _distribute_bento(spark, get_bento(bento_tag))
-
-    process = _get_process(bento_tag, api_name)
+    process = _get_process(bento.tag, api_name)
 
     if api.output._dtype is None:
-        raise BentoMLException(f"Output descriptor for {api_name} must specify a dtype.")
+        raise BentoMLException(
+            f"Output descriptor for {api_name} must specify a dtype."
+        )
 
-    return pandas_udf(process, returnType=api.output._dtype)
+    return df.mapInArrow(process, df.schema)  # TODO fix df.schema

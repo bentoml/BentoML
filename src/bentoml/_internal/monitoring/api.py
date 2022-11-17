@@ -256,7 +256,7 @@ def monitor(
     :param monitor_class: class of the monitor, can be a string or a class
         example:
         - default
-        - opentelemetry
+        - otlp
         - "bentoml.monitoring.prometheus.PrometheusMonitor"
     :param monitor_options: options for the monitor
 
@@ -303,10 +303,10 @@ def monitor(
             from .default import DefaultMonitor
 
             monitor_klass = DefaultMonitor
-        elif monitor_class == "opentelemetry":
-            from .opentelemetry import OpenTelemetryMonitor
+        elif monitor_class == "otlp":
+            from .otlp import OTLPMonitor
 
-            monitor_klass = OpenTelemetryMonitor
+            monitor_klass = OTLPMonitor
         elif isinstance(monitor_class, str):
             monitor_klass = LazyType["MonitorBase[t.Any]"](monitor_class).get_class()
         elif isinstance(monitor_class, type):

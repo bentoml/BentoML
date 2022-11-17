@@ -37,9 +37,9 @@ if TYPE_CHECKING:
     ]
 
 
-class OpenTelemetryMonitor(MonitorBase["JSONSerializable"]):
+class OTLPMonitor(MonitorBase["JSONSerializable"]):
     """
-    The monitor implementation to log data to OpenTelemetry.
+    The monitor implementation to log data to OTLP endpoint.
     The otlp exporter could be configured by environment variables or
     by passing arguments to the monitor from the config file.
 

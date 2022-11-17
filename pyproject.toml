@@ -156,6 +156,11 @@ tracing-jaeger = ["opentelemetry-exporter-jaeger==1.14.0"]
 tracing-zipkin = ["opentelemetry-exporter-zipkin==1.14.0"]
 tracing-otlp = ["opentelemetry-exporter-otlp==1.14.0"]
 
+monitoring = [
+  "bentoml[monitoring-otlp]",
+]
+monitoring-otlp = ["opentelemetry-exporter-otlp==1.14.0"]
+
 [tool.setuptools_scm]
 write_to = "src/bentoml/_version.py"
 git_describe_command = "git describe --dirty --tags --long --first-parent"

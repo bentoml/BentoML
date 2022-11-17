@@ -31,12 +31,13 @@ if TYPE_CHECKING:
     import pydantic
     import pydantic.schema as schema
     from google.protobuf import struct_pb2
-    from typing_extensions import Self
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
+    DictStrAny = dict[str, t.Any]
+    ListAny = list[t.Any]
 else:
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=EXC_MSG)
     schema = LazyLoader("schema", globals(), "pydantic.schema", exc_msg=EXC_MSG)
@@ -44,9 +45,11 @@ else:
     struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
     # lazy load numpy for processing ndarray.
     np = LazyLoader("np", globals(), "numpy")
+    DictStrAny = dict
+    ListAny = list
 
 
-JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", None]
+JSONType = t.Union[str, DictStrAny, ListAny, "pydantic.BaseModel", None]
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +76,9 @@ class DefaultJsonEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
+class JSON(
+    IODescriptor[JSONType], descriptor_id="bentoml.io.JSON", proto_fields=("json",)
+):
     """
     :obj:`JSON` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from a JSON representation
@@ -172,9 +177,8 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         :obj:`JSON`: IO Descriptor that represents JSON format.
     """
 
-    _proto_fields = ("json",)
     # default mime type is application/json
-    _mime_type = "application/json"
+    mime_type = "application/json"
 
     def __init__(
         self,
@@ -201,7 +205,48 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
                 "'validate_json' option from 'bentoml.io.JSON' has been deprecated. Use a Pydantic model to specify validation options instead."
             )
 
-    def _from_sample(self, sample: JSONType) -> JSONType:
+    def preprocess_sample(self, sample: JSONType) -> JSONType:
+        """
+        Create a class:`JSON` IO Descriptor from given inputs.
+
+        Args:
+            sample: Given JSONType, which can be either dict, str, list.
+                    ``sample`` will also accepting a Pydantic model.
+                    .. code-block:: python
+                        from pydantic import BaseModel
+                        class IrisFeatures(BaseModel):
+                            sepal_len: float
+                            sepal_width: float
+                            petal_len: float
+                            petal_width: float
+                        input_spec = JSON.from_sample(
+                            IrisFeatures(sepal_len=1.0, sepal_width=2.0, petal_len=3.0, petal_width=4.0)
+                        )
+                        @svc.api(input=input_spec, output=NumpyNdarray())
+                        async def predict(input: NDArray[np.int16]) -> NDArray[Any]:
+                            return await runner.async_run(input)
+            json_encoder: Optional JSON encoder.
+
+        Returns:
+            :class:`JSON`: :class:`JSON` IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           from __future__ import annotations
+           from typing import Any
+           import bentoml
+           from bentoml.io import JSON
+           input_spec = JSON.from_sample({"Hello": "World", "foo": "bar"})
+           @svc.api(input=input_spec, output=JSON())
+           async def predict(input: dict[str, Any]) -> dict[str, Any]:
+               return await runner.async_run(input)
+
+        Raises:
+            BadInput: Given sample is not a valid JSON string, bytes, or supported nest types.
+        """
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(sample):
             self._pydantic_model = sample.__class__
         elif isinstance(sample, str):
@@ -234,7 +279,7 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in JSON spec: {spec}")
         if "has_pydantic_model" in spec["args"] and spec["args"]["has_pydantic_model"]:
@@ -275,27 +320,27 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         return {"schemas": pydantic_components_schema(self._pydantic_model)}
 
     def openapi_example(self):
-        if self.sample is not None:
+        if self._sample is not None:
             if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(
-                self.sample
+                self._sample
             ):
-                return self.sample.dict()
-            elif isinstance(self.sample, (str, list)):
+                return self._sample.dict()
+            elif isinstance(self._sample, (str, list)):
                 return json.dumps(
-                    self.sample,
+                    self._sample,
                     cls=self._json_encoder,
                     ensure_ascii=False,
                     allow_nan=False,
                     indent=None,
                     separators=(",", ":"),
                 )
-            elif isinstance(self.sample, dict):
-                return self.sample
+            elif isinstance(self._sample, dict):
+                return self._sample
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -307,7 +352,7 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -354,41 +399,58 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         if ctx is not None:
             res = Response(
                 json_str,
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(json_str, media_type=self._mime_type)
+            return Response(json_str, media_type=self.mime_type)
 
-    async def from_proto(self, field: struct_pb2.Value | bytes) -> JSONType:
-        from google.protobuf.json_format import MessageToDict
+    def _register_unstructure_proto_fn(self) -> None:
+        self._unstructure_proto_fn.register_iter_fns(
+            (
+                (
+                    lambda v: issubclass(v, bytes),
+                    self._unstructure_proto_bytes,
+                ),
+                (
+                    lambda v: issubclass(v, struct_pb2.Value),
+                    self._unstructure_proto_google_struct_value,
+                ),
+            )
+        )
 
-        if isinstance(field, bytes):
-            content = field
-            if self._pydantic_model:
-                try:
-                    return self._pydantic_model.parse_raw(content)
-                except pydantic.ValidationError as e:
-                    raise BadInput(f"Invalid JSON input received: {e}") from None
+    def _unstructure_proto_bytes(self, field: bytes) -> JSONType:
+        if self._pydantic_model:
             try:
-                parsed = json.loads(content)
-            except json.JSONDecodeError as e:
+                return self._pydantic_model.parse_raw(field)
+            except pydantic.ValidationError as e:
                 raise BadInput(f"Invalid JSON input received: {e}") from None
-        else:
-            assert isinstance(field, struct_pb2.Value)
-            parsed = MessageToDict(field, preserving_proto_field_name=True)
-
-            if self._pydantic_model:
-                try:
-                    return self._pydantic_model.parse_obj(parsed)
-                except pydantic.ValidationError as e:
-                    raise BadInput(f"Invalid JSON input received: {e}") from None
+        try:
+            parsed = json.loads(field)
+        except json.JSONDecodeError as e:
+            raise BadInput(f"Invalid JSON input received: {e}") from None
         return parsed
 
-    async def to_proto(self, obj: JSONType) -> struct_pb2.Value:
+    def _unstructure_proto_google_struct_value(
+        self, field: struct_pb2.Value
+    ) -> JSONType:
+        from google.protobuf.json_format import MessageToDict
+
+        parsed = MessageToDict(field, preserving_proto_field_name=True)
+
+        if self._pydantic_model:
+            try:
+                return self._pydantic_model.parse_obj(parsed)
+            except pydantic.ValidationError as e:
+                raise BadInput(f"Invalid JSON input received: {e}") from None
+        return parsed
+
+    def _structure_proto_google_struct_value(
+        self, obj: JSONType, _: str
+    ) -> struct_pb2.Value:
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):
             obj = obj.dict()
         msg = struct_pb2.Value()
@@ -408,3 +470,33 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
                 # take any arguments.
                 ParseDict(self._json_encoder().default(obj), msg)
         return msg
+
+    def _register_structure_proto_fn(self) -> None:
+        for type_ in (
+            DictStrAny,
+            str,
+            ListAny,
+            float,
+            int,
+            bool,
+        ):
+            self._structure_proto_fn.register_direct(
+                type_, self._structure_proto_google_struct_value
+            )
+        self._structure_proto_fn.register_predicate(
+            lambda v: attr.has(v), self._structure_proto_google_struct_value
+        )
+        self._structure_proto_fn.register_iter_fns(
+            (
+                (
+                    lambda v: typ_.isinstance(v),
+                    self._structure_proto_google_struct_value,
+                )
+                for typ_ in (
+                    LazyType["ext.NpNDArray"]("numpy.ndarray"),
+                    LazyType["ext.PdDataFrame"]("pandas.DataFrame"),
+                    LazyType["ext.PdSeries"]("pandas.Series"),
+                    LazyType["pydantic.BaseModel"]("pydantic.BaseModel"),
+                )
+            )
+        )

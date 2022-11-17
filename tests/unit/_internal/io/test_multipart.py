@@ -9,6 +9,8 @@ from bentoml.io import JSON
 from bentoml.io import Image
 from bentoml.io import Multipart
 from bentoml.exceptions import InvalidArgument
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml._internal.utils import LazyLoader
 
 example = Multipart(arg1=JSON(), arg2=Image(mime_type="image/bmp", pilmode="RGB"))
 
@@ -18,11 +20,11 @@ if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-    from bentoml._internal.utils import LazyLoader
 
     pb, _ = import_generated_stubs()
+    pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
     np = LazyLoader("np", globals(), "numpy")
     PILImage = LazyLoader("PILImage", globals(), "PIL.Image")
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
@@ -57,7 +59,7 @@ def test_multipart_openapi_request_responses():
 @pytest.mark.asyncio
 async def test_exception_from_to_proto():
     with pytest.raises(InvalidArgument):
-        await example.from_proto(b"")  # type: ignore (test exception)
+        await example.from_proto(b"")
     with pytest.raises(InvalidArgument) as e:
         await example.from_proto(
             pb.Multipart(
@@ -95,7 +97,39 @@ async def test_multipart_from_to_proto(img_file: str):
     np.testing.assert_array_almost_equal(np.array(obj["arg2"]), np.array(assert_file))
 
     message = await example.to_proto(
-        {"arg1": {"asd": "asd"}, "arg2": PILImage.open(io.BytesIO(img))}
+        {"arg1": {"asd": "asd"}, "arg2": PILImage.open(io.BytesIO(img))},
     )
     assert isinstance(message, pb.Multipart)
+    assert message.fields["arg1"].json.struct_value.fields["asd"].string_value == "asd"
+
+    with open(img_file, "rb") as f:
+        img = f.read()
+    obj = await example.from_proto(
+        pb_v1alpha1.Multipart(
+            fields={
+                "arg1": pb_v1alpha1.Part(
+                    json=struct_pb2.Value(
+                        struct_value=struct_pb2.Struct(
+                            fields={"asd": struct_pb2.Value(string_value="asd")}
+                        )
+                    )
+                ),
+                "arg2": pb_v1alpha1.Part(
+                    file=pb_v1alpha1.File(
+                        kind=pb_v1alpha1.File.FILE_TYPE_BMP, content=img
+                    )
+                ),
+            }
+        )
+    )
+
+    assert obj["arg1"] == {"asd": "asd"}
+    assert_file = PILImage.open(img_file)
+    np.testing.assert_array_almost_equal(np.array(obj["arg2"]), np.array(assert_file))
+
+    message = await example.to_proto(
+        {"arg1": {"asd": "asd"}, "arg2": PILImage.open(io.BytesIO(img))},
+        _version="v1alpha1",
+    )
+    assert isinstance(message, pb_v1alpha1.Multipart)
     assert message.fields["arg1"].json.struct_value.fields["asd"].string_value == "asd"

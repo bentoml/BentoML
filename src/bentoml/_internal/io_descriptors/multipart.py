@@ -8,10 +8,12 @@ from starlette.requests import Request
 from multipart.multipart import parse_options_header
 from starlette.responses import Response
 
-from . import from_spec as io_descriptor_from_spec
+from .base import from_spec as io_descriptor_from_spec
 from .base import IODescriptor
+from ..types import LazyType
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_response
@@ -21,20 +23,26 @@ from ..service.openapi.specification import MediaType
 if TYPE_CHECKING:
     from types import UnionType
 
+    from google.protobuf import message as _message
     from typing_extensions import Self
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
+    from .base import StubVersion
     from .base import OpenAPIResponse
-    from ..types import LazyType
     from ..context import InferenceApiContext as Context
+
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
+    pb_v1alpha1, _ = import_generated_stubs(version="v1alpha1")
 
 
-class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Multipart"):
+class Multipart(
+    IODescriptor[t.Dict[str, t.Any]],
+    descriptor_id="bentoml.io.Multipart",
+    proto_fields=("multipart",),
+):
     """
     :obj:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
     of a Service can receive/send a **multipart** request/responses as specified in your API function signature.
@@ -162,8 +170,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         :obj:`Multipart`: IO Descriptor that represents a Multipart request/response.
     """
 
-    _proto_fields = ("multipart",)
-    _mime_type = "multipart/form-data"
+    mime_type = "multipart/form-data"
 
     def __init__(self, **inputs: IODescriptor[t.Any]):
         if any(isinstance(descriptor, Multipart) for descriptor in inputs.values()):
@@ -175,7 +182,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
     def __repr__(self) -> str:
         return f"Multipart({','.join([f'{k}={v}' for k,v in zip(self._inputs, map(repr, self._inputs.values()))])})"
 
-    def _from_sample(cls, sample: dict[str, t.Any]) -> t.Any:
+    def preprocess_sample(self, sample: dict[str, t.Any]) -> t.Any:
         raise NotImplementedError("'from_sample' is not supported for Multipart.")
 
     def input_type(
@@ -227,7 +234,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -239,7 +246,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -285,13 +292,31 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
                 f"'{self!r}' accepts the following keys: {set(self._inputs)}. Given {field.__class__.__qualname__} has invalid fields: {set(field) - set(self._inputs)}",
             ) from None
 
-    async def from_proto(self, field: pb.Multipart) -> dict[str, t.Any]:
+    def _register_unstructure_proto_fn(self):
+        self._unstructure_proto_fn.register_iter_fns(
+            (
+                (lambda v: issubclass(v, bytes), self._unstructure_proto_bytes),
+                (
+                    lambda v: issubclass(v, pb.Multipart),
+                    self._unstructure_proto_multipart,
+                ),
+                (
+                    lambda v: issubclass(v, pb_v1alpha1.Multipart),
+                    self._unstructure_proto_multipart,
+                ),
+            )
+        )
+
+    def _unstructure_proto_bytes(self, _: t.Any) -> t.Any:
+        raise InvalidArgument(
+            f"cannot use 'serialized_bytes' with {self.__class__.__name__}"
+        ) from None
+
+    async def _unstructure_proto_multipart(
+        self, field: pb.Multipart | pb_v1alpha1.Multipart
+    ) -> dict[str, t.Any]:
         from bentoml.grpc.utils import validate_proto_fields
 
-        if isinstance(field, bytes):
-            raise InvalidArgument(
-                f"cannot use 'serialized_bytes' with {self.__class__.__name__}"
-            ) from None
         message = field.fields
         self.validate_input_mapping(message)
         to_populate = {self._inputs[k]: message[k] for k in self._inputs}
@@ -310,21 +335,33 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         )
         return dict(zip(self._inputs.keys(), reqs))
 
-    async def to_proto(self, obj: dict[str, t.Any]) -> pb.Multipart:
+    def _register_structure_proto_fn(self):
+        self._structure_proto_fn.register_predicate(
+            lambda v: issubclass(v, dict), self._structure_proto_multipart
+        )
+
+    async def _structure_proto_multipart(
+        self, obj: dict[str, t.Any], _version: StubVersion
+    ) -> _message.Message:
+        if _version == "v1":
+            stub = pb
+        elif _version == "v1alpha1":
+            stub = pb_v1alpha1
+
         self.validate_input_mapping(obj)
         resps = await asyncio.gather(
             *tuple(
-                io_.to_proto(data)
+                io_.to_proto(data, _version=_version)
                 for io_, data in zip(self._inputs.values(), obj.values())
             )
         )
-        return pb.Multipart(
+        return stub.Multipart(
             fields=dict(
                 zip(
                     obj,
                     [
                         # TODO: support multiple proto_fields
-                        pb.Part(**{io_._proto_fields[0]: resp})
+                        stub.Part(**{io_.proto_fields[0]: resp})
                         for io_, resp in zip(self._inputs.values(), resps)
                     ],
                 )

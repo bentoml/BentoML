@@ -20,6 +20,7 @@ from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import UnprocessableEntity
 from ...exceptions import MissingDependencyException
+from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
@@ -30,18 +31,19 @@ EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install w
 if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
-    from typing_extensions import Self
+    from google.protobuf import message as _message
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
+    from .base import StubVersion
     from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
+    pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
     pd = LazyLoader("pd", globals(), "pandas", exc_msg=EXC_MSG)
     np = LazyLoader("np", globals(), "numpy")
 
@@ -197,7 +199,9 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
 
 
 class PandasDataFrame(
-    IODescriptor["ext.PdDataFrame"], descriptor_id="bentoml.io.PandasDataFrame"
+    IODescriptor["ext.PdDataFrame"],
+    descriptor_id="bentoml.io.PandasDataFrame",
+    proto_fields=("dataframe",),
 ):
     """
     :obj:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
@@ -312,8 +316,6 @@ class PandasDataFrame(
         :obj:`PandasDataFrame`: IO Descriptor that represents a :code:`pd.DataFrame`.
     """
 
-    _proto_fields = ("dataframe",)
-
     def __init__(
         self,
         orient: ext.DataFrameOrient = "records",
@@ -336,9 +338,9 @@ class PandasDataFrame(
         self._default_format = SerializationFormat[default_format.upper()]
 
         _validate_serialization_format(self._default_format)
-        self._mime_type = self._default_format.mime_type
+        self.mime_type = self._default_format.mime_type
 
-    def _from_sample(self, sample: ext.PdDataFrame) -> ext.PdDataFrame:
+    def preprocess_sample(self, sample: ext.PdDataFrame) -> ext.PdDataFrame:
         """
         Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
 
@@ -453,7 +455,7 @@ class PandasDataFrame(
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in PandasDataFrame spec: {spec}")
         res = PandasDataFrame(**spec["args"])
@@ -469,13 +471,13 @@ class PandasDataFrame(
         pass
 
     def openapi_example(self):
-        if self.sample is not None:
-            return self.sample.to_json(orient=self._orient)
+        if self._sample is not None:
+            return self._sample.to_json(orient=self._orient)
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -487,7 +489,7 @@ class PandasDataFrame(
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -615,7 +617,31 @@ class PandasDataFrame(
 
         return dataframe
 
-    async def from_proto(self, field: pb.DataFrame | bytes) -> ext.PdDataFrame:
+    def _register_unstructure_proto_fn(self):
+        # TODO: support different serialization format
+        self._unstructure_proto_fn.register_iter_fns(
+            (
+                (lambda v: issubclass(v, bytes), self._unstructure_proto_bytes),
+                (
+                    lambda v: issubclass(v, pb.DataFrame),
+                    self._unstructure_proto_dataframe,
+                ),
+                (
+                    lambda v: issubclass(v, pb_v1alpha1.DataFrame),
+                    self._unstructure_proto_dataframe,
+                ),
+            )
+        )
+
+    def _unstructure_proto_bytes(self, _: bytes) -> t.Any:
+        # TODO: handle serialized_bytes for dataframe
+        raise NotImplementedError(
+            'Currently not yet implemented. Use "dataframe" instead.'
+        )
+
+    def _unstructure_proto_dataframe(
+        self, field: pb.DataFrame | pb_v1alpha1.DataFrame
+    ) -> ext.PdDataFrame:
         """
         Process incoming protobuf request and convert it to ``pandas.DataFrame``
 
@@ -627,44 +653,43 @@ class PandasDataFrame(
             a ``pandas.DataFrame`` object. This can then be used
              inside users defined logics.
         """
-        # TODO: support different serialization format
-        if isinstance(field, bytes):
-            # TODO: handle serialized_bytes for dataframe
-            raise NotImplementedError(
-                'Currently not yet implemented. Use "dataframe" instead.'
-            )
-        else:
-            # note that there is a current bug where we don't check for
-            # dtype of given fields per Series to match with types of a given
-            # columns, hence, this would result in a wrong DataFrame that is not
-            # expected by our users.
-            assert isinstance(field, pb.DataFrame)
-            # columns orient: { column_name : {index : columns.series._value}}
-            if self._orient != "columns":
+        # note that there is a current bug where we don't check for
+        # dtype of given fields per Series to match with types of a given
+        # columns, hence, this would result in a wrong DataFrame that is not
+        # expected by our users.
+        # columns orient: { column_name : {index : columns.series._value}}
+        if self._orient != "columns":
+            raise BadInput(
+                f"'dataframe' field currently only supports 'columns' orient. Make sure to set 'orient=columns' in {self.__class__.__name__}."
+            ) from None
+        data: list[t.Any] = []
+
+        def process_columns_contents(content: pb.Series) -> dict[str, t.Any]:
+            # To be use inside a ThreadPoolExecutor to handle
+            # large tabular data
+            if len(content.ListFields()) != 1:
                 raise BadInput(
-                    f"'dataframe' field currently only supports 'columns' orient. Make sure to set 'orient=columns' in {self.__class__.__name__}."
+                    f"Array contents can only be one of given values key. Use one of '{list(map(lambda f: f[0].name,content.ListFields()))}' instead."
                 ) from None
-            data: list[t.Any] = []
+            return {str(i): c for i, c in enumerate(content.ListFields()[0][1])}
 
-            def process_columns_contents(content: pb.Series) -> dict[str, t.Any]:
-                # To be use inside a ThreadPoolExecutor to handle
-                # large tabular data
-                if len(content.ListFields()) != 1:
-                    raise BadInput(
-                        f"Array contents can only be one of given values key. Use one of '{list(map(lambda f: f[0].name,content.ListFields()))}' instead."
-                    ) from None
-                return {str(i): c for i, c in enumerate(content.ListFields()[0][1])}
-
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = executor.map(process_columns_contents, field.columns)
-                data.extend([i for i in list(futures)])
-            dataframe = pd.DataFrame(
-                dict(zip(field.column_names, data)),
-                columns=t.cast(t.List[str], field.column_names),
-            )
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = executor.map(process_columns_contents, field.columns)
+            data.extend([i for i in list(futures)])
+        dataframe = pd.DataFrame(
+            dict(zip(field.column_names, data)),
+            columns=t.cast(t.List[str], field.column_names),
+        )
         return self.validate_dataframe(dataframe)
 
-    async def to_proto(self, obj: ext.PdDataFrame) -> pb.DataFrame:
+    def _register_structure_proto_fn(self):
+        self._structure_proto_fn.register_predicate(
+            lambda v: issubclass(v, pd.DataFrame), self._structure_proto_dataframe
+        )
+
+    def _structure_proto_dataframe(
+        self, obj: ext.PdDataFrame, version: StubVersion
+    ) -> _message.Message:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -677,9 +702,15 @@ class PandasDataFrame(
         """
         from .numpy import npdtype_to_fieldpb_map
 
+        if version == "v1":
+            stub = pb
+        elif version == "v1alpha1":
+            stub = pb_v1alpha1
+
         # TODO: support different serialization format
         obj = self.validate_dataframe(obj)
         mapping = npdtype_to_fieldpb_map()
+
         # note that this is not safe, since we are not checking the dtype of the series
         # FIXME(aarnphm): validate and handle mix columns dtype
         # currently we don't support ExtensionDtype
@@ -694,10 +725,10 @@ class PandasDataFrame(
             raise UnprocessableEntity(
                 f'dtype in column "{obj.columns}" is not currently supported.'
             ) from None
-        return pb.DataFrame(
+        return stub.DataFrame(
             column_names=columns_name,
             columns=[
-                pb.Series(
+                stub.Series(
                     **{mapping[t.cast("ext.NpDTypeLike", obj[col].dtype)]: obj[col]}
                 )
                 for col in columns_name
@@ -706,7 +737,9 @@ class PandasDataFrame(
 
 
 class PandasSeries(
-    IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
+    IODescriptor["ext.PdSeries"],
+    descriptor_id="bentoml.io.PandasSeries",
+    proto_fields=("series",),
 ):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
@@ -802,8 +835,7 @@ class PandasSeries(
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
     """
 
-    _proto_fields = ("series",)
-    _mime_type = "application/json"
+    mime_type = "application/json"
 
     def __init__(
         self,
@@ -819,7 +851,9 @@ class PandasSeries(
         self._shape = shape
         self._enforce_shape = enforce_shape
 
-    def _from_sample(self, sample: ext.PdSeries | t.Sequence[t.Any]) -> ext.PdSeries:
+    def preprocess_sample(
+        self, sample: ext.PdSeries | t.Sequence[t.Any]
+    ) -> ext.PdSeries:
         """
         Create a :obj:`PandasSeries` IO Descriptor from given inputs.
 
@@ -895,7 +929,7 @@ class PandasSeries(
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in PandasSeries spec: {spec}")
         res = PandasSeries(**spec["args"])
@@ -908,13 +942,13 @@ class PandasSeries(
         pass
 
     def openapi_example(self):
-        if self.sample is not None:
-            return self.sample.to_json(orient=self._orient)
+        if self._sample is not None:
+            return self._sample.to_json(orient=self._orient)
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -926,7 +960,7 @@ class PandasSeries(
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -966,16 +1000,14 @@ class PandasSeries(
         if ctx is not None:
             res = Response(
                 obj.to_json(orient=self._orient),
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers=ctx.response.headers,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(
-                obj.to_json(orient=self._orient), media_type=self._mime_type
-            )
+            return Response(obj.to_json(orient=self._orient), media_type=self.mime_type)
 
     def validate_series(
         self, series: ext.PdSeries, exception_cls: t.Type[Exception] = BadInput
@@ -1010,7 +1042,31 @@ class PandasSeries(
 
         return series
 
-    async def from_proto(self, field: pb.Series | bytes) -> ext.PdSeries:
+    def _register_unstructure_proto_fn(self):
+        # TODO: support different serialization format
+        self._unstructure_proto_fn.register_iter_fns(
+            (
+                (lambda v: issubclass(v, bytes), self._unstructure_proto_bytes),
+                (
+                    lambda v: issubclass(v, pb.Series),
+                    self._unstructure_proto_series,
+                ),
+                (
+                    lambda v: issubclass(v, pb_v1alpha1.Series),
+                    self._unstructure_proto_series,
+                ),
+            )
+        )
+
+    def _unstructure_proto_bytes(self, _: bytes) -> t.Any:
+        # TODO: handle serialized_bytes for dataframe
+        raise NotImplementedError(
+            'Currently not yet implemented. Use "dataframe" instead.'
+        )
+
+    def _unstructure_proto_series(
+        self, field: pb.Series | pb_v1alpha1.Series
+    ) -> ext.PdSeries:
         """
         Process incoming protobuf request and convert it to ``pandas.Series``
 
@@ -1022,36 +1078,29 @@ class PandasSeries(
             a ``pandas.Series`` object. This can then be used
              inside users defined logics.
         """
-        if isinstance(field, bytes):
-            # TODO: handle serialized_bytes for dataframe
-            raise NotImplementedError(
-                'Currently not yet implemented. Use "series" instead.'
-            )
-        else:
-            assert isinstance(field, pb.Series)
-            # The behaviour of `from_proto` will mimic the behaviour of `NumpyNdArray.from_proto`,
-            # where we will respect self._dtype if set.
-            # since self._dtype uses numpy dtype, we will use some of numpy logics here.
-            from .numpy import fieldpb_to_npdtype_map
-            from .numpy import npdtype_to_fieldpb_map
+        # The behaviour of `from_proto` will mimic the behaviour of `NumpyNdArray.from_proto`,
+        # where we will respect self._dtype if set.
+        # since self._dtype uses numpy dtype, we will use some of numpy logics here.
+        from .numpy import fieldpb_to_npdtype_map
+        from .numpy import npdtype_to_fieldpb_map
 
-            if self._dtype is not None:
-                dtype = self._dtype
-                data = getattr(field, npdtype_to_fieldpb_map()[self._dtype])
-            else:
-                fieldpb = [
-                    f.name for f, _ in field.ListFields() if f.name.endswith("_values")
-                ]
-                if len(fieldpb) == 0:
-                    # input message doesn't have any fields.
-                    return pd.Series()
-                elif len(fieldpb) > 1:
-                    # when there are more than two values provided in the proto.
-                    raise InvalidArgument(
-                        f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead.",
-                    ) from None
-                dtype = fieldpb_to_npdtype_map()[fieldpb[0]]
-                data = getattr(field, fieldpb[0])
+        if self._dtype is not None:
+            dtype = self._dtype
+            data = getattr(field, npdtype_to_fieldpb_map()[self._dtype])
+        else:
+            fieldpb = [
+                f.name for f, _ in field.ListFields() if f.name.endswith("_values")
+            ]
+            if len(fieldpb) == 0:
+                # input message doesn't have any fields.
+                return pd.Series()
+            elif len(fieldpb) > 1:
+                # when there are more than two values provided in the proto.
+                raise InvalidArgument(
+                    f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead.",
+                ) from None
+            dtype = fieldpb_to_npdtype_map()[fieldpb[0]]
+            data = getattr(field, fieldpb[0])
 
         try:
             series = pd.Series(data, dtype=dtype)
@@ -1060,7 +1109,14 @@ class PandasSeries(
 
         return self.validate_series(series)
 
-    async def to_proto(self, obj: ext.PdSeries) -> pb.Series:
+    def _register_structure_proto_fn(self):
+        self._structure_proto_fn.register_predicate(
+            lambda v: issubclass(v, pd.Series), self._structure_proto_series
+        )
+
+    def _structure_proto_series(
+        self, obj: ext.PdSeries, version: StubVersion
+    ) -> _message.Message:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -1072,6 +1128,11 @@ class PandasSeries(
                 Protobuf representation of given ``pandas.Series``
         """
         from .numpy import npdtype_to_fieldpb_map
+
+        if version == "v1":
+            stub = pb
+        elif version == "v1alpha1":
+            stub = pb_v1alpha1
 
         try:
             obj = self.validate_series(obj, exception_cls=InvalidArgument)
@@ -1087,7 +1148,7 @@ class PandasSeries(
             ) from None
         try:
             fieldpb = npdtype_to_fieldpb_map()[obj.dtype]
-            return pb.Series(**{fieldpb: obj.ravel().tolist()})
+            return stub.Series(**{fieldpb: obj.ravel().tolist()})
         except KeyError:
             raise InvalidArgument(
                 f"Unsupported dtype '{obj.dtype}' for response message."

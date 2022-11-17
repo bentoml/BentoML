@@ -15,8 +15,11 @@ import pytest
 import pydantic
 
 from bentoml.io import JSON
+from bentoml.io import IOStructureError
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import UnprocessableEntity
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils.pkg import pkg_version_info
 from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 
@@ -27,8 +30,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml._internal.service.openapi.specification import Schema
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-    from bentoml._internal.utils import LazyLoader
 
     pb, _ = import_generated_stubs()
     struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
@@ -255,9 +256,9 @@ async def test_from_proto():
 
 @pytest.mark.asyncio
 async def test_exception_from_proto():
-    with pytest.raises(AssertionError):
-        await JSON().from_proto(pb.NDArray(string_values="asdf"))  # type: ignore (testing exception)
-        await JSON().from_proto("")  # type: ignore (testing exception)
+    with pytest.raises(IOStructureError):
+        await JSON().from_proto(pb.NDArray(string_values="asdf"))
+        await JSON().from_proto("")
     with pytest.raises(BadInput, match="Invalid JSON input received*"):
         await JSON(pydantic_model=Nested).from_proto(
             struct_pb2.Value(string_value="asdf")
@@ -269,8 +270,8 @@ async def test_exception_from_proto():
 
 @pytest.mark.asyncio
 async def test_exception_to_proto():
-    with pytest.raises(TypeError):
-        await JSON().to_proto(b"asdf")  # type: ignore (testing exception)
+    with pytest.raises(IOStructureError):
+        await JSON().to_proto(b"asdf")
 
 
 @pytest.mark.asyncio
@@ -288,6 +289,8 @@ async def test_exception_to_proto():
         None,
     ],
 )
-async def test_to_proto(o: t.Any) -> None:
-    res = await JSON().to_proto(o)
+@pytest.mark.parametrize("version", ["v1", "v1alpha1"])
+async def test_to_proto(o: t.Any, version: str):
+    print(o, type(o))
+    res = await JSON().to_proto(o, _version=version)
     assert res and isinstance(res, struct_pb2.Value)

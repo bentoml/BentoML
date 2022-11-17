@@ -316,7 +316,7 @@ skip_glob = [
 ]
 
 [tool.pyright]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 include = ["src/", "examples/", "tests/"]
 exclude = [
   'src/bentoml/_version.py',
@@ -325,7 +325,7 @@ exclude = [
   'src/**/*_pb2.py*',
   "src/**/*_pb2_grpc.py*",
   "grpc-client/thirdparty",
-  "test/proto",
+  "tests/proto",
   "bazel-*",
 ]
 analysis.useLibraryCodeForTypes = true

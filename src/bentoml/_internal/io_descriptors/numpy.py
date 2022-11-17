@@ -4,6 +4,7 @@ import json
 import typing as t
 import logging
 from typing import TYPE_CHECKING
+from functools import partial
 from functools import lru_cache
 
 from starlette.requests import Request
@@ -17,23 +18,28 @@ from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ...exceptions import UnprocessableEntity
+from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     import numpy as np
-    from typing_extensions import Self
+    from google.protobuf import message as _message
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
+    from .base import StubVersion
     from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 else:
-    from bentoml.grpc.utils import import_generated_stubs
 
     pb, _ = import_generated_stubs()
+    pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
     np = LazyLoader("np", globals(), "numpy")
 
 logger = logging.getLogger(__name__)
@@ -60,24 +66,26 @@ FIELDPB_TO_NPDTYPE_NAME_MAP = {
 }
 
 
-@lru_cache(maxsize=1)
-def dtypepb_to_npdtype_map() -> dict[pb.NDArray.DType.ValueType, ext.NpDTypeLike]:
+@lru_cache(maxsize=None)
+def dtypepb_to_npdtype_map(stub: ModuleType) -> dict[int, ext.NpDTypeLike]:
     # pb.NDArray.Dtype -> np.dtype
     return {
-        pb.NDArray.DTYPE_FLOAT: np.dtype("float32"),
-        pb.NDArray.DTYPE_DOUBLE: np.dtype("double"),
-        pb.NDArray.DTYPE_INT32: np.dtype("int32"),
-        pb.NDArray.DTYPE_INT64: np.dtype("int64"),
-        pb.NDArray.DTYPE_UINT32: np.dtype("uint32"),
-        pb.NDArray.DTYPE_UINT64: np.dtype("uint64"),
-        pb.NDArray.DTYPE_BOOL: np.dtype("bool"),
-        pb.NDArray.DTYPE_STRING: np.dtype("<U"),
+        stub.NDArray.DTYPE_FLOAT: np.dtype("float32"),
+        stub.NDArray.DTYPE_DOUBLE: np.dtype("double"),
+        stub.NDArray.DTYPE_INT32: np.dtype("int32"),
+        stub.NDArray.DTYPE_INT64: np.dtype("int64"),
+        stub.NDArray.DTYPE_UINT32: np.dtype("uint32"),
+        stub.NDArray.DTYPE_UINT64: np.dtype("uint64"),
+        stub.NDArray.DTYPE_BOOL: np.dtype("bool"),
+        stub.NDArray.DTYPE_STRING: np.dtype("<U"),
     }
 
 
-@lru_cache(maxsize=1)
-def dtypepb_to_fieldpb_map() -> dict[pb.NDArray.DType.ValueType, str]:
-    return {k: npdtype_to_fieldpb_map()[v] for k, v in dtypepb_to_npdtype_map().items()}
+@lru_cache(maxsize=None)
+def dtypepb_to_fieldpb_map(stub: ModuleType) -> dict[int, str]:
+    return {
+        k: npdtype_to_fieldpb_map()[v] for k, v in dtypepb_to_npdtype_map(stub).items()
+    }
 
 
 @lru_cache(maxsize=1)
@@ -86,10 +94,9 @@ def fieldpb_to_npdtype_map() -> dict[str, ext.NpDTypeLike]:
     return {k: np.dtype(v) for k, v in FIELDPB_TO_NPDTYPE_NAME_MAP.items()}
 
 
-@lru_cache(maxsize=1)
-def npdtype_to_dtypepb_map() -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType]:
+def npdtype_to_dtypepb_map(stub: ModuleType) -> dict[ext.NpDTypeLike, t.Any]:
     # np.dtype -> pb.NDArray.Dtype
-    return {v: k for k, v in dtypepb_to_npdtype_map().items()}
+    return {v: k for k, v in dtypepb_to_npdtype_map(stub).items()}
 
 
 @lru_cache(maxsize=1)
@@ -116,7 +123,9 @@ def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
 
 # TODO: when updating docs, add examples with gRPCurl
 class NumpyNdarray(
-    IODescriptor["ext.NpNDArray"], descriptor_id="bentoml.io.NumpyNdarray"
+    IODescriptor["ext.NpNDArray"],
+    descriptor_id="bentoml.io.NumpyNdarray",
+    proto_fields=("ndarray",),
 ):
     """
     :obj:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
@@ -206,8 +215,7 @@ class NumpyNdarray(
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that represents a :code:`np.ndarray`.
     """
 
-    _proto_fields = ("ndarray",)
-    _mime_type = "application/json"
+    mime_type = "application/json"
 
     def __init__(
         self,
@@ -252,7 +260,7 @@ class NumpyNdarray(
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in NumpyNdarray spec: {spec}")
         res = NumpyNdarray(**spec["args"])
@@ -271,15 +279,15 @@ class NumpyNdarray(
         pass
 
     def openapi_example(self):
-        if self.sample is not None:
-            if isinstance(self.sample, np.generic):
+        if self._sample is not None:
+            if isinstance(self._sample, np.generic):
                 raise BadInput("NumpyNdarray: sample must be a numpy array.") from None
-            return self.sample.tolist()
+            return self._sample.tolist()
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -291,7 +299,7 @@ class NumpyNdarray(
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -370,16 +378,18 @@ class NumpyNdarray(
         if ctx is not None:
             res = Response(
                 json.dumps(obj.tolist()),
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(json.dumps(obj.tolist()), media_type=self._mime_type)
+            return Response(json.dumps(obj.tolist()), media_type=self.mime_type)
 
-    def _from_sample(self, sample: ext.NpNDArray | t.Sequence[t.Any]) -> ext.NpNDArray:
+    def preprocess_sample(
+        self, sample: ext.NpNDArray | t.Sequence[t.Any]
+    ) -> ext.NpNDArray:
         """
         Create a :obj:`NumpyNdarray` IO Descriptor from given inputs.
 
@@ -433,97 +443,101 @@ class NumpyNdarray(
         self._shape = sample.shape
         return sample
 
-    async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:
-        """
-        Process incoming protobuf request and convert it to ``numpy.ndarray``
+    def _register_unstructure_proto_fn(self):
+        self._unstructure_proto_fn.register_iter_fns(
+            (
+                (lambda v: issubclass(v, bytes), self._unstructure_proto_bytes),
+                (
+                    lambda v: issubclass(v, pb.NDArray),
+                    partial(
+                        self._unstructure_proto_ndarray,
+                        stub=pb,
+                    ),
+                ),
+                (
+                    lambda v: issubclass(v, pb_v1alpha1.NDArray),
+                    partial(
+                        self._unstructure_proto_ndarray,
+                        stub=pb_v1alpha1,
+                    ),
+                ),
+            )
+        )
 
-        Args:
-            request: Incoming RPC request message.
-            context: grpc.ServicerContext
+    def _unstructure_proto_bytes(self, field: bytes) -> ext.NpNDArray:
+        # We will be using ``np.frombuffer`` to deserialize the bytes.
+        # This means that we need to ensure that ``dtype`` are provided to the IO descriptor
+        #
+        # ```python
+        # from __future__ import annotations
+        #
+        # import numpy as np
+        #
+        # @svc.api(input=NumpyNdarray(dtype=np.float16), output=NumpyNdarray())
+        # def predict(input: np.ndarray):
+        #     ... # input will be serialized with np.frombuffer, and hence dtype is required
+        # ```
+        if not self._dtype:
+            raise BadInput("'serialized_bytes' requires specifying 'dtype'.") from None
 
-        Returns:
-            ``numpy.ndarray``: A ``np.array`` constructed from given protobuf message.
+        return self.validate_array(np.frombuffer(field, dtype=self._dtype))
 
-        .. seealso::
-
-            :ref:`Protobuf representation of np.ndarray <guides/grpc:Array representation via \\`\\`NDArray\\`\\`>`
-
-        .. note::
-
-           Currently, we support ``pb.NDArray`` and ``serialized_bytes`` as valid inputs.
-           ``serialized_bytes`` will be prioritised over ``pb.NDArray`` if both are provided.
-           Serialized bytes has a specialized bytes representation and should not be used by users directly.
-        """
-        if isinstance(field, bytes):
-
-            # We will be using ``np.frombuffer`` to deserialize the bytes.
-            # This means that we need to ensure that ``dtype`` are provided to the IO descriptor
-            #
-            # ```python
-            # from __future__ import annotations
-            #
-            # import numpy as np
-            #
-            # @svc.api(input=NumpyNdarray(dtype=np.float16), output=NumpyNdarray())
-            # def predict(input: np.ndarray):
-            #     ... # input will be serialized with np.frombuffer, and hence dtype is required
-            # ```
-            if not self._dtype:
+    def _unstructure_proto_ndarray(
+        self, field: pb.NDArray, *, stub: ModuleType
+    ) -> ext.NpNDArray:
+        # The behaviour of dtype are as follows:
+        # - if not provided:
+        #     * All of the fields are empty, then we return a ``np.empty``.
+        #     * We will loop through all of the provided fields, and only allows one field per message.
+        #       If here are more than two fields (i.e. ``string_values`` and ``float_values``), then we will raise an error, as we don't know how to deserialize the data.
+        # - if provided:
+        #     * We will use the provided dtype-to-field maps to get the data from the given message.
+        if field.dtype == stub.NDArray.DTYPE_UNSPECIFIED:
+            dtype = None
+        else:
+            try:
+                dtype = dtypepb_to_npdtype_map(stub)[field.dtype]
+            except KeyError:
+                raise BadInput(f"{field.dtype} is invalid.") from None
+        if dtype is not None:
+            values_array = getattr(field, dtypepb_to_fieldpb_map(stub)[field.dtype])
+        else:
+            fieldpb = [
+                f.name for f, _ in field.ListFields() if f.name.endswith("_values")
+            ]
+            if len(fieldpb) == 0:
+                # input message doesn't have any fields.
+                return np.empty(shape=field.shape or 0)
+            elif len(fieldpb) > 1:
+                # when there are more than two values provided in the proto.
                 raise BadInput(
-                    "'serialized_bytes' requires specifying 'dtype'."
+                    f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead.",
                 ) from None
 
-            dtype: ext.NpDTypeLike = self._dtype
-            array = np.frombuffer(field, dtype=self._dtype)
-        else:
-            assert isinstance(field, pb.NDArray)
+            dtype: ext.NpDTypeLike = fieldpb_to_npdtype_map()[fieldpb[0]]
+            values_array = getattr(field, fieldpb[0])
+        try:
+            array = np.array(values_array, dtype=dtype)
+        except ValueError:
+            array = np.array(values_array)
 
-            # The behaviour of dtype are as follows:
-            # - if not provided:
-            #     * All of the fields are empty, then we return a ``np.empty``.
-            #     * We will loop through all of the provided fields, and only allows one field per message.
-            #       If here are more than two fields (i.e. ``string_values`` and ``float_values``), then we will raise an error, as we don't know how to deserialize the data.
-            # - if provided:
-            #     * We will use the provided dtype-to-field maps to get the data from the given message.
-            if field.dtype == pb.NDArray.DTYPE_UNSPECIFIED:
-                dtype = None
-            else:
-                try:
-                    dtype = dtypepb_to_npdtype_map()[field.dtype]
-                except KeyError:
-                    raise BadInput(f"{field.dtype} is invalid.") from None
-            if dtype is not None:
-                values_array = getattr(field, dtypepb_to_fieldpb_map()[field.dtype])
-            else:
-                fieldpb = [
-                    f.name for f, _ in field.ListFields() if f.name.endswith("_values")
-                ]
-                if len(fieldpb) == 0:
-                    # input message doesn't have any fields.
-                    return np.empty(shape=field.shape or 0)
-                elif len(fieldpb) > 1:
-                    # when there are more than two values provided in the proto.
-                    raise BadInput(
-                        f"Array contents can only be one of given values key. Use one of '{fieldpb}' instead.",
-                    ) from None
-
-                dtype: ext.NpDTypeLike = fieldpb_to_npdtype_map()[fieldpb[0]]
-                values_array = getattr(field, fieldpb[0])
-            try:
-                array = np.array(values_array, dtype=dtype)
-            except ValueError:
-                array = np.array(values_array)
-
-            # We will try to reshape the array if ``shape`` is provided.
-            # Note that all of the logics here are handled in-place, meaning that we will ensure
-            # not to create new copies of given initialized array.
-            if field.shape:
-                array = np.reshape(array, field.shape)
+        # We will try to reshape the array if ``shape`` is provided.
+        # Note that all of the logics here are handled in-place, meaning that we will ensure
+        # not to create new copies of given initialized array.
+        if field.shape:
+            array = np.reshape(array, field.shape)
 
         # We will try to run validation process before sending this of to the user.
         return self.validate_array(array)
 
-    async def to_proto(self, obj: ext.NpNDArray) -> pb.NDArray:
+    def _register_structure_proto_fn(self):
+        self._structure_proto_fn.register_predicate(
+            lambda v: issubclass(v, np.ndarray), self._structure_proto_ndarray
+        )
+
+    def _structure_proto_ndarray(
+        self, obj: ext.NpNDArray, version: StubVersion
+    ) -> _message.Message:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -533,6 +547,13 @@ class NumpyNdarray(
             ``pb.NDArray``:
                 Protobuf representation of given ``np.ndarray``
         """
+        if version == "v1":
+            stub = pb
+        elif version == "v1alpha1":
+            stub = pb_v1alpha1
+        else:
+            raise ValueError(f"Unknown stub version {version}.")
+
         try:
             obj = self.validate_array(obj)
         except BadInput as e:
@@ -540,8 +561,8 @@ class NumpyNdarray(
 
         try:
             fieldpb = npdtype_to_fieldpb_map()[obj.dtype]
-            dtypepb = npdtype_to_dtypepb_map()[obj.dtype]
-            return pb.NDArray(
+            dtypepb = npdtype_to_dtypepb_map(stub)[obj.dtype]
+            return stub.NDArray(
                 dtype=dtypepb,
                 shape=tuple(obj.shape),
                 **{fieldpb: obj.ravel().tolist()},

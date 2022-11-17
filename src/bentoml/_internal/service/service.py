@@ -13,10 +13,10 @@ from ..tag import Tag
 from ..models import Model
 from ..runner import Runner
 from ...grpc.utils import import_grpc
+from ...grpc.utils import LATEST_STUB_VERSION
 from ..bento.bento import get_default_svc_readme
 from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
-from ...grpc.utils import LATEST_STUB_VERSION
 
 if TYPE_CHECKING:
     import grpc

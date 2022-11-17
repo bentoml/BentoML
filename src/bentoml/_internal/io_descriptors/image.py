@@ -20,6 +20,7 @@ from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import InternalServerError
 from ...exceptions import MissingDependencyException
+from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
@@ -31,11 +32,13 @@ if TYPE_CHECKING:
 
     import PIL
     import PIL.Image
-    from typing_extensions import Self
+    from google.protobuf import message as _message
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
+    from .base import StubVersion
     from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
@@ -43,14 +46,13 @@ if TYPE_CHECKING:
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
     ]
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=PIL_EXC_MSG)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=PIL_EXC_MSG)
 
     pb, _ = import_generated_stubs()
+    pb_v1alpha1, _ = import_generated_stubs(version="v1alpha1")
 
 # NOTES: we will keep type in quotation to avoid backward compatibility
 #  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
@@ -80,7 +82,9 @@ def initialize_pillow():
     READABLE_MIMES = {k for k, v in MIME_EXT_MAPPING.items() if v not in PIL_WRITE_ONLY_FORMATS}  # type: ignore (lazy constant)
 
 
-class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
+class Image(
+    IODescriptor[ImageType], descriptor_id="bentoml.io.Image", proto_fields=("file",)
+):
     """
     :obj:`Image` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from images as specified
@@ -167,8 +171,6 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         :obj:`Image`: IO Descriptor that either a :code:`PIL.Image.Image` or a :code:`np.ndarray` representing an image.
     """
 
-    _proto_fields = ("file",)
-
     def __init__(
         self,
         pilmode: _Mode | None = DEFAULT_PIL_MODE,
@@ -183,7 +185,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
                 f"Invalid Image pilmode '{pilmode}'. Supported PIL modes are {', '.join(PIL.Image.MODES)}."
             ) from None
 
-        self._mime_type = mime_type.lower()
+        self.mime_type = mime_type.lower()
         self._allowed_mimes: set[str] = (
             READABLE_MIMES
             if allowed_mime_types is None
@@ -191,7 +193,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         )
         self._allow_all_images = allowed_mime_types is None
 
-        if self._mime_type not in MIME_EXT_MAPPING:  # pragma: no cover
+        if self.mime_type not in MIME_EXT_MAPPING:  # pragma: no cover
             raise InvalidArgument(
                 f"Invalid Image mime_type '{mime_type}'; supported mime types are {', '.join(PIL.Image.MIME.values())} "
             )
@@ -208,9 +210,43 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
                 )
 
         self._pilmode: _Mode | None = pilmode
-        self._format: str = MIME_EXT_MAPPING[self._mime_type]
+        self._format: str = MIME_EXT_MAPPING[self.mime_type]
 
-    def _from_sample(self, sample: ImageType | str) -> ImageType:
+    def preprocess_sample(self, sample: ImageType | str) -> ImageType:
+        """
+        Create a class:`Image` IO Descriptor from given inputs.
+
+        Args:
+            sample: Given File-like object, or a path to a file.
+            pilmode: Optional color mode for PIL. Default to ``RGB``.
+            mime_type: The MIME type of the file type that this descriptor should return.
+                       If not specified, then ``from_sample`` will try to infer the MIME type
+                       from file extension.
+            allowed_mime_types: An optional list of MIME types to restrict input to.
+
+        Returns:
+            :class:`Image`: :class:`Image` IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           from __future__ import annotations
+           from typing import Any
+           import bentoml
+           from bentoml.io import Image
+           import numpy as np
+           input_spec = Image.from_sample("/path/to/image.jpg")
+           @svc.api(input=input_spec, output=Image())
+           async def predict(input: t.IO[t.Any]) -> t.IO[t.Any]:
+               return await runner.async_run(input)
+
+        Raises:
+            InvalidArgument: If the given sample is not a valid image type.
+            MissingDependencyException: If 'filetype' is not installed.
+            BadInput: Given sample from file can't be parsed.
+        """
         try:
             from filetype.match import image_match
         except ModuleNotFoundError:
@@ -231,7 +267,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
                     sample = PIL.Image.open(f)
             except PIL.UnidentifiedImageError as err:
                 raise BadInput(f"Failed to parse sample image file: {err}") from None
-        self._mime_type = img_type.mime
+        self.mime_type = img_type.mime
         return sample
 
     def to_spec(self) -> dict[str, t.Any]:
@@ -239,13 +275,13 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
             "id": self.descriptor_id,
             "args": {
                 "pilmode": self._pilmode,
-                "mime_type": self._mime_type,
+                "mime_type": self.mime_type,
                 "allowed_mime_types": list(self._allowed_mimes),
             },
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in Image spec: {spec}")
 
@@ -276,7 +312,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {self.mime_type: MediaType(schema=self.openapi_schema())},
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
@@ -374,7 +410,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
                 ctx.response.headers["content-disposition"] = content_disposition
             res = Response(
                 ret.getvalue(),
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers=ctx.response.headers,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
@@ -383,35 +419,111 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         else:
             return Response(
                 ret.getvalue(),
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers={"content-disposition": content_disposition},
             )
 
-    async def from_proto(self, field: pb.File | bytes) -> ImageType:
-        if isinstance(field, bytes):
-            content = field
-        else:
-            assert isinstance(field, pb.File)
-            if field.kind and field.kind != self._mime_type:
-                raise BadInput(
-                    f"MIME type from 'kind' is '{field.kind}', while '{self!r}' is expecting '{self._mime_type}'",
-                )
-            content = field.content
-            if not content:
-                raise BadInput("Content is empty!") from None
+    def _register_unstructure_proto_fn(self):
+        self._unstructure_proto_fn.register_iter_fns(
+            (
+                (
+                    lambda v: issubclass(v, bytes),
+                    self._unstructure_proto_bytes,
+                ),
+                (
+                    lambda v: issubclass(v, pb.File),
+                    self._unstructure_proto_file_v1,
+                ),
+                (
+                    lambda v: issubclass(v, pb_v1alpha1.File),
+                    self._unstructure_proto_file_v1alpha1,
+                ),
+            )
+        )
 
-        return PIL.Image.open(io.BytesIO(content))
+    def _unstructure_proto_bytes(self, field: bytes) -> ImageType:
+        return PIL.Image.open(io.BytesIO(field))
 
-    async def to_proto(self, obj: ImageType) -> pb.File:
-        if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
-            image = PIL.Image.fromarray(obj, mode=self._pilmode)
-        elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
-            image = obj
-        else:
+    def _unstructure_proto_file_v1(self, field: pb.File) -> ImageType:
+        if field.kind and field.kind != self.mime_type:
             raise BadInput(
-                f"Unsupported Image type received: '{type(obj)}', the Image IO descriptor only supports 'np.ndarray' and 'PIL.Image'.",
+                f"MIME type from 'kind' is '{field.kind}', while '{self!r}' is expecting '{self.mime_type}'",
+            )
+        if not field.content:
+            raise BadInput("Content is empty!") from None
+
+        return PIL.Image.open(io.BytesIO(field.content))
+
+    def _unstructure_proto_file_v1alpha1(self, field: pb_v1alpha1.File) -> ImageType:
+        from .file import filetype_pb_to_mimetype_map
+
+        mapping = filetype_pb_to_mimetype_map()
+        if field.kind:
+            try:
+                mime_type = mapping[field.kind]
+                if mime_type != self.mime_type:
+                    raise BadInput(
+                        f"Inferred mime_type from 'kind' is '{mime_type}', while '{self!r}' is expecting '{self.mime_type}'",
+                    )
+            except KeyError:
+                raise BadInput(
+                    f"{field.kind} is not a valid File kind. Accepted file kind: {[names for names,_ in pb_v1alpha1.File.FileType.items()]}",
+                ) from None
+        if not field.content:
+            raise BadInput("Content is empty!") from None
+
+        return PIL.Image.open(io.BytesIO(field.content))
+
+    def _determine_proto_kind(self) -> pb_v1alpha1.File.FileType.ValueType:
+        from .file import mimetype_to_filetype_pb_map
+
+        try:
+            kind = mimetype_to_filetype_pb_map()[self.mime_type]
+        except KeyError:
+            raise BadInput(
+                f"{self.mime_type} doesn't have a corresponding File 'kind'"
             ) from None
+        return kind
+
+    def _structure_proto_ndarray(
+        self, obj: ext.NpNDArray, version: StubVersion
+    ) -> _message.Message:
+        image = PIL.Image.fromarray(obj, mode=self._pilmode)
         ret = io.BytesIO()
         image.save(ret, format=self._format)
+        if version == "v1":
+            return pb.File(kind=self.mime_type, content=ret.getvalue())
+        elif version == "v1alpha1":
+            return pb_v1alpha1.File(
+                kind=self._determine_proto_kind(), content=ret.getvalue()
+            )
 
-        return pb.File(kind=self._mime_type, content=ret.getvalue())
+    def _structure_proto_pil(
+        self, obj: PIL.Image.Image, version: StubVersion
+    ) -> _message.Message:
+        ret = io.BytesIO()
+        obj.save(ret, format=self._format)
+        if version == "v1":
+            return pb.File(kind=self.mime_type, content=ret.getvalue())
+        elif version == "v1alpha1":
+            return pb_v1alpha1.File(
+                kind=self._determine_proto_kind(), content=ret.getvalue()
+            )
+
+    def _register_structure_proto_fn(self):
+        self._structure_proto_fn.register_iter_fns(
+            (
+                (
+                    lambda v: issubclass(
+                        v, LazyType["ext.NpNDArray"]("numpy.ndarray").get_class()
+                    ),
+                    self._structure_proto_ndarray,
+                ),
+                (
+                    lambda v: issubclass(
+                        v, LazyType["PIL.Image.Image"]("PIL.Image.Image").get_class()
+                    ),
+                    self._structure_proto_pil,
+                ),
+            )
+        )

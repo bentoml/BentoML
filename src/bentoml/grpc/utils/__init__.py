@@ -9,8 +9,8 @@ from dataclasses import dataclass
 
 from bentoml.exceptions import InvalidArgument
 from bentoml.grpc.utils._import_hook import import_grpc
-from bentoml.grpc.utils._import_hook import import_generated_stubs
 from bentoml.grpc.utils._import_hook import LATEST_STUB_VERSION
+from bentoml.grpc.utils._import_hook import import_generated_stubs
 
 if TYPE_CHECKING:
     from enum import Enum
@@ -51,7 +51,7 @@ def validate_proto_fields(
 ) -> str | ProtoField:
     if field is None:
         raise InvalidArgument('"field" cannot be empty.')
-    accepted_fields = io_._proto_fields + ("serialized_bytes",)
+    accepted_fields = io_.proto_fields + ("serialized_bytes",)
     if field not in accepted_fields:
         raise InvalidArgument(
             f"'{io_.__class__.__name__}' accepts one of the following fields: '{','.join(accepted_fields)}' got '{field}' instead.",

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ._internal.io_descriptors import from_spec
 from ._internal.io_descriptors.base import IODescriptor
+from ._internal.io_descriptors.base import IOStructureError
 from ._internal.io_descriptors.file import File
 from ._internal.io_descriptors.json import JSON
 from ._internal.io_descriptors.text import Text
@@ -22,4 +23,5 @@ __all__ = [
     "PandasSeries",
     "Text",
     "from_spec",
+    "IOStructureError",
 ]

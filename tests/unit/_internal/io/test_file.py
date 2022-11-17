@@ -6,14 +6,17 @@ from typing import TYPE_CHECKING
 import pytest
 
 from bentoml.io import File
+from bentoml.io import IOStructureError
 from bentoml.exceptions import BadInput
+from bentoml.grpc.utils import import_generated_stubs
 
 if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 else:
-    from bentoml.grpc.utils import import_generated_stubs
 
     pb, _ = import_generated_stubs()
+    pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
 
 
 def test_file_openapi_schema():
@@ -50,7 +53,7 @@ async def test_from_proto(bin_file: str):
 
 @pytest.mark.asyncio
 async def test_exception_from_proto():
-    with pytest.raises(AssertionError):
+    with pytest.raises(IOStructureError):
         await File().from_proto(pb.NDArray(string_values="asdf"))  # type: ignore (testing exceptions)
         await File().from_proto("")  # type: ignore (testing exceptions)
     with pytest.raises(BadInput) as exc_info:
@@ -65,6 +68,9 @@ async def test_exception_from_proto():
 
 @pytest.mark.asyncio
 async def test_to_proto() -> None:
-    assert await File(mime_type="image/bmp").to_proto(io.BytesIO(b"asdf")) == pb.File(
-        kind="image/bmp", content=b"asdf"
-    )
+    assert await File(mime_type="image/bmp").to_proto(
+        io.BytesIO(b"asdf"), _version="v1"
+    ) == pb.File(kind="image/bmp", content=b"asdf")
+    assert await File(mime_type="image/bmp").to_proto(
+        io.BytesIO(b"asdf"), _version="v1alpha1"
+    ) == pb_v1alpha1.File(kind=pb_v1alpha1.File.FILE_TYPE_BMP, content=b"asdf")

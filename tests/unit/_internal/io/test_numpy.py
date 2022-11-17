@@ -9,25 +9,30 @@ import numpy as np
 import pytest
 
 from bentoml.io import NumpyNdarray
+from bentoml.io import IOStructureError
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import BentoMLException
+from bentoml.grpc.utils import import_generated_stubs
 from bentoml._internal.service.openapi.specification import Schema
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from _pytest.logging import LogCaptureFixture
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml._internal import external_typing as ext
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
+    pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
 
 
 class ExampleGeneric(str, np.generic):
     pass
 
 
-example = np.zeros((2, 2, 3, 2))
+example: ext.NpNDArray = np.zeros((2, 2, 3, 2))
 from_example = NumpyNdarray.from_sample(example, enforce_dtype=True, enforce_shape=True)
 
 
@@ -38,13 +43,13 @@ def test_invalid_dtype():
 
     generic = ExampleGeneric("asdf")
     with pytest.raises(BentoMLException) as e:
-        _ = NumpyNdarray.from_sample(generic)  # type: ignore (test exception)
+        _ = NumpyNdarray.from_sample(generic)
     assert "expects a 'numpy.array'" in str(e.value)
 
 
 @pytest.mark.parametrize("dtype, expected", [("float", "number"), (">U8", "integer")])
 def test_numpy_to_openapi_types(dtype: str, expected: str):
-    assert NumpyNdarray(dtype=dtype)._openapi_types() == expected  # type: ignore (private functions warning)
+    assert NumpyNdarray(dtype=dtype)._openapi_types() == expected
 
 
 def test_numpy_openapi_schema():
@@ -95,7 +100,7 @@ def test_numpy_openapi_example():
     assert r == example.tolist()
 
     nparray = NumpyNdarray(dtype="float")
-    nparray.sample = ExampleGeneric("asdf")
+    nparray._sample = ExampleGeneric("asdf")
     with pytest.raises(BadInput):
         nparray.openapi_example()
 
@@ -132,7 +137,8 @@ def generate_1d_array(dtype: pb.NDArray.DType.ValueType, length: int = 3):
     "dtype",
     filter(lambda x: x > 0, [v.number for v in pb.NDArray.DType.DESCRIPTOR.values]),
 )
-async def test_from_proto(dtype: pb.NDArray.DType.ValueType) -> None:
+@pytest.mark.parametrize("stub", [pb, pb_v1alpha1])
+async def test_from_proto(dtype: pb.NDArray.DType.ValueType, stub: ModuleType) -> None:
     from bentoml._internal.io_descriptors.numpy import dtypepb_to_fieldpb_map
     from bentoml._internal.io_descriptors.numpy import dtypepb_to_npdtype_map
 
@@ -160,10 +166,10 @@ async def test_from_proto(dtype: pb.NDArray.DType.ValueType) -> None:
         await NumpyNdarray().from_proto(
             pb.NDArray(
                 dtype=dtype,
-                **{dtypepb_to_fieldpb_map()[dtype]: generate_1d_array(dtype)},
+                **{dtypepb_to_fieldpb_map(stub)[dtype]: generate_1d_array(dtype)},
             ),
         ),
-        np.array(generate_1d_array(dtype), dtype=dtypepb_to_npdtype_map()[dtype]),
+        np.array(generate_1d_array(dtype), dtype=dtypepb_to_npdtype_map(stub)[dtype]),
     )
     # given shape from message.
     np.testing.assert_array_equal(
@@ -176,7 +182,7 @@ async def test_from_proto(dtype: pb.NDArray.DType.ValueType) -> None:
 
 @pytest.mark.asyncio
 async def test_exception_from_proto():
-    with pytest.raises(AssertionError):
+    with pytest.raises(IOStructureError):
         await NumpyNdarray().from_proto(pb.NDArray(string_values="asdf"))
         await NumpyNdarray().from_proto(pb.File(content=b"asdf"))  # type: ignore (testing exception)
     with pytest.raises(BadInput):
@@ -202,9 +208,10 @@ async def test_exception_to_proto():
 
 
 @pytest.mark.asyncio
-async def test_to_proto() -> None:
-    assert await NumpyNdarray().to_proto(example) == pb.NDArray(
+@pytest.mark.parametrize("version,stub", [("v1", pb), ("v1alpha1", pb_v1alpha1)])
+async def test_to_proto(version: str, stub: ModuleType) -> None:
+    assert await NumpyNdarray().to_proto(example, _version=version) == stub.NDArray(
         shape=example.shape,
-        dtype=pb.NDArray.DType.DTYPE_DOUBLE,
+        dtype=stub.NDArray.DType.DTYPE_DOUBLE,
         double_values=example.ravel().tolist(),
     )

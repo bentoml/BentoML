@@ -6,19 +6,21 @@ from typing import TYPE_CHECKING
 import pytest
 
 from bentoml.io import Image
+from bentoml.io import IOStructureError
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import InvalidArgument
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml._internal.utils import LazyLoader
 
 if TYPE_CHECKING:
     import numpy as np
     import PIL.Image as PILImage
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-    from bentoml._internal.utils import LazyLoader
-
     pb, _ = import_generated_stubs()
+    pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
     np = LazyLoader("np", globals(), "numpy")
     PILImage = LazyLoader("PILImage", globals(), "PIL.Image")
 
@@ -70,7 +72,7 @@ async def test_from_proto(img_file: str):
 
 @pytest.mark.asyncio
 async def test_exception_from_proto():
-    with pytest.raises(AssertionError):
+    with pytest.raises(IOStructureError):
         await Image().from_proto(pb.NDArray(string_values="asdf"))  # type: ignore (testing exception)
         await Image().from_proto("")  # type: ignore (testing exception)
     with pytest.raises(BadInput) as exc_info:
@@ -85,9 +87,8 @@ async def test_exception_from_proto():
 
 @pytest.mark.asyncio
 async def test_exception_to_proto():
-    with pytest.raises(BadInput) as exc_info:
-        await Image().to_proto(io.BytesIO(b"asdf"))  # type: ignore (testing exception)
-    assert "Unsupported Image type received:" in str(exc_info.value)
+    with pytest.raises(IOStructureError):
+        await Image().to_proto(io.BytesIO(b"asdf"))
 
 
 @pytest.mark.asyncio
@@ -97,3 +98,9 @@ async def test_to_proto(img_file: str) -> None:
     img = PILImage.open(io.BytesIO(content))
     res = await Image(mime_type="image/bmp").to_proto(img)
     assert res.kind == "image/bmp"
+
+    with open(img_file, "rb") as f:
+        content = f.read()
+    img = PILImage.open(io.BytesIO(content))
+    res = await Image(mime_type="image/bmp").to_proto(img, _version="v1alpha1")
+    assert res.kind == pb_v1alpha1.File.FILE_TYPE_BMP

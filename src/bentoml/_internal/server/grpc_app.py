@@ -9,8 +9,8 @@ from functools import partial
 from simple_di import inject
 from simple_di import Provide
 
-from ..configuration.containers import BentoMLContainer
 from ...grpc.utils import LATEST_STUB_VERSION
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 

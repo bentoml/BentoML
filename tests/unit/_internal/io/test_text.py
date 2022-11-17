@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from bentoml.io import Text
+from bentoml.io import IOStructureError
 from bentoml.exceptions import BentoMLException
 
 if TYPE_CHECKING:
@@ -53,7 +54,7 @@ async def test_from_proto():
 
 @pytest.mark.asyncio
 async def test_exception_from_proto():
-    with pytest.raises(AssertionError):
+    with pytest.raises(IOStructureError):
         await Text().from_proto(pb.NDArray(string_values="asdf"))  # type: ignore (testing exception)
         await Text().from_proto(b"")
 
@@ -61,4 +62,7 @@ async def test_exception_from_proto():
 @pytest.mark.asyncio
 async def test_to_proto() -> None:
     res = await Text().to_proto("asdf")
+    assert res.value == "asdf"
+
+    res = await Text().to_proto("asdf", _version="v1alpha1")
     assert res.value == "asdf"

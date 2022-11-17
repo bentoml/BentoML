@@ -15,6 +15,8 @@ from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
+EXC_MESSAGE = "'protobuf' is required. Install with 'pip install bentoml[grpc]'"
+
 if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
     from typing_extensions import Self
@@ -22,12 +24,14 @@ if TYPE_CHECKING:
     from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 else:
-    wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
+    wrappers_pb2 = LazyLoader(
+        "wrappers_pb2", globals(), "google.protobuf.wrappers_pb2", exc_msg=EXC_MESSAGE
+    )
 
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
+class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("text",)):
     """
     :obj:`Text` defines API specification for the inputs/outputs of a Service. :obj:`Text`
     represents strings for all incoming requests/outcoming responses as specified in
@@ -90,8 +94,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
-    _proto_fields = ("text",)
-    _mime_type = MIME_TYPE
+    mime_type = MIME_TYPE
 
     def __init__(self, *args: t.Any, **kwargs: t.Any):
         if args or kwargs:
@@ -99,7 +102,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
                 f"'{self.__class__.__name__}' is not designed to take any args or kwargs during initialization."
             ) from None
 
-    def _from_sample(self, sample: str | bytes) -> str:
+    def preprocess_sample(self, sample: str | bytes) -> str:
         if isinstance(sample, bytes):
             sample = sample.decode("utf-8")
         return sample
@@ -121,12 +124,13 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
         pass
 
     def openapi_example(self):
-        return str(self.sample)
+        if self._sample:
+            return str(self._sample)
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -138,7 +142,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self._mime_type: MediaType(
+                self.mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -153,21 +157,40 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
         if ctx is not None:
             res = Response(
                 obj,
-                media_type=self._mime_type,
+                media_type=self.mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(obj, media_type=self._mime_type)
+            return Response(obj, media_type=self.mime_type)
 
-    async def from_proto(self, field: wrappers_pb2.StringValue | bytes) -> str:
-        if isinstance(field, bytes):
-            return field.decode("utf-8")
-        else:
-            assert isinstance(field, wrappers_pb2.StringValue)
-            return field.value
+    def _register_unstructure_proto_fn(self):
+        self._unstructure_proto_fn.register_iter_fns(
+            (
+                (lambda v: issubclass(v, bytes), self._unstructure_proto_bytes),
+                (
+                    lambda v: issubclass(v, wrappers_pb2.StringValue),
+                    self._unstructure_proto_google_wrappers_string,
+                ),
+            )
+        )
 
-    async def to_proto(self, obj: str) -> wrappers_pb2.StringValue:
+    def _unstructure_proto_bytes(self, field: bytes) -> t.Any:
+        return field.decode("utf-8")
+
+    def _unstructure_proto_google_wrappers_string(
+        self, field: wrappers_pb2.StringValue
+    ) -> t.Any:
+        return field.value
+
+    def _register_structure_proto_fn(self):
+        self._structure_proto_fn.register_direct(
+            str, self._structure_proto_google_wrappers_string
+        )
+
+    async def _structure_proto_google_wrappers_string(
+        self, obj: str, _: str
+    ) -> wrappers_pb2.StringValue:
         return wrappers_pb2.StringValue(value=obj)

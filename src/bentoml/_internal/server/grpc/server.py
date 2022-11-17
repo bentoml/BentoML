@@ -12,7 +12,8 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml.grpc.utils import import_grpc
-from bentoml.grpc.utils import import_generated_stubs, LATEST_STUB_VERSION
+from bentoml.grpc.utils import LATEST_STUB_VERSION
+from bentoml.grpc.utils import import_generated_stubs
 
 from ...utils import LazyLoader
 from ...utils import cached_property

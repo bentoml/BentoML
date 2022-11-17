@@ -13,6 +13,7 @@ DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
 
 def add_serve_command(cli: click.Group) -> None:
 
+    from bentoml.grpc.utils import LATEST_STUB_VERSION
     from bentoml._internal.log import configure_server_logging
     from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -328,7 +329,7 @@ def add_serve_command(cli: click.Group) -> None:
         "--stub-version",
         type=click.Choice(["v1", "v1alpha1"]),
         help="Determine the version of generated gRPC stubs to use.",
-        default="v1",
+        default=LATEST_STUB_VERSION,
         show_default=True,
     )
     @add_experimental_docstring

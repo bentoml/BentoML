@@ -9,8 +9,9 @@ from inspect import isawaitable
 
 import anyio
 
-from bentoml.grpc.utils import import_grpc, LATEST_STUB_VERSION
+from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import grpc_status_code
+from bentoml.grpc.utils import LATEST_STUB_VERSION
 from bentoml.grpc.utils import validate_proto_fields
 from bentoml.grpc.utils import import_generated_stubs
 
@@ -26,7 +27,6 @@ if TYPE_CHECKING:
     import grpc
     from grpc import aio
     from grpc_health.v1 import health
-    from typing_extensions import Self
 
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.v1 import service_pb2_grpc as services
@@ -60,7 +60,7 @@ class Servicer:
     """Create an instance of gRPC Servicer."""
 
     def __init__(
-        self: Self,
+        self: t.Self,
         service: Service,
         on_startup: t.Sequence[t.Callable[[], t.Any]] | None = None,
         on_shutdown: t.Sequence[t.Callable[[], t.Any]] | None = None,
@@ -141,7 +141,7 @@ def create_bento_servicer(
             api = service.apis[request.api_name]
             response = pb.Response()
 
-            # NOTE: since IODescriptor._proto_fields is a tuple, the order is preserved.
+            # NOTE: since IODescriptor.proto_fields is a tuple, the order is preserved.
             # This is important so that we know the order of fields to process.
             # We will use fields descriptor to determine how to process that request.
             try:
@@ -161,9 +161,9 @@ def create_bento_servicer(
                         output = await anyio.to_thread.run_sync(api.func, **input_data)
                     else:
                         output = await anyio.to_thread.run_sync(api.func, input_data)
-                res = await api.output.to_proto(output)
+                res = await api.output.to_proto(output, _version=stub_version)
                 # TODO(aarnphm): support multiple proto fields
-                response = pb.Response(**{api.output._proto_fields[0]: res})
+                response = pb.Response(**{api.output.proto_fields[0]: res})
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
                 await context.abort(code=grpc_status_code(e), details=e.message)

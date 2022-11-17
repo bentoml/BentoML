@@ -14,8 +14,10 @@ if TYPE_CHECKING:
     from bentoml._internal.context import InferenceApiContext as Context
 
 
-class DummyDescriptor(IODescriptor[t.Any], descriptor_id="bentoml.io.Dummy"):
-    _mime_type = "application/vnd.bentoml.dummy"
+class DummyDescriptor(
+    IODescriptor[t.Any], descriptor_id="bentoml.io.Dummy", proto_fields=("foo",)
+):
+    mime_type = "application/vnd.bentoml.dummy"
 
     def __init__(self, **kwargs: t.Any):
         [object.__setattr__(self, k, v) for k, v in kwargs.items()]
@@ -51,14 +53,14 @@ class DummyDescriptor(IODescriptor[t.Any], descriptor_id="bentoml.io.Dummy"):
     async def to_http_response(self, obj: t.Any, ctx: Context | None = None) -> t.Any:
         return obj, ctx
 
-    async def from_proto(self, field: t.Any) -> t.Any:
-        return field
-
-    async def to_proto(self, obj: t.Any) -> t.Any:
-        return obj
-
-    def _from_sample(cls, sample: t.Any, **kwargs: t.Any):
+    def preprocess_sample(cls, sample: t.Any, **kwargs: t.Any):
         return sample
+
+    def _register_structure_proto_fn(self):
+        pass
+
+    def _register_unstructure_proto_fn(self):
+        pass
 
 
 @pytest.mark.parametrize(

@@ -27,15 +27,7 @@ from ..context import trace_context
 from ..context import component_context
 
 if TYPE_CHECKING:
-    JSONSerializable = t.Union[
-        str,
-        int,
-        float,
-        bool,
-        None,
-        t.List["JSONSerializable"],
-        t.Dict[str, "JSONSerializable"],
-    ]
+    from ..types import JSONSerializable
 
 
 class OTLPMonitor(MonitorBase["JSONSerializable"]):
@@ -43,9 +35,51 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
     The monitor implementation to log data to OTLP endpoint.
     The otlp exporter could be configured by environment variables or
     by passing arguments to the monitor from the config file.
-
     For more information, please refer to:
     * https://opentelemetry.io/docs/concepts/sdk-configuration/otlp-exporter-configuration/
+
+    The sample output of the data is as follows:
+
+    .. code-block:: json
+
+        {
+            "sepal length": 4.9,
+            "sepal width": 3.0,
+            "petal length": 1.4,
+            "petal width": 0.2,
+            "pred": "setosa",
+            "timestamp": 1668660679.587727,
+            "request_id": "6413930528999883196",
+            "bento_meta": {
+                "bento_name": "iris_classifier",
+                "bento_version": "not available",
+                "monitor_name": "iris_classifier_prediction",
+                "schema": {
+                    "sepal length": {
+                        "name": "sepal length",
+                        "role": "feature",
+                        "type": "numerical",
+                    },
+                    "sepal width": {
+                        "name": "sepal width",
+                        "role": "feature",
+                        "type": "numerical",
+                    },
+                    "petal length": {
+                        "name": "petal length",
+                        "role": "feature",
+                        "type": "numerical",
+                    },
+                    "petal width": {
+                        "name": "petal width",
+                        "role": "feature",
+                        "type": "numerical",
+                    },
+                    "pred": {"name": "pred", "role": "prediction", "type": "categorical"},
+                },
+            },
+        }
+
     """
 
     PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_META) = (
@@ -180,7 +214,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         while True:
             try:
                 record = {k: v.popleft() for k, v in datas.items()}
-                record.update(extra_columns)  # type: ignore
+                record.update(extra_columns)  # type: ignore  # pyright can not resolve backward reference correctly for JSONSerializable
                 self.data_logger.info(record)
             except IndexError:
                 break

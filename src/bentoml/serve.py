@@ -490,6 +490,7 @@ def serve_grpc_development(
     reload: bool = False,
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    stub_version: str = "v1",
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -539,6 +540,8 @@ def serve_grpc_development(
             "--prometheus-dir",
             prometheus_dir,
             *ssl_args,
+            "--stub-version",
+            stub_version,
         ]
 
         if reflection:
@@ -668,6 +671,7 @@ def serve_grpc_production(
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    stub_version: str = "v1",
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -812,6 +816,8 @@ def serve_grpc_production(
             "--worker-id",
             "$(CIRCUS.WID)",
             *ssl_args,
+            "--stub-version",
+            stub_version,
         ]
         if reflection:
             args.append("--enable-reflection")

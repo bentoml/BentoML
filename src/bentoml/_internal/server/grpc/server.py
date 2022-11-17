@@ -12,7 +12,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml.grpc.utils import import_grpc
-from bentoml.grpc.utils import import_generated_stubs
+from bentoml.grpc.utils import import_generated_stubs, LATEST_STUB_VERSION
 
 from ...utils import LazyLoader
 from ...utils import cached_property
@@ -32,7 +32,6 @@ if TYPE_CHECKING:
     from .servicer import Servicer
 else:
     grpc, aio = import_grpc()
-    _, services = import_generated_stubs()
     health_exception_msg = "'grpcio-health-checking' is required for using health checking endpoints. Install with 'pip install grpcio-health-checking'."
     pb_health = LazyLoader(
         "pb_health",
@@ -76,6 +75,7 @@ class Server(aio._server.Server):
         ssl_ca_certs: str | None = None,
         graceful_shutdown_timeout: float | None = None,
         compression: grpc.Compression | None = None,
+        stub_version: str = LATEST_STUB_VERSION,
     ):
         self.servicer = servicer
         self.max_message_length = max_message_length
@@ -87,6 +87,10 @@ class Server(aio._server.Server):
         self.ssl_certfile = ssl_certfile
         self.ssl_keyfile = ssl_keyfile
         self.ssl_ca_certs = ssl_ca_certs
+        self.stub_version = stub_version
+        _, self._services = import_generated_stubs(version=self.stub_version)
+        if TYPE_CHECKING:
+            self._services = t.cast(services, self._services)
 
         if not bool(self.servicer):
             self.servicer.load()
@@ -191,7 +195,9 @@ class Server(aio._server.Server):
         # Running on_startup callback.
         await self.servicer.startup()
         # register bento servicer
-        services.add_BentoServiceServicer_to_server(self.servicer.bento_servicer, self)
+        self._services.add_BentoServiceServicer_to_server(
+            self.servicer.bento_servicer, self
+        )
         services_health.add_HealthServicer_to_server(
             self.servicer.health_servicer, self
         )

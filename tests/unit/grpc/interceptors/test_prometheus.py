@@ -106,10 +106,12 @@ async def test_empty_metrics():
         ("gauge", ["api_name", "service_version", "service_name"]),
     ],
 )
+@pytest.mark.parametrize("stub_version", ["v1", "v1alpha1"])
 async def test_metrics_interceptors(
     simple_service: Service,
     metric_type: str,
     parent_set: list[str],
+    stub_version: str,
 ):
     metrics_client = BentoMLContainer.metrics_client.get()
 
@@ -118,7 +120,7 @@ async def test_metrics_interceptors(
         host_url,
     ):
         services.add_BentoServiceServicer_to_server(
-            create_bento_servicer(simple_service), server
+            create_bento_servicer(simple_service, stub_version=stub_version), server
         )
         try:
             await server.start()

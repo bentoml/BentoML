@@ -10,6 +10,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from ..configuration.containers import BentoMLContainer
+from ...grpc.utils import LATEST_STUB_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,9 @@ class GRPCAppFactory:
     ) -> None:
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
+        self.stub_version: str = getattr(
+            bento_service, "_grpc_stub_version", LATEST_STUB_VERSION
+        )
 
     @inject
     async def wait_for_runner_ready(
@@ -102,6 +106,7 @@ class GRPCAppFactory:
             on_shutdown=self.on_shutdown,
             mount_servicers=self.bento_service.mount_servicers,
             interceptors=self.interceptors,
+            stub_version=self.stub_version,
         )
 
     @property

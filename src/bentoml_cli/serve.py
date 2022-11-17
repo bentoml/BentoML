@@ -324,6 +324,13 @@ def add_serve_command(cli: click.Group) -> None:
         help="CA certificates file",
         show_default=True,
     )
+    @click.option(
+        "--stub-version",
+        type=click.Choice(["v1", "v1alpha1"]),
+        help="Determine the version of generated gRPC stubs to use.",
+        default="v1",
+        show_default=True,
+    )
     @add_experimental_docstring
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
@@ -340,6 +347,7 @@ def add_serve_command(cli: click.Group) -> None:
         enable_reflection: bool,
         enable_channelz: bool,
         max_concurrent_streams: int | None,
+        stub_version: str,
     ):
         """Start a gRPC BentoServer from a given 🍱
 
@@ -400,6 +408,7 @@ def add_serve_command(cli: click.Group) -> None:
                 max_concurrent_streams=max_concurrent_streams,
                 reflection=enable_reflection,
                 channelz=enable_channelz,
+                stub_version=stub_version,
             )
         else:
             from bentoml.serve import serve_grpc_development
@@ -417,4 +426,5 @@ def add_serve_command(cli: click.Group) -> None:
                 max_concurrent_streams=max_concurrent_streams,
                 reflection=enable_reflection,
                 channelz=enable_channelz,
+                stub_version=stub_version,
             )

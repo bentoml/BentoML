@@ -52,6 +52,13 @@ import click
     default=None,
     help="CA certificates file",
 )
+@click.option(
+    "--stub-version",
+    type=click.Choice(["v1", "v1alpha1"]),
+    help="Determine the version of generated gRPC stubs to use.",
+    default="v1",
+    show_default=True,
+)
 def main(
     bento_identifier: str,
     host: str,
@@ -64,6 +71,7 @@ def main(
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
     ssl_ca_certs: str | None,
+    stub_version: str,
 ):
     import psutil
 
@@ -102,6 +110,7 @@ def main(
         "bind_address": f"{host}:{port}",
         "enable_reflection": enable_reflection,
         "enable_channelz": enable_channelz,
+        "stub_version": stub_version,
     }
     if max_concurrent_streams is not None:
         grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)
@@ -111,6 +120,10 @@ def main(
         grpc_options["ssl_keyfile"] = ssl_keyfile
     if ssl_ca_certs:
         grpc_options["ssl_ca_certs"] = ssl_ca_certs
+
+    # NOTE: This setattr adds given stub_version to service, so that
+    # servicer can use it to determine which stub to use.
+    object.__setattr__(svc, "_grpc_stub_version", stub_version)
 
     grpc.Server(svc.grpc_servicer, **grpc_options).run()
 

@@ -16,6 +16,7 @@ from ...grpc.utils import import_grpc
 from ..bento.bento import get_default_svc_readme
 from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
+from ...grpc.utils import LATEST_STUB_VERSION
 
 if TYPE_CHECKING:
     import grpc
@@ -115,6 +116,7 @@ class Service:
     # Working dir and Import path of the service, set when the service was imported
     _working_dir: str | None = attr.field(init=False, default=None)
     _import_str: str | None = attr.field(init=False, default=None)
+    _grpc_stub_version: str = attr.field(init=False, default=LATEST_STUB_VERSION)
 
     def __init__(
         self,

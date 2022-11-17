@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from bentoml.exceptions import InvalidArgument
 from bentoml.grpc.utils._import_hook import import_grpc
 from bentoml.grpc.utils._import_hook import import_generated_stubs
+from bentoml.grpc.utils._import_hook import LATEST_STUB_VERSION
 
 if TYPE_CHECKING:
     from enum import Enum
@@ -33,6 +34,7 @@ __all__ = [
     "parse_method_name",
     "to_http_status",
     "GRPC_CONTENT_TYPE",
+    "LATEST_STUB_VERSION",
     "import_generated_stubs",
     "import_grpc",
     "validate_proto_fields",

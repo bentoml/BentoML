@@ -58,7 +58,7 @@ DEFAULT_BACKENDS = frozenset(
 )
 
 
-def register_default_backend():
+def register_default_backends():
     for backend in DEFAULT_BACKENDS:
         try:
             module = t.cast(
@@ -318,7 +318,7 @@ def get_backend(backend: str) -> OCIBuilder:
     return BUILDER_REGISTRY[backend]
 
 
-register_default_backend()
+register_default_backends()
 
 REGISTERED_BACKENDS = list(BUILDER_REGISTRY.keys())
 

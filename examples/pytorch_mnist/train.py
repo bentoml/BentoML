@@ -3,9 +3,9 @@ import os
 import random
 import argparse
 
+import model as models
 import numpy as np
 import torch
-import model as models
 from torch import nn
 from torchvision import transforms
 from torchvision.datasets import MNIST

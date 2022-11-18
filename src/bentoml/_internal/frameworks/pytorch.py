@@ -75,7 +75,9 @@ def load_model(
 
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
     with Path(weight_file).open("rb") as file:
-        model: "torch.nn.Module" = torch.load(file, map_location=device_id)
+        model: "torch.nn.Module" = torch.load(
+            file, map_location=device_id, pickle_module=cloudpickle
+        )
     return model
 
 

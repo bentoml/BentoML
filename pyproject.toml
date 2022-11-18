@@ -231,6 +231,7 @@ exclude = '''
     | typings
     | src/bentoml/grpc/v1alpha1
     | src/bentoml/grpc/v1
+    | tests/proto
     | grpc-client/thirdparty
     | grpc-client/bentoml
   )/
@@ -321,6 +322,7 @@ exclude = [
   'src/**/*_pb2.py*',
   "src/**/*_pb2_grpc.py*",
   "grpc-client/thirdparty",
+  "test/proto",
   "bazel-*",
 ]
 analysis.useLibraryCodeForTypes = true

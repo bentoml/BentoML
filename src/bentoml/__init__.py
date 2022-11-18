@@ -74,12 +74,10 @@ if TYPE_CHECKING:
     from . import pytorch_lightning
 
     # isort: off
-
     from . import io
     from . import models
-
-    # Prometheus metrics client
-    from . import metrics
+    from . import metrics  # Prometheus metrics client
+    from . import container  # Container API
 
     # isort: on
 else:
@@ -122,6 +120,7 @@ else:
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
     metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
+    container = _LazyLoader("bentoml.container", globals(), "bentoml.container")
 
     del _LazyLoader
 
@@ -132,6 +131,7 @@ __all__ = [
     "Service",
     "models",
     "metrics",
+    "container",
     "io",
     "Tag",
     "Model",

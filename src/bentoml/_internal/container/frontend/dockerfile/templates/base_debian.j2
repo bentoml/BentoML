@@ -1,0 +1,14 @@
+{% extends "base.j2" %}
+{% set __cache_apt__ = "/var/cache/apt" %}
+{% set __lib_apt__ = "/var/lib/apt" %}
+{% block SETUP_BENTO_BASE_IMAGE %}
+{{ super() }}
+USER root
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+{% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache(__lib_apt__) }} {{ common.mount_cache(__cache_apt__) }} {% endcall -%} set -eux && \
+    apt-get update -y && \
+    apt-get install -q -y --no-install-recommends --allow-remove-essential \
+        ca-certificates gnupg2 bash build-essential {% if __options__system_packages is not none %}{{ __options__system_packages | join(' ') }}{% endif -%}
+{% endblock %}

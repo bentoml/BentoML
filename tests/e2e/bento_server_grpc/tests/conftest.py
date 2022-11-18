@@ -34,7 +34,7 @@ def pytest_collection_modifyitems(
 @pytest.fixture(scope="module")
 def host(
     bentoml_home: str,
-    deployment_mode: t.Literal["docker", "distributed", "standalone"],
+    deployment_mode: t.Literal["container", "distributed", "standalone"],
     clean_context: ExitStack,
 ) -> t.Generator[str, None, None]:
     from bentoml.testing.server import host_bento

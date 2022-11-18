@@ -4,6 +4,7 @@ mlflow
 fastai
 xgboost
 scikit-learn
+pyspark
 # ONNX dependencies
 onnx
 onnxruntime
@@ -17,3 +18,5 @@ pytorch-lightning
 # huggingface dependencies
 transformers
 tokenizer
+# pyspark dependencies
+py4j

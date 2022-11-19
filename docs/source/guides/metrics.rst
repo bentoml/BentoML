@@ -54,13 +54,13 @@ BentoML automatically collects the following metrics for all API Server and Runn
      - Histogram
      - ``endpoint``, ``service_name``, ``service_version``, ``http_response_code``
    * - Runner request duration in seconds
-     - ``bentoml_api_server_request_duration_seconds_sum``, ``bentoml_api_server_request_duration_seconds_count``, ``bentoml_api_server_request_duration_seconds_bucket``
+     - ``bentoml_runner_request_duration_seconds_sum``, ``bentoml_runner_request_duration_seconds_count``, ``bentoml_runner_request_duration_seconds_bucket``
      - Histogram
      - ``endpoint``, ``service_name``, ``runner_name``, ``service_version``, ``http_response_code``
    * - Runner adaptive batch size
-     - ``bentoml_runner_request_duration_seconds_sum``, ``bentoml_runner_request_duration_seconds_count``, ``bentoml_runner_request_duration_seconds_bucket``
+     - ``bentoml_runner_adaptive_batch_size_sum``, ``bentoml_runner_adaptive_batch_size_count``, ``bentoml_runner_adaptive_batch_size_bucket``
      - Histogram
-     - ``method_name``, ``service_name``, ``runner_name``, ``http_response_code``
+     - ``method_name``, ``service_name``, ``runner_name``, ``worker_index``
 
 Request In-Progress
 ^^^^^^^^^^^^^^^^^^^
@@ -81,11 +81,11 @@ Request Duration
 ^^^^^^^^^^^^^^^^
 
 Measures the durations of requests processed by the API Server or Runner. The accuracy of the histogram depends on the range and
-granularity of histogram buckets. By default, The Prometheus default buckets covering from 0.005s to 10s range are used. The following
-configuration can be used to update the buckets configuration for request duration. The configuration keys ``min`` and ``max`` indicates
-the range of expected latecy duration to be tracked. The configuration key ``factor`` indicates granularity of the buckets and is used as
+granularity of histogram buckets. The default Prometheus buckets covering the range from 0.005s to 10s are used. To override, the following
+configuration can be used to update the buckets configuration for the request duration metric. The configuration keys ``min`` and ``max`` indicates
+the expected range of request duration to be tracked. The configuration key ``factor`` controls granularity of the buckets and is used as
 the exponential factor to generate the buckets. For example, the configuration below will generate the following buckets
-``(0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 5.0, inf)``. See :ref:`configuration <guides/configuration:Configuration>` guide for more information on
+``(0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 5.0, inf)``. See the :ref:`configuration <guides/configuration:Configuration>` guide for more information on
 how to configure BentoML.
 
 .. code-block:: yaml
@@ -103,12 +103,12 @@ on the ``iris_classifier`` service.
 
 .. code-block:: text
 
-   histogram_quantile(0.99, rate(bentoml_api_server_request_duration_seconds_bucket{service_name="iris_classifier", endpoint="/classify"}[1m]))
+   histogram_quantile(0.75, rate(bentoml_api_server_request_duration_seconds_bucket{service_name="iris_classifier", endpoint="/classify"}[1m]))
 
-Adaptive Batch size
+Adaptive Batch Size
 ^^^^^^^^^^^^^^^^^^^
 
-Measures the batch size used by the :ref:`adaptive batching <guides/batching:Adaptive Batching>` feature in the :ref:`concepts/runner:Custom Runner`.
+Measures the batch size used by the :ref:`adaptive batching <guides/batching:Adaptive Batching>` feature in the :ref:`runner <concepts/runner:Using Runners>`.
 The following PromQL expression returns the 75th percentile of the batch size over the last 1 minute for the ``iris_classifier`` service.
 
 .. code-block:: text

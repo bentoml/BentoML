@@ -10,7 +10,7 @@ from functools import update_wrapper
 
 import anyio
 
-from .dispatch import MultiDispatch
+from .dispatch import MultiStrategyDispatch
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ...grpc.utils import LATEST_STUB_VERSION
@@ -109,7 +109,7 @@ class IODescriptor(ABC, t.Generic[IOType], OpenAPIMixin):
             ...
 
     __slots__ = (
-        "mime_type",
+        "_mime_type",
         "proto_fields",
         "descriptor_id",
         "from_sample",
@@ -121,7 +121,7 @@ class IODescriptor(ABC, t.Generic[IOType], OpenAPIMixin):
         "_unstruct_fn_registered",
     )
 
-    mime_type: str
+    _mime_type: str
     descriptor_id: str | None
     proto_fields: tuple[ProtoField]
 
@@ -147,11 +147,14 @@ class IODescriptor(ABC, t.Generic[IOType], OpenAPIMixin):
             cls.proto_fields = tuple()
 
         # _unstructure_proto_fn and _structure_proto_fn handle
-        # dispatching different stub version to its correct type processor.
-        cls._unstructure_proto_fn = MultiDispatch(cls._structure_error)
-        cls._structure_proto_fn = MultiDispatch(cls._structure_error)
+        # dispatching proto processor depending on types.
+        cls._unstructure_proto_fn = MultiStrategyDispatch(cls._structure_error)
+        cls._structure_proto_fn = MultiStrategyDispatch(cls._structure_error)
+        # The two below boolean are used to check whether each IO descriptor strategy
+        # has been registered or not.
         cls._struct_fn_registered = False
         cls._unstruct_fn_registered = False
+
         cls._sample: IOType | None = None
 
         # from_sample implementation with correct docstring.
@@ -181,12 +184,25 @@ class IODescriptor(ABC, t.Generic[IOType], OpenAPIMixin):
     def _structure_error(cl: type[t.Any]) -> t.NoReturn:
         """At the bottom of the loop, explode if we can't find a matching type."""
         raise IOStructureError(
-            f"Unsupported type: {type(cl)} ({cl!r}). Write a custom hook to handle this type."
+            f"Unsupported type: {cl!r}. Register a custom hooks for it."
         )
+
+    @abstractmethod
+    def to_spec(self) -> dict[str, t.Any]:
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
+        raise NotImplementedError
 
     @abstractmethod
     def input_type(self) -> InputType:
         raise NotImplementedError
+
+    @property
+    def mime_type(self) -> str:
+        return self._mime_type
 
     @abstractmethod
     def preprocess_sample(self, sample: t.Any) -> IOType:
@@ -202,15 +218,6 @@ class IODescriptor(ABC, t.Generic[IOType], OpenAPIMixin):
     ) -> Response:
         raise NotImplementedError
 
-    @classmethod
-    @abstractmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
-        raise NotImplementedError
-
-    @abstractmethod
-    def to_spec(self) -> dict[str, t.Any]:
-        raise NotImplementedError
-
     @abstractmethod
     def _register_unstructure_proto_fn(self) -> None:
         raise NotImplementedError
@@ -223,12 +230,10 @@ class IODescriptor(ABC, t.Generic[IOType], OpenAPIMixin):
         if not self._unstruct_fn_registered:
             self._register_unstructure_proto_fn()
             self._unstruct_fn_registered = True
-        assert (
-            self._unstructure_proto_fn.__bool__()
-        ), "Failed to register unstructure_proto_fn."
-        return await self._invoke_predicate(
-            self._unstructure_proto_fn.dispatch(type(field)), field
-        )
+        _ = self._unstructure_proto_fn.dispatch(type(field))
+        if asyncio.iscoroutinefunction(_):
+            return await _(field)
+        return await anyio.to_thread.run_sync(_, field)
 
     async def to_proto(
         self, obj: IOType | t.Any, *, _version: str = LATEST_STUB_VERSION
@@ -236,9 +241,6 @@ class IODescriptor(ABC, t.Generic[IOType], OpenAPIMixin):
         if not self._struct_fn_registered:
             self._register_structure_proto_fn()
             self._struct_fn_registered = True
-        assert (
-            self._structure_proto_fn.__bool__()
-        ), "Failed to register structure_proto_fn."
         func = self._structure_proto_fn.dispatch(type(obj))
         if func == self._structure_error:
             self._structure_error(type(obj))
@@ -256,10 +258,6 @@ class IODescriptor(ABC, t.Generic[IOType], OpenAPIMixin):
             raise ValueError(
                 f"Invalid structure function {func.__name__} for 'to_proto', must have return type annotation."
             )
-        return await self._invoke_predicate(func, obj, _version)
-
-    async def _invoke_predicate(self, fn: F, *attrs: t.Any, **kwargs: t.Any):
-        if asyncio.iscoroutinefunction(fn):
-            return await fn(*attrs, **kwargs)
-        else:
-            return await anyio.to_thread.run_sync(fn, *attrs, **kwargs)
+        if asyncio.iscoroutinefunction(func):
+            return await func(obj, _version)
+        return await anyio.to_thread.run_sync(func, obj, _version)

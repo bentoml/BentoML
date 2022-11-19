@@ -285,12 +285,14 @@ async def test_exception_to_proto():
         1,
         True,
         BaseSchema(name="test", endpoints=["predict", "health"]),
+        ExampleDataclass(name="hello", endpoints=["healthz", "livez"]),
         np.random.rand(6, 6),
+        pd.DataFrame({"a": [1, 2, 3]}),
+        pd.Series([1, 2, 3]),
         None,
     ],
 )
 @pytest.mark.parametrize("version", ["v1", "v1alpha1"])
 async def test_to_proto(o: t.Any, version: str):
-    print(o, type(o))
     res = await JSON().to_proto(o, _version=version)
     assert res and isinstance(res, struct_pb2.Value)

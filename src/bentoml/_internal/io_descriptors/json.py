@@ -28,6 +28,8 @@ EXC_MSG = "'pydantic' must be installed to use 'pydantic_model'. Install with 'p
 if TYPE_CHECKING:
     from types import UnionType
 
+    import numpy as np
+    import pandas as pd
     import pydantic
     import pydantic.schema as schema
     from google.protobuf import struct_pb2
@@ -38,6 +40,7 @@ if TYPE_CHECKING:
 
     DictStrAny = dict[str, t.Any]
     ListAny = list[t.Any]
+    from attr import AttrsInstance
 else:
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=EXC_MSG)
     schema = LazyLoader("schema", globals(), "pydantic.schema", exc_msg=EXC_MSG)
@@ -45,11 +48,14 @@ else:
     struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
     # lazy load numpy for processing ndarray.
     np = LazyLoader("np", globals(), "numpy")
+    pd = LazyLoader("pd", globals(), "pandas")
     DictStrAny = dict
     ListAny = list
 
 
-JSONType = t.Union[str, DictStrAny, ListAny, "pydantic.BaseModel", None]
+JSONType = t.Union[
+    str, DictStrAny, ListAny, "pydantic.BaseModel", None, "AttrsInstance"
+]
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +184,7 @@ class JSON(
     """
 
     # default mime type is application/json
-    mime_type = "application/json"
+    _mime_type = "application/json"
 
     def __init__(
         self,
@@ -340,7 +346,7 @@ class JSON(
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self.mime_type: MediaType(
+                self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -352,7 +358,7 @@ class JSON(
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self.mime_type: MediaType(
+                self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -399,14 +405,14 @@ class JSON(
         if ctx is not None:
             res = Response(
                 json_str,
-                media_type=self.mime_type,
+                media_type=self._mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(json_str, media_type=self.mime_type)
+            return Response(json_str, media_type=self._mime_type)
 
     def _register_unstructure_proto_fn(self) -> None:
         self._unstructure_proto_fn.register_iter_fns(
@@ -451,8 +457,6 @@ class JSON(
     def _structure_proto_google_struct_value(
         self, obj: JSONType, _: str
     ) -> struct_pb2.Value:
-        if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):
-            obj = obj.dict()
         msg = struct_pb2.Value()
         # To handle None cases.
         if obj is not None:
@@ -471,32 +475,57 @@ class JSON(
                 ParseDict(self._json_encoder().default(obj), msg)
         return msg
 
-    def _register_structure_proto_fn(self) -> None:
-        for type_ in (
-            DictStrAny,
-            str,
-            ListAny,
-            float,
-            int,
-            bool,
-        ):
-            self._structure_proto_fn.register_direct(
-                type_, self._structure_proto_google_struct_value
-            )
-        self._structure_proto_fn.register_predicate(
-            lambda v: attr.has(v), self._structure_proto_google_struct_value
+    # We need to register each of these types explicitly since user can have custom json_encoder
+    def _structure_proto_dataclass(self, obj: t.Any, _: str) -> struct_pb2.Value:
+        return self._structure_proto_google_struct_value(dataclasses.asdict(obj), _)
+
+    def _structure_proto_pydantic(
+        self, obj: pydantic.BaseModel, _: str
+    ) -> struct_pb2.Value:
+        return self._structure_proto_google_struct_value(obj.dict(), _)
+
+    def _structure_proto_attrs(self, obj: AttrsInstance, _: str) -> struct_pb2.Value:
+        return self._structure_proto_google_struct_value(
+            bentoml_cattr.unstructure(obj), _
         )
-        self._structure_proto_fn.register_iter_fns(
-            (
-                (
-                    lambda v: typ_.isinstance(v),
-                    self._structure_proto_google_struct_value,
-                )
-                for typ_ in (
-                    LazyType["ext.NpNDArray"]("numpy.ndarray"),
-                    LazyType["ext.PdDataFrame"]("pandas.DataFrame"),
-                    LazyType["ext.PdSeries"]("pandas.Series"),
-                    LazyType["pydantic.BaseModel"]("pydantic.BaseModel"),
-                )
-            )
+
+    def _structure_proto_ndarray(self, obj: ext.NpNDArray, _: str) -> struct_pb2.Value:
+        return self._structure_proto_google_struct_value(obj.tolist(), _)
+
+    def _structure_proto_dataframe(
+        self, obj: ext.PdDataFrame, _: str
+    ) -> struct_pb2.Value:
+        return self._structure_proto_google_struct_value(obj.to_json(), _)
+
+    def _structure_proto_series(self, obj: ext.PdSeries, _: str) -> struct_pb2.Value:
+        return self._structure_proto_google_struct_value(obj.to_json(), _)
+
+    def _register_structure_proto_fn(self) -> None:
+        self._structure_proto_fn.register_predicate(
+            lambda v: issubclass(v, (dict, str, list, float, int, bool)),
+            self._structure_proto_google_struct_value,
+        )
+        self._structure_proto_fn.register_predicate(
+            lambda v: attr.has(v), self._structure_proto_attrs
+        )
+        self._structure_proto_fn.register_predicate(
+            lambda v: dataclasses.is_dataclass(v), self._structure_proto_dataclass
+        )
+        self._structure_proto_fn.register_predicate(
+            lambda v: issubclass(
+                v, LazyType["pydantic.BaseModel"]("pydantic.BaseModel").get_class()
+            ),
+            self._structure_proto_pydantic,
+        )
+        self._structure_proto_fn.register_predicate(
+            lambda v: issubclass(v, np.ndarray), self._structure_proto_ndarray
+        )
+        self._structure_proto_fn.register_predicate(
+            lambda v: issubclass(v, pd.DataFrame), self._structure_proto_dataframe
+        )
+        self._structure_proto_fn.register_predicate(
+            lambda v: issubclass(v, pd.Series), self._structure_proto_series
+        )
+        self._structure_proto_fn.register_direct(
+            type(None), self._structure_proto_google_struct_value
         )

@@ -338,7 +338,7 @@ class PandasDataFrame(
         self._default_format = SerializationFormat[default_format.upper()]
 
         _validate_serialization_format(self._default_format)
-        self.mime_type = self._default_format.mime_type
+        self._mime_type = self._default_format.mime_type
 
     def preprocess_sample(self, sample: ext.PdDataFrame) -> ext.PdDataFrame:
         """
@@ -477,7 +477,7 @@ class PandasDataFrame(
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self.mime_type: MediaType(
+                self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -489,7 +489,7 @@ class PandasDataFrame(
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self.mime_type: MediaType(
+                self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -948,7 +948,7 @@ class PandasSeries(
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self.mime_type: MediaType(
+                self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -960,7 +960,7 @@ class PandasSeries(
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self.mime_type: MediaType(
+                self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -1000,14 +1000,16 @@ class PandasSeries(
         if ctx is not None:
             res = Response(
                 obj.to_json(orient=self._orient),
-                media_type=self.mime_type,
+                media_type=self._mime_type,
                 headers=ctx.response.headers,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(obj.to_json(orient=self._orient), media_type=self.mime_type)
+            return Response(
+                obj.to_json(orient=self._orient), media_type=self._mime_type
+            )
 
     def validate_series(
         self, series: ext.PdSeries, exception_cls: t.Type[Exception] = BadInput

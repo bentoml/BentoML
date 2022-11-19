@@ -185,7 +185,7 @@ class Image(
                 f"Invalid Image pilmode '{pilmode}'. Supported PIL modes are {', '.join(PIL.Image.MODES)}."
             ) from None
 
-        self.mime_type = mime_type.lower()
+        self._mime_type = mime_type.lower()
         self._allowed_mimes: set[str] = (
             READABLE_MIMES
             if allowed_mime_types is None
@@ -193,7 +193,7 @@ class Image(
         )
         self._allow_all_images = allowed_mime_types is None
 
-        if self.mime_type not in MIME_EXT_MAPPING:  # pragma: no cover
+        if self._mime_type not in MIME_EXT_MAPPING:  # pragma: no cover
             raise InvalidArgument(
                 f"Invalid Image mime_type '{mime_type}'; supported mime types are {', '.join(PIL.Image.MIME.values())} "
             )
@@ -210,7 +210,7 @@ class Image(
                 )
 
         self._pilmode: _Mode | None = pilmode
-        self._format: str = MIME_EXT_MAPPING[self.mime_type]
+        self._format: str = MIME_EXT_MAPPING[self._mime_type]
 
     def preprocess_sample(self, sample: ImageType | str) -> ImageType:
         """
@@ -267,7 +267,7 @@ class Image(
                     sample = PIL.Image.open(f)
             except PIL.UnidentifiedImageError as err:
                 raise BadInput(f"Failed to parse sample image file: {err}") from None
-        self.mime_type = img_type.mime
+        self._mime_type = img_type.mime
         return sample
 
     def to_spec(self) -> dict[str, t.Any]:
@@ -275,7 +275,7 @@ class Image(
             "id": self.descriptor_id,
             "args": {
                 "pilmode": self._pilmode,
-                "mime_type": self.mime_type,
+                "mime_type": self._mime_type,
                 "allowed_mime_types": list(self._allowed_mimes),
             },
         }
@@ -312,7 +312,7 @@ class Image(
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self.mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
@@ -410,7 +410,7 @@ class Image(
                 ctx.response.headers["content-disposition"] = content_disposition
             res = Response(
                 ret.getvalue(),
-                media_type=self.mime_type,
+                media_type=self._mime_type,
                 headers=ctx.response.headers,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
@@ -419,7 +419,7 @@ class Image(
         else:
             return Response(
                 ret.getvalue(),
-                media_type=self.mime_type,
+                media_type=self._mime_type,
                 headers={"content-disposition": content_disposition},
             )
 
@@ -445,9 +445,9 @@ class Image(
         return PIL.Image.open(io.BytesIO(field))
 
     def _unstructure_proto_file_v1(self, field: pb.File) -> ImageType:
-        if field.kind and field.kind != self.mime_type:
+        if field.kind and field.kind != self._mime_type:
             raise BadInput(
-                f"MIME type from 'kind' is '{field.kind}', while '{self!r}' is expecting '{self.mime_type}'",
+                f"MIME type from 'kind' is '{field.kind}', while '{self!r}' is expecting '{self._mime_type}'",
             )
         if not field.content:
             raise BadInput("Content is empty!") from None
@@ -461,9 +461,9 @@ class Image(
         if field.kind:
             try:
                 mime_type = mapping[field.kind]
-                if mime_type != self.mime_type:
+                if mime_type != self._mime_type:
                     raise BadInput(
-                        f"Inferred mime_type from 'kind' is '{mime_type}', while '{self!r}' is expecting '{self.mime_type}'",
+                        f"Inferred mime_type from 'kind' is '{mime_type}', while '{self!r}' is expecting '{self._mime_type}'",
                     )
             except KeyError:
                 raise BadInput(
@@ -478,10 +478,10 @@ class Image(
         from .file import mimetype_to_filetype_pb_map
 
         try:
-            kind = mimetype_to_filetype_pb_map()[self.mime_type]
+            kind = mimetype_to_filetype_pb_map()[self._mime_type]
         except KeyError:
             raise BadInput(
-                f"{self.mime_type} doesn't have a corresponding File 'kind'"
+                f"{self._mime_type} doesn't have a corresponding File 'kind'"
             ) from None
         return kind
 
@@ -492,7 +492,7 @@ class Image(
         ret = io.BytesIO()
         image.save(ret, format=self._format)
         if version == "v1":
-            return pb.File(kind=self.mime_type, content=ret.getvalue())
+            return pb.File(kind=self._mime_type, content=ret.getvalue())
         elif version == "v1alpha1":
             return pb_v1alpha1.File(
                 kind=self._determine_proto_kind(), content=ret.getvalue()
@@ -504,7 +504,7 @@ class Image(
         ret = io.BytesIO()
         obj.save(ret, format=self._format)
         if version == "v1":
-            return pb.File(kind=self.mime_type, content=ret.getvalue())
+            return pb.File(kind=self._mime_type, content=ret.getvalue())
         elif version == "v1alpha1":
             return pb_v1alpha1.File(
                 kind=self._determine_proto_kind(), content=ret.getvalue()

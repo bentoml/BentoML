@@ -8,8 +8,6 @@ from functools import lru_cache
 
 import attr
 
-from ..types import LazyType
-
 if t.TYPE_CHECKING:
 
     F = t.Callable[..., t.Any]
@@ -29,7 +27,7 @@ class FunctionDispatch:
     def register(self, handler: CanHandleF, func: F):
         self._dispatchers.insert(0, (handler, func))
 
-    def dispatch(self, type_: type[t.Any]) -> F:
+    def dispatch(self, type_: type[t.Any]) -> F | None:
         for handler, func in self._dispatchers:
             try:
                 can_handle = handler(type_)
@@ -38,38 +36,37 @@ class FunctionDispatch:
                 continue
             if can_handle:
                 return func
-        raise NotImplementedError(f"No handler for type {type_}")
+        return
 
     def __len__(self) -> int:
         return len(self._dispatchers)
 
 
-class MultiDispatch:
+class MultiStrategyDispatch:
     """
-    Dispatching based on the type of the input. Returns a tuple of (function, constructor)
+    Dispatching based on the type of the input. Current strategy includes direct and function dispatch.
     constructor by default is None.
     """
 
-    __slots__ = ("_function_dispatch", "_direct_dispatch", "dispatch")
+    __slots__ = ("_function_dispatch", "_direct_dispatch", "_fallback_fn", "dispatch")
 
     def __init__(self, fallback_fn: F):
-        self._direct_dispatch: dict[type[t.Any] | LazyType[t.Any], F] = {}
+        self._direct_dispatch: dict[type[t.Any], F] = {}
         self._function_dispatch = FunctionDispatch()
-        self._function_dispatch.register(lambda _: True, fallback_fn)
         self.dispatch = lru_cache(maxsize=None)(self._dispatch)
+        self._fallback_fn = fallback_fn
 
     def _dispatch(self, type_: type[t.Any]):
         direct_dispatch = self._direct_dispatch.get(type_)
         if direct_dispatch is not None:
             return direct_dispatch
-        # NOTE: We need to resolve lazy types import here for dispatching.
-        for ltype in filter(lambda x: isinstance(x, LazyType), self._direct_dispatch):
-            if issubclass(type_, ltype.get_class()):
-                return self._direct_dispatch[ltype]
 
-        return self._function_dispatch.dispatch(type_)
+        _ = self._function_dispatch.dispatch(type_)
+        return _ if _ is not None else self._fallback_fn
 
-    def register_direct(self, type_: type[t.Any] | LazyType[t.Any], func: F):
+    def register_direct(self, type_: type[t.Any], func: F):
+        # Note that if we want to register_direct, make sure to do it after
+        # register_predicate and register_iter_fns
         self._direct_dispatch[type_] = func
         self.dispatch.cache_clear()
 
@@ -84,6 +81,3 @@ class MultiDispatch:
             self._function_dispatch.register(handler, fn)
         self._direct_dispatch.clear()
         self.dispatch.cache_clear()
-
-    def __bool__(self) -> bool:
-        return len(self._function_dispatch) > 0 or len(self._direct_dispatch) > 0

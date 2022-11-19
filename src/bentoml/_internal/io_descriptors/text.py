@@ -94,7 +94,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
-    mime_type = MIME_TYPE
+    _mime_type = MIME_TYPE
 
     def __init__(self, *args: t.Any, **kwargs: t.Any):
         if args or kwargs:
@@ -130,7 +130,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self.mime_type: MediaType(
+                self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -142,7 +142,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self.mime_type: MediaType(
+                self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -157,14 +157,14 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
         if ctx is not None:
             res = Response(
                 obj,
-                media_type=self.mime_type,
+                media_type=self._mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
             )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(obj, media_type=self.mime_type)
+            return Response(obj, media_type=self._mime_type)
 
     def _register_unstructure_proto_fn(self):
         self._unstructure_proto_fn.register_iter_fns(

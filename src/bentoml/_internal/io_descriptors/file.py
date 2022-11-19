@@ -118,14 +118,16 @@ class File(
 
     """
 
-    def __new__(cls, kind: FileKind = "binaryio", mime_type: str | None = None) -> File:
+    def __new__(
+        cls, kind: FileKind = "binaryio", mime_type: str | None = None, **kwargs: t.Any
+    ) -> File:
         mime_type = mime_type if mime_type is not None else "application/octet-stream"
         if kind == "binaryio":
-            res = object.__new__(BytesIOFile)
+            res = super().__new__(BytesIOFile, **kwargs)
         else:
             raise ValueError(f"invalid File kind '{kind}'")
 
-        res.mime_type = mime_type
+        res._mime_type = mime_type
         return res
 
     if TYPE_CHECKING:
@@ -178,7 +180,7 @@ class File(
                     raise ValueError(f"could not guess MIME type of file {p}")
             except Exception as e:
                 raise BadInput(f"failed to guess MIME type of {p}: {e}")
-            self.mime_type = mime
+            self._mime_type = mime
             with open(p, "rb") as f:
                 sample = FileLike[bytes](f, "<sample>")
         return sample
@@ -203,7 +205,7 @@ class File(
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
-            "content": {self.mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
             "required": True,
             "x-bentoml-io-descriptor": self.to_spec(),
         }
@@ -211,7 +213,7 @@ class File(
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self.mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
@@ -251,7 +253,7 @@ class File(
     ) -> _message.Message:
         # Return kwargs for pb.File constructor
         if version == "v1":
-            return pb.File(kind=self.mime_type, content=obj)
+            return pb.File(kind=self._mime_type, content=obj)
         elif version == "v1alpha1":
             return pb_v1alpha1.File(kind=self._determine_proto_kind(), content=obj)
 
@@ -259,7 +261,7 @@ class File(
         self, obj: FileLike[bytes], version: StubVersion
     ) -> _message.Message:
         if version == "v1":
-            return pb.File(kind=self.mime_type, content=obj.read())
+            return pb.File(kind=self._mime_type, content=obj.read())
         elif version == "v1alpha1":
             return pb_v1alpha1.File(
                 kind=self._determine_proto_kind(), content=obj.read()
@@ -267,10 +269,10 @@ class File(
 
     def _determine_proto_kind(self) -> pb_v1alpha1.File.FileType.ValueType:
         try:
-            kind = mimetype_to_filetype_pb_map()[self.mime_type]
+            kind = mimetype_to_filetype_pb_map()[self._mime_type]
         except KeyError:
             raise BadInput(
-                f"{self.mime_type} doesn't have a corresponding File 'kind'"
+                f"{self._mime_type} doesn't have a corresponding File 'kind'"
             ) from None
         return kind
 
@@ -287,7 +289,7 @@ class BytesIOFile(File, descriptor_id=None):
             "id": super().descriptor_id,
             "args": {
                 "kind": "binaryio",
-                "mime_type": self.mime_type,
+                "mime_type": self._mime_type,
             },
         }
 
@@ -300,7 +302,7 @@ class BytesIOFile(File, descriptor_id=None):
             for val in form.values():  # type: ignore
                 if isinstance(val, UploadFile):
                     found_mimes.append(val.content_type)  # type: ignore (bad starlette types)
-                    if val.content_type == self.mime_type:  # type: ignore (bad starlette types)
+                    if val.content_type == self._mime_type:  # type: ignore (bad starlette types)
                         res = FileLike[bytes](val.file, val.filename)  # type: ignore (bad starlette types)
                         break
             else:
@@ -308,23 +310,23 @@ class BytesIOFile(File, descriptor_id=None):
                     raise BentoMLException("no File found in multipart form")
                 else:
                     raise BentoMLException(
-                        f"multipart File should have Content-Type '{self.mime_type}', got files with content types {', '.join(found_mimes)}"
+                        f"multipart File should have Content-Type '{self._mime_type}', got files with content types {', '.join(found_mimes)}"
                     )
             return res  # type: ignore
-        if content_type.decode("utf-8") == self.mime_type:
+        if content_type.decode("utf-8") == self._mime_type:
             body = await request.body()
             return FileLike[bytes](io.BytesIO(body), "<request body>")
         raise BentoMLException(
-            f"File should have Content-Type '{self.mime_type}' or 'multipart/form-data', got {content_type} instead"
+            f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
         )
 
     def _unstructure_proto_bytes(self, field: bytes) -> FileLike[bytes]:
         return FileLike[bytes](io.BytesIO(field), "<content>")
 
     def _unstructure_proto_file_v1(self, field: pb.File) -> FileLike[bytes]:
-        if field.kind and field.kind != self.mime_type:
+        if field.kind and field.kind != self._mime_type:
             raise BadInput(
-                f"MIME type from 'kind' is '{field.kind}', while '{self!r}' is expecting '{self.mime_type}'",
+                f"MIME type from 'kind' is '{field.kind}', while '{self!r}' is expecting '{self._mime_type}'",
             )
         content = field.content
         if not content:
@@ -339,9 +341,9 @@ class BytesIOFile(File, descriptor_id=None):
         if field.kind:
             try:
                 mime_type = mapping[field.kind]
-                if mime_type != self.mime_type:
+                if mime_type != self._mime_type:
                     raise BadInput(
-                        f"Inferred mime_type from 'kind' is '{mime_type}', while '{self!r}' is expecting '{self.mime_type}'",
+                        f"Inferred mime_type from 'kind' is '{mime_type}', while '{self!r}' is expecting '{self._mime_type}'",
                     )
             except KeyError:
                 raise BadInput(

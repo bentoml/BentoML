@@ -170,7 +170,7 @@ class Multipart(
         :obj:`Multipart`: IO Descriptor that represents a Multipart request/response.
     """
 
-    mime_type = "multipart/form-data"
+    _mime_type = "multipart/form-data"
 
     def __init__(self, **inputs: IODescriptor[t.Any]):
         if any(isinstance(descriptor, Multipart) for descriptor in inputs.values()):
@@ -234,7 +234,7 @@ class Multipart(
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                self.mime_type: MediaType(
+                self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },
@@ -246,7 +246,7 @@ class Multipart(
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self.mime_type: MediaType(
+                self._mime_type: MediaType(
                     schema=self.openapi_schema(), example=self.openapi_example()
                 )
             },

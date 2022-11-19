@@ -6,8 +6,8 @@ Metrics are measurements of statistics about your service, which can provide inf
 
 BentoML allows users to define custom metrics with `Prometheus <https://prometheus.io/docs/introduction/overview/>`_ to easily enable monitoring for their Bentos.
  
-This article will dive into how to add custom metrics to monitor your BentoService and how you can incorporate custom metrics into 
-either a :ref:`concepts/runner:Custom Runner` or your :ref:`Service <concepts/service:Service and APIs>`.
+This article will dive into the default metrics and how to add custom metrics for
+either a :ref:`concepts/runner:Custom Runner` or :ref:`Service <concepts/service:Service and APIs>`.
 
 Having a `Prometheus server <https://prometheus.io/docs/prometheus/latest/getting_started/>`_ available will help visualize the examples in this guide.
 
@@ -21,8 +21,103 @@ Having a `Prometheus server <https://prometheus.io/docs/prometheus/latest/gettin
    All `metrics types <https://prometheus.io/docs/concepts/metric_types/>`_ supported by Prometheus are supported in BentoML. See :ref:`reference/metrics:Metrics API` for more information on ``bentoml.metrics``.
 
 
-Using Metrics in a BentoService
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Default Metrics
+~~~~~~~~~~~~~~~
+
+BentoML automatically collects the following metrics for all API Server and Runners by default across the following dimensions.
+
+.. list-table:: Default Metrics
+   :header-rows: 1
+
+   * - Description
+     - Metric Name
+     - Metric Type
+     - Dimensions
+   * - API Server request in progress
+     - ``bentoml_api_server_request_in_progress``
+     - Gauge
+     - ``endpoint``, ``service_name``, ``service_version``
+   * - Runner request in progress
+     - ``bentoml_runner_request_in_progress``
+     - Gauge
+     - ``endpoint``, ``runner_name``, ``service_name``, ``service_version``
+   * - API Server request total
+     - ``bentoml_api_server_request_total``
+     - Counter
+     - ``endpoint``, ``service_name``, ``service_version``, ``http_response_code``
+   * - Runner request total
+     - ``bentoml_runner_request_total``
+     - Counter
+     - ``endpoint``, ``service_name``, ``runner_name``, ``service_version``, ``http_response_code``
+   * - API Server request duration in seconds
+     - ``bentoml_api_server_request_duration_seconds_sum``, ``bentoml_api_server_request_duration_seconds_count``, ``bentoml_api_server_request_duration_seconds_bucket``
+     - Histogram
+     - ``endpoint``, ``service_name``, ``service_version``, ``http_response_code``
+   * - Runner request duration in seconds
+     - ``bentoml_api_server_request_duration_seconds_sum``, ``bentoml_api_server_request_duration_seconds_count``, ``bentoml_api_server_request_duration_seconds_bucket``
+     - Histogram
+     - ``endpoint``, ``service_name``, ``runner_name``, ``service_version``, ``http_response_code``
+   * - Runner adaptive batch size
+     - ``bentoml_runner_request_duration_seconds_sum``, ``bentoml_runner_request_duration_seconds_count``, ``bentoml_runner_request_duration_seconds_bucket``
+     - Histogram
+     - ``method_name``, ``service_name``, ``runner_name``, ``http_response_code``
+
+Request In-Progress
+^^^^^^^^^^^^^^^^^^^
+
+Measures the number of requests currently being processed by the API Server or Runner.
+
+Request Total
+^^^^^^^^^^^^^
+
+Measures the total number of requests processed by the API Server or Runner. The following PromQL expression returns the average request count
+per-second over the last 1 minute for the ``/classify`` endpoint on the ``iris_classifier`` service.
+
+.. code-block:: text
+
+   rate(bentoml_api_server_request_total{service_name="iris_classifier", endpoint="/classify"}[1m])
+
+Request Duration
+^^^^^^^^^^^^^^^^
+
+Measures the durations of requests processed by the API Server or Runner. The accuracy of the histogram depends on the range and
+granularity of histogram buckets. By default, The Prometheus default buckets covering from 0.005s to 10s range are used. The following
+configuration can be used to update the buckets configuration for request duration. The configuration keys ``min`` and ``max`` indicates
+the range of expected latecy duration to be tracked. The configuration key ``factor`` indicates granularity of the buckets and is used as
+the exponential factor to generate the buckets. For example, the configuration below will generate the following buckets
+``(0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 5.0, inf)``. See :ref:`configuration <guides/configuration:Configuration>` guide for more information on
+how to configure BentoML.
+
+.. code-block:: yaml
+   :caption: ⚙️ `configuration.yml`
+
+   api_server:
+     metrics:
+       duration:
+         min: 0.1
+         max: 5.0
+         factor: 2.0
+
+The following PromQL expression returns the 99th percentile of the request duration over the last 1 minute for the ``/classify`` endpoint
+on the ``iris_classifier`` service.
+
+.. code-block:: text
+
+   histogram_quantile(0.99, rate(bentoml_api_server_request_duration_seconds_bucket{service_name="iris_classifier", endpoint="/classify"}[1m]))
+
+Adaptive Batch size
+^^^^^^^^^^^^^^^^^^^
+
+Measures the batch size used by the :ref:`adaptive batching <guides/batching:Adaptive Batching>` feature in the :ref:`concepts/runner:Custom Runner`.
+The following PromQL expression returns the 75th percentile of the batch size over the last 1 minute for the ``iris_classifier`` service.
+
+.. code-block:: text
+
+   histogram_quantile(0.99, rate(bentoml_runner_adaptive_batch_size_bucket{service_name="iris_classifier"}[1m]))
+
+
+Custom Metrics
+~~~~~~~~~~~~~~
 
 We will build a custom histogram to track the latency of our :ref:`pretrained NLTK runner <concepts/runner:Custom Runner>`, a custom
 counter to measure the total amount of time our endpoint is invoked.

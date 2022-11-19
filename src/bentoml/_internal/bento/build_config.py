@@ -219,7 +219,7 @@ class DockerOptions:
         dockerfile_path = fs.path.combine(docker_folder, "Dockerfile")
 
         # NOTE that by default the generated Dockerfile won't have BuildKit syntax.
-        # By default, BentoML will use BuildKit. To opt-out specify DOCKER_BUILDKIT=0
+        # By default, BentoML containerization will use BuildKit. To opt-out specify DOCKER_BUILDKIT=0
         bento_fs.writetext(
             dockerfile_path,
             generate_containerfile(

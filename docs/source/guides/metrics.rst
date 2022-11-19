@@ -81,9 +81,9 @@ Request Duration
 ^^^^^^^^^^^^^^^^
 
 Measures the durations of requests processed by the API Server or Runner. The accuracy of the histogram depends on the range and
-granularity of histogram buckets. The default Prometheus buckets covering the range from 0.005s to 10s are used. To override, the following
+granularity of the histogram buckets. By default, the Prometheus buckets covering the range from 0.005s to 10s are used. The following
 configuration can be used to update the buckets configuration for the request duration metric. The configuration keys ``min`` and ``max`` indicates
-the expected range of request duration to be tracked. The configuration key ``factor`` controls granularity of the buckets and is used as
+the expected range of request duration to be tracked. The configuration key ``factor`` controls the granularity of the buckets and is used as
 the exponential factor to generate the buckets. For example, the configuration below will generate the following buckets
 ``(0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 5.0, inf)``. See the :ref:`configuration <guides/configuration:Configuration>` guide for more information on
 how to configure BentoML.
@@ -103,7 +103,7 @@ on the ``iris_classifier`` service.
 
 .. code-block:: text
 
-   histogram_quantile(0.75, rate(bentoml_api_server_request_duration_seconds_bucket{service_name="iris_classifier", endpoint="/classify"}[1m]))
+   histogram_quantile(0.99, rate(bentoml_api_server_request_duration_seconds_bucket{service_name="iris_classifier", endpoint="/classify"}[1m]))
 
 Adaptive Batch Size
 ^^^^^^^^^^^^^^^^^^^
@@ -113,7 +113,7 @@ The following PromQL expression returns the 75th percentile of the batch size ov
 
 .. code-block:: text
 
-   histogram_quantile(0.99, rate(bentoml_runner_adaptive_batch_size_bucket{service_name="iris_classifier"}[1m]))
+   histogram_quantile(0.75, rate(bentoml_runner_adaptive_batch_size_bucket{service_name="iris_classifier"}[1m]))
 
 
 Custom Metrics

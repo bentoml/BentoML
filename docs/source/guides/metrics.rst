@@ -26,7 +26,7 @@ Default Metrics
 
 BentoML automatically collects the following metrics for all API Server and Runners by default across the following dimensions.
 
-.. list-table:: Default Metrics
+.. list-table::
    :header-rows: 1
 
    * - Description

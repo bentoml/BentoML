@@ -218,9 +218,13 @@ class DockerOptions:
         bento_fs.makedirs(docker_folder, recreate=True)
         dockerfile_path = fs.path.combine(docker_folder, "Dockerfile")
 
+        # NOTE that by default the generated Dockerfile won't have BuildKit syntax.
+        # By default, BentoML containerization will use BuildKit. To opt-out specify DOCKER_BUILDKIT=0
         bento_fs.writetext(
             dockerfile_path,
-            generate_containerfile(self, build_ctx, conda=conda, bento_fs=bento_fs),
+            generate_containerfile(
+                self, build_ctx, conda=conda, bento_fs=bento_fs, enable_buildkit=False
+            ),
         )
         copy_file_to_fs_folder(
             fs.path.join(

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     import PIL.Image
     from typing_extensions import Self
 
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
+    from bentoml.grpc.v1 import service_pb2 as pb
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
@@ -388,25 +388,14 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
             )
 
     async def from_proto(self, field: pb.File | bytes) -> ImageType:
-        from bentoml.grpc.utils import filetype_pb_to_mimetype_map
-
-        mapping = filetype_pb_to_mimetype_map()
-        # check if the request message has the correct field
         if isinstance(field, bytes):
             content = field
         else:
             assert isinstance(field, pb.File)
-            if field.kind:
-                try:
-                    mime_type = mapping[field.kind]
-                    if mime_type != self._mime_type:
-                        raise BadInput(
-                            f"Inferred mime_type from 'kind' is '{mime_type}', while '{self!r}' is expecting '{self._mime_type}'",
-                        )
-                except KeyError:
-                    raise BadInput(
-                        f"{field.kind} is not a valid File kind. Accepted file kind: {[names for names,_ in pb.File.FileType.items()]}",
-                    ) from None
+            if field.kind and field.kind != self._mime_type:
+                raise BadInput(
+                    f"MIME type from 'kind' is '{field.kind}', while '{self!r}' is expecting '{self._mime_type}'",
+                )
             content = field.content
             if not content:
                 raise BadInput("Content is empty!") from None
@@ -414,8 +403,6 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         return PIL.Image.open(io.BytesIO(content))
 
     async def to_proto(self, obj: ImageType) -> pb.File:
-        from bentoml.grpc.utils import mimetype_to_filetype_pb_map
-
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)
         elif LazyType["PIL.Image.Image"]("PIL.Image.Image").isinstance(obj):
@@ -427,11 +414,4 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         ret = io.BytesIO()
         image.save(ret, format=self._format)
 
-        try:
-            kind = mimetype_to_filetype_pb_map()[self._mime_type]
-        except KeyError:
-            raise BadInput(
-                f"{self._mime_type} doesn't have a corresponding File 'kind'",
-            ) from None
-
-        return pb.File(kind=kind, content=ret.getvalue())
+        return pb.File(kind=self._mime_type, content=ret.getvalue())

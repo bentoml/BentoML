@@ -9,6 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from tests.proto import service_test_pb2 as pb_test
+from tests.proto import service_test_pb2_grpc as services_test
 from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
@@ -16,6 +18,7 @@ from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import create_bento_servicer
 from bentoml.testing.grpc import make_standalone_server
 from bentoml._internal.utils import LazyLoader
+from tests.unit.grpc.conftest import TestServiceServicer
 from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
 from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -24,12 +27,10 @@ if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
     from bentoml import Service
-    from bentoml.grpc.v1alpha1 import service_pb2_grpc as services
-    from bentoml.grpc.v1alpha1 import service_test_pb2 as pb_test
+    from bentoml.grpc.v1 import service_pb2_grpc as services
 else:
 
     _, services = import_generated_stubs()
-    pb_test, _ = import_generated_stubs(file="service_test.proto")
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
     grpc, aio = import_grpc()
 
@@ -70,10 +71,13 @@ async def test_empty_metrics():
         host_url,
     ):
         try:
+            services_test.add_TestServiceServicer_to_server(
+                TestServiceServicer(), server
+            )
             await server.start()
             async with create_channel(host_url) as channel:
                 Execute = channel.unary_unary(
-                    "/bentoml.testing.v1alpha1.TestService/Execute",
+                    "/tests.proto.TestService/Execute",
                     request_serializer=pb_test.ExecuteRequest.SerializeToString,
                     response_deserializer=pb_test.ExecuteResponse.FromString,
                 )

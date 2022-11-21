@@ -1,8 +1,8 @@
 package com.client
 
-import com.bentoml.grpc.v1alpha1.BentoServiceGrpc
-import com.bentoml.grpc.v1alpha1.NDArray
-import com.bentoml.grpc.v1alpha1.Request
+import com.bentoml.grpc.v1.BentoServiceGrpc
+import com.bentoml.grpc.v1.NDArray
+import com.bentoml.grpc.v1.Request
 import io.grpc.ManagedChannelBuilder
 
 class BentoServiceClient {

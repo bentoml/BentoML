@@ -11,13 +11,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.bentoml.grpc.v1alpha1.BentoServiceGrpc;
-import com.bentoml.grpc.v1alpha1.BentoServiceGrpc.BentoServiceBlockingStub;
-import com.bentoml.grpc.v1alpha1.BentoServiceGrpc.BentoServiceStub;
-import com.bentoml.grpc.v1alpha1.NDArray;
-import com.bentoml.grpc.v1alpha1.Request;
-import com.bentoml.grpc.v1alpha1.RequestOrBuilder;
-import com.bentoml.grpc.v1alpha1.Response;
+import com.bentoml.grpc.v1.BentoServiceGrpc;
+import com.bentoml.grpc.v1.BentoServiceGrpc.BentoServiceBlockingStub;
+import com.bentoml.grpc.v1.BentoServiceGrpc.BentoServiceStub;
+import com.bentoml.grpc.v1.NDArray;
+import com.bentoml.grpc.v1.Request;
+import com.bentoml.grpc.v1.RequestOrBuilder;
+import com.bentoml.grpc.v1.Response;
 
 public class BentoServiceClient {
 

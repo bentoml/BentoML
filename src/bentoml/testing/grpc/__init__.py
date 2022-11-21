@@ -15,8 +15,6 @@ from bentoml._internal.utils import cached_contextmanager
 from bentoml._internal.utils import add_experimental_docstring
 from bentoml._internal.server.grpc.servicer import create_bento_servicer
 
-from .servicer import TestServiceServicer
-
 if TYPE_CHECKING:
     import grpc
     import numpy as np
@@ -25,11 +23,9 @@ if TYPE_CHECKING:
     from grpc.aio._channel import Channel
     from google.protobuf.message import Message
 
-    from bentoml.grpc.v1alpha1 import service_pb2 as pb
-    from bentoml.grpc.v1alpha1 import service_test_pb2_grpc as services_test
+    from bentoml.grpc.v1 import service_pb2 as pb
 else:
     pb, _ = import_generated_stubs()
-    _, services_test = import_generated_stubs(file="service_test.proto")
     grpc, aio = import_grpc()  # pylint: disable=E1111
     np = LazyLoader("np", globals(), "numpy")
 
@@ -39,7 +35,6 @@ __all__ = [
     "make_pb_ndarray",
     "create_channel",
     "make_standalone_server",
-    "TestServiceServicer",
     "create_bento_servicer",
 ]
 
@@ -81,6 +76,7 @@ async def async_client_call(
     assert_code: grpc.StatusCode | None = None,
     assert_details: str | None = None,
     assert_trailing_metadata: aio.Metadata | None = None,
+    _internal_stubs_version: str = "v1",
 ) -> pb.Response | None:
     """
     Invoke a given API method via a client.
@@ -103,7 +99,7 @@ async def async_client_call(
     res: pb.Response | None = None
     try:
         Call = channel.unary_unary(
-            "/bentoml.grpc.v1alpha1.BentoService/Call",
+            f"/bentoml.grpc.{_internal_stubs_version}.BentoService/Call",
             request_serializer=pb.Request.SerializeToString,
             response_deserializer=pb.Response.FromString,
         )
@@ -222,7 +218,6 @@ def make_standalone_server(
         interceptors=interceptors,
         options=(("grpc.so_reuseport", 1),),
     )
-    services_test.add_TestServiceServicer_to_server(TestServiceServicer(), server)  # type: ignore (no async types) # pylint: disable=E0601
     server.add_insecure_port(f"{host}:{port}")
     print("Using port %d..." % port)
     try:

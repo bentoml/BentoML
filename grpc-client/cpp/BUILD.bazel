@@ -1,8 +1,23 @@
 load("@rules_proto_grpc//cpp:defs.bzl", "cc_grpc_library")
 
 cc_grpc_library(
-    name = "service_grpc",
+    name = "service_grpc_v1alpha1",
     protos = ["//:service_v1alpha1_proto"],
+    well_known_protos = True,
+)
+
+cc_binary(
+    name = "client_v1alpha1",
+    srcs = ["client.cc"],
+    deps = [
+        ":service_grpc_v1alpha1",
+        "@com_github_grpc_grpc//:grpc++",
+    ],
+)
+
+cc_grpc_library(
+    name = "service_grpc",
+    protos = ["//:service_v1_proto"],
     well_known_protos = True,
 )
 

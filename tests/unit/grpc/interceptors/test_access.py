@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from tests.proto import service_test_pb2 as pb_test
+from tests.proto import service_test_pb2_grpc as services_test
 from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import wrap_rpc_handler
 from bentoml.grpc.utils import import_generated_stubs
@@ -16,6 +18,7 @@ from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import create_bento_servicer
 from bentoml.testing.grpc import make_standalone_server
 from bentoml._internal.utils import LazyLoader
+from tests.unit.grpc.conftest import TestServiceServicer
 from bentoml.grpc.interceptors.access import AccessLogServerInterceptor
 from bentoml.grpc.interceptors.opentelemetry import AsyncOpenTelemetryServerInterceptor
 
@@ -26,18 +29,15 @@ if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
     from bentoml import Service
+    from bentoml.grpc.v1 import service_pb2_grpc as services
     from bentoml.grpc.types import Request
     from bentoml.grpc.types import Response
     from bentoml.grpc.types import RpcMethodHandler
     from bentoml.grpc.types import AsyncHandlerMethod
     from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.v1alpha1 import service_pb2_grpc as services
-    from bentoml.grpc.v1alpha1 import service_test_pb2 as pb_test
-    from bentoml.grpc.v1alpha1 import service_test_pb2_grpc as services_test
 else:
     _, services = import_generated_stubs()
-    pb_test, services_test = import_generated_stubs(file="service_test.proto")
     grpc, aio = import_grpc()
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
 
@@ -80,13 +80,16 @@ async def test_success_logs(caplog: LogCaptureFixture):
         ]
     ) as (server, host_url):
         try:
+            services_test.add_TestServiceServicer_to_server(
+                TestServiceServicer(), server
+            )
             await server.start()
             with caplog.at_level(logging.INFO, "bentoml.access"):
                 async with create_channel(host_url) as channel:
                     stub = services_test.TestServiceStub(channel)
                     await stub.Execute(pb_test.ExecuteRequest(input="BentoML"))
             assert (
-                "(scheme=http,path=/bentoml.testing.v1alpha1.TestService/Execute,type=application/grpc,size=9) (http_status=200,grpc_status=0,type=application/grpc,size=17)"
+                "(scheme=http,path=/tests.proto.TestService/Execute,type=application/grpc,size=9) (http_status=200,grpc_status=0,type=application/grpc,size=17)"
                 in caplog.text
             )
 
@@ -107,6 +110,9 @@ async def test_trailing_metadata(caplog: LogCaptureFixture):
         ]
     ) as (server, host_url):
         try:
+            services_test.add_TestServiceServicer_to_server(
+                TestServiceServicer(), server
+            )
             await server.start()
             with caplog.at_level(logging.INFO, "bentoml.access"):
                 async with create_channel(host_url) as channel:
@@ -142,7 +148,7 @@ async def test_access_log_exception(caplog: LogCaptureFixture, simple_service: S
                         assert_code=grpc.StatusCode.INTERNAL,
                     )
             assert (
-                "(scheme=http,path=/bentoml.grpc.v1alpha1.BentoService/Call,type=application/grpc,size=17) (http_status=500,grpc_status=13,type=application/grpc,size=0)"
+                "(scheme=http,path=/bentoml.grpc.v1.BentoService/Call,type=application/grpc,size=17) (http_status=500,grpc_status=13,type=application/grpc,size=0)"
                 in caplog.text
             )
         finally:

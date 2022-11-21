@@ -1,0 +1,16 @@
+{% extends "base.j2" %}
+{% block SETUP_BENTO_BASE_IMAGE %}
+{{ super() }}
+
+# Install helpers
+{% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/apk") }} {% endcall -%} set -eux && \
+    apk add --update bash gcc libc-dev shadow musl-dev build-base linux-headers g++
+
+ENV ENV /root/.bashrc
+
+{% if __options__system_packages is not none %}
+# Install user-defined system package
+{% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/apk") }} {% endcall -%} set -eux \
+    apk add --update {{ __options__system_packages | join(' ') }}
+{% endif -%}
+{% endblock %}

@@ -122,13 +122,7 @@ def log_grpcui_instruction(port: int) -> None:
         platform_deps="host.docker.internal", network_args="-p 8080:8080"
     )
 
-    if os.path.exists("/.dockerenv"):
-        logger.info(
-            "Detected running Bento inside an OCI container. In order to use gRPC UI, do as follows: If your local machine are either MacOS or Windows , then use '%s'. Otherwise use '%s'.",
-            mac_win_instruction,
-            linux_instruction,
-        )
-    elif psutil.WINDOWS or psutil.MACOS:
+    if psutil.WINDOWS or psutil.MACOS:
         logger.info(message, mac_win_instruction)
     elif psutil.LINUX:
         logger.info(message, linux_instruction)

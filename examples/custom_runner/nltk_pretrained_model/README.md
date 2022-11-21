@@ -74,7 +74,7 @@ curl -X POST -H "content-type: application/text" --data "BentoML is great" http:
 <td>
 
 ```bash
-grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1alpha1.BentoService/Call <<EOM
+grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1.BentoService/Call <<EOM
 {
   "apiName": "classify",
   "text": "BentoML is great"

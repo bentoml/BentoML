@@ -280,7 +280,7 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
                 self.sample
             ):
                 return self.sample.dict()
-            elif isinstance(self.sample, str):
+            elif isinstance(self.sample, (str, list)):
                 return json.dumps(
                     self.sample,
                     cls=self._json_encoder,

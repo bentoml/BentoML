@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 BENTOML_DEV_BUILD = "BENTOML_BUNDLE_LOCAL_BUILD"
 
 
-def build_bentoml_editable_wheel(target_path: str) -> None:
+def build_bentoml_editable_wheel(
+    target_path: str, *, _internal_stubs_version: str = "v1"
+) -> None:
     """
     This is for BentoML developers to create Bentos that contains the local bentoml
     build based on their development branch. To enable this behavior, one must
@@ -49,9 +51,11 @@ def build_bentoml_editable_wheel(target_path: str) -> None:
         raise BentoMLException("Could not find bentoml module location.")
     bentoml_path = Path(module_location)
 
-    if not Path(module_location, "grpc", "v1alpha1", "service_pb2.py").exists():
+    if not Path(
+        module_location, "grpc", _internal_stubs_version, "service_pb2.py"
+    ).exists():
         raise ModuleNotFoundError(
-            f"Generated stubs are not found. Make sure to run '{bentoml_path.as_posix()}/scripts/generate_grpc_stubs.sh' beforehand to generate gRPC stubs."
+            f"Generated stubs for version {_internal_stubs_version} are missing. Make sure to run '{bentoml_path.as_posix()}/scripts/generate_grpc_stubs.sh {_internal_stubs_version}' beforehand to generate gRPC stubs."
         ) from None
 
     # location to pyproject.toml

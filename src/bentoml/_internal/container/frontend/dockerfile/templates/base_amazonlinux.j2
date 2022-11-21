@@ -5,10 +5,8 @@
 
 USER root
 
-SHELL [ "/bin/bash", "-eo", "pipefail", "-c" ]
-
 # Install helpers
-RUN {{ common.mount_cache("/var/cache/yum") }} set -euxo pipefail && \
+{% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/yum") }} {% endcall -%} set -eux && \
     yum upgrade -y && \
     yum install -y amazon-linux-extras curl ca-certificates gcc gcc-c++ make bash shadow-utils && \
     {% if __options__python_version == "3.7" %}
@@ -23,7 +21,7 @@ RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
     python{{ __options__python_version }} get-pip.py
 {% if __options__system_packages is not none %}
 # Install user-defined system package
-RUN {{ common.mount_cache("/var/cache/yum") }} \ 
+{% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/yum") }} {% endcall -%} set -eux && \
     yum install -y {{ __options__system_packages | join(' ') }}
 {% endif -%}
 RUN ln -sf /usr/bin/python{{ __options__python_version }} /usr/bin/python3 && \

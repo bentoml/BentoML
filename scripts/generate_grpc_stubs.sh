@@ -6,14 +6,14 @@ STUBS_GENERATOR="bentoml/stubs-generator"
 cd "$GIT_ROOT/src" || exit 1
 
 main() {
-	local VERSION="${1:-v1alpha1}"
+	local VERSION="${1:-v1}"
 	# Use inline heredoc for even faster build
 	# Keeping image as cache should be fine since we only want to generate the stubs.
 	if [[ $(docker images --filter=reference="$STUBS_GENERATOR" -q) == "" ]] || test "$(git diff --name-only --diff-filter=d -- "$0")"; then
 		docker buildx build --platform=linux/amd64 -t "$STUBS_GENERATOR" --load -f- . <<EOF
 # syntax=docker/dockerfile:1.4-labs
 
-FROM --platform=linux/amd64 python:3-slim-bullseye
+FROM --platform=linux/amd64 python:3.10-slim
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -40,10 +40,13 @@ EOF
 
 	echo "Generating gRPC stubs..."
 	find "bentoml/grpc/$VERSION" -type f -name "*.proto" -exec docker run --rm -it -v "$GIT_ROOT/src":/workspace --platform=linux/amd64 "$STUBS_GENERATOR" python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. "{}" \;
+	pushd "$GIT_ROOT" &>/dev/null
+	find "tests/proto" -type f -name "*.proto" -exec docker run --rm -it -v "$GIT_ROOT":/workspace --platform=linux/amd64 "$STUBS_GENERATOR" python -m grpc_tools.protoc -I. --grpc_python_out=. --python_out=. --mypy_out=. --mypy_grpc_out=. "{}" \;
+	popd &>/dev/null
 }
 
 if [ "${#}" -gt 1 ]; then
-	echo "$0 takes one optional argument. Usage: $0 [v1alpha2]"
+	echo "$0 takes one optional argument. Usage: $0 [v1]"
 	exit 1
 fi
 main "$@"

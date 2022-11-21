@@ -41,20 +41,24 @@ logger = logging.getLogger("bentoml")
 
 
 def kwargs_transformers(
-    _func: F[t.Any] | None = None,
+    f: F[t.Any] | None = None,
     *,
     transformer: F[t.Any],
+    pass_click_context: bool = False,
 ) -> F[t.Any]:
-    def decorator(func: F[t.Any]) -> t.Callable[P, t.Any]:
-        @functools.wraps(func)
+    def decorator(_f: F[t.Any]) -> t.Callable[P, t.Any]:
+        @functools.wraps(_f)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
-            return func(*args, **{k: transformer(v) for k, v in kwargs.items()})
+            transformed = {k: transformer(v) for k, v in kwargs.items()}
+            if pass_click_context:
+                return _f(click.get_current_context(), *args, **transformed)
+            return _f(*args, **transformed)
 
         return wrapper
 
-    if _func is None:
+    if f is None:
         return decorator
-    return decorator(_func)
+    return decorator(f)
 
 
 def _validate_docker_tag(tag: str) -> str:
@@ -95,7 +99,7 @@ def _validate_docker_tag(tag: str) -> str:
     return tag
 
 
-def validate_docker_tag(
+def validate_container_tag(
     ctx: Context, param: Parameter, tag: str | tuple[str] | None
 ) -> str | tuple[str] | None:
     from bentoml.exceptions import BentoMLException

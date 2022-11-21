@@ -37,16 +37,16 @@ defer {
 }
 
 // Provide the connection to the generated client.
-let stubs = Bentoml_Grpc_V1alpha1_BentoServiceNIOClient(channel: channel)
+let stubs = Bentoml_Grpc_v1_BentoServiceNIOClient(channel: channel)
 
 // Form the request with the NDArray, if one was provided.
-let ndarray: Bentoml_Grpc_V1alpha1_NDArray = .with {
+let ndarray: Bentoml_Grpc_v1_NDArray = .with {
   $0.shape = shape
   $0.floatValues = data
-  $0.dtype = Bentoml_Grpc_V1alpha1_NDArray.DType.float
+  $0.dtype = Bentoml_Grpc_v1_NDArray.DType.float
 }
 
-let request: Bentoml_Grpc_V1alpha1_Request = .with {
+let request: Bentoml_Grpc_v1_Request = .with {
   $0.apiName = apiName
   $0.ndarray = ndarray
 }

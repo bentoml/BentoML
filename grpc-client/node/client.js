@@ -1,7 +1,7 @@
 "use strict";
 const grpc = require("@grpc/grpc-js");
-const pb = require("./bentoml/grpc/v1alpha1/service_pb");
-const services = require("./bentoml/grpc/v1alpha1/service_grpc_pb");
+const pb = require("./bentoml/grpc/v1/service_pb");
+const services = require("./bentoml/grpc/v1/service_grpc_pb");
 
 function main() {
   const target = "localhost:3000";

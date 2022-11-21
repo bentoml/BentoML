@@ -31,6 +31,7 @@ dependencies = [
   "cattrs>=22.1.0",
   "circus>=0.17.0,!=0.17.2",
   "click>=7.0",
+  "click-option-group",
   "cloudpickle",
   "deepmerge",
   "fs",
@@ -38,13 +39,14 @@ dependencies = [
   # OpenTelemetry is the server dependencies, rather than SDK
   # Since there are discrepancies among API and instrumentation packages,
   # we should always pin the set version of Opentelemetry suite
-  "opentelemetry-api==1.13.0",
-  "opentelemetry-instrumentation==0.34b0",
-  "opentelemetry-instrumentation-aiohttp-client==0.34b0",
-  "opentelemetry-instrumentation-asgi==0.34b0",
-  "opentelemetry-sdk==1.13.0",
-  "opentelemetry-semantic-conventions==0.34b0",
-  "opentelemetry-util-http==0.34b0",
+  "opentelemetry-api==1.14.0",
+  "opentelemetry-sdk==1.14.0",
+  "opentelemetry-exporter-otlp-proto-http==1.14.0",
+  "opentelemetry-instrumentation==0.35b0",
+  "opentelemetry-instrumentation-aiohttp-client==0.35b0",
+  "opentelemetry-instrumentation-asgi==0.35b0",
+  "opentelemetry-semantic-conventions==0.35b0",
+  "opentelemetry-util-http==0.35b0",
   "packaging>=20.0",
   "pathspec",
   "pip-tools>=6.6.2",
@@ -65,6 +67,7 @@ dependencies = [
   "backports.cached-property;python_version<'3.8'",
   "backports.shutil_copytree;python_version<'3.8'",
   "importlib-metadata;python_version<'3.8'",
+  "singledispatchmethod;python_version<'3.8'",
 ]
 dynamic = ["version"]
 
@@ -135,17 +138,15 @@ grpc = [
   # 3.19.5 is currently breaking on a lot of system.
   "protobuf>=3.5.0, <3.20, !=3.19.5",
   # Lowest version that support 3.10. We need to set an upper bound
-  # since grpcio >=1.49.0 uses protbuf >=3.20.0, which breaks compatibility.
   # We can't use 1.48.2 since it depends on 3.19.5
-  "grpcio>=1.41.0, <1.49, !=1.48.2",
-  "grpcio-health-checking>=1.41.0, <1.49, !=1.48.2",
-  "opentelemetry-instrumentation-grpc==0.34b0",
+  "grpcio>=1.41.0,!=1.48.2",
+  # grpcio>=1.48.0 provides a pre-built M1 wheel.
+  "grpcio>=1.48.0,!=1.48.2;platform_machine=='arm64' and platform_system=='Darwin'",
+  "grpcio-health-checking>=1.41.0,!=1.48.2",
+  "opentelemetry-instrumentation-grpc==0.35b0",
 ]
-grpc-reflection = [
-  "bentoml[grpc]",
-  "grpcio-reflection>=1.41.0, <1.49, !=1.48.2",
-]
-grpc-channelz = ["bentoml[grpc]", "grpcio-channelz>=1.41.0, <1.49, !=1.48.2"]
+grpc-reflection = ["bentoml[grpc]", "grpcio-reflection>=1.41.0,!=1.48.2"]
+grpc-channelz = ["bentoml[grpc]", "grpcio-channelz>=1.41.0,!=1.48.2"]
 # We kept for compatibility with previous
 # versions of BentoML. It is discouraged to use this, instead use any
 # of the above tracing.* extras.
@@ -154,9 +155,9 @@ tracing = [
   "bentoml[tracing-otlp]",
   "bentoml[tracing-zipkin]",
 ]
-tracing-jaeger = ["opentelemetry-exporter-jaeger==1.13.0"]
-tracing-zipkin = ["opentelemetry-exporter-zipkin==1.13.0"]
-tracing-otlp = ["opentelemetry-exporter-otlp==1.13.0"]
+tracing-jaeger = ["opentelemetry-exporter-jaeger==1.14.0"]
+tracing-zipkin = ["opentelemetry-exporter-zipkin==1.14.0"]
+tracing-otlp = ["opentelemetry-exporter-otlp==1.14.0"]
 
 [tool.setuptools_scm]
 write_to = "src/bentoml/_version.py"
@@ -179,6 +180,7 @@ omit = [
   "src/bentoml/_internal/types.py",
   "src/bentoml/testing/*",
   "src/bentoml/grpc/v1alpha1/*",
+  "src/bentoml/grpc/v1/*",
   "src/bentoml/_internal/external_typing/*",
   "src/bentoml/_internal/yatai_client/*",
   "src/bentoml/_internal/yatai_rest_api_client/*",
@@ -195,6 +197,7 @@ omit = [
   "src/bentoml/_internal/types.py",
   "src/bentoml/testing/*",
   "src/bentoml/grpc/v1alpha1/*",
+  "src/bentoml/grpc/v1/*",
   "src/bentoml/_internal/external_typing/*",
   "src/bentoml/_internal/yatai_client/*",
   "src/bentoml/_internal/yatai_rest_api_client/*",
@@ -230,7 +233,10 @@ exclude = '''
     | dist
     | typings
     | src/bentoml/grpc/v1alpha1
+    | src/bentoml/grpc/v1
+    | tests/proto
     | grpc-client/thirdparty
+    | grpc-client/bentoml
   )/
   | src/bentoml/_version.py
 )
@@ -255,6 +261,7 @@ extension-pkg-allow-list = [
 ignore-paths = [
   "src/bentoml/_internal/external_typing",
   "src/bentoml/grpc/v1alpha1",
+  "src/bentoml/grpc/v1",
 ]
 disable = ["coerce-builtin", "no-absolute-import", "C", "R"]
 enable = ["c-extension-no-member"]
@@ -304,6 +311,7 @@ skip_glob = [
   "venv/*",
   "lib/*",
   "grpc-client/thirdparty",
+  "grpc-client/bentoml",
   "bazel-*",
 ]
 
@@ -317,6 +325,7 @@ exclude = [
   'src/**/*_pb2.py*',
   "src/**/*_pb2_grpc.py*",
   "grpc-client/thirdparty",
+  "test/proto",
   "bazel-*",
 ]
 analysis.useLibraryCodeForTypes = true

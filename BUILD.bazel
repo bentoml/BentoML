@@ -1,7 +1,7 @@
-package(default_visibility = ["//visibility:public"])
-
 load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
 load("@rules_proto//proto:defs.bzl", "proto_library")
+
+package(default_visibility = ["//visibility:public"])
 
 filegroup(
     name = "pyproject",
@@ -15,6 +15,16 @@ buildifier(
 proto_library(
     name = "service_v1alpha1_proto",
     srcs = ["src/bentoml/grpc/v1alpha1/service.proto"],
+    visibility = ["//grpc-client:__subpackages__"],
+    deps = [
+        "@com_google_protobuf//:struct_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)
+
+proto_library(
+    name = "service_v1_proto",
+    srcs = ["src/bentoml/grpc/v1/service.proto"],
     visibility = ["//grpc-client:__subpackages__"],
     deps = [
         "@com_google_protobuf//:struct_proto",

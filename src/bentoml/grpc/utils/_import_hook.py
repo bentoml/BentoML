@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 def import_generated_stubs(
-    version: str = "v1alpha1",
+    version: str = "v1",
     file: str = "service.proto",
 ) -> tuple[types.ModuleType, types.ModuleType]:
     """
@@ -26,8 +26,8 @@ def import_generated_stubs(
 
            from bentoml.grpc.utils import import_generated_stubs
 
-           # given proto file bentoml/grpc/v1alpha2/service.proto exists
-           pb, services = import_generated_stubs(version="v1alpha2", file="service.proto")
+           # given proto file bentoml/grpc/v1/service.proto exists
+           pb, services = import_generated_stubs(version="v1", file="service.proto")
     """
     # generate git root from this file's path
     from bentoml._internal.utils import LazyLoader

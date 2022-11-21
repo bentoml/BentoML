@@ -75,6 +75,7 @@ async def server_warmup(
     check_interval: float = 1,
     popen: subprocess.Popen[t.Any] | None = None,
     service_name: str | None = None,
+    _internal_stubs_version: str = "v1",
 ) -> bool:
     start_time = time.time()
     proxy_handler = urllib.request.ProxyHandler({})
@@ -86,7 +87,9 @@ async def server_warmup(
 
             try:
                 if service_name is None:
-                    service_name = "bentoml.grpc.v1alpha1.BentoService"
+                    service_name = (
+                        f"bentoml.grpc.{_internal_stubs_version}.BentoService"
+                    )
                 async with create_channel(host_url) as channel:
                     Check = channel.unary_unary(
                         "/grpc.health.v1.Health/Check",
@@ -127,9 +130,7 @@ async def server_warmup(
 
 
 @cached_contextmanager("{project_path}, {cleanup}")
-def bentoml_build(
-    project_path: str, cleanup: bool = True
-) -> t.Generator[Bento, None, None]:
+def build(project_path: str, cleanup: bool = True) -> t.Generator[Bento, None, None]:
     """
     Build a BentoML project.
     """
@@ -144,11 +145,12 @@ def bentoml_build(
 
 
 @cached_contextmanager("{bento_tag}, {image_tag}, {cleanup}, {use_grpc}")
-def bentoml_containerize(
+def containerize(
     bento_tag: str | Tag,
     image_tag: str | None = None,
     cleanup: bool = True,
     use_grpc: bool = False,
+    backend: str = "docker",
 ) -> t.Generator[str, None, None]:
     """
     Build the docker image from a saved bento, yield the docker image tag
@@ -159,30 +161,33 @@ def bentoml_containerize(
     if image_tag is None:
         image_tag = bento_tag.name
     try:
-        print(f"Building bento server docker image: {bento_tag}")
+        print(f"Building bento server container: {bento_tag}")
         bentos.containerize(
             str(bento_tag),
             docker_image_tag=(image_tag,),
             progress="plain",
             features=["grpc", "grpc-reflection"] if use_grpc else None,
+            labels={"testing": True, "module": __name__},
+            backend=backend,
         )
         yield image_tag
     finally:
         if cleanup:
-            print(f"Removing bento server docker image: {image_tag}")
-            subprocess.call(["docker", "rmi", image_tag])
+            print(f"Removing bento server container: {image_tag}")
+            subprocess.call([backend, "rmi", image_tag])
 
 
 @cached_contextmanager("{image_tag}, {config_file}, {use_grpc}")
-def run_bento_server_docker(
+def run_bento_server_container(
     image_tag: str,
     config_file: str | None = None,
     use_grpc: bool = False,
     timeout: float = 90,
     host: str = "127.0.0.1",
+    backend: str = "docker",
 ):
     """
-    Launch a bentoml service container from a docker image, yield the host URL
+    Launch a bentoml service container from a container, yield the host URL
     """
     from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -193,7 +198,7 @@ def run_bento_server_docker(
         pass
 
     cmd = [
-        "docker",
+        backend,
         "run",
         "--rm",
         "--name",
@@ -213,7 +218,7 @@ def run_bento_server_docker(
     cmd.append(image_tag)
     serve_cmd = "serve-grpc" if use_grpc else "serve-http"
     cmd.extend([serve_cmd, "--production"])
-    print(f"Running API server docker image: '{' '.join(cmd)}'")
+    print(f"Running API server in container: '{' '.join(cmd)}'")
     with subprocess.Popen(
         cmd,
         stdin=subprocess.PIPE,
@@ -231,7 +236,7 @@ def run_bento_server_docker(
                 ) from None
         finally:
             print(f"Stopping Bento container {container_name}...")
-            subprocess.call(["docker", "stop", container_name])
+            subprocess.call([backend, "stop", container_name])
     time.sleep(1)
 
 
@@ -405,12 +410,13 @@ def host_bento(
     bento_name: str | Tag | None = None,
     project_path: str = ".",
     config_file: str | None = None,
-    deployment_mode: t.Literal["standalone", "distributed", "docker"] = "standalone",
+    deployment_mode: t.Literal["standalone", "distributed", "container"] = "standalone",
     bentoml_home: str | None = None,
     use_grpc: bool = False,
     clean_context: contextlib.ExitStack | None = None,
     host: str = "127.0.0.1",
     timeout: float = 120,
+    backend: str = "docker",
 ) -> t.Generator[str, None, None]:
     """
     Host a bentoml service, yields the host URL.
@@ -428,17 +434,24 @@ def host_bento(
         use_grpc: if True, running gRPC tests.
         host: set a given host for the bento, default to ``127.0.0.1``
         timeout: the timeout for the server to start
+        backend: the backend to use for building container, default to ``docker``
 
     Returns:
         :obj:`str`: a generated host URL where we run the test bento.
     """
     import bentoml
 
+    # NOTE: clean_context here to ensure we can close all running context manager
+    # to avoid dangling processes. When running pytest, we have a clean_context fixture
+    # as a ExitStack.
     if clean_context is None:
         clean_context = contextlib.ExitStack()
         clean_on_exit = True
     else:
         clean_on_exit = False
+
+    # NOTE: we need to set the BENTOML_HOME to a temporary folder to avoid
+    # conflict with the user's BENTOML_HOME.
     if bentoml_home:
         from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -446,7 +459,7 @@ def host_bento(
     try:
         if bento_name is None or not bentoml.list(bento_name):
             bento = clean_context.enter_context(
-                bentoml_build(project_path, cleanup=clean_on_exit)
+                build(project_path, cleanup=clean_on_exit)
             )
         else:
             bento = bentoml.get(bento_name)
@@ -462,16 +475,23 @@ def host_bento(
                 timeout=timeout,
             ) as host_url:
                 yield host_url
-        elif deployment_mode == "docker":
+        elif deployment_mode == "container":
+            from bentoml._internal.container import REGISTERED_BACKENDS
+
+            if backend not in REGISTERED_BACKENDS:
+                raise ValueError(
+                    f"Unknown backend: {backend}. To register your custom backend, use 'bentoml.container.register_backend()'"
+                )
             container_tag = clean_context.enter_context(
-                bentoml_containerize(bento.tag, use_grpc=use_grpc)
+                containerize(bento.tag, use_grpc=use_grpc, backend=backend)
             )
-            with run_bento_server_docker(
+            with run_bento_server_container(
                 container_tag,
                 config_file=config_file,
                 use_grpc=use_grpc,
                 host=host,
                 timeout=timeout,
+                backend=backend,
             ) as host_url:
                 yield host_url
         elif deployment_mode == "distributed":

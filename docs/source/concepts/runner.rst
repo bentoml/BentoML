@@ -307,7 +307,7 @@ the configuration for all runners in aggregate and for an individual runner (``i
 Adaptive Batching
 ^^^^^^^^^^^^^^^^^
 
-If a model or custom runner supports batching, the :ref:`adaptive batching <guides/configuration:Configuration>` mechanism is enabled by default.
+If a model or custom runner supports batching, the :ref:`adaptive batching <guides/batching:Adaptive Batching>` mechanism is enabled by default.
 To explicitly disable or control adaptive batching behaviors at runtime, configuration can be specified under the ``batching`` key.
 
 .. tab-set::

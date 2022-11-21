@@ -4,17 +4,17 @@ load("@com_github_grpc_grpc_kotlin//:kt_jvm_grpc.bzl", "kt_jvm_grpc_library", "k
 
 java_proto_library(
     name = "service_java",
-    deps = ["//:service_v1alpha1_proto"],
+    deps = ["//:service_v1_proto"],
 )
 
 kt_jvm_proto_library(
     name = "service_kt",
-    deps = ["//:service_v1alpha1_proto"],
+    deps = ["//:service_v1_proto"],
 )
 
 kt_jvm_grpc_library(
     name = "service_grpc_kt",
-    srcs = ["//:service_v1alpha1_proto"],
+    srcs = ["//:service_v1_proto"],
     deps = [":service_java"],
 )
 

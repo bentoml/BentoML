@@ -51,7 +51,7 @@ T = t.TypeVar("T")
 
 rich_console = Console(theme=None)
 
-# lightweight port from psutil._common.py to avoid circular dependency in bazel
+# lightweight port from psutil._common.py.
 POSIX = os.name == "posix"
 WINDOWS = os.name == "nt"
 LINUX = sys.platform.startswith("linux")

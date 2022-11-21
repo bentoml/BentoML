@@ -4,7 +4,7 @@ import grpc
 
 from bentoml.grpc.utils import import_generated_stubs
 
-pb, services = import_generated_stubs()
+pb, services = import_generated_stubs(version="v1alpha1")
 
 
 async def run():

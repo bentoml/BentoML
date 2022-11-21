@@ -1,0 +1,19 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "client_v1alpha1",
+    srcs = ["client.v1alpha1.py"],
+    imports = ["../"],
+    main = "client.v1alpha1.py",
+    visibility = ["//visibility:public"],
+    deps = ["//src/bentoml"],
+)
+
+py_binary(
+    name = "client_v1",
+    srcs = ["client.v1.py"],
+    imports = ["../"],
+    main = "client.v1.py",
+    visibility = ["//visibility:public"],
+    deps = ["//src/bentoml"],
+)

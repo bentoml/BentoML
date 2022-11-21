@@ -7,10 +7,10 @@ for researchers to build new approaches. To learn more about fastai, visit their
 
 BentoML provides native support for `fastai <https://github.com/fastai/fastai>`_, and this guide provides an overview of how to use BentoML with fastai.
 
-Compatibility 
+Compatibility
 -------------
 
-BentoML requires fastai **version 2** or higher to be installed. 
+BentoML requires fastai version **2.7.0** or higher to be installed. 
 
 BentoML does not support fastai version 1. If you are using fastai version 1, consider using :ref:`concepts/runner:Custom Runner`.
 

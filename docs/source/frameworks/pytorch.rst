@@ -4,6 +4,11 @@ PyTorch
 
 BentoML provides native support for serving and deploying models trained from PyTorch. For more in-depth tutorials about PyTorch, please visit `PyTorch's official documentation <https://pytorch.org/tutorials/>`_
 
+Compatibility
+-------------
+
+BentoML has been validated to work with torch version 1.9.0 and higher.
+
 Preface
 -------
 

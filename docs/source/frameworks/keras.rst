@@ -25,8 +25,8 @@ Keras
 Compatibility
 -------------
 
-BentoML requires TensorFlow version **2.7.3** or higher to be installed.
-
+BentoML requires TensorFlow version **2.9.0** or higher to be installed.
+In addition, BentoML is also validated to work with keras version 2.9.0 or higher.
 
 Saving a Keras Model
 --------------------

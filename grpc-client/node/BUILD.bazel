@@ -1,0 +1,33 @@
+load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
+load("@rules_proto_grpc//js:defs.bzl", "nodejs_grpc_library")
+
+exports_files([
+    "package.json",
+    "yarn.lock",
+])
+
+nodejs_grpc_library(
+    name = "v1alpha1_grpc_lib",
+    legacy_path = True,
+    protos = ["//src/bentoml/grpc/v1alpha1:service_proto"],
+)
+
+nodejs_binary(
+    name = "client_v1alpha1",
+    data = glob(["v1alpha1/*.js"]) + [":v1alpha1_grpc_lib"],
+    entry_point = "v1alpha1/client.js",
+    visibility = ["//visibility:public"],
+)
+
+nodejs_grpc_library(
+    name = "v1_grpc_lib",
+    legacy_path = True,
+    protos = ["//src/bentoml/grpc/v1:service_proto"],
+)
+
+nodejs_binary(
+    name = "client_v1",
+    data = glob(["v1/*.js"]) + [":v1_grpc_lib"],
+    entry_point = "v1/client.js",
+    visibility = ["//visibility:public"],
+)

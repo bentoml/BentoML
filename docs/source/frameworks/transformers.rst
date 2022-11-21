@@ -6,10 +6,10 @@ Transformers
 pretrained models for common machine learning tasks. BentoML provides native support for serving and deploying models trained from 
 Transformers.
 
-Compatibility 
+Compatibility
 -------------
 
-BentoML requires Transformers version 4 or above. For other versions of Transformers, consider using a 
+BentoML requires Transformers version 4.21.0 or above. For other versions of Transformers, consider using a 
 :ref:`concepts/runner:Custom Runner`.
 
 When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`, include ``transformers`` and the machine learning 

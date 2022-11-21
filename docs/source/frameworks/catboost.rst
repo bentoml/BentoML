@@ -8,6 +8,11 @@ To learn more about CatBoost, visit their `documentation <https://catboost.ai/en
 
 BentoML provides native support for `CatBoost <https://github.com/catboost/catboost>`_, and this guide provides an overview of how to use BentoML with CatBoost.
 
+Compatibility
+-------------
+
+BentoML requires catboost version **1.1.1** or higher to be installed.
+
 Saving a trained CatBoost model
 --------------------------------
 

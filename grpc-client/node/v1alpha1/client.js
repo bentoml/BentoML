@@ -1,7 +1,12 @@
 "use strict";
 const grpc = require("@grpc/grpc-js");
-const pb = require("./bentoml/grpc/v1/service_pb");
-const services = require("./bentoml/grpc/v1/service_grpc_pb");
+
+// Uncomment the two lines below when using locally.
+// const pb = require("./bentoml/grpc/v1alpha1/service_pb");
+// const services = require("./bentoml/grpc/v1alpha1/service_grpc_pb");
+
+const pb = require("v1alpha1_grpc_lib/v1alpha1_grpc_lib_pb/src/bentoml/grpc/v1alpha1/service_pb.js");
+const services = require("v1alpha1_grpc_lib/v1alpha1_grpc_lib_pb/src/bentoml/grpc/v1alpha1/service_grpc_pb.js");
 
 function main() {
   const target = "localhost:3000";
@@ -33,3 +38,4 @@ function main() {
 }
 
 main();
+

@@ -4,9 +4,12 @@ Contains examples for gRPC clients using for [Serving with gRPC](https://docs.be
 
 We will use [`bazel`](bazel.build) to build and run these examples.
 
+If you don't have bazel installed, you can use [./tools/bazel](../tools/bazel) instead.
+This script will download a local bazel to `GIT_ROOT` and run bazel.
+
 # Instruction
 
-All clients are built to run with [quickstart image](https://docs.bentoml.org/en/latest/tutorial.html#setup-for-the-tutorial):
+All client examples are built to run with [quickstart image](https://docs.bentoml.org/en/latest/tutorial.html#setup-for-the-tutorial):
 
 ```bash
 docker run -it --rm -p 8888:8888 -p 3000:3000 -p 3001:3001 bentoml/quickstart:latest serve-grpc --production --enable-reflection
@@ -26,21 +29,21 @@ bazel build ...
 
 The following table contains command to run clients:
 
-| Language           | Command                                 |
-| ------------------ | --------------------------------------- |
-| [Python](./python) | `python client.py`                      |
-| [C++](./cpp)       | `bazel run //grpc-client/cpp:client`    |
-| [Go](./go)         | `bazel run //grpc-client/go:client`     |
-| [Java](./java)     | `bazel run //grpc-client/java:client`   |
-| [Kotlin](./kotlin) | `bazel run //grpc-client/kotlin:client` |
-| [Swift](./swift)   | `./swift/client`                        |
-| [Node.js](./node)  | `pushd node && yarn client && popd`     |
-| [PHP](./php)       | See [PHP instruction](./php/README.md)  |
+| Language           | Command                                |
+| ------------------ | -------------------------------------- |
+| [Python](./python) | `bazel run //grpc-client:python`       |
+| [C++](./cpp)       | `bazel run //grpc-client:cpp`          |
+| [Go](./go)         | `bazel run //grpc-client:go`           |
+| [Java](./java)     | `bazel run //grpc-client:java`         |
+| [Kotlin](./kotlin) | `bazel run //grpc-client:kotlin`       |
+| [Node.js](./node)  | `bazel run //grpc-client:node`         |
+| [Swift](./swift)   | `bazel run //grpc-client:swift`        |
+| [PHP](./php)       | See [PHP instruction](./php/README.md) |
+
+Note that bazel is first-class support for all gRPC client example. However,
+each of the client implementation also support local toolchain. Make sure to modify the given client source for it to work with local tooling.
 
 > For Swift client, make sure to compile gRPC Swift `protoc` beforehand to generate the client stubs.
-
-Note that each of the above client examples are also working standalone if you wish not
-to use bazel.
 
 # Adding new language support
 
@@ -48,8 +51,3 @@ to use bazel.
 - Create a new language directory. Add a `client.<ext>` and `BUILD`
 - Add new rules to `WORKSPACE`
 - `bazel run //:buildifier` for formatting
-
-### TODO:
-
-- Write ruleset for compiling Swift
-- Write ruleset for running grpc-node

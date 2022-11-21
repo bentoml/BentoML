@@ -2,6 +2,11 @@
 PyTorch Lightning
 =================
 
+Compatibility
+-------------
+
+BentoML has been validated to work with pytorch-lightning version 1.5.0 and higher.
+
 Here's a simple example of using PyTorch Lightning with BentoML:
 
 .. code:: python

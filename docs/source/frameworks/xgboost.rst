@@ -7,7 +7,7 @@ XGBoost is an optimized distributed gradient boosting library designed to be hig
 Compatibility
 ~~~~~~~~~~~~~
 
-BentoML has been validated to work with XGBoost version 0.7post3 and higher.
+BentoML has been validated to work with XGBoost version 1.6.2 and higher.
 
 Saving a Trained Booster
 ------------------------

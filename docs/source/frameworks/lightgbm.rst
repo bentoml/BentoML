@@ -2,6 +2,11 @@
 LightGBM
 ========
 
+Compatibility
+-------------
+
+BentoML has been validated to work with lightgbm version 3.3.3 and higher.
+
 Users can now use LightGBM with BentoML with the following API: :code:`load_model`,
 :code:`save_model`, and :code:`get` as follow:
 

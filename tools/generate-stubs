@@ -21,12 +21,6 @@ main() {
 		"$BAZEL_BIN" build @com_github_grpc_grpc//src/compiler:grpc_python_plugin
 	fi
 
-	# get protobuf proto
-	if ! [ -d "$BIN_FOLDER/external/com_google_protobuf/_virtual_imports" ]; then
-		"$BAZEL_BIN" build @com_google_protobuf//:struct_proto
-		"$BAZEL_BIN" build @com_google_protobuf//:wrappers_proto
-	fi
-
 	# Build mypy plugin for protobuf
 	GEN_MYPY_PATH="$BIN_FOLDER/external/pypi_mypy_protobuf/rules_python_wheel_entry_point_protoc-gen-mypy"
 	GEN_MYPY_GRPC_PATH="$BIN_FOLDER/external/pypi_mypy_protobuf/rules_python_wheel_entry_point_protoc-gen-mypy_grpc"
@@ -46,12 +40,12 @@ main() {
 		--plugin=protoc-gen-grpc-python="$GRPC_PLUGIN" \
 		--grpc-python_out="$GIT_ROOT/src" --python_out="$GIT_ROOT/src" --mypy_out="$GIT_ROOT/src" --grpc-mypy_out="$GIT_ROOT/src" \
 		"bentoml/grpc/$VERSION/service.proto"
-	"$BAZEL_BIN" run @com_google_protobuf//:protoc -- -I. \
+	"$BAZEL_BIN" run @com_google_protobuf//:protoc -- -I"$GIT_ROOT" \
 		--plugin=protoc-gen-mypy="$GEN_MYPY_PATH" \
 		--plugin=protoc-gen-grpc-mypy="$GEN_MYPY_GRPC_PATH" \
 		--plugin=protoc-gen-grpc-python="$GRPC_PLUGIN" \
-		--grpc-python_out=. --python_out=. --mypy_out=. --grpc-mypy_out=. \
-		"tests/proto/service_test.proto"
+		--grpc-python_out="$GIT_ROOT" --python_out="$GIT_ROOT" --mypy_out="$GIT_ROOT" --grpc-mypy_out="$GIT_ROOT" \
+		"$GIT_ROOT/tests/proto/service_test.proto"
 }
 
 if [ "${#}" -gt 1 ]; then

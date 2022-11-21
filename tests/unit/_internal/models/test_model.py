@@ -14,6 +14,8 @@ import fs.errors
 
 from bentoml import Tag
 from bentoml.exceptions import BentoMLException
+from bentoml.testing.utils import run_in_bazel
+from bentoml.testing.utils import BENTOML_TEST_NO_BAZEL
 from bentoml.testing.pytest import TEST_MODEL_CONTEXT
 from bentoml._internal.models import ModelOptions as InternalModelOptions
 from bentoml._internal.models.model import Model
@@ -26,10 +28,17 @@ if TYPE_CHECKING:
 
 TEST_PYTHON_VERSION = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
 
+# TODO: investigate in bazel the pytest uses importlib.import_module
+module = (
+    "test_model"
+    if BENTOML_TEST_NO_BAZEL not in os.environ or not run_in_bazel()
+    else "tests.unit._internal.models.test_model"
+)
+
 expected_yaml = """\
 name: test
 version: v1
-module: test_model
+module: {module}
 labels:
   label: stringvalue
 options:
@@ -133,6 +142,7 @@ def test_model_info(tmpdir: "Path"):
             bentoml_version=BENTOML_VERSION,
             creation_time=modelinfo_b.creation_time.isoformat(),
             python_version=TEST_PYTHON_VERSION,
+            module=module,
         )
 
     with open(model_yaml_b_filename, encoding="utf-8") as model_yaml_b:

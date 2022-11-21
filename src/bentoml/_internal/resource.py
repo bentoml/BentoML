@@ -9,8 +9,7 @@ import functools
 from abc import ABC
 from abc import abstractmethod
 
-import psutil
-
+from .utils import POSIX
 from ..exceptions import BentoMLConfigException
 
 logger = logging.getLogger(__name__)
@@ -103,7 +102,7 @@ class CpuResource(Resource[float], resource_id="cpu"):
 
     @classmethod
     def from_system(cls) -> float:
-        if psutil.POSIX:
+        if POSIX:
             return query_cgroup_cpu_count()
         else:
             return float(query_os_cpu_count())

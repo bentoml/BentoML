@@ -105,3 +105,6 @@ pip install -r tests/e2e/qa/requirements.txt
 ```bash
 pytest tests/e2e/qa
 ```
+
+6. Add a `BUILD` to the folder, (e.g: `qa/BUILD`) to run the test with bazel.
+See similar BUILD file in [`bento_server_http`](`./bento_server_http/BUILD`) or [`bento_server_grpc`](./bento_server_grpc/BUILD) for example.

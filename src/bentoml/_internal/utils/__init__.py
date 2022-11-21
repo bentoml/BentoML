@@ -52,6 +52,18 @@ _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
 
 rich_console = Console(theme=None)
 
+# lightweight port from psutil._common.py to avoid circular dependency in bazel
+POSIX = os.name == "posix"
+WINDOWS = os.name == "nt"
+LINUX = sys.platform.startswith("linux")
+MACOS = sys.platform.startswith("darwin")
+FREEBSD = sys.platform.startswith(("freebsd", "midnightbsd"))
+OPENBSD = sys.platform.startswith("openbsd")
+NETBSD = sys.platform.startswith("netbsd")
+BSD = FREEBSD or OPENBSD or NETBSD
+SUNOS = sys.platform.startswith(("sunos", "solaris"))
+AIX = sys.platform.startswith("aix")
+
 __all__ = [
     "bentoml_cattr",
     "cached_property",
@@ -225,13 +237,11 @@ def reserve_free_port(
     """
     detect free port and reserve until exit the context
     """
-    import psutil
-
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     if enable_so_reuseport:
-        if psutil.WINDOWS:
+        if WINDOWS:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        elif psutil.MACOS or psutil.FREEBSD:
+        elif MACOS or FREEBSD:
             sock.setsockopt(socket.SOL_SOCKET, 0x10000, 1)  # SO_REUSEPORT_LB
         else:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)

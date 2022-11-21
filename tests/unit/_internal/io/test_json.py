@@ -13,11 +13,13 @@ import numpy as np
 import pandas as pd
 import pytest
 import pydantic
+from packaging.version import parse
 
 from bentoml.io import JSON
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import UnprocessableEntity
 from bentoml._internal.utils.pkg import pkg_version_info
+from bentoml._internal.configuration import CLEAN_BENTOML_VERSION as BENTOML_VERSION
 from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 
 if TYPE_CHECKING:
@@ -80,9 +82,11 @@ dumps = partial(
     separators=(",", ":"),
 )
 
+_parsed = parse(BENTOML_VERSION)
+
 
 @pytest.mark.skipif(
-    pkg_version_info("pydantic")[0] < 2 and pkg_version_info("bentoml")[:2] <= (1, 1),
+    pkg_version_info("pydantic")[0] < 2 and (_parsed.major, _parsed.minor) <= (1, 1),
     reason="Pydantic 2.x is not yet supported until official releases of Pydantic.",
 )
 def test_not_yet_supported_pydantic():

@@ -11,11 +11,11 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-import psutil
 from simple_di import inject
 from simple_di import Provide
 
 from .exceptions import BentoMLException
+from ._internal.utils import LINUX
 from ._internal.container import build as _internal_build
 from ._internal.container import health
 from ._internal.container import get_backend
@@ -402,7 +402,7 @@ def build(
 
     if platform is not None:
         passed_platform = ",".join(map(lambda v: v.split("=")[1], platform))
-        if not psutil.LINUX and "linux/amd64" not in passed_platform:
+        if not LINUX and "linux/amd64" not in passed_platform:
             logger.warning(
                 'Current platform is set to "--opt platform=%s". To avoid issue, we recommend you to build the container with x86_64 (amd64): "bentoml containerize %s --opt platform=linux/amd64"',
                 passed_platform,

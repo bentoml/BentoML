@@ -17,6 +17,7 @@ optax==0.1.3
 # tensorflow dependencies
 keras==2.9.0
 # NOTE: Once tensorflow resolve this namespace conflict, this will do it.
+grpcio==1.48.1 # <- works on all platforms
 tensorflow==2.9.0;platform_system!="Darwin"
 tensorflow-macos==2.9.0;platform_system=="Darwin"
 # torch-related dependencies
@@ -35,7 +36,6 @@ databricks-cli==0.17.3 # <- mlflow
 numpy==1.23.5 # numpy <- scikit-learn & tensorflow (separated from tests.txt)
 scipy==1.9.3 # numpy <- scikit-learn & tensorflow (separated from tests.txt)
 tensorboard==2.9.0 # <- pytorch-lightning
-grpcio==1.48.1 # <- works on all platforms
 h5py==3.7.0 # <- tensorflow and this supports M1
 aiohttp==3.8.3 # required by some libraries
 asynctest==0.13.0 # <- aiohttp

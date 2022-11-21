@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import typing as t
 import tempfile
@@ -17,6 +18,8 @@ from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import make_standalone_server
 from bentoml.testing.grpc import create_test_bento_servicer
+from bentoml.testing.utils import run_in_bazel
+from bentoml.testing.utils import BENTOML_TEST_NO_BAZEL
 from bentoml._internal.utils import LazyLoader
 from tests.unit.grpc.conftest import TestServiceServicer
 from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
@@ -35,11 +38,12 @@ prom_dir = tempfile.mkdtemp("prometheus-multiproc")
 BentoMLContainer.prometheus_multiproc_dir.set(prom_dir)
 interceptor = PrometheusServerInterceptor()
 
-if "prometheus_client" in sys.modules:
-    mods = [m for m in sys.modules if "prometheus_client" in m]
-    list(map(lambda s: sys.modules.pop(s), mods))
-    if not interceptor._is_setup:
-        interceptor._setup()
+if BENTOML_TEST_NO_BAZEL not in os.environ or not run_in_bazel():
+    if "prometheus_client" in sys.modules:
+        mods = [m for m in sys.modules if "prometheus_client" in m]
+        list(map(lambda s: sys.modules.pop(s), mods))
+        if not interceptor._is_setup:
+            interceptor._setup()
 
 
 @pytest.mark.asyncio

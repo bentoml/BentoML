@@ -12,11 +12,15 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 from functools import partial
 
-import psutil
 from simple_di import inject
 from simple_di import Provide
 
 from .grpc.utils import LATEST_PROTOCOL_VERSION
+from ._internal.utils import LINUX
+from ._internal.utils import MACOS
+from ._internal.utils import POSIX
+from ._internal.utils import FREEBSD
+from ._internal.utils import WINDOWS
 from ._internal.utils import experimental
 from ._internal.configuration.containers import BentoMLContainer
 
@@ -123,9 +127,9 @@ def log_grpcui_instruction(port: int) -> None:
         platform_deps="host.docker.internal", network_args="-p 8080:8080"
     )
 
-    if psutil.WINDOWS or psutil.MACOS:
+    if WINDOWS or MACOS:
         logger.info(message, mac_win_instruction)
-    elif psutil.LINUX:
+    elif LINUX:
         logger.info(message, linux_instruction)
 
 
@@ -315,7 +319,7 @@ def serve_http_production(
     runner_bind_map: t.Dict[str, str] = {}
     uds_path = None
 
-    if psutil.POSIX:
+    if POSIX:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
@@ -354,7 +358,7 @@ def serve_http_production(
                 )
             )
 
-    elif psutil.WINDOWS:
+    elif WINDOWS:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
@@ -696,17 +700,17 @@ def serve_grpc_production(
 
     # Check whether users are running --grpc on windows
     # also raising warning if users running on MacOS or FreeBSD
-    if psutil.WINDOWS:
+    if WINDOWS:
         raise UnprocessableEntity(
             "'grpc' is not supported on Windows with '--production'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
         )
-    if psutil.MACOS or psutil.FREEBSD:
+    if MACOS or FREEBSD:
         logger.warning(
             "Due to gRPC implementation on exposing SO_REUSEPORT, '--production' behaviour on %s is not correct. We recommend to containerize BentoServer as a Linux container instead.",
-            "MacOS" if psutil.MACOS else "FreeBSD",
+            "MacOS" if MACOS else "FreeBSD",
         )
 
-    if psutil.POSIX:
+    if POSIX:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
@@ -743,7 +747,7 @@ def serve_grpc_production(
                 )
             )
 
-    elif psutil.WINDOWS:
+    elif WINDOWS:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:

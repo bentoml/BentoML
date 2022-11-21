@@ -3,6 +3,11 @@ from __future__ import annotations
 import typing as t
 from typing import TYPE_CHECKING
 
+# NOTE: We have to run this first to ensure correct setup
+from bentoml.testing.pytest import set_huggingface_envar
+
+set_huggingface_envar()
+
 import requests
 import transformers
 from PIL import Image
@@ -26,6 +31,7 @@ framework = bentoml.transformers
 
 backward_compatible = True
 
+
 if TYPE_CHECKING:
     from transformers.utils.generic import ModelOutput
     from transformers.tokenization_utils_base import BatchEncoding
@@ -41,6 +47,11 @@ TINY_TEXT_TASK = get_task(TINY_TEXT_MODEL)
 TINY_TEXT_AUTO = "AutoModelForSequenceClassification"
 
 set_seed(124)
+
+import os
+
+print(os.environ["HF_HOME"])
+print(os.environ["HUGGINGFACE_HUB_CACHE"])
 
 
 class CustomPipeline(Pipeline):
@@ -81,10 +92,10 @@ def gen_kwargs(
 
 
 def gen_task_pipeline(
-    model: str, task: str | None = None, *, frameworks: list[str] = ["pt", "tf"]
+    model: str, task: str, *, frameworks: list[str] = ["pt", "tf"]
 ) -> PipelineGenerator:
     yield from map(
-        lambda framework: pipeline(task=task, model=model, framework=framework),  # type: ignore (unfinished transformers type)
+        lambda framework: pipeline(task=task, model=model, framework=framework),
         frameworks,
     )
 
@@ -119,7 +130,7 @@ text_classification_pipeline: list[FrameworkTestModel] = [
             ),
         ],
     )
-    for model in gen_task_pipeline(model=TINY_TEXT_MODEL)
+    for model in gen_task_pipeline(model=TINY_TEXT_MODEL, task=TINY_TEXT_TASK)
 ]
 
 batched_pipeline: list[FrameworkTestModel] = [
@@ -153,7 +164,7 @@ batched_pipeline: list[FrameworkTestModel] = [
             )
         ],
     )
-    for model in gen_task_pipeline(model=TINY_TEXT_MODEL)
+    for model in gen_task_pipeline(model=TINY_TEXT_MODEL, task=TINY_TEXT_TASK)
 ]
 
 tiny_image_model = "hf-internal-testing/tiny-random-vit"
@@ -195,7 +206,7 @@ image_classification: list[FrameworkTestModel] = [
             ),
         ],
     )
-    for model in gen_task_pipeline(model=tiny_image_model)
+    for model in gen_task_pipeline(model=tiny_image_model, task=tiny_image_task)
 ]
 
 custom_task = "custom-text-classification"

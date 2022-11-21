@@ -1,0 +1,53 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@pypi//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+py_library(
+    name = "worker",
+    srcs = glob(["worker/*.py"]),
+    deps = ["//src/bentoml"],
+)
+
+_SRC = [
+    "bentos",
+    "containerize",
+    "env",
+    "models",
+    "serve",
+    "start",
+    "utils",
+    "yatai",
+]
+
+[
+    py_library(
+        name = lib,
+        srcs = ["{}.py".format(lib)],
+        deps = [
+            "//src/bentoml",
+            requirement("click"),
+            requirement("PyYAML"),
+        ],
+    )
+    for lib in _SRC
+]
+
+py_library(
+    name = "bentoml_cli",
+    srcs = glob(["**/*.py"]),
+    deps = [
+        ":worker",
+        requirement("click"),
+        "//src/bentoml",
+    ] + [":{}".format(lib) for lib in _SRC],
+)
+
+py_binary(
+    name = "cli",
+    srcs = ["cli.py"],
+    imports = ["../"],
+    main = "cli.py",
+    visibility = ["//visibility:public"],
+    deps = [":bentoml_cli"],
+)

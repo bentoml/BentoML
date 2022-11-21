@@ -16,7 +16,7 @@ from bentoml._internal.runner.runner import Runner
 from bentoml._internal.runner.strategy import DefaultStrategy
 from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 
-from .models import FrameworkTestModel
+from tests.integration.frameworks.models import FrameworkTestModel
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture

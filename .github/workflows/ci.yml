@@ -44,7 +44,7 @@ jobs:
       - name: (pyright) Running type checking.
         if: ${{ steps.current-branch.outputs.branch != 'main' }}
         run: |
-          cd ${{ steps.get-workspace.output.workspace }} || exit 1
+          cd ${{ steps.get-workspace.outputs.workspace }} || exit 1
           git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py' | xargs -0 --no-run-if-empty bazel run //:pyright
 
   lint:
@@ -75,12 +75,12 @@ jobs:
       - name: Run style check
         run: |
           bazel run //:buildcheck
-          bazel run //:black -- --check "${{ steps.get-workspace.output.workspace }}/src"
-          bazel run //:isort -- --check "${{ steps.get-workspace.output.workspace }}/src"
+          bazel run //:black -- --check "${{ steps.get-workspace.outputs.workspace }}/src"
+          bazel run //:isort -- --check "${{ steps.get-workspace.outputs.workspace }}/src"
           bazel run //:v1alpha1_proto_lint
           bazel run //:v1_proto_lint
       - name: (pylint) Linting source.
-        if: ${{ steps.get-current-branch.output.branch != 'main' }}
+        if: ${{ steps.get-current-branch.outputs.branch != 'main' }}
         run: git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py' | xargs -0 --no-run-if-empty bazel run //:pylint -- --rcfile "${{ steps.get-workspace.output.workspace }}/pyproject.toml" --fail-under 9.0
       # Running spellcheck
       - name: Install libenchant

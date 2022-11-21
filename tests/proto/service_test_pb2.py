@@ -3,6 +3,7 @@
 # source: tests/proto/service_test.proto
 """Generated protocol buffer code."""
 from google.protobuf import descriptor as _descriptor
+from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
@@ -15,85 +16,12 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor.FileDescriptor(
-  name='tests/proto/service_test.proto',
-  package='tests.proto',
-  syntax='proto3',
-  serialized_options=b'H\001Z\035github.com/bentoml/testing/v1\220\001\001\370\001\001',
-  create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x1etests/proto/service_test.proto\x12\x0btests.proto\"\x1f\n\x0e\x45xecuteRequest\x12\r\n\x05input\x18\x01 \x01(\t\"!\n\x0f\x45xecuteResponse\x12\x0e\n\x06output\x18\x01 \x01(\t2S\n\x0bTestService\x12\x44\n\x07\x45xecute\x12\x1b.tests.proto.ExecuteRequest\x1a\x1c.tests.proto.ExecuteResponseB\'H\x01Z\x1dgithub.com/bentoml/testing/v1\x90\x01\x01\xf8\x01\x01\x62\x06proto3'
-)
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1etests/proto/service_test.proto\x12\x0btests.proto\"\x1f\n\x0e\x45xecuteRequest\x12\r\n\x05input\x18\x01 \x01(\t\"!\n\x0f\x45xecuteResponse\x12\x0e\n\x06output\x18\x01 \x01(\t2S\n\x0bTestService\x12\x44\n\x07\x45xecute\x12\x1b.tests.proto.ExecuteRequest\x1a\x1c.tests.proto.ExecuteResponseB\'H\x01Z\x1dgithub.com/bentoml/testing/v1\x90\x01\x01\xf8\x01\x01\x62\x06proto3')
 
 
 
-
-_EXECUTEREQUEST = _descriptor.Descriptor(
-  name='ExecuteRequest',
-  full_name='tests.proto.ExecuteRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='input', full_name='tests.proto.ExecuteRequest.input', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=47,
-  serialized_end=78,
-)
-
-
-_EXECUTERESPONSE = _descriptor.Descriptor(
-  name='ExecuteResponse',
-  full_name='tests.proto.ExecuteResponse',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='output', full_name='tests.proto.ExecuteResponse.output', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=80,
-  serialized_end=113,
-)
-
-DESCRIPTOR.message_types_by_name['ExecuteRequest'] = _EXECUTEREQUEST
-DESCRIPTOR.message_types_by_name['ExecuteResponse'] = _EXECUTERESPONSE
-_sym_db.RegisterFileDescriptor(DESCRIPTOR)
-
+_EXECUTEREQUEST = DESCRIPTOR.message_types_by_name['ExecuteRequest']
+_EXECUTERESPONSE = DESCRIPTOR.message_types_by_name['ExecuteResponse']
 ExecuteRequest = _reflection.GeneratedProtocolMessageType('ExecuteRequest', (_message.Message,), {
   'DESCRIPTOR' : _EXECUTEREQUEST,
   '__module__' : 'tests.proto.service_test_pb2'
@@ -108,34 +36,17 @@ ExecuteResponse = _reflection.GeneratedProtocolMessageType('ExecuteResponse', (_
   })
 _sym_db.RegisterMessage(ExecuteResponse)
 
+_TESTSERVICE = DESCRIPTOR.services_by_name['TestService']
+if _descriptor._USE_C_DESCRIPTORS == False:
 
-DESCRIPTOR._options = None
-
-_TESTSERVICE = _descriptor.ServiceDescriptor(
-  name='TestService',
-  full_name='tests.proto.TestService',
-  file=DESCRIPTOR,
-  index=0,
-  serialized_options=None,
-  create_key=_descriptor._internal_create_key,
-  serialized_start=115,
-  serialized_end=198,
-  methods=[
-  _descriptor.MethodDescriptor(
-    name='Execute',
-    full_name='tests.proto.TestService.Execute',
-    index=0,
-    containing_service=None,
-    input_type=_EXECUTEREQUEST,
-    output_type=_EXECUTERESPONSE,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-])
-_sym_db.RegisterServiceDescriptor(_TESTSERVICE)
-
-DESCRIPTOR.services_by_name['TestService'] = _TESTSERVICE
-
+  DESCRIPTOR._options = None
+  DESCRIPTOR._serialized_options = b'H\001Z\035github.com/bentoml/testing/v1\220\001\001\370\001\001'
+  _EXECUTEREQUEST._serialized_start=47
+  _EXECUTEREQUEST._serialized_end=78
+  _EXECUTERESPONSE._serialized_start=80
+  _EXECUTERESPONSE._serialized_end=113
+  _TESTSERVICE._serialized_start=115
+  _TESTSERVICE._serialized_end=198
 TestService = service_reflection.GeneratedServiceType('TestService', (_service.Service,), dict(
   DESCRIPTOR = _TESTSERVICE,
   __module__ = 'tests.proto.service_test_pb2'

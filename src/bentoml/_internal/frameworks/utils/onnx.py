@@ -9,7 +9,6 @@ from ....exceptions import BentoMLException
 from ...utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
-    import onnx
     import torch
 
     from ... import external_typing as ext
@@ -66,6 +65,7 @@ TENSORPROTO_ELEMENT_TYPE_TO_NUMPY_TYPE: dict[int, str] = {
     onnx.TensorProto.COMPLEX128: "cdouble",  # 15
     # onnx.TensorProto.BFLOAT16: None,  # 16
 }
+
 
 # type -> casting function generator
 CASTING_FUNC_DISPATCHER: dict[str, ONNXArgCastingFuncGeneratorType] = {}

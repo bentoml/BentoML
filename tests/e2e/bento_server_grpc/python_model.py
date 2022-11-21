@@ -4,9 +4,9 @@ from typing import Any
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 
 if TYPE_CHECKING:
+    import pandas as pd
     from numpy.typing import NDArray
 
     from bentoml._internal.types import FileLike
@@ -37,7 +37,6 @@ class PythonFunction:
         return arr1 * arr2
 
     def double_dataframe_column(self, df: pd.DataFrame) -> pd.DataFrame:
-        assert isinstance(df, pd.DataFrame)
         return df[["col1"]] * 2  # type: ignore (no pandas types)
 
     def echo_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:

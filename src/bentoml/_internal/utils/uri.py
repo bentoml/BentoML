@@ -4,8 +4,6 @@ from urllib.parse import unquote
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
-import psutil
-
 
 def path_to_uri(path: str) -> str:
     """
@@ -17,10 +15,13 @@ def path_to_uri(path: str) -> str:
     Returns:
         URI string. (quoted, absolute)
     """
+    from . import POSIX
+    from . import WINDOWS
+
     path = os.path.abspath(path)
-    if psutil.WINDOWS:
+    if WINDOWS:
         return pathlib.PureWindowsPath(path).as_uri()
-    if psutil.POSIX:
+    if POSIX:
         return pathlib.PurePosixPath(path).as_uri()
     raise ValueError("Unsupported OS")
 

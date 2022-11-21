@@ -4,8 +4,8 @@ import typing as t
 import logging
 from functools import lru_cache
 
-from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import BentoMLConfigException
+from ...exceptions import BentoMLException
+from ...exceptions import BentoMLConfigException
 
 try:
     from ..._version import __version__

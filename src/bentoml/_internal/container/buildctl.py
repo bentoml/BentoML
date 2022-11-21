@@ -7,9 +7,8 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-import psutil
-
 from .base import Arguments
+from ..utils import WINDOWS
 
 if TYPE_CHECKING:
     from .base import ArgType
@@ -52,7 +51,7 @@ def buildkitd_health() -> bool:
 def health() -> bool:
     client = find_binary()
 
-    if psutil.WINDOWS:
+    if WINDOWS:
         logger.error("buildctl is NOT SUPPORTED on Windows.")
         return False
 

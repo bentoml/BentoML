@@ -13,11 +13,11 @@ from typing import TYPE_CHECKING
 import fs
 import attr
 import yaml
-import psutil
 import fs.copy
 from pathspec import PathSpec
 from pip_requirements_parser import RequirementsFile
 
+from ..utils import WINDOWS
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from ..utils import copy_file_to_fs_folder
@@ -245,7 +245,7 @@ class DockerOptions:
                 raise InvalidArgument(f"Invalid setup_script file: {e}") from None
             if not os.access(setup_script, os.X_OK):
                 message = f"{setup_script} is not executable."
-                if not psutil.WINDOWS:
+                if not WINDOWS:
                     raise InvalidArgument(
                         f"{message} Ensure the script has a shebang line, then run 'chmod +x {setup_script}'."
                     ) from None

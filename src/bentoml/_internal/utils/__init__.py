@@ -48,9 +48,20 @@ if TYPE_CHECKING:
 
 C = t.TypeVar("C")
 T = t.TypeVar("T")
-_T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
 
 rich_console = Console(theme=None)
+
+# lightweight port from psutil._common.py to avoid circular dependency in bazel
+POSIX = os.name == "posix"
+WINDOWS = os.name == "nt"
+LINUX = sys.platform.startswith("linux")
+MACOS = sys.platform.startswith("darwin")
+FREEBSD = sys.platform.startswith(("freebsd", "midnightbsd"))
+OPENBSD = sys.platform.startswith("openbsd")
+NETBSD = sys.platform.startswith("netbsd")
+BSD = FREEBSD or OPENBSD or NETBSD
+SUNOS = sys.platform.startswith(("sunos", "solaris"))
+AIX = sys.platform.startswith("aix")
 
 __all__ = [
     "bentoml_cattr",

@@ -7,16 +7,13 @@ import tempfile
 import contextlib
 from typing import TYPE_CHECKING
 
-import psutil
 import pytest
 from pytest import MonkeyPatch
 
-import bentoml
-from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils import validate_or_create_dir
-from bentoml._internal.models import ModelContext
-from bentoml._internal.configuration import CLEAN_BENTOML_VERSION
-from bentoml._internal.configuration.containers import BentoMLContainer
+from ... import models
+from ..utils import BENTOML_TEST_NO_BAZEL
+from ..._internal.utils import LazyLoader
+from ..._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import numpy as np
@@ -34,17 +31,15 @@ else:
     np = LazyLoader("np", globals(), "numpy")
 
 
-TEST_MODEL_CONTEXT = ModelContext(
-    framework_name="testing",
-    framework_versions={"testing": "v1"},
-)
-
 _RUN_GPU_TESTS_MARKER = "--run-gpu-tests"
 _RUN_GRPC_TESTS_MARKER = "--run-grpc-tests"
+_NO_BAZEL = "--no-bazel"
 
 
 @pytest.mark.tryfirst
 def pytest_report_header(config: Config) -> list[str]:
+    from ..._internal.configuration import CLEAN_BENTOML_VERSION
+
     return [f"bentoml: version={CLEAN_BENTOML_VERSION}"]
 
 
@@ -63,6 +58,12 @@ def pytest_addoption(parser: Parser) -> None:
         default=False,
         help="run grpc related tests.",
     )
+    group.addoption(
+        _NO_BAZEL,
+        action="store_true",
+        default=False,
+        help="run test suite as standalone",
+    )
 
 
 def pytest_configure(config: Config) -> None:
@@ -75,6 +76,12 @@ def pytest_configure(config: Config) -> None:
         "markers",
         "requires_grpc: requires gRPC support to run given test.",
     )
+    # We will adjust the test behaviour whether we are running inside Bazel or not.
+    # NOTE: by default BentoML test suite will run using bazel.
+    if BENTOML_TEST_NO_BAZEL not in os.environ:
+        os.environ[BENTOML_TEST_NO_BAZEL] = "0"
+    if config.getoption(_NO_BAZEL):
+        os.environ[BENTOML_TEST_NO_BAZEL] = "1"
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -105,6 +112,9 @@ def _setup_deployment_mode(metafunc: Metafunc):
     Current matrix:
     - deployment_mode: ["container", "distributed", "standalone"]
     """
+    from ..._internal.utils import MACOS
+    from ..._internal.utils import WINDOWS
+
     if os.getenv("VSCODE_IPC_HOOK_CLI") and not os.getenv("GITHUB_CODESPACE_TOKEN"):
         # When running inside VSCode remote container locally, we don't have access to
         # exposed reserved ports, so we can't run container-based tests. However on GitHub
@@ -112,16 +122,16 @@ def _setup_deployment_mode(metafunc: Metafunc):
         # Note that inside the remote container, it is already running as a Linux container.
         deployment_mode = ["distributed", "standalone"]
     else:
-        if os.environ.get("GITHUB_ACTIONS") and (psutil.WINDOWS or psutil.MACOS):
+        if os.environ.get("GITHUB_ACTIONS") and (WINDOWS or MACOS):
             # Due to GitHub Actions' limitation, we can't run container-based tests
             # on Windows and macOS. However, we can still running those tests on
             # local development.
-            if psutil.MACOS:
+            if MACOS:
                 deployment_mode = ["distributed", "standalone"]
             else:
                 deployment_mode = ["standalone"]
         else:
-            if psutil.WINDOWS:
+            if WINDOWS:
                 deployment_mode = ["standalone", "container"]
             else:
                 deployment_mode = ["distributed", "standalone", "container"]
@@ -130,21 +140,23 @@ def _setup_deployment_mode(metafunc: Metafunc):
 
 def _setup_model_store(metafunc: Metafunc):
     """Setup dummy models for test session."""
-    with bentoml.models.create(
+    from . import TEST_MODEL_CONTEXT
+
+    with models.create(
         "testmodel",
         module=__name__,
         signatures={},
         context=TEST_MODEL_CONTEXT,
     ):
         pass
-    with bentoml.models.create(
+    with models.create(
         "testmodel",
         module=__name__,
         signatures={},
         context=TEST_MODEL_CONTEXT,
     ):
         pass
-    with bentoml.models.create(
+    with models.create(
         "anothermodel",
         module=__name__,
         signatures={},
@@ -178,6 +190,12 @@ def _setup_session_environment(
 
 
 def _setup_test_directory() -> tuple[str, str]:
+    # NOTE: lazy load this funcall to avoid circular import with psutil inside bazel,
+    # as we only use this function when pytest starts (which is after analyze phase).
+    # TODO: This has to do with bazel modifying PYTHONPATH and imports from prebuilt
+    # psutil creates circular imports during analysis phase.
+    from ..._internal.utils import validate_or_create_dir
+
     # Ensure we setup correct home and prometheus_multiproc_dir folders.
     # For any given test session.
     bentoml_home = tempfile.mkdtemp("bentoml-pytest")
@@ -198,7 +216,7 @@ def _setup_test_directory() -> tuple[str, str]:
 @pytest.mark.tryfirst
 def pytest_sessionstart(session: Session) -> None:
     """Create a temporary directory for the BentoML home directory, then monkey patch to config."""
-    from bentoml._internal.utils import analytics
+    from ..._internal.utils import analytics
 
     # We need to clear analytics cache before running tests.
     analytics.usage_stats.do_not_track.cache_clear()

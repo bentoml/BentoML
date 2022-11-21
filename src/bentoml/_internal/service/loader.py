@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 def import_service(
     svc_import_path: str,
     *,
-    working_dir: t.Optional[str] = None,
+    working_dir: str | None = None,
     standalone_load: bool = False,
     model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> Service:
@@ -102,7 +102,13 @@ def import_service(
             )
 
         if os.path.exists(import_path):
-            import_path = os.path.realpath(import_path)
+            from ...testing.utils import run_in_bazel
+            from ...testing.utils import BENTOML_TEST_NO_BAZEL
+
+            if BENTOML_TEST_NO_BAZEL not in os.environ or not run_in_bazel():
+                # In Bazel, the target of the bento is a symlink, which means realpath will fail.
+                # Hence, we only resolve to realpath if we aren't inside bazel.
+                import_path = os.path.realpath(import_path)
             # Importing from a module file path:
             if not import_path.startswith(working_dir):
                 raise ImportServiceError(

@@ -17,7 +17,7 @@ import multiprocessing
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
-from .utils import run_in_bazel
+from .._internal.utils import run_in_bazel
 from ..grpc.utils import import_grpc
 from .._internal.tag import Tag
 from .._internal.utils import WINDOWS

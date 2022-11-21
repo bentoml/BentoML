@@ -63,6 +63,14 @@ BSD = FREEBSD or OPENBSD or NETBSD
 SUNOS = sys.platform.startswith(("sunos", "solaris"))
 AIX = sys.platform.startswith("aix")
 
+BENTOML_IN_BAZEL = "__BENTOML_IN_BAZEL__"
+
+# NOTE: We set this env to determine whether we are inside Bazel environment.
+def run_in_bazel() -> bool:
+    return os.environ.get(BENTOML_IN_BAZEL, "0") == "0"
+
+
+
 __all__ = [
     "bentoml_cattr",
     "cached_property",
@@ -74,6 +82,7 @@ __all__ = [
     "rich_console",
     "experimental",
     "compose",
+    "run_in_bazel",
 ]
 
 _EXPERIMENTAL_APIS: set[str] = set()

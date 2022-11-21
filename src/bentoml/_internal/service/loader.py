@@ -102,10 +102,10 @@ def import_service(
             )
 
         if os.path.exists(import_path):
-            from ...testing.utils import run_in_bazel
-            from ...testing.utils import BENTOML_TEST_NO_BAZEL
+            from ..utils import run_in_bazel
+            from ..utils import BENTOML_IN_BAZEL
 
-            if BENTOML_TEST_NO_BAZEL not in os.environ or not run_in_bazel():
+            if BENTOML_IN_BAZEL not in os.environ or not run_in_bazel():
                 # In Bazel, the target of the bento is a symlink, which means realpath will fail.
                 # Hence, we only resolve to realpath if we aren't inside bazel.
                 import_path = os.path.realpath(import_path)

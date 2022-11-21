@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml.testing.utils import run_in_bazel
+from bentoml._internal.utils import run_in_bazel
 from bentoml._internal.utils import WINDOWS
 
 if TYPE_CHECKING:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -14,13 +13,6 @@ if TYPE_CHECKING:
     from aiohttp.typedefs import LooseHeaders
     from starlette.datastructures import Headers
     from starlette.datastructures import FormData
-
-BENTOML_TEST_NO_BAZEL = "__BENTOML_TEST_NO_BAZEL__"
-
-# NOTE: We set this env to determine whether we are inside Bazel environment.
-def run_in_bazel() -> bool:
-    return os.environ.get(BENTOML_TEST_NO_BAZEL, "0") == "0"
-
 
 async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":
     """

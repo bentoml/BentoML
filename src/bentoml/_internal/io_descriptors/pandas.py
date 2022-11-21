@@ -835,7 +835,7 @@ class PandasSeries(
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
     """
 
-    mime_type = "application/json"
+    _mime_type = "application/json"
 
     def __init__(
         self,

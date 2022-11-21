@@ -4,9 +4,8 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-from bentoml.exceptions import BentoMLException
-
 from ...types import LazyType
+from ....exceptions import BentoMLException
 from ...utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
@@ -68,10 +67,8 @@ TENSORPROTO_ELEMENT_TYPE_TO_NUMPY_TYPE: dict[int, str] = {
     # onnx.TensorProto.BFLOAT16: None,  # 16
 }
 
-
-CASTING_FUNC_DISPATCHER: dict[str, ONNXArgCastingFuncGeneratorType] = {
-    # type -> casting function generator
-}
+# type -> casting function generator
+CASTING_FUNC_DISPATCHER: dict[str, ONNXArgCastingFuncGeneratorType] = {}
 
 
 def gen_input_casting_func(spec: dict[str, t.Any]) -> ONNXArgCastingFuncType:

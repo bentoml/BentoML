@@ -18,7 +18,6 @@ from bentoml.exceptions import MissingDependencyException
 
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import PackageNotFoundError
-from .utils.onnx import gen_input_casting_func
 
 if TYPE_CHECKING:
 
@@ -35,6 +34,7 @@ try:
     import onnx
     from google.protobuf.json_format import MessageToDict
 
+    from .utils.onnx import gen_input_casting_func
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "onnx is required in order to use module 'bentoml.onnx', install onnx with 'pip install onnx'. For more information, refer to https://onnx.ai/get-started.html"

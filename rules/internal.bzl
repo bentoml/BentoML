@@ -2,6 +2,12 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 
+# NOTE: sync with pyproject.toml
+GRPC_VERSION = "1.48.1"
+GRPC_SHA256 = "320366665d19027cda87b2368c03939006a37e0388bfd1091c8d2a96fbc93bd8"
+PROTOBUF_VERSION = "3.19.6"
+PROTOBUF_SHA256 = "9a301cf94a8ddcb380b901e7aac852780b826595075577bb967004050c835056"
+
 def bentoml_internal_deps():
     maybe(
         http_archive,
@@ -61,20 +67,20 @@ def bentoml_internal_deps():
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        strip_prefix = "protobuf-3.19.6",
-        sha256 = "9a301cf94a8ddcb380b901e7aac852780b826595075577bb967004050c835056",
+        strip_prefix = "protobuf-{}".format(PROTOBUF_VERSION),
+        sha256 = PROTOBUF_SHA256,
         urls = [
-            "https://github.com/protocolbuffers/protobuf/archive/v3.19.6.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/v{}.tar.gz".format(PROTOBUF_VERSION),
         ],
     )
 
     maybe(
         http_archive,
         name = "com_github_grpc_grpc",
-        strip_prefix = "grpc-1.50.1",
-        sha256 = "fb1ed98eb3555877d55eb2b948caca44bc8601c6704896594de81558639709ef",
+        strip_prefix = "grpc-{}".format(GRPC_VERSION),
+        sha256 = GRPC_SHA256,
         urls = [
-            "https://github.com/grpc/grpc/archive/v1.50.1.tar.gz",
+            "https://github.com/grpc/grpc/archive/v{}.tar.gz".format(GRPC_VERSION),
         ],
     )
 

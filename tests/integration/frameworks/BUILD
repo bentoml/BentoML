@@ -1,7 +1,7 @@
-load("//rules:python.bzl", "framework_py_test", _FRAMEWORKS = "FRAMEWORKS")
+load("//rules/py:python.bzl", "framework_py_test", _FRAMEWORKS = "FRAMEWORKS")
 load("@rules_python//python:defs.bzl", "py_library")
-load("@pypi//:requirements.bzl", pypi = "requirement")
-load("@frameworks//:requirements.bzl", framework = "requirement")
+load("@pypi//:requirements.bzl", "requirement")
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = ["//:__subpackages__"])
 
@@ -14,8 +14,8 @@ py_library(
     name = "models",
     srcs = ["//tests/integration/frameworks/models:__init__.py"],
     deps = [
-        pypi("attrs"),
-        pypi("numpy"),
+        requirement("attrs"),
+        requirement("numpy"),
     ],
 )
 
@@ -35,9 +35,10 @@ py_library(
     deps = [
         ":models",
         "//src/bentoml",
-        pypi("pytest"),
-        pypi("pytest-xdist"),
-        pypi("pytest-asyncio"),
+        requirement("scikit-learn"),
+        requirement("pytest"),
+        requirement("pytest-xdist"),
+        requirement("pytest-asyncio"),
     ],
 )
 
@@ -47,6 +48,34 @@ py_library(
 ]
 
 framework_py_test(name = "lightgbm")
+
+framework_py_test(
+    name = "keras",
+    deps = selects.with_or({
+        "@bazel_tools//src/conditions:darwin_arm64": [
+            "//:grpcio",
+            requirement("tensorflow-macos"),
+        ],
+        ("@bazel_tools//src/conditions:linux", "@bazel_tools//src/conditions:windows", "@bazel_tools//src/conditions:darwin_x86_64"): [
+            "//:grpcio",
+            requirement("tensorflow"),
+        ],
+    }),
+)
+
+framework_py_test(
+    name = "pytorch_lightning",
+    deps = selects.with_or({
+        "@bazel_tools//src/conditions:darwin_arm64": [
+            "//:grpcio",
+            requirement("torch"),
+        ],
+        ("@bazel_tools//src/conditions:linux", "@bazel_tools//src/conditions:windows", "@bazel_tools//src/conditions:darwin_x86_64"): [
+            "//:grpcio",
+            requirement("torch"),
+        ],
+    }),
+)
 
 [
     framework_py_test(
@@ -67,16 +96,23 @@ framework_py_test(
         "test_transformers_unit.py",
         "//tests/integration/frameworks/models:transformers.py",
     ],
-    deps = select({
-        "@bazel_tools//src/conditions:linux": [
-            framework("tensorflow"),
-            framework("torch"),
-            framework("flax"),
+    deps = selects.with_or({
+        "@bazel_tools//src/conditions:darwin_arm64": [
+            "//:grpcio",
+            requirement("tensorflow-macos"),
+            requirement("torch"),
+            requirement("flax"),
         ],
-        "@bazel_tools//src/conditions:darwin": [
-            framework("tensorflow-macos"),
-            framework("torch"),
-            framework("flax"),
+        "@bazel_tools//src/conditions:windows": [
+            "//:grpcio",
+            requirement("tensorflow"),
+            requirement("torch"),
+        ],
+        ("@bazel_tools//src/conditions:linux", "@bazel_tools//src/conditions:darwin_x86_64"): [
+            "//:grpcio",
+            requirement("tensorflow"),
+            requirement("torch"),
+            requirement("flax"),
         ],
     }),
 )

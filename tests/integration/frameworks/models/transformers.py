@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 # NOTE: We have to run this first to ensure correct setup
 from bentoml.testing.pytest import set_huggingface_envar
 
-set_huggingface_envar()
+set_huggingface_envar()  # noqa
 
 import requests
 import transformers
@@ -47,11 +47,6 @@ TINY_TEXT_TASK = get_task(TINY_TEXT_MODEL)
 TINY_TEXT_AUTO = "AutoModelForSequenceClassification"
 
 set_seed(124)
-
-import os
-
-print(os.environ["HF_HOME"])
-print(os.environ["HUGGINGFACE_HUB_CACHE"])
 
 
 class CustomPipeline(Pipeline):

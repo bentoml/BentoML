@@ -7,11 +7,18 @@ BASEDIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" &>/dev/null && pwd 2>/d
 # NOTE that we are using local bazel instead of system bazel.
 BAZEL_BIN="$BASEDIR/bazel"
 
-"${BAZEL_BIN}" run //:pypi.update
-if [[ "$(uname)" == "Darwin" ]]; then
-	"${BAZEL_BIN}" run //:frameworks-macos.update
-elif [[ "$(uname)" == "Linux" ]]; then
-	"${BAZEL_BIN}" run //:frameworks-linux.update
-elif [[ "$(uname)" == "Windows" ]]; then
-	"${BAZEL_BIN}" run //:frameworks-windows.update
-fi
+case $(uname -s) in
+"Linux")
+	"${BAZEL_BIN}" run //:pypi-linux.update
+	;;
+"Darwin")
+	"${BAZEL_BIN}" run //:pypi-macos.update
+	;;
+"MINGW"* | "MSYS_NT"*)
+	"${BAZEL_BIN}" run //:pypi-windows.update
+	;;
+*)
+	echo "Unsupported OS: $(uname -s)" >&2
+	exit 1
+	;;
+esac

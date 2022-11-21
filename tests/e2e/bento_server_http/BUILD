@@ -1,4 +1,4 @@
-load("//rules:python.bzl", "py_test")
+load("//rules/py:python.bzl", "py_test")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@pypi//:requirements.bzl", "requirement")
 
@@ -55,5 +55,6 @@ py_test(
         ":train",
         requirement("numpy"),
         requirement("fastapi"),
+        requirement("pyarrow"),
     ],
 )

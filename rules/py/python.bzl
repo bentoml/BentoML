@@ -7,11 +7,9 @@ FRAMEWORKS = [
     "catboost",
     "onnx",
     "picklable_model",
-    "pytorch_lightning",
     "torchscript",
     "sklearn",
     "xgboost",
-    "keras",
 ]
 
 # NOTE: the following are frameworks with general tests and additional unit tests.
@@ -28,8 +26,9 @@ FRAMEWORKS_GENERAL_TESTS = [
 FRAMEWORKS_UNIVERSAL = FRAMEWORKS + FRAMEWORKS_GENERAL_TESTS
 
 # XXX: mlflow has its own testset. so it will be added separatedly in src/BUILD.bazel
-# XXX: lightgbm can only be ran on Linux, and it is also added separately in tests/integration/frameworks/BUILD
-SUPPORTED_FRAMEWORKS_TARGETS = FRAMEWORKS_UNIVERSAL + ["lightgbm", "mlflow"]
+# XXX: lightgbm can only be ran on Linux, and it is also added separately in tests/integration/frameworks/BUILD.
+# XXX: pytorch_lightning depends on gRPC which needs to build manually on M1.
+SUPPORTED_FRAMEWORKS_TARGETS = FRAMEWORKS_UNIVERSAL + ["lightgbm", "mlflow", "pytorch_lightning", "keras"]
 
 def py_test(name, args = [], data = [], **kwargs):
     """A py_test macro that use pytest + rules_python's 'py_test' to run BentoML tests.
@@ -56,12 +55,9 @@ def py_test(name, args = [], data = [], **kwargs):
         name = name,
         srcs = [":__test__"] + srcs,
         main = ":__test__.py",
-        args = ["-vvv"] + args,
+        args = ["-vvv", "-p", "rules.py.codecoverage", "-p", "no:warning"] + args,
         python_version = "PY3",
         env = {
-            # "PYTHON_COVERAGE": "$(location //:coveragepy)",
-            # # set COVERAGE_DIR to make sure set lcov.dat to default runfiles target.
-            # "COVERAGE_DIR": "",
             # NOTE: Set the following envvar to build the wheel.
             "BENTOML_BUNDLE_LOCAL_BUILD": "True",
             "SETUPTOOLS_USE_DISTUTILS": "stdlib",
@@ -70,7 +66,7 @@ def py_test(name, args = [], data = [], **kwargs):
             ":__test__",
             "//src/bentoml",
             "//src/bentoml_cli",
-            # "//:coveragepy",
+            "//rules/py:codecov",
             _pypi_requirement("pytest"),
             _pypi_requirement("pytest-xdist"),
             _pypi_requirement("pytest-asyncio"),
@@ -82,6 +78,7 @@ def py_test(name, args = [], data = [], **kwargs):
             "//:pyproject",
             "//src/bentoml:srcs_files",
         ] + data,
+        legacy_create_init = 0,
         **kwargs
     )
 

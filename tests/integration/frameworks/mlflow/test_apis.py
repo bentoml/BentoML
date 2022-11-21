@@ -17,7 +17,7 @@ from sklearn.neighbors import KNeighborsClassifier
 import bentoml
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
-from bentoml.testing.pytest import run_in_bazel
+from bentoml._internal.utils import run_in_bazel
 from bentoml._internal.models.model import ModelContext
 
 if TYPE_CHECKING:

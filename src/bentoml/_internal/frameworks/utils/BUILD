@@ -1,6 +1,6 @@
 load("@rules_python//python:defs.bzl", "py_library")
-load("@pypi//:requirements.bzl", pypi = "requirement")
-load("@frameworks//:requirements.bzl", framework = "requirement")
+load("@pypi//:requirements.bzl", "requirement")
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = ["//src/bentoml/_internal/frameworks:__pkg__"])
 
@@ -14,25 +14,25 @@ py_library(
     srcs = ["onnx.py"],
     deps = [
         "//src/bentoml",
-        framework("onnx"),
+        requirement("onnx"),
     ],
 )
 
 py_library(
     name = "tensorflow",
     srcs = ["tensorflow.py"],
-    deps = select({
-        "@bazel_tools//src/conditions:linux": [
-            "//src/bentoml",
-            framework("grpcio"),
-            framework("tensorflow"),
-            pypi("importlib-metadata"),
-        ],
-        "@bazel_tools//src/conditions:darwin": [
+    deps = selects.with_or({
+        "@bazel_tools//src/conditions:darwin_arm64": [
             "//src/bentoml",
             "//:grpcio",
-            framework("tensorflow-macos"),
-            pypi("importlib-metadata"),
+            requirement("tensorflow-macos"),
+            requirement("importlib-metadata"),
+        ],
+        ("@bazel_tools//src/conditions:linux", "@bazel_tools//src/conditions:windows", "@bazel_tools//src/conditions:darwin_x86_64"): [
+            "//src/bentoml",
+            "//:grpcio",
+            requirement("tensorflow"),
+            requirement("importlib-metadata"),
         ],
     }),
 )

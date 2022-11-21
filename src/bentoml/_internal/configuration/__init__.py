@@ -7,9 +7,9 @@ import logging
 from pathlib import Path
 from functools import lru_cache
 
+from ..utils import run_in_bazel
 from ...exceptions import BentoMLException
 from ...exceptions import BentoMLConfigException
-from ...testing.utils import run_in_bazel
 
 # this __version__ simulates what setuptools-scm will generate when repo is shallow clone.
 # __version_tuple__ and __version__ will be overriden if src/bentoml/_version.py exists and

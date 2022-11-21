@@ -13,20 +13,20 @@ lint: ## Running lint checker: pylint
 	@./tools/lint
 type: ## Running type checker: pyright
 	@echo "(pyright) Watching codebase's type..."
-	@pyright -p src/ -w
+	@bazel run //:pyright -- -p $(GIT_ROOT)/src/ -w
 test: ## Running tests
 	@bazel test //tests/...
 clean: ## Clean all generated files
 	@echo "Cleaning all generated files..."
 	@cd $(GIT_ROOT)/docs && make clean
-	@cd $(GIT_ROOT) || exit 1
-	@find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
+	@find $(GIT_ROOT) -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
+	@bazel clean --expunge
 
 # Docs
 watch-docs: ## Build and watch documentation
-	sphinx-autobuild docs/source docs/build/html --watch $(GIT_ROOT)/src/ --ignore "bazel-*"
+	@bazel run //:sphinx-autobuild -- $(GIT_ROOT)/docs/source $(GIT_ROOT)/docs/build/html --watch $(GIT_ROOT)/src/ --ignore "$(GIT_ROOT)/bazel-*"
 spellcheck-docs: ## Spell check documentation
-	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
+	@bazel run //:sphinx-build -- -b spelling $(GIT_ROOT)/docs/source $(GIT_ROOT)/docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)

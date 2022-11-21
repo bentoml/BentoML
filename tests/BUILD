@@ -7,14 +7,8 @@ py_library(
     srcs = ["//tests/proto:srcs_files"] + glob(["proto/*.py"]),
     data = ["//tests/proto:srcs_files"],
     imports = ["../"],
-    deps = select({
-        "@bazel_tools//src/conditions:linux": [
-            "@pypi_grpcio//:pkg",
-            "@pypi_protobuf//:pkg",
-        ],
-        "@bazel_tools//src/conditions:darwin": [
-            "//:grpcio",
-            "//:protobuf",
-        ],
-    }),
+    deps = [
+        "//:grpcio",
+        "//:protobuf",
+    ],
 )

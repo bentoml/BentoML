@@ -1,6 +1,18 @@
 # Coloring for error messages.
 common --color=yes
 
+# Work around https://github.com/bazelbuild/bazel/issues/6293 by setting a dummy lcov.
+coverage --combined_report=lcov --coverage_report_generator=@bazel_tools//tools/test:lcov_merger
+
+# prevent creation of empty __init__.py
+# see: https://github.com/bazelbuild/bazel/issues/10076, https://github.com/bazelbuild/bazel/issues/7386
+build --incompatible_default_to_explicit_init_py
+test --incompatible_default_to_explicit_init_py
+
+# Windows requires enable_runfiles
+build --enable_runfiles
+startup --windows_enable_symlinks
+
 ## Build ##
 
 # Turn off legacy external runfiles
@@ -13,6 +25,9 @@ build --cxxopt=-std=c++14 --host_cxxopt=-std=c++14
 build --define=use_fast_cpp_protos=true
 # don't zip, see: https://github.com/bazelbuild/bazel/issues/8981
 build --build_python_zip=false
+
+build --verbose_failures
+build --worker_verbose
 
 # --config=opt
 build:opt --compilation_mode=opt
@@ -31,20 +46,13 @@ build:macos --host_swiftcopt=-wmo --swiftcopt=-wmo
 # which can hide issues with non-hermetic bugs.
 build:macos --strategy=SwiftCompile=sandboxed
 
-# prevent creation of empty __init__.py
-# see: https://github.com/bazelbuild/bazel/issues/10076, https://github.com/bazelbuild/bazel/issues/7386
-build --incompatible_default_to_explicit_init_py
-
-# nix config
-
-build:nix --copt="-I$(nix eval --impure --raw --expr 'let pkgs = import <nixpkgs> { }; in pkgs.llvmPackages.openmp.out')/include -L$(nix eval --impure --raw --expr 'let pkgs = import <nixpkgs> { }; in pkgs.llvmPackages.openmp.out')/lib"
-
 ## Test ##
-
-test --incompatible_default_to_explicit_init_py
 
 # --test_output=errors: Printout test error
 test --test_output=errors
 
 # with dbg mode we will stream the output
 test:dbg --test_output=streamed
+
+# nix config
+build:nix --copt="-I$(nix eval --impure --raw --expr 'let pkgs = import <nixpkgs> { }; in pkgs.llvmPackages.openmp.out')/include -L$(nix eval --impure --raw --expr 'let pkgs = import <nixpkgs> { }; in pkgs.llvmPackages.openmp.out')/lib"

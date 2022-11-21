@@ -1,39 +1,38 @@
-load("//rules:python.bzl", "framework_py_library")
-load("@pypi//:requirements.bzl", pypi = "requirement")
-load("@frameworks//:requirements.bzl", framework = "requirement")
+load("//rules/py:python.bzl", "framework_py_library")
+load("@pypi//:requirements.bzl", "requirement")
 
 exports_files(glob(["*.py"]))
 
 framework_py_library(
     name = "catboost",
-    deps = [framework("scikit-learn")],
+    deps = [requirement("scikit-learn")],
 )
 
 framework_py_library(
     name = "fastai",
     deps = [
-        pypi("pandas"),
-        framework("scikit-learn"),
-        framework("numpy"),
+        requirement("pandas"),
+        requirement("scikit-learn"),
+        requirement("numpy"),
     ],
 )
 
 framework_py_library(
     name = "lightgbm",
     deps = [
-        pypi("pandas"),
-        framework("numpy"),
-        framework("scikit-learn"),
+        requirement("pandas"),
+        requirement("numpy"),
+        requirement("scikit-learn"),
     ],
 )
 
 framework_py_library(
     name = "onnx",
     deps = [
-        framework("scikit-learn"),
-        framework("numpy"),
-        framework("torch"),
-        framework("skl2onnx"),
+        requirement("scikit-learn"),
+        requirement("numpy"),
+        requirement("torch"),
+        requirement("skl2onnx"),
     ],
 )
 
@@ -41,33 +40,37 @@ framework_py_library(name = "picklable_model")
 
 framework_py_library(
     name = "pytorch",
-    deps = [framework("numpy")],
+    deps = [requirement("numpy")],
 )
 
 framework_py_library(
     name = "torchscript",
     deps = [
-        framework("numpy"),
-        pypi("pandas"),
+        requirement("numpy"),
+        requirement("pandas"),
     ],
 )
 
 framework_py_library(
     name = "pytorch_lightning",
-    deps = [framework("numpy")],
+    deps = [
+        "//:grpcio",
+        requirement("numpy"),
+    ],
 )
 
 framework_py_library(
     name = "sklearn",
-    deps = [framework("numpy")],
+    deps = [requirement("numpy")],
 )
 
 framework_py_library(
     name = "tensorflow",
     srcs = ["tensorflow.py"],
     deps = [
-        framework("keras"),
-        framework("numpy"),
+        "//:grpcio",
+        requirement("keras"),
+        requirement("numpy"),
     ],
 )
 
@@ -75,24 +78,26 @@ framework_py_library(
     name = "keras",
     srcs = ["keras.py"],
     deps = [
-        framework("keras"),
-        framework("numpy"),
+        "//:grpcio",
+        requirement("keras"),
+        requirement("numpy"),
     ],
 )
 
 framework_py_library(
     name = "transformers",
     deps = [
-        pypi("Pillow"),
-        pypi("requests"),
+        "//:grpcio",
+        requirement("Pillow"),
+        requirement("requests"),
     ],
 )
 
 framework_py_library(
     name = "xgboost",
     deps = [
-        pypi("pandas"),
-        framework("numpy"),
-        framework("scikit-learn"),
+        requirement("pandas"),
+        requirement("numpy"),
+        requirement("scikit-learn"),
     ],
 )

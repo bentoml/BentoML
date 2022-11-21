@@ -1,7 +1,17 @@
-load("//rules:python.bzl", "py_test")
+load("//rules/py:python.bzl", "py_test")
+load("@pypi//:requirements.bzl", "requirement")
 
 [
-    py_test(name = lib)
+    py_test(
+        name = lib,
+        deps = [
+            "//:grpcio",
+            "//:protobuf",
+            requirement("numpy"),
+            requirement("Pillow"),
+            requirement("pydantic"),
+        ],
+    )
     for lib in [
         "base",
         "file",

@@ -50,35 +50,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
    pip install -r ./requirements/dev-requirements.txt
    ```
 
-8. (Optional) Install frameworks dependencies:
-
-<table>
-<tr>
-<td> OS </td> <td> Command </td>
-</tr>
-<tr>
-<td> <code>Linux/Windows</code> </td>
-<td>
-
-```bash
-pip install -r ./requirements/frameworks-requirements.txt
-```
-
-</td>
-</tr>
-<tr>
-<td> <code>MacOS</code> </td>
-<td>
-
-```bash
-pip install -r ./requirements/frameworks-requirements.macos.txt
-```
-
-</td>
-</tr>
-</table>
-
-9. Test the BentoML installation either in a terminal:
+8. Test the BentoML installation either in a terminal:
 
    ```bash
    bentoml --version
@@ -282,7 +254,7 @@ bazel run @com_google_protobuf//:protoc -- ...
 
 ## Deploy with your changes
 
-Test test out your changes in an actual BentoML model deployment, you can create a new Bento with your custom BentoML source repo:
+Test out your changes in an actual BentoML model deployment, you can create a new Bento with your custom BentoML source repo:
 
 1. Install custom BentoML in editable mode.
 
@@ -334,25 +306,31 @@ BentoML CI uses [bazel](https://bazel.build/) to run tests, and setup toolchains
 
 ### Running with bazel
 
-Use the below scripts will run BentoML test suite with Bazel:
+First, mark the generated lock files to `assume-unchanged`:
 
 ```bash
-bazel run ${flags} //tests/...
+git update-index --assume-unchanged requirements/*.lock.txt
+```
+
+Generate the locked dependencies:
+
+```bash
+./tools/update-deps
+```
+
+Use `bazel test` to run the test suite:
+
+```bash
+bazel test ${flags} //tests/...
 ```
 
 On Windows, remove the prefix `//`:
 
 ```bash
-bazel run ${flags} tests/...
+bazel test ${flags} tests/...
 ```
 
 ### Running with pytest
-
-Make sure to install all test dependencies:
-
-```bash
-pip install -r requirements/tests-requirements.txt
-```
 
 BentoML tests come with a pytest plugin. Export `PYTEST_PLUGINS`:
 

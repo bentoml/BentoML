@@ -1,5 +1,5 @@
 # Dev dependencies
 -e .[all]
--r docs-requirements.txt
+-r pypi.txt
 twine
 wheel

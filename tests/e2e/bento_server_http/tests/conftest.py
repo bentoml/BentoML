@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml.testing.utils import run_in_bazel
+from bentoml._internal.utils import run_in_bazel
 
 if TYPE_CHECKING:
     from contextlib import ExitStack

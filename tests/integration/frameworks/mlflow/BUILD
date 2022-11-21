@@ -1,5 +1,5 @@
-load("//rules:python.bzl", "py_test")
-load("@frameworks//:requirements.bzl", framework = "requirement")
+load("//rules/py:python.bzl", "py_test")
+load("@pypi//:requirements.bzl", "requirement")
 
 filegroup(
     name = "testdata",
@@ -14,9 +14,9 @@ py_test(
     ],
     deps = [
         "//src/bentoml:mlflow",
-        framework("numpy"),
-        framework("scikit-learn"),
-        framework("mlflow"),
-        framework("importlib-resources"),
+        requirement("numpy"),
+        requirement("scikit-learn"),
+        requirement("mlflow"),
+        requirement("importlib-resources"),
     ],
 )

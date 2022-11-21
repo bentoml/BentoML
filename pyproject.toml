@@ -138,7 +138,7 @@ grpc = [
   # We can't use 1.48.2 since it depends on 3.19.5
   "grpcio>=1.41.0,!=1.48.2",
   # grpcio>=1.48.1 is currently the only version that works with M1
-  "grpcio>=1.48.0,!=1.48.2,<1.49;platform_machine=='arm64' and platform_system=='Darwin'",
+  "grpcio==1.48.1;platform_machine=='arm64' and platform_system=='Darwin'",
   "grpcio-health-checking>=1.41.0,!=1.48.2",
   "opentelemetry-instrumentation-grpc==0.35b0",
 ]
@@ -259,6 +259,7 @@ ignore-paths = [
   "src/bentoml/_internal/external_typing",
   "src/bentoml/grpc/v1alpha1",
   "src/bentoml/grpc/v1",
+  "tests/proto",
 ]
 disable = ["coerce-builtin", "no-absolute-import", "C", "R", "fixme"]
 enable = ["c-extension-no-member"]
@@ -317,12 +318,13 @@ include = ["src/", "examples/", "tests/"]
 exclude = [
   'src/bentoml/_version.py',
   'src/bentoml/__main__.py',
-  'src/bentoml/_internal/external_typing/',
-  'src/**/*_pb2.py*',
-  "src/**/*_pb2_grpc.py*",
+  'src/bentoml/_internal/external_typing',
+  'src/bentoml/grpc/v1',
+  'src/bentoml/grpc/v1alpha1',
   "tests/proto",
   "third_party",
   "bazel-*",
+  "grpc-client",
 ]
 analysis.useLibraryCodeForTypes = true
 strictListInference = true

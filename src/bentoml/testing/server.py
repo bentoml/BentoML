@@ -17,16 +17,14 @@ import multiprocessing
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
-from bentoml.grpc.utils import import_grpc
-from bentoml._internal.tag import Tag
-from bentoml._internal.utils import WINDOWS
-from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils import reserve_free_port
-from bentoml._internal.utils import cached_contextmanager
-
+from ..grpc.utils import import_grpc
 from ..grpc.utils import LATEST_PROTOCOL_VERSION
-
-from .utils import run_in_bazel
+from .._internal.tag import Tag
+from .._internal.utils import WINDOWS
+from .._internal.utils import LazyLoader
+from .._internal.utils import run_in_bazel
+from .._internal.utils import reserve_free_port
+from .._internal.utils import cached_contextmanager
 
 if TYPE_CHECKING:
     from grpc import aio

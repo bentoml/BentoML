@@ -10,8 +10,5 @@ package(default_visibility = ["//:__pkg__"])
     for src in [
         "internal",
         "utils",
-        "python",
     ]
 ]
-
-exports_files(["executor-entrypoint.sh"])

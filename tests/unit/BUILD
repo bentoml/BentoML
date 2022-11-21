@@ -1,4 +1,4 @@
-load("//rules:python.bzl", "py_test")
+load("//rules/py:python.bzl", "py_test")
 
 [
     py_test(name = lib)

@@ -1,5 +1,0 @@
-# Docs dependencies
--r bazel/pypi.txt
-myst-parser
-furo
-pyenchant

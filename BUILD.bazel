@@ -2,8 +2,7 @@ package(default_visibility = ["//:__subpackages__"])
 
 # rules_python
 load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
-load("@rules_python//python:defs.bzl", "py_binary", "py_library")
-load("@com_github_grpc_grpc//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@pypi//:requirements.bzl", "entry_point", "requirement")
 
@@ -19,20 +18,12 @@ filegroup(
     srcs = ["pyproject.toml"],
 )
 
-compile_pip_requirements(
-    name = "pypi",
-    extra_args = ["--allow-unsafe"],
-    requirements_in = "//requirements/bazel:pypi.txt",
-    requirements_txt = "//requirements/bazel:pypi.lock.txt",
-    visibility = ["//visibility:__pkg__"],
-)
-
 [
     compile_pip_requirements(
-        name = "frameworks-{}".format(platform),
+        name = "pypi-{}".format(platform),
         extra_args = ["--allow-unsafe"],
-        requirements_in = "//requirements/bazel:frameworks.txt",
-        requirements_txt = "//requirements/bazel:frameworks-{}.lock.txt".format(platform),
+        requirements_in = "//requirements:pypi.txt",
+        requirements_txt = "//requirements:pypi-{}.lock.txt".format(platform),
         visibility = ["//visibility:__pkg__"],
     )
     for platform in [
@@ -90,47 +81,9 @@ alias(
     actual = "@com_github_grpc_grpc//src/python/grpcio/grpc:grpcio",
 )
 
-# mimic grpcio-health-checking rules
-py_proto_library(
-    name = "health_py_pb2",
-    imports = ["grpc_health.v1"],
-    deps = ["@com_github_grpc_grpc//src/proto/grpc/health/v1:health_proto_descriptor"],
-)
-
-py_grpc_library(
-    name = "health_py_pb2_grpc",
-    srcs = ["@com_github_grpc_grpc//src/proto/grpc/health/v1:health_proto_descriptor"],
-    strip_prefixes = ["src.python.grpcio_health_checking."],
-    deps = [":health_py_pb2"],
-)
-
-py_library(
-    name = "grpc_health",
-    srcs = [
-        "@com_github_grpc_grpc//src/python/grpcio_health_checking/grpc_health/v1:_async.py",
-        "@com_github_grpc_grpc//src/python/grpcio_health_checking/grpc_health/v1:health.py",
-    ],
-    imports = ["grpc_health.v1"],
-    deps = [
-        ":grpcio",
-        ":health_py_pb2",
-        ":health_py_pb2_grpc",
-    ],
-)
-
-alias(
-    name = "grpcio-health-checking",
-    actual = ":grpc_health",
-)
-
 alias(
     name = "buildozer",
     actual = "@com_github_bazelbuild_buildtools//buildozer",
-)
-
-alias(
-    name = "coveragepy",
-    actual = entry_point("coverage"),
 )
 
 buildifier(
@@ -156,6 +109,11 @@ alias(
         "sphinx",
         script = "sphinx-build",
     ),
+)
+
+alias(
+    name = "sphinx-autobuild",
+    actual = entry_point("sphinx-autobuild"),
 )
 
 alias(

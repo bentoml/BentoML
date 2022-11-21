@@ -3,12 +3,12 @@
 set -e
 
 BASEDIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" &>/dev/null && pwd 2>/dev/null)"
-GIT_ROOT="$(bazel info workspace)"
-
-cd "$GIT_ROOT" || exit 1
-
 # NOTE that we are using local bazel instead of system bazel.
 BAZEL_BIN="$BASEDIR/bazel"
+
+GIT_ROOT=$("${BAZEL_BIN}" info workspace >&1 2>/dev/null)
+
+cd "$GIT_ROOT" || exit 1
 
 "${BAZEL_BIN}" run //:buildfmt
 "${BAZEL_BIN}" run //:black -- "$GIT_ROOT/src"

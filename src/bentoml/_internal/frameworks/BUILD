@@ -1,5 +1,6 @@
 load("@rules_python//python:defs.bzl", "py_library")
-load("@frameworks//:requirements.bzl", framework = "requirement")
+load("@pypi//:requirements.bzl", "requirement")
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = ["//src/bentoml:__pkg__"])
 
@@ -14,10 +15,10 @@ py_library(
     srcs = ["catboost.py"],
     deps = [
         "//src/bentoml",
-        "@pypi_attrs//:pkg",
-        framework("numpy"),
-        framework("pandas"),
-        framework("catboost"),
+        requirement("attrs"),
+        requirement("numpy"),
+        requirement("pandas"),
+        requirement("catboost"),
     ],
 )
 
@@ -27,24 +28,24 @@ py_library(
     deps = [
         "//src/bentoml",
         "//src/bentoml/_internal/frameworks/common:pytorch",
-        framework("torch"),
-        framework("fastai"),
+        requirement("torch"),
+        requirement("fastai"),
     ],
 )
 
 py_library(
     name = "lightgbm",
     srcs = ["lightgbm.py"],
-    deps = select({
-        "@bazel_tools//src/conditions:linux": [
+    deps = selects.with_or({
+        ("@bazel_tools//src/conditions:linux", "@bazel_tools//src/conditions:windows"): [
             "//src/bentoml",
-            framework("numpy"),
-            framework("lightgbm"),
+            requirement("numpy"),
+            requirement("lightgbm"),
         ],
         "@bazel_tools//src/conditions:darwin": [
             "//src/bentoml",
-            "@frameworks_numpy//:pkg",
             "@com_github_microsoft_lightgbm//:python_package",
+            requirement("numpy"),
         ],
     }),
 )
@@ -54,7 +55,7 @@ py_library(
     srcs = ["mlflow.py"],
     deps = [
         "//src/bentoml",
-        framework("mlflow"),
+        requirement("mlflow"),
     ],
 )
 
@@ -64,9 +65,9 @@ py_library(
     deps = [
         "//src/bentoml",
         "//src/bentoml/_internal/frameworks/utils:onnx",
-        framework("onnxruntime"),
-        framework("protobuf"),
-        framework("onnx"),
+        requirement("onnxruntime"),
+        requirement("protobuf"),
+        requirement("onnx"),
     ],
 )
 
@@ -75,7 +76,7 @@ py_library(
     srcs = ["picklable.py"],
     deps = [
         "//src/bentoml",
-        "@pypi_cloudpickle//:pkg",
+        requirement("cloudpickle"),
     ],
 )
 
@@ -85,8 +86,8 @@ py_library(
     deps = [
         "//src/bentoml",
         "//src/bentoml/_internal/frameworks/common:pytorch",
-        "@pypi_cloudpickle//:pkg",
-        framework("torch"),
+        requirement("cloudpickle"),
+        requirement("torch"),
     ],
 )
 
@@ -94,10 +95,11 @@ py_library(
     name = "pytorch_lightning",
     srcs = ["pytorch_lightning.py"],
     deps = [
+        "//:grpcio",
         "//src/bentoml",
         "//src/bentoml/_internal/frameworks/common:pytorch",
-        framework("pytorch-lightning"),
-        framework("torch"),
+        requirement("torch"),
+        requirement("lightning-lite"),
     ],
 )
 
@@ -107,7 +109,7 @@ py_library(
     deps = [
         "//src/bentoml",
         "//src/bentoml/_internal/frameworks/common:pytorch",
-        framework("torch"),
+        requirement("torch"),
     ],
 )
 
@@ -116,28 +118,28 @@ py_library(
     srcs = ["sklearn.py"],
     deps = [
         "//src/bentoml",
-        framework("joblib"),
-        framework("scikit-learn"),
+        requirement("joblib"),
+        requirement("scikit-learn"),
     ],
 )
 
 py_library(
     name = "keras",
     srcs = ["keras.py"],
-    deps = select({
-        "@bazel_tools//src/conditions:linux": [
-            "//src/bentoml",
-            "//src/bentoml/_internal/frameworks/utils:tensorflow",
-            framework("grpcio"),
-            framework("keras"),
-            framework("tensorflow"),
-        ],
-        "@bazel_tools//src/conditions:darwin": [
+    deps = selects.with_or({
+        "@bazel_tools//src/conditions:darwin_arm64": [
             "//src/bentoml",
             "//src/bentoml/_internal/frameworks/utils:tensorflow",
             "//:grpcio",
-            framework("keras"),
-            framework("tensorflow-macos"),
+            requirement("keras"),
+            requirement("tensorflow-macos"),
+        ],
+        ("@bazel_tools//src/conditions:linux", "@bazel_tools//src/conditions:windows", "@bazel_tools//src/conditions:darwin_x86_64"): [
+            "//src/bentoml",
+            "//src/bentoml/_internal/frameworks/utils:tensorflow",
+            "//:grpcio",
+            requirement("keras"),
+            requirement("tensorflow"),
         ],
     }),
 )
@@ -145,20 +147,20 @@ py_library(
 py_library(
     name = "tensorflow",
     srcs = ["tensorflow_v2.py"],
-    deps = select({
-        "@bazel_tools//src/conditions:linux": [
-            "//src/bentoml",
-            "//src/bentoml/_internal/frameworks/utils:tensorflow",
-            framework("grpcio"),
-            framework("tensorflow"),
-            "@pypi_attrs//:pkg",
-        ],
-        "@bazel_tools//src/conditions:darwin": [
+    deps = selects.with_or({
+        "@bazel_tools//src/conditions:darwin_arm64": [
             "//src/bentoml",
             "//src/bentoml/_internal/frameworks/utils:tensorflow",
             "//:grpcio",
-            framework("tensorflow-macos"),
-            "@pypi_attrs//:pkg",
+            requirement("tensorflow-macos"),
+            requirement("attrs"),
+        ],
+        ("@bazel_tools//src/conditions:linux", "@bazel_tools//src/conditions:windows", "@bazel_tools//src/conditions:darwin_x86_64"): [
+            "//src/bentoml",
+            "//src/bentoml/_internal/frameworks/utils:tensorflow",
+            "//:grpcio",
+            requirement("tensorflow"),
+            requirement("attrs"),
         ],
     }),
 )
@@ -166,14 +168,33 @@ py_library(
 py_library(
     name = "transformers",
     srcs = ["transformers.py"],
-    deps = [
-        "//src/bentoml",
-        "@pypi_attrs//:pkg",
-        framework("torch"),
-        framework("flax"),
-        framework("jax"),
-        framework("transformers"),
-    ],
+    deps = selects.with_or({
+        "@bazel_tools//src/conditions:darwin_arm64": [
+            "//src/bentoml",
+            requirement("attrs"),
+            requirement("tensorflow-macos"),
+            requirement("torch"),
+            requirement("flax"),
+            requirement("jax"),
+            requirement("transformers"),
+        ],
+        ("@bazel_tools//src/conditions:linux", "@bazel_tools//src/conditions:darwin_x86_64"): [
+            "//src/bentoml",
+            requirement("attrs"),
+            requirement("tensorflow"),
+            requirement("torch"),
+            requirement("flax"),
+            requirement("jax"),
+            requirement("transformers"),
+        ],
+        "@bazel_tools//src/conditions:windows": [
+            "//src/bentoml",
+            requirement("attrs"),
+            requirement("tensorflow"),
+            requirement("torch"),
+            requirement("transformers"),
+        ],
+    }),
 )
 
 py_library(
@@ -181,8 +202,8 @@ py_library(
     srcs = ["xgboost.py"],
     deps = [
         "//src/bentoml",
-        "@pypi_attrs//:pkg",
-        framework("numpy"),
-        framework("xgboost"),
+        requirement("attrs"),
+        requirement("numpy"),
+        requirement("xgboost"),
     ],
 )

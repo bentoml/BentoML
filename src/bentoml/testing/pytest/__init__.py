@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import tempfile
 
-from ..utils import run_in_bazel
+from ..._internal.utils import run_in_bazel
 from ..._internal.models import ModelContext
 
 __all__ = ["TEST_MODEL_CONTEXT", "set_huggingface_envar"]

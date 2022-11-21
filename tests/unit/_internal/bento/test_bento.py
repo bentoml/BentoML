@@ -11,7 +11,7 @@ import fs
 import pytest
 
 from bentoml import Tag
-from bentoml.testing.utils import run_in_bazel
+from bentoml._internal.utils import run_in_bazel
 from bentoml._internal.bento import Bento
 from bentoml._internal.models import ModelStore
 from bentoml._internal.bento.bento import BentoInfo

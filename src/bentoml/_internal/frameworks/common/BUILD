@@ -1,6 +1,5 @@
 load("@rules_python//python:defs.bzl", "py_library")
-load("@pypi//:requirements.bzl", pypi = "requirement")
-load("@frameworks//:requirements.bzl", framework = "requirement")
+load("@pypi//:requirements.bzl", "requirement")
 
 package(default_visibility = ["//src/bentoml/_internal/frameworks:__pkg__"])
 
@@ -14,7 +13,7 @@ py_library(
     srcs = ["pytorch.py"],
     deps = [
         "//src/bentoml",
-        pypi("simple-di"),
-        framework("torch"),
+        requirement("simple-di"),
+        requirement("torch"),
     ],
 )

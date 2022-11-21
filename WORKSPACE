@@ -70,23 +70,14 @@ load("@rules_python//python/pip_install:pip_repository.bzl", "pip_repository")
 
 pip_parse(
     name = "pypi",
-    requirements_lock = "//requirements/bazel:pypi.lock.txt",
-)
-
-pip_parse(
-    name = "frameworks",
-    requirements_darwin = "//requirements/bazel:frameworks-macos.lock.txt",
-    requirements_linux = "//requirements/bazel:frameworks-linux.lock.txt",
-    requirements_windows = "//requirements/bazel:frameworks-windows.lock.txt",
+    requirements_darwin = "//requirements:pypi-macos.lock.txt",
+    requirements_linux = "//requirements:pypi-linux.lock.txt",
+    requirements_windows = "//requirements:pypi-windows.lock.txt",
 )
 
 load("@pypi//:requirements.bzl", pypi_deps = "install_deps")
 
 pypi_deps()
-
-load("@frameworks//:requirements.bzl", framework_deps = "install_deps")
-
-framework_deps()
 
 load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies")
 
@@ -189,7 +180,6 @@ yarn_install(
     exports_directories_only = False,  # Required for ts_library
     package_json = "//:package.json",
     package_path = "/",
-    symlink_node_modules = True,
     yarn = "@yarn//:bin/yarn",
     yarn_lock = "//:yarn.lock",
 )

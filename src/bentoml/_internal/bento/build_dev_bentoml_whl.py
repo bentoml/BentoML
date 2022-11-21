@@ -4,11 +4,11 @@ import os
 import logging
 from pathlib import Path
 
+from ..utils import run_in_bazel
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..configuration import is_pypi_installed_bentoml
-from ...testing.utils import run_in_bazel
 
 logger = logging.getLogger(__name__)
 

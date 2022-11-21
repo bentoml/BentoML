@@ -1,4 +1,4 @@
-load("//rules:python.bzl", "py_test")
+load("//rules/py:python.bzl", "py_test")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@pypi//:requirements.bzl", "requirement")
 
@@ -43,18 +43,11 @@ py_library(
 py_library(
     name = "context_server_interceptor",
     srcs = ["context_server_interceptor.py"],
-    deps = select({
-        "@bazel_tools//src/conditions:linux": [
-            requirement("grpcio"),
-            "//src/bentoml",
-            "//tests:tests_lib",
-        ],
-        "@bazel_tools//src/conditions:darwin": [
-            "//:grpcio",
-            "//src/bentoml",
-            "//tests:tests_lib",
-        ],
-    }),
+    deps = [
+        "//:grpcio",
+        "//src/bentoml",
+        "//tests:tests_lib",
+    ],
 )
 
 py_test(
@@ -69,28 +62,15 @@ py_test(
         ":conftest",
         ":srcs_files",
     ],
-    deps = select({
-        "@bazel_tools//src/conditions:linux": [
-            ":context_server_interceptor",
-            ":train",
-            requirement("grpcio"),
-            requirement("protobuf"),
-            requirement("grpcio-health-checking"),
-            requirement("numpy"),
-            requirement("pydantic"),
-            requirement("pandas"),
-            requirement("Pillow"),
-        ],
-        "@bazel_tools//src/conditions:darwin": [
-            ":context_server_interceptor",
-            ":train",
-            "//:grpcio",
-            "//:grpcio-health-checking",
-            "//:protobuf",
-            requirement("numpy"),
-            requirement("pydantic"),
-            requirement("pandas"),
-            requirement("Pillow"),
-        ],
-    }),
+    deps = [
+        ":context_server_interceptor",
+        ":train",
+        "//:grpcio",
+        "//:protobuf",
+        requirement("grpcio-health-checking"),
+        requirement("numpy"),
+        requirement("pydantic"),
+        requirement("pandas"),
+        requirement("Pillow"),
+    ],
 )

@@ -11,8 +11,8 @@ import pytest
 from pytest import MonkeyPatch
 
 from ... import models
-from ..utils import BENTOML_TEST_NO_BAZEL
 from ..._internal.utils import LazyLoader
+from ..._internal.utils import BENTOML_IN_BAZEL
 from ..._internal.configuration import CLEAN_BENTOML_VERSION
 from ..._internal.configuration.containers import BentoMLContainer
 
@@ -96,10 +96,10 @@ def pytest_runtest_setup(item: Item) -> None:
         )
     # We will adjust the test behaviour whether we are running inside Bazel or not.
     # NOTE: by default BentoML test suite will run using bazel.
-    if BENTOML_TEST_NO_BAZEL not in os.environ:
-        os.environ[BENTOML_TEST_NO_BAZEL] = "0"
+    if BENTOML_IN_BAZEL not in os.environ:
+        os.environ[BENTOML_IN_BAZEL] = "0"
     if config.getoption(_NO_BAZEL):
-        os.environ[BENTOML_TEST_NO_BAZEL] = "1"
+        os.environ[BENTOML_IN_BAZEL] = "1"
 
 
 def _setup_deployment_mode(metafunc: Metafunc):

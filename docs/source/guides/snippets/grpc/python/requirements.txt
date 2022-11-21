@@ -1,1 +1,2 @@
 bentoml==1.0.10
+grpcio==1.48.1

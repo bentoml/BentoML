@@ -188,9 +188,14 @@ def save_model(
             The ONNX model to be saved.
         signatures (``dict[str, ModelSignatureDict]``, optional):
             Signatures of predict methods to be used. If not provided, the signatures default to
-            ``{"run": {"batchable": False}}``. Because we are using :obj:``onnxruntime.InferenceSession``,
-            the only allowed method name is "run"
-            See :obj:`~bentoml.types.ModelSignature` for more details.
+            ``{"run": {"batchable": False}}``. See :obj:`~bentoml.types.ModelSignature` for more details.
+            ``bentoml.onnx`` internally use ``onnxruntime.InferenceSession``to run inference.
+            When the original model is converted to ONNX format and loaded by
+            ``onnxruntime.InferenceSession``, the inference method of the original model is
+            converted to the ``run`` method of the ``onnxruntime.InferenceSession``.
+            ``signatures`` here refers to the predict method of
+            ``onnxruntime.InferenceSession``, hence the only allowed method name in ``signatures``
+            is ``run``.
         labels (``dict[str, str]``, optional):
             A default set of management labels to be associated with the model. An example is
             ``{"training-set": "data-1"}``.

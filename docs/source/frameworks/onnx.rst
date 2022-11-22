@@ -75,7 +75,7 @@ Converting model frameworks to ONNX format
 		 init.orthogonal_(self.conv3.weight, init.calculate_gain('relu'))
 		 init.orthogonal_(self.conv4.weight)
 
-	 torch_model = SuperResolutionNet()
+	 torch_model = SuperResolutionNet(upscale_factor=3)
 
       For this tutorial, we will use pre-trained weights provided by the PyTorch team. Note that the model was only partially trained and being used for demonstration purposes.
 

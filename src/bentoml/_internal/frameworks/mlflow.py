@@ -198,7 +198,7 @@ def import_model(
             local_path = download_artifacts(
                 artifact_uri=model_uri, dst_path=download_dir
             )
-        except ImportError:
+        except (ModuleNotFoundError, ImportError):
             # For MLflow < 1.25
             from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 
@@ -244,7 +244,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         # because most custom python_function models are likely numpy code or model
         # inference with pre/post-processing code.
         SUPPORTED_RESOURCES = ("cpu",)
-        SUPPORTS_CPU_MULTI_THREADING = True  # type: ignore
+        SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             super().__init__()

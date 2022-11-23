@@ -75,7 +75,7 @@ Converting model frameworks to ONNX format
 		 init.orthogonal_(self.conv3.weight, init.calculate_gain('relu'))
 		 init.orthogonal_(self.conv4.weight)
 
-	 torch_model = SuperResolutionNet()
+	 torch_model = SuperResolutionNet(upscale_factor=3)
 
       For this tutorial, we will use pre-trained weights provided by the PyTorch team. Note that the model was only partially trained and being used for demonstration purposes.
 
@@ -286,6 +286,18 @@ If you want to enable adaptive batching, provide a signature similar to the
 aboved example.
 
 Refer to :ref:`concepts/model:Model Signatures` and :ref:`Batching behaviour <concepts/model:Batching>` for more information.
+
+.. note::
+
+   BentoML internally use `onnxruntime.InferenceSession
+   <https://onnxruntime.ai/docs/api/python/api_summary.html#inferencesession>`_
+   to run inference. When the original model is converted to ONNX
+   format and loaded by ``onnxruntime.InferenceSession``, the
+   inference method of the original model is converted to the ``run``
+   method of the ``onnxruntime.InferenceSession``. ``signatures`` in
+   above codes refers to the predict method of
+   ``onnxruntime.InferenceSession``, hence the only allowed method
+   name in ``signatures`` is ``run``.
 
 
 Building a Service for **ONNX**

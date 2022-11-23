@@ -189,7 +189,7 @@ def save_model(
         signatures (``dict[str, ModelSignatureDict]``, optional):
             Signatures of predict methods to be used. If not provided, the signatures default to
             ``{"run": {"batchable": False}}``. See :obj:`~bentoml.types.ModelSignature` for more details.
-            ``bentoml.onnx`` internally use ``onnxruntime.InferenceSession``to run inference.
+            ``bentoml.onnx`` internally use ``onnxruntime.InferenceSession`` to run inference.
             When the original model is converted to ONNX format and loaded by
             ``onnxruntime.InferenceSession``, the inference method of the original model is
             converted to the ``run`` method of the ``onnxruntime.InferenceSession``.

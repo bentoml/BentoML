@@ -597,11 +597,15 @@ class PandasDataFrame(
 
         if self._apply_column_names:
             if not self._columns:
-                raise BadInput("When apply_column_names is set, you must provide columns.")
+                raise BadInput(
+                    "When apply_column_names is set, you must provide columns."
+                )
 
             if len(self._columns) != dataframe.shape[1]:
-                msg = f"length of 'columns' ({len(self._columns)}) does not match " \
-                      f"the # of columns of incoming data ({dataframe.shape[1]})."
+                msg = (
+                    f"length of 'columns' ({len(self._columns)}) does not match "
+                    f"the # of columns of incoming data ({dataframe.shape[1]})."
+                )
                 raise BadInput(msg) from None
 
             dataframe.columns = pd.Index(self._columns)

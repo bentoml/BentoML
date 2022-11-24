@@ -595,13 +595,16 @@ class PandasDataFrame(
         #     if self._enforce_dtype:
         #         raise exception_cls(msg) from None
 
-        if self._columns is not None and len(self._columns) != dataframe.shape[1]:
-            msg = "length of 'columns' (%d) does not match the # of columns of incoming data."
-            if self._apply_column_names:
-                raise BadInput(msg % len(self._columns)) from None
-            else:
-                logger.debug(msg, len(self._columns))
-                dataframe.columns = pd.Index(self._columns)
+        if self._apply_column_names:
+            if not self._columns:
+                raise BadInput("When apply_column_names is set, you must provide columns.")
+
+            if len(self._columns) != dataframe.shape[1]:
+                msg = f"length of 'columns' ({len(self._columns)}) does not match " \
+                      f"the # of columns of incoming data ({dataframe.shape[1]})."
+                raise BadInput(msg) from None
+
+            dataframe.columns = pd.Index(self._columns)
 
         # TODO: convert from wide to long format (melt())
         if self._shape is not None and self._shape != dataframe.shape:

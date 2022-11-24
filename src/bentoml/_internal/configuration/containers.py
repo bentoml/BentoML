@@ -135,11 +135,11 @@ class BentoMLConfiguration:
                 ) from None
 
     def _finalize(self):
-        GLOBAL_RUNNERS_KEY = ["batching", "resources", "logging", "metrics", "timeout"]
-        global_runner_cfg = {k: self.config["runners"][k] for k in GLOBAL_RUNNERS_KEY}
+        RUNNER_CFG_KEYS = ["batching", "resources", "logging", "metrics", "timeout"]
+        global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
         custom_runners_cfg = dict(
             filter(
-                lambda kv: kv[0] not in GLOBAL_RUNNERS_KEY,
+                lambda kv: kv[0] not in RUNNER_CFG_KEYS,
                 self.config["runners"].items(),
             )
         )

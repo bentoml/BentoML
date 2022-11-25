@@ -10,7 +10,7 @@ import contextlib
 from simple_di import inject
 from simple_di import Provide
 
-from .grpc.utils import LATEST_STUB_VERSION
+from .grpc.utils import LATEST_PROTOCOL_VERSION
 from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -242,7 +242,7 @@ def start_grpc_server(
     ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
     ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
-    stub_version: str = LATEST_STUB_VERSION,
+    protocol_version: str = LATEST_PROTOCOL_VERSION,
 ) -> None:
     from .serve import ensure_prometheus_dir
 
@@ -299,8 +299,8 @@ def start_grpc_server(
             "--worker-id",
             "$(CIRCUS.WID)",
             *ssl_args,
-            "--stub-version",
-            stub_version,
+            "--protocol-version",
+            protocol_version,
         ]
         if reflection:
             args.append("--enable-reflection")

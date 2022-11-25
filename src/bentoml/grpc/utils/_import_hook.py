@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import types
 
-LATEST_STUB_VERSION = "v1"
+LATEST_PROTOCOL_VERSION = "v1"
 
 
 def import_generated_stubs(
-    version: str = LATEST_STUB_VERSION,
+    version: str = LATEST_PROTOCOL_VERSION,
     file: str = "service.proto",
 ) -> tuple[types.ModuleType, types.ModuleType]:
     """

@@ -9,7 +9,7 @@ from functools import partial
 from simple_di import inject
 from simple_di import Provide
 
-from ...grpc.utils import LATEST_STUB_VERSION
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -43,8 +43,8 @@ class GRPCAppFactory:
     ) -> None:
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
-        self.stub_version: str = getattr(
-            bento_service, "_grpc_stub_version", LATEST_STUB_VERSION
+        self.protocol_version: str = getattr(
+            bento_service, "_grpc_protocol_version", LATEST_PROTOCOL_VERSION
         )
 
     @inject
@@ -106,7 +106,7 @@ class GRPCAppFactory:
             on_shutdown=self.on_shutdown,
             mount_servicers=self.bento_service.mount_servicers,
             interceptors=self.interceptors,
-            stub_version=self.stub_version,
+            protocol_version=self.protocol_version,
         )
 
     @property

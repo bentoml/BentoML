@@ -13,7 +13,7 @@ import anyio
 from .dispatch import MultiStrategyDispatch
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
-from ...grpc.utils import LATEST_STUB_VERSION
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -236,7 +236,7 @@ class IODescriptor(ABC, t.Generic[IOType], OpenAPIMixin):
         return await anyio.to_thread.run_sync(_, field)
 
     async def to_proto(
-        self, obj: IOType | t.Any, *, _version: str = LATEST_STUB_VERSION
+        self, obj: IOType | t.Any, *, _version: str = LATEST_PROTOCOL_VERSION
     ) -> _message.Message:
         if not self._struct_fn_registered:
             self._register_structure_proto_fn()

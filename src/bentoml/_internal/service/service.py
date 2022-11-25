@@ -13,7 +13,7 @@ from ..tag import Tag
 from ..models import Model
 from ..runner import Runner
 from ...grpc.utils import import_grpc
-from ...grpc.utils import LATEST_STUB_VERSION
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..bento.bento import get_default_svc_readme
 from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
@@ -116,7 +116,9 @@ class Service:
     # Working dir and Import path of the service, set when the service was imported
     _working_dir: str | None = attr.field(init=False, default=None)
     _import_str: str | None = attr.field(init=False, default=None)
-    _grpc_stub_version: str = attr.field(init=False, default=LATEST_STUB_VERSION)
+    _grpc_protocol_version: str = attr.field(
+        init=False, default=LATEST_PROTOCOL_VERSION
+    )
 
     def __init__(
         self,

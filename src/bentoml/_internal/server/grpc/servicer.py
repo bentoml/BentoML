@@ -11,9 +11,9 @@ import anyio
 
 from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import grpc_status_code
-from bentoml.grpc.utils import LATEST_STUB_VERSION
 from bentoml.grpc.utils import validate_proto_fields
 from bentoml.grpc.utils import import_generated_stubs
+from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
 
 from ...utils import LazyLoader
 from ....exceptions import InvalidArgument
@@ -67,7 +67,7 @@ class Servicer:
         mount_servicers: t.Sequence[tuple[ServicerClass, AddServicerFn, list[str]]]
         | None = None,
         interceptors: Interceptors | None = None,
-        stub_version: str = LATEST_STUB_VERSION,
+        protocol_version: str = LATEST_PROTOCOL_VERSION,
     ) -> None:
         self.bento_service = service
 
@@ -76,16 +76,16 @@ class Servicer:
         self.mount_servicers = [] if not mount_servicers else list(mount_servicers)
         self.interceptors = [] if not interceptors else list(interceptors)
         self.loaded = False
-        self.stub_version = stub_version
+        self.protocol_version = protocol_version
 
     def load(self):
-        pb, _ = import_generated_stubs(self.stub_version)
+        pb, _ = import_generated_stubs(self.protocol_version)
         assert not self.loaded
 
         self.interceptors_stack = self.build_interceptors_stack()
 
         self.bento_servicer = create_bento_servicer(
-            self.bento_service, stub_version=self.stub_version
+            self.bento_service, protocol_version=self.protocol_version
         )
 
         # Create a health check servicer. We use the non-blocking implementation
@@ -117,13 +117,13 @@ class Servicer:
 
 
 def create_bento_servicer(
-    service: Service, stub_version: str = LATEST_STUB_VERSION
+    service: Service, protocol_version: str = LATEST_PROTOCOL_VERSION
 ) -> services.BentoServiceServicer:
     """
     This is the actual implementation of BentoServicer.
     Main inference entrypoint will be invoked via /bentoml.grpc.<version>.BentoService/Call
     """
-    pb, services = import_generated_stubs(stub_version)
+    pb, services = import_generated_stubs(protocol_version)
 
     class BentoServiceImpl(services.BentoServiceServicer):
         """An asyncio implementation of BentoService servicer."""
@@ -161,7 +161,7 @@ def create_bento_servicer(
                         output = await anyio.to_thread.run_sync(api.func, **input_data)
                     else:
                         output = await anyio.to_thread.run_sync(api.func, input_data)
-                res = await api.output.to_proto(output, _version=stub_version)
+                res = await api.output.to_proto(output, _version=protocol_version)
                 # TODO(aarnphm): support multiple proto fields
                 response = pb.Response(**{api.output.proto_fields[0]: res})
             except BentoMLException as e:

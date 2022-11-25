@@ -12,8 +12,8 @@ from simple_di import inject
 from simple_di import Provide
 
 from bentoml.grpc.utils import import_grpc
-from bentoml.grpc.utils import LATEST_STUB_VERSION
 from bentoml.grpc.utils import import_generated_stubs
+from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
 
 from ...utils import LazyLoader
 from ...utils import cached_property
@@ -76,7 +76,7 @@ class Server(aio._server.Server):
         ssl_ca_certs: str | None = None,
         graceful_shutdown_timeout: float | None = None,
         compression: grpc.Compression | None = None,
-        stub_version: str = LATEST_STUB_VERSION,
+        protocol_version: str = LATEST_PROTOCOL_VERSION,
     ):
         self.servicer = servicer
         self.max_message_length = max_message_length
@@ -88,8 +88,8 @@ class Server(aio._server.Server):
         self.ssl_certfile = ssl_certfile
         self.ssl_keyfile = ssl_keyfile
         self.ssl_ca_certs = ssl_ca_certs
-        self.stub_version = stub_version
-        _, self._services = import_generated_stubs(version=self.stub_version)
+        self.protocol_version = protocol_version
+        _, self._services = import_generated_stubs(version=self.protocol_version)
         if TYPE_CHECKING:
             self._services = t.cast(services, self._services)
 

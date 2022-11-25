@@ -125,9 +125,9 @@ async def test_trailing_metadata(caplog: LogCaptureFixture):
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("propagate_logs")
-@pytest.mark.parametrize("stub_version", ["v1", "v1alpha1"])
+@pytest.mark.parametrize("protocol_version", ["v1", "v1alpha1"])
 async def test_access_log_exception(
-    caplog: LogCaptureFixture, simple_service: Service, stub_version: str
+    caplog: LogCaptureFixture, simple_service: Service, protocol_version: str
 ):
     with make_standalone_server(
         # we need to also setup opentelemetry interceptor
@@ -138,7 +138,7 @@ async def test_access_log_exception(
         ]
     ) as (server, host_url):
         services.add_BentoServiceServicer_to_server(
-            create_bento_servicer(simple_service, stub_version=stub_version), server
+            create_bento_servicer(simple_service, protocol_version), server
         )
         try:
             await server.start()

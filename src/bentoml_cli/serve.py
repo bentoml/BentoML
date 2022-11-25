@@ -13,7 +13,7 @@ DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
 
 def add_serve_command(cli: click.Group) -> None:
 
-    from bentoml.grpc.utils import LATEST_STUB_VERSION
+    from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml._internal.log import configure_server_logging
     from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -326,10 +326,11 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
-        "--stub-version",
+        "-pv",
+        "--protocol-version",
         type=click.Choice(["v1", "v1alpha1"]),
         help="Determine the version of generated gRPC stubs to use.",
-        default=LATEST_STUB_VERSION,
+        default=LATEST_PROTOCOL_VERSION,
         show_default=True,
     )
     @add_experimental_docstring
@@ -348,7 +349,7 @@ def add_serve_command(cli: click.Group) -> None:
         enable_reflection: bool,
         enable_channelz: bool,
         max_concurrent_streams: int | None,
-        stub_version: str,
+        protocol_version: str,
     ):
         """Start a gRPC BentoServer from a given 🍱
 
@@ -409,7 +410,7 @@ def add_serve_command(cli: click.Group) -> None:
                 max_concurrent_streams=max_concurrent_streams,
                 reflection=enable_reflection,
                 channelz=enable_channelz,
-                stub_version=stub_version,
+                protocol_version=protocol_version,
             )
         else:
             from bentoml.serve import serve_grpc_development
@@ -427,5 +428,5 @@ def add_serve_command(cli: click.Group) -> None:
                 max_concurrent_streams=max_concurrent_streams,
                 reflection=enable_reflection,
                 channelz=enable_channelz,
-                stub_version=stub_version,
+                protocol_version=protocol_version,
             )

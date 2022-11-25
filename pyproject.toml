@@ -105,6 +105,7 @@ include = [
   # include bentoml packages
   "bentoml",
   "bentoml.grpc*",
+  "bentoml.client*",
   "bentoml.testing*",
   "bentoml._internal*",
   # include bentoml_cli packages
@@ -183,7 +184,7 @@ omit = [
 show_missing = true
 precision = 2
 omit = [
-  'src/bentoml/__main__.py',
+  "src/bentoml/__main__.py",
   "src/bentoml/io.py",
   "src/bentoml/serve.py",
   "src/bentoml/start.py",

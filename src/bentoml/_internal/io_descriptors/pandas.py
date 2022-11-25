@@ -602,7 +602,9 @@ class PandasDataFrame(
                 )
 
             if len(self._columns) != dataframe.shape[1]:
-                raise BadInput(f"length of 'columns' ({len(self._columns)}) does not match the # of columns of incoming data ({dataframe.shape[1]}).") from None
+                raise BadInput(
+                    f"length of 'columns' ({len(self._columns)}) does not match the # of columns of incoming data ({dataframe.shape[1]})."
+                ) from None
 
             dataframe.columns = pd.Index(self._columns)
 

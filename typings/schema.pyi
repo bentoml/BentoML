@@ -1,22 +1,16 @@
 from types import BuiltinFunctionType, FunctionType
-from typing import Any, Callable, Dict, List
-from typing import Literal as LiteralType
-from typing import Optional as OptionalType
-from typing import Tuple, Union, overload
+import typing as t
+from typing import overload
 
-GenericType = Union[
-    "Schema", "And", "Or", "Use", "Optional", "Regex", "Literal", "Const"
-]
-AcceptedDictType = Dict[Union[str, GenericType], Any]
-_CallableLike = Union[FunctionType, BuiltinFunctionType, Callable[..., Any]]
+OpsType = Schema | And | Or | Use | Optional | Regex | Literal | Const
+AcceptedDictType = dict[str | OpsType, t.Any]
+_CallableLike = FunctionType | BuiltinFunctionType | t.Callable[..., t.Any]
+_SchemaLike = _CallableLike | OpsType
 
 class SchemaError(Exception):
-    @overload
-    def __init__(self, autos: str, errors: str = ...) -> None: ...
-    @overload
-    def __init__(self, autos: str, errors: List[str] = ...) -> None: ...
-    @overload
-    def __init__(self, autos: List[str], errors: None = ...) -> None: ...
+    def __init__(
+        self, autos: str | list[str], errors: str | list[str] | None = ...
+    ) -> None: ...
     @property
     def code(self) -> str: ...
 
@@ -26,90 +20,74 @@ class SchemaOnlyOneAllowedError(SchemaError): ...
 class SchemaForbiddenKeyError(SchemaError): ...
 class SchemaUnexpectedTypeError(SchemaError): ...
 
-class And:
+class OpsMeta(t.Protocol):
     @overload
+    def validate(self, data: AcceptedDictType, **kwargs: t.Any) -> AcceptedDictType: ...
+    @overload
+    def validate(self, data: t.Any, **kwargs: t.Any) -> t.Any: ...
+
+class And(OpsMeta):
     def __init__(
         self,
-        *args: _CallableLike,
-        error: List[str] = ...,
-        schema: "Schema" = ...,
-        ignore_extra_keys: bool = ...
-    ) -> None: ...
-    @overload
-    def __init__(
-        self,
-        *args: _CallableLike,
-        error: List[str] = ...,
-        schema: None = ...,
+        *args: _SchemaLike,
+        error: list[str] = ...,
+        schema: Schema | None = ...,
         ignore_extra_keys: bool = ...
     ) -> None: ...
     def __repr__(self) -> str: ...
     @property
-    def args(self) -> Tuple[_CallableLike, ...]: ...
-    def validate(self, data: Any) -> Any: ...
+    def args(self) -> tuple[_CallableLike, ...]: ...
 
 class Or(And):
-    @overload
     def __init__(
         self,
-        *args: _CallableLike,
-        error: List[str] = ...,
+        *args: _SchemaLike | t.MutableSequence[t.Any] | None,
+        error: list[str] = ...,
         schema: None = ...,
-        ignore_extra_keys: bool = ...,
-        only_one: bool = ...
-    ) -> None: ...
-    @overload
-    def __init__(
-        self,
-        *args: _CallableLike,
-        error: List[str] = ...,
-        schema: "Schema" = ...,
         ignore_extra_keys: bool = ...,
         only_one: bool = ...
     ) -> None: ...
     def reset(self) -> None: ...
-    def validate(self, data: Any) -> Any: ...
 
-class Regex:
-    NAMES: List[str] = ...
+class Regex(OpsMeta):
+    NAMES: list[str] = ...
+
     def __init__(
         self,
         pattern_str: str,
-        flags: OptionalType[int] = ...,
-        error: OptionalType[str] = ...,
+        flags: int | None = ...,
+        error: str | None = ...,
     ) -> None: ...
     def __repr__(self) -> str: ...
     @property
     def pattern_str(self) -> str: ...
-    def validate(self, data: str) -> str: ...
 
-class Use:
-    def __init__(
-        self, callable_: _CallableLike, error: OptionalType[str] = ...
-    ) -> None: ...
+class Use(OpsMeta):
+    def __init__(self, callable_: _CallableLike, error: str | None = ...) -> None: ...
     def __repr__(self) -> str: ...
-    def validate(self, data: Any) -> Any: ...
 
-COMPARABLE = LiteralType["0"]
-CALLABLE = LiteralType["1"]
-VALIDATOR = LiteralType["2"]
-TYPE = LiteralType["3"]
-DICT = LiteralType["4"]
-ITERABLE = LiteralType["5"]
+COMPARABLE = t.Literal["0"]
+CALLABLE = t.Literal["1"]
+VALIDATOR = t.Literal["2"]
+TYPE = t.Literal["3"]
+DICT = t.Literal["4"]
+ITERABLE = t.Literal["5"]
 
 def _priority(
-    s: object,
-) -> Union[CALLABLE, COMPARABLE, VALIDATOR, TYPE, DICT, ITERABLE]: ...
-def _invoke_with_optional_kwargs(f: Callable[..., Any], **kwargs: Any) -> Any: ...
+    s: OpsType,
+) -> CALLABLE | COMPARABLE | VALIDATOR | TYPE | DICT | ITERABLE: ...
+def _invoke_with_optional_kwargs(
+    f: t.Callable[..., t.Any], **kwargs: t.Any
+) -> t.Any: ...
 
-class Schema:
+class Schema(OpsMeta):
     def __init__(
         self,
-        schema: Union[Schema, AcceptedDictType],
-        error: OptionalType[str] = ...,
-        ignore_extra_keys: OptionalType[bool] = ...,
-        name: OptionalType[str] = ...,
-        description: OptionalType[str] = ...,
+        schema: _SchemaLike | type | AcceptedDictType,
+        error: str | None = ...,
+        ignore_extra_keys: bool | None = ...,
+        name: str | None = ...,
+        description: str | None = ...,
         as_reference: bool = ...,
     ) -> None: ...
     def __repr__(self) -> str: ...
@@ -122,87 +100,55 @@ class Schema:
     @property
     def ignore_extra_keys(self) -> bool: ...
     @staticmethod
-    def _dict_key_priority(s: Union[GenericType, object]) -> Union[float, int]: ...
+    def _dict_key_priority(s: OpsType) -> float | int: ...
     @staticmethod
-    def _is_optional_type(s: Union[GenericType, object]) -> bool: ...
-    def is_valid(self, data: Any, **kwargs: Any) -> bool: ...
+    def _is_optional_type(s: OpsType) -> bool: ...
+    def is_valid(self, data: t.Any, **kwargs: t.Any) -> bool: ...
     def _prepend_schema_name(self, message: str) -> str: ...
-    @overload
-    def validate(self, data: AcceptedDictType) -> AcceptedDictType: ...
-    @overload
-    def validate(self, data: Any) -> Any: ...
-    def json_schema(self, schema_id: Any, use_refs: bool = ...) -> Dict[str, Any]: ...
+    def json_schema(self, schema_id: str, use_refs: bool = ...) -> dict[str, t.Any]: ...
 
 class Optional(Schema):
     _MARKER: object = ...
     default: object
     key: str
-    @overload
+
     def __init__(
         self,
-        schema: Union[Schema, AcceptedDictType],
-        error: Union[str, List[str]] = ...,
-        ignore_extra_keys: OptionalType[bool] = ...,
-        name: OptionalType[str] = ...,
-        description: OptionalType[str] = ...,
-        as_reference: OptionalType[bool] = ...,
-        default: OptionalType[Any] = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self,
-        schema: str,
-        error: Union[str, List[str]] = ...,
-        ignore_extra_keys: OptionalType[bool] = ...,
-        name: OptionalType[str] = ...,
-        description: OptionalType[str] = ...,
-        as_reference: OptionalType[bool] = ...,
-        default: OptionalType[Any] = ...,
+        schema: _SchemaLike | type | str,
+        error: str | list[str] | None = ...,
+        ignore_extra_keys: bool | None = ...,
+        name: str | None = ...,
+        description: str | None = ...,
+        as_reference: bool | None = ...,
+        default: t.Any = ...,
     ) -> None: ...
     def __hash__(self) -> int: ...
     def __eq__(self, other: Optional) -> bool: ...
     def reset(self) -> None: ...
 
-_HookCallback = Callable[[str, AcceptedDictType, str], SchemaError]
+_HookCallback = t.Callable[[str, t.Any, str | list[str]], SchemaError | None | t.Any]
 
 class Hook(Schema):
     key: Schema
+
     def __init__(
         self,
-        schema: Union[Schema, AcceptedDictType],
-        error: OptionalType[str] = ...,
-        ignore_extra_keys: OptionalType[bool] = ...,
-        name: OptionalType[str] = ...,
-        description: OptionalType[str] = ...,
-        as_reference: OptionalType[bool] = ...,
-        handler: OptionalType[_HookCallback] = ...,
+        schema: _SchemaLike | str,
+        error: str | list[str] | None = ...,
+        ignore_extra_keys: bool | None = ...,
+        name: str | None = ...,
+        description: str | None = ...,
+        as_reference: bool | None = ...,
+        handler: _HookCallback | None = ...,
     ) -> None: ...
 
-class Forbidden(Hook):
-    handler: Callable[[str, AcceptedDictType, str], SchemaForbiddenKeyError]
-    def __init__(
-        self,
-        schema: AcceptedDictType,
-        error: OptionalType[str] = ...,
-        ignore_extra_keys: OptionalType[bool] = ...,
-        name: OptionalType[str] = ...,
-        description: OptionalType[str] = ...,
-        as_reference: OptionalType[bool] = ...,
-    ) -> None: ...
-    @staticmethod
-    def _default_function(nkey: str, data: Any, error: Exception) -> None: ...
+class Forbidden(Hook): ...
 
-class Literal(object):
-    def __init__(self, value: str, description: OptionalType[str] = ...) -> None: ...
-    def __str__(self) -> str: ...
-    def __repr__(self) -> str: ...
+class Literal:
+    def __init__(self, value: str, description: str | None = ...) -> None: ...
     @property
     def description(self) -> str: ...
     @property
     def schema(self) -> str: ...
 
-class Const(Schema):
-    def validate(self, data: Union[Schema, AcceptedDictType]) -> AcceptedDictType: ...
-
-def _callable_str(callable_: Callable[..., Any]) -> str: ...
-def _plural_s(sized: str) -> str: ...
+class Const(Schema): ...

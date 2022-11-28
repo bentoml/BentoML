@@ -10,12 +10,7 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
 import yaml
-from schema import Or
-from schema import And
-from schema import Use
-from schema import Schema
-from schema import Optional
-from schema import SchemaError
+import schema as s
 from simple_di import Provide
 from simple_di import providers
 from deepmerge.merger import Merger
@@ -23,6 +18,10 @@ from deepmerge.merger import Merger
 from . import expand_env_var
 from ..utils import split_with_quotes
 from ..utils import validate_or_create_dir
+from .helpers import flatten_dict
+from .helpers import load_config_file
+from .helpers import get_default_config
+from .helpers import import_configuration_spec
 from ..context import component_context
 from ..resource import CpuResource
 from ..resource import system_resources
@@ -38,249 +37,50 @@ if TYPE_CHECKING:
 
 config_merger = Merger(
     # merge dicts
-    [(dict, "merge")],
+    type_strategies=[(dict, "merge")],
     # override all other types
-    ["override"],
+    fallback_strategies=["override"],
     # override conflicting types
-    ["override"],
+    type_conflict_strategies=["override"],
 )
 
 logger = logging.getLogger(__name__)
-
-_check_tracing_type: t.Callable[[str], bool] = lambda s: s in (
-    "zipkin",
-    "jaeger",
-    "otlp",
-)
-_check_otlp_protocol: t.Callable[[str], bool] = lambda s: s in (
-    "grpc",
-    "http",
-)
-_larger_than: t.Callable[[int | float], t.Callable[[int | float], bool]] = (
-    lambda target: lambda val: val > target
-)
-_larger_than_zero: t.Callable[[int | float], bool] = _larger_than(0)
-
-
-def _check_sample_rate(sample_rate: float) -> None:
-    if sample_rate == 0.0:
-        logger.warning(
-            "Tracing enabled, but sample_rate is unset or zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
-        )
-
-
-def _is_ip_address(addr: str) -> bool:
-    import socket
-
-    try:
-        socket.inet_aton(addr)
-        return True
-    except socket.error:
-        return False
-
-
-RUNNER_CFG_KEYS = ["batching", "resources", "logging", "metrics", "timeout"]
-
-RUNNER_CFG_SCHEMA = {
-    Optional("batching"): {
-        Optional("enabled"): bool,
-        Optional("max_batch_size"): And(int, _larger_than_zero),
-        Optional("max_latency_ms"): And(int, _larger_than_zero),
-    },
-    # note there is a distinction between being unset and None here; if set to 'None'
-    # in configuration for a specific runner, it will override the global configuration
-    Optional("resources"): Or({Optional(str): object}, lambda s: s == "system", None),  # type: ignore (incomplete schema typing)
-    Optional("logging"): {
-        # TODO add logging level configuration
-        Optional("access"): {
-            Optional("enabled"): bool,
-            Optional("request_content_length"): Or(bool, None),
-            Optional("request_content_type"): Or(bool, None),
-            Optional("response_content_length"): Or(bool, None),
-            Optional("response_content_type"): Or(bool, None),
-        },
-    },
-    Optional("metrics"): {
-        "enabled": bool,
-        "namespace": str,
-    },
-    Optional("timeout"): And(int, _larger_than_zero),
-}
-
-SCHEMA = Schema(
-    {
-        "api_server": {
-            "workers": Or(And(int, _larger_than_zero), None),
-            "timeout": And(int, _larger_than_zero),
-            "backlog": And(int, _larger_than(64)),
-            Optional("ssl"): {
-                Optional("certfile"): Or(str, None),
-                Optional("keyfile"): Or(str, None),
-                Optional("keyfile_password"): Or(str, None),
-                Optional("version"): Or(And(int, _larger_than_zero), None),
-                Optional("cert_reqs"): Or(int, None),
-                Optional("ca_certs"): Or(str, None),
-                Optional("ciphers"): Or(str, None),
-            },
-            "metrics": {
-                "enabled": bool,
-                "namespace": str,
-                Optional("duration"): {
-                    Optional("min"): And(float, _larger_than_zero),
-                    Optional("max"): And(float, _larger_than_zero),
-                    Optional("factor"): And(float, _larger_than(1.0)),
-                },
-            },
-            "logging": {
-                # TODO add logging level configuration
-                "access": {
-                    "enabled": bool,
-                    "request_content_length": Or(bool, None),
-                    "request_content_type": Or(bool, None),
-                    "response_content_length": Or(bool, None),
-                    "response_content_type": Or(bool, None),
-                    "format": {
-                        "trace_id": str,
-                        "span_id": str,
-                    },
-                },
-            },
-            "http": {
-                "host": And(str, _is_ip_address),
-                "port": And(int, _larger_than_zero),
-                "cors": {
-                    "enabled": bool,
-                    "access_control_allow_origin": Or(str, None),
-                    "access_control_allow_credentials": Or(bool, None),
-                    "access_control_allow_headers": Or([str], str, None),
-                    "access_control_allow_methods": Or([str], str, None),
-                    "access_control_max_age": Or(int, None),
-                    "access_control_expose_headers": Or([str], str, None),
-                },
-            },
-            "grpc": {
-                "host": And(str, _is_ip_address),
-                "port": And(int, _larger_than_zero),
-                "metrics": {
-                    "port": And(int, _larger_than_zero),
-                    "host": And(str, _is_ip_address),
-                },
-                "reflection": {"enabled": bool},
-                "channelz": {"enabled": bool},
-                "max_concurrent_streams": Or(int, None),
-                "max_message_length": Or(int, None),
-                "maximum_concurrent_rpcs": Or(int, None),
-            },
-            "runner_probe": {
-                "enabled": bool,
-                "timeout": int,
-                "period": int,
-            },
-        },
-        "runners": {
-            **RUNNER_CFG_SCHEMA,
-            Optional(str): RUNNER_CFG_SCHEMA,  # type: ignore (incomplete schema typing)
-        },
-        "tracing": {
-            "type": Or(And(str, Use(str.lower), _check_tracing_type), None),
-            "sample_rate": Or(And(float, lambda i: i >= 0 and i <= 1), None),
-            "excluded_urls": Or([str], str, None),
-            Optional("zipkin"): {"url": Or(str, None)},
-            Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
-            Optional("otlp"): {
-                "protocol": Or(And(str, Use(str.lower), _check_otlp_protocol), None),
-                "url": Or(str, None),
-            },
-        },
-        Optional("monitoring"): {
-            "enabled": bool,
-            Optional("type"): Or(str, None),
-            Optional("options"): Or(dict, None),
-        },
-        Optional("yatai"): {
-            "default_server": Or(str, None),
-            "servers": {
-                str: {
-                    "url": Or(str, None),
-                    "access_token": Or(str, None),
-                    "access_token_header": Or(str, None),
-                    "tls": {
-                        "root_ca_cert": Or(str, None),
-                        "client_key": Or(str, None),
-                        "client_cert": Or(str, None),
-                        "client_certificate_file": Or(str, None),
-                    },
-                },
-            },
-        },
-    }
-)
-
-_WARNING_MESSAGE = (
-    "field 'api_server.%s' is deprecated and has been renamed to 'api_server.http.%s'"
-)
 
 
 class BentoMLConfiguration:
     def __init__(
         self,
-        override_config_file: t.Optional[str] = None,
-        override_config_values: t.Optional[str] = None,
+        override_config_file: str | None = None,
+        override_config_values: str | None = None,
+        *,
         validate_schema: bool = True,
+        use_version: int = 1,
     ):
-        # Load default configuration
-        default_config_file = os.path.join(
-            os.path.dirname(__file__), "default_configuration.yaml"
-        )
-        with open(default_config_file, "rb") as f:
-            self.config: t.Dict[str, t.Any] = yaml.safe_load(f)
-        if validate_schema:
-            try:
-                SCHEMA.validate(self.config)
-            except SchemaError as e:
-                raise BentoMLConfigException(
-                    "Default configuration 'default_configuration.yml' does not"
-                    " conform to the required schema."
-                ) from e
+        # Load default configuration with latest version.
+        self.config = get_default_config(version=use_version)
+        spec_module = import_configuration_spec(version=use_version)
 
         # User override configuration
         if override_config_file is not None:
-            logger.info("Applying user config override from %s" % override_config_file)
-            if not os.path.exists(override_config_file):
-                raise BentoMLConfigException(
-                    f"Config file {override_config_file} not found"
+            logger.info(
+                "Applying user config override from path: %s" % override_config_file
+            )
+            override = load_config_file(override_config_file)
+            if "version" not in override:
+                # If users does not define a version, we then by default assume they are using v1
+                # and we will migrate it to latest version
+                logger.debug(
+                    "User config does not define a version, assuming given config is version %d..."
+                    % use_version
                 )
-            with open(override_config_file, "rb") as f:
-                override_config: dict[str, t.Any] = yaml.safe_load(f)
-
-            # compatibility layer with old configuration pre gRPC features
-            # api_server.[cors|port|host] -> api_server.http.$^
-            if "api_server" in override_config:
-                user_api_config = override_config["api_server"]
-                # max_request_size is deprecated
-                if "max_request_size" in user_api_config:
-                    logger.warning(
-                        "'api_server.max_request_size' is deprecated and has become obsolete."
-                    )
-                    user_api_config.pop("max_request_size")
-                # check if user are using older configuration
-                if "http" not in user_api_config:
-                    user_api_config["http"] = {}
-                # then migrate these fields to newer configuration fields.
-                for field in ["port", "host", "cors"]:
-                    if field in user_api_config:
-                        old_field = user_api_config.pop(field)
-                        user_api_config["http"][field] = old_field
-                        logger.warning(_WARNING_MESSAGE, field, field)
-
-                config_merger.merge(override_config["api_server"], user_api_config)
-
-                assert all(
-                    key not in override_config["api_server"]
-                    for key in ["cors", "max_request_size", "host", "port"]
-                )
-
-            config_merger.merge(self.config, override_config)
+                current = use_version
+            else:
+                current = override["version"]
+            migration = getattr(import_configuration_spec(current), "migration", None)
+            # Running migration layer if it exists
+            if migration is not None:
+                override = migration(override_config=dict(flatten_dict(override)))
+            config_merger.merge(self.config, override)
 
         if override_config_values is not None:
             logger.info(
@@ -298,68 +98,62 @@ class BentoMLConfiguration:
                     split_with_quotes(line, sep="=", quote='"') for line in lines
                 ]
             }
+            # Note that this values will only support latest version of configuration,
+            # as there is no way for us to infer what values user can pass in.
+            # however, if users pass in a version inside this value, we will that to migrate up
+            # if possible
+            if "version" in override_config_map:
+                override_version = override_config_map["version"]
+                logger.debug(
+                    "Found defined 'version=%d' in BENTOML_CONFIG_OPTIONS."
+                    % override_version
+                )
+                migration = getattr(
+                    import_configuration_spec(override_version), "migration", None
+                )
+                # Running migration layer if it exists
+                if migration is not None:
+                    override_config_map = migration(override_config=override_config_map)
+            # Previous behaviour, before configuration versioning.
             try:
-                override_config = unflatten(override_config_map)
+                override = unflatten(override_config_map)
             except ValueError as e:
                 raise BentoMLConfigException(
-                    f"Failed to parse config options from the env var: {e}. \n *** Note: You can use '\"' to quote the key if it contains special characters. ***"
+                    f"Failed to parse config options from the env var:\n{e}.\n*** Note: You can use '\"' to quote the key if it contains special characters. ***"
                 ) from None
-            config_merger.merge(self.config, override_config)
+            config_merger.merge(self.config, override)
 
         if override_config_file is not None or override_config_values is not None:
             self._finalize()
 
         if validate_schema:
             try:
-                SCHEMA.validate(self.config)
-            except SchemaError as e:
+                spec_module.SCHEMA.validate(self.config)
+            except s.SchemaError as e:
                 raise BentoMLConfigException(
-                    "Invalid configuration file was given."
-                ) from e
+                    f"Invalid configuration file was given:\n{e}"
+                ) from None
 
     def _finalize(self):
+        RUNNER_CFG_KEYS = ["batching", "resources", "logging", "metrics", "timeout"]
         global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
-        for key in self.config["runners"]:
-            if key not in RUNNER_CFG_KEYS:
-                runner_cfg = self.config["runners"][key]
+        custom_runners_cfg = dict(
+            filter(
+                lambda kv: kv[0] not in RUNNER_CFG_KEYS,
+                self.config["runners"].items(),
+            )
+        )
+        if custom_runners_cfg:
+            for runner_name, runner_cfg in custom_runners_cfg.items():
                 # key is a runner name
                 if runner_cfg.get("resources") == "system":
                     runner_cfg["resources"] = system_resources()
-                self.config["runners"][key] = config_merger.merge(
+                self.config["runners"][runner_name] = config_merger.merge(
                     deepcopy(global_runner_cfg),
                     runner_cfg,
                 )
 
-    def override(self, keys: t.List[str], value: t.Any):
-        if keys is None:
-            raise BentoMLConfigException(
-                "Configuration override key is None."
-            ) from None
-        if len(keys) == 0:
-            raise BentoMLConfigException(
-                "Configuration override key is empty."
-            ) from None
-        if value is None:
-            return
-
-        c = self.config
-        for key in keys[:-1]:
-            if key not in c:
-                raise BentoMLConfigException(
-                    "Configuration override key is invalid, %s" % keys
-                ) from None
-            c = c[key]
-        c[keys[-1]] = value
-
-        try:
-            SCHEMA.validate(self.config)
-        except SchemaError as e:
-            raise BentoMLConfigException(
-                "Configuration after applying override does not conform"
-                " to the required schema, key=%s, value=%s." % (keys, value)
-            ) from e
-
-    def as_dict(self) -> providers.ConfigDictType:
+    def to_dict(self) -> providers.ConfigDictType:
         return t.cast(providers.ConfigDictType, self.config)
 
 
@@ -429,36 +223,39 @@ class _BentoMLContainerClass:
 
         return get_serve_info()
 
+    cors = http.cors
+
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origins: str | None = Provide[http.cors.access_control_allow_origin],
-        allow_credentials: bool
-        | None = Provide[http.cors.access_control_allow_credentials],
-        expose_headers: list[str]
-        | str
-        | None = Provide[http.cors.access_control_expose_headers],
+        allow_origin: str | None = Provide[cors.access_control_allow_origin],
+        allow_origin_regex: str
+        | None = Provide[cors.access_control_allow_origin_regex],
+        allow_credentials: bool | None = Provide[cors.access_control_allow_credentials],
         allow_methods: list[str]
         | str
-        | None = Provide[http.cors.access_control_allow_methods],
+        | None = Provide[cors.access_control_allow_methods],
         allow_headers: list[str]
         | str
-        | None = Provide[http.cors.access_control_allow_headers],
-        max_age: int | None = Provide[http.cors.access_control_max_age],
+        | None = Provide[cors.access_control_allow_headers],
+        max_age: int | None = Provide[cors.access_control_max_age],
+        expose_headers: list[str]
+        | str
+        | None = Provide[cors.access_control_expose_headers],
     ) -> dict[str, list[str] | str | int]:
-        kwargs = dict(
-            allow_origins=allow_origins,
-            allow_credentials=allow_credentials,
-            expose_headers=expose_headers,
-            allow_methods=allow_methods,
-            allow_headers=allow_headers,
-            max_age=max_age,
-        )
-
-        filtered_kwargs: dict[str, list[str] | str | int] = {
-            k: v for k, v in kwargs.items() if v is not None
+        return {
+            k: v
+            for k, v in {
+                "allow_origins": allow_origin,
+                "allow_origin_regex": allow_origin_regex,
+                "allow_credentials": allow_credentials,
+                "allow_methods": allow_methods,
+                "allow_headers": allow_headers,
+                "max_age": max_age,
+                "expose_headers": expose_headers,
+            }.items()
+            if v is not None
         }
-        return filtered_kwargs
 
     api_server_workers = providers.Factory[int](
         lambda workers: workers or math.ceil(CpuResource.from_system()),
@@ -480,16 +277,18 @@ class _BentoMLContainerClass:
 
         return PrometheusClient(multiproc_dir=multiproc_dir)
 
+    tracing = config.tracing
+
     @providers.SingletonFactory
     @staticmethod
     def tracer_provider(
-        tracer_type: str = Provide[config.tracing.type],
-        sample_rate: t.Optional[float] = Provide[config.tracing.sample_rate],
-        zipkin_server_url: t.Optional[str] = Provide[config.tracing.zipkin.url],
-        jaeger_server_address: t.Optional[str] = Provide[config.tracing.jaeger.address],
-        jaeger_server_port: t.Optional[int] = Provide[config.tracing.jaeger.port],
-        otlp_server_protocol: t.Optional[str] = Provide[config.tracing.otlp.protocol],
-        otlp_server_url: t.Optional[str] = Provide[config.tracing.otlp.url],
+        tracer_type: str = Provide[tracing.exporter_type],
+        sample_rate: float | None = Provide[tracing.sample_rate],
+        timeout: int | None = Provide[tracing.timeout],
+        max_tag_value_length: int | None = Provide[tracing.max_tag_value_length],
+        zipkin: dict[str, t.Any] = Provide[tracing.zipkin],
+        jaeger: dict[str, t.Any] = Provide[tracing.jaeger],
+        otlp: dict[str, t.Any] = Provide[tracing.otlp],
     ):
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.resources import Resource
@@ -506,9 +305,11 @@ class _BentoMLContainerClass:
 
         if sample_rate is None:
             sample_rate = 0.0
-
+        if sample_rate == 0.0:
+            logger.debug(
+                "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
+            )
         resource = {}
-
         # User can optionally configure the resource with the following environment variables. Only
         # configure resource if user has not explicitly configured it.
         if (
@@ -523,57 +324,70 @@ class _BentoMLContainerClass:
                 resource[SERVICE_NAMESPACE] = component_context.bento_name
             if component_context.bento_version:
                 resource[SERVICE_VERSION] = component_context.bento_version
-
+        # create tracer provider
         provider = TracerProvider(
             sampler=ParentBasedTraceIdRatio(sample_rate),
             resource=Resource.create(resource),
         )
-
-        if tracer_type == "zipkin" and zipkin_server_url is not None:
+        if tracer_type == "zipkin" and any(zipkin.values()):
             from opentelemetry.exporter.zipkin.json import ZipkinExporter
 
-            exporter = ZipkinExporter(endpoint=zipkin_server_url)
-            provider.add_span_processor(BatchSpanProcessor(exporter))
-            _check_sample_rate(sample_rate)
-            return provider
-        elif (
-            tracer_type == "jaeger"
-            and jaeger_server_address is not None
-            and jaeger_server_port is not None
-        ):
-            from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-
-            exporter = JaegerExporter(
-                agent_host_name=jaeger_server_address, agent_port=jaeger_server_port
+            exporter = ZipkinExporter(
+                endpoint=zipkin.get("endpoint"),
+                local_node_ipv4=zipkin.get("local_node_ipv4"),
+                local_node_ipv6=zipkin.get("local_node_ipv6"),
+                local_node_port=zipkin.get("local_node_port"),
+                max_tag_value_length=max_tag_value_length,
+                timeout=timeout,
             )
-            provider.add_span_processor(BatchSpanProcessor(exporter))
-            _check_sample_rate(sample_rate)
-            return provider
-        elif (
-            tracer_type == "otlp"
-            and otlp_server_protocol is not None
-            and otlp_server_url is not None
-        ):
-            if otlp_server_protocol == "grpc":
+        elif tracer_type == "jaeger" and any(jaeger.values()):
+            protocol = jaeger.get("protocol")
+            if protocol == "thrift":
+                from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+            elif protocol == "grpc":
+                from opentelemetry.exporter.jaeger.proto.grpc import JaegerExporter
+            else:
+                raise InvalidArgument(
+                    f"Invalid 'api_server.tracing.jaeger.protocol' value: {protocol}"
+                ) from None
+            exporter = JaegerExporter(
+                collector_endpoint=jaeger.get("collector_endpoint"),
+                max_tag_value_length=max_tag_value_length,
+                timeout=timeout,
+                **jaeger[protocol],
+            )
+        elif tracer_type == "otlp" and any(otlp.values()):
+            protocol = otlp.get("protocol")
+            if protocol == "grpc":
                 from opentelemetry.exporter.otlp.proto.grpc import trace_exporter
-
-            elif otlp_server_protocol == "http":
+            elif protocol == "http":
                 from opentelemetry.exporter.otlp.proto.http import trace_exporter
             else:
                 raise InvalidArgument(
-                    f"Invalid otlp protocol: {otlp_server_protocol}"
+                    f"Invalid 'api_server.tracing.jaeger.protocol' value: {protocol}"
                 ) from None
-            exporter = trace_exporter.OTLPSpanExporter(endpoint=otlp_server_url)
-            provider.add_span_processor(BatchSpanProcessor(exporter))
-            _check_sample_rate(sample_rate)
-            return provider
+            exporter = trace_exporter.OTLPSpanExporter(
+                endpoint=otlp.get("endpoint", None),
+                compression=otlp.get("compression", None),
+                timeout=timeout,
+                **otlp[protocol],
+            )
+        elif tracer_type == "in_memory":
+            # This will be used during testing, user shouldn't use this otherwise.
+            # We won't document this in documentation.
+            from opentelemetry.sdk.trace.export import in_memory_span_exporter
+
+            exporter = in_memory_span_exporter.InMemorySpanExporter()
         else:
             return provider
+        # When exporter is set
+        provider.add_span_processor(BatchSpanProcessor(exporter))
+        return provider
 
     @providers.SingletonFactory
     @staticmethod
     def tracing_excluded_urls(
-        excluded_urls: str | list[str] | None = Provide[config.tracing.excluded_urls],
+        excluded_urls: str | list[str] | None = Provide[tracing.excluded_urls],
     ):
         from opentelemetry.util.http import ExcludeList
         from opentelemetry.util.http import parse_excluded_urls
@@ -592,27 +406,26 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def duration_buckets(
-        metrics: dict[str, t.Any] = Provide[api_server_config.metrics]
+        duration: dict[str, t.Any] = Provide[api_server_config.metrics.duration]
     ) -> tuple[float, ...]:
         """
         Returns a tuple of duration buckets in seconds. If not explicitly configured,
         the Prometheus default is returned; otherwise, a set of exponential buckets
         generated based on the configuration is returned.
         """
-        from ..utils.metrics import DEFAULT_BUCKET
+        from ..utils.metrics import INF
         from ..utils.metrics import exponential_buckets
 
-        if "duration" in metrics:
-            duration: dict[str, float] = metrics["duration"]
-            if duration.keys() >= {"min", "max", "factor"}:
+        if "buckets" in duration:
+            return tuple(duration["buckets"]) + (INF,)
+        else:
+            if len(set(duration) - {"min", "max", "factor"}) == 0:
                 return exponential_buckets(
                     duration["min"], duration["factor"], duration["max"]
                 )
             raise BentoMLConfigException(
-                "Keys 'min', 'max', and 'factor' are required for "
-                f"'duration' configuration, '{duration}'."
-            )
-        return DEFAULT_BUCKET
+                f"Keys 'min', 'max', and 'factor' are required for 'duration' configuration, '{duration!r}'."
+            ) from None
 
     @providers.SingletonFactory
     @staticmethod

@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import os
 import re
 import typing as t
 import logging
 from functools import lru_cache
 
-from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import BentoMLConfigException
+from ...exceptions import BentoMLException
+from ...exceptions import BentoMLConfigException
 
 try:
     from ..._version import __version__
@@ -87,14 +89,14 @@ def is_pypi_installed_bentoml() -> bool:
     return is_tagged and is_clean and not_been_modified
 
 
-def get_bentoml_config_file_from_env() -> t.Optional[str]:
+def get_bentoml_config_file_from_env() -> str | None:
     if CONFIG_ENV_VAR in os.environ:
         # User local config file for customizing bentoml
         return expand_env_var(os.environ.get(CONFIG_ENV_VAR, ""))
     return None
 
 
-def get_bentoml_override_config_from_env() -> t.Optional[str]:
+def get_bentoml_override_config_from_env() -> str | None:
     if CONFIG_OVERRIDE_ENV_VAR in os.environ:
         # User local config options for customizing bentoml
         return os.environ.get(CONFIG_OVERRIDE_ENV_VAR, None)
@@ -129,7 +131,7 @@ def get_quiet_mode() -> bool:
     return False
 
 
-def load_global_config(bentoml_config_file: t.Optional[str] = None):
+def load_config(bentoml_config_file: str | None = None):
     """Load global configuration of BentoML"""
 
     from .containers import BentoMLContainer
@@ -141,24 +143,22 @@ def load_global_config(bentoml_config_file: t.Optional[str] = None):
     if bentoml_config_file:
         if not bentoml_config_file.endswith((".yml", ".yaml")):
             raise BentoMLConfigException(
-                "BentoML config file specified in ENV VAR does not end with `.yaml`: "
-                f"`BENTOML_CONFIG={bentoml_config_file}`"
+                f"BentoML config file specified in ENV VAR does not end with either '.yaml' or '.yml': 'BENTOML_CONFIG={bentoml_config_file}'"
             ) from None
         if not os.path.isfile(bentoml_config_file):
             raise FileNotFoundError(
-                "BentoML config file specified in ENV VAR not found: "
-                f"`BENTOML_CONFIG={bentoml_config_file}`"
+                f"BentoML config file specified in ENV VAR not found: 'BENTOML_CONFIG={bentoml_config_file}'"
             ) from None
 
-    bentoml_configuration = BentoMLConfiguration(
-        override_config_file=bentoml_config_file,
-        override_config_values=get_bentoml_override_config_from_env(),
+    BentoMLContainer.config.set(
+        BentoMLConfiguration(
+            override_config_file=bentoml_config_file,
+            override_config_values=get_bentoml_override_config_from_env(),
+        ).to_dict()
     )
 
-    BentoMLContainer.config.set(bentoml_configuration.as_dict())
 
-
-def save_global_config(config_file_handle: t.IO[t.Any]):
+def save_config(config_file_handle: t.IO[t.Any]):
     import yaml
 
     from ..configuration.containers import BentoMLContainer

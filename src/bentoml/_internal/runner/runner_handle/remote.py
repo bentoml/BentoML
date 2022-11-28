@@ -22,7 +22,6 @@ from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import yarl
-    import aiohttp
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
 
@@ -114,7 +113,7 @@ class RemoteRunnerClient(RunnerHandle):
                 trace_configs=[
                     create_trace_config(
                         # Remove all query params from the URL attribute on the span.
-                        url_filter=strip_query_params,  # type: ignore
+                        url_filter=strip_query_params,
                         tracer_provider=BentoMLContainer.tracer_provider.get(),
                     )
                 ],

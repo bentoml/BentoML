@@ -1,10 +1,33 @@
+version: 1
 api_server:
-  workers: ~ # When this is set to null the number of available CPU cores is used.
+  workers: ~ # cpu_count() will be used when null
   timeout: 60
   backlog: 2048
   metrics:
     enabled: true
     namespace: bentoml_api_server
+    duration:
+      # https://github.com/prometheus/client_python/blob/f17a8361ad3ed5bc47f193ac03b00911120a8d81/prometheus_client/metrics.py#L544
+      buckets:
+        [
+          0.005,
+          0.01,
+          0.025,
+          0.05,
+          0.075,
+          0.1,
+          0.25,
+          0.5,
+          0.75,
+          1.0,
+          2.5,
+          5.0,
+          7.5,
+          10.0,
+        ]
+      min: ~
+      max: ~
+      factor: ~
   logging:
     access:
       enabled: true
@@ -16,6 +39,7 @@ api_server:
         trace_id: 032x
         span_id: 016x
   ssl:
+    enabled: false
     certfile: ~
     keyfile: ~
     keyfile_password: ~
@@ -32,6 +56,7 @@ api_server:
       access_control_allow_credentials: ~
       access_control_allow_methods: ~
       access_control_allow_headers: ~
+      access_control_allow_origin_regex: ~
       access_control_max_age: ~
       access_control_expose_headers: ~
   grpc:
@@ -51,13 +76,13 @@ api_server:
     enabled: true
     timeout: 1
     period: 10
-
 runners:
+  resources: ~
+  timeout: 300
   batching:
     enabled: true
     max_batch_size: 100
     max_latency_ms: 10000
-  resources: ~
   logging:
     access:
       enabled: true
@@ -66,23 +91,38 @@ runners:
       response_content_length: true
       response_content_type: true
   metrics:
-    enabled: True
+    enabled: true
     namespace: bentoml_runner
-  timeout: 300
-
 tracing:
-  type: zipkin
+  exporter_type: ~
   sample_rate: ~
   excluded_urls: ~
+  timeout: ~
+  max_tag_value_length: ~
   zipkin:
-    url: ~
+    endpoint: ~
+    local_node_ipv4: ~
+    local_node_ipv6: ~
+    local_node_port: ~
   jaeger:
-    address: ~
-    port: ~
+    protocol: thrift
+    collector_endpoint: ~
+    thrift:
+      agent_host_name: ~
+      agent_port: ~
+      udp_split_oversized_batches: ~
+    grpc:
+      insecure: ~
   otlp:
     protocol: ~
-    url: ~
-
+    endpoint: ~
+    compression: ~
+    http:
+      certificate_file: ~
+      headers: ~
+    grpc:
+      headers: ~
+      insecure: ~
 monitoring:
   enabled: true
   type: default

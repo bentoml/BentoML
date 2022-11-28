@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import types
 import typing as t
@@ -24,18 +26,20 @@ class LazyLoader(types.ModuleType):
     def __init__(
         self,
         local_name: str,
-        parent_module_globals: t.Dict[str, t.Any],
+        parent_module_globals: dict[str, t.Any],
         name: str,
-        warning: t.Optional[str] = None,
-        exc_msg: t.Optional[str] = None,
+        warning: str | None = None,
+        exc_msg: str | None = None,
+        exc: type[Exception] = MissingDependencyException,
     ):
         self._local_name = local_name
         self._parent_module_globals = parent_module_globals
         self._warning = warning
         self._exc_msg = exc_msg
-        self._module: t.Optional[types.ModuleType] = None
+        self._exc = exc
+        self._module: types.ModuleType | None = None
 
-        super(LazyLoader, self).__init__(str(name))
+        super().__init__(str(name))
 
     def _load(self) -> types.ModuleType:
         """Load the module and insert it into the parent's globals."""
@@ -46,7 +50,7 @@ class LazyLoader(types.ModuleType):
             # The additional add to sys.modules ensures library is actually loaded.
             sys.modules[self._local_name] = module
         except ModuleNotFoundError as err:
-            raise MissingDependencyException(f"{self._exc_msg}") from err
+            raise self._exc(f"{self._exc_msg} (reason: {err})") from None
 
         # Emit a warning if one was specified
         if self._warning:

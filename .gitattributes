@@ -1,6 +1,5 @@
 typings/**/*.pyi linguist-generated=true
-*_pb2*.py linguist-generated=true
-*_pb2*.pyi linguist-generated=true
-*.lock.txt linguist-generated=true
+*_pb2* linguist-generated=true
 yarn.lock linguist-generated=true
+BUILD* linguist-language=Starlark
 * text=auto eol=lf

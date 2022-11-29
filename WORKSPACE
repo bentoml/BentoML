@@ -70,9 +70,7 @@ load("@rules_python//python/pip_install:pip_repository.bzl", "pip_repository")
 
 pip_parse(
     name = "pypi",
-    requirements_darwin = "//requirements:pypi-macos.lock.txt",
-    requirements_linux = "//requirements:pypi-linux.lock.txt",
-    requirements_windows = "//requirements:pypi-windows.lock.txt",
+    requirements = "//:bazel-requirements.lock.txt",
 )
 
 load("@pypi//:requirements.bzl", pypi_deps = "install_deps")

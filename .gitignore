@@ -121,7 +121,6 @@ pyvenv.cfg
 
 # bazel generated files
 bazel-*
-grpc-client/bentoml
 
 # Swift-related
 .DS_Store

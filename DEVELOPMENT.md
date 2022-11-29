@@ -315,7 +315,7 @@ git update-index --assume-unchanged requirements/*.lock.txt
 Generate the locked dependencies:
 
 ```bash
-./tools/update-deps
+bazel run //:pypi.update
 ```
 
 Use `bazel test` to run the test suite:

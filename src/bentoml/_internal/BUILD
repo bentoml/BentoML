@@ -7,5 +7,5 @@ filegroup(
 
 filegroup(
     name = "data_files",
-    srcs = ["configuration/default_configuration.yaml"] + glob(["server/static_content/**"]) + glob(["container/frontend/**"]),
+    srcs = glob(["configuration/**/*.yaml"]) + glob(["server/static_content/**"]) + glob(["container/frontend/**"]),
 )

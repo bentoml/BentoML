@@ -17,7 +17,7 @@ sphinx:
 
 python:
   install:
-    - requirements: requirements/pypi.txt
+    - requirements: requirements/pypi-requirements.txt
     - method: pip
       path: .
 

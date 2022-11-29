@@ -61,4 +61,8 @@ if [ ! -x "${filename_abs}" ]; then
 fi
 
 popd >/dev/null
+
+[ ! -f "$GIT_ROOT/bazel-requirements.lock.txt" ] && touch "$GIT_ROOT/bazel-requirements.lock.txt"
+[ ! -f "$GIT_ROOT/yarn.lock" ] && touch "$GIT_ROOT/yarn.lock"
+
 exec "${filename_abs}" "$@"

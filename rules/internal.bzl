@@ -139,7 +139,7 @@ def bentoml_internal_deps():
         url = "https://github.com/aspect-build/bazel-lib/archive/refs/tags/v1.16.1.tar.gz",
     )
 
-    # add lightgbm manually for MacOS
+    # The following library will need to be built from source.
     maybe(
         new_git_repository,
         name = "com_github_microsoft_lightgbm",
@@ -149,6 +149,15 @@ def bentoml_internal_deps():
         build_file = Label("//third_party:BUILD.lightgbm"),
         remote = "https://github.com/microsoft/LightGBM.git",
         shallow_since = "1667710116 -0500",
+    )
+    maybe(
+        new_git_repository,
+        name = "com_github_onnx_onnx",
+        init_submodules = True,
+        recursive_init_submodules = True,
+        commit = "3fd41d249bb8006935aa0031a332dd945e61b7e5",
+        build_file = Label("//third_party:BUILD.onnx"),
+        remote = "https://github.com/onnx/onnx.git",
     )
 
     # io_grpc_grpc_java is for java_grpc_library and related dependencies.

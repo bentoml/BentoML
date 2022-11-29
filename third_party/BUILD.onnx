@@ -1,0 +1,35 @@
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+load("@rules_python//python:defs.bzl", "py_library")
+load("@pypi//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "srcs",
+    srcs = glob(["**"]),
+)
+
+cmake(
+    name = "lib",
+    generate_args = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_STATIC_LIB=ON",
+        "-DONNX_USE_LITE_PROTO=ON",
+        "-DCMAKE_CXX_STANDARD=14",
+    ],
+    lib_source = ":srcs",
+    deps = ["//:protobuf"]
+)
+
+py_library(
+    name = "python_package",
+    srcs = glob(["python-package/lightgbm/*.py"]),
+    imports = ["."],
+    data = [":lib"],
+    deps = [
+        requirement("numpy"),
+        requirement("scipy"),
+        requirement("scikit-learn"),
+    ],
+)
+

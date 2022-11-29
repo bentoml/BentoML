@@ -18,20 +18,13 @@ filegroup(
     srcs = ["pyproject.toml"],
 )
 
-[
-    compile_pip_requirements(
-        name = "pypi-{}".format(platform),
-        extra_args = ["--allow-unsafe"],
-        requirements_in = "//requirements:pypi.txt",
-        requirements_txt = "//requirements:pypi-{}.lock.txt".format(platform),
-        visibility = ["//visibility:__pkg__"],
-    )
-    for platform in [
-        "linux",
-        "macos",
-        "windows",
-    ]
-]
+compile_pip_requirements(
+    name = "pypi",
+    extra_args = ["--allow-unsafe"],
+    requirements_in = "//requirements:pypi-requirements.txt",
+    requirements_txt = "//:bazel-requirements.lock.txt",
+    visibility = ["//visibility:__pkg__"],
+)
 
 [
     alias(

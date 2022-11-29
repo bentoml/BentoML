@@ -71,7 +71,7 @@ isort==5.10.1
 pylint==2.15.5
 imageio==2.22.4
 build[virtualenv]==0.9.0
-tomli>=1.0.0
+tomli==2.0.1
 # docs requirements
 Sphinx==5.3.0
 sphinx-autobuild==2021.3.14
@@ -95,7 +95,7 @@ xgboost==1.6.2
 # ONNX dependencies
 # 1.12.0 is the lowest version that is supported on all platforms for onnx
 onnx==1.12.0
-onnxruntime==1.12.0
+onnxruntime==1.13.1
 skl2onnx==1.13
 # Jax is not yet supported on Windows, so pip install will fail
 flax==0.6.2;platform_system!="Windows"

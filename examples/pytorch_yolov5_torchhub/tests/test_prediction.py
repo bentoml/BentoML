@@ -4,10 +4,12 @@
 import io
 import json
 
-import aiohttp
 import numpy as np
 import pytest
-from bentoml.testing.utils import async_request, parse_multipart_form
+import aiohttp
+
+from bentoml.testing.utils import async_request
+from bentoml.testing.utils import parse_multipart_form
 
 
 @pytest.fixture()

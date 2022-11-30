@@ -1,14 +1,13 @@
-import sys
 import os
+import sys
 import typing as t
 
 import numpy as np
 import PIL.Image
 
 import bentoml
-from bentoml.io import Image
 from bentoml.io import JSON
-
+from bentoml.io import Image
 
 yolo_runner = bentoml.pytorch.get("pytorch_yolov5").to_runner()
 

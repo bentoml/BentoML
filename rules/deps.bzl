@@ -8,7 +8,7 @@ GRPC_SHA256 = "320366665d19027cda87b2368c03939006a37e0388bfd1091c8d2a96fbc93bd8"
 PROTOBUF_VERSION = "3.19.6"
 PROTOBUF_SHA256 = "9a301cf94a8ddcb380b901e7aac852780b826595075577bb967004050c835056"
 
-def bentoml_internal_deps():
+def bentoml_dependencies():
     maybe(
         http_archive,
         name = "bazel_skylib",
@@ -118,9 +118,9 @@ def bentoml_internal_deps():
     maybe(
         http_archive,
         name = "rules_python",
-        sha256 = "a868059c8c6dd6ad45a205cca04084c652cfe1852e6df2d5aca036f6e5438380",
-        strip_prefix = "rules_python-0.14.0",
-        url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.14.0.tar.gz",
+        sha256 = "fda23c37fbacf7579f94d5e8f342d3a831140e9471b770782e83846117dd6596",
+        strip_prefix = "rules_python-0.15.0",
+        url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.15.0.tar.gz",
     )
 
     maybe(

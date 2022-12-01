@@ -8,7 +8,10 @@ package(default_visibility = ["//:__pkg__"])
         srcs = ["{}.bzl".format(src)],
     )
     for src in [
-        "internal",
+        "deps",
         "utils",
+        "workspace0",
+        "workspace1",
+        "workspace2",
     ]
 ]

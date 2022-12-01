@@ -181,7 +181,11 @@ class OCIBuilder:
         commands = list(map(str, cmds))
 
         try:
-            if not self.enable_buildkit:
+            # We need to also respect DOCKER_BUILDKIT environment here
+            # to stream logs
+            if not self.enable_buildkit or (
+                "DOCKER_BUILDKIT" in env and env["DOCKER_BUILDKIT"] == "0"
+            ):
                 return self.stream_logs(commands, cwd=context_path, env=env).stdout
             else:
                 return subprocess.check_output(commands, cwd=context_path, env=env)

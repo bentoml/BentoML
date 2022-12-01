@@ -1,7 +1,7 @@
 load("@rules_python//python:defs.bzl", _py_library = "py_library", _py_test = "py_test")
 load("@aspect_rules_py//py:defs.bzl", _pytest_main = "py_pytest_main")
 load("@rules_python//python:pip.bzl", _compile_pip_requirements = "compile_pip_requirements")
-load("@pypi//:requirements.bzl", _pypi_requirement = "requirement")
+load("@pypi//:requirements.bzl", "requirement")
 
 FRAMEWORKS = [
     "catboost",
@@ -48,6 +48,7 @@ def py_test(name, args = [], data = [], **kwargs):
 
     srcs = kwargs.pop("srcs", [])
     deps = kwargs.pop("deps", [])
+
     if not srcs:
         srcs += ["test_{}.py".format(name)]
 
@@ -64,15 +65,15 @@ def py_test(name, args = [], data = [], **kwargs):
         },
         deps = [
             ":__test__",
-            "//src/bentoml",
-            "//src/bentoml_cli",
-            "//rules/py:codecov",
-            _pypi_requirement("pytest"),
-            _pypi_requirement("pytest-xdist"),
-            _pypi_requirement("pytest-asyncio"),
-            _pypi_requirement("setuptools-scm"),
-            _pypi_requirement("build"),
-            _pypi_requirement("virtualenv"),
+            str(Label("@//src/bentoml")),
+            str(Label("@//src/bentoml_cli")),
+            str(Label("//rules/py:codecov")),
+            requirement("pytest"),
+            requirement("pytest-xdist"),
+            requirement("pytest-asyncio"),
+            requirement("setuptools-scm"),
+            requirement("build"),
+            requirement("virtualenv"),
         ] + deps,
         data = [
             "//:pyproject",

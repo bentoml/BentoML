@@ -18,3 +18,15 @@ workspace1()
 load("//rules:workspace2.bzl", "workspace2")
 
 workspace2()
+
+# NOTE: rules_python
+load("@rules_python//python:pip.bzl", "pip_parse")
+
+pip_parse(
+    name = "pypi",
+    requirements = "//:bazel-requirements.lock.txt",
+)
+
+load("@pypi//:requirements.bzl", "install_deps")
+
+install_deps()

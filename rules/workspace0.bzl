@@ -1,6 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
-load("@//rules:deps.bzl", "bentoml_dependencies")
 
 # setup rules_proto_grpc
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
@@ -30,9 +29,6 @@ load(
     container_repositories = "repositories",
 )
 
-# NOTE: rules_python
-load("@rules_python//python:pip.bzl", "pip_parse")
-
 # NOTE: rules_swift and rules_apple
 load(
     "@build_bazel_apple_support//lib:repositories.bzl",
@@ -56,8 +52,6 @@ IO_GRPC_GRPC_KOTLIN_ARTIFACTS = [
 ]
 
 def _bentoml_workspace():
-    bentoml_dependencies()
-
     bazel_skylib_workspace()
 
     rules_proto_grpc_toolchains()
@@ -112,10 +106,5 @@ def _bentoml_workspace():
     swift_rules_extra_dependencies()
 
     rules_foreign_cc_dependencies()
-
-    pip_parse(
-        name = "pypi",
-        requirements = "//:bazel-requirements.lock.txt",
-    )
 
 workspace0 = _bentoml_workspace

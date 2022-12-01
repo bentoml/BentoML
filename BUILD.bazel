@@ -59,7 +59,7 @@ alias(
 
 alias(
     name = "sdk",
-    actual = "//src/bentoml",
+    actual = "//src/bentoml:bentoml",
     visibility = ["//visibility:public"],
 )
 

@@ -48,7 +48,12 @@ to_options_field: t.Callable[[str], str] = lambda s: f"__options__{s}"
 
 
 def get_templates_variables(
-    docker: DockerOptions, conda: CondaOptions, bento_fs: FS, **bento_env: str | bool
+    docker: DockerOptions,
+    conda: CondaOptions,
+    bento_fs: FS,
+    *,
+    _is_cuda: bool = False,
+    **bento_env: str | bool,
 ) -> dict[str, t.Any]:
     """
     Returns a dictionary of variables to be used in BentoML base templates.
@@ -90,6 +95,7 @@ def get_templates_variables(
         "__prometheus_port__": BentoMLContainer.grpc.metrics.port.get(),
         "__base_image__": base_image,
         "__conda_python_version__": conda_python_version,
+        "__is_cuda__": _is_cuda,
     }
 
 
@@ -177,5 +183,11 @@ def generate_containerfile(
         )
 
     return template.render(
-        **get_templates_variables(docker, conda, bento_fs, **override_bento_env)
+        **get_templates_variables(
+            docker,
+            conda,
+            bento_fs,
+            _is_cuda=release_type == "cuda",
+            **override_bento_env,
+        )
     )

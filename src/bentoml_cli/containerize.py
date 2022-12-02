@@ -613,7 +613,10 @@ def add_containerize_command(cli: Group) -> None:
                 start = "To run your newly built Bento container, use one of the above tags (e.g: %s) and pass it to '%s run'. For example:"
                 instructions[0] = start
             fmt = [example_tag, container_runtime, container_runtime, example_tag]
-            if features is not None and "grpc" in features:
+            if features is not None and any(
+                has_grpc in features
+                for has_grpc in ("all", "grpc", "grpc-reflection", "grpc-channelz")
+            ):
                 grpc_metrics_port = BentoMLContainer.grpc.metrics.port.get()
                 instructions.extend(
                     [

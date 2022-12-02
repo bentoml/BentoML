@@ -20,6 +20,7 @@ into this part of the documentation.
     graph
     logging
     metrics
+    monitoring
     performance
     grpc
     gpu

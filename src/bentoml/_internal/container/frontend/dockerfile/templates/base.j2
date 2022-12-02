@@ -28,6 +28,10 @@ ENV PYTHONIOENCODING=UTF-8
 
 ENV PYTHONUNBUFFERED=1
 
+{% if __is_cuda__ %}
+ENV NVIDIA_VISIBLE_DEVICES=
+{% endif %}
+
 {% endblock %}
 
 # Block SETUP_BENTO_USER

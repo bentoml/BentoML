@@ -5,7 +5,6 @@ labels:
   stage: demo
 include:
 - "*.py"
-- "/home/agent/.cache/torch/hub/ultralytics_yolov5_master/models/common.py"
 exclude:
 - "tests/"
 - "locustfile.py"

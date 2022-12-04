@@ -44,7 +44,7 @@ handlers:
     filename: "{schema_filename}"
 formatters:
   bentoml_json:
-    class: pythonjsonlogger.tsonlogger.JsonFormatter
+    class: pythonjsonlogger.jsonlogger.JsonFormatter
     format: ""
 """
 

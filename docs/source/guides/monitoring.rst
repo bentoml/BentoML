@@ -210,7 +210,7 @@ plugins could be more platform specific.
     To use plugins, you need to install the plugin and include it in the dependencies section of the bentofile.
     For example, it is required to add `bentoml-plugins-arize` to the `python:packages` to use the Arize plugin.
 
-1. Ship to Arize AI
+1. Arize AI
 
 For end-to-end solutions for data/model monitoring, BentoML colaborates with Arize AI to provide a plugin for Arize.
 If you don't want to deploy a pipeline by yourself but still need data and model monitoring for the bussiness, Arize AI is a good choice.

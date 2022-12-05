@@ -2,7 +2,7 @@
 Inference Data Collection & Model Monitoring
 ============================================
 
-Data-Centric Artificial Intelligence (AI) is a popular paradigm that is
+Data-Centric Artificial Intelligence is a popular paradigm that is
 revolutionizing the way we build AI systems. It is a new way of thinking
 about AI that is based on the idea that data is the most important
 component of AI systems.

@@ -23,7 +23,7 @@ The benefits of having a data collection and model monitoring workflow includes:
 Build an ML Application with monitoring API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Let's take a simple iris classifier service in bentoml/examples as an example below.
+The following examples are excerpted from :github:`bentoml/BentoML/tree/main/examples/quickstart`.
 
 Given that we have the definetion of the bento service:
 

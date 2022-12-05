@@ -29,9 +29,8 @@ The following examples are excerpted from :github:`bentoml/BentoML/tree/main/exa
 
 Given that we have the definetion of the bento service:
 
-:code:`service.py`
 
-.. code:: python
+.. code-block:: python
     :caption: `service.py`
 
     import numpy as np
@@ -58,8 +57,9 @@ Given that we have the definetion of the bento service:
 Before we go to the production, we will only need one more step to add monitoring:
 
 
-.. codeblock:: python
+.. code-block:: python
     :caption: `service.py`
+    :emphasize-lines: 17-21,27
 
     import numpy as np
 
@@ -94,7 +94,7 @@ The Monitor object has a ``log()`` API that allows users to log request features
 
 Then we can continue the normal steps, build a bento (BentoML Application) for the above service.
 
-.. code:: bash
+.. code-block:: bash
 
     $ bentoml build
     ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
@@ -113,7 +113,7 @@ With BentoML, once we have the bento, it's easy to deploy the ML application to 
 
 Use ``serve --production`` to start the bento in production mode as a standalone server:
 
-.. code:: bash
+.. code-block:: bash
 
     $ bentoml serve iris_classifier --production
 
@@ -121,7 +121,7 @@ Then we can send a request to the server to get the prediction. BentoML will log
 
 By default BentoML will export the data to the `monitoring/<your_monitor_name>` directory. To preview:
 
-.. code:: bash
+.. code-block:: bash
 
     $ tail -f monitoring/iris_classifier_prediction/data/*.log
     ==> monitoring/iris_classifier_prediction/data/data.1.log <==
@@ -165,7 +165,7 @@ Built-in Monitoring Data Collectors
 The most common way to collect monitoring data is to write it to log files. Many utils like fluentbit, filebeat, logstash, etc. can be used to collect log files and ship them to a data warehouse or a monitoring system.
 This is also the default way BentoML exports monitoring data:
 
-.. code:: yaml
+.. code-block:: yaml
     :caption: `deployment_configuration.yaml`
 
     monitoring:
@@ -180,8 +180,9 @@ For K8s deployments, user can mount the log directory, and deploy a fluentbit da
 
 2. Through a OTLP endpoint
 
-.. code:: yaml
+.. code-block:: yaml
     :caption: `deployment_configuration.yaml`
+
     monitoring:
       enable: true
       type: otlp
@@ -208,6 +209,7 @@ plugins could be more platform specific.
 .. note::
     To use plugins, you need to install the plugin and include it in the dependencies section of the bentofile.
     For example, it is required to add `bentoml-plugins-arize` to the `python:packages` to use the Arize plugin.
+    See :ref:`the build command<concepts/bento:The Build Command>` for more details.
 
 1. Arize AI
 
@@ -218,7 +220,7 @@ Arize AI provides a unified platform for data scientists, data engineers, and ML
 And the `bentoml-plugins-arize` makes it easy to work with BentoML.
 
 
-.. code:: yaml
+.. code-block:: yaml
     :caption: `deployment_configuration.yaml`
 
     monitoring:

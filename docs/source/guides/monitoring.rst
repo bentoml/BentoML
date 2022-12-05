@@ -110,7 +110,7 @@ Deploy the service and collect monitoring data
 
 With BentoML, once we have the bento, it's easy to deploy the ML application to any target. https://docs.bentoml.org/en/latest/concepts/deploy.html
 
-Here is the command to start a standalone server.
+Use ``serve --production`` to start the bento in production mode as a standalone server:
 
 .. code:: bash
 

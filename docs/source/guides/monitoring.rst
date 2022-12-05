@@ -58,7 +58,7 @@ Given that we have the definetion of the bento service:
 Before we go to the production, we will only need one more step to add monitoring:
 
 
-.. code:: python
+.. codeblock:: python
     :caption: `service.py`
 
     import numpy as np

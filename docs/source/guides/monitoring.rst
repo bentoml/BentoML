@@ -9,7 +9,9 @@ component of AI systems.
 
 BentoML embraces this new paradigm by providing APIs that make a data-centric workflow easy to implement.
 
-.. image:: ../_static/img/batching-architecture.png
+.. image:: ../_static/img/monitoring_workflow.png
+   :width: 600px
+   :align: center
 
 In this guide, we will focus on the online data collection and model monitoring. BentoML provides a unified interface for that.
 

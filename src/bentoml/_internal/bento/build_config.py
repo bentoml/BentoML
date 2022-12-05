@@ -26,6 +26,7 @@ from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ..utils.dotenv import parse_dotenv
 from ..configuration import CLEAN_BENTOML_VERSION
+from ..container.generate import BENTO_PATH
 from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 from ..container.frontend.dockerfile import DistroSpec
 from ..container.frontend.dockerfile import get_supported_spec
@@ -111,12 +112,23 @@ def _convert_env(
     if isinstance(env, list):
         env_dict: dict[str, str | None] = {}
         for envvar in env:
-            match = re.match(r"^(\w+)=([\w\-,]+)$", envvar)
-            if not match:
+            if not re.match(r"^(\w+)=(?:[\.\w\-,\/]+)$", envvar):
                 raise BentoMLException(
                     "All value in `env` list must follow format ENV=VALUE"
                 )
-            env_key, env_value = match.groups()
+            env_key, _, env_value = envvar.partition("=")
+            if os.path.isfile(env_value):
+                bento_env_path = BENTO_PATH + os.path.abspath(
+                    os.path.expanduser(os.path.expandvars(env_value))
+                )
+                logger.info(
+                    "'%s' sets to '%s', which is a file. Make sure to mount this file as a persistent volume to the container when using 'run' command: 'docker run -v %s:%s ...'",
+                    env_key,
+                    env_value,
+                    env_value,
+                    bento_env_path,
+                )
+                env_value = bento_env_path
             env_dict[env_key] = env_value
         return env_dict
 

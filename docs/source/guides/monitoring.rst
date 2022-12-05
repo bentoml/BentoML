@@ -170,7 +170,7 @@ This is also the default way BentoML exports monitoring data:
     :caption: `deployment_configuration.yaml`
 
     monitoring:
-      enable: true
+      enabled: true
       type: default
       options:
         log_path: path/to/log/file

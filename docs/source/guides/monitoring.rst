@@ -95,7 +95,7 @@ Then we can continue the normal steps, build a bento (BentoML Application) for t
 
 .. code:: bash
 
-    $ bentoml build .
+    $ bentoml build
     ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
     ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
     ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░

@@ -5,7 +5,7 @@ Arize AI
 Arize AI provides a unified platform for data scientists, data engineers, and ML engineers to monitor, analyze, and debug ML models in production.
 If you don't want to deploy a pipeline by yourself but still need data and model monitoring for the bussiness, Arize AI is a good choice.
 
-For end-to-end solutions for data/model monitoring, BentoML colaborates with Arize AI to make it easy to work with all BentoML Deployments.
+Our collaboration with Arize AI makes it easy to integrate end-to-end solutions for data/model monitoring with BentoML Deployments.
 
 
 .. seealso::

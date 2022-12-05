@@ -41,7 +41,7 @@ In addition to declaring model as batchable, batch dimensions can also be config
     bentoml.pytorch.save_model(
         name="mnist",
         model=model,
-        signature={
+        signatures={
             "__call__": {
                 "batchable": True,
                 "batch_dim": (0, 0),

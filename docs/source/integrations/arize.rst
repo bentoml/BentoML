@@ -9,8 +9,8 @@ For end-to-end solutions for data/model monitoring, BentoML colaborates with Ari
 
 
 .. seealso::
-   How to use:
-   :ref:`Inference Data Collection & Model Monitoring <guides/monitoring:Plugins and Third-party Monitoring Data Collectors>`.
+   
+   :ref:`The Arize section under the monitoring guide <guides/monitoring:Plugins and Third-party Monitoring Data Collectors>` demonstrates how to use the integration.
 
 
 Preview

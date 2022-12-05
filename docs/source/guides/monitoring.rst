@@ -90,8 +90,7 @@ Before we go to the production, we will only need one more step to add monitorin
             mon.log(category, name="pred", role="prediction", data_type="categorical")
         return category
 
-
-Here we logged the request features and predictions with the `bentoml.monitor` API. Here’s the [API reference].
+The Monitor object has a ``log()`` API that allows users to log request features and prediction information. Given data type can be one of the following: ``["numerical", "categorical", "numerical_sequence"]`` with each role to be one of ``["feature", "prediction", "target"]``.
 
 Then we can continue the normal steps, build a bento (BentoML Application) for the above service.
 

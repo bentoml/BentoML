@@ -23,6 +23,101 @@ else:
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
 
+class ServiceMetadataRequest(google.protobuf.message.Message):
+    """ServiceMetadataRequest message doesn't take any arguments."""
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+
+global___ServiceMetadataRequest = ServiceMetadataRequest
+
+class ServiceMetadataResponse(google.protobuf.message.Message):
+    """ServiceMetadataResponse returns metadata of bentoml.Service.
+    Currently it includes name, version, apis, and docs.
+    """
+
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    class DescriptorMetadata(google.protobuf.message.Message):
+        """DescriptorMetadata is a metadata of any given IODescriptor."""
+
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        DESCRIPTOR_ID_FIELD_NUMBER: builtins.int
+        ATTRIBUTES_FIELD_NUMBER: builtins.int
+        descriptor_id: builtins.str
+        """descriptor_id describes the given ID of the descriptor, which matches with our OpenAPI definition."""
+        @property
+        def attributes(self) -> google.protobuf.struct_pb2.Struct:
+            """attributes is the kwargs of the given descriptor."""
+        def __init__(
+            self,
+            *,
+            descriptor_id: builtins.str | None = ...,
+            attributes: google.protobuf.struct_pb2.Struct | None = ...,
+        ) -> None: ...
+        def HasField(self, field_name: typing_extensions.Literal["_descriptor_id", b"_descriptor_id", "attributes", b"attributes", "descriptor_id", b"descriptor_id"]) -> builtins.bool: ...
+        def ClearField(self, field_name: typing_extensions.Literal["_descriptor_id", b"_descriptor_id", "attributes", b"attributes", "descriptor_id", b"descriptor_id"]) -> None: ...
+        def WhichOneof(self, oneof_group: typing_extensions.Literal["_descriptor_id", b"_descriptor_id"]) -> typing_extensions.Literal["descriptor_id"] | None: ...
+
+    class InferenceAPI(google.protobuf.message.Message):
+        """InferenceAPI is bentoml._internal.service.inferece_api.InferenceAPI
+        that is exposed to gRPC client.
+        There is no way for reflection to get information of given @svc.api.
+        """
+
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        NAME_FIELD_NUMBER: builtins.int
+        INPUT_FIELD_NUMBER: builtins.int
+        OUTPUT_FIELD_NUMBER: builtins.int
+        DOCS_FIELD_NUMBER: builtins.int
+        name: builtins.str
+        """name is the name of the API."""
+        @property
+        def input(self) -> global___ServiceMetadataResponse.DescriptorMetadata:
+            """input is the input descriptor of the API."""
+        @property
+        def output(self) -> global___ServiceMetadataResponse.DescriptorMetadata:
+            """output is the output descriptor of the API."""
+        docs: builtins.str
+        """docs is the optional documentation of the API."""
+        def __init__(
+            self,
+            *,
+            name: builtins.str = ...,
+            input: global___ServiceMetadataResponse.DescriptorMetadata | None = ...,
+            output: global___ServiceMetadataResponse.DescriptorMetadata | None = ...,
+            docs: builtins.str | None = ...,
+        ) -> None: ...
+        def HasField(self, field_name: typing_extensions.Literal["_docs", b"_docs", "docs", b"docs", "input", b"input", "output", b"output"]) -> builtins.bool: ...
+        def ClearField(self, field_name: typing_extensions.Literal["_docs", b"_docs", "docs", b"docs", "input", b"input", "name", b"name", "output", b"output"]) -> None: ...
+        def WhichOneof(self, oneof_group: typing_extensions.Literal["_docs", b"_docs"]) -> typing_extensions.Literal["docs"] | None: ...
+
+    NAME_FIELD_NUMBER: builtins.int
+    APIS_FIELD_NUMBER: builtins.int
+    DOCS_FIELD_NUMBER: builtins.int
+    name: builtins.str
+    """name is the service name."""
+    @property
+    def apis(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ServiceMetadataResponse.InferenceAPI]:
+        """apis holds a list of InferenceAPI of the service."""
+    docs: builtins.str
+    """docs is the documentation of the service."""
+    def __init__(
+        self,
+        *,
+        name: builtins.str = ...,
+        apis: collections.abc.Iterable[global___ServiceMetadataResponse.InferenceAPI] | None = ...,
+        docs: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["apis", b"apis", "docs", b"docs", "name", b"name"]) -> None: ...
+
+global___ServiceMetadataResponse = ServiceMetadataResponse
+
 class Request(google.protobuf.message.Message):
     """Request message for incoming Call."""
 
@@ -481,6 +576,14 @@ class BentoService(google.protobuf.service.Service, metaclass=abc.ABCMeta):
         callback: collections.abc.Callable[[global___Response], None] | None,
     ) -> concurrent.futures.Future[global___Response]:
         """Call handles methodcaller of given API entrypoint."""
+    @abc.abstractmethod
+    def ServiceMetadata(
+        inst: BentoService,
+        rpc_controller: google.protobuf.service.RpcController,
+        request: global___ServiceMetadataRequest,
+        callback: collections.abc.Callable[[global___ServiceMetadataResponse], None] | None,
+    ) -> concurrent.futures.Future[global___ServiceMetadataResponse]:
+        """ServiceMetadata returns metadata of bentoml.Service."""
 
 class BentoService_Stub(BentoService):
     """a gRPC BentoServer."""
@@ -494,3 +597,10 @@ class BentoService_Stub(BentoService):
         callback: collections.abc.Callable[[global___Response], None] | None = ...,
     ) -> concurrent.futures.Future[global___Response]:
         """Call handles methodcaller of given API entrypoint."""
+    def ServiceMetadata(
+        inst: BentoService_Stub,
+        rpc_controller: google.protobuf.service.RpcController,
+        request: global___ServiceMetadataRequest,
+        callback: collections.abc.Callable[[global___ServiceMetadataResponse], None] | None = ...,
+    ) -> concurrent.futures.Future[global___ServiceMetadataResponse]:
+        """ServiceMetadata returns metadata of bentoml.Service."""

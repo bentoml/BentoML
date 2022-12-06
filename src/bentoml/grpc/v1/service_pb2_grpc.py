@@ -20,6 +20,11 @@ class BentoServiceStub(object):
                 request_serializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.Request.SerializeToString,
                 response_deserializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.Response.FromString,
                 )
+        self.ServiceMetadata = channel.unary_unary(
+                '/bentoml.grpc.v1.BentoService/ServiceMetadata',
+                request_serializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.ServiceMetadataRequest.SerializeToString,
+                response_deserializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.ServiceMetadataResponse.FromString,
+                )
 
 
 class BentoServiceServicer(object):
@@ -33,6 +38,13 @@ class BentoServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ServiceMetadata(self, request, context):
+        """ServiceMetadata returns metadata of bentoml.Service.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_BentoServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -40,6 +52,11 @@ def add_BentoServiceServicer_to_server(servicer, server):
                     servicer.Call,
                     request_deserializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.Request.FromString,
                     response_serializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.Response.SerializeToString,
+            ),
+            'ServiceMetadata': grpc.unary_unary_rpc_method_handler(
+                    servicer.ServiceMetadata,
+                    request_deserializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.ServiceMetadataRequest.FromString,
+                    response_serializer=bentoml_dot_grpc_dot_v1_dot_service__pb2.ServiceMetadataResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -66,5 +83,22 @@ class BentoService(object):
         return grpc.experimental.unary_unary(request, target, '/bentoml.grpc.v1.BentoService/Call',
             bentoml_dot_grpc_dot_v1_dot_service__pb2.Request.SerializeToString,
             bentoml_dot_grpc_dot_v1_dot_service__pb2.Response.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ServiceMetadata(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/bentoml.grpc.v1.BentoService/ServiceMetadata',
+            bentoml_dot_grpc_dot_v1_dot_service__pb2.ServiceMetadataRequest.SerializeToString,
+            bentoml_dot_grpc_dot_v1_dot_service__pb2.ServiceMetadataResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

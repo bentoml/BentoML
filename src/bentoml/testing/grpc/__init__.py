@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING
 from contextlib import ExitStack
 from contextlib import asynccontextmanager
 
-from bentoml.exceptions import BentoMLException
-from bentoml.grpc.utils import import_grpc
-from bentoml.grpc.utils import import_generated_stubs
-from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
-from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils import reserve_free_port
-from bentoml._internal.utils import cached_contextmanager
-from bentoml._internal.utils import add_experimental_docstring
+from ...exceptions import BentoMLException
+from ...grpc.utils import import_grpc
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ..._internal.utils import LazyLoader
+from ..._internal.utils import reserve_free_port
+from ..._internal.utils import cached_contextmanager
+from ..._internal.utils import add_experimental_docstring
 
 if TYPE_CHECKING:
     import grpc
@@ -24,8 +24,8 @@ if TYPE_CHECKING:
     from grpc.aio._channel import Channel
     from google.protobuf.message import Message
 
-    from bentoml import Service
-    from bentoml.grpc.v1 import service_pb2 as pb
+    from ...grpc.v1 import service_pb2 as pb
+    from ..._internal.service import Service
 else:
     grpc, aio = import_grpc()  # pylint: disable=E1111
     np = LazyLoader("np", globals(), "numpy")
@@ -36,18 +36,19 @@ __all__ = [
     "make_pb_ndarray",
     "create_channel",
     "make_standalone_server",
-    "create_bento_servicer",
+    "create_test_bento_servicer",
 ]
 
 
-def create_bento_servicer(
+def create_test_bento_servicer(
+    service: Service,
     protocol_version: str = LATEST_PROTOCOL_VERSION,
 ) -> t.Callable[[Service], t.Any]:
     try:
         module = importlib.import_module(
             f".{protocol_version}", package="bentoml._internal.server.grpc.servicer"
         )
-        return getattr(module, "create_bento_servicer")
+        return getattr(module, "create_bento_servicer")(service)
     except (ImportError, ModuleNotFoundError):
         raise BentoMLException(
             f"Failed to load servicer implementation for version {protocol_version}"

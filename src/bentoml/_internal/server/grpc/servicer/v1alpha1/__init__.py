@@ -21,8 +21,7 @@ if TYPE_CHECKING:
 
     import grpc
 
-    from bentoml.grpc.types import BentoServicerContext
-
+    from ......grpc.types import BentoServicerContext
     from ......grpc.v1alpha1 import service_pb2 as pb
     from ......grpc.v1alpha1 import service_pb2_grpc as services
     from .....service.service import Service

@@ -15,8 +15,8 @@ from bentoml.grpc.utils import wrap_rpc_handler
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
-from bentoml.testing.grpc import create_bento_servicer
 from bentoml.testing.grpc import make_standalone_server
+from bentoml.testing.grpc import create_test_bento_servicer
 from bentoml._internal.utils import LazyLoader
 from tests.unit.grpc.conftest import TestServiceServicer
 from bentoml.grpc.interceptors.access import AccessLogServerInterceptor
@@ -138,7 +138,7 @@ async def test_access_log_exception(
         ]
     ) as (server, host_url):
         services.add_BentoServiceServicer_to_server(
-            create_bento_servicer(protocol_version)(simple_service), server
+            create_test_bento_servicer(simple_service, protocol_version), server
         )
         try:
             await server.start()

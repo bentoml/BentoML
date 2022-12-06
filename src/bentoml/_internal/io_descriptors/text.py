@@ -90,7 +90,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
-    _proto_fields = ("text",)
+    proto_fields = ("text",)
     _mime_type = MIME_TYPE
 
     def __init__(self, *args: t.Any, **kwargs: t.Any):

@@ -315,7 +315,7 @@ class PandasDataFrame(
         :obj:`PandasDataFrame`: IO Descriptor that represents a :code:`pd.DataFrame`.
     """
 
-    _proto_fields = ("dataframe",)
+    proto_fields = ("dataframe",)
 
     def __init__(
         self,
@@ -878,7 +878,7 @@ class PandasSeries(
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
     """
 
-    _proto_fields = ("series",)
+    proto_fields = ("series",)
     _mime_type = "application/json"
 
     def __init__(

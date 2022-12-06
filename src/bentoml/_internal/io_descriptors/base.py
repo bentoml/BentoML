@@ -4,6 +4,7 @@ import typing as t
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from functools import update_wrapper
 
 from ...exceptions import InvalidArgument
 
@@ -12,7 +13,6 @@ if TYPE_CHECKING:
 
     import pyarrow
     import pyspark.sql.types
-    from typing_extensions import Self
     from starlette.requests import Request
     from starlette.responses import Response
 
@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
     )
     OpenAPIResponse = dict[str, str | dict[str, t.Any]]
+    F = t.Callable[..., t.Any]
 
 
 IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
@@ -76,18 +77,24 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     endpoint IO descriptor types in BentoServer.
     """
 
-    __slots__ = ("_args", "_kwargs", "_proto_fields", "_mime_type", "descriptor_id")
+    if TYPE_CHECKING:
+        # Populated by subclasses. Makes pyright happy.
+        def __init__(self, **kwargs: t.Any) -> None:
+            ...
 
-    HTTP_METHODS = ["POST"]
+    __slots__ = (
+        "_mime_type",
+        "proto_fields",
+        "descriptor_id",
+        "from_sample",
+        "_sample",
+    )
 
-    descriptor_id: str | None
+    HTTP_METHODS = ("POST",)
 
     _mime_type: str
-    _rpc_content_type: str = "application/grpc"
-    _proto_fields: tuple[ProtoField]
-    _sample: IOType | None = None
-    _args: t.Sequence[t.Any]
-    _kwargs: dict[str, t.Any]
+    descriptor_id: str | None
+    proto_fields: tuple[ProtoField]
 
     def __init_subclass__(cls, *, descriptor_id: str | None = None):
         if descriptor_id is not None:
@@ -98,10 +105,26 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
             IO_DESCRIPTOR_REGISTRY[descriptor_id] = cls
         cls.descriptor_id = descriptor_id
 
-    if TYPE_CHECKING:
+        cls._sample: IOType | None = None
 
-        def __init__(self, **kwargs: t.Any) -> None:
-            ...
+        from_sample_docstring = cls._from_sample.__doc__
+        if not from_sample_docstring:
+            base_docstring = IODescriptor[t.Any]._from_sample.__doc__
+            assert base_docstring is not None
+            from_sample_docstring = base_docstring.format(name=cls.__name__)
+
+        def _() -> F:
+            def impl(
+                cl_: type[IODescriptor[t.Any]], sample: t.Any, **kwargs: t.Any
+            ) -> IODescriptor[t.Any]:
+                klass = cl_(**kwargs)
+                object.__setattr__(klass, "_sample", klass._from_sample(sample))
+                return klass
+
+            impl.__doc__ = from_sample_docstring
+            return update_wrapper(impl, cls._from_sample)
+
+        cls.from_sample = classmethod(_())
 
     def __repr__(self) -> str:
         return self.__class__.__qualname__
@@ -114,14 +137,22 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     def sample(self, value: IOType) -> None:
         self._sample = value
 
-    @classmethod
-    def from_sample(cls, sample: IOType | t.Any, **kwargs: t.Any) -> Self:
-        klass = cls(**kwargs)
-        klass.sample = klass._from_sample(sample)
-        return klass
-
     @abstractmethod
     def _from_sample(self, sample: t.Any) -> IOType:
+        """
+        Creates an instance of :class:`{name}` from given sample.
+
+        .. note::
+
+            ``from_sample`` does not take positional arguments.
+
+        Args:
+            sample: The sample to create the instance from.
+            **kwargs: Additional keyword arguments to pass to the constructor.
+
+        Returns:
+            :class:`{name}`: The IODescriptor instance.
+        """
         raise NotImplementedError
 
     @property

@@ -260,7 +260,7 @@ class NumpyNdarray(
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that represents a :code:`np.ndarray`.
     """
 
-    _proto_fields = ("ndarray",)
+    proto_fields = ("ndarray",)
     _mime_type = "application/json"
 
     def __init__(

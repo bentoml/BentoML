@@ -163,7 +163,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         :obj:`Multipart`: IO Descriptor that represents a Multipart request/response.
     """
 
-    _proto_fields = ("multipart",)
+    proto_fields = ("multipart",)
     _mime_type = "multipart/form-data"
 
     def __init__(self, **inputs: IODescriptor[t.Any]):
@@ -352,7 +352,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
                     obj,
                     [
                         # TODO: support multiple proto_fields
-                        pb.Part(**{io_._proto_fields[0]: resp})
+                        pb.Part(**{io_.proto_fields[0]: resp})
                         for io_, resp in zip(self._inputs.values(), resps)
                     ],
                 )

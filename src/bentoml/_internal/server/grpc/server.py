@@ -4,6 +4,7 @@ import os
 import sys
 import typing as t
 import asyncio
+import inspect
 import logging
 from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
@@ -29,7 +30,8 @@ if TYPE_CHECKING:
 
     from bentoml.grpc.v1 import service_pb2_grpc as services
 
-    from .servicer import Servicer
+    from ..grpc_app import GrpcServicerFactory
+
 else:
     grpc, aio = import_grpc()
     _, services = import_generated_stubs()
@@ -61,7 +63,7 @@ class Server(aio._server.Server):
     @inject
     def __init__(
         self,
-        servicer: Servicer,
+        servicer: GrpcServicerFactory,
         bind_address: str,
         max_message_length: int
         | None = Provide[BentoMLContainer.grpc.max_message_length],
@@ -87,10 +89,6 @@ class Server(aio._server.Server):
         self.ssl_certfile = ssl_certfile
         self.ssl_keyfile = ssl_keyfile
         self.ssl_ca_certs = ssl_ca_certs
-
-        if not bool(self.servicer):
-            self.servicer.load()
-        assert self.servicer.loaded
 
         super().__init__(
             # Note that the max_workers are used inside ThreadPoolExecutor.
@@ -189,7 +187,11 @@ class Server(aio._server.Server):
         from bentoml.exceptions import MissingDependencyException
 
         # Running on_startup callback.
-        await self.servicer.startup()
+        for handler in self.servicer.on_startup:
+            out = handler()
+            if inspect.isawaitable(out):
+                await out
+
         # register bento servicer
         services.add_BentoServiceServicer_to_server(self.servicer.bento_servicer, self)
         services_health.add_HealthServicer_to_server(
@@ -236,7 +238,11 @@ class Server(aio._server.Server):
 
     async def shutdown(self):
         # Running on_startup callback.
-        await self.servicer.shutdown()
+        for handler in self.servicer.on_shutdown:
+            out = handler()
+            if inspect.isawaitable(out):
+                await out
+
         await self.stop(grace=self.graceful_shutdown_timeout)
         await self.servicer.health_servicer.enter_graceful_shutdown()
         self.loop.stop()

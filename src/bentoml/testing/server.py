@@ -25,6 +25,8 @@ from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import reserve_free_port
 from bentoml._internal.utils import cached_contextmanager
 
+from ..grpc.utils import LATEST_PROTOCOL_VERSION
+
 if TYPE_CHECKING:
     from grpc import aio
     from grpc_health.v1 import health_pb2 as pb_health
@@ -75,7 +77,7 @@ async def server_warmup(
     check_interval: float = 1,
     popen: subprocess.Popen[t.Any] | None = None,
     service_name: str | None = None,
-    _internal_stubs_version: str = "v1",
+    protocol_version: str = LATEST_PROTOCOL_VERSION,
 ) -> bool:
     start_time = time.time()
     proxy_handler = urllib.request.ProxyHandler({})
@@ -87,9 +89,7 @@ async def server_warmup(
 
             try:
                 if service_name is None:
-                    service_name = (
-                        f"bentoml.grpc.{_internal_stubs_version}.BentoService"
-                    )
+                    service_name = f"bentoml.grpc.{protocol_version}.BentoService"
                 async with create_channel(host_url) as channel:
                     Check = channel.unary_unary(
                         "/grpc.health.v1.Health/Check",
@@ -177,7 +177,7 @@ def containerize(
             subprocess.call([backend, "rmi", image_tag])
 
 
-@cached_contextmanager("{image_tag}, {config_file}, {use_grpc}")
+@cached_contextmanager("{image_tag}, {config_file}, {use_grpc}, {protocol_version}")
 def run_bento_server_container(
     image_tag: str,
     config_file: str | None = None,
@@ -185,6 +185,7 @@ def run_bento_server_container(
     timeout: float = 90,
     host: str = "127.0.0.1",
     backend: str = "docker",
+    protocol_version: str = LATEST_PROTOCOL_VERSION,
 ):
     """
     Launch a bentoml service container from a container, yield the host URL
@@ -227,7 +228,13 @@ def run_bento_server_container(
         try:
             host_url = f"{host}:{port}"
             if asyncio.run(
-                server_warmup(host_url, timeout=timeout, popen=proc, grpc=use_grpc)
+                server_warmup(
+                    host_url,
+                    timeout=timeout,
+                    popen=proc,
+                    grpc=use_grpc,
+                    protocol_version=protocol_version,
+                )
             ):
                 yield host_url
             else:
@@ -247,6 +254,7 @@ def run_bento_server_standalone(
     config_file: str | None = None,
     timeout: float = 90,
     host: str = "127.0.0.1",
+    protocol_version: str = LATEST_PROTOCOL_VERSION,
 ):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
@@ -277,7 +285,13 @@ def run_bento_server_standalone(
     try:
         host_url = f"{host}:{server_port}"
         assert asyncio.run(
-            server_warmup(host_url, timeout=timeout, popen=p, grpc=use_grpc)
+            server_warmup(
+                host_url,
+                timeout=timeout,
+                popen=p,
+                grpc=use_grpc,
+                protocol_version=protocol_version,
+            )
         )
         yield host_url
     finally:
@@ -302,6 +316,7 @@ def run_bento_server_distributed(
     use_grpc: bool = False,
     timeout: float = 90,
     host: str = "127.0.0.1",
+    protocol_version: str = LATEST_PROTOCOL_VERSION,
 ):
     """
     Launch a bentoml service as a simulated distributed environment(Yatai), yields the host URL.
@@ -391,7 +406,14 @@ def run_bento_server_distributed(
     )
     try:
         host_url = f"{host}:{server_port}"
-        asyncio.run(server_warmup(host_url, timeout=timeout, grpc=use_grpc))
+        asyncio.run(
+            server_warmup(
+                host_url,
+                timeout=timeout,
+                grpc=use_grpc,
+                protocol_version=protocol_version,
+            )
+        )
         yield host_url
     finally:
         for p in processes:
@@ -404,7 +426,7 @@ def run_bento_server_distributed(
 
 
 @cached_contextmanager(
-    "{bento_name}, {project_path}, {config_file}, {deployment_mode}, {bentoml_home}, {use_grpc}"
+    "{bento_name}, {project_path}, {config_file}, {deployment_mode}, {bentoml_home}, {use_grpc}, {protocol_version}"
 )
 def host_bento(
     bento_name: str | Tag | None = None,
@@ -417,6 +439,7 @@ def host_bento(
     host: str = "127.0.0.1",
     timeout: float = 120,
     backend: str = "docker",
+    protocol_version: str = LATEST_PROTOCOL_VERSION,
 ) -> t.Generator[str, None, None]:
     """
     Host a bentoml service, yields the host URL.
@@ -473,6 +496,7 @@ def host_bento(
                 use_grpc=use_grpc,
                 host=host,
                 timeout=timeout,
+                protocol_version=protocol_version,
             ) as host_url:
                 yield host_url
         elif deployment_mode == "container":
@@ -492,6 +516,7 @@ def host_bento(
                 host=host,
                 timeout=timeout,
                 backend=backend,
+                protocol_version=protocol_version,
             ) as host_url:
                 yield host_url
         elif deployment_mode == "distributed":
@@ -501,6 +526,7 @@ def host_bento(
                 use_grpc=use_grpc,
                 host=host,
                 timeout=timeout,
+                protocol_version=protocol_version,
             ) as host_url:
                 yield host_url
         else:

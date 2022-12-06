@@ -36,7 +36,7 @@ IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
 IOType = t.TypeVar("IOType")
 
 
-def from_spec(spec: dict[str, str]) -> IODescriptor[t.Any]:
+def from_spec(spec: dict[str, t.Any]) -> IODescriptor[t.Any]:
     if "id" not in spec:
         raise InvalidArgument(f"IO descriptor spec ({spec}) missing ID.")
     return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)

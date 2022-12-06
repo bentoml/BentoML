@@ -1,22 +1,18 @@
 from __future__ import annotations
 
 import sys
-import typing as t
 import asyncio
 import logging
 from typing import TYPE_CHECKING
-from inspect import isawaitable
 
 import anyio
 
-from bentoml.grpc.utils import import_grpc
-from bentoml.grpc.utils import grpc_status_code
-from bentoml.grpc.utils import validate_proto_fields
-from bentoml.grpc.utils import import_generated_stubs
-
-from ...utils import LazyLoader
-from ....exceptions import InvalidArgument
-from ....exceptions import BentoMLException
+from ......exceptions import InvalidArgument
+from ......exceptions import BentoMLException
+from ......grpc.utils import import_grpc
+from ......grpc.utils import grpc_status_code
+from ......grpc.utils import validate_proto_fields
+from ......grpc.utils import import_generated_stubs
 
 logger = logging.getLogger(__name__)
 
@@ -24,91 +20,20 @@ if TYPE_CHECKING:
     from logging import _ExcInfoType as ExcInfoType  # type: ignore (private warning)
 
     import grpc
-    from grpc import aio
-    from grpc_health.v1 import health
-    from typing_extensions import Self
 
-    from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.grpc.v1 import service_pb2_grpc as services
-    from bentoml.grpc.types import Interceptors
-    from bentoml.grpc.types import AddServicerFn
-    from bentoml.grpc.types import ServicerClass
     from bentoml.grpc.types import BentoServicerContext
 
-    from ...service.service import Service
-
+    from ......grpc.v1alpha1 import service_pb2 as pb
+    from ......grpc.v1alpha1 import service_pb2_grpc as services
+    from .....service.service import Service
 else:
-    pb, services = import_generated_stubs()
-    grpc, aio = import_grpc()
-    health = LazyLoader(
-        "health",
-        globals(),
-        "grpc_health.v1.health",
-        exc_msg="'grpcio-health-checking' is required for using health checking endpoints. Install with 'pip install grpcio-health-checking'.",
-    )
-    containers = LazyLoader(
-        "containers", globals(), "google.protobuf.internal.containers"
-    )
+    grpc, _ = import_grpc()
+    pb, services = import_generated_stubs(version="v1alpha1")
 
 
 def log_exception(request: pb.Request, exc_info: ExcInfoType) -> None:
     # gRPC will always send a POST request.
     logger.error("Exception on /%s [POST]", request.api_name, exc_info=exc_info)
-
-
-class Servicer:
-    """Create an instance of gRPC Servicer."""
-
-    def __init__(
-        self: Self,
-        service: Service,
-        on_startup: t.Sequence[t.Callable[[], t.Any]] | None = None,
-        on_shutdown: t.Sequence[t.Callable[[], t.Any]] | None = None,
-        mount_servicers: t.Sequence[tuple[ServicerClass, AddServicerFn, list[str]]]
-        | None = None,
-        interceptors: Interceptors | None = None,
-    ) -> None:
-        self.bento_service = service
-
-        self.on_startup = [] if not on_startup else list(on_startup)
-        self.on_shutdown = [] if not on_shutdown else list(on_shutdown)
-        self.mount_servicers = [] if not mount_servicers else list(mount_servicers)
-        self.interceptors = [] if not interceptors else list(interceptors)
-        self.loaded = False
-
-    def load(self):
-        assert not self.loaded
-
-        self.interceptors_stack = self.build_interceptors_stack()
-
-        self.bento_servicer = create_bento_servicer(self.bento_service)
-
-        # Create a health check servicer. We use the non-blocking implementation
-        # to avoid thread starvation.
-        self.health_servicer = health.aio.HealthServicer()
-
-        self.service_names = tuple(
-            service.full_name for service in pb.DESCRIPTOR.services_by_name.values()
-        ) + (health.SERVICE_NAME,)
-        self.loaded = True
-
-    def build_interceptors_stack(self) -> list[aio.ServerInterceptor]:
-        return list(map(lambda x: x(), self.interceptors))
-
-    async def startup(self):
-        for handler in self.on_startup:
-            out = handler()
-            if isawaitable(out):
-                await out
-
-    async def shutdown(self):
-        for handler in self.on_shutdown:
-            out = handler()
-            if isawaitable(out):
-                await out
-
-    def __bool__(self):
-        return self.loaded
 
 
 def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
@@ -121,7 +46,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
         """An asyncio implementation of BentoService servicer."""
 
         async def Call(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
-            self,
+            self: services.BentoServiceServicer,
             request: pb.Request,
             context: BentoServicerContext,
         ) -> pb.Response | None:

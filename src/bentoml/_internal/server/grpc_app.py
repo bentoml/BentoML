@@ -3,33 +3,54 @@ from __future__ import annotations
 import typing as t
 import asyncio
 import logging
+import importlib
 from typing import TYPE_CHECKING
 from functools import partial
 
 from simple_di import inject
 from simple_di import Provide
 
+from ..utils import LazyLoader
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
+    from grpc_health.v1 import health
 
     from bentoml.grpc.types import Interceptors
 
     from ..service import Service
-    from .grpc.servicer import Servicer
+    from ...grpc.v1 import service_pb2_grpc as services
+
+    class ServicerModule(ModuleType):
+        @staticmethod
+        def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
+            ...
 
     OnStartup = list[t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]]
+else:
+    health = LazyLoader(
+        "health",
+        globals(),
+        "grpc_health.v1.health",
+        exc_msg="'grpcio-health-checking' is required for using health checking endpoints. Install with 'pip install grpcio-health-checking'.",
+    )
 
 
-class GRPCAppFactory:
+class GrpcServicerFactory:
     """
-    GRPCApp creates an async gRPC API server based on APIs defined with a BentoService via BentoService#apis.
-    This is a light wrapper around GRPCServer with addition to `on_startup` and `on_shutdown` hooks.
+    GrpcServicerFactory creates an async gRPC API server based on APIs defined with a BentoService via BentoService.apis.
+    This is a light wrapper around GrpcServer with addition to `on_startup` and `on_shutdown` hooks.
 
     Note that even though the code are similar with BaseAppFactory, gRPC protocol is different from ASGI.
     """
+
+    _cached_module = None
 
     @inject
     def __init__(
@@ -39,9 +60,27 @@ class GRPCAppFactory:
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
+        protocol_version: str = LATEST_PROTOCOL_VERSION,
     ) -> None:
+        pb, _ = import_generated_stubs(protocol_version)
+
         self.bento_service = bento_service
         self.enable_metrics = enable_metrics
+        self.protocol_version = protocol_version
+        self.interceptors_stack = list(map(lambda x: x(), self.interceptors))
+
+        self.bento_servicer = self._servicer_module.create_bento_servicer(
+            self.bento_service
+        )
+        self.mount_servicers = self.bento_service.mount_servicers
+
+        # Create a health check servicer. We use the non-blocking implementation
+        # to avoid thread starvation.
+        self.health_servicer = health.aio.HealthServicer()
+
+        self.service_names = tuple(
+            service.full_name for service in pb.DESCRIPTOR.services_by_name.values()
+        ) + (health.SERVICE_NAME,)
 
     @inject
     async def wait_for_runner_ready(
@@ -93,34 +132,37 @@ class GRPCAppFactory:
 
         return on_shutdown
 
-    def __call__(self) -> Servicer:
-        from .grpc import Servicer
-
-        return Servicer(
-            self.bento_service,
-            on_startup=self.on_startup,
-            on_shutdown=self.on_shutdown,
-            mount_servicers=self.bento_service.mount_servicers,
-            interceptors=self.interceptors,
-        )
+    @property
+    def _servicer_module(self) -> ServicerModule:
+        if self._cached_module is None:
+            object.__setattr__(
+                self,
+                "_cached_module",
+                importlib.import_module(
+                    f".grpc.servicer.{self.protocol_version}",
+                    package="bentoml._internal.server",
+                ),
+            )
+        assert self._cached_module is not None
+        return self._cached_module
 
     @property
     def interceptors(self) -> Interceptors:
         # Note that order of interceptors is important here.
 
-        from bentoml.grpc.interceptors.opentelemetry import (
+        from ...grpc.interceptors.opentelemetry import (
             AsyncOpenTelemetryServerInterceptor,
         )
 
         interceptors: Interceptors = [AsyncOpenTelemetryServerInterceptor]
 
         if self.enable_metrics:
-            from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
+            from ...grpc.interceptors.prometheus import PrometheusServerInterceptor
 
             interceptors.append(PrometheusServerInterceptor)
 
         if BentoMLContainer.api_server_config.logging.access.enabled.get():
-            from bentoml.grpc.interceptors.access import AccessLogServerInterceptor
+            from ...grpc.interceptors.access import AccessLogServerInterceptor
 
             access_logger = logging.getLogger("bentoml.access")
             if access_logger.getEffectiveLevel() <= logging.INFO:

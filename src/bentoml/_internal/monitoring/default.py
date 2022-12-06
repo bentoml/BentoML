@@ -45,7 +45,8 @@ handlers:
 formatters:
   bentoml_json:
     class: pythonjsonlogger.jsonlogger.JsonFormatter
-    format: " "
+    format: "()"
+    validate: false
 """
 
 

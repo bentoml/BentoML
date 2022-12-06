@@ -27,7 +27,7 @@ Build an ML Application with monitoring API
 
 The following examples are excerpted from :github:`bentoml/BentoML/tree/main/examples/quickstart`.
 
-Given that we have the definetion of the bento service:
+Given the following service definition:
 
 
 .. code-block:: python

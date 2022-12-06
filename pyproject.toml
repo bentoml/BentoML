@@ -316,7 +316,7 @@ skip_glob = [
 ]
 
 [tool.pyright]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 include = ["src/", "examples/", "tests/"]
 exclude = [
   'src/bentoml/_version.py',

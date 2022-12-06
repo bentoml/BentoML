@@ -92,7 +92,7 @@ Before we go to the production, we will only need one more step to add monitorin
 
 The Monitor object has a ``log()`` API that allows users to log request features and prediction information. Given data type can be one of the following: ``["numerical", "categorical", "numerical_sequence"]`` with each role to be one of ``["feature", "prediction", "target"]``.
 
-Then we can continue the normal steps, build a bento (BentoML Application) for the above service.
+With a complete service definition, we can proceed to build the bento.
 
 .. code-block:: bash
 

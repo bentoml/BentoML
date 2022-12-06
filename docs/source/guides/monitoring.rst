@@ -16,10 +16,10 @@ BentoML embraces this new paradigm by providing APIs that make a data-centric wo
 In this guide, we will focus on the online data collection and model monitoring. BentoML provides a unified interface for that.
 
 The benefits of having a data collection and model monitoring workflow includes:
-- Monitoring key statistical business metrics
-- Identify data drift early to help decide if the model needs to be retrained
-- make QA possible for the previous untracked metrics, like data and model performance
-- use the same data collection and model monitoring workflow for training or model iteration
+- Monitor key statistical business metrics.
+- Identify early data drift events to determine whether retraining is required.
+- Enable QA for the previous untracked metrics, such as model performance, accuracy, degradation, etc.
+- Better interoperability for training or model iteration.
 
 
 Build an ML Application with monitoring API

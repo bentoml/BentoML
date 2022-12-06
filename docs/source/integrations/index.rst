@@ -10,3 +10,4 @@ Integrations
     airflow
     flink
     mlflow
+    arize

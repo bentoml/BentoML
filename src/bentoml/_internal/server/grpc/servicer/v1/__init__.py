@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import sys
+import typing as t
 import asyncio
 import logging
 from typing import TYPE_CHECKING
 
 import anyio
-
+from .....utils import LazyLoader
 from ......exceptions import InvalidArgument
 from ......exceptions import BentoMLException
 from ......grpc.utils import import_grpc
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
     from logging import _ExcInfoType as ExcInfoType  # type: ignore (private warning)
 
     import grpc
-
+    from google.protobuf import struct_pb2
     from ......grpc.v1 import service_pb2 as pb
     from ......grpc.v1 import service_pb2_grpc as services
     from ......grpc.types import BentoServicerContext
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
 else:
     grpc, _ = import_grpc()
     pb, services = import_generated_stubs(version="v1")
+    struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
 
 
 def log_exception(request: pb.Request, exc_info: ExcInfoType) -> None:
@@ -97,4 +99,62 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                 )
             return response
 
+        async def ServiceMetadata(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
+            self,
+            request: pb.ServiceMetadataRequest,  # pylint: disable=unused-argument
+            context: BentoServicerContext,  # pylint: disable=unused-argument
+        ) -> pb.ServiceMetadataResponse:
+            return pb.ServiceMetadataResponse(
+                name=service.name,
+                docs=service.doc,
+                apis=[
+                    pb.ServiceMetadataResponse.InferenceAPI(
+                        name=api.name,
+                        docs=api.doc,
+                        input=make_descriptor_spec(
+                            api.input.to_spec(), pb.ServiceMetadataResponse
+                        ),
+                        output=make_descriptor_spec(
+                            api.output.to_spec(), pb.ServiceMetadataResponse
+                        ),
+                    )
+                    for api in service.apis.values()
+                ],
+            )
+
     return BentoServiceImpl()
+
+
+if TYPE_CHECKING:
+    NestedDictStrAny = dict[str, dict[str, t.Any] | t.Any]
+    TupleAny = tuple[t.Any, ...]
+
+
+def _tuple_converter(d: NestedDictStrAny | None) -> NestedDictStrAny | None:
+    # handles case for struct_pb2.Value where nested items are tuple.
+    # if that is the case, then convert to list.
+    # This dict is only one level deep, as we don't allow nested Multipart.
+    if d is not None:
+        for key, value in d.items():
+            if isinstance(value, tuple):
+                d[key] = list(t.cast("TupleAny", value))
+            elif isinstance(value, dict):
+                d[key] = _tuple_converter(t.cast("NestedDictStrAny", value))
+    return d
+
+
+def make_descriptor_spec(
+    spec: dict[str, t.Any], pb: type[pb.ServiceMetadataResponse]
+) -> pb.ServiceMetadataResponse.DescriptorMetadata:
+    from .....io_descriptors.json import parse_dict_to_proto
+
+    descriptor_id = spec.pop("id")
+    return pb.DescriptorMetadata(
+        descriptor_id=descriptor_id,
+        attributes=struct_pb2.Struct(
+            fields={
+                key: parse_dict_to_proto(_tuple_converter(value), struct_pb2.Value())
+                for key, value in spec.items()
+            }
+        ),
+    )

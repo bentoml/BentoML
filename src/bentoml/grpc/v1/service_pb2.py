@@ -23,7 +23,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'\n\023com.bentoml.grpc.v1B\014ServiceProtoP\001Z*github.com/bentoml/bentoml/grpc/v1;service\220\001\001\370\001\001\242\002\003SVC',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x1d\x62\x65ntoml/grpc/v1/service.proto\x12\x0f\x62\x65ntoml.grpc.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1egoogle/protobuf/wrappers.proto\"\x85\x03\n\x07Request\x12\x10\n\x08\x61pi_name\x18\x01 \x01(\t\x12+\n\x07ndarray\x18\x03 \x01(\x0b\x32\x18.bentoml.grpc.v1.NDArrayH\x00\x12/\n\tdataframe\x18\x05 \x01(\x0b\x32\x1a.bentoml.grpc.v1.DataFrameH\x00\x12)\n\x06series\x18\x06 \x01(\x0b\x32\x17.bentoml.grpc.v1.SeriesH\x00\x12%\n\x04\x66ile\x18\x07 \x01(\x0b\x32\x15.bentoml.grpc.v1.FileH\x00\x12,\n\x04text\x18\x08 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\t \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12/\n\tmultipart\x18\n \x01(\x0b\x32\x1a.bentoml.grpc.v1.MultipartH\x00\x12\x1a\n\x10serialized_bytes\x18\x02 \x01(\x0cH\x00\x42\t\n\x07\x63ontentJ\x04\x08\x04\x10\x05J\x04\x08\x0b\x10\x0e\"\xf4\x02\n\x08Response\x12+\n\x07ndarray\x18\x01 \x01(\x0b\x32\x18.bentoml.grpc.v1.NDArrayH\x00\x12/\n\tdataframe\x18\x03 \x01(\x0b\x32\x1a.bentoml.grpc.v1.DataFrameH\x00\x12)\n\x06series\x18\x05 \x01(\x0b\x32\x17.bentoml.grpc.v1.SeriesH\x00\x12%\n\x04\x66ile\x18\x06 \x01(\x0b\x32\x15.bentoml.grpc.v1.FileH\x00\x12,\n\x04text\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\x08 \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12/\n\tmultipart\x18\t \x01(\x0b\x32\x1a.bentoml.grpc.v1.MultipartH\x00\x12\x1a\n\x10serialized_bytes\x18\x02 \x01(\x0cH\x00\x42\t\n\x07\x63ontentJ\x04\x08\x04\x10\x05J\x04\x08\n\x10\x0e\"\xc6\x02\n\x04Part\x12+\n\x07ndarray\x18\x01 \x01(\x0b\x32\x18.bentoml.grpc.v1.NDArrayH\x00\x12/\n\tdataframe\x18\x03 \x01(\x0b\x32\x1a.bentoml.grpc.v1.DataFrameH\x00\x12)\n\x06series\x18\x05 \x01(\x0b\x32\x17.bentoml.grpc.v1.SeriesH\x00\x12%\n\x04\x66ile\x18\x06 \x01(\x0b\x32\x15.bentoml.grpc.v1.FileH\x00\x12,\n\x04text\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\x08 \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12\x1a\n\x10serialized_bytes\x18\x04 \x01(\x0cH\x00\x42\x10\n\x0erepresentationJ\x04\x08\x02\x10\x03J\x04\x08\t\x10\x0e\"\x89\x01\n\tMultipart\x12\x36\n\x06\x66ields\x18\x01 \x03(\x0b\x32&.bentoml.grpc.v1.Multipart.FieldsEntry\x1a\x44\n\x0b\x46ieldsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12$\n\x05value\x18\x02 \x01(\x0b\x32\x15.bentoml.grpc.v1.Part:\x02\x38\x01\"3\n\x04\x46ile\x12\x11\n\x04kind\x18\x03 \x01(\tH\x00\x88\x01\x01\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\x0c\x42\x07\n\x05_kind\"K\n\tDataFrame\x12\x14\n\x0c\x63olumn_names\x18\x01 \x03(\t\x12(\n\x07\x63olumns\x18\x02 \x03(\x0b\x32\x17.bentoml.grpc.v1.Series\"\xa1\x01\n\x06Series\x12\x17\n\x0b\x62ool_values\x18\x01 \x03(\x08\x42\x02\x10\x01\x12\x18\n\x0c\x66loat_values\x18\x02 \x03(\x02\x42\x02\x10\x01\x12\x18\n\x0cint32_values\x18\x03 \x03(\x05\x42\x02\x10\x01\x12\x18\n\x0cint64_values\x18\x06 \x03(\x03\x42\x02\x10\x01\x12\x15\n\rstring_values\x18\x05 \x03(\t\x12\x19\n\rdouble_values\x18\x04 \x03(\x01\x42\x02\x10\x01\"\xc2\x03\n\x07NDArray\x12-\n\x05\x64type\x18\x01 \x01(\x0e\x32\x1e.bentoml.grpc.v1.NDArray.DType\x12\r\n\x05shape\x18\x02 \x03(\x05\x12\x15\n\rstring_values\x18\x05 \x03(\t\x12\x18\n\x0c\x66loat_values\x18\x03 \x03(\x02\x42\x02\x10\x01\x12\x19\n\rdouble_values\x18\x04 \x03(\x01\x42\x02\x10\x01\x12\x17\n\x0b\x62ool_values\x18\x06 \x03(\x08\x42\x02\x10\x01\x12\x18\n\x0cint32_values\x18\x07 \x03(\x05\x42\x02\x10\x01\x12\x18\n\x0cint64_values\x18\x08 \x03(\x03\x42\x02\x10\x01\x12\x19\n\ruint32_values\x18\t \x03(\rB\x02\x10\x01\x12\x19\n\ruint64_values\x18\n \x03(\x04\x42\x02\x10\x01\"\xa9\x01\n\x05\x44Type\x12\x15\n\x11\x44TYPE_UNSPECIFIED\x10\x00\x12\x0f\n\x0b\x44TYPE_FLOAT\x10\x01\x12\x10\n\x0c\x44TYPE_DOUBLE\x10\x02\x12\x0e\n\nDTYPE_BOOL\x10\x03\x12\x0f\n\x0b\x44TYPE_INT32\x10\x04\x12\x0f\n\x0b\x44TYPE_INT64\x10\x05\x12\x10\n\x0c\x44TYPE_UINT32\x10\x06\x12\x10\n\x0c\x44TYPE_UINT64\x10\x07\x12\x10\n\x0c\x44TYPE_STRING\x10\x08\x32M\n\x0c\x42\x65ntoService\x12=\n\x04\x43\x61ll\x12\x18.bentoml.grpc.v1.Request\x1a\x19.bentoml.grpc.v1.Response\"\x00\x42]\n\x13\x63om.bentoml.grpc.v1B\x0cServiceProtoP\x01Z*github.com/bentoml/bentoml/grpc/v1;service\x90\x01\x01\xf8\x01\x01\xa2\x02\x03SVCb\x06proto3'
+  serialized_pb=b'\n\x1d\x62\x65ntoml/grpc/v1/service.proto\x12\x0f\x62\x65ntoml.grpc.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1egoogle/protobuf/wrappers.proto\"\x18\n\x16ServiceMetadataRequest\"\xbf\x03\n\x17ServiceMetadataResponse\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x43\n\x04\x61pis\x18\x02 \x03(\x0b\x32\x35.bentoml.grpc.v1.ServiceMetadataResponse.InferenceAPI\x12\x0c\n\x04\x64ocs\x18\x03 \x01(\t\x1ao\n\x12\x44\x65scriptorMetadata\x12\x1a\n\rdescriptor_id\x18\x01 \x01(\tH\x00\x88\x01\x01\x12+\n\nattributes\x18\x02 \x01(\x0b\x32\x17.google.protobuf.StructB\x10\n\x0e_descriptor_id\x1a\xd1\x01\n\x0cInferenceAPI\x12\x0c\n\x04name\x18\x01 \x01(\t\x12J\n\x05input\x18\x02 \x01(\x0b\x32;.bentoml.grpc.v1.ServiceMetadataResponse.DescriptorMetadata\x12K\n\x06output\x18\x03 \x01(\x0b\x32;.bentoml.grpc.v1.ServiceMetadataResponse.DescriptorMetadata\x12\x11\n\x04\x64ocs\x18\x04 \x01(\tH\x00\x88\x01\x01\x42\x07\n\x05_docs\"\x85\x03\n\x07Request\x12\x10\n\x08\x61pi_name\x18\x01 \x01(\t\x12+\n\x07ndarray\x18\x03 \x01(\x0b\x32\x18.bentoml.grpc.v1.NDArrayH\x00\x12/\n\tdataframe\x18\x05 \x01(\x0b\x32\x1a.bentoml.grpc.v1.DataFrameH\x00\x12)\n\x06series\x18\x06 \x01(\x0b\x32\x17.bentoml.grpc.v1.SeriesH\x00\x12%\n\x04\x66ile\x18\x07 \x01(\x0b\x32\x15.bentoml.grpc.v1.FileH\x00\x12,\n\x04text\x18\x08 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\t \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12/\n\tmultipart\x18\n \x01(\x0b\x32\x1a.bentoml.grpc.v1.MultipartH\x00\x12\x1a\n\x10serialized_bytes\x18\x02 \x01(\x0cH\x00\x42\t\n\x07\x63ontentJ\x04\x08\x04\x10\x05J\x04\x08\x0b\x10\x0e\"\xf4\x02\n\x08Response\x12+\n\x07ndarray\x18\x01 \x01(\x0b\x32\x18.bentoml.grpc.v1.NDArrayH\x00\x12/\n\tdataframe\x18\x03 \x01(\x0b\x32\x1a.bentoml.grpc.v1.DataFrameH\x00\x12)\n\x06series\x18\x05 \x01(\x0b\x32\x17.bentoml.grpc.v1.SeriesH\x00\x12%\n\x04\x66ile\x18\x06 \x01(\x0b\x32\x15.bentoml.grpc.v1.FileH\x00\x12,\n\x04text\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\x08 \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12/\n\tmultipart\x18\t \x01(\x0b\x32\x1a.bentoml.grpc.v1.MultipartH\x00\x12\x1a\n\x10serialized_bytes\x18\x02 \x01(\x0cH\x00\x42\t\n\x07\x63ontentJ\x04\x08\x04\x10\x05J\x04\x08\n\x10\x0e\"\xc6\x02\n\x04Part\x12+\n\x07ndarray\x18\x01 \x01(\x0b\x32\x18.bentoml.grpc.v1.NDArrayH\x00\x12/\n\tdataframe\x18\x03 \x01(\x0b\x32\x1a.bentoml.grpc.v1.DataFrameH\x00\x12)\n\x06series\x18\x05 \x01(\x0b\x32\x17.bentoml.grpc.v1.SeriesH\x00\x12%\n\x04\x66ile\x18\x06 \x01(\x0b\x32\x15.bentoml.grpc.v1.FileH\x00\x12,\n\x04text\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValueH\x00\x12&\n\x04json\x18\x08 \x01(\x0b\x32\x16.google.protobuf.ValueH\x00\x12\x1a\n\x10serialized_bytes\x18\x04 \x01(\x0cH\x00\x42\x10\n\x0erepresentationJ\x04\x08\x02\x10\x03J\x04\x08\t\x10\x0e\"\x89\x01\n\tMultipart\x12\x36\n\x06\x66ields\x18\x01 \x03(\x0b\x32&.bentoml.grpc.v1.Multipart.FieldsEntry\x1a\x44\n\x0b\x46ieldsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12$\n\x05value\x18\x02 \x01(\x0b\x32\x15.bentoml.grpc.v1.Part:\x02\x38\x01\"3\n\x04\x46ile\x12\x11\n\x04kind\x18\x03 \x01(\tH\x00\x88\x01\x01\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\x0c\x42\x07\n\x05_kind\"K\n\tDataFrame\x12\x14\n\x0c\x63olumn_names\x18\x01 \x03(\t\x12(\n\x07\x63olumns\x18\x02 \x03(\x0b\x32\x17.bentoml.grpc.v1.Series\"\xa1\x01\n\x06Series\x12\x17\n\x0b\x62ool_values\x18\x01 \x03(\x08\x42\x02\x10\x01\x12\x18\n\x0c\x66loat_values\x18\x02 \x03(\x02\x42\x02\x10\x01\x12\x18\n\x0cint32_values\x18\x03 \x03(\x05\x42\x02\x10\x01\x12\x18\n\x0cint64_values\x18\x06 \x03(\x03\x42\x02\x10\x01\x12\x15\n\rstring_values\x18\x05 \x03(\t\x12\x19\n\rdouble_values\x18\x04 \x03(\x01\x42\x02\x10\x01\"\xc2\x03\n\x07NDArray\x12-\n\x05\x64type\x18\x01 \x01(\x0e\x32\x1e.bentoml.grpc.v1.NDArray.DType\x12\r\n\x05shape\x18\x02 \x03(\x05\x12\x15\n\rstring_values\x18\x05 \x03(\t\x12\x18\n\x0c\x66loat_values\x18\x03 \x03(\x02\x42\x02\x10\x01\x12\x19\n\rdouble_values\x18\x04 \x03(\x01\x42\x02\x10\x01\x12\x17\n\x0b\x62ool_values\x18\x06 \x03(\x08\x42\x02\x10\x01\x12\x18\n\x0cint32_values\x18\x07 \x03(\x05\x42\x02\x10\x01\x12\x18\n\x0cint64_values\x18\x08 \x03(\x03\x42\x02\x10\x01\x12\x19\n\ruint32_values\x18\t \x03(\rB\x02\x10\x01\x12\x19\n\ruint64_values\x18\n \x03(\x04\x42\x02\x10\x01\"\xa9\x01\n\x05\x44Type\x12\x15\n\x11\x44TYPE_UNSPECIFIED\x10\x00\x12\x0f\n\x0b\x44TYPE_FLOAT\x10\x01\x12\x10\n\x0c\x44TYPE_DOUBLE\x10\x02\x12\x0e\n\nDTYPE_BOOL\x10\x03\x12\x0f\n\x0b\x44TYPE_INT32\x10\x04\x12\x0f\n\x0b\x44TYPE_INT64\x10\x05\x12\x10\n\x0c\x44TYPE_UINT32\x10\x06\x12\x10\n\x0c\x44TYPE_UINT64\x10\x07\x12\x10\n\x0c\x44TYPE_STRING\x10\x08\x32\xb5\x01\n\x0c\x42\x65ntoService\x12=\n\x04\x43\x61ll\x12\x18.bentoml.grpc.v1.Request\x1a\x19.bentoml.grpc.v1.Response\"\x00\x12\x66\n\x0fServiceMetadata\x12\'.bentoml.grpc.v1.ServiceMetadataRequest\x1a(.bentoml.grpc.v1.ServiceMetadataResponse\"\x00\x42]\n\x13\x63om.bentoml.grpc.v1B\x0cServiceProtoP\x01Z*github.com/bentoml/bentoml/grpc/v1;service\x90\x01\x01\xf8\x01\x01\xa2\x02\x03SVCb\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,google_dot_protobuf_dot_wrappers__pb2.DESCRIPTOR,])
 
@@ -84,10 +84,181 @@ _NDARRAY_DTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1924,
-  serialized_end=2093,
+  serialized_start=2400,
+  serialized_end=2569,
 )
 _sym_db.RegisterEnumDescriptor(_NDARRAY_DTYPE)
+
+
+_SERVICEMETADATAREQUEST = _descriptor.Descriptor(
+  name='ServiceMetadataRequest',
+  full_name='bentoml.grpc.v1.ServiceMetadataRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=112,
+  serialized_end=136,
+)
+
+
+_SERVICEMETADATARESPONSE_DESCRIPTORMETADATA = _descriptor.Descriptor(
+  name='DescriptorMetadata',
+  full_name='bentoml.grpc.v1.ServiceMetadataResponse.DescriptorMetadata',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='descriptor_id', full_name='bentoml.grpc.v1.ServiceMetadataResponse.DescriptorMetadata.descriptor_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='attributes', full_name='bentoml.grpc.v1.ServiceMetadataResponse.DescriptorMetadata.attributes', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+    _descriptor.OneofDescriptor(
+      name='_descriptor_id', full_name='bentoml.grpc.v1.ServiceMetadataResponse.DescriptorMetadata._descriptor_id',
+      index=0, containing_type=None,
+      create_key=_descriptor._internal_create_key,
+    fields=[]),
+  ],
+  serialized_start=263,
+  serialized_end=374,
+)
+
+_SERVICEMETADATARESPONSE_INFERENCEAPI = _descriptor.Descriptor(
+  name='InferenceAPI',
+  full_name='bentoml.grpc.v1.ServiceMetadataResponse.InferenceAPI',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='name', full_name='bentoml.grpc.v1.ServiceMetadataResponse.InferenceAPI.name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='input', full_name='bentoml.grpc.v1.ServiceMetadataResponse.InferenceAPI.input', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='output', full_name='bentoml.grpc.v1.ServiceMetadataResponse.InferenceAPI.output', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='docs', full_name='bentoml.grpc.v1.ServiceMetadataResponse.InferenceAPI.docs', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+    _descriptor.OneofDescriptor(
+      name='_docs', full_name='bentoml.grpc.v1.ServiceMetadataResponse.InferenceAPI._docs',
+      index=0, containing_type=None,
+      create_key=_descriptor._internal_create_key,
+    fields=[]),
+  ],
+  serialized_start=377,
+  serialized_end=586,
+)
+
+_SERVICEMETADATARESPONSE = _descriptor.Descriptor(
+  name='ServiceMetadataResponse',
+  full_name='bentoml.grpc.v1.ServiceMetadataResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='name', full_name='bentoml.grpc.v1.ServiceMetadataResponse.name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='apis', full_name='bentoml.grpc.v1.ServiceMetadataResponse.apis', index=1,
+      number=2, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='docs', full_name='bentoml.grpc.v1.ServiceMetadataResponse.docs', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[_SERVICEMETADATARESPONSE_DESCRIPTORMETADATA, _SERVICEMETADATARESPONSE_INFERENCEAPI, ],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=139,
+  serialized_end=586,
+)
 
 
 _REQUEST = _descriptor.Descriptor(
@@ -178,8 +349,8 @@ _REQUEST = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=113,
-  serialized_end=502,
+  serialized_start=589,
+  serialized_end=978,
 )
 
 
@@ -264,8 +435,8 @@ _RESPONSE = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=505,
-  serialized_end=877,
+  serialized_start=981,
+  serialized_end=1353,
 )
 
 
@@ -343,8 +514,8 @@ _PART = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=880,
-  serialized_end=1206,
+  serialized_start=1356,
+  serialized_end=1682,
 )
 
 
@@ -382,8 +553,8 @@ _MULTIPART_FIELDSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1278,
-  serialized_end=1346,
+  serialized_start=1754,
+  serialized_end=1822,
 )
 
 _MULTIPART = _descriptor.Descriptor(
@@ -413,8 +584,8 @@ _MULTIPART = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1209,
-  serialized_end=1346,
+  serialized_start=1685,
+  serialized_end=1822,
 )
 
 
@@ -457,8 +628,8 @@ _FILE = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1348,
-  serialized_end=1399,
+  serialized_start=1824,
+  serialized_end=1875,
 )
 
 
@@ -496,8 +667,8 @@ _DATAFRAME = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1401,
-  serialized_end=1476,
+  serialized_start=1877,
+  serialized_end=1952,
 )
 
 
@@ -563,8 +734,8 @@ _SERIES = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1479,
-  serialized_end=1640,
+  serialized_start=1955,
+  serialized_end=2116,
 )
 
 
@@ -659,10 +830,22 @@ _NDARRAY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1643,
-  serialized_end=2093,
+  serialized_start=2119,
+  serialized_end=2569,
 )
 
+_SERVICEMETADATARESPONSE_DESCRIPTORMETADATA.fields_by_name['attributes'].message_type = google_dot_protobuf_dot_struct__pb2._STRUCT
+_SERVICEMETADATARESPONSE_DESCRIPTORMETADATA.containing_type = _SERVICEMETADATARESPONSE
+_SERVICEMETADATARESPONSE_DESCRIPTORMETADATA.oneofs_by_name['_descriptor_id'].fields.append(
+  _SERVICEMETADATARESPONSE_DESCRIPTORMETADATA.fields_by_name['descriptor_id'])
+_SERVICEMETADATARESPONSE_DESCRIPTORMETADATA.fields_by_name['descriptor_id'].containing_oneof = _SERVICEMETADATARESPONSE_DESCRIPTORMETADATA.oneofs_by_name['_descriptor_id']
+_SERVICEMETADATARESPONSE_INFERENCEAPI.fields_by_name['input'].message_type = _SERVICEMETADATARESPONSE_DESCRIPTORMETADATA
+_SERVICEMETADATARESPONSE_INFERENCEAPI.fields_by_name['output'].message_type = _SERVICEMETADATARESPONSE_DESCRIPTORMETADATA
+_SERVICEMETADATARESPONSE_INFERENCEAPI.containing_type = _SERVICEMETADATARESPONSE
+_SERVICEMETADATARESPONSE_INFERENCEAPI.oneofs_by_name['_docs'].fields.append(
+  _SERVICEMETADATARESPONSE_INFERENCEAPI.fields_by_name['docs'])
+_SERVICEMETADATARESPONSE_INFERENCEAPI.fields_by_name['docs'].containing_oneof = _SERVICEMETADATARESPONSE_INFERENCEAPI.oneofs_by_name['_docs']
+_SERVICEMETADATARESPONSE.fields_by_name['apis'].message_type = _SERVICEMETADATARESPONSE_INFERENCEAPI
 _REQUEST.fields_by_name['ndarray'].message_type = _NDARRAY
 _REQUEST.fields_by_name['dataframe'].message_type = _DATAFRAME
 _REQUEST.fields_by_name['series'].message_type = _SERIES
@@ -761,6 +944,8 @@ _FILE.fields_by_name['kind'].containing_oneof = _FILE.oneofs_by_name['_kind']
 _DATAFRAME.fields_by_name['columns'].message_type = _SERIES
 _NDARRAY.fields_by_name['dtype'].enum_type = _NDARRAY_DTYPE
 _NDARRAY_DTYPE.containing_type = _NDARRAY
+DESCRIPTOR.message_types_by_name['ServiceMetadataRequest'] = _SERVICEMETADATAREQUEST
+DESCRIPTOR.message_types_by_name['ServiceMetadataResponse'] = _SERVICEMETADATARESPONSE
 DESCRIPTOR.message_types_by_name['Request'] = _REQUEST
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
 DESCRIPTOR.message_types_by_name['Part'] = _PART
@@ -770,6 +955,36 @@ DESCRIPTOR.message_types_by_name['DataFrame'] = _DATAFRAME
 DESCRIPTOR.message_types_by_name['Series'] = _SERIES
 DESCRIPTOR.message_types_by_name['NDArray'] = _NDARRAY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
+
+ServiceMetadataRequest = _reflection.GeneratedProtocolMessageType('ServiceMetadataRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SERVICEMETADATAREQUEST,
+  '__module__' : 'bentoml.grpc.v1.service_pb2'
+  # @@protoc_insertion_point(class_scope:bentoml.grpc.v1.ServiceMetadataRequest)
+  })
+_sym_db.RegisterMessage(ServiceMetadataRequest)
+
+ServiceMetadataResponse = _reflection.GeneratedProtocolMessageType('ServiceMetadataResponse', (_message.Message,), {
+
+  'DescriptorMetadata' : _reflection.GeneratedProtocolMessageType('DescriptorMetadata', (_message.Message,), {
+    'DESCRIPTOR' : _SERVICEMETADATARESPONSE_DESCRIPTORMETADATA,
+    '__module__' : 'bentoml.grpc.v1.service_pb2'
+    # @@protoc_insertion_point(class_scope:bentoml.grpc.v1.ServiceMetadataResponse.DescriptorMetadata)
+    })
+  ,
+
+  'InferenceAPI' : _reflection.GeneratedProtocolMessageType('InferenceAPI', (_message.Message,), {
+    'DESCRIPTOR' : _SERVICEMETADATARESPONSE_INFERENCEAPI,
+    '__module__' : 'bentoml.grpc.v1.service_pb2'
+    # @@protoc_insertion_point(class_scope:bentoml.grpc.v1.ServiceMetadataResponse.InferenceAPI)
+    })
+  ,
+  'DESCRIPTOR' : _SERVICEMETADATARESPONSE,
+  '__module__' : 'bentoml.grpc.v1.service_pb2'
+  # @@protoc_insertion_point(class_scope:bentoml.grpc.v1.ServiceMetadataResponse)
+  })
+_sym_db.RegisterMessage(ServiceMetadataResponse)
+_sym_db.RegisterMessage(ServiceMetadataResponse.DescriptorMetadata)
+_sym_db.RegisterMessage(ServiceMetadataResponse.InferenceAPI)
 
 Request = _reflection.GeneratedProtocolMessageType('Request', (_message.Message,), {
   'DESCRIPTOR' : _REQUEST,
@@ -858,8 +1073,8 @@ _BENTOSERVICE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=2095,
-  serialized_end=2172,
+  serialized_start=2572,
+  serialized_end=2753,
   methods=[
   _descriptor.MethodDescriptor(
     name='Call',
@@ -868,6 +1083,16 @@ _BENTOSERVICE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_REQUEST,
     output_type=_RESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ServiceMetadata',
+    full_name='bentoml.grpc.v1.BentoService.ServiceMetadata',
+    index=1,
+    containing_service=None,
+    input_type=_SERVICEMETADATAREQUEST,
+    output_type=_SERVICEMETADATARESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),

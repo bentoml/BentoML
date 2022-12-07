@@ -15,6 +15,11 @@ class BentoServiceStub:
         bentoml.grpc.v1.service_pb2.Response,
     ]
     """Call handles methodcaller of given API entrypoint."""
+    ServiceMetadata: grpc.UnaryUnaryMultiCallable[
+        bentoml.grpc.v1.service_pb2.ServiceMetadataRequest,
+        bentoml.grpc.v1.service_pb2.ServiceMetadataResponse,
+    ]
+    """ServiceMetadata returns metadata of bentoml.Service."""
 
 class BentoServiceServicer(metaclass=abc.ABCMeta):
     """a gRPC BentoServer."""
@@ -26,5 +31,12 @@ class BentoServiceServicer(metaclass=abc.ABCMeta):
         context: grpc.ServicerContext,
     ) -> bentoml.grpc.v1.service_pb2.Response:
         """Call handles methodcaller of given API entrypoint."""
+    @abc.abstractmethod
+    def ServiceMetadata(
+        self,
+        request: bentoml.grpc.v1.service_pb2.ServiceMetadataRequest,
+        context: grpc.ServicerContext,
+    ) -> bentoml.grpc.v1.service_pb2.ServiceMetadataResponse:
+        """ServiceMetadata returns metadata of bentoml.Service."""
 
 def add_BentoServiceServicer_to_server(servicer: BentoServiceServicer, server: grpc.Server) -> None: ...

@@ -113,7 +113,7 @@ def generate_containerfile(
 
     .. note::
 
-        You should use ``construct_dockerfile`` instead of this function.
+        You should use ``construct_containerfile`` instead of this function.
 
     Returns:
         str: The rendered Dockerfile string.

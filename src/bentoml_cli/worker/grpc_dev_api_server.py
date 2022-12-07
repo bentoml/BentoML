@@ -112,7 +112,7 @@ def main(
     if ssl_ca_certs:
         grpc_options["ssl_ca_certs"] = ssl_ca_certs
 
-    grpc.Server(svc.grpc_servicer, **grpc_options).run()
+    grpc.Server(svc, **grpc_options).run()
 
 
 if __name__ == "__main__":

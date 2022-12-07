@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import typing as t
 import asyncio
 import logging
 import importlib
 from typing import TYPE_CHECKING
-from functools import partial
 
 from simple_di import inject
 from simple_di import Provide
@@ -32,7 +30,6 @@ if TYPE_CHECKING:
         def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
             ...
 
-    OnStartup = list[t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]]
 else:
     health = LazyLoader(
         "health",
@@ -42,7 +39,7 @@ else:
     )
 
 
-class GrpcServicerFactory:
+class GrpcServicer:
     """
     GrpcServicerFactory creates an async gRPC API server based on APIs defined with a BentoService via BentoService.apis.
     This is a light wrapper around GrpcServer with addition to `on_startup` and `on_shutdown` hooks.
@@ -110,27 +107,6 @@ class GrpcServicerFactory:
                 await asyncio.sleep(check_interval)
 
             logger.info("All runners ready.")
-
-    @property
-    def on_startup(self) -> OnStartup:
-        on_startup: OnStartup = [self.bento_service.on_grpc_server_startup]
-        if BentoMLContainer.development_mode.get():
-            for runner in self.bento_service.runners:
-                on_startup.append(partial(runner.init_local, quiet=True))
-        else:
-            for runner in self.bento_service.runners:
-                on_startup.append(runner.init_client)
-
-        on_startup.append(self.wait_for_runner_ready)
-        return on_startup
-
-    @property
-    def on_shutdown(self) -> list[t.Callable[[], None]]:
-        on_shutdown = [self.bento_service.on_grpc_server_shutdown]
-        for runner in self.bento_service.runners:
-            on_shutdown.append(runner.destroy)
-
-        return on_shutdown
 
     @property
     def _servicer_module(self) -> ServicerModule:

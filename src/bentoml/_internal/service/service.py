@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from ..bento import Bento
-    from ..server.grpc_app import GrpcServicerFactory
+    from ..server.grpc_app import GrpcServicer
     from .openapi.specification import OpenAPISpecification
 else:
     grpc, _ = import_grpc()
@@ -221,10 +221,10 @@ class Service:
         pass
 
     @property
-    def grpc_servicer(self) -> GrpcServicerFactory:
-        from ..server.grpc_app import GrpcServicerFactory
+    def grpc_servicer(self) -> GrpcServicer:
+        from ..server.grpc_app import GrpcServicer
 
-        return GrpcServicerFactory(self)
+        return GrpcServicer(self)
 
     @property
     def asgi_app(self) -> "ext.ASGIApp":

@@ -7,6 +7,7 @@ import asyncio
 import inspect
 import logging
 from typing import TYPE_CHECKING
+from functools import partial
 from concurrent.futures import ThreadPoolExecutor
 
 from simple_di import inject
@@ -30,7 +31,9 @@ if TYPE_CHECKING:
 
     from bentoml.grpc.v1 import service_pb2_grpc as services
 
-    from ..grpc_app import GrpcServicerFactory
+    from ...service import Service
+
+    OnStartup = list[t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]]
 
 else:
     grpc, aio = import_grpc()
@@ -63,7 +66,7 @@ class Server(aio._server.Server):
     @inject
     def __init__(
         self,
-        servicer: GrpcServicerFactory,
+        bento_service: Service,
         bind_address: str,
         max_message_length: int
         | None = Provide[BentoMLContainer.grpc.max_message_length],
@@ -79,7 +82,8 @@ class Server(aio._server.Server):
         graceful_shutdown_timeout: float | None = None,
         compression: grpc.Compression | None = None,
     ):
-        self.servicer = servicer
+        self.bento_service = bento_service
+        self.servicer = bento_service.grpc_servicer
         self.max_message_length = max_message_length
         self.max_concurrent_streams = max_concurrent_streams
         self.bind_address = bind_address
@@ -183,11 +187,24 @@ class Server(aio._server.Server):
         await self.startup()
         await self.wait_for_termination()
 
+    @property
+    def on_startup(self) -> OnStartup:
+        on_startup: OnStartup = [self.bento_service.on_grpc_server_startup]
+        if BentoMLContainer.development_mode.get():
+            for runner in self.bento_service.runners:
+                on_startup.append(partial(runner.init_local, quiet=True))
+        else:
+            for runner in self.bento_service.runners:
+                on_startup.append(runner.init_client)
+
+        on_startup.append(self.servicer.wait_for_runner_ready)
+        return on_startup
+
     async def startup(self) -> None:
         from bentoml.exceptions import MissingDependencyException
 
         # Running on_startup callback.
-        for handler in self.servicer.on_startup:
+        for handler in self.on_startup:
             out = handler()
             if inspect.isawaitable(out):
                 await out
@@ -236,9 +253,17 @@ class Server(aio._server.Server):
             )
         await self.start()
 
+    @property
+    def on_shutdown(self) -> list[t.Callable[[], None]]:
+        on_shutdown = [self.bento_service.on_grpc_server_shutdown]
+        for runner in self.bento_service.runners:
+            on_shutdown.append(runner.destroy)
+
+        return on_shutdown
+
     async def shutdown(self):
         # Running on_startup callback.
-        for handler in self.servicer.on_shutdown:
+        for handler in self.on_shutdown:
             out = handler()
             if inspect.isawaitable(out):
                 await out

@@ -4,9 +4,11 @@ User facing python APIs for managing local bentos and build new bentos.
 
 from __future__ import annotations
 
+import shutil
 import typing as t
 import logging
 from typing import TYPE_CHECKING
+from subprocess import Popen
 
 from simple_di import inject
 from simple_di import Provide
@@ -19,14 +21,12 @@ from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 
-from subprocess import Popen
-
-import shutil
-
 if TYPE_CHECKING:
-    from ._internal.bento import BentoStore
-    from bentoml.client import Client
     from subprocess import Popen
+
+    from bentoml.client import Client
+
+    from ._internal.bento import BentoStore
 
 logger = logging.getLogger(__name__)
 
@@ -456,7 +456,17 @@ def serve(
     if type not in ["HTTP", "GRPC"]:
         raise ValueError('Server type must either be "HTTP" or "GRPC"')
 
-    args = [str(shutil.which("bentoml")), "serve", bento, "--port", str(port), "--host", host, "--backlog", str(backlog)]
+    args = [
+        str(shutil.which("bentoml")),
+        "serve",
+        bento,
+        "--port",
+        str(port),
+        "--host",
+        host,
+        "--backlog",
+        str(backlog),
+    ]
     if production:
         args.append("--production")
     if reload:
@@ -493,26 +503,25 @@ def serve(
     return Server(process, host, port)
 
 
-class Server():
-
+class Server:
     def __init__(self, process: Popen[bytes], host: str, port: int) -> None:
         self._process = process
         self._host = host
         self._port = port
-    
+
     def get_client(self) -> Client:
         from bentoml.client import Client
+
         Client.wait_until_server_is_ready(self._host, self._port, 10)
         return Client.from_url(f"http://localhost:{self._port}")
-    
+
     def stop(self) -> None:
         self.process.kill()
-    
+
     @property
     def process(self) -> Popen[bytes]:
         return self._process
-    
+
     @property
     def address(self) -> str:
         return f"{self._host}:{self._port}"
-

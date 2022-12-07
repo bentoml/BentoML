@@ -63,7 +63,7 @@ class Client(ABC):
         self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
     ) -> t.Any:
         raise NotImplementedError
-    
+
     @staticmethod
     def wait_until_server_is_ready(host: str, port: int, timeout: int) -> None:
         import time
@@ -80,7 +80,6 @@ class Client(ABC):
             if time.time() > time_end:
                 raise TimeoutError("The server took too long to get ready")
             time.sleep(1)
-
 
     @staticmethod
     def from_url(server_url: str) -> Client:

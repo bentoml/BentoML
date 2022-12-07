@@ -30,5 +30,9 @@ def health():
 def build(**kwargs: t.Any):
     # subprocess_env from bentoctl will be handle by buildx, so it is safe to pop this out.
     kwargs.pop("subprocess_env")
+    kwargs["tag"] = kwargs.pop("tags")
     context_path = kwargs.pop("cwd", None)
+    for key, value in kwargs.items():
+        if not value:
+            kwargs[key] = None
     _buildx_backend.build(context_path=context_path, **kwargs)

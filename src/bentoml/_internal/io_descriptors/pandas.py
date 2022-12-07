@@ -387,8 +387,16 @@ class PandasDataFrame(
            def predict(inputs: pd.DataFrame) -> pd.DataFrame: ...
         """
         if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(sample):
+            logger.warning(
+                "'from_sample' from type '%s' is deprecated. Make sure to only pass pandas DataFrame.",
+                type(sample),
+            )
             sample = pd.DataFrame(sample)
         elif isinstance(sample, str):
+            logger.warning(
+                "'from_sample' from type '%s' is deprecated. Make sure to only pass pandas DataFrame.",
+                type(sample),
+            )
             try:
                 if os.path.exists(sample):
                     try:
@@ -517,12 +525,10 @@ class PandasDataFrame(
 
         obj = await request.body()
         if serialization_format is SerializationFormat.JSON:
-            assert not isinstance(self._dtype, bool)
             res = pd.read_json(io.BytesIO(obj), dtype=self._dtype, orient=self._orient)
         elif serialization_format is SerializationFormat.PARQUET:
             res = pd.read_parquet(io.BytesIO(obj), engine=get_parquet_engine())
         elif serialization_format is SerializationFormat.CSV:
-            assert not isinstance(self._dtype, bool)
             res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=self._dtype)
         else:
             raise InvalidArgument(

@@ -411,15 +411,14 @@ class PandasDataFrame(
                         raise InvalidArgument(f"Unsupported sample '{sample}' format.")
                 else:
                     # Try to load the string as json.
-                    sample = pd.read_json(sample)
+                    sample = pd.read_json(sample, dtype=True)
             except ValueError as e:
                 raise InvalidArgument(
                     f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
                 ) from None
         self._shape = sample.shape
         self._columns = [str(i) for i in list(sample.columns)]
-        if self._dtype is None:
-            self._dtype = True  # infer dtype automatically
+        self._dtype = True  # infer dtype automatically
         return sample
 
     def _convert_dtype(

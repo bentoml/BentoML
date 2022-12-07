@@ -16,6 +16,7 @@ import psutil
 from simple_di import inject
 from simple_di import Provide
 
+from .grpc.utils import LATEST_PROTOCOL_VERSION
 from ._internal.utils import experimental
 from ._internal.configuration.containers import BentoMLContainer
 
@@ -490,6 +491,7 @@ def serve_grpc_development(
     reload: bool = False,
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    protocol_version: str = LATEST_PROTOCOL_VERSION,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -539,6 +541,8 @@ def serve_grpc_development(
             "--prometheus-dir",
             prometheus_dir,
             *ssl_args,
+            "--protocol-version",
+            protocol_version,
         ]
 
         if reflection:
@@ -668,6 +672,7 @@ def serve_grpc_production(
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    protocol_version: str = LATEST_PROTOCOL_VERSION,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -812,6 +817,8 @@ def serve_grpc_production(
             "--worker-id",
             "$(CIRCUS.WID)",
             *ssl_args,
+            "--protocol-version",
+            protocol_version,
         ]
         if reflection:
             args.append("--enable-reflection")

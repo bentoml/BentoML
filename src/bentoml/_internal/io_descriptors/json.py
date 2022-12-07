@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
     import pydantic
     import pydantic.schema as schema
+    from google.protobuf import message as _message
     from google.protobuf import struct_pb2
     from typing_extensions import Self
 
@@ -392,19 +393,29 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):
             obj = obj.dict()
         msg = struct_pb2.Value()
-        # To handle None cases.
-        if obj is not None:
-            from google.protobuf.json_format import ParseDict
+        return parse_dict_to_proto(obj, msg, json_encoder=self._json_encoder)
 
-            if isinstance(obj, (dict, str, list, float, int, bool)):
-                # ParseDict handles google.protobuf.Struct type
-                # directly if given object has a supported type
-                ParseDict(obj, msg)
-            else:
-                # If given object doesn't have a supported type, we will
-                # use given JSON encoder to convert it to dictionary
-                # and then parse it to google.protobuf.Struct.
-                # Note that if a custom JSON encoder is used, it mustn't
-                # take any arguments.
-                ParseDict(self._json_encoder().default(obj), msg)
+
+def parse_dict_to_proto(
+    obj: JSONType,
+    msg: _message.Message,
+    json_encoder: type[json.JSONEncoder] = DefaultJsonEncoder,
+) -> t.Any:
+    if obj is None:
+        # this function is an identity op for the msg if obj is None.
         return msg
+
+    from google.protobuf.json_format import ParseDict
+
+    if isinstance(obj, (dict, str, list, float, int, bool)):
+        # ParseDict handles google.protobuf.Struct type
+        # directly if given object has a supported type
+        ParseDict(obj, msg)
+    else:
+        # If given object doesn't have a supported type, we will
+        # use given JSON encoder to convert it to dictionary
+        # and then parse it to google.protobuf.Struct.
+        # Note that if a custom JSON encoder is used, it mustn't
+        # take any arguments.
+        ParseDict(json_encoder().default(obj), msg)
+    return msg

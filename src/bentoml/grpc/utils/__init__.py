@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from bentoml.exceptions import InvalidArgument
 from bentoml.grpc.utils._import_hook import import_grpc
 from bentoml.grpc.utils._import_hook import import_generated_stubs
+from bentoml.grpc.utils._import_hook import LATEST_PROTOCOL_VERSION
 
 if TYPE_CHECKING:
     from enum import Enum
@@ -36,6 +37,7 @@ __all__ = [
     "import_generated_stubs",
     "import_grpc",
     "validate_proto_fields",
+    "LATEST_PROTOCOL_VERSION",
 ]
 
 logger = logging.getLogger(__name__)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 import logging
+import importlib
 from typing import TYPE_CHECKING
 from functools import partial
 
@@ -13,6 +14,7 @@ from ..tag import Tag
 from ..models import Model
 from ..runner import Runner
 from ...grpc.utils import import_grpc
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..bento.bento import get_default_svc_readme
 from .inference_api import InferenceAPI
 from ..io_descriptors import IODescriptor
@@ -25,8 +27,9 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from ..bento import Bento
-    from ..server.grpc.servicer import Servicer
+    from ...grpc.v1 import service_pb2_grpc as services
     from .openapi.specification import OpenAPISpecification
+
 else:
     grpc, _ = import_grpc()
 
@@ -220,11 +223,26 @@ class Service:
     def on_grpc_server_shutdown(self) -> None:
         pass
 
-    @property
-    def grpc_servicer(self) -> Servicer:
-        from ..server.grpc_app import GRPCAppFactory
+    def get_grpc_servicer(
+        self, protocol_version: str = LATEST_PROTOCOL_VERSION
+    ) -> services.BentoServiceServicer:
+        """
+        Return a gRPC servicer instance for this service.
 
-        return GRPCAppFactory(self)()
+        Args:
+            protocol_version: The protocol version to use for the gRPC servicer.
+
+        Returns:
+            A bento gRPC servicer implementation.
+        """
+        return importlib.import_module(
+            f".grpc.servicer.{protocol_version}",
+            package="bentoml._internal.server",
+        ).create_bento_servicer(self)
+
+    @property
+    def grpc_servicer(self):
+        return self.get_grpc_servicer(protocol_version=LATEST_PROTOCOL_VERSION)
 
     @property
     def asgi_app(self) -> "ext.ASGIApp":

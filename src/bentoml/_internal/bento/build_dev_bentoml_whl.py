@@ -7,6 +7,7 @@ from pathlib import Path
 from ..utils.pkg import source_locations
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..configuration import is_pypi_installed_bentoml
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ BENTOML_DEV_BUILD = "BENTOML_BUNDLE_LOCAL_BUILD"
 
 
 def build_bentoml_editable_wheel(
-    target_path: str, *, _internal_stubs_version: str = "v1"
+    target_path: str, *, _internal_protocol_version: str = LATEST_PROTOCOL_VERSION
 ) -> None:
     """
     This is for BentoML developers to create Bentos that contains the local bentoml
@@ -52,10 +53,10 @@ def build_bentoml_editable_wheel(
     bentoml_path = Path(module_location)
 
     if not Path(
-        module_location, "grpc", _internal_stubs_version, "service_pb2.py"
+        module_location, "grpc", _internal_protocol_version, "service_pb2.py"
     ).exists():
         raise ModuleNotFoundError(
-            f"Generated stubs for version {_internal_stubs_version} are missing. Make sure to run '{bentoml_path.as_posix()}/scripts/generate_grpc_stubs.sh {_internal_stubs_version}' beforehand to generate gRPC stubs."
+            f"Generated stubs for version {_internal_protocol_version} are missing. Make sure to run '{bentoml_path.as_posix()}/scripts/generate_grpc_stubs.sh {_internal_protocol_version}' beforehand to generate gRPC stubs."
         ) from None
 
     # location to pyproject.toml

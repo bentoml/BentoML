@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 import typing as t
+import importlib
 import traceback
 from typing import TYPE_CHECKING
 from contextlib import ExitStack
 from contextlib import asynccontextmanager
 
-from bentoml.exceptions import BentoMLException
-from bentoml.grpc.utils import import_grpc
-from bentoml.grpc.utils import import_generated_stubs
-from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils import reserve_free_port
-from bentoml._internal.utils import cached_contextmanager
-from bentoml._internal.utils import add_experimental_docstring
-from bentoml._internal.server.grpc.servicer import create_bento_servicer
+from ...exceptions import BentoMLException
+from ...grpc.utils import import_grpc
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ..._internal.utils import LazyLoader
+from ..._internal.utils import reserve_free_port
+from ..._internal.utils import cached_contextmanager
+from ..._internal.utils import add_experimental_docstring
 
 if TYPE_CHECKING:
     import grpc
@@ -23,9 +24,9 @@ if TYPE_CHECKING:
     from grpc.aio._channel import Channel
     from google.protobuf.message import Message
 
-    from bentoml.grpc.v1 import service_pb2 as pb
+    from ...grpc.v1 import service_pb2 as pb
+    from ..._internal.service import Service
 else:
-    pb, _ = import_generated_stubs()
     grpc, aio = import_grpc()  # pylint: disable=E1111
     np = LazyLoader("np", globals(), "numpy")
 
@@ -35,20 +36,42 @@ __all__ = [
     "make_pb_ndarray",
     "create_channel",
     "make_standalone_server",
-    "create_bento_servicer",
+    "create_test_bento_servicer",
 ]
 
 
-def randomize_pb_ndarray(shape: tuple[int, ...]) -> pb.NDArray:
+def create_test_bento_servicer(
+    service: Service,
+    protocol_version: str = LATEST_PROTOCOL_VERSION,
+) -> t.Callable[[Service], t.Any]:
+    try:
+        module = importlib.import_module(
+            f".{protocol_version}", package="bentoml._internal.server.grpc.servicer"
+        )
+        return getattr(module, "create_bento_servicer")(service)
+    except (ImportError, ModuleNotFoundError):
+        raise BentoMLException(
+            f"Failed to load servicer implementation for version {protocol_version}"
+        ) from None
+
+
+def randomize_pb_ndarray(
+    shape: tuple[int, ...], protocol_version: str = LATEST_PROTOCOL_VERSION
+) -> pb.NDArray:
+    pb, _ = import_generated_stubs(protocol_version)
     arr: NDArray[np.float32] = t.cast("NDArray[np.float32]", np.random.rand(*shape))
     return pb.NDArray(
         shape=list(shape), dtype=pb.NDArray.DTYPE_FLOAT, float_values=arr.ravel()
     )
 
 
-def make_pb_ndarray(arr: NDArray[t.Any]) -> pb.NDArray:
+def make_pb_ndarray(
+    arr: NDArray[t.Any], protocol_version: str = LATEST_PROTOCOL_VERSION
+) -> pb.NDArray:
     from bentoml._internal.io_descriptors.numpy import npdtype_to_dtypepb_map
     from bentoml._internal.io_descriptors.numpy import npdtype_to_fieldpb_map
+
+    pb, _ = import_generated_stubs(protocol_version)
 
     try:
         fieldpb = npdtype_to_fieldpb_map()[arr.dtype]
@@ -76,7 +99,7 @@ async def async_client_call(
     assert_code: grpc.StatusCode | None = None,
     assert_details: str | None = None,
     assert_trailing_metadata: aio.Metadata | None = None,
-    _internal_stubs_version: str = "v1",
+    protocol_version: str = LATEST_PROTOCOL_VERSION,
 ) -> pb.Response | None:
     """
     Invoke a given API method via a client.
@@ -95,11 +118,12 @@ async def async_client_call(
     Returns:
         The response from the server.
     """
+    pb, _ = import_generated_stubs(protocol_version)
 
     res: pb.Response | None = None
     try:
         Call = channel.unary_unary(
-            f"/bentoml.grpc.{_internal_stubs_version}.BentoService/Call",
+            f"/bentoml.grpc.{protocol_version}.BentoService/Call",
             request_serializer=pb.Request.SerializeToString,
             response_deserializer=pb.Response.FromString,
         )

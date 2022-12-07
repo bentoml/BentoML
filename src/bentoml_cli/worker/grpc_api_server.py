@@ -70,6 +70,13 @@ import click
     default=None,
     help="CA certificates file",
 )
+@click.option(
+    "--protocol-version",
+    type=click.Choice(["v1", "v1alpha1"]),
+    help="Determine the version of generated gRPC stubs to use.",
+    default="v1",
+    show_default=True,
+)
 def main(
     bento_identifier: str,
     host: str,
@@ -84,6 +91,7 @@ def main(
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
     ssl_ca_certs: str | None,
+    protocol_version: str,
 ):
     """
     Start BentoML API server.
@@ -126,12 +134,13 @@ def main(
         component_context.bento_name = svc.tag.name
         component_context.bento_version = svc.tag.version or "not available"
 
-    from bentoml._internal.server import grpc
+    from bentoml._internal.server import grpc_app as grpc
 
     grpc_options: dict[str, t.Any] = {
         "bind_address": f"{host}:{port}",
         "enable_reflection": enable_reflection,
         "enable_channelz": enable_channelz,
+        "protocol_version": protocol_version,
     }
     if max_concurrent_streams:
         grpc_options["max_concurrent_streams"] = int(max_concurrent_streams)
@@ -142,7 +151,7 @@ def main(
     if ssl_ca_certs:
         grpc_options["ssl_ca_certs"] = ssl_ca_certs
 
-    grpc.Server(svc.grpc_servicer, **grpc_options).run()
+    grpc.Server(svc, **grpc_options).run()
 
 
 if __name__ == "__main__":

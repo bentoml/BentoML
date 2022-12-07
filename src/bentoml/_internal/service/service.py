@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import types
 import typing as t
 import logging
 import importlib
@@ -30,11 +29,6 @@ if TYPE_CHECKING:
     from ..bento import Bento
     from ...grpc.v1 import service_pb2_grpc as services
     from .openapi.specification import OpenAPISpecification
-
-    class ServicerModule(types.ModuleType):
-        @staticmethod
-        def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
-            ...
 
 else:
     grpc, _ = import_grpc()
@@ -241,14 +235,10 @@ class Service:
         Returns:
             A bento gRPC servicer implementation.
         """
-        module = t.cast(
-            "ServicerModule",
-            importlib.import_module(
-                f".grpc.servicer.{protocol_version}",
-                package="bentoml._internal.server",
-            ),
-        )
-        return module.create_bento_servicer(self)
+        return importlib.import_module(
+            f".grpc.servicer.{protocol_version}",
+            package="bentoml._internal.server",
+        ).create_bento_servicer(self)
 
     @property
     def grpc_servicer(self):

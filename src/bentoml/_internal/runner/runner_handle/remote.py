@@ -243,10 +243,9 @@ class RemoteRunnerClient(RunnerHandle):
         return t.cast(
             "R",
             anyio.from_thread.run(
-                self.async_run_method,
+                functools.partial(self.async_run_method, **kwargs),
                 __bentoml_method,
                 *args,
-                **kwargs,
             ),
         )
 

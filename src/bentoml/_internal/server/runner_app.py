@@ -275,7 +275,7 @@ class RunnerAppFactory(BaseAppFactory):
                     content=str(e),
                     headers={
                         PAYLOAD_META_HEADER: "{}",
-                        "Content-Type": "application/vnd.bentoml.error}",
+                        "Content-Type": "application/vnd.bentoml.error",
                         "Server": server_str,
                     },
                 )

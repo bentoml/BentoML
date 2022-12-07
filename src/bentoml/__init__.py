@@ -79,6 +79,7 @@ if TYPE_CHECKING:
     from . import models
     from . import metrics  # Prometheus metrics client
     from . import container  # Container API
+    from . import client  # Client API
 
     # isort: on
 else:
@@ -122,6 +123,7 @@ else:
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
     metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
     container = _LazyLoader("bentoml.container", globals(), "bentoml.container")
+    client = _LazyLoader("bentoml.client", globals(), "bentoml.client")
 
     del _LazyLoader
 
@@ -133,6 +135,7 @@ __all__ = [
     "models",
     "metrics",
     "container",
+    "client",
     "io",
     "Tag",
     "Model",

@@ -16,6 +16,7 @@ BentoML embraces this new paradigm by providing APIs that make a data-centric wo
 In this guide, we will focus on the online data collection and model monitoring. BentoML provides a unified interface for that.
 
 The benefits of having a data collection and model monitoring workflow includes:
+
 - Monitor key statistical business metrics.
 - Identify early data drift events to determine whether retraining is required.
 - Enable QA for the previous untracked metrics, such as model performance, accuracy, degradation, etc.
@@ -109,7 +110,7 @@ With a complete service definition, we can proceed to build the bento.
 Deploy the service and collect monitoring data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-With BentoML, once we have the bento, it's easy to deploy the ML application to any target. https://docs.bentoml.org/en/latest/concepts/deploy.html
+With BentoML, once we have the bento, it's easy to :ref:`deploy <concepts/deploy:Deploying Bento>` the ML application to any target.
 
 Use ``serve --production`` to start the bento in production mode as a standalone server:
 
@@ -160,13 +161,14 @@ To achieve this, we just neet to provide a deployment configuration to bentoml.
 Built-in Monitoring Data Collectors
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1. Through log files
+Through log files
+~~~~~~~~~~~~~~~~~
 
-The most common way to collect monitoring data is to write it to log files. Many utils like fluentbit, filebeat, logstash, etc. can be used to collect log files and ship them to a data warehouse or a monitoring system.
+The most common way to collect monitoring data is to write it to log files. Many utils like `fluentbit <https://fluentbit.io/>`_, `filebeat <https://www.elastic.co/beats/filebeat>`_, `logstash <https://www.elastic.co/logstash/>`_, etc. can be used to collect log files and ship them to a data warehouse or a monitoring system.
 This is also the default way BentoML exports monitoring data:
 
 .. code-block:: yaml
-    :caption: `deployment_configuration.yaml`
+    :caption: ⚙️ `configuration.yml`
 
     monitoring:
       enabled: true
@@ -178,10 +180,11 @@ For Docker deployments, user can mount the log directory to a volume to persist 
 For K8s deployments, user can mount the log directory, and deploy a fluentbit daemonset or sidecar container to collect the log files to target destinations.
 
 
-2. Through a OTLP endpoint
+Through a OTLP endpoint
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: yaml
-    :caption: `deployment_configuration.yaml`
+    :caption: ⚙️ `configuration.yml`
 
     monitoring:
       enable: true
@@ -211,9 +214,10 @@ plugins could be more platform specific.
     For example, it is required to add `bentoml-plugins-arize` to the `python:packages` to use the Arize plugin.
     See :ref:`the build command<concepts/bento:The Build Command>` for more details.
 
-1. Arize AI
+Arize AI
+~~~~~~~~
 
-For end-to-end solutions for data/model monitoring, BentoML colaborates with Arize AI to provide a plugin for Arize.
+For end-to-end solutions for data/model monitoring, BentoML colaborates with `Arize AI <https://arize.com/docs/>`_ to provide a plugin for Arize.
 If you don't want to deploy a pipeline by yourself but still need data and model monitoring for the bussiness, Arize AI is a good choice.
 
 Arize AI provides a unified platform for data scientists, data engineers, and ML engineers to monitor, analyze, and debug ML models in production.
@@ -221,7 +225,7 @@ And the `bentoml-plugins-arize` makes it easy to work with BentoML.
 
 
 .. code-block:: yaml
-    :caption: `deployment_configuration.yaml`
+    :caption: ⚙️ `configuration.yml`
 
     monitoring:
         enable: true

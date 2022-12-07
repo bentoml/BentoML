@@ -29,6 +29,7 @@ from .bentos import get
 from .bentos import list  # pylint: disable=W0622
 from .bentos import pull
 from .bentos import push
+from .bentos import serve
 from .bentos import delete
 from .bentos import export_bento
 from .bentos import import_bento
@@ -148,6 +149,7 @@ __all__ = [
     "load",
     "push",
     "pull",
+    "serve",
     "Bento",
     # Framework specific modules
     "catboost",

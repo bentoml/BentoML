@@ -63,6 +63,24 @@ class Client(ABC):
         self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
     ) -> t.Any:
         raise NotImplementedError
+    
+    @staticmethod
+    def wait_until_server_is_ready(host: str, port: int, timeout: int) -> None:
+        import time
+
+        time_end = time.time() + timeout
+        status = None
+        while status != 200:
+            try:
+                conn = HTTPConnection(host, port)
+                conn.request("GET", "/")
+                status = conn.getresponse().status
+            except ConnectionRefusedError:
+                print("Connection refused. Trying again...")
+            if time.time() > time_end:
+                raise TimeoutError("The server took too long to get ready")
+            time.sleep(1)
+
 
     @staticmethod
     def from_url(server_url: str) -> Client:

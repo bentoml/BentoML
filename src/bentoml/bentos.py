@@ -19,8 +19,14 @@ from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 
+from subprocess import Popen
+
+import shutil
+
 if TYPE_CHECKING:
     from ._internal.bento import BentoStore
+    from bentoml.client import Client
+    from subprocess import Popen
 
 logger = logging.getLogger(__name__)
 
@@ -419,3 +425,94 @@ def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:
     except Exception as e:  # pylint: disable=broad-except
         logger.error("Failed to containerize %s: %s", bento_tag, e)
         return False
+
+
+def serve(
+    bento: str,
+    production: bool = False,
+    port: int = BentoMLContainer.http.port.get(),
+    host: str = BentoMLContainer.http.host.get(),
+    type: str = "HTTP",
+    api_workers: int | None = BentoMLContainer.api_server_workers.get(),
+    backlog: int = BentoMLContainer.api_server_config.backlog.get(),
+    reload: bool = False,
+    working_dir: str | None = None,
+    ssl_certfile: str | None = None,
+    ssl_keyfile: str | None = None,
+    ssl_ca_certs: str | None = None,
+    # HTTP-specific args
+    ssl_keyfile_password: str | None = None,
+    ssl_version: int | None = None,
+    ssl_cert_reqs: int | None = None,
+    ssl_ciphers: str | None = None,
+    # GRPC-specific args
+    enable_reflection: bool = BentoMLContainer.grpc.reflection.enabled.get(),
+    enable_channelz: bool = BentoMLContainer.grpc.channelz.enabled.get(),
+    max_concurrent_streams: int
+    | None = BentoMLContainer.grpc.max_concurrent_streams.get(),
+) -> Server:
+    """Launch a BentoServer and returns a client that exposes all APIs defined in target service"""
+
+    if type not in ["HTTP", "GRPC"]:
+        raise ValueError('Server type must either be "HTTP" or "GRPC"')
+
+    args = [str(shutil.which("bentoml")), "serve", bento, "--port", str(port), "--host", host, "--backlog", str(backlog)]
+    if production:
+        args.append("--production")
+    if reload:
+        args.extend(["--reload", str(reload)])
+    if api_workers is not None:
+        args.extend(["--api-workers", str(api_workers)])
+    if working_dir is not None:
+        args.extend(["--working-dir", str(working_dir)])
+    if ssl_certfile is not None:
+        args.extend(["--ssl-certfile", ssl_certfile])
+    if ssl_keyfile is not None:
+        args.extend(["--ssl-keyfile", ssl_keyfile])
+    if ssl_ca_certs is not None:
+        args.extend(["--ssl-ca-certs", ssl_ca_certs])
+    if type == "HTTP":
+        if ssl_keyfile_password is not None:
+            args.extend(["--ssl-keyfile-password", ssl_keyfile_password])
+        if ssl_version is not None:
+            args.extend(["--ssl-version", str(ssl_version)])
+        if ssl_cert_reqs is not None:
+            args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)])
+        if ssl_ciphers is not None:
+            args.extend(["--ssl-ciphers", ssl_ciphers])
+    if type == "GRPC":
+        if enable_reflection:
+            args.extend(["--enable-reflection", str(enable_reflection)])
+        if enable_channelz:
+            args.extend(["--enable-channelz", str(enable_channelz)])
+        if max_concurrent_streams is not None:
+            args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
+
+    process = Popen(args)
+
+    return Server(process, host, port)
+
+
+class Server():
+
+    def __init__(self, process: Popen[bytes], host: str, port: int) -> None:
+        self._process = process
+        self._host = host
+        self._port = port
+    
+    def get_client(self) -> Client:
+        from bentoml.client import Client
+        Client.wait_until_server_is_ready(self._host, self._port, 10)
+        return Client.from_url(f"http://localhost:{self._port}")
+    
+    def stop(self) -> None:
+        self.process.kill()
+    
+    @property
+    def process(self) -> Popen[bytes]:
+        return self._process
+    
+    @property
+    def address(self) -> str:
+        return f"{self._host}:{self._port}"
+

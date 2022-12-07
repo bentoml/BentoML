@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 def add_start_command(cli: click.Group) -> None:
 
+    from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml._internal.utils import add_experimental_docstring
     from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -348,6 +349,14 @@ def add_start_command(cli: click.Group) -> None:
         default=None,
         help="CA certificates file",
     )
+    @click.option(
+        "-pv",
+        "--protocol-version",
+        type=click.Choice(["v1", "v1alpha1"]),
+        help="Determine the version of generated gRPC stubs to use.",
+        default=LATEST_PROTOCOL_VERSION,
+        show_default=True,
+    )
     @add_experimental_docstring
     def start_grpc_server(  # type: ignore (unused warning)
         bento: str,
@@ -363,6 +372,7 @@ def add_start_command(cli: click.Group) -> None:
         ssl_ca_certs: str | None,
         enable_channelz: bool,
         max_concurrent_streams: int | None,
+        protocol_version: str,
     ) -> None:
         """
         Start a gRPC API server standalone. This will be used inside Yatai.
@@ -393,4 +403,5 @@ def add_start_command(cli: click.Group) -> None:
             ssl_ca_certs=ssl_ca_certs,
             channelz=enable_channelz,
             max_concurrent_streams=max_concurrent_streams,
+            protocol_version=protocol_version,
         )

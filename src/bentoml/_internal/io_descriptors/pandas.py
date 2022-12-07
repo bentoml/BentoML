@@ -386,36 +386,13 @@ class PandasDataFrame(
            @svc.api(input=input_spec, output=PandasDataFrame())
            def predict(inputs: pd.DataFrame) -> pd.DataFrame: ...
         """
-        if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(sample):
-            sample = pd.DataFrame(sample)
-        elif isinstance(sample, str):
-            try:
-                if os.path.exists(sample):
-                    try:
-                        ext = os.path.splitext(sample)[-1].strip(".")
-                        sample = getattr(
-                            pd,
-                            {
-                                "json": "read_json",
-                                "csv": "read_csv",
-                                "html": "read_html",
-                                "xls": "read_excel",
-                                "xlsx": "read_excel",
-                                "hdf5": "read_hdf",
-                                "parquet": "read_parquet",
-                                "pickle": "read_pickle",
-                                "sql": "read_sql",
-                            }[ext],
-                        )(sample)
-                    except KeyError:
-                        raise InvalidArgument(f"Unsupported sample '{sample}' format.")
-                else:
-                    # Try to load the string as json.
-                    sample = pd.read_json(sample, dtype=True)
-            except ValueError as e:
-                raise InvalidArgument(
-                    f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
-                ) from None
+        if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(
+            sample
+        ) or isinstance(sample, str):
+            logger.warning(
+                "'from_sample' from type '%s' is deprecated. Make sure to only pass pandas DataFrame.",
+                type(sample),
+            )
         self._shape = sample.shape
         self._columns = [str(i) for i in list(sample.columns)]
         self._dtype = True  # infer dtype automatically

@@ -37,8 +37,12 @@ IOType = t.TypeVar("IOType")
 
 
 def from_spec(spec: dict[str, t.Any]) -> IODescriptor[t.Any]:
+    if spec["id"] is None:
+        raise BentoMLException("No IO descriptor spec found.")
+
     if "id" not in spec:
         raise InvalidArgument(f"IO descriptor spec ({spec}) missing ID.")
+
     return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)
 
 
@@ -123,9 +127,8 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     def mime_type(self) -> str:
         return self._mime_type
 
-    @abstractmethod
-    def to_spec(self) -> dict[str, t.Any]:
-        raise NotImplementedError
+    def to_spec(self) -> dict[str, t.Any] | None:
+        return None
 
     @classmethod
     @abstractmethod

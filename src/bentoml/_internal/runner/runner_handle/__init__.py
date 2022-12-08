@@ -63,7 +63,7 @@ class DummyRunnerHandle(RunnerHandle):
         **kwargs: t.Any,
     ) -> t.Any:
         raise StateException(
-            "Runner is not initialized. Did you forget to include this runner in the BentoService (`Service(runners=[your_runner])`)?"
+            f"Runner is not initialized. Make sure to include '{self!r}' to your service definition."
         )
 
     async def async_run_method(
@@ -73,5 +73,5 @@ class DummyRunnerHandle(RunnerHandle):
         **kwargs: t.Any,
     ) -> t.Any:
         raise StateException(
-            "Runner is not initialized. Did you forget to include this runner in the BentoService (`Service(runners=[your_runner])`)?"
+            f"Runner is not initialized. Make sure to include '{self!r}' to your service definition."
         )

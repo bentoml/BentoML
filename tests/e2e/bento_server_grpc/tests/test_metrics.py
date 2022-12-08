@@ -22,3 +22,5 @@ async def test_metrics_available(host: str):
         compared=np.random.randint(255, size=(10, 10, 3)).astype("uint8"),
     )
     assert isinstance(resp, pb.Response)
+    resp = await client.async_ensure_metrics_are_registered("input_data")
+    assert isinstance(resp, pb.Response)

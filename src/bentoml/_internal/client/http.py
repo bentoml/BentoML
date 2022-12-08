@@ -78,6 +78,8 @@ class HTTPClient(Client):
     async def _call(
         self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
     ) -> t.Any:
+        # All gRPC kwargs should be poped out.
+        kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_grpc_")}
         api = _bentoml_api
 
         if api.multi_input:

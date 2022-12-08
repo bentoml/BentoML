@@ -46,7 +46,9 @@ class Client(ABC):
                 )
 
     def call(self, bentoml_api_name: str, inp: t.Any = None, **kwargs: t.Any) -> t.Any:
-        return asyncio.run(self.async_call(bentoml_api_name, inp, **kwargs))
+        return self._sync_call(
+            inp, _bentoml_api=self._svc.apis[bentoml_api_name], **kwargs
+        )
 
     async def async_call(
         self, bentoml_api_name: str, inp: t.Any = None, **kwargs: t.Any

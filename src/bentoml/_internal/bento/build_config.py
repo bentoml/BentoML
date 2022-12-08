@@ -16,7 +16,6 @@ import yaml
 import psutil
 import fs.copy
 from pathspec import PathSpec
-from pip_requirements_parser import RequirementsFile
 
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
@@ -598,6 +597,8 @@ fi
             f.write(install_sh)
 
         if self.requirements_txt is not None:
+            from pip_requirements_parser import RequirementsFile
+
             requirements_txt = RequirementsFile.from_file(
                 resolve_user_filepath(self.requirements_txt, build_ctx),
                 include_nested=True,

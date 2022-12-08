@@ -28,7 +28,7 @@ if TYPE_CHECKING:
         | LazyType[t.Any]
         | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
     )
-    OpenAPIResponse = dict[str, str | dict[str, MediaType] | dict[str, t.Any]]
+    OpenAPIResponse = dict[str, str | dict[str, t.Any]]
 
 
 IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
@@ -131,7 +131,6 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
         return None
 
     @classmethod
-    @abstractmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:
         raise NotImplementedError
 

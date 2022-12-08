@@ -424,15 +424,15 @@ def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:
         logger.error("Failed to containerize %s: %s", bento_tag, e)
         return False
 
-
+@inject
 def serve(
     bento: str,
     production: bool = False,
-    port: int = BentoMLContainer.http.port.get(),
-    host: str = BentoMLContainer.http.host.get(),
-    type: str = "HTTP",
-    api_workers: int | None = BentoMLContainer.api_server_workers.get(),
-    backlog: int = BentoMLContainer.api_server_config.backlog.get(),
+    port: int = Provide[BentoMLContainer.http.port],
+    host: str = Provide[BentoMLContainer.http.host],
+    server_type: str = "http",
+    api_workers: int | None = Provide[BentoMLContainer.api_server_workers],
+    backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     reload: bool = False,
     working_dir: str | None = None,
     ssl_certfile: str | None = None,
@@ -444,15 +444,15 @@ def serve(
     ssl_cert_reqs: int | None = None,
     ssl_ciphers: str | None = None,
     # GRPC-specific args
-    enable_reflection: bool = BentoMLContainer.grpc.reflection.enabled.get(),
-    enable_channelz: bool = BentoMLContainer.grpc.channelz.enabled.get(),
+    enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+    enable_channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     max_concurrent_streams: int
-    | None = BentoMLContainer.grpc.max_concurrent_streams.get(),
+    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
 ) -> Server:
     """Launch a BentoServer and returns a client that exposes all APIs defined in target service"""
 
-    if type not in ["HTTP", "GRPC"]:
-        raise ValueError('Server type must either be "HTTP" or "GRPC"')
+    if server_type.lower() not in ["http", "grpc"]:
+        raise ValueError('Server type must either be "http" or "grpc"')
 
     args = [
         str(shutil.which("bentoml")),
@@ -479,7 +479,7 @@ def serve(
         args.extend(["--ssl-keyfile", ssl_keyfile])
     if ssl_ca_certs is not None:
         args.extend(["--ssl-ca-certs", ssl_ca_certs])
-    if type == "HTTP":
+    if server_type.lower() == "http":
         if ssl_keyfile_password is not None:
             args.extend(["--ssl-keyfile-password", ssl_keyfile_password])
         if ssl_version is not None:
@@ -488,7 +488,7 @@ def serve(
             args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)])
         if ssl_ciphers is not None:
             args.extend(["--ssl-ciphers", ssl_ciphers])
-    if type == "GRPC":
+    if server_type.lower() == "grpc":
         if enable_reflection:
             args.extend(["--enable-reflection", str(enable_reflection)])
         if enable_channelz:

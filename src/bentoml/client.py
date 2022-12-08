@@ -73,7 +73,7 @@ class Client(ABC):
         while status != 200:
             try:
                 conn = HTTPConnection(host, port)
-                conn.request("GET", "/")
+                conn.request("GET", "/readyz")
                 status = conn.getresponse().status
             except ConnectionRefusedError:
                 print("Connection refused. Trying again...")

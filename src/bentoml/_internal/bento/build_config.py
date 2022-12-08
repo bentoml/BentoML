@@ -149,13 +149,13 @@ class DockerOptions:
     # always omit config values in case of default values got changed in future BentoML releases
     __omit_if_default__ = False
 
-    distro: str = attr.field(
+    distro: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(CONTAINER_SUPPORTED_DISTROS)
         ),
     )
-    python_version: str = attr.field(
+    python_version: t.Optional[str] = attr.field(
         converter=_convert_python_version,
         default=None,
         validator=attr.validators.optional(

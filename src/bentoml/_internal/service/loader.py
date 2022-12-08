@@ -218,7 +218,8 @@ def load_bento(
                 info_bentoml_version,
                 BENTOML_VERSION,
             )
-    return _load_bento(bento, standalone_load)
+    with BentoMLContainer.model_store.patch(bento._model_store):
+        return _load_bento(bento, standalone_load)
 
 
 def load_bento_dir(path: str, standalone_load: bool = False) -> "Service":

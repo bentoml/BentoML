@@ -7,6 +7,7 @@ import tempfile
 from typing import TYPE_CHECKING
 
 import pyarrow
+from pyspark.files import SparkFiles
 from pyspark.sql.dataframe import DataFrame
 
 from .tag import Tag
@@ -62,8 +63,7 @@ def _load_bento(bento_tag: Tag):
     """
     try:
         return load_bento(str(bento_tag))
-    except NotFound:
-        from pyspark.files import SparkFiles
+    except Exception:
 
         # Use the default Bento export file name. This relies on the implementation
         # of _distribute_bento to use default Bento export file name.
@@ -139,8 +139,15 @@ def _get_process(
 
         for batch in iterator:
             # default batch size = 10,000
-            func_input = inference_api.input.from_arrow(batch)
-            func_output = inference_api.func(func_input)
+            func_input = inference_api.input.from_arrow(
+                batch
+            )  # use client api. call for input...?
+            func_output = inference_api.func(
+                func_input
+            )  # instead of doing this, we'll start the server above
+            # instead of running load bento, we just load bento
+            # call the client here instead of doing the inference api.
+            # the server does a bunch of smart things and we want to use it here...
             assert isinstance(func_output, pd.Series), f"type is {type(func_output)}"
             yield inference_api.output.to_arrow(func_output)
 

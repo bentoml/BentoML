@@ -57,6 +57,7 @@ class Client(ABC):
 
     @t.overload
     @classmethod
+    @abstractmethod
     def from_url(
         cls, server_url: str, *, kind: None | t.Literal["auto"] = ...
     ) -> GrpcClient | HTTPClient:
@@ -64,15 +65,18 @@ class Client(ABC):
 
     @t.overload
     @classmethod
+    @abstractmethod
     def from_url(cls, server_url: str, *, kind: t.Literal["http"] = ...) -> HTTPClient:
         ...
 
     @t.overload
     @classmethod
+    @abstractmethod
     def from_url(cls, server_url: str, *, kind: t.Literal["grpc"] = ...) -> GrpcClient:
         ...
 
     @classmethod
+    @abstractmethod
     def from_url(
         cls, server_url: str, *, kind: str | None = None, **kwargs: t.Any
     ) -> Client:
@@ -98,7 +102,6 @@ class Client(ABC):
         elif kind == "http":
             from .http import HTTPClient
 
-            server_url = server_url if "://" in server_url else "http://" + server_url
             return HTTPClient.from_url(server_url, **kwargs)
         elif kind == "grpc":
             from .grpc import GrpcClient

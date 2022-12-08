@@ -65,8 +65,6 @@ class GrpcClient(Client):
         *,
         protocol_version: str = LATEST_PROTOCOL_VERSION,
     ):
-        super().__init__(svc, server_url)
-
         self._pb, self._services = import_generated_stubs(protocol_version)
 
         self._protocol_version = protocol_version
@@ -85,6 +83,7 @@ class GrpcClient(Client):
                     for k, v in ssl_client_credentials.items()
                 }
             )
+        super().__init__(svc, server_url)
 
     @cached_property
     def channel(self):
@@ -268,15 +267,13 @@ if __name__ == '__main__':
 
         # create an insecure channel to invoke ServiceMetadata rpc
         with channel:
-            # gRPC sync stub is WIP.
-            ServiceMetadata = channel.unary_unary(
-                f"/bentoml.grpc.{protocol_version}.BentoService/ServiceMetadata",
-                request_serializer=pb.ServiceMetadataRequest.SerializeToString,
-                response_deserializer=pb.ServiceMetadataResponse.FromString,
-            )
             metadata = t.cast(
                 "ServiceMetadataResponse",
-                ServiceMetadata(pb.ServiceMetadataRequest()),
+                channel.unary_unary(
+                    f"/bentoml.grpc.{protocol_version}.BentoService/ServiceMetadata",
+                    request_serializer=pb.ServiceMetadataRequest.SerializeToString,
+                    response_deserializer=pb.ServiceMetadataResponse.FromString,
+                )(pb.ServiceMetadataRequest()),
             )
         dummy_service = Service(metadata.name)
 

@@ -93,7 +93,8 @@ def main(
     from bentoml._internal.log import configure_server_logging
 
     configure_server_logging()
-    import uvicorn  # type: ignore
+
+    import uvicorn
 
     from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -131,10 +132,10 @@ def main(
     }
 
     if psutil.WINDOWS:
-        # 1. uvloop doesn't support Windows
-        # 2. the default policy after Python3.8 on Windows is ProactorEventLoop, which doesn't
+        # 1. uvloop is not supported on Windows
+        # 2. the default policy for Python > 3.8 on Windows is ProactorEventLoop, which doesn't
         #    support listen on a existing socket file descriptors
-        # about the cons and more details, see https://docs.python.org/3.8/library/asyncio-platforms.html#windows
+        # See https://docs.python.org/3.8/library/asyncio-platforms.html#windows
         uvicorn_options["loop"] = "asyncio"
         import asyncio
 

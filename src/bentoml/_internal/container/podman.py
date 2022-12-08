@@ -41,7 +41,7 @@ def health() -> bool:
         .strip("\n&#34;")  # strip quotation marks from JSON format.
         .lower()
     )
-    return output == "running"
+    return output == '"running"'
 
 
 def parse_dict_opt(d: dict[str, str]) -> str:

@@ -133,20 +133,13 @@ io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["bentoml[io-file]", "Pillow"]
 io-pandas = ["pandas", "pyarrow"]
 grpc = [
-  # Restrict maximum version due to breaking protobuf 4.21.0 changes
-  # (see https://github.com/protocolbuffers/protobuf/issues/10051)
-  # 3.19.5 is currently breaking on a lot of system.
-  "protobuf>=3.5.0, <3.20, !=3.19.5",
-  # Lowest version that support 3.10. We need to set an upper bound
-  # We can't use 1.48.2 since it depends on 3.19.5
-  "grpcio>=1.41.0,!=1.48.2",
-  # grpcio>=1.48.0 provides a pre-built M1 wheel.
-  "grpcio>=1.48.0,!=1.48.2;platform_machine=='arm64' and platform_system=='Darwin'",
-  "grpcio-health-checking>=1.41.0,!=1.48.2",
+  "protobuf",
+  "grpcio",
+  "grpcio-health-checking",
   "opentelemetry-instrumentation-grpc==0.35b0",
 ]
-grpc-reflection = ["bentoml[grpc]", "grpcio-reflection>=1.41.0,!=1.48.2"]
-grpc-channelz = ["bentoml[grpc]", "grpcio-channelz>=1.41.0,!=1.48.2"]
+grpc-reflection = ["bentoml[grpc]", "grpcio-reflection"]
+grpc-channelz = ["bentoml[grpc]", "grpcio-channelz"]
 # We kept for compatibility with previous
 # versions of BentoML. It is discouraged to use this, instead use any
 # of the above tracing.* extras.
@@ -306,8 +299,7 @@ force_alphabetical_sort_within_sections = true
 skip_glob = [
   "typings/*",
   "test/*",
-  "**/*_pb2.py*",
-  "**/*_pb2_grpc.py*",
+  "**/*_pb2*",
   "venv/*",
   "lib/*",
   "grpc-client/thirdparty",

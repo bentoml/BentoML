@@ -62,7 +62,9 @@ class DummyRunnerHandle(RunnerHandle):
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
-        raise StateException("Runner is not initialized")
+        raise StateException(
+            f"Runner is not initialized. Make sure to include '{self!r}' to your service definition."
+        )
 
     async def async_run_method(
         self,
@@ -70,4 +72,6 @@ class DummyRunnerHandle(RunnerHandle):
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
-        raise StateException("Runner is not initialized")
+        raise StateException(
+            f"Runner is not initialized. Make sure to include '{self!r}' to your service definition."
+        )

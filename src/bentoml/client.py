@@ -111,18 +111,26 @@ class Client(ABC):
                         raise BentoMLException(
                             f"Malformed BentoML spec received from BentoML server {server_url}"
                         )
-                    dummy_service.apis[meth_spec["x-bentoml-name"]] = InferenceAPI(
-                        None,
-                        bentoml.io.from_spec(
-                            meth_spec["requestBody"]["x-bentoml-io-descriptor"]
-                        ),
-                        bentoml.io.from_spec(
-                            meth_spec["responses"]["200"]["x-bentoml-io-descriptor"]
-                        ),
-                        name=meth_spec["x-bentoml-name"],
-                        doc=meth_spec["description"],
-                        route=route.lstrip("/"),
-                    )
+                    try:
+                        api = InferenceAPI(
+                            None,
+                            bentoml.io.from_spec(
+                                meth_spec["requestBody"]["x-bentoml-io-descriptor"]
+                            ),
+                            bentoml.io.from_spec(
+                                meth_spec["responses"]["200"]["x-bentoml-io-descriptor"]
+                            ),
+                            name=meth_spec["x-bentoml-name"],
+                            doc=meth_spec["description"],
+                            route=route.lstrip("/"),
+                        )
+                        dummy_service.apis[meth_spec["x-bentoml-name"]] = api
+                    except BentoMLException as e:
+                        logger.error(
+                            "Failed to instantiate client for API %s: ",
+                            meth_spec["x-bentoml-name"],
+                            e,
+                        )
 
         res = HTTPClient(dummy_service, server_url)
         res.server_url = server_url

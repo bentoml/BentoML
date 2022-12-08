@@ -16,7 +16,6 @@ import yaml
 import psutil
 import fs.copy
 from pathspec import PathSpec
-from pip_requirements_parser import RequirementsFile
 
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
@@ -149,13 +148,13 @@ class DockerOptions:
     # always omit config values in case of default values got changed in future BentoML releases
     __omit_if_default__ = False
 
-    distro: str = attr.field(
+    distro: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(CONTAINER_SUPPORTED_DISTROS)
         ),
     )
-    python_version: str = attr.field(
+    python_version: t.Optional[str] = attr.field(
         converter=_convert_python_version,
         default=None,
         validator=attr.validators.optional(
@@ -598,6 +597,8 @@ fi
             f.write(install_sh)
 
         if self.requirements_txt is not None:
+            from pip_requirements_parser import RequirementsFile
+
             requirements_txt = RequirementsFile.from_file(
                 resolve_user_filepath(self.requirements_txt, build_ctx),
                 include_nested=True,

@@ -28,7 +28,7 @@ if TYPE_CHECKING:
         | LazyType[t.Any]
         | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
     )
-    OpenAPIResponse = dict[str, str | dict[str, MediaType] | dict[str, t.Any]]
+    OpenAPIResponse = dict[str, str | dict[str, t.Any]]
 
 
 IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
@@ -36,9 +36,13 @@ IO_DESCRIPTOR_REGISTRY: dict[str, type[IODescriptor[t.Any]]] = {}
 IOType = t.TypeVar("IOType")
 
 
-def from_spec(spec: dict[str, str]) -> IODescriptor[t.Any]:
+def from_spec(spec: dict[str, t.Any]) -> IODescriptor[t.Any]:
+    if spec["id"] is None:
+        raise BentoMLException("No IO descriptor spec found.")
+
     if "id" not in spec:
         raise InvalidArgument(f"IO descriptor spec ({spec}) missing ID.")
+
     return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)
 
 
@@ -123,12 +127,10 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     def mime_type(self) -> str:
         return self._mime_type
 
-    @abstractmethod
-    def to_spec(self) -> dict[str, t.Any]:
-        raise NotImplementedError
+    def to_spec(self) -> dict[str, t.Any] | None:
+        return None
 
     @classmethod
-    @abstractmethod
     def from_spec(cls, spec: dict[str, t.Any]) -> Self:
         raise NotImplementedError
 

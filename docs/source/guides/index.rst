@@ -18,9 +18,9 @@ into this part of the documentation.
     server
     configuration
     graph
+    monitoring
     logging
     metrics
-    monitoring
     performance
     grpc
     gpu

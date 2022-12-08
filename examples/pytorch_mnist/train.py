@@ -116,6 +116,7 @@ def cross_validate(dataset, epochs=NUM_EPOCHS, k_folds=K_FOLDS, device="cpu"):
         model = models.SimpleConvNet()
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
         loss_function = nn.CrossEntropyLoss()
+        model = model.to(device)
         for epoch in range(epochs):
             train_epoch(
                 model, optimizer, loss_function, train_loader, epoch, device=device
@@ -153,6 +154,7 @@ def train(dataset, epochs=NUM_EPOCHS, device="cpu"):
     model = models.SimpleConvNet()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     loss_function = nn.CrossEntropyLoss()
+    model = model.to(device)
     for epoch in range(epochs):
         train_epoch(model, optimizer, loss_function, train_loader, epoch, device)
     return model

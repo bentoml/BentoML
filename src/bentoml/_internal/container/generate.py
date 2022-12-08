@@ -58,24 +58,27 @@ def get_templates_variables(
     """
     Returns a dictionary of variables to be used in BentoML base templates.
     """
-    spec = DistroSpec.from_options(docker, conda)
     conda_python_version = conda.get_python_version(bento_fs)
     if conda_python_version is None:
         conda_python_version = docker.python_version
 
-    python_version = docker.python_version
-    if docker.distro in ("ubi8"):
-        # ubi8 base images uses "py38" instead of "py3.8" in its image tag
-        python_version = python_version.replace(".", "")
-    base_image = spec.image.format(spec_version=python_version)
-    if docker.cuda_version is not None:
-        base_image = spec.image.format(spec_version=docker.cuda_version)
     if docker.base_image is not None:
         base_image = docker.base_image
         logger.info(
             "BentoML will not install Python to custom base images; ensure the base image '%s' has Python installed.",
             base_image,
         )
+    else:
+        spec = DistroSpec.from_options(docker, conda)
+        python_version = docker.python_version
+        assert docker.distro is not None and python_version is not None
+        if docker.distro in ("ubi8"):
+            # ubi8 base images uses "py38" instead of "py3.8" in its image tag
+            python_version = python_version.replace(".", "")
+        base_image = spec.image.format(spec_version=python_version)
+        if docker.cuda_version is not None:
+            base_image = spec.image.format(spec_version=docker.cuda_version)
+
     # bento__env
     default_env = {
         "uid_gid": BENTO_UID_GID,
@@ -113,7 +116,7 @@ def generate_containerfile(
 
     .. note::
 
-        You should use ``construct_dockerfile`` instead of this function.
+        You should use ``construct_containerfile`` instead of this function.
 
     Returns:
         str: The rendered Dockerfile string.

@@ -205,9 +205,6 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
     async def from_http_request(self, request: Request) -> FileLike[bytes]:
         raise NotImplementedError
 
-    def to_spec(self) -> dict[str, t.Any]:
-        raise NotImplementedError
-
 
 class BytesIOFile(File, descriptor_id=None):
     def to_spec(self) -> dict[str, t.Any]:

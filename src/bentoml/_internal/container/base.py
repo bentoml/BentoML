@@ -49,6 +49,7 @@ class Arguments(ListStr):
 
     @construct_args.register(type(None))
     @construct_args.register(tuple)
+    @construct_args.register(list)
     def _(self, args: ArgType, opt: str = ""):
         if args is not None:
             self.extend(

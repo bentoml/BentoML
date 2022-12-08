@@ -114,6 +114,16 @@ def validate_container_tag(
         raise BentoMLException(f"Invalid tag type. Got {type(tag)}")
 
 
+# NOTE: shim for bentoctl
+def validate_docker_tag(
+    ctx: Context, param: Parameter, tag: str | tuple[str] | None
+) -> str | tuple[str] | None:
+    logger.warning(
+        "'validate_docker_tag' is now deprecated, use 'validate_container_tag' instead."
+    )
+    return validate_container_tag(ctx, param, tag)
+
+
 class BentoMLCommandGroup(click.Group):
     """
     Click command class customized for BentoML CLI, allow specifying a default

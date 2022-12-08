@@ -18,6 +18,43 @@ option py_generic_services = true;
 service BentoService {
   // Call handles methodcaller of given API entrypoint.
   rpc Call(Request) returns (Response) {}
+  // ServiceMetadata returns metadata of bentoml.Service.
+  rpc ServiceMetadata(ServiceMetadataRequest) returns (ServiceMetadataResponse) {}
+}
+
+// ServiceMetadataRequest message doesn't take any arguments.
+message ServiceMetadataRequest {}
+
+// ServiceMetadataResponse returns metadata of bentoml.Service.
+// Currently it includes name, version, apis, and docs.
+message ServiceMetadataResponse {
+  // DescriptorMetadata is a metadata of any given IODescriptor.
+  message DescriptorMetadata {
+    // descriptor_id describes the given ID of the descriptor, which matches with our OpenAPI definition.
+    optional string descriptor_id = 1;
+
+    // attributes is the kwargs of the given descriptor.
+    google.protobuf.Struct attributes = 2;
+  }
+  // InferenceAPI is bentoml._internal.service.inferece_api.InferenceAPI
+  // that is exposed to gRPC client.
+  // There is no way for reflection to get information of given @svc.api.
+  message InferenceAPI {
+    // name is the name of the API.
+    string name = 1;
+    // input is the input descriptor of the API.
+    DescriptorMetadata input = 2;
+    // output is the output descriptor of the API.
+    DescriptorMetadata output = 3;
+    // docs is the optional documentation of the API.
+    optional string docs = 4;
+  }
+  // name is the service name.
+  string name = 1;
+  // apis holds a list of InferenceAPI of the service.
+  repeated InferenceAPI apis = 2;
+  // docs is the documentation of the service.
+  string docs = 3;
 }
 
 // Request message for incoming Call.

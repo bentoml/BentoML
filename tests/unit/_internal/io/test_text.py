@@ -6,15 +6,14 @@ import pytest
 
 from bentoml.io import Text
 from bentoml.exceptions import BentoMLException
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml._internal.utils import LazyLoader
 
 if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
     from bentoml.grpc.v1 import service_pb2 as pb
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-    from bentoml._internal.utils import LazyLoader
-
     pb, _ = import_generated_stubs()
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
 

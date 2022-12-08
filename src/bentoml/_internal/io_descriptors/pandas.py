@@ -20,6 +20,7 @@ from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import UnprocessableEntity
 from ...exceptions import MissingDependencyException
+from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
@@ -32,18 +33,18 @@ if TYPE_CHECKING:
     import pandas as pd
     import pyarrow
     import pyspark.sql.types
-    from typing_extensions import Self
+    from google.protobuf import message as _message
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
-    pb, _ = import_generated_stubs()
+    pb, _ = import_generated_stubs("v1")
+    pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
     pd = LazyLoader("pd", globals(), "pandas", exc_msg=EXC_MSG)
     np = LazyLoader("np", globals(), "numpy")
 
@@ -463,7 +464,7 @@ class PandasDataFrame(
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in PandasDataFrame spec: {spec}")
         res = PandasDataFrame(**spec["args"])
@@ -589,7 +590,6 @@ class PandasDataFrame(
     def validate_dataframe(
         self, dataframe: ext.PdDataFrame, exception_cls: t.Type[Exception] = BadInput
     ) -> ext.PdDataFrame:
-
         if not LazyType["ext.PdDataFrame"]("pandas.core.frame.DataFrame").isinstance(
             dataframe
         ):
@@ -651,7 +651,6 @@ class PandasDataFrame(
             # dtype of given fields per Series to match with types of a given
             # columns, hence, this would result in a wrong DataFrame that is not
             # expected by our users.
-            assert isinstance(field, pb.DataFrame)
             # columns orient: { column_name : {index : columns.series._value}}
             if self._orient != "columns":
                 raise BadInput(
@@ -677,7 +676,21 @@ class PandasDataFrame(
             )
         return self.validate_dataframe(dataframe)
 
-    async def to_proto(self, obj: ext.PdDataFrame) -> pb.DataFrame:
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: ext.PdDataFrame, *, version: t.Literal["v1"]
+    ) -> pb.DataFrame:
+        ...
+
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: ext.PdDataFrame, *, version: t.Literal["v1alpha1"]
+    ) -> pb_v1alpha1.DataFrame:
+        ...
+
+    async def _to_proto_impl(
+        self, obj: ext.PdDataFrame, *, version: str
+    ) -> _message.Message:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -689,6 +702,8 @@ class PandasDataFrame(
                 Protobuf representation of given ``pandas.DataFrame``
         """
         from .numpy import npdtype_to_fieldpb_map
+
+        pb, _ = import_generated_stubs(version)
 
         # TODO: support different serialization format
         obj = self.validate_dataframe(obj)
@@ -753,6 +768,12 @@ class PandasDataFrame(
             raise NotImplementedError(
                 "Only dict dtypes are currently supported for dataframes"
             )
+
+    async def to_proto(self, obj: ext.PdDataFrame) -> pb.DataFrame:
+        return await self._to_proto_impl(obj, version="v1")
+
+    async def to_proto_v1alpha1(self, obj: ext.PdDataFrame) -> pb_v1alpha1.DataFrame:
+        return await self._to_proto_impl(obj, version="v1alpha1")
 
 
 class PandasSeries(
@@ -945,7 +966,7 @@ class PandasSeries(
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in PandasSeries spec: {spec}")
         res = PandasSeries(**spec["args"])
@@ -1078,7 +1099,6 @@ class PandasSeries(
                 'Currently not yet implemented. Use "series" instead.'
             )
         else:
-            assert isinstance(field, pb.Series)
             # The behaviour of `from_proto` will mimic the behaviour of `NumpyNdArray.from_proto`,
             # where we will respect self._dtype if set.
             # since self._dtype uses numpy dtype, we will use some of numpy logics here.
@@ -1110,7 +1130,21 @@ class PandasSeries(
 
         return self.validate_series(series)
 
-    async def to_proto(self, obj: ext.PdSeries) -> pb.Series:
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: ext.PdSeries, *, version: t.Literal["v1"]
+    ) -> pb.Series:
+        ...
+
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: ext.PdSeries, *, version: t.Literal["v1alpha1"]
+    ) -> pb_v1alpha1.Series:
+        ...
+
+    async def _to_proto_impl(
+        self, obj: ext.PdSeries, *, version: str
+    ) -> _message.Message:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -1122,6 +1156,8 @@ class PandasSeries(
                 Protobuf representation of given ``pandas.Series``
         """
         from .numpy import npdtype_to_fieldpb_map
+
+        pb, _ = import_generated_stubs(version)
 
         try:
             obj = self.validate_series(obj, exception_cls=InvalidArgument)
@@ -1179,3 +1215,9 @@ class PandasSeries(
             )
 
         return StructType([StructField("out", out_spark_type)])
+
+    async def to_proto(self, obj: ext.PdSeries) -> pb.Series:
+        return await self._to_proto_impl(obj, version="v1")
+
+    async def to_proto_v1alpha1(self, obj: ext.PdSeries) -> pb_v1alpha1.Series:
+        return await self._to_proto_impl(obj, version="v1alpha1")

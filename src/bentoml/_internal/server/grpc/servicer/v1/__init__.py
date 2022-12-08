@@ -7,6 +7,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import anyio
+
 from .....utils import LazyLoader
 from ......exceptions import InvalidArgument
 from ......exceptions import BentoMLException
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
 
     import grpc
     from google.protobuf import struct_pb2
+
     from ......grpc.v1 import service_pb2 as pb
     from ......grpc.v1 import service_pb2_grpc as services
     from ......grpc.types import BentoServicerContext

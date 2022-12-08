@@ -4,11 +4,11 @@ User facing python APIs for managing local bentos and build new bentos.
 
 from __future__ import annotations
 
+import sys
 import typing as t
 import logging
-from typing import TYPE_CHECKING
 import subprocess
-import sys
+from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
@@ -18,9 +18,9 @@ from .exceptions import BentoMLException
 from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.utils import resolve_user_filepath
+from ._internal.server.server import Server
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.server.server import Server
 
 if TYPE_CHECKING:
     from ._internal.bento import BentoStore
@@ -423,6 +423,7 @@ def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:
         logger.error("Failed to containerize %s: %s", bento_tag, e)
         return False
 
+
 @inject
 def serve(
     bento: str,
@@ -453,7 +454,8 @@ def serve(
     if server_type.lower() not in ["http", "grpc"]:
         raise ValueError('Server type must either be "http" or "grpc"')
 
-    args = ["-m",
+    args = [
+        "-m",
         "bentoml",
         "serve",
         bento,

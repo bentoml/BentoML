@@ -4,11 +4,11 @@ User facing python APIs for managing local bentos and build new bentos.
 
 from __future__ import annotations
 
-import shutil
 import typing as t
 import logging
 from typing import TYPE_CHECKING
 import subprocess
+import sys
 
 from simple_di import inject
 from simple_di import Provide
@@ -453,8 +453,8 @@ def serve(
     if server_type.lower() not in ["http", "grpc"]:
         raise ValueError('Server type must either be "http" or "grpc"')
 
-    args = [
-        str(shutil.which("bentoml")),
+    args = ["-m",
+        "bentoml",
         "serve",
         bento,
         "--port",
@@ -495,6 +495,6 @@ def serve(
         if max_concurrent_streams is not None:
             args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
 
-    process = subprocess.Popen(args)
+    process = subprocess.Popen(args, executable=sys.executable)
 
     return Server(process, host, port)

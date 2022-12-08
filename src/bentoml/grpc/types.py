@@ -12,12 +12,6 @@ if TYPE_CHECKING:
 
     import grpc
     from grpc import aio
-    from grpc.aio._typing import SerializingFunction
-    from grpc.aio._typing import DeserializingFunction
-    from grpc.aio._base_channel import UnaryUnaryMultiCallable
-    from grpc.aio._base_channel import StreamUnaryMultiCallable
-    from grpc.aio._base_channel import UnaryStreamMultiCallable
-    from grpc.aio._base_channel import StreamStreamMultiCallable
 
     from bentoml.grpc.v1.service_pb2 import Request
     from bentoml.grpc.v1.service_pb2 import Response
@@ -99,13 +93,6 @@ if TYPE_CHECKING:
     Interceptors = list[
         t.Callable[[], aio.ServerInterceptor] | partial[aio.ServerInterceptor]
     ]
-
-    MultiCallable = (
-        UnaryUnaryMultiCallable
-        | UnaryStreamMultiCallable
-        | StreamUnaryMultiCallable
-        | StreamStreamMultiCallable
-    )
 
     __all__ = [
         "Request",

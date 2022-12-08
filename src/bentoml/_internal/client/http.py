@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import typing as t
 import logging
-from typing import TYPE_CHECKING
 from http.client import HTTPConnection
 
 import aiohttp
@@ -11,21 +10,17 @@ import starlette.requests
 import starlette.datastructures
 
 from . import Client
-from .. import io
-from .. import Service
-from ..exceptions import BentoMLException
-from .._internal.configuration import get_debug_mode
-from .._internal.service.inference_api import InferenceAPI
-
-if TYPE_CHECKING:
-    from urllib.parse import ParseResult
+from .. import io_descriptors as io
+from ..service import Service
+from ...exceptions import BentoMLException
+from ..configuration import get_debug_mode
+from ..service.inference_api import InferenceAPI
 
 
 class HTTPClient(Client):
-    @staticmethod
-    def _create_client(parsed: ParseResult, **kwargs: t.Any) -> HTTPClient:
+    @classmethod
+    def from_url(cls, server_url: str, **kwargs: t.Any) -> HTTPClient:
         # TODO: HTTP SSL support
-        server_url = parsed.netloc
         conn = HTTPConnection(server_url)
         conn.set_debuglevel(logging.DEBUG if get_debug_mode() else 0)
         conn.request("GET", "/docs.json")
@@ -64,7 +59,7 @@ class HTTPClient(Client):
                         route=route.lstrip("/"),
                     )
 
-        return HTTPClient(dummy_service, parsed.geturl())
+        return cls(dummy_service, server_url)
 
     async def _call(
         self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any

@@ -105,7 +105,6 @@ include = [
   # include bentoml packages
   "bentoml",
   "bentoml.grpc*",
-  "bentoml.client*",
   "bentoml.testing*",
   "bentoml._internal*",
   # include bentoml_cli packages

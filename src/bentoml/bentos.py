@@ -8,7 +8,7 @@ import shutil
 import typing as t
 import logging
 from typing import TYPE_CHECKING
-from subprocess import Popen
+import subprocess
 
 from simple_di import inject
 from simple_di import Provide
@@ -22,8 +22,6 @@ from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from subprocess import Popen
-
     from bentoml.client import Client
 
     from ._internal.bento import BentoStore
@@ -498,13 +496,13 @@ def serve(
         if max_concurrent_streams is not None:
             args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
 
-    process = Popen(args)
+    process = subprocess.Popen(args)
 
     return Server(process, host, port)
 
 
 class Server:
-    def __init__(self, process: Popen[bytes], host: str, port: int) -> None:
+    def __init__(self, process: subprocess.Popen[bytes], host: str, port: int) -> None:
         self._process = process
         self._host = host
         self._port = port
@@ -519,7 +517,7 @@ class Server:
         self.process.kill()
 
     @property
-    def process(self) -> Popen[bytes]:
+    def process(self) -> subprocess.Popen[bytes]:
         return self._process
 
     @property

@@ -100,7 +100,7 @@ CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
         "custom": {
             "image": "A custom base image was provided",
         },
-    }
+    },
 }
 
 CONTAINER_SUPPORTED_DISTROS = list(CONTAINER_METADATA.keys())

@@ -31,11 +31,10 @@ from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 from ..container.frontend.dockerfile import DistroSpec
 from ..container.frontend.dockerfile import get_supported_spec
 from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
+from ..container.frontend.dockerfile import CUSTOM_BASE_IMAGE_DISTRO
 from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
 from ..container.frontend.dockerfile import SUPPORTED_PYTHON_VERSIONS
 from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
-from ..container.frontend.dockerfile import CUSTOM_BASE_IMAGE_DISTRO
-
 
 if TYPE_CHECKING:
     from attr import Attribute

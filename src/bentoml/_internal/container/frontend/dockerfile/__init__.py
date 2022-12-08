@@ -40,6 +40,8 @@ SUPPORTED_ARCHITECTURES = ["amd64", "arm64", "ppc64le", "s390x"]
 # Supported release types
 SUPPORTED_RELEASE_TYPES = ["python", "miniconda", "cuda"]
 
+CUSTOM_BASE_IMAGE_DISTRO = "custom_base_image"
+
 # BentoML supported distros mapping spec with
 # keys represents distros, and value is a tuple of list for supported python
 # versions and list of supported CUDA versions.
@@ -92,6 +94,13 @@ CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
             "supported_architectures": ["amd64"],
         },
     },
+    CUSTOM_BASE_IMAGE_DISTRO: {
+        "supported_python_versions": SUPPORTED_PYTHON_VERSIONS,
+        "supported_cuda_versions": SUPPORTED_CUDA_VERSIONS,
+        "custom": {
+            "image": "A custom base image was provided",
+        },
+    }
 }
 
 CONTAINER_SUPPORTED_DISTROS = list(CONTAINER_METADATA.keys())
@@ -143,7 +152,9 @@ class DistroSpec:
                 f"{docker.distro} is not supported. Supported distros are: {', '.join(CONTAINER_METADATA.keys())}."
             )
 
-        if docker.cuda_version is not None:
+        if docker.distro == CUSTOM_BASE_IMAGE_DISTRO:
+            release_type = "custom"
+        elif docker.cuda_version is not None:
             release_type = "cuda"
         elif not conda.is_empty():
             release_type = "miniconda"

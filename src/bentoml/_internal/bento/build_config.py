@@ -34,6 +34,8 @@ from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
 from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
 from ..container.frontend.dockerfile import SUPPORTED_PYTHON_VERSIONS
 from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
+from ..container.frontend.dockerfile import CUSTOM_BASE_IMAGE_DISTRO
+
 
 if TYPE_CHECKING:
     from attr import Attribute
@@ -149,13 +151,13 @@ class DockerOptions:
     # always omit config values in case of default values got changed in future BentoML releases
     __omit_if_default__ = False
 
-    distro: str = attr.field(
+    distro: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(CONTAINER_SUPPORTED_DISTROS)
         ),
     )
-    python_version: str = attr.field(
+    python_version: t.Optional[str] = attr.field(
         converter=_convert_python_version,
         default=None,
         validator=attr.validators.optional(
@@ -222,6 +224,8 @@ class DockerOptions:
             if self.python_version is None:
                 python_version = f"{version_info.major}.{version_info.minor}"
                 defaults["python_version"] = python_version
+        else:
+            defaults["distro"] = CUSTOM_BASE_IMAGE_DISTRO
 
         return attr.evolve(self, **defaults)
 

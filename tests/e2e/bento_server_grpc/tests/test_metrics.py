@@ -16,7 +16,7 @@ else:
 
 @pytest.mark.asyncio
 async def test_metrics_available(host: str):
-    client = Client.from_url(host, grpc=True)
+    client = Client.from_url(host)
     resp = await client.async_predict_multi_images(
         original=np.random.randint(255, size=(10, 10, 3)).astype("uint8"),
         compared=np.random.randint(255, size=(10, 10, 3)).astype("uint8"),

@@ -152,6 +152,8 @@ def get_runnable(bento_model: Model):
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
+    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
+
     class PicklableRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = False
@@ -160,21 +162,27 @@ def get_runnable(bento_model: Model):
             super().__init__()
             self.model = load_model(bento_model)
 
-    def _get_run(method_name: str):
+    def _get_run(method_name: str, partial_kwargs: t.Dict[str, t.Any] | None = None):
+        if partial_kwargs is None:
+            partial_kwargs = {}
+
         def _run(
             self: PicklableRunnable,
             *args: ext.NpNDArray | ext.PdDataFrame,
             **kwargs: ext.NpNDArray | ext.PdDataFrame,
         ) -> ext.NpNDArray:
             assert isinstance(method_name, str), repr(method_name)
-            return getattr(self.model, method_name)(*args, **kwargs)
+            return getattr(self.model, method_name)(
+                *args, **dict(partial_kwargs, **kwargs)
+            )
 
         return _run
 
     for method_name, options in bento_model.info.signatures.items():
         assert isinstance(method_name, str), repr(method_name)
+        method_partial_kwargs = partial_kwargs.get(method_name)
         PicklableRunnable.add_method(
-            _get_run(method_name),
+            _get_run(method_name, method_partial_kwargs),
             name=method_name,
             batchable=options.batchable,
             batch_dim=options.batch_dim,

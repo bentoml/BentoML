@@ -28,9 +28,13 @@ class PickleModel:
     def echo_multi_ndarray(self, *input_arr: NDArray[t.Any]) -> tuple[NDArray[t.Any]]:
         return input_arr
 
-    def predict_ndarray(self, arr: NDArray[t.Any]) -> NDArray[t.Any]:
+    def predict_ndarray(
+        self,
+        arr: NDArray[t.Any],
+        coefficient: int = 1,
+    ) -> NDArray[t.Any]:
         assert isinstance(arr, np.ndarray)
-        return arr * 2
+        return arr * coefficient
 
     def predict_multi_ndarray(
         self, arr1: NDArray[t.Any], arr2: NDArray[t.Any]

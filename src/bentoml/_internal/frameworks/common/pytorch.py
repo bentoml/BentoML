@@ -78,7 +78,13 @@ class PytorchModelRunnable(bentoml.Runnable):
         self.model.train(False)
 
 
-def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tensor]:
+def make_pytorch_runnable_method(
+    method_name: str,
+    partial_kwargs: dict[str, t.Any] | None = None,
+) -> t.Callable[..., torch.Tensor]:
+    if partial_kwargs is None:
+        partial_kwargs = {}
+
     def _run(
         self: PytorchModelRunnable,
         *args: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
@@ -98,7 +104,10 @@ def make_pytorch_runnable_method(method_name: str) -> t.Callable[..., torch.Tens
 
         with inference_mode_ctx():
             params = params.map(_mapping)
-            return getattr(self.model, method_name)(*params.args, **params.kwargs)
+            return getattr(self.model, method_name)(
+                *params.args,
+                **dict(partial_kwargs, **params.kwargs),
+            )
 
     return _run
 

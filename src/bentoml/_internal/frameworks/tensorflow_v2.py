@@ -56,8 +56,6 @@ logger = logging.getLogger(__name__)
 class TensorflowOptions(ModelOptions):
     """Options for the Keras model."""
 
-    partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
-
 
 def get(tag_like: str | Tag) -> bentoml.Model:
     model = bentoml.models.get(tag_like)

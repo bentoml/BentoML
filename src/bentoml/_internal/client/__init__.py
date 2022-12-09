@@ -57,6 +57,16 @@ class Client(ABC):
             inp, _bentoml_api=self._svc.apis[bentoml_api_name], **kwargs
         )
 
+    @abstractmethod
+    def wait_until_server_ready(
+        self,
+        *,
+        server_url: str | None = None,
+        timeout: int = 30,
+        **kwargs: t.Any,
+    ) -> None:
+        raise NotImplementedError
+
     @t.overload
     @classmethod
     @abstractmethod

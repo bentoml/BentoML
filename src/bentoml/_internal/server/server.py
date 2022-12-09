@@ -24,12 +24,11 @@ class ServerHandle:
         return self.get_client()
 
     def get_client(self):
-        from bentoml.client import Client
+        from ..client import Client
 
-        Client.wait_until_server_is_ready(
-            host=self.host, port=self.port, timeout=self.timeout
-        )
-        return Client.from_url(f"http://localhost:{self.port}")
+        client = Client.from_url(f"http://{self.host}:{self.port}")
+        client.wait_until_server_ready(timeout=10)
+        return client
 
     def stop(self) -> None:
         self.process.terminate()
@@ -43,7 +42,7 @@ class ServerHandle:
 
     def __exit__(
         self,
-        exc_type: type[BaseException],
+        exc_type: type[BaseException] | None,
         exc_value: BaseException,
         traceback_type: TracebackType,
     ):

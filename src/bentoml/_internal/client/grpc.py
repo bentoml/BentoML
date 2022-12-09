@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import time
 import typing as t
+import asyncio
 import logging
 import functools
 from typing import TYPE_CHECKING
@@ -28,7 +30,9 @@ if TYPE_CHECKING:
 
     import grpc
     from grpc import aio
+    from grpc_health.v1 import health_pb2 as pb_health
     from google.protobuf import json_format as _json_format
+    from google.protobuf.internal import python_message
 
     from ..types import PathType
     from ...grpc.v1.service_pb2 import Response
@@ -41,6 +45,7 @@ if TYPE_CHECKING:
 
 else:
     grpc, aio = import_grpc()
+    pb_health = LazyLoader("pb_health", globals(), "grpc_health.v1.health_pb2")
     _json_format = LazyLoader(
         "_json_format",
         globals(),
@@ -80,6 +85,7 @@ class GrpcClient(Client):
                     for k, v in ssl_client_credentials.items()
                 }
             )
+        self._call_rpc = f"/bentoml.grpc.{protocol_version}.BentoService/Call"
         super().__init__(svc, server_url)
 
     @property
@@ -100,14 +106,40 @@ class GrpcClient(Client):
                 interceptors=self._interceptors,
             )
 
+    def wait_until_server_ready(
+        self,
+        *,
+        server_url: str | None = None,
+        timeout: int = 30,
+        check_interval: float = 1,
+        **kwargs: t.Any,
+    ) -> None:
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                res = asyncio.run(
+                    self._health(service_name=self._call_rpc, timeout=timeout)
+                )
+                if res.status == pb_health.HealthCheckResponse.SERVING:
+                    break
+                else:
+                    asyncio.run(asyncio.sleep(check_interval))
+            except aio.AioRpcError as err:
+                logger.debug("[%s] Retrying to connect to the host %s", err, server_url)
+                asyncio.run(asyncio.sleep(check_interval))
+        raise TimeoutError(
+            f"Timed out waiting {timeout} seconds for server at '{server_url}' to be ready."
+        )
+
     @cached_property
-    def _rpc_metadata(self):
+    def _rpc_metadata(self) -> dict[str, dict[str, t.Any]]:
         # Currently all RPCs in BentoService are unary-unary
+        # NOTE: we will set the types of the stubs to be Any.
         return {
             method: {"input_type": input_type, "output_type": output_type}
             for method, input_type, output_type in (
                 (
-                    f"/bentoml.grpc.{self._protocol_version}.BentoService/Call",
+                    self._call_rpc,
                     self._pb.Request,
                     self._pb.Response,
                 ),
@@ -116,8 +148,20 @@ class GrpcClient(Client):
                     self._pb.ServiceMetadataRequest,
                     self._pb.ServiceMetadataResponse,
                 ),
+                (
+                    "/grpc.health.v1.Health/Check",
+                    pb_health.HealthCheckRequest,
+                    pb_health.HealthCheckResponse,
+                ),
             )
         }
+
+    async def _health(self, service_name: str, *, timeout: int = 30) -> t.Any:
+        return await self._invoke(
+            method_name="/grpc.health.v1.Health/Check",
+            service=service_name,
+            _grpc_channel_timeout=timeout,
+        )
 
     async def _invoke(self, method_name: str, **attrs: t.Any):
         # channel kwargs include timeout, metadata, credentials, wait_for_ready and compression

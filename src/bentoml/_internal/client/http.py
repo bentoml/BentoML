@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import json
+import time
+import socket
 import typing as t
 import logging
+import urllib.error
+import urllib.request
 from http.client import HTTPConnection
 from urllib.parse import urlparse
 
@@ -21,6 +25,35 @@ logger = logging.getLogger(__name__)
 
 
 class HTTPClient(Client):
+    def wait_until_server_ready(
+        self,
+        *,
+        server_url: str | None = None,
+        timeout: int = 30,
+        check_interval: int = 1,
+        # set kwargs here to omit gRPC kwargs
+        **kwargs: t.Any,
+    ) -> None:
+        start_time = time.time()
+        if server_url is None:
+            server_url = self.server_url
+
+        proxy_handler = urllib.request.ProxyHandler({})
+        opener = urllib.request.build_opener(proxy_handler)
+        logger.debug("Waiting for host %s to be ready.", server_url)
+        while time.time() - start_time < timeout:
+            try:
+                if opener.open(f"http://{server_url}/readyz", timeout=1).status == 200:
+                    break
+                else:
+                    time.sleep(check_interval)
+            except (ConnectionError, urllib.error.URLError, socket.timeout) as err:
+                logger.debug("[%s] Retrying to connect to the host %s", err, server_url)
+                time.sleep(check_interval)
+        raise TimeoutError(
+            f"Timed out waiting {timeout} seconds for server at '{server_url}' to be ready."
+        )
+
     @classmethod
     def from_url(cls, server_url: str, **kwargs: t.Any) -> HTTPClient:
         server_url = server_url if "://" in server_url else "http://" + server_url

@@ -191,6 +191,7 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
+    from transformers.pipelines import TASK_ALIASES
     from transformers.pipelines import SUPPORTED_TASKS
 
     if TYPE_CHECKING:
@@ -199,7 +200,7 @@ def load_model(
         options = bento_model.info.options
 
     task: str = bento_model.info.options.task  # type: ignore
-    if task not in SUPPORTED_TASKS:
+    if task not in SUPPORTED_TASKS and task not in TASK_ALIASES:
         try:
             import cloudpickle  # type: ignore
         except ImportError:  # pragma: no cover

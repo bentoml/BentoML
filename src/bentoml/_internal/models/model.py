@@ -512,7 +512,6 @@ class ModelInfo:
     version: str
     module: str
     labels: t.Dict[str, str] = attr.field(validator=label_validator)
-    _options: t.Dict[str, t.Any]
     metadata: MetadataDict = attr.field(validator=metadata_validator, converter=dict)
     context: ModelContext = attr.field()
     signatures: t.Dict[str, ModelSignature] = attr.field(
@@ -520,9 +519,9 @@ class ModelInfo:
     )
     api_version: str
     creation_time: datetime
+    options: ModelOptions = attr.field(factory=ModelOptions)
 
-    _cached_module: t.Optional[ModuleType] = None
-    _cached_options: t.Optional[ModelOptions] = None
+    _cached_module: t.Optional[ModuleType] = attr.field(init=False, default=None)
 
     def __init__(
         self,
@@ -536,9 +535,8 @@ class ModelInfo:
         api_version: str,
         creation_time: datetime | None = None,
     ):
-        if isinstance(options, ModelOptions):
-            object.__setattr__(self, "_cached_options", options)
-            options = options.to_dict()
+        if not isinstance(options, ModelOptions):
+            options = ModelOptions(**options)
 
         if creation_time is None:
             creation_time = datetime.now(timezone.utc)
@@ -603,21 +601,6 @@ class ModelInfo:
         assert self._cached_module is not None
         return self._cached_module
 
-    @property
-    def options(self) -> ModelOptions:
-        if self._cached_options is None:
-            if hasattr(self.imported_module, "ModelOptions"):
-                object.__setattr__(
-                    self,
-                    "_cached_options",
-                    self.imported_module.ModelOptions(**self._options),
-                )
-            else:
-                object.__setattr__(self, "_cached_options", ModelOptions())
-
-        assert self._cached_options is not None
-        return self._cached_options
-
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
 
@@ -676,7 +659,6 @@ bentoml_cattr.register_structure_hook_func(
         bentoml_cattr,
         name=override(omit=True),
         version=override(omit=True),
-        _options=override(rename="options"),
     ),
 )
 bentoml_cattr.register_unstructure_hook_func(
@@ -686,9 +668,7 @@ bentoml_cattr.register_unstructure_hook_func(
         ModelInfo,
         bentoml_cattr,
         tag=override(omit=True),
-        _options=override(rename="options"),
         _cached_module=override(omit=True),
-        _cached_options=override(omit=True),
     ),
 )
 

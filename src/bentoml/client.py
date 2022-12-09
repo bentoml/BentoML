@@ -65,6 +65,23 @@ class Client(ABC):
         raise NotImplementedError
 
     @staticmethod
+    def wait_until_server_is_ready(host: str, port: int, timeout: int) -> None:
+        import time
+
+        time_end = time.time() + timeout
+        status = None
+        while status != 200:
+            try:
+                conn = HTTPConnection(host, port)
+                conn.request("GET", "/readyz")
+                status = conn.getresponse().status
+            except ConnectionRefusedError:
+                print("Connection refused. Trying again...")
+            if time.time() > time_end:
+                raise TimeoutError("The server took too long to get ready")
+            time.sleep(1)
+
+    @staticmethod
     def from_url(server_url: str) -> Client:
         server_url = server_url if "://" in server_url else "http://" + server_url
         url_parts = urlparse(server_url)

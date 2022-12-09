@@ -63,13 +63,16 @@ CUSTOM_OBJECTS_FILENAME = "custom_objects.pkl"
 
 @attr.define
 class ModelOptions:
-    partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
-
     def with_options(self, **kwargs: t.Any) -> ModelOptions:
         return attr.evolve(self, **kwargs)
 
     def to_dict(self: ModelOptions) -> dict[str, t.Any]:
         return attr.asdict(self)
+
+
+@attr.define
+class PartialKwargsModelOptions(ModelOptions):
+    partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
 @attr.define(repr=False, eq=False, init=False)

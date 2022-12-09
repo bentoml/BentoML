@@ -8,18 +8,16 @@ import contextlib
 from types import ModuleType
 from typing import TYPE_CHECKING
 
-import attr
-
 import bentoml
 from bentoml import Tag
 from bentoml import Runnable
 from bentoml.models import ModelContext
-from bentoml.models import ModelOptions
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..models.model import ModelSignature
+from ..models.model import PartialKwargsModelOptions
 from .utils.tensorflow import get_tf_version
 from .utils.tensorflow import get_input_signatures_v2
 from .utils.tensorflow import get_output_signatures_v2
@@ -50,11 +48,6 @@ MODULE_NAME = "bentoml.tensorflow"
 API_VERSION = "v1"
 
 logger = logging.getLogger(__name__)
-
-
-@attr.define
-class TensorflowOptions(ModelOptions):
-    """Options for the Keras model."""
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -220,7 +213,7 @@ def save_model(
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
-        options=TensorflowOptions(),
+        options=PartialKwargsModelOptions(),
         context=context,
         labels=labels,
         custom_objects=custom_objects,

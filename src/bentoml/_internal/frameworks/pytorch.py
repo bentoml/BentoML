@@ -16,7 +16,7 @@ from ..models import Model
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ..models.model import ModelContext
-from ..models.model import PartialKwargsModelOptions
+from ..models.model import PartialKwargsModelOptions as ModelOptions
 from .common.pytorch import torch
 from .common.pytorch import PyTorchTensorContainer
 
@@ -176,7 +176,7 @@ def save_model(
         signatures=signatures,
         custom_objects=custom_objects,
         external_modules=external_modules,
-        options=PartialKwargsModelOptions(),
+        options=ModelOptions(),
         context=context,
         metadata=metadata,
     ) as bento_model:

@@ -17,7 +17,7 @@ from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..models.model import ModelSignature
-from ..models.model import PartialKwargsModelOptions
+from ..models.model import PartialKwargsModelOptions as ModelOptions
 from .utils.tensorflow import get_tf_version
 from .utils.tensorflow import get_input_signatures_v2
 from .utils.tensorflow import get_output_signatures_v2
@@ -213,7 +213,7 @@ def save_model(
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
-        options=PartialKwargsModelOptions(),
+        options=ModelOptions(),
         context=context,
         labels=labels,
         custom_objects=custom_objects,

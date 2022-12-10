@@ -16,7 +16,7 @@ from bentoml.exceptions import NotFound
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE
 from ..models.model import ModelSignature
-from ..models.model import PartialKwargsModelOptions
+from ..models.model import PartialKwargsModelOptions as ModelOptions
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
@@ -140,7 +140,7 @@ def save_model(
         metadata=metadata,
         context=context,
         signatures=signatures,
-        options=PartialKwargsModelOptions(),
+        options=ModelOptions(),
     ) as bento_model:
 
         with open(bento_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"), "wb") as f:

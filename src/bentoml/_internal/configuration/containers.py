@@ -102,18 +102,17 @@ class BentoMLConfiguration:
             # as there is no way for us to infer what values user can pass in.
             # however, if users pass in a version inside this value, we will that to migrate up
             # if possible
-            if "version" in override_config_map:
-                override_version = override_config_map["version"]
-                logger.debug(
-                    "Found defined 'version=%d' in BENTOML_CONFIG_OPTIONS."
-                    % override_version
-                )
-                migration = getattr(
-                    import_configuration_spec(override_version), "migration", None
-                )
-                # Running migration layer if it exists
-                if migration is not None:
-                    override_config_map = migration(override_config=override_config_map)
+            override_version = override_config_map.get("version", use_version)
+            logger.debug(
+                "Found defined 'version=%d' in BENTOML_CONFIG_OPTIONS."
+                % override_version
+            )
+            migration = getattr(
+                import_configuration_spec(override_version), "migration", None
+            )
+            # Running migration layer if it exists
+            if migration is not None:
+                override_config_map = migration(override_config=override_config_map)
             # Previous behaviour, before configuration versioning.
             try:
                 override = unflatten(override_config_map)

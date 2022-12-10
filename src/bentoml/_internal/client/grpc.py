@@ -249,11 +249,11 @@ class GrpcClient(Client):
         if parse(protocol_version) < parse("v1"):
             exception_message = [
                 f"Using protocol version {protocol_version} older than v1. 'bentoml.client.Client' will only support protocol version v1 onwards. To create client with protocol version '{protocol_version}', do the following:\n"
-                """\
+                f"""\
 
 from bentoml.grpc.utils import import_generated_stubs, import_grpc
 
-pb, services = import_generated_stubs("v1alpha1")
+pb, services = import_generated_stubs("{protocol_version}")
 
 grpc, _ = import_grpc()
 

@@ -12,6 +12,7 @@ from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ..models.model import Model
 from ..models.model import ModelContext
+from ..models.model import PartialKwargsModelOptions as ModelOptions
 from .common.pytorch import torch
 
 if TYPE_CHECKING:
@@ -147,7 +148,7 @@ def save_model(
         signatures=signatures,
         custom_objects=custom_objects,
         external_modules=external_modules,
-        options=None,
+        options=ModelOptions(),
         context=context,
         metadata=metadata,
     ) as bento_model:

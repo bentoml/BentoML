@@ -61,6 +61,29 @@ ARG GENERATED_PB3_DIR
 
 COPY --from=run-grpcio-tools-3 /result/${GENERATED_PB3_DIR} /
 
+FROM protobuf-3 as generate-tests-proto-3
+
+RUN mkdir -p /result/tests/proto/_generated_pb3
+
+RUN --mount=type=bind,target=.,rw <<EOT
+set -ex
+mkdir -p tests/proto/_generated_pb3
+
+python -m grpc_tools.protoc \
+    -I. --grpc_python_out=tests/proto/_generated_pb3 --python_out=tests/proto/_generated_pb3 \
+    --mypy_out=tests/proto/_generated_pb3 --mypy_grpc_out=tests/proto/_generated_pb3 \
+    tests/proto/service_test.proto
+
+mv tests/proto/_generated_pb3/tests/proto/* /result/tests/proto/_generated_pb3
+
+touch /result/tests/proto/_generated_pb3/__init__.py
+
+EOT
+
+FROM scratch as generate-tests-proto-3-output
+
+COPY --from=generate-tests-proto-3 /result/* /
+
 FROM protobuf-4 as run-grpcio-tools-4
 
 ARG PROTOCOL_VERSION
@@ -88,4 +111,27 @@ FROM scratch as protobuf-4-output
 ARG GENERATED_PB4_DIR
 
 COPY --from=run-grpcio-tools-4 /result/${GENERATED_PB4_DIR} /
+
+FROM protobuf-4 as generate-tests-proto-4
+
+RUN mkdir -p /result/tests/proto/_generated_pb4
+
+RUN --mount=type=bind,target=.,rw <<EOT
+set -ex
+mkdir -p tests/proto/_generated_pb4
+
+python -m grpc_tools.protoc \
+    -I. --grpc_python_out=tests/proto/_generated_pb4 --python_out=tests/proto/_generated_pb4 \
+    --mypy_out=tests/proto/_generated_pb4 --mypy_grpc_out=tests/proto/_generated_pb4 \
+    tests/proto/service_test.proto
+
+mv tests/proto/_generated_pb4/tests/proto/* /result/tests/proto/_generated_pb4
+
+touch /result/tests/proto/_generated_pb4/__init__.py
+
+EOT
+
+FROM scratch as generate-tests-proto-4-output
+
+COPY --from=generate-tests-proto-4 /result/* /
 

@@ -43,7 +43,7 @@ dependencies = [
   "opentelemetry-sdk==1.14.0",
   "opentelemetry-exporter-otlp-proto-http==1.14.0",
   "opentelemetry-instrumentation==0.35b0",
-  "opentelemetry-instrumentation-aiohttp-client==0.35b0",
+  "opentelemetry-instrumentation-aiohttp-client==0.36b0",
   "opentelemetry-instrumentation-asgi==0.35b0",
   "opentelemetry-semantic-conventions==0.35b0",
   "opentelemetry-util-http==0.35b0",

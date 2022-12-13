@@ -16,6 +16,7 @@ from ..models import Model
 from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ..models.model import ModelContext
+from ..models.model import PartialKwargsModelOptions as ModelOptions
 from .common.pytorch import torch
 from .common.pytorch import PyTorchTensorContainer
 
@@ -175,7 +176,7 @@ def save_model(
         signatures=signatures,
         custom_objects=custom_objects,
         external_modules=external_modules,
-        options=None,
+        options=ModelOptions(),
         context=context,
         metadata=metadata,
     ) as bento_model:
@@ -194,9 +195,12 @@ def get_runnable(bento_model: Model):
     from .common.pytorch import PytorchModelRunnable
     from .common.pytorch import make_pytorch_runnable_method
 
+    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
+
     for method_name, options in bento_model.info.signatures.items():
+        method_partial_kwargs = partial_kwargs.get(method_name)
         PytorchModelRunnable.add_method(
-            make_pytorch_runnable_method(method_name),
+            make_pytorch_runnable_method(method_name, method_partial_kwargs),
             name=method_name,
             batchable=options.batchable,
             batch_dim=options.batch_dim,

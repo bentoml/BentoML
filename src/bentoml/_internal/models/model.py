@@ -70,6 +70,11 @@ class ModelOptions:
         return attr.asdict(self)
 
 
+@attr.define
+class PartialKwargsModelOptions(ModelOptions):
+    partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
+
+
 @attr.define(repr=False, eq=False, init=False)
 class Model(StoreItem):
     _tag: Tag

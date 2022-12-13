@@ -12,12 +12,12 @@ import bentoml
 from bentoml import Tag
 from bentoml import Runnable
 from bentoml.models import ModelContext
-from bentoml.models import ModelOptions
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..models.model import ModelSignature
+from ..models.model import PartialKwargsModelOptions
 from ..runner.utils import Params
 from .utils.tensorflow import get_tf_version
 
@@ -43,11 +43,10 @@ API_VERSION = "v1"
 
 
 @attr.define
-class KerasOptions(ModelOptions):
+class KerasOptions(PartialKwargsModelOptions):
     """Options for the Keras model."""
 
     include_optimizer: bool = False
-    partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:

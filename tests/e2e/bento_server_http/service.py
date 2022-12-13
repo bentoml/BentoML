@@ -29,7 +29,11 @@ if TYPE_CHECKING:
     from bentoml._internal.types import JSONSerializable
 
 
-py_model = bentoml.picklable_model.get("py_model.case-1.http.e2e").to_runner()
+py_model = (
+    bentoml.picklable_model.get("py_model.case-1.http.e2e")
+    .with_options(partial_kwargs={"predict_ndarray": dict(coefficient=2)})
+    .to_runner()
+)
 
 
 svc = bentoml.Service(name="general_http_service.case-1.e2e", runners=[py_model])

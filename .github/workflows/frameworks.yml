@@ -229,7 +229,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7.10
+          python-version: 3.8
 
       - name: Get pip cache dir
         id: cache-dir

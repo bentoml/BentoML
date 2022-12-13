@@ -7,22 +7,22 @@ from typing import TYPE_CHECKING
 from functools import lru_cache
 from dataclasses import dataclass
 
-from bentoml.exceptions import InvalidArgument
-from bentoml.grpc.utils._import_hook import import_grpc
-from bentoml.grpc.utils._import_hook import import_generated_stubs
-from bentoml.grpc.utils._import_hook import LATEST_PROTOCOL_VERSION
+from ...exceptions import InvalidArgument
+from ._import_hook import import_grpc
+from ._import_hook import import_generated_stubs
+from ._import_hook import LATEST_PROTOCOL_VERSION
 
 if TYPE_CHECKING:
     from enum import Enum
 
     import grpc
 
-    from bentoml.grpc.v1 import service_pb2 as pb
-    from bentoml.exceptions import BentoMLException
-    from bentoml.grpc.types import ProtoField
-    from bentoml.grpc.types import RpcMethodHandler
-    from bentoml.grpc.types import BentoServicerContext
-    from bentoml._internal.io_descriptors import IODescriptor
+    from ..v1 import service_pb2 as pb
+    from ..types import ProtoField
+    from ..types import RpcMethodHandler
+    from ..types import BentoServicerContext
+    from ...exceptions import BentoMLException
+    from ..._internal.io_descriptors import IODescriptor
 
 else:
 

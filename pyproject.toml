@@ -317,7 +317,7 @@ exclude = [
   'src/**/*_pb2.py*',
   "src/**/*_pb2_grpc.py*",
   "grpc-client/thirdparty",
-  "test/proto",
+  "tests/proto",
   "bazel-*",
 ]
 analysis.useLibraryCodeForTypes = true

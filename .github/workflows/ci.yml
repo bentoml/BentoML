@@ -148,7 +148,7 @@ jobs:
 
       - name: Install libenchant
         run: |
-          sudo apt-get update && sudo apt-get install -y libenchant-dev
+          sudo apt-get update && sudo apt-get install -y libenchant-2-dev
 
       - name: Run spellcheck script
         run: make spellcheck-docs

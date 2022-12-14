@@ -14,6 +14,8 @@ from bentoml.exceptions import InternalServerError
 from .utils import REF_PREFIX
 from .utils import exception_schema
 from .utils import exception_components_schema
+from ...types import LazyType
+from ...utils import bentoml_cattr
 from .specification import Tag
 from .specification import Info
 from .specification import Contact
@@ -26,6 +28,8 @@ from .specification import Components
 from .specification import OpenAPISpecification
 
 if TYPE_CHECKING:
+    import fastapi
+
     from .. import Service
     from ..inference_api import InferenceAPI
 
@@ -97,6 +101,25 @@ def generate_service_components(svc: Service) -> Components:
 
 def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
     """Generate a OpenAPI specification for a service."""
+    mounted_app_paths = {}
+
+    for app, _, _ in svc.mount_apps:
+        if LazyType["fastapi.FastAPI"]("fastapi.FastAPI").isinstance(app):
+            from fastapi.openapi.utils import get_openapi
+
+            openapi = get_openapi(
+                title=app.title,
+                version=app.version,
+                routes=app.routes,
+            )
+
+            mounted_app_paths.update(
+                {
+                    k: bentoml_cattr.structure(v, PathItem)
+                    for k, v in openapi["paths"].items()
+                }
+            )
+
     return OpenAPISpecification(
         openapi=openapi_version,
         tags=[APP_TAG, INFRA_TAG],
@@ -147,5 +170,6 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
                 )
                 for api in svc.apis.values()
             },
+            **mounted_app_paths,
         },
     )

@@ -45,7 +45,7 @@ else:
 
 
 def partial_class(
-    cls: t.Type[PytorchModelRunnable], *args: t.Any, **kwargs: t.Any
+    cls: type[PytorchModelRunnable], *args: t.Any, **kwargs: t.Any
 ) -> type[PytorchModelRunnable]:
     class NewClass(cls):
         def __init__(self, *inner_args: t.Any, **inner_kwargs: t.Any) -> None:

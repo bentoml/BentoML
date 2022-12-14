@@ -197,7 +197,7 @@ def get_runnable(bento_model: Model):
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 
-    runnable_class: t.Type[PytorchModelRunnable] = partial_class(
+    runnable_class: type[PytorchModelRunnable] = partial_class(
         PytorchModelRunnable,
         bento_model=bento_model,
         loader=load_model,

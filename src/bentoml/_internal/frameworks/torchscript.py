@@ -166,10 +166,15 @@ def get_runnable(bento_model: Model):
     from .common.pytorch import make_pytorch_runnable_method
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
+    model_runnable_class = partial_class(
+        PytorchModelRunnable,
+        bento_model=bento_model,
+        loader=load_model,
+    )
 
     for method_name, options in bento_model.info.signatures.items():
         method_partial_kwargs = partial_kwargs.get(method_name)
-        PytorchModelRunnable.add_method(
+        model_runnable_class.add_method(
             make_pytorch_runnable_method(method_name, method_partial_kwargs),
             name=method_name,
             batchable=options.batchable,
@@ -177,8 +182,4 @@ def get_runnable(bento_model: Model):
             input_spec=options.input_spec,
             output_spec=options.output_spec,
         )
-    return partial_class(
-        PytorchModelRunnable,
-        bento_model=bento_model,
-        loader=load_model,
-    )
+    return model_runnable_class

@@ -389,6 +389,8 @@ def build(
     """
     from ._internal.container import determine_container_tag
 
+    _from_cli = kwargs.pop("_from_cli", False)
+
     # Run healthcheck
     if not health(backend):
         raise BentoMLException("Failed to use backend %s." % backend)
@@ -400,7 +402,7 @@ def build(
     logger.info("Building OCI-compliant image for %s with %s\n", bento.tag, backend)
     platform = kwargs.get("platform", None)
 
-    if platform is not None:
+    if platform is not None and _from_cli:
         passed_platform = ",".join(map(lambda v: v.split("=")[1], platform))
         if not psutil.LINUX and "linux/amd64" not in passed_platform:
             logger.warning(

@@ -550,6 +550,7 @@ def add_containerize_command(cli: Group) -> None:
         elif get_debug_mode():
             _memoized["progress"] = "plain"
         _memoized["_run_as_root"] = run_as_root
+        _memoized["_from_cli"] = True
 
         features: tuple[str] | None = None
         if enable_features:

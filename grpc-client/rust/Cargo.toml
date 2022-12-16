@@ -1,0 +1,21 @@
+[package]
+name = "rust-grpc-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+prost = "0.11.3"
+prost-types = "0.11.2"
+tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"] }
+tonic = "0.8.3"
+
+[build-dependencies]
+tonic-build = "0.8.4"
+
+[[bin]]
+name = "client-v1"
+path = "src/v1/client.rs"
+
+[[bin]]
+name = "client-v1alpha1"
+path = "src/v1alpha1/client.rs"

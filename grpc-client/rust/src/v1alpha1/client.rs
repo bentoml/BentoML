@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let request = tonic::Request::new(api::Request {
         api_name: String::from("classify"),
-        content: api::request::Content::Ndarray(api::NdArray {
+        content: Some(api::request::Content::Ndarray(api::NdArray {
             float_values: vec![5.9, 3.0, 5.1, 1.8],
             string_values: vec![],
             double_values: vec![],
@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             uint64_values: vec![],
             shape: vec![1, 4],
             dtype: 1,
-        }),
+        })),
     });
     let response = client.call(request).await?.into_inner();
     println!("{:?}", response);

@@ -143,7 +143,7 @@ def construct_containerfile(
 ) -> t.Generator[tuple[str, str], None, None]:
     from ..bento.bento import BentoInfo
 
-    dockerfile_path = os.path.join("env", "docker", "Dockerfile")
+    dockerfile_path = "env/docker/Dockerfile"
     instruction: list[str] = []
 
     with fs.open_fs("temp://") as temp_fs, open(

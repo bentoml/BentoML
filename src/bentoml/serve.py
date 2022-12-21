@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import json
+import shlex
 import shutil
 import typing as t
 import logging
@@ -99,7 +100,7 @@ def create_watcher(
 
     return Watcher(
         name=name,
-        cmd=sys.executable,
+        cmd=shlex.quote(sys.executable),
         args=args,
         copy_env=True,
         stop_children=True,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import json
+import shlex
 import typing as t
 import logging
 import contextlib
@@ -72,7 +73,7 @@ def start_runner_server(
                 watchers.append(
                     Watcher(
                         name=f"{RUNNER}_{runner.name}",
-                        cmd=sys.executable,
+                        cmd=shlex.quote(sys.executable),
                         args=[
                             "-m",
                             SCRIPT_RUNNER,

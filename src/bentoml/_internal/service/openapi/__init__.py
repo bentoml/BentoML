@@ -107,6 +107,7 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
             version=svc.tag.version if svc.tag and svc.tag.version else "None",
             contact=Contact(name="BentoML Team", email="contact@bentoml.com"),
         ),
+        servers=[{"url": "."}],
         paths={
             # setup infra endpoints
             **make_infra_endpoints(),

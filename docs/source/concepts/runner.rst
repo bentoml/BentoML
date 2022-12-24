@@ -2,6 +2,11 @@
 Using Runners
 =============
 
+*time expected: 15 minutes*
+
+This page articulates on the concept of Runners and demonstrates its role within the
+BentoML architecture.
+
 What is Runner?
 ---------------
 
@@ -55,6 +60,10 @@ methods.
 
 Custom Runner
 -------------
+
+For more advanced use cases, BentoML also allows users to define their own Runner
+classes. This is useful when the pre-built Runners do not meet the requirements, or
+when the user wants to implement a Runner for a new ML framework.
 
 Creating a Runnable
 ^^^^^^^^^^^^^^^^^^^
@@ -300,6 +309,7 @@ Runner Configuration
 --------------------
 
 Runner behaviors and resource allocation can be specified via BentoML :ref:`configuration <guides/configuration:Configuration>`.
+
 Runners can be both configured individually or in aggregate under the ``runners`` configuration key. To configure a specific runner, specify its name
 under the ``runners`` configuration key. Otherwise, the configuration will be applied to all runners. The examples below demonstrate both
 the configuration for all runners in aggregate and for an individual runner (``iris_clf``).
@@ -313,29 +323,29 @@ To explicitly disable or control adaptive batching behaviors at runtime, configu
 .. tab-set::
 
     .. tab-item:: All Runners
-        :sync: all_runners
+       :sync: all_runners
 
-        .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+       .. code-block:: yaml
+          :caption: ⚙️ `configuration.yml`
 
-            runners:
-                batching:
-                    enabled: true
-                    max_batch_size: 100
-                    max_latency_ms: 500
-    
+          runners:
+            batching:
+              enabled: true
+              max_batch_size: 100
+              max_latency_ms: 500
+
     .. tab-item:: Individual Runner
         :sync: individual_runner
-        
-        .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
 
-            runners:
-                iris_clf:
-                    batching:
-                        enabled: true
-                        max_batch_size: 100
-                        max_latency_ms: 500
+        .. code-block:: yaml
+           :caption: ⚙️ `configuration.yml`
+
+           runners:
+             iris_clf:
+               batching:
+                 enabled: true
+                 max_batch_size: 100
+                 max_latency_ms: 500
 
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
@@ -346,27 +356,27 @@ through configuration, with a `float` value for ``cpu`` and an `int` value for `
 .. tab-set::
 
     .. tab-item:: All Runners
-        :sync: all_runners
+       :sync: all_runners
 
-        .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+       .. code-block:: yaml
+          :caption: ⚙️ `configuration.yml`
 
-            runners:
-                resources:
-                    cpu: 0.5
-                    nvidia.com/gpu: 1
-    
+          runners:
+            resources:
+              cpu: 0.5
+              nvidia.com/gpu: 1
+
     .. tab-item:: Individual Runner
         :sync: individual_runner
-        
-        .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
 
-            runners:
-                iris_clf:
-                    resources:
-                        cpu: 0.5
-                        nvidia.com/gpu: 1
+        .. code-block:: yaml
+           :caption: ⚙️ `configuration.yml`
+
+           runners:
+             iris_clf:
+               resources:
+                 cpu: 0.5
+                 nvidia.com/gpu: 1
 
 Alternatively, a runner can be mapped to a specific set of GPUs. To specify GPU mapping, instead of defining an `integer` value, a list of device IDs
 can be specified for the ``nvidia.com/gpu`` key. For example, the following configuration maps the configured runners to GPU device 2 and 4.
@@ -374,25 +384,25 @@ can be specified for the ``nvidia.com/gpu`` key. For example, the following conf
 .. tab-set::
 
     .. tab-item:: All Runners
-        :sync: all_runners
+       :sync: all_runners
 
-        .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+       .. code-block:: yaml
+          :caption: ⚙️ `configuration.yml`
 
-            runners:
-                resources:
-                    nvidia.com/gpu: [2, 4]
-    
+          runners:
+            resources:
+              nvidia.com/gpu: [2, 4]
+
     .. tab-item:: Individual Runner
-        :sync: individual_runner
-        
-        .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+       :sync: individual_runner
 
-            runners:
-                iris_clf:
-                    resources:
-                        nvidia.com/gpu: [2, 4]
+       .. code-block:: yaml
+          :caption: ⚙️ `configuration.yml`
+
+          runners:
+            iris_clf:
+              resources:
+                nvidia.com/gpu: [2, 4]
 
 Timeout
 ^^^^^^^
@@ -402,23 +412,23 @@ Runner timeout defines the amount of time in seconds to wait before calls a runn
 .. tab-set::
 
     .. tab-item:: All Runners
-        :sync: all_runners
+       :sync: all_runners
 
-        .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+       .. code-block:: yaml
+          :caption: ⚙️ `configuration.yml`
 
-            runners:
-                timeout: 60
-    
+          runners:
+            timeout: 60
+
     .. tab-item:: Individual Runner
-        :sync: individual_runner
-        
-        .. code-block:: yaml
-	    :caption: ⚙️ `configuration.yml`
+       :sync: individual_runner
 
-            runners:
-                iris_clf:
-                    timeout: 60
+       .. code-block:: yaml
+          :caption: ⚙️ `configuration.yml`
+
+          runners:
+            iris_clf:
+              timeout: 60
 
 Access Logging
 ^^^^^^^^^^^^^^

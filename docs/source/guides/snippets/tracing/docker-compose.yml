@@ -1,0 +1,34 @@
+version: "3.7"
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.38
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+      - "14268:14268"
+      - "5778:5778"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - jaeger-network
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+  iris_classifier:
+    image: iris_classifier:klncyjcfqwldtgxi
+    volumes:
+      - ./bentoml_configuration.yaml:/home/bentoml/bentoml_configuration.yaml
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    command: ["serve-grpc", "--production"]
+    environment:
+      - OTEL_EXPORTER_JAEGER_AGENT_HOST=jaeger
+      - OTEL_EXPORTER_JAEGER_AGENT_PORT=6831
+      - BENTOML_CONFIG=/home/bentoml/bentoml_configuration.yaml
+    networks:
+      - jaeger-network
+    depends_on:
+      - jaeger
+
+networks:
+  jaeger-network:

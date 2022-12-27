@@ -49,7 +49,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
         """An asyncio implementation of BentoService servicer."""
 
         async def Call(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
-            self,
+            self: services.BentoServiceServicer,
             request: pb.Request,
             context: BentoServicerContext,
         ) -> pb.Response | None:

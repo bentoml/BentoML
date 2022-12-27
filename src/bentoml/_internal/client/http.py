@@ -17,6 +17,7 @@ import starlette.datastructures
 from . import Client
 from .. import io_descriptors as io
 from ..service import Service
+from ...exceptions import RemoteException
 from ...exceptions import BentoMLException
 from ..configuration import get_debug_mode
 from ..service.inference_api import InferenceAPI
@@ -62,8 +63,12 @@ class HTTPClient(Client):
         # TODO: SSL and grpc support
         conn = HTTPConnection(url_parts.netloc)
         conn.set_debuglevel(logging.DEBUG if get_debug_mode() else 0)
-        conn.request("GET", "/docs.json")
+        conn.request("GET", url_parts.path + "/docs.json")
         resp = conn.getresponse()
+        if resp.status != 200:
+            raise RemoteException(
+                f"Failed to get OpenAPI schema from the server: {resp.status} {resp.reason}:\n{resp.read()}"
+            )
         openapi_spec = json.load(resp)
         conn.close()
 

@@ -95,7 +95,9 @@ class BentoMLConfiguration:
             override_config_map = {
                 k: yaml.safe_load(v)
                 for k, v in [
-                    split_with_quotes(line, sep="=", quote='"') for line in lines
+                    split_with_quotes(line, sep="=", quote='"')
+                    for line in lines
+                    if line.strip()
                 ]
             }
             # Note that this values will only support latest version of configuration,

@@ -223,7 +223,18 @@ class Runner:
     def _init_local(self) -> None:
         from .runner_handle.local import LocalRunnerRef
 
-        self._init(LocalRunnerRef)
+        try:
+            self._init(LocalRunnerRef)
+        except Exception as e:
+            import traceback
+
+            logger.error(
+                "An exception occurred while instantiating runner '%s', see details below:",
+                self.name,
+            )
+            logger.error(traceback.format_exc())
+
+            raise e
 
     def init_local(self, quiet: bool = False) -> None:
         """

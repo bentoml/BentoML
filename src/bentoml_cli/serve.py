@@ -16,6 +16,7 @@ def add_serve_command(cli: click.Group) -> None:
 
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml._internal.log import configure_server_logging
+    from bentoml_cli.env_manager import env_manager
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     from .utils import opt_callback

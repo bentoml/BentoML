@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import typing as t
-import logging
 from typing import TYPE_CHECKING
 
 import click
 
 if TYPE_CHECKING:
     from bentoml._internal import external_typing as ext
-
-logger = logging.getLogger("bentoml")
 
 
 class GenerateLatestMiddleware:

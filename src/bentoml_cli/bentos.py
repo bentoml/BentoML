@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 import json
 import typing as t
-import logging
 from typing import TYPE_CHECKING
 
 import yaml
@@ -18,8 +17,6 @@ if TYPE_CHECKING:
     from click import Group
     from click import Context
     from click import Parameter
-
-logger = logging.getLogger("bentoml")
 
 
 def parse_delete_targets_argument_callback(
@@ -175,7 +172,7 @@ def add_bento_management_commands(cli: Group):
 
                 if delete_confirmed:
                     bento_store.delete(bento.tag)
-                    logger.info("%s deleted.", bento)
+                    click.echo(f"{bento} deleted.")
 
         for target in delete_targets:
             delete_target(target)
@@ -208,7 +205,7 @@ def add_bento_management_commands(cli: Group):
         """
         bento = bento_store.get(bento_tag)
         out_path = bento.export(out_path)
-        logger.info("%s exported to %s.", bento, out_path)
+        click.echo(f"{bento} exported to {out_path}.")
 
     @cli.command(name="import")
     @click.argument("bento_path", type=click.STRING)
@@ -225,7 +222,7 @@ def add_bento_management_commands(cli: Group):
             bentoml import s3://mybucket/bentos/my_bento.bento
         """
         bento = import_bento(bento_path)
-        logger.info("%s imported.", bento)
+        click.echo(f"{bento} imported.")
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)

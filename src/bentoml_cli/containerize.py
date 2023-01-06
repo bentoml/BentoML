@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import re
 import sys
-import random
 import shutil
 import typing as t
 import logging
@@ -50,8 +49,6 @@ def normalize_none_type(
 
 # NOTE: This is the key we use to store the transformed options in the CLI context.
 _MEMO_KEY = "_memoized"
-_INDENTATION = " " * 4
-_indent = partial(indent, prefix=_INDENTATION)
 
 
 def compatible_option(*param_decls: str, **attrs: t.Any):
@@ -595,47 +592,27 @@ def add_containerize_command(cli: Group) -> None:
                     )
                     sys.exit(0)
                 o = subprocess.check_output([container_runtime, "load"], input=result)
-                logger.info(o.decode("utf-8").strip())
+                click.echo(o.decode("utf-8").strip())
 
             multiple_tags = len(tags) > 1
-            example_tag = random.choice(tags)
+            example_tag = tags[0]
 
-            logger.info(
-                'Successfully built Bento container for "%s" with tag(s) "%s"',
-                bento_tag,
-                ",".join(tags),
+            click.echo(
+                f'Successfully built Bento container for "{bento_tag}" with tag(s) "{",".join(tags)}"',
             )
-            instructions = [
-                "To run your newly built Bento container, use '%s' as a tag and pass it to '%s run'. For example:",
-                _indent("%s run -it --rm -p 3000:3000 %s serve --production"),
-            ]
-            if multiple_tags:
-                start = "To run your newly built Bento container, use one of the above tags (e.g: %s) and pass it to '%s run'. For example:"
-                instructions[0] = start
-            fmt = [example_tag, container_runtime, container_runtime, example_tag]
+            instructions = (
+                f"To run your newly built Bento container, run:\n"
+                + f"    {container_runtime} run -it --rm -p 3000:3000 {example_tag} serve --production\n"
+            )
+
             if features is not None and any(
                 has_grpc in features
                 for has_grpc in ("all", "grpc", "grpc-reflection", "grpc-channelz")
             ):
-                grpc_metrics_port = BentoMLContainer.grpc.metrics.port.get()
-                instructions.extend(
-                    [
-                        "%s can also be served with gRPC. To run your Bento container as a gRPC server, do the following:",
-                        _indent(
-                            "%s run -it -p 3000:3000 -p %s:%s %s serve-grpc --production"
-                        ),
-                    ]
+                instructions += (
+                    "To serve with gRPC instead, run:\n"
+                    + f"    {container_runtime} run -it -p 3000:3000 -p 3001:3001 {example_tag} serve-grpc --production\n"
                 )
-                fmt.extend(
-                    [
-                        example_tag,
-                        container_runtime,
-                        grpc_metrics_port,
-                        grpc_metrics_port,
-                        example_tag,
-                    ]
-                )
-            final_instr = "\n".join(instructions)
-            logger.info(final_instr, *fmt)
+            click.echo(instructions, nl=False)
             raise SystemExit(0)
         raise SystemExit(1)

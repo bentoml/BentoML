@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-import logging
-
 import click
-
-logger = logging.getLogger("bentoml")
 
 
 def add_login_command(cli: click.Group) -> None:
@@ -52,8 +48,6 @@ def add_login_command(cli: click.Group) -> None:
 
         add_context(ctx)
 
-        logger.info(
-            'Successfully logged in as user "%s" in organization "%s".',
-            user.name,
-            org.name,
+        click.echo(
+            f'Successfully logged in as user "{user.name}" in organization "{org.name}".'
         )

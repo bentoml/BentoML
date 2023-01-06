@@ -153,6 +153,13 @@ def construct_containerfile(
         options = BentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
         fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
+
+        # NOTE: dockefile_template is already included in the
+        # Dockerfile inside bento, and it is not relevant to
+        # construct_containerfile. Hence it is safe to set it to None here.
+        # See https://github.com/bentoml/BentoML/issues/3399.
+        object.__setattr__(options.docker, "dockerfile_template", None)
+
         dockerfile = generate_containerfile(
             docker=options.docker,
             build_ctx=tempdir,

@@ -6,6 +6,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -19,7 +20,6 @@ if TYPE_CHECKING:
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
     from ..service.openapi.specification import Schema
-    from ..service.openapi.specification import MediaType
     from ..service.openapi.specification import Reference
 
     InputType = (

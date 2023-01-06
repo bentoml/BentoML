@@ -60,7 +60,7 @@ class HTTPClient(Client):
         server_url = server_url if "://" in server_url else "http://" + server_url
         url_parts = urlparse(server_url)
 
-        # TODO: SSL and grpc support
+        # TODO: SSL support
         conn = HTTPConnection(url_parts.netloc)
         conn.set_debuglevel(logging.DEBUG if get_debug_mode() else 0)
         conn.request("GET", url_parts.path + "/docs.json")

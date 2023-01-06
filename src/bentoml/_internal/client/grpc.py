@@ -32,7 +32,6 @@ if TYPE_CHECKING:
     from grpc import aio
     from grpc_health.v1 import health_pb2 as pb_health
     from google.protobuf import json_format as _json_format
-    from google.protobuf.internal import python_message
 
     from ..types import PathType
     from ...grpc.v1.service_pb2 import Response
@@ -67,6 +66,7 @@ class GrpcClient(Client):
         ssl_client_credentials: ClientCredentials | None = None,
         *,
         protocol_version: str = LATEST_PROTOCOL_VERSION,
+        **kwargs: t.Any,
     ):
         self._pb, _ = import_generated_stubs(protocol_version)
 

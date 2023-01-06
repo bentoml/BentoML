@@ -398,16 +398,6 @@ def build(
     bento = _bento_store.get(bento_tag)
 
     logger.info("Building OCI-compliant image for %s with %s\n", bento.tag, backend)
-    platform = kwargs.get("platform", None)
-
-    if platform is not None:
-        passed_platform = ",".join(map(lambda v: v.split("=")[1], platform))
-        if not psutil.LINUX and "linux/amd64" not in passed_platform:
-            logger.warning(
-                'Current platform is set to "--opt platform=%s". To avoid issue, we recommend you to build the container with x86_64 (amd64): "bentoml containerize %s --opt platform=linux/amd64"',
-                passed_platform,
-                str(bento.tag),
-            )
     return _internal_build(bento_tag, backend, features=features, **kwargs)
 
 

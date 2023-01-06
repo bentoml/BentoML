@@ -6,6 +6,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -19,7 +20,6 @@ if TYPE_CHECKING:
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
     from ..service.openapi.specification import Schema
-    from ..service.openapi.specification import MediaType
     from ..service.openapi.specification import Reference
 
     InputType = (
@@ -37,11 +37,11 @@ IOType = t.TypeVar("IOType")
 
 
 def from_spec(spec: dict[str, t.Any]) -> IODescriptor[t.Any]:
-    if spec["id"] is None:
-        raise BentoMLException("No IO descriptor spec found.")
-
     if "id" not in spec:
         raise InvalidArgument(f"IO descriptor spec ({spec}) missing ID.")
+
+    if spec["id"] is None:
+        raise BentoMLException("No IO descriptor spec found.")
 
     return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)
 

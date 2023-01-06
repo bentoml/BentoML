@@ -16,6 +16,7 @@ import starlette.datastructures
 import bentoml
 from bentoml import Service
 
+from .exceptions import RemoteException
 from .exceptions import BentoMLException
 from ._internal.service.inference_api import InferenceAPI
 
@@ -88,8 +89,12 @@ class Client(ABC):
 
         # TODO: SSL and grpc support
         conn = HTTPConnection(url_parts.netloc)
-        conn.request("GET", "/docs.json")
+        conn.request("GET", url_parts.path + "/docs.json")
         resp = conn.getresponse()
+        if resp.status != 200:
+            raise RemoteException(
+                f"Failed to get OpenAPI schema from the server: {resp.status} {resp.reason}:\n{resp.read()}"
+            )
         openapi_spec = json.load(resp)
         conn.close()
 

@@ -87,14 +87,16 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
         # default can be a callable. We only care about the result.
         default_value = param.get_default(ctx)
 
+        # We need to run transformation here such that we don't have to deal with
+        # nested value.
+        # NOTE: if users are using both old and new options, the new option will take
+        # precedence, and the old option will be ignored.
+        value = normalize_none_type(value)
+
         # if given param.name is not in the memoized options, we need to create them.
         if param.name not in ctx.params[_MEMO_KEY]:
             # Initialize the memoized options with default value.
             ctx.params[_MEMO_KEY][param.name] = () if param.multiple else default_value
-
-            # We need to run transformation here such that we don't have to deal with
-            # nested value.
-            value = normalize_none_type(value)
             if value is not None:
                 # Only warning if given value is different from the default.
                 # Since we are going to transform default value from old options to

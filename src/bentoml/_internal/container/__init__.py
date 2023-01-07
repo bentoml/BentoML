@@ -118,6 +118,7 @@ FEATURES = frozenset(
     {
         "tracing",
         "grpc",
+        "triton",
         "grpc-reflection",
         "grpc-channelz",
         "aws",

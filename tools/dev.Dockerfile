@@ -32,6 +32,11 @@ EOT
 
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
+
+############################################
+
+# gRPC with protobuf 3 generation
+
 FROM protobuf-3 as run-grpcio-tools-3
 
 ARG PROTOCOL_VERSION
@@ -61,6 +66,41 @@ ARG GENERATED_PB3_DIR
 
 COPY --from=run-grpcio-tools-3 /result/${GENERATED_PB3_DIR} /
 
+############################################
+
+# Triton with protobuf 3 generation
+
+FROM protobuf-3 as generate-triton-stubs-3
+
+ARG GENERATED_PB3_DIR
+
+RUN mkdir -p /result/${GENERATED_PB3_DIR}
+
+RUN --mount=type=bind,target=.,rw <<EOT
+set -ex
+
+mkdir -p ${GENERATED_PB3_DIR}
+
+python -m grpc_tools.protoc \
+    -Isrc --python_out=${GENERATED_PB3_DIR} \
+    --mypy_out=${GENERATED_PB3_DIR} \
+    src/bentoml/_internal/integrations/triton/model_config.proto
+
+mv ${GENERATED_PB3_DIR}/bentoml/_internal/integrations/triton/* /result/${GENERATED_PB3_DIR}
+touch /result/${GENERATED_PB3_DIR}/__init__.py
+rm -rf /result/${GENERATED_PB3_DIR}/bentoml
+EOT
+
+FROM scratch as triton-protobuf-3-output
+
+ARG GENERATED_PB3_DIR
+
+COPY --from=generate-triton-stubs-3 /result/${GENERATED_PB3_DIR} /
+
+############################################
+
+# Test with protobuf 3 generation
+
 FROM protobuf-3 as generate-tests-proto-3
 
 RUN mkdir -p /result/tests/proto/_generated_pb3
@@ -83,6 +123,10 @@ EOT
 FROM scratch as generate-tests-proto-3-output
 
 COPY --from=generate-tests-proto-3 /result/* /
+
+############################################
+
+# gRPC with protobuf 4 generation
 
 FROM protobuf-4 as run-grpcio-tools-4
 
@@ -111,6 +155,41 @@ FROM scratch as protobuf-4-output
 ARG GENERATED_PB4_DIR
 
 COPY --from=run-grpcio-tools-4 /result/${GENERATED_PB4_DIR} /
+
+############################################
+
+# Triton with protobuf 4 generation
+
+FROM protobuf-4 as generate-triton-stubs-4
+
+ARG GENERATED_PB4_DIR
+
+RUN mkdir -p /result/${GENERATED_PB4_DIR}
+
+RUN --mount=type=bind,target=.,rw <<EOT
+set -ex
+
+mkdir -p ${GENERATED_PB4_DIR}
+
+python -m grpc_tools.protoc \
+    -Isrc --python_out=${GENERATED_PB4_DIR} \
+    --mypy_out=${GENERATED_PB4_DIR} \
+    src/bentoml/_internal/integrations/triton/model_config.proto
+
+mv ${GENERATED_PB4_DIR}/bentoml/_internal/integrations/triton/* /result/${GENERATED_PB4_DIR}
+touch /result/${GENERATED_PB4_DIR}/__init__.py
+rm -rf /result/${GENERATED_PB4_DIR}/bentoml
+EOT
+
+FROM scratch as triton-protobuf-4-output
+
+ARG GENERATED_PB4_DIR
+
+COPY --from=generate-triton-stubs-4 /result/${GENERATED_PB4_DIR} /
+
+############################################
+
+# Test with protobuf 4 generation
 
 FROM protobuf-4 as generate-tests-proto-4
 

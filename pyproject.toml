@@ -120,6 +120,7 @@ all = [
   "bentoml[grpc-reflection]",
   "bentoml[grpc-channelz]",
   "bentoml[tracing]",
+  "bentoml[triton]",
 ]
 aws = ["fs-s3fs"]
 io = [
@@ -132,6 +133,7 @@ io-file = ["filetype"] # Currently use for from_sample
 io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["bentoml[io-file]", "Pillow"]
 io-pandas = ["pandas", "pyarrow"]
+triton = ["bentoml[grpc]", "tritonclient"]
 grpc = [
   "protobuf",
   "grpcio",
@@ -227,6 +229,8 @@ exclude = '''
     | typings
     | src/bentoml/grpc/v1alpha1
     | src/bentoml/grpc/v1
+    | src/bentoml/_internal/integrations/triton/_generated_pb3
+    | src/bentoml/_internal/integrations/triton/_generated_pb4
     | tests/proto
     | grpc-client/thirdparty
     | grpc-client/bentoml
@@ -255,6 +259,8 @@ ignore-paths = [
   "src/bentoml/_internal/external_typing",
   "src/bentoml/grpc/v1alpha1",
   "src/bentoml/grpc/v1",
+  "src/bentoml/_internal/integrations/triton/_generated_pb3",
+  "src/bentoml/_internal/integrations/triton/_generated_pb4",
 ]
 disable = ["coerce-builtin", "no-absolute-import", "C", "R"]
 enable = ["c-extension-no-member"]

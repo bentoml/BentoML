@@ -85,6 +85,18 @@ class Client(ABC):
                 raise TimeoutError("The server took too long to get ready")
             time.sleep(1)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, type, value, traceback):
+        pass
+
     @staticmethod
     def from_url(server_url: str) -> Client:
         server_url = server_url if "://" in server_url else "http://" + server_url

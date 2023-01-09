@@ -91,9 +91,7 @@ class RemoteRunnerClient(RunnerHandle):
         return self._conn
 
     @property
-    def _client(
-        self,
-    ) -> ClientSession:
+    def _client(self) -> ClientSession:
         import aiohttp
 
         if (

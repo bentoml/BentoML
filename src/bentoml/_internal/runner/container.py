@@ -409,12 +409,6 @@ def register_builtin_containers():
     DataContainerRegistry.register_container(
         LazyType("numpy", "ndarray"), LazyType("numpy", "ndarray"), NdarrayContainer
     )
-    # DataContainerRegistry.register_container(np.ndarray, np.ndarray, NdarrayContainer)
-
-    # DataContainerRegistry.register_container(
-    #     LazyType("xgboost", "DMatrix"), LazyType("xgboost", "DMatrix"), DMatrixContainer
-    # )
-
     DataContainerRegistry.register_container(
         LazyType("pandas.core.series", "Series"),
         LazyType("pandas.core.frame", "DataFrame"),

@@ -454,12 +454,23 @@ def serve(
     if server_type not in ["http", "grpc"]:
         raise ValueError('Server type must either be "http" or "grpc"')
 
+    ssl_args = {
+        "ssl_certfile": ssl_certfile,
+        "ssl_keyfile": ssl_keyfile,
+        "ssl_ca_certs": ssl_ca_certs,
+    }
     if server_type == "http":
         serve_cmd = "serve-http"
         if host is None:
             host = BentoMLContainer.http.host.get()
         if port is None:
             port = BentoMLContainer.http.port.get()
+            ssl_args.update(
+                ssl_keyfile_password=ssl_keyfile_password,
+                ssl_version=ssl_version,
+                ssl_cert_reqs=ssl_cert_reqs,
+                ssl_ciphers=ssl_ciphers,
+            )
     else:
         serve_cmd = "serve-grpc"
         if host is None:
@@ -480,15 +491,7 @@ def serve(
         str(port),
         "--backlog",
         str(backlog),
-        *construct_ssl_args(
-            ssl_certfile=ssl_certfile,
-            ssl_keyfile=ssl_keyfile,
-            ssl_keyfile_password=ssl_keyfile_password,
-            ssl_version=ssl_version,
-            ssl_cert_reqs=ssl_cert_reqs,
-            ssl_ca_certs=ssl_ca_certs,
-            ssl_ciphers=ssl_ciphers,
-        ),
+        *construct_ssl_args(**ssl_args),
     ]
     if production:
         args.append("--production")

@@ -5,7 +5,6 @@ import subprocess
 from typing import TYPE_CHECKING
 
 import attr
-import psutil
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -33,7 +32,7 @@ class ServerHandle:
         return Client.from_url(f"http://localhost:{self.port}")
 
     def stop(self) -> None:
-        psutil.Process(self.process.pid).terminate()
+        self.process.terminate()
 
     @property
     def address(self) -> str:

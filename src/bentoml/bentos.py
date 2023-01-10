@@ -454,7 +454,7 @@ def serve(
     if server_type not in ["http", "grpc"]:
         raise ValueError('Server type must either be "http" or "grpc"')
 
-    ssl_args = {
+    ssl_args: dict[str, t.Any] = {
         "ssl_certfile": ssl_certfile,
         "ssl_keyfile": ssl_keyfile,
         "ssl_ca_certs": ssl_ca_certs,
@@ -465,12 +465,13 @@ def serve(
             host = BentoMLContainer.http.host.get()
         if port is None:
             port = BentoMLContainer.http.port.get()
-            ssl_args.update(
-                ssl_keyfile_password=ssl_keyfile_password,
-                ssl_version=ssl_version,
-                ssl_cert_reqs=ssl_cert_reqs,
-                ssl_ciphers=ssl_ciphers,
-            )
+
+        ssl_args.update(
+            ssl_keyfile_password=ssl_keyfile_password,
+            ssl_version=ssl_version,
+            ssl_cert_reqs=ssl_cert_reqs,
+            ssl_ciphers=ssl_ciphers,
+        )
     else:
         serve_cmd = "serve-grpc"
         if host is None:
@@ -495,7 +496,7 @@ def serve(
     ]
     if production:
         args.append("--production")
-    elif reload:
+    if reload:
         args.append("--reload")
 
     if api_workers is not None:

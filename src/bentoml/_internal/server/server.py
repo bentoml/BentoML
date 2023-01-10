@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import logging
-import traceback
 import subprocess
 from typing import TYPE_CHECKING
 
 import attr
-
-from ..utils import cached_property
+import psutil
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -23,7 +21,6 @@ class ServerHandle:
     port: int
     timeout: int = attr.field(default=10)
 
-    @cached_property
     def client(self):
         return self.get_client()
 
@@ -36,7 +33,7 @@ class ServerHandle:
         return Client.from_url(f"http://localhost:{self.port}")
 
     def stop(self) -> None:
-        self.process.kill()
+        psutil.Process(self.process.pid).terminate()
 
     @property
     def address(self) -> str:
@@ -55,4 +52,3 @@ class ServerHandle:
             self.stop()
         except Exception as e:  # pylint: disable=broad-except
             logger.error(f"Error stopping server: {e}", exc_info=e)
-        traceback.print_exception(exc_type, exc_value, traceback_type)

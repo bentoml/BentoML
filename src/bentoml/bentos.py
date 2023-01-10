@@ -454,9 +454,6 @@ def serve(
     if server_type not in ["http", "grpc"]:
         raise ValueError('Server type must either be "http" or "grpc"')
 
-    if production and reload:
-        raise ValueError("'reload' and 'production' are mutually exclusive.")
-
     if server_type == "http":
         serve_cmd = "serve-http"
         if host is None:
@@ -472,6 +469,7 @@ def serve(
 
     assert host is not None and port is not None
     args: t.List[str] = [
+        sys.executable,
         "-m",
         "bentoml",
         serve_cmd,
@@ -508,6 +506,4 @@ def serve(
     if max_concurrent_streams is not None:
         args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
 
-    return ServerHandle(
-        process=subprocess.Popen(args, executable=sys.executable), host=host, port=port
-    )
+    return ServerHandle(process=subprocess.Popen(args), host=host, port=port)

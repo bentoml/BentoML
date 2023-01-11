@@ -42,7 +42,7 @@ class ServerHandle:
 
     def __exit__(
         self,
-        exc_type: type[BaseException] | None,
+        exc_type: type[BaseException],
         exc_value: BaseException,
         traceback_type: TracebackType,
     ):

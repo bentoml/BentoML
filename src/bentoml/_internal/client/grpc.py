@@ -111,7 +111,7 @@ class GrpcClient(Client):
         *,
         server_url: str | None = None,
         timeout: int = 30,
-        check_interval: float = 1,
+        check_interval: int = 1,
         **kwargs: t.Any,
     ) -> None:
         start_time = time.time()

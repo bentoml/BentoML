@@ -184,8 +184,9 @@ def add_serve_command(cli: click.Group) -> None:
 
         if production:
             if reload:
-                logger.warning(
-                    "'--reload' is not supported with '--production'; ignoring"
+                click.echo(
+                    "'--reload' is not supported with '--production'; ignoring",
+                    err=True,
                 )
 
             from bentoml.serve import serve_http_production
@@ -391,8 +392,9 @@ def add_serve_command(cli: click.Group) -> None:
                 working_dir = "."
         if production:
             if reload:
-                logger.warning(
-                    "'--reload' is not supported with '--production'; ignoring"
+                click.echo(
+                    "'--reload' is not supported with '--production'; ignoring",
+                    err=True,
                 )
 
             from bentoml.serve import serve_grpc_production

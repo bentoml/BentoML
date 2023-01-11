@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import os
+import sys
 import json
-import pickle
+
+if sys.version_info >= (3, 8):
+    import pickle
+else:
+    import pickle5 as pickle
+
 import typing as t
 import asyncio
 import functools
@@ -159,7 +165,9 @@ class RemoteRunnerClient(RunnerHandle):
         try:
             async with self._client.post(
                 f"{self._addr}/{path}",
-                data=pickle.dumps(payload_params),  # FIXME: pickle inside pickle
+                data=pickle.dumps(
+                    payload_params, protocol=pickle.HIGHEST_PROTOCOL
+                ),  # FIXME: pickle inside pickle
                 headers={
                     "Bento-Name": component_context.bento_name,
                     "Bento-Version": component_context.bento_version,
@@ -177,7 +185,8 @@ class RemoteRunnerClient(RunnerHandle):
                     async with self._client.post(
                         f"{self._addr}/{path}",
                         data=pickle.dumps(
-                            payload_params
+                            payload_params,
+                            protocol=pickle.HIGHEST_PROTOCOL,
                         ),  # FIXME: pickle inside pickle
                         headers={
                             "Bento-Name": component_context.bento_name,

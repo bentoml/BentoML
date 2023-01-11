@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import sys
 import json
-import pickle
+
+if sys.version_info >= (3, 8):
+    import pickle
+else:
+    import pickle5 as pickle
+
 import typing as t
 import logging
 import functools
@@ -301,7 +307,7 @@ class RunnerAppFactory(BaseAppFactory):
             if isinstance(payload, tuple):
                 # a tuple, which means user runnable has multiple outputs
                 return Response(
-                    pickle.dumps(payload),
+                    pickle.dumps(payload, protocol=pickle.HIGHEST_PROTOCOL),
                     headers={
                         PAYLOAD_META_HEADER: json.dumps({}),
                         "Content-Type": "application/vnd.bentoml.multiple_outputs",

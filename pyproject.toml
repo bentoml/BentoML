@@ -64,6 +64,7 @@ dependencies = [
   "starlette",
   "uvicorn",
   "watchfiles>=0.15.0",
+  "pickle5;python_version<'3.8'",
   "backports.cached-property;python_version<'3.8'",
   "backports.shutil_copytree;python_version<'3.8'",
   "importlib-metadata;python_version<'3.8'",

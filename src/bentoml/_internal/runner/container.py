@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import abc
-import pickle
+import sys
+
+if sys.version_info >= (3, 8):
+    import pickle
+else:
+    import pickle5 as pickle
+
 import typing as t
 import itertools
 from typing import TYPE_CHECKING
@@ -129,7 +135,7 @@ class NdarrayContainer(
             )
 
         return cls.create_payload(
-            pickle.dumps(batch),
+            pickle.dumps(batch, protocol=pickle.HIGHEST_PROTOCOL),
             batch.shape[batch_dim],
             {"plasma": False},
         )
@@ -240,7 +246,7 @@ class PandasDataFrameContainer(
             )
 
         return cls.create_payload(
-            pickle.dumps(batch),
+            pickle.dumps(batch, protocol=pickle.HIGHEST_PROTOCOL),
             batch.size,
             {"plasma": False},
         )
@@ -319,10 +325,13 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
             batch = list(t.cast(t.Generator[t.Any, t.Any, t.Any], batch))
         if isinstance(batch, list):
             return cls.create_payload(
-                pickle.dumps(batch), len(t.cast(t.List[t.Any], batch))
+                pickle.dumps(batch, protocol=pickle.HIGHEST_PROTOCOL),
+                len(t.cast(t.List[t.Any], batch)),
             )
         else:
-            return cls.create_payload(pickle.dumps(batch), 1)
+            return cls.create_payload(
+                pickle.dumps(batch, protocol=pickle.HIGHEST_PROTOCOL), 1
+            )
 
     @classmethod
     @inject

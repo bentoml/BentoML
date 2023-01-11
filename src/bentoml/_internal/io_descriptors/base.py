@@ -11,6 +11,7 @@ from ...exceptions import BentoMLException
 if TYPE_CHECKING:
     from types import UnionType
 
+    import pyarrow
     from typing_extensions import Self
     from starlette.requests import Request
     from starlette.responses import Response
@@ -155,3 +156,13 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     @abstractmethod
     async def to_proto(self, obj: IOType) -> t.Any:
         raise NotImplementedError
+
+    def from_arrow(self, batch: pyarrow.RecordBatch) -> IOType:
+        raise NotImplementedError(
+            "This IO descriptor does not currently support batch inference."
+        )
+
+    def to_arrow(self, obj: IOType) -> pyarrow.RecordBatch:
+        raise NotImplementedError(
+            "This IO descriptor does not currently support batch inference."
+        )

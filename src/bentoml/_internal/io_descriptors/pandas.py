@@ -30,6 +30,7 @@ EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install w
 if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
+    import pyarrow
     from typing_extensions import Self
 
     from bentoml.grpc.v1 import service_pb2 as pb
@@ -715,9 +716,21 @@ class PandasDataFrame(
             ],
         )
 
+    def from_arrow(self, batch: pyarrow.RecordBatch) -> ext.PdDataFrame:
+        res = batch.to_pandas()
+        if isinstance(res, pd.DataFrame):
+            return res
+        if isinstance(res, pd.Series):
+            return res.to_frame()
+
+    def to_arrow(self, df: pd.Series[t.Any]) -> pyarrow.RecordBatch:
+        import pyarrow
+
+        return pyarrow.RecordBatch.from_pandas(df)
+
 
 class PandasSeries(
-    IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
+    IODescriptor["ext.PdSeries[t.Any]"], descriptor_id="bentoml.io.PandasSeries"
 ):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
@@ -874,7 +887,7 @@ class PandasSeries(
         self._shape = sample.shape
         return sample
 
-    def input_type(self) -> LazyType[ext.PdSeries]:
+    def input_type(self) -> LazyType[ext.PdSeries[t.Any]]:
         return LazyType("pandas", "Series")
 
     def _convert_dtype(
@@ -1103,3 +1116,21 @@ class PandasSeries(
             raise InvalidArgument(
                 f"Unsupported dtype '{obj.dtype}' for response message."
             ) from None
+
+    def from_arrow(self, batch: pyarrow.RecordBatch) -> pd.Series[t.Any]:
+        res = batch.to_pandas()
+        if isinstance(res, pd.Series):
+            return res
+        if isinstance(res, pd.DataFrame):
+            if len(res.columns) == 1:
+                return res.squeeze()
+            else:
+                raise InvalidArgument(
+                    "Multi-column dataframe was passed when trying to convert to a series."
+                )
+
+    def to_arrow(self, series: pd.Series[t.Any]) -> pyarrow.RecordBatch:
+        import pyarrow
+
+        df = series.to_frame()
+        return pyarrow.RecordBatch.from_pandas(df)

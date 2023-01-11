@@ -23,6 +23,7 @@ from ..service.openapi.specification import MediaType
 
 if TYPE_CHECKING:
     import numpy as np
+    import pyarrow
     from typing_extensions import Self
 
     from bentoml.grpc.v1 import service_pb2 as pb
@@ -550,3 +551,42 @@ class NumpyNdarray(
             raise BadInput(
                 f"Unsupported dtype '{obj.dtype}' for response message.",
             ) from None
+
+    def from_arrow(self, batch: pyarrow.RecordBatch) -> ext.NpNDArray:
+        df = batch.to_pandas()
+        if not LazyType("pandas", "DataFrame").isinstance(df):
+            raise InvalidArgument("Unable to convert input into numpy ndarray.")
+        return df.to_numpy()
+
+    def to_arrow(self, arr: ext.NpNDArray) -> pyarrow.RecordBatch:
+        import pyarrow
+
+        return pyarrow.RecordBatch.from_arrays([pyarrow.array(arr)], names=["output"])
+
+    def spark_schema(self) -> pyspark.sql.types.StructType:
+        from pyspark.sql.types import ArrayType
+        from pyspark.sql.types import StructType
+        from pyspark.sql.types import StructField
+        from pyspark.pandas.typedef import as_spark_type
+
+        if self._dtype is None:
+            raise InvalidArgument(
+                "Cannot perform batch inference with a numpy output without a known dtype; please provide a dtype."
+            )
+        if self._shape is None:
+            raise InvalidArgument(
+                "Cannot perform batch inference with a numpy output without a known shape; please provide a shape."
+            )
+
+        out_spark_type = as_spark_type(self._dtype)
+        print(out_spark_type)
+
+        types = [out_spark_type for i in range(self._shape[0])]
+
+        for i in range(len(self._shape) - 1):
+            types = [ArrayType(out_spark_type, containsNull=False) for typ in types]
+
+        fields = [
+            StructField(f"out_{i}", typ, nullable=False) for i, typ in enumerate(types)
+        ]
+        return StructType(fields)

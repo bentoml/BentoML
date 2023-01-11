@@ -23,6 +23,7 @@ from ..service.openapi.specification import MediaType
 
 if TYPE_CHECKING:
     import numpy as np
+    import pyarrow
     from typing_extensions import Self
 
     from bentoml.grpc.v1 import service_pb2 as pb
@@ -550,3 +551,22 @@ class NumpyNdarray(
             raise BadInput(
                 f"Unsupported dtype '{obj.dtype}' for response message.",
             ) from None
+
+    def from_arrow(self, batch: pyarrow.RecordBatch) -> ext.NpNDArray:
+        df = batch.to_pandas()
+        if not LazyType("pandas", "DataFrame").isinstance(df):
+            raise InvalidArgument("Unable to convert input into numpy ndarray.")
+        return df.to_numpy()
+
+    def to_arrow(self, arr: ext.NpNDArray) -> pyarrow.RecordBatch:
+        import pyarrow
+
+        if len(arr.shape) == 1:
+            # batch dimension assumed to be 0
+            return pyarrow.RecordBatch.from_arrays(
+                [pyarrow.array(arr)], names=["output"]
+            )
+        return pyarrow.RecordBatch.from_arrays(
+            [pyarrow.array([col]) for col in arr],
+            names=[f"output_{num}" for num in range(arr.shape[0])],
+        )

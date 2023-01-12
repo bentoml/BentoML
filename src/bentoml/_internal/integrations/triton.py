@@ -2,44 +2,38 @@ from __future__ import annotations
 
 import os
 import typing as t
+import asyncio
 import logging
-
-import attr
+import functools
+import contextlib
 import urllib.parse
+
 import fs
+import attr
 import fs.errors
 import fs.opener
 import fs.opener.errors
 
-from ...utils import LazyLoader
-from ...runner.runnable import RunnableMethodConfig
-from ...runner.runner import Runner, RunnerMethod
-from ...runner.runner_handle import DummyRunnerHandle, RunnerHandle
+from ..utils import LazyLoader
+from ..runner.utils import Params
+from ..runner.utils import Payload
+from ..runner.runner import Runner
+from ..runner.runner import RunnerMethod
+from ..runner.runnable import RunnableMethodConfig
+from ..runner.runner_handle import RunnerHandle
 
 if t.TYPE_CHECKING:
+    import tritonclient.grpc.aio as tritongrpcclient
+    from tritonclient.grpc import service_pb2 as pb
     from fs.opener.registry import Registry
-    from google.protobuf import text_format
-
-    import tritonclient.grpc as tritongrpcclient
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
 else:
-    pb_model_config = LazyLoader(
-        "pb_model_config",
-        globals(),
-        "bentoml._internal.integrations.triton.model_config_pb2",
-    )
-    text_format = LazyLoader(
-        "text_format",
-        globals(),
-        "google.protobuf.text_format",
-        exc_msg="'protobuf' is required to use triton with BentoML. Install with 'pip install bentoml[triton]'.",
-    )
     tritongrpcclient - LazyLoader(
         "tritongrpcclient",
         globals(),
-        "tritonclient.grpc",
+        "tritonclient.grpc.aio",
         exc_msg="tritonclient is required to use triton with BentoML. Install with 'pip install bentoml[triton]'.",
     )
 
@@ -125,8 +119,6 @@ class TritonRunner(Runner):
             resource = urllib.parse.quote(resource)
             repo_fs = fs.open_fs(f"{protocol}://{resource}")
 
-        model_names = repo_fs.listdir("/")
-
         self.__attrs_init__(name=name, model_repository=model_repository)
 
         # List of models inside given model repository.
@@ -138,7 +130,7 @@ class TritonRunner(Runner):
                     self,
                     model,
                     # TODO: the following aren't relevant to TritonRunner yet.
-                    RunnableMethodConfig(batchable=False, batch_dim=(0, 0)),
+                    RunnableMethodConfig(batchable=True, batch_dim=(0, 0)),
                     max_batch_size=0,
                     max_latency_ms=1000,
                 ),
@@ -153,40 +145,69 @@ class TritonRunner(Runner):
         self._init(TritonRunnerHandle)
 
 
+# NOTE: to support files, consider using ModelInferStream via raw_bytes_contents
+
+
 @attr.define
 class TritonRunnerHandle(RunnerHandle):
     runner: TritonRunner
+    clean_context: contextlib.AsyncExitStack = attr.field(
+        factory=contextlib.AsyncExitStack
+    )
+    # cache given client
+    _client_cache: tritongrpcclient.InferenceServerClient = attr.field(
+        init=False, default=None
+    )
+    # By default, the gRPC port from 'tritonserver' is 8001
+    _address: str = attr.field(init=False, default="0.0.0.0:8001")
 
     async def is_ready(self, timeout: int) -> bool:
-        return True
+        return t.cast(bool, await self._client.is_server_live())
 
     @property
     def _client(self) -> tritongrpcclient.InferenceServerClient:
         from ...configuration import get_debug_mode
 
-        try:
-            return tritongrpcclient.InferenceServerClient(
-                url="0.0.0.0:8001", verbose=get_debug_mode()
-            )
-        except Exception as e:
-            import traceback
+        if self._client_cache is None:
+            try:
+                self._client_cache = tritongrpcclient.InferenceServerClient(
+                    url=self._address, verbose=get_debug_mode()
+                )
+            except Exception as e:
+                import traceback
 
-            logger.error(
-                "Failed to instantiate Triton Inference Server client for '%s', see details:",
-                self.runner.name,
-            )
-            logger.error(traceback.format_exc())
-            raise e
+                logger.error(
+                    "Failed to instantiate Triton Inference Server client for '%s', see details:",
+                    self.runner.name,
+                )
+                logger.error(traceback.format_exc())
+                raise e
+        return self._client_cache
 
-    def run_method(
+    def __del__(self):
+        async def _():
+            await self._client.close()
+
+        asyncio.run(_())
+
+    async def async_run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> R:
-        ...
+        from ...runner.container import AutoContainer
 
-    async def async_run_method(
+        # return metadata of a given model
+        metadata: dict[
+            str, pb.ModelMetadataResponse
+        ] = await self._client.get_model_metadata(__bentoml_method.name)
+
+        payload = Params[Payload](*args, **kwargs).map(
+            functools.partial(AutoContainer.to_triton_payload, metadata=metadata)
+        )
+
+    def run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],
         *args: P.args,

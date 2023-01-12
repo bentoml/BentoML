@@ -57,9 +57,6 @@ cd "$GIT_ROOT" || exit 1
 ./tools/generate-grpc-stubs v1alpha1
 ./tools/generate-grpc-stubs v1
 
-# generate triton stubs
-./tools/generate-triton-stubs
-
 python3 -m build -s -w
 
 # Use testpypi by default, run script with: "REPO=pypi release.sh" for

@@ -146,6 +146,7 @@ class RemoteRunnerClient(RunnerHandle):
         payload_params = Params[Payload](*args, **kwargs).map(
             functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
         )
+        print(payload_params.args, payload_params.kwargs)
 
         if __bentoml_method.config.batchable:
             if not payload_params.map(lambda i: i.batch_size).all_equal():

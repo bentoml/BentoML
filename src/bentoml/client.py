@@ -102,7 +102,7 @@ class Client(ABC):
 
         for route, spec in openapi_spec["paths"].items():
             for meth_spec in spec.values():
-                if "Service APIs" in meth_spec["tags"]:
+                if "tags" in meth_spec and "Service APIs" in meth_spec["tags"]:
                     if "x-bentoml-io-descriptor" not in meth_spec["requestBody"]:
                         # TODO: better message stating min version for from_url to work
                         raise BentoMLException(

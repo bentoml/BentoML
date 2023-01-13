@@ -15,6 +15,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from .base import OCIBuilder
+from ..utils import bentoml_cattr
 from .generate import generate_containerfile
 from ...exceptions import InvalidArgument
 from ..configuration.containers import BentoMLContainer
@@ -142,6 +143,7 @@ def construct_containerfile(
     add_header: bool = False,
 ) -> t.Generator[tuple[str, str], None, None]:
     from ..bento.bento import BentoInfo
+    from ..bento.build_config import DockerOptions
 
     dockerfile_path = "env/docker/Dockerfile"
     instruction: list[str] = []
@@ -153,8 +155,16 @@ def construct_containerfile(
         options = BentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
         fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
+
+        # NOTE: dockefile_template is already included in the
+        # Dockerfile inside bento, and it is not relevant to
+        # construct_containerfile. Hence it is safe to set it to None here.
+        # See https://github.com/bentoml/BentoML/issues/3399.
+        docker_attrs = bentoml_cattr.unstructure(options.docker)
+        docker_attrs["dockerfile_template"] = None
+
         dockerfile = generate_containerfile(
-            docker=options.docker,
+            docker=DockerOptions(**docker_attrs),
             build_ctx=tempdir,
             conda=options.conda,
             bento_fs=temp_fs,

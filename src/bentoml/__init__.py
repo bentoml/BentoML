@@ -81,6 +81,7 @@ if TYPE_CHECKING:
     from . import metrics  # Prometheus metrics client
     from . import container  # Container API
     from . import client  # Client API
+    from . import batch  # Batch API
 
     # isort: on
 else:
@@ -121,6 +122,7 @@ else:
     xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
 
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
+    batch = _LazyLoader("bentoml.batch", globals(), "bentoml.batch")
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
     metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
     container = _LazyLoader("bentoml.container", globals(), "bentoml.container")

@@ -18,7 +18,6 @@ from .base import OCIBuilder
 from ..utils import bentoml_cattr
 from .generate import generate_containerfile
 from ...exceptions import InvalidArgument
-from ..bento.build_config import DockerOptions
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -144,6 +143,7 @@ def construct_containerfile(
     add_header: bool = False,
 ) -> t.Generator[tuple[str, str], None, None]:
     from ..bento.bento import BentoInfo
+    from ..bento.build_config import DockerOptions
 
     dockerfile_path = "env/docker/Dockerfile"
     instruction: list[str] = []

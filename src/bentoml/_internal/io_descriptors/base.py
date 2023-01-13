@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from types import UnionType
 
     import pyarrow
+    import pyspark.sql.types
     from typing_extensions import Self
     from starlette.requests import Request
     from starlette.responses import Response
@@ -163,6 +164,11 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
         )
 
     def to_arrow(self, series: IOType) -> pyarrow.RecordBatch:
+        raise NotImplementedError(
+            "This IO descriptor does not currently support batch inference."
+        )
+
+    def spark_schema(self) -> pyspark.sql.types.StructType:
         raise NotImplementedError(
             "This IO descriptor does not currently support batch inference."
         )

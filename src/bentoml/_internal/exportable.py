@@ -13,7 +13,6 @@ import fs.copy
 import fs.errors
 import fs.mirror
 import fs.opener
-import fs.opener.errors
 import fs.tempfs
 import fs.opener.errors
 from fs import open_fs

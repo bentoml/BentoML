@@ -23,6 +23,7 @@ from simple_di import Provide
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
+from ..types import LazyType
 from ..types import PathType
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
@@ -43,6 +44,7 @@ if TYPE_CHECKING:
 
     from ..models import Model
     from ..service import Service
+    from ..integrations.triton import TritonRunner
     from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
@@ -199,8 +201,12 @@ class Bento(StoreItem):
             models.add(model)
         # Add all models required by service runners
         for runner in svc.runners:
-            for model in runner.models:
-                models.add(model)
+            # only add models if given runner is not a TritonRunner
+            if not LazyType["TritonRunner"](
+                "bentoml._internal.integrations.triton", "TritonRunner"
+            ).isinstance(runner):
+                for model in runner.models:
+                    models.add(model)
 
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))
@@ -364,12 +370,18 @@ class BentoStore(Store[Bento]):
 @attr.frozen
 class BentoRunnerInfo:
     name: str
-    runnable_type: str
+    runnable_type: str = attr.field(
+        default=None, converter=attr.converters.default_if_none("n/a")
+    )
     models: t.List[str] = attr.field(factory=list)
     resource_config: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
 
     @classmethod
     def from_runner(cls, r: Runner) -> BentoRunnerInfo:
+        if LazyType["TritonRunner"](
+            "bentoml._internal.integrations.triton", "TritonRunner"
+        ).isinstance(r):
+            return cls(name=r.name)
         return cls(
             name=r.name,
             runnable_type=r.runnable_class.__name__,

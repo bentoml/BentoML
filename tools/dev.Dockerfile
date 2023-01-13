@@ -152,3 +152,12 @@ FROM scratch as generate-tests-proto-4-output
 
 COPY --from=generate-tests-proto-4 /result/* /
 
+############################################
+
+# Use generated tritonserver from docker images
+
+FROM nvcr.io/nvidia/tritonserver:22.12-py3 as triton-base
+
+FROM scratch as tritonserver-output
+
+COPY --from=triton-base /opt/tritonserver /

@@ -12,16 +12,21 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 from functools import partial
 
+import attr
 import psutil
 from simple_di import inject
 from simple_di import Provide
 
 from .grpc.utils import LATEST_PROTOCOL_VERSION
+from ._internal.utils import LazyType
 from ._internal.utils import experimental
+from ._internal.service.service import Service
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from circus.watcher import Watcher
+
+    from ._internal.integrations.triton import TritonRunner
 
 
 logger = logging.getLogger(__name__)
@@ -92,6 +97,7 @@ def create_watcher(
     name: str,
     args: list[str],
     *,
+    cmd: str = sys.executable,
     use_sockets: bool = True,
     **kwargs: t.Any,
 ) -> Watcher:
@@ -99,7 +105,7 @@ def create_watcher(
 
     return Watcher(
         name=name,
-        cmd=sys.executable,
+        cmd=cmd,
         args=args,
         copy_env=True,
         stop_children=True,
@@ -160,6 +166,25 @@ def construct_ssl_args(
     return args
 
 
+def get_triton_runners_from_service(
+    svc: Service, production: bool = False
+) -> list[TritonRunner] | None:
+    runners = [
+        r
+        for r in svc.runners
+        if LazyType["TritonRunner"](
+            "bentoml._internal.integrations.triton", "TritonRunner"
+        ).isinstance(r)
+    ]
+    if len(runners) > 0:
+        if not production:
+            logger.warning(
+                "TritonRunner is found in '%s'. Make sure to have a 'tritonserver' binary available in PATH to use Triton Inference Server with BentoML. See https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/build.md for how to build Triton Inference Server from source.",
+                svc.name,
+            )
+        return runners
+
+
 @inject
 def serve_http_development(
     bento_identifier: str,
@@ -203,6 +228,13 @@ def serve_http_development(
         ssl_ca_certs=ssl_ca_certs,
         ssl_ciphers=ssl_ciphers,
     )
+
+    triton_runners = get_triton_runners_from_service(svc)
+    if triton_runners is not None:
+        logger.warning(
+            "TritonRunner is found in '%s' and will not be used during development mode.",
+            svc.name,
+        )
 
     watchers.append(
         create_watcher(
@@ -296,6 +328,7 @@ def serve_http_production(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+    **attrs: t.Any,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -319,53 +352,16 @@ def serve_http_production(
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
-            sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
-            assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
+            if not LazyType["TritonRunner"](
+                "bentoml._internal.integrations.triton", "TritonRunner"
+            ).isinstance(runner):
+                sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
+                assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
-            runner_bind_map[runner.name] = path_to_uri(sockets_path)
-            circus_socket_map[runner.name] = CircusSocket(
-                name=runner.name,
-                path=sockets_path,
-                backlog=backlog,
-            )
-
-            watchers.append(
-                create_watcher(
-                    name=f"runner_{runner.name}",
-                    args=[
-                        "-m",
-                        SCRIPT_RUNNER,
-                        bento_identifier,
-                        "--runner-name",
-                        runner.name,
-                        "--fd",
-                        f"$(circus.sockets.{runner.name})",
-                        "--working-dir",
-                        working_dir,
-                        "--worker-id",
-                        "$(CIRCUS.WID)",
-                        "--worker-env-map",
-                        json.dumps(runner.scheduled_worker_env_map),
-                        "--prometheus-dir",
-                        prometheus_dir,
-                    ],
-                    working_dir=working_dir,
-                    numprocesses=runner.scheduled_worker_count,
-                )
-            )
-
-    elif psutil.WINDOWS:
-        # Windows doesn't (fully) support AF_UNIX sockets
-        with contextlib.ExitStack() as port_stack:
-            for runner in svc.runners:
-                runner_port = port_stack.enter_context(reserve_free_port())
-                runner_host = "127.0.0.1"
-
-                runner_bind_map[runner.name] = f"tcp://{runner_host}:{runner_port}"
+                runner_bind_map[runner.name] = path_to_uri(sockets_path)
                 circus_socket_map[runner.name] = CircusSocket(
                     name=runner.name,
-                    host=runner_host,
-                    port=runner_port,
+                    path=sockets_path,
                     backlog=backlog,
                 )
 
@@ -386,16 +382,90 @@ def serve_http_production(
                             "$(CIRCUS.WID)",
                             "--worker-env-map",
                             json.dumps(runner.scheduled_worker_env_map),
+                            "--prometheus-dir",
+                            prometheus_dir,
                         ],
                         working_dir=working_dir,
                         numprocesses=runner.scheduled_worker_count,
                     )
                 )
-            port_stack.enter_context(
-                reserve_free_port()
-            )  # reserve one more to avoid conflicts
+
+    elif psutil.WINDOWS:
+        # Windows doesn't (fully) support AF_UNIX sockets
+        with contextlib.ExitStack() as port_stack:
+            for runner in svc.runners:
+                if not LazyType["TritonRunner"](
+                    "bentoml._internal.integrations.triton", "TritonRunner"
+                ).isinstance(runner):
+                    runner_port = port_stack.enter_context(reserve_free_port())
+                    runner_host = "127.0.0.1"
+
+                    runner_bind_map[runner.name] = f"tcp://{runner_host}:{runner_port}"
+                    circus_socket_map[runner.name] = CircusSocket(
+                        name=runner.name,
+                        host=runner_host,
+                        port=runner_port,
+                        backlog=backlog,
+                    )
+
+                    watchers.append(
+                        create_watcher(
+                            name=f"runner_{runner.name}",
+                            args=[
+                                "-m",
+                                SCRIPT_RUNNER,
+                                bento_identifier,
+                                "--runner-name",
+                                runner.name,
+                                "--fd",
+                                f"$(circus.sockets.{runner.name})",
+                                "--working-dir",
+                                working_dir,
+                                "--worker-id",
+                                "$(CIRCUS.WID)",
+                                "--worker-env-map",
+                                json.dumps(runner.scheduled_worker_env_map),
+                            ],
+                            working_dir=working_dir,
+                            numprocesses=runner.scheduled_worker_count,
+                        )
+                    )
+
+            # reserve one more to avoid conflicts
+            port_stack.enter_context(reserve_free_port())
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
+
+    triton_runners = get_triton_runners_from_service(svc, production=True)
+    if triton_runners is not None:
+        from ._internal.integrations.triton.config import TritonServerConfig
+
+        triton_kwargs: dict[str, t.Any] = {
+            key: attrs.pop(f"triton_{key}", None)
+            for key in [
+                i.name
+                for i in attr.fields(TritonServerConfig)
+                # model_repository is set via TritonRunner
+                if not i.name.startswith("_")
+                and i.name not in ["model_repository", "allow_grpc"]
+            ]
+        }
+        triton_kwargs["model_repository"] = [r.repository_path for r in triton_runners]
+        tritonserver_args = TritonServerConfig(**triton_kwargs).to_cli_args()
+        if not shutil.which(tritonserver_args[0]):
+            raise ValueError(
+                "'tritonserver' binary is not found in PATH. If you are running this inside a container, make sure to use the official Triton container image as a 'base_image'. See https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver."
+            )
+        watchers.append(
+            create_watcher(
+                name="tritonserver",
+                cmd=tritonserver_args[0],
+                args=tritonserver_args[1:],
+                use_sockets=False,
+                working_dir=working_dir,
+                numprocesses=1,
+            )
+        )
 
     logger.debug("Runner map: %s", runner_bind_map)
 
@@ -521,6 +591,14 @@ def serve_grpc_development(
         ssl_keyfile=ssl_keyfile,
         ssl_ca_certs=ssl_ca_certs,
     )
+
+    triton_runners = get_triton_runners_from_service(svc)
+    if triton_runners is not None:
+        logger.warning(
+            "TritonRunner is found in '%s' and will not be used during development mode.",
+            svc.name,
+        )
+
     scheme = "https" if len(ssl_args) > 0 else "http"
 
     with contextlib.ExitStack() as port_stack:
@@ -673,6 +751,7 @@ def serve_grpc_production(
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     protocol_version: str = LATEST_PROTOCOL_VERSION,
+    **attrs: t.Any,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -710,51 +789,16 @@ def serve_grpc_production(
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
-            sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
-            assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
+            if not LazyType["TritonRunner"](
+                "bentoml._internal.integrations.triton", "TritonRunner"
+            ).isinstance(runner):
+                sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
+                assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
-            runner_bind_map[runner.name] = path_to_uri(sockets_path)
-            circus_socket_map[runner.name] = CircusSocket(
-                name=runner.name,
-                path=sockets_path,
-                backlog=backlog,
-            )
-
-            watchers.append(
-                create_watcher(
-                    name=f"runner_{runner.name}",
-                    args=[
-                        "-m",
-                        SCRIPT_RUNNER,
-                        bento_identifier,
-                        "--runner-name",
-                        runner.name,
-                        "--fd",
-                        f"$(circus.sockets.{runner.name})",
-                        "--working-dir",
-                        working_dir,
-                        "--worker-id",
-                        "$(CIRCUS.WID)",
-                        "--worker-env-map",
-                        json.dumps(runner.scheduled_worker_env_map),
-                    ],
-                    working_dir=working_dir,
-                    numprocesses=runner.scheduled_worker_count,
-                )
-            )
-
-    elif psutil.WINDOWS:
-        # Windows doesn't (fully) support AF_UNIX sockets
-        with contextlib.ExitStack() as port_stack:
-            for runner in svc.runners:
-                runner_port = port_stack.enter_context(reserve_free_port())
-                runner_host = "127.0.0.1"
-
-                runner_bind_map[runner.name] = f"tcp://{runner_host}:{runner_port}"
+                runner_bind_map[runner.name] = path_to_uri(sockets_path)
                 circus_socket_map[runner.name] = CircusSocket(
                     name=runner.name,
-                    host=runner_host,
-                    port=runner_port,
+                    path=sockets_path,
                     backlog=backlog,
                 )
 
@@ -771,22 +815,95 @@ def serve_grpc_production(
                             f"$(circus.sockets.{runner.name})",
                             "--working-dir",
                             working_dir,
-                            "--no-access-log",
                             "--worker-id",
-                            "$(circus.wid)",
+                            "$(CIRCUS.WID)",
                             "--worker-env-map",
                             json.dumps(runner.scheduled_worker_env_map),
-                            "--prometheus-dir",
-                            prometheus_dir,
                         ],
                         working_dir=working_dir,
                         numprocesses=runner.scheduled_worker_count,
                     )
                 )
-            # reserve one more to avoid conflicts
-            port_stack.enter_context(reserve_free_port())
+
+    elif psutil.WINDOWS:
+        # Windows doesn't (fully) support AF_UNIX sockets
+        with contextlib.ExitStack() as port_stack:
+            for runner in svc.runners:
+                if not LazyType["TritonRunner"](
+                    "bentoml._internal.integrations.triton", "TritonRunner"
+                ).isinstance(runner):
+                    runner_port = port_stack.enter_context(reserve_free_port())
+                    runner_host = "127.0.0.1"
+
+                    runner_bind_map[runner.name] = f"tcp://{runner_host}:{runner_port}"
+                    circus_socket_map[runner.name] = CircusSocket(
+                        name=runner.name,
+                        host=runner_host,
+                        port=runner_port,
+                        backlog=backlog,
+                    )
+
+                    watchers.append(
+                        create_watcher(
+                            name=f"runner_{runner.name}",
+                            args=[
+                                "-m",
+                                SCRIPT_RUNNER,
+                                bento_identifier,
+                                "--runner-name",
+                                runner.name,
+                                "--fd",
+                                f"$(circus.sockets.{runner.name})",
+                                "--working-dir",
+                                working_dir,
+                                "--no-access-log",
+                                "--worker-id",
+                                "$(circus.wid)",
+                                "--worker-env-map",
+                                json.dumps(runner.scheduled_worker_env_map),
+                                "--prometheus-dir",
+                                prometheus_dir,
+                            ],
+                            working_dir=working_dir,
+                            numprocesses=runner.scheduled_worker_count,
+                        )
+                    )
+                # reserve one more to avoid conflicts
+                port_stack.enter_context(reserve_free_port())
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
+
+    triton_runners = get_triton_runners_from_service(svc, production=True)
+    if triton_runners is not None:
+        from ._internal.integrations.triton.config import TritonServerConfig
+
+        triton_kwargs: dict[str, t.Any] = {
+            key: attrs.pop(f"triton_{key}", None)
+            for key in [
+                i.name
+                for i in attr.fields(TritonServerConfig)
+                # model_repository is set via TritonRunner
+                if not i.name.startswith("_")
+                and i.name not in ["model_repository", "allow_grpc"]
+            ]
+        }
+        triton_kwargs["model_repository"] = [r.repository_path for r in triton_runners]
+        tritonserver_args = TritonServerConfig(**triton_kwargs).to_cli_args()
+
+        if not shutil.which(tritonserver_args[0]):
+            raise ValueError(
+                "'tritonserver' binary is not found in PATH. If you are running this inside a container, make sure to use the official Triton container image as a 'base_image'. See https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver."
+            )
+        watchers.append(
+            create_watcher(
+                name="tritonserver",
+                cmd=tritonserver_args[0],
+                args=tritonserver_args[1:],
+                use_sockets=False,
+                working_dir=working_dir,
+                numprocesses=1,
+            )
+        )
 
     logger.debug("Runner map: %s", runner_bind_map)
     ssl_args = construct_ssl_args(

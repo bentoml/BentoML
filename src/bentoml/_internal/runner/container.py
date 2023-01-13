@@ -8,36 +8,24 @@ import itertools
 from simple_di import inject
 from simple_di import Provide
 
-from ..utils import LazyLoader
 from ..types import LazyType
+from ..utils import LazyLoader
 from ..configuration.containers import BentoMLContainer
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
 
-_TRITON_EXCEPTION_MESSAGE = "tritonclient is required to use triton with BentoML. Install with 'pip install bentoml[triton]'."
-
 if t.TYPE_CHECKING:
-    from .. import external_typing as ext
-    from tritonclient.grpc import service_pb2 as pb
-
     import tritonclient.grpc as tritongrpcclient
-    import rapidjson as json
-    from google.protobuf import json_format
+
+    from .. import external_typing as ext
 else:
     tritongrpcclient = LazyLoader(
         "tritongrpcclient",
         globals(),
         "tritonclient.grpc",
-        exc_msg=_TRITON_EXCEPTION_MESSAGE,
+        exc_msg="tritonclient is required to use triton with BentoML. Install with 'pip install bentoml[triton]'.",
     )
-    json_format = LazyLoader(
-        "json_format",
-        globals(),
-        "google.protobuf.json_format",
-        exc_msg=_TRITON_EXCEPTION_MESSAGE,
-    )
-    json = LazyLoader("json", globals(), "rapidjson", exc_msg=_TRITON_EXCEPTION_MESSAGE)
 
 
 class Payload(t.NamedTuple):
@@ -68,6 +56,18 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ...
 
     @classmethod
+    def to_triton_payload(cls, inp: SingleType) -> ext.NpNDArray:
+        """
+        Convert given input types to a Triton payload.
+
+        Implementation of this method should always return a Payload that has
+        data of a Numpy array.
+        """
+        raise NotImplementedError(
+            f"{cls.__name__} doesn't support converting to Triton payload."
+        )
+
+    @classmethod
     @abc.abstractmethod
     def batches_to_batch(
         cls, batches: t.Sequence[BatchType], batch_dim: int
@@ -96,20 +96,6 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         batch_dim: int,
     ) -> tuple[BatchType, list[int]]:
         ...
-
-    @classmethod
-    def to_triton_payload(
-        cls, inp: SingleType, metadata: dict[str, pb.ModelMetadataResponse]
-    ) -> t.Any:
-        raise NotImplementedError(
-            f"{cls.__name__} doesn't support converting to Triton payload."
-        )
-
-    @classmethod
-    def from_triton_payload(cls, payload: Payload) -> SingleType:
-        raise NotImplementedError(
-            f"{cls.__name__} doesn't support converting from Triton payload."
-        )
 
 
 class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
@@ -144,14 +130,8 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         return np.split(batch, indices[1:-1], axis=batch_dim)  # type: ignore  (no numpy types)
 
     @classmethod
-    def to_triton_payload(
-        cls, inp: ext.NpNDArray, metadata: dict[str, pb.ModelMetadataResponse]
-    ) -> t.Any:
-        raise NotImplementedError
-
-    @classmethod
-    def from_triton_payload(cls, payload: Payload) -> ext.NpNDArray:
-        raise NotImplementedError
+    def to_triton_payload(cls, inp: ext.NpNDArray) -> ext.NpNDArray:
+        return inp
 
     @classmethod
     @inject
@@ -301,16 +281,8 @@ class PandasDataFrameContainer(
         return pickle.loads(payload.data)
 
     @classmethod
-    def to_triton_payload(
-        cls,
-        inp: ext.PdDataFrame | ext.PdSeries,
-        metadata: dict[str, pb.ModelMetadataResponse],
-    ) -> t.Any:
-        raise NotImplementedError
-
-    @classmethod
-    def from_triton_payload(cls, payload: Payload) -> ext.PdDataFrame:
-        raise NotImplementedError
+    def to_triton_payload(cls, inp: ext.PdDataFrame | ext.PdSeries) -> ext.NpNDArray:
+        return t.cast("ext.NpNDArray", inp.to_numpy())
 
     @classmethod
     @inject
@@ -380,6 +352,10 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     @inject
     def from_payload(cls, payload: Payload) -> t.Any:
         return pickle.loads(payload.data)
+
+    @classmethod
+    def to_triton_payload(cls, inp: t.Any) -> ext.NpNDArray:
+        raise NotImplementedError
 
     @classmethod
     @inject
@@ -491,20 +467,11 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         return container_cls.from_payload(payload)
 
     @classmethod
-    def to_triton_payload(
-        cls, inp: t.Any, metadata: dict[str, pb.ModelMetadataResponse]
-    ) -> t.Any:
+    def to_triton_payload(cls, inp: t.Any) -> ext.NpNDArray:
         container_cls: type[
             DataContainer[t.Any, t.Any]
         ] = DataContainerRegistry.find_by_single_type(type(inp))
-        return container_cls.to_triton_payload(inp, metadata)
-
-    @classmethod
-    def from_triton_payload(cls, payload: Payload) -> t.Any:
-        container_cls: type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_name(payload.container)
-        return container_cls.from_triton_payload(payload)
+        return container_cls.to_triton_payload(inp)
 
     @classmethod
     def batches_to_batch(

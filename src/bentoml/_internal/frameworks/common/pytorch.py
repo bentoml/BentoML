@@ -177,6 +177,11 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         return torch.from_numpy(ret).requires_grad_(False)
 
     @classmethod
+    def to_triton_payload(cls, inp: torch.Tensor) -> ext.NpNDArray:
+        # TODO: support from_dlpack and to_dlpack as triton tensor to torch tensor is zero-copy
+        return inp.cpu().numpy()
+
+    @classmethod
     @inject
     def batch_to_payloads(  # pylint: disable=arguments-differ
         cls,

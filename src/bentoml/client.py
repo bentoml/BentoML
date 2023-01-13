@@ -20,6 +20,9 @@ from .exceptions import RemoteException
 from .exceptions import BentoMLException
 from ._internal.service.inference_api import InferenceAPI
 
+if t.TYPE_CHECKING:
+    from types import TracebackType
+
 
 class Client(ABC):
     server_url: str
@@ -84,6 +87,28 @@ class Client(ABC):
             if time.time() > time_end:
                 raise TimeoutError("The server took too long to get ready")
             time.sleep(1)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        pass
 
     @staticmethod
     def from_url(server_url: str) -> Client:

@@ -158,7 +158,7 @@ def construct_containerfile(
         # Dockerfile inside bento, and it is not relevant to
         # construct_containerfile. Hence it is safe to set it to None here.
         # See https://github.com/bentoml/BentoML/issues/3399.
-        object.__setattr__(options.docker, "dockerfile_template", None)
+        options.docker.dockerfile_template = None
 
         dockerfile = generate_containerfile(
             docker=options.docker,

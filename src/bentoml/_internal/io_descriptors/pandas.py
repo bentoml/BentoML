@@ -756,7 +756,7 @@ class PandasDataFrame(
 
 
 class PandasSeries(
-    IODescriptor["ext.PdSeries[t.Any]"], descriptor_id="bentoml.io.PandasSeries"
+    IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
 ):
     """
     :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
@@ -913,7 +913,7 @@ class PandasSeries(
         self._shape = sample.shape
         return sample
 
-    def input_type(self) -> LazyType[ext.PdSeries[t.Any]]:
+    def input_type(self) -> LazyType[ext.PdSeries]:
         return LazyType("pandas", "Series")
 
     def _convert_dtype(

@@ -15,8 +15,10 @@ from simple_di import inject
 from simple_di import Provide
 
 from .base import OCIBuilder
+from ..utils import bentoml_cattr
 from .generate import generate_containerfile
 from ...exceptions import InvalidArgument
+from ..bento.build_config import DockerOptions
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -158,10 +160,11 @@ def construct_containerfile(
         # Dockerfile inside bento, and it is not relevant to
         # construct_containerfile. Hence it is safe to set it to None here.
         # See https://github.com/bentoml/BentoML/issues/3399.
-        options.docker.dockerfile_template = None
+        docker_attrs = bentoml_cattr.unstructure(options.docker)
+        docker_attrs["dockerfile_template"] = None
 
         dockerfile = generate_containerfile(
-            docker=options.docker,
+            docker=DockerOptions(**docker_attrs),
             build_ctx=tempdir,
             conda=options.conda,
             bento_fs=temp_fs,

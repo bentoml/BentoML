@@ -140,7 +140,7 @@ def _convert_env(
     )
 
 
-@attr.define
+@attr.frozen
 class DockerOptions:
 
     # For validating user defined bentofile.yaml.
@@ -310,7 +310,7 @@ else:
     ListStr = list
 
 
-@attr.define
+@attr.frozen
 class CondaOptions:
 
     # User shouldn't add new fields under yaml file.
@@ -436,7 +436,7 @@ class CondaOptions:
         )
 
 
-@attr.define
+@attr.frozen
 class PythonOptions:
 
     # User shouldn't add new fields under yaml file.

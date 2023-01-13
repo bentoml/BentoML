@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
     import pyarrow
+    import pyspark.sql.types
     from typing_extensions import Self
 
     from bentoml.grpc.v1 import service_pb2 as pb
@@ -728,6 +729,31 @@ class PandasDataFrame(
 
         return pyarrow.RecordBatch.from_pandas(df)
 
+    def spark_schema(self) -> pyspark.sql.types.StructType:
+        from pyspark.sql.types import StructType
+        from pyspark.sql.types import StructField
+        from pyspark.pandas.typedef import as_spark_type
+
+        if self._dtype is None or self._dtype:
+            raise InvalidArgument(
+                "Cannot perform batch inference with a numpy output without a known dtype; please provide a dtype."
+            )
+
+        if isinstance(self._dtype, dict):
+            fields = []
+            for col_name, col_type in self._dtype:
+                try:
+                    fields.append(StructField(col_name, as_spark_type(col_type)))
+                except TypeError:
+                    raise InvalidArgument(
+                        f"dtype {col_type} is not supported for batch inference."
+                    )
+            return StructType(fields)
+        else:
+            raise NotImplementedError(
+                "Only dict dtypes are currently supported for dataframes"
+            )
+
 
 class PandasSeries(
     IODescriptor["ext.PdSeries[t.Any]"], descriptor_id="bentoml.io.PandasSeries"
@@ -1134,3 +1160,22 @@ class PandasSeries(
 
         df = series.to_frame()
         return pyarrow.RecordBatch.from_pandas(df)
+
+    def spark_schema(self) -> pyspark.sql.types.StructType:
+        from pyspark.sql.types import StructType
+        from pyspark.sql.types import StructField
+        from pyspark.pandas.typedef import as_spark_type
+
+        if self._dtype is None or self._dtype is True:
+            raise InvalidArgument(
+                "Cannot perform batch inference with a pandas series output without a known dtype; please provide a dtype."
+            )
+
+        try:
+            out_spark_type = as_spark_type(self._dtype)
+        except TypeError:
+            raise InvalidArgument(
+                f"dtype {self._dtype} is not supported for batch inference."
+            )
+
+        return StructType([StructField("out", out_spark_type)])

@@ -24,6 +24,7 @@ from ..service.openapi.specification import MediaType
 if TYPE_CHECKING:
     import numpy as np
     import pyarrow
+    import pyspark.sql.types
     from typing_extensions import Self
 
     from bentoml.grpc.v1 import service_pb2 as pb
@@ -579,12 +580,11 @@ class NumpyNdarray(
             )
 
         out_spark_type = as_spark_type(self._dtype)
-        print(out_spark_type)
 
-        types = [out_spark_type for i in range(self._shape[0])]
+        types = [out_spark_type for _ in range(self._shape[0])]
 
-        for i in range(len(self._shape) - 1):
-            types = [ArrayType(out_spark_type, containsNull=False) for typ in types]
+        for _ in range(len(self._shape) - 1):
+            types = [ArrayType(typ, containsNull=False) for typ in types]
 
         fields = [
             StructField(f"out_{i}", typ, nullable=False) for i, typ in enumerate(types)

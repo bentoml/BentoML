@@ -23,6 +23,7 @@ from ._internal.service.inference_api import InferenceAPI
 
 class Client(ABC):
     server_url: str
+    endpoints: list[str]
 
     def __init__(self, svc: Service, server_url: str):
         self._svc = svc
@@ -30,13 +31,15 @@ class Client(ABC):
         if len(self._svc.apis) == 0:
             raise BentoMLException("No APIs were found when constructing client")
 
+        self.endpoints = []
         for name, api in self._svc.apis.items():
+            self.endpoints.append(name)
+
             if not hasattr(self, name):
                 setattr(
                     self, name, functools.partial(self._sync_call, _bentoml_api=api)
                 )
 
-        for name, api in self._svc.apis.items():
             if not hasattr(self, f"async_{name}"):
                 setattr(
                     self,

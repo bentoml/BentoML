@@ -39,6 +39,8 @@ from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    import pyspark.sql.session
+    import pyspark.sql.dataframe
     from fs.base import FS
 
     from ..models import Model
@@ -351,6 +353,16 @@ class Bento(StoreItem):
             raise BentoMLException(
                 f"{self!s} does not contain a {BENTO_YAML_FILENAME}."
             )
+
+    def run_in_spark(
+        self,
+        df: pyspark.sql.dataframe.DataFrame,
+        spark: pyspark.sql.session.SparkSession,
+        api_name: str | None = None,
+    ) -> pyspark.sql.dataframe.DataFrame:
+        from ..batch.spark import run_in_spark
+
+        return run_in_spark(self, df, spark, api_name)
 
     def __str__(self):
         return f'Bento(tag="{self.tag}")'

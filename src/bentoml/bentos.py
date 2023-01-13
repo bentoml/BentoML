@@ -426,7 +426,7 @@ def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:
 
 @inject
 def serve(
-    bento: str,
+    bento: str | Tag | Bento,
     server_type: str = "http",
     reload: bool = False,
     production: bool = False,
@@ -449,6 +449,11 @@ def serve(
 ) -> ServerHandle:
     from .serve import construct_ssl_args
     from ._internal.server.server import ServerHandle
+
+    if isinstance(bento, Bento):
+        bento = str(bento.tag)
+    elif isinstance(bento, Tag):
+        bento = str(bento)
 
     server_type = server_type.lower()
     if server_type not in ["http", "grpc"]:

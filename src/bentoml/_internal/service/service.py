@@ -11,6 +11,7 @@ import attr
 from bentoml.exceptions import BentoMLException
 
 from ..tag import Tag
+from ..types import LazyType
 from ..models import Model
 from ..runner import Runner
 from ...grpc.utils import import_grpc
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from ..bento import Bento
+    from ...triton import TritonRunner
     from ...grpc.v1 import service_pb2_grpc as services
     from .openapi.specification import OpenAPISpecification
 
@@ -88,16 +90,16 @@ class Service:
     """
 
     name: str
-    runners: t.List[Runner]
-    models: t.List[Model]
+    runners: list[Runner]
+    models: list[Model]
 
     # starlette related
-    mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str]] = attr.field(
+    mount_apps: list[tuple[ext.ASGIApp, str, str]] = attr.field(
         init=False, factory=list
     )
-    middlewares: t.List[
-        t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]
-    ] = attr.field(init=False, factory=list)
+    middlewares: list[tuple[type[ext.AsgiMiddleware], dict[str, t.Any]]] = attr.field(
+        init=False, factory=list
+    )
 
     # gRPC related
     mount_servicers: list[tuple[ServicerClass, AddServicerFn, list[str]]] = attr.field(
@@ -109,7 +111,7 @@ class Service:
     grpc_handlers: list[grpc.GenericRpcHandler] = attr.field(init=False, factory=list)
 
     # list of APIs from @svc.api
-    apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
+    apis: dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
 
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)
@@ -123,8 +125,8 @@ class Service:
         self,
         name: str,
         *,
-        runners: t.List[Runner] | None = None,
-        models: t.List[Model] | None = None,
+        runners: list[Runner | TritonRunner] | None = None,
+        models: list[Model] | None = None,
     ):
         """
 
@@ -139,7 +141,9 @@ class Service:
         if runners is not None:
             runner_names: t.Set[str] = set()
             for r in runners:
-                assert isinstance(
+                assert LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(
+                    r
+                ) or isinstance(
                     r, Runner
                 ), f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
 

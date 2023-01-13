@@ -43,8 +43,8 @@ if TYPE_CHECKING:
     from fs.base import FS
 
     from ..models import Model
+    from ...triton import TritonRunner
     from ..service import Service
-    from ..integrations.triton import TritonRunner
     from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
@@ -200,13 +200,16 @@ class Bento(StoreItem):
         for model in svc.models:
             models.add(model)
         # Add all models required by service runners
+        has_triton_runner = False
         for runner in svc.runners:
             # only add models if given runner is not a TritonRunner
-            if not LazyType["TritonRunner"](
-                "bentoml._internal.integrations.triton", "TritonRunner"
-            ).isinstance(runner):
+            if not LazyType["TritonRunner"]("bentoml.triton.TritonRunner").isinstance(
+                runner
+            ):
                 for model in runner.models:
                     models.add(model)
+            else:
+                has_triton_runner = True
 
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))
@@ -245,7 +248,9 @@ class Bento(StoreItem):
         # first to make sure we can generate the Dockerfile correctly.
         build_config.python.write_to_bento(bento_fs, build_ctx)
         build_config.conda.write_to_bento(bento_fs, build_ctx)
-        build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
+        build_config.docker.write_to_bento(
+            bento_fs, build_ctx, build_config.conda, has_triton_runner
+        )
 
         # Create `readme.md` file
         if build_config.description is None:
@@ -370,18 +375,14 @@ class BentoStore(Store[Bento]):
 @attr.frozen
 class BentoRunnerInfo:
     name: str
-    runnable_type: str = attr.field(
-        default=None, converter=attr.converters.default_if_none("n/a")
-    )
+    runnable_type: str
     models: t.List[str] = attr.field(factory=list)
     resource_config: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
 
     @classmethod
     def from_runner(cls, r: Runner) -> BentoRunnerInfo:
-        if LazyType["TritonRunner"](
-            "bentoml._internal.integrations.triton", "TritonRunner"
-        ).isinstance(r):
-            return cls(name=r.name)
+        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r):
+            return cls(name=r.name, runnable_type=r.runnable_class.__name__)
         return cls(
             name=r.name,
             runnable_type=r.runnable_class.__name__,

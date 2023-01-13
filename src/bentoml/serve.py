@@ -26,7 +26,7 @@ from ._internal.configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from circus.watcher import Watcher
 
-    from ._internal.integrations.triton import TritonRunner
+    from .triton import TritonRunner
 
 
 logger = logging.getLogger(__name__)
@@ -172,9 +172,7 @@ def get_triton_runners_from_service(
     runners = [
         r
         for r in svc.runners
-        if LazyType["TritonRunner"](
-            "bentoml._internal.integrations.triton", "TritonRunner"
-        ).isinstance(r)
+        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
     ]
     if len(runners) > 0:
         if not production:
@@ -352,9 +350,7 @@ def serve_http_production(
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
-            if not LazyType["TritonRunner"](
-                "bentoml._internal.integrations.triton", "TritonRunner"
-            ).isinstance(runner):
+            if not LazyType("bentoml.triton.Runner").isinstance(runner):
                 sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
                 assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
@@ -394,9 +390,7 @@ def serve_http_production(
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
-                if not LazyType["TritonRunner"](
-                    "bentoml._internal.integrations.triton", "TritonRunner"
-                ).isinstance(runner):
+                if not LazyType("bentoml.triton.Runner").isinstance(runner):
                     runner_port = port_stack.enter_context(reserve_free_port())
                     runner_host = "127.0.0.1"
 
@@ -438,7 +432,7 @@ def serve_http_production(
 
     triton_runners = get_triton_runners_from_service(svc, production=True)
     if triton_runners is not None:
-        from ._internal.integrations.triton.config import TritonServerConfig
+        from .triton import TritonServerConfig
 
         triton_kwargs: dict[str, t.Any] = {
             key: attrs.pop(f"triton_{key}", None)
@@ -447,11 +441,12 @@ def serve_http_production(
                 for i in attr.fields(TritonServerConfig)
                 # model_repository is set via TritonRunner
                 if not i.name.startswith("_")
-                and i.name not in ["model_repository", "allow_grpc"]
+                and i.name not in ["model_repository", "allow_grpc", "allow_http"]
             ]
         }
         triton_kwargs["model_repository"] = [r.repository_path for r in triton_runners]
         tritonserver_args = TritonServerConfig(**triton_kwargs).to_cli_args()
+
         if not shutil.which(tritonserver_args[0]):
             raise ValueError(
                 "'tritonserver' binary is not found in PATH. If you are running this inside a container, make sure to use the official Triton container image as a 'base_image'. See https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver."
@@ -789,9 +784,7 @@ def serve_grpc_production(
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
-            if not LazyType["TritonRunner"](
-                "bentoml._internal.integrations.triton", "TritonRunner"
-            ).isinstance(runner):
+            if not LazyType("bentoml.triton.Runner").isinstance(runner):
                 sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
                 assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
@@ -829,9 +822,7 @@ def serve_grpc_production(
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
-                if not LazyType["TritonRunner"](
-                    "bentoml._internal.integrations.triton", "TritonRunner"
-                ).isinstance(runner):
+                if not LazyType("bentoml.triton.Runner").isinstance(runner):
                     runner_port = port_stack.enter_context(reserve_free_port())
                     runner_host = "127.0.0.1"
 
@@ -875,7 +866,7 @@ def serve_grpc_production(
 
     triton_runners = get_triton_runners_from_service(svc, production=True)
     if triton_runners is not None:
-        from ._internal.integrations.triton.config import TritonServerConfig
+        from .triton import TritonServerConfig
 
         triton_kwargs: dict[str, t.Any] = {
             key: attrs.pop(f"triton_{key}", None)
@@ -884,7 +875,7 @@ def serve_grpc_production(
                 for i in attr.fields(TritonServerConfig)
                 # model_repository is set via TritonRunner
                 if not i.name.startswith("_")
-                and i.name not in ["model_repository", "allow_grpc"]
+                and i.name not in ["model_repository", "allow_grpc", "allow_http"]
             ]
         }
         triton_kwargs["model_repository"] = [r.repository_path for r in triton_runners]

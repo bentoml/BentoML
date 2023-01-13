@@ -224,17 +224,29 @@ class DockerOptions:
 
         return attr.evolve(self, **defaults)
 
-    def write_to_bento(self, bento_fs: FS, build_ctx: str, conda: CondaOptions) -> None:
+    def write_to_bento(
+        self, bento_fs: FS, build_ctx: str, conda: CondaOptions, has_triton_runner: bool
+    ) -> None:
         docker_folder = fs.path.combine("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
         dockerfile_path = fs.path.combine(docker_folder, "Dockerfile")
+
+        if has_triton_runner:
+            logger.info(
+                "Make sure to include the Triton container from https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver as a 'base_image' in your 'bentofile.yaml'."
+            )
 
         # NOTE that by default the generated Dockerfile won't have BuildKit syntax.
         # By default, BentoML containerization will use BuildKit. To opt-out specify DOCKER_BUILDKIT=0
         bento_fs.writetext(
             dockerfile_path,
             generate_containerfile(
-                self, build_ctx, conda=conda, bento_fs=bento_fs, enable_buildkit=False
+                self,
+                build_ctx,
+                conda=conda,
+                bento_fs=bento_fs,
+                enable_buildkit=False,
+                has_triton_runner=has_triton_runner,
             ),
         )
         copy_file_to_fs_folder(

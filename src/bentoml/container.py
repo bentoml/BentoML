@@ -11,6 +11,7 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
+import psutil
 from simple_di import inject
 from simple_di import Provide
 

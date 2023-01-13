@@ -2,15 +2,19 @@ from __future__ import annotations
 
 import os
 import json
+import time
 import pickle
 import typing as t
 import asyncio
+import logging
 import functools
+import contextlib
 from typing import TYPE_CHECKING
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
 from . import RunnerHandle
+from ...utils import LazyLoader
 from ...context import component_context
 from ..container import Payload
 from ...utils.uri import uri_to_path
@@ -22,14 +26,26 @@ from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import yarl
+    import tritonclient.grpc.aio as tritongrpcclient
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
 
+    from ... import external_typing as ext
     from ..runner import Runner
     from ..runner import RunnerMethod
+    from ....triton import TritonRunner
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
+else:
+    tritongrpcclient = LazyLoader(
+        "tritongrpcclient",
+        globals(),
+        "tritonclient.grpc.aio",
+        exc_msg="tritonclient is required to use triton with BentoML. Install with 'pip install bentoml[triton]'.",
+    )
+
+logger = logging.getLogger(__name__)
 
 
 class RemoteRunnerClient(RunnerHandle):
@@ -268,3 +284,127 @@ class RemoteRunnerClient(RunnerHandle):
 
     def __del__(self) -> None:
         self._close_conn()
+
+
+# NOTE: to support files, consider using ModelInferStream via raw_bytes_contents
+class TritonRunnerHandle(RunnerHandle):
+    def __init__(self, runner: TritonRunner):
+        self.runner = runner
+        self.clean_context = contextlib.AsyncExitStack()
+        self._client_cache: tritongrpcclient.InferenceServerClient | None = None
+        self._address = "0.0.0.0:8001"
+
+    async def is_ready(self, timeout: int) -> bool:
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                if (
+                    await self._client.is_server_ready()
+                    and await self._client.is_server_live()
+                ):
+                    return True
+                else:
+                    await asyncio.sleep(1)
+            except Exception as err:
+                logger.error(
+                    "Caught exception while waiting Triton to be ready: %s", err
+                )
+                await asyncio.sleep(1)
+        return False
+
+    @property
+    def _client(self) -> tritongrpcclient.InferenceServerClient:
+        from ...configuration import get_debug_mode
+
+        if self._client_cache is None:
+            try:
+                self._client_cache = tritongrpcclient.InferenceServerClient(
+                    url=self._address, verbose=get_debug_mode()
+                )
+            except Exception as e:
+                import traceback
+
+                logger.error(
+                    "Failed to instantiate Triton Inference Server client for '%s', see details:",
+                    self.runner.name,
+                )
+                logger.error(traceback.format_exc())
+                raise e
+        return self._client_cache
+
+    async def async_run_method(
+        self,
+        __bentoml_method: RunnerMethod[t.Any, P, t.Any],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> tritongrpcclient.InferResult:
+        from ..container import AutoContainer
+
+        assert (len(args) == 0) ^ (
+            len(kwargs) == 0
+        ), f"Inputs for model '{__bentoml_method.name}' can be given either as positional (args) or keyword arguments (kwargs), but not both. See https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration"
+
+        model_name = __bentoml_method.name
+
+        # return metadata of a given model
+        model_metadata = await self._client.get_model_metadata(model_name)
+
+        pass_args = args if len(args) > 0 else kwargs
+        if len(model_metadata.inputs) != len(pass_args):
+            raise ValueError(
+                f"Number of provided arguments ({len(model_metadata.inputs)}) does not match the number of inputs ({len(pass_args)})"
+            )
+
+        input_params = Params["ext.NpNDArray"](*args, **kwargs).map(
+            AutoContainer.to_triton_payload
+        )
+
+        outputs = [
+            tritongrpcclient.InferRequestedOutput(output.name)
+            for output in model_metadata.outputs
+        ]
+        inputs: list[tritongrpcclient.InferInput] = []
+
+        if len(args) > 0:
+            for (infer_input, arg) in zip(model_metadata.inputs, input_params.args):
+                InferInput = tritongrpcclient.InferInput(
+                    infer_input.name,
+                    arg.shape,
+                    tritongrpcclient.np_to_triton_dtype(arg.dtype),
+                )
+                InferInput.set_data_from_numpy(arg)
+                inputs.append(InferInput)
+        else:
+            for infer_input in model_metadata.inputs:
+                arg = input_params.kwargs[infer_input.name]
+                inputs.append(
+                    tritongrpcclient.InferInput(
+                        infer_input.name,
+                        arg.shape,
+                        tritongrpcclient.np_to_triton_dtype(arg.dtype),
+                    )
+                )
+                inputs[-1].set_data_from_numpy(arg)
+
+        try:
+            return await self._client.infer(
+                model_name=model_name, inputs=inputs, outputs=outputs
+            )
+        except tritongrpcclient.InferenceServerException as err:
+            logger.error("Caught exception while sending payload to Triton:")
+            logger.error(err)
+            raise err
+
+    def run_method(
+        self,
+        __bentoml_method: RunnerMethod[t.Any, P, t.Any],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> tritongrpcclient.InferResult:
+        import anyio
+
+        return anyio.from_thread.run(
+            functools.partial(self.async_run_method, **kwargs),
+            __bentoml_method,
+            *args,
+        )

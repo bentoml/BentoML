@@ -76,8 +76,15 @@ RUN {{ __setup_script__ }}
 # Default port for BentoServer
 EXPOSE 3000
 
-# Expose Prometheus port
+# Prometheus port
 EXPOSE {{ __prometheus_port__ }}
+
+# Triton ports
+{% if __has_triton_runner__ %}
+# gRPC port is 8001, metrics port is 8002
+EXPOSE 8001
+EXPOSE 8002
+{% endif %}
 
 RUN chmod +x {{ bento__entrypoint }}
 

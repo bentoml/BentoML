@@ -32,11 +32,6 @@ EOT
 
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
-
-############################################
-
-# gRPC with protobuf 3 generation
-
 FROM protobuf-3 as run-grpcio-tools-3
 
 ARG PROTOCOL_VERSION
@@ -66,10 +61,6 @@ ARG GENERATED_PB3_DIR
 
 COPY --from=run-grpcio-tools-3 /result/${GENERATED_PB3_DIR} /
 
-############################################
-
-# Test with protobuf 3 generation
-
 FROM protobuf-3 as generate-tests-proto-3
 
 RUN mkdir -p /result/tests/proto/_generated_pb3
@@ -92,10 +83,6 @@ EOT
 FROM scratch as generate-tests-proto-3-output
 
 COPY --from=generate-tests-proto-3 /result/* /
-
-############################################
-
-# gRPC with protobuf 4 generation
 
 FROM protobuf-4 as run-grpcio-tools-4
 
@@ -125,10 +112,6 @@ ARG GENERATED_PB4_DIR
 
 COPY --from=run-grpcio-tools-4 /result/${GENERATED_PB4_DIR} /
 
-############################################
-
-# Test with protobuf 4 generation
-
 FROM protobuf-4 as generate-tests-proto-4
 
 RUN mkdir -p /result/tests/proto/_generated_pb4
@@ -152,12 +135,3 @@ FROM scratch as generate-tests-proto-4-output
 
 COPY --from=generate-tests-proto-4 /result/* /
 
-############################################
-
-# Use generated tritonserver from docker images
-
-FROM nvcr.io/nvidia/tritonserver:22.12-py3 as triton-base
-
-FROM scratch as tritonserver-output
-
-COPY --from=triton-base /opt/tritonserver /

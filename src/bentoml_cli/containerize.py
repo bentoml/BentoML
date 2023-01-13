@@ -9,9 +9,6 @@ import subprocess
 from typing import TYPE_CHECKING
 from functools import partial
 
-from .utils import MEMO_KEY
-from .utils import normalize_none_type
-
 if TYPE_CHECKING:
     from click import Group
     from click import Command
@@ -40,6 +37,9 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
         * ``append_msg``: a string to append a help message to the original help message.
     """
     import click
+
+    from .utils import MEMO_KEY
+    from .utils import normalize_none_type
 
     append_msg = attrs.pop("append_msg", "")
     equivalent: tuple[str, str] = attrs.pop("equivalent", ())
@@ -356,6 +356,7 @@ def add_containerize_command(cli: Group) -> None:
     from bentoml import container
     from bentoml_cli.utils import opt_callback
     from bentoml_cli.utils import kwargs_transformers
+    from bentoml_cli.utils import normalize_none_type
     from bentoml_cli.utils import validate_container_tag
     from bentoml.exceptions import BentoMLException
     from bentoml._internal.container import FEATURES

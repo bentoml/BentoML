@@ -154,7 +154,7 @@ def save_model(
             def configure_optimizers(self):
                 return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
 
-        tag = bentoml.pytorch_lightning.save("lit_classifier", LitClassifier())
+        tag = bentoml.pytorch_lightning.save_model("lit_classifier", LitClassifier())
     """
     if not isinstance(model, pl.LightningModule):
         raise TypeError(

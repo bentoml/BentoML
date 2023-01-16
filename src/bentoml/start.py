@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import json
 import typing as t
 import logging
@@ -11,7 +10,11 @@ from simple_di import inject
 from simple_di import Provide
 
 from .grpc.utils import LATEST_PROTOCOL_VERSION
+from ._internal.utils import LazyType
 from ._internal.configuration.containers import BentoMLContainer
+
+if t.TYPE_CHECKING:
+    from .triton import TritonRunner
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +35,7 @@ def start_runner_server(
     port: int | None = None,
     host: str | None = None,
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
+    **attrs: t.Any,
 ) -> None:
     """
     Experimental API for serving a BentoML runner.
@@ -40,8 +44,9 @@ def start_runner_server(
 
     prometheus_dir = ensure_prometheus_dir()
 
-    from bentoml import load
-
+    from . import load
+    from .serve import create_watcher
+    from .serve import construct_triton_handle
     from ._internal.utils import reserve_free_port
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
@@ -55,53 +60,75 @@ def start_runner_server(
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
 
+    # NOTE: We need to find and set model-repository args
+    # to all TritonRunner instances (required from tritonserver if spawning multiple instances.)
+    triton_runners = [
+        r
+        for r in svc.runners
+        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
+    ]
+    model_repository_paths = [r.repository_path for r in triton_runners]
+
     with contextlib.ExitStack() as port_stack:
         for runner in svc.runners:
             if runner.name == runner_name:
-                if port is None:
-                    port = port_stack.enter_context(reserve_free_port())
-                if host is None:
-                    host = "127.0.0.1"
-                circus_socket_map[runner.name] = CircusSocket(
-                    name=runner.name,
-                    host=host,
-                    port=port,
-                    backlog=backlog,
-                )
-
-                watchers.append(
-                    Watcher(
-                        name=f"{RUNNER}_{runner.name}",
-                        cmd=sys.executable,
-                        args=[
-                            "-m",
-                            SCRIPT_RUNNER,
-                            bento_identifier,
-                            "--runner-name",
-                            runner.name,
-                            "--fd",
-                            f"$(circus.sockets.{runner.name})",
-                            "--working-dir",
-                            working_dir,
-                            "--no-access-log",
-                            "--worker-id",
-                            "$(circus.wid)",
-                            "--prometheus-dir",
-                            prometheus_dir,
-                        ],
-                        copy_env=True,
-                        stop_children=True,
-                        use_sockets=True,
-                        working_dir=working_dir,
-                        numprocesses=runner.scheduled_worker_count,
+                if runner not in triton_runners:
+                    if port is None:
+                        port = port_stack.enter_context(reserve_free_port())
+                    if host is None:
+                        host = "127.0.0.1"
+                    circus_socket_map[runner.name] = CircusSocket(
+                        name=runner.name,
+                        host=host,
+                        port=port,
+                        backlog=backlog,
                     )
-                )
-                break
+
+                    watchers.append(
+                        create_watcher(
+                            name=f"{RUNNER}_{runner.name}",
+                            args=[
+                                "-m",
+                                SCRIPT_RUNNER,
+                                bento_identifier,
+                                "--runner-name",
+                                runner.name,
+                                "--fd",
+                                f"$(circus.sockets.{runner.name})",
+                                "--working-dir",
+                                working_dir,
+                                "--no-access-log",
+                                "--worker-id",
+                                "$(circus.wid)",
+                                "--prometheus-dir",
+                                prometheus_dir,
+                            ],
+                            working_dir=working_dir,
+                            numprocesses=runner.scheduled_worker_count,
+                        )
+                    )
+                    break
+                else:
+                    triton_handle = construct_triton_handle(
+                        runner, _model_repository_paths=model_repository_paths, **attrs
+                    )
+                    watchers.append(
+                        create_watcher(
+                            name=f"tritonserver_{runner.name}",
+                            cmd=triton_handle.executable,
+                            args=triton_handle.args,
+                            use_sockets=False,
+                            working_dir=working_dir,
+                            numprocesses=1,
+                        )
+                    )
+                    break
         else:
             raise ValueError(
                 f"Runner {runner_name} not found in the service: `{bento_identifier}`, "
                 f"available runners: {[r.name for r in svc.runners]}"
             )
+
     arbiter = create_standalone_arbiter(
         watchers=watchers,
         sockets=list(circus_socket_map.values()),
@@ -141,8 +168,7 @@ def start_http_server(
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
 
-    from bentoml import load
-
+    from . import load
     from .serve import create_watcher
     from .serve import API_SERVER_NAME
     from .serve import construct_ssl_args

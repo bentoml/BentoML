@@ -14,10 +14,12 @@ DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
 
 def add_serve_command(cli: click.Group) -> None:
 
-    from bentoml_cli.utils import opt_callback
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml._internal.log import configure_server_logging
     from bentoml._internal.configuration.containers import BentoMLContainer
+
+    from .utils import opt_callback
+    from .utils import flatten_opt_tuple
 
     @cli.command(aliases=["serve-http"])
     @click.argument("bento", type=click.STRING, default=".")
@@ -217,7 +219,10 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
-                **{f"triton_{attr}": value for attr, value in _memoized.items()},
+                **{
+                    f"triton_{attr}": flatten_opt_tuple(value)
+                    for attr, value in _memoized.items()
+                },
             )
         else:
             from bentoml.serve import serve_http_development
@@ -436,7 +441,10 @@ def add_serve_command(cli: click.Group) -> None:
                 reflection=enable_reflection,
                 channelz=enable_channelz,
                 protocol_version=protocol_version,
-                **{f"triton_{attr}": value for attr, value in _memoized.items()},
+                **{
+                    f"triton_{attr}": flatten_opt_tuple(value)
+                    for attr, value in _memoized.items()
+                },
             )
         else:
             from bentoml.serve import serve_grpc_development

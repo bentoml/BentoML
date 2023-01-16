@@ -200,16 +200,9 @@ class Bento(StoreItem):
         for model in svc.models:
             models.add(model)
         # Add all models required by service runners
-        has_triton_runner = False
         for runner in svc.runners:
-            # only add models if given runner is not a TritonRunner
-            if not LazyType["TritonRunner"]("bentoml.triton.TritonRunner").isinstance(
-                runner
-            ):
-                for model in runner.models:
-                    models.add(model)
-            else:
-                has_triton_runner = True
+            for model in runner.models:
+                models.add(model)
 
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))
@@ -248,9 +241,15 @@ class Bento(StoreItem):
         # first to make sure we can generate the Dockerfile correctly.
         build_config.python.write_to_bento(bento_fs, build_ctx)
         build_config.conda.write_to_bento(bento_fs, build_ctx)
-        build_config.docker.write_to_bento(
-            bento_fs, build_ctx, build_config.conda, has_triton_runner
-        )
+        build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
+
+        if any(
+            LazyType["TritonRunner"]("bentoml.triton.TritonRunner").isinstance(runner)
+            for runner in svc.runners
+        ):
+            logger.info(
+                "Make sure to include the Triton container from https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver as a 'base_image' in your 'bentofile.yaml'."
+            )
 
         # Create `readme.md` file
         if build_config.description is None:

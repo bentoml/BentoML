@@ -53,7 +53,6 @@ def get_templates_variables(
     bento_fs: FS,
     *,
     _is_cuda: bool = False,
-    _has_triton_runner: bool = False,
     **bento_env: str | bool,
 ) -> dict[str, t.Any]:
     """
@@ -100,7 +99,6 @@ def get_templates_variables(
         "__base_image__": base_image,
         "__conda_python_version__": conda_python_version,
         "__is_cuda__": _is_cuda,
-        "__has_triton_runner__": _has_triton_runner,
     }
 
 
@@ -111,7 +109,6 @@ def generate_containerfile(
     conda: CondaOptions,
     bento_fs: FS,
     frontend: str = "dockerfile",
-    has_triton_runner: bool = False,
     **override_bento_env: t.Any,
 ) -> str:
     """
@@ -194,7 +191,6 @@ def generate_containerfile(
             conda,
             bento_fs,
             _is_cuda=release_type == "cuda",
-            _has_triton_runner=has_triton_runner,
             **override_bento_env,
         )
     )

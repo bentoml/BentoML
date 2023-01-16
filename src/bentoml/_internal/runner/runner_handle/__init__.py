@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     R = t.TypeVar("R")
     P = t.ParamSpec("P")
 
+
 logger = logging.getLogger(__name__)
 
 

@@ -292,7 +292,7 @@ class TritonRunnerHandle(RunnerHandle):
         self.runner = runner
         self.clean_context = contextlib.AsyncExitStack()
         self._client_cache: tritongrpcclient.InferenceServerClient | None = None
-        self._address = "0.0.0.0:8001"
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     async def is_ready(self, timeout: int) -> bool:
         start = time.time()
@@ -313,14 +313,25 @@ class TritonRunnerHandle(RunnerHandle):
         return False
 
     @property
+    def _url(self) -> str:
+        try:
+            return BentoMLContainer.remote_runner_mapping.get()[self.runner.name]
+        except KeyError:
+            raise ValueError(
+                f"'{self.runner.name}' is not found in registered Triton runner mapping '{BentoMLContainer.remote_runner_mapping.get()}'"
+            )
+
+    @property
     def _client(self) -> tritongrpcclient.InferenceServerClient:
         from ...configuration import get_debug_mode
 
-        if self._client_cache is None:
+        if self._client_cache is None or self._loop is None or self._loop.is_closed():
             try:
+                # TODO: configuration customization
                 self._client_cache = tritongrpcclient.InferenceServerClient(
-                    url=self._address, verbose=get_debug_mode()
+                    url=self._url, verbose=get_debug_mode()
                 )
+                self._loop = asyncio.get_event_loop()
             except Exception as e:
                 import traceback
 
@@ -331,6 +342,11 @@ class TritonRunnerHandle(RunnerHandle):
                 logger.error(traceback.format_exc())
                 raise e
         return self._client_cache
+
+    def __del__(self):
+        if self._loop is not None:
+            self._loop.run_until_complete(self._client.close())
+            self._loop.close()
 
     async def async_run_method(
         self,

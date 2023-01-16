@@ -145,6 +145,14 @@ def normalize_none_type(
     return value
 
 
+def flatten_opt_tuple(value: t.Any) -> t.Any:
+    from bentoml._internal.types import LazyType
+
+    if LazyType["tuple[t.Any, ...]"](tuple).isinstance(value) and len(value) == 1:
+        return value[0]
+    return value
+
+
 # NOTE: This is the key we use to store the transformed options in the CLI context.
 MEMO_KEY = "_memoized"
 

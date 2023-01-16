@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import enum
+import shutil
 import typing as t
 import logging
 import urllib.parse
@@ -174,7 +175,9 @@ class TritonRunner:
         return await self._runner_handle.is_ready(timeout)
 
 
-def _to_list(inp: list[str] | str) -> list[str] | None:
+def _to_mut_iterable(
+    inp: tuple[str, ...] | list[str] | str
+) -> tuple[str, ...] | list[str] | None:
     if inp is None:
         return
     if isinstance(inp, (list, tuple)):
@@ -193,11 +196,12 @@ class ModelControlMode(enum.Enum):
     EXPLICIT = "explicit"
 
     @classmethod
-    def from_type(cls, s: t.Any) -> ModelControlMode | None:
+    def from_type(cls, s: t.Any) -> ModelControlMode:
         if s is None:
-            return
+            return ModelControlMode.NONE
 
         if isinstance(s, (tuple, list)):
+            # parsed from CLI or SDK
             s = s[0]
 
         if not isinstance(s, str):
@@ -216,10 +220,19 @@ class ModelControlMode(enum.Enum):
 Runner = TritonRunner
 
 
+def _find_triton_binary():
+    binary = shutil.which("tritonserver")
+    if binary is None:
+        raise RuntimeError(
+            "'tritonserver' is not found on PATH. Make sure to include the compiled binary in PATH to proceed.\nIf you are running this inside a container, make sure to use the official Triton container image as a 'base_image'. See https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver."
+        )
+    return binary
+
+
 @attr.frozen
-class TritonServerConfig:
+class TritonServerHandle:
     """
-    Triton Server configuration
+    Triton Server handle. This is a dataclass to handle CLI arguments that pass to 'tritonserver' binary.
 
     Note that BentoML will always run tritonserver with gRPC protocol, hence
     all config for HTTP will be ignored.
@@ -228,9 +241,36 @@ class TritonServerConfig:
     """
 
     __omit_if_default__ = True
+    _binary: str = attr.field(init=False, factory=_find_triton_binary)
 
-    _binary: str = attr.field(init=False, default="tritonserver")
-    model_repository: t.List[str] = attr.field(converter=_to_list)
+    model_repository: t.List[str] = attr.field(converter=_to_mut_iterable)
+
+    # arguments that is set by default by BentoML
+    allow_http: bool = attr.field(
+        init=False, default=None, converter=attr.converters.default_if_none(False)
+    )
+    allow_grpc: bool = attr.field(
+        init=False, default=None, converter=attr.converters.default_if_none(True)
+    )
+
+    # address to bind gRPC server to
+    grpc_address: str = attr.field(
+        default=None, converter=attr.converters.default_if_none("0.0.0.0")
+    )
+    grpc_port: int = attr.field(
+        default=None, converter=attr.converters.default_if_none(8001)
+    )
+    # Always reuse gRPC port so that we can spawn multiple tritonserver gRPC server.
+    reuse_grpc_port: int = attr.field(
+        default=None, converter=attr.converters.default_if_none(1)
+    )
+    # by default, expose the Triton metrics server
+    allow_metrics: bool = attr.field(
+        default=None, converter=attr.converters.default_if_none(True)
+    )
+    metrics_port: int = attr.field(
+        default=None, converter=attr.converters.default_if_none(8002)
+    )
 
     # TODO: support Sagemaker and Vertex AI
     # TODO: support rate limit and memory cache management
@@ -248,22 +288,7 @@ class TritonServerConfig:
     # whether to exit on error during initialization
     exit_on_error: bool = attr.field(default=None)
 
-    # enable gRPC
-    allow_grpc: bool = attr.field(
-        init=False, default=None, converter=attr.converters.default_if_none(True)
-    )
-    allow_http: bool = attr.field(
-        init=False, default=None, converter=attr.converters.default_if_none(False)
-    )
     # gRPC-related args
-    grpc_port: int = attr.field(
-        default=None, converter=attr.converters.default_if_none(8001)
-    )
-    reuse_grpc_port: int = attr.field(
-        default=None, converter=attr.converters.default_if_none(1)
-    )
-    # address to bind gRPC server to
-    grpc_address: str = attr.field(default=None)
     #   The maximum number of inference request/response objects
     # that remain allocated for reuse. As long as the number of in-flight
     # requests doesn't exceed this value there will be no
@@ -305,15 +330,9 @@ class TritonServerConfig:
     # Default is 2.
     grpc_http2_max_ping_strikes: int = attr.field(default=None)
 
-    # Allow user to enable Prometheus metrics from Triton
-    allow_metrics: bool = attr.field(
-        default=None, converter=attr.converters.default_if_none(True)
-    )
+    # Metrics server related (Prometheus)
     allow_gpu_metrics: bool = attr.field(default=None)
     allow_cpu_metrics: bool = attr.field(default=None)
-    metrics_port: int = attr.field(
-        default=None, converter=attr.converters.default_if_none(8002)
-    )
     #   Metrics will be collected once every <metrics-interval-ms> milliseconds.
     # Default is 2000 milliseconds.
     metrics_interval_ms: float = attr.field(default=None)
@@ -326,7 +345,9 @@ class TritonServerConfig:
     #   Specify a trace level. OFF to disable tracing, TIMESTAMPS to
     # trace timestamps, TENSORS to trace tensors. It may be specified
     # multiple times to trace multiple informations. Default is OFF.
-    trace_level: t.List[TraceLevel] = attr.field(default=None, converter=_to_list)
+    trace_level: t.List[TraceLevel] = attr.field(
+        default=None, converter=attr.converters.default_if_none([])
+    )
     #   Set the trace sampling rate. Default is 1000
     trace_rate: int = attr.field(default=None)
     #   Number of traces to be sampled. If set to -1, # of traces are unlimted. Default
@@ -341,6 +362,8 @@ class TritonServerConfig:
     # it logs the 101-th to the 200-th traces to file <trace-file>.1.
     # Default is 0.
     trace_log_frequency: int = attr.field(default=None)
+
+    # Model management args
     #  Specify the mode for model management. Options are "none",
     # "poll" and "explicit". The default is "none". For "none", the server
     # will load all models in the model repository(s) at startup and will
@@ -361,7 +384,9 @@ class TritonServerConfig:
     # matching. Specifying --load-model=* in conjunction with another
     # --load-model argument will result in error. Note that this option will only
     # take effect if --model-control-mode=explicit is true.
-    load_model: t.List[str] = attr.field(default=None, converter=_to_list)
+    load_model: t.List[str] = attr.field(
+        default=None, converter=attr.converters.default_if_none([])
+    )
 
     #   Path to backend shared library. Default is /opt/tritonserver/backends.
     backend_directory: str = attr.field(default=None)
@@ -369,7 +394,7 @@ class TritonServerConfig:
     repoagent_directory: str = attr.field(default=None)
 
     def to_cli_args(self):
-        cli: list[str] = [self._binary]
+        cli: list[str] = []
         margs = bentoml_cattr.unstructure(self)
         for arg, value in margs.items():
             opt = arg.replace("_", "-")
@@ -379,5 +404,27 @@ class TritonServerConfig:
                 )
             else:
                 cli.extend([f"--{opt}", str(value)])
-        logger.debug("tritonserver cmd: '%s'", " ".join(cli))
+        logger.debug("tritonserver cmd: '%s %s'", self.executable, " ".join(cli))
         return cli
+
+    def to_dict(self, omit_if_default: bool = False):
+        # by default, this class is set to omit all default values
+        # set from Python to use default values that are set by tritonserver.
+        converter_mod = bentoml_cattr
+
+        if not omit_if_default:
+            # we want to use the default cattr.Converter
+            # to return all default values.
+            import cattr
+
+            converter_mod = cattr
+
+        return converter_mod.unstructure(self)
+
+    @property
+    def executable(self):
+        return self._binary
+
+    @property
+    def args(self):
+        return self.to_cli_args()

@@ -8,7 +8,6 @@ import typing as t
 import logging
 import tempfile
 import contextlib
-from typing import TYPE_CHECKING
 from pathlib import Path
 from functools import partial
 
@@ -20,13 +19,13 @@ from simple_di import Provide
 from .grpc.utils import LATEST_PROTOCOL_VERSION
 from ._internal.utils import LazyType
 from ._internal.utils import experimental
-from ._internal.service.service import Service
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from circus.watcher import Watcher
 
     from .triton import TritonRunner
+    from .triton import TritonServerHandle
 
 
 logger = logging.getLogger(__name__)
@@ -166,21 +165,27 @@ def construct_ssl_args(
     return args
 
 
-def get_triton_runners_from_service(
-    svc: Service, production: bool = False
-) -> list[TritonRunner] | None:
-    runners = [
-        r
-        for r in svc.runners
-        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
-    ]
-    if len(runners) > 0:
-        if not production:
-            logger.warning(
-                "TritonRunner is found in '%s'. Make sure to have a 'tritonserver' binary available in PATH to use Triton Inference Server with BentoML. See https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/build.md for how to build Triton Inference Server from source.",
-                svc.name,
-            )
-        return runners
+def construct_triton_handle(
+    runner: TritonRunner, _model_repository_paths: list[str], **attrs: t.Any
+) -> TritonServerHandle:
+    from .triton import TritonServerHandle
+
+    triton_kwargs: dict[str, t.Any] = {
+        key: attrs.pop(f"triton_{key}", None)
+        for key in [
+            i.name
+            for i in attr.fields(TritonServerHandle)
+            # model_repository is set via TritonRunner
+            if not i.name.startswith("_")
+            # NOTE: make sure to add attributes to this value when new attributes
+            # that is initialized by BentoML instead of users.
+            and i.name not in ["model_repository", "allow_grpc", "allow_http"]
+        ]
+    }
+    # handle multiple model_repository for multiple TritonRunner
+    triton_kwargs["model_repository"] = _model_repository_paths
+
+    return TritonServerHandle(**triton_kwargs)
 
 
 @inject
@@ -227,12 +232,14 @@ def serve_http_development(
         ssl_ciphers=ssl_ciphers,
     )
 
-    triton_runners = get_triton_runners_from_service(svc)
-    if triton_runners is not None:
-        logger.warning(
-            "TritonRunner is found in '%s' and will not be used during development mode.",
-            svc.name,
-        )
+    # TODO: support Triton in development mode.
+    triton_runners = [
+        r
+        for r in svc.runners
+        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
+    ]
+    if len(triton_runners) > 0:
+        logger.warning("'TritonRunner' is currently only supported in production mode.")
 
     watchers.append(
         create_watcher(
@@ -338,6 +345,7 @@ def serve_http_production(
     from ._internal.utils.uri import path_to_uri
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
+    from ._internal.configuration.containers import BentoMLContainer
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -346,11 +354,20 @@ def serve_http_production(
     runner_bind_map: t.Dict[str, str] = {}
     uds_path = None
 
+    # NOTE: We need to find and set model-repository args
+    # to all TritonRunner instances (required from tritonserver if spawning multiple instances.)
+    triton_runners = [
+        r
+        for r in svc.runners
+        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
+    ]
+    model_repository_paths = [r.repository_path for r in triton_runners]
+
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
-            if not LazyType("bentoml.triton.Runner").isinstance(runner):
+            if runner not in triton_runners:
                 sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
                 assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
@@ -385,12 +402,29 @@ def serve_http_production(
                         numprocesses=runner.scheduled_worker_count,
                     )
                 )
+            else:
+                triton_handle = construct_triton_handle(
+                    runner, _model_repository_paths=model_repository_paths, **attrs
+                )
+                runner_bind_map[
+                    runner.name
+                ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                watchers.append(
+                    create_watcher(
+                        name=f"tritonserver_{runner.name}",
+                        cmd=triton_handle.executable,
+                        args=triton_handle.args,
+                        use_sockets=False,
+                        working_dir=working_dir,
+                        numprocesses=1,
+                    )
+                )
 
     elif psutil.WINDOWS:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
-                if not LazyType("bentoml.triton.Runner").isinstance(runner):
+                if runner not in triton_runners:
                     runner_port = port_stack.enter_context(reserve_free_port())
                     runner_host = "127.0.0.1"
 
@@ -424,43 +458,28 @@ def serve_http_production(
                             numprocesses=runner.scheduled_worker_count,
                         )
                     )
+                else:
+                    triton_handle = construct_triton_handle(
+                        runner, _model_repository_paths=model_repository_paths, **attrs
+                    )
+                    runner_bind_map[
+                        runner.name
+                    ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                    watchers.append(
+                        create_watcher(
+                            name=f"tritonserver_{runner.name}",
+                            cmd=triton_handle.executable,
+                            args=triton_handle.args,
+                            use_sockets=False,
+                            working_dir=working_dir,
+                            numprocesses=1,
+                        )
+                    )
 
             # reserve one more to avoid conflicts
             port_stack.enter_context(reserve_free_port())
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
-
-    triton_runners = get_triton_runners_from_service(svc, production=True)
-    if triton_runners is not None:
-        from .triton import TritonServerConfig
-
-        triton_kwargs: dict[str, t.Any] = {
-            key: attrs.pop(f"triton_{key}", None)
-            for key in [
-                i.name
-                for i in attr.fields(TritonServerConfig)
-                # model_repository is set via TritonRunner
-                if not i.name.startswith("_")
-                and i.name not in ["model_repository", "allow_grpc", "allow_http"]
-            ]
-        }
-        triton_kwargs["model_repository"] = [r.repository_path for r in triton_runners]
-        tritonserver_args = TritonServerConfig(**triton_kwargs).to_cli_args()
-
-        if not shutil.which(tritonserver_args[0]):
-            raise ValueError(
-                "'tritonserver' binary is not found in PATH. If you are running this inside a container, make sure to use the official Triton container image as a 'base_image'. See https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver."
-            )
-        watchers.append(
-            create_watcher(
-                name="tritonserver",
-                cmd=tritonserver_args[0],
-                args=tritonserver_args[1:],
-                use_sockets=False,
-                working_dir=working_dir,
-                numprocesses=1,
-            )
-        )
 
     logger.debug("Runner map: %s", runner_bind_map)
 
@@ -587,12 +606,14 @@ def serve_grpc_development(
         ssl_ca_certs=ssl_ca_certs,
     )
 
-    triton_runners = get_triton_runners_from_service(svc)
-    if triton_runners is not None:
-        logger.warning(
-            "TritonRunner is found in '%s' and will not be used during development mode.",
-            svc.name,
-        )
+    # TODO: support Triton in development mode.
+    triton_runners = [
+        r
+        for r in svc.runners
+        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
+    ]
+    if len(triton_runners) > 0:
+        logger.warning("'TritonRunner' is currently only supported in production mode.")
 
     scheme = "https" if len(ssl_args) > 0 else "http"
 
@@ -780,11 +801,20 @@ def serve_grpc_production(
             "MacOS" if psutil.MACOS else "FreeBSD",
         )
 
+    # NOTE: We need to find and set model-repository args
+    # to all TritonRunner instances (required from tritonserver if spawning multiple instances.)
+    triton_runners = [
+        r
+        for r in svc.runners
+        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
+    ]
+    model_repository_paths = [r.repository_path for r in triton_runners]
+
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
-            if not LazyType("bentoml.triton.Runner").isinstance(runner):
+            if runner not in triton_runners:
                 sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
                 assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
@@ -817,12 +847,29 @@ def serve_grpc_production(
                         numprocesses=runner.scheduled_worker_count,
                     )
                 )
+            else:
+                triton_handle = construct_triton_handle(
+                    runner, _model_repository_paths=model_repository_paths, **attrs
+                )
+                runner_bind_map[
+                    runner.name
+                ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                watchers.append(
+                    create_watcher(
+                        name=f"tritonserver_{runner.name}",
+                        cmd=triton_handle.executable,
+                        args=triton_handle.args,
+                        use_sockets=False,
+                        working_dir=working_dir,
+                        numprocesses=1,
+                    )
+                )
 
     elif psutil.WINDOWS:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
-                if not LazyType("bentoml.triton.Runner").isinstance(runner):
+                if runner not in triton_runners:
                     runner_port = port_stack.enter_context(reserve_free_port())
                     runner_host = "127.0.0.1"
 
@@ -859,44 +906,30 @@ def serve_grpc_production(
                             numprocesses=runner.scheduled_worker_count,
                         )
                     )
-                # reserve one more to avoid conflicts
-                port_stack.enter_context(reserve_free_port())
+                else:
+                    triton_handle = construct_triton_handle(
+                        runner, _model_repository_paths=model_repository_paths, **attrs
+                    )
+                    runner_bind_map[
+                        runner.name
+                    ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                    watchers.append(
+                        create_watcher(
+                            name=f"tritonserver_{runner.name}",
+                            cmd=triton_handle.executable,
+                            args=triton_handle.args,
+                            use_sockets=False,
+                            working_dir=working_dir,
+                            numprocesses=1,
+                        )
+                    )
+            # reserve one more to avoid conflicts
+            port_stack.enter_context(reserve_free_port())
     else:
         raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
 
-    triton_runners = get_triton_runners_from_service(svc, production=True)
-    if triton_runners is not None:
-        from .triton import TritonServerConfig
-
-        triton_kwargs: dict[str, t.Any] = {
-            key: attrs.pop(f"triton_{key}", None)
-            for key in [
-                i.name
-                for i in attr.fields(TritonServerConfig)
-                # model_repository is set via TritonRunner
-                if not i.name.startswith("_")
-                and i.name not in ["model_repository", "allow_grpc", "allow_http"]
-            ]
-        }
-        triton_kwargs["model_repository"] = [r.repository_path for r in triton_runners]
-        tritonserver_args = TritonServerConfig(**triton_kwargs).to_cli_args()
-
-        if not shutil.which(tritonserver_args[0]):
-            raise ValueError(
-                "'tritonserver' binary is not found in PATH. If you are running this inside a container, make sure to use the official Triton container image as a 'base_image'. See https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver."
-            )
-        watchers.append(
-            create_watcher(
-                name="tritonserver",
-                cmd=tritonserver_args[0],
-                args=tritonserver_args[1:],
-                use_sockets=False,
-                working_dir=working_dir,
-                numprocesses=1,
-            )
-        )
-
     logger.debug("Runner map: %s", runner_bind_map)
+
     ssl_args = construct_ssl_args(
         ssl_certfile=ssl_certfile,
         ssl_keyfile=ssl_keyfile,

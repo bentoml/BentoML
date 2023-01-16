@@ -1,0 +1,16 @@
+platform: "pytorch_libtorch"
+dynamic_batching {}
+input {
+name: "INPUT__0"
+data_type: TYPE_FP32
+dims: -1
+dims: 1
+dims: 28
+dims: 28
+}
+output {
+name: "OUTPUT__0"
+data_type: TYPE_FP32
+dims: -1
+dims: 10
+}

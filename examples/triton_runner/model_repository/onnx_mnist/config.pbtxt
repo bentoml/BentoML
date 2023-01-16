@@ -1,0 +1,15 @@
+platform: "onnxruntime_onnx"
+input {
+name: "input_0"
+data_type: TYPE_FP32
+dims: -1
+dims: 1
+dims: 28
+dims: 28
+}
+output {
+name: "output_0"
+data_type: TYPE_FP32
+dims: -1
+dims: 10
+}

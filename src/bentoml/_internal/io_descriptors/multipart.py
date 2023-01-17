@@ -219,7 +219,14 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         )
 
     def openapi_components(self) -> dict[str, t.Any] | None:
-        pass
+        components = {}
+
+        for io in self._inputs.values():
+            child_components = io.openapi_components()
+            if child_components is not None:
+                components.update(child_components)
+
+        return components
 
     def openapi_example(self) -> t.Any:
         return {args: io.openapi_example() for args, io in self._inputs.items()}

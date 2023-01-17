@@ -136,6 +136,7 @@ __all__ = [
     "Cookie",
     "Service",
     "models",
+    "batch",
     "metrics",
     "container",
     "client",

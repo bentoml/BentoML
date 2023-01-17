@@ -227,6 +227,9 @@ jobs:
         exclude:
           - os: windows-latest
             server_type: "grpc"
+          - os: macos-latest
+            server_type: "grpc"
+            python-version: "3.10"
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_${{ matrix.server_type }}_e2e_tests (${{ matrix.os }})

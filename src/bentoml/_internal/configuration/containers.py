@@ -175,8 +175,9 @@ class _BentoMLContainerClass:
         )
         bentos = os.path.join(home, "bentos")
         models = os.path.join(home, "models")
+        env = os.path.join(home, "envs")
 
-        validate_or_create_dir(home, bentos, models)
+        validate_or_create_dir(home, bentos, models, env)
         return home
 
     @providers.SingletonFactory
@@ -188,6 +189,11 @@ class _BentoMLContainerClass:
     @staticmethod
     def model_store_dir(bentoml_home: str = Provide[bentoml_home]):
         return os.path.join(bentoml_home, "models")
+
+    @providers.SingletonFactory
+    @staticmethod
+    def env_store_dir(bentoml_home: str = Provide[bentoml_home]):
+        return os.path.join(bentoml_home, "envs")
 
     @providers.SingletonFactory
     @staticmethod

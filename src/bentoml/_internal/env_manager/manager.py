@@ -9,7 +9,6 @@ from distutils.spawn import find_executable as which
 
 import fs
 import attrs
-from rich.status import Status
 
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.configuration import get_debug_mode
@@ -53,12 +52,14 @@ def run_script_subprocess(
 class EnvManager:
     env_type: str
     env_name: str
-    from_bento_store: bool
     bento_path: t.Optional[str]
     _env_fs: FS = attrs.field(init=False)
 
     def __attrs_post_init__(self):
-        env_home = fs.open_fs("/tmp/env_manager", create=True)
+        from bentoml._internal.configuration.containers import BentoMLContainer
+
+        env_home = fs.open_fs(BentoMLContainer.env_store_dir.get())
+
         if self.env_type == "conda":
             if not env_home.exists("conda"):
                 env_home.makedir("conda")
@@ -68,26 +69,28 @@ class EnvManager:
     @classmethod
     def get_environment(
         cls,
-        env_name: str,
+        env_name: str | None,
         env_type: str,
-        from_bento_store: bool,
         bento_path: t.Optional[str] = None,
     ):
         return cls(
             env_name=env_name,
             env_type=env_type,
-            from_bento_store=from_bento_store,
             bento_path=bento_path,
         )
 
     def create_conda_env(self) -> str:
+        """
+        Create a new conda env with self.env_name
+        """
         conda_exe = os.environ.get("CONDA_EXE")
         if conda_exe is None:
             raise BentoMLException(
                 "conda executable not found! Make sure conda is installed and that `CONDA_EXE` is set."
             )
         # setup conda with bento's environment.yml file and python/install.sh file
-        if self.from_bento_store:
+        if self.env_name is not None:
+            conda_env_path: str
             if self._env_fs.exists(self.env_name):
                 return self._env_fs.getsyspath(self.env_name)
             with NamedTemporaryFile(mode="w", delete=False) as script_file:
@@ -100,17 +103,34 @@ class EnvManager:
                     + "\n"
                 )
 
+                # install conda deps
+                from bentoml._internal.bento.build_config import (
+                    CONDA_ENV_YAML_FILE_NAME,
+                )
+
+                conda_environment_file = fs.path.join(
+                    self.bento_path, "env", "conda", CONDA_ENV_YAML_FILE_NAME
+                )
+                if os.path.exists(conda_environment_file):
+                    script_file.write(
+                        "conda config --set pip_interop_enabled True" + "\n"
+                    )
+                    script_file.write(
+                        f"conda env update -p {conda_env_path} --file {conda_environment_file}"
+                        + "\n"
+                    )
+
                 script_file.write(f'eval "$(conda shell.posix hook)"' + "\n")
                 script_file.write(f"conda activate {conda_env_path}" + "\n")
+
                 python_install_script = fs.path.join(
                     self.bento_path, "env", "python", "install.sh"
                 )
                 script_file.write(f"bash -euxo pipefail {python_install_script}" + "\n")
 
-            with Status("Creating Conda environment and installing dependencies"):
-                run_script_subprocess(
-                    script_file.name, capture_output=not is_debug_mode
-                )
+            logger.info("Creating Conda env and installing dependencies...")
+            run_script_subprocess(script_file.name, capture_output=not is_debug_mode)
+            return conda_env_path
         # TODO:create an ephimeral env
         else:
             pass

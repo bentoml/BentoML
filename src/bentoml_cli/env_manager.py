@@ -9,7 +9,6 @@ import functools
 import click
 
 from bentoml.exceptions import NotFound
-
 from bentoml._internal.env_manager import EnvManager
 
 logger = logging.getLogger(__name__)
@@ -56,15 +55,15 @@ def env_manager(func):
             # if bento_tag is a bento in the bento_store, use a persistent env
             try:
                 bento = bento_store.get(bento_tag)
-                from_bento_store = True
+                env_name = str(bento.tag).replace(":", "_")
                 bento_path = bento._fs.getsyspath("")
             except NotFound:
                 # env created will be ephemeral
-                from_bento_store = False
+                env_name = None
+                bento_path = None
             bento_env = EnvManager.get_environment(
-                env_name=bento_tag,
+                env_name=env_name,
                 env_type=env,
-                from_bento_store=from_bento_store,
                 bento_path=bento_path,
             )
 

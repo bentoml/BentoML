@@ -9,6 +9,7 @@ import functools
 import click
 
 from bentoml.exceptions import NotFound
+from bentoml._internal.utils import rich_console
 from bentoml._internal.env_manager import EnvManager
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ def env_manager(func):
     def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
         env = kwargs.pop("env")
         if env is not None:
-            print("loading env_manager")
+            rich_console.print(f"loading {env} environment...")
             bento_tag = kwargs["bento"]
 
             # if bento_tag is a bento in the bento_store, use a persistent env
@@ -65,6 +66,9 @@ def env_manager(func):
                 env_name=env_name,
                 env_type=env,
                 bento_path=bento_path,
+            )
+            rich_console.print(
+                f"environment {'' if not env_name else env_name} activated!"
             )
 
             # once env is created, spin up a subprocess to run current arg

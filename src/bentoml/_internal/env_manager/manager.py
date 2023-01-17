@@ -27,14 +27,22 @@ def decode(msg: bytes) -> str:
 
 
 def run_script_subprocess(
-    script_file_path: t.Union[str, os.PathLike[str]], capture_output: bool
+    script_file_path: t.Union[str, os.PathLike[str]],
+    capture_output: bool,
+    debug_mode: bool,
 ):
     shell_path = which("bash")
     if shell_path is None:
         raise BentoMLException("Unable to locate a valid shell")
 
+    safer_bash_args: list[str] = []
+    if debug_mode:
+        safer_bash_args = [
+            "-euxo",
+            "pipefail",
+        ]
     result = subprocess.run(
-        [shell_path, "-euxo", "pipefail", script_file_path],
+        [shell_path, *safer_bash_args, script_file_path],
         capture_output=capture_output,
     )
     if result.returncode != 0:
@@ -129,7 +137,11 @@ class EnvManager:
                 script_file.write(f"bash -euxo pipefail {python_install_script}" + "\n")
 
             logger.info("Creating Conda env and installing dependencies...")
-            run_script_subprocess(script_file.name, capture_output=not is_debug_mode)
+            run_script_subprocess(
+                script_file.name,
+                capture_output=not is_debug_mode,
+                debug_mode=is_debug_mode,
+            )
             return conda_env_path
         # TODO:create an ephimeral env
         else:
@@ -144,4 +156,6 @@ class EnvManager:
             script_file.write(f'eval "$(conda shell.posix hook)"' + "\n")
             script_file.write(f"conda activate {conda_env_path}" + "\n")
             script_file.write(" ".join(commands) + "\n")
-        run_script_subprocess(script_file.name, capture_output=not is_debug_mode)
+        run_script_subprocess(
+            script_file.name, capture_output=False, debug_mode=is_debug_mode
+        )

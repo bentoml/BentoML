@@ -341,23 +341,22 @@ if __name__ == '__main__':
             raise BentoMLException("\n".join(exception_message))
         pb, _ = import_generated_stubs(protocol_version)
 
-        channel = GrpcClient._create_sync_channel(
-            urlparse(server_url).netloc,
+        with GrpcClient._create_sync_channel(
+            server_url.replace(r"localhost", "0.0.0.0"),
             ssl=kwargs.get("ssl", False),
             ssl_client_credentials=kwargs.get("ssl_client_credentials", None),
             channel_options=kwargs.get("channel_options", None),
             compression=kwargs.get("compression", None),
-        )
-
-        # create an insecure channel to invoke ServiceMetadata rpc
-        metadata = t.cast(
-            "ServiceMetadataResponse",
-            channel.unary_unary(
-                f"/bentoml.grpc.{protocol_version}.BentoService/ServiceMetadata",
-                request_serializer=pb.ServiceMetadataRequest.SerializeToString,
-                response_deserializer=pb.ServiceMetadataResponse.FromString,
-            )(pb.ServiceMetadataRequest()),
-        )
+        ) as channel:
+            # create an insecure channel to invoke ServiceMetadata rpc
+            metadata = t.cast(
+                "ServiceMetadataResponse",
+                channel.unary_unary(
+                    f"/bentoml.grpc.{protocol_version}.BentoService/ServiceMetadata",
+                    request_serializer=pb.ServiceMetadataRequest.SerializeToString,
+                    response_deserializer=pb.ServiceMetadataResponse.FromString,
+                )(pb.ServiceMetadataRequest()),
+            )
         dummy_service = Service(metadata.name)
 
         for api in metadata.apis:

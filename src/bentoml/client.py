@@ -15,5 +15,7 @@ See https://docs.bentoml.org/en/latest/guides/client.html for more information.
 from __future__ import annotations
 
 from ._internal.client import Client
+from ._internal.client.grpc import GrpcClient
+from ._internal.client.http import HTTPClient
 
-__all__ = ["Client"]
+__all__ = ["Client", "HTTPClient", "GrpcClient"]

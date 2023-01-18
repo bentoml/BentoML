@@ -128,7 +128,7 @@ class Runner:
         else:
             if not all(isinstance(model, Model) for model in models):
                 raise ValueError(
-                    f"models must be a list of 'bentoml.Model'. Got { {type(model) for model in models if isinstance(model, Model)} } instead."
+                    f"models must be a list of 'bentoml.Model'. Got { {type(model) for model in models if not isinstance(model, Model)} } instead."
                 )
         runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
         runnable_init_params = (

@@ -109,11 +109,6 @@ def get_current_context() -> YataiClientContext:
     return config.get_current_context()
 
 
-def get_current_yatai_rest_api_client() -> YataiRESTApiClient:
-    ctx = get_current_context()
-    return ctx.get_yatai_rest_api_client()
-
-
 def get_context(context: t.Optional[str]) -> YataiClientContext:
     config = get_config()
     return config.get_context(context)

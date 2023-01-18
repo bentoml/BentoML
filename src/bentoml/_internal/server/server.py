@@ -20,6 +20,7 @@ class ServerHandle:
     port: int
     timeout: int = attr.field(default=10)
 
+    @property
     def client(self):
         return self.get_client()
 
@@ -27,7 +28,7 @@ class ServerHandle:
         from ..client import Client
 
         Client.wait_until_server_ready(self.host, self.port, self.timeout)
-        return Client.from_url(f"http://{self.host}:{self.port}")
+        return Client.from_url(f"http://{self.host}:{self.port}", kind="auto")
 
     def stop(self) -> None:
         self.process.terminate()

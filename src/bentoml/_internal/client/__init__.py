@@ -7,7 +7,6 @@ import functools
 from abc import ABC
 from abc import abstractmethod
 from http.client import BadStatusLine
-from urllib.parse import urlparse
 
 from ...exceptions import BentoMLException
 from ..service.inference_api import InferenceAPI
@@ -102,12 +101,6 @@ class Client(ABC):
     def from_url(
         server_url: str, *, kind: str | None = None, **kwargs: t.Any
     ) -> Client:
-        url_parsed = urlparse(server_url)
-        if url_parsed.scheme == "http":
-            kind = "http"
-        elif url_parsed.scheme == "grpc":
-            kind = "grpc"
-
         if kind is None or kind == "auto":
             try:
                 from .http import HTTPClient

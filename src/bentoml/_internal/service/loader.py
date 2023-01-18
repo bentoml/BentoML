@@ -11,6 +11,7 @@ import fs
 from simple_di import inject
 from simple_di import Provide
 
+from ..tag import Tag
 from ..bento import Bento
 from ..models import ModelStore
 from .service import on_import_svc
@@ -26,7 +27,6 @@ from ..bento.build_config import BentoBuildConfig
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ..tag import Tag
     from ..bento import BentoStore
     from .service import Service
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import typing as t
-import asyncio
 import logging
 import functools
 from typing import TYPE_CHECKING
@@ -10,7 +9,7 @@ from typing import TYPE_CHECKING
 from packaging.version import parse
 
 from . import Client
-from .. import io_descriptors as io
+from .. import io_descriptors
 from ..utils import LazyLoader
 from ..utils import cached_property
 from ..service import Service
@@ -30,6 +29,7 @@ if TYPE_CHECKING:
 
     import grpc
     from grpc import aio
+    from grpc._channel import Channel as GrpcSyncChannel
     from grpc_health.v1 import health_pb2 as pb_health
     from google.protobuf import json_format as _json_format
 
@@ -78,7 +78,7 @@ class GrpcClient(Client):
         if ssl:
             assert (
                 ssl_client_credentials is not None
-            ), "'ssl=True' requires 'credentials'"
+            ), "'ssl=True' requires 'ssl_client_credentials'"
             self._credentials = grpc.ssl_channel_credentials(
                 **{
                     k: load_from_file(v) if isinstance(v, str) else v
@@ -106,30 +106,95 @@ class GrpcClient(Client):
                 interceptors=self._interceptors,
             )
 
+    @staticmethod
+    def _create_sync_channel(
+        server_url: str,
+        ssl: bool = False,
+        ssl_client_credentials: ClientCredentials | None = None,
+        channel_options: t.Any | None = None,
+        compression: grpc.Compression | None = None,
+    ) -> GrpcSyncChannel:
+        if ssl:
+            assert (
+                ssl_client_credentials is not None
+            ), "'ssl=True' requires 'ssl_client_credentials'"
+            return grpc.secure_channel(
+                server_url,
+                credentials=grpc.ssl_channel_credentials(
+                    **{
+                        k: load_from_file(v) if isinstance(v, str) else v
+                        for k, v in ssl_client_credentials.items()
+                    }
+                ),
+                options=channel_options,
+                compression=compression,
+            )
+        return grpc.insecure_channel(
+            server_url, options=channel_options, compression=compression
+        )
+
+    @staticmethod
     def wait_until_server_ready(
-        self,
-        *,
-        server_url: str | None = None,
+        host: str,
+        port: int,
         timeout: int = 30,
         check_interval: int = 1,
+        # set kwargs here to omit gRPC kwargs
         **kwargs: t.Any,
     ) -> None:
+        protocol_version = kwargs.get("protocol_version", LATEST_PROTOCOL_VERSION)
+
+        channel = GrpcClient._create_sync_channel(
+            f"{host}:{port}",
+            ssl=kwargs.get("ssl", False),
+            ssl_client_credentials=kwargs.get("ssl_client_credentials", None),
+            channel_options=kwargs.get("channel_options", None),
+            compression=kwargs.get("compression", None),
+        )
+        rpc = channel.unary_unary(
+            "/grpc.health.v1.Health/Check",
+            request_serializer=pb_health.HealthCheckRequest.SerializeToString,
+            response_deserializer=pb_health.HealthCheckResponse.FromString,
+        )
+
         start_time = time.time()
         while time.time() - start_time < timeout:
             try:
-                res = asyncio.run(
-                    self._health(service_name=self._call_rpc, timeout=timeout)
+                response = t.cast(
+                    pb_health.HealthCheckResponse,
+                    rpc(
+                        pb_health.HealthCheckRequest(
+                            service=f"bentoml.grpc.{protocol_version}.BentoService"
+                        )
+                    ),
                 )
-                if res.status == pb_health.HealthCheckResponse.SERVING:
+                if response.status == pb_health.HealthCheckResponse.SERVING:
                     break
                 else:
-                    asyncio.run(asyncio.sleep(check_interval))
-            except aio.AioRpcError as err:
-                logger.debug("[%s] Retrying to connect to the host %s", err, server_url)
-                asyncio.run(asyncio.sleep(check_interval))
-        raise TimeoutError(
-            f"Timed out waiting {timeout} seconds for server at '{server_url}' to be ready."
-        )
+                    time.sleep(check_interval)
+            except grpc.RpcError:
+                logger.debug("Server is not ready. Retrying...")
+                time.sleep(check_interval)
+
+        try:
+            response = t.cast(
+                pb_health.HealthCheckResponse,
+                rpc(
+                    pb_health.HealthCheckRequest(
+                        service=f"bentoml.grpc.{protocol_version}.BentoService"
+                    )
+                ),
+            )
+            if response.status != pb_health.HealthCheckResponse.SERVING:
+                raise TimeoutError(
+                    f"Timed out waiting {timeout} seconds for server at '{host}:{port}' to be ready."
+                )
+        except (grpc.RpcError, TimeoutError) as err:
+            logger.error("Caught exception while connecting to %s:%s:", host, port)
+            logger.error(err)
+            raise
+        else:
+            channel.close()
 
     @cached_property
     def _rpc_metadata(self) -> dict[str, dict[str, t.Any]]:
@@ -156,7 +221,7 @@ class GrpcClient(Client):
             )
         }
 
-    async def _health(self, service_name: str, *, timeout: int = 30) -> t.Any:
+    async def health(self, service_name: str, *, timeout: int = 30) -> t.Any:
         return await self._invoke(
             method_name="/grpc.health.v1.Health/Check",
             service=service_name,
@@ -240,8 +305,6 @@ class GrpcClient(Client):
     @classmethod
     def from_url(cls, server_url: str, **kwargs: t.Any) -> GrpcClient:
         protocol_version = kwargs.get("protocol_version", LATEST_PROTOCOL_VERSION)
-        ssl = kwargs.get("ssl", False)
-        ssl_client_credentials = kwargs.get("ssl_client_credentials", None)
 
         # Since v1, we introduce a ServiceMetadata rpc to retrieve bentoml.Service metadata.
         # then `client.predict` or `client.classify` won't be available.
@@ -279,27 +342,13 @@ if __name__ == '__main__':
             raise BentoMLException("\n".join(exception_message))
         pb, _ = import_generated_stubs(protocol_version)
 
-        if ssl:
-            assert (
-                ssl_client_credentials is not None
-            ), "'ssl=True' requires 'credentials'"
-            channel = grpc.secure_channel(
-                server_url,
-                credentials=grpc.ssl_channel_credentials(
-                    **{
-                        k: load_from_file(v) if isinstance(v, str) else v
-                        for k, v in ssl_client_credentials.items()
-                    }
-                ),
-                options=kwargs.get("channel_options", None),
-                compression=kwargs.get("compression", None),
-            )
-        else:
-            channel = grpc.insecure_channel(
-                server_url,
-                options=kwargs.get("channel_options", None),
-                compression=kwargs.get("compression", None),
-            )
+        channel = GrpcClient._create_sync_channel(
+            server_url,
+            ssl=kwargs.get("ssl", False),
+            ssl_client_credentials=kwargs.get("ssl_client_credentials", None),
+            channel_options=kwargs.get("channel_options", None),
+            compression=kwargs.get("compression", None),
+        )
 
         # create an insecure channel to invoke ServiceMetadata rpc
         metadata = t.cast(
@@ -316,7 +365,7 @@ if __name__ == '__main__':
             try:
                 dummy_service.apis[api.name] = InferenceAPI(
                     None,
-                    io.from_spec(
+                    io_descriptors.from_spec(
                         {
                             "id": api.input.descriptor_id,
                             "args": _json_format.MessageToDict(
@@ -324,7 +373,7 @@ if __name__ == '__main__':
                             ).get("args", None),
                         }
                     ),
-                    io.from_spec(
+                    io_descriptors.from_spec(
                         {
                             "id": api.output.descriptor_id,
                             "args": _json_format.MessageToDict(

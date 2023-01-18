@@ -26,34 +26,56 @@ logger = logging.getLogger(__name__)
 
 
 class HTTPClient(Client):
+    @staticmethod
     def wait_until_server_ready(
-        self,
-        *,
-        server_url: str | None = None,
+        host: str,
+        port: int,
         timeout: int = 30,
         check_interval: int = 1,
         # set kwargs here to omit gRPC kwargs
         **kwargs: t.Any,
     ) -> None:
         start_time = time.time()
-        if server_url is None:
-            server_url = self.server_url
+        status = None
 
-        proxy_handler = urllib.request.ProxyHandler({})
-        opener = urllib.request.build_opener(proxy_handler)
-        logger.debug("Waiting for host %s to be ready.", server_url)
+        logger.debug("Waiting for host %s to be ready.", f"{host}:{port}")
         while time.time() - start_time < timeout:
             try:
-                if opener.open(f"http://{server_url}/readyz", timeout=1).status == 200:
+                conn = HTTPConnection(host, port)
+                conn.request("GET", "/readyz")
+                status = conn.getresponse().status
+                if status == 200:
                     break
                 else:
                     time.sleep(check_interval)
-            except (ConnectionError, urllib.error.URLError, socket.timeout) as err:
-                logger.debug("[%s] Retrying to connect to the host %s", err, server_url)
+            except (
+                ConnectionError,
+                urllib.error.URLError,
+                socket.timeout,
+                ConnectionRefusedError,
+            ):
+                logger.debug("Server is not ready. Retrying...")
                 time.sleep(check_interval)
-        raise TimeoutError(
-            f"Timed out waiting {timeout} seconds for server at '{server_url}' to be ready."
-        )
+
+        # try to connect one more time and raise exception.
+        try:
+            conn = HTTPConnection(host, port)
+            conn.request("GET", "/readyz")
+            status = conn.getresponse().status
+            if status != 200:
+                raise TimeoutError(
+                    f"Timed out waiting {timeout} seconds for server at '{host}:{port}' to be ready."
+                )
+        except (
+            ConnectionError,
+            urllib.error.URLError,
+            socket.timeout,
+            ConnectionRefusedError,
+            TimeoutError,
+        ) as err:
+            logger.error("Caught exception while connecting to %s:%s:", host, port)
+            logger.error(err)
+            raise
 
     @classmethod
     def from_url(cls, server_url: str, **kwargs: t.Any) -> HTTPClient:

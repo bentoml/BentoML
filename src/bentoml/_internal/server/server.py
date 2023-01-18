@@ -26,9 +26,8 @@ class ServerHandle:
     def get_client(self):
         from ..client import Client
 
-        client = Client.from_url(f"http://{self.host}:{self.port}")
-        client.wait_until_server_ready(timeout=10)
-        return client
+        Client.wait_until_server_ready(self.host, self.port, self.timeout)
+        return Client.from_url(f"http://{self.host}:{self.port}")
 
     def stop(self) -> None:
         self.process.terminate()

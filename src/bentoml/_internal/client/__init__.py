@@ -6,7 +6,6 @@ import logging
 import functools
 from abc import ABC
 from abc import abstractmethod
-from typing import TYPE_CHECKING
 from http.client import BadStatusLine
 from urllib.parse import urlparse
 
@@ -15,7 +14,9 @@ from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from types import TracebackType
+
     from .grpc import GrpcClient
     from .http import HTTPClient
     from ..service import Service
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
 class Client(ABC):
     server_url: str
     _svc: Service
+    endpoints: list[str]
 
     def __init__(self, svc: Service, server_url: str):
         self._svc = svc
@@ -32,7 +34,10 @@ class Client(ABC):
         if svc is not None and len(svc.apis) == 0:
             raise BentoMLException("No APIs were found when constructing client.")
 
+        self.endpoints = []
         for name, api in self._svc.apis.items():
+            self.endpoints.append(name)
+
             if not hasattr(self, name):
                 setattr(
                     self, name, functools.partial(self._sync_call, _bentoml_api=api)
@@ -57,40 +62,45 @@ class Client(ABC):
             inp, _bentoml_api=self._svc.apis[bentoml_api_name], **kwargs
         )
 
-    @abstractmethod
+    @staticmethod
     def wait_until_server_ready(
-        self,
-        *,
-        server_url: str | None = None,
-        timeout: int = 30,
-        **kwargs: t.Any,
+        host: str, port: int, timeout: int = 30, **kwargs: t.Any
     ) -> None:
-        raise NotImplementedError
+        try:
+            from .http import HTTPClient
+
+            HTTPClient.wait_until_server_ready(host, port, timeout, **kwargs)
+        except BadStatusLine:
+            # when address is a RPC
+            from .grpc import GrpcClient
+
+            GrpcClient.wait_until_server_ready(host, port, timeout, **kwargs)
+        except Exception as err:
+            # caught all other exceptions
+            logger.error("Failed to connect to server %s:%s", host, port)
+            logger.error(err)
+            raise
 
     @t.overload
-    @classmethod
-    @abstractmethod
+    @staticmethod
     def from_url(
-        cls, server_url: str, *, kind: None | t.Literal["auto"] = ...
+        server_url: str, *, kind: None | t.Literal["auto"] = ...
     ) -> GrpcClient | HTTPClient:
         ...
 
     @t.overload
-    @classmethod
-    @abstractmethod
-    def from_url(cls, server_url: str, *, kind: t.Literal["http"] = ...) -> HTTPClient:
+    @staticmethod
+    def from_url(server_url: str, *, kind: t.Literal["http"] = ...) -> HTTPClient:
         ...
 
     @t.overload
-    @classmethod
-    @abstractmethod
-    def from_url(cls, server_url: str, *, kind: t.Literal["grpc"] = ...) -> GrpcClient:
+    @staticmethod
+    def from_url(server_url: str, *, kind: t.Literal["grpc"] = ...) -> GrpcClient:
         ...
 
-    @classmethod
-    @abstractmethod
+    @staticmethod
     def from_url(
-        cls, server_url: str, *, kind: str | None = None, **kwargs: t.Any
+        server_url: str, *, kind: str | None = None, **kwargs: t.Any
     ) -> Client:
         url_parsed = urlparse(server_url)
         if url_parsed.scheme == "http":
@@ -134,3 +144,25 @@ class Client(ABC):
         self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
     ) -> t.Any:
         raise NotImplementedError
+
+    def __enter__(self):
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        pass

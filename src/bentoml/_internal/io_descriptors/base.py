@@ -6,7 +6,6 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from ...exceptions import InvalidArgument
-from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from types import UnionType
@@ -41,7 +40,7 @@ def from_spec(spec: dict[str, t.Any]) -> IODescriptor[t.Any]:
         raise InvalidArgument(f"IO descriptor spec ({spec}) missing ID.")
 
     if spec["id"] is None:
-        raise BentoMLException("No IO descriptor spec found.")
+        raise InvalidArgument("No IO descriptor spec found.")
 
     return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)
 

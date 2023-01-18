@@ -8,7 +8,6 @@ import logging
 import itertools
 import subprocess
 from typing import TYPE_CHECKING
-from textwrap import indent
 from functools import partial
 
 if TYPE_CHECKING:
@@ -88,58 +87,62 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
         # default can be a callable. We only care about the result.
         default_value = param.get_default(ctx)
 
+        # We need to run transformation here such that we don't have to deal with
+        # nested value.
+        # NOTE: if users are using both old and new options, the new option will take
+        # precedence, and the old option will be ignored.
+        value = normalize_none_type(value)
+
         # if given param.name is not in the memoized options, we need to create them.
         if param.name not in ctx.params[_MEMO_KEY]:
             # Initialize the memoized options with default value.
             ctx.params[_MEMO_KEY][param.name] = () if param.multiple else default_value
-
-        # We need to run transformation here such that we don't have to deal with
-        # nested value.
-        value = normalize_none_type(value)
-        if value is not None:
-            # Only warning if given value is different from the default.
-            # Since we are going to transform default value from old options to
-            # the kwargs map, there is no need to bloat logs.
-            if value != default_value:
-                msg = "is now obsolete, use the equivalent"
-                if isinstance(value, bool):
-                    logger.warning(
-                        "'%s' %s '--%s %s' instead.",
-                        opt,
-                        msg,
-                        equivalent[0],
-                        opt.lstrip("--"),
-                    )
-                elif isinstance(value, tuple):
-                    obsolete_format = " ".join(map(lambda s: "%s=%s" % (opt, s), value))
-                    new_format = " ".join(
-                        map(
-                            lambda s: "--%s %s=%s"
-                            % (equivalent[0], opt.lstrip("--"), s),
+            if value is not None:
+                # Only warning if given value is different from the default.
+                # Since we are going to transform default value from old options to
+                # the kwargs map, there is no need to bloat logs.
+                if value != default_value:
+                    msg = "is now deprecated, use the equivalent"
+                    if isinstance(value, bool):
+                        logger.warning(
+                            "'%s' %s '--%s %s' instead.",
+                            opt,
+                            msg,
+                            equivalent[0],
+                            opt.lstrip("--"),
+                        )
+                    elif isinstance(value, tuple):
+                        obsolete_format = " ".join(
+                            map(lambda s: "%s=%s" % (opt, s), value)
+                        )
+                        new_format = " ".join(
+                            map(
+                                lambda s: "--%s %s=%s"
+                                % (equivalent[0], opt.lstrip("--"), s),
+                                value,
+                            )
+                        )
+                        logger.warning(
+                            "'%s' %s '%s' instead.", obsolete_format, msg, new_format
+                        )
+                    else:
+                        assert isinstance(value, str)
+                        logger.warning(
+                            "'%s=%s' %s '--%s %s=%s' instead.",
+                            opt,
+                            value,
+                            msg,
+                            equivalent[0],
+                            opt.lstrip("--"),
                             value,
                         )
-                    )
-                    logger.warning(
-                        "'%s' %s '%s' instead.", obsolete_format, msg, new_format
-                    )
+                if isinstance(value, (bool, str)):
+                    ctx.params[_MEMO_KEY][param.name] = value
+                elif isinstance(value, tuple):
+                    assert param.multiple
+                    ctx.params[_MEMO_KEY][param.name] += value
                 else:
-                    assert isinstance(value, str)
-                    logger.warning(
-                        "'%s=%s' %s '--%s %s=%s' instead.",
-                        opt,
-                        value,
-                        msg,
-                        equivalent[0],
-                        opt.lstrip("--"),
-                        value,
-                    )
-            if isinstance(value, (bool, str)):
-                ctx.params[_MEMO_KEY][param.name] = value
-            elif isinstance(value, tuple):
-                assert param.multiple
-                ctx.params[_MEMO_KEY][param.name] += value
-            else:
-                raise ValueError(f"Unexpected value type: {type(value)}")
+                    raise ValueError(f"Unexpected value type: {type(value)}")
 
     def decorator(f: F[t.Any]) -> t.Callable[[F[t.Any]], Command]:
         # We will set default value to None if 'default' is not set.
@@ -413,7 +416,6 @@ def add_containerize_command(cli: Group) -> None:
     from bentoml._internal.container import REGISTERED_BACKENDS
     from bentoml._internal.container import determine_container_tag
     from bentoml._internal.configuration import get_debug_mode
-    from bentoml._internal.configuration.containers import BentoMLContainer
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING, metavar="BENTO:TAG")
@@ -593,15 +595,12 @@ def add_containerize_command(cli: Group) -> None:
                 o = subprocess.check_output([container_runtime, "load"], input=result)
                 click.echo(o.decode("utf-8").strip())
 
-            multiple_tags = len(tags) > 1
-            example_tag = tags[0]
-
             click.echo(
                 f'Successfully built Bento container for "{bento_tag}" with tag(s) "{",".join(tags)}"',
             )
             instructions = (
                 f"To run your newly built Bento container, run:\n"
-                + f"    {container_runtime} run -it --rm -p 3000:3000 {example_tag} serve --production\n"
+                + f"    {container_runtime} run -it --rm -p 3000:3000 {tags[0]} serve --production\n"
             )
 
             if features is not None and any(
@@ -610,7 +609,7 @@ def add_containerize_command(cli: Group) -> None:
             ):
                 instructions += (
                     "To serve with gRPC instead, run:\n"
-                    + f"    {container_runtime} run -it -p 3000:3000 -p 3001:3001 {example_tag} serve-grpc --production\n"
+                    + f"    {container_runtime} run -it -p 3000:3000 -p 3001:3001 {tags[0]} serve-grpc --production\n"
                 )
             click.echo(instructions, nl=False)
             raise SystemExit(0)

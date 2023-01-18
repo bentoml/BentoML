@@ -240,7 +240,7 @@ class Model(StoreItem):
         try:
             res.validate()
         except BentoMLException as e:
-            raise BentoMLException(f"Failed to load {self!s}: {e}") from None
+            raise BentoMLException(f"Failed to load {res!s}: {e}") from None
 
         return res
 

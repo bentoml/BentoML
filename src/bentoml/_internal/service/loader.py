@@ -26,6 +26,7 @@ from ..bento.build_config import BentoBuildConfig
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    from ..tag import Tag
     from ..bento import BentoStore
     from .service import Service
 
@@ -185,7 +186,7 @@ def import_service(
 
 @inject
 def load_bento(
-    bento_tag: str,
+    bento: str | Tag | Bento,
     bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     standalone_load: bool = False,
 ) -> "Service":
@@ -195,11 +196,13 @@ def load_bento(
         load_bento("FraudDetector:latest")
         load_bento("FraudDetector:20210709_DE14C9")
     """
-    bento = bento_store.get(bento_tag)
+    if isinstance(bento, (str, Tag)):
+        bento = bento_store.get(bento)
+
     logger.debug(
         'Loading bento "%s" found in local store: %s',
         bento.tag,
-        bento._fs.getsyspath("/"),
+        bento.path,
     )
 
     # not in validate as it's only really necessary when getting bentos from disk

@@ -30,6 +30,8 @@ EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install w
 if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
+    import pyarrow
+    import pyspark.sql.types
     from typing_extensions import Self
 
     from bentoml.grpc.v1 import service_pb2 as pb
@@ -715,6 +717,43 @@ class PandasDataFrame(
             ],
         )
 
+    def from_arrow(self, batch: pyarrow.RecordBatch) -> ext.PdDataFrame:
+        res = batch.to_pandas()
+        if isinstance(res, pd.DataFrame):
+            return res
+        if isinstance(res, pd.Series):
+            return res.to_frame()
+
+    def to_arrow(self, df: pd.Series[t.Any]) -> pyarrow.RecordBatch:
+        import pyarrow
+
+        return pyarrow.RecordBatch.from_pandas(df)
+
+    def spark_schema(self) -> pyspark.sql.types.StructType:
+        from pyspark.sql.types import StructType
+        from pyspark.sql.types import StructField
+        from pyspark.pandas.typedef import as_spark_type
+
+        if self._dtype is None or self._dtype:
+            raise InvalidArgument(
+                "Cannot perform batch inference with a numpy output without a known dtype; please provide a dtype."
+            )
+
+        if isinstance(self._dtype, dict):
+            fields = []
+            for col_name, col_type in self._dtype:
+                try:
+                    fields.append(StructField(col_name, as_spark_type(col_type)))
+                except TypeError:
+                    raise InvalidArgument(
+                        f"dtype {col_type} is not supported for batch inference."
+                    )
+            return StructType(fields)
+        else:
+            raise NotImplementedError(
+                "Only dict dtypes are currently supported for dataframes"
+            )
+
 
 class PandasSeries(
     IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
@@ -1103,3 +1142,40 @@ class PandasSeries(
             raise InvalidArgument(
                 f"Unsupported dtype '{obj.dtype}' for response message."
             ) from None
+
+    def from_arrow(self, batch: pyarrow.RecordBatch) -> pd.Series[t.Any]:
+        res = batch.to_pandas()
+        if isinstance(res, pd.Series):
+            return res
+        if isinstance(res, pd.DataFrame):
+            if len(res.columns) == 1:
+                return res.squeeze()
+            else:
+                raise InvalidArgument(
+                    "Multi-column dataframe was passed when trying to convert to a series."
+                )
+
+    def to_arrow(self, series: pd.Series[t.Any]) -> pyarrow.RecordBatch:
+        import pyarrow
+
+        df = series.to_frame()
+        return pyarrow.RecordBatch.from_pandas(df)
+
+    def spark_schema(self) -> pyspark.sql.types.StructType:
+        from pyspark.sql.types import StructType
+        from pyspark.sql.types import StructField
+        from pyspark.pandas.typedef import as_spark_type
+
+        if self._dtype is None or self._dtype is True:
+            raise InvalidArgument(
+                "Cannot perform batch inference with a pandas series output without a known dtype; please provide a dtype."
+            )
+
+        try:
+            out_spark_type = as_spark_type(self._dtype)
+        except TypeError:
+            raise InvalidArgument(
+                f"dtype {self._dtype} is not supported for batch inference."
+            )
+
+        return StructType([StructField("out", out_spark_type)])

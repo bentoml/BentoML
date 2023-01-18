@@ -102,7 +102,7 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
                 # Since we are going to transform default value from old options to
                 # the kwargs map, there is no need to bloat logs.
                 if value != default_value:
-                    msg = "is now obsolete, use the equivalent"
+                    msg = "is now deprecated, use the equivalent"
                     if isinstance(value, bool):
                         logger.warning(
                             "'%s' %s '--%s %s' instead.",

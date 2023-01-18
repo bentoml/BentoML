@@ -4,5 +4,6 @@
 -r docs-requirements.txt
 twine
 wheel
+setuptools-scm
 # stubs
-pandas-stubs  # officially supported by pandas teams
+pandas-stubs

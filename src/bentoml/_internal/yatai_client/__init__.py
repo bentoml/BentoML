@@ -44,7 +44,7 @@ from ..models import ModelStore
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
-from ..yatai_rest_api_client.config import get_current_yatai_rest_api_client
+from ..yatai_rest_api_client.config import get_yatai_rest_api_client
 from ..yatai_rest_api_client.schemas import BentoApiSchema
 from ..yatai_rest_api_client.schemas import LabelItemSchema
 from ..yatai_rest_api_client.schemas import BentoRunnerSchema
@@ -193,12 +193,21 @@ class YataiClient:
             self.spinner_progress.stop_task(task_id)
             self.spinner_progress.update(task_id, visible=False)
 
-    def push_bento(self, bento: "Bento", *, force: bool = False, threads: int = 10):
+    def push_bento(
+        self,
+        bento: "Bento",
+        *,
+        force: bool = False,
+        threads: int = 10,
+        context: t.Optional[str] = None,
+    ):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
                 f'Pushing Bento "{bento.tag}"', start=False, visible=False
             )
-            self._do_push_bento(bento, upload_task_id, force=force, threads=threads)
+            self._do_push_bento(
+                bento, upload_task_id, force=force, threads=threads, context=context
+            )
 
     def _do_push_bento(
         self,
@@ -207,8 +216,9 @@ class YataiClient:
         *,
         force: bool = False,
         threads: int = 10,
+        context: t.Optional[str] = None,
     ):
-        yatai_rest_client = get_current_yatai_rest_api_client()
+        yatai_rest_client = get_yatai_rest_api_client(context)
         name = bento.tag.name
         version = bento.tag.version
         if version is None:
@@ -224,7 +234,11 @@ class YataiClient:
                     f'Pushing model "{model.tag}"', start=False, visible=False
                 )
                 self._do_push_model(
-                    model, model_upload_task_id, force=force, threads=threads
+                    model,
+                    model_upload_task_id,
+                    force=force,
+                    threads=threads,
+                    context=context,
                 )
 
             futures: t.Iterator[None] = executor.map(push_model, models)
@@ -531,6 +545,7 @@ class YataiClient:
         *,
         force: bool = False,
         bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+        context: t.Optional[str] = None,
     ) -> "Bento":
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
@@ -541,6 +556,7 @@ class YataiClient:
                 download_task_id,
                 force=force,
                 bento_store=bento_store,
+                context=context,
             )
 
     @inject
@@ -551,6 +567,7 @@ class YataiClient:
         *,
         force: bool = False,
         bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+        context: t.Optional[str] = None,
     ) -> "Bento":
         try:
             bento = bento_store.get(tag)
@@ -568,7 +585,7 @@ class YataiClient:
         if version is None:
             raise BentoMLException(f'Bento "{_tag}" version can not be None')
 
-        yatai_rest_client = get_current_yatai_rest_api_client()
+        yatai_rest_client = get_yatai_rest_api_client(context)
 
         with self.spin(text=f'Fetching bento "{_tag}"'):
             remote_bento = yatai_rest_client.get_bento(
@@ -593,6 +610,7 @@ class YataiClient:
                         model_download_task_id,
                         force=force,
                         model_store=model_store,
+                        context=context,
                     )
 
                 futures = executor.map(pull_model, remote_bento.manifest.models)
@@ -681,12 +699,21 @@ class YataiClient:
                         )
                         return bento
 
-    def push_model(self, model: "Model", *, force: bool = False, threads: int = 10):
+    def push_model(
+        self,
+        model: "Model",
+        *,
+        force: bool = False,
+        threads: int = 10,
+        context: t.Optional[str] = None,
+    ):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
                 f'Pushing model "{model.tag}"', start=False, visible=False
             )
-            self._do_push_model(model, upload_task_id, force=force, threads=threads)
+            self._do_push_model(
+                model, upload_task_id, force=force, threads=threads, context=context
+            )
 
     def _do_push_model(
         self,
@@ -695,8 +722,9 @@ class YataiClient:
         *,
         force: bool = False,
         threads: int = 10,
+        context: t.Optional[str] = None,
     ):
-        yatai_rest_client = get_current_yatai_rest_api_client()
+        yatai_rest_client = get_yatai_rest_api_client(context)
         name = model.tag.name
         version = model.tag.version
         if version is None:
@@ -965,13 +993,18 @@ class YataiClient:
         *,
         force: bool = False,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        context: t.Optional[str] = None,
     ) -> "Model":
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
                 f'Pulling model "{tag}"', start=False, visible=False
             )
             return self._do_pull_model(
-                tag, download_task_id, force=force, model_store=model_store
+                tag,
+                download_task_id,
+                force=force,
+                model_store=model_store,
+                context=context,
             )
 
     @inject
@@ -982,6 +1015,7 @@ class YataiClient:
         *,
         force: bool = False,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        context: t.Optional[str] = None,
     ) -> "Model":
         try:
             model = model_store.get(tag)
@@ -994,7 +1028,7 @@ class YataiClient:
                 model_store.delete(tag)
         except NotFound:
             pass
-        yatai_rest_client = get_current_yatai_rest_api_client()
+        yatai_rest_client = get_yatai_rest_api_client(context)
         _tag = Tag.from_taglike(tag)
         name = _tag.name
         version = _tag.version

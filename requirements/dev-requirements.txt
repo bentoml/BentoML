@@ -4,3 +4,4 @@
 -r docs-requirements.txt
 twine
 wheel
+setuptools-scm

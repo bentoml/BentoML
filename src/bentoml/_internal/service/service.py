@@ -11,13 +11,13 @@ import attr
 from bentoml.exceptions import BentoMLException
 
 from ..tag import Tag
-from ..types import LazyType
 from ..models import Model
-from ..runner import Runner
 from ...grpc.utils import import_grpc
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..bento.bento import get_default_svc_readme
 from .inference_api import InferenceAPI
+from ..runner.runner import Runner
+from ..runner.runner import RunnerMeta
 from ..io_descriptors import IODescriptor
 
 if TYPE_CHECKING:
@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from ..bento import Bento
-    from ...triton import TritonRunner
     from ...grpc.v1 import service_pb2_grpc as services
     from .openapi.specification import OpenAPISpecification
 
@@ -125,7 +124,7 @@ class Service:
         self,
         name: str,
         *,
-        runners: list[Runner | TritonRunner] | None = None,
+        runners: list[RunnerMeta] | None = None,
         models: list[Model] | None = None,
     ):
         """
@@ -141,10 +140,8 @@ class Service:
         if runners is not None:
             runner_names: t.Set[str] = set()
             for r in runners:
-                assert LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(
-                    r
-                ) or isinstance(
-                    r, Runner
+                assert issubclass(
+                    r.__class__, RunnerMeta
                 ), f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
 
                 if r.name in runner_names:

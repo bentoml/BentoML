@@ -23,7 +23,6 @@ from simple_di import Provide
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..types import LazyType
 from ..types import PathType
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
@@ -43,7 +42,6 @@ if TYPE_CHECKING:
     from fs.base import FS
 
     from ..models import Model
-    from ...triton import TritonRunner
     from ..service import Service
     from ..service.inference_api import InferenceAPI
 
@@ -243,14 +241,6 @@ class Bento(StoreItem):
         build_config.conda.write_to_bento(bento_fs, build_ctx)
         build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
 
-        if any(
-            LazyType["TritonRunner"]("bentoml.triton.TritonRunner").isinstance(runner)
-            for runner in svc.runners
-        ):
-            logger.info(
-                "Make sure to include the Triton container from https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver as a 'base_image' in your 'bentofile.yaml'."
-            )
-
         # Create `readme.md` file
         if build_config.description is None:
             with bento_fs.open(BENTO_README_FILENAME, "w", encoding="utf-8") as f:
@@ -380,13 +370,11 @@ class BentoRunnerInfo:
 
     @classmethod
     def from_runner(cls, r: Runner) -> BentoRunnerInfo:
-        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r):
-            return cls(name=r.name, runnable_type=r.runnable_class.__name__)
         return cls(
             name=r.name,
             runnable_type=r.runnable_class.__name__,
-            models=[str(model.tag) for model in r.models],
-            resource_config=r.resource_config,
+            models=[str(model.tag) for model in r.models] if r.models else [],
+            resource_config=getattr(r, "resource_config", None),
         )
 
 

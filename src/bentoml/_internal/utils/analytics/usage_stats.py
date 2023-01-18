@@ -159,7 +159,11 @@ def _track_serve_init(
             ),
             num_of_runners=len(svc.runners),
             num_of_apis=len(svc.apis.keys()),
-            runnable_types=[r.runnable_class.__name__ for r in svc.runners],
+            runnable_types=[
+                r.runnable_class.__name__
+                for r in svc.runners
+                if hasattr(r, "runnable_class")
+            ],
             api_input_types=[api.input.__class__.__name__ for api in svc.apis.values()],
             api_output_types=[
                 api.output.__class__.__name__ for api in svc.apis.values()

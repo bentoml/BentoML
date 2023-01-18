@@ -214,7 +214,7 @@ def test_runnable(
     for config in test_model.configurations:
         runner = saved_model.with_options(**config.load_kwargs).to_runner()
         runner.init_local()
-        runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+        runner_handle = t.cast(LocalRunnerRef, runner.runner_handle)
         runnable = runner_handle._runnable
         config.check_runnable(runnable, {})
         runner.destroy()
@@ -293,7 +293,7 @@ def test_runner_cpu_multi_threading(
 
             runner.init_local()
 
-            runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+            runner_handle = t.cast(LocalRunnerRef, runner.runner_handle)
             runnable = runner_handle._runnable
             config.check_runnable(runnable, resource_cfg)
             if (
@@ -339,7 +339,7 @@ def test_runner_cpu(
 
             runner.init_local()
 
-            runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+            runner_handle = t.cast(LocalRunnerRef, runner.runner_handle)
             runnable = runner_handle._runnable
             config.check_runnable(runnable, resource_cfg)
 
@@ -387,7 +387,7 @@ def test_runner_nvidia_gpu(
 
             runner.init_local()
 
-            runner_handle = t.cast(LocalRunnerRef, runner._runner_handle)
+            runner_handle = t.cast(LocalRunnerRef, runner.runner_handle)
             runnable = runner_handle._runnable
 
             config.check_runnable(runnable, resource_cfg)

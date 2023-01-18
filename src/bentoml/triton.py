@@ -13,24 +13,18 @@ import attr
 import fs.errors
 import fs.opener
 import fs.opener.errors
-from simple_di import inject
-from simple_di import Provide
 
-from .exceptions import StateException
 from ._internal.utils import bentoml_cattr
 from ._internal.utils import resolve_user_filepath
+from ._internal.runner.runner import RunnerMeta
 from ._internal.runner.runner import RunnerMethod
+from ._internal.runner.runner import object_setattr
 from ._internal.runner.runnable import RunnableMethodConfig
-from ._internal.runner.runner_handle import DummyRunnerHandle
-from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner.runner_handle.remote import TritonRunnerHandle
 
 if t.TYPE_CHECKING:
     from fs.base import FS
     from fs.opener.registry import Registry
-
-    from ._internal.runner.runner import Runner as BentoMLRunner
-    from ._internal.runner.runner_handle import RunnerHandle
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
@@ -47,18 +41,11 @@ logger = logging.getLogger(__name__)
 
 __all__ = ["Runner"]
 
-_object_setattr = object.__setattr__
 
-
-@attr.frozen(slots=False, eq=False)
-class TritonRunner:
-    name: str
-    repository_path: str
-    models: list[str]
-    runnable_class: type[TritonRunner]
-
+@attr.define(slots=False, frozen=True, eq=False)
+class TritonRunner(RunnerMeta):
     _fs: FS
-    _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
+    repository_path: str
 
     def __init__(
         self,
@@ -67,12 +54,6 @@ class TritonRunner:
         *,
         fs_protocol: str | None = None,
     ):
-        lname = name.lower()
-        if name != lname:
-            logger.warning(
-                "Converting runner name '%s' to lowercase: '%s'", name, lname
-            )
-
         # TODO: Support configuration (P1)
 
         # The logic below mimic the behaviour of Exportable.import_from
@@ -129,27 +110,21 @@ class TritonRunner:
             repo_fs = fs.open_fs(f"{fs_protocol}://{resource}")
 
         self.__attrs_init__(
-            name=lname,
-            repository_path=resolve_user_filepath(model_repository, ctx=None),
-            models=[m for m in repo_fs.listdir("/")],
-            runnable_class=TritonRunner,
-            fs=repo_fs,
+            name=name, models=[], repository_path=model_repository, fs=repo_fs
         )
 
         # List of models inside given model repository.
-        for model in self.models:
-            _object_setattr(
+        for model in repo_fs.listdir("/"):
+            object_setattr(
                 self,
                 model,
                 RunnerMethod(
-                    # TODO: Runner interface
-                    # We cast the types here because TritonRunner does follow
-                    # current implementation of BentoML Runner architecture.
-                    runner=t.cast("BentoMLRunner", self),
+                    runner=self,
                     name=model,
+                    # TODO: support config for Triton runners.
                     config=RunnableMethodConfig(batchable=False, batch_dim=(0, 0)),
                     max_batch_size=0,
-                    max_latency_ms=10000,
+                    max_latency_ms=100000,
                 ),
             )
 
@@ -159,20 +134,7 @@ class TritonRunner:
         )
 
     def init_client(self):
-        if not isinstance(self._runner_handle, DummyRunnerHandle):
-            raise StateException("Runner already initialized")
-
-        _object_setattr(self, "_runner_handle", TritonRunnerHandle(self))
-
-    def destroy(self):
-        _object_setattr(self, "_runner_handle", DummyRunnerHandle())
-
-    @inject
-    async def runner_handle_is_ready(
-        self,
-        timeout: int = Provide[BentoMLContainer.api_server_config.runner_probe.timeout],
-    ) -> bool:
-        return await self._runner_handle.is_ready(timeout)
+        self._init(TritonRunnerHandle)
 
 
 def _to_mut_iterable(
@@ -346,7 +308,7 @@ class TritonServerHandle:
     # trace timestamps, TENSORS to trace tensors. It may be specified
     # multiple times to trace multiple informations. Default is OFF.
     trace_level: t.List[TraceLevel] = attr.field(
-        default=None, converter=attr.converters.default_if_none([])
+        default=None, converter=attr.converters.default_if_none(factory=list)
     )
     #   Set the trace sampling rate. Default is 1000
     trace_rate: int = attr.field(default=None)
@@ -385,7 +347,7 @@ class TritonServerHandle:
     # --load-model argument will result in error. Note that this option will only
     # take effect if --model-control-mode=explicit is true.
     load_model: t.List[str] = attr.field(
-        default=None, converter=attr.converters.default_if_none([])
+        default=None, converter=attr.converters.default_if_none(factory=list)
     )
 
     #   Path to backend shared library. Default is /opt/tritonserver/backends.

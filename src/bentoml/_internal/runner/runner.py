@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import typing as t
 import logging
+from abc import ABC
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 import attr
@@ -24,8 +26,10 @@ if TYPE_CHECKING:
 
     # only use ParamSpec in type checking, as it's only in 3.10
     P = t.ParamSpec("P")
+    ListModel = list[Model]
 else:
     P = t.TypeVar("P")
+    ListModel = list
 
 T = t.TypeVar("T", bound=Runnable)
 R = t.TypeVar("R")
@@ -33,107 +37,161 @@ R = t.TypeVar("R")
 
 logger = logging.getLogger(__name__)
 
+object_setattr = object.__setattr__
+
 
 @attr.frozen(slots=False)
 class RunnerMethod(t.Generic[T, P, R]):
-    runner: Runner
+    runner: RunnerMeta
     name: str
     config: RunnableMethodConfig
     max_batch_size: int
     max_latency_ms: int
 
     def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return self.runner._runner_handle.run_method(  # type: ignore
-            self,
-            *args,
-            **kwargs,
-        )
+        return self.runner.runner_handle.run_method(self, *args, **kwargs)
 
     async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return await self.runner._runner_handle.async_run_method(  # type: ignore
-            self,
-            *args,
-            **kwargs,
-        )
+        return await self.runner.runner_handle.async_run_method(self, *args, **kwargs)
+
+
+def _to_lower_name(name: str) -> str:
+    lname = name.lower()
+    if name != lname:
+        logger.warning("Converting runner name '%s' to lowercase: '%s'", name, lname)
+
+    return lname
+
+
+def _validate_name(_: t.Any, attr: attr.Attribute[str], value: str):
+    try:
+        validate_tag_str(value)
+    except ValueError as e:
+        # TODO: link to tag validation documentation
+        raise ValueError(
+            f"Runner name '{value}' is not valid; it must be a valid BentoML Tag name."
+        ) from e
+
+
+@attr.define(slots=False, frozen=True)
+class RunnerMeta(ABC):
+    name: str = attr.field(converter=_to_lower_name, validator=_validate_name)
+    models: list[Model] = attr.field(
+        converter=list,
+        validator=attr.validators.deep_iterable(
+            attr.validators.instance_of(Model),
+            iterable_validator=attr.validators.instance_of(ListModel),
+        ),
+    )
+    runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
+
+    def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
+        if not isinstance(self.runner_handle, DummyRunnerHandle):
+            raise StateException("Runner already initialized")
+
+        object_setattr(self, "runner_handle", handle_class(self))
+
+    def destroy(self):
+        """
+        Destroy the runner. This is called when the runner is no longer needed.
+        Currently used under ``on_shutdown`` event of the BentoML server.
+        """
+        object_setattr(self, "runner_handle", DummyRunnerHandle())
+
+    @inject
+    async def runner_handle_is_ready(
+        self,
+        timeout: int = Provide[BentoMLContainer.api_server_config.runner_probe.timeout],
+    ) -> bool:
+        """
+        Check if given runner handle is ready. This will be used as readiness probe in Kubernetes.
+        """
+        return await self.runner_handle.is_ready(timeout)
+
+    @abstractmethod
+    def init_local(self, quiet: bool = False) -> None:
+        """
+        Initialize local runnable instance, for testing and debugging only.
+
+        Args:
+            quiet: if True, no logs will be printed
+        """
+
+    @abstractmethod
+    def init_client(self):
+        """
+        Initialize client for a remote runner instance. To be used within API server instance.
+        """
 
 
 @attr.define(slots=False, frozen=True, eq=False)
-class Runner:
-    runnable_class: t.Type[Runnable]
-    runnable_init_params: dict[str, t.Any]
-    name: str
-    models: list[Model]
-    resource_config: dict[str, t.Any]
-    runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
-    scheduling_strategy: t.Type[Strategy]
-
-    _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
-
+class Runner(RunnerMeta):
     if TYPE_CHECKING:
+        # This will be set by __init__. This is for type checking only.
         run: t.Callable[..., t.Any]
         async_run: t.Callable[..., t.Awaitable[t.Any]]
 
+    runnable_class: type[Runnable]
+    resource_config: dict[str, t.Any]
+    runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
+    scheduling_strategy: type[Strategy]
+    runnable_init_params: dict[str, t.Any] = attr.field(
+        default=None, converter=attr.converters.default_if_none(factory=dict)
+    )
+
     def __init__(
         self,
-        runnable_class: t.Type[Runnable],
+        runnable_class: type[Runnable],
         *,
-        runnable_init_params: t.Dict[str, t.Any] | None = None,
+        runnable_init_params: dict[str, t.Any] | None = None,
         name: str | None = None,
-        scheduling_strategy: t.Type[Strategy] = DefaultStrategy,
-        models: t.List[Model] | None = None,
+        scheduling_strategy: type[Strategy] = DefaultStrategy,
+        models: list[Model] | None = None,
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
-        method_configs: t.Dict[str, t.Dict[str, int]] | None = None,
+        method_configs: dict[str, dict[str, int]] | None = None,
     ) -> None:
         """
+
+        Runner represents a unit of computation that can be executed on a remote Python worker and scales independently
+        See https://docs.bentoml.org/en/latest/concepts/runner.html for more details.
+
         Args:
-            runnable_class: runnable class
-            runnable_init_params: runnable init params
-            name: runner name
-            scheduling_strategy: scheduling strategy
-            models: list of required bento models
-            max_batch_size: max batch size config for micro batching
-            max_latency_ms: max latency config for micro batching
-            method_configs: per method configs
+            runnable_class: Runnable class that can be executed on a remote Python worker.
+            runnable_init_params: Parameters to be passed to the runnable class constructor ``__init__``.
+            name: Given a name for this runner. If not provided, name will be generated from the runnable class name.
+                  Note that all name will be converted to lowercase and validate to be a valid BentoML Tag name.
+            scheduling_strategy: A strategy class that implements the scheduling logic for this runner. If not provided,
+                                 use the default strategy. Strategy will respect ``Runnable.SUPPORTED_RESOURCES`` as well as
+                                 ``Runnable.SUPPORTS_CPU_MULTI_THREADING``.
+            models: An optional list composed of ``bentoml.Model`` instances.
+            max_batch_size: Max batch size config for dynamic batching. If not provided, use the default value from
+                            configuration.
+            max_latency_ms: Max latency config for dynamic batching. If not provided, use the default value from
+                            configuration.
+            method_configs: A dictionary per method config for this given Runner signatures.
+
+        Returns:
+            :obj:`bentoml.Runner`: A Runner instance.
         """
 
         if name is None:
-            lname = runnable_class.__name__.lower()
+            name = runnable_class.__name__.lower()
             logger.warning(
-                "Using lowercased runnable class name '%s' for runner.", lname
+                "Using lowercased runnable class name '%s' for runner.", name
             )
-        else:
-            lname = name.lower()
-
-            if name != lname:
-                logger.warning(
-                    "Converting runner name '%s' to lowercase: '%s'", name, lname
-                )
-
-        try:
-            validate_tag_str(lname)
-        except ValueError as e:
-            # TODO: link to tag validation documentation
-            raise ValueError(
-                f"Runner name '{name}' is not valid; it must be a valid BentoML Tag name."
-            ) from e
 
         runners_config = BentoMLContainer.config.runners.get()
+        # If given runner is configured, then use it. Otherwise use the default configuration.
         if name in runners_config:
             config = runners_config[name]
         else:
             config = runners_config
+
         if models is None:
             models = []
-        else:
-            if not all(isinstance(model, Model) for model in models):
-                raise ValueError(
-                    f"models must be a list of 'bentoml.Model'. Got { {type(model) for model in models if not isinstance(model, Model)} } instead."
-                )
+
         runner_method_map: dict[str, RunnerMethod[t.Any, t.Any, t.Any]] = {}
-        runnable_init_params = (
-            {} if runnable_init_params is None else runnable_init_params
-        )
         method_configs = {} if method_configs is None else method_configs
 
         if runnable_class.bentoml_runnable_methods__ is None:
@@ -171,11 +229,11 @@ class Runner:
                 ),
             )
 
-        self.__attrs_init__(  # type: ignore
+        self.__attrs_init__(
+            name=name,
+            models=models,
             runnable_class=runnable_class,
             runnable_init_params=runnable_init_params,
-            name=lname,
-            models=models,
             resource_config=config["resources"],
             runner_methods=list(runner_method_map.values()),
             scheduling_strategy=scheduling_strategy,
@@ -213,14 +271,12 @@ class Runner:
         for runner_method in self.runner_methods:
             object.__setattr__(self, runner_method.name, runner_method)
 
-    def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
-        if not isinstance(self._runner_handle, DummyRunnerHandle):
-            raise StateException("Runner already initialized")
+    def init_local(self, quiet: bool = False) -> None:
+        if not quiet:
+            logger.warning(
+                "'Runner.init_local' is for debugging and testing only. Make sure to remove it before deploying to production."
+            )
 
-        runner_handle = handle_class(self)
-        object.__setattr__(self, "_runner_handle", runner_handle)
-
-    def _init_local(self) -> None:
         from .runner_handle.local import LocalRunnerRef
 
         try:
@@ -236,34 +292,10 @@ class Runner:
 
             raise e
 
-    def init_local(self, quiet: bool = False) -> None:
-        """
-        init local runnable instance, for testing and debugging only
-        """
-        if not quiet:
-            logger.warning(
-                "'Runner.init_local' is for debugging and testing only. Make sure to remove it before deploying to production."
-            )
-
-        self._init_local()
-
     def init_client(self):
-        """
-        init client for a remote runner instance
-        """
         from .runner_handle.remote import RemoteRunnerClient
 
         self._init(RemoteRunnerClient)
-
-    def destroy(self):
-        object.__setattr__(self, "_runner_handle", DummyRunnerHandle())
-
-    @inject
-    async def runner_handle_is_ready(
-        self,
-        timeout: int = Provide[BentoMLContainer.api_server_config.runner_probe.timeout],
-    ) -> bool:
-        return await self._runner_handle.is_ready(timeout)
 
     @property
     def scheduled_worker_count(self) -> int:

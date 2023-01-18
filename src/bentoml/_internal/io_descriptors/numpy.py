@@ -565,7 +565,6 @@ class NumpyNdarray(
         return pyarrow.RecordBatch.from_arrays([pyarrow.array(arr)], names=["output"])
 
     def spark_schema(self) -> pyspark.sql.types.StructType:
-        from pyspark.sql.types import ArrayType
         from pyspark.sql.types import StructType
         from pyspark.sql.types import StructField
         from pyspark.pandas.typedef import as_spark_type
@@ -578,15 +577,15 @@ class NumpyNdarray(
             raise InvalidArgument(
                 "Cannot perform batch inference with a numpy output without a known shape; please provide a shape."
             )
+        if len(self._shape) != 1:
+            raise InvalidArgument(
+                "Cannot perform batch inference with a multidimensional numpy ndarray output; consider using pandas DataFrames instead."
+            )
 
-        out_spark_type = as_spark_type(self._dtype)
-
-        types = [out_spark_type for _ in range(self._shape[0])]
-
-        for _ in range(len(self._shape) - 1):
-            types = [ArrayType(typ, containsNull=False) for typ in types]
-
-        fields = [
-            StructField(f"out_{i}", typ, nullable=False) for i, typ in enumerate(types)
-        ]
-        return StructType(fields)
+        try:
+            out_spark_type = as_spark_type(self._dtype)
+        except TypeError:
+            raise InvalidArgument(
+                f"dtype {self._dtype} is not supported for batch inference."
+            )
+        return StructType([StructField("out", out_spark_type, nullable=False)])

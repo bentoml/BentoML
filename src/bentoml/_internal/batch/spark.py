@@ -6,6 +6,8 @@ import os.path
 import tempfile
 from typing import TYPE_CHECKING
 
+from bentoml._internal.utils import reserve_free_port
+
 from ..tag import Tag
 from ..bento import Bento
 from ...bentos import serve
@@ -15,26 +17,20 @@ from ...client import HTTPClient
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..service.loader import load_bento
-from ..service.loader import _load_bento as load_bento_service  # type: ignore
 
 try:
     from pyspark.files import SparkFiles
     from pyspark.sql.types import StructType
-    from pyspark.sql.dataframe import DataFrame
 except ImportError:  # pragma: no cover (trivial error)
     raise MissingDependencyException(
-        '"pyspark" is required in order to use module `bentoml.spark`, install pyspark with `pip install pyspark`. For more information, refer to https://spark.apache.org/docs/latest/api/python/'
-    )
-
-try:
-    import pyarrow
-except ImportError:  # pragma: no cover (trivial error)
-    raise MissingDependencyException(
-        '"pyspark" is required in order to use module `bentoml.spark`, install pyspark with `pip install pyspark`. For more information, refer to https://spark.apache.org/docs/latest/api/python/'
+        "'pyspark' is required in order to use module 'bentoml.spark', install pyspark with 'pip install pyspark'. For more information, refer to https://spark.apache.org/docs/latest/api/python/"
     )
 
 if TYPE_CHECKING:
     from pyspark.sql.session import SparkSession
+    from pyspark.sql.dataframe import DataFrame as SparkDataFrame
+
+    RecordBatch: t.TypeAlias = t.Any  # pyarrow doesn't have type annotations
 
 
 logger = logging.getLogger(__name__)
@@ -47,12 +43,12 @@ def _distribute_bento(spark: SparkSession, bento: Bento) -> str:
     return os.path.basename(export_path)
 
 
-def _load_bento(bento_tag: Tag):
+def _load_bento_spark(bento_tag: Tag):
     """
     load Bento from local bento store or the SparkFiles directory
     """
     try:
-        return load_bento(str(bento_tag))
+        return load_bento(bento_tag)
     except Exception:
 
         # Use the default Bento export file name. This relies on the implementation
@@ -62,48 +58,48 @@ def _load_bento(bento_tag: Tag):
             raise
 
         import_bento(bento_path)
-        return load_bento(str(bento_tag))
+        return load_bento(bento_tag)
 
 
 def _get_process(
     bento_tag: Tag, api_name: str
-) -> t.Callable[
-    [t.Iterator[pyarrow.RecordBatch]], t.Generator[pyarrow.RecordBatch, None, None]
-]:
+) -> t.Callable[[t.Iterable[RecordBatch]], t.Generator[RecordBatch, None, None]]:
     def process(
-        iterator: t.Iterator[pyarrow.RecordBatch],
-    ) -> t.Generator[pyarrow.RecordBatch, None, None]:
+        iterator: t.Iterable[RecordBatch],
+    ) -> t.Generator[RecordBatch, None, None]:
 
-        svc = _load_bento(bento_tag)
+        svc = _load_bento_spark(bento_tag)
 
         assert (
             api_name in svc.apis
-        ), "An error occurred transferring the Bento to the Spark worker; see <something>."
+        ), "An error occurred transferring the Bento to the Spark worker."
         inference_api = svc.apis[api_name]
         assert inference_api.func is not None, "Inference API function not defined"
 
         # start bento server
-        server = serve(bento_tag)
+        with reserve_free_port() as port:
+            pass
+
+        server = serve(bento_tag, port=port)
         Client.wait_until_server_is_ready("localhost", server.port, 30)
         client = HTTPClient(svc, f"http://localhost:{server.port}")
 
         for batch in iterator:
-            # default batch size = 10,000
             func_input = inference_api.input.from_arrow(batch)
             func_output = client.call(api_name, func_input)
             yield inference_api.output.to_arrow(func_output)
 
-    return process  # type: ignore  # process type evaluated at runtime
+    return process
 
 
 def run_in_spark(
     bento: Bento,
-    df: DataFrame,
+    df: SparkDataFrame,
     spark: SparkSession,
     api_name: str | None = None,
     output_schema: StructType | None = None,
-) -> DataFrame:
-    svc = load_bento_service(bento, False)
+) -> SparkDataFrame:
+    svc = load_bento(bento)
 
     if api_name is None:
         if len(svc.apis) != 1:

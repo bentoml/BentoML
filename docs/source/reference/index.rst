@@ -14,5 +14,5 @@ BentoML APIs and learn about all the options they provide.
   metrics
   frameworks/index
   cli
-
+  batch
 

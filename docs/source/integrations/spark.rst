@@ -25,7 +25,7 @@ For this example, we'll be using the quickstart bento from the aforementioned tu
 commands should work for bentos with IO descriptors which support batch inference (at the time of writing, those are ``bentoml.io.NumpyNdarray``<link_to_io_descriptor_numpy>, ``bentoml.io.PandasDataFrame``<link_to_io_descriptor_pandas> and
 ``bentoml.io.PandasSeries``<link_to_io_descriptor_series>) with the following caveat:
 
-IMPORTANT: your Bento API must be capable of accepting multiple inputs. For example,
+:bdg-warning:`IMPORTANT:` your Bento API must be capable of accepting multiple inputs. For example,
 ``batch_classify(np.array([[input_1], [input_2]]))`` must work, and return
 ``np.array([[output_1], [output_2]])``. The quickstart bento supports this pattern because the iris
 classifier model it contains does.

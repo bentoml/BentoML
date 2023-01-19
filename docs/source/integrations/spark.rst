@@ -2,8 +2,9 @@
 Batch Inference in Spark
 ========================
 
-BentoML supports running your bentos with batch data using Spark. This feature requires BentoML
-version 1.0.13 and above and Spark version 3.3.0 and above.
+`Apache Spark <https://spark.apache.org/>`_ is a general-purpose distributed processing system used for big data workloads. It allows for processing large datasets through a unique in-memory computation model, which can improve the performance of big data processing tasks. It also provides a wide range of APIs and a feature-rich set of tools for structured data processing, machine learning, and stream processing for big-data applications.
+
+BentoML now supports running your Bentos with batch data via Spark.
 
 The following tutorial assumes basic understanding of BentoML and a BentoML service ready to use. If you'd like to learn more about BentoML, see the :ref:`BentoML tutorial <tutorial>`.
 

@@ -14,10 +14,16 @@ Make sure to have at least BentoML 1.0.13 and Spark version 3.3.0 available in y
 
 	$ pip install -U "bentoml>=1.0.13"
 
+
+The following tutorial will use the quickstart bento from :ref:`aforementioned tutorial <tutorial>`.
+
+.. note::
+
+	All of the following commands/APIs should work for bentos with IO Descriptor <link_to_io_descriptor_rst> that supports 
+
 For this example, we'll be using the quickstart bento from the aforementioned tutorial, but the
-commands should work for bentos with IO descriptors which support batch inference (at the time of
-writing, those are ``bentoml.io.NumpyNdarray``, ``bentoml.io.PandasDataFrame`` and
-``bentoml.io.PandasSeries``) with the following caveat:
+commands should work for bentos with IO descriptors which support batch inference (at the time of writing, those are ``bentoml.io.NumpyNdarray``<link_to_io_descriptor_numpy>, ``bentoml.io.PandasDataFrame``<link_to_io_descriptor_pandas> and
+``bentoml.io.PandasSeries``<link_to_io_descriptor_series>) with the following caveat:
 
 IMPORTANT: your Bento API must be capable of accepting multiple inputs. For example,
 ``batch_classify(np.array([[input_1], [input_2]]))`` must work, and return

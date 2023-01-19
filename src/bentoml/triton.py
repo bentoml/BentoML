@@ -8,9 +8,12 @@ import itertools
 
 import attr
 
+from ._internal.utils import LazyLoader as _LazyLoader
 from ._internal.runner.runner import RunnerMeta as _RunnerMeta
 
 if t.TYPE_CHECKING:
+    import tritonclient.grpc.aio as tritongrpcclient
+
     from ._internal.runner.runner import RunnerMethod
 
     P = t.ParamSpec("P")
@@ -22,6 +25,13 @@ else:
     _LogFormat = str
     _GrpcInferResponseCompressionLevel = str
     _TraceLevel = str
+
+    tritongrpcclient = _LazyLoader(
+        "tritongrpcclient",
+        globals(),
+        "tritonclient.grpc.aio",
+        exc_msg="tritonclient is required to use triton with BentoML. Install with 'pip install bentoml[triton]'.",
+    )
 
 _logger = logging.getLogger(__name__)
 
@@ -39,6 +49,26 @@ class TritonRunner(_RunnerMeta):
         raise ValueError(
             "'init_local' is not supported for TritonRunner as this is intended to be used with Triton Inference Server."
         )
+
+    def __getattr__(self, item: str) -> t.Any:
+        from ._internal.runner.runner_handle.remote import TritonRunnerHandle
+
+        if (
+            isinstance(self.runner_handle, TritonRunnerHandle)
+            and item not in self.__dict__
+        ):
+            try:
+                # item can be a model inside the repository_path
+                return self.get_model(item)
+            except tritongrpcclient.InferenceServerException as err:
+                if err.message() == f"Failed to load model '{item}'":
+                    tritongrpcclient.raise_error(
+                        f"Model '{item}' does not exists under '{self.repository_path}'"
+                    )
+                else:
+                    raise
+
+        return super().__getattribute__(item)
 
     def get_model(self, model_name: str) -> RunnerMethod[t.Any, P, t.Any]:
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle

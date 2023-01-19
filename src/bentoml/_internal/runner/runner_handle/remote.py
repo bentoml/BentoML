@@ -368,7 +368,7 @@ class TritonRunnerHandle(RunnerHandle):
     async def get_model(self, model_name: str) -> RunnerMethod[t.Any, t.Any, t.Any]:
         if not await self._client.is_model_ready(model_name):
             # model is not ready, try to load it
-            logger.debug("model '%s' is not ready, loading it now.", model_name)
+            logger.debug("model '%s' is not ready, loading.", model_name)
             await self._client.load_model(model_name)
 
         if not await self._client.is_model_ready(model_name):

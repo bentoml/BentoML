@@ -20,7 +20,13 @@ def add_login_command(cli: click.Group) -> None:
         "--endpoint", type=click.STRING, help="Yatai endpoint, i.e: https://yatai.com"
     )
     @click.option("--api-token", type=click.STRING, help="Yatai user API token")
-    def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
+    @click.option(
+        "--context",
+        type=click.STRING,
+        help="Yatai context name for the endpoint and API token",
+        default=default_context_name,
+    )
+    def login(endpoint: str, api_token: str, context: str) -> None:  # type: ignore (not accessed)
         """Login to Yatai server."""
         if not endpoint:
             raise CLIException("need --endpoint")
@@ -40,7 +46,7 @@ def add_login_command(cli: click.Group) -> None:
             raise CLIException("current organization is not found")
 
         ctx = YataiClientContext(
-            name=default_context_name,
+            name=context,
             endpoint=endpoint,
             api_token=api_token,
             email=user.email,

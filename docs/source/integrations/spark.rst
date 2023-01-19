@@ -1,6 +1,6 @@
-===
+========================
 Batch Inference in Spark
-===
+========================
 
 BentoML supports running your bentos with batch data using Spark. This feature requires BentoML
 version 1.0.13 and above and Spark version 3.3.0 and above.

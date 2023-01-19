@@ -4,6 +4,7 @@ import json
 import typing as t
 import asyncio
 import functools
+import logging
 from abc import ABC
 from abc import abstractmethod
 from http.client import HTTPConnection
@@ -22,6 +23,8 @@ from ._internal.service.inference_api import InferenceAPI
 
 if t.TYPE_CHECKING:
     from types import TracebackType
+
+logger = logging.getLogger(__name__)
 
 
 class Client(ABC):
@@ -146,7 +149,7 @@ class Client(ABC):
                         )
                     try:
                         api = InferenceAPI(
-                            None,
+                            lambda: None,
                             bentoml.io.from_spec(
                                 meth_spec["requestBody"]["x-bentoml-io-descriptor"]
                             ),

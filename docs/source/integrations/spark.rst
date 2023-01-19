@@ -5,9 +5,13 @@ Batch Inference in Spark
 BentoML supports running your bentos with batch data using Spark. This feature requires BentoML
 version 1.0.13 and above and Spark version 3.3.0 and above.
 
-The following tutorial assumes you have a BentoML service ready and know the basics of BentoML. If
-you'd like to learn more about BentoML, see the :ref:`BentoML tutorial <tutorial>`. Also, ensure that
-you have at least BentoML 1.0.13 and Spark version 3.3.0.
+The following tutorial assumes basic understanding of BentoML and a BentoML service ready to use. If you'd like to learn more about BentoML, see the :ref:`BentoML tutorial <tutorial>`.
+
+Make sure to have at least BentoML 1.0.13 and Spark version 3.3.0 available in your system.
+
+.. code-block:: bash
+
+	$ pip install -U "bentoml>=1.0.13"
 
 For this example, we'll be using the quickstart bento from the aforementioned tutorial, but the
 commands should work for bentos with IO descriptors which support batch inference (at the time of

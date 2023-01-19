@@ -89,14 +89,6 @@ class TritonRunner(_RunnerMeta):
 
         self._init(TritonRunnerHandle)
 
-    def run(self, model_name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        return self.get_model(model_name).run(*args, **kwargs)
-
-    async def async_run(
-        self, model_name: str, /, *args: t.Any, **kwargs: t.Any
-    ) -> t.Any:
-        return await self.get_model(model_name).async_run(*args, **kwargs)
-
 
 def _to_mut_iterable(
     inp: tuple[str, ...] | list[str] | str
@@ -138,7 +130,9 @@ class _ModelControlMode(enum.Enum):
             return _ModelControlMode.POLL
         if s == "explicit":
             return _ModelControlMode.EXPLICIT
-        raise ValueError(f"Invalid ModelControlMode: {s}")
+        raise ValueError(
+            f"Invalid ModelControlMode: {s}, accepted value: ['none', 'poll', 'explicit']"
+        )
 
 
 def _find_triton_binary():
@@ -305,9 +299,7 @@ class TritonServerHandle:
     # matching. Specifying --triton-options load-model=* in conjunction with another
     # --triton-options load-model argument will result in error. Note that this option will only
     # take effect if --triton-options model-control-mode=explicit is true.
-    load_model: t.List[str] = attr.field(
-        default=None, converter=attr.converters.default_if_none(factory=list)
-    )
+    load_model: t.List[str] = attr.field(default=None, converter=_to_mut_iterable)
 
     #   Path to backend shared library. Default is /opt/tritonserver/backends.
     backend_directory: str = attr.field(default=None)
@@ -331,6 +323,7 @@ class TritonServerHandle:
                 )
             else:
                 cli.extend([f"--{opt}", str(value)])
+        cli.extend(["--reuse-http-port", "1"])
         _logger.debug("tritonserver cmd: '%s %s'", self.executable, " ".join(cli))
         return cli
 

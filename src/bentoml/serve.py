@@ -368,6 +368,10 @@ def serve_http_production(
         if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
     ]
     model_repository_paths = [r.repository_path for r in triton_runners]
+    if len(triton_runners) > 1:
+        # There are multiple triton runners, we will disable metrics as currently
+        # we don't have support for assigning each instance separate metrics port
+        attrs["triton_allow_metrics"] = "False"
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
@@ -815,6 +819,10 @@ def serve_grpc_production(
         if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
     ]
     model_repository_paths = [r.repository_path for r in triton_runners]
+    if len(triton_runners) > 1:
+        # There are multiple triton runners, we will disable metrics as currently
+        # we don't have support for assigning each instance separate metrics port
+        attrs["triton_allow_metrics"] = "False"
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus

@@ -58,8 +58,9 @@ def run_script_subprocess(
 
 @attrs.define
 class EnvManager:
-    env_type: str
     env_name: str
+    env_type: str
+    is_ephimeral: bool
     bento_path: t.Optional[str]
     _env_fs: FS = attrs.field(init=False)
 
@@ -68,24 +69,41 @@ class EnvManager:
 
         env_home = fs.open_fs(BentoMLContainer.env_store_dir.get())
 
+        if not self.is_ephimeral:
+            assert (
+                self.env_name is not None
+            ), "persistent environments need a valid name."
+
         if self.env_type == "conda":
             if not env_home.exists("conda"):
                 env_home.makedir("conda")
-            self._env_fs = env_home.opendir("conda")
+            self._env_fs = (
+                env_home.opendir("conda")
+                if not self.is_ephimeral
+                else fs.tempfs.TempFS()
+            )
             self.create_conda_env()
 
     @classmethod
-    def get_environment(
+    def from_bento(
         cls,
-        env_name: str | None,
         env_type: str,
+        is_ephimeral: bool,
+        env_name: t.Optional[str] = None,
         bento_path: t.Optional[str] = None,
-    ):
+    ) -> EnvManager:
+        if env_name is None:
+            env_name = "ephimeral_env"
         return cls(
             env_name=env_name,
             env_type=env_type,
+            is_ephimeral=is_ephimeral,
             bento_path=bento_path,
         )
+
+    @classmethod
+    def from_bentofile(cls) -> EnvManager:
+        raise NotImplementedError
 
     def create_conda_env(self) -> str:
         """
@@ -96,11 +114,12 @@ class EnvManager:
             raise BentoMLException(
                 "conda executable not found! Make sure conda is installed and that `CONDA_EXE` is set."
             )
+        # create a env under $BENTOML_HOME/env
         # setup conda with bento's environment.yml file and python/install.sh file
-        if self.env_name is not None:
-            conda_env_path: str
-            if self._env_fs.exists(self.env_name):
-                return self._env_fs.getsyspath(self.env_name)
+        conda_env_path: str
+        if self._env_fs.exists(self.env_name):
+            return self._env_fs.getsyspath(self.env_name)
+        else:
             with NamedTemporaryFile(mode="w", delete=False) as script_file:
                 conda_env_path = self._env_fs.getsyspath(self.env_name)
                 # TODO: figure out a proper way to get python version from a
@@ -143,9 +162,6 @@ class EnvManager:
                 debug_mode=is_debug_mode,
             )
             return conda_env_path
-        # TODO:create an ephimeral env
-        else:
-            pass
 
     def run(self, commands: list[str]):
         """

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import sys
 import typing as t
@@ -8,7 +9,8 @@ import functools
 
 import click
 
-from bentoml.exceptions import NotFound
+from bentoml.exceptions import NotFound as BentoNotFound
+from bentoml.exceptions import BentoMLException
 from bentoml._internal.utils import rich_console
 from bentoml._internal.env_manager import EnvManager
 
@@ -34,11 +36,57 @@ def remove_env_arg(cmd_args: list[str]) -> list[str]:
     return new_cmd_args
 
 
+def get_environment(bento_identifier: str, env: str) -> EnvManager:
+    from bentoml._internal.bento.bento import BENTO_YAML_FILENAME
+    from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
+
+    # env created will be ephemeral
+    if os.path.isdir(os.path.expanduser(bento_identifier)):
+
+        bento_path = os.path.abspath(os.path.expanduser(bento_identifier))
+        if os.path.isfile(
+            os.path.expanduser(os.path.join(bento_path, BENTO_YAML_FILENAME))
+        ):
+            # path to a build bento dir
+            return EnvManager.from_bento(
+                env_type=env,
+                bento_path=bento_path,
+                is_ephimeral=True,
+            )
+        elif os.path.isfile(
+            os.path.expanduser(os.path.join(bento_path, DEFAULT_BENTO_BUILD_FILE))
+        ):
+            # path to a bento project
+            raise NotImplementedError(
+                "Serving bento project in an environment is not supported now."
+            )
+        else:
+            raise BentoMLException(
+                f"EnvManager failed to create environment from path {bento_path}. When loading from a path, it must be either a Bento containing bento.yaml or a project directory containing bentofile.yaml"
+            )
+    else:
+        try:
+            from bentoml._internal.configuration.containers import BentoMLContainer
+
+            bento_store = BentoMLContainer.bento_store.get()
+            bento = bento_store.get(bento_identifier)
+            env_name = str(bento.tag).replace(":", "_")
+            bento_path = bento._fs.getsyspath("")
+            return EnvManager.from_bento(
+                env_name=env_name,
+                env_type=env,
+                bento_path=bento_path,
+                is_ephimeral=False,
+            )
+        except BentoNotFound:
+            # service definition
+            bento_path = os.path.join(os.getcwd(), DEFAULT_BENTO_BUILD_FILE)
+            raise NotImplementedError(
+                "Serving bento with 'import_string' in an environment is not supported now."
+            )
+
+
 def env_manager(func):
-    from bentoml._internal.configuration.containers import BentoMLContainer
-
-    bento_store = BentoMLContainer.bento_store.get()
-
     @click.option(
         "--env",
         type=click.Choice(["conda"]),
@@ -51,24 +99,10 @@ def env_manager(func):
         env = kwargs.pop("env")
         if env is not None:
             rich_console.print(f"loading {env} environment...")
-            bento_tag = kwargs["bento"]
-
-            # if bento_tag is a bento in the bento_store, use a persistent env
-            try:
-                bento = bento_store.get(bento_tag)
-                env_name = str(bento.tag).replace(":", "_")
-                bento_path = bento._fs.getsyspath("")
-            except NotFound:
-                # env created will be ephemeral
-                env_name = None
-                bento_path = None
-            bento_env = EnvManager.get_environment(
-                env_name=env_name,
-                env_type=env,
-                bento_path=bento_path,
-            )
+            bento_identifier = kwargs["bento"]
+            bento_env = get_environment(bento_identifier, env)
             rich_console.print(
-                f"environment {'' if not env_name else env_name} activated!"
+                f"environment {'' if not bento_env.env_name else bento_env.env_name} activated!"
             )
 
             # once env is created, spin up a subprocess to run current arg

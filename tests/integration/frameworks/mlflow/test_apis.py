@@ -123,7 +123,7 @@ def fixture_no_mlmodel(URI: Path) -> Tag:
 
 
 def test_invalid_load(no_mlmodel: Tag):
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(OSError):
         _ = bentoml.mlflow.load_model(no_mlmodel)
 
 

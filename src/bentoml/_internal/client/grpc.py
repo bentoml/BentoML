@@ -5,7 +5,6 @@ import typing as t
 import logging
 import functools
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
 
 from packaging.version import parse
 
@@ -194,6 +193,8 @@ class GrpcClient(Client):
             logger.error("Caught exception while connecting to %s:%s:", host, port)
             logger.error(err)
             raise
+        finally:
+            channel.close()
 
     @cached_property
     def _rpc_metadata(self) -> dict[str, dict[str, t.Any]]:

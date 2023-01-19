@@ -24,7 +24,7 @@ from ._internal.configuration.containers import BentoMLContainer
 if t.TYPE_CHECKING:
     from circus.watcher import Watcher
 
-    from .triton import TritonRunner
+    from .triton import Runner as TritonRunner
     from .triton import TritonServerHandle
 
 
@@ -421,7 +421,9 @@ def serve_http_production(
                 )
             else:
                 triton_handle = construct_triton_handle(
-                    _model_repository_paths=model_repository_paths, **attrs
+                    _model_repository_paths=model_repository_paths,
+                    _has_multiple_runners=len(triton_runners) > 1,
+                    **attrs,
                 )
                 runner_bind_map[
                     runner.name
@@ -477,7 +479,9 @@ def serve_http_production(
                     )
                 else:
                     triton_handle = construct_triton_handle(
-                        _model_repository_paths=model_repository_paths, **attrs
+                        _model_repository_paths=model_repository_paths,
+                        _has_multiple_runners=len(triton_runners) > 1,
+                        **attrs,
                     )
                     runner_bind_map[
                         runner.name

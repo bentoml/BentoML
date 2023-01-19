@@ -14,7 +14,7 @@ from ._internal.utils import LazyType
 from ._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
-    from .triton import TritonRunner
+    from .triton import Runner as TritonRunner
 
 logger = logging.getLogger(__name__)
 

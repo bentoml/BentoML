@@ -8,11 +8,12 @@ import itertools
 
 import attr
 
+from ._internal.types import LazyType as _LazyType
 from ._internal.utils import LazyLoader as _LazyLoader
 from ._internal.runner.runner import RunnerMeta as _RunnerMeta
 
 if t.TYPE_CHECKING:
-    import tritonclient.grpc.aio as tritongrpcclient
+    import tritonclient.grpc.aio as _tritongrpcclient
 
     from ._internal.runner.runner import RunnerMethod
 
@@ -26,8 +27,8 @@ else:
     _GrpcInferResponseCompressionLevel = str
     _TraceLevel = str
 
-    tritongrpcclient = _LazyLoader(
-        "tritongrpcclient",
+    _tritongrpcclient = _LazyLoader(
+        "_tritongrpcclient",
         globals(),
         "tritonclient.grpc.aio",
         exc_msg="tritonclient is required to use triton with BentoML. Install with 'pip install bentoml[triton]'.",
@@ -39,7 +40,7 @@ __all__ = ["Runner"]
 
 
 @attr.define(slots=False, frozen=True, eq=False)
-class TritonRunner(_RunnerMeta):
+class _TritonRunner(_RunnerMeta):
     repository_path: str
 
     def __init__(self, name: str, model_repository: str):
@@ -60,17 +61,17 @@ class TritonRunner(_RunnerMeta):
             try:
                 # item can be a model inside the repository_path
                 return self.get_model(item)
-            except tritongrpcclient.InferenceServerException as err:
-                if err.message() == f"Failed to load model '{item}'":
-                    tritongrpcclient.raise_error(
-                        f"Model '{item}' does not exists under '{self.repository_path}'"
-                    )
-                else:
-                    raise
+            except _tritongrpcclient.InferenceServerException as err:
+                _logger.error(err)
+                _tritongrpcclient.raise_error(
+                    f"Model '{item}' does not exists under '{self.repository_path}'"
+                )
 
         return super().__getattribute__(item)
 
-    def get_model(self, model_name: str) -> RunnerMethod[t.Any, P, t.Any]:
+    def get_model(
+        self, model_name: str
+    ) -> RunnerMethod[t.Any, t.Any, _tritongrpcclient.InferResult]:
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle
 
         if not isinstance(self.runner_handle, TritonRunnerHandle):
@@ -103,7 +104,7 @@ def _to_mut_iterable(
         raise ValueError(f"Unknown type: {type(inp)}")
 
 
-Runner = TritonRunner
+Runner = _TritonRunner
 
 
 class _ModelControlMode(enum.Enum):
@@ -313,7 +314,9 @@ class TritonServerHandle:
         margs = bentoml_cattr.unstructure(self)
         for arg, value in margs.items():
             opt = arg.replace("_", "-")
-            if isinstance(value, (list, tuple)):
+            if _LazyType["list[str]"](list).isinstance(value) or _LazyType[
+                "tuple[str, ...]"
+            ](tuple).isinstance(value):
                 cli.extend(
                     list(
                         itertools.chain.from_iterable(
@@ -323,7 +326,6 @@ class TritonServerHandle:
                 )
             else:
                 cli.extend([f"--{opt}", str(value)])
-        cli.extend(["--reuse-http-port", "1"])
         _logger.debug("tritonserver cmd: '%s %s'", self.executable, " ".join(cli))
         return cli
 

@@ -35,7 +35,7 @@ if t.TYPE_CHECKING:
     from ... import external_typing as ext
     from ..runner import Runner
     from ..runner import RunnerMethod
-    from ....triton import TritonRunner
+    from ....triton import Runner as TritonRunner
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
@@ -365,14 +365,13 @@ class TritonRunnerHandle(RunnerHandle):
             )
 
     @handle_triton_exception
-    async def get_model(self, model_name: str) -> RunnerMethod[t.Any, t.Any, t.Any]:
+    async def get_model(
+        self, model_name: str
+    ) -> RunnerMethod[t.Any, P, tritongrpcclient.InferResult]:
         if not await self._client.is_model_ready(model_name):
             # model is not ready, try to load it
             logger.debug("model '%s' is not ready, loading.", model_name)
             await self._client.load_model(model_name)
-
-        if not await self._client.is_model_ready(model_name):
-            tritongrpcclient.raise_error(f"Failed to load model '{model_name}'")
 
         method = RunnerMethod[t.Any, P, tritongrpcclient.InferResult](
             runner=self.runner,
@@ -453,7 +452,7 @@ class TritonRunnerHandle(RunnerHandle):
     @handle_triton_exception
     def run_method(
         self,
-        __bentoml_method: RunnerMethod[t.Any, P, t.Any],
+        __bentoml_method: RunnerMethod[t.Any, P, tritongrpcclient.InferResult],
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> tritongrpcclient.InferResult:

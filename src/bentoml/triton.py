@@ -59,10 +59,12 @@ class TritonRunner(_RunnerMeta):
 
         self._init(TritonRunnerHandle)
 
-    def run(self, model_name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
+    def run(self, model_name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self.get_model(model_name).run(*args, **kwargs)
 
-    async def async_run(self, model_name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
+    async def async_run(
+        self, model_name: str, /, *args: t.Any, **kwargs: t.Any
+    ) -> t.Any:
         return await self.get_model(model_name).async_run(*args, **kwargs)
 
 

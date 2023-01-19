@@ -105,8 +105,10 @@ jobs:
           black --check --pyi typings
           isort --check .
       - name: Lint check
+        if: ${{ github.event_name == 'pull_request' }}
         run: git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py' | xargs -0 --no-run-if-empty pylint --rcfile pyproject.toml --fail-under 9.0 --exit-zero
       - name: Type check
+        if: ${{ github.event_name == 'pull_request' }}
         run: git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py[i]' | xargs -0 --no-run-if-empty pyright
       - name: Proto check
         if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.protos == 'true') || github.event_name == 'push' }}

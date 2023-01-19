@@ -1,140 +1,69 @@
 from __future__ import annotations
 
-import os
 import enum
 import shutil
 import typing as t
 import logging
-import urllib.parse
-from itertools import chain
+import itertools
 
-import fs
 import attr
-import fs.errors
-import fs.opener
-import fs.opener.errors
 
-from ._internal.utils import bentoml_cattr
-from ._internal.utils import resolve_user_filepath
-from ._internal.runner.runner import RunnerMeta
-from ._internal.runner.runner import RunnerMethod
-from ._internal.runner.runner import object_setattr
-from ._internal.runner.runnable import RunnableMethodConfig
-from ._internal.runner.runner_handle.remote import TritonRunnerHandle
+from ._internal.runner.runner import RunnerMeta as _RunnerMeta
 
 if t.TYPE_CHECKING:
-    from fs.base import FS
-    from fs.opener.registry import Registry
+    from ._internal.runner.runner import RunnerMethod
 
     P = t.ParamSpec("P")
-    R = t.TypeVar("R")
 
-    LogFormat = t.Literal["default", "ISO8601"]
-    GrpcInferResponseCompressionLevel = t.Literal["none", "low", "medium", "high"]
-    TraceLevel = t.Literal["OFF", "TIMESTAMPS", "TENSORS"]
+    _LogFormat = t.Literal["default", "ISO8601"]
+    _GrpcInferResponseCompressionLevel = t.Literal["none", "low", "medium", "high"]
+    _TraceLevel = t.Literal["OFF", "TIMESTAMPS", "TENSORS"]
 else:
-    LogFormat = str
-    GrpcInferResponseCompressionLevel = str
-    TraceLevel = str
+    _LogFormat = str
+    _GrpcInferResponseCompressionLevel = str
+    _TraceLevel = str
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 __all__ = ["Runner"]
 
 
 @attr.define(slots=False, frozen=True, eq=False)
-class TritonRunner(RunnerMeta):
-    _fs: FS
+class TritonRunner(_RunnerMeta):
     repository_path: str
 
-    def __init__(
-        self,
-        name: str,
-        model_repository: str,
-        *,
-        fs_protocol: str | None = None,
-    ):
-        # TODO: Support configuration (P1)
-
-        # The logic below mimic the behaviour of Exportable.import_from
-        # To determine models inside given model repository.
-        try:
-            parsed_model_repository = fs.opener.parse(model_repository)
-        except fs.opener.errors.ParseError:
-            if fs_protocol is None:
-                fs_protocol = "osfs"
-                resource: str = (
-                    model_repository
-                    if os.sep == "/"
-                    else model_repository.replace(os.sep, "/")
-                )
-            else:
-                resource: str = ""
-        else:
-            if fs_protocol is not None:
-                raise ValueError(
-                    "An FS URL was passed as the output path; all additional information should be passed as part of the URL."
-                )
-
-            fs_protocol = parsed_model_repository.protocol
-            resource: str = parsed_model_repository.resource
-
-        if fs_protocol not in t.cast("Registry", fs.opener.registry).protocols:
-            if fs_protocol == "s3":
-                raise ValueError(
-                    "Tried to open an S3 url but the protocol is not registered; did you 'pip install \"bentoml[aws]\"'?"
-                )
-            else:
-                raise ValueError(
-                    f"Unknown or unsupported protocol {fs_protocol}. Some supported protocols are 'ftp', 's3', and 'osfs'."
-                )
-
-        is_os_path = fs_protocol in [
-            "temp",
-            "osfs",
-            "userdata",
-            "userconf",
-            "sitedata",
-            "siteconf",
-            "usercache",
-            "userlog",
-        ]
-
-        if is_os_path:
-            try:
-                repo_fs = fs.open_fs(f"{fs_protocol}://{resource}")
-            except fs.errors.CreateFailed:
-                raise ValueError(f"Path {model_repository} does not exist.")
-        else:
-            resource = urllib.parse.quote(resource)
-            repo_fs = fs.open_fs(f"{fs_protocol}://{resource}")
-
-        self.__attrs_init__(
-            name=name, models=[], repository_path=model_repository, fs=repo_fs
-        )
-
-        # List of models inside given model repository.
-        for model in repo_fs.listdir("/"):
-            object_setattr(
-                self,
-                model,
-                RunnerMethod(
-                    runner=self,
-                    name=model,
-                    # TODO: support config for Triton runners.
-                    config=RunnableMethodConfig(batchable=False, batch_dim=(0, 0)),
-                    max_batch_size=0,
-                    max_latency_ms=100000,
-                ),
-            )
+    def __init__(self, name: str, model_repository: str):
+        self.__attrs_init__(name=name, models=[], repository_path=model_repository)
 
     def init_local(self, quiet: bool = False) -> None:
         raise ValueError(
             "'init_local' is not supported for TritonRunner as this is intended to be used with Triton Inference Server."
         )
 
+    def get_model(self, model_name: str) -> RunnerMethod[t.Any, P, t.Any]:
+        from ._internal.runner.runner_handle.remote import TritonRunnerHandle
+
+        if not isinstance(self.runner_handle, TritonRunnerHandle):
+            # This is the case where given runner is not yet initialized.
+            # This is to prevent user calling this method eagerly
+            raise RuntimeError(
+                "'get_model' should only be used lazily under '@svc.api' function, not eagerly."
+            )
+
+        import anyio
+
+        return anyio.from_thread.run(self.runner_handle.get_model, model_name)
+
     def init_client(self):
+        from ._internal.runner.runner_handle.remote import TritonRunnerHandle
+
         self._init(TritonRunnerHandle)
+
+    def run(self, model_name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return self.get_model(model_name).run(*args, **kwargs)
+
+    async def async_run(self, model_name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return await self.get_model(model_name).async_run(*args, **kwargs)
 
 
 def _to_mut_iterable(
@@ -145,22 +74,23 @@ def _to_mut_iterable(
     if isinstance(inp, (list, tuple)):
         return inp
     elif isinstance(inp, str):
-        if os.path.exists(inp):
-            inp = resolve_user_filepath(inp, ctx=None)
         return [inp]
     else:
         raise ValueError(f"Unknown type: {type(inp)}")
 
 
-class ModelControlMode(enum.Enum):
+Runner = TritonRunner
+
+
+class _ModelControlMode(enum.Enum):
     NONE = "none"
     POLL = "poll"
     EXPLICIT = "explicit"
 
     @classmethod
-    def from_type(cls, s: t.Any) -> ModelControlMode:
+    def from_type(cls, s: t.Any) -> _ModelControlMode:
         if s is None:
-            return ModelControlMode.NONE
+            return _ModelControlMode.NONE
 
         if isinstance(s, (tuple, list)):
             # parsed from CLI or SDK
@@ -171,15 +101,12 @@ class ModelControlMode(enum.Enum):
                 f"Can't convert given type {type(s)} [value: {s}] to ModelControlMode, accepts strings only."
             )
         if s == "none":
-            return ModelControlMode.NONE
+            return _ModelControlMode.NONE
         if s == "poll":
-            return ModelControlMode.POLL
+            return _ModelControlMode.POLL
         if s == "explicit":
-            return ModelControlMode.EXPLICIT
+            return _ModelControlMode.EXPLICIT
         raise ValueError(f"Invalid ModelControlMode: {s}")
-
-
-Runner = TritonRunner
 
 
 def _find_triton_binary():
@@ -242,7 +169,7 @@ class TritonServerHandle:
     log_info: bool = attr.field(default=None)
     log_warning: bool = attr.field(default=None)
     log_error: bool = attr.field(default=None)
-    log_format: LogFormat = attr.field(default=None)
+    log_format: _LogFormat = attr.field(default=None)
     # if specified, then stream logs to a file, otherwise to stdout.
     log_file: str = attr.field(default=None)
     # identifier of this triton server instance
@@ -265,7 +192,7 @@ class TritonServerHandle:
     grpc_server_key: str = attr.field(default=None)
     grpc_root_cert: str = attr.field(default=None)
     # compression level to be used while returning inference results
-    grpc_infer_response_compression_level: GrpcInferResponseCompressionLevel = (
+    grpc_infer_response_compression_level: _GrpcInferResponseCompressionLevel = (
         attr.field(default=None)
     )
     #   Period in miliseconds after which a keepalive ping is sent on the transport
@@ -301,13 +228,13 @@ class TritonServerHandle:
 
     # trace-related args
     #   Set the file where trace output will be saved. If
-    # --trace-log-frequency is also specified, this argument value will be the
+    # --triton-options trace-log-frequency is also specified, this argument value will be the
     # prefix of the files to save the trace output.
     trace_file: str = attr.field(default=None)
     #   Specify a trace level. OFF to disable tracing, TIMESTAMPS to
     # trace timestamps, TENSORS to trace tensors. It may be specified
     # multiple times to trace multiple informations. Default is OFF.
-    trace_level: t.List[TraceLevel] = attr.field(
+    trace_level: t.List[_TraceLevel] = attr.field(
         default=None, converter=attr.converters.default_if_none(factory=list)
     )
     #   Set the trace sampling rate. Default is 1000
@@ -334,18 +261,18 @@ class TritonServerHandle:
     # load/unload models based on those changes. The poll rate is
     # controlled by 'repository-poll-secs'. For "explicit", model load and unload
     # is initiated by using the model control APIs, and only models
-    # specified with --load-model will be loaded at startup.
-    model_control_mode: ModelControlMode = attr.field(
-        default=None, converter=ModelControlMode.from_type
+    # specified with --triton-options load-model will be loaded at startup.
+    model_control_mode: _ModelControlMode = attr.field(
+        default="explicit", converter=_ModelControlMode.from_type
     )
     repository_poll_secs: int = attr.field(default=None)
     #   Name of the model to be loaded on server startup. It may be
     # specified multiple times to add multiple models. To load ALL models
     # at startup, specify '*' as the model name with --load-model=* as the
-    # ONLY --load-model argument, this does not imply any pattern
-    # matching. Specifying --load-model=* in conjunction with another
-    # --load-model argument will result in error. Note that this option will only
-    # take effect if --model-control-mode=explicit is true.
+    # ONLY --triton-options load-model argument, this does not imply any pattern
+    # matching. Specifying --triton-options load-model=* in conjunction with another
+    # --triton-options load-model argument will result in error. Note that this option will only
+    # take effect if --triton-options model-control-mode=explicit is true.
     load_model: t.List[str] = attr.field(
         default=None, converter=attr.converters.default_if_none(factory=list)
     )
@@ -356,32 +283,35 @@ class TritonServerHandle:
     repoagent_directory: str = attr.field(default=None)
 
     def to_cli_args(self):
+        from ._internal.utils import bentoml_cattr
+
         cli: list[str] = []
         margs = bentoml_cattr.unstructure(self)
         for arg, value in margs.items():
             opt = arg.replace("_", "-")
             if isinstance(value, (list, tuple)):
                 cli.extend(
-                    list(chain.from_iterable(map(lambda a: (f"--{opt}", a), value)))
+                    list(
+                        itertools.chain.from_iterable(
+                            map(lambda a: (f"--{opt}", a), value)
+                        )
+                    )
                 )
             else:
                 cli.extend([f"--{opt}", str(value)])
-        logger.debug("tritonserver cmd: '%s %s'", self.executable, " ".join(cli))
+        _logger.debug("tritonserver cmd: '%s %s'", self.executable, " ".join(cli))
         return cli
 
     def to_dict(self, omit_if_default: bool = False):
-        # by default, this class is set to omit all default values
-        # set from Python to use default values that are set by tritonserver.
-        converter_mod = bentoml_cattr
-
         if not omit_if_default:
-            # we want to use the default cattr.Converter
-            # to return all default values.
+            # we want to use the default cattr.Converter to return all default values.
             import cattr
+        else:
+            # by default, this class is set to omit all default values
+            # set from Python to use default values that are set by tritonserver.
+            from ._internal.utils import bentoml_cattr as cattr
 
-            converter_mod = cattr
-
-        return converter_mod.unstructure(self)
+        return cattr.unstructure(self)
 
     @property
     def executable(self):

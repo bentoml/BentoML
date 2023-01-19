@@ -8,27 +8,29 @@ import typing as t
 import asyncio
 import logging
 import functools
-import contextlib
-from typing import TYPE_CHECKING
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
 from . import RunnerHandle
+from ..utils import Params
+from ..utils import PAYLOAD_META_HEADER
 from ...utils import LazyLoader
+from ..runner import RunnerMethod
+from ..runner import object_setattr
 from ...context import component_context
+from ..runnable import RunnableMethodConfig
 from ..container import Payload
 from ...utils.uri import uri_to_path
 from ....exceptions import RemoteException
 from ....exceptions import ServiceUnavailable
-from ...runner.utils import Params
-from ...runner.utils import PAYLOAD_META_HEADER
 from ...configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import yarl
     import tritonclient.grpc.aio as tritongrpcclient
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
+    from tritonclient.grpc import service_pb2 as pb
 
     from ... import external_typing as ext
     from ..runner import Runner
@@ -38,6 +40,8 @@ if TYPE_CHECKING:
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
 else:
+    P = t.TypeVar("P")
+
     tritongrpcclient = LazyLoader(
         "tritongrpcclient",
         globals(),
@@ -286,11 +290,23 @@ class RemoteRunnerClient(RunnerHandle):
         self._close_conn()
 
 
+def handle_triton_exception(f: t.Callable[P, R]) -> t.Callable[..., R]:
+    @functools.wraps(f)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        try:
+            return f(*args, **kwargs)
+        except tritongrpcclient.InferenceServerException as err:
+            logger.error("Caught exception while sending payload to Triton:")
+            logger.error(err)
+            raise err
+
+    return wrapper
+
+
 # NOTE: to support files, consider using ModelInferStream via raw_bytes_contents
 class TritonRunnerHandle(RunnerHandle):
     def __init__(self, runner: TritonRunner):
         self.runner = runner
-        self.clean_context = contextlib.AsyncExitStack()
         self._client_cache: tritongrpcclient.InferenceServerClient | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
 
@@ -306,9 +322,8 @@ class TritonRunnerHandle(RunnerHandle):
                 else:
                     await asyncio.sleep(1)
             except Exception as err:
-                logger.error(
-                    "Caught exception while waiting Triton to be ready: %s", err
-                )
+                logger.error("Caught exception while waiting Triton to be ready:")
+                logger.error(err)
                 await asyncio.sleep(1)
         return False
 
@@ -345,12 +360,39 @@ class TritonRunnerHandle(RunnerHandle):
 
     def __del__(self):
         if self._loop is not None:
-            self._loop.run_until_complete(self._client.close())
-            self._loop.close()
+            self._loop.call_soon_threadsafe(
+                lambda: asyncio.ensure_future(self._client.close())
+            )
 
+    @handle_triton_exception
+    async def get_model(self, model_name: str) -> RunnerMethod[t.Any, t.Any, t.Any]:
+        if not await self._client.is_model_ready(model_name):
+            # model is not ready, try to load it
+            logger.debug("model '%s' is not ready, loading it now.", model_name)
+            await self._client.load_model(model_name)
+
+        if not await self._client.is_model_ready(model_name):
+            tritongrpcclient.raise_error(f"Failed to load model '{model_name}'")
+
+        method = RunnerMethod[t.Any, P, tritongrpcclient.InferResult](
+            runner=self.runner,
+            name=model_name,
+            # TODO: configuration for triton
+            config=RunnableMethodConfig(batchable=False, batch_dim=(0, 0)),
+            max_batch_size=0,
+            max_latency_ms=10000,
+        )
+
+        # setattr for given models
+        if model_name not in self.runner.__dict__:
+            object_setattr(self.runner, model_name, method)
+
+        return method
+
+    @handle_triton_exception
     async def async_run_method(
         self,
-        __bentoml_method: RunnerMethod[t.Any, P, t.Any],
+        __bentoml_method: RunnerMethod[t.Any, P, tritongrpcclient.InferResult],
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> tritongrpcclient.InferResult:
@@ -363,7 +405,9 @@ class TritonRunnerHandle(RunnerHandle):
         model_name = __bentoml_method.name
 
         # return metadata of a given model
-        model_metadata = await self._client.get_model_metadata(model_name)
+        model_metadata: pb.ModelMetadataResponse = (
+            await self._client.get_model_metadata(model_name)
+        )
 
         pass_args = args if len(args) > 0 else kwargs
         if len(model_metadata.inputs) != len(pass_args):
@@ -402,15 +446,11 @@ class TritonRunnerHandle(RunnerHandle):
                 )
                 inputs[-1].set_data_from_numpy(arg)
 
-        try:
-            return await self._client.infer(
-                model_name=model_name, inputs=inputs, outputs=outputs
-            )
-        except tritongrpcclient.InferenceServerException as err:
-            logger.error("Caught exception while sending payload to Triton:")
-            logger.error(err)
-            raise err
+        return await self._client.infer(
+            model_name=model_name, inputs=inputs, outputs=outputs
+        )
 
+    @handle_triton_exception
     def run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, t.Any],

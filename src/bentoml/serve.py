@@ -166,12 +166,12 @@ def construct_ssl_args(
 
 
 def construct_triton_handle(
-    runner: TritonRunner, _model_repository_paths: list[str], **attrs: t.Any
+    _model_repository_paths: list[str], **attrs: t.Any
 ) -> TritonServerHandle:
     from .triton import TritonServerHandle
 
     triton_kwargs: dict[str, t.Any] = {
-        key: attrs.pop(f"triton_{key}", None)
+        key: attrs.get(f"triton_{key}")
         for key in [
             i.name
             for i in attr.fields(TritonServerHandle)
@@ -184,6 +184,12 @@ def construct_triton_handle(
     }
     # handle multiple model_repository for multiple TritonRunner
     triton_kwargs["model_repository"] = _model_repository_paths
+
+    if triton_kwargs.get("model_control_mode") is None:
+        # By default, we will load model on demand. Our TritonServerHandle
+        # already set this value to explicit. However, on CLI, it is default to
+        # None. Therefore, we need to set it again here.
+        triton_kwargs["model_control_mode"] = "explicit"
 
     return TritonServerHandle(**triton_kwargs)
 
@@ -404,7 +410,7 @@ def serve_http_production(
                 )
             else:
                 triton_handle = construct_triton_handle(
-                    runner, _model_repository_paths=model_repository_paths, **attrs
+                    _model_repository_paths=model_repository_paths, **attrs
                 )
                 runner_bind_map[
                     runner.name
@@ -460,7 +466,7 @@ def serve_http_production(
                     )
                 else:
                     triton_handle = construct_triton_handle(
-                        runner, _model_repository_paths=model_repository_paths, **attrs
+                        _model_repository_paths=model_repository_paths, **attrs
                     )
                     runner_bind_map[
                         runner.name
@@ -849,7 +855,7 @@ def serve_grpc_production(
                 )
             else:
                 triton_handle = construct_triton_handle(
-                    runner, _model_repository_paths=model_repository_paths, **attrs
+                    _model_repository_paths=model_repository_paths, **attrs
                 )
                 runner_bind_map[
                     runner.name
@@ -908,7 +914,7 @@ def serve_grpc_production(
                     )
                 else:
                     triton_handle = construct_triton_handle(
-                        runner, _model_repository_paths=model_repository_paths, **attrs
+                        _model_repository_paths=model_repository_paths, **attrs
                     )
                     runner_bind_map[
                         runner.name

@@ -166,7 +166,9 @@ def construct_ssl_args(
 
 
 def construct_triton_handle(
-    _model_repository_paths: list[str], **attrs: t.Any
+    _model_repository_paths: list[str],
+    _has_multiple_runners: bool,
+    **attrs: t.Any,
 ) -> TritonServerHandle:
     from .triton import TritonServerHandle
 
@@ -190,6 +192,11 @@ def construct_triton_handle(
         # already set this value to explicit. However, on CLI, it is default to
         # None. Therefore, we need to set it again here.
         triton_kwargs["model_control_mode"] = "explicit"
+
+    if _has_multiple_runners:
+        # There are multiple triton runners, we will disable metrics as currently
+        # we don't have support for assigning each instance separate metrics port
+        triton_kwargs["allow_metrics"] = "False"
 
     return TritonServerHandle(**triton_kwargs)
 
@@ -819,10 +826,6 @@ def serve_grpc_production(
         if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
     ]
     model_repository_paths = [r.repository_path for r in triton_runners]
-    if len(triton_runners) > 1:
-        # There are multiple triton runners, we will disable metrics as currently
-        # we don't have support for assigning each instance separate metrics port
-        attrs["triton_allow_metrics"] = "False"
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
@@ -863,7 +866,9 @@ def serve_grpc_production(
                 )
             else:
                 triton_handle = construct_triton_handle(
-                    _model_repository_paths=model_repository_paths, **attrs
+                    _model_repository_paths=model_repository_paths,
+                    _has_multiple_runners=len(triton_runners) > 1,
+                    **attrs,
                 )
                 runner_bind_map[
                     runner.name
@@ -922,7 +927,9 @@ def serve_grpc_production(
                     )
                 else:
                     triton_handle = construct_triton_handle(
-                        _model_repository_paths=model_repository_paths, **attrs
+                        _model_repository_paths=model_repository_paths,
+                        _has_multiple_runners=len(triton_runners) > 1,
+                        **attrs,
                     )
                     runner_bind_map[
                         runner.name

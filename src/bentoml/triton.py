@@ -327,6 +327,9 @@ class TritonServerHandle:
         _logger.debug("tritonserver cmd: '%s %s'", self.executable, " ".join(cli))
         return cli
 
+    def with_args(self, **kwargs: t.Any):
+        return attr.evolve(self, **kwargs)
+
     def to_dict(self, omit_if_default: bool = False):
         if not omit_if_default:
             # we want to use the default cattr.Converter to return all default values.

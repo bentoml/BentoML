@@ -37,6 +37,8 @@ def run_script_subprocess(
         raise BentoMLException("Unable to locate a valid shell")
 
     safer_bash_args: list[str] = []
+
+    # but only work in bash
     if debug_mode:
         safer_bash_args = [
             "-euxo",
@@ -47,9 +49,8 @@ def run_script_subprocess(
         capture_output=capture_output,
     )
     if result.returncode != 0:
-        if result.stderr and result.stdout:
-            logger.debug(decode(result.stdout))
-            logger.error(decode(result.stderr))
+        logger.debug(decode(result.stdout))
+        logger.error(decode(result.stderr))
         raise BentoMLException(
             "Subprocess call returned non-zero value. Error: "
             + decode(result.stderr)

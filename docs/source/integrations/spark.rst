@@ -43,10 +43,10 @@ This will be used to create a DataFrame from the input
 data, and to run the batch inference job. If you're running in a notebook with spark already
 (e.g. a VertexAI PySpark notebook or a Databricks Notebook), you can skip this step.
 
-    .. code-block:: python
+.. code-block:: python
 
-        from pyspark.sql import SparkSession
-        spark = SparkSession.builder.getOrCreate()
+    from pyspark.sql import SparkSession
+    spark = SparkSession.builder.getOrCreate()
 
 Load the input data into a PySpark DataFrame
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -56,16 +56,16 @@ requires column names, you must also provide a schema for your DataFrame as you 
 do this using the ``spark.read.csv()`` method, which takes a file path as input and returns a
 DataFrame containing the data from the file.
 
-    .. code-block:: python
+.. code-block:: python
 
-        from pyspark.sql.types import StructType, StructField, FloatType, StringType
-        schema = SparkStruct(
-            StructField(name=”sepal_length”, FloatType(), False),
-            StructField(name=”sepal_width”, FloatType(), False),
-            StructField(name=”petal_length”, FloatType(), False),
-            StructField(name=”petal_width”, FloatType(), False),
-        )
-        df = spark.read.csv("https://docs.bentoml.org/en/latest/integrations/spark/input.csv")
+    from pyspark.sql.types import StructType, StructField, FloatType, StringType
+    schema = SparkStruct(
+        StructField(name=”sepal_length”, FloatType(), False),
+        StructField(name=”sepal_width”, FloatType(), False),
+        StructField(name=”petal_length”, FloatType(), False),
+        StructField(name=”petal_width”, FloatType(), False),
+    )
+    df = spark.read.csv("https://docs.bentoml.org/en/latest/integrations/spark/input.csv")
 
 Create a BentoService object
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -74,13 +74,13 @@ Create a BentoService object using the BentoML service you want to use for the b
 job. You can do this by calling the ``bentoml.get`` function, and passing the name of the bento
 and its version as a parameter.
 
-    .. code-block:: python
+.. code-block:: python
 
-        import bentoml
+    import bentoml
 
-        bento = bentoml.import_bento("s3://bentoml/quickstart")
-        # alternatively, if the bento is already in the bento store:
-        bento = bentoml.get("iris_classifier:latest")
+    bento = bentoml.import_bento("s3://bentoml/quickstart")
+    # alternatively, if the bento is already in the bento store:
+    bento = bentoml.get("iris_classifier:latest")
 
 Run the batch inference job
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -89,22 +89,22 @@ Run the batch inference job using the ``bentoml.batch.run_in_spark()`` method. T
 the API name, the Spark DataFrame containing the input data, and the Spark session itself as
 parameters, and it returns a DataFrame containing the results of the batch inference job.
 
-    .. code-block:: python
+.. code-block:: python
 
-        results_df = bentoml.batch.run_in_spark(bento, "classify", df, spark)
+    results_df = bentoml.batch.run_in_spark(bento, "classify", df, spark)
 
-        Internally, what happens when you run `run_in_spark` is as follows:
+    Internally, what happens when you run `run_in_spark` is as follows:
 
-    * First, the bento is distributed to the cluster. Note that if the bento has already been
-      distributed, i.e. you have already run a computation with that bento, this step is skipped.
+* First, the bento is distributed to the cluster. Note that if the bento has already been
+  distributed, i.e. you have already run a computation with that bento, this step is skipped.
 
-    * Next, a process function is created, which starts a BentoML server on each of the Spark
-      workers, then uses a client to process all the data. This is done so that the workers take
-      advantage of the batch processing features of the BentoML server. PySpark pickles this process
-      function and dispatches it, along with the relevant data, to the workers.
+* Next, a process function is created, which starts a BentoML server on each of the Spark workers,
+  then uses a client to process all the data. This is done so that the workers take advantage of the
+  batch processing features of the BentoML server. PySpark pickles this process function and
+  dispatches it, along with the relevant data, to the workers.
 
-    * Finally, the function is evaluated on the given dataframe. Once all methods that the user
-      defined in the script have been executed, the data is returned to the master node.
+* Finally, the function is evaluated on the given dataframe. Once all methods that the user defined
+  in the script have been executed, the data is returned to the master node.
 
 Save the results
 ^^^^^^^^^^^^^^^^
@@ -113,18 +113,18 @@ Finally, save the results of the batch inference job to a file using the
 ``DataFrame.write.csv()`` method. This method takes a file path as input and saves the contents
 of the DataFrame to the specified file.
 
-    .. code-block:: python
+.. code-block:: python
 
-        results_df.write.csv("output")
+    results_df.write.csv("output")
 
-    Upon success, you should see multiple files in the output folder: an empty ``_SUCCESS`` file and
-    one or more ``part-*.csv`` files containing your output.
+Upon success, you should see multiple files in the output folder: an empty ``_SUCCESS`` file and
+one or more ``part-*.csv`` files containing your output.
 
-    .. code-block:: bash
+.. code-block:: bash
 
-        $ ls output
-        _SUCCESS  part-00000-85fe41df-4005-4991-a6ad-98b6ed549993-c000.csv
+    $ ls output
+    _SUCCESS  part-00000-85fe41df-4005-4991-a6ad-98b6ed549993-c000.csv
 
-    Spark supports many formats other than CSV; see the `Spark documentation
-    <https://spark.apache.org/docs/latest/api/python//reference/pyspark.sql/api/pyspark.sql.DataFrameWriter.html#pyspark.sql.DataFrameWriter>`_
-    for a full list.
+Spark supports many formats other than CSV; see the `Spark documentation
+<https://spark.apache.org/docs/latest/api/python//reference/pyspark.sql/api/pyspark.sql.DataFrameWriter.html#pyspark.sql.DataFrameWriter>`_
+for a full list.

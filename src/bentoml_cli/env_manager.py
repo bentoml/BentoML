@@ -14,6 +14,10 @@ from bentoml.exceptions import BentoMLException
 from bentoml._internal.utils import rich_console
 from bentoml._internal.env_manager import EnvManager
 
+if t.TYPE_CHECKING:
+    P = t.ParamSpec("P")
+    F = t.Callable[P, t.Any]
+
 logger = logging.getLogger(__name__)
 
 
@@ -71,7 +75,7 @@ def get_environment(bento_identifier: str, env: str) -> EnvManager:
             bento_store = BentoMLContainer.bento_store.get()
             bento = bento_store.get(bento_identifier)
             env_name = str(bento.tag).replace(":", "_")
-            bento_path = bento._fs.getsyspath("")
+            bento_path = bento.path
             return EnvManager.from_bento(
                 env_name=env_name,
                 env_type=env,
@@ -86,7 +90,7 @@ def get_environment(bento_identifier: str, env: str) -> EnvManager:
             )
 
 
-def env_manager(func):
+def env_manager(func: F[t.Any]) -> F[t.Any]:
     @click.option(
         "--env",
         type=click.Choice(["conda"]),
@@ -107,7 +111,6 @@ def env_manager(func):
 
             # once env is created, spin up a subprocess to run current arg
             bento_env.run(["bentoml"] + remove_env_arg(sys.argv[1:]))
-            sys.exit(0)
 
         value = func(*args, **kwargs)
         return value

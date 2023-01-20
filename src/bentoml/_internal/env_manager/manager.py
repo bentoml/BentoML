@@ -4,11 +4,12 @@ import os
 import typing as t
 import logging
 import subprocess
+from shutil import which
 from tempfile import NamedTemporaryFile
-from distutils.spawn import find_executable as which
 
 import fs
 import attrs
+from fs.tempfs import TempFS
 
 from bentoml.exceptions import BentoMLException
 from bentoml._internal.configuration import get_debug_mode
@@ -61,7 +62,8 @@ class EnvManager:
     env_name: str
     env_type: str
     is_ephimeral: bool
-    bento_path: t.Optional[str]
+    bento_path: t.Optional[str] = None
+    bentofile_path: t.Optional[str] = None
     _env_fs: FS = attrs.field(init=False)
 
     def __attrs_post_init__(self):
@@ -74,13 +76,15 @@ class EnvManager:
                 self.env_name is not None
             ), "persistent environments need a valid name."
 
+        assert not (
+            self.bento_path is None and self.bentofile_path is None
+        ), "Provide bentopath or path to bentofile."
+
         if self.env_type == "conda":
             if not env_home.exists("conda"):
                 env_home.makedir("conda")
             self._env_fs = (
-                env_home.opendir("conda")
-                if not self.is_ephimeral
-                else fs.tempfs.TempFS()
+                env_home.opendir("conda") if not self.is_ephimeral else TempFS()
             )
             self.create_conda_env()
 
@@ -120,6 +124,7 @@ class EnvManager:
         if self._env_fs.exists(self.env_name):
             return self._env_fs.getsyspath(self.env_name)
         else:
+            assert self.bento_path is not None, "bento_path not provided."
             with NamedTemporaryFile(mode="w", delete=False) as script_file:
                 conda_env_path = self._env_fs.getsyspath(self.env_name)
                 # TODO: figure out a proper way to get python version from a

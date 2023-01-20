@@ -205,14 +205,9 @@ class Model(StoreItem):
 
     @inject
     def save(
-        self, model_store: ModelStore = Provide[BentoMLContainer.model_store]
+        self,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Model:
-        self._save(model_store)
-
-        logger.info("Successfully saved %s", self)
-        return self
-
-    def _save(self, model_store: ModelStore) -> Model:
         try:
             self.validate()
         except BentoMLException as e:

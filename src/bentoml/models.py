@@ -122,7 +122,7 @@ def import_model(
         passwd=passwd,
         params=params,
         subpath=subpath,
-    )._save(_model_store)
+    ).save(_model_store)
 
 
 @inject

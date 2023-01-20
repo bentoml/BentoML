@@ -42,7 +42,7 @@ object_setattr = object.__setattr__
 
 @attr.frozen(slots=False)
 class RunnerMethod(t.Generic[T, P, R]):
-    runner: RunnerMeta
+    runner: AbstractRunner
     name: str
     config: RunnableMethodConfig
     max_batch_size: int
@@ -74,15 +74,16 @@ def _validate_name(_: t.Any, attr: attr.Attribute[str], value: str):
 
 
 @attr.define(slots=False, frozen=True)
-class RunnerMeta(ABC):
+class AbstractRunner(ABC):
     name: str = attr.field(converter=_to_lower_name, validator=_validate_name)
     models: list[Model] = attr.field(
-        converter=list,
+        converter=attr.converters.default_if_none(factory=list),
         validator=attr.validators.deep_iterable(
             attr.validators.instance_of(Model),
             iterable_validator=attr.validators.instance_of(ListModel),
         ),
     )
+    resource_config: dict[str, t.Any]
     runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
     def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
@@ -125,14 +126,13 @@ class RunnerMeta(ABC):
 
 
 @attr.define(slots=False, frozen=True, eq=False)
-class Runner(RunnerMeta):
+class Runner(AbstractRunner):
     if TYPE_CHECKING:
         # This will be set by __init__. This is for type checking only.
         run: t.Callable[..., t.Any]
         async_run: t.Callable[..., t.Awaitable[t.Any]]
 
     runnable_class: type[Runnable]
-    resource_config: dict[str, t.Any]
     runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: type[Strategy]
     runnable_init_params: dict[str, t.Any] = attr.field(

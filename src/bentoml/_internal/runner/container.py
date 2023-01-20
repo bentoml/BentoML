@@ -15,6 +15,8 @@ SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
 
 if t.TYPE_CHECKING:
+    from tritonclient.grpc import InferInput
+
     from .. import external_typing as ext
 
 
@@ -46,7 +48,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ...
 
     @classmethod
-    def to_triton_payload(cls, inp: SingleType) -> ext.NpNDArray:
+    def to_triton_payload(cls, inp: SingleType) -> InferInput:
         """
         Convert given input types to a Triton payload.
 
@@ -344,10 +346,6 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         return pickle.loads(payload.data)
 
     @classmethod
-    def to_triton_payload(cls, inp: t.Any) -> ext.NpNDArray:
-        raise NotImplementedError
-
-    @classmethod
     @inject
     def batch_to_payloads(
         cls,
@@ -457,7 +455,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         return container_cls.from_payload(payload)
 
     @classmethod
-    def to_triton_payload(cls, inp: t.Any) -> ext.NpNDArray:
+    def to_triton_payload(cls, inp: t.Any) -> InferInput:
         container_cls: type[
             DataContainer[t.Any, t.Any]
         ] = DataContainerRegistry.find_by_single_type(type(inp))

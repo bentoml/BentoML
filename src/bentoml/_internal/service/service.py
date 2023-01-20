@@ -17,7 +17,7 @@ from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..bento.bento import get_default_svc_readme
 from .inference_api import InferenceAPI
 from ..runner.runner import Runner
-from ..runner.runner import RunnerMeta
+from ..runner.runner import AbstractRunner
 from ..io_descriptors import IODescriptor
 
 if TYPE_CHECKING:
@@ -124,7 +124,7 @@ class Service:
         self,
         name: str,
         *,
-        runners: list[RunnerMeta] | None = None,
+        runners: list[AbstractRunner] | None = None,
         models: list[Model] | None = None,
     ):
         """
@@ -141,7 +141,7 @@ class Service:
             runner_names: t.Set[str] = set()
             for r in runners:
                 assert issubclass(
-                    r.__class__, RunnerMeta
+                    r.__class__, AbstractRunner
                 ), f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
 
                 if r.name in runner_names:

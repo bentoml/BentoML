@@ -347,7 +347,7 @@ class TritonRunnerHandle(RunnerHandle):
                     url=self._url, verbose=get_debug_mode()
                 )
                 self._loop = asyncio.get_event_loop()
-            except Exception as e:
+            except Exception:
                 import traceback
 
                 logger.error(
@@ -355,7 +355,7 @@ class TritonRunnerHandle(RunnerHandle):
                     self.runner.name,
                 )
                 logger.error(traceback.format_exc())
-                raise e
+                raise
         return self._client_cache
 
     def __del__(self):
@@ -387,6 +387,25 @@ class TritonRunnerHandle(RunnerHandle):
             object_setattr(self.runner, model_name, method)
 
         return method
+
+    @handle_triton_exception
+    async def get_model_config(self, model_name: str) -> pb.ModelConfigResponse:
+        if not await self._client.is_model_ready(model_name):
+            await self.get_model(model_name)
+        return t.cast(
+            "pb.ModelConfigResponse", await self._client.get_model_config(model_name)
+        )
+
+    def __getattr__(self, item: str) -> t.Any:
+        if item not in self.__dict__:
+            try:
+                func_or_attribute = getattr(self._client, item)
+                if callable(func_or_attribute):
+                    return handle_triton_exception(func_or_attribute)
+                return None
+            except AttributeError:
+                pass
+        return super().__getattribute__(item)
 
     @handle_triton_exception
     async def async_run_method(

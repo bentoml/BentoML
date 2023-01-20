@@ -5,4 +5,4 @@ Batch Inference
 Batch Inference Backends
 ------------------------
 
-.. autofunction:: bentoml.batch.run_in_spark
+.. autofunction:: bentoml.batch.spark.run_in_spark

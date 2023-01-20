@@ -78,8 +78,6 @@ and its version as a parameter.
 
     import bentoml
 
-    bento = bentoml.import_bento("s3://bentoml/quickstart")
-    # alternatively, if the bento is already in the bento store:
     bento = bentoml.get("iris_classifier:latest")
 
 Run the batch inference job

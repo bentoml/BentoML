@@ -27,6 +27,14 @@ def decode(msg: bytes) -> str:
     return ""
 
 
+def get_python_version_from_bento(bento_path: str) -> str:
+    with open(
+        os.path.join(bento_path, "env", "python", "version.txt"), "r"
+    ) as pyver_file:
+        py_version = pyver_file.read().split(".")[:2]
+        return ".".join(py_version)
+
+
 def run_script_subprocess(
     script_file_path: t.Union[str, os.PathLike[str]],
     capture_output: bool,
@@ -128,9 +136,7 @@ class EnvManager:
             assert self.bento_path is not None, "bento_path not provided."
             with NamedTemporaryFile(mode="w", delete=False) as script_file:
                 conda_env_path = self._env_fs.getsyspath(self.env_name)
-                # TODO: figure out a proper way to get python version from a
-                # bento
-                python_version = "3.8"
+                python_version = get_python_version_from_bento(self.bento_path)
                 script_file.write(
                     f"conda create -p {conda_env_path} python={python_version} --yes"
                     + "\n"

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from bentoml._internal.env_manager import remove_env_arg
+from bentoml_cli.env_manager import remove_env_arg
 
 testdata = [
     (

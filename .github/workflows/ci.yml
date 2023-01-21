@@ -96,8 +96,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install .[all]
-          pip install -r requirements/tests-requirements.txt
+          pip install .
+          pip install -r requirements/dev-requirements.txt
 
       - name: Format check
         run: |

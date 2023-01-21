@@ -89,16 +89,16 @@ class Service:
     """
 
     name: str
-    runners: list[Runner]
-    models: list[Model]
+    runners: t.List[Runner]
+    models: t.List[Model]
 
     # starlette related
-    mount_apps: list[tuple[ext.ASGIApp, str, str]] = attr.field(
+    mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str]] = attr.field(
         init=False, factory=list
     )
-    middlewares: list[tuple[type[ext.AsgiMiddleware], dict[str, t.Any]]] = attr.field(
-        init=False, factory=list
-    )
+    middlewares: t.List[
+        t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]
+    ] = attr.field(init=False, factory=list)
 
     # gRPC related
     mount_servicers: list[tuple[ServicerClass, AddServicerFn, list[str]]] = attr.field(
@@ -110,7 +110,7 @@ class Service:
     grpc_handlers: list[grpc.GenericRpcHandler] = attr.field(init=False, factory=list)
 
     # list of APIs from @svc.api
-    apis: dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
+    apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
 
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)

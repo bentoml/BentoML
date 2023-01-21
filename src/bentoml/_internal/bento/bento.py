@@ -372,9 +372,7 @@ class BentoRunnerInfo:
     def from_runner(cls, r: Runner) -> BentoRunnerInfo:
         return cls(
             name=r.name,
-            runnable_type=r.runnable_class.__name__
-            if hasattr(r, "runnable_class")
-            else r.__class__.__name__,
+            runnable_type=r.runnable_class.__name__,
             models=[str(model.tag) for model in r.models],
             resource_config=r.resource_config,
         )

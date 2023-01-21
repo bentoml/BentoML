@@ -114,17 +114,24 @@ include = [
 
 [project.optional-dependencies]
 all = [
-  "bentoml[aws,io,tracing]",
-  "bentoml[grpc,grpc-channelz,grpc-reflection]",
-  "bentoml[triton]",
+  "bentoml[aws]",
+  "bentoml[io]",
+  "bentoml[grpc]",
+  "bentoml[grpc-reflection]",
+  "bentoml[grpc-channelz]",
+  "bentoml[tracing]",
 ]
 aws = ["fs-s3fs"]
-io = ["bentoml[io-json,io-image,io-pandas,io-file]"]
+io = [
+  "bentoml[io-json]",
+  "bentoml[io-image]",
+  "bentoml[io-pandas]",
+  "bentoml[io-file]",
+] # syntatic sugar for bentoml[io-json,io-image,io-pandas,io-file]
 io-file = ["filetype"] # Currently use for from_sample
 io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["bentoml[io-file]", "Pillow"]
 io-pandas = ["pandas", "pyarrow"]
-triton = ["tritonclient[grpc]>=2.29.0"]
 grpc = [
   "protobuf",
   "grpcio",
@@ -136,7 +143,11 @@ grpc-channelz = ["bentoml[grpc]", "grpcio-channelz"]
 # We kept for compatibility with previous
 # versions of BentoML. It is discouraged to use this, instead use any
 # of the above tracing.* extras.
-tracing = ["bentoml[tracing-jaeger,tracing-otlp,tracing-zipkin]"]
+tracing = [
+  "bentoml[tracing-jaeger]",
+  "bentoml[tracing-otlp]",
+  "bentoml[tracing-zipkin]",
+]
 tracing-jaeger = ["opentelemetry-exporter-jaeger==1.14.0"]
 tracing-zipkin = ["opentelemetry-exporter-zipkin==1.14.0"]
 tracing-otlp = ["opentelemetry-exporter-otlp==1.14.0"]

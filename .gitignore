@@ -151,6 +151,3 @@ composer.lock
 vendor
 *.pkl
 *.ckpt
-
-# tritonserver directory binary
-/opt

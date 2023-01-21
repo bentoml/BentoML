@@ -994,8 +994,6 @@ enable additional features for the generated Bento container image.
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 | ``--enable-features=grpc``            | enable gRPC functionalities in BentoML                                                                                  |
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
-| ``--enable-features=triton``          | enable `Triton Inference Server <https://developer.nvidia.com/nvidia-triton-inference-server>`_ support in BentoML      |
-+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 | ``--enable-features=grpc-channelz``   | enable `gRPC Channelz <https://grpc.io/blog/a-short-introduction-to-channelz/>`_ for debugging purposes                 |
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 | ``--enable-features=grpc-reflection`` | enable :github:`gRPC Reflection <grpc/grpc/blob/master/doc/server-reflection.md>`                                       |
@@ -1003,8 +1001,6 @@ enable additional features for the generated Bento container image.
 | ``--enable-features=io-image``        | adding Pillow dependencies to :ref:`Image IO descriptor <reference/api_io_descriptors:Images>`                          |
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 | ``--enable-features=io-json``         | adding Pydantic validation to :ref:`JSON IO descriptor <reference/api_io_descriptors:Structured Data with JSON>`        |
-+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
-| ``--enable-features=io-file``         | adding filetype dependency to :ref:`File IO descriptor <reference/api_io_descriptors:Files>`                            |
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 | ``--enable-features=io-pandas``       | adding Pandas dependencies to :ref:`PandasDataFrame descriptor <reference/api_io_descriptors:Tabular Data with Pandas>` |
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+

@@ -65,7 +65,7 @@ DataFrame containing the data from the file.
         StructField(name=”petal_length”, FloatType(), False),
         StructField(name=”petal_width”, FloatType(), False),
     )
-    df = spark.read.csv("https://docs.bentoml.org/en/latest/integrations/spark/input.csv")
+    df = spark.read.csv("https://docs.bentoml.org/en/latest/_static/examples/batch/input.csv")
 
 Create a BentoService object
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -78,8 +78,6 @@ and its version as a parameter.
 
     import bentoml
 
-    bento = bentoml.import_bento("s3://bentoml/quickstart")
-    # alternatively, if the bento is already in the bento store:
     bento = bentoml.get("iris_classifier:latest")
 
 Run the batch inference job

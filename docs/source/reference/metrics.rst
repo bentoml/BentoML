@@ -73,11 +73,3 @@ The following section will go over the most commonly used metrics API in
 .. autofunction:: bentoml.metrics.generate_latest
 
 .. autofunction:: bentoml.metrics.text_string_to_metric_families
-
-.. autofunction:: bentoml.metrics.Histogram
-
-.. autofunction:: bentoml.metrics.Counter
-
-.. autofunction:: bentoml.metrics.Summary
-
-.. autofunction:: bentoml.metrics.Gauge

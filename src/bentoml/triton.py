@@ -42,6 +42,8 @@ else:
 
 _logger = logging.getLogger(__name__)
 
+_M = t.TypeVar("_M", bound=str)
+
 __all__ = ["Runner"]
 
 
@@ -67,6 +69,16 @@ class _TritonRunner(_AbstractRunner):
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle
 
         self._init(TritonRunnerHandle)
+
+    @t.overload
+    def __getattr__(self, item: t.Literal["__attrs_init__"]) -> t.Callable[..., None]:
+        ...
+
+    @t.overload
+    def __getattr__(
+        self, item: _M
+    ) -> _RunnerMethod[t.Any, _P, _tritongrpcclient.InferResult]:
+        ...
 
     def __getattr__(self, item: str) -> t.Any:
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle

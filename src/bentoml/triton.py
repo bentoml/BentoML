@@ -4,7 +4,6 @@ import enum
 import shutil
 import typing as t
 import logging
-import functools
 import itertools
 
 import attr
@@ -12,20 +11,24 @@ import attr
 from ._internal.types import LazyType as _LazyType
 from ._internal.utils import LazyLoader as _LazyLoader
 from ._internal.configuration import get_debug_mode as _get_debug_mode
+from ._internal.runner.runner import RunnerMethod as _RunnerMethod
 from ._internal.runner.runner import AbstractRunner as _AbstractRunner
+from ._internal.runner.runnable import RunnableMethodConfig as _RunnableMethodConfig
+from ._internal.runner.runner_handle.remote import (
+    handle_triton_exception as _handle_triton_exception,
+)
 
 if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as _tritongrpcclient
-    from tritonclient.grpc import service_pb2 as _pb
 
-    from ._internal.runner.runner import RunnerMethod
-
-    P = t.ParamSpec("P")
+    _P = t.ParamSpec("_P")
 
     _LogFormat = t.Literal["default", "ISO8601"]
     _GrpcInferResponseCompressionLevel = t.Literal["none", "low", "medium", "high"]
     _TraceLevel = t.Literal["OFF", "TIMESTAMPS", "TENSORS"]
 else:
+    _P = t.TypeVar("_P")
+
     _LogFormat = str
     _GrpcInferResponseCompressionLevel = str
     _TraceLevel = str
@@ -51,6 +54,7 @@ class _TritonRunner(_AbstractRunner):
             name=name,
             models=None,
             resource_config=None,
+            runnable_class=self.__class__,
             repository_path=model_repository,
         )
 
@@ -67,45 +71,24 @@ class _TritonRunner(_AbstractRunner):
     def __getattr__(self, item: str) -> t.Any:
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle
 
-        if isinstance(self.runner_handle, TritonRunnerHandle):
-            if item not in self.__dict__:
-                client_api = getattr(self.runner_handle, item, None)
-                if client_api is not None:
-                    return client_api
-                try:
-                    # item can be a model inside the repository_path
-                    return self.get_model(item)
-                except _tritongrpcclient.InferenceServerException as err:
-                    _logger.error(err)
-                    _tritongrpcclient.raise_error(
-                        f"Model '{item}' does not exists under '{self.repository_path}'"
-                    )
+        if isinstance(self._runner_handle, TritonRunnerHandle):
+            # get attributes from runner_handle.client
+            if item in self._runner_handle.client_methods:
+                return _handle_triton_exception(
+                    getattr(self._runner_handle.client, item)
+                )
+            else:
+                # if given item is not a client method, then we assume it is a model name.
+                # Hence, we will return a RunnerMethod that will be responsible for this model handle.
+                return _RunnerMethod[t.Any, _P, _tritongrpcclient.InferResult](
+                    runner=self,
+                    name=item,
+                    config=_RunnableMethodConfig(batchable=False, batch_dim=(0, 0)),
+                    max_batch_size=0,
+                    max_latency_ms=10000,
+                )
 
         return super().__getattribute__(item)
-
-    def _call_handle(self, _method: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        from ._internal.runner.runner_handle.remote import TritonRunnerHandle
-
-        if not isinstance(self.runner_handle, TritonRunnerHandle):
-            # This is the case where given runner is not yet initialized.
-            # This is to prevent user calling this method eagerly
-            raise RuntimeError(
-                f"'{_method}' should only be used lazily under '@svc.api' function, not eagerly."
-            )
-
-        import anyio
-
-        return anyio.from_thread.run(
-            functools.partial(getattr(self.runner_handle, _method), **kwargs), *args
-        )
-
-    def get_model(
-        self, model_name: str
-    ) -> RunnerMethod[t.Any, t.Any, _tritongrpcclient.InferResult]:
-        return self._call_handle("get_model", model_name)
-
-    def get_model_config(self, model_name: str) -> _pb.ModelConfigResponse:
-        return self._call_handle("get_model_config", model_name)
 
 
 def _to_mut_iterable(
@@ -310,7 +293,7 @@ class TritonServerHandle:
     # is initiated by using the model control APIs, and only models
     # specified with --triton-options load-model will be loaded at startup.
     model_control_mode: _ModelControlMode = attr.field(
-        default="explicit", converter=_ModelControlMode.from_type
+        default="none", converter=_ModelControlMode.from_type
     )
     repository_poll_secs: int = attr.field(default=None)
     #   Name of the model to be loaded on server startup. It may be

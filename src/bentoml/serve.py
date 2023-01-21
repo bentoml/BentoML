@@ -187,12 +187,6 @@ def construct_triton_handle(
     # handle multiple model_repository for multiple TritonRunner
     triton_kwargs["model_repository"] = _model_repository_paths
 
-    if triton_kwargs.get("model_control_mode") is None:
-        # By default, we will load model on demand. Our TritonServerHandle
-        # already set this value to explicit. However, on CLI, it is default to
-        # None. Therefore, we need to set it again here.
-        triton_kwargs["model_control_mode"] = "explicit"
-
     if _has_multiple_runners:
         # There are multiple triton runners, we will disable metrics as currently
         # we don't have support for assigning each instance separate metrics port
@@ -222,8 +216,7 @@ def serve_http_development(
 
     from circus.sockets import CircusSocket
 
-    from bentoml import load
-
+    from . import load
     from ._internal.log import SERVER_LOGGING_CONFIG
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
@@ -244,15 +237,6 @@ def serve_http_development(
         ssl_ca_certs=ssl_ca_certs,
         ssl_ciphers=ssl_ciphers,
     )
-
-    # TODO: support Triton in development mode.
-    triton_runners = [
-        r
-        for r in svc.runners
-        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
-    ]
-    if len(triton_runners) > 0:
-        logger.warning("'TritonRunner' is currently only supported in production mode.")
 
     watchers.append(
         create_watcher(
@@ -352,8 +336,7 @@ def serve_http_production(
 
     from circus.sockets import CircusSocket
 
-    from bentoml import load
-
+    from . import load
     from ._internal.utils import reserve_free_port
     from ._internal.utils.uri import path_to_uri
     from ._internal.utils.circus import create_standalone_arbiter
@@ -602,8 +585,7 @@ def serve_grpc_development(
 
     from circus.sockets import CircusSocket
 
-    from bentoml import load
-
+    from . import load
     from ._internal.log import SERVER_LOGGING_CONFIG
     from ._internal.utils import reserve_free_port
     from ._internal.utils.circus import create_standalone_arbiter
@@ -626,15 +608,6 @@ def serve_grpc_development(
         ssl_keyfile=ssl_keyfile,
         ssl_ca_certs=ssl_ca_certs,
     )
-
-    # TODO: support Triton in development mode.
-    triton_runners = [
-        r
-        for r in svc.runners
-        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
-    ]
-    if len(triton_runners) > 0:
-        logger.warning("'TritonRunner' is currently only supported in production mode.")
 
     scheme = "https" if len(ssl_args) > 0 else "http"
 
@@ -792,9 +765,8 @@ def serve_grpc_production(
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
-    from bentoml import load
-    from bentoml.exceptions import UnprocessableEntity
-
+    from . import load
+    from .exceptions import UnprocessableEntity
     from ._internal.utils import reserve_free_port
     from ._internal.utils.uri import path_to_uri
     from ._internal.utils.circus import create_standalone_arbiter

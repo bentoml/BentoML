@@ -15,10 +15,7 @@ from . import RunnerHandle
 from ..utils import Params
 from ..utils import PAYLOAD_META_HEADER
 from ...utils import LazyLoader
-from ..runner import RunnerMethod
-from ..runner import object_setattr
 from ...context import component_context
-from ..runnable import RunnableMethodConfig
 from ..container import Payload
 from ...utils.uri import uri_to_path
 from ....exceptions import RemoteException
@@ -305,18 +302,45 @@ def handle_triton_exception(f: t.Callable[P, R]) -> t.Callable[..., R]:
 
 # NOTE: to support files, consider using ModelInferStream via raw_bytes_contents
 class TritonRunnerHandle(RunnerHandle):
+
+    # We keep a copy of all the methods from client to for getattr
+    # to avoid RuntimeError when there is no running event loop.
+    client_methods = {
+        "get_cuda_shared_memory_status",
+        "get_inference_statistics",
+        "get_log_settings",
+        "get_model_config",
+        "get_model_metadata",
+        "get_model_repository_index",
+        "get_server_metadata",
+        "get_system_shared_memory_status",
+        "get_trace_settings",
+        "infer",
+        "is_model_ready",
+        "is_server_live",
+        "is_server_ready",
+        "load_model",
+        "register_cuda_shared_memory",
+        "register_system_shared_memory",
+        "stream_infer",
+        "unload_model",
+        "unregister_cuda_shared_memory",
+        "unregister_system_shared_memory",
+        "update_log_settings",
+        "update_trace_settings",
+    }
+
     def __init__(self, runner: TritonRunner):
         self.runner = runner
         self._client_cache: tritongrpcclient.InferenceServerClient | None = None
-        self._loop: asyncio.AbstractEventLoop | None = None
 
     async def is_ready(self, timeout: int) -> bool:
         start = time.time()
         while time.time() - start < timeout:
             try:
                 if (
-                    await self._client.is_server_ready()
-                    and await self._client.is_server_live()
+                    await self.client.is_server_ready()
+                    and await self.client.is_server_live()
                 ):
                     return True
                 else:
@@ -328,25 +352,16 @@ class TritonRunnerHandle(RunnerHandle):
         return False
 
     @property
-    def _url(self) -> str:
-        try:
-            return BentoMLContainer.remote_runner_mapping.get()[self.runner.name]
-        except KeyError:
-            raise ValueError(
-                f"'{self.runner.name}' is not found in registered Triton runner mapping '{BentoMLContainer.remote_runner_mapping.get()}'"
-            )
-
-    @property
-    def _client(self) -> tritongrpcclient.InferenceServerClient:
+    def client(self) -> tritongrpcclient.InferenceServerClient:
         from ...configuration import get_debug_mode
 
-        if self._client_cache is None or self._loop is None or self._loop.is_closed():
+        if self._client_cache is None:
             try:
                 # TODO: configuration customization
                 self._client_cache = tritongrpcclient.InferenceServerClient(
-                    url=self._url, verbose=get_debug_mode()
+                    url=BentoMLContainer.remote_runner_mapping.get()[self.runner.name],
+                    verbose=get_debug_mode(),
                 )
-                self._loop = asyncio.get_event_loop()
             except Exception:
                 import traceback
 
@@ -356,56 +371,8 @@ class TritonRunnerHandle(RunnerHandle):
                 )
                 logger.error(traceback.format_exc())
                 raise
+
         return self._client_cache
-
-    def __del__(self):
-        if self._loop is not None:
-            self._loop.call_soon_threadsafe(
-                lambda: asyncio.ensure_future(self._client.close())
-            )
-
-    @handle_triton_exception
-    async def get_model(
-        self, model_name: str
-    ) -> RunnerMethod[t.Any, P, tritongrpcclient.InferResult]:
-        if not await self._client.is_model_ready(model_name):
-            # model is not ready, try to load it
-            logger.debug("model '%s' is not ready, loading.", model_name)
-            await self._client.load_model(model_name)
-
-        method = RunnerMethod[t.Any, P, tritongrpcclient.InferResult](
-            runner=self.runner,
-            name=model_name,
-            # TODO: configuration for triton
-            config=RunnableMethodConfig(batchable=False, batch_dim=(0, 0)),
-            max_batch_size=0,
-            max_latency_ms=10000,
-        )
-
-        # setattr for given models
-        if model_name not in self.runner.__dict__:
-            object_setattr(self.runner, model_name, method)
-
-        return method
-
-    @handle_triton_exception
-    async def get_model_config(self, model_name: str) -> pb.ModelConfigResponse:
-        if not await self._client.is_model_ready(model_name):
-            await self.get_model(model_name)
-        return t.cast(
-            "pb.ModelConfigResponse", await self._client.get_model_config(model_name)
-        )
-
-    def __getattr__(self, item: str) -> t.Any:
-        if item not in self.__dict__:
-            try:
-                func_or_attribute = getattr(self._client, item)
-                if callable(func_or_attribute):
-                    return handle_triton_exception(func_or_attribute)
-                return None
-            except AttributeError:
-                pass
-        return super().__getattribute__(item)
 
     @handle_triton_exception
     async def async_run_method(
@@ -423,8 +390,8 @@ class TritonRunnerHandle(RunnerHandle):
         model_name = __bentoml_method.name
 
         # return metadata of a given model
-        model_metadata: pb.ModelMetadataResponse = (
-            await self._client.get_model_metadata(model_name)
+        model_metadata: pb.ModelMetadataResponse = await self.client.get_model_metadata(
+            model_name
         )
 
         pass_args = args if len(args) > 0 else kwargs
@@ -464,7 +431,7 @@ class TritonRunnerHandle(RunnerHandle):
                 )
                 inputs[-1].set_data_from_numpy(arg)
 
-        return await self._client.infer(
+        return await self.client.infer(
             model_name=model_name, inputs=inputs, outputs=outputs
         )
 

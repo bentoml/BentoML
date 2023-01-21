@@ -48,7 +48,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ...
 
     @classmethod
-    def to_triton_payload(cls, inp: SingleType) -> InferInput:
+    def to_triton_payload(cls, inp: SingleType) -> ext.NpNDArray:
         """
         Convert given input types to a Triton payload.
 
@@ -87,6 +87,50 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         payloads: t.Sequence[Payload],
         batch_dim: int,
     ) -> tuple[BatchType, list[int]]:
+        ...
+
+
+class TritonInferInputDataContainer(DataContainer["InferInput", "InferInput"]):
+    @classmethod
+    def to_payload(cls, batch: InferInput, batch_dim: int) -> Payload:
+        ...
+
+    @classmethod
+    def from_payload(cls, payload: Payload) -> InferInput:
+        ...
+
+    @classmethod
+    def to_triton_payload(cls, inp: InferInput) -> ext.NpNDArray:
+        ...
+
+    @classmethod
+    @abc.abstractmethod
+    def batches_to_batch(
+        cls, batches: t.Sequence[InferInput], batch_dim: int
+    ) -> tuple[InferInput, list[int]]:
+        ...
+
+    @classmethod
+    @abc.abstractmethod
+    def batch_to_batches(
+        cls, batch: InferInput, indices: t.Sequence[int], batch_dim: int
+    ) -> list[InferInput]:
+        ...
+
+    @classmethod
+    @abc.abstractmethod
+    def batch_to_payloads(
+        cls, batch: InferInput, indices: t.Sequence[int], batch_dim: int
+    ) -> list[Payload]:
+        ...
+
+    @classmethod
+    @abc.abstractmethod
+    def from_batch_payloads(
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int,
+    ) -> tuple[InferInput, list[int]]:
         ...
 
 
@@ -455,7 +499,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         return container_cls.from_payload(payload)
 
     @classmethod
-    def to_triton_payload(cls, inp: t.Any) -> InferInput:
+    def to_triton_payload(cls, inp: t.Any) -> ext.NpNDArray:
         container_cls: type[
             DataContainer[t.Any, t.Any]
         ] = DataContainerRegistry.find_by_single_type(type(inp))

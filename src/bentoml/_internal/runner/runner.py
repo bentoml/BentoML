@@ -49,10 +49,10 @@ class RunnerMethod(t.Generic[T, P, R]):
     max_latency_ms: int
 
     def run(self, *args: P.args, **kwargs: P.kwargs) -> R:
-        return self.runner.runner_handle.run_method(self, *args, **kwargs)
+        return self.runner._runner_handle.run_method(self, *args, **kwargs)
 
     async def async_run(self, *args: P.args, **kwargs: P.kwargs) -> R:
-        return await self.runner.runner_handle.async_run_method(self, *args, **kwargs)
+        return await self.runner._runner_handle.async_run_method(self, *args, **kwargs)
 
 
 def _to_lower_name(name: str) -> str:
@@ -84,20 +84,21 @@ class AbstractRunner(ABC):
         ),
     )
     resource_config: dict[str, t.Any]
-    runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
+    runnable_class: type[Runnable]
+    _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
     def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
-        if not isinstance(self.runner_handle, DummyRunnerHandle):
+        if not isinstance(self._runner_handle, DummyRunnerHandle):
             raise StateException("Runner already initialized")
 
-        object_setattr(self, "runner_handle", handle_class(self))
+        object_setattr(self, "_runner_handle", handle_class(self))
 
     def destroy(self):
         """
         Destroy the runner. This is called when the runner is no longer needed.
         Currently used under ``on_shutdown`` event of the BentoML server.
         """
-        object_setattr(self, "runner_handle", DummyRunnerHandle())
+        object_setattr(self, "_runner_handle", DummyRunnerHandle())
 
     @inject
     async def runner_handle_is_ready(
@@ -107,7 +108,7 @@ class AbstractRunner(ABC):
         """
         Check if given runner handle is ready. This will be used as readiness probe in Kubernetes.
         """
-        return await self.runner_handle.is_ready(timeout)
+        return await self._runner_handle.is_ready(timeout)
 
     @abstractmethod
     def init_local(self, quiet: bool = False) -> None:
@@ -127,12 +128,12 @@ class AbstractRunner(ABC):
 
 @attr.define(slots=False, frozen=True, eq=False)
 class Runner(AbstractRunner):
+
     if TYPE_CHECKING:
         # This will be set by __init__. This is for type checking only.
         run: t.Callable[..., t.Any]
         async_run: t.Callable[..., t.Awaitable[t.Any]]
 
-    runnable_class: type[Runnable]
     runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: type[Strategy]
     runnable_init_params: dict[str, t.Any] = attr.field(

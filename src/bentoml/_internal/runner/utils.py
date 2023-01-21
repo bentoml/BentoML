@@ -34,11 +34,7 @@ class Params(t.Generic[T]):
     args: tuple[T, ...]
     kwargs: dict[str, T]
 
-    def __init__(
-        self,
-        *args: T,
-        **kwargs: T,
-    ):
+    def __init__(self, *args: T, **kwargs: T):
         self.args = args
         self.kwargs = kwargs
 

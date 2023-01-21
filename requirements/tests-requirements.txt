@@ -20,3 +20,4 @@ protobuf<4.0dev
 grpcio
 grpcio-health-checking
 opentelemetry-instrumentation-grpc==0.35b0
+tritonclient[grpc]>=2.29.0

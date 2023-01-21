@@ -98,7 +98,6 @@ class _TritonRunner(_AbstractRunner):
 
     # Even though the below overload overlaps, it is ok to ignore the warning since types
     # for TritonRunner can handle both function from client and LiteralString from model name.
-    # The first overload for attrs methods is here til attrs provides stubs for these methods.
     @t.overload
     def __getattr__(self, item: t.Literal["__attrs_init__"]) -> t.Callable[..., None]:  # type: ignore (overload warning)
         ...

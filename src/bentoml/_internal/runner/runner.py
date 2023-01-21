@@ -125,6 +125,21 @@ class AbstractRunner(ABC):
         Initialize client for a remote runner instance. To be used within API server instance.
         """
 
+    if t.TYPE_CHECKING:
+
+        @t.overload
+        def __getattr__(  # type: ignore
+            self, item: t.Literal["__attrs_init__"]
+        ) -> t.Callable[..., None]:
+            ...
+
+        @t.overload
+        def __getattr__(self, item: t.LiteralString) -> RunnerMethod[t.Any, P, t.Any]:
+            ...
+
+        def __getattr__(self, item: str) -> t.Any:
+            ...
+
 
 @attr.define(slots=False, frozen=True, eq=False)
 class Runner(AbstractRunner):

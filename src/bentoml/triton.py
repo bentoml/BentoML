@@ -20,12 +20,40 @@ from ._internal.runner.runner_handle.remote import (
 
 if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as _tritongrpcclient
+    from google.protobuf import message as _message
 
     _P = t.ParamSpec("_P")
 
     _LogFormat = t.Literal["default", "ISO8601"]
     _GrpcInferResponseCompressionLevel = t.Literal["none", "low", "medium", "high"]
     _TraceLevel = t.Literal["OFF", "TIMESTAMPS", "TENSORS"]
+
+    _ClientMethod = t.Literal[
+        "get_cuda_shared_memory_status",
+        "get_inference_statistics",
+        "get_log_settings",
+        "get_model_config",
+        "get_model_metadata",
+        "get_model_repository_index",
+        "get_server_metadata",
+        "get_system_shared_memory_status",
+        "get_trace_settings",
+        "infer",
+        "is_model_ready",
+        "is_server_live",
+        "is_server_ready",
+        "load_model",
+        "register_cuda_shared_memory",
+        "register_system_shared_memory",
+        "stream_infer",
+        "unload_model",
+        "unregister_cuda_shared_memory",
+        "unregister_system_shared_memory",
+        "update_log_settings",
+        "update_trace_settings",
+    ]
+    _ModelName = t.Annotated[str, t.LiteralString]
+
 else:
     _P = t.TypeVar("_P")
 
@@ -41,8 +69,6 @@ else:
     )
 
 _logger = logging.getLogger(__name__)
-
-_M = t.TypeVar("_M", bound=str)
 
 __all__ = ["Runner"]
 
@@ -70,13 +96,24 @@ class _TritonRunner(_AbstractRunner):
 
         self._init(TritonRunnerHandle)
 
+    # Even though the below overload overlaps, it is ok to ignore the warning since types
+    # for TritonRunner can handle both function from client and LiteralString from model name.
+    # The first overload for attrs methods is here til attrs provides stubs for these methods.
     @t.overload
-    def __getattr__(self, item: t.Literal["__attrs_init__"]) -> t.Callable[..., None]:
+    def __getattr__(self, item: t.Literal["__attrs_init__"]) -> t.Callable[..., None]:  # type: ignore (overload warning)
         ...
 
     @t.overload
     def __getattr__(
-        self, item: _M
+        self, item: _ClientMethod
+    ) -> t.Callable[
+        ..., t.Coroutine[t.Any, t.Any, dict[str, t.Any] | _message.Message]
+    ]:
+        ...
+
+    @t.overload
+    def __getattr__(
+        self, item: _ModelName
     ) -> _RunnerMethod[t.Any, _P, _tritongrpcclient.InferResult]:
         ...
 

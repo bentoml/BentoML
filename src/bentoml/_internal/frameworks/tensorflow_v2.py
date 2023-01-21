@@ -404,10 +404,6 @@ class TensorflowTensorContainer(
         return pickle.loads(payload.data)
 
     @classmethod
-    def to_triton_payload(cls, inp: tf_ext.EagerTensor) -> ext.NpNDArray:
-        return inp.numpy()
-
-    @classmethod
     def batch_to_payloads(
         cls,
         batch: tf_ext.EagerTensor,

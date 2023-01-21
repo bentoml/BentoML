@@ -48,7 +48,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ...
 
     @classmethod
-    def to_triton_payload(cls, inp: SingleType) -> ext.NpNDArray:
+    def to_triton_payload(cls, inp: SingleType) -> t.Any:
         """
         Convert given input types to a Triton payload.
 
@@ -93,36 +93,36 @@ class DataContainer(t.Generic[SingleType, BatchType]):
 class TritonInferInputDataContainer(DataContainer["InferInput", "InferInput"]):
     @classmethod
     def to_payload(cls, batch: InferInput, batch_dim: int) -> Payload:
-        ...
+        raise NotImplementedError
 
     @classmethod
     def from_payload(cls, payload: Payload) -> InferInput:
-        ...
+        raise NotImplementedError
 
     @classmethod
-    def to_triton_payload(cls, inp: InferInput) -> ext.NpNDArray:
-        ...
+    def to_triton_payload(cls, inp: InferInput) -> InferInput:
+        return inp
 
     @classmethod
     @abc.abstractmethod
     def batches_to_batch(
         cls, batches: t.Sequence[InferInput], batch_dim: int
     ) -> tuple[InferInput, list[int]]:
-        ...
+        raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
     def batch_to_batches(
         cls, batch: InferInput, indices: t.Sequence[int], batch_dim: int
     ) -> list[InferInput]:
-        ...
+        raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
     def batch_to_payloads(
         cls, batch: InferInput, indices: t.Sequence[int], batch_dim: int
     ) -> list[Payload]:
-        ...
+        raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
@@ -131,7 +131,7 @@ class TritonInferInputDataContainer(DataContainer["InferInput", "InferInput"]):
         payloads: t.Sequence[Payload],
         batch_dim: int,
     ) -> tuple[InferInput, list[int]]:
-        ...
+        raise NotImplementedError
 
 
 class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
@@ -317,10 +317,6 @@ class PandasDataFrameContainer(
         return pickle.loads(payload.data)
 
     @classmethod
-    def to_triton_payload(cls, inp: ext.PdDataFrame | ext.PdSeries) -> ext.NpNDArray:
-        return t.cast("ext.NpNDArray", inp.to_numpy())
-
-    @classmethod
     @inject
     def batch_to_payloads(
         cls,
@@ -474,11 +470,21 @@ def register_builtin_containers():
         LazyType("pandas.core.frame", "DataFrame"),
         PandasDataFrameContainer,
     )
-
     DataContainerRegistry.register_container(
         LazyType("pandas.core.frame", "DataFrame"),
         LazyType("pandas.core.frame", "DataFrame"),
         PandasDataFrameContainer,
+    )
+
+    DataContainerRegistry.register_container(
+        LazyType("tritonclient.grpc", "InferInput"),
+        LazyType("tritonclient.grpc", "InferInput"),
+        TritonInferInputDataContainer,
+    )
+    DataContainerRegistry.register_container(
+        LazyType("tritonclient.grpc.aio", "InferInput"),
+        LazyType("tritonclient.grpc.aio", "InferInput"),
+        TritonInferInputDataContainer,
     )
 
 
@@ -499,11 +505,10 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         return container_cls.from_payload(payload)
 
     @classmethod
-    def to_triton_payload(cls, inp: t.Any) -> ext.NpNDArray:
-        container_cls: type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_single_type(type(inp))
-        return container_cls.to_triton_payload(inp)
+    def to_triton_payload(cls, inp: t.Any) -> t.Any:
+        return DataContainerRegistry.find_by_single_type(
+            type(inp),
+        ).to_triton_payload(inp)
 
     @classmethod
     def batches_to_batch(

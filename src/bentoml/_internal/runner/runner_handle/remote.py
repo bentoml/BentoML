@@ -8,6 +8,7 @@ import typing as t
 import asyncio
 import logging
 import functools
+import traceback
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
@@ -27,7 +28,6 @@ if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as tritongrpcclient
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
-    from tritonclient.grpc import service_pb2 as pb
 
     from ... import external_typing as ext
     from ..runner import Runner
@@ -363,8 +363,6 @@ class TritonRunnerHandle(RunnerHandle):
                     verbose=get_debug_mode(),
                 )
             except Exception:
-                import traceback
-
                 logger.error(
                     "Failed to instantiate Triton Inference Server client for '%s', see details:",
                     self.runner.name,
@@ -387,11 +385,9 @@ class TritonRunnerHandle(RunnerHandle):
             len(kwargs) == 0
         ), f"Inputs for model '{__bentoml_method.name}' can be given either as positional (args) or keyword arguments (kwargs), but not both. See https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration"
 
-        model_name = __bentoml_method.name
-
         # return metadata of a given model
-        model_metadata: pb.ModelMetadataResponse = await self.client.get_model_metadata(
-            model_name
+        model_metadata = await self.client.get_model_metadata(
+            model_name=__bentoml_method.name, as_json=False
         )
 
         pass_args = args if len(args) > 0 else kwargs
@@ -400,39 +396,47 @@ class TritonRunnerHandle(RunnerHandle):
                 f"Number of provided arguments ({len(model_metadata.inputs)}) does not match the number of inputs ({len(pass_args)})"
             )
 
-        input_params = Params["ext.NpNDArray"](*args, **kwargs).map(
-            AutoContainer.to_triton_payload
-        )
+        params = Params["ext.NpNDArray | tritongrpcclient.InferInput"](
+            *args,
+            **kwargs,
+        ).map(AutoContainer.to_triton_payload)
 
         outputs = [
             tritongrpcclient.InferRequestedOutput(output.name)
             for output in model_metadata.outputs
         ]
-        inputs: list[tritongrpcclient.InferInput] = []
 
-        if len(args) > 0:
-            for (infer_input, arg) in zip(model_metadata.inputs, input_params.args):
-                InferInput = tritongrpcclient.InferInput(
-                    infer_input.name,
-                    arg.shape,
-                    tritongrpcclient.np_to_triton_dtype(arg.dtype),
-                )
-                InferInput.set_data_from_numpy(arg)
-                inputs.append(InferInput)
+        if isinstance(params.sample, tritongrpcclient.InferInput):
+            inputs = (
+                list(params.args) if len(args) > 0 else list(params.kwargs.values())
+            )
         else:
-            for infer_input in model_metadata.inputs:
-                arg = input_params.kwargs[infer_input.name]
-                inputs.append(
-                    tritongrpcclient.InferInput(
-                        infer_input.name,
-                        arg.shape,
-                        tritongrpcclient.np_to_triton_dtype(arg.dtype),
+            # args are of type ext.NpNDArray
+            inputs: list[tritongrpcclient.InferInput] = []
+            if len(args) > 0:
+                for (infer_input, arg) in zip(model_metadata.inputs, params.args):
+                    inputs.append(
+                        tritongrpcclient.InferInput(
+                            infer_input.name,
+                            arg.shape,
+                            tritongrpcclient.np_to_triton_dtype(arg.dtype),
+                        )
                     )
-                )
-                inputs[-1].set_data_from_numpy(arg)
+                    inputs[-1].set_data_from_numpy(arg)
+            else:
+                for infer_input in model_metadata.inputs:
+                    arg = params.kwargs[infer_input.name]
+                    inputs.append(
+                        tritongrpcclient.InferInput(
+                            infer_input.name,
+                            arg.shape,
+                            tritongrpcclient.np_to_triton_dtype(arg.dtype),
+                        )
+                    )
+                    inputs[-1].set_data_from_numpy(arg)
 
         return await self.client.infer(
-            model_name=model_name, inputs=inputs, outputs=outputs
+            model_name=__bentoml_method.name, inputs=inputs, outputs=outputs
         )
 
     @handle_triton_exception

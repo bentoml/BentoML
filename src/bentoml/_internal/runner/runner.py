@@ -127,10 +127,10 @@ class AbstractRunner(ABC):
 
     if t.TYPE_CHECKING:
 
+        # the following annotations hacks around the fact that Runner does not
+        # have information about signatures at runtime.
         @t.overload
-        def __getattr__(  # type: ignore
-            self, item: t.Literal["__attrs_init__"]
-        ) -> t.Callable[..., None]:
+        def __getattr__(self, item: t.Literal["__attrs_init__"]) -> t.Callable[..., None]:  # type: ignore
             ...
 
         @t.overload

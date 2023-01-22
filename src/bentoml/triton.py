@@ -20,7 +20,6 @@ from ._internal.runner.runner_handle.remote import (
 
 if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as _tritongrpcclient
-    from google.protobuf import message as _message
 
     _P = t.ParamSpec("_P")
 
@@ -104,9 +103,7 @@ class _TritonRunner(_AbstractRunner):
     @t.overload
     def __getattr__(
         self, item: _ClientMethod
-    ) -> t.Callable[
-        ..., t.Coroutine[t.Any, t.Any, dict[str, t.Any] | _message.Message]
-    ]:
+    ) -> t.Callable[..., t.Coroutine[t.Any, t.Any, t.Any]]:
         ...
 
     @t.overload
@@ -119,11 +116,8 @@ class _TritonRunner(_AbstractRunner):
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle
 
         if isinstance(self._runner_handle, TritonRunnerHandle):
-            # get attributes from runner_handle.client
-            if item in self._runner_handle.client_methods:
-                return _handle_triton_exception(
-                    getattr(self._runner_handle.client, item)
-                )
+            if hasattr(self._runner_handle, item):
+                return _handle_triton_exception(getattr(self._runner_handle, item))
             else:
                 # if given item is not a client method, then we assume it is a model name.
                 # Hence, we will return a RunnerMethod that will be responsible for this model handle.

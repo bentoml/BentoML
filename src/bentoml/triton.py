@@ -64,7 +64,7 @@ else:
         "_tritongrpcclient",
         globals(),
         "tritonclient.grpc.aio",
-        exc_msg="tritonclient is required to use triton with BentoML. Install with 'pip install bentoml[triton]'.",
+        exc_msg="tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[grpc]>=2.29.0\"'.",
     )
 
 _logger = logging.getLogger(__name__)

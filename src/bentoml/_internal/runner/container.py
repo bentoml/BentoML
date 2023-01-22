@@ -9,6 +9,7 @@ from simple_di import inject
 from simple_di import Provide
 
 from ..types import LazyType
+from ..utils import LazyLoader
 from ..configuration.containers import BentoMLContainer
 
 SingleType = t.TypeVar("SingleType")
@@ -18,6 +19,13 @@ if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as tritongrpcclient
 
     from .. import external_typing as ext
+else:
+    tritongrpcclient = LazyLoader(
+        "tritongrpcclient",
+        globals(),
+        "tritonclient.grpc.aio",
+        exc_msg="tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[grpc]>=2.29.0\"'.",
+    )
 
 
 class Payload(t.NamedTuple):

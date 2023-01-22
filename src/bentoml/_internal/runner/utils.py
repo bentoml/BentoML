@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 T = t.TypeVar("T")
 To = t.TypeVar("To")
+Ti = t.TypeVar("Ti", bound=t.Any)
 
 
 CUDA_SUCCESS = 0
@@ -61,6 +62,26 @@ class Params(t.Generic[T]):
         args = tuple(function(a) for a in self.args)
         kwargs = {k: function(v) for k, v in self.kwargs.items()}
         return Params[To](*args, **kwargs)
+
+    def map_idx(
+        self, function: t.Callable[[T, Ti], To], iterable: t.Iterable[Ti]
+    ) -> Params[To]:
+        """
+        Apply function that takes two arguments with given iterable as index to all none empty field in Params.
+        """
+        if self.args:
+            return Params[To](
+                *tuple(
+                    function(a, b[idx])
+                    for (idx, a), b in zip(enumerate(self.args), iterable)
+                )
+            )
+        return Params[To](
+            **{
+                k: function(self.kwargs[k], b[idx])
+                for (idx, k), b in zip(enumerate(self.kwargs), iterable)
+            }
+        )
 
     def iter(self: Params[tuple[t.Any, ...]]) -> t.Iterator[Params[t.Any]]:
         """

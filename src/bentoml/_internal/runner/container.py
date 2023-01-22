@@ -15,7 +15,7 @@ SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
 
 if t.TYPE_CHECKING:
-    from tritonclient.grpc import InferInput
+    import tritonclient.grpc.aio as tritongrpcclient
 
     from .. import external_typing as ext
 
@@ -48,7 +48,11 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ...
 
     @classmethod
-    def to_triton_payload(cls, inp: SingleType) -> t.Any:
+    def to_triton_payload(
+        cls,
+        inp: SingleType,
+        meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
+    ) -> tritongrpcclient.InferInput:
         """
         Convert given input types to a Triton payload.
 
@@ -90,37 +94,49 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ...
 
 
-class TritonInferInputDataContainer(DataContainer["InferInput", "InferInput"]):
+class TritonInferInputDataContainer(
+    DataContainer["tritongrpcclient.InferInput", "tritongrpcclient.InferInput"]
+):
     @classmethod
-    def to_payload(cls, batch: InferInput, batch_dim: int) -> Payload:
+    def to_payload(cls, batch: tritongrpcclient.InferInput, batch_dim: int) -> Payload:
         raise NotImplementedError
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> InferInput:
+    def from_payload(cls, payload: Payload) -> tritongrpcclient.InferInput:
         raise NotImplementedError
 
     @classmethod
-    def to_triton_payload(cls, inp: InferInput) -> InferInput:
+    def to_triton_payload(
+        cls,
+        inp: tritongrpcclient.InferInput,
+        meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
+    ) -> tritongrpcclient.InferInput:
         return inp
 
     @classmethod
     @abc.abstractmethod
     def batches_to_batch(
-        cls, batches: t.Sequence[InferInput], batch_dim: int
-    ) -> tuple[InferInput, list[int]]:
+        cls, batches: t.Sequence[tritongrpcclient.InferInput], batch_dim: int
+    ) -> tuple[tritongrpcclient.InferInput, list[int]]:
         raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
     def batch_to_batches(
-        cls, batch: InferInput, indices: t.Sequence[int], batch_dim: int
-    ) -> list[InferInput]:
+        cls,
+        batch: tritongrpcclient.InferInput,
+        indices: t.Sequence[int],
+        batch_dim: int,
+    ) -> list[tritongrpcclient.InferInput]:
         raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
     def batch_to_payloads(
-        cls, batch: InferInput, indices: t.Sequence[int], batch_dim: int
+        cls,
+        batch: tritongrpcclient.InferInput,
+        indices: t.Sequence[int],
+        batch_dim: int,
     ) -> list[Payload]:
         raise NotImplementedError
 
@@ -130,7 +146,7 @@ class TritonInferInputDataContainer(DataContainer["InferInput", "InferInput"]):
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int,
-    ) -> tuple[InferInput, list[int]]:
+    ) -> tuple[tritongrpcclient.InferInput, list[int]]:
         raise NotImplementedError
 
 
@@ -166,8 +182,16 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         return np.split(batch, indices[1:-1], axis=batch_dim)  # type: ignore  (no numpy types)
 
     @classmethod
-    def to_triton_payload(cls, inp: ext.NpNDArray) -> ext.NpNDArray:
-        return inp
+    def to_triton_payload(
+        cls,
+        inp: ext.NpNDArray,
+        meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
+    ) -> tritongrpcclient.InferInput:
+        InferInput = tritongrpcclient.InferInput(
+            meta.name, inp.shape, tritongrpcclient.np_to_triton_dtype(inp.dtype)
+        )
+        InferInput.set_data_from_numpy(inp)
+        return InferInput
 
     @classmethod
     @inject
@@ -465,6 +489,7 @@ def register_builtin_containers():
     DataContainerRegistry.register_container(
         LazyType("numpy", "ndarray"), LazyType("numpy", "ndarray"), NdarrayContainer
     )
+
     DataContainerRegistry.register_container(
         LazyType("pandas.core.series", "Series"),
         LazyType("pandas.core.frame", "DataFrame"),
@@ -505,10 +530,14 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         return container_cls.from_payload(payload)
 
     @classmethod
-    def to_triton_payload(cls, inp: t.Any) -> t.Any:
-        return DataContainerRegistry.find_by_single_type(
-            type(inp),
-        ).to_triton_payload(inp)
+    def to_triton_payload(
+        cls,
+        inp: t.Any,
+        meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
+    ) -> tritongrpcclient.InferInput:
+        return DataContainerRegistry.find_by_single_type(type(inp)).to_triton_payload(
+            inp, meta
+        )
 
     @classmethod
     def batches_to_batch(

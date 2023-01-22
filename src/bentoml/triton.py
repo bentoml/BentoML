@@ -27,6 +27,7 @@ if t.TYPE_CHECKING:
     _LogFormat = t.Literal["default", "ISO8601"]
     _GrpcInferResponseCompressionLevel = t.Literal["none", "low", "medium", "high"]
     _TraceLevel = t.Literal["OFF", "TIMESTAMPS", "TENSORS"]
+    _RateLimit = t.Literal["execution_count", "off"]
 
     _ClientMethod = t.Literal[
         "get_cuda_shared_memory_status",
@@ -57,9 +58,7 @@ if t.TYPE_CHECKING:
 else:
     _P = t.TypeVar("_P")
 
-    _LogFormat = str
-    _GrpcInferResponseCompressionLevel = str
-    _TraceLevel = str
+    _LogFormat = _GrpcInferResponseCompressionLevel = _TraceLevel = _RateLimit = str
 
     _tritongrpcclient = _LazyLoader(
         "_tritongrpcclient",
@@ -352,32 +351,111 @@ class TritonServerHandle:
     # --triton-options load-model argument will result in error. Note that this option will only
     # take effect if --triton-options model-control-mode=explicit is true.
     load_model: t.List[str] = attr.field(default=None, converter=_to_mut_iterable)
-
-    #   Path to backend shared library. Default is /opt/tritonserver/backends.
+    #   Specify the mode for rate limiting. Options are
+    # "execution_count" and "off". The default is "off". For "execution_count", the
+    # server will determine the instance using configured priority and the
+    # number of time the instance has been used to run inference. The
+    # inference will finally be executed once the required resources are
+    # available. For "off", the server will ignore any rate limiter config and
+    # run inference as soon as an instance is ready.
+    rate_limit: _RateLimit = attr.field(default=None)
+    # 	The number of resources available to the server. The format # of this flag is
+    # --rate-limit-resource=<resource_name>:<count>:<device>. The <device> is optional and if not listed will be applied to
+    # every device. If the resource is specified as "GLOBAL" in the model
+    # configuration the resource is considered shared among all the devices
+    # in the system. The <device> property is ignored for such resources.
+    # This flag can be specified multiple times to specify each resources
+    # and their availability. By default, the max across all instances
+    # that list the resource is selected as its availability. The values for
+    # this flag is case-insensitive.
+    rate_limit_resource: t.List[str] = attr.field(
+        default=None, converter=_to_mut_iterable
+    )
+    # The total byte size that can be allocated as pinned system
+    # memory. If GPU support is enabled, the server will allocate pinned
+    # system memory to accelerate data transfer between host and devices
+    # until it exceeds the specified byte size. If 'numa-node' is configured
+    # via --host-policy, the pinned system memory of the pool size will be
+    # allocated on each numa node. This option will not affect the
+    # allocation conducted by the backend frameworks. Default is 256 MB.
+    pinned_memory_pool_byte_size: int = attr.field(default=None)
+    # The total byte size that can be allocated as CUDA memory for
+    # the GPU device. If GPU support is enabled, the server will allocate
+    # CUDA memory to minimize data transfer between host and devices
+    # until it exceeds the specified byte size. This option will not affect
+    # the allocation conducted by the backend frameworks. The argument
+    # should be 2 integers separated by colons in the format <GPU device
+    # ID>:<pool byte size>. This option can be used multiple times, but only
+    # once per GPU device. Subsequent uses will overwrite previous uses for
+    # the same GPU device. Default is 64 MB.
+    cuda_memory_pool_byte_size: t.List[str] = attr.field(
+        default=None, converter=_to_mut_iterable
+    )
+    # The size in bytes to allocate for a request/response cache.
+    # When non-zero, Triton allocates the requested size in CPU memory and
+    # shares the cache across all inference requests and across all
+    # models. For a given model to use request caching, the model must enable
+    # request caching in the model configuration. By default, no model uses
+    # request caching even if the request cache is enabled with the
+    # --response-cache-byte-size flag. Default is 0.
+    response_cache_byte_size: int = attr.field(default=None)
+    # The minimum supported CUDA compute capability. GPUs that
+    # don't support this compute capability will not be used by the server.
+    min_supported_compute_capability: float = attr.field(default=None)
+    # Timeout (in seconds) when exiting to wait for in-flight
+    # inferences to finish. After the timeout expires the server exits even if
+    # inferences are still in flight.
+    exit_timeout_secs: int = attr.field(default=None)
+    # The global directory searched for backend shared libraries.
+    # Default is '/opt/tritonserver/backends'.
     backend_directory: str = attr.field(default=None)
-    #   Path to repo agents. Default is /opt/tritonserver/repoagents.
+    # The global directory searched for repository agent shared
+    # libraries. Default is '/opt/tritonserver/repoagents'.
     repoagent_directory: str = attr.field(default=None)
+    # The number of threads used to accelerate copies and other
+    # operations required to manage input and output tensor contents.
+    # Default is 0.
+    buffer_manager_thread_count: int = attr.field(default=None)
+    # The number of threads used to concurrently load models in
+    # model repositories. Default is 2*<num_cpu_cores>.
+    model_load_thread_count: int = attr.field(default=None)
+    # Specify a backend-specific configuration setting. The format
+    # of this flag is --backend-config=<backend_name>,<setting>=<value>.
+    # Where <backend_name> is the name of the backend, such as 'tensorrt'.
+    backend_config: t.List[str] = attr.field(default=None, converter=_to_mut_iterable)
+    # Specify a host policy setting associated with a policy name.
+    # The format of this flag is
+    # --host-policy=<policy_name>,<setting>=<value>. Currently supported settings are 'numa-node', 'cpu-cores'.
+    # Note that 'numa-node' setting will affect pinned memory pool behavior,
+    # see --pinned-memory-pool for more detail.
+    host_policy: t.List[str] = attr.field(default=None, converter=_to_mut_iterable)
+    # Specify the limit on GPU memory usage as a fraction. If
+    # model loading on the device is requested and the current memory usage
+    # exceeds the limit, the load will be rejected. If not specified, the
+    # limit will not be set.
+    model_load_gpu_limit: t.List[str] = attr.field(
+        default=None, converter=_to_mut_iterable
+    )
 
     def to_cli_args(self):
         from ._internal.utils import bentoml_cattr
 
         cli: list[str] = []
-        margs = bentoml_cattr.unstructure(self)
-        for arg, value in margs.items():
-            opt = arg.replace("_", "-")
+        for arg, value in t.cast(
+            "dict[str, t.Any]", bentoml_cattr.unstructure(self)
+        ).items():
             if _LazyType["list[str]"](list).isinstance(value) or _LazyType[
                 "tuple[str, ...]"
             ](tuple).isinstance(value):
                 cli.extend(
                     list(
                         itertools.chain.from_iterable(
-                            map(lambda a: (f"--{opt}", a), value)
+                            map(lambda a: (f"--{arg.replace('_', '-')}", a), value)
                         )
                     )
                 )
             else:
-                cli.extend([f"--{opt}", str(value)])
-        _logger.debug("tritonserver cmd: '%s %s'", self.executable, " ".join(cli))
+                cli.extend([f"--{arg.replace('_', '-')}", str(value)])
         return cli
 
     def with_args(self, **kwargs: t.Any):

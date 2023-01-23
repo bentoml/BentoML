@@ -8,11 +8,16 @@ import logging
 import functools
 
 import click
+from simple_di import inject
+from simple_di import Provide
 
 from bentoml.exceptions import NotFound as BentoNotFound
 from bentoml.exceptions import BentoMLException
-from bentoml._internal.utils import rich_console
+from bentoml._internal.bento.bento import BentoStore
+from bentoml._internal.bento.bento import BENTO_YAML_FILENAME
+from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
 from bentoml._internal.env_manager import EnvManager
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     P = t.ParamSpec("P")
@@ -40,10 +45,12 @@ def remove_env_arg(cmd_args: list[str]) -> list[str]:
     return new_cmd_args
 
 
-def get_environment(bento_identifier: str, env: str) -> EnvManager:
-    from bentoml._internal.bento.bento import BENTO_YAML_FILENAME
-    from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-
+@inject
+def get_environment(
+    bento_identifier: str,
+    env: str,
+    bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+) -> EnvManager:
     # env created will be ephemeral
     if os.path.isdir(os.path.expanduser(bento_identifier)):
 
@@ -55,7 +62,7 @@ def get_environment(bento_identifier: str, env: str) -> EnvManager:
             return EnvManager.from_bento(
                 env_type=env,
                 bento_path=bento_path,
-                is_ephimeral=True,
+                is_ephemeral=True,
             )
         elif os.path.isfile(
             os.path.expanduser(os.path.join(bento_path, DEFAULT_BENTO_BUILD_FILE))
@@ -70,9 +77,6 @@ def get_environment(bento_identifier: str, env: str) -> EnvManager:
             )
     else:
         try:
-            from bentoml._internal.configuration.containers import BentoMLContainer
-
-            bento_store = BentoMLContainer.bento_store.get()
             bento = bento_store.get(bento_identifier)
             env_name = str(bento.tag).replace(":", "_")
             bento_path = bento.path
@@ -80,7 +84,7 @@ def get_environment(bento_identifier: str, env: str) -> EnvManager:
                 env_name=env_name,
                 env_type=env,
                 bento_path=bento_path,
-                is_ephimeral=False,
+                is_ephemeral=False,
             )
         except BentoNotFound:
             # service definition
@@ -102,17 +106,16 @@ def env_manager(func: F[t.Any]) -> F[t.Any]:
     def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
         env = kwargs.pop("env")
         if env is not None:
-            rich_console.print(f"loading {env} environment...")
+            click.echo(f"loading {env} environment...")
             bento_identifier = kwargs["bento"]
             bento_env = get_environment(bento_identifier, env)
-            rich_console.print(
+            click.echo(
                 f"environment {'' if not bento_env.env_name else bento_env.env_name} activated!"
             )
 
             # once env is created, spin up a subprocess to run current arg
             bento_env.run(["bentoml"] + remove_env_arg(sys.argv[1:]))
 
-        value = func(*args, **kwargs)
-        return value
+        return func(*args, **kwargs)
 
     return wrapper

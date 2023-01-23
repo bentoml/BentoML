@@ -9,13 +9,11 @@ from tempfile import NamedTemporaryFile
 
 import fs
 import attr
-from fs.tempfs import TempFS
 
-from bentoml.exceptions import BentoMLException
-from bentoml._internal.configuration import get_debug_mode
+from ...exceptions import BentoMLException
+from ..configuration import get_debug_mode
 
 logger = logging.getLogger(__name__)
-is_debug_mode = get_debug_mode()
 
 if t.TYPE_CHECKING:
     from fs.base import FS
@@ -60,27 +58,25 @@ def run_script_subprocess(
         logger.debug(decode(result.stdout))
         logger.error(decode(result.stderr))
         raise BentoMLException(
-            "Subprocess call returned non-zero value. Error: "
-            + decode(result.stderr)
-            + "\n Reffer logs for more details"
+            "Subprocess call returned non-zero value. Reffer logs for more details"
         )
 
 
-@attrs.define
+@attr.define
 class EnvManager:
     env_name: str
     env_type: str
-    is_ephimeral: bool
+    is_ephemeral: bool
     bento_path: t.Optional[str] = None
     bentofile_path: t.Optional[str] = None
-    _env_fs: FS = attrs.field(init=False)
+    _env_fs: FS = attr.field(init=False)
 
     def __attrs_post_init__(self):
         from bentoml._internal.configuration.containers import BentoMLContainer
 
         env_home = fs.open_fs(BentoMLContainer.env_store_dir.get())
 
-        if not self.is_ephimeral:
+        if not self.is_ephemeral:
             assert (
                 self.env_name is not None
             ), "persistent environments need a valid name."
@@ -93,7 +89,9 @@ class EnvManager:
             if not env_home.exists("conda"):
                 env_home.makedir("conda")
             self._env_fs = (
-                env_home.opendir("conda") if not self.is_ephimeral else TempFS()
+                fs.open_fs("temp://")
+                if self.is_ephemeral
+                else env_home.opendir("conda")
             )
             self.create_conda_env()
 
@@ -101,16 +99,16 @@ class EnvManager:
     def from_bento(
         cls,
         env_type: str,
-        is_ephimeral: bool,
+        is_ephemeral: bool,
         env_name: t.Optional[str] = None,
         bento_path: t.Optional[str] = None,
     ) -> EnvManager:
         if env_name is None:
-            env_name = "ephimeral_env"
+            env_name = "ephemeral_env"
         return cls(
             env_name=env_name,
             env_type=env_type,
-            is_ephimeral=is_ephimeral,
+            is_ephemeral=is_ephemeral,
             bento_path=bento_path,
         )
 
@@ -143,9 +141,7 @@ class EnvManager:
                 )
 
                 # install conda deps
-                from bentoml._internal.bento.build_config import (
-                    CONDA_ENV_YAML_FILE_NAME,
-                )
+                from ..bento.build_config import CONDA_ENV_YAML_FILE_NAME
 
                 conda_environment_file = fs.path.join(
                     self.bento_path, "env", "conda", CONDA_ENV_YAML_FILE_NAME
@@ -170,8 +166,8 @@ class EnvManager:
             logger.info("Creating Conda env and installing dependencies...")
             run_script_subprocess(
                 script_file.name,
-                capture_output=not is_debug_mode,
-                debug_mode=is_debug_mode,
+                capture_output=get_debug_mode(),
+                debug_mode=get_debug_mode(),
             )
             return conda_env_path
 
@@ -185,5 +181,5 @@ class EnvManager:
             script_file.write(f"conda activate {conda_env_path}" + "\n")
             script_file.write(" ".join(commands) + "\n")
         run_script_subprocess(
-            script_file.name, capture_output=False, debug_mode=is_debug_mode
+            script_file.name, capture_output=False, debug_mode=get_debug_mode()
         )

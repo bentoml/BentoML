@@ -310,8 +310,8 @@ class TritonRunnerHandle(RunnerHandle):
         while time.time() - start < timeout:
             try:
                 if (
-                    await self._client.is_server_ready()
-                    and await self._client.is_server_live()
+                    await self.client.is_server_ready()
+                    and await self.client.is_server_live()
                 ):
                     return True
                 else:
@@ -322,15 +322,8 @@ class TritonRunnerHandle(RunnerHandle):
                 await asyncio.sleep(1)
         return False
 
-    def __getattr__(self, item: t.LiteralString) -> t.Any:
-        if self._client_cache is not None:
-            attribute = getattr(self._client, item, None)
-            if attribute is not None:
-                return attribute
-        return super().__getattribute__(item)
-
     @property
-    def _client(self) -> tritongrpcclient.InferenceServerClient:
+    def client(self) -> tritongrpcclient.InferenceServerClient:
         from ...configuration import get_debug_mode
 
         if self._client_cache is None:
@@ -364,7 +357,7 @@ class TritonRunnerHandle(RunnerHandle):
         ), f"Inputs for model '{__bentoml_method.name}' can be given either as positional (args) or keyword arguments (kwargs), but not both. See https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration"
 
         # return metadata of a given model
-        model_metadata = await self._client.get_model_metadata(
+        model_metadata = await self.client.get_model_metadata(
             model_name=__bentoml_method.name, as_json=False
         )
 
@@ -377,7 +370,7 @@ class TritonRunnerHandle(RunnerHandle):
         params = Params[tritongrpcclient.InferInput](*args, **kwargs).map_idx(
             AutoContainer.to_triton_payload, model_metadata.inputs
         )
-        return await self._client.infer(
+        return await self.client.infer(
             model_name=__bentoml_method.name,
             inputs=list(params.args) if len(args) > 0 else list(params.kwargs.values()),
             outputs=[

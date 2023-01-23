@@ -116,8 +116,10 @@ class _TritonRunner(_AbstractRunner):
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle
 
         if isinstance(self._runner_handle, TritonRunnerHandle):
-            if hasattr(self._runner_handle, item):
-                return _handle_triton_exception(getattr(self._runner_handle, item))
+            if getattr(self._runner_handle.client, item) is not None:
+                return _handle_triton_exception(
+                    getattr(self._runner_handle.client, item)
+                )
             else:
                 # if given item is not a client method, then we assume it is a model name.
                 # Hence, we will return a RunnerMethod that will be responsible for this model handle.

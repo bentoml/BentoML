@@ -8,7 +8,7 @@ from shutil import which
 from tempfile import NamedTemporaryFile
 
 import fs
-import attrs
+import attr
 from fs.tempfs import TempFS
 
 from bentoml.exceptions import BentoMLException

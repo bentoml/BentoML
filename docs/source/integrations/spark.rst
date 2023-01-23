@@ -2,9 +2,15 @@
 Spark
 =====
 
-`Apache Spark <https://spark.apache.org/>`_ is a general-purpose distributed processing system used for big data workloads. It allows for processing large datasets through an in-memory computation model, which can improve the performance of big data processing tasks. It also provides a wide range of APIs and a feature-rich set of tools for structured data processing, machine learning, and stream processing for big-data applications.
+`Apache Spark <https://spark.apache.org/>`_ is a general-purpose distributed processing system used
+for big data workloads. It allows for processing large datasets through an in-memory computation
+model, which can improve the performance of big data processing tasks. It also provides a wide range
+of APIs and a feature-rich set of tools for structured data processing, machine learning, and stream
+processing for big-data applications.
 
-BentoML now supports running your Bentos with batch data via Spark. The following tutorial assumes basic understanding of BentoML and a BentoML service ready to use. If you'd like to learn more about BentoML, see the :ref:`BentoML tutorial <tutorial>`.
+BentoML now supports running your Bentos with batch data via Spark. The following tutorial assumes
+basic understanding of BentoML and a BentoML service ready to use. If you'd like to learn more about
+BentoML, see the :ref:`BentoML tutorial <tutorial>`.
 
 Prerequisites
 #############
@@ -13,8 +19,10 @@ Make sure to have at least BentoML 1.0.13 and Spark version 3.3.0 available in y
 
 .. code-block:: bash
 
-	$ pip install -U "bentoml>=1.0.13"
+    $ pip install -U "bentoml>=1.0.13"
 
+BentoML and your service's must also be installed in the Spark cluster. Most likely, the service
+you are hosting Spark on has its own mechanisms for doing this.
 
 Run Bentos in Spark
 ###################
@@ -23,13 +31,11 @@ The following tutorial will use the quickstart bento from :ref:`aforementioned t
 
 .. note::
 
-	All of the following commands/APIs should work for bentos with :ref:`IO Descriptor <reference/api_io_descriptors:API IO Descriptors>` that supports 
-
-For this example, we'll be using the quickstart bento from the aforementioned tutorial, but the
-commands should work for bentos with IO descriptors which support batch inference (at the time of writing, those are 
-:ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`,
-:ref:`bentoml.io.PandasDataFrame and bentoml.io.PandasSeries <reference/api_io_descriptors:Tabular Data with Pandas>`
-with the following caveat:
+    All of the following commands/APIs should work for bentos with
+    :ref:`IO Descriptor <reference/api_io_descriptors:API IO Descriptors>` that support batch
+    inference. Currently, those descriptors are
+    :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`,
+    :ref:`bentoml.io.PandasDataFrame, and bentoml.io.PandasSeries <reference/api_io_descriptors:Tabular Data with Pandas>`.
 
 :bdg-warning:`IMPORTANT:` your Bento API must be capable of accepting multiple inputs. For example,
 ``batch_classify(np.array([[input_1], [input_2]]))`` must work, and return
@@ -59,26 +65,37 @@ DataFrame containing the data from the file.
 .. code-block:: python
 
     from pyspark.sql.types import StructType, StructField, FloatType, StringType
-    schema = SparkStruct(
-        StructField(name=”sepal_length”, FloatType(), False),
-        StructField(name=”sepal_width”, FloatType(), False),
-        StructField(name=”petal_length”, FloatType(), False),
-        StructField(name=”petal_width”, FloatType(), False),
-    )
-    df = spark.read.csv("https://docs.bentoml.org/en/latest/_static/examples/batch/input.csv")
+    import urllib.request
+
+    urllib.request.urlretrieve("https://docs.bentoml.org/en/latest/_static/examples/batch/input.csv", "input.csv")
+
+    schema = StructType([
+        StructField("sepal_length", FloatType(), False),
+        StructField("sepal_width", FloatType(), False),
+        StructField("petal_length", FloatType(), False),
+        StructField("petal_width", FloatType(), False),
+    ])
+    df = spark.read.csv("input.csv", schema=schema)
 
 Create a BentoService object
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Create a BentoService object using the BentoML service you want to use for the batch inference
-job. You can do this by calling the ``bentoml.get`` function, and passing the name of the bento
-and its version as a parameter.
+job. Here, we first try to use ``bentoml.get`` to get the bento from the local BentoML store. If it
+is not found, we retrieve the bento from the BentoML public S3 and import it.
 
 .. code-block:: python
 
     import bentoml
 
-    bento = bentoml.get("iris_classifier:latest")
+    try:
+        bento = bentoml.get("iris_classifier:atfmp3u3ncrkseb5")
+    except bentoml.exceptions.NotFound:
+        import urllib.request
+        urllib.request.urlretrieve("https://bentoml-public.s3.us-west-1.amazonaws.com/quickstart/iris_classifier.bento", "iris_classifier.bento")
+        bento = bentoml.import_bento("iris_classifier.bento")
+
+        bento = bentoml.get("iris_classifier:latest")
 
 Run the batch inference job
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -91,15 +108,14 @@ parameters, and it returns a DataFrame containing the results of the batch infer
 
     results_df = bentoml.batch.run_in_spark(bento, "classify", df, spark)
 
-    Internally, what happens when you run `run_in_spark` is as follows:
+Internally, what happens when you run ``run_in_spark`` is as follows:
 
 * First, the bento is distributed to the cluster. Note that if the bento has already been
   distributed, i.e. you have already run a computation with that bento, this step is skipped.
 
-* Next, a process function is created, which starts a BentoML server on each of the Spark workers,
-  then uses a client to process all the data. This is done so that the workers take advantage of the
-  batch processing features of the BentoML server. PySpark pickles this process function and
-  dispatches it, along with the relevant data, to the workers.
+* Next, a process function is created, which runs the API method on every Spark batch given it. The
+  batch size can be controlled by setting ``spark.sql.execution.arrow.maxRecordsPerBatch``. PySpark
+  pickles this process function and dispatches it, along with the relevant data, to the workers.
 
 * Finally, the function is evaluated on the given dataframe. Once all methods that the user defined
   in the script have been executed, the data is returned to the master node.
@@ -122,6 +138,11 @@ one or more ``part-*.csv`` files containing your output.
 
     $ ls output
     _SUCCESS  part-00000-85fe41df-4005-4991-a6ad-98b6ed549993-c000.csv
+    $ head output/part-00000-d8fe59de-0233-4a80-8bda-519ce98223ea-c000.csv
+    1.0
+    0.0
+    2.0
+    0.0
 
 Spark supports many formats other than CSV; see the `Spark documentation
 <https://spark.apache.org/docs/latest/api/python//reference/pyspark.sql/api/pyspark.sql.DataFrameWriter.html#pyspark.sql.DataFrameWriter>`_

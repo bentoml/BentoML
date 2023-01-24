@@ -9,8 +9,8 @@ of APIs and a feature-rich set of tools for structured data processing, machine 
 processing for big-data applications.
 
 BentoML now supports running your Bentos with batch data via Spark. The following tutorial assumes
-basic understanding of BentoML and a BentoML service ready to use. If you'd like to learn more about
-BentoML, see the :ref:`BentoML tutorial <tutorial>`.
+basic understanding of BentoML. If you'd like to learn more about BentoML, see the
+:ref:`BentoML tutorial <tutorial>`.
 
 Prerequisites
 #############
@@ -21,13 +21,24 @@ Make sure to have at least BentoML 1.0.13 and Spark version 3.3.0 available in y
 
     $ pip install -U "bentoml>=1.0.13"
 
-BentoML and your service's must also be installed in the Spark cluster. Most likely, the service
-you are hosting Spark on has its own mechanisms for doing this.
+
+In addition, both BentoML and your service's dependencies (including model dependencies) must also
+be installed in the Spark cluster. Most likely, the service you are hosting Spark on has its own
+mechanisms for doing this. If you are using a standalone cluster, you should install those
+dependencies on every node you expect to use.
+
+Finally, we use the quickstart bento from the :ref:`aforementioned tutorial <tutorial>`. If you have
+already followed that tutorial, you should already have that bento. If you have note, simply run the
+following:
+
+.. code-block:: python
+
+    import urllib.request
+    urllib.request.urlretrieve("https://bentoml-public.s3.us-west-1.amazonaws.com/quickstart/iris_classifier.bento", "iris_classifier.bento")
+    bentoml.import_bento("iris_classifier.bento")
 
 Run Bentos in Spark
 ###################
-
-The following tutorial will use the quickstart bento from :ref:`aforementioned tutorial <tutorial>`.
 
 .. note::
 
@@ -88,14 +99,7 @@ is not found, we retrieve the bento from the BentoML public S3 and import it.
 
     import bentoml
 
-    try:
-        bento = bentoml.get("iris_classifier:atfmp3u3ncrkseb5")
-    except bentoml.exceptions.NotFound:
-        import urllib.request
-        urllib.request.urlretrieve("https://bentoml-public.s3.us-west-1.amazonaws.com/quickstart/iris_classifier.bento", "iris_classifier.bento")
-        bento = bentoml.import_bento("iris_classifier.bento")
-
-        bento = bentoml.get("iris_classifier:latest")
+    bento = bentoml.get("iris_classifier:latest")
 
 Run the batch inference job
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

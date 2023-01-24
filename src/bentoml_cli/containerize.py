@@ -75,7 +75,7 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
         # if given param.name is not in the memoized options, we need to create them.
         if param.name not in ctx.params[MEMO_KEY]:
             # Initialize the memoized options with default value.
-            ctx.params[_MEMO_KEY][param.name] = () if param.multiple else default_value
+            ctx.params[MEMO_KEY][param.name] = () if param.multiple else default_value
             if value is not None:
                 # Only warning if given value is different from the default.
                 # Since we are going to transform default value from old options to
@@ -116,10 +116,10 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
                             value,
                         )
                 if isinstance(value, (bool, str)):
-                    ctx.params[_MEMO_KEY][param.name] = value
+                    ctx.params[MEMO_KEY][param.name] = value
                 elif isinstance(value, tuple):
                     assert param.multiple
-                    ctx.params[_MEMO_KEY][param.name] += value
+                    ctx.params[MEMO_KEY][param.name] += value
                 else:
                     raise ValueError(f"Unexpected value type: {type(value)}")
 

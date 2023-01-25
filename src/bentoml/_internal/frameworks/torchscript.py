@@ -82,6 +82,7 @@ def save_model(
     metadata: t.Dict[str, t.Any] | None = None,
     _framework_name: str = "torchscript",
     _module_name: str = MODULE_NAME,
+    _extra_files: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
@@ -113,8 +114,6 @@ def save_model(
 
         import bentoml
         import torch
-
-        TODO(jiang)
     """
     if not isinstance(model, (torch.ScriptModule, torch.jit.ScriptModule)):
         raise TypeError(f"Given model ({model}) is not a torch.ScriptModule.")
@@ -152,8 +151,9 @@ def save_model(
         context=context,
         metadata=metadata,
     ) as bento_model:
-        weight_file = bento_model.path_of(MODEL_FILENAME)
-        torch.jit.save(model, weight_file)  # type: ignore
+        torch.jit.save(
+            model, bento_model.path_of(MODEL_FILENAME), _extra_files=_extra_files
+        )
         return bento_model
 
 

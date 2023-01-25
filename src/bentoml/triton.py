@@ -116,7 +116,7 @@ class _TritonRunner(_AbstractRunner):
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle
 
         if isinstance(self._runner_handle, TritonRunnerHandle):
-            if getattr(self._runner_handle.client, item) is not None:
+            if item in self._runner_handle.client_methods:
                 return _handle_triton_exception(
                     getattr(self._runner_handle.client, item)
                 )

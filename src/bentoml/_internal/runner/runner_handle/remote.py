@@ -322,6 +322,32 @@ class TritonRunnerHandle(RunnerHandle):
                 await asyncio.sleep(1)
         return False
 
+    # keep a copy of all client methods to avoid getattr check.
+    client_methods = [
+        "get_cuda_shared_memory_status",
+        "get_inference_statistics",
+        "get_log_settings",
+        "get_model_config",
+        "get_model_metadata",
+        "get_model_repository_index",
+        "get_server_metadata",
+        "get_system_shared_memory_status",
+        "get_trace_settings",
+        "infer",
+        "is_model_ready",
+        "is_server_live",
+        "is_server_ready",
+        "load_model",
+        "register_cuda_shared_memory",
+        "register_system_shared_memory",
+        "stream_infer",
+        "unload_model",
+        "unregister_cuda_shared_memory",
+        "unregister_system_shared_memory",
+        "update_log_settings",
+        "update_trace_settings",
+    ]
+
     @property
     def client(self) -> tritongrpcclient.InferenceServerClient:
         from ...configuration import get_debug_mode

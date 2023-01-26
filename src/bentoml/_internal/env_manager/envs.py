@@ -80,10 +80,7 @@ class Environment(ABC):
 
         # but only work in bash
         if debug_mode:
-            safer_bash_args = [
-                "-euxo",
-                "pipefail",
-            ]
+            safer_bash_args = ["-euxo"]
         result = subprocess.run(
             [shell_path, *safer_bash_args, script_file_path],
             capture_output=capture_output,

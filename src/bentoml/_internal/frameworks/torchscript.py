@@ -34,10 +34,29 @@ def get(tag_like: str | Tag) -> Model:
     return model
 
 
+@t.overload
+def load_model(
+    bentoml_model: str | Tag | Model,
+    device_id: str | None = ...,
+    return_extra_files: t.Literal[False] = ...,
+) -> torch.ScriptModule:
+    ...
+
+
+@t.overload
+def load_model(
+    bentoml_model: str | Tag | Model,
+    device_id: str | None = ...,
+    return_extra_files: t.Literal[True] = ...,
+) -> tuple[torch.ScriptModule, dict[str, t.Any]]:
+    ...
+
+
 def load_model(
     bentoml_model: str | Tag | Model,
     device_id: t.Optional[str] = "cpu",
-) -> torch.ScriptModule:
+    return_extra_files: bool = False,
+) -> torch.ScriptModule | tuple[torch.ScriptModule, dict[str, t.Any]]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -67,7 +86,16 @@ def load_model(
             f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
-    model: torch.ScriptModule = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage]
+    _extra_files = t.cast(
+        "dict[str, t.Any] | None", bentoml_model.info.metadata.get("_extra_files", None)
+    )
+    model: torch.ScriptModule = torch.jit.load(
+        weight_file,
+        map_location=device_id,
+        _extra_files=_extra_files,
+    )
+    if return_extra_files:
+        return model, _extra_files or {}
     return model
 
 
@@ -130,6 +158,10 @@ def save_model(
         framework_name=_framework_name,
         framework_versions=framework_versions,
     )
+    if metadata is None:
+        metadata = {}
+    if _extra_files is not None:
+        metadata["_extra_files"] = {_: "" for _ in _extra_files}
 
     if signatures is None:
         signatures = {"__call__": {"batchable": False}}

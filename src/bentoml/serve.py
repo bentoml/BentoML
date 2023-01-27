@@ -170,6 +170,7 @@ def construct_triton_handle(
     **attrs: t.Any,
 ) -> TritonServerHandle:
     from .triton import TritonServerHandle
+    from ._internal.utils import reserve_free_port
 
     if any(
         attrs.get(f"triton_{k}") is not None
@@ -192,7 +193,17 @@ def construct_triton_handle(
     # handle multiple model_repository for multiple TritonRunner
     triton_kwargs["model_repository"] = _model_repository_paths
 
-    return TritonServerHandle(**triton_kwargs)
+    handle = TritonServerHandle(**triton_kwargs)
+
+    updated = {}
+
+    with reserve_free_port(
+        host=handle.grpc_address, enable_so_reuseport=bool(handle.reuse_grpc_port)
+    ) as port:
+        pass
+
+    updated["grpc_port"] = port
+    return handle.with_args(**updated)
 
 
 @inject

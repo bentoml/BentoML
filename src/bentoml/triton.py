@@ -13,7 +13,6 @@ from simple_di import Provide as _Provide
 from .exceptions import StateException as _StateException
 from ._internal.types import LazyType as _LazyType
 from ._internal.utils import LazyLoader as _LazyLoader
-from ._internal.utils import reserve_free_port as _reserve_free_port
 from ._internal.configuration import get_debug_mode as _get_debug_mode
 from ._internal.runner.runner import RunnerMethod as _RunnerMethod
 from ._internal.runner.runner import AbstractRunner as _AbstractRunner
@@ -191,6 +190,8 @@ class _ModelControlMode(enum.Enum):
     def from_type(cls, s: t.Any) -> _ModelControlMode:
         if s is None:
             return _ModelControlMode.NONE
+        elif isinstance(s, _ModelControlMode):
+            return s
 
         if isinstance(s, (tuple, list)):
             # parsed from CLI or SDK
@@ -454,11 +455,6 @@ class TritonServerHandle:
 
         resolved: dict[str, t.Any] = bentoml_cattr.unstructure(self)
 
-        if "grpc_port" not in resolved or resolved["grpc_port"] is None:
-            with _reserve_free_port(
-                host=self.grpc_address, enable_so_reuseport=bool(self.reuse_grpc_port)
-            ) as port:
-                resolved["grpc_port"] = port
         resolved["allow_metrics"] = str(False)
 
         cli: list[str] = []

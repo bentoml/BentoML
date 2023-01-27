@@ -133,7 +133,7 @@ def add_serve_command(cli: click.Group) -> None:
         required=False,
         multiple=True,
         callback=opt_callback,
-        metavar="ARG=VALUE[,ARG=VALUE]",
+        metavar="ARG=VALUE[,VALUE]",
     )
     def serve(  # type: ignore (unused warning)
         bento: str,

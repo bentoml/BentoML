@@ -237,7 +237,7 @@ def add_start_command(cli: click.Group) -> None:
         required=False,
         multiple=True,
         callback=opt_callback,
-        metavar="ARG=VALUE[,ARG=VALUE]",
+        metavar="ARG=VALUE[,VALUE]",
     )
     @add_experimental_docstring
     def start_runner_server(  # type: ignore (unused warning)

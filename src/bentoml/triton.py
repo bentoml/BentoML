@@ -240,10 +240,6 @@ class TritonServerHandle:
     allow_http: bool = attr.field(
         init=False, default=None, converter=attr.converters.default_if_none(False)
     )
-    # by default, disable the Triton metrics server and all metrics args
-    allow_metrics: bool = attr.field(
-        init=False, default=None, converter=attr.converters.default_if_none(False)
-    )
     allow_grpc: bool = attr.field(
         init=False, default=None, converter=attr.converters.default_if_none(True)
     )
@@ -463,6 +459,7 @@ class TritonServerHandle:
                 host=self.grpc_address, enable_so_reuseport=bool(self.reuse_grpc_port)
             ) as port:
                 resolved["grpc_port"] = port
+        resolved["allow_metrics"] = str(False)
 
         cli: list[str] = []
         for arg, value in resolved.items():

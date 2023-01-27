@@ -7,19 +7,27 @@ import logging
 import itertools
 
 import attr
+from simple_di import inject as _inject
+from simple_di import Provide as _Provide
 
+from .exceptions import StateException as _StateException
 from ._internal.types import LazyType as _LazyType
 from ._internal.utils import LazyLoader as _LazyLoader
 from ._internal.configuration import get_debug_mode as _get_debug_mode
 from ._internal.runner.runner import RunnerMethod as _RunnerMethod
 from ._internal.runner.runner import AbstractRunner as _AbstractRunner
+from ._internal.runner.runner import object_setattr as _object_setattr
 from ._internal.runner.runnable import RunnableMethodConfig as _RunnableMethodConfig
+from ._internal.runner.runner_handle import DummyRunnerHandle as _DummyRunnerHandle
+from ._internal.configuration.containers import BentoMLContainer as _BentoMLContainer
 from ._internal.runner.runner_handle.remote import (
     handle_triton_exception as _handle_triton_exception,
 )
 
 if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as _tritongrpcclient
+
+    from ._internal.runner.runner_handle import RunnerHandle
 
     _P = t.ParamSpec("_P")
 
@@ -75,6 +83,26 @@ __all__ = ["Runner"]
 class _TritonRunner(_AbstractRunner):
     repository_path: str
 
+    _runner_handle: RunnerHandle = attr.field(init=False, factory=_DummyRunnerHandle)
+
+    def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
+        if not isinstance(self._runner_handle, _DummyRunnerHandle):
+            raise _StateException("Runner already initialized")
+
+        _object_setattr(self, "_runner_handle", handle_class(self))
+
+    @_inject
+    async def runner_handle_is_ready(
+        self,
+        timeout: int = _Provide[
+            _BentoMLContainer.api_server_config.runner_probe.timeout
+        ],
+    ) -> bool:
+        """
+        Check if given runner handle is ready. This will be used as readiness probe in Kubernetes.
+        """
+        return await self._runner_handle.is_ready(timeout)
+
     def __init__(self, name: str, model_repository: str):
         self.__attrs_init__(
             name=name,
@@ -93,6 +121,9 @@ class _TritonRunner(_AbstractRunner):
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle
 
         self._init(TritonRunnerHandle)
+
+    def destroy(self):
+        _object_setattr(self, "_runner_handle", _DummyRunnerHandle())
 
     # Even though the below overload overlaps, it is ok to ignore the warning since types
     # for TritonRunner can handle both function from client and LiteralString from model name.

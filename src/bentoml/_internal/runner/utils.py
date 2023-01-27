@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 T = t.TypeVar("T")
 To = t.TypeVar("To")
-Ti = t.TypeVar("Ti", bound=t.Any)
+Ti = t.TypeVar("Ti")
 
 
 CUDA_SUCCESS = 0
@@ -63,7 +63,7 @@ class Params(t.Generic[T]):
         kwargs = {k: function(v) for k, v in self.kwargs.items()}
         return Params[To](*args, **kwargs)
 
-    def map_idx(
+    def map_enumerate(
         self, function: t.Callable[[T, Ti], To], iterable: t.Iterable[Ti]
     ) -> Params[To]:
         """

@@ -344,13 +344,22 @@ class HTTPAppFactory(BaseAppFactory):
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
                 if output is not None:
+                    import inspect
+
+                    signature = inspect.signature(api.output.to_proto)
+                    param = next(iter(signature.parameters.values()))
+                    ann = ""
+                    if param is not inspect.Parameter.empty:
+                        ann = param.annotation
+
                     # more descriptive errors if output is available
                     logger.error(
-                        "Function '%s' has 'input=%s,output=%s' as IO descriptor, and returns 'result=%s'",
+                        "Function '%s' has 'input=%s,output=%s' as IO descriptor, and returns 'result=%s', while expected return type is '%s'",
                         api.name,
                         api.input,
                         api.output,
-                        output,
+                        type(output),
+                        ann,
                     )
 
                 status = e.error_code.value
@@ -365,15 +374,6 @@ class HTTPAppFactory(BaseAppFactory):
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
                 log_exception(request, sys.exc_info())
-                if output is not None:
-                    # more descriptive errors if output is available
-                    logger.error(
-                        "Function '%s' has 'input=%s,output=%s' as IO descriptor, and returns 'result=%s'",
-                        api.name,
-                        api.input,
-                        api.output,
-                        output,
-                    )
 
                 response = JSONResponse(
                     "An error has occurred in BentoML user code when handling this request, find the error details in server logs",

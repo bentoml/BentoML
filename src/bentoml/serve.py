@@ -16,6 +16,7 @@ import psutil
 from simple_di import inject
 from simple_di import Provide
 
+from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
 from ._internal.utils import LazyType
 from ._internal.utils import experimental
@@ -172,6 +173,14 @@ def construct_triton_handle(
 ) -> TritonServerHandle:
     from .triton import TritonServerHandle
 
+    if any(
+        attrs.get(f"triton_{k}") is not None
+        for k in ("model_repository", "allow_grpc", "allow_http")
+    ):
+        raise BentoMLException(
+            "triton_model_repository, triton_allow_grpc, triton_allow_http are not allowed in TritonRunner"
+        )
+
     triton_kwargs: dict[str, t.Any] = {
         key: attrs.get(f"triton_{key}")
         for key in [
@@ -179,15 +188,17 @@ def construct_triton_handle(
             for i in attr.fields(TritonServerHandle)
             # model_repository is set via TritonRunner
             if not i.name.startswith("_")
-            # NOTE: make sure to add attributes to this value when new attributes
-            # that is initialized by BentoML instead of users.
-            and i.name not in ["model_repository", "allow_grpc", "allow_http"]
         ]
     }
     # handle multiple model_repository for multiple TritonRunner
     triton_kwargs["model_repository"] = _model_repository_paths
 
     if _has_multiple_runners:
+        if "allow_metrics" in triton_kwargs and bool(triton_kwargs["allow_metrics"]):
+            raise BentoMLException(
+                "'triton_allow_metrics' should be set to False when using multiple triton runners"
+            )
+
         # There are multiple triton runners, we will disable metrics as currently
         # we don't have support for assigning each instance separate metrics port
         triton_kwargs["allow_metrics"] = "False"
@@ -766,7 +777,6 @@ def serve_grpc_production(
     prometheus_dir = ensure_prometheus_dir()
 
     from . import load
-    from .exceptions import UnprocessableEntity
     from ._internal.utils import reserve_free_port
     from ._internal.utils.uri import path_to_uri
     from ._internal.utils.circus import create_standalone_arbiter
@@ -785,7 +795,7 @@ def serve_grpc_production(
     # Check whether users are running --grpc on windows
     # also raising warning if users running on MacOS or FreeBSD
     if psutil.WINDOWS:
-        raise UnprocessableEntity(
+        raise BentoMLException(
             "'grpc' is not supported on Windows with '--production'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
         )
     if psutil.MACOS or psutil.FREEBSD:

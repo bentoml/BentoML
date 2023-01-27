@@ -4,7 +4,6 @@ import typing as t
 import logging
 from abc import ABC
 from abc import abstractmethod
-from typing import TYPE_CHECKING
 
 import attr
 from simple_di import inject
@@ -21,7 +20,8 @@ from .runner_handle import RunnerHandle
 from .runner_handle import DummyRunnerHandle
 from ..configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from ...triton import Runner as TritonRunner
     from .runnable import RunnableMethodConfig
 
     # only use ParamSpec in type checking, as it's only in 3.10
@@ -42,7 +42,7 @@ object_setattr = object.__setattr__
 
 @attr.frozen(slots=False)
 class RunnerMethod(t.Generic[T, P, R]):
-    runner: AbstractRunner
+    runner: Runner | TritonRunner
     name: str
     config: RunnableMethodConfig
     max_batch_size: int
@@ -85,30 +85,6 @@ class AbstractRunner(ABC):
     )
     resource_config: dict[str, t.Any]
     runnable_class: type[Runnable]
-    _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
-
-    def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
-        if not isinstance(self._runner_handle, DummyRunnerHandle):
-            raise StateException("Runner already initialized")
-
-        object_setattr(self, "_runner_handle", handle_class(self))
-
-    def destroy(self):
-        """
-        Destroy the runner. This is called when the runner is no longer needed.
-        Currently used under ``on_shutdown`` event of the BentoML server.
-        """
-        object_setattr(self, "_runner_handle", DummyRunnerHandle())
-
-    @inject
-    async def runner_handle_is_ready(
-        self,
-        timeout: int = Provide[BentoMLContainer.api_server_config.runner_probe.timeout],
-    ) -> bool:
-        """
-        Check if given runner handle is ready. This will be used as readiness probe in Kubernetes.
-        """
-        return await self._runner_handle.is_ready(timeout)
 
     @abstractmethod
     def init_local(self, quiet: bool = False) -> None:
@@ -125,7 +101,14 @@ class AbstractRunner(ABC):
         Initialize client for a remote runner instance. To be used within API server instance.
         """
 
+
+@attr.define(slots=False, frozen=True, eq=False)
+class Runner(AbstractRunner):
+
     if t.TYPE_CHECKING:
+        # This will be set by __init__. This is for type checking only.
+        run: t.Callable[..., t.Any]
+        async_run: t.Callable[..., t.Awaitable[t.Any]]
 
         # the following annotations hacks around the fact that Runner does not
         # have information about signatures at runtime.
@@ -140,20 +123,28 @@ class AbstractRunner(ABC):
         def __getattr__(self, item: str) -> t.Any:
             ...
 
-
-@attr.define(slots=False, frozen=True, eq=False)
-class Runner(AbstractRunner):
-
-    if TYPE_CHECKING:
-        # This will be set by __init__. This is for type checking only.
-        run: t.Callable[..., t.Any]
-        async_run: t.Callable[..., t.Awaitable[t.Any]]
-
     runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: type[Strategy]
     runnable_init_params: dict[str, t.Any] = attr.field(
         default=None, converter=attr.converters.default_if_none(factory=dict)
     )
+    _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
+
+    def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
+        if not isinstance(self._runner_handle, DummyRunnerHandle):
+            raise StateException("Runner already initialized")
+
+        object_setattr(self, "_runner_handle", handle_class(self))
+
+    @inject
+    async def runner_handle_is_ready(
+        self,
+        timeout: int = Provide[BentoMLContainer.api_server_config.runner_probe.timeout],
+    ) -> bool:
+        """
+        Check if given runner handle is ready. This will be used as readiness probe in Kubernetes.
+        """
+        return await self._runner_handle.is_ready(timeout)
 
     def __init__(
         self,
@@ -312,6 +303,13 @@ class Runner(AbstractRunner):
         from .runner_handle.remote import RemoteRunnerClient
 
         self._init(RemoteRunnerClient)
+
+    def destroy(self):
+        """
+        Destroy the runner. This is called when the runner is no longer needed.
+        Currently used under ``on_shutdown`` event of the BentoML server.
+        """
+        object_setattr(self, "_runner_handle", DummyRunnerHandle())
 
     @property
     def scheduled_worker_count(self) -> int:

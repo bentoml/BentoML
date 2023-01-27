@@ -291,10 +291,9 @@ def handle_triton_exception(f: t.Callable[P, R]) -> t.Callable[..., R]:
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return f(*args, **kwargs)
-        except tritongrpcclient.InferenceServerException as err:
+        except tritongrpcclient.InferenceServerException:
             logger.error("Caught exception while sending payload to Triton:")
-            logger.error(err)
-            raise err
+            raise
 
     return wrapper
 
@@ -306,6 +305,7 @@ class TritonRunnerHandle(RunnerHandle):
         self._client_cache: tritongrpcclient.InferenceServerClient | None = None
 
     async def is_ready(self, timeout: int) -> bool:
+        logger.info("Waiting for Triton server to be ready...")
         start = time.time()
         while time.time() - start < timeout:
             try:
@@ -316,9 +316,7 @@ class TritonRunnerHandle(RunnerHandle):
                     return True
                 else:
                     await asyncio.sleep(1)
-            except Exception as err:
-                logger.error("Caught exception while waiting Triton to be ready:")
-                logger.error(err)
+            except Exception:
                 await asyncio.sleep(1)
         return False
 
@@ -393,7 +391,7 @@ class TritonRunnerHandle(RunnerHandle):
                 f"Number of provided arguments ({len(model_metadata.inputs)}) does not match the number of inputs ({len(pass_args)})"
             )
 
-        params = Params[tritongrpcclient.InferInput](*args, **kwargs).map_idx(
+        params = Params[tritongrpcclient.InferInput](*args, **kwargs).map_enumerate(
             AutoContainer.to_triton_payload, model_metadata.inputs
         )
         return await self.client.infer(

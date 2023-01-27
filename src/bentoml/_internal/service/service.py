@@ -140,8 +140,8 @@ class Service:
         if runners is not None:
             runner_names: t.Set[str] = set()
             for r in runners:
-                assert issubclass(
-                    r.__class__, AbstractRunner
+                assert isinstance(
+                    r, AbstractRunner
                 ), f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
 
                 if r.name in runner_names:

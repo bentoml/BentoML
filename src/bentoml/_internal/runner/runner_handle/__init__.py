@@ -11,6 +11,7 @@ from ....exceptions import StateException
 if TYPE_CHECKING:
     from ..runner import Runner
     from ..runner import RunnerMethod
+    from ..runner import AbstractRunner
 
     R = t.TypeVar("R")
     P = t.ParamSpec("P")
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class RunnerHandle(ABC):
     @abstractmethod
-    def __init__(self, runner: Runner) -> None:
+    def __init__(self, runner: AbstractRunner) -> None:
         ...
 
     @abstractmethod

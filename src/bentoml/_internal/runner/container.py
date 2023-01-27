@@ -4,19 +4,28 @@ import abc
 import pickle
 import typing as t
 import itertools
-from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
 
 from ..types import LazyType
+from ..utils import LazyLoader
 from ..configuration.containers import BentoMLContainer
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    import tritonclient.grpc.aio as tritongrpcclient
+
     from .. import external_typing as ext
+else:
+    tritongrpcclient = LazyLoader(
+        "tritongrpcclient",
+        globals(),
+        "tritonclient.grpc.aio",
+        exc_msg="tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[grpc]>=2.29.0\"'.",
+    )
 
 
 class Payload(t.NamedTuple):
@@ -45,6 +54,22 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     @abc.abstractmethod
     def from_payload(cls, payload: Payload) -> BatchType:
         ...
+
+    @classmethod
+    def to_triton_payload(
+        cls,
+        inp: SingleType,
+        meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
+    ) -> tritongrpcclient.InferInput:
+        """
+        Convert given input types to a Triton payload.
+
+        Implementation of this method should always return a Payload that has
+        data of a Numpy array.
+        """
+        raise NotImplementedError(
+            f"{cls.__name__} doesn't support converting to Triton payload."
+        )
 
     @classmethod
     @abc.abstractmethod
@@ -77,12 +102,63 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ...
 
 
-class NdarrayContainer(
-    DataContainer[
-        "ext.NpNDArray",
-        "ext.NpNDArray",
-    ]
+class TritonInferInputDataContainer(
+    DataContainer["tritongrpcclient.InferInput", "tritongrpcclient.InferInput"]
 ):
+    @classmethod
+    def to_payload(cls, batch: tritongrpcclient.InferInput, batch_dim: int) -> Payload:
+        raise NotImplementedError
+
+    @classmethod
+    def from_payload(cls, payload: Payload) -> tritongrpcclient.InferInput:
+        raise NotImplementedError
+
+    @classmethod
+    def to_triton_payload(
+        cls,
+        inp: tritongrpcclient.InferInput,
+        meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
+    ) -> tritongrpcclient.InferInput:
+        return inp
+
+    @classmethod
+    @abc.abstractmethod
+    def batches_to_batch(
+        cls, batches: t.Sequence[tritongrpcclient.InferInput], batch_dim: int
+    ) -> tuple[tritongrpcclient.InferInput, list[int]]:
+        raise NotImplementedError
+
+    @classmethod
+    @abc.abstractmethod
+    def batch_to_batches(
+        cls,
+        batch: tritongrpcclient.InferInput,
+        indices: t.Sequence[int],
+        batch_dim: int,
+    ) -> list[tritongrpcclient.InferInput]:
+        raise NotImplementedError
+
+    @classmethod
+    @abc.abstractmethod
+    def batch_to_payloads(
+        cls,
+        batch: tritongrpcclient.InferInput,
+        indices: t.Sequence[int],
+        batch_dim: int,
+    ) -> list[Payload]:
+        raise NotImplementedError
+
+    @classmethod
+    @abc.abstractmethod
+    def from_batch_payloads(
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int,
+    ) -> tuple[tritongrpcclient.InferInput, list[int]]:
+        raise NotImplementedError
+
+
+class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
     @classmethod
     def batches_to_batch(
         cls,
@@ -112,6 +188,18 @@ class NdarrayContainer(
         import numpy as np
 
         return np.split(batch, indices[1:-1], axis=batch_dim)  # type: ignore  (no numpy types)
+
+    @classmethod
+    def to_triton_payload(
+        cls,
+        inp: ext.NpNDArray,
+        meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
+    ) -> tritongrpcclient.InferInput:
+        InferInput = tritongrpcclient.InferInput(
+            meta.name, inp.shape, tritongrpcclient.np_to_triton_dtype(inp.dtype)
+        )
+        InferInput.set_data_from_numpy(inp)
+        return InferInput
 
     @classmethod
     @inject
@@ -409,22 +497,27 @@ def register_builtin_containers():
     DataContainerRegistry.register_container(
         LazyType("numpy", "ndarray"), LazyType("numpy", "ndarray"), NdarrayContainer
     )
-    # DataContainerRegistry.register_container(np.ndarray, np.ndarray, NdarrayContainer)
-
-    # DataContainerRegistry.register_container(
-    #     LazyType("xgboost", "DMatrix"), LazyType("xgboost", "DMatrix"), DMatrixContainer
-    # )
 
     DataContainerRegistry.register_container(
         LazyType("pandas.core.series", "Series"),
         LazyType("pandas.core.frame", "DataFrame"),
         PandasDataFrameContainer,
     )
-
     DataContainerRegistry.register_container(
         LazyType("pandas.core.frame", "DataFrame"),
         LazyType("pandas.core.frame", "DataFrame"),
         PandasDataFrameContainer,
+    )
+
+    DataContainerRegistry.register_container(
+        LazyType("tritonclient.grpc", "InferInput"),
+        LazyType("tritonclient.grpc", "InferInput"),
+        TritonInferInputDataContainer,
+    )
+    DataContainerRegistry.register_container(
+        LazyType("tritonclient.grpc.aio", "InferInput"),
+        LazyType("tritonclient.grpc.aio", "InferInput"),
+        TritonInferInputDataContainer,
     )
 
 
@@ -443,6 +536,16 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     def from_payload(cls, payload: Payload) -> t.Any:
         container_cls = DataContainerRegistry.find_by_name(payload.container)
         return container_cls.from_payload(payload)
+
+    @classmethod
+    def to_triton_payload(
+        cls,
+        inp: t.Any,
+        meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
+    ) -> tritongrpcclient.InferInput:
+        return DataContainerRegistry.find_by_single_type(type(inp)).to_triton_payload(
+            inp, meta
+        )
 
     @classmethod
     def batches_to_batch(

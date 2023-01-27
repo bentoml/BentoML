@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import typing as t
 import logging
 
 import click
@@ -16,6 +17,9 @@ def add_serve_command(cli: click.Group) -> None:
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml._internal.log import configure_server_logging
     from bentoml._internal.configuration.containers import BentoMLContainer
+
+    from .utils import opt_callback
+    from .utils import flatten_opt_tuple
 
     @cli.command(aliases=["serve-http"])
     @click.argument("bento", type=click.STRING, default=".")
@@ -123,6 +127,14 @@ def add_serve_command(cli: click.Group) -> None:
         help="Ciphers to use (see stdlib 'ssl' module)",
         show_default=True,
     )
+    @click.option(
+        "--triton-options",
+        help="Trition Inference Server options",
+        required=False,
+        multiple=True,
+        callback=opt_callback,
+        metavar="ARG=VALUE[,VALUE]",
+    )
     def serve(  # type: ignore (unused warning)
         bento: str,
         production: bool,
@@ -139,6 +151,8 @@ def add_serve_command(cli: click.Group) -> None:
         ssl_cert_reqs: int | None,
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
+        _memoized: dict[str, t.Any],
+        **kwargs: t.Any,  # pylint: disable=unused-argument
     ) -> None:
         """Start a HTTP BentoServer from a given 🍱
 
@@ -205,6 +219,10 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
+                **{
+                    f"triton_{attr}": flatten_opt_tuple(value)
+                    for attr, value in _memoized.items()
+                },
             )
         else:
             from bentoml.serve import serve_http_development
@@ -334,6 +352,14 @@ def add_serve_command(cli: click.Group) -> None:
         default=LATEST_PROTOCOL_VERSION,
         show_default=True,
     )
+    @click.option(
+        "--triton-options",
+        help="Trition Inference Server options",
+        required=False,
+        multiple=True,
+        callback=opt_callback,
+        metavar="ARG=VALUE[,ARG=VALUE]",
+    )
     @add_experimental_docstring
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
@@ -351,6 +377,8 @@ def add_serve_command(cli: click.Group) -> None:
         enable_channelz: bool,
         max_concurrent_streams: int | None,
         protocol_version: str,
+        _memoized: dict[str, t.Any],
+        **kwargs: t.Any,  # pylint: disable=unused-argument
     ):
         """Start a gRPC BentoServer from a given 🍱
 
@@ -413,6 +441,10 @@ def add_serve_command(cli: click.Group) -> None:
                 reflection=enable_reflection,
                 channelz=enable_channelz,
                 protocol_version=protocol_version,
+                **{
+                    f"triton_{attr}": flatten_opt_tuple(value)
+                    for attr, value in _memoized.items()
+                },
             )
         else:
             from bentoml.serve import serve_grpc_development

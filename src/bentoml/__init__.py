@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     from . import fastai
     from . import mlflow
     from . import paddle
+    from . import triton
     from . import easyocr
     from . import pycaret
     from . import pytorch
@@ -121,6 +122,8 @@ else:
     )
     xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
 
+    triton = _LazyLoader("bentoml.triton", globals(), "bentoml.triton")
+
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
     batch = _LazyLoader("bentoml.batch", globals(), "bentoml.batch")
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
@@ -183,6 +186,8 @@ __all__ = [
     "torchscript",
     "transformers",
     "xgboost",
+    # integrations
+    "triton",
     "monitor",
     "load_config",
     "save_config",

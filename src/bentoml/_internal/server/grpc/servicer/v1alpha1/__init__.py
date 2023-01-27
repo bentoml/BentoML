@@ -56,6 +56,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
 
             api = service.apis[request.api_name]
             response = pb.Response()
+            output = None
 
             # NOTE: since IODescriptor._proto_fields is a tuple, the order is preserved.
             # This is important so that we know the order of fields to process.
@@ -82,6 +83,24 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                 response = pb.Response(**{api.output._proto_fields[0]: res})
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
+                if output is not None:
+                    import inspect
+
+                    signature = inspect.signature(api.output.to_proto)
+                    param = next(iter(signature.parameters.values()))
+                    ann = ""
+                    if param is not inspect.Parameter.empty:
+                        ann = param.annotation
+
+                    # more descriptive errors if output is available
+                    logger.error(
+                        "Function '%s' has 'input=%s,output=%s' as IO descriptor, and returns 'result=%s', while expected return type is '%s'",
+                        api.name,
+                        api.input,
+                        api.output,
+                        type(output),
+                        ann,
+                    )
                 await context.abort(code=grpc_status_code(e), details=e.message)
             except (RuntimeError, TypeError, NotImplementedError):
                 log_exception(request, sys.exc_info())

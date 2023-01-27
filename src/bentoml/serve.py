@@ -180,6 +180,9 @@ def construct_triton_handle(
             "triton_model_repository, triton_allow_grpc, triton_allow_http are not allowed in TritonRunner"
         )
 
+    if attrs.get("triton_grpc_port") is not None:
+        raise BentoMLException("triton_grpc_port is currently not supported")
+
     triton_kwargs: dict[str, t.Any] = {
         key: attrs.get(f"triton_{key}")
         for key in [
@@ -195,16 +198,12 @@ def construct_triton_handle(
 
     handle = TritonServerHandle(**triton_kwargs)
 
-    updated = {}
+    with reserve_free_port(
+        host=handle.grpc_address, enable_so_reuseport=bool(handle.reuse_grpc_port)
+    ) as triton_grpc_port:
+        pass
 
-    if handle.grpc_port is None:
-        with reserve_free_port(
-            host=handle.grpc_address, enable_so_reuseport=bool(handle.reuse_grpc_port)
-        ) as port:
-            pass
-        updated["grpc_port"] = port
-
-    return handle.with_args(**updated)
+    return handle.with_args(**{"grpc_port": triton_grpc_port})
 
 
 @inject

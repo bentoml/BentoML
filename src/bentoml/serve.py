@@ -197,12 +197,13 @@ def construct_triton_handle(
 
     updated = {}
 
-    with reserve_free_port(
-        host=handle.grpc_address, enable_so_reuseport=bool(handle.reuse_grpc_port)
-    ) as port:
-        pass
+    if handle.grpc_port is None:
+        with reserve_free_port(
+            host=handle.grpc_address, enable_so_reuseport=bool(handle.reuse_grpc_port)
+        ) as port:
+            pass
+        updated["grpc_port"] = port
 
-    updated["grpc_port"] = port
     return handle.with_args(**updated)
 
 

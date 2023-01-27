@@ -173,10 +173,10 @@ def construct_triton_handle(
 
     if any(
         attrs.get(f"triton_{k}") is not None
-        for k in ("model_repository", "allow_grpc", "allow_http")
+        for k in ("model_repository", "allow_grpc", "allow_http", "allow_metrics")
     ):
         raise BentoMLException(
-            "triton_model_repository, triton_allow_grpc, triton_allow_http are not allowed in TritonRunner"
+            "triton_model_repository, triton_allow_grpc, triton_allow_http, triton_allow_metrics are not allowed in TritonRunner"
         )
 
     triton_kwargs: dict[str, t.Any] = {

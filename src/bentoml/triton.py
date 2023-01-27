@@ -13,6 +13,7 @@ from simple_di import Provide as _Provide
 from .exceptions import StateException as _StateException
 from ._internal.types import LazyType as _LazyType
 from ._internal.utils import LazyLoader as _LazyLoader
+from ._internal.utils import reserve_free_port as _reserve_free_port
 from ._internal.configuration import get_debug_mode as _get_debug_mode
 from ._internal.runner.runner import RunnerMethod as _RunnerMethod
 from ._internal.runner.runner import AbstractRunner as _AbstractRunner
@@ -239,6 +240,10 @@ class TritonServerHandle:
     allow_http: bool = attr.field(
         init=False, default=None, converter=attr.converters.default_if_none(False)
     )
+    # by default, disable the Triton metrics server and all metrics args
+    allow_metrics: bool = attr.field(
+        init=False, default=None, converter=attr.converters.default_if_none(False)
+    )
     allow_grpc: bool = attr.field(
         init=False, default=None, converter=attr.converters.default_if_none(True)
     )
@@ -247,19 +252,10 @@ class TritonServerHandle:
     grpc_address: str = attr.field(
         default=None, converter=attr.converters.default_if_none("0.0.0.0")
     )
-    grpc_port: int = attr.field(
-        default=None, converter=attr.converters.default_if_none(8001)
-    )
+    grpc_port: int = attr.field(default=None)
     # Always reuse gRPC port so that we can spawn multiple tritonserver gRPC server.
     reuse_grpc_port: int = attr.field(
         default=None, converter=attr.converters.default_if_none(1)
-    )
-    # by default, expose the Triton metrics server
-    allow_metrics: bool = attr.field(
-        default=None, converter=attr.converters.default_if_none(True)
-    )
-    metrics_port: int = attr.field(
-        default=None, converter=attr.converters.default_if_none(8002)
     )
 
     # TODO: support Sagemaker and Vertex AI
@@ -322,13 +318,6 @@ class TritonServerHandle:
     # Setting it to 0 allows the server to accept any number of bad pings.
     # Default is 2.
     grpc_http2_max_ping_strikes: int = attr.field(default=None)
-
-    # Metrics server related (Prometheus)
-    allow_gpu_metrics: bool = attr.field(default=None)
-    allow_cpu_metrics: bool = attr.field(default=None)
-    #   Metrics will be collected once every <metrics-interval-ms> milliseconds.
-    # Default is 2000 milliseconds.
-    metrics_interval_ms: float = attr.field(default=None)
 
     # trace-related args
     #   Set the file where trace output will be saved. If
@@ -467,10 +456,16 @@ class TritonServerHandle:
     def to_cli_args(self):
         from ._internal.utils import bentoml_cattr
 
+        resolved: dict[str, t.Any] = bentoml_cattr.unstructure(self)
+
+        if "grpc_port" not in resolved or resolved["grpc_port"] is None:
+            with _reserve_free_port(
+                host=self.grpc_address, enable_so_reuseport=bool(self.reuse_grpc_port)
+            ) as port:
+                resolved["grpc_port"] = port
+
         cli: list[str] = []
-        for arg, value in t.cast(
-            "dict[str, t.Any]", bentoml_cattr.unstructure(self)
-        ).items():
+        for arg, value in resolved.items():
             if _LazyType["list[str]"](list).isinstance(value) or _LazyType[
                 "tuple[str, ...]"
             ](tuple).isinstance(value):

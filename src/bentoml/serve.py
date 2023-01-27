@@ -18,14 +18,13 @@ from simple_di import Provide
 
 from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
-from ._internal.utils import LazyType
 from ._internal.utils import experimental
+from ._internal.runner.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     from circus.watcher import Watcher
 
-    from .triton import Runner as TritonRunner
     from .triton import TritonServerHandle
 
 
@@ -167,8 +166,7 @@ def construct_ssl_args(
 
 
 def construct_triton_handle(
-    _model_repository_paths: list[str],
-    _has_multiple_runners: bool,
+    _model_repository_paths: str,
     **attrs: t.Any,
 ) -> TritonServerHandle:
     from .triton import TritonServerHandle
@@ -188,20 +186,11 @@ def construct_triton_handle(
             for i in attr.fields(TritonServerHandle)
             # model_repository is set via TritonRunner
             if not i.name.startswith("_")
+            and i.name not in ("model_repository", "allow_grpc", "allow_http")
         ]
     }
     # handle multiple model_repository for multiple TritonRunner
     triton_kwargs["model_repository"] = _model_repository_paths
-
-    if _has_multiple_runners:
-        if "allow_metrics" in triton_kwargs and bool(triton_kwargs["allow_metrics"]):
-            raise BentoMLException(
-                "'triton_allow_metrics' should be set to False when using multiple triton runners"
-            )
-
-        # There are multiple triton runners, we will disable metrics as currently
-        # we don't have support for assigning each instance separate metrics port
-        triton_kwargs["allow_metrics"] = "False"
 
     return TritonServerHandle(**triton_kwargs)
 
@@ -361,24 +350,11 @@ def serve_http_production(
     runner_bind_map: t.Dict[str, str] = {}
     uds_path = None
 
-    # NOTE: We need to find and set model-repository args
-    # to all TritonRunner instances (required from tritonserver if spawning multiple instances.)
-    triton_runners = [
-        r
-        for r in svc.runners
-        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
-    ]
-    model_repository_paths = [r.repository_path for r in triton_runners]
-    if len(triton_runners) > 1:
-        # There are multiple triton runners, we will disable metrics as currently
-        # we don't have support for assigning each instance separate metrics port
-        attrs["triton_allow_metrics"] = "False"
-
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
-            if runner not in triton_runners:
+            if isinstance(runner, Runner):
                 sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
                 assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
@@ -414,11 +390,7 @@ def serve_http_production(
                     )
                 )
             else:
-                triton_handle = construct_triton_handle(
-                    _model_repository_paths=model_repository_paths,
-                    _has_multiple_runners=len(triton_runners) > 1,
-                    **attrs,
-                )
+                triton_handle = construct_triton_handle(runner.repository_path, **attrs)
                 runner_bind_map[
                     runner.name
                 ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
@@ -437,7 +409,7 @@ def serve_http_production(
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
-                if runner not in triton_runners:
+                if isinstance(runner, Runner):
                     runner_port = port_stack.enter_context(reserve_free_port())
                     runner_host = "127.0.0.1"
 
@@ -473,9 +445,7 @@ def serve_http_production(
                     )
                 else:
                     triton_handle = construct_triton_handle(
-                        _model_repository_paths=model_repository_paths,
-                        _has_multiple_runners=len(triton_runners) > 1,
-                        **attrs,
+                        runner.repository_path, **attrs
                     )
                     runner_bind_map[
                         runner.name
@@ -806,18 +776,12 @@ def serve_grpc_production(
 
     # NOTE: We need to find and set model-repository args
     # to all TritonRunner instances (required from tritonserver if spawning multiple instances.)
-    triton_runners = [
-        r
-        for r in svc.runners
-        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
-    ]
-    model_repository_paths = [r.repository_path for r in triton_runners]
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
-            if runner not in triton_runners:
+            if isinstance(runner, Runner):
                 sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
                 assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
@@ -851,11 +815,7 @@ def serve_grpc_production(
                     )
                 )
             else:
-                triton_handle = construct_triton_handle(
-                    _model_repository_paths=model_repository_paths,
-                    _has_multiple_runners=len(triton_runners) > 1,
-                    **attrs,
-                )
+                triton_handle = construct_triton_handle(runner.repository_path, **attrs)
                 runner_bind_map[
                     runner.name
                 ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
@@ -874,7 +834,7 @@ def serve_grpc_production(
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
-                if runner not in triton_runners:
+                if isinstance(runner, Runner):
                     runner_port = port_stack.enter_context(reserve_free_port())
                     runner_host = "127.0.0.1"
 
@@ -913,9 +873,7 @@ def serve_grpc_production(
                     )
                 else:
                     triton_handle = construct_triton_handle(
-                        _model_repository_paths=model_repository_paths,
-                        _has_multiple_runners=len(triton_runners) > 1,
-                        **attrs,
+                        runner.repository_path, **attrs
                     )
                     runner_bind_map[
                         runner.name

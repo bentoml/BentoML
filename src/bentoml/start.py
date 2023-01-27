@@ -10,11 +10,8 @@ from simple_di import inject
 from simple_di import Provide
 
 from .grpc.utils import LATEST_PROTOCOL_VERSION
-from ._internal.utils import LazyType
+from ._internal.runner.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
-
-if t.TYPE_CHECKING:
-    from .triton import Runner as TritonRunner
 
 logger = logging.getLogger(__name__)
 
@@ -62,17 +59,11 @@ def start_runner_server(
 
     # NOTE: We need to find and set model-repository args
     # to all TritonRunner instances (required from tritonserver if spawning multiple instances.)
-    triton_runners = [
-        r
-        for r in svc.runners
-        if LazyType["TritonRunner"]("bentoml.triton.Runner").isinstance(r)
-    ]
-    model_repository_paths = [r.repository_path for r in triton_runners]
 
     with contextlib.ExitStack() as port_stack:
         for runner in svc.runners:
             if runner.name == runner_name:
-                if runner not in triton_runners:
+                if isinstance(runner, Runner):
                     if port is None:
                         port = port_stack.enter_context(reserve_free_port())
                     if host is None:
@@ -110,9 +101,7 @@ def start_runner_server(
                     break
                 else:
                     triton_handle = construct_triton_handle(
-                        _model_repository_paths=model_repository_paths,
-                        _has_multiple_runners=len(triton_runners) > 1,
-                        **attrs,
+                        runner.repository_path, **attrs
                     )
                     watchers.append(
                         create_watcher(

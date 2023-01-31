@@ -455,8 +455,6 @@ class TritonServerHandle:
 
         resolved: dict[str, t.Any] = bentoml_cattr.unstructure(self)
 
-        resolved["allow_metrics"] = str(False)
-
         cli: list[str] = []
         for arg, value in resolved.items():
             if _LazyType["list[str]"](list).isinstance(value) or _LazyType[

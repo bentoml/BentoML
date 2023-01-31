@@ -80,7 +80,7 @@ class Environment(ABC):
 
         # but only work in bash
         if debug_mode:
-            safer_bash_args = ["-euxo"]
+            safer_bash_args = ["-euxo", "pipefail"]
         result = subprocess.run(
             [shell_path, *safer_bash_args, script_file_path],
             capture_output=capture_output,
@@ -95,10 +95,12 @@ class Environment(ABC):
 
 class Conda(Environment):
     def get_executable(self) -> str:
-        conda_exe = os.environ.get("CONDA_EXE")
-        if conda_exe is None:
+        conda_exe: str
+        if os.environ.get("CONDA_EXE") is not None:
+            conda_exe = os.environ.get("CONDA_EXE")
+        else:
             raise BentoMLException(
-                "conda executable not found! Make sure conda is installed and that `CONDA_EXE` is set."
+                "Conda|Miniconda executable not found! Make sure any one is installed and environment is activated."
             )
         return conda_exe
 
@@ -119,12 +121,14 @@ class Conda(Environment):
             self.bento_env_dir, "conda", CONDA_ENV_YAML_FILE_NAME
         )
         if os.path.exists(conda_environment_file):
-            script_file_commands.append("conda config --set pip_interop_enabled True")
             script_file_commands.append(
-                f"conda env update -p {conda_env_path} --file {conda_environment_file}"
+                f"{self.env_exe} config --set pip_interop_enabled True"
+            )
+            script_file_commands.append(
+                f"{self.env_exe} env update -p {conda_env_path} --file {conda_environment_file}"
             )
 
-        script_file_commands.append(f'eval "$(conda shell.posix hook)"' + "\n")
+        script_file_commands.append(f'eval "$({self.env_exe} shell.posix hook)"' + "\n")
         script_file_commands.append(f"conda activate {conda_env_path}" + "\n")
 
         python_install_script = os.path.join(self.bento_env_dir, "python", "install.sh")
@@ -135,7 +139,7 @@ class Conda(Environment):
         logger.info("Creating Conda env and installing dependencies...")
         self.run_script_subprocess(
             script_file.name,
-            capture_output=get_debug_mode(),
+            capture_output=not get_debug_mode(),
             debug_mode=get_debug_mode(),
         )
 
@@ -143,11 +147,13 @@ class Conda(Environment):
         """
         Run commands in the activated environment.
         """
+        conda_env_path = self.env_fs.getsyspath(self.name)
+        script_file_lines: list[str] = []
+        script_file_lines.append(f'eval "$({self.env_exe} shell.posix hook)"')
+        script_file_lines.append(f"conda activate {conda_env_path}")
+        script_file_lines.append(" ".join(commands))
         with NamedTemporaryFile(mode="w", delete=False) as script_file:
-            conda_env_path = self.env_fs.getsyspath(self.name)
-            script_file.write(f'eval "$(conda shell.posix hook)"' + "\n")
-            script_file.write(f"conda activate {conda_env_path}" + "\n")
-            script_file.write(" ".join(commands) + "\n")
+            script_file.write("\n".join(script_file_lines))
         self.run_script_subprocess(
             script_file.name, capture_output=False, debug_mode=get_debug_mode()
         )

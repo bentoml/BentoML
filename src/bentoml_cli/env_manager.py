@@ -19,6 +19,7 @@ from bentoml._internal.bento.bento import BentoStore
 from bentoml._internal.bento.bento import BENTO_YAML_FILENAME
 from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
 from bentoml._internal.env_manager import EnvManager
+from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.env_manager.envs import Environment
 from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -104,9 +105,16 @@ def env_manager(func: F[t.Any]) -> F[t.Any]:
     def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
         env = kwargs.pop("env")
         if env is not None:
-            click.echo(f"loading {env} environment...")
+            from rich.status import Status
+
             bento_identifier = kwargs["bento"]
-            bento_env = get_environment(bento_identifier, env)
+            spinner_status = Status(f"Loading {env} environment")
+            if not get_debug_mode():
+                spinner_status.start()
+                bento_env = get_environment(bento_identifier, env)
+                spinner_status.stop()
+            else:
+                bento_env = get_environment(bento_identifier, env)
             click.echo(
                 f"environment {'' if not bento_env.name else bento_env.name} activated!"
             )

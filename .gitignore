@@ -110,7 +110,6 @@ tests/integration/data
 # setuptools_scm generated version file
 typings
 **/*/_version.py
-typings
 
 # test files
 catboost_info

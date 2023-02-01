@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from .exceptions import BentoMLException
 from ._internal.container import build as _internal_build
 from ._internal.container import health
 from ._internal.container import get_backend
@@ -389,10 +388,6 @@ def build(
                   for each of the supported arguments per backend.
     """
     from ._internal.container import determine_container_tag
-
-    # Run healthcheck
-    if not health(backend):
-        raise BentoMLException("Failed to use backend %s." % backend)
 
     if "tag" not in kwargs:
         kwargs["tag"] = determine_container_tag(bento_tag, image_tag=image_tag)

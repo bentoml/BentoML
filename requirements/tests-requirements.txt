@@ -7,7 +7,7 @@ black[jupyter]==22.12.0
 codecov==2.1.12
 coverage[toml]==7.1.0
 setuptools>=63
-isort==5.11.4
+isort==5.12.0
 pylint==2.16.0
 pytest-cov==4.0.0
 pytest==7.2.1

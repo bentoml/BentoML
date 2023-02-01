@@ -113,7 +113,6 @@ def set_debug_mode(enabled: bool) -> None:
     )
 
 
-@lru_cache(maxsize=1)
 def get_debug_mode() -> bool:
     if DEBUG_ENV_VAR in os.environ:
         return os.environ[DEBUG_ENV_VAR].lower() == "true"

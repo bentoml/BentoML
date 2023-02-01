@@ -1,43 +1,50 @@
-================
+===================
 Environment Manager
-================
+===================
 
-*Not supported on Windows*
+:bdg-info:`Note:` This feature is currently only supported on UNIX/MacOS.
 
-The Environment Manager creates an isolated environment based on the
-dependencies from the bentofile.yaml to run bentoml-cli commands. This means you
-can use the environment manager to create an environment and use it to run
-``bentoml serve`` which will then serve your bento in the isolated environment
-that is created. 
+Environment manager is a utility that helps create an isolated environment to
+run the BentoML CLI. Dependencies are pulled from your defined
+``bentofile.yaml`` and the environment is built upon request. This means by
+passing ``--env`` to supported CLI commands (such as :ref:`bentoml serve
+<reference/cli:serve>`), such commands will then be run in an sandbox
+environment that mimics the behaviour during production.
 
 .. code-block:: bash
 
    » bentoml serve --env conda iris_classifier:latest
 
-.. tip::
-
-    Depending on the environment, the env-manager will use different tools
-    behind the scenes to resolve and install the dependencies. The logs for
-    these tools are hidden by env-manager default. To view them, run bentoml 
-    in debug mode with ``--debug``/``--verbose`` flag.
-
-Caching
-~~~~~~~~~~~~
-
-There are 2 types of environment that can be created for you based on the serving
-target you invoke ``bentoml serve`` with. 
-(checkout :ref:`bentoml serving reference <reference/cli:serve>` for more
-information on different serving targets.)
+This creates and isolated conda environment from the dependencies in the bento
+and runs ``bentoml serve`` from that environment.
 
 
-1. Persistant environments - If the serving target is a Bento-Tag for a bento in
-   the bento store, the created environment will be persistant and will be saved 
-   to ``$BENTOML_HOME/env``. For subsequent invocations can use the same
-   environment.
-2. Ephimeral environments - In all other cases, ie if the serving target is the 
-   import path of a ‘bentoml.Service’ instance or a folder containing a valid 
-   ‘bentofile.yaml’ build file, the created environment will be removed after
-   the bentoml command has been complete.
+BentoML CLI Commands that support Environment Manager
+    - :ref:`serve <reference/cli:serve>`
+    - :ref:`serve-grpc <reference/cli:serve-grpc>`
+
+Supported Environments
+    - conda
+
+
+Caching strategies
+==================
+
+Currently, there are two types of environments that are supported by the
+environment manager:
+
+1. Persistent environment: If the given target is a Bento, then the created
+   environment will be stored locally to ``$BENTOML_HOME/env``. Such an
+   environment will then be cached and later used by subsequent invocations.
+
+ 2. Ephemeral environment: In cases where the given target is not a Bento
+     (import path to ``bentoml.Service``, project directory containing a valid
+     ``bentofile.yaml``), the environment will be created and cleanup up on
+     demand.
+
+.. note:: The current implementation will try to install the given dependencies
+   before running the CLI command. Therefore, the environment startup will be a
+   blocking call.  the bentoml command has been complete.
 
 .. note::
    You can run ``rm -rf $BENTOML_HOME/env`` to clear the cache.

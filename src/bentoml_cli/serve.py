@@ -362,6 +362,7 @@ def add_serve_command(cli: click.Group) -> None:
         metavar="ARG=VALUE[,ARG=VALUE]",
     )
     @add_experimental_docstring
+    @env_manager
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
         production: bool,

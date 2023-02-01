@@ -75,7 +75,7 @@ def get_environment(
             )
         else:
             raise BentoMLException(
-                f"EnvManager failed to create environment from path {bento_path_fs}. When loading from a path, it must be either a Bento containing bento.yaml or a project directory containing bentofile.yaml"
+                f"EnvManager failed to create an environment from path {bento_path_fs}. When loading from a path, it must be either a Bento or a project directory containing 'bentofile.yaml'."
             )
     else:
         try:
@@ -108,7 +108,7 @@ def env_manager(func: F[t.Any]) -> F[t.Any]:
             from rich.status import Status
 
             bento_identifier = kwargs["bento"]
-            spinner_status = Status(f"Loading {env} environment")
+            spinner_status = Status(f"Preparing {env} environment")
             if not get_debug_mode():
                 spinner_status.start()
                 bento_env = get_environment(bento_identifier, env)

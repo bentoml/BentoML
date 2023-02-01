@@ -265,6 +265,16 @@ class DockerOptions:
                 setup_script, bento_fs, docker_folder, "setup_script"
             )
 
+        # If dockerfile_template is provided, then we copy it to the Bento
+        # See https://github.com/bentoml/BentoML/issues/3491
+        if self.dockerfile_template is not None:
+            copy_file_to_fs_folder(
+                resolve_user_filepath(self.dockerfile_template, build_ctx),
+                bento_fs,
+                docker_folder,
+                "Dockerfile.template",
+            )
+
     def to_dict(self) -> dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)
 

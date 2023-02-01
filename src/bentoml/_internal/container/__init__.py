@@ -161,7 +161,12 @@ def construct_containerfile(
         # construct_containerfile. Hence it is safe to set it to None here.
         # See https://github.com/bentoml/BentoML/issues/3399.
         docker_attrs = bentoml_cattr.unstructure(options.docker)
-        docker_attrs["dockerfile_template"] = None
+        if "dockerfile_template" in docker_attrs:
+            # NOTE: if users specify a dockerfile_template, we will
+            # save it to /env/docker/Dockerfile.template. This is necessary
+            # for the reconstruction of the Dockerfile.
+            # See https://github.com/bentoml/BentoML/issues/3491
+            docker_attrs["dockerfile_template"] = "env/docker/Dockerfile.template"
 
         dockerfile = generate_containerfile(
             docker=DockerOptions(**docker_attrs),

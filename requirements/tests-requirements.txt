@@ -3,7 +3,7 @@ pandas
 pydantic
 scikit-learn
 yamllint==1.29.0
-black[jupyter]==22.12.0
+black[jupyter]==23.1.0
 codecov==2.1.12
 coverage[toml]==7.1.0
 setuptools>=63

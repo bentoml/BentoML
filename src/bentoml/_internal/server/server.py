@@ -39,7 +39,7 @@ class ServerHandle:
         return f"{self.host}:{self.port}"
 
     def __enter__(self):
-        yield self
+        return self
 
     def __exit__(
         self,

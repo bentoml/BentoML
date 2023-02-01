@@ -100,9 +100,7 @@ def start_runner_server(
                     )
                     break
                 else:
-                    triton_handle = construct_triton_handle(
-                        runner.repository_path, **attrs
-                    )
+                    triton_handle = construct_triton_handle(runner, **attrs)
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",

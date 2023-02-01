@@ -5,14 +5,16 @@ import shutil
 import typing as t
 import logging
 import itertools
+import subprocess
 
 import attr
 from simple_di import inject as _inject
 from simple_di import Provide as _Provide
 
 from .exceptions import StateException as _StateException
-from ._internal.types import LazyType as _LazyType
+from .exceptions import BentoMLException as _BentoMLException
 from ._internal.utils import LazyLoader as _LazyLoader
+from ._internal.utils import cached_property as _cached_property
 from ._internal.configuration import get_debug_mode as _get_debug_mode
 from ._internal.runner.runner import RunnerMethod as _RunnerMethod
 from ._internal.runner.runner import AbstractRunner as _AbstractRunner
@@ -20,12 +22,14 @@ from ._internal.runner.runner import object_setattr as _object_setattr
 from ._internal.runner.runnable import RunnableMethodConfig as _RunnableMethodConfig
 from ._internal.runner.runner_handle import DummyRunnerHandle as _DummyRunnerHandle
 from ._internal.configuration.containers import BentoMLContainer as _BentoMLContainer
+from ._internal.runner.runner_handle.remote import TRITON_EXC_MSG as _TRITON_EXC_MSG
 from ._internal.runner.runner_handle.remote import (
     handle_triton_exception as _handle_triton_exception,
 )
 
 if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as _tritongrpcclient
+    import tritonclient.http.aio as _tritonhttpclient
 
     from ._internal.runner.runner_handle import RunnerHandle
 
@@ -35,6 +39,7 @@ if t.TYPE_CHECKING:
     _GrpcInferResponseCompressionLevel = t.Literal["none", "low", "medium", "high"]
     _TraceLevel = t.Literal["OFF", "TIMESTAMPS", "TENSORS"]
     _RateLimit = t.Literal["execution_count", "off"]
+    _TritonServerType = t.Literal["grpc", "http"]
 
     _ClientMethod = t.Literal[
         "get_cuda_shared_memory_status",
@@ -68,10 +73,10 @@ else:
     _LogFormat = _GrpcInferResponseCompressionLevel = _TraceLevel = _RateLimit = str
 
     _tritongrpcclient = _LazyLoader(
-        "_tritongrpcclient",
-        globals(),
-        "tritonclient.grpc.aio",
-        exc_msg="tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[grpc]>=2.29.0\"'.",
+        "_tritongrpcclient", globals(), "tritonclient.grpc.aio", exc_msg=_TRITON_EXC_MSG
+    )
+    _tritonhttpclient = _LazyLoader(
+        "_tritonhttpclient", globals(), "tritonclient.http.aio", exc_msg=_TRITON_EXC_MSG
     )
 
 _logger = logging.getLogger(__name__)
@@ -82,6 +87,10 @@ __all__ = ["Runner"]
 @attr.define(slots=False, frozen=True, eq=False)
 class _TritonRunner(_AbstractRunner):
     repository_path: str
+
+    tritonserver_type: _TritonServerType = attr.field(
+        default="grpc", validator=attr.validators.in_(["grpc", "http"])
+    )
 
     _runner_handle: RunnerHandle = attr.field(init=False, factory=_DummyRunnerHandle)
 
@@ -103,13 +112,19 @@ class _TritonRunner(_AbstractRunner):
         """
         return await self._runner_handle.is_ready(timeout)
 
-    def __init__(self, name: str, model_repository: str):
+    def __init__(
+        self,
+        name: str,
+        model_repository: str,
+        tritonserver_type: _TritonServerType = "grpc",
+    ):
         self.__attrs_init__(
             name=name,
             models=None,
             resource_config=None,
             runnable_class=self.__class__,
             repository_path=model_repository,
+            tritonserver_type=tritonserver_type,
         )
 
     def init_local(self, quiet: bool = False) -> None:
@@ -140,7 +155,9 @@ class _TritonRunner(_AbstractRunner):
     @t.overload
     def __getattr__(
         self, item: _ModelName
-    ) -> _RunnerMethod[t.Any, _P, _tritongrpcclient.InferResult]:
+    ) -> _RunnerMethod[
+        t.Any, _P, _tritongrpcclient.InferResult | _tritonhttpclient.InferResult
+    ]:
         ...
 
     def __getattr__(self, item: str) -> t.Any:
@@ -148,16 +165,20 @@ class _TritonRunner(_AbstractRunner):
 
         if isinstance(self._runner_handle, TritonRunnerHandle):
             if item in self._runner_handle.client_methods:
-                return _handle_triton_exception(
-                    getattr(self._runner_handle.client, item)
-                )
+                # NOTE: auto wrap triton methods to its respective clients
+                return _handle_triton_exception(self._runner_handle.client, item)
             else:
                 # if given item is not a client method, then we assume it is a model name.
                 # Hence, we will return a RunnerMethod that will be responsible for this model handle.
-                return _RunnerMethod[t.Any, _P, _tritongrpcclient.InferResult](
+                RT = (
+                    _tritonhttpclient.InferResult
+                    if self.tritonserver_type == "http"
+                    else _tritongrpcclient.InferResult
+                )
+                return _RunnerMethod[t.Any, _P, RT](
                     runner=self,
                     name=item,
-                    config=_RunnableMethodConfig(batchable=False, batch_dim=(0, 0)),
+                    config=_RunnableMethodConfig(batchable=True, batch_dim=(0, 0)),
                     max_batch_size=0,
                     max_latency_ms=10000,
                 )
@@ -166,7 +187,7 @@ class _TritonRunner(_AbstractRunner):
 
 
 def _to_mut_iterable(
-    inp: tuple[str, ...] | list[str] | str
+    inp: tuple[str, ...] | list[str] | str | None
 ) -> tuple[str, ...] | list[str] | None:
     if inp is None:
         return
@@ -224,7 +245,8 @@ def _find_triton_binary():
 @attr.frozen
 class TritonServerHandle:
     """
-    Triton Server handle. This is a dataclass to handle CLI arguments that pass to 'tritonserver' binary.
+    Triton Server handle. This is a dataclass to handle CLI arguments that pass to
+    'tritonserver' binary.
 
     Note that BentoML will always run tritonserver with gRPC protocol, hence
     all config for HTTP will be ignored.
@@ -234,6 +256,7 @@ class TritonServerHandle:
 
     __omit_if_default__ = True
     _binary: str = attr.field(init=False, factory=_find_triton_binary)
+    _runner: _TritonRunner = attr.field(init=False, default=None)
 
     model_repository: t.List[str] = attr.field(converter=_to_mut_iterable)
 
@@ -244,7 +267,6 @@ class TritonServerHandle:
     allow_grpc: bool = attr.field(
         init=False, default=None, converter=attr.converters.default_if_none(True)
     )
-
     # address to bind gRPC server to
     grpc_address: str = attr.field(
         default=None, converter=attr.converters.default_if_none("0.0.0.0")
@@ -254,6 +276,14 @@ class TritonServerHandle:
     reuse_grpc_port: int = attr.field(
         default=None, converter=attr.converters.default_if_none(1)
     )
+    allow_http: bool = attr.field(
+        init=False, default=None, converter=attr.converters.default_if_none(False)
+    )
+    http_address: str = attr.field(
+        default=None, converter=attr.converters.default_if_none("127.0.0.1")
+    )
+    http_port: int = attr.field(default=None)
+    http_thread_count: int = attr.field(default=None)
 
     # TODO: support Sagemaker and Vertex AI
     # TODO: support rate limit and memory cache management
@@ -450,16 +480,103 @@ class TritonServerHandle:
         default=None, converter=_to_mut_iterable
     )
 
+    def _validate_args(self, args: str, value: t.Any, timeout: int | float = 0.3):
+        # NOTE: If the arguments are not available, the process will exit instantly.
+        # Otherwise, if it exists, then quickly quit the process with a timeout.
+        from ._internal.container.base import Arguments
+
+        cmd = Arguments([self._binary])
+        cmd.construct_args(self.model_repository, opt="model-repository")
+        cmd.construct_args(value, opt=args)
+
+        try:
+            subprocess.run(
+                list(map(str, cmd)),
+                timeout=timeout,
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except subprocess.TimeoutExpired:
+            _logger.debug("Arguments %s are available in %s", args, self._binary)
+            return True
+        except subprocess.CalledProcessError:
+            _logger.debug("Arguments %s does not exists for %s", args, self._binary)
+            return False
+        except Exception as e:  # pylint: disable=broad-except
+            _logger.error("Caught exception while validating arguments: %s", args)
+            _logger.error(e)
+            raise
+
+    @property
+    def runner(self):
+        return self._runner
+
+    @runner.setter
+    def runner(self, value: Runner) -> None:
+        _object_setattr(self, "_runner", value)
+
+    @_cached_property
+    def use_http_client(self):
+        assert self._runner is not None
+        return self._runner.tritonserver_type == "http"
+
     def to_cli_args(self):
         from ._internal.utils import bentoml_cattr
 
-        resolved: dict[str, t.Any] = bentoml_cattr.unstructure(self)
+        resolved: dict[
+            str, str | bool | list[str] | tuple[str]
+        ] = bentoml_cattr.unstructure(self)
+
+        # NOTE: to run subprocess to check if the arguments are available
+        # are not optimal, but it is the only way to do it?
+        if self._validate_args("allow-http", str(False)):
+            # This server have HTTP endpoint enabled.
+            resolved["allow_http"] = self.use_http_client
+            if self._validate_args("allow-grpc", str(False)):
+                resolved["allow_grpc"] = not self.use_http_client
+            else:
+                # Server doesn't have gRPC enabled.
+                for key in [
+                    "allow_grpc",
+                    "grpc_address",
+                    "grpc_port",
+                    "reuse_grpc_port",
+                    "grpc_infer_allocation_pool_size",
+                    "grpc_use_ssl",
+                    "grpc_use_ssl_mutual",
+                    "grpc_server_cert",
+                    "grpc_server_key",
+                    "grpc_root_cert",
+                    "grpc_infer_response_compression_level",
+                    "grpc_keepalive_time",
+                    "grpc_keepalive_permit_without_calls",
+                    "grpc_http2_max_pings_without_data",
+                    "grpc_http2_min_recv_ping_interval_without_data",
+                    "grpc_http2_max_ping_strikes",
+                ]:
+                    resolved.pop(key, None)
+        else:
+            if self.use_http_client:
+                # Raise errors when users wants to use HTTP but the server
+                # doesn't have HTTP endpoint enabled.
+                raise _BentoMLException(
+                    f"HTTP is not available for the tritonserver ({self._binary}), while 'TritonRunner.tritonserver_type={self.use_http_client}'."
+                )
+            # This server doesn't have HTTP jendpoint enabled.
+            # we need to pop all arguments that are only available for HTTP
+            # to avoid error
+            for key in ["allow_http", "http_port", "http_address", "http_thread_count"]:
+                resolved.pop(key, None)
+        if self._validate_args("allow-metrics", str(False)):
+            # This server have Metrics endpoint enabled. For the scope of BentoML
+            # we will always disable this. This check ensures not to break on server
+            # that doesn't have metrics enabled.
+            resolved["allow_metrics"] = False
 
         cli: list[str] = []
         for arg, value in resolved.items():
-            if _LazyType["list[str]"](list).isinstance(value) or _LazyType[
-                "tuple[str, ...]"
-            ](tuple).isinstance(value):
+            if isinstance(value, (list, tuple)):
                 cli.extend(
                     list(
                         itertools.chain.from_iterable(
@@ -492,3 +609,10 @@ class TritonServerHandle:
     @property
     def args(self):
         return self.to_cli_args()
+
+    @property
+    def protocol_address(self):
+        if self.use_http_client:
+            return f"{self.http_address}:{self.http_port}"
+        else:
+            return f"{self.grpc_address}:{self.grpc_port}"

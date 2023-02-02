@@ -51,12 +51,12 @@ def test_valid_runner_short_tag():
 
 
 def test_valid_runner_long_tag():
-    named_runner = Runner(DummyRunnable, name="a"*50)
-    assert named_runner.name == "a"*50
+    named_runner = Runner(DummyRunnable, name="a" * 50)
+    assert named_runner.name == "a" * 50
 
     # Boundary case: tag value must be at most 63 characters long
-    named_runner = Runner(DummyRunnable, name="a"*63)
-    assert named_runner.name == "a"*63
+    named_runner = Runner(DummyRunnable, name="a" * 63)
+    assert named_runner.name == "a" * 63
 
 
 def test_valid_runner_tag_start_end_with_number():
@@ -89,21 +89,20 @@ def test_invalid_runner_empty_tag():
 
 def test_invalid_runner_long_tag():
     with pytest.raises(ValueError):
-        Runner(DummyRunnable, name="a"*100)
+        Runner(DummyRunnable, name="a" * 100)
 
     # Boundary case: Tag value must be at most 63 characters long
     with pytest.raises(ValueError):
-        Runner(DummyRunnable, name="a"*64)
+        Runner(DummyRunnable, name="a" * 64)
 
 
 def test_invalid_runner_tag_not_start_end_with_alphanumeric():
     # Tag must begin and end with an alphanumeric character (`[a-z0-9A-Z]`)
     with pytest.raises(ValueError):
         Runner(DummyRunnable, name="_dummyrunnable")
-    
+
     with pytest.raises(ValueError):
         Runner(DummyRunnable, name="dummyrunnable_")
 
     with pytest.raises(ValueError):
         Runner(DummyRunnable, name="_dummyrunnable_")
-    

@@ -13,8 +13,8 @@ class DummyRunnable(bentoml.Runnable):
 
 
 def test_runner(caplog):
-    dummy_runner = Runner(DummyRunnable)
 
+    dummy_runner = Runner(DummyRunnable)
     assert dummy_runner.name == "dummyrunnable"
     assert (
         "bentoml._internal.runner.runner",
@@ -23,6 +23,7 @@ def test_runner(caplog):
     ) in caplog.record_tuples
 
     named_runner = Runner(DummyRunnable, name="UPPERCASE_name")
+    assert named_runner.name == "uppercase_name"
     assert (
         "bentoml._internal.runner.runner",
         logging.WARNING,
@@ -30,7 +31,6 @@ def test_runner(caplog):
     ) in caplog.record_tuples
 
     named_runner = Runner(DummyRunnable, name="test_name")
-
     assert named_runner.name == "test_name"
 
     with pytest.raises(ValueError):

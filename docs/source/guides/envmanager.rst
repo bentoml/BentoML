@@ -18,6 +18,10 @@ environment that mimics the behaviour during production.
 This creates and isolated conda environment from the dependencies in the bento
 and runs ``bentoml serve`` from that environment.
 
+.. note:: The current implementation will try to install the given dependencies
+   before running the CLI command. Therefore, the environment startup will be a
+   blocking call.
+
 
 BentoML CLI Commands that support Environment Manager
     - :ref:`serve <reference/cli:serve>`
@@ -37,14 +41,10 @@ environment manager:
    environment will be stored locally to ``$BENTOML_HOME/env``. Such an
    environment will then be cached and later used by subsequent invocations.
 
- 2. Ephemeral environment: In cases where the given target is not a Bento
-     (import path to ``bentoml.Service``, project directory containing a valid
-     ``bentofile.yaml``), the environment will be created and cleanup up on
-     demand.
-
-.. note:: The current implementation will try to install the given dependencies
-   before running the CLI command. Therefore, the environment startup will be a
-   blocking call.  the bentoml command has been complete.
+2. Ephemeral environment: In cases where the given target is not a Bento (import
+   path to ``bentoml.Service``, project directory containing a valid
+   ``bentofile.yaml``), the environment will be created and cleanup up on
+   demand.
 
 .. note::
    You can run ``rm -rf $BENTOML_HOME/env`` to clear the cache.

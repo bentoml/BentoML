@@ -136,6 +136,7 @@ def add_serve_command(cli: click.Group) -> None:
         callback=opt_callback,
         metavar="ARG=VALUE[,VALUE]",
     )
+    @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,
         production: bool,

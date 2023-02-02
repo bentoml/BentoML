@@ -5,16 +5,16 @@ import typing as t
 import contextvars
 from abc import ABC
 from abc import abstractmethod
-from typing import TYPE_CHECKING
 
 import attr
 import starlette.datastructures
 
 from .utils.http import Cookie
 
-if TYPE_CHECKING:
-    import starlette.requests
-    import starlette.responses
+if t.TYPE_CHECKING:
+    from starlette.requests import Request
+
+    from ..grpc.types import BentoServicerContext
 
 
 class Metadata(t.Mapping[str, str], ABC):
@@ -74,19 +74,24 @@ class Metadata(t.Mapping[str, str], ABC):
 
 @attr.define
 class InferenceApiContext:
-    request: "RequestContext"
-    response: "ResponseContext"
-
-    def __init__(self, request: "RequestContext", response: "ResponseContext"):
-        self.request = request
-        self.response = response
+    request: RequestContext = attr.field(default=None)
+    response: ResponseContext = attr.field(default=None)
+    grpc: GrpcContext = attr.field(default=None)
 
     @staticmethod
-    def from_http(request: "starlette.requests.Request") -> "InferenceApiContext":
-        request_ctx = InferenceApiContext.RequestContext.from_http(request)
-        response_ctx = InferenceApiContext.ResponseContext()
+    def from_http(request: Request) -> InferenceApiContext:
+        return InferenceApiContext(
+            request=InferenceApiContext.RequestContext.from_http(request),
+            response=InferenceApiContext.ResponseContext(),
+        )
 
-        return InferenceApiContext(request_ctx, response_ctx)
+    @staticmethod
+    def from_grpc(context: BentoServicerContext) -> InferenceApiContext:
+        return InferenceApiContext(grpc=InferenceApiContext.GrpcContext(context))
+
+    @attr.define
+    class GrpcContext:
+        context: BentoServicerContext
 
     @attr.define
     class RequestContext:
@@ -98,9 +103,7 @@ class InferenceApiContext:
             self.headers = metadata
 
         @staticmethod
-        def from_http(
-            request: "starlette.requests.Request",
-        ) -> "InferenceApiContext.RequestContext":
+        def from_http(request: Request) -> InferenceApiContext.RequestContext:
             return InferenceApiContext.RequestContext(request.headers)  # type: ignore (coercing Starlette headers to Metadata)
 
     @attr.define

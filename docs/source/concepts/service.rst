@@ -168,10 +168,7 @@ status codes.
 
 .. code-block:: python
 
-    @svc.api(
-        input=NumpyNdarray(),
-        output=NumpyNdarray(),
-    )
+    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def predict(input_array: np.ndarray, ctx: bentoml.Context) -> np.ndarray:
         # get request headers
         request_headers = ctx.request.headers
@@ -196,6 +193,25 @@ status codes.
         ctx.response.headers.append("X-Custom-Header", "value")
 
         return result
+
+For gRPC endpoints, the `grpc.aio.ServicerContext <https://grpc.github.io/grpc/python/grpc_asyncio.html#grpc.aio.ServicerContext>`_ can be accessed through the inference context at ``ctx.grpc.context``.
+
+
+.. code-block:: python
+
+    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
+    def predict(input_array: np.ndarray, ctx: bentoml.Context) -> np.ndarray:
+        res = runner.run(input_array)
+        accuracy = accuracy_score(res, expected)
+        context.grpc.context.set_trailing_metadata(
+            aio.Metadata.from_tuple((("accuracy", accuracy),))
+        )
+        return res
+
+.. note::
+
+    The gRPC context is a `grpc.aio.ServicerContext <https://grpc.github.io/grpc/python/grpc_asyncio.html#grpc.aio.ServicerContext>`_ object,
+    which means that any async function such as ``send_initial_metadata`` must be called in an async API function.
 
 
 IO Descriptors

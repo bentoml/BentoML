@@ -16,6 +16,7 @@ from bentoml.io import Multipart
 from bentoml.io import NumpyNdarray
 from bentoml.io import PandasSeries
 from bentoml.io import PandasDataFrame
+from bentoml.grpc.utils import import_grpc
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils.metrics import exponential_buckets
 
@@ -23,8 +24,10 @@ if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
     import PIL.Image
+    from grpc import aio
     from numpy.typing import NDArray
 
+    from bentoml import Context
     from bentoml._internal.types import FileLike
     from bentoml._internal.types import JSONSerializable
     from bentoml.picklable_model import get_runnable
@@ -54,6 +57,7 @@ else:
     pd = LazyLoader("pd", globals(), "pandas")
     PIL = LazyLoader("PIL", globals(), "PIL")
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image")
+    _, aio = import_grpc()
 
 
 py_model = t.cast(
@@ -205,3 +209,12 @@ def ensure_metrics_are_registered(_: str) -> None:
         if m.type == "histogram"
     ]
     assert "inference_latency" in histograms
+
+
+@svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
+async def echo_check_grpc_context(data: str, context: Context):
+    context.grpc.context.set_trailing_metadata
+    await context.grpc.context.send_initial_metadata(
+        aio.Metadata.from_tuple((("foo", "bar"),))
+    )
+    return data

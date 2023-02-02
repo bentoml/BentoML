@@ -39,3 +39,21 @@ async def test_trailing_metadata_interceptors(host: str) -> None:
                 (("usage", "NLP"), ("accuracy_score", "0.8247"))
             ),
         )
+
+
+@pytest.mark.asyncio
+async def test_grpc_context(host: str) -> None:
+    async with create_channel(host) as channel:
+        Call = channel.unary_unary(
+            "/bentoml.grpc.v1.BentoService/Call",
+            request_serializer=pb.Request.SerializeToString,
+            response_deserializer=pb.Response.FromString,
+        )
+        output: aio.UnaryUnaryCall[pb.Request, pb.Response] = Call(
+            pb.Request(
+                api_name="echo_check_grpc_context",
+                text=wrappers_pb2.StringValue(value="BentoML"),
+            )
+        )
+        initial_metadata = await output.initial_metadata()
+        assert initial_metadata == aio.Metadata.from_tuple((("foo", "bar"),))

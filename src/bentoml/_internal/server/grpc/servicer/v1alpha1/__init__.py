@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import anyio
 
+from .....context import InferenceApiContext
 from ......exceptions import InvalidArgument
 from ......exceptions import BentoMLException
 from ......grpc.utils import import_grpc
@@ -45,7 +46,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
         """An asyncio implementation of BentoService servicer."""
 
         async def Call(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
-            self: services.BentoServiceServicer,
+            self,
             request: pb.Request,
             context: BentoServicerContext,
         ) -> pb.Response | None:
@@ -68,16 +69,38 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                     validate_proto_fields(request.WhichOneof("content"), api.input),
                 )
                 input_data = await api.input.from_proto(input_proto)
+                ctx = None
+                # NOTE: function should always be set here, but check anyway.
+                assert api.func is not None
                 if asyncio.iscoroutinefunction(api.func):
                     if api.multi_input:
+                        if api.needs_ctx:
+                            ctx = InferenceApiContext.from_grpc(context)
+                            input_data[api.ctx_param] = ctx
                         output = await api.func(**input_data)
                     else:
-                        output = await api.func(input_data)
+                        if api.needs_ctx:
+                            output = await api.func(
+                                input_data, InferenceApiContext.from_grpc(context)
+                            )
+                        else:
+                            output = await api.func(input_data)
                 else:
                     if api.multi_input:
+                        if api.needs_ctx:
+                            ctx = InferenceApiContext.from_grpc(context)
+                            input_data[api.ctx_param] = ctx
                         output = await anyio.to_thread.run_sync(api.func, **input_data)
                     else:
-                        output = await anyio.to_thread.run_sync(api.func, input_data)
+                        if api.needs_ctx:
+                            ctx = InferenceApiContext.from_grpc(context)
+                            output = await anyio.to_thread.run_sync(
+                                api.func, input_data, ctx
+                            )
+                        else:
+                            output = await anyio.to_thread.run_sync(
+                                api.func, input_data
+                            )
                 if hasattr(api.output, "to_proto_v1alpha1"):
                     # special case for handling v1alpha1 specific to_proto logic
                     res = await getattr(api.output, "to_proto_v1alpha1")(output)

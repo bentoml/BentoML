@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 import typing as t
 import inspect
-from typing import Optional
 
 import yaml
 
@@ -29,12 +28,15 @@ class InferenceAPI:
         user_defined_callback: t.Callable[..., t.Any],
         input_descriptor: IODescriptor[t.Any],
         output_descriptor: IODescriptor[t.Any],
-        name: Optional[str],
-        doc: Optional[str] = None,
-        route: Optional[str] = None,
+        name: str | None = None,
+        doc: str | None = None,
+        route: str | None = None,
     ):
         # Use user_defined_callback function variable if name not specified
-        name = user_defined_callback.__name__ if name is None else name
+        if user_defined_callback is None:
+            name = "" if name is None else name
+        else:
+            name = user_defined_callback.__name__ if name is None else name
         # Use user_defined_callback function docstring `__doc__` if doc not specified
         doc = user_defined_callback.__doc__ if doc is None else doc
         # Use API name as route if route not specified
@@ -132,7 +134,7 @@ class InferenceAPI:
         self.route = route
 
     def __str__(self):
-        return f"{self.__class__.__name__}({str(self.input)} → {str(self.output)})"
+        return f"{self.__class__.__name__}({self.input!s} → {self.output!s})"
 
     @staticmethod
     def _validate_name(api_name: str):

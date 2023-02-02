@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import anyio
 
 from .....utils import LazyLoader
+from .....context import InferenceApiContext
 from ......exceptions import InvalidArgument
 from ......exceptions import BentoMLException
 from ......grpc.utils import import_grpc
@@ -72,20 +73,43 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                     validate_proto_fields(request.WhichOneof("content"), api.input),
                 )
                 input_data = await api.input.from_proto(input_proto)
+                ctx = None
+                assert api.func is not None
+                # NOTE: function should always be set here, but check anyway.
                 if asyncio.iscoroutinefunction(api.func):
                     if api.multi_input:
+                        if api.needs_ctx:
+                            ctx = InferenceApiContext.from_grpc(context)
+                            input_data[api.ctx_param] = ctx
                         output = await api.func(**input_data)
                     else:
-                        output = await api.func(input_data)
+                        if api.needs_ctx:
+                            output = await api.func(
+                                input_data, InferenceApiContext.from_grpc(context)
+                            )
+                        else:
+                            output = await api.func(input_data)
                 else:
                     if api.multi_input:
+                        if api.needs_ctx:
+                            ctx = InferenceApiContext.from_grpc(context)
+                            input_data[api.ctx_param] = ctx
                         output = await anyio.to_thread.run_sync(api.func, **input_data)
                     else:
-                        output = await anyio.to_thread.run_sync(api.func, input_data)
+                        if api.needs_ctx:
+                            ctx = InferenceApiContext.from_grpc(context)
+                            output = await anyio.to_thread.run_sync(
+                                api.func, input_data, ctx
+                            )
+                        else:
+                            output = await anyio.to_thread.run_sync(
+                                api.func, input_data
+                            )
 
-                res = await api.output.to_proto(output)
                 # TODO(aarnphm): support multiple proto fields
-                response = pb.Response(**{api.output._proto_fields[0]: res})
+                response = pb.Response(
+                    **{api.output._proto_fields[0]: await api.output.to_proto(output)}
+                )
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
                 if output is not None:

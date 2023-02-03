@@ -31,13 +31,35 @@ def test_flatten_dict():
     assert dict(flatten_dict({"a": 1, "b": 2}, sep="_")) == {"a": 1, "b": 2}
 
 
-def test_rename_fields(caplog: LogCaptureFixture):
-    # first, if given field is not in the dictionary, nothing will happen
+def test_rename_fields_field_in_dict():
+    # If given field is in the dictionary, it will be renamed
+    d = {"a": 1, "b": 2}
+    rename_fields(d, "a", "x")
+    assert "a" not in d
+    assert "x" in d
+    assert d["x"] == 1
+    assert d["b"] == 2
+
+
+def test_rename_fields_field_not_in_dict():
+    # If given field is not in the dictionary, nothing will happen
     d = {"a": 1, "b": 2}
     rename_fields(d, "c", "d")
     assert "a" in d
+    assert "b" in d
+    assert d["a"] == 1
+    assert d["b"] == 2
 
-    # second, if given field is in the dictionary, it will be renamed
+def test_rename_fields_remove_only():
+    # If given field is in the dictionary, and remove_only is True, it will be removed.
+    d = {"a": 1, "b": 2}
+    rename_fields(d, "a", remove_only=True)
+    assert "a" not in d
+    rename_fields(d, "b", remove_only=True)
+    assert len(d) == 0
+
+
+def test_rename_fields_check_log(caplog: LogCaptureFixture):
     d = {"api_server.port": 5000}
     with caplog.at_level(logging.WARNING):
         rename_fields(d, "api_server.port", "api_server.http.port")
@@ -46,26 +68,34 @@ def test_rename_fields(caplog: LogCaptureFixture):
         in caplog.text
     )
     assert "api_server.http.port" in d and d["api_server.http.port"] == 5000
-    caplog.clear()
 
-    # third, if given field is in the dictionary, and remove_only is True, it will be
-    # removed.
+
+def test_rename_fields_check_log_remove_only(caplog: LogCaptureFixture):
     d = {"api_server.port": 5000}
     with caplog.at_level(logging.WARNING):
         rename_fields(d, "api_server.port", remove_only=True)
-
     assert "Field 'api_server.port' is deprecated and will be removed." in caplog.text
-    assert len(d) == 0 and "api_server.port" not in d
-    caplog.clear()
+    assert len(d) == 0
 
+
+def test_rename_fields_exception():
+    # If no replace_with field is given, an AssertionError will be raised
+    d = {"api_server.port": 5000}
     with pytest.raises(AssertionError, match="'replace_with' must be provided."):
-        # fourth, if no replace_with field is given, an AssertionError will be raised
-        d = {"api_server.port": 5000}
         rename_fields(d, "api_server.port")
+    
+    with pytest.raises(AssertionError, match="'replace_with' must be provided."):
+        rename_fields(d, "api_server.port", remove_only=False)
+    
+    # If the given dictionary is not flattened, a ValueError will be raised
+    d = {"a": 1, "b": {"c": 2}}
     with pytest.raises(ValueError, match="Given dictionary is not flattened. *"):
-        # fifth, if the given dictionary is not flattened, a ValueError will be raised
-        d = {"a": 1, "b": {"c": 2}}
         rename_fields(d, "b.c", "b.d.c")
+
+    # If the given dictionary is not flattened + no replace_with field is given, a ValueError will be raised
+    d = {"a": 1, "b": {"c": 2}}
+    with pytest.raises(ValueError, match="Given dictionary is not flattened. *"):
+        rename_fields(d, "b.c")
 
 
 def test_valid_load_config_file(tmp_path: Path):

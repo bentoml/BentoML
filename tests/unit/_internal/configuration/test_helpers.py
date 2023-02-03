@@ -50,6 +50,7 @@ def test_rename_fields_field_not_in_dict():
     assert d["a"] == 1
     assert d["b"] == 2
 
+
 def test_rename_fields_remove_only():
     # If given field is in the dictionary, and remove_only is True, it will be removed.
     d = {"a": 1, "b": 2}
@@ -83,10 +84,10 @@ def test_rename_fields_exception():
     d = {"api_server.port": 5000}
     with pytest.raises(AssertionError, match="'replace_with' must be provided."):
         rename_fields(d, "api_server.port")
-    
+
     with pytest.raises(AssertionError, match="'replace_with' must be provided."):
         rename_fields(d, "api_server.port", remove_only=False)
-    
+
     # If the given dictionary is not flattened, a ValueError will be raised
     d = {"a": 1, "b": {"c": 2}}
     with pytest.raises(ValueError, match="Given dictionary is not flattened. *"):
@@ -118,6 +119,7 @@ def test_valid_ip_address():
     assert is_valid_ip_address("0.0.0.0")
     assert is_valid_ip_address("192.192.192.192")
     assert is_valid_ip_address("255.255.255.255")
+
 
 def test_invalid_ip_address():
     assert not is_valid_ip_address("asdfadsf:143")

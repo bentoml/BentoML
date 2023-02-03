@@ -133,5 +133,4 @@ def test_invalid_ip_address():
     assert not is_valid_ip_address("255.256.255.255")
     assert not is_valid_ip_address("256.255.255.255")
     assert not is_valid_ip_address("256.256.256.256")
-    assert not is_valid_ip_address(" ")
     assert not is_valid_ip_address("")

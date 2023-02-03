@@ -63,11 +63,11 @@ will build a new image on top of the base_image with the following steps:
     only be used for building linux/amd64 platform docker images.
 
     If you are running BentoML from an Apple M1 device or an ARM based computer, make
-    sure to pass the :code:`--platform` parameter when containerizing a Bento. e.g.:
+    sure to pass the :code:`--opt platform=linux/amd64` parameter when containerizing a Bento. e.g.:
 
     .. code:: bash
 
-        bentoml containerize iris_classifier:latest --platform=linux/amd64
+        bentoml containerize iris_classifier:latest --opt platform=linux/amd64
 
 
 Dockerfile Template
@@ -517,6 +517,171 @@ If you need to use conda for CUDA images, use the following template ( *partiall
    .. literalinclude:: ./snippets/containerization/conda_cuda.template
       :language: jinja
       :caption: `Dockerfile.template`
+
+Containerization with different container engines.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since BentoML version 1.0.11 [#pr_3164]_, we have added supports for various container engines and extend our containerize SDK and CLI.
+
+Bento from version 1.0.11 will be OCI-compliant and can be built with:
+
+* `Docker <https://www.docker.com/>`_
+* `Podman <https://podman.io/>`_
+* `Buildah <https://buildah.io/>`_
+* `nerdctl <https://github.com/containerd/nerdctl>`_
+* :github:`buildctl <moby/buildkit/blob/master/docs/buildctl.md>`
+* `Docker buildx <https://docs.docker.com/engine/reference/commandline/buildx/>`_
+
+To use any of the aforementioned backend, refer to their documentation for installation and setup.
+
+.. note::
+
+   By default, BentoML will use ``docker`` as the default container backend. 
+   To use other container engines, please set the environment variable ``BENTOML_CONTAINERIZE_BACKEND`` or
+   pass in ``--backend`` to :ref:`bentoml containerize <reference/cli:containerize>`:
+
+   .. code-block:: bash
+
+      # set environment variable
+      BENTOML_CONTAINERIZE_BACKEND=buildah bentoml containerize pytorch-mnist
+
+      # or pass in --backend
+      bentoml containerize pytorch-mnist:latest --backend buildah
+
+To build a BentoContainer, one can use the :ref:`Container SDK <reference/container:Container APIs>` via :meth:`bentoml.container.build`:
+
+.. code-block:: python
+
+   import bentoml
+
+   bentoml.container.build(
+      "pytorch-mnist:latest",
+      backend="podman",
+      features=["grpc","grpc-reflection"],
+      cache_from="registry.com/my_cache:v1",
+   )
+
+Each backend is a class of ``OCIBuilder`` that represents a container engine. It helps construct
+and parsing commandline arguments for the container engine to containerize the Bento.
+
+One can retrieve the backend with :meth:`bentoml.container.get_backend`:
+
+.. code-block:: python
+
+   from bentoml.container import get_backend
+
+   backend = get_backend("buildah")
+   assert backend.health()
+   backend.build("pytorch-mnist:latest")
+
+Register custom backend
+^^^^^^^^^^^^^^^^^^^^^^^
+
+To register a new backend, there are two functions that need to be implemented:
+
+* ``arg_parser_func``: a function that takes in keyword arguments that represents the builder
+  commandline arguments and returns a ``list[str]``:
+
+  .. code-block:: python
+
+     def arg_parser_func(
+         *,
+         context_path: str = ".",
+         cache_from: Optional[str] = None,
+         **kwargs,
+     ) -> list[str]:
+         if cache_from:
+             args.extend(["--cache-from", cache_from])
+         args.append(context_path)
+         return args
+
+* ``health_func``: a function that returns a ``bool`` to indicate if the backend is available:
+
+  .. code-block:: python
+
+     import shutil
+
+     def health_func() -> bool:
+         return shutil.which("limactl") is not None
+
+To register a new backend, use :meth:`bentoml.container.register_backend`:
+
+.. code-block:: python
+
+   from bentoml.container import register_backend
+
+   register_backend(
+      "lima",
+      binary="/usr/bin/limactl",
+      buildkit_support=True,
+      health=health_func,
+      construct_build_args=arg_parser_func,
+      env={"DOCKER_BUILDKIT": "1"},
+   )
+
+.. dropdown:: Backward compatibility with ``bentoml.bentos.containerize``
+   :class-title: sd-text-primary
+
+   Before 1.0.11, BentoML uses :meth:`bentoml.bentos.containerize` to containerize Bento. This method is now deprecated and will be removed in the future.
+
+BuildKit interop
+^^^^^^^^^^^^^^^^
+
+BentoML leverages `BuildKit <https://github.com/moby/buildkit>`_ for a more extensive feature set. However, we recognise that  
+BuildKit has come with a lot of friction for migration purposes as well as restrictions to use with other build tools (such as podman, buildah, kaniko).
+
+Therefore, since BentoML version 1.0.11, BuildKit will be an opt-out. To disable BuildKit, pass ``DOCKER_BUILDKIT=0`` to
+:ref:`bentoml containerize <reference/cli:containerize>`, which aligns with the behaviour of ``docker build``:
+
+.. code-block:: bash
+
+    $ DOCKER_BUILDKIT=0 bentoml containerize ...
+
+.. note::
+
+    All Bento container will now be following OCI spec instead of Docker spec. The difference is that in OCI spec, there is no SHELL argument.
+
+.. note::
+
+   The generated Dockerfile included inside the Bento will be a minimal Dockerfile, which ensures compatibility among build tools. We encourage users to always use
+   :ref:`bentoml containerize <reference/cli:containerize>`.
+
+   *If you wish to use the generated Dockerfile, make sure that you know what you are doing!*
+
+CLI enhancement
+^^^^^^^^^^^^^^^
+
+To better support different backends, :ref:`bentoml containerize <reference/cli:containerize>`
+will be more agnostic when it comes to parsing options.
+
+One can pass in options for specific backend with ``--opt``:
+
+.. code-block:: bash
+
+   $ bentoml containerize pytorch-mnist:latest --backend buildx --opt platform=linux/arm64
+
+``--opt`` also accepts parsing ``:``
+
+.. code-block:: bash
+
+   $ bentoml containerize pytorch-mnist:latest --backend buildx --opt platform:linux/arm64
+
+.. note::
+
+   If you are seeing a warning message like:
+
+   .. code-block:: prolog
+
+       '--platform=linux/arm64' is now deprecated, use the equivalent '--opt platform=linux/arm64' instead.
+
+   BentoML used to depends on Docker buildx. These options are now backward compatible with ``--opt``. You can safely ignore this warning and use
+   ``--opt`` to pass options for ``--backend=buildx``.
+
+----
+
+.. rubric:: Notes
+
+.. [#pr_3164] Introduction of container builder to build Bento into OCI-compliant image: :github:`bentoml/BentoML/pull/3164`
 
 .. _conda_docker: https://github.com/ContinuumIO/docker-images/blob/master/miniconda3/debian/Dockerfile
 

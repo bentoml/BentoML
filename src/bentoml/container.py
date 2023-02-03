@@ -384,8 +384,10 @@ def build(
                      ``buildx`` is a syntatic sugar for ``docker buildx build``. See https://docs.docker.com/build/.
                      The reason for this is that ``buildx`` used to be the default behaviour of ``bentoml containerize``.
         image_tag: Optional additional image tag to apply to the built image.
-        features: Optional features to include in the container file. See https://docs.bentoml.org/en/latest/concepts/bento.html#python-packages
+        features: Optional features to include in the container file. See :ref:`concepts/bento:Python Packages`
                   for additional BentoML features.
+        **kwargs: Additional keyword arguments to pass to the builder backend. Refer to the above overload
+                  for each of the supported arguments per backend.
     """
     from ._internal.container import determine_container_tag
 
@@ -413,7 +415,7 @@ def get_containerfile(
     Returns the generated container file for a given Bento.
 
     Note that the container file (Dockerfile) inside the Bento is minimal, whereas
-    this utility functions returns the container file that 'bentoml containerize' will
+    this utility functions returns the container file that :ref:`bentoml containerize <reference/cli:containerize>` will
     be using.
 
     .. note::
@@ -428,7 +430,7 @@ def get_containerfile(
                      Note that if ``output_path`` is a directory, then the targeted file
                      will be ``output_path + os.sep + "<bento_tag>.dockerfile"``.
         enable_buildkit: Whether the container file contains BuildKit syntax.
-        features: Optional features to include in the container file. See https://docs.bentoml.org/en/latest/concepts/bento.html#python-packages
+        features: Optional features to include in the container file. See :ref:`concepts/bento:Python Packages`
                   for additional BentoML features.
     """
     bento = _bento_store.get(bento_tag)

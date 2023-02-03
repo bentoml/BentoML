@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import os
-import re
 import sys
-import random
 import shutil
 import typing as t
 import logging
 import itertools
 import subprocess
 from typing import TYPE_CHECKING
-from textwrap import indent
 from functools import partial
 
 if TYPE_CHECKING:
@@ -21,37 +17,12 @@ if TYPE_CHECKING:
 
     from bentoml._internal.container import DefaultBuilder
 
+    from .utils import ClickParamType
+
     P = t.ParamSpec("P")
     F = t.Callable[P, t.Any]
-    ClickParamType = t.Sequence[t.Any] | bool | None
 
 logger = logging.getLogger("bentoml")
-
-
-@t.overload
-def normalize_none_type(value: t.Mapping[str, t.Any]) -> t.Mapping[str, t.Any]:
-    ...
-
-
-@t.overload
-def normalize_none_type(value: ClickParamType) -> ClickParamType:
-    ...
-
-
-def normalize_none_type(
-    value: ClickParamType | t.Mapping[str, t.Any]
-) -> ClickParamType | t.Mapping[str, t.Any]:
-    if isinstance(value, (tuple, list, set, str)) and len(value) == 0:
-        return
-    if isinstance(value, dict):
-        return {k: normalize_none_type(v) for k, v in value.items()}
-    return value
-
-
-# NOTE: This is the key we use to store the transformed options in the CLI context.
-_MEMO_KEY = "_memoized"
-_INDENTATION = " " * 4
-_indent = partial(indent, prefix=_INDENTATION)
 
 
 def compatible_option(*param_decls: str, **attrs: t.Any):
@@ -66,6 +37,9 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
         * ``append_msg``: a string to append a help message to the original help message.
     """
     import click
+
+    from .utils import MEMO_KEY
+    from .utils import normalize_none_type
 
     append_msg = attrs.pop("append_msg", "")
     equivalent: tuple[str, str] = attrs.pop("equivalent", ())
@@ -84,66 +58,70 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
 
         opt = param.opts[0]
         # ensure that our memoized are available under CLI context.
-        if _MEMO_KEY not in ctx.params:
+        if MEMO_KEY not in ctx.params:
             # By default, multiple options are stored as a tuple.
             # our memoized options are stored as a dict.
-            ctx.params[_MEMO_KEY] = {}
+            ctx.params[MEMO_KEY] = {}
 
         # default can be a callable. We only care about the result.
         default_value = param.get_default(ctx)
 
-        # if given param.name is not in the memoized options, we need to create them.
-        if param.name not in ctx.params[_MEMO_KEY]:
-            # Initialize the memoized options with default value.
-            ctx.params[_MEMO_KEY][param.name] = () if param.multiple else default_value
-
         # We need to run transformation here such that we don't have to deal with
         # nested value.
+        # NOTE: if users are using both old and new options, the new option will take
+        # precedence, and the old option will be ignored.
         value = normalize_none_type(value)
-        if value is not None:
-            # Only warning if given value is different from the default.
-            # Since we are going to transform default value from old options to
-            # the kwargs map, there is no need to bloat logs.
-            if value != default_value:
-                msg = "is now obsolete, use the equivalent"
-                if isinstance(value, bool):
-                    logger.warning(
-                        "'%s' %s '--%s %s' instead.",
-                        opt,
-                        msg,
-                        equivalent[0],
-                        opt.lstrip("--"),
-                    )
-                elif isinstance(value, tuple):
-                    obsolete_format = " ".join(map(lambda s: "%s=%s" % (opt, s), value))
-                    new_format = " ".join(
-                        map(
-                            lambda s: "--%s %s=%s"
-                            % (equivalent[0], opt.lstrip("--"), s),
+
+        # if given param.name is not in the memoized options, we need to create them.
+        if param.name not in ctx.params[MEMO_KEY]:
+            # Initialize the memoized options with default value.
+            ctx.params[MEMO_KEY][param.name] = () if param.multiple else default_value
+            if value is not None:
+                # Only warning if given value is different from the default.
+                # Since we are going to transform default value from old options to
+                # the kwargs map, there is no need to bloat logs.
+                if value != default_value:
+                    msg = "is now deprecated, use the equivalent"
+                    if isinstance(value, bool):
+                        logger.warning(
+                            "'%s' %s '--%s %s' instead.",
+                            opt,
+                            msg,
+                            equivalent[0],
+                            opt.lstrip("--"),
+                        )
+                    elif isinstance(value, tuple):
+                        obsolete_format = " ".join(
+                            map(lambda s: "%s=%s" % (opt, s), value)
+                        )
+                        new_format = " ".join(
+                            map(
+                                lambda s: "--%s %s=%s"
+                                % (equivalent[0], opt.lstrip("--"), s),
+                                value,
+                            )
+                        )
+                        logger.warning(
+                            "'%s' %s '%s' instead.", obsolete_format, msg, new_format
+                        )
+                    else:
+                        assert isinstance(value, str)
+                        logger.warning(
+                            "'%s=%s' %s '--%s %s=%s' instead.",
+                            opt,
+                            value,
+                            msg,
+                            equivalent[0],
+                            opt.lstrip("--"),
                             value,
                         )
-                    )
-                    logger.warning(
-                        "'%s' %s '%s' instead.", obsolete_format, msg, new_format
-                    )
+                if isinstance(value, (bool, str)):
+                    ctx.params[MEMO_KEY][param.name] = value
+                elif isinstance(value, tuple):
+                    assert param.multiple
+                    ctx.params[MEMO_KEY][param.name] += value
                 else:
-                    assert isinstance(value, str)
-                    logger.warning(
-                        "'%s=%s' %s '--%s %s=%s' instead.",
-                        opt,
-                        value,
-                        msg,
-                        equivalent[0],
-                        opt.lstrip("--"),
-                        value,
-                    )
-            if isinstance(value, (bool, str)):
-                ctx.params[_MEMO_KEY][param.name] = value
-            elif isinstance(value, tuple):
-                assert param.multiple
-                ctx.params[_MEMO_KEY][param.name] += value
-            else:
-                raise ValueError(f"Unexpected value type: {type(value)}")
+                    raise ValueError(f"Unexpected value type: {type(value)}")
 
     def decorator(f: F[t.Any]) -> t.Callable[[F[t.Any]], Command]:
         # We will set default value to None if 'default' is not set.
@@ -371,45 +349,14 @@ def buildx_options_group(f: F[t.Any]):
     return f
 
 
-def opt_callback(ctx: Context, param: Parameter, value: ClickParamType):
-    # NOTE: our new options implementation will have the following format:
-    #   --opt ARG[=|:]VALUE[,VALUE] (e.g., --opt key1=value1,value2 --opt key2:value3/value4:hello)
-    # Argument and values per --opt has one-to-one or one-to-many relationship,
-    # separated by '=' or ':'.
-    # TODO: We might also want to support the following format:
-    #  --opt arg1 value1 arg2 value2 --opt arg3 value3
-    #  --opt arg1=value1,arg2=value2 --opt arg3:value3
-
-    assert param.multiple, "Only use this callback when multiple=True."
-    if _MEMO_KEY not in ctx.params:
-        # By default, multiple options are stored as a tuple.
-        # our memoized options are stored as a dict.
-        ctx.params[_MEMO_KEY] = {}
-
-    if param.name not in ctx.params[_MEMO_KEY]:
-        ctx.params[_MEMO_KEY][param.name] = ()
-
-    value = normalize_none_type(value)
-    if value is not None and isinstance(value, tuple):
-        for opt in value:
-            o, *val = re.split(r"=|:", opt, maxsplit=1)
-            norm = o.replace("-", "_")
-            if len(val) == 0:
-                # --opt bool
-                ctx.params[_MEMO_KEY][norm] = True
-            else:
-                # --opt key=value
-                ctx.params[_MEMO_KEY].setdefault(norm, ())
-                ctx.params[_MEMO_KEY][norm] += (*val,)
-    return value
-
-
 def add_containerize_command(cli: Group) -> None:
     import click
     from click_option_group import optgroup
 
     from bentoml import container
+    from bentoml_cli.utils import opt_callback
     from bentoml_cli.utils import kwargs_transformers
+    from bentoml_cli.utils import normalize_none_type
     from bentoml_cli.utils import validate_container_tag
     from bentoml.exceptions import BentoMLException
     from bentoml._internal.container import FEATURES
@@ -417,7 +364,6 @@ def add_containerize_command(cli: Group) -> None:
     from bentoml._internal.container import REGISTERED_BACKENDS
     from bentoml._internal.container import determine_container_tag
     from bentoml._internal.configuration import get_debug_mode
-    from bentoml._internal.configuration.containers import BentoMLContainer
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING, metavar="BENTO:TAG")
@@ -595,47 +541,24 @@ def add_containerize_command(cli: Group) -> None:
                     )
                     sys.exit(0)
                 o = subprocess.check_output([container_runtime, "load"], input=result)
-                logger.info(o.decode("utf-8").strip())
+                click.echo(o.decode("utf-8").strip())
 
-            multiple_tags = len(tags) > 1
-            example_tag = random.choice(tags)
-
-            logger.info(
-                'Successfully built Bento container for "%s" with tag(s) "%s"',
-                bento_tag,
-                ",".join(tags),
+            click.echo(
+                f'Successfully built Bento container for "{bento_tag}" with tag(s) "{",".join(tags)}"',
             )
-            instructions = [
-                "To run your newly built Bento container, use '%s' as a tag and pass it to '%s run'. For example:",
-                _indent("%s run -it --rm -p 3000:3000 %s serve --production"),
-            ]
-            if multiple_tags:
-                start = "To run your newly built Bento container, use one of the above tags (e.g: %s) and pass it to '%s run'. For example:"
-                instructions[0] = start
-            fmt = [example_tag, container_runtime, container_runtime, example_tag]
+            instructions = (
+                f"To run your newly built Bento container, run:\n"
+                + f"    {container_runtime} run -it --rm -p 3000:3000 {tags[0]} serve --production\n"
+            )
+
             if features is not None and any(
                 has_grpc in features
                 for has_grpc in ("all", "grpc", "grpc-reflection", "grpc-channelz")
             ):
-                grpc_metrics_port = BentoMLContainer.grpc.metrics.port.get()
-                instructions.extend(
-                    [
-                        "%s can also be served with gRPC. To run your Bento container as a gRPC server, do the following:",
-                        _indent(
-                            "%s run -it -p 3000:3000 -p %s:%s %s serve-grpc --production"
-                        ),
-                    ]
+                instructions += (
+                    "To serve with gRPC instead, run:\n"
+                    + f"    {container_runtime} run -it -p 3000:3000 -p 3001:3001 {tags[0]} serve-grpc --production\n"
                 )
-                fmt.extend(
-                    [
-                        example_tag,
-                        container_runtime,
-                        grpc_metrics_port,
-                        grpc_metrics_port,
-                        example_tag,
-                    ]
-                )
-            final_instr = "\n".join(instructions)
-            logger.info(final_instr, *fmt)
+            click.echo(instructions, nl=False)
             raise SystemExit(0)
         raise SystemExit(1)

@@ -16,3 +16,4 @@ pyenchant
 Jinja2>=3.1
 sphinx-autobuild
 sphinx-hoverxref
+pyspark

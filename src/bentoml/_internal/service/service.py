@@ -12,11 +12,12 @@ from bentoml.exceptions import BentoMLException
 
 from ..tag import Tag
 from ..models import Model
-from ..runner import Runner
 from ...grpc.utils import import_grpc
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..bento.bento import get_default_svc_readme
 from .inference_api import InferenceAPI
+from ..runner.runner import Runner
+from ..runner.runner import AbstractRunner
 from ..io_descriptors import IODescriptor
 
 if TYPE_CHECKING:
@@ -123,8 +124,8 @@ class Service:
         self,
         name: str,
         *,
-        runners: t.List[Runner] | None = None,
-        models: t.List[Model] | None = None,
+        runners: list[AbstractRunner] | None = None,
+        models: list[Model] | None = None,
     ):
         """
 
@@ -140,7 +141,7 @@ class Service:
             runner_names: t.Set[str] = set()
             for r in runners:
                 assert isinstance(
-                    r, Runner
+                    r, AbstractRunner
                 ), f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
 
                 if r.name in runner_names:

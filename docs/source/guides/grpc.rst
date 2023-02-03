@@ -2,6 +2,8 @@
 Serving with gRPC
 =================
 
+*time expected: 12 minutes*
+
 This guide will demonstrate advanced features that BentoML offers for you to get started
 with `gRPC <https://grpc.io/>`_:
 
@@ -1477,6 +1479,7 @@ A quick overview of the available configuration for gRPC:
 ``max_concurrent_streams``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. epigraph::
    :bdg-info:`Definition:` Maximum number of concurrent incoming streams to allow on a HTTP2 connection.
 
 By default we don't set a limit cap. HTTP/2 connections typically has limit of `maximum concurrent streams <httpwg.org/specs/rfc7540.html#rfc.section.5.1.2>`_
@@ -1505,6 +1508,7 @@ on a connection at one time.
 ``maximum_concurrent_rpcs``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. epigraph::
    :bdg-info:`Definition:` The maximum number of concurrent RPCs this server will service before returning ``RESOURCE_EXHAUSTED`` status.
 
 By default we set to ``None`` to indicate no limit, and let gRPC to decide the limit.
@@ -1514,6 +1518,7 @@ By default we set to ``None`` to indicate no limit, and let gRPC to decide the l
 ``max_message_length``
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. epigraph::
    :bdg-info:`Definition:` The maximum message length in bytes allowed to be received on/can be send to the server.
 
 By default we set to ``-1`` to indicate no limit.

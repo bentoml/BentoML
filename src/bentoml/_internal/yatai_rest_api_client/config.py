@@ -1,4 +1,5 @@
 import os
+import typing as t
 import logging
 from typing import List
 from typing import Optional
@@ -53,13 +54,16 @@ class YataiClientConfig:
     contexts: List[YataiClientContext] = attr.field(factory=list)
     current_context_name: str = attr.field(default=default_context_name)
 
-    def get_current_context(self) -> YataiClientContext:
+    def get_context(self, context: t.Optional[str]) -> YataiClientContext:
         for ctx in self.contexts:
-            if ctx.name == self.current_context_name:
+            if ctx.name == context:
                 return ctx
         raise YataiRESTApiClientError(
-            f"Not found {self.current_context_name} yatai context, please login!"
+            f"Not found {context} yatai context, please login!"
         )
+
+    def get_current_context(self) -> YataiClientContext:
+        return self.get_context(self.current_context_name)
 
 
 _config: YataiClientConfig = YataiClientConfig()
@@ -105,6 +109,14 @@ def get_current_context() -> YataiClientContext:
     return config.get_current_context()
 
 
-def get_current_yatai_rest_api_client() -> YataiRESTApiClient:
-    ctx = get_current_context()
+def get_context(context: t.Optional[str]) -> YataiClientContext:
+    config = get_config()
+    return config.get_context(context)
+
+
+def get_yatai_rest_api_client(context: t.Optional[str]) -> YataiRESTApiClient:
+    if context:
+        ctx = get_context(context)
+    else:
+        ctx = get_current_context()
     return ctx.get_yatai_rest_api_client()

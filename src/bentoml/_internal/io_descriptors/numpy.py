@@ -23,6 +23,8 @@ from ..service.openapi.specification import MediaType
 
 if TYPE_CHECKING:
     import numpy as np
+    import pyarrow
+    import pyspark.sql.types
     from typing_extensions import Self
 
     from bentoml.grpc.v1 import service_pb2 as pb
@@ -550,3 +552,40 @@ class NumpyNdarray(
             raise BadInput(
                 f"Unsupported dtype '{obj.dtype}' for response message.",
             ) from None
+
+    def from_arrow(self, batch: pyarrow.RecordBatch) -> ext.NpNDArray:
+        df = batch.to_pandas()
+        if not LazyType("pandas", "DataFrame").isinstance(df):
+            raise InvalidArgument("Unable to convert input into numpy ndarray.")
+        return df.to_numpy()
+
+    def to_arrow(self, arr: ext.NpNDArray) -> pyarrow.RecordBatch:
+        import pyarrow
+
+        return pyarrow.RecordBatch.from_arrays([pyarrow.array(arr)], names=["output"])
+
+    def spark_schema(self) -> pyspark.sql.types.StructType:
+        from pyspark.sql.types import StructType
+        from pyspark.sql.types import StructField
+        from pyspark.pandas.typedef import as_spark_type
+
+        if self._dtype is None:
+            raise InvalidArgument(
+                "Cannot perform batch inference with a numpy output without a known dtype; please provide a dtype."
+            )
+        if self._shape is None:
+            raise InvalidArgument(
+                "Cannot perform batch inference with a numpy output without a known shape; please provide a shape."
+            )
+        if len(self._shape) != 1:
+            raise InvalidArgument(
+                "Cannot perform batch inference with a multidimensional numpy ndarray output; consider using pandas DataFrames instead."
+            )
+
+        try:
+            out_spark_type = as_spark_type(self._dtype)
+        except TypeError:
+            raise InvalidArgument(
+                f"dtype {self._dtype} is not supported for batch inference."
+            )
+        return StructType([StructField("out", out_spark_type, nullable=False)])

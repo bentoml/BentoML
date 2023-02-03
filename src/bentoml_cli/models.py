@@ -19,8 +19,6 @@ if TYPE_CHECKING:
     from click import Context
     from click import Parameter
 
-logger = logging.getLogger("bentoml")
-
 
 def parse_delete_targets_argument_callback(
     ctx: Context, params: Parameter, value: t.Any  # pylint: disable=unused-argument
@@ -175,7 +173,7 @@ def add_model_management_commands(cli: Group) -> None:
 
                 if delete_confirmed:
                     model_store.delete(model.tag)
-                    logger.info("%s deleted.", model)
+                    click.echo(f"{model} deleted.")
 
         for target in delete_targets:
             delete_target(target)
@@ -204,7 +202,7 @@ def add_model_management_commands(cli: Group) -> None:
         """
         bentomodel = model_store.get(model_tag)
         out_path = bentomodel.export(out_path)
-        logger.info("%s exported to %s.", bentomodel, out_path)
+        click.echo(f"{bentomodel} exported to {out_path}.")
 
     @model_cli.command(name="import")
     @click.argument("model_path", type=click.STRING)
@@ -215,7 +213,7 @@ def add_model_management_commands(cli: Group) -> None:
         bentoml models import s3://mybucket/models/my_model.bentomodel
         """
         bentomodel = import_model(model_path)
-        logger.info("%s imported.", bentomodel)
+        click.echo(f"{bentomodel} imported.")
 
     @model_cli.command()
     @click.argument("model_tag", type=click.STRING)
@@ -226,9 +224,12 @@ def add_model_management_commands(cli: Group) -> None:
         default=False,
         help="Force pull from yatai to local and overwrite even if it already exists in local",
     )
-    def pull(model_tag: str, force: bool):  # type: ignore (not accessed)
+    @click.option(
+        "--context", type=click.STRING, default=None, help="Yatai context name."
+    )
+    def pull(model_tag: str, force: bool, context: str):  # type: ignore (not accessed)
         """Pull Model from a yatai server."""
-        yatai_client.pull_model(model_tag, force=force)
+        yatai_client.pull_model(model_tag, force=force, context=context)
 
     @model_cli.command()
     @click.argument("model_tag", type=click.STRING)
@@ -245,9 +246,14 @@ def add_model_management_commands(cli: Group) -> None:
         default=10,
         help="Number of threads to use for upload",
     )
-    def push(model_tag: str, force: bool, threads: int):  # type: ignore (not accessed)
+    @click.option(
+        "--context", type=click.STRING, default=None, help="Yatai context name."
+    )
+    def push(model_tag: str, force: bool, threads: int, context: str):  # type: ignore (not accessed)
         """Push Model to a yatai server."""
         model_obj = model_store.get(model_tag)
         if not model_obj:
             raise click.ClickException(f"Model {model_tag} not found in local store")
-        yatai_client.push_model(model_obj, force=force, threads=threads)
+        yatai_client.push_model(
+            model_obj, force=force, threads=threads, context=context
+        )

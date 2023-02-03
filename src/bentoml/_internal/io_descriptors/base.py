@@ -10,6 +10,8 @@ from ...exceptions import InvalidArgument
 if TYPE_CHECKING:
     from types import UnionType
 
+    import pyarrow
+    import pyspark.sql.types
     from typing_extensions import Self
     from starlette.requests import Request
     from starlette.responses import Response
@@ -19,7 +21,6 @@ if TYPE_CHECKING:
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
     from ..service.openapi.specification import Schema
-    from ..service.openapi.specification import MediaType
     from ..service.openapi.specification import Reference
 
     InputType = (
@@ -37,11 +38,11 @@ IOType = t.TypeVar("IOType")
 
 
 def from_spec(spec: dict[str, t.Any]) -> IODescriptor[t.Any]:
-    if spec["id"] is None:
-        raise BentoMLException("No IO descriptor spec found.")
-
     if "id" not in spec:
         raise InvalidArgument(f"IO descriptor spec ({spec}) missing ID.")
+
+    if spec["id"] is None:
+        raise InvalidArgument("No IO descriptor spec found.")
 
     return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)
 
@@ -155,3 +156,18 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     @abstractmethod
     async def to_proto(self, obj: IOType) -> t.Any:
         raise NotImplementedError
+
+    def from_arrow(self, batch: pyarrow.RecordBatch) -> IOType:
+        raise NotImplementedError(
+            "This IO descriptor does not currently support batch inference."
+        )
+
+    def to_arrow(self, obj: IOType) -> pyarrow.RecordBatch:
+        raise NotImplementedError(
+            "This IO descriptor does not currently support batch inference."
+        )
+
+    def spark_schema(self) -> pyspark.sql.types.StructType:
+        raise NotImplementedError(
+            "This IO descriptor does not currently support batch inference."
+        )

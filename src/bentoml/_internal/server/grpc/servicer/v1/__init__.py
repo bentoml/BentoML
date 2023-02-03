@@ -49,7 +49,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
         """An asyncio implementation of BentoService servicer."""
 
         async def Call(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
-            self: services.BentoServiceServicer,
+            self,
             request: pb.Request,
             context: BentoServicerContext,
         ) -> pb.Response | None:
@@ -60,6 +60,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
 
             api = service.apis[request.api_name]
             response = pb.Response()
+            output = None
 
             # NOTE: since IODescriptor._proto_fields is a tuple, the order is preserved.
             # This is important so that we know the order of fields to process.
@@ -81,11 +82,30 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                         output = await anyio.to_thread.run_sync(api.func, **input_data)
                     else:
                         output = await anyio.to_thread.run_sync(api.func, input_data)
+
                 res = await api.output.to_proto(output)
                 # TODO(aarnphm): support multiple proto fields
                 response = pb.Response(**{api.output._proto_fields[0]: res})
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
+                if output is not None:
+                    import inspect
+
+                    signature = inspect.signature(api.output.to_proto)
+                    param = next(iter(signature.parameters.values()))
+                    ann = ""
+                    if param is not inspect.Parameter.empty:
+                        ann = param.annotation
+
+                    # more descriptive errors if output is available
+                    logger.error(
+                        "Function '%s' has 'input=%s,output=%s' as IO descriptor, and returns 'result=%s', while expected return type is '%s'",
+                        api.name,
+                        api.input,
+                        api.output,
+                        type(output),
+                        ann,
+                    )
                 await context.abort(code=grpc_status_code(e), details=e.message)
             except (RuntimeError, TypeError, NotImplementedError):
                 log_exception(request, sys.exc_info())
@@ -146,17 +166,21 @@ def _tuple_converter(d: NestedDictStrAny | None) -> NestedDictStrAny | None:
 
 
 def make_descriptor_spec(
-    spec: dict[str, t.Any], pb: type[pb.ServiceMetadataResponse]
+    spec: dict[str, t.Any] | None, pb: type[pb.ServiceMetadataResponse]
 ) -> pb.ServiceMetadataResponse.DescriptorMetadata:
     from .....io_descriptors.json import parse_dict_to_proto
 
-    descriptor_id = spec.pop("id")
-    return pb.DescriptorMetadata(
-        descriptor_id=descriptor_id,
-        attributes=struct_pb2.Struct(
-            fields={
-                key: parse_dict_to_proto(_tuple_converter(value), struct_pb2.Value())
-                for key, value in spec.items()
-            }
-        ),
-    )
+    if spec is not None:
+        descriptor_id = spec.pop("id")
+        return pb.DescriptorMetadata(
+            descriptor_id=descriptor_id,
+            attributes=struct_pb2.Struct(
+                fields={
+                    key: parse_dict_to_proto(
+                        _tuple_converter(value), struct_pb2.Value()
+                    )
+                    for key, value in spec.items()
+                }
+            ),
+        )
+    return pb.DescriptorMetadata()

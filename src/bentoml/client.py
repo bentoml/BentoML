@@ -16,12 +16,17 @@ import starlette.datastructures
 import bentoml
 from bentoml import Service
 
+from .exceptions import RemoteException
 from .exceptions import BentoMLException
 from ._internal.service.inference_api import InferenceAPI
+
+if t.TYPE_CHECKING:
+    from types import TracebackType
 
 
 class Client(ABC):
     server_url: str
+    endpoints: list[str]
 
     def __init__(self, svc: Service, server_url: str):
         self._svc = svc
@@ -29,13 +34,15 @@ class Client(ABC):
         if len(self._svc.apis) == 0:
             raise BentoMLException("No APIs were found when constructing client")
 
+        self.endpoints = []
         for name, api in self._svc.apis.items():
+            self.endpoints.append(name)
+
             if not hasattr(self, name):
                 setattr(
                     self, name, functools.partial(self._sync_call, _bentoml_api=api)
                 )
 
-        for name, api in self._svc.apis.items():
             if not hasattr(self, f"async_{name}"):
                 setattr(
                     self,
@@ -81,6 +88,28 @@ class Client(ABC):
                 raise TimeoutError("The server took too long to get ready")
             time.sleep(1)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        pass
+
     @staticmethod
     def from_url(server_url: str) -> Client:
         server_url = server_url if "://" in server_url else "http://" + server_url
@@ -88,8 +117,12 @@ class Client(ABC):
 
         # TODO: SSL and grpc support
         conn = HTTPConnection(url_parts.netloc)
-        conn.request("GET", "/docs.json")
+        conn.request("GET", url_parts.path + "/docs.json")
         resp = conn.getresponse()
+        if resp.status != 200:
+            raise RemoteException(
+                f"Failed to get OpenAPI schema from the server: {resp.status} {resp.reason}:\n{resp.read()}"
+            )
         openapi_spec = json.load(resp)
         conn.close()
 
@@ -97,7 +130,7 @@ class Client(ABC):
 
         for route, spec in openapi_spec["paths"].items():
             for meth_spec in spec.values():
-                if "Service APIs" in meth_spec["tags"]:
+                if "tags" in meth_spec and "Service APIs" in meth_spec["tags"]:
                     if "x-bentoml-io-descriptor" not in meth_spec["requestBody"]:
                         # TODO: better message stating min version for from_url to work
                         raise BentoMLException(

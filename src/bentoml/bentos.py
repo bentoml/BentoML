@@ -18,12 +18,12 @@ from .exceptions import BentoMLException
 from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.utils import resolve_user_filepath
-from ._internal.server.server import Server
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ._internal.bento import BentoStore
+    from ._internal.server.server import ServerHandle
 
 logger = logging.getLogger(__name__)
 
@@ -426,77 +426,93 @@ def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:
 
 @inject
 def serve(
-    bento: str,
-    production: bool = False,
-    port: int = Provide[BentoMLContainer.http.port],
-    host: str = Provide[BentoMLContainer.http.host],
+    bento: str | Tag | Bento,
     server_type: str = "http",
+    reload: bool = False,
+    production: bool = False,
+    host: str | None = None,
+    port: int | None = None,
+    working_dir: str | None = None,
     api_workers: int | None = Provide[BentoMLContainer.api_server_workers],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-    reload: bool = False,
-    working_dir: str | None = None,
-    ssl_certfile: str | None = None,
-    ssl_keyfile: str | None = None,
-    ssl_ca_certs: str | None = None,
-    # HTTP-specific args
-    ssl_keyfile_password: str | None = None,
-    ssl_version: int | None = None,
-    ssl_cert_reqs: int | None = None,
-    ssl_ciphers: str | None = None,
-    # GRPC-specific args
+    ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+    ssl_keyfile_password: str | None = Provide[BentoMLContainer.ssl.keyfile_password],
+    ssl_version: int | None = Provide[BentoMLContainer.ssl.version],
+    ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
+    ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
     enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     enable_channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
-) -> Server:
-    """Launch a BentoServer and returns a client that exposes all APIs defined in target service"""
+) -> ServerHandle:
+    from .serve import construct_ssl_args
+    from ._internal.server.server import ServerHandle
 
-    if server_type.lower() not in ["http", "grpc"]:
+    if isinstance(bento, Bento):
+        bento = str(bento.tag)
+    elif isinstance(bento, Tag):
+        bento = str(bento)
+
+    server_type = server_type.lower()
+    if server_type not in ["http", "grpc"]:
         raise ValueError('Server type must either be "http" or "grpc"')
 
-    args = [
+    ssl_args: dict[str, t.Any] = {
+        "ssl_certfile": ssl_certfile,
+        "ssl_keyfile": ssl_keyfile,
+        "ssl_ca_certs": ssl_ca_certs,
+    }
+    if server_type == "http":
+        serve_cmd = "serve-http"
+        if host is None:
+            host = BentoMLContainer.http.host.get()
+        if port is None:
+            port = BentoMLContainer.http.port.get()
+
+        ssl_args.update(
+            ssl_keyfile_password=ssl_keyfile_password,
+            ssl_version=ssl_version,
+            ssl_cert_reqs=ssl_cert_reqs,
+            ssl_ciphers=ssl_ciphers,
+        )
+    else:
+        serve_cmd = "serve-grpc"
+        if host is None:
+            host = BentoMLContainer.grpc.host.get()
+        if port is None:
+            port = BentoMLContainer.grpc.port.get()
+
+    assert host is not None and port is not None
+    args: t.List[str] = [
+        sys.executable,
         "-m",
         "bentoml",
-        "serve",
+        serve_cmd,
         bento,
-        "--port",
-        str(port),
         "--host",
         host,
+        "--port",
+        str(port),
         "--backlog",
         str(backlog),
+        *construct_ssl_args(**ssl_args),
     ]
     if production:
         args.append("--production")
     if reload:
-        args.extend(["--reload", str(reload)])
+        args.append("--reload")
+
     if api_workers is not None:
         args.extend(["--api-workers", str(api_workers)])
     if working_dir is not None:
         args.extend(["--working-dir", str(working_dir)])
-    if ssl_certfile is not None:
-        args.extend(["--ssl-certfile", ssl_certfile])
-    if ssl_keyfile is not None:
-        args.extend(["--ssl-keyfile", ssl_keyfile])
-    if ssl_ca_certs is not None:
-        args.extend(["--ssl-ca-certs", ssl_ca_certs])
-    if server_type.lower() == "http":
-        if ssl_keyfile_password is not None:
-            args.extend(["--ssl-keyfile-password", ssl_keyfile_password])
-        if ssl_version is not None:
-            args.extend(["--ssl-version", str(ssl_version)])
-        if ssl_cert_reqs is not None:
-            args.extend(["--ssl-cert-reqs", str(ssl_cert_reqs)])
-        if ssl_ciphers is not None:
-            args.extend(["--ssl-ciphers", ssl_ciphers])
-    if server_type.lower() == "grpc":
-        if enable_reflection:
-            args.extend(["--enable-reflection", str(enable_reflection)])
-        if enable_channelz:
-            args.extend(["--enable-channelz", str(enable_channelz)])
-        if max_concurrent_streams is not None:
-            args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
+    if enable_reflection:
+        args.append("--enable-reflection")
+    if enable_channelz:
+        args.append("--enable-channelz")
+    if max_concurrent_streams is not None:
+        args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
 
-    process = subprocess.Popen(args, executable=sys.executable)
-
-    return Server(process, host, port)
+    return ServerHandle(process=subprocess.Popen(args), host=host, port=port)

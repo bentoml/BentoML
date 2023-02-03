@@ -174,14 +174,14 @@ def generate_containerfile(
 
     user_templates = docker.dockerfile_template
     if user_templates is not None:
-        TEMPLATES_PATH.append(
-            os.path.dirname(resolve_user_filepath(user_templates, build_ctx))
-        )
+        dir_path = os.path.dirname(resolve_user_filepath(user_templates, build_ctx))
+        user_templates = os.path.basename(user_templates)
+        TEMPLATES_PATH.append(dir_path)
         environment = ENVIRONMENT.overlay(
             loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True)
         )
         template = environment.get_template(
-            os.path.basename(user_templates),
+            user_templates,
             globals={"bento_base_template": template, **J2_FUNCTION},
         )
 

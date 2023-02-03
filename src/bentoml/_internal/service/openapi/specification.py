@@ -271,6 +271,7 @@ class OpenAPISpecification:
     openapi: str
     info: Info
     paths: t.Dict[str, PathItem]
+    servers: t.List[t.Any]
     tags: t.Optional[t.List[Tag]] = None
     components: t.Optional[Components] = None
 

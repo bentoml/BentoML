@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 import json
 import typing as t
-import logging
 from typing import TYPE_CHECKING
 
 import yaml
@@ -18,8 +17,6 @@ if TYPE_CHECKING:
     from click import Group
     from click import Context
     from click import Parameter
-
-logger = logging.getLogger("bentoml")
 
 
 def parse_delete_targets_argument_callback(
@@ -175,7 +172,7 @@ def add_bento_management_commands(cli: Group):
 
                 if delete_confirmed:
                     bento_store.delete(bento.tag)
-                    logger.info("%s deleted.", bento)
+                    click.echo(f"{bento} deleted.")
 
         for target in delete_targets:
             delete_target(target)
@@ -208,7 +205,7 @@ def add_bento_management_commands(cli: Group):
         """
         bento = bento_store.get(bento_tag)
         out_path = bento.export(out_path)
-        logger.info("%s exported to %s.", bento, out_path)
+        click.echo(f"{bento} exported to {out_path}.")
 
     @cli.command(name="import")
     @click.argument("bento_path", type=click.STRING)
@@ -225,7 +222,7 @@ def add_bento_management_commands(cli: Group):
             bentoml import s3://mybucket/bentos/my_bento.bento
         """
         bento = import_bento(bento_path)
-        logger.info("%s imported.", bento)
+        click.echo(f"{bento} imported.")
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -236,9 +233,12 @@ def add_bento_management_commands(cli: Group):
         default=False,
         help="Force pull from yatai to local and overwrite even if it already exists in local",
     )
-    def pull(bento_tag: str, force: bool) -> None:  # type: ignore (not accessed)
+    @click.option(
+        "--context", type=click.STRING, default=None, help="Yatai context name."
+    )
+    def pull(bento_tag: str, force: bool, context: str) -> None:  # type: ignore (not accessed)
         """Pull Bento from a yatai server."""
-        yatai_client.pull_bento(bento_tag, force=force)
+        yatai_client.pull_bento(bento_tag, force=force, context=context)
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -255,12 +255,17 @@ def add_bento_management_commands(cli: Group):
         default=10,
         help="Number of threads to use for upload",
     )
-    def push(bento_tag: str, force: bool, threads: int) -> None:  # type: ignore (not accessed)
+    @click.option(
+        "--context", type=click.STRING, default=None, help="Yatai context name."
+    )
+    def push(bento_tag: str, force: bool, threads: int, context: str) -> None:  # type: ignore (not accessed)
         """Push Bento to a yatai server."""
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
-        yatai_client.push_bento(bento_obj, force=force, threads=threads)
+        yatai_client.push_bento(
+            bento_obj, force=force, threads=threads, context=context
+        )
 
     @cli.command()
     @click.argument("build_ctx", type=click.Path(), default=".")

@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 T = t.TypeVar("T")
 To = t.TypeVar("To")
+Ti = t.TypeVar("Ti")
 
 
 CUDA_SUCCESS = 0
@@ -34,11 +35,7 @@ class Params(t.Generic[T]):
     args: tuple[T, ...]
     kwargs: dict[str, T]
 
-    def __init__(
-        self,
-        *args: T,
-        **kwargs: T,
-    ):
+    def __init__(self, *args: T, **kwargs: T):
         self.args = args
         self.kwargs = kwargs
 
@@ -65,6 +62,20 @@ class Params(t.Generic[T]):
         args = tuple(function(a) for a in self.args)
         kwargs = {k: function(v) for k, v in self.kwargs.items()}
         return Params[To](*args, **kwargs)
+
+    def map_enumerate(
+        self, function: t.Callable[[T, Ti], To], iterable: t.Iterable[Ti]
+    ) -> Params[To]:
+        """
+        Apply function that takes two arguments with given iterable as index to all none empty field in Params.
+        """
+        if self.args:
+            return Params[To](
+                *tuple(function(a, b) for a, b in zip(self.args, iterable))
+            )
+        return Params[To](
+            **{k: function(self.kwargs[k], b) for k, b in zip(self.kwargs, iterable)}
+        )
 
     def iter(self: Params[tuple[t.Any, ...]]) -> t.Iterator[Params[t.Any]]:
         """

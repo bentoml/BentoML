@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     from . import fastai
     from . import mlflow
     from . import paddle
+    from . import triton
     from . import easyocr
     from . import pycaret
     from . import pytorch
@@ -81,6 +82,7 @@ if TYPE_CHECKING:
     from . import metrics  # Prometheus metrics client
     from . import container  # Container API
     from . import client  # Client API
+    from . import batch  # Batch API
 
     # isort: on
 else:
@@ -120,7 +122,10 @@ else:
     )
     xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
 
+    triton = _LazyLoader("bentoml.triton", globals(), "bentoml.triton")
+
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
+    batch = _LazyLoader("bentoml.batch", globals(), "bentoml.batch")
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
     metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
     container = _LazyLoader("bentoml.container", globals(), "bentoml.container")
@@ -134,6 +139,7 @@ __all__ = [
     "Cookie",
     "Service",
     "models",
+    "batch",
     "metrics",
     "container",
     "client",
@@ -180,6 +186,8 @@ __all__ = [
     "torchscript",
     "transformers",
     "xgboost",
+    # integrations
+    "triton",
     "monitor",
     "load_config",
     "save_config",

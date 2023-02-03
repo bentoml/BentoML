@@ -80,4 +80,20 @@ def test_load_config_file(tmp_path: Path):
 
 def test_valid_ip_address():
     assert is_valid_ip_address("0.0.0.0")
+    assert is_valid_ip_address("192.192.192.192")
+    assert is_valid_ip_address("255.255.255.255")
+
+def test_invalid_ip_address():
     assert not is_valid_ip_address("asdfadsf:143")
+    assert not is_valid_ip_address("asdfadsf")
+    assert not is_valid_ip_address("0.0.0.0.0")
+    assert not is_valid_ip_address("0.0.0.")
+    assert not is_valid_ip_address(".0.0.0")
+    assert not is_valid_ip_address("x.0.0.0")
+    assert not is_valid_ip_address("255.255.255.256")
+    assert not is_valid_ip_address("255.255.256.255")
+    assert not is_valid_ip_address("255.256.255.255")
+    assert not is_valid_ip_address("256.255.255.255")
+    assert not is_valid_ip_address("256.256.256.256")
+    assert not is_valid_ip_address(" ")
+    assert not is_valid_ip_address("")

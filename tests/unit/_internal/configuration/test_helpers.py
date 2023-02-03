@@ -68,14 +68,20 @@ def test_rename_fields(caplog: LogCaptureFixture):
         rename_fields(d, "b.c", "b.d.c")
 
 
-def test_load_config_file(tmp_path: Path):
+def test_valid_load_config_file(tmp_path: Path):
     config = tmp_path / "configuration.yaml"
     config.write_text("api_server:\n  port: 5000")
     assert load_config_file(config.__fspath__()) == {"api_server": {"port": 5000}}
 
+
+def test_invalid_load_config_file(tmp_path: Path):
     with pytest.raises(BentoMLConfigException) as e:
         load_config_file("/tmp/nonexistent.yaml")
     assert "Configuration file /tmp/nonexistent.yaml not found." in str(e.value)
+
+    with pytest.raises(BentoMLConfigException) as e:
+        load_config_file("\\tmp\\invalid.yaml")
+    assert "Configuration file \\tmp\\invalid.yaml not found." in str(e.value)
 
 
 def test_valid_ip_address():

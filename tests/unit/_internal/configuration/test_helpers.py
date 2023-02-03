@@ -105,7 +105,7 @@ def test_valid_load_config_file(tmp_path: Path):
     assert load_config_file(config.__fspath__()) == {"api_server": {"port": 5000}}
 
 
-def test_invalid_load_config_file(tmp_path: Path):
+def test_invalid_load_config_file():
     with pytest.raises(BentoMLConfigException) as e:
         load_config_file("/tmp/nonexistent.yaml")
     assert "Configuration file /tmp/nonexistent.yaml not found." in str(e.value)

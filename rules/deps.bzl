@@ -118,9 +118,9 @@ def bentoml_dependencies():
     maybe(
         http_archive,
         name = "rules_python",
-        sha256 = "497ca47374f48c8b067d786b512ac10a276211810f4a580178ee9b9ad139323a",
-        strip_prefix = "rules_python-0.16.1",
-        url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.16.1.tar.gz",
+        sha256 = "8c15896f6686beb5c631a4459a3aa8392daccaab805ea899c9d14215074b60ef",
+        strip_prefix = "rules_python-0.17.3",
+        url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.17.3.tar.gz",
     )
 
     maybe(

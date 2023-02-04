@@ -73,7 +73,7 @@ jobs:
         run: echo "workspace=$(bazel info workspace)" >> $GITHUB_OUTPUT
         # Running formatter check
       - name: Lock dependencies
-        run: bazel run pypi-linux.update
+        run: bazel run pypi.update
       - name: Run style check
         run: |
           bazel run //:buildcheck
@@ -125,16 +125,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu' }}
         id: buildx
         uses: docker/setup-buildx-action@v2
-      - name: Get target lock target
-        id: lock
-        run: |
-          if [ "${{ matrix.os }}" == "ubuntu" ]; then
-            target="linux"
-          else
-            target="${{ matrix.os }}"
-          fi
-          echo "target=$target" >> $GITHUB_OUTPUT
       - name: Lock dependencies
-        run: bazel run pypi-${{ steps.lock.outputs.target }}.update
+        run: bazel run pypi.update
       - name: Run tests
         run: bazel test tests/... --test_env=GITHUB_ACTIONS=${GITHUB_ACTIONS}

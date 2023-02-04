@@ -29,39 +29,8 @@ git clone https://github.com/bentoml/BentoML.git && cd BentoML
 Install all dependencies required for building docs (mainly `sphinx` and its extension):
 
 ```bash
-pip install -r requirements/pypi-requirements.txt
+pip install -r requirements/dev-requirements.txt
 ```
-
-Build the sphinx docs:
-
-```bash
-make clean html -C ./docs
-```
-
-The docs HTML files are now generated under `docs/build/html` directory, you can preview
-it locally with the following command:
-
-```bash
-python -m http.server 8000 -d docs/build/html
-```
-
-And open your browser at http://0.0.0.0:8000/ to view the generated docs.
-
-#### Spellcheck
-
-Install spellchecker dependencies:
-
-```bash
-make install-spellchecker-deps
-```
-
-To run spellchecker locally:
-
-```bash
-make spellcheck-doc
-```
-
-##### Watch Docs
 
 We recommend using sphinx-autobuild during development, which provides a live-reloading
 server, that rebuilds the documentation and refreshes any open pages automatically when
@@ -73,6 +42,29 @@ Simply run the following command from BentoML project's root directory:
 ```bash
 GIT_ROOT=$(bazel info workspace)
 bazel run //:sphinx-autobuild -- ${GIT_ROOT}/docs/source ${GIT_ROOT}/docs/build/html --watch ${GIT_ROOT}/src/ --ignore "${GIT_ROOT}/bazel-*"
+```
+
+#### Spellcheck
+
+For spellchecker dependencies, makes sure to install enchant and sphinxcontrib-spelling
+
+On MacOS:
+
+```bash
+brew install enchant
+pip install sphinxcontrib-spelling
+```
+
+On Debian-based:
+
+```bash
+sudo apt-get install -y libenchant-dev
+```
+
+To run spellchecker locally:
+
+```bash
+tools/bazel run //:sphinx-build -- -b spelling ${GIT_ROOT}/docs/source ${GIT_ROOT}/docs/build
 ```
 
 ## Writing Documentation
@@ -227,10 +219,9 @@ its type, a new indentation for description of given field. Each argument should
 
 ```markdown
     Args:
-        bento_name (:code:`str`):
-            :class:`~bentoml.BentoService` identifier with name format :obj:`NAME:VERSION`.
-            ``NAME`` can be accessed via :meth:`~bentoml.BentoService.name` and ``VERSION`` can
-            be accessed via :meth:`~bentoml.BentoService.version`
+        bento_name: :class:`~bentoml.BentoService` identifier with name format :obj:`NAME:VERSION`.
+                    ``NAME`` can be accessed via :meth:`~bentoml.BentoService.name` and ``VERSION`` can
+                    be accessed via :meth:`~bentoml.BentoService.version`
 ```
 
 For optional arguments, follow the following syntax. For example a function `func()` with following signature:

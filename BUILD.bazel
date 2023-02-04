@@ -103,16 +103,6 @@ alias(
 
 # thirdparty alias
 alias(
-    name = "protobuf-python",
-    actual = "@com_google_protobuf//:protobuf_python",
-)
-
-alias(
-    name = "grpcio-python",
-    actual = "@com_github_grpc_grpc//src/python/grpcio/grpc:grpcio",
-)
-
-alias(
     name = "buildozer",
     actual = "@com_github_bazelbuild_buildtools//buildozer",
 )

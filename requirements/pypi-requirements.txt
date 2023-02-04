@@ -47,11 +47,7 @@ pydantic==1.10.2
 Pillow==9.3.0
 fs-s3fs==1.1.1
 opentelemetry-instrumentation-grpc==0.35b0
-grpcio
-grpcio-reflection
-grpcio-health-checking
-grpcio-channelz
-protobuf<=3.20.1
+protobuf==3.20.2
 opentelemetry-exporter-jaeger==1.14.0
 opentelemetry-exporter-otlp==1.14.0
 opentelemetry-exporter-zipkin==1.14.0
@@ -80,7 +76,7 @@ fastai==2.7.0
 xgboost==1.6.2
 # ONNX dependencies
 # 1.12.0 is the lowest version that is supported on all platforms for onnx
-onnx==1.12.0
+onnx
 onnxruntime==1.13.1
 skl2onnx==1.13
 # Jax is not yet supported on Windows, so pip install will fail
@@ -116,6 +112,9 @@ scipy==1.9.0 # <- scikit-learn & numpy
 typing-extensions==4.4.0
 # Tools
 pyenchant==3.2.2
-mypy-protobuf>=3.3.0
 # e2e deps.
 fastapi==0.87.0
+grpcio<1.51.0
+grpcio-reflection
+grpcio-health-checking
+grpcio-channelz

@@ -18,7 +18,7 @@ WORKDIR /home/bentoml
 
 
 COPY ../examples/quickstart .
-RUN pip install -U pip "bentoml[grpc]==${BENTOML_VERSION}" && pip install -r ./requirements.txt
+RUN pip install -U pip "bentoml[grpc,grpc-reflection]==${BENTOML_VERSION}" && pip install -r ./requirements.txt
 
 # For jupyter notebook UI
 EXPOSE 8888

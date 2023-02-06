@@ -115,6 +115,6 @@ pyenchant==3.2.2
 # e2e deps.
 fastapi==0.87.0
 grpcio<1.51.0
-grpcio-reflection
-grpcio-health-checking
-grpcio-channelz
+grpcio-reflection<1.51.0
+grpcio-health-checking<1.51.0
+grpcio-channelz<1.51.0

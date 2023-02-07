@@ -34,39 +34,21 @@ def get(tag_like: str | Tag) -> Model:
     return model
 
 
-@t.overload
-def load_model(
-    bentoml_model: str | Tag | Model,
-    device_id: str | None = ...,
-    return_extra_files: t.Literal[False] = ...,
-) -> torch.ScriptModule:
-    ...
-
-
-@t.overload
-def load_model(
-    bentoml_model: str | Tag | Model,
-    device_id: str | None = ...,
-    return_extra_files: t.Literal[True] = ...,
-) -> tuple[torch.ScriptModule, dict[str, t.Any]]:
-    ...
-
-
 def load_model(
     bentoml_model: str | Tag | Model,
     device_id: t.Optional[str] = "cpu",
-    return_extra_files: bool = False,
+    _extra_files: dict[str, t.Any] | None = None,
 ) -> torch.ScriptModule | tuple[torch.ScriptModule, dict[str, t.Any]]:
     """
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (:code:`Union[str, Tag]`):
+        tag:
             Tag of a saved model in BentoML local modelstore.
-        device_id (:code:`str`, `optional`):
+        device_id:
             Optional devices to put the given model on. Refer to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
+        _extra_files:
+            A dictionary of file names and a empty string. Similar to `_extra_files` in `torch.jit.load`. See https://pytorch.org/docs/stable/generated/torch.jit.load.html.
 
     Returns:
         :obj:`torch.ScriptModule`: an instance of :obj:`torch.ScriptModule` from BentoML modelstore.
@@ -86,16 +68,17 @@ def load_model(
             f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
-    _extra_files = t.cast(
-        "dict[str, t.Any] | None", bentoml_model.info.metadata.get("_extra_files", None)
-    )
+    if _extra_files is None:
+        _extra_files = t.cast(
+            "dict[str, t.Any] | None",
+            bentoml_model.info.metadata.get("_extra_files", None),
+        )
+
     model: torch.ScriptModule = torch.jit.load(
         weight_file,
         map_location=device_id,
         _extra_files=_extra_files,
     )
-    if return_extra_files:
-        return model, _extra_files or {}
     return model
 
 

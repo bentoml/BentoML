@@ -118,7 +118,7 @@ The following frameworks are supported in pre-1.0 BentoML versions and are being
     keras
     lightgbm
     onnx
-    picklable_model
+    picklable
     pytorch
     pytorch_lightning
     sklearn

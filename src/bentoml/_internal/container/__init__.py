@@ -243,7 +243,7 @@ def register_backend(
                               and returns a list of command line arguments.
         env: Default environment variables dict for this OCI builder implementation.
         binary: Optional binary path. If not provided, the binary will use the backend name.
-                Make sure that the binary is in the ``PATH``.
+                Make sure that the binary is on your ``PATH``.
         build_cmd: Optional build command. If not provided, the command will be 'build'.
 
     Examples:

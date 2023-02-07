@@ -521,9 +521,9 @@ If you need to use conda for CUDA images, use the following template ( *partiall
 Containerization with different container engines.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since BentoML version 1.0.11 [#pr_3164]_, we have added supports for various container engines and extend our containerize SDK and CLI.
+In BentoML version 1.0.11 [#pr_3164]_, we support different container engines aside from docker.
 
-Bento from version 1.0.11 will be OCI-compliant and can be built with:
+BentoML-generated Dockerfiles from version 1.0.11 onward will be OCI-compliant and can be built with:
 
 * `Docker <https://www.docker.com/>`_
 * `Podman <https://podman.io/>`_
@@ -532,11 +532,11 @@ Bento from version 1.0.11 will be OCI-compliant and can be built with:
 * :github:`buildctl <moby/buildkit/blob/master/docs/buildctl.md>`
 * `Docker buildx <https://docs.docker.com/engine/reference/commandline/buildx/>`_
 
-To use any of the aforementioned backend, refer to their documentation for installation and setup.
+To use any of the aforementioned backends, they must be installed on your system. Refer to their documentation for installation and setup.
 
 .. note::
 
-   By default, BentoML will use ``docker`` as the default container backend. 
+   By default, BentoML will use Docker as the container backend. 
    To use other container engines, please set the environment variable ``BENTOML_CONTAINERIZE_BACKEND`` or
    pass in ``--backend`` to :ref:`bentoml containerize <reference/cli:containerize>`:
 
@@ -548,7 +548,7 @@ To use any of the aforementioned backend, refer to their documentation for insta
       # or pass in --backend
       bentoml containerize pytorch-mnist:latest --backend buildah
 
-To build a BentoContainer, one can use the :ref:`Container SDK <reference/container:Container APIs>` via :meth:`bentoml.container.build`:
+To build a BentoContainer in Python, you can use the :ref:`Container SDK <reference/container:Container APIs>` method :meth:`bentoml.container.build`:
 
 .. code-block:: python
 
@@ -561,18 +561,6 @@ To build a BentoContainer, one can use the :ref:`Container SDK <reference/contai
       cache_from="registry.com/my_cache:v1",
    )
 
-Each backend is a class of ``OCIBuilder`` that represents a container engine. It helps construct
-and parsing commandline arguments for the container engine to containerize the Bento.
-
-One can retrieve the backend with :meth:`bentoml.container.get_backend`:
-
-.. code-block:: python
-
-   from bentoml.container import get_backend
-
-   backend = get_backend("buildah")
-   assert backend.health()
-   backend.build("pytorch-mnist:latest")
 
 Register custom backend
 ^^^^^^^^^^^^^^^^^^^^^^^

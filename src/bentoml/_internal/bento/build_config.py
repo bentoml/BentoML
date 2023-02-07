@@ -514,7 +514,7 @@ class PythonOptions:
         build_bentoml_editable_wheel(bento_fs.getsyspath(wheels_folder))
 
         # Move over required wheel files
-        if self.wheels is not None:
+        if self.wheels:
             bento_fs.makedirs(wheels_folder, recreate=True)
             for whl_file in self.wheels:  # pylint: disable=not-an-iterable
                 whl_file = resolve_user_filepath(whl_file, build_ctx)

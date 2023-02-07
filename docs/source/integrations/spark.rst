@@ -10,7 +10,7 @@ processing for big-data applications.
 
 BentoML now supports running your Bentos with batch data via Spark. The following tutorial assumes
 basic understanding of BentoML. If you'd like to learn more about BentoML, see the
-:ref:`BentoML tutorial <tutorial>`.
+:ref:`BentoML tutorial <tutorial:Creating a Service>`.
 
 Prerequisites
 #############

@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import typing as t
 import asyncio
-import functools
 import logging
+import functools
 from abc import ABC
 from abc import abstractmethod
 from http.client import HTTPConnection

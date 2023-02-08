@@ -68,6 +68,10 @@ into this part of the documentation.
         :link: /guides/tracing
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/guides/envmanager`
+        :link: /guides/envmanager
+        :link-type: doc
+
     .. grid-item-card:: :doc:`/guides/migration`
         :link: /guides/migration
         :link-type: doc

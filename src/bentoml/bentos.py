@@ -430,6 +430,7 @@ def serve(
     server_type: str = "http",
     reload: bool = False,
     production: bool = False,
+    env: t.Literal["conda"] | None = None,
     host: str | None = None,
     port: int | None = None,
     working_dir: str | None = None,
@@ -503,6 +504,8 @@ def serve(
         args.append("--production")
     if reload:
         args.append("--reload")
+    if env:
+        args.extend(["--env", env])
 
     if api_workers is not None:
         args.extend(["--api-workers", str(api_workers)])

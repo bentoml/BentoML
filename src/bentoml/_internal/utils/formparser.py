@@ -104,7 +104,6 @@ class MultiPartParser:
         header_value = b""
         field_name = ""
         content_disposition = None
-        content_type = b""
         multipart_file = None
 
         data = b""
@@ -120,7 +119,6 @@ class MultiPartParser:
             for message_type, message_bytes in messages:
                 if message_type == MultiPartMessage.PART_BEGIN:
                     content_disposition = None
-                    content_type = b""
                     field_name = ""
                     data = b""
                     headers = list()
@@ -132,8 +130,6 @@ class MultiPartParser:
                     field = header_field.lower()
                     if field == b"content-disposition":
                         content_disposition = header_value
-                    elif field == b"content-type":
-                        content_type = header_value
                     elif field == b"bentoml-payload-field":
                         field_name = user_safe_decode(header_value, charset)
                     else:
@@ -157,7 +153,6 @@ class MultiPartParser:
                         filename = user_safe_decode(options[b"filename"], charset)
                         multipart_file = UploadFile(
                             filename=filename,
-                            content_type=content_type.decode("latin-1"),
                             headers=Headers(raw=headers),  # type: ignore (incomplete starlette types)
                         )
                     else:

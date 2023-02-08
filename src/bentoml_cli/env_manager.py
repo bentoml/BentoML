@@ -69,7 +69,7 @@ def get_environment(
         elif bento_path_fs.isfile(DEFAULT_BENTO_BUILD_FILE):
             # path to a bento project
             raise NotImplementedError(
-                "Serving bento project in an environment is not supported now."
+                "Serving from development project is not yet supported."
             )
         else:
             raise BentoMLException(

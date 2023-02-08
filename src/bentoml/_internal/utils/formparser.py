@@ -4,6 +4,7 @@ import io
 import uuid
 import typing as t
 from typing import TYPE_CHECKING
+from tempfile import SpooledTemporaryFile
 
 import multipart.multipart as multipart
 from starlette.requests import Request
@@ -31,6 +32,9 @@ def user_safe_decode(src: bytes, codec: str) -> str:
         return src.decode(codec)
     except (UnicodeDecodeError, LookupError):
         return src.decode("latin-1")
+
+
+MAX_FILE_SIZE = 1024 * 1024
 
 
 class MultiPartParser:
@@ -151,7 +155,10 @@ class MultiPartParser:
                         )
                     if b"filename" in options:
                         filename = user_safe_decode(options[b"filename"], charset)
+                        tempfile = SpooledTemporaryFile(max_size=MAX_FILE_SIZE)
                         multipart_file = UploadFile(
+                            file=tempfile,
+                            # size=0, # TODO: support size for starlette 0.24 onwards
                             filename=filename,
                             headers=Headers(raw=headers),  # type: ignore (incomplete starlette types)
                         )

@@ -4,8 +4,8 @@ import sys
 import shutil
 import typing as t
 import logging
-import itertools
 import tempfile
+import itertools
 from typing import TYPE_CHECKING
 from functools import partial
 

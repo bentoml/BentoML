@@ -194,7 +194,7 @@ status codes.
 
         return result
 
-For gRPC endpoints, the `grpc.aio.ServicerContext <https://grpc.github.io/grpc/python/grpc_asyncio.html#grpc.aio.ServicerContext>`_ can be accessed through the inference context at ``ctx.grpc.context``.
+For gRPC endpoints, the `grpc.aio.ServicerContext <https://grpc.github.io/grpc/python/grpc_asyncio.html#grpc.aio.ServicerContext>`_ can be accessed through the inference context at ``ctx.request.grpc``.
 
 
 .. code-block:: python
@@ -203,7 +203,7 @@ For gRPC endpoints, the `grpc.aio.ServicerContext <https://grpc.github.io/grpc/p
     def predict(input_array: np.ndarray, ctx: bentoml.Context) -> np.ndarray:
         res = runner.run(input_array)
         accuracy = accuracy_score(res, expected)
-        context.grpc.context.set_trailing_metadata(
+        ctx.request.grpc.set_trailing_metadata(
             aio.Metadata.from_tuple((("accuracy", accuracy),))
         )
         return res

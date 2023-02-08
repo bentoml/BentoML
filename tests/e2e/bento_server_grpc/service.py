@@ -212,9 +212,8 @@ def ensure_metrics_are_registered(_: str) -> None:
 
 
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
-async def echo_check_grpc_context(data: str, context: Context):
-    context.grpc.context.set_trailing_metadata
-    await context.grpc.context.send_initial_metadata(
+async def echo_check_grpc_context(data: str, ctx: Context):
+    await ctx.request.grpc.send_initial_metadata(
         aio.Metadata.from_tuple((("foo", "bar"),))
     )
     return data

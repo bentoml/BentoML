@@ -33,10 +33,7 @@ class InferenceAPI:
         route: str | None = None,
     ):
         # Use user_defined_callback function variable if name not specified
-        if user_defined_callback is None:
-            name = "" if name is None else name
-        else:
-            name = user_defined_callback.__name__ if name is None else name
+        name = user_defined_callback.__name__ if name is None else name
         # Use user_defined_callback function docstring `__doc__` if doc not specified
         doc = user_defined_callback.__doc__ if doc is None else doc
         # Use API name as route if route not specified

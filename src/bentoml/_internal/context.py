@@ -76,7 +76,6 @@ class Metadata(t.Mapping[str, str], ABC):
 class InferenceApiContext:
     request: RequestContext = attr.field(default=None)
     response: ResponseContext = attr.field(default=None)
-    grpc: GrpcContext = attr.field(default=None)
 
     @staticmethod
     def from_http(request: Request) -> InferenceApiContext:
@@ -87,7 +86,10 @@ class InferenceApiContext:
 
     @staticmethod
     def from_grpc(context: BentoServicerContext) -> InferenceApiContext:
-        return InferenceApiContext(grpc=InferenceApiContext.GrpcContext(context))
+        return InferenceApiContext(
+            request=InferenceApiContext.RequestContext.from_grpc(context),
+            response=InferenceApiContext.ResponseContext(),
+        )
 
     @attr.define
     class GrpcContext:
@@ -97,14 +99,22 @@ class InferenceApiContext:
     class RequestContext:
         metadata: Metadata
         headers: Metadata
+        grpc: BentoServicerContext
 
         def __init__(self, metadata: Metadata):
             self.metadata = metadata
             self.headers = metadata
+            self.grpc = t.cast("BentoServicerContext", metadata)
 
         @staticmethod
         def from_http(request: Request) -> InferenceApiContext.RequestContext:
-            return InferenceApiContext.RequestContext(request.headers)  # type: ignore (coercing Starlette headers to Metadata)
+            return InferenceApiContext.RequestContext(t.cast(Metadata, request.headers))
+
+        @staticmethod
+        def from_grpc(
+            context: BentoServicerContext,
+        ) -> InferenceApiContext.RequestContext:
+            return InferenceApiContext.RequestContext(t.cast(Metadata, context))
 
     @attr.define
     class ResponseContext:

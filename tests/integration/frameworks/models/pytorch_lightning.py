@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+
 import torch
 import torch.nn
 import pytorch_lightning as pl
@@ -9,13 +11,12 @@ import bentoml
 from . import FrameworkTestModel
 from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from .torchscript import test_y
+from .torchscript import test_x_list
 
 framework = bentoml.pytorch_lightning
 
 backward_compatible = True
-
-from .torchscript import test_y
-from .torchscript import test_x_list
 
 
 def generate_models():
@@ -25,7 +26,7 @@ def generate_models():
             self.linear = torch.nn.Linear(5, 1, bias=False)
             torch.nn.init.ones_(self.linear.weight)
 
-        def forward(self, x):
+        def forward(self, x: t.Any):
             return self.linear(x)
 
     yield LightningLinearModel()

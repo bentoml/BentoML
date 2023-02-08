@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import typing as t
 import asyncio
+import logging
 import functools
 from abc import ABC
 from abc import abstractmethod
@@ -22,6 +23,8 @@ from ._internal.service.inference_api import InferenceAPI
 
 if t.TYPE_CHECKING:
     from types import TracebackType
+
+logger = logging.getLogger(__name__)
 
 
 class Client(ABC):

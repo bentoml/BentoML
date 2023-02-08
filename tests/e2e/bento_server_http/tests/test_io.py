@@ -250,7 +250,7 @@ async def test_multipart_image_io(host: str, img_form_data: aiohttp.FormData):
 
 
 @pytest.mark.asyncio
-async def test_multipart_image_io(host: str, img_form_data: aiohttp.FormData):
+async def test_multipart_different_args(host: str, img_form_data: aiohttp.FormData):
     await async_request(
         "POST",
         f"http://{host}/predict_different_args",

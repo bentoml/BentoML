@@ -11,7 +11,7 @@ isort==5.11.4
 pylint==2.16.0
 pytest-cov==4.0.0
 pytest==7.2.1
-pytest-xdist[psutil]==3.1.0
+pytest-xdist[psutil]==3.2.0
 pytest-asyncio==0.20.3
 imageio==2.25.0
 pyarrow==11.0.0

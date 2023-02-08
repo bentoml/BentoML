@@ -166,7 +166,14 @@ class _TritonRunner(_AbstractRunner):
         if isinstance(self._runner_handle, TritonRunnerHandle):
             if item in self._runner_handle.client_methods:
                 # NOTE: auto wrap triton methods to its respective clients
-                return _handle_triton_exception(self._runner_handle.client, item)
+                if self.tritonserver_type == "grpc":
+                    return _handle_triton_exception(
+                        getattr(self._runner_handle.grpc_client, item)
+                    )
+                else:
+                    return _handle_triton_exception(
+                        getattr(self._runner_handle.http_client, item)
+                    )
             else:
                 # if given item is not a client method, then we assume it is a model name.
                 # Hence, we will return a RunnerMethod that will be responsible for this model handle.

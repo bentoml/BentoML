@@ -36,7 +36,7 @@ def get(tag_like: str | Tag) -> Model:
 
 def load_model(
     bentoml_model: str | Tag | Model,
-    device_id: str | None = "cpu"
+    device_id: str | None = "cpu",
     _extra_files: dict[str, t.Any] | None = None,
 ) -> torch.ScriptModule | tuple[torch.ScriptModule, dict[str, t.Any]]:
     """

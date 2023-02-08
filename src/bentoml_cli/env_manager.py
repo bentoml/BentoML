@@ -18,7 +18,7 @@ from bentoml._internal.bento.bento import Bento
 from bentoml._internal.bento.bento import BentoStore
 from bentoml._internal.bento.bento import BENTO_YAML_FILENAME
 from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-from bentoml._internal.env_manager import EnvironmentFactory
+from bentoml._internal.env_manager import EnvManager
 from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.env_manager.envs import Environment
 from bentoml._internal.configuration.containers import BentoMLContainer
@@ -63,7 +63,7 @@ def get_environment(
         )
         if bento_path_fs.isfile(BENTO_YAML_FILENAME):
             # path to a build bento dir
-            return EnvironmentFactory.from_bento(
+            return EnvManager.from_bento(
                 env_type=env,
                 bento=Bento.from_fs(bento_path_fs),
                 is_ephemeral=True,
@@ -80,7 +80,7 @@ def get_environment(
     else:
         try:
             bento = bento_store.get(bento_identifier)
-            return EnvironmentFactory.from_bento(
+            return EnvManager.from_bento(
                 env_type=env,
                 bento=bento,
                 is_ephemeral=False,

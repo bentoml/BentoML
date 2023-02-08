@@ -1,1 +1,1 @@
-from .manager import EnvironmentFactory
+from .manager import EnvManager

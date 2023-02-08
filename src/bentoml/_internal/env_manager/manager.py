@@ -20,7 +20,7 @@ def decode(msg: bytes) -> str:
     return ""
 
 
-class EnvironmentFactory:
+class EnvManager:
     @inject
     def __init__(
         self,
@@ -48,7 +48,7 @@ class EnvironmentFactory:
         env_type: str,
         bento: Bento,
         is_ephemeral: bool,
-    ) -> EnvironmentFactory:
+    ) -> EnvManager:
         env_name: str
         if is_ephemeral:
             env_name = "ephemeral_env"
@@ -64,5 +64,5 @@ class EnvironmentFactory:
     @classmethod
     def from_bentofile(
         cls, env_type: str, bento_info: BentoInfo, is_ephemeral: str
-    ) -> EnvironmentFactory:
+    ) -> EnvManager:
         raise NotImplementedError

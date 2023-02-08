@@ -40,11 +40,13 @@ class EnvManager:
 
         if env_type == "conda":
             self.environment = Conda(name=env_name, env_fs=env_fs, bento=bento)
+        else:
+            raise NotImplementedError(f"'{env_type}' is not supported.")
 
     @classmethod
     def from_bento(
         cls,
-        env_type: str,
+        env_type: t.Literal["conda"],
         bento: Bento,
         is_ephemeral: bool,
     ) -> EnvManager:

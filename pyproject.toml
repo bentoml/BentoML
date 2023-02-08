@@ -259,7 +259,7 @@ fix = true
 
 [tool.ruff.per-file-ignores]
 # ignore imports violations in __init__.py
-"__init__.py" = ["E402"]
+"src/bentoml/__init__.py" = ["E402"]
 
 [tool.ruff.pydocstyle]
 convention = "google"

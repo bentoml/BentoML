@@ -176,9 +176,9 @@ class _BentoMLContainerClass:
         )
         bentos = os.path.join(home, "bentos")
         models = os.path.join(home, "models")
-        env = os.path.join(home, "envs")
+        envs = os.path.join(home, "envs")
 
-        validate_or_create_dir(home, bentos, models, env)
+        validate_or_create_dir(home, bentos, models, envs)
         return home
 
     @providers.SingletonFactory

@@ -21,12 +21,6 @@ if t.TYPE_CHECKING:
     from fs.base import FS
 
 
-def decode(msg: bytes) -> str:
-    if msg:
-        return msg.decode("utf-8")
-    return ""
-
-
 @attr.define
 class Environment(ABC):
     name: str
@@ -46,7 +40,7 @@ class Environment(ABC):
     def get_executable(self) -> str:
         """
         Returns executable path responsible for running this environment.
-        
+
         Make sure that said executable is available in PATH.
         """
         ...
@@ -85,8 +79,10 @@ class Environment(ABC):
             capture_output=capture_output,
         )
         if result.returncode != 0:
-            logger.debug(decode(result.stdout))
-            logger.error(decode(result.stderr))
+            if result.stdout:
+                logger.debug(result.stdout.decode())
+            if result.stderr:
+                logger.error(result.stderr.decode())
             raise BentoMLException(
                 "Subprocess call returned non-zero value. Reffer logs for more details"
             )

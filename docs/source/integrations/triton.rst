@@ -151,18 +151,14 @@ one can treat Triton as a standalone runtime.
 
 .. note::
 
-   By default, ``bentoml.triton.Runner`` will run the ``tritonserver`` with gRPC protocol. To use HTTP/REST protocol, set the environment variable ``BENTOML_USE_HTTP_TRITONSERVER``
-   to ``True`` before running :ref:`bentoml serve <reference/cli:serve>`.
+   By default, ``bentoml.triton.Runner`` will run the ``tritonserver`` with gRPC protocol. To use HTTP/REST protocol, provide ``tritonserver_type=''http'`` to the ``Runner`` constructor.
 
-   .. code-block:: bash
+   .. code-block:: python
 
-      $ BENTOML_USE_HTTP_TRITONSERVER=True bentoml serve-http triton-integration:gpu --production
+      import bentoml
 
-   To pass said environment into a BentoContainer, use the ``--env`` flag:
+      triton_runner = bentoml.triton.Runner("triton_runner", model_repository="/path/to/model_repository", tritonserver_type="http")
 
-   .. code-block:: bash
-
-      $ docker run --rm -it -p 3000:3000 --env BENTOML_USE_HTTP_TRITONSERVER=True triton-integration:gpu serve-http --production
 
 Triton Runner signatures
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -267,7 +263,6 @@ There are a few things to note here:
        await triton_runner.torchscript_mnist.async_run(
            INPUT__0=np.zeros((1, 28, 28)), INPUT__1=np.zeros((1, 28, 28))
        )
-                                                      )
 
    The following will result in an error:
 
@@ -330,53 +325,48 @@ There are a few things to note here:
              InferResult = triton_runner.torchscript_mnist.run(np.zeros((1, 28, 28)), np.zeros((1, 28, 28)))
              return InferResult.get_output("OUTPUT__0")
 
-Additonally, Triton runners exposes all `tritonclient <https://github.com/triton-inference-server/client>`_ API with
-its corresponding protocol (``grpc_`` or ``http_``) as prefix. For example:
-
-* ``triton_runner.grpc_get_model_config`` will use ``tritonclient.grpc`` to get model config from the gRPC client.
-
-* ``triton_runner.http_get_model_config`` will use ``tritonclient.http`` to get model config from the HTTP client (if HTTP server is enabled via ``BENTOML_USE_HTTP_TRITONSERVER``)
+Additonally, Triton runners exposes all `tritonclient <https://github.com/triton-inference-server/client>`_ to TritonRunner.
 
 .. dropdown:: Supported client APIs
     :icon: triangle-down
 
     The list below comprises all the model management APIs from ``tritonclient`` that are supported by Triton runners:
 
-    - ``[grpc|http]_get_model_config``
-    - ``[grpc|http]_get_model_metadata``
-    - ``[grpc|http]_get_model_repository_index``
-    - ``[grpc|http]_is_model_ready``
-    - ``[grpc|http]_is_server_live``
-    - ``[grpc|http]_is_server_ready``
-    - ``[grpc|http]_load_model``
-    - ``[grpc|http]_unload_model``
-    - ``[grpc|http]_infer``
-    - ``[grpc|http]_stream_infer``
+    - ``get_model_config``
+    - ``get_model_metadata``
+    - ``get_model_repository_index``
+    - ``is_model_ready``
+    - ``is_server_live``
+    - ``is_server_ready``
+    - ``load_model``
+    - ``unload_model``
+    - ``infer``
+    - ``stream_infer``
 
     The following advanced client APIs are also supported:
 
-    - ``[grpc|http]_get_cuda_shared_memory_status``
-    - ``[grpc|http]_get_inference_statistics``
-    - ``[grpc|http]_get_log_settings``
-    - ``[grpc|http]_get_server_metadata``
-    - ``[grpc|http]_get_system_shared_memory_status``
-    - ``[grpc|http]_get_trace_settings``
-    - ``[grpc|http]_register_cuda_shared_memory``
-    - ``[grpc|http]_register_system_shared_memory``
-    - ``[grpc|http]_unregister_cuda_shared_memory``
-    - ``[grpc|http]_unregister_system_shared_memory``
-    - ``[grpc|http]_update_log_settings``
-    - ``[grpc|http]_update_trace_settings``
+    - ``get_cuda_shared_memory_status``
+    - ``get_inference_statistics``
+    - ``get_log_settings``
+    - ``get_server_metadata``
+    - ``get_system_shared_memory_status``
+    - ``get_trace_settings``
+    - ``register_cuda_shared_memory``
+    - ``register_system_shared_memory``
+    - ``unregister_cuda_shared_memory``
+    - ``unregister_system_shared_memory``
+    - ``update_log_settings``
+    - ``update_trace_settings``
 
 .. epigraph::
-   :bdg-warning:`Warning:` All of the client APIs are asynchronous. To use them, make sure to use it under an async ``@svc.api``. See :ref:`concepts/service:Sync vs Async APIs`
+   :bdg-primary:`Important:` All of the client APIs are asynchronous. To use them, make sure to use it under an async ``@svc.api``. See :ref:`concepts/service:Sync vs Async APIs`
 
    .. code-block:: python
       :caption: `service.py`
 
       @svc.api(input=bentoml.io.Text.from_sample("onnx_mnist"), output=bentoml.io.JSON())
       async def unload_model(input_model: str):
-          await triton_runner.grpc_unload_model(input_model)
+          await triton_runner.unload_model(input_model)
           return {"unloaded": input_model}
 
 Packaging BentoService with Triton Inference Server
@@ -517,8 +507,7 @@ HTTP/REST APIs is disabled by default, though it can be enabled via ``BENTOML_US
 
 .. code-block:: bash
 
-    $ docker run --init --rm --env BENTOML_USE_HTTP_TRITONSERVER=True \
-                            -p 3000:3000 triton-integration:cpu serve \
+    $ docker run --init --rm -p 3000:3000 triton-integration:cpu serve \
                             --production --triton-options model-control-mode=explicit \
                             --triton-options load-model=onnx_mnist --triton-options load-model=torchscript_yolov5s
 
@@ -527,18 +516,6 @@ HTTP/REST APIs is disabled by default, though it can be enabled via ``BENTOML_US
     If you are interested in supporting the metrics server, please open an issue on :github:`GitHub <bentoml/BentoML/issues/new/choose>`
 
 Additionally, BentoML supervisors will allocate a random port for the gRPC server, hence ``grpc-port`` options that is passed to ``--triton-options`` will be omited.
-
-.. note::
-
-   In cases where your ``tritonserver`` binary only supports HTTP, make sure to export ``BENTOML_USE_HTTP_TRITONSERVER=True`` to your ``bentofile.yaml``
-   before building your Bento
-
-   .. code-block:: yaml
-      :caption: `bentofile.yaml`
-
-      docker:
-        env:
-          BENTOML_USE_HTTP_TRITONSERVER: True
 
 ---------------
 
@@ -553,9 +530,7 @@ The following list of benefits and drawbacks are based on our experience buildin
 The benefits Triton Inference Server brings:
 
 * **Performance enhancement**: Triton Inference Server's concurrent model execution [#concurrent_model_execution]_
-  enables multiple models to be executed concurrently on the same/multiple GPUs, which significantly improves the overall throughput.
-  There is no doubt that by simply imlemented in C++, Triton Inference Server triumphs over its Python counterparts in terms of performance and resource
-  utilization as it can take full advantage of the underlying hardware, instead of the limitations of Python's GIL [#constraints]_.
+  enables models to be executed concurrently on the same/multiple GPUs, with out the IO performance limitations introduced by Python's GIL [#constraints]_.
 
 * **Extensive configuration options**: To go along with its suite of features and optimizations, Triton Inference Server also provides
   an extensive set of configuration options that can be used to customize models' behaviour, with ability to extend its capabilities.
@@ -564,27 +539,9 @@ The benefits Triton Inference Server brings:
   which enables for a wide range of use-cases and empowers ML practitioners to do what they do best. Additionally, they also support custom backends
   that can be used to implement custom inference logic.
 
-Among the drawbacks:
-
-* **Model repository management**: Or lackthereof. Triton Inference Server requires a specific directory structure to be followed when
-  creating a model repository. This can be a bit cumbersome as users will have to manually manage versions and different model file
-  to be in the correct directory. Additionally, the ``config.pbtxt`` will also have to be manually setup to match with given model's configuration.
-  This will become more complex as the number of models increases.
-
-* **Requires domain knowledge**: Triton Inference Server requires domain knowledge about MLOps and model serving to be able to
-  fully utilize its features and capabilities. For the typical data scientists, this can be overwhelming, which reduces developer agility
-  and often times requires the help of an veteran ML engineer. Furthermore, it does not provide a easy-to-use development workflow. 
-  Developers are required to mount the local model repository into the triton container [#triton_container_ngc]_ to continuously test and develop their models.
-
-* **Lack of multi-model inference graph**: Triton Inference Server does not provide a straightforward way to create a multi-model inference graph.
-  This is a common use-case for many ML practitioners, where they will need to combine multiple models together to create a different inference graphs.
-
-* **Lack of reusable pre/post-processing**: Triton Inference Server provides a `Python backend <https://github.com/triton-inference-server/python_backend#quick-start>`_
-  as a solution to this problem. Users will need to write the business logic scripting in "Triton's Python" code, combining it other models 
-  to create an `ensemble model <https://github.com/triton-inference-server/server/blob/main/docs/user_guide/architecture.md#ensemble-models>`_.
-
-  Other options includes writing custom C++ backend to handle pre/post-processing logics, which is not the language of choice for most ML practitioners.
-  This comes with a steep learning curve and potentially brings in a lot of frictions and overheads during development cycle.
+Among the powerful features Triton offers, it is worth to mention that Triton's design philosophy are engineering-driven, meaning users who excels in taking full advantages of Triton 
+are ML engineers who are familiar with the domain of MLOps. This is not to say that data scientists cannot use Triton, but rather that they will have to learn a bit more about MLOps
+and model serving to be able to fully utilize its features and capabilities.
 
 
 Should I use Triton Inference Server?

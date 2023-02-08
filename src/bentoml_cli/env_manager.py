@@ -6,6 +6,7 @@ import sys
 import typing as t
 import logging
 import functools
+from shutil import which
 
 import fs
 import click
@@ -119,7 +120,10 @@ def env_manager(func: F[t.Any]) -> F[t.Any]:
             )
 
             # once env is created, spin up a subprocess to run current arg
-            bento_env.run(["bentoml"] + remove_env_arg(sys.argv[1:]))
+            bentoml_exec_path = which("bentoml")
+            if bentoml_exec_path is None:
+                raise BentoMLException("bentoml command not found!")
+            bento_env.run([bentoml_exec_path] + remove_env_arg(sys.argv[1:]))
 
         return func(*args, **kwargs)
 

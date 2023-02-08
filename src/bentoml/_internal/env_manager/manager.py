@@ -14,12 +14,6 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 
-def decode(msg: bytes) -> str:
-    if msg:
-        return msg.decode("utf-8")
-    return ""
-
-
 class EnvManager:
     @inject
     def __init__(

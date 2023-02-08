@@ -153,4 +153,14 @@ def construct_build_args(
         else:
             raise ValueError(f"Unsupported type for {k}: {type(v)}")
 
+    if tag is not None:
+        if output is None:
+            logger.warning(
+                "Autoconfig for output type is deprecated. See message below."
+            )
+    else:
+        logger.info(
+            "'tag' is not specified. Result image will only be saved in build cache."
+        )
+
     return cmds

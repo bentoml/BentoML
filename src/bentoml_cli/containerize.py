@@ -5,7 +5,7 @@ import shutil
 import typing as t
 import logging
 import itertools
-import subprocess
+import tempfile
 from typing import TYPE_CHECKING
 from functools import partial
 
@@ -540,14 +540,27 @@ def add_containerize_command(cli: Group) -> None:
                         "To load image built with 'buildctl' requires one of docker, podman, nerdctl (Neither are found in PATH) and try again."
                     )
                     sys.exit(0)
-                o = subprocess.check_output([container_runtime, "load"], input=result)
-                click.echo(o.decode("utf-8").strip())
+                # NOTE: We will always use the docker image spec if docker is available.
+                # Otherwise fallback to the OCI image spec.
+                if "output" not in _memoized:
+                    tmp_path = tempfile.gettempdir()
+                    type_prefix = "type=oci,name="
+                    if container_runtime == "docker":
+                        type_prefix = "type=docker,name=docker.io/"
+                    click.echo(
+                        "If you wish to load the image locally, set the destination to a tar file. For example:"
+                    )
+                    click.echo(
+                        f"    bentoml containerize {bento_tag} --backend buildctl --opt output={type_prefix}{tags[0]},dest={tmp_path}/{tags[0].replace(':', '_')}.tar\n"
+                        + f"    {container_runtime} load -i {tmp_path}/{tags[0].replace(':', '_')}.tar"
+                    )
+                return result
 
             click.echo(
                 f'Successfully built Bento container for "{bento_tag}" with tag(s) "{",".join(tags)}"',
             )
             instructions = (
-                f"To run your newly built Bento container, run:\n"
+                "To run your newly built Bento container, run:\n"
                 + f"    {container_runtime} run -it --rm -p 3000:3000 {tags[0]} serve --production\n"
             )
 

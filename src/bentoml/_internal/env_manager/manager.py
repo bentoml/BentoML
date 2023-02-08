@@ -1,22 +1,17 @@
 from __future__ import annotations
 
-import typing as t
 import logging
 
 import fs
-import attr
-
-from bentoml._internal.bento.bento import Bento
+from simple_di import inject
+from simple_di import Provide
 
 from .envs import Conda
-from .envs import Environment
 from ..bento.bento import Bento
 from ..bento.bento import BentoInfo
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
-
-if t.TYPE_CHECKING:
-    from fs.base import FS
 
 
 def decode(msg: bytes) -> str:
@@ -25,36 +20,27 @@ def decode(msg: bytes) -> str:
     return ""
 
 
-@attr.define
-class EnvManager:
-    env_name: str
-    env_type: str
-    is_ephemeral: bool
-    bento_env_dir: str
-    env_fs: FS = attr.field(init=False)
-    environment: Environment = attr.field(init=False)
+class EnvironmentFactory:
+    @inject
+    def __init__(
+        self,
+        env_name: str,
+        env_type: str,
+        is_ephemeral: bool,
+        bento: Bento,
+        env_store_dir: str = Provide[BentoMLContainer.env_store_dir],
+    ):
 
-    def __attrs_post_init__(self):
-        from bentoml._internal.configuration.containers import BentoMLContainer
+        env_store = fs.open_fs(env_store_dir)
 
-        env_home = fs.open_fs(BentoMLContainer.env_store_dir.get())
+        if not is_ephemeral:
+            assert env_name is not None, "persistent environments need a valid name."
+        if not env_store.exists(env_type):
+            env_store.makedir(env_type)
+        env_fs = fs.open_fs("temp://") if is_ephemeral else env_store.opendir(env_type)
 
-        if not self.is_ephemeral:
-            assert (
-                self.env_name is not None
-            ), "persistent environments need a valid name."
-        if not env_home.exists(self.env_type):
-            env_home.makedir(self.env_type)
-        self.env_fs = (
-            fs.open_fs("temp://")
-            if self.is_ephemeral
-            else env_home.opendir(self.env_type)
-        )
-
-        if self.env_type == "conda":
-            self.environment = Conda(
-                name=self.env_name, env_fs=self.env_fs, bento_env_dir=self.bento_env_dir
-            )
+        if env_type == "conda":
+            self.environment = Conda(name=env_name, env_fs=env_fs, bento=bento)
 
     @classmethod
     def from_bento(
@@ -62,7 +48,7 @@ class EnvManager:
         env_type: str,
         bento: Bento,
         is_ephemeral: bool,
-    ) -> EnvManager:
+    ) -> EnvironmentFactory:
         env_name: str
         if is_ephemeral:
             env_name = "ephemeral_env"
@@ -72,11 +58,11 @@ class EnvManager:
             env_type=env_type,
             env_name=env_name,
             is_ephemeral=is_ephemeral,
-            bento_env_dir=bento.path_of("env"),
+            bento=bento,
         )
 
     @classmethod
     def from_bentofile(
         cls, env_type: str, bento_info: BentoInfo, is_ephemeral: str
-    ) -> EnvManager:
+    ) -> EnvironmentFactory:
         raise NotImplementedError

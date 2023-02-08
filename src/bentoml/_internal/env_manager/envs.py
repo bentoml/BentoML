@@ -13,6 +13,7 @@ import attr
 from fs.base import FS
 
 from ...exceptions import BentoMLException
+from ..bento.bento import Bento
 from ..configuration import get_debug_mode
 
 logger = logging.getLogger(__name__)
@@ -27,18 +28,12 @@ def decode(msg: bytes) -> str:
     return ""
 
 
-def get_python_version_from_bento(bento_env_path: str) -> str:
-    with open(os.path.join(bento_env_path, "python", "version.txt"), "r") as pyver_file:
-        py_version = pyver_file.read().split(".")[:2]
-        return ".".join(py_version)
-
-
 @attr.define
 class Environment(ABC):
     name: str
     env_fs: FS
     # path to bento's /env dir
-    bento_env_dir: str
+    bento: Bento
     env_exe: str = attr.field(init=False)
 
     def __attrs_post_init__(self):
@@ -50,21 +45,24 @@ class Environment(ABC):
 
     @abstractmethod
     def get_executable(self) -> str:
+        """
+        Get path to executable that will be used to create/manage the environment
+        """
         ...
 
     @abstractmethod
     def create(self):
         """
-        Create the environment with the files from bento_env_dir.
+        Create the environment with the files from bento.
         """
-        pass
+        ...
 
     @abstractmethod
     def run(self, commands: list[str]):
         """
         run the commands in an activated environment.
         """
-        pass
+        ...
 
     @staticmethod
     def run_script_subprocess(
@@ -109,7 +107,10 @@ class Conda(Environment):
         # setup conda with bento's environment.yml file and python/install.sh file
         conda_env_path = self.env_fs.getsyspath(self.name)
         script_file_commands: list[str] = []
-        python_version = get_python_version_from_bento(self.bento_env_dir)
+        python_version: str
+        with open(self.bento.path_of("/env/python/version.txt"), "r") as pyver_file:
+            py_version = pyver_file.read().split(".")[:2]
+            python_version = ".".join(py_version)
         script_file_commands.append(
             f"conda create -p {conda_env_path} python={python_version} --yes"
         )
@@ -117,8 +118,8 @@ class Conda(Environment):
         # install conda deps
         from ..bento.build_config import CONDA_ENV_YAML_FILE_NAME
 
-        conda_environment_file = os.path.join(
-            self.bento_env_dir, "conda", CONDA_ENV_YAML_FILE_NAME
+        conda_environment_file = self.bento.path_of(
+            f"/env/conda/{CONDA_ENV_YAML_FILE_NAME}"
         )
         if os.path.exists(conda_environment_file):
             script_file_commands.append(
@@ -131,7 +132,7 @@ class Conda(Environment):
         script_file_commands.append(f'eval "$({self.env_exe} shell.posix hook)"' + "\n")
         script_file_commands.append(f"conda activate {conda_env_path}" + "\n")
 
-        python_install_script = os.path.join(self.bento_env_dir, "python", "install.sh")
+        python_install_script = self.bento.path_of("/env/python/install.sh")
         script_file_commands.append(f"bash -euxo pipefail {python_install_script}")
         with NamedTemporaryFile(mode="w", delete=False) as script_file:
             script_file.write("\n".join(script_file_commands))

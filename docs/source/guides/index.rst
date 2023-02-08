@@ -80,6 +80,7 @@ into this part of the documentation.
     client
     server
     configuration
+    envmanager
     graph
     monitoring
     logging

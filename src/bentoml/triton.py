@@ -8,13 +8,15 @@ import itertools
 import subprocess
 
 import attr
+from cattr.gen import override as _override
+from cattr.gen import make_dict_unstructure_fn as _make_dict_unstructure_fn
 from simple_di import inject as _inject
 from simple_di import Provide as _Provide
 
 from .exceptions import StateException as _StateException
 from .exceptions import BentoMLException as _BentoMLException
 from ._internal.utils import LazyLoader as _LazyLoader
-from ._internal.utils import cached_property as _cached_property
+from ._internal.utils import bentoml_cattr as _bentoml_cattr
 from ._internal.configuration import get_debug_mode as _get_debug_mode
 from ._internal.runner.runner import RunnerMethod as _RunnerMethod
 from ._internal.runner.runner import AbstractRunner as _AbstractRunner
@@ -249,7 +251,7 @@ def _find_triton_binary():
     return binary
 
 
-@attr.frozen
+@attr.define(frozen=False)
 class TritonServerHandle:
     """
     Triton Server handle. This is a dataclass to handle CLI arguments that pass to
@@ -261,7 +263,6 @@ class TritonServerHandle:
     Currently, Sagemaker and Vertex AI with Triton are yet to be implemented.
     """
 
-    __omit_if_default__ = True
     _binary: str = attr.field(init=False, factory=_find_triton_binary)
     _runner: _TritonRunner = attr.field(init=False, default=None)
 
@@ -520,10 +521,16 @@ class TritonServerHandle:
         return self._runner
 
     @runner.setter
-    def runner(self, value: Runner) -> None:
-        _object_setattr(self, "_runner", value)
+    def runner(self, runner: Runner) -> None:
+        self._runner = runner
 
-    @_cached_property
+    @classmethod
+    def from_runner(cls, runner: _TritonRunner, **attrs: t.Any) -> TritonServerHandle:
+        o = cls(**attrs)
+        o.runner = runner
+        return o
+
+    @property
     def use_http_client(self):
         assert self._runner is not None
         return self._runner.tritonserver_type == "http"
@@ -595,9 +602,6 @@ class TritonServerHandle:
                 cli.extend([f"--{arg.replace('_', '-')}", str(value)])
         return cli
 
-    def with_args(self, **kwargs: t.Any):
-        return attr.evolve(self, **kwargs)
-
     def to_dict(self, omit_if_default: bool = False):
         if not omit_if_default:
             # we want to use the default cattr.Converter to return all default values.
@@ -623,3 +627,14 @@ class TritonServerHandle:
             return f"{self.http_address}:{self.http_port}"
         else:
             return f"{self.grpc_address}:{self.grpc_port}"
+
+
+_bentoml_cattr.register_unstructure_hook_func(
+    lambda cls: issubclass(cls, TritonServerHandle),
+    _make_dict_unstructure_fn(
+        TritonServerHandle,
+        _bentoml_cattr,
+        _runner=_override(omit=True),
+        _cattrs_omit_if_default=True,
+    ),
+)

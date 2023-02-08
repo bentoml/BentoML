@@ -199,21 +199,19 @@ def construct_triton_handle(
     triton_kwargs["model_repository"] = _runner.repository_path
 
     handle = TritonServerHandle(**triton_kwargs)
-    handle.runner = _runner
 
-    override: dict[str, t.Any] = {}
-    if handle.use_http_client:
+    if _runner.tritonserver_type == "http":
         with reserve_free_port(host=handle.http_address) as port:
             pass
-        override["http_port"] = port
+        triton_kwargs["http_port"] = port
     else:
         with reserve_free_port(
             host=handle.grpc_address, enable_so_reuseport=bool(handle.reuse_grpc_port)
         ) as port:
             pass
-        override["grpc_port"] = port
+        triton_kwargs["grpc_port"] = port
 
-    return handle.with_args(**override)
+    return TritonServerHandle.from_runner(_runner, **triton_kwargs)
 
 
 @inject

@@ -20,13 +20,9 @@ format: ## Running code formatter: black and isort
 format-proto: ## Running proto formatter: buf
 	@echo "Formatting proto files..."
 	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf format --config "/workspace/bentoml/grpc/buf.yaml" -w bentoml/grpc
-lint: ## Running lint checker: pylint
-	@echo "(pylint) Linting bentoml..."
-	@pylint --rcfile=pyproject.toml --fail-under 9.5 src
-	@echo "(pylint) Linting examples..."
-	@pylint --rcfile=pyproject.toml --fail-under 9.5 examples
-	@echo "(pylint) Linting tests..."
-	@pylint --rcfile=pyproject.toml --fail-under 9.5 tests
+lint: ## Running lint checker: ruff
+	@echo "(ruff) Linting development project..."
+	@ruff check src examples tests --fix
 lint-proto: ## Running proto lint checker: buf
 	@echo "Linting proto files..."
 	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf lint --config "/workspace/bentoml/grpc/buf.yaml" --error-format msvs bentoml/grpc

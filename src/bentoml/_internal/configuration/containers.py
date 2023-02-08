@@ -29,6 +29,8 @@ from ...exceptions import BentoMLConfigException
 from ..utils.unflatten import unflatten
 
 if TYPE_CHECKING:
+    from fs.base import FS
+
     from .. import external_typing as ext
     from ..models import ModelStore
     from ..utils.analytics import ServeInfo
@@ -160,7 +162,6 @@ class BentoMLConfiguration:
 
 @dataclass
 class _BentoMLContainerClass:
-
     config = providers.Configuration()
 
     @providers.SingletonFactory
@@ -194,6 +195,13 @@ class _BentoMLContainerClass:
     @staticmethod
     def env_store_dir(bentoml_home: str = Provide[bentoml_home]):
         return os.path.join(bentoml_home, "envs")
+
+    @providers.SingletonFactory
+    @staticmethod
+    def env_store(bentoml_home: str = Provide[bentoml_home]) -> FS:
+        import fs
+
+        return fs.open_fs(os.path.join(bentoml_home, "envs"))
 
     @providers.SingletonFactory
     @staticmethod

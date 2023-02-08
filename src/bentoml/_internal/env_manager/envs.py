@@ -10,7 +10,6 @@ from shutil import which
 from tempfile import NamedTemporaryFile
 
 import attr
-from fs.base import FS
 
 from ...exceptions import BentoMLException
 from ..bento.bento import Bento
@@ -93,49 +92,42 @@ class Environment(ABC):
 
 class Conda(Environment):
     def get_executable(self) -> str:
-        conda_exe: str
-        if os.environ.get("CONDA_EXE") is not None:
-            conda_exe = os.environ.get("CONDA_EXE")
-        else:
+        conda_exe = os.environ.get("CONDA_EXE")
+        if conda_exe is None:
             raise BentoMLException(
                 "Conda|Miniconda executable not found! Make sure any one is installed and environment is activated."
             )
         return conda_exe
 
     def create(self):
+        # install conda deps
+        from ..bento.build_config import CONDA_ENV_YAML_FILE_NAME
+
         # create a env under $BENTOML_HOME/env
         # setup conda with bento's environment.yml file and python/install.sh file
         conda_env_path = self.env_fs.getsyspath(self.name)
-        script_file_commands: list[str] = []
         python_version: str
         with open(self.bento.path_of("/env/python/version.txt"), "r") as pyver_file:
             py_version = pyver_file.read().split(".")[:2]
             python_version = ".".join(py_version)
-        script_file_commands.append(
-            f"conda create -p {conda_env_path} python={python_version} --yes"
-        )
-
-        # install conda deps
-        from ..bento.build_config import CONDA_ENV_YAML_FILE_NAME
-
         conda_environment_file = self.bento.path_of(
             f"/env/conda/{CONDA_ENV_YAML_FILE_NAME}"
         )
-        if os.path.exists(conda_environment_file):
-            script_file_commands.append(
-                f"{self.env_exe} config --set pip_interop_enabled True"
-            )
-            script_file_commands.append(
-                f"{self.env_exe} env update -p {conda_env_path} --file {conda_environment_file}"
-            )
+        create_script = f"""\
+eval "$({self.get_executable()} shell.posix hook)"
 
-        script_file_commands.append(f'eval "$({self.env_exe} shell.posix hook)"' + "\n")
-        script_file_commands.append(f"conda activate {conda_env_path}" + "\n")
+conda create -p {conda_env_path} python={python_version} --yes
 
-        python_install_script = self.bento.path_of("/env/python/install.sh")
-        script_file_commands.append(f"bash -euxo pipefail {python_install_script}")
+if [ -f {conda_environment_file} ]; then
+    conda config --set pip_interop_enabled True
+    conda env update -p {conda_env_path} --file {conda_environment_file}
+fi
+
+conda activate {conda_env_path}
+bash -euxo pipefail {self.bento.path_of("/env/python/install.sh")}
+"""
         with NamedTemporaryFile(mode="w", delete=False) as script_file:
-            script_file.write("\n".join(script_file_commands))
+            script_file.write(create_script)
 
         logger.info("Creating Conda env and installing dependencies...")
         self.run_script_subprocess(
@@ -149,12 +141,13 @@ class Conda(Environment):
         Run commands in the activated environment.
         """
         conda_env_path = self.env_fs.getsyspath(self.name)
-        script_file_lines: list[str] = []
-        script_file_lines.append(f'eval "$({self.env_exe} shell.posix hook)"')
-        script_file_lines.append(f"conda activate {conda_env_path}")
-        script_file_lines.append(" ".join(commands))
+        create_script = f"""\
+eval "$({self.env_exe} shell.posix hook)"
+conda activate {conda_env_path}
+{" ".join(commands)}
+"""
         with NamedTemporaryFile(mode="w", delete=False) as script_file:
-            script_file.write("\n".join(script_file_lines))
+            script_file.write(create_script)
         self.run_script_subprocess(
             script_file.name, capture_output=False, debug_mode=get_debug_mode()
         )

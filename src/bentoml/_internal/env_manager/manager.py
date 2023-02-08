@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 import logging
 
 import fs
@@ -11,22 +12,26 @@ from ..bento.bento import Bento
 from ..bento.bento import BentoInfo
 from ..configuration.containers import BentoMLContainer
 
+if t.TYPE_CHECKING:
+    from fs.base import FS
+
+    from .envs import Environment
+
 logger = logging.getLogger(__name__)
 
 
 class EnvManager:
+    environment: Environment
+
     @inject
     def __init__(
         self,
-        env_name: str,
-        env_type: str,
-        is_ephemeral: bool,
+        env_type: t.Literal["conda"],
         bento: Bento,
-        env_store_dir: str = Provide[BentoMLContainer.env_store_dir],
+        is_ephemeral: bool = True,
+        env_name: str | None = None,
+        env_store: FS = Provide[BentoMLContainer.env_store],
     ):
-
-        env_store = fs.open_fs(env_store_dir)
-
         if not is_ephemeral:
             assert env_name is not None, "persistent environments need a valid name."
         if not env_store.exists(env_type):

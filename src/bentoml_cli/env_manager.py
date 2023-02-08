@@ -53,21 +53,18 @@ def remove_env_arg(cmd_args: list[str]) -> list[str]:
 @inject
 def get_environment(
     bento_identifier: str,
-    env: str,
+    env: t.Literal["conda"],
     bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> Environment:
     # env created will be ephemeral
     if os.path.isdir(os.path.expanduser(bento_identifier)):
-
         bento_path_fs = fs.open_fs(
             os.path.abspath(os.path.expanduser(bento_identifier))
         )
         if bento_path_fs.isfile(BENTO_YAML_FILENAME):
             # path to a build bento dir
             return EnvManager.from_bento(
-                env_type=env,
-                bento=Bento.from_fs(bento_path_fs),
-                is_ephemeral=True,
+                env_type=env, bento=Bento.from_fs(bento_path_fs)
             ).environment
         elif bento_path_fs.isfile(DEFAULT_BENTO_BUILD_FILE):
             # path to a bento project
@@ -93,7 +90,7 @@ def get_environment(
             )
 
 
-def env_manager(func: F[t.Any]) -> F[t.Any]:
+def env_manager(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
     @click.option(
         "--env",
         type=click.Choice(["conda"]),
@@ -115,9 +112,6 @@ def env_manager(func: F[t.Any]) -> F[t.Any]:
                 spinner_status.stop()
             else:
                 bento_env = get_environment(bento_identifier, env)
-            click.echo(
-                f"environment {'' if not bento_env.name else bento_env.name} activated!"
-            )
 
             # once env is created, spin up a subprocess to run current arg
             bentoml_exec_path = which("bentoml")

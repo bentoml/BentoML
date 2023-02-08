@@ -32,7 +32,7 @@ bentoml_yolov5_tensorflow = bentoml.tensorflow.get("tensorflow-yolov5").to_runne
 bentoml_yolov5_onnx = (
     bentoml.onnx.get("onnx-yolov5")
     .with_options(
-        providers=[("CUDAExecutionProvider", {"device_id": 0}), "CPUExecutionProvider"]
+        providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
         if torch.cuda.is_available()
         else ["CPUExecutionProvider"]
     )
@@ -44,7 +44,7 @@ bentoml_mnist_tensorflow = bentoml.tensorflow.get("tensorflow-mnist").to_runner(
 bentoml_mnist_onnx = (
     bentoml.onnx.get("onnx-mnist")
     .with_options(
-        providers=[("CUDAExecutionProvider", {"device_id": 0}), "CPUExecutionProvider"]
+        providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
         if torch.cuda.is_available()
         else ["CPUExecutionProvider"]
     )

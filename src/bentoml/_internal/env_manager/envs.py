@@ -45,7 +45,9 @@ class Environment(ABC):
     @abstractmethod
     def get_executable(self) -> str:
         """
-        Get path to executable that will be used to create/manage the environment
+        Returns executable path responsible for running this environment.
+        
+        Make sure that said executable is available in PATH.
         """
         ...
 

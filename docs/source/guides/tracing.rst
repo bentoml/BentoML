@@ -8,7 +8,6 @@ This guide dives into the :wiki:`tracing <Tracing_(software)>` capabilities that
 
 BentoML allows user to export trace with `Zipkin <https://zipkin.io/>`_,
 `Jaeger <https://www.jaegertracing.io/>`_ and `OTLP <https://opentelemetry.io/>`_.
-
 This guide will also provide a simple example of how to use BentoML tracing with `Jaeger <https://www.jaegertracing.io/>`_
 
 Why do you need this?

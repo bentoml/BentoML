@@ -7,7 +7,8 @@ BentoML provides native support for serving and deploying models trained from Py
 Preface
 -------
 
-If you have already compiled your PyTorch model to TorchScript, you might consider to use :doc:`bentoml.torchscript </reference/frameworks/torchscript>`. BentoML provides first-class support for TorchScript, hence using ``bentoml.torchscript`` is less prone to compatibility issues during production.
+If you have already compiled your PyTorch model to TorchScript, you might consider using :doc:`bentoml.torchscript </reference/frameworks/torchscript>`.
+BentoML provides first-class support for TorchScript, hence using ``bentoml.torchscript`` is less prone to compatibility issues during production.
 
 .. note::
 
@@ -163,7 +164,6 @@ The signatures used for creating a Runner is ``{"__call__": {"batchable": False}
 .. code-block:: python
 
     bentoml.pytorch.save(model, "my_model", signatures={"__call__": {"batch_dim": 0, "batchable": True}})
-
 
 
 Building a Service

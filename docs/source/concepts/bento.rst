@@ -456,7 +456,7 @@ which also allow users to add or modify labels at any time.
 Files to include
 ^^^^^^^^^^^^^^^^
 
-In the example :ref:`above </concepts/bento:The Build Command>`, the :code:`*.py` includes every Python files under ``build_ctx``.
+In the example :ref:`above <concepts/bento:The Build Command>`, the :code:`*.py` includes every Python files under ``build_ctx``.
 You can also include other wildcard and directory pattern matching.
 
 .. code-block:: yaml

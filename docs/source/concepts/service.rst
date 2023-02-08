@@ -65,7 +65,7 @@ BentoML provides a convenient way of creating Runner instance from a saved model
     runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
 .. tip::
-    Users can also create custom Runners via the :doc:`Runner and Runnable interface <concepts/runner>`.
+    Users can also create custom Runners via the :doc:`Runner and Runnable interface </concepts/runner>`.
 
 
 Runner created from a model will automatically choose the most optimal Runner
@@ -76,7 +76,7 @@ natively, BentoML will create a single global instance of the runner worker and 
 all API requests to the global instance; otherwise, BentoML will create multiple
 instances of runners based on the available system resources. We also let advanced users
 to customize the runtime configurations to fine tune the runner performance. To learn
-more, please see the :doc:`concepts/runner` guide.
+more, refer to the :doc:`introduction about Runner </concepts/runner>` documentation.
 
 Debugging Runners
 ^^^^^^^^^^^^^^^^^
@@ -114,7 +114,7 @@ have one or more APIs. An API consists of its input/output specs and a callback 
         # Define post-processing logic
         return result
 
-By decorating a function with ``@svc.api`, we declare that the function shall be`
+By decorating a function with ``@svc.api``, we declare that the function shall be`
 invoked when this API is called. The API function is a great place for defining your
 serving logic, such as feature fetching, pre and post processing, and model inferences 
 via Runners.
@@ -146,8 +146,7 @@ this URL via the ``route`` option, e.g.:
 .. code-block:: python
 
     @svc.api(
-        input=NumpyNdarray(),
-        output=NumpyNdarray(),
+        input=NumpyNdarray(), output=NumpyNdarray(),
         route="/v2/models/my_model/versions/v0/infer",
     )
     def predict(input_array: np.ndarray) -> np.ndarray:
@@ -243,7 +242,7 @@ The data type and shape of the ``NumpyNdarray`` can be specified with the ``dtyp
 and ``shape`` arguments. By setting the ``enforce_shape`` and ``enforce_dtype`` 
 arguments to `True`, the IO descriptor will strictly validate the input and output data 
 based the specified data type and shape. To learn more, see IO descrptor reference for 
-:ref:`reference/api_io_descriptors:NumPy ndarray`.
+:ref:`reference/api_io_descriptors:NumPy ``ndarray```.
 
 .. code-block:: python
 
@@ -336,7 +335,7 @@ Built-in Types
 ^^^^^^^^^^^^^^
 
 Beside ``NumpyNdarray``, BentoML supports a variety of other built-in IO descriptor
-types under the :doc:`bentoml.io <reference/api_io_descriptors>` module. Each type comes
+types under the :doc:`bentoml.io </reference/api_io_descriptors>` module. Each type comes
 with support of type validation and OpenAPI specification generation. For example:
 
 +-----------------+---------------------+---------------------+-------------------------+

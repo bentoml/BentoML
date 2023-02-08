@@ -10,14 +10,15 @@ Framework APIs
 .. toctree::
     :maxdepth: 1
 
+    onnx
+    sklearn
+    tensorflow
+    torchscript
+    transformers
+    xgboost
+    lightgbm
+    mlflow
     catboost
     fastai
     keras
-    mlflow
-    onnx
-    sklearn
-    transformers
-    tensorflow
-    xgboost
     picklable_model
-    lightgbm

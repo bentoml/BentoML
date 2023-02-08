@@ -289,8 +289,7 @@ Refer to :ref:`concepts/model:Model Signatures` and :ref:`Batching behaviour <co
 
 .. note::
 
-   BentoML internally use `onnxruntime.InferenceSession
-   <https://onnxruntime.ai/docs/api/python/api_summary.html#inferencesession>`_
+   BentoML internally use ``onnxruntime.InferenceSession`` [#onnxruntime_inferencesession]_
    to run inference. When the original model is converted to ONNX
    format and loaded by ``onnxruntime.InferenceSession``, the
    inference method of the original model is converted to the ``run``
@@ -394,7 +393,7 @@ Building a Service for **ONNX**
 
    In the aboved example, notice there are both ``run`` and ``async_run``  in ``runner.run.async_run(input_data)`` inside inference code. The distinction between ``run`` and ``async_run`` is as follow:
 
-   1.  The ``run`` refers  to `onnxruntime.InferenceSession <https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/core/session/inference_session.cc>`_'s ``run`` method, which is ONNX Runtime API to run `inference <https://onnxruntime.ai/docs/api/python/api_summary.html#data-inputs-and-outputs>`_.
+   1.  The ``run`` refers  to ``onnxruntime.InferenceSession`` [#onnxruntime_inferencesession]_'s ``run`` method, which is ONNX Runtime API to run `inference <https://onnxruntime.ai/docs/api/python/api_summary.html#data-inputs-and-outputs>`_.
    2. The ``async_run`` refers to BentoML's runner inference API for invoking a model's signature. In the case of ONNX, it happens to have a similar name like the ``InferenceSession`` endpoint.
 
 
@@ -578,3 +577,9 @@ override the default setting using ``with_options`` when creating a runner:
 .. seealso::
 
    `Execution Providers' documentation <https://onnxruntime.ai/docs/execution-providers/>`_
+
+----
+
+.. rubric:: Notes
+
+.. [#onnxruntime_inferencesession]  ``onnxruntime.InferenceSession`` API docs: `[link] <https://onnxruntime.ai/docs/api/python/api_summary.html#inferencesession>`_

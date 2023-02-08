@@ -51,7 +51,7 @@ Create :ref:`Runners <concepts/runner:Using Runners>` for the three text generat
 Create Service
 ##############
 
-Create a :ref:`Service <concept/service:Service and APIs>` named ``inference_graph`` and specify the runners created earlier in the ``runners`` argument.
+Create a :doc:`Service </concepts/service>` named ``inference_graph`` and specify the runners created earlier in the ``runners`` argumentj
 
 .. code-block:: python
 

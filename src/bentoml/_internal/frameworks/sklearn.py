@@ -55,22 +55,21 @@ def get(tag_like: str | Tag) -> Model:
     return model
 
 
-def load_model(
-    bento_model: str | Tag | Model,
-) -> SklearnModel:
+def load_model(bento_model: str | Tag | Model) -> SklearnModel:
     """
     Load the scikit-learn model with the given tag from the local BentoML model store.
 
     Args:
-        bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
-            Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
-            instance to load the model from.
-        ...
+        bento_model: Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
+                     instance to load the model from.
+
     Returns:
-        ``BaseEstimator`` ``|`` ``Pipeline``:
-            The scikit-learn model loaded from the model store or BentoML :obj:`~bentoml.Model`.
+        The scikit-learn model loaded from the model store.
+
     Example:
+
     .. code-block:: python
+
         import bentoml
         sklearn = bentoml.sklearn.load_model('my_model:latest')
     """  # noqa
@@ -100,27 +99,20 @@ def save_model(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (:code:`str`):
-            Name for given model instance. This should pass Python identifier check.
-        model (:code:`Union[BaseEstimator, Pipeline]`):
-            Instance of model to be saved.
-        signatures (:code: `Dict[str, ModelSignatureDict]`)
-            Methods to expose for running inference on the target model. Signatures are
-             used for creating Runner instances when serving model with bentoml.Service
-        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
-            user-defined labels for managing models, e.g. team=nlp, stage=dev
-        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
-            user-defined additional python objects to be saved alongside the model,
-             e.g. a tokenizer instance, preprocessor function, model configuration json
-        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
-            user-defined additional python modules to be saved alongside the model or custom objects,
-            e.g. a tokenizer module, preprocessor module, model configuration module
-        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
-            Custom metadata for given model.
+        name: Name for given model instance. This should pass Python identifier check.
+        model: Instance of model to be saved.
+        signatures: Methods to expose for running inference on the target model. Signatures are
+                    used for creating Runner instances when serving model with bentoml.Service
+        labels: user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects: user-defined additional python objects to be saved alongside the model,
+                        e.g. a tokenizer instance, preprocessor function, model configuration json
+        external_modules: user-defined additional python modules to be saved alongside the model or custom objects,
+                          e.g. a tokenizer module, preprocessor module, model configuration module
+        metadata: Custom metadata for given model.
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
-        the user-defined model's name, and a generated `version`.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format ``name:version`` where ``name`` is
+        the user-defined model's name, and a generated ``version``.
 
     Examples:
 
@@ -171,7 +163,6 @@ def save_model(
         context=context,
         signatures=signatures,
     ) as bento_model:
-
         joblib.dump(model, bento_model.path_of(MODEL_FILENAME))
 
         return bento_model

@@ -123,15 +123,12 @@ def import_bento(
     Args:
         tag: the tag of the bento to export
         path: can be one of two things:
-            * a folder on the local filesystem
-            * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_, for example
-                :code:`'s3://my_bucket/folder/my_bento.bento'`
-        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`,
-            :code:`'s3'`, and :code:`'userdata'`
+              * a folder on the local filesystem
+              * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_, for example :code:`'s3://my_bucket/folder/my_bento.bento'`
+        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`, :code:`'s3'`, and :code:`'userdata'`
         user: (expert) the username used for authentication if required, e.g. for FTP
         passwd: (expert) the username used for authentication if required, e.g. for FTP
-        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}`
-            for setting a proxy for FTP
+        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}` for setting a proxy for FTP
         subpath: (expert) the path inside the FS that the bento should be exported to
         _bento_store: the bento store to save the bento to
 
@@ -207,16 +204,13 @@ def export_bento(
 
     Args:
         tag: the tag of the Bento to export
-        path: can be one of two things:
-            * a folder on the local filesystem
-            * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_
-                * for example, :code:`'s3://my_bucket/folder/my_bento.bento'`
-        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`,
-            :code:`'s3'`, and :code:`'userdata'`
+        path: can be either:
+              * a folder on the local filesystem
+              * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_. For example, :code:`'s3://my_bucket/folder/my_bento.bento'`
+        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`, :code:`'s3'`, and :code:`'userdata'`
         user: (expert) the username used for authentication if required, e.g. for FTP
         passwd: (expert) the username used for authentication if required, e.g. for FTP
-        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}`
-            for setting a proxy for FTP
+        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}` for setting a proxy for FTP
         subpath: (expert) the path inside the FS that the bento should be exported to
         _bento_store: save Bento created to this BentoStore
 

@@ -153,7 +153,7 @@ contributing to the project, helping other users and discuss all things MLOps.
    Blog <https://modelserving.com>
 
 
-.. spelling::
+.. spelling:word-list::
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML

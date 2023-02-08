@@ -122,40 +122,30 @@ def save_model(
     external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
-
     """
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (:code:`str`):
-            Name for given model instance. This should pass Python identifier check.
-        model (``keras.Model`` | ``tf.Module``):
-            Instance of model to be saved
-        tf_signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
-            Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
-            from Tensorflow documentation for more information.
-        tf_save_options (`tf.saved_model.SaveOptions`, `optional`, default to :code:`None`):
-            :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
-        signatures (:code: `Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
-            Methods to expose for running inference on the target model. Signatures are
-             used for creating Runner instances when serving model with bentoml.Service
-        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
-            user-defined labels for managing models, e.g. team=nlp, stage=dev
-        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
-            user-defined additional python objects to be saved alongside the model,
-            e.g. a tokenizer instance, preprocessor function, model configuration json
-        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
-            user-defined additional python modules to be saved alongside the model or custom objects,
-            e.g. a tokenizer module, preprocessor module, model configuration module
-        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
-            Custom metadata for given model.
+        name: Name for given model instance. This should pass Python identifier check.
+        model: Instance of model to be saved
+        tf_signatures: Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
+                       from Tensorflow documentation for more information.
+        tf_save_options: :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
+        signatures: Methods to expose for running inference on the target model. Signatures are
+                    used for creating Runner instances when serving model with bentoml.Service
+        labels: user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects: user-defined additional python objects to be saved alongside the model,
+                        e.g. a tokenizer instance, preprocessor function, model configuration json
+        external_modules: user-defined additional python modules to be saved alongside the model or custom objects,
+                          e.g. a tokenizer module, preprocessor module, model configuration module
+        metadata: Custom metadata for given model.
 
     Raises:
         ValueError: If :obj:`obj` is not trackable.
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
-        the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format ``name:version`` where ``name`` is
+        the user-defined model's name, and a generated ``version`` by BentoML.
 
     Examples:
 
@@ -221,7 +211,6 @@ def save_model(
         metadata=metadata,
         signatures=signatures,  # type: ignore
     ) as bento_model:
-
         tf.saved_model.save(
             model,
             bento_model.path,
@@ -273,7 +262,6 @@ def get_runnable(
         output_sigs = get_output_signatures_v2(raw_method)
 
         if len(output_sigs) == 1:
-
             # if there's only one output signatures, then we can
             # define the _postprocess function without doing
             # conditional casting each time
@@ -292,7 +280,6 @@ def get_runnable(
                     return t.cast("ext.NpNDArray", res.numpy())
 
         else:
-
             # if there are no output signature or more than one output
             # signatures, the post process function need to do casting
             # depends on the real output value each time
@@ -389,7 +376,6 @@ class TensorflowTensorContainer(
         batch: tf_ext.EagerTensor,
         batch_dim: int = 0,
     ) -> Payload:
-
         return cls.create_payload(
             pickle.dumps(batch),
             batch_size=batch.shape[batch_dim],
@@ -400,7 +386,6 @@ class TensorflowTensorContainer(
         cls,
         payload: Payload,
     ) -> tf_ext.EagerTensor:
-
         return pickle.loads(payload.data)
 
     @classmethod
@@ -410,7 +395,6 @@ class TensorflowTensorContainer(
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> t.List[Payload]:
-
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
         payloads = [cls.to_payload(subbatch) for subbatch in batches]

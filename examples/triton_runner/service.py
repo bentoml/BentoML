@@ -10,12 +10,10 @@ from bentoml._internal.types import LazyType
 from bentoml._internal.utils import LazyLoader
 
 if t.TYPE_CHECKING:
-    import numpy as np
     import helpers
     from PIL.Image import Image
     from numpy.typing import NDArray
 else:
-    np = LazyLoader("np", globals(), "numpy")
     helpers = LazyLoader("helpers", globals(), "helpers")
 
 # triton runner
@@ -69,6 +67,7 @@ svc = bentoml.Service(
 
 # Comparison between Triton and bentoml.Runner
 preprocess_device = "cpu"
+
 
 #### BentoML YOLOv5
 @svc.api(
@@ -221,17 +220,11 @@ async def triton_onnx_mnist_infer(im: Image) -> NDArray[t.Any]:
 
 # Triton Model management API
 @svc.api(
-    input=bentoml.io.JSON.from_sample({"model_name": "onnx_mnist", "protocol": "grpc"}),
+    input=bentoml.io.JSON.from_sample({"model_name": "onnx_mnist"}),
     output=bentoml.io.JSON(),
 )
-async def model_config(input_model: dict[t.Literal["model_name", "protocol"], str]):
-    attrs: dict[str, t.Any] = {}
-    protocol = input_model["protocol"]
-    if protocol == "grpc":
-        attrs["as_json"] = True
-    return await getattr(triton_runner, f"{protocol}_get_model_config")(
-        input_model["model_name"], **attrs
-    )
+async def model_config(input_model: dict[t.Literal["model_name"], str]):
+    return await triton_runner.get_model_config(input_model["model_name"], as_json=True)
 
 
 @svc.api(input=bentoml.io.Text.from_sample("onnx_mnist"), output=bentoml.io.JSON())

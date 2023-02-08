@@ -130,7 +130,7 @@ def test_invalid_load(no_mlmodel: Tag):
 def test_invalid_signatures_model(URI: Path):
     with pytest.raises(
         BentoMLException,
-        match=f"MLflow pyfunc model support only the `predict` method, *",
+        match="MLflow pyfunc model support only the `predict` method, *",
     ):
         _ = bentoml.mlflow.import_model(
             MODEL_NAME,

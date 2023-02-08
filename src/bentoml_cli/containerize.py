@@ -547,7 +547,7 @@ def add_containerize_command(cli: Group) -> None:
                 f'Successfully built Bento container for "{bento_tag}" with tag(s) "{",".join(tags)}"',
             )
             instructions = (
-                f"To run your newly built Bento container, run:\n"
+                "To run your newly built Bento container, run:\n"
                 + f"    {container_runtime} run -it --rm -p 3000:3000 {tags[0]} serve --production\n"
             )
 

@@ -202,10 +202,10 @@ class RemoteRunnerClient(RunnerHandle):
                         },
                     ) as resp:
                         body = await resp.read()
-                except aiohttp.ClientOSError as e:
-                    raise RemoteException(f"Failed to connect to runner server.")
+                except aiohttp.ClientOSError:
+                    raise RemoteException("Failed to connect to runner server.")
             else:
-                raise RemoteException(f"Failed to connect to runner server.") from e
+                raise RemoteException("Failed to connect to runner server.") from e
 
         try:
             content_type = resp.headers["Content-Type"]

@@ -47,7 +47,7 @@ except ImportError:  # pragma: no cover
     )
 
 try:
-    import fastai.basics as _
+    import fastai.basics as _  # noqa
 except ImportError:  # pragma: no cover
     raise MissingDependencyException("BentoML only supports fastai v2 onwards.")
 

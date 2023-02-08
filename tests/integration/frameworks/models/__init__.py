@@ -28,8 +28,14 @@ class FrameworkTestModel:
 class FrameworkTestModelConfiguration:
     test_inputs: dict[str, list[FrameworkTestModelInput]]
     load_kwargs: dict[str, t.Any] = attr.Factory(dict)
-    check_model: t.Callable[[t.Any, dict[str, t.Any]], None] = lambda _, __: None
-    check_runnable: t.Callable[[t.Any, dict[str, t.Any]], None] = lambda _, __: None
+
+    @staticmethod
+    def check_model(_, __):
+        return None
+
+    @staticmethod
+    def check_runnable(_, __):
+        return None
 
 
 @attr.define
@@ -38,7 +44,9 @@ class FrameworkTestModelInput:
     expected: t.Any | t.Callable[[t.Any], bool]
     input_kwargs: dict[str, t.Any] = attr.Factory(dict)
 
-    preprocess: t.Callable[[t.Any], t.Any] = lambda v: v
+    @staticmethod
+    def preprocess(v: t.Any):
+        return v
 
     def check_output(self, outp: t.Any):
         if isinstance(self.expected, t.Callable):

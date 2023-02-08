@@ -43,8 +43,13 @@ def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
 
 J2_FUNCTION: dict[str, F[t.Any]] = {"expands_bento_path": expands_bento_path}
 
-to_bento_field: t.Callable[[str], str] = lambda s: f"bento__{s}"
-to_options_field: t.Callable[[str], str] = lambda s: f"__options__{s}"
+
+def to_bento_field(s: str):
+    return f"bento__{s}"
+
+
+def to_options_field(s: str):
+    return f"__options__{s}"
 
 
 def get_templates_variables(

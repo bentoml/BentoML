@@ -37,6 +37,7 @@ def get(tag_like: str | Tag) -> Model:
 def load_model(
     bentoml_model: str | Tag | Model,
     device_id: str | None = "cpu",
+    *,
     _extra_files: dict[str, t.Any] | None = None,
 ) -> torch.ScriptModule | tuple[torch.ScriptModule, dict[str, t.Any]]:
     """
@@ -48,7 +49,7 @@ def load_model(
         device_id:
             Optional devices to put the given model on. Refer to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
         _extra_files:
-            A dictionary of file names and a empty string. Similar to `_extra_files` in `torch.jit.load`. See https://pytorch.org/docs/stable/generated/torch.jit.load.html.
+            A dictionary of file names and a empty string. See https://pytorch.org/docs/stable/generated/torch.jit.load.html.
 
     Returns:
         :obj:`torch.ScriptModule`: an instance of :obj:`torch.ScriptModule` from BentoML modelstore.
@@ -68,11 +69,6 @@ def load_model(
             f"Model {bentoml_model.tag} was saved with module {bentoml_model.info.module}, not loading with {MODULE_NAME}."
         )
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
-    if _extra_files is None:
-        _extra_files = t.cast(
-            "dict[str, t.Any] | None",
-            bentoml_model.info.metadata.get("_extra_files", None),
-        )
 
     model: torch.ScriptModule = torch.jit.load(
         weight_file,
@@ -141,10 +137,10 @@ def save_model(
         framework_name=_framework_name,
         framework_versions=framework_versions,
     )
-    if metadata is None:
-        metadata = {}
     if _extra_files is not None:
-        metadata["_extra_files"] = {_: "" for _ in _extra_files}
+        if metadata is None:
+            metadata = {}
+        metadata["_extra_files"] = [f for f in _extra_files]
 
     if signatures is None:
         signatures = {"__call__": {"batchable": False}}

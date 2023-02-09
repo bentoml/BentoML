@@ -156,8 +156,20 @@ def construct_build_args(
     if tag is not None:
         if output is None:
             logger.warning(
-                "Autoconfig for output type is deprecated. See message below."
+                "Autoconfig for output type is deprecated and will be removed in 2.0."
             )
+            # NOTE: We will always use the docker image spec if docker is available.
+            # Otherwise fallback to the OCI image spec.
+            if shutil.which("docker") is not None:
+                cmds.construct_args(
+                    tuple(map(lambda tg: f"type=docker,name=docker.io/{tg}", tag)),
+                    opt="output",
+                )
+            else:
+                cmds.construct_args(
+                    tuple(map(lambda tg: f"type=oci,name={tg}", tag)),
+                    opt="output",
+                )
     else:
         logger.info(
             "'tag' is not specified. Result image will only be saved in build cache."

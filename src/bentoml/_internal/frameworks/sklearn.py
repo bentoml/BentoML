@@ -64,7 +64,7 @@ def load_model(bento_model: str | Tag | Model) -> SklearnModel:
                      instance to load the model from.
 
     Returns:
-        The scikit-learn model loaded from the model store.
+        The scikit-learn model loaded from the model store or BentoML :obj:`~bentoml.Model`.
 
     Example:
 

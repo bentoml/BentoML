@@ -49,7 +49,7 @@ def load_model(bento_model: str | Tag | Model) -> ModelType:
                      the model from.
 
     Returns:
-        The picklable model loaded from the model store.
+        The picklable model loaded from the model store or BentoML :obj:`~bentoml.Model`.
 
     Example:
 
@@ -58,7 +58,7 @@ def load_model(bento_model: str | Tag | Model) -> ModelType:
         import bentoml
 
         picklable_model = bentoml.picklable_model.load_model('my_model:latest')
-    """
+    """  # noqa
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
 

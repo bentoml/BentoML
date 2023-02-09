@@ -31,9 +31,10 @@ if __name__ == "__main__":
     try:
         bentos = bentoml.get(tag)
         if args.override:
-            raise bentoml.exceptions.NotFound("'--override=True', rebuilding bentos.")
+            bentoml.delete(tag)
+            raise bentoml.exceptions.NotFound("'--override', rebuilding bentos.")
         else:
-            print(f"{bentos} already exists, use '--override=True' to rebuild.")
+            print(f"{bentos} already exists, use '--override' to rebuild.")
     except bentoml.exceptions.NotFound:
         bentofile = resolve_user_filepath("bentofile.yaml", None)
 

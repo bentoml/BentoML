@@ -34,11 +34,7 @@ if __name__ == "__main__":
             production=True,
             triton_options={
                 "model_control_mode": "explicit",
-                "load-model": [
-                    "torchscript_yolov5s",
-                    "tensorflow_yolov5s",
-                    "onnx_yolov5s",
-                ],
+                "load-model": ["tensorflow_yolov5s"],
             },
         )
         try:

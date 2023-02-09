@@ -4,9 +4,9 @@ import sys
 import shutil
 import typing as t
 import logging
-import subprocess
 import tempfile
 import itertools
+import subprocess
 from typing import TYPE_CHECKING
 from functools import partial
 

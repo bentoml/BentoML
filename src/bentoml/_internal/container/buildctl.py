@@ -156,7 +156,7 @@ def construct_build_args(
     if tag is not None:
         if output is None:
             logger.warning(
-                "Autoconfig for output type is deprecated and will be removed in 2.0."
+                "Autoconfig for output type is deprecated and will be removed in the next major release."
             )
             # NOTE: We will always use the docker image spec if docker is available.
             # Otherwise fallback to the OCI image spec.

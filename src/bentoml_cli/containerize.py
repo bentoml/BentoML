@@ -4,6 +4,7 @@ import sys
 import shutil
 import typing as t
 import logging
+import subprocess
 import tempfile
 import itertools
 from typing import TYPE_CHECKING
@@ -536,24 +537,44 @@ def add_containerize_command(cli: Group) -> None:
                 elif shutil.which("nerdctl") is not None:
                     container_runtime = "nerdctl"
                 else:
-                    logger.warning(
-                        "To load image built with 'buildctl' requires one of docker, podman, nerdctl (Neither are found in PATH) and try again."
+                    click.echo(
+                        click.style(
+                            "To load image built with 'buildctl' requires one of "
+                            "docker, podman, nerdctl (None are found in PATH). "
+                            "Make sure they are visible to PATH and try again.",
+                            fg="yellow",
+                        ),
+                        color=True,
                     )
                     sys.exit(0)
-                # NOTE: We will always use the docker image spec if docker is available.
-                # Otherwise fallback to the OCI image spec.
                 if "output" not in _memoized:
                     tmp_path = tempfile.gettempdir()
                     type_prefix = "type=oci,name="
                     if container_runtime == "docker":
                         type_prefix = "type=docker,name=docker.io/"
                     click.echo(
-                        "If you wish to load the image locally, set the destination to a tar file. For example:"
+                        click.style(
+                            "Autoconfig is now deprecated and will be removed "
+                            "in the next future release. We recommend setting "
+                            "output to a tarfile should you wish to load the "
+                            "image locally. For example:",
+                            fg="yellow",
+                        ),
+                        color=True,
                     )
                     click.echo(
-                        f"    bentoml containerize {bento_tag} --backend buildctl --opt output={type_prefix}{tags[0]},dest={tmp_path}/{tags[0].replace(':', '_')}.tar\n"
-                        + f"    {container_runtime} load -i {tmp_path}/{tags[0].replace(':', '_')}.tar"
+                        click.style(
+                            f"    bentoml containerize {bento_tag} --backend buildctl --opt output={type_prefix}{tags[0]},dest={tmp_path}/{tags[0].replace(':', '_')}.tar\n"
+                            f"    {container_runtime} load -i {tmp_path}/{tags[0].replace(':', '_')}.tar",
+                            fg="yellow",
+                        ),
+                        color=True,
                     )
+                    o = subprocess.check_output(
+                        [container_runtime, "load"], input=result
+                    )
+                    click.echo(o.decode("utf-8").strip())
+                    sys.exit(0)
                 return result
 
             click.echo(

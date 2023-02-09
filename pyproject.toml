@@ -243,8 +243,7 @@ testpaths = ["tests"]
 [tool.ruff]
 # similar to black's
 line-length = 88
-# E501: line too long
-# tip: use 'ruff rule <RULE>' to see the description of a rule
+# We ignore E501 (line too long) here because we keep user-visible strings on one line.
 ignore = ["E501"]
 exclude = [
     "bazel-*/",

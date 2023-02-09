@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import typing as t
 import tempfile
-from typing import Callable
 from typing import TYPE_CHECKING
 
 import onnx
@@ -12,7 +11,6 @@ import torch
 import sklearn
 import torch.nn as nn
 import onnxruntime as ort
-from pytest import CallInfo
 from skl2onnx import convert_sklearn
 from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier

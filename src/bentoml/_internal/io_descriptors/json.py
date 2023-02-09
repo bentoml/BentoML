@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from google.protobuf import struct_pb2
     from typing_extensions import Self
 
-    from .. import external_typing as ext
     from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 

@@ -11,63 +11,63 @@ keywords = ["MLOps", "AI", "BentoML", "Model Serving", "Model Deployment"]
 license = { text = "Apache-2.0" }
 authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
 classifiers = [
-  "License :: OSI Approved :: Apache Software License",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: Implementation :: CPython",
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
-  "Topic :: Software Development :: Libraries",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-  "Jinja2>=3.0.1",
-  "PyYAML>=5.0",
-  "aiohttp",
-  "attrs>=21.1.0",
-  "cattrs>=22.1.0",
-  "circus>=0.17.0,!=0.17.2",
-  "click>=7.0",
-  "click-option-group",
-  "cloudpickle",
-  "deepmerge",
-  "fs",
-  "numpy",
-  # OpenTelemetry is the server dependencies, rather than SDK
-  # Since there are discrepancies among API and instrumentation packages,
-  # we should always pin the set version of Opentelemetry suite
-  "opentelemetry-api==1.14.0",
-  "opentelemetry-sdk==1.14.0",
-  "opentelemetry-exporter-otlp-proto-http==1.14.0",
-  "opentelemetry-instrumentation==0.35b0",
-  "opentelemetry-instrumentation-aiohttp-client==0.35b0",
-  "opentelemetry-instrumentation-asgi==0.35b0",
-  "opentelemetry-semantic-conventions==0.35b0",
-  "opentelemetry-util-http==0.35b0",
-  "packaging>=22.0",
-  "pathspec",
-  "pip-tools>=6.6.2",
-  "pip-requirements-parser>=31.2.0",
-  "prometheus-client>=0.10.0",
-  "psutil",
-  "pynvml<12",
-  "python-dateutil",
-  "python-multipart",
-  "python-json-logger",
-  "requests",
-  "rich>=11.2.0",
-  "schema",
-  "simple-di>=0.1.4",
-  "starlette",
-  "uvicorn",
-  "watchfiles>=0.15.0",
-  "backports.cached-property;python_version<'3.8'",
-  "backports.shutil_copytree;python_version<'3.8'",
-  "importlib-metadata;python_version<'3.8'",
-  "singledispatchmethod;python_version<'3.8'",
+    "Jinja2>=3.0.1",
+    "PyYAML>=5.0",
+    "aiohttp",
+    "attrs>=21.1.0",
+    "cattrs>=22.1.0",
+    "circus>=0.17.0,!=0.17.2",
+    "click>=7.0",
+    "click-option-group",
+    "cloudpickle",
+    "deepmerge",
+    "fs",
+    "numpy",
+    # OpenTelemetry is the server dependencies, rather than SDK
+    # Since there are discrepancies among API and instrumentation packages,
+    # we should always pin the set version of Opentelemetry suite
+    "opentelemetry-api==1.14.0",
+    "opentelemetry-sdk==1.14.0",
+    "opentelemetry-exporter-otlp-proto-http==1.14.0",
+    "opentelemetry-instrumentation==0.35b0",
+    "opentelemetry-instrumentation-aiohttp-client==0.35b0",
+    "opentelemetry-instrumentation-asgi==0.35b0",
+    "opentelemetry-semantic-conventions==0.35b0",
+    "opentelemetry-util-http==0.35b0",
+    "packaging>=22.0",
+    "pathspec",
+    "pip-tools>=6.6.2",
+    "pip-requirements-parser>=31.2.0",
+    "prometheus-client>=0.10.0",
+    "psutil",
+    "pynvml<12",
+    "python-dateutil",
+    "python-multipart",
+    "python-json-logger",
+    "requests",
+    "rich>=11.2.0",
+    "schema",
+    "simple-di>=0.1.4",
+    "starlette",
+    "uvicorn",
+    "watchfiles>=0.15.0",
+    "backports.cached-property;python_version<'3.8'",
+    "backports.shutil_copytree;python_version<'3.8'",
+    "importlib-metadata;python_version<'3.8'",
+    "singledispatchmethod;python_version<'3.8'",
 ]
 dynamic = ["version"]
 
@@ -87,14 +87,14 @@ bentoml_cli = ["bentoml_cli/*"]
 
 [tool.setuptools.exclude-package-data]
 "*" = [
-  ".git*",
-  ".bazel*",
-  "BUILD.bazel",
-  "WORKSPACE",
-  "*.md",
-  "Makefile",
-  "*.py[cod]",
-  "typings",
+    ".git*",
+    ".bazel*",
+    "BUILD.bazel",
+    "WORKSPACE",
+    "*.md",
+    "Makefile",
+    "*.py[cod]",
+    "typings",
 ]
 bentoml = ["grpc/buf.yaml", "_internal/frameworks/FRAMEWORK_TEMPLATE_PY"]
 bentoml_cli = ["worker/README.md"]
@@ -102,41 +102,41 @@ bentoml_cli = ["worker/README.md"]
 [tool.setuptools.packages.find]
 where = ["src"]
 include = [
-  # include bentoml packages
-  "bentoml",
-  "bentoml.grpc*",
-  "bentoml.testing*",
-  "bentoml._internal*",
-  # include bentoml_cli packages
-  "bentoml_cli",
-  "bentoml_cli.worker",
+    # include bentoml packages
+    "bentoml",
+    "bentoml.grpc*",
+    "bentoml.testing*",
+    "bentoml._internal*",
+    # include bentoml_cli packages
+    "bentoml_cli",
+    "bentoml_cli.worker",
 ]
 
 [project.optional-dependencies]
 all = [
-  "bentoml[aws]",
-  "bentoml[io]",
-  "bentoml[grpc]",
-  "bentoml[grpc-reflection]",
-  "bentoml[grpc-channelz]",
-  "bentoml[tracing]",
+    "bentoml[aws]",
+    "bentoml[io]",
+    "bentoml[grpc]",
+    "bentoml[grpc-reflection]",
+    "bentoml[grpc-channelz]",
+    "bentoml[tracing]",
 ]
 aws = ["fs-s3fs"]
 io = [
-  "bentoml[io-json]",
-  "bentoml[io-image]",
-  "bentoml[io-pandas]",
-  "bentoml[io-file]",
+    "bentoml[io-json]",
+    "bentoml[io-image]",
+    "bentoml[io-pandas]",
+    "bentoml[io-file]",
 ] # syntatic sugar for bentoml[io-json,io-image,io-pandas,io-file]
 io-file = ["filetype"] # Currently use for from_sample
 io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["bentoml[io-file]", "Pillow"]
 io-pandas = ["pandas", "pyarrow"]
 grpc = [
-  "protobuf",
-  "grpcio",
-  "grpcio-health-checking",
-  "opentelemetry-instrumentation-grpc==0.35b0",
+    "protobuf",
+    "grpcio",
+    "grpcio-health-checking",
+    "opentelemetry-instrumentation-grpc==0.35b0",
 ]
 grpc-reflection = ["bentoml[grpc]", "grpcio-reflection"]
 grpc-channelz = ["bentoml[grpc]", "grpcio-channelz"]
@@ -144,9 +144,9 @@ grpc-channelz = ["bentoml[grpc]", "grpcio-channelz"]
 # versions of BentoML. It is discouraged to use this, instead use any
 # of the above tracing.* extras.
 tracing = [
-  "bentoml[tracing-jaeger]",
-  "bentoml[tracing-otlp]",
-  "bentoml[tracing-zipkin]",
+    "bentoml[tracing-jaeger]",
+    "bentoml[tracing-otlp]",
+    "bentoml[tracing-zipkin]",
 ]
 tracing-jaeger = ["opentelemetry-exporter-jaeger==1.14.0"]
 tracing-zipkin = ["opentelemetry-exporter-zipkin==1.14.0"]
@@ -166,46 +166,46 @@ branch = true
 parallel = true
 source = ["src/bentoml/"]
 omit = [
-  "src/bentoml/__main__.py",
-  "src/bentoml/io.py",
-  "src/bentoml/serve.py",
-  "src/bentoml/start.py",
-  "src/bentoml/_internal/types.py",
-  "src/bentoml/testing/*",
-  "src/bentoml/grpc/v1alpha1/*",
-  "src/bentoml/grpc/v1/*",
-  "src/bentoml/_internal/external_typing/*",
-  "src/bentoml/_internal/yatai_client/*",
-  "src/bentoml/_internal/yatai_rest_api_client/*",
+    "src/bentoml/__main__.py",
+    "src/bentoml/io.py",
+    "src/bentoml/serve.py",
+    "src/bentoml/start.py",
+    "src/bentoml/_internal/types.py",
+    "src/bentoml/testing/*",
+    "src/bentoml/grpc/v1alpha1/*",
+    "src/bentoml/grpc/v1/*",
+    "src/bentoml/_internal/external_typing/*",
+    "src/bentoml/_internal/yatai_client/*",
+    "src/bentoml/_internal/yatai_rest_api_client/*",
 ]
 
 [tool.coverage.report]
 show_missing = true
 precision = 2
 omit = [
-  'src/bentoml/__main__.py',
-  "src/bentoml/io.py",
-  "src/bentoml/serve.py",
-  "src/bentoml/start.py",
-  "src/bentoml/_internal/types.py",
-  "src/bentoml/testing/*",
-  "src/bentoml/grpc/v1alpha1/*",
-  "src/bentoml/grpc/v1/*",
-  "src/bentoml/_internal/external_typing/*",
-  "src/bentoml/_internal/yatai_client/*",
-  "src/bentoml/_internal/yatai_rest_api_client/*",
+    'src/bentoml/__main__.py',
+    "src/bentoml/io.py",
+    "src/bentoml/serve.py",
+    "src/bentoml/start.py",
+    "src/bentoml/_internal/types.py",
+    "src/bentoml/testing/*",
+    "src/bentoml/grpc/v1alpha1/*",
+    "src/bentoml/grpc/v1/*",
+    "src/bentoml/_internal/external_typing/*",
+    "src/bentoml/_internal/yatai_client/*",
+    "src/bentoml/_internal/yatai_rest_api_client/*",
 ]
 exclude_lines = [
-  "\\#\\s*pragma: no cover",
-  "^\\s*def __repr__",
-  "^\\s*raise AssertionError",
-  "^\\s*raise NotImplementedError",
-  "^\\s*raise MissingDependencyException",
-  "^\\s*except ImportError",
-  "if __name__ == .__main__.:",
-  "^\\s*if TYPE_CHECKING:",
-  "^\\s*@(t\\.)?overload( |$)",
-  "@(abc\\.)?abstractmethod",
+    "\\#\\s*pragma: no cover",
+    "^\\s*def __repr__",
+    "^\\s*raise AssertionError",
+    "^\\s*raise NotImplementedError",
+    "^\\s*raise MissingDependencyException",
+    "^\\s*except ImportError",
+    "if __name__ == .__main__.:",
+    "^\\s*if TYPE_CHECKING:",
+    "^\\s*@(t\\.)?overload( |$)",
+    "@(abc\\.)?abstractmethod",
 ]
 
 [tool.black]
@@ -240,53 +240,31 @@ addopts = ["-rfEX", "-pbentoml.testing.pytest.plugin"]
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 
-[tool.pylint.main]
-recursive = true
-extension-pkg-allow-list = [
-  "numpy",
-  "tensorflow",
-  "torch",
-  "paddle",
-  "onnxruntime",
-  "onnx",
-  "pydantic.schema",
+[tool.ruff]
+# similar to black's
+line-length = 88
+# We ignore E501 (line too long) here because we keep user-visible strings on one line.
+ignore = ["E501"]
+exclude = [
+    "bazel-*/",
+    "venv",
+    "typings",
+    "src/bentoml/_internal/external_typing",
+    "src/bentoml/grpc/v1alpha1",
+    "src/bentoml/grpc/v1",
+    "tests/proto",
 ]
-ignore-paths = [
-  "src/bentoml/_internal/external_typing",
-  "src/bentoml/grpc/v1alpha1",
-  "src/bentoml/grpc/v1",
-]
-disable = ["coerce-builtin", "no-absolute-import", "C", "R"]
-enable = ["c-extension-no-member"]
-evaluation = "10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)"
-msg-template = "{msg_id}:{symbol} [{line:0>3d}:{column:0>2d}] {obj}: {msg}"
-output-format = "colorized"
-score = true
+target-version = "py310"
 
-[tool.pylint.classes]
-valid-metaclass-classmethod-first-arg = ["cls", "mcls", "kls"]
+[tool.ruff.per-file-ignores]
+# ignore imports violations in __init__.py
+"src/bentoml/__init__.py" = ["E402"]
 
-[tool.pylint.logging]
-logging-format-style = "old" # using %s formatter for logging (performance-related)
+[tool.ruff.pydocstyle]
+convention = "google"
 
-[tool.pylint.miscellaneous]
-notes = ["FIXME", "XXX", "TODO", "NOTE", "WARNING"]
-
-[tool.pylint.refactoring]
-# specify functions that should not return
-never-returning-functions = ["sys.exit"]
-
-[tool.pylint.spelling]
-spelling-ignore-comment-directives = "fmt: on,fmt: off,noqa:,noqa,nosec,isort:skip,mypy:,pylint:,type:"
-
-[tool.pylint.variables]
-init-import = true
-
-[tool.pylint.typecheck]
-contextmanager-decorators = [
-  "contextlib.contextmanager",
-  "bentoml._internal.utils.cached_contextmanager",
-]
+[tool.ruff.isort]
+lines-after-imports = 2
 
 [tool.isort]
 profile = "black"
@@ -294,31 +272,31 @@ line_length = 88
 length_sort = true
 force_single_line = true
 order_by_type = true
-known_first_party = "bentoml"
+known_first_party = ["bentoml"]
 force_alphabetical_sort_within_sections = true
 skip_glob = [
-  "typings/*",
-  "test/*",
-  "**/*_pb2*",
-  "venv/*",
-  "lib/*",
-  "grpc-client/thirdparty",
-  "grpc-client/bentoml",
-  "bazel-*",
+    "typings/*",
+    "test/*",
+    "**/*_pb2*",
+    "venv/*",
+    "lib/*",
+    "grpc-client/thirdparty",
+    "grpc-client/bentoml",
+    "bazel-*",
 ]
 
 [tool.pyright]
 pythonVersion = "3.11"
 include = ["src/", "examples/", "tests/"]
 exclude = [
-  'src/bentoml/_version.py',
-  'src/bentoml/__main__.py',
-  'src/bentoml/_internal/external_typing/',
-  'src/**/*_pb2.py*',
-  "src/**/*_pb2_grpc.py*",
-  "grpc-client/thirdparty",
-  "tests/proto",
-  "bazel-*",
+    'src/bentoml/_version.py',
+    'src/bentoml/__main__.py',
+    'src/bentoml/_internal/external_typing/',
+    'src/**/*_pb2.py*',
+    "src/**/*_pb2_grpc.py*",
+    "grpc-client/thirdparty",
+    "tests/proto",
+    "bazel-*",
 ]
 analysis.useLibraryCodeForTypes = true
 strictListInference = true

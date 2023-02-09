@@ -1133,7 +1133,7 @@ class PandasSeries(
         # User shouldn't use mixed dtype in the first place.
         if obj.dtype.kind == "O":
             raise InvalidArgument(
-                f"Series has mixed dtype. Please convert it to a single dtype."
+                "Series has mixed dtype. Please convert it to a single dtype."
             ) from None
         try:
             fieldpb = npdtype_to_fieldpb_map()[obj.dtype]

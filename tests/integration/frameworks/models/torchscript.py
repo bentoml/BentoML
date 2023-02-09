@@ -24,7 +24,7 @@ test_y = 5
 
 
 if torch.cuda.is_available():
-    torch_x_list.append(torch.Tensor(test_x_nda, device="cuda"))
+    test_x_list.append(torch.Tensor(test_x_nda, device="cuda"))
 
 
 def generate_models():

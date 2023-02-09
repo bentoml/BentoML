@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+
 import keras
 import numpy as np
 import tensorflow as tf
@@ -9,6 +11,9 @@ import bentoml
 from . import FrameworkTestModel
 from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+
+if t.TYPE_CHECKING:
+    from bentoml._internal.external_typing import tensorflow as tf_ext
 
 framework = bentoml.tensorflow
 

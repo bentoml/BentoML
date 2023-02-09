@@ -5,10 +5,10 @@ import argparse
 import net
 import torch
 import torch.optim as optim
-import torch.utils.data as data
 import torch.nn.functional as F
 from torchvision import datasets
 from torchvision import transforms
+from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR
 
 
@@ -139,8 +139,8 @@ def main():
     )
     train_ds = datasets.MNIST("data", train=True, download=True, transform=transform)
     test_ds = datasets.MNIST("data", train=False, transform=transform)
-    train_loader = data.DataLoader(train_ds, **train_kwargs)
-    test_loader = data.DataLoader(test_ds, **test_kwargs)
+    train_loader = DataLoader(train_ds, **train_kwargs)
+    test_loader = DataLoader(test_ds, **test_kwargs)
 
     model = net.CNN().to(device)
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)

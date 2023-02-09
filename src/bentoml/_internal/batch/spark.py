@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _distribute_bento(spark: SparkSession, bento: Bento) -> str:
+def _distribute_bento(spark: pyspark.sql.session.SparkSession, bento: Bento) -> str:
     temp_dir = tempfile.mkdtemp()
     export_path = bento.export(temp_dir)
     spark.sparkContext.addFile(export_path)
@@ -50,7 +50,6 @@ def _load_bento_spark(bento_tag: Tag):
     try:
         return load_bento(bento_tag)
     except Exception:
-
         # Use the default Bento export file name. This relies on the implementation
         # of _distribute_bento to use default Bento export file name.
         bento_path = SparkFiles.get(f"{bento_tag.name}-{bento_tag.version}.bento")
@@ -67,7 +66,6 @@ def _get_process(
     def process(
         iterator: t.Iterable[RecordBatch],
     ) -> t.Generator[RecordBatch, None, None]:
-
         svc = _load_bento_spark(bento_tag)
 
         assert (

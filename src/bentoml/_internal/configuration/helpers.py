@@ -26,7 +26,7 @@ def import_configuration_spec(version: int) -> ModuleType:  # pragma: no cover
         f"v{version}",
         globals(),
         f"bentoml._internal.configuration.v{version}",
-        exc_msg=f"Configuration version %d does not exists." % version,
+        exc_msg=f"Configuration version {version} does not exist.",
     )
 
 

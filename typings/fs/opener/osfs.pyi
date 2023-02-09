@@ -1,7 +1,8 @@
 import typing
 from typing import Text
-from ..osfs import OSFS
+
 from .base import Opener
+from ..osfs import OSFS
 from .parse import ParseResult
 from .registry import registry
 

@@ -1,10 +1,12 @@
-import typing
-from typing import Callable, Optional, Text, Union
+from typing import Text
+from typing import Union
+from typing import Callable
+from typing import Optional
+
 from .base import FS
 from .walk import Walker
 
-if typing.TYPE_CHECKING:
-    _OnCopy = Callable[[FS, Text, FS, Text], object]
+_OnCopy = Callable[[FS, Text, FS, Text], object]
 
 def copy_fs(
     src_fs: Union[FS, Text],

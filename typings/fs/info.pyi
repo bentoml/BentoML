@@ -1,10 +1,19 @@
 import typing
+from typing import Any
+from typing import List
+from typing import Union
+from typing import Mapping
+from typing import Callable
+from typing import Optional
+from typing import overload
 from datetime import datetime
-from typing import Any, Callable, List, Mapping, Optional, Union
+
 import six
-from ._typing import Text, overload
+
 from .enums import ResourceType
 from .permissions import Permissions
+
+Text = str
 
 RawInfo = Mapping[Text, Mapping[Text, object]]
 ToDatetime = Callable[[int], datetime]
@@ -13,6 +22,7 @@ T = typing.TypeVar("T")
 @six.python_2_unicode_compatible
 class Info:
     __slots__ = ["raw", "_to_datetime", "namespaces"]
+
     def __init__(self, raw_info: RawInfo, to_datetime: ToDatetime = ...) -> None: ...
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...

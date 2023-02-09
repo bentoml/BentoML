@@ -16,6 +16,7 @@ def add_serve_command(cli: click.Group) -> None:
 
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml._internal.log import configure_server_logging
+    from bentoml_cli.env_manager import env_manager
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     from .utils import opt_callback
@@ -135,6 +136,7 @@ def add_serve_command(cli: click.Group) -> None:
         callback=opt_callback,
         metavar="ARG=VALUE[,VALUE]",
     )
+    @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,
         production: bool,
@@ -361,6 +363,7 @@ def add_serve_command(cli: click.Group) -> None:
         metavar="ARG=VALUE[,ARG=VALUE]",
     )
     @add_experimental_docstring
+    @env_manager
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
         production: bool,

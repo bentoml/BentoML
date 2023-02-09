@@ -4,6 +4,7 @@ import io
 import uuid
 import typing as t
 from typing import TYPE_CHECKING
+from tempfile import SpooledTemporaryFile
 
 import multipart.multipart as multipart
 from starlette.requests import Request
@@ -31,6 +32,9 @@ def user_safe_decode(src: bytes, codec: str) -> str:
         return src.decode(codec)
     except (UnicodeDecodeError, LookupError):
         return src.decode("latin-1")
+
+
+MAX_FILE_SIZE = 1024 * 1024
 
 
 class MultiPartParser:
@@ -104,7 +108,6 @@ class MultiPartParser:
         header_value = b""
         field_name = ""
         content_disposition = None
-        content_type = b""
         multipart_file = None
 
         data = b""
@@ -120,7 +123,6 @@ class MultiPartParser:
             for message_type, message_bytes in messages:
                 if message_type == MultiPartMessage.PART_BEGIN:
                     content_disposition = None
-                    content_type = b""
                     field_name = ""
                     data = b""
                     headers = list()
@@ -132,8 +134,6 @@ class MultiPartParser:
                     field = header_field.lower()
                     if field == b"content-disposition":
                         content_disposition = header_value
-                    elif field == b"content-type":
-                        content_type = header_value
                     elif field == b"bentoml-payload-field":
                         field_name = user_safe_decode(header_value, charset)
                     else:
@@ -155,9 +155,11 @@ class MultiPartParser:
                         )
                     if b"filename" in options:
                         filename = user_safe_decode(options[b"filename"], charset)
+                        tempfile = SpooledTemporaryFile(max_size=MAX_FILE_SIZE)
                         multipart_file = UploadFile(
+                            file=tempfile,
+                            # size=0, # TODO: support size for starlette 0.24 onwards
                             filename=filename,
-                            content_type=content_type.decode("latin-1"),
                             headers=Headers(raw=headers),  # type: ignore (incomplete starlette types)
                         )
                     else:

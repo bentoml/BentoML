@@ -142,7 +142,6 @@ def _convert_env(
 
 @attr.frozen
 class DockerOptions:
-
     # For validating user defined bentofile.yaml.
     __forbid_extra_keys__ = True
     # always omit config values in case of default values got changed in future BentoML releases
@@ -265,6 +264,16 @@ class DockerOptions:
                 setup_script, bento_fs, docker_folder, "setup_script"
             )
 
+        # If dockerfile_template is provided, then we copy it to the Bento
+        # This template then can be used later to containerize.
+        if self.dockerfile_template is not None:
+            copy_file_to_fs_folder(
+                resolve_user_filepath(self.dockerfile_template, build_ctx),
+                bento_fs,
+                docker_folder,
+                "Dockerfile.template",
+            )
+
     def to_dict(self) -> dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)
 
@@ -312,7 +321,6 @@ else:
 
 @attr.frozen
 class CondaOptions:
-
     # User shouldn't add new fields under yaml file.
     __forbid_extra_keys__ = True
     # no need to omit since BentoML has already handled the default values.
@@ -438,7 +446,6 @@ class CondaOptions:
 
 @attr.frozen
 class PythonOptions:
-
     # User shouldn't add new fields under yaml file.
     __forbid_extra_keys__ = True
     # no need to omit since BentoML has already handled the default values.
@@ -732,7 +739,6 @@ class BentoBuildConfig:
     )
 
     if TYPE_CHECKING:
-
         # NOTE: This is to ensure that BentoBuildConfig __init__
         # satisfies type checker. docker, python, and conda accepts
         # dict[str, t.Any] since our converter will handle the conversion.

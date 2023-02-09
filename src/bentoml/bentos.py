@@ -18,7 +18,6 @@ from .exceptions import InvalidArgument
 from .exceptions import BentoMLException
 from ._internal.tag import Tag
 from ._internal.bento import Bento
-from ._internal.types import LazyType as _LazyType
 from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
@@ -528,10 +527,7 @@ def serve(
     if triton_args is not None:
         args.extend(
             itertools.chain.from_iterable(
-                map(
-                    lambda value: ("--triton-options", value),
-                    triton_args,
-                )
+                [("--triton-options", arg) for arg in triton_args]
             )
         )
 

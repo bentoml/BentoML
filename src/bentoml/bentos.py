@@ -7,7 +7,6 @@ from __future__ import annotations
 import sys
 import typing as t
 import logging
-import builtins
 import itertools
 import subprocess
 
@@ -448,7 +447,7 @@ def serve(
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     grpc_protocol_version: str | None = None,
-    triton_args: builtins.list[str] | None = None,
+    triton_args: t.List[str] | None = None,
 ) -> ServerHandle:
     from .serve import construct_ssl_args
     from ._internal.server.server import ServerHandle

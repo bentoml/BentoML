@@ -244,10 +244,8 @@ testpaths = ["tests"]
 # similar to black's
 line-length = 88
 # E501: line too long
-# E741: ambiguous variable name
-# W605: invalid escape sequence
 # tip: use 'ruff rule <RULE>' to see the description of a rule
-ignore = ["E501", "E741", "W605"]
+ignore = ["E501"]
 exclude = [
     "bazel-*/",
     "venv",

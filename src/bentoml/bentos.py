@@ -7,8 +7,8 @@ from __future__ import annotations
 import sys
 import typing as t
 import logging
+import itertools
 import subprocess
-from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
@@ -21,7 +21,7 @@ from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from ._internal.bento import BentoStore
     from ._internal.server.server import ServerHandle
 
@@ -447,6 +447,8 @@ def serve(
     enable_channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+    grpc_protocol_version: str | None = None,
+    triton_args: t.List[str] | None = None,
 ) -> ServerHandle:
     from .serve import construct_ssl_args
     from ._internal.server.server import ServerHandle
@@ -517,5 +519,18 @@ def serve(
         args.append("--enable-channelz")
     if max_concurrent_streams is not None:
         args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
+
+    if grpc_protocol_version is not None:
+        assert (
+            server_type == "grpc"
+        ), f"'grpc_protocol_version' should only be passed to gRPC server, got '{server_type}' instead."
+        args.extend(["--protocol-version", str(grpc_protocol_version)])
+
+    if triton_args is not None:
+        args.extend(
+            itertools.chain.from_iterable(
+                [("--triton-options", arg) for arg in triton_args]
+            )
+        )
 
     return ServerHandle(process=subprocess.Popen(args), host=host, port=port)

@@ -9,27 +9,35 @@ import attr
 if TYPE_CHECKING:
     from types import TracebackType
 
+    from bentoml.client import Client
+
 
 logger = logging.getLogger(__name__)
 
 
-@attr.frozen
+@attr.define
 class ServerHandle:
     process: subprocess.Popen[bytes]
     host: str
     port: int
-    timeout: int = attr.field(default=10)
+    timeout: int = 10
+    _client: Client | None = None
 
-    def client(self):
+    def client(self) -> Client:
+        logger.warning(
+            "'ServerHandle.client()' is deprecated, use 'ServerHandle.get_client()' instead"
+        )
         return self.get_client()
 
-    def get_client(self):
-        from bentoml.client import Client
+    def get_client(self) -> Client:
+        if self._client is None:
+            from bentoml.client import Client
 
-        Client.wait_until_server_is_ready(
-            host=self.host, port=self.port, timeout=self.timeout
-        )
-        return Client.from_url(f"http://localhost:{self.port}")
+            Client.wait_until_server_is_ready(
+                host=self.host, port=self.port, timeout=self.timeout
+            )
+            self._client = Client.from_url(f"http://localhost:{self.port}")
+        return self._client
 
     def stop(self) -> None:
         self.process.terminate()

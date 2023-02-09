@@ -824,7 +824,6 @@ class PandasSeries(
                 - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                 - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
         columns: List of columns name that users wish to update.
-        apply_column_names (`bool`, `optional`, default to :code:`False`):
         apply_column_names: Whether to update incoming DataFrame columns. If :code:`apply_column_names=True`,
                             then ``columns`` must be specified.
         dtype: Data type users wish to convert their inputs/outputs to. If it is a boolean,

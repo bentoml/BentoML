@@ -271,7 +271,7 @@ def load(
                          current working directory and global model store.
 
     Returns:
-        Service instance
+        The loaded :obj:`bentoml.Service` instance.
 
     The argument ``bento_identifier`` can be one of the following forms:
 

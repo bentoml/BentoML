@@ -67,12 +67,10 @@ def load_model(
     Load a tensorflow model from BentoML local modelstore with given name.
 
     Args:
-        bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
-            Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
-            instance to load the model from.
-        device_name (``str`` | ``None``):
-            The device id to load the model on. The device id format should be compatible with `tf.device <https://www.tensorflow.org/api_docs/python/tf/device>`_
-
+        bento_model: Either the tag of the model to get from the store, or a
+                     BentoML `~bentoml.Model` instance to load the model from.
+        device_name: The device id to load the model on. The device id format
+                     should be compatible with `tf.device <https://www.tensorflow.org/api_docs/python/tf/device>`_
 
     Returns:
         :obj:`SavedModel`: an instance of :obj:`SavedModel` format from BentoML modelstore.
@@ -86,7 +84,7 @@ def load_model(
         # load a model back into memory
         model = bentoml.tensorflow.load_model("my_tensorflow_model")
 
-    """  # noqa: LN001
+    """  # noqa
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
 
@@ -130,7 +128,7 @@ def save_model(
         model: Instance of model to be saved
         tf_signatures: Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
                        from Tensorflow documentation for more information.
-        tf_save_options: :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
+        tf_save_options: TensorFlow save options..
         signatures: Methods to expose for running inference on the target model. Signatures are
                     used for creating Runner instances when serving model with bentoml.Service
         labels: user-defined labels for managing models, e.g. team=nlp, stage=dev
@@ -176,7 +174,7 @@ def save_model(
        :code:`bentoml.tensorflow.save_model` API also support saving `RaggedTensor <https://www.tensorflow.org/guide/ragged_tensor>`_ model and Keras model. If you choose to save a Keras model
        with :code:`bentoml.tensorflow.save_model`, then the model will be saved under a :obj:`SavedModel` format instead of :obj:`.h5`.
 
-    """
+    """  # noqa
     context = ModelContext(
         framework_name="tensorflow",
         framework_versions={"tensorflow": get_tf_version()},

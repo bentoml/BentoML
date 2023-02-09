@@ -32,15 +32,16 @@ if __name__ == "__main__":
             bento,
             server_type=server_type,
             production=True,
-            triton_options={
-                "model_control_mode": "explicit",
-                "load-model": ["tensorflow_yolov5s"],
-            },
+            triton_args=[
+                "model-control-mode=explicit",
+                "load-model=tensorflow_yolov5s",
+                "load-model=tensorflow_mnist",
+            ],
         )
         try:
-            while 1 > 0:
+            while True:
                 bentoml.client.Client.wait_until_server_is_ready(
-                    server.host, server.port, 60
+                    server.host, server.port, 1000
                 )
                 client = bentoml.client.Client.from_url(
                     f"http://localhost:{server.port}"

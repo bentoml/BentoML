@@ -1,7 +1,8 @@
 from . import path
-from ._fscompat import fsdecode, fsencode
-from ._version import __version__
-from .enums import ResourceType, Seek
+from .enums import Seek
+from .enums import ResourceType
 from .opener import open_fs
 
-__all__ = ["__version__", "ResourceType", "Seek", "open_fs"]
+__version__: str = ...
+
+__all__ = ["__version__", "path", "ResourceType", "Seek", "open_fs"]

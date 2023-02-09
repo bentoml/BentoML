@@ -1,16 +1,15 @@
 import typing
-from typing import (
-    Any,
-    Callable,
-    Collection,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    Text,
-    Tuple,
-    Type,
-)
+from typing import Any
+from typing import List
+from typing import Text
+from typing import Type
+from typing import Tuple
+from typing import Callable
+from typing import Iterator
+from typing import Optional
+from typing import Collection
+from typing import NamedTuple
+
 from .base import FS
 from .info import Info
 
@@ -57,19 +56,21 @@ class BoundWalker(typing.Generic[_F]):
         self,
         path: Text = ...,
         namespaces: Optional[Collection[Text]] = ...,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Iterator[Step]: ...
+
     __call__ = walk
+
     def files(self, path: Text = ..., **kwargs: Any) -> Iterator[Text]: ...
     def dirs(self, path: Text = ..., **kwargs: Any) -> Iterator[Text]: ...
     def info(
         self,
         path: Text = ...,
         namespaces: Optional[Collection[Text]] = ...,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Iterator[Tuple[Text, Info]]: ...
 
-default_walker = Walker()
+default_walker: Walker = ...
 walk = default_walker.walk
 walk_files = default_walker.files
 walk_info = default_walker.info

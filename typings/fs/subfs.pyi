@@ -1,6 +1,9 @@
 import typing
-from typing import Text, Tuple
+from typing import Text
+from typing import Tuple
+
 import six
+
 from .base import FS
 from .wrapfs import WrapFS
 

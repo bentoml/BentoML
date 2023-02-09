@@ -1,61 +1,68 @@
-from yaml.emitter import Emitter
-from yaml.representer import BaseRepresenter, Representer, SafeRepresenter
-from yaml.resolver import BaseResolver, Resolver
-from yaml.serializer import Serializer
+from __future__ import annotations
+
+import typing as t
+
+from .emitter import Emitter
+from .resolver import Resolver
+from .resolver import BaseResolver
+from .serializer import Serializer
+from .representer import Representer
+from .representer import BaseRepresenter
+from .representer import SafeRepresenter
 
 class BaseDumper(Emitter, Serializer, BaseRepresenter, BaseResolver):
     def __init__(
         self,
-        stream,
-        default_style=...,
-        default_flow_style=...,
-        canonical=...,
-        indent=...,
-        width=...,
-        allow_unicode=...,
-        line_break=...,
-        encoding=...,
-        explicit_start=...,
-        explicit_end=...,
-        version=...,
-        tags=...,
+        stream: t.IO[str],
+        default_style: str = ...,
+        default_flow_style: bool = ...,
+        canonical: bool | None = ...,
+        indent: int = ...,
+        width: int = ...,
+        allow_unicode: bool | None = ...,
+        line_break: str = ...,
+        encoding: str = ...,
+        explicit_start: bool | None = ...,
+        explicit_end: bool | None = ...,
+        version: bool | None = ...,
+        tags: bool | None = ...,
         sort_keys: bool = ...,
     ) -> None: ...
 
 class SafeDumper(Emitter, Serializer, SafeRepresenter, Resolver):
     def __init__(
         self,
-        stream,
-        default_style=...,
-        default_flow_style=...,
-        canonical=...,
-        indent=...,
-        width=...,
-        allow_unicode=...,
-        line_break=...,
-        encoding=...,
-        explicit_start=...,
-        explicit_end=...,
-        version=...,
-        tags=...,
+        stream: t.IO[str],
+        default_style: str = ...,
+        default_flow_style: bool = ...,
+        canonical: bool | None = ...,
+        indent: int = ...,
+        width: int = ...,
+        allow_unicode: bool | None = ...,
+        line_break: str = ...,
+        encoding: str = ...,
+        explicit_start: bool | None = ...,
+        explicit_end: bool | None = ...,
+        version: bool | None = ...,
+        tags: bool | None = ...,
         sort_keys: bool = ...,
     ) -> None: ...
 
 class Dumper(Emitter, Serializer, Representer, Resolver):
     def __init__(
         self,
-        stream,
-        default_style=...,
-        default_flow_style=...,
-        canonical=...,
-        indent=...,
-        width=...,
-        allow_unicode=...,
-        line_break=...,
-        encoding=...,
-        explicit_start=...,
-        explicit_end=...,
-        version=...,
-        tags=...,
+        stream: t.IO[str],
+        default_style: str = ...,
+        default_flow_style: bool = ...,
+        canonical: bool | None = ...,
+        indent: int = ...,
+        width: int = ...,
+        allow_unicode: bool | None = ...,
+        line_break: str = ...,
+        encoding: str = ...,
+        explicit_start: bool | None = ...,
+        explicit_end: bool | None = ...,
+        version: bool | None = ...,
+        tags: bool | None = ...,
         sort_keys: bool = ...,
     ) -> None: ...

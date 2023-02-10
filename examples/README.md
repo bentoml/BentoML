@@ -7,6 +7,37 @@ usage and best practices.
 
 👉 [Pop into our Slack community!](https://join.slack.bentoml.org) We're happy to help with any issue you face or even just to meet you and hear what you're working on :)
 
+## Index
+
+| Example | Framework | Model | Functionality |
+| ------- | --------- | ----- | ------------- |
+| [custom_model_runner](https://github.com/bentoml/BentoML/tree/main/examples/custom_model_runner) | PyTorch | MNIST | Custom Model Runner, Prometheus, gRPC |
+| [custom_python_model/lda_classifier](https://github.com/bentoml/BentoML/tree/main/examples/custom_python_model/lda_classifier) | Picklable | LDA | Custom Python Model |
+| [custom_python_model/simple_pickable_model](https://github.com/bentoml/BentoML/tree/main/examples/custom_python_model/simple_pickable_model) | Picklable | Python Function | |
+| [custom_runner/nltk_pretrained_model](https://github.com/bentoml/BentoML/tree/main/examples/custom_runner/nltk_pretrained_model) | Custom | NLTK | Custom Runner |
+| [custom_runner/torch_hub_yolov5](https://github.com/bentoml/BentoML/tree/main/examples/custom_runner/torch_hub_yolov5) | Custom | YOLOv5 | Custom Runner, Torch Hub |
+| [custom_web_serving/fastapi_example](https://github.com/bentoml/BentoML/tree/main/examples/custom_web_serving/fastapi_example) | SKLearn | Classification | FastAPI |
+| [custom_web_serving/flask_example](https://github.com/bentoml/BentoML/tree/main/examples/custom_web_serving/flask_example) | SKLearn | Classification | Flask |
+| [inference_graph](https://github.com/bentoml/BentoML/tree/main/examples/inference_graph) | Transformers | Text Generation, Text Classification | Hugging Face Model Hub, Inference Graph |
+| [kfserving](https://github.com/bentoml/BentoML/tree/main/examples/kfserving) | SKLearn | Classification | KServe |
+| [mlflow/keras](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/keras) | MLflow, Keras | Sequential | |
+| [mlflow/lightgbm](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/lightgbm) | MLflow, LightGBM | Classification | |
+| [mlflow/pytorch](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/pytorch) | MLflow, PyTorch | MNIST | |
+| [mlflow/sklearn_autolog](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/sklearn_autolog) | MLflow, SKLearn | Linear Regression, Pipeline | MLflow Automatic Logging |
+| [mlflow/sklearn_logistic_regression](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/sklearn_logistic_regression) | MLflow, SKLearn | Logistic Regression | |
+| [mlflow/torchscript](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/torchscript) | MLflow, TorchScript |
+| [monitoring/task_classification](https://github.com/bentoml/BentoML/tree/main/examples/monitoring/task_classification) | SKLearn | Classfication | Model Monitoring, Classification Tasks |
+| [pydantic_validation](https://github.com/bentoml/BentoML/tree/main/examples/pydantic_validation) | SKLearn | Classification | Pydantic Model, Validation |
+| [pytorch_mnist](https://github.com/bentoml/BentoML/tree/main/examples/pytorch_mnist) | PyTorch | MNIST | |
+| [quickstart](https://github.com/bentoml/BentoML/tree/main/examples/quickstart) | SKLearn | Classification | Notebook |
+| [sklearn/linear_regression](https://github.com/bentoml/BentoML/tree/main/examples/sklearn/linear_regression) | SKLearn | Linear Regression | |
+| [sklearn/pipeline](https://github.com/bentoml/BentoML/tree/main/examples/sklearn/pipeline) | SKLearn | Pipeline | |
+| [tensorflow2_keras](https://github.com/bentoml/BentoML/tree/main/examples/tensorflow2_keras) | TensorFlow, Keras | MNIST | Notebook |
+| [tensorflow2_native](https://github.com/bentoml/BentoML/tree/main/examples/tensorflow2_native) | TensforFlow | MNIST | Notebook |
+| [xgboost](https://github.com/bentoml/BentoML/tree/main/examples/xgboost) | XGBoost | DMatrix | |
+
+
+
 
 ## How to contribute
 

@@ -25,7 +25,8 @@ usage and best practices.
 | [mlflow/pytorch](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/pytorch) | MLflow, PyTorch | MNIST | |
 | [mlflow/sklearn_autolog](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/sklearn_autolog) | MLflow, SKLearn | Linear Regression, Pipeline | MLflow Automatic Logging |
 | [mlflow/sklearn_logistic_regression](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/sklearn_logistic_regression) | MLflow, SKLearn | Logistic Regression | |
-| [mlflow/torchscript](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/torchscript) | MLflow, TorchScript |
+| [mlflow/torchscript/IrisClassification](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/torchscript/IrisClassification) | MLflow, TorchScript | Classfication | MLflow Log Model |
+| [mlflow/torchscript/MNIST](https://github.com/bentoml/BentoML/tree/main/examples/mlflow/torchscript/MNIST) | MLflow, PyTorch | MNIST | MLflow Log Model |
 | [monitoring/task_classification](https://github.com/bentoml/BentoML/tree/main/examples/monitoring/task_classification) | SKLearn | Classfication | Model Monitoring, Classification Tasks |
 | [pydantic_validation](https://github.com/bentoml/BentoML/tree/main/examples/pydantic_validation) | SKLearn | Classification | Pydantic Model, Validation |
 | [pytorch_mnist](https://github.com/bentoml/BentoML/tree/main/examples/pytorch_mnist) | PyTorch | MNIST | |

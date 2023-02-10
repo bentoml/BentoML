@@ -573,7 +573,8 @@ def add_containerize_command(cli: Group) -> None:
                     o = subprocess.check_output(
                         [container_runtime, "load"], input=result
                     )
-                    click.echo(o.decode("utf-8").strip())
+                    if get_debug_mode():
+                        click.echo(o.decode("utf-8").strip())
                     sys.exit(0)
                 return result
 

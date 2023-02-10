@@ -18,9 +18,9 @@ import fs.errors
 import fs.mirror
 import cloudpickle  # type: ignore (no cloudpickle types)
 from fs.base import FS
-from cattr.gen import override  # type: ignore (incomplete cattr types)
-from cattr.gen import make_dict_structure_fn  # type: ignore (incomplete cattr types)
-from cattr.gen import make_dict_unstructure_fn  # type: ignore (incomplete cattr types)
+from cattr.gen import override
+from cattr.gen import make_dict_structure_fn
+from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
@@ -496,7 +496,6 @@ bentoml_cattr.register_unstructure_hook(
 
 @attr.define(repr=False, eq=False, frozen=True)
 class ModelInfo:
-
     # for backward compatibility in case new fields are added to BentoInfo.
     __forbid_extra_keys__ = False
     # omit field in yaml file if it is not provided by the user.
@@ -614,7 +613,7 @@ class ModelInfo:
         return self._cached_options
 
     def to_dict(self) -> t.Dict[str, t.Any]:
-        return bentoml_cattr.unstructure(self)  # type: ignore (incomplete cattr types)
+        return bentoml_cattr.unstructure(self)
 
     @overload
     def dump(self, stream: io.StringIO) -> io.BytesIO:
@@ -675,9 +674,9 @@ bentoml_cattr.register_structure_hook_func(
     ),
 )
 bentoml_cattr.register_unstructure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),  # type: ignore (lambda)
+    lambda cls: issubclass(cls, ModelInfo),
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(  # type: ignore (incomplete cattr types)
+    make_dict_unstructure_fn(
         ModelInfo,
         bentoml_cattr,
         tag=override(omit=True),

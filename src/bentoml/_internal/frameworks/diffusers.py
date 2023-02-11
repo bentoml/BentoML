@@ -28,6 +28,7 @@ try:
     import torch
     import diffusers
     from diffusers.utils.import_utils import is_torch_version
+    from diffusers.utils.import_utils import is_xformers_available
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'diffusers' is required in order to use module 'bentoml.diffusers', install diffusers with 'pip install --upgrade diffusers transformers accelerate'. For more information, refer to https://github.com/huggingface/diffusers",
@@ -49,6 +50,8 @@ class DiffusersOptions(PartialKwargsModelOptions):
     pipeline_class: type[diffusers.pipelines.DiffusionPipeline] | None = None
     scheduler_class: type[diffusers.SchedulerMixin] | None = None
     torch_dtype: str | torch.dtype | None = None
+    custom_pipeline: str | None = None
+    enable_xformers: bool | None = None
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -83,10 +86,11 @@ def load_model(
         diffusers.pipelines.DiffusionPipeline
     ] = diffusers.StableDiffusionPipeline,
     device_map: str | dict[str, int | str | torch.device] = "auto",
-    custom_pipline: str | None = None,
+    custom_pipeline: str | None = None,
     scheduler_class: type[diffusers.SchedulerMixin] | None = None,
     torch_dtype: str | torch.dtype | None = None,
     low_cpu_mem_usage: bool | None = None,
+    enable_xformers: bool = False,
 ) -> diffusers.DiffusionPipeline:
     """
     Load a Diffusion model and convert it to diffusers `Pipeline <https://huggingface.co/docs/diffusers/api/pipelines/overview>`_
@@ -115,6 +119,9 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
+    if pipeline_class is None:
+        pipeline_class = diffusers.StableDiffusionPipeline
+
     diffusion_model_dir = bento_model.path_of(DIFFUSION_MODEL_FOLDER)
 
     if low_cpu_mem_usage is None:
@@ -128,7 +135,7 @@ def load_model(
         torch_dtype=torch_dtype,
         low_cpu_mem_usage=low_cpu_mem_usage,
         device_map=device_map,
-        custom_pipline=custom_pipline,
+        custom_pipeline=custom_pipeline,
     )
 
     if scheduler_class:
@@ -136,6 +143,9 @@ def load_model(
             pipeline.scheduler.config
         )
         pipeline.scheduler = scheduler
+
+    if enable_xformers:
+        pipeline.enable_xformers_memory_efficient_attention()
 
     return pipeline
 
@@ -280,6 +290,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     scheduler_class: type[
         diffusers.SchedulerMixin
     ] | None = bento_model.info.options.scheduler_class
+    custom_pipeline: str | None = bento_model.info.options.custom_pipeline
+    _enable_xformers: str | None = bento_model.info.options.enable_xformers
     _torch_dtype: str | torch.dtype | None = bento_model.info.options.torch_dtype
 
     class DiffusersRunnable(bentoml.Runnable):
@@ -294,11 +306,18 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             else:
                 torch_dtype = _torch_dtype
 
+            enable_xformers: bool = False
+            if torch.cuda.is_available() and _enable_xformers is None:
+                if is_xformers_available():
+                    enable_xformers: bool = True
+
             self.pipeline: diffusers.DiffusionPipeline = load_model(
                 bento_model,
                 pipeline_class=pipeline_class,
                 scheduler_class=scheduler_class,
                 torch_dtype=torch_dtype,
+                custom_pipeline=custom_pipeline,
+                enable_xformers=enable_xformers,
             )
 
             if torch.cuda.is_available():
@@ -315,7 +334,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 kwargs = dict(method_partial_kwargs, **kwargs)
 
             raw_method = getattr(runnable_self.pipeline, method_name)
-            res = raw_method(*args, **kwargs)
+            res = raw_method(*args, return_dict=False, **kwargs)
             return res
 
         return _run_method

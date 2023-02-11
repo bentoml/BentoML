@@ -6,7 +6,6 @@ import argparse
 
 import attr
 import torch
-import fs.mirror
 
 import bentoml
 from bentoml import Bento

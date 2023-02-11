@@ -109,7 +109,7 @@ def load_model(
 
         import bentoml
         pipeline = bentoml.diffusers.load_model('my_diffusers_model:latest')
-        pipeline.(prompt)
+        pipeline(prompt)
     """  # noqa
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
@@ -216,7 +216,7 @@ def import_model(
             'my_sd15_model',
             "runwayml/stable-diffusion-v1-5",
             signatures={
-                "__call__": {"batchable": True},
+                "__call__": {"batchable": False},
             }
         )
     """
@@ -282,7 +282,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    signature = bento_model.info.signatures["__call__"]
+
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
     pipeline_class: type[diffusers.DiffusionPipeline] = (
         bento_model.info.options.pipeline_class or diffusers.StableDiffusionPipeline
@@ -323,12 +323,14 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             if torch.cuda.is_available():
                 self.pipeline.to("cuda")
 
-    def make_run_method(method_name: str, partial_kwargs):
+    def make_run_method(
+        method_name: str, partial_kwargs: dict[str, t.Any] | None
+    ) -> t.Callable[..., t.Any]:
         def _run_method(
             runnable_self: DiffusersRunnable,
             *args: t.Any,
             **kwargs: t.Any,
-        ) -> diffusers.pipelines.stable_diffusion.StableDiffusionPipelineOutput:
+        ) -> t.Any:
 
             if method_partial_kwargs is not None:
                 kwargs = dict(method_partial_kwargs, **kwargs)

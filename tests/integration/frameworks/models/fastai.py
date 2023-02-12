@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing as t
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -21,7 +20,7 @@ from . import FrameworkTestModel
 from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from sklearn.utils import Bunch
 
     import bentoml._internal.external_typing as ext

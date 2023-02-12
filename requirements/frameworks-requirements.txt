@@ -1,11 +1,12 @@
 catboost
-lightgbm;platform_machine!="arm64"
+lightgbm
 mlflow
 fastai
 xgboost
 scikit-learn
 # ONNX dependencies
 onnx
+skl2onnx
 onnxruntime
 # tensorflow dependencies
 keras

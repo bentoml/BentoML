@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
     from .utils.onnx import ONNXArgType
     from .utils.onnx import ONNXArgCastedType
+    from .utils.onnx import ONNXArgCastingFuncType
 
     ProvidersType = list[str | tuple[str, dict[str, t.Any]]]
 
@@ -65,7 +66,8 @@ class ONNXOptions(ModelOptions):
     input_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
     output_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
     providers: ProvidersType = attr.field(default=None)
-    session_options: t.Optional["ort.SessionOptions"] = attr.field(default=None)
+    session_options: "ort.SessionOptions" | None = attr.field(default=None)
+    use_kwargs_inputs: bool = attr.field(default=False)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -407,7 +409,13 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         output_specs: list[dict[str, t.Any]],
     ):
 
-        casting_funcs = [gen_input_casting_func(spec) for spec in input_specs]
+        casting_funcs: list[ONNXArgCastingFuncType] = []
+        input_name2casting_func: dict[str, ONNXArgCastingFuncType] = {}
+
+        for spec in input_specs:
+            casting_f: ONNXArgCastingFuncType = gen_input_casting_func(spec)
+            casting_funcs.append(casting_f)
+            input_name2casting_func[spec["name"]] = casting_f
 
         if len(output_specs) > 1:
 
@@ -419,17 +427,31 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             def _process_output(outs):
                 return outs[0]
 
-        def _run(self: ONNXRunnable, *args: ONNXArgType) -> t.Any:
-            casted_args = [
-                casting_funcs[idx](args[idx]) for idx in range(len(casting_funcs))
-            ]
+        if options.use_kwargs_inputs:
 
-            input_names: dict[str, ONNXArgCastedType] = {
-                i.name: val for i, val in zip(self.model.get_inputs(), casted_args)
-            }
-            output_names: list[str] = [o.name for o in self.model.get_outputs()]
-            raw_outs = self.predict_fns[method_name](output_names, input_names)
-            return _process_output(raw_outs)
+            def _run(self: ONNXRunnable, **kwargs: ONNXArgType) -> t.Any:
+
+                input_names: dict[str, ONNXArgCastedType] = {
+                    name: input_name2casting_func[name](val)
+                    for name, val in kwargs.items()
+                }
+                output_names: list[str] = [o.name for o in self.model.get_outputs()]
+                raw_outs = self.predict_fns[method_name](output_names, input_names)
+                return _process_output(raw_outs)
+
+        else:
+
+            def _run(self: ONNXRunnable, *args: ONNXArgType) -> t.Any:
+                casted_args = [
+                    casting_funcs[idx](args[idx]) for idx in range(len(casting_funcs))
+                ]
+
+                input_names: dict[str, ONNXArgCastedType] = {
+                    i.name: val for i, val in zip(self.model.get_inputs(), casted_args)
+                }
+                output_names: list[str] = [o.name for o in self.model.get_outputs()]
+                raw_outs = self.predict_fns[method_name](output_names, input_names)
+                return _process_output(raw_outs)
 
         ONNXRunnable.add_method(
             _run,

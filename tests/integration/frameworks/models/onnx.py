@@ -12,6 +12,8 @@ import sklearn
 import torch.nn as nn
 import onnxruntime as ort
 from skl2onnx import convert_sklearn
+from transformers import AutoTokenizer
+from transformers import AutoModelForSequenceClassification
 from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
@@ -279,4 +281,91 @@ for labels, tensor_type in [
     onnx_le_models.append(onnx_le_model)
 
 
-models: list[FrameworkTestModel] = [onnx_pytorch_model, onnx_rf_model] + onnx_le_models
+# tiny bert model
+TINY_BERT_MODEL_ID = "prajjwal1/bert-tiny"
+
+
+def make_bert_onnx_model(tmpdir) -> tuple[onnx.ModelProto, t.Any]:
+    model_id = TINY_BERT_MODEL_ID
+    bert_model = AutoModelForSequenceClassification.from_pretrained(model_id)
+    tokenizer = AutoTokenizer(model_id)
+    sample_text = "This is a sample"
+    sample_input = tokenizer(sample_text, return_tensors="pt")
+    model_path = os.path.join(tmpdir, "bert-tiny.onnx")
+
+    torch.onnx.export(
+        bert_model,
+        tuple(sample_input.values()),
+        f=model_path,
+        input_names=["input_ids", "attention_mask", "token_type_ids"],
+        output_names=["logits"],
+        dynamic_axes={
+            "input_ids": {0: "batch_size", 1: "sequence"},
+            "attention_mask": {0: "batch_size", 1: "sequence"},
+            "logits": {0: "batch_size", 1: "sequence"},
+        },
+        do_constant_folding=True,
+        opset_version=13,
+    )
+
+    onnx_model = onnx.load(model_path)
+
+    expected_input = tokenizer(sample_text, return_tensors="np")
+    model_output = bert_model(**sample_input)
+    expected_output = model_output.logits.detach().to("cpu").numpy()
+    expected_data = (expected_input, expected_output)
+    return (onnx_model, expected_data)
+
+
+onnx_bert_raw_model, _expected_data = make_bert_onnx_model()
+bert_input, bert_expected_output = _expected_data
+
+
+def method_caller_kwargs(
+    framework_test_model: FrameworkTestModel,
+    method: str,
+    args: list[t.Any],
+    kwargs: dict[str, t.Any],
+):
+    with tempfile.NamedTemporaryFile() as temp:
+        onnx.save(framework_test_model.model, temp.name)
+        ort_sess = ort.InferenceSession(temp.name, providers=["CPUExecutionProvider"])
+
+    def to_numpy(item):
+        if isinstance(item, np.ndarray):
+            pass
+        elif isinstance(item, torch.Tensor):
+            item = item.detach().to("cpu").numpy()
+        return item
+
+    input_names = {k: list(v) for k, v in kwargs}
+    output_names = [o.name for o in ort_sess.get_outputs()]
+    out = getattr(ort_sess, method)(output_names, input_names)[0]
+    return out
+
+
+onnx_bert_model = FrameworkTestModel(
+    name="onnx_bert_model",
+    model=onnx_bert_raw_model,
+    model_method_caller=method_caller_kwargs,
+    model_signatures={"run": {"batchable": True}},
+    configurations=[
+        Config(
+            test_inputs={
+                "run": [
+                    Input(
+                        input_args=[],
+                        input_kwargs=bert_input,
+                        expected=close_to(bert_expected_output),
+                    ),
+                ],
+            },
+            load_kwargs={"use_kwargs_inputs": True},
+            check_model=check_model,
+        ),
+    ],
+)
+
+models: list[FrameworkTestModel] = (
+    [onnx_pytorch_model, onnx_rf_model] + onnx_le_models + [onnx_bert_model]
+)

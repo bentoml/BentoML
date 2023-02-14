@@ -13,7 +13,7 @@ BentoML makes it easy to create Machine Learning services that are ready to depl
 
 👉 [Join our Slack community today!](https://l.bentoml.com/join-slack)
 
-✨ Looking deploy your ML service quickly? Checkout [BentoML Cloud](https://www.bentoml.com/bentoml-cloud/)
+✨ Looking deploy your ML service quickly? Checkout [BentoML Cloud](https://l.bentoml.com/bento-cloud)
 for the easiest and fastest way to deploy your bento.
 
 ## Getting Started

@@ -13,7 +13,7 @@ pytest-cov==4.0.0
 pytest==7.2.1
 pytest-xdist[psutil]==3.2.0
 pytest-asyncio==0.20.3
-imageio==2.25.0
+imageio==2.25.1
 pyarrow==11.0.0
 build[virtualenv]==0.10.0
 protobuf<4.0dev

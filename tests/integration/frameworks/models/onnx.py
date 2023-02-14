@@ -288,7 +288,7 @@ TINY_BERT_MODEL_ID = "prajjwal1/bert-tiny"
 def make_bert_onnx_model(tmpdir) -> tuple[onnx.ModelProto, t.Any]:
     model_id = TINY_BERT_MODEL_ID
     bert_model = AutoModelForSequenceClassification.from_pretrained(model_id)
-    tokenizer = AutoTokenizer(model_id)
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
     sample_text = "This is a sample"
     sample_input = tokenizer(sample_text, return_tensors="pt")
     model_path = os.path.join(tmpdir, "bert-tiny.onnx")
@@ -317,8 +317,9 @@ def make_bert_onnx_model(tmpdir) -> tuple[onnx.ModelProto, t.Any]:
     return (onnx_model, expected_data)
 
 
-onnx_bert_raw_model, _expected_data = make_bert_onnx_model()
-bert_input, bert_expected_output = _expected_data
+with tempfile.TemporaryDirectory() as tmpdir:
+    onnx_bert_raw_model, _expected_data = make_bert_onnx_model(tmpdir)
+    bert_input, bert_expected_output = _expected_data
 
 
 def method_caller_kwargs(
@@ -341,6 +342,7 @@ def method_caller_kwargs(
     input_names = {k: list(v) for k, v in kwargs}
     output_names = [o.name for o in ort_sess.get_outputs()]
     out = getattr(ort_sess, method)(output_names, input_names)[0]
+    print("hahahah lkasjdfklasfdsaf")
     return out
 
 

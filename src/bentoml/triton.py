@@ -5,7 +5,6 @@ import shutil
 import typing as t
 import logging
 import itertools
-import subprocess
 
 import attr
 from cattr.gen import override as _override
@@ -14,7 +13,6 @@ from simple_di import inject as _inject
 from simple_di import Provide as _Provide
 
 from .exceptions import StateException as _StateException
-from .exceptions import BentoMLException as _BentoMLException
 from ._internal.utils import LazyLoader as _LazyLoader
 from ._internal.utils import bentoml_cattr as _bentoml_cattr
 from ._internal.configuration import get_debug_mode as _get_debug_mode
@@ -488,34 +486,6 @@ class TritonServerHandle:
         default=None, converter=_to_mut_iterable
     )
 
-    def _validate_args(self, args: str, value: t.Any, timeout: int | float = 0.3):
-        # NOTE: If the arguments are not available, the process will exit instantly.
-        # Otherwise, if it exists, then quickly quit the process with a timeout.
-        from ._internal.container.base import Arguments
-
-        cmd = Arguments([self._binary])
-        cmd.construct_args(self.model_repository, opt="model-repository")
-        cmd.construct_args(value, opt=args)
-
-        try:
-            subprocess.run(
-                list(map(str, cmd)),
-                timeout=timeout,
-                check=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-        except subprocess.TimeoutExpired:
-            _logger.debug("Arguments %s are available in %s", args, self._binary)
-            return True
-        except subprocess.CalledProcessError:
-            _logger.debug("Arguments %s does not exists for %s", args, self._binary)
-            return False
-        except Exception as e:  # pylint: disable=broad-except
-            _logger.error("Caught exception while validating arguments: %s", args)
-            _logger.error(e)
-            raise
-
     @property
     def runner(self):
         return self._runner
@@ -544,49 +514,36 @@ class TritonServerHandle:
 
         # NOTE: to run subprocess to check if the arguments are available
         # are not optimal, but it is the only way to do it?
-        if self._validate_args("allow-http", str(False)):
-            # This server have HTTP endpoint enabled.
-            resolved["allow_http"] = self.use_http_client
-            if self._validate_args("allow-grpc", str(False)):
-                resolved["allow_grpc"] = not self.use_http_client
-            else:
-                # Server doesn't have gRPC enabled.
-                for key in [
-                    "allow_grpc",
-                    "grpc_address",
-                    "grpc_port",
-                    "reuse_grpc_port",
-                    "grpc_infer_allocation_pool_size",
-                    "grpc_use_ssl",
-                    "grpc_use_ssl_mutual",
-                    "grpc_server_cert",
-                    "grpc_server_key",
-                    "grpc_root_cert",
-                    "grpc_infer_response_compression_level",
-                    "grpc_keepalive_time",
-                    "grpc_keepalive_permit_without_calls",
-                    "grpc_http2_max_pings_without_data",
-                    "grpc_http2_min_recv_ping_interval_without_data",
-                    "grpc_http2_max_ping_strikes",
-                ]:
-                    resolved.pop(key, None)
+        if self.use_http_client:
+            # This runner is using HTTP triton client
+            for key in [
+                "allow_grpc",
+                "grpc_address",
+                "grpc_port",
+                "reuse_grpc_port",
+                "grpc_infer_allocation_pool_size",
+                "grpc_use_ssl",
+                "grpc_use_ssl_mutual",
+                "grpc_server_cert",
+                "grpc_server_key",
+                "grpc_root_cert",
+                "grpc_infer_response_compression_level",
+                "grpc_keepalive_time",
+                "grpc_keepalive_permit_without_calls",
+                "grpc_http2_max_pings_without_data",
+                "grpc_http2_min_recv_ping_interval_without_data",
+                "grpc_http2_max_ping_strikes",
+            ]:
+                resolved.pop(key, None)
         else:
-            if self.use_http_client:
-                # Raise errors when users wants to use HTTP but the server
-                # doesn't have HTTP endpoint enabled.
-                raise _BentoMLException(
-                    f"HTTP is not available for the tritonserver ({self._binary}), while 'TritonRunner.tritonserver_type={self.use_http_client}'."
-                )
-            # This server doesn't have HTTP jendpoint enabled.
-            # we need to pop all arguments that are only available for HTTP
-            # to avoid error
+            # This runner is using GRPC triton client
             for key in ["allow_http", "http_port", "http_address", "http_thread_count"]:
                 resolved.pop(key, None)
-        if self._validate_args("allow-metrics", str(False)):
-            # This server have Metrics endpoint enabled. For the scope of BentoML
-            # we will always disable this. This check ensures not to break on server
-            # that doesn't have metrics enabled.
-            resolved["allow_metrics"] = False
+
+        # This server have Metrics endpoint enabled. For the scope of BentoML
+        # we will always disable this. This check ensures not to break on server
+        # that doesn't have metrics enabled.
+        resolved["allow_metrics"] = False
 
         cli: list[str] = []
         for arg, value in resolved.items():

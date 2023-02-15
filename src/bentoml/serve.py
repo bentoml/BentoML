@@ -411,13 +411,12 @@ def serve_http_production(
             else:
                 triton_handle = construct_triton_handle(runner, **attrs)
                 # Make sure that the tritonserver uses the correct protocol
-                cli_args = triton_handle.to_cli_args()
                 runner_bind_map[runner.name] = triton_handle.protocol_address
                 watchers.append(
                     create_watcher(
                         name=f"tritonserver_{runner.name}",
                         cmd=triton_handle.executable,
-                        args=cli_args,
+                        args=triton_handle.args,
                         use_sockets=False,
                         working_dir=working_dir,
                         numprocesses=1,
@@ -465,13 +464,12 @@ def serve_http_production(
                 else:
                     triton_handle = construct_triton_handle(runner, **attrs)
                     # Make sure that the tritonserver uses the correct protocol
-                    cli_args = triton_handle.to_cli_args()
                     runner_bind_map[runner.name] = triton_handle.protocol_address
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
                             cmd=triton_handle.executable,
-                            args=cli_args,
+                            args=triton_handle.args,
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,
@@ -834,13 +832,12 @@ def serve_grpc_production(
             else:
                 triton_handle = construct_triton_handle(runner, **attrs)
                 # Make sure that the tritonserver uses the correct protocol
-                cli_args = triton_handle.to_cli_args()
                 runner_bind_map[runner.name] = triton_handle.protocol_address
                 watchers.append(
                     create_watcher(
                         name=f"tritonserver_{runner.name}",
                         cmd=triton_handle.executable,
-                        args=cli_args,
+                        args=triton_handle.args,
                         use_sockets=False,
                         working_dir=working_dir,
                         numprocesses=1,
@@ -891,13 +888,12 @@ def serve_grpc_production(
                 else:
                     triton_handle = construct_triton_handle(runner, **attrs)
                     # Make sure that the tritonserver uses the correct protocol
-                    cli_args = triton_handle.to_cli_args()
                     runner_bind_map[runner.name] = triton_handle.protocol_address
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
                             cmd=triton_handle.executable,
-                            args=cli_args,
+                            args=triton_handle.args,
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,

@@ -98,8 +98,29 @@ def load_model(
     with the given tag from the local BentoML model store.
 
     Args:
-        bento_model: Either the tag of the model to get from the store, or a BentoML
+        bento_model:
+            Either the tag of the model to get from the store, or a BentoML
             ``~bentoml.Model`` instance to load the model from.
+        pipeline_class (:code:`type[diffusers.DiffusionPipeline]`, `optional`):
+            DiffusionPipeline Class use to load the saved diffusion model, default to
+            ``diffusers.StableDiffusionPipeline``. For more pipeline types, refer to
+            `Pipeline Overview <https://huggingface.co/docs/diffusers/api/pipelines/overview>`_
+        device_map (:code:`None | str | Dict[str, Union[int, str, torch.device]]`, `optional`):
+            A map that specifies where each submodule should go. For more information, refer to
+            `device_map <https://huggingface.co/docs/diffusers/main/en/api/diffusion_pipeline#diffusers.DiffusionPipeline.from_pretrained.device_map>`_
+        custom_pipeline (:code:`None | str`, `optional`):
+            An identifier of custom pipeline hosted on github. For a list of community
+            maintained custom piplines, refer to https://github.com/huggingface/diffusers/tree/main/examples/community
+        scheduler_class (:code:`type[diffusers.SchedulerMixin]`, `optional`):
+            Scheduler Class to be used by DiffusionPipeline
+        torch_dtype (:code:`str | torch.dtype`, `optional`):
+            Override the default `torch.dtype` and load the model under this dtype.
+        low_cpu_mem_usage (:code:`bool`, `optional`):
+            Speed up model loading by not initializing the weights and only loading the
+            pre-trained weights. defaults to `True` if torch version >= 1.9.0 else `False`
+        enable_xformers (:code:`bool`, `optional`):
+            Use xformers optimization if it's available. For more info, refer to
+            https://github.com/facebookresearch/xformers
 
     Returns:
         The Diffusion model loaded as diffusers pipeline from the BentoML model store.

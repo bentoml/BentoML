@@ -652,6 +652,7 @@ fi
                     "--allow-unsafe",
                     "--no-header",
                     f"--output-file={pip_compile_out}",
+                    "--resolver=backtracking",
                 ]
             )
             logger.info("Locking PyPI package versions.")

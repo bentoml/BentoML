@@ -29,6 +29,7 @@ try:
     import diffusers
     from diffusers.utils.import_utils import is_torch_version
     from diffusers.utils.import_utils import is_xformers_available
+    from diffusers.utils.import_utils import is_accelerate_available
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'diffusers' is required in order to use module 'bentoml.diffusers', install diffusers with 'pip install --upgrade diffusers transformers accelerate'. For more information, refer to https://github.com/huggingface/diffusers",
@@ -85,7 +86,7 @@ def load_model(
     pipeline_class: type[
         diffusers.pipelines.DiffusionPipeline
     ] = diffusers.StableDiffusionPipeline,
-    device_map: str | dict[str, int | str | torch.device] = "auto",
+    device_map: str | dict[str, int | str | torch.device] | None = None,
     custom_pipeline: str | None = None,
     scheduler_class: type[diffusers.SchedulerMixin] | None = None,
     torch_dtype: str | torch.dtype | None = None,
@@ -124,8 +125,15 @@ def load_model(
 
     diffusion_model_dir = bento_model.path_of(DIFFUSION_MODEL_FOLDER)
 
+    if (
+        device_map is None
+        and is_torch_version(">=", "1.9.0")
+        and is_accelerate_available()
+    ):
+        device_map = "auto"
+
     if low_cpu_mem_usage is None:
-        if is_torch_version(">=", "1.9.0"):
+        if is_torch_version(">=", "1.9.0") and is_accelerate_available():
             low_cpu_mem_usage = True
         else:
             low_cpu_mem_usage = False
@@ -278,6 +286,88 @@ def import_model(
         return bento_model
 
 
+def save_model(
+    name: str,
+    pipeline: diffusers.DiffusionPipeline,
+    *,
+    signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: t.List[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
+) -> bentoml.Model:
+    """
+    Save a DiffusionPipeline to the BentoML model store.
+
+    Args:
+        name:
+            The name to give to the model in the BentoML store. This must be a valid
+            :obj:`~bentoml.Tag` name.
+        pipeline:
+            Instance of the Diffusers pipeline to be saved
+        signatures:
+            Signatures of predict methods to be used. If not provided, the signatures
+            default to {"__call__": {"batchable": False}}. See
+            :obj:`~bentoml.types.ModelSignature` for more details.
+        labels:
+            A default set of management labels to be associated with the model. For
+            example: ``{"training-set": "data-v1"}``.
+        custom_objects:
+            Custom objects to be saved with the model. An example is
+            ``{"my-normalizer": normalizer}``. Custom objects are serialized with
+            cloudpickle.
+        metadata:
+            Metadata to be associated with the model. An example is ``{"param_a": .2}``.
+
+            Metadata is intended for display in a model management UI and therefore all
+            values in metadata dictionary must be a primitive Python type, such as
+            ``str`` or ``int``.
+
+    Returns:
+        A :obj:`~bentoml.Model` instance referencing a saved model in the local BentoML
+        model store.
+
+    """
+
+    if not isinstance(pipeline, diffusers.DiffusionPipeline):
+        raise BentoMLException(
+            "'pipeline' must be an instance of 'diffusers.DiffusionPipeline'. "
+        )
+
+    context = ModelContext(
+        framework_name="diffusers",
+        framework_versions={"diffusers": diffusers.__version__},
+    )
+
+    if signatures is None:
+        signatures = {
+            "__call__": {"batchable": False},
+        }
+        logger.info(
+            'Using the default model signature for diffusers (%s) for model "%s".',
+            signatures,
+            name,
+        )
+
+    with bentoml.models.create(
+        name,
+        module=MODULE_NAME,
+        api_version=API_VERSION,
+        signatures=signatures,
+        labels=labels,
+        options=None,
+        custom_objects=custom_objects,
+        external_modules=external_modules,
+        metadata=metadata,
+        context=context,
+    ) as bento_model:
+
+        diffusion_model_dir = bento_model.path_of(DIFFUSION_MODEL_FOLDER)
+        pipeline.save_pretrained(diffusion_model_dir)
+
+        return bento_model
+
+
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
@@ -336,7 +426,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 kwargs = dict(method_partial_kwargs, **kwargs)
 
             raw_method = getattr(runnable_self.pipeline, method_name)
-            res = raw_method(*args, return_dict=False, **kwargs)
+            if "return_dict" not in kwargs:
+                kwargs["return_dict"] = False
+            res = raw_method(*args, **kwargs)
             return res
 
         return _run_method

@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       catboost: ${{ steps.filter.outputs.catboost }}
+      diffusers: ${{ steps.filter.outputs.diffusers }}
       fastai: ${{ steps.filter.outputs.fastai }}
       keras: ${{ steps.filter.outputs.keras }}
       lightgbm: ${{ steps.filter.outputs.lightgbm }}
@@ -56,6 +57,11 @@ jobs:
               - src/bentoml/catboost.py
               - src/bentoml/_internal/frameworks/catboost.py
               - tests/integration/frameworks/models/catboost.py
+            diffusers:
+              - *related
+              - src/bentoml/diffusers.py
+              - src/bentoml/_internal/frameworks/diffusers.py
+              - tests/integration/frameworks/models/diffusers.py
             lightgbm:
               - *related
               - src/bentoml/lightgbm.py
@@ -162,6 +168,51 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework catboost)
+          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+
+      - name: Generate coverage
+        run: coverage xml
+
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  diffusers_integration_tests:
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.diffusers == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - name: Get pip cache dir
+        id: cache-dir
+        run: |
+          echo ::set-output name=dir::$(pip cache dir)
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        id: cache-pip
+        with:
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          pip install .
+          pip install diffusers torch transformers
+          pip install -r requirements/tests-requirements.txt
+
+      - name: Run tests and generate coverage report
+        run: |
+          OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework diffusers)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
       - name: Generate coverage

@@ -68,6 +68,7 @@ if TYPE_CHECKING:
     from . import lightgbm
     from . import onnxmlir
     from . import detectron
+    from . import diffusers
     from . import tensorflow
     from . import statsmodels
     from . import torchscript
@@ -91,6 +92,7 @@ else:
 
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
     detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")
+    diffusers = _LazyLoader("bentoml.diffusers", globals(), "bentoml.diffusers")
     easyocr = _LazyLoader("bentoml.easyocr", globals(), "bentoml.easyocr")
     flax = _LazyLoader("bentoml.flax", globals(), "bentoml.flax")
     fastai = _LazyLoader("bentoml.fastai", globals(), "bentoml.fastai")
@@ -166,6 +168,7 @@ __all__ = [
     # Framework specific modules
     "catboost",
     "detectron",
+    "diffusers",
     "easyocr",
     "flax",
     "fastai",

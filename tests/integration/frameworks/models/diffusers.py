@@ -11,7 +11,7 @@ from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.diffusers
 
-backward_compatible = True
+backward_compatible = False
 
 
 def check_output(out):

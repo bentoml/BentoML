@@ -15,7 +15,6 @@ from fastai.data.core import Datasets
 from fastai.data.core import DataLoaders
 from fastai.data.block import DataBlock
 from fastai.test_utils import synth_learner
-from fastai.torch_core import Module
 from fastcore.foundation import L
 from fastai.data.transforms import Transform
 

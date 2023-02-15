@@ -113,7 +113,7 @@ Next, we will transform the service definition module and breakdown each section
 Environment
 ~~~~~~~~~~~
 
-BentoML version 0.13.1 relies on the :code:`@env` decorator API [#env_decorator]_ for defining the
+BentoML version 0.13.1 relies on the :code:`@env` decorator API for defining the
 environment settings and dependencies of the service. Typical arguments of the environment decorator includes Python
 dependencies (e.g. :code:`pip_packages`, :code:`pip_index_url`), Conda dependencies (e.g. :code:`conda_channels`,
 :code:`conda_dependencies`), and Docker options (e.g. :code:`setup_sh`, :code:`docker_base_image`).
@@ -147,8 +147,9 @@ Artifacts
 ~~~~~~~~~
 
 BentoML version 0.13.1 provides the :code:`@artifacts`
-decorator API [#artifact_decorator]_ for users to specify
-the trained models required by a BentoService. The specified artifacts are automatically serialized and deserialized
+decorator API for users to specify
+the trained models required by a BentoService.
+The specified artifacts are automatically serialized and deserialized
 when saving and loading a BentoService.
 
 .. code-block:: python
@@ -346,11 +347,3 @@ in one place, and enables advanced GitOps and CI/CD workflow.
 
 🎉 Ta-da, you have migrated your project to BentoML 1.0.0. Have more questions?
 `Join the BentoML Slack community <https://l.linklyhq.com/l/ktPp>`_.
-
-----
-
-.. rubric:: Footnotes
-
-.. [#env_decorator] 0.13 ``@env`` `decorator documentation <https://docs.bentoml.org/en/0.13-lts/concepts.html#defining-service-environment>`_
-
-.. [#artifact_decorator] 0.13 ``@artifact`` decorator: `[link] <https://docs.bentoml.org/en/0.13-lts/concepts.html#packaging-model-artifacts>`_

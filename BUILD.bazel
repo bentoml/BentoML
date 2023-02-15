@@ -9,7 +9,7 @@ filegroup(
 )
 
 buildifier(
-    name = "buildifier",
+    name = "buildfmt",
 )
 
 proto_library(

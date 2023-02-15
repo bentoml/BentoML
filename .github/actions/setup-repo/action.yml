@@ -1,0 +1,90 @@
+name: Setup repo
+description: Setup repo with all features on CI
+inputs:
+  python-version:
+    description: "Python version"
+    required: true
+    default: "3.8"
+  architecture:
+    description: "Architecture to run on"
+    required: true
+    default: x64
+  os:
+    description: "OS to be used with this actions. Default to ubuntu-latest"
+    required: false
+    default: ubuntu-latest
+  enable-coverage:
+    description: "Whether to enable coverage"
+    required: false
+    default: false
+  debug:
+    description: "Whether to enable debug"
+    required: false
+    default: false
+  exit-on-fail:
+    description: "Whether to exit when fail. Equivalent to passing -x to pytest"
+    required: false
+    default: false
+outputs:
+  pytest-args:
+    description: "pytest arguments"
+    value: ${{ steps.pytest-args-generator.outputs.args }}
+runs:
+  using: composite
+  steps:
+    - name: Fetch base reference.
+      shell: bash
+      run: git fetch origin $GITHUB_BASE_REF
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+        architecture: ${{ inputs.architecture }}
+    - name: Get pip cache dir
+      id: pip-cache-dir
+      shell: bash
+      run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
+    - name: Get cache key prefix
+      id: get-cache-key-prefix
+      shell: bash
+      run: echo "prefix=${{ runner.os }}-${{ inputs.python-version }}" >> $GITHUB_OUTPUT
+    - name: Pip cache
+      id: pip-cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.pip-cache-dir.outputs.dir }}
+        key: ${{ steps.get-cache-key-prefix.outputs.prefix }}-pip
+        restore-keys: |
+          ${{ steps.get-cache-key-prefix.outputs.prefix }}-pip-
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install -r requirements/dev-requirements.txt
+        pip install -r requirements/frameworks-requirements.txt
+    - name: Generate pytest args
+      shell: bash
+      id: pytest-args-generator
+      run: |
+        OPTS=(--cov-config pyproject.toml --cov=src/bentoml)
+        if [ "${{ inputs.os }}" != "windows-latest"  ]; then
+            # we will only run grpc on Unix.
+            OPTS=(${OPTS[@]} --run-grpc-tests)
+        fi
+        if [ "${{ inputs.debug }}" = true ]; then
+            OPTS=(${OPTS[@]} --capture=tee-sys)
+        fi
+        if [ "${{ inputs.exit-on-fail }}" = true ]; then
+            OPTS=(${OPTS[@]} -x)
+        fi
+        echo "args=${OPTS[@]}" >> $GITHUB_OUTPUT
+    - uses: bazelbuild/setup-bazelisk@v2
+    - name: Bazel cache
+      id: bazel-cache
+      uses: actions/cache@v3
+      with:
+        key: ${{ steps.get-cache-key-prefix.outputs.prefix }}-bazel
+        path: |
+          ~/.cache/bazel
+          tools/
+        restore-keys: |
+          ${{ steps.get-cache-key-prefix.outputs.prefix }}-bazel-

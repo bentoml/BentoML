@@ -101,7 +101,7 @@ class FormParser:
         field_name = b""
         field_value = b""
 
-        items: typing.List[typing.Tuple[str, typing.Union[str, UploadFile]]] = []
+        items: list[tuple[str, str | UploadFile]] = []
 
         # Feed the parser with data from the request.
         async for chunk in self.stream:

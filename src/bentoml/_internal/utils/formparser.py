@@ -7,6 +7,7 @@ from enum import Enum
 from tempfile import SpooledTemporaryFile
 from dataclasses import field
 from dataclasses import dataclass
+from urllib.parse import unquote_plus
 
 import multipart.multipart as multipart
 from starlette.requests import Request
@@ -17,7 +18,6 @@ from starlette.datastructures import UploadFile
 from starlette.datastructures import MutableHeaders
 
 from .http import set_cookies
-from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 
 if t.TYPE_CHECKING:
@@ -36,11 +36,11 @@ class FormMessage(Enum):
 
 @dataclass
 class MultipartPart:
-    content_disposition: typing.Optional[bytes] = None
+    content_disposition: bytes | None = None
     field_name: str = ""
     data: bytes = b""
-    file: typing.Optional[UploadFile] = None
-    item_headers: typing.List[typing.Tuple[bytes, bytes]] = field(default_factory=list)
+    file: UploadFile | None = None
+    item_headers: list[tuple[bytes, bytes]] = field(default_factory=list)
 
 
 def _user_safe_decode(src: bytes, codec: str) -> str:
@@ -62,7 +62,7 @@ class FormParser:
         ), "The `python-multipart` library must be installed to use form parsing."
         self.headers = headers
         self.stream = stream
-        self.messages: typing.List[typing.Tuple[FormMessage, bytes]] = []
+        self.messages: list[tuple[FormMessage, bytes]] = []
 
     def on_field_start(self) -> None:
         message = (FormMessage.FIELD_START, b"")
@@ -131,10 +131,10 @@ class MultiPartParser:
     def __init__(
         self,
         headers: Headers,
-        stream: typing.AsyncGenerator[bytes, None],
+        stream: t.AsyncGenerator[bytes, None],
         *,
-        max_files: typing.Union[int, float] = 1000,
-        max_fields: typing.Union[int, float] = 1000,
+        max_files: int | float = 1000,
+        max_fields: int | float = 1000,
     ) -> None:
         assert (
             multipart is not None
@@ -143,16 +143,16 @@ class MultiPartParser:
         self.stream = stream
         self.max_files = max_files
         self.max_fields = max_fields
-        self.items: typing.List[typing.Tuple[str, typing.Union[str, UploadFile]]] = []
+        self.items: list[tuple[str, str | UploadFile]] = []
         self._current_files = 0
         self._current_fields = 0
         self._current_partial_header_name: bytes = b""
         self._current_partial_header_value: bytes = b""
         self._current_part = MultipartPart()
-        self._charset = ""
-        self._file_parts_to_write: typing.List[typing.Tuple[MultipartPart, bytes]] = []
-        self._file_parts_to_finish: typing.List[MultipartPart] = []
-        self._files_to_close_on_error: typing.List[SpooledTemporaryFile] = []
+        self._charset: str = ""
+        self._file_parts_to_write: list[tuple[MultipartPart, bytes]] = []
+        self._file_parts_to_finish: list[MultipartPart] = []
+        self._files_to_close_on_error: list[SpooledTemporaryFile[bytes]] = []
 
     def on_part_begin(self) -> None:
         self._current_part = MultipartPart()
@@ -196,12 +196,13 @@ class MultiPartParser:
         self._current_partial_header_value = b""
 
     def on_headers_finished(self) -> None:
-        disposition, options = multipart.parse_options_header(
+        assert self._current_part.content_disposition is not None
+        _, options = multipart.parse_options_header(
             self._current_part.content_disposition
         )
         try:
             self._current_part.field_name = _user_safe_decode(
-                options[b"name"], self._charset
+                bytes(options[b"name"]), self._charset
             )
         except KeyError:
             raise MultiPartException(
@@ -213,12 +214,11 @@ class MultiPartParser:
                 raise MultiPartException(
                     f"Too many files. Maximum number of files is {self.max_files}."
                 )
-            filename = _user_safe_decode(options[b"filename"], self._charset)
+            filename = _user_safe_decode(bytes(options[b"filename"]), self._charset)
             tempfile = SpooledTemporaryFile(max_size=self.max_file_size)
             self._files_to_close_on_error.append(tempfile)
             self._current_part.file = UploadFile(
-                file=tempfile,  # type: ignore[arg-type]
-                size=0,
+                file=tempfile,
                 filename=filename,
                 headers=Headers(raw=self._current_part.item_headers),
             )
@@ -237,9 +237,9 @@ class MultiPartParser:
         # Parse the Content-Type header to get the multipart boundary.
         _, params = multipart.parse_options_header(self.headers["Content-Type"])
         charset = params.get(b"charset", "utf-8")
-        if type(charset) == bytes:
+        if isinstance(charset, bytes):
             charset = charset.decode("latin-1")
-        self._charset = charset
+        self._charset = str(charset)
         try:
             boundary = params[b"boundary"]
         except KeyError:
@@ -319,11 +319,11 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
             scope["headers"] = []
 
         req = Request(scope)
-        req._form = FormData([(field_name, data)])  # type: ignore (using internal starlette APIs)
+        req._form = FormData([(field_name, data)])  # type: ignore  # using internal starlette APIs
         if isinstance(data, str):
             req._body = bytes(data, "utf-8")
         elif isinstance(data, UploadFile):
-            req._receive = (  # type: ignore (using internal starlette APIs)
+            req._receive = (  # type: ignore  # using internal starlette APIs
                 file_body_to_message(data)
             )
         reqs[field_name] = req

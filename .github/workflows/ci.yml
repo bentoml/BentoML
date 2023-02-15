@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    paths:
+      - "**.py"
   schedule:
     - cron: "0 0 * * 1/2"
 env:

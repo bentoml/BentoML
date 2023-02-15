@@ -34,7 +34,7 @@ runs:
   steps:
     - name: Fetch base reference.
       shell: bash
-      run: git fetch origin $GITHUB_BASE_REF
+      run: git fetch origin $GITHUB_BASE_REF --tags
     - name: Setup Python
       uses: actions/setup-python@v4
       with:

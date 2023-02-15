@@ -7,7 +7,7 @@ BentoML provides native support for serving and deploying models trained from Py
 Preface
 -------
 
-If you have already compiled your PyTorch model to TorchScript, you might consider using :doc:`bentoml.torchscript </reference/frameworks/torchscript>`.
+If you have already compiled your PyTorch model to TorchScript, should consider using :doc:`bentoml.torchscript </reference/frameworks/torchscript>`.
 BentoML provides first-class support for TorchScript, hence using ``bentoml.torchscript`` is less prone to compatibility issues during production.
 
 .. note::

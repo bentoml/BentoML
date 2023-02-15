@@ -76,7 +76,7 @@ natively, BentoML will create a single global instance of the runner worker and 
 all API requests to the global instance; otherwise, BentoML will create multiple
 instances of runners based on the available system resources. We also let advanced users
 to customize the runtime configurations to fine tune the runner performance. To learn
-more, refer to the :doc:`introduction about Runner </concepts/runner>` documentation.
+more, see the :doc:`introduction to Runners </concepts/runner>`.
 
 Debugging Runners
 ^^^^^^^^^^^^^^^^^
@@ -114,7 +114,7 @@ have one or more APIs. An API consists of its input/output specs and a callback 
         # Define post-processing logic
         return result
 
-By decorating a function with ``@svc.api``, we declare that the function shall be`
+By decorating a function with ``@svc.api``, we declare that the function shall be
 invoked when this API is called. The API function is a great place for defining your
 serving logic, such as feature fetching, pre and post processing, and model inferences 
 via Runners.

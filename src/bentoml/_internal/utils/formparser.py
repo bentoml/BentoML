@@ -57,7 +57,7 @@ class MultiPartException(Exception):
 
 class FormParser:
     def __init__(
-        self, headers: Headers, stream: typing.AsyncGenerator[bytes, None]
+        self, headers: Headers, stream: t.AsyncGenerator[bytes, None]
     ) -> None:
         assert (
             multipart is not None

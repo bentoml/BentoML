@@ -56,9 +56,7 @@ class MultiPartException(Exception):
 
 
 class FormParser:
-    def __init__(
-        self, headers: Headers, stream: t.AsyncGenerator[bytes, None]
-    ) -> None:
+    def __init__(self, headers: Headers, stream: t.AsyncGenerator[bytes, None]) -> None:
         assert (
             multipart is not None
         ), "The `python-multipart` library must be installed to use form parsing."

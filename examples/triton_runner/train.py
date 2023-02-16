@@ -3,27 +3,25 @@ from __future__ import annotations
 import os
 import sys
 import json
+import typing as t
 import subprocess
 
 import fs
-import torch
 import fs.copy
 import fs.mirror
-from helpers import *
+from helpers import tf
+from helpers import onnx
+from helpers import torch
+from helpers import MODEL_FILE
+from helpers import onnx_checker
+from helpers import TORCH_DEVICE
+from helpers import ModelRepository
+from helpers import safe_create_bentomodel
 
 import bentoml
 
 if t.TYPE_CHECKING:
-    import onnx
-    import torch
-    import tensorflow as tf
-    import onnx.checker as onnx_checker
     from torch.jit._script import ScriptModule
-else:
-    torch = LazyLoader("torch", globals(), "torch")
-    onnx = LazyLoader("onnx", globals(), "onnx")
-    onnx_checker = LazyLoader("onnx_checker", globals(), "onnx.checker")
-    tf = LazyLoader("tf", globals(), "tensorflow")
 
 
 def load_traced_script() -> tuple[ScriptModule, dict[str, t.Any]]:

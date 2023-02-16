@@ -17,8 +17,11 @@ from bentoml._internal.utils import LazyLoader
 
 if t.TYPE_CHECKING:
     import cv2
+    import onnx
     import numpy as np
+    import tensorflow as tf
     import torchvision
+    import onnx.checker as onnx_checker
     from PIL import Image as PILImage
     from fs.base import FS
     from numpy.typing import NDArray
@@ -26,6 +29,9 @@ if t.TYPE_CHECKING:
     P = t.ParamSpec("P")
 
 else:
+    tf = LazyLoader("tf", globals(), "tensorflow")
+    onnx = LazyLoader("onnx", globals(), "onnx")
+    onnx_checker = LazyLoader("onnx_checker", globals(), "onnx.checker")
     np = LazyLoader("np", globals(), "numpy")
     onnx = LazyLoader("onnx", globals(), "onnx")
     torchvision = LazyLoader("torchvision", globals(), "torchvision")
@@ -132,7 +138,6 @@ def prepare_yolov5_input(
     fp16: bool = False,
     stride: int = 32,
 ) -> TensorContainer:
-
     p = torch.empty(1, device=torch.device(device))
     # Automatic Mixed Precision (AMP) inference
     autocast = fp16 and p.device.type != "cpu"

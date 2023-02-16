@@ -25,6 +25,7 @@ from ._internal.configuration.containers import BentoMLContainer
 if t.TYPE_CHECKING:
     from circus.watcher import Watcher
 
+    from .triton import Runner as TritonRunner
     from .triton import TritonServerHandle
 
 
@@ -166,8 +167,7 @@ def construct_ssl_args(
 
 
 def construct_triton_handle(
-    _model_repository_paths: str,
-    **attrs: t.Any,
+    _runner: TritonRunner, **attrs: t.Any
 ) -> TritonServerHandle:
     from .triton import TritonServerHandle
     from ._internal.utils import reserve_free_port
@@ -180,8 +180,10 @@ def construct_triton_handle(
             "triton_model_repository, triton_allow_grpc, triton_allow_http, triton_allow_metrics are not allowed in TritonRunner"
         )
 
-    if attrs.get("triton_grpc_port") is not None:
-        raise BentoMLException("triton_grpc_port is currently not supported")
+    if any(attrs.get(f"triton_{k}") is not None for k in ("grpc_port", "http_port")):
+        raise BentoMLException(
+            "triton_grpc_port, triton_http_port are currently not yet configurable."
+        )
 
     triton_kwargs: dict[str, t.Any] = {
         key: attrs.get(f"triton_{key}")
@@ -194,16 +196,22 @@ def construct_triton_handle(
         ]
     }
     # handle multiple model_repository for multiple TritonRunner
-    triton_kwargs["model_repository"] = _model_repository_paths
+    triton_kwargs["model_repository"] = _runner.repository_path
 
     handle = TritonServerHandle(**triton_kwargs)
 
-    with reserve_free_port(
-        host=handle.grpc_address, enable_so_reuseport=bool(handle.reuse_grpc_port)
-    ) as triton_grpc_port:
-        pass
+    if _runner.tritonserver_type == "http":
+        with reserve_free_port(host=handle.http_address) as port:
+            pass
+        triton_kwargs["http_port"] = port
+    else:
+        with reserve_free_port(
+            host=handle.grpc_address, enable_so_reuseport=bool(handle.reuse_grpc_port)
+        ) as port:
+            pass
+        triton_kwargs["grpc_port"] = port
 
-    return handle.with_args(**{"grpc_port": triton_grpc_port})
+    return TritonServerHandle.from_runner(_runner, **triton_kwargs)
 
 
 @inject
@@ -401,10 +409,9 @@ def serve_http_production(
                     )
                 )
             else:
-                triton_handle = construct_triton_handle(runner.repository_path, **attrs)
-                runner_bind_map[
-                    runner.name
-                ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                triton_handle = construct_triton_handle(runner, **attrs)
+                # Make sure that the tritonserver uses the correct protocol
+                runner_bind_map[runner.name] = triton_handle.protocol_address
                 watchers.append(
                     create_watcher(
                         name=f"tritonserver_{runner.name}",
@@ -455,12 +462,9 @@ def serve_http_production(
                         )
                     )
                 else:
-                    triton_handle = construct_triton_handle(
-                        runner.repository_path, **attrs
-                    )
-                    runner_bind_map[
-                        runner.name
-                    ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                    triton_handle = construct_triton_handle(runner, **attrs)
+                    # Make sure that the tritonserver uses the correct protocol
+                    runner_bind_map[runner.name] = triton_handle.protocol_address
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
@@ -826,10 +830,9 @@ def serve_grpc_production(
                     )
                 )
             else:
-                triton_handle = construct_triton_handle(runner.repository_path, **attrs)
-                runner_bind_map[
-                    runner.name
-                ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                triton_handle = construct_triton_handle(runner, **attrs)
+                # Make sure that the tritonserver uses the correct protocol
+                runner_bind_map[runner.name] = triton_handle.protocol_address
                 watchers.append(
                     create_watcher(
                         name=f"tritonserver_{runner.name}",
@@ -883,12 +886,9 @@ def serve_grpc_production(
                         )
                     )
                 else:
-                    triton_handle = construct_triton_handle(
-                        runner.repository_path, **attrs
-                    )
-                    runner_bind_map[
-                        runner.name
-                    ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                    triton_handle = construct_triton_handle(runner, **attrs)
+                    # Make sure that the tritonserver uses the correct protocol
+                    runner_bind_map[runner.name] = triton_handle.protocol_address
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",

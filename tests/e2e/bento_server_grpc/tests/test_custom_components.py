@@ -7,7 +7,6 @@ from grpc import aio
 from grpc_health.v1 import health_pb2 as pb_health
 from google.protobuf import wrappers_pb2
 
-from bentoml.grpc.utils import import_generated_stubs
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
 
@@ -45,22 +44,10 @@ async def test_trailing_metadata_interceptors(host: str) -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("protocol_version", ["v1", "v1alpha1"])
 async def test_grpc_context(host: str, protocol_version: str) -> None:
-    if t.TYPE_CHECKING:
-        from bentoml.grpc.v1 import service_pb2 as pb
-    else:
-        pb, _ = import_generated_stubs(protocol_version)
-
     async with create_channel(host) as channel:
-        Call = channel.unary_unary(
-            f"/bentoml.grpc.{protocol_version}.BentoService/Call",
-            request_serializer=pb.Request.SerializeToString,
-            response_deserializer=pb.Response.FromString,
+        await async_client_call(
+            "echo_check_grpc_context",
+            channel=channel,
+            data={"text": wrappers_pb2.StringValue(value="BentoML")},
+            assert_trailing_metadata=aio.Metadata.from_tuple((("foo", "bar"),)),
         )
-        output: aio.UnaryUnaryCall[pb.Request, pb.Response] = Call(
-            pb.Request(
-                api_name="echo_check_grpc_context",
-                text=wrappers_pb2.StringValue(value="BentoML"),
-            )
-        )
-        initial_metadata = await output.initial_metadata()
-        assert initial_metadata == aio.Metadata.from_tuple((("foo", "bar"),))

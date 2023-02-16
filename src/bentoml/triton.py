@@ -267,6 +267,9 @@ class TritonServerHandle:
     model_repository: t.List[str] = attr.field(converter=_to_mut_iterable)
 
     # arguments that is set by default by BentoML
+    allow_http: bool = attr.field(
+        init=False, default=None, converter=attr.converters.default_if_none(False)
+    )
     allow_grpc: bool = attr.field(
         init=False, default=None, converter=attr.converters.default_if_none(True)
     )

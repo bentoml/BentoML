@@ -3,6 +3,7 @@ from __future__ import annotations
 import shutil
 import typing as t
 import logging
+import psutil
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -32,17 +33,20 @@ def health() -> bool:
             "Podman not found. Make sure it is installed and in your PATH. See https://podman.io/getting-started/installation"
         )
         return False
-    # check if podman machine is running.
-    output = (
-        subprocess.check_output(
-            [client, "machine", "info", "--format", "{{json .Host.MachineState}}"]
-        )
-        .decode("utf-8")
-        .strip("\n&#34;")  # strip quotation marks from JSON format.
-        .lower()
-    )
-    return output == '"running"'
 
+    if psutil.MACOS or psutil.WINDOWS:
+        # check if podman machine is running.
+        output = (
+            subprocess.check_output(
+                [client, "machine", "info", "--format", "{{json .Host.MachineState}}"]
+            )
+            .decode("utf-8")
+            .strip("\n&#34;")  # strip quotation marks from JSON format.
+            .lower()
+        )
+        return output == '"running"'
+    else:
+        return True
 
 def parse_dict_opt(d: dict[str, str]) -> str:
     return ",".join([f"{key}={value}" for key, value in d.items()])

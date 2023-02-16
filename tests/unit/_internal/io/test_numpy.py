@@ -11,6 +11,7 @@ import pytest
 from bentoml.io import NumpyNdarray
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import BentoMLException
+from bentoml.grpc.utils import import_generated_stubs
 from bentoml._internal.service.openapi.specification import Schema
 
 if TYPE_CHECKING:
@@ -18,8 +19,6 @@ if TYPE_CHECKING:
 
     from bentoml.grpc.v1 import service_pb2 as pb
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
 
 
@@ -176,10 +175,8 @@ async def test_from_proto(dtype: pb.NDArray.DType.ValueType) -> None:
 
 @pytest.mark.asyncio
 async def test_exception_from_proto():
-    with pytest.raises(AssertionError):
-        await NumpyNdarray().from_proto(pb.NDArray(string_values="asdf"))
-        await NumpyNdarray().from_proto(pb.File(content=b"asdf"))  # type: ignore (testing exception)
     with pytest.raises(BadInput):
+        await NumpyNdarray().from_proto(pb.File(content=b"asdf"))  # type: ignore (testing exception)
         await NumpyNdarray().from_proto(b"asdf")
     with pytest.raises(BadInput) as exc_info:
         await NumpyNdarray().from_proto(pb.NDArray(dtype=123, string_values="asdf"))  # type: ignore (testing exception)

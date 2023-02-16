@@ -9,6 +9,8 @@ from bentoml.io import JSON
 from bentoml.io import Image
 from bentoml.io import Multipart
 from bentoml.exceptions import InvalidArgument
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml._internal.utils import LazyLoader
 
 example = Multipart(arg1=JSON(), arg2=Image(mime_type="image/bmp", pilmode="RGB"))
 
@@ -19,9 +21,6 @@ if TYPE_CHECKING:
 
     from bentoml.grpc.v1 import service_pb2 as pb
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-    from bentoml._internal.utils import LazyLoader
-
     pb, _ = import_generated_stubs()
     np = LazyLoader("np", globals(), "numpy")
     PILImage = LazyLoader("PILImage", globals(), "PIL.Image")

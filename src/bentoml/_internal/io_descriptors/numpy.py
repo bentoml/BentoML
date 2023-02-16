@@ -17,6 +17,8 @@ from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ...exceptions import UnprocessableEntity
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
@@ -25,17 +27,17 @@ if TYPE_CHECKING:
     import numpy as np
     import pyarrow
     import pyspark.sql.types
-    from typing_extensions import Self
+    from google.protobuf import message as _message
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
-    pb, _ = import_generated_stubs()
+    pb, _ = import_generated_stubs("v1")
+    pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
     np = LazyLoader("np", globals(), "numpy")
 
 logger = logging.getLogger(__name__)
@@ -62,8 +64,25 @@ FIELDPB_TO_NPDTYPE_NAME_MAP = {
 }
 
 
-@lru_cache(maxsize=1)
-def dtypepb_to_npdtype_map() -> dict[pb.NDArray.DType.ValueType, ext.NpDTypeLike]:
+@t.overload
+def dtypepb_to_npdtype_map(
+    version: t.Literal["v1"] = ...,
+) -> dict[pb.NDArray.DType.ValueType, ext.NpDTypeLike]:
+    ...
+
+
+@t.overload
+def dtypepb_to_npdtype_map(
+    version: t.Literal["v1alpha1"] = ...,
+) -> dict[pb_v1alpha1.NDArray.DType.ValueType, ext.NpDTypeLike]:
+    ...
+
+
+@lru_cache(maxsize=2)
+def dtypepb_to_npdtype_map(
+    version: str = LATEST_PROTOCOL_VERSION,
+) -> dict[int, ext.NpDTypeLike]:
+    pb, _ = import_generated_stubs(version)
     # pb.NDArray.Dtype -> np.dtype
     return {
         pb.NDArray.DTYPE_FLOAT: np.dtype("float32"),
@@ -77,9 +96,26 @@ def dtypepb_to_npdtype_map() -> dict[pb.NDArray.DType.ValueType, ext.NpDTypeLike
     }
 
 
-@lru_cache(maxsize=1)
-def dtypepb_to_fieldpb_map() -> dict[pb.NDArray.DType.ValueType, str]:
-    return {k: npdtype_to_fieldpb_map()[v] for k, v in dtypepb_to_npdtype_map().items()}
+@t.overload
+def dtypepb_to_fieldpb_map(
+    version: t.Literal["v1"] = ...,
+) -> dict[pb.NDArray.DType.ValueType, str]:
+    ...
+
+
+@t.overload
+def dtypepb_to_fieldpb_map(
+    version: t.Literal["v1alpha1"] = ...,
+) -> dict[pb_v1alpha1.NDArray.DType.ValueType, str]:
+    ...
+
+
+@lru_cache(maxsize=2)
+def dtypepb_to_fieldpb_map(version: str = LATEST_PROTOCOL_VERSION) -> dict[int, str]:
+    return {
+        k: npdtype_to_fieldpb_map()[v]
+        for k, v in dtypepb_to_npdtype_map(version).items()
+    }
 
 
 @lru_cache(maxsize=1)
@@ -88,10 +124,26 @@ def fieldpb_to_npdtype_map() -> dict[str, ext.NpDTypeLike]:
     return {k: np.dtype(v) for k, v in FIELDPB_TO_NPDTYPE_NAME_MAP.items()}
 
 
-@lru_cache(maxsize=1)
-def npdtype_to_dtypepb_map() -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType]:
+@t.overload
+def npdtype_to_dtypepb_map(
+    version: t.Literal["v1"] = ...,
+) -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType]:
+    ...
+
+
+@t.overload
+def npdtype_to_dtypepb_map(
+    version: t.Literal["v1alpha1"] = ...,
+) -> dict[ext.NpDTypeLike, pb_v1alpha1.NDArray.DType.ValueType]:
+    ...
+
+
+@lru_cache(maxsize=2)
+def npdtype_to_dtypepb_map(
+    version: str = LATEST_PROTOCOL_VERSION,
+) -> dict[ext.NpDTypeLike, int]:
     # np.dtype -> pb.NDArray.Dtype
-    return {v: k for k, v in dtypepb_to_npdtype_map().items()}
+    return {v: k for k, v in dtypepb_to_npdtype_map(version).items()}
 
 
 @lru_cache(maxsize=1)
@@ -254,7 +306,7 @@ class NumpyNdarray(
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in NumpyNdarray spec: {spec}")
         res = NumpyNdarray(**spec["args"])
@@ -457,7 +509,6 @@ class NumpyNdarray(
            Serialized bytes has a specialized bytes representation and should not be used by users directly.
         """
         if isinstance(field, bytes):
-
             # We will be using ``np.frombuffer`` to deserialize the bytes.
             # This means that we need to ensure that ``dtype`` are provided to the IO descriptor
             #
@@ -478,7 +529,14 @@ class NumpyNdarray(
             dtype: ext.NpDTypeLike = self._dtype
             array = np.frombuffer(field, dtype=self._dtype)
         else:
-            assert isinstance(field, pb.NDArray)
+            if isinstance(field, pb_v1alpha1.NDArray):
+                version = "v1alpha1"
+            elif isinstance(field, pb.NDArray):
+                version = "v1"
+            else:
+                raise BadInput(
+                    f"Expected 'pb.NDArray' or 'bytes' but received {type(field)}"
+                ) from None
 
             # The behaviour of dtype are as follows:
             # - if not provided:
@@ -491,11 +549,13 @@ class NumpyNdarray(
                 dtype = None
             else:
                 try:
-                    dtype = dtypepb_to_npdtype_map()[field.dtype]
+                    dtype = dtypepb_to_npdtype_map(version=version)[field.dtype]
                 except KeyError:
                     raise BadInput(f"{field.dtype} is invalid.") from None
             if dtype is not None:
-                values_array = getattr(field, dtypepb_to_fieldpb_map()[field.dtype])
+                values_array = getattr(
+                    field, dtypepb_to_fieldpb_map(version=version)[field.dtype]
+                )
             else:
                 fieldpb = [
                     f.name for f, _ in field.ListFields() if f.name.endswith("_values")
@@ -525,7 +585,21 @@ class NumpyNdarray(
         # We will try to run validation process before sending this of to the user.
         return self.validate_array(array)
 
-    async def to_proto(self, obj: ext.NpNDArray) -> pb.NDArray:
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: ext.NpNDArray, *, version: t.Literal["v1"]
+    ) -> pb.NDArray:
+        ...
+
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: ext.NpNDArray, *, version: t.Literal["v1alpha1"]
+    ) -> pb_v1alpha1.NDArray:
+        ...
+
+    async def _to_proto_impl(
+        self, obj: ext.NpNDArray, *, version: str
+    ) -> _message.Message:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -540,9 +614,11 @@ class NumpyNdarray(
         except BadInput as e:
             raise e from None
 
+        pb, _ = import_generated_stubs(version)
+
         try:
             fieldpb = npdtype_to_fieldpb_map()[obj.dtype]
-            dtypepb = npdtype_to_dtypepb_map()[obj.dtype]
+            dtypepb = npdtype_to_dtypepb_map(version=version)[obj.dtype]
             return pb.NDArray(
                 dtype=dtypepb,
                 shape=tuple(obj.shape),
@@ -589,3 +665,9 @@ class NumpyNdarray(
                 f"dtype {self._dtype} is not supported for batch inference."
             )
         return StructType([StructField("out", out_spark_type, nullable=False)])
+
+    async def to_proto(self, obj: ext.NpNDArray) -> pb.NDArray:
+        return await self._to_proto_impl(obj, version="v1")
+
+    async def to_proto_v1alpha1(self, obj: ext.NpNDArray) -> pb_v1alpha1.NDArray:
+        return await self._to_proto_impl(obj, version="v1alpha1")

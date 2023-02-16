@@ -78,7 +78,11 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                         output = await anyio.to_thread.run_sync(api.func, **input_data)
                     else:
                         output = await anyio.to_thread.run_sync(api.func, input_data)
-                res = await api.output.to_proto(output)
+                if hasattr(api.output, "to_proto_v1alpha1"):
+                    # special case for handling v1alpha1 specific to_proto logic
+                    res = await getattr(api.output, "to_proto_v1alpha1")(output)
+                else:
+                    res = await api.output.to_proto(output)
                 # TODO(aarnphm): support multiple proto fields
                 response = pb.Response(**{api.output._proto_fields[0]: res})
             except BentoMLException as e:

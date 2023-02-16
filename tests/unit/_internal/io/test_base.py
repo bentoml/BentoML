@@ -9,8 +9,6 @@ from bentoml.io import IODescriptor
 
 if TYPE_CHECKING:
 
-    from typing_extensions import Self
-
     from bentoml._internal.context import InferenceApiContext as Context
 
 
@@ -39,7 +37,7 @@ class DummyDescriptor(IODescriptor[t.Any], descriptor_id="bentoml.io.Dummy"):
         raise NotImplementedError
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         return cls(**spec)
 
     def input_type(self) -> t.Any:

@@ -97,7 +97,7 @@ class RemoteRunnerClient(RunnerHandle):
             elif parsed.scheme == "tcp":
                 self._conn = aiohttp.TCPConnector(
                     loop=self._loop,
-                    verify_ssl=False,
+                    ssl=False,
                     limit=800,  # TODO(jiang): make it configurable
                     keepalive_timeout=1800.0,
                 )

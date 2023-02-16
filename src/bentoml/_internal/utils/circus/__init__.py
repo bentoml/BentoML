@@ -54,7 +54,7 @@ def create_standalone_arbiter(watchers: list[Watcher], **kwargs: t.Any) -> Arbit
                 endpoint=f"tcp://127.0.0.1:{endpoint_port}",
                 pubsub_endpoint=f"tcp://127.0.0.1:{pubsub_port}",
                 # NOTE: increase check delay to 5s to avoid
-                # ConfclitError raised when arbiter is running arbiter_stop command
+                # ConflictError raised when arbiter is running arbiter_stop command.
                 # See https://github.com/bentoml/BentoML/pull/3540.
                 check_delay=5,
                 **kwargs,

@@ -1,43 +1,15 @@
 #!/usr/bin/env bash
 
-set -e
-
-: "${DEBUG:=false}"
-: "${USE_GPU:=false}"
-
-[[ "$DEBUG" == "true" ]] && set -x
-
-BASEDIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" &>/dev/null && pwd 2>/dev/null)"
+set -ex
 
 if [ -f /etc/lsb-release ]; then
-	# In Ubuntu
-	apt-get update && apt-get install -y pkg-config libhdf5-dev ffmpeg libsm6 libxext6
+    # In Ubuntu
+    apt-get update && apt-get install -y pkg-config libhdf5-dev ffmpeg libsm6 libxext6
 fi
 
-REQUIREMENTS_TXT="$BASEDIR/requirements/requirements.txt"
-[[ "$USE_GPU" == "true" ]] && REQUIREMENTS_TXT="$BASEDIR/requirements/requirements-gpu.txt"
-
-run_train() {
-	echo "Exporting YOLOv5 weights..."
-	DEBUG="${DEBUG}" bash "$BASEDIR/export-yolov5-weights"
-	echo "Training BentoML models..."
-	[[ "$DEBUG" == "true" ]] && args=("--override") || args=()
-	python3 train.py ${args[*]}
-}
-
 if [ -n "${BENTO_PATH}" ] || [ -f /.dockerenv ]; then
-	# We need to export LD_PRELOAD inside bento container.
-	SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])")
+    # We need to export LD_PRELOAD inside bento container.
+    SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])")
 
-	export LD_PRELOAD="$SITE_PACKAGES/torch/lib/libgomp-d22c30c5.so.1"
-
-	# docker run --rm -v $BENTOML_GIT_ROOT:/opt/bentoml tritonserver bash
-	if [[ -d /opt/bentoml ]]; then
-		# We are running as pseudo-dev mode
-		pip install -r "$REQUIREMENTS_TXT" && DEBUG=${DEBUG} run_train
-	else
-		! [ -n "$BENTO_PATH" ] && echo "If you are running this directory interactively inside a container, make sure to install the $REQUIREMENTS_TXT (USE_GPU=${USE_GPU})"
-	fi
-else
-	pip install -r "$REQUIREMENTS_TXT" && DEBUG=${DEBUG} run_train
+    export LD_PRELOAD="$SITE_PACKAGES/torch/lib/libgomp-d22c30c5.so.1"
 fi

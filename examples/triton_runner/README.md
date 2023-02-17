@@ -4,17 +4,22 @@ BentoML now provides support for Triton Inference Server.
 
 ### Why do you want to use Triton?
 
-1. You are current Triton users trying to look for unification among frameworks other than those supported by Triton.
-2. Current BentoML users who want to reduce performance gaps between C++ and Python. While BentoML is rapidly improving, Triton provides better
+1. You are current Triton users trying to look for unification among frameworks
+   other than those supported by Triton.
+2. Current BentoML users who want to reduce performance gaps between C++ and
+   Python. While BentoML is rapidly improving, Triton provides better
    performance under given conditions.
-3. Current Triton users who are looking for reusable pre-processing logic for multi-model inference graphs.
+3. Current Triton users who are looking for reusable pre-processing logic for
+   multi-model inference graphs.
 
 ### Quick tour
 
 Triton Runner can be created via `bentoml.triton.Runner`:
 
 ```python
-triton_runner = bentoml.triton.Runner("local", model_respository="/path/to/model_repository")
+triton_runner = bentoml.triton.Runner(
+    "local", model_respository="/path/to/model_repository"
+)
 
 svc = bentoml.Service("my-service", runners=[triton_runner])
 ```
@@ -22,7 +27,9 @@ svc = bentoml.Service("my-service", runners=[triton_runner])
 `model_repository` can also accept S3 path:
 
 ```python
-triton_runner = bentoml.triton.Runner("triton-runners", model_repository="s3://path/to/model_repository")
+triton_runner = bentoml.triton.Runner(
+    "triton-runners", model_repository="s3://path/to/model_repository"
+)
 ```
 
 An example of inference API:
@@ -40,7 +47,8 @@ def triton_infer(input_data: NDArray[np.float16]) -> NDArray[np.int16]:
     return iris_res
 ```
 
-Note that each attribute of the `triton_runner` includes the name of all given models under `model_repository`
+Note that each attribute of the `triton_runner` includes the name of all given
+models under `model_repository`
 
 APIs from tritonclient are also provided through the Triton Runner:
 
@@ -59,9 +67,11 @@ docker:
   base_image: nvcr.io/nvidia/tritonserver:22.12-py3
 ```
 
-> tritonserver are currently only supported with `--production` tag. Make sure to have `tritonserver` binary available in PATH if running locally.
+> tritonserver are currently only supported with `--production` tag. Make sure
+> to have `tritonserver` binary available in PATH if running locally.
 
-To pass triton arguments to `serve` do it via `--triton-options ARG=VALUE[, VALUE]`
+To pass triton arguments to `serve` do it via
+`--triton-options ARG=VALUE[, VALUE]`
 
 ```bash
 bentoml serve --production --triton-options log-verbose=True
@@ -88,18 +98,23 @@ server = bentoml.serve(
 )
 ```
 
-To find out more about BentoML Runner architecture, see [our latest documentation](https://docs.bentoml.org/en/latest/concepts/runner.html#)
+To find out more about BentoML Runner architecture, see
+[our latest documentation](https://docs.bentoml.org/en/latest/concepts/runner.html#)
 
-For more information about Triton Inference Server, see [here](https://github.com/triton-inference-server/server)
+For more information about Triton Inference Server, see
+[here](https://github.com/triton-inference-server/server)
 
 ### Instruction
 
-The following project includes YOLOv5 and MNIST model for `TritonRunner` and `bentoml.Runner`.
+The following project includes YOLOv5 and MNIST model for `TritonRunner` and
+`bentoml.Runner`.
 
 1. Setup Triton model repository and BentoML model:
 
 ```bash
-./setup
+./export-yolov5-weights
+
+python3 train.py
 ```
 
 2. To run Triton, use the following docker container:
@@ -112,7 +127,9 @@ docker run --rm -it -p 3000-4000:3000-4000 \
            nvcr.io/nvidia/tritonserver:22.12-py3 bash
 ```
 
-If you have NVIDIA GPU available, make sure to have [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) available on your system then pass in `--gpus all` to `docker`:
+If you have NVIDIA GPU available, make sure to have
+[nvidia-docker](https://github.com/NVIDIA/nvidia-docker) available on your
+system then pass in `--gpus all` to `docker`:
 
 ```bash
 BENTOML_GIT_ROOT=$(git rev-parse --show-toplevel)
@@ -130,29 +147,60 @@ Inside the container shell, there are two options to install BentoML:
 cd /opt/bentoml && pip install -r requirements/dev-requirements.txt
 ```
 
-- Install from pip
-
-```bash
-pip install -U bentoml
-```
-
 Run the [`setup` script](./setup):
 
 ```bash
-cd /workspace && RUN_TRAIN=true bash setup
+cd /workspace/ && pip install -r requirements/requirements.txt
+
+bash ./setup
 ```
 
-> Feel free to build your own tritonserver. See [here](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/build.md) for more details on building customisation.
+Proceed to run serve:
+
+```bash
+bentoml serve --production --triton-options log-verbose=True
+```
+
+NOTE: If you running into this issue:
+
+````prolog
+I0217 00:33:40.955605 3626 server.cc:633]
++---------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------+
+| Model               | Version | Status                                                                                                                                 |
++---------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------+
+| onnx_mnist          | 1       | READY                                                                                                                                  |
+| onnx_yolov5s        | 1       | READY                                                                                                                                  |
+| tensorflow_mnist    | 1       | READY                                                                                                                                  |
+| tensorflow_yolov5s  | 1       | READY                                                                                                                                  |
+| torchscript_mnist   | 1       | UNAVAILABLE: Not found: unable to load shared library: /lib/aarch64-linux-gnu/libgomp.so.1: cannot allocate memory in static TLS block |
+| torchscript_yolov5s | 1       | UNAVAILABLE: Not found: unable to load shared library: /lib/aarch64-linux-gnu/libgomp.so.1: cannot allocate memory in static TLS block |
++---------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------+
+
+```
+
+Exit out of the process. Then do the following:
+
+```bash
+export LD_PRELOAD=/lib/aarch64-linux-gnu/libgomp.so.1
+```
+
+Then run the `bentoml serve` command again.
+
+> Feel free to build your own tritonserver. See
+> [here](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/build.md)
+> for more details on building customisation.
 
 3. To build the Bento, use [`build_bento.py`](./build_bento.py):
 
 ```bash
 python3 build_bento.py
-```
+````
 
-> NOTE: To build with custom GPU, pass in `--gpu`. To build with custom tags pass in `--tag <custom_tag>`
+> NOTE: To build with custom GPU, pass in `--gpu`. To build with custom tags
+> pass in `--tag <custom_tag>`
 
-4. To serve the Bento, use either `bentoml serve` or [`serve_bento.py`](./serve_bento.py):
+4. To serve the Bento, use either `bentoml serve` or
+   [`serve_bento.py`](./serve_bento.py):
 
 ```bash
 python3 serve_bento.py
@@ -160,7 +208,8 @@ python3 serve_bento.py
 # bentoml serve-http | serve-grpc triton-integration --production
 ```
 
-> NOTE: to serve previously custom tag bento, you can also pass in `--tag` to `serve_bento.py`
+> NOTE: to serve previously custom tag bento, you can also pass in `--tag` to
+> `serve_bento.py`
 
 5. To containerize use [`containerize_bento.py`](./containerize_bento.py):
 
@@ -168,4 +217,5 @@ python3 serve_bento.py
 python3 containerize_bento.py
 ```
 
-> NOTE: to serve previously custom tag bento, you can also pass in `--tag` to `serve_bento.py`
+> NOTE: to serve previously custom tag bento, you can also pass in `--tag` to
+> `serve_bento.py`

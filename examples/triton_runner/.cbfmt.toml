@@ -1,0 +1,2 @@
+[languages]
+python = ["black -", "isort -"]

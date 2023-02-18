@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import io
-from typing import TYPE_CHECKING
+import typing as t
 
 import numpy as np
 import pytest
@@ -10,7 +10,7 @@ import bentoml
 from bentoml.testing.grpc import create_channel
 from bentoml.testing.grpc import async_client_call
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import jax.numpy as jnp
 
 
@@ -24,9 +24,11 @@ def img():
         img_path = f"samples/{digit}.png"
         with open(img_path, "rb") as f:
             img_bytes = f.read()
-        arr = np.array(PIL.Image.open(io.BytesIO(img_bytes)))
+        im = PIL.Image.open(io.BytesIO(img_bytes))
+        arr = np.array(im)
         images[digit] = {
             "bytes": img_bytes,
+            "pil": im,
             "array": arr,
         }
 
@@ -66,6 +68,4 @@ async def test_image_http(
     if enable_grpc:
         pytest.skip("Skipping HTTP test when testing on gRPC.")
     for digit, d in img.items():
-        img_bytes = d["bytes"]
-        expected = f"{digit}".encode()
-        assert await client.predict(img_bytes) == expected
+        assert await client.async_predict(d["pil"]).item() == digit

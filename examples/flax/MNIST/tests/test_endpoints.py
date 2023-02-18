@@ -35,8 +35,9 @@ def img():
 
 @pytest.fixture(name="client")
 @pytest.mark.asyncio
-def fixture_client(host: str):
-    return bentoml.client.Client.from_url(host)
+def fixture_client(host: str, enable_grpc: bool):
+    if not enable_grpc:
+        return bentoml.client.Client.from_url(host)
 
 
 @pytest.mark.asyncio

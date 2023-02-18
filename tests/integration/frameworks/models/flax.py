@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as t
 
 import chex
-import numpy as np
 import jax.numpy as jnp
 from jax import random
 from flax import linen as nn
@@ -42,7 +41,7 @@ class MLP(nn.Module):
 
 class MultiInputPerceptron(nn.Module):
     @nn.compact
-    def __call__(  # pytlint: disable=arguments-differ
+    def __call__(
         self, x1: jnp.ndarray, x2: jnp.ndarray, features: int = 3
     ) -> jnp.ndarray:
         x: jnp.ndarray = jnp.concatenate([x1, x2], axis=-1)

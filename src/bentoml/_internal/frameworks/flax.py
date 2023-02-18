@@ -7,13 +7,12 @@ from types import ModuleType
 from pickle import UnpicklingError
 from typing import TYPE_CHECKING
 
-import attr
 import msgpack.exceptions
 
 import bentoml
 
 from ..types import LazyType
-from ...models import ModelOptions
+from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 from .common.jax import jax
 from .common.jax import jnp
@@ -22,16 +21,20 @@ from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
+from ..models.model import PartialKwargsModelOptions as ModelOptions
 from ..runner.utils import Params
 
 if TYPE_CHECKING:
     from flax import struct
+    from jax.lib import xla_bridge
     from flax.core import FrozenDict
     from jax._src.lib.xla_bridge import XlaBackend
 
     from ..tag import Tag
     from ...types import ModelSignature
     from ..models.model import ModelSignaturesType
+else:
+    xla_bridge = LazyLoader("xla_bridge", globals(), "jax.lib.xla_bridge")
 
 try:
     from flax import linen as nn
@@ -58,14 +61,6 @@ logger = logging.getLogger(__name__)
 
 
 __all__ = ["load_model", "save_model", "get_runnable", "get", "JaxArrayContainer"]
-
-
-@attr.define
-class FlaxOptions(ModelOptions):
-    """Options for the Flax model."""
-
-    partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
-    device: str = attr.field(default="cpu")
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -213,8 +208,8 @@ def save_model(
            )
 
            logger.info(
-               "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
-               % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
+               "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f",
+               epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100
            )
 
        # `Save` the model with BentoML
@@ -250,7 +245,7 @@ def save_model(
         api_version=API_VERSION,
         signatures=signatures,
         labels=labels,
-        options=FlaxOptions(),
+        options=ModelOptions(),
         custom_objects=custom_objects,
         external_modules=external_modules,
         metadata=metadata,
@@ -262,11 +257,8 @@ def save_model(
 
 
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
-    """
-    Private API: use :obj:`~bentoml.Model.to_runnable` instead.
-    """
+    """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
     partial_kwargs: dict[str, t.Any] = bento_model.info.options.partial_kwargs
-    device: str = bento_model.info.options.device
 
     class FlaxRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu", "tpu")
@@ -274,8 +266,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 
         def __init__(self):
             super().__init__()
+            self.device = xla_bridge.get_backend().platform
 
-            self.model, self.state_dict = load_model(bento_model, device=device)
+            self.model, self.state_dict = load_model(bento_model, device=self.device)
             self.params = self.state_dict["params"]
             self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}
 
@@ -286,8 +279,10 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             method = functools.partial(method, **method_partial_kwargs)
 
         def mapping(item: jnp.ndarray) -> jnp.ndarray:
-            if not LazyType["jnp.ndarray"]("jnp.ndarray").isinstance(item):
+            if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 return jnp.asarray(item)
+            if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
+                return jnp.asarray(item.to_numpy())
             return item
 
         def run_method(self: FlaxRunnable, *args: jnp.ndarray):

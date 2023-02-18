@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import pickle
 import typing as t
+import itertools
 from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
 
 from ...types import LazyType
+from ...utils import LazyLoader
 from ....exceptions import MissingDependencyException
 from ...runner.container import Payload
 from ...runner.container import DataContainer
@@ -30,7 +32,11 @@ except ImportError:  # pragma: no cover
     ) from None
 
 if TYPE_CHECKING:
+    import numpy as np
+
     from ... import external_typing as ext
+else:
+    np = LazyLoader("numpy", globals(), "numpy")
 
 __all__ = ["jax", "jnp", "jaxlib", "JaxArrayContainer"]
 
@@ -60,7 +66,7 @@ class JaxArrayContainer(DataContainer[jnp.ndarray, jnp.ndarray]):
 
     @classmethod
     @inject
-    def to_payload(  # pylint: disable=arguments-differ
+    def to_payload(
         cls,
         batch: jnp.ndarray,
         batch_dim: int = 0,
@@ -68,20 +74,20 @@ class JaxArrayContainer(DataContainer[jnp.ndarray, jnp.ndarray]):
     ) -> Payload:
         if plasma_db:
             return cls.create_payload(
-                plasma_db.put(batch).binary(),
+                plasma_db.put(np.asarray(batch)).binary(),
                 batch.shape[batch_dim],
                 {"plasma": True},
             )
 
         return cls.create_payload(
-            pickle.dumps(batch),
+            pickle.dumps(np.asarray(batch)),
             batch.shape[batch_dim],
             {"plasma": False},
         )
 
     @classmethod
     @inject
-    def from_payload(  # pylint: disable=arguments-differ
+    def from_payload(
         cls,
         payload: Payload,
         plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
@@ -95,7 +101,7 @@ class JaxArrayContainer(DataContainer[jnp.ndarray, jnp.ndarray]):
 
     @classmethod
     @inject
-    def batch_to_payloads(  # pylint: disable=arguments-differ
+    def batch_to_payloads(
         cls,
         batch: jnp.ndarray,
         indices: t.Sequence[int],
@@ -110,7 +116,7 @@ class JaxArrayContainer(DataContainer[jnp.ndarray, jnp.ndarray]):
 
     @classmethod
     @inject
-    def from_batch_payloads(  # pylint: disable=arguments-differ
+    def from_batch_payloads(
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,

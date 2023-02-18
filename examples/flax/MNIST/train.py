@@ -70,9 +70,7 @@ class CNN(nn.Module):
 def apply_model(
     state: train_state.TrainState, image: jnp.DeviceArray, labels: jnp.DeviceArray
 ) -> tuple[t.Callable[..., core.FrozenDict[str, t.Any]], jnp.ndarray, jnp.ndarray]:
-    """
-    Compute gradients, loss, and accuracy for a single batch.
-    """
+    """Compute gradients, loss, and accuracy for a single batch."""
 
     def loss_fn(params: core.FrozenDict[str, t.Any]) -> tuple[jnp.ndarray, jnp.ndarray]:
         logits: jnp.ndarray = state.apply_fn({"params": params}, image)

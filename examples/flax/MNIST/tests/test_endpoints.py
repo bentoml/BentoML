@@ -39,10 +39,6 @@ def fixture_client(host: str):
     return bentoml.client.Client.from_url(host)
 
 
-# TODO: update with bentoml.client once
-# gRPC client is implemented.
-
-
 @pytest.mark.asyncio
 async def test_image_grpc(
     host: str, img: dict[int, dict[str, bytes | jnp.ndarray]], enable_grpc: bool

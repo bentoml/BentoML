@@ -7,6 +7,11 @@ This project demonstrates a simple CNN for MNIST classifier served with BentoML.
 Run training scripts:
 
 ```bash
+# run with python3
+pip install -r requirements.txt
+python3 train.py --num-epochs 2
+
+# run with bazel
 bazel run :train -- --num-epochs 2
 ```
 

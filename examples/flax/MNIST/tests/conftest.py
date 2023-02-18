@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import psutil
 import pytest
 
+import bentoml
 from bentoml.testing.server import host_bento
 
 if TYPE_CHECKING:
@@ -26,30 +27,24 @@ if TYPE_CHECKING:
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def pytest_configure(config: Config):  # pylint: disable=unused-argument
-    if "PYTEST_PLUGINS" not in os.environ:
-        os.environ["PYTEST_PLUGINS"] = "bentoml.testing.pytest_plugin"
-
-
-def pytest_unconfigure(config: Config):  # pylint: disable=unused-argument
-    if "PYTEST_PLUGINS" in os.environ:
-        del os.environ["PYTEST_PLUGINS"]
-
-
 def pytest_collection_modifyitems(
     session: Session, config: Config, items: list[Item]
 ) -> None:
-    subprocess.check_call(
-        [
-            sys.executable,
-            f"{os.path.join(PROJECT_DIR, 'train.py')}",
-            "--num-epochs",
-            "2",  # 2 epochs for faster testing
-            "--lr",
-            "0.22",  # speed up training time
-            "--enable-tensorboard",
-        ]
-    )
+    try:
+        m = bentoml.models.get("mnist_flax")
+        print(f"Model exists: {m}")
+    except bentoml.exceptions.NotFound:
+        subprocess.check_call(
+            [
+                sys.executable,
+                f"{os.path.join(PROJECT_DIR, 'train.py')}",
+                "--num-epochs",
+                "2",  # 2 epochs for faster testing
+                "--lr",
+                "0.22",  # speed up training time
+                "--enable-tensorboard",
+            ]
+        )
 
 
 @pytest.fixture(name="enable_grpc", params=[True, False], scope="session")

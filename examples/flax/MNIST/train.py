@@ -39,6 +39,7 @@ class ConfigDict:
     num_epochs: int = 10
     momentum: float = 0.9
     enable_tensorboard: bool = True
+    hermetic: bool = True
 
     def to_dict(self) -> dict[str, t.Any]:
         return cattrs.unstructure(self)
@@ -47,7 +48,7 @@ class ConfigDict:
         return attrs.evolve(self, **kwargs)
 
 
-DEFAULT_CONFIG = ConfigDict()
+_DefaultConfig = ConfigDict()
 
 
 class CNN(nn.Module):
@@ -140,7 +141,7 @@ def create_train_state(rng: KeyArray, config: ConfigDict) -> train_state.TrainSt
 
 
 def train_and_evaluate(
-    config: ConfigDict = DEFAULT_CONFIG, workdir: str = "."
+    config: ConfigDict = _DefaultConfig, workdir: str = "."
 ) -> train_state.TrainState:
     """Execute model training and evaluation loop.
     Args:
@@ -161,7 +162,8 @@ def train_and_evaluate(
     state = create_train_state(init_rng, config)
 
     for epoch in range(1, config.num_epochs + 1):
-        rng, input_rng = jax.random.split(rng)
+        if not config.hermetic:
+            rng, input_rng = jax.random.split(rng)
         state, train_loss, train_accuracy = train_epoch(
             state, train_ds, config.batch_size, input_rng
         )
@@ -218,15 +220,22 @@ if __name__ == "__main__":
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--num-epochs", type=int, default=10)
     parser.add_argument("--enable-tensorboard", action="store_true")
+    parser.add_argument(
+        "--hermetic",
+        action="store_true",
+        default=False,
+        help="Whether to use random key",
+    )
     args = parser.parse_args()
 
     training_state = train_and_evaluate(
-        config=DEFAULT_CONFIG.with_options(
+        config=_DefaultConfig.with_options(
             learning_rate=args.lr,
             momentum=args.momentum,
             batch_size=args.batch_size,
             num_epochs=args.num_epochs,
             enable_tensorboard=args.enable_tensorboard,
+            hermetic=args.hermetic,
         ),
     )
 

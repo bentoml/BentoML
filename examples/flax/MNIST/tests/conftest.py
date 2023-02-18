@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import typing as t
+import contextlib
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -11,6 +12,7 @@ import pytest
 
 import bentoml
 from bentoml.testing.server import host_bento
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from contextlib import ExitStack
@@ -52,11 +54,26 @@ def fixture_enable_grpc(request: FixtureRequest) -> str:
     return request.param
 
 
+@pytest.fixture(scope="session", autouse=True)
+def clean_context() -> t.Generator[contextlib.ExitStack, None, None]:
+    stack = contextlib.ExitStack()
+    yield stack
+    stack.close()
+
+
+@pytest.fixture(
+    name="deployment_mode",
+    params=["container", "distributed", "standalone"],
+    scope="session",
+)
+def fixture_deployment_mode(request: FixtureRequest) -> str:
+    return request.param
+
+
 @pytest.mark.usefixtures("change_test_dir")
 @pytest.fixture(scope="module")
 def host(
-    bentoml_home: str,
-    deployment_mode: t.Literal["docker", "distributed", "standalone"],
+    deployment_mode: t.Literal["container", "distributed", "standalone"],
     clean_context: ExitStack,
     enable_grpc: bool,
 ) -> t.Generator[str, None, None]:
@@ -67,7 +84,7 @@ def host(
         "service:svc",
         deployment_mode=deployment_mode,
         project_path=PROJECT_DIR,
-        bentoml_home=bentoml_home,
+        bentoml_home=BentoMLContainer.bentoml_home.get(),
         clean_context=clean_context,
         use_grpc=enable_grpc,
     ) as _host:

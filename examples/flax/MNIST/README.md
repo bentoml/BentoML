@@ -26,3 +26,9 @@ Run the test suite:
 ```bash
 pytest tests
 ```
+
+To run containerize do:
+
+```bash
+bentoml containerize mnist_flax --opt platform=linux/amd64
+```

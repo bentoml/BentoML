@@ -6,5 +6,7 @@ labels:
 include:
   - "*.py"
 python:
-  lock_packages: true
+  lock_packages: false
+  extra_index_url:
+    - https://storage.googleapis.com/jax-releases/jax_releases.html
   requirements_txt: ./requirements.txt

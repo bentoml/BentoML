@@ -124,7 +124,7 @@ class Client(ABC):
             return GrpcClient.from_url(server_url, **kwargs)
         else:
             raise BentoMLException(
-                "Invalid client kind. Must be one of ['http', 'grpc', 'auto']"
+                f"Invalid client kind '{kind}'. Must be one of 'http', 'grpc', or 'auto'."
             )
 
     def _sync_call(

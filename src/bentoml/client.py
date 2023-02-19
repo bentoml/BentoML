@@ -149,7 +149,7 @@ class Client(ABC):
                         )
                     try:
                         api = InferenceAPI(
-                            lambda: None,
+                            None,
                             bentoml.io.from_spec(
                                 meth_spec["requestBody"]["x-bentoml-io-descriptor"]
                             ),

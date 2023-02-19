@@ -26,33 +26,32 @@ RESERVED_API_NAMES = [
 class InferenceAPI:
     def __init__(
         self,
-        user_defined_callback: t.Callable[..., t.Any],
+        user_defined_callback: t.Callable[..., t.Any] | None,
         input_descriptor: IODescriptor[t.Any],
         output_descriptor: IODescriptor[t.Any],
         name: Optional[str],
         doc: Optional[str] = None,
         route: Optional[str] = None,
     ):
-        # Use user_defined_callback function variable if name not specified
-        name = user_defined_callback.__name__ if name is None else name
-        # Use user_defined_callback function docstring `__doc__` if doc not specified
-        doc = user_defined_callback.__doc__ if doc is None else doc
+        if user_defined_callback is not None:
+            # Use user_defined_callback function variable if name not specified
+            name = user_defined_callback.__name__ if name is None else name
+            # Use user_defined_callback function docstring `__doc__` if doc not specified
+            doc = user_defined_callback.__doc__ if doc is None else doc
+        else:
+            name, doc = "", ""
+
         # Use API name as route if route not specified
         route = name if route is None else route
 
-        InferenceAPI._validate_name(name)
-        InferenceAPI._validate_route(route)
-
-        self.name = name
         self.needs_ctx = False
         self.ctx_param = None
-        self.func = user_defined_callback
         input_type = input_descriptor.input_type()
-        self.multi_input = isinstance(input_type, dict)
 
-        # user_defined_callback shouldn't be a lambda function. Currently the only place for
-        # lambda function is at the client implementation.
-        if user_defined_callback is not None and user_defined_callback.__name__ != "<lambda>":
+        if user_defined_callback is not None:
+            InferenceAPI._validate_name(name)
+            InferenceAPI._validate_route(route)
+
             sig = inspect.signature(user_defined_callback)
 
             if len(sig.parameters) == 0:
@@ -128,6 +127,9 @@ class InferenceAPI:
                                 f"Expected type of argument '{second_arg}' to be '{input_type}', got '{sig.parameters[second_arg].annotation}'"
                             )
 
+        self.name = name
+        self.func = user_defined_callback
+        self.multi_input = isinstance(input_type, dict)
         self.input = input_descriptor
         self.output = output_descriptor
         self.doc = doc

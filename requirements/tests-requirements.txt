@@ -20,4 +20,4 @@ build[virtualenv]==0.10.0
 protobuf<4.0dev
 grpcio
 grpcio-health-checking
-opentelemetry-instrumentation-grpc==0.35b0
+opentelemetry-instrumentation-grpc==0.37b0

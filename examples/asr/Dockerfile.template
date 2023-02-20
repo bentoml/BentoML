@@ -1,0 +1,14 @@
+{% extends bento_base_template %}
+{% set bento__buildkit_frontend="docker/dockerfile-upstream:master" %}
+
+{% block SETUP_BENTO_COMPONENTS %}
+
+USER bentoml
+
+RUN mkdir -p /home/bentoml/.local/share/whispercpp
+
+USER root
+
+{{ super() }}
+
+{% endblock %}

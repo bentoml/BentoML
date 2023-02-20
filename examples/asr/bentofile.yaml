@@ -1,0 +1,19 @@
+service: "service:svc"
+include:
+  - service.py
+exclude:
+  - /__pycache__
+python:
+  lock_packages: true
+  requirements_txt: "./requirements.txt"
+docker:
+  python_version: "3.10"
+  env:
+    GGML_MODEL: tiny.en
+  system_packages:
+    - clang
+    - git
+    - libsdl2-dev
+    - curl
+  setup_script: "./download_model_cpp.py"
+  dockerfile_template: ./Dockerfile.template

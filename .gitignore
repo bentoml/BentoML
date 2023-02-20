@@ -159,3 +159,4 @@ vendor
 *.plan
 *.bin
 yolov5*
+*.bin

@@ -66,6 +66,7 @@ def assert_equal_shape(
     def check(out: jnp.ndarray) -> bool:
         logit = model.apply({"params": state_dict["params"]}, arr)
         chex.assert_equal_shape([logit, out])
+        assert (logit == out).all()
         return True
 
     return check

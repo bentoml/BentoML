@@ -50,9 +50,7 @@ class InferenceAPI:
         input_type = input_descriptor.input_type()
         self.multi_input = isinstance(input_type, dict)
 
-        # user_defined_callback shouldn't be a lambda function. Currently the only place for
-        # lambda function is at the client implementation.
-        if user_defined_callback is not None and user_defined_callback.__name__ != "<lambda>":
+        if user_defined_callback is not None:
             sig = inspect.signature(user_defined_callback)
 
             if len(sig.parameters) == 0:

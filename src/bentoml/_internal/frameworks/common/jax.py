@@ -109,3 +109,9 @@ DataContainerRegistry.register_container(
     LazyType("jax.numpy", "ndarray"),
     JaxArrayContainer,
 )
+
+DataContainerRegistry.register_container(
+    LazyType("jax", "Array"),
+    LazyType("jax", "Array"),
+    JaxArrayContainer,
+)

@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from flax.core import FrozenDict
     from jax._src.lib.xla_bridge import XlaBackend
 
+    from .. import external_typing as ext
     from ..tag import Tag
     from ...types import ModelSignature
     from ..models.model import ModelSignaturesType
@@ -261,7 +262,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     partial_kwargs: dict[str, t.Any] = bento_model.info.options.partial_kwargs
 
     class FlaxRunnable(bentoml.Runnable):
-        SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu", "tpu")
+        SUPPORTED_RESOURCES = ("tpu", "nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
@@ -278,14 +279,17 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         if method_partial_kwargs is not None:
             method = functools.partial(method, **method_partial_kwargs)
 
-        def mapping(item: jnp.ndarray) -> jnp.ndarray:
+        def mapping(item: jnp.ndarray | ext.NpNDArray | ext.PdDataFrame) -> jnp.ndarray:
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
                 return jnp.asarray(item)
             if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
+                # NOTE: only to_numpy() are doing copying in memory here.
                 return jnp.asarray(item.to_numpy())
             return item
 
-        def run_method(self: FlaxRunnable, *args: jnp.ndarray):
+        def run_method(
+            self: FlaxRunnable, *args: jnp.ndarray | ext.NpNDArray | ext.PdDataFrame
+        ):
             params = Params[jnp.ndarray](*args).map(mapping)
 
             arg = params.args[0] if len(params.args) == 1 else params.args

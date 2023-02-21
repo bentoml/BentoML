@@ -16,7 +16,7 @@ from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
 
 # register PyTorchTensorContainer as import side effect.
-from .common.pytorch import PyTorchTensorContainer  # type: ignore # noqa
+from .common.pytorch import PyTorchTensorContainer
 
 MODULE_NAME = "bentoml.fastai"
 MODEL_FILENAME = "saved_model.pkl"
@@ -52,7 +52,7 @@ except ImportError:  # pragma: no cover
     raise MissingDependencyException("BentoML only supports fastai v2 onwards.")
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get"]
+__all__ = ["load_model", "save_model", "get_runnable", "get", "PyTorchTensorContainer"]
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:

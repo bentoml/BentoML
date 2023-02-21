@@ -4,10 +4,8 @@ TorchScript
 
 .. admonition:: About this page
 
-   This is an API reference for TorchScript in BentoML. As TorchScript
-   is a serialization format for PyTorch models, please refer to
-   :doc:`/frameworks/pytorch` for more information on how to use PyTorch
-   in BentoML.
+   This is the API reference for TorchScript in BentoML.
+   You can find more information about TorchScript in the `official documentation <https://pytorch.org/docs/stable/jit.html>`_.
 
 
 .. note::

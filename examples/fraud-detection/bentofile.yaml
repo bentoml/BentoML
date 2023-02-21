@@ -1,0 +1,11 @@
+service: "service:svc"
+labels:
+  supports_gpu: "false"
+include:
+- "*.py"
+python:
+  packages:
+  - numpy
+  - pandas
+  - xgboost
+  - sklearn

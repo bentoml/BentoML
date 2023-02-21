@@ -1,0 +1,13 @@
+service: "service:svc"
+labels:
+  supports_gpu: "true"
+include:
+- "*.py"
+docker:
+  cuda_version: "11.6.2"
+python:
+  packages:
+  - numpy
+  - pandas
+  - xgboost
+  - sklearn

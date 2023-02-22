@@ -18,6 +18,15 @@ if TYPE_CHECKING:
     from click import Context
     from click import Parameter
 
+BENTOML_FIGLET = """
+██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+"""
+
 
 def parse_delete_targets_argument_callback(
     ctx: Context, params: Parameter, value: t.Any  # pylint: disable=unused-argument
@@ -278,4 +287,6 @@ def add_bento_management_commands(cli: Group):
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 
-        build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        bento = build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        logger.info(BENTOML_FIGLET)
+        logger.info("Successfully built %s.", bento)

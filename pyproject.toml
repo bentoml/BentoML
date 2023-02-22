@@ -61,7 +61,7 @@ dependencies = [
     "rich>=11.2.0",
     "schema",
     "simple-di>=0.1.4",
-    "starlette",
+    "starlette<0.26",
     "uvicorn",
     "watchfiles>=0.15.0",
     "backports.cached-property;python_version<'3.8'",

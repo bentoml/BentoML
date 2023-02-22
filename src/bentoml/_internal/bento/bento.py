@@ -26,6 +26,7 @@ from ..store import StoreItem
 from ..types import PathType
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
+from ..utils import normalize_labels_value
 from ..models import ModelStore
 from ..runner import Runner
 from ...exceptions import InvalidArgument
@@ -410,7 +411,6 @@ class BentoModelInfo:
 
 @attr.frozen(repr=False)
 class BentoInfo:
-
     # for backward compatibility in case new fields are added to BentoInfo.
     __forbid_extra_keys__ = False
     # omit field in yaml file if it is not provided by the user.
@@ -426,7 +426,9 @@ class BentoInfo:
     bentoml_version: str = attr.field(factory=lambda: BENTOML_VERSION)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
-    labels: t.Dict[str, t.Any] = attr.field(factory=dict)
+    labels: t.Dict[str, t.Any] = attr.field(
+        factory=dict, converter=normalize_labels_value
+    )
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
     apis: t.List[BentoApiInfo] = attr.field(factory=list)

@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import re
 import sys
-import uuid
 import random
 import socket
 import typing as t
@@ -137,8 +136,10 @@ def first_not_none(*args: T | None, default: None | T = None) -> T | None:
     return next((arg for arg in args if arg is not None), default)
 
 
-def randomize_runner_name(module_name: str):
-    return f"{module_name.split('.')[-1]}_{uuid.uuid4().hex[:6].lower()}"
+def normalize_labels_value(label: dict[str, t.Any] | None) -> dict[str, str] | None:
+    if not label:
+        return
+    return {k: str(v) for k, v in label.items()}
 
 
 def validate_or_create_dir(*path: PathType) -> None:
@@ -413,7 +414,6 @@ class cached_contextmanager:
     def __call__(
         self, func: "t.Callable[P, t.Generator[VT, None, None]]"
     ) -> "t.Callable[P, t.ContextManager[VT]]":
-
         func_m = contextlib.contextmanager(func)
 
         @contextlib.contextmanager

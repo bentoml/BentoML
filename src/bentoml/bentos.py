@@ -268,15 +268,16 @@ def pull(
 def build(
     service: str,
     *,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    description: t.Optional[str] = None,
-    include: t.Optional[t.List[str]] = None,
-    exclude: t.Optional[t.List[str]] = None,
-    docker: t.Optional[t.Dict[str, t.Any]] = None,
-    python: t.Optional[t.Dict[str, t.Any]] = None,
-    conda: t.Optional[t.Dict[str, t.Any]] = None,
-    version: t.Optional[str] = None,
-    build_ctx: t.Optional[str] = None,
+    name: str | None = None,
+    labels: dict[str, str] | None = None,
+    description: str | None = None,
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+    docker: dict[str, t.Any] | None = None,
+    python: dict[str, t.Any] | None = None,
+    conda: dict[str, t.Any] | None = None,
+    version: str | None = None,
+    build_ctx: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> "Bento":
     """
@@ -291,15 +292,15 @@ def build(
         labels: optional immutable labels for carrying contextual info
         description: optional description string in markdown format
         include: list of file paths and patterns specifying files to include in Bento,
-            default is all files under build_ctx, beside the ones excluded from the
-            exclude parameter or a :code:`.bentoignore` file for a given directory
+                 default is all files under build_ctx, beside the ones excluded from the
+                 exclude parameter or a :code:`.bentoignore` file for a given directory
         exclude: list of file paths and patterns to exclude from the final Bento archive
         docker: dictionary for configuring Bento's containerization process, see details
-            in :class:`bentoml._internal.bento.build_config.DockerOptions`
+                in :class:`bentoml._internal.bento.build_config.DockerOptions`
         python: dictionary for configuring Bento's python dependencies, see details in
-            :class:`bentoml._internal.bento.build_config.PythonOptions`
+                :class:`bentoml._internal.bento.build_config.PythonOptions`
         conda: dictionary for configuring Bento's conda dependencies, see details in
-            :class:`bentoml._internal.bento.build_config.CondaOptions`
+               :class:`bentoml._internal.bento.build_config.CondaOptions`
         version: Override the default auto generated version str
         build_ctx: Build context directory, when used as
         _bento_store: save Bento created to this BentoStore
@@ -344,6 +345,7 @@ def build(
     """
     build_config = BentoBuildConfig(
         service=service,
+        name=name,
         description=description,
         labels=labels,
         include=include,

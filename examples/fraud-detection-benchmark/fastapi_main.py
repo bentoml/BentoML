@@ -6,7 +6,7 @@ import numpy as np
 from fastapi import FastAPI, Request
 from sample import sample_input
 
-model_ref = bentoml.xgboost.get("ieee-fraud-detection-sm:latest")
+model_ref = bentoml.xgboost.get("ieee-fraud-detection-lg:latest")
 preprocessor = model_ref.custom_objects['preprocessor']
 fraud_model_runner = model_ref.to_runner()
 fraud_model_runner.init_local()

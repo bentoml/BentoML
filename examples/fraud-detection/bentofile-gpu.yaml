@@ -1,6 +1,4 @@
 service: "service:svc"
-labels:
-  supports_gpu: "true"
 include:
 - "*.py"
 docker:
@@ -10,4 +8,4 @@ python:
   - numpy
   - pandas
   - xgboost
-  - sklearn
+  - scikit-learn

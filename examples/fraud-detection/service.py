@@ -18,8 +18,8 @@ def is_fraud(input_df: pd.DataFrame):
     input_df = input_df.astype(sample_input.dtypes)
     input_features = preprocessor.transform(input_df)
     results = fraud_model_runner.predict_proba.run(input_features)
-    prediction = np.argmax(results, axis=1)  # 0 is not fraud, 1 is fraud
+    predictions = np.argmax(results, axis=1)  # 0 is not fraud, 1 is fraud
     return {
-        "is_fraud": bool(prediction),
+        "is_fraud": list(map(bool, predictions)),
         "is_fraud_prob": results[:,1]
     }

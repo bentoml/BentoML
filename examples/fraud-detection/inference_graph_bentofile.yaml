@@ -1,7 +1,6 @@
-service: "service:svc"
+service: "inference_graph_service:svc"
 include:
-- "service.py"
-- "sample.py"
+- "*.py"
 python:
   packages:
   - numpy

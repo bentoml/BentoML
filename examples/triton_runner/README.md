@@ -83,18 +83,14 @@ or via `bentoml.serve`:
 import bentoml
 
 server = bentoml.serve(
-    "triton-bento",
-    server_type="http",
+    bento,
+    server_type='grpc',
     production=True,
-    triton_options={
-        "log-verbose": True,
-        "model_control_mode": "explicit",
-        "load-model": [
-            "torchscript_yolov5s",
-            "tensorflow_yolov5s",
-            "onnx_yolov5s",
-        ],
-    },
+    triton_args=[
+        "model-control-mode=explicit",
+        "load-model=tensorflow_yolov5s",
+        "load-model=tensorflow_mnist",
+    ],
 )
 ```
 

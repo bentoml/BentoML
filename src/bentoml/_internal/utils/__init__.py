@@ -66,6 +66,8 @@ __all__ = [
 
 _EXPERIMENTAL_APIS: set[str] = set()
 
+logger = logging.getLogger(__name__)
+
 
 def warn_experimental(api_name: str) -> None:
     """
@@ -80,7 +82,6 @@ def warn_experimental(api_name: str) -> None:
     if api_name not in _EXPERIMENTAL_APIS:
         _EXPERIMENTAL_APIS.add(api_name)
         msg = "'%s' is an EXPERIMENTAL API and is currently not yet stable. Proceed with caution!"
-        logger = logging.getLogger(__name__)
         logger.warning(msg, api_name)
 
 
@@ -138,7 +139,11 @@ def first_not_none(*args: T | None, default: None | T = None) -> T | None:
 
 def normalize_labels_value(label: dict[str, t.Any] | None) -> dict[str, str] | None:
     if not label:
-        return
+        return label
+    if any(not isinstance(v, str) for v in label.values()):
+        logger.warning(
+            "'labels' should be a dict[str, str] to conform with Kubernetes label spec. Converting all values to string. See https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ for more information."
+        )
     return {k: str(v) for k, v in label.items()}
 
 

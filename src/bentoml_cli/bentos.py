@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import json
 import typing as t
-from typing import TYPE_CHECKING
+import logging
 
 import yaml
 import click
@@ -13,7 +13,7 @@ from rich.syntax import Syntax
 from bentoml_cli.utils import is_valid_bento_tag
 from bentoml_cli.utils import is_valid_bento_name
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from click import Group
     from click import Context
     from click import Parameter
@@ -57,6 +57,7 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.yatai_client import yatai_client
     from bentoml._internal.configuration.containers import BentoMLContainer
 
+    logger = logging.getLogger(__name__)
     bento_store = BentoMLContainer.bento_store.get()
 
     @cli.command()

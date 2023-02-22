@@ -175,25 +175,44 @@ class RemoteRunnerClient(RunnerHandle):
             functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
         )
 
-        if __bentoml_method.config.batchable:
-            if not payload_params.map(lambda i: i.batch_size).all_equal():
-                raise ValueError(
-                    "All batchable arguments must have the same batch size."
-                ) from None
+        headers={
+            "Bento-Name": component_context.bento_name,
+            "Bento-Version": component_context.bento_version,
+            "Runner-Name": self._runner.name,
+            "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
+            "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+        }
+        total_args_num = len(args) + len(kwargs)
+        headers["Args-Number"] = str(total_args_num)
+
+        if total_args_num == 1:
+            # FIXME: also considering kwargs
+            payload = AutoContainer.to_payload(args[0], batch_dim=inp_batch_dim)
+            headers["Payload-Meta"] = json.dumps(payload.meta)
+            headers["Payload-Container"] = payload.container
+            headers["Batch-Size"] = str(payload.batch_size)
+            data = payload.data
+
+        else:
+            payload_params = Params[Payload](*args, **kwargs).map(
+                functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
+            )
+
+            if __bentoml_method.config.batchable:
+                if not payload_params.map(lambda i: i.batch_size).all_equal():
+                    raise ValueError(
+                        "All batchable arguments must have the same batch size."
+                    )
+
+            data = pickle.dumps(payload_params)  # FIXME: pickle inside pickle
 
         path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
         async with self._semaphore:
             try:
                 async with self._client.post(
                     f"{self._addr}/{path}",
-                    data=pickle.dumps(payload_params),  # FIXME: pickle inside pickle
-                    headers={
-                        "Bento-Name": component_context.bento_name,
-                        "Bento-Version": component_context.bento_version,
-                        "Runner-Name": self._runner.name,
-                        "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-                        "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
-                    },
+                    data=data,
+                    headers=headers,
                 ) as resp:
                     body = await resp.read()
             except aiohttp.ClientOSError as e:
@@ -203,16 +222,8 @@ class RemoteRunnerClient(RunnerHandle):
                         await self._reset_client()
                         async with self._client.post(
                             f"{self._addr}/{path}",
-                            data=pickle.dumps(
-                                payload_params
-                            ),  # FIXME: pickle inside pickle
-                            headers={
-                                "Bento-Name": component_context.bento_name,
-                                "Bento-Version": component_context.bento_version,
-                                "Runner-Name": self._runner.name,
-                                "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-                                "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
-                            },
+                            data=data,
+                            headers=headers,
                         ) as resp:
                             body = await resp.read()
                     except aiohttp.ClientOSError:

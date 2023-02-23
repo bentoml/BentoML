@@ -233,10 +233,7 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         import numpy as np
 
         # numpy.concatenate may consume lots of memory, need optimization later
-        batch: ext.NpNDArray = np.concatenate(  # type: ignore  (no numpy types)
-            batches,
-            axis=batch_dim,
-        )
+        batch: ext.NpNDArray = np.concatenate(batches, axis=batch_dim)
         indices = list(
             itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
         )
@@ -252,7 +249,7 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
     ) -> list[ext.NpNDArray]:
         import numpy as np
 
-        return np.split(batch, indices[1:-1], axis=batch_dim)  # type: ignore  (no numpy types)
+        return np.split(batch, indices[1:-1], axis=batch_dim)
 
     @classmethod
     def to_triton_grpc_payload(
@@ -323,7 +320,6 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         batch_dim: int = 0,
         plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> list[Payload]:
-
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
         payloads = [
@@ -370,7 +366,6 @@ class PandasDataFrameContainer(
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> list[ext.PdDataFrame]:
-
         assert (
             batch_dim == 0
         ), "PandasDataFrameContainer does not support batch_dim other than 0"
@@ -434,7 +429,6 @@ class PandasDataFrameContainer(
         batch_dim: int = 0,
         plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> list[Payload]:
-
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
         payloads = [
@@ -502,7 +496,6 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> list[Payload]:
-
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
         payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
@@ -574,7 +567,6 @@ def register_builtin_containers():
     DataContainerRegistry.register_container(
         LazyType("numpy", "ndarray"), LazyType("numpy", "ndarray"), NdarrayContainer
     )
-
     DataContainerRegistry.register_container(
         LazyType("pandas.core.series", "Series"),
         LazyType("pandas.core.frame", "DataFrame"),

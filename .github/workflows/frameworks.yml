@@ -12,6 +12,7 @@ env:
   LINES: 120
   COLUMNS: 120
   BENTOML_DO_NOT_TRACK: True
+  PYTEST_PLUGINS: bentoml.testing.pytest.plugin
 
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaultsrun
 defaults:
@@ -33,6 +34,7 @@ jobs:
       pytorch: ${{ steps.filter.outputs.pytorch }}
       pytorch_lightning: ${{ steps.filter.outputs.pytorch_lightning }}
       sklearn: ${{ steps.filter.outputs.sklearn }}
+      flax: ${{ steps.filter.outputs.flax }}
       tensorflow: ${{ steps.filter.outputs.tensorflow }}
       torchscript: ${{ steps.filter.outputs.torchscript }}
       transformers: ${{ steps.filter.outputs.transformers }}
@@ -94,6 +96,12 @@ jobs:
               - src/bentoml/_internal/frameworks/pytorch.py
               - src/bentoml/_internal/frameworks/common/pytorch.py
               - tests/integration/frameworks/test_pytorch_unit.py
+            flax:
+              - *related
+              - src/bentoml/flax.py
+              - src/bentoml/_internal/frameworks/flax.py
+              - src/bentoml/_internal/frameworks/common/jax.py
+              - tests/integration/frameworks/models/flax.py
             torchscript:
               - *related
               - src/bentoml/torchscript.py
@@ -213,6 +221,51 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework diffusers)
+          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+
+      - name: Generate coverage
+        run: coverage xml
+
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  flax_integration_tests:
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.flax == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - name: Get pip cache dir
+        id: cache-dir
+        run: |
+          echo ::set-output name=dir::$(pip cache dir)
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        id: cache-pip
+        with:
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          pip install .
+          pip install flax jax jaxlib chex tensorflow
+          pip install -r requirements/tests-requirements.txt
+
+      - name: Run tests and generate coverage report
+        run: |
+          OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework flax)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
       - name: Generate coverage

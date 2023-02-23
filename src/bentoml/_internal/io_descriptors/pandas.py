@@ -430,7 +430,7 @@ class PandasDataFrame(
         self._shape = sample.shape
         self._columns = [str(i) for i in list(sample.columns)]
         if self._dtype is None:
-            self._dtype = True  # infer dtype automatically
+            self._dtype = sample.dtypes
         return sample
 
     def _convert_dtype(
@@ -527,12 +527,15 @@ class PandasDataFrame(
         _validate_serialization_format(serialization_format)
 
         obj = await request.body()
+        dtype = self._dtype if self._enforce_dtype else None
         if serialization_format is SerializationFormat.JSON:
-            res = pd.read_json(io.BytesIO(obj), dtype=self._dtype, orient=self._orient)
+            if dtype is None:
+                dtype = True  # infer dtype automatically
+            res = pd.read_json(io.BytesIO(obj), dtype=dtype, orient=self._orient)
         elif serialization_format is SerializationFormat.PARQUET:
             res = pd.read_parquet(io.BytesIO(obj), engine=get_parquet_engine())
         elif serialization_format is SerializationFormat.CSV:
-            res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=self._dtype)
+            res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=dtype)
         else:
             raise InvalidArgument(
                 f"Unknown serialization format ({serialization_format})."
@@ -1018,7 +1021,7 @@ class PandasSeries(
             io.BytesIO(obj),
             typ="series",
             orient=self._orient,
-            dtype=self._dtype,
+            dtype=self._dtype if self._enforce_dtype else True,
         )
         return self.validate_series(res)
 

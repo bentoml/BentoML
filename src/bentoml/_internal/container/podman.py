@@ -6,6 +6,8 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING
 
+import psutil
+
 from .base import Arguments
 from .buildah import ENV
 
@@ -32,16 +34,20 @@ def health() -> bool:
             "Podman not found. Make sure it is installed and in your PATH. See https://podman.io/getting-started/installation"
         )
         return False
-    # check if podman machine is running.
-    output = (
-        subprocess.check_output(
-            [client, "machine", "info", "--format", "{{json .Host.MachineState}}"]
+
+    if psutil.MACOS or psutil.WINDOWS:
+        # check if podman machine is running.
+        output = (
+            subprocess.check_output(
+                [client, "machine", "info", "--format", "{{json .Host.MachineState}}"]
+            )
+            .decode("utf-8")
+            .strip("\n&#34;")  # strip quotation marks from JSON format.
+            .lower()
         )
-        .decode("utf-8")
-        .strip("\n&#34;")  # strip quotation marks from JSON format.
-        .lower()
-    )
-    return output == '"running"'
+        return output == '"running"'
+    else:
+        return True
 
 
 def parse_dict_opt(d: dict[str, str]) -> str:

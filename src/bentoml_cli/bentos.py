@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 import json
 import typing as t
-from typing import TYPE_CHECKING
 
 import yaml
 import click
@@ -13,10 +12,19 @@ from rich.syntax import Syntax
 from bentoml_cli.utils import is_valid_bento_tag
 from bentoml_cli.utils import is_valid_bento_name
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from click import Group
     from click import Context
     from click import Parameter
+
+BENTOML_FIGLET = """
+██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+"""
 
 
 def parse_delete_targets_argument_callback(
@@ -74,7 +82,7 @@ def add_bento_management_commands(cli: Group):
             console.print_json(info)
         else:
             info = yaml.dump(bento.info, indent=2, sort_keys=False)
-            console.print(Syntax(info, "yaml"))
+            console.print(Syntax(info, "yaml", background_color="default"))
 
     @cli.command(name="list")
     @click.argument("bento_name", type=click.STRING, required=False)
@@ -115,7 +123,7 @@ def add_bento_management_commands(cli: Group):
             console.print(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            console.print(Syntax(info, "yaml"))
+            console.print(Syntax(info, "yaml", background_color="default"))
         else:
             table = Table(box=None)
             table.add_column("Tag")
@@ -233,9 +241,12 @@ def add_bento_management_commands(cli: Group):
         default=False,
         help="Force pull from yatai to local and overwrite even if it already exists in local",
     )
-    def pull(bento_tag: str, force: bool) -> None:  # type: ignore (not accessed)
+    @click.option(
+        "--context", type=click.STRING, default=None, help="Yatai context name."
+    )
+    def pull(bento_tag: str, force: bool, context: str) -> None:  # type: ignore (not accessed)
         """Pull Bento from a yatai server."""
-        yatai_client.pull_bento(bento_tag, force=force)
+        yatai_client.pull_bento(bento_tag, force=force, context=context)
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -252,12 +263,17 @@ def add_bento_management_commands(cli: Group):
         default=10,
         help="Number of threads to use for upload",
     )
-    def push(bento_tag: str, force: bool, threads: int) -> None:  # type: ignore (not accessed)
+    @click.option(
+        "--context", type=click.STRING, default=None, help="Yatai context name."
+    )
+    def push(bento_tag: str, force: bool, threads: int, context: str) -> None:  # type: ignore (not accessed)
         """Push Bento to a yatai server."""
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
-        yatai_client.push_bento(bento_obj, force=force, threads=threads)
+        yatai_client.push_bento(
+            bento_obj, force=force, threads=threads, context=context
+        )
 
     @cli.command()
     @click.argument("build_ctx", type=click.Path(), default=".")
@@ -270,4 +286,14 @@ def add_bento_management_commands(cli: Group):
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 
-        build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        bento = build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        click.echo(BENTOML_FIGLET)
+        click.secho(f"Successfully built {bento}.", fg="green")
+        click.secho(
+            f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
+            fg="yellow",
+        )
+        click.secho(
+            f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
+            fg="yellow",
+        )

@@ -27,8 +27,8 @@ except ImportError:  # pragma: no cover (trivial error)
     )
 
 if TYPE_CHECKING:
-    from pyspark.sql.session import SparkSession
-    from pyspark.sql.dataframe import DataFrame as SparkDataFrame
+    import pyspark.sql.session
+    import pyspark.sql.dataframe
 
     RecordBatch: t.TypeAlias = t.Any  # pyarrow doesn't have type annotations
 
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _distribute_bento(spark: SparkSession, bento: Bento) -> str:
+def _distribute_bento(spark: pyspark.sql.session.SparkSession, bento: Bento) -> str:
     temp_dir = tempfile.mkdtemp()
     export_path = bento.export(temp_dir)
     spark.sparkContext.addFile(export_path)
@@ -50,7 +50,6 @@ def _load_bento_spark(bento_tag: Tag):
     try:
         return load_bento(bento_tag)
     except Exception:
-
         # Use the default Bento export file name. This relies on the implementation
         # of _distribute_bento to use default Bento export file name.
         bento_path = SparkFiles.get(f"{bento_tag.name}-{bento_tag.version}.bento")
@@ -67,7 +66,6 @@ def _get_process(
     def process(
         iterator: t.Iterable[RecordBatch],
     ) -> t.Generator[RecordBatch, None, None]:
-
         svc = _load_bento_spark(bento_tag)
 
         assert (
@@ -94,11 +92,59 @@ def _get_process(
 
 def run_in_spark(
     bento: Bento,
-    df: SparkDataFrame,
-    spark: SparkSession,
+    df: pyspark.sql.dataframe.DataFrame,
+    spark: pyspark.sql.session.SparkSession,
     api_name: str | None = None,
     output_schema: StructType | None = None,
-) -> SparkDataFrame:
+) -> pyspark.sql.dataframe.DataFrame:
+    """
+    Run BentoService inference API in Spark.
+
+    The API to run must accept batches as input and return batches as output.
+
+    Args:
+        bento:
+            The bento containing the inference API to run.
+        df:
+            The input DataFrame to run the inference API on.
+        spark:
+            The spark session to use to run the inference API.
+        api_name:
+            The name of the inference API to run. If not provided, there must be only one API contained
+            in the bento; that API will be run.
+        output_schema:
+            The Spark schema of the output DataFrame. If not provided, BentoML will attempt to infer the
+            schema from the output descriptor of the inference API.
+
+    Returns:
+        The result of the inference API run on the input ``df``.
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        >>> import bentoml
+        >>> import pyspark
+        >>> from pyspark.sql import SparkSession
+        >>> from pyspark.sql.types import StructType, StructField, StringType
+
+        >>> spark = SparkSession.builder.getOrCreate()
+        >>> schema = StructType([
+        ...     StructField("name", StringType(), True),
+        ...     StructField("age", StringType(), True),
+        ... ])
+        >>> df = spark.createDataFrame([("John", 30), ("Mike", 25), ("Sally", 40)], schema)
+
+        >>> bento = bentoml.get("my_service:latest")
+        >>> results = bentoml.batch.run_in_spark(bento, df, spark)
+        >>> results.show()
+        +-----+---+
+        | name|age|
+        +-----+---+
+        |John |30 |
+        +-----+---+
+    """
     svc = load_bento(bento)
 
     if api_name is None:

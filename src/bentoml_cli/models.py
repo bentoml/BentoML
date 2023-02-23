@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import typing as t
-import logging
 from typing import TYPE_CHECKING
 
 import yaml
@@ -75,7 +74,9 @@ def add_model_management_commands(cli: Group) -> None:
             info = json.dumps(model.info.to_dict(), indent=2, default=str)
             console.print_json(info)
         else:
-            console.print(Syntax(str(model.info.dump()), "yaml"))
+            console.print(
+                Syntax(str(model.info.dump()), "yaml", background_color="default")
+            )
 
     @model_cli.command(name="list")
     @click.argument("model_name", type=click.STRING, required=False)
@@ -116,7 +117,7 @@ def add_model_management_commands(cli: Group) -> None:
             console.print_json(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            console.print(Syntax(info, "yaml"))
+            console.print(Syntax(info, "yaml"), background_color="default")
         else:
             table = Table(box=None)
             table.add_column("Tag")
@@ -224,9 +225,12 @@ def add_model_management_commands(cli: Group) -> None:
         default=False,
         help="Force pull from yatai to local and overwrite even if it already exists in local",
     )
-    def pull(model_tag: str, force: bool):  # type: ignore (not accessed)
+    @click.option(
+        "--context", type=click.STRING, default=None, help="Yatai context name."
+    )
+    def pull(model_tag: str, force: bool, context: str):  # type: ignore (not accessed)
         """Pull Model from a yatai server."""
-        yatai_client.pull_model(model_tag, force=force)
+        yatai_client.pull_model(model_tag, force=force, context=context)
 
     @model_cli.command()
     @click.argument("model_tag", type=click.STRING)
@@ -243,9 +247,14 @@ def add_model_management_commands(cli: Group) -> None:
         default=10,
         help="Number of threads to use for upload",
     )
-    def push(model_tag: str, force: bool, threads: int):  # type: ignore (not accessed)
+    @click.option(
+        "--context", type=click.STRING, default=None, help="Yatai context name."
+    )
+    def push(model_tag: str, force: bool, threads: int, context: str):  # type: ignore (not accessed)
         """Push Model to a yatai server."""
         model_obj = model_store.get(model_tag)
         if not model_obj:
             raise click.ClickException(f"Model {model_tag} not found in local store")
-        yatai_client.push_model(model_obj, force=force, threads=threads)
+        yatai_client.push_model(
+            model_obj, force=force, threads=threads, context=context
+        )

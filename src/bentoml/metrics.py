@@ -9,13 +9,12 @@ from simple_di import Provide
 
 from ._internal.utils import warn_experimental
 from ._internal.utils import add_experimental_docstring
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ._internal.server.metrics.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
-
-from ._internal.configuration.containers import BentoMLContainer
 
 # NOTE: We have to set our docstring here due to the fact that
 # we are lazy loading the metrics. This means that the docstring

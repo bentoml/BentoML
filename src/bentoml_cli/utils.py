@@ -36,6 +36,7 @@ if TYPE_CHECKING:
 
     WrappedCLI = t.Callable[P, ClickFunctionWrapper[P]]
 
+    ClickParamType = t.Sequence[t.Any] | bool | None
 
 logger = logging.getLogger("bentoml")
 
@@ -122,6 +123,71 @@ def validate_docker_tag(
         "'validate_docker_tag' is now deprecated, use 'validate_container_tag' instead."
     )
     return validate_container_tag(ctx, param, tag)
+
+
+@t.overload
+def normalize_none_type(value: t.Mapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+    ...
+
+
+@t.overload
+def normalize_none_type(value: ClickParamType) -> ClickParamType:
+    ...
+
+
+def normalize_none_type(
+    value: ClickParamType | t.Mapping[str, t.Any]
+) -> ClickParamType | t.Mapping[str, t.Any]:
+    if isinstance(value, (tuple, list, set, str)) and len(value) == 0:
+        return
+    if isinstance(value, dict):
+        return {k: normalize_none_type(v) for k, v in value.items()}
+    return value
+
+
+def flatten_opt_tuple(value: t.Any) -> t.Any:
+    from bentoml._internal.types import LazyType
+
+    if LazyType["tuple[t.Any, ...]"](tuple).isinstance(value) and len(value) == 1:
+        return value[0]
+    return value
+
+
+# NOTE: This is the key we use to store the transformed options in the CLI context.
+MEMO_KEY = "_memoized"
+
+
+def opt_callback(ctx: Context, param: Parameter, value: ClickParamType):
+    # NOTE: our new options implementation will have the following format:
+    #   --opt ARG[=|:]VALUE[,VALUE] (e.g., --opt key1=value1,value2 --opt key2:value3/value4:hello)
+    # Argument and values per --opt has one-to-one or one-to-many relationship,
+    # separated by '=' or ':'.
+    # TODO: We might also want to support the following format:
+    #  --opt arg1 value1 arg2 value2 --opt arg3 value3
+    #  --opt arg1=value1,arg2=value2 --opt arg3:value3
+
+    assert param.multiple, "Only use this callback when multiple=True."
+    if MEMO_KEY not in ctx.params:
+        # By default, multiple options are stored as a tuple.
+        # our memoized options are stored as a dict.
+        ctx.params[MEMO_KEY] = {}
+
+    if param.name not in ctx.params[MEMO_KEY]:
+        ctx.params[MEMO_KEY][param.name] = ()
+
+    value = normalize_none_type(value)
+    if value is not None and isinstance(value, tuple):
+        for opt in value:
+            o, *val = re.split(r"=|:", opt, maxsplit=1)
+            norm = o.replace("-", "_")
+            if len(val) == 0:
+                # --opt bool
+                ctx.params[MEMO_KEY][norm] = True
+            else:
+                # --opt key=value
+                ctx.params[MEMO_KEY].setdefault(norm, ())
+                ctx.params[MEMO_KEY][norm] += (*val,)
+    return value
 
 
 class BentoMLCommandGroup(click.Group):

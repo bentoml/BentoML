@@ -11,3 +11,4 @@ Integrations
     flink
     arize
     mlflow
+    spark

@@ -99,7 +99,7 @@ def import_model(
     name: str,
     model_uri: str,
     *,
-    signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
+    signatures: dict[str, ModelSignature] | dict[str, ModelSignatureDict] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,

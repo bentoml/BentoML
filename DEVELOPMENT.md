@@ -210,7 +210,7 @@ bentoml get IrisClassifier --verbose
 
 formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyCQA/isort), [buf](https://github.com/bufbuild/buf)
 
-linter: [pylint](https://pylint.org/), [buf](https://github.com/bufbuild/buf)
+linter: [ruff](https://github.com/charliermarsh/ruff), [buf](https://github.com/bufbuild/buf)
 
 type checker: [pyright](https://github.com/microsoft/pyright)
 

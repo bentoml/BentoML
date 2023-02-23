@@ -50,8 +50,6 @@ if TYPE_CHECKING:
         echo_dataframe: RunnerMethod[RunnableImpl, [pd.DataFrame], pd.DataFrame]
 
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
     np = LazyLoader("np", globals(), "numpy")
     pd = LazyLoader("pd", globals(), "pandas")
     PIL = LazyLoader("PIL", globals(), "PIL")
@@ -200,7 +198,7 @@ async def predict_multi_images(original: Image, compared: Image):
 
 
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
-def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-argument
+def ensure_metrics_are_registered(_: str) -> None:
     histograms = [
         m.name
         for m in bentoml.metrics.text_string_to_metric_families()

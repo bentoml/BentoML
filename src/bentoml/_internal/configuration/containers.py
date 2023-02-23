@@ -29,6 +29,8 @@ from ...exceptions import BentoMLConfigException
 from ..utils.unflatten import unflatten
 
 if TYPE_CHECKING:
+    from fs.base import FS
+
     from .. import external_typing as ext
     from ..models import ModelStore
     from ..utils.analytics import ServeInfo
@@ -104,18 +106,17 @@ class BentoMLConfiguration:
             # as there is no way for us to infer what values user can pass in.
             # however, if users pass in a version inside this value, we will that to migrate up
             # if possible
-            if "version" in override_config_map:
-                override_version = override_config_map["version"]
-                logger.debug(
-                    "Found defined 'version=%d' in BENTOML_CONFIG_OPTIONS."
-                    % override_version
-                )
-                migration = getattr(
-                    import_configuration_spec(override_version), "migration", None
-                )
-                # Running migration layer if it exists
-                if migration is not None:
-                    override_config_map = migration(override_config=override_config_map)
+            override_version = override_config_map.get("version", use_version)
+            logger.debug(
+                "Found defined 'version=%d' in BENTOML_CONFIG_OPTIONS."
+                % override_version
+            )
+            migration = getattr(
+                import_configuration_spec(override_version), "migration", None
+            )
+            # Running migration layer if it exists
+            if migration is not None:
+                override_config_map = migration(override_config=override_config_map)
             # Previous behaviour, before configuration versioning.
             try:
                 override = unflatten(override_config_map)
@@ -161,7 +162,6 @@ class BentoMLConfiguration:
 
 @dataclass
 class _BentoMLContainerClass:
-
     config = providers.Configuration()
 
     @providers.SingletonFactory
@@ -176,8 +176,9 @@ class _BentoMLContainerClass:
         )
         bentos = os.path.join(home, "bentos")
         models = os.path.join(home, "models")
+        envs = os.path.join(home, "envs")
 
-        validate_or_create_dir(home, bentos, models)
+        validate_or_create_dir(home, bentos, models, envs)
         return home
 
     @providers.SingletonFactory
@@ -189,6 +190,18 @@ class _BentoMLContainerClass:
     @staticmethod
     def model_store_dir(bentoml_home: str = Provide[bentoml_home]):
         return os.path.join(bentoml_home, "models")
+
+    @providers.SingletonFactory
+    @staticmethod
+    def env_store_dir(bentoml_home: str = Provide[bentoml_home]):
+        return os.path.join(bentoml_home, "envs")
+
+    @providers.SingletonFactory
+    @staticmethod
+    def env_store(bentoml_home: str = Provide[bentoml_home]) -> FS:
+        import fs
+
+        return fs.open_fs(os.path.join(bentoml_home, "envs"))
 
     @providers.SingletonFactory
     @staticmethod

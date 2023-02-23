@@ -2,34 +2,59 @@ from __future__ import annotations
 
 import os
 import json
+import time
 import pickle
 import typing as t
 import asyncio
+import logging
 import functools
-from typing import TYPE_CHECKING
+import traceback
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
 from . import RunnerHandle
+from ..utils import Params
+from ..utils import PAYLOAD_META_HEADER
+from ...utils import LazyLoader
 from ...context import component_context
 from ..container import Payload
 from ...utils.uri import uri_to_path
 from ....exceptions import RemoteException
 from ....exceptions import ServiceUnavailable
-from ...runner.utils import Params
-from ...runner.utils import PAYLOAD_META_HEADER
 from ...configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
+TRITON_EXC_MSG = "tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[all]>=2.29.0\"'."
+
+if t.TYPE_CHECKING:
     import yarl
+    import tritonclient.grpc.aio as tritongrpcclient
+    import tritonclient.http.aio as tritonhttpclient
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
 
     from ..runner import Runner
     from ..runner import RunnerMethod
+    from ....triton import Runner as TritonRunner
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
+else:
+    P = t.TypeVar("P")
+
+    tritongrpcclient = LazyLoader(
+        "tritongrpcclient",
+        globals(),
+        "tritonclient.grpc.aio",
+        exc_msg=TRITON_EXC_MSG,
+    )
+    tritonhttpclient = LazyLoader(
+        "tritonhttpclient",
+        globals(),
+        "tritonclient.http.aio",
+        exc_msg=TRITON_EXC_MSG,
+    )
+
+logger = logging.getLogger(__name__)
 
 
 class RemoteRunnerClient(RunnerHandle):
@@ -81,7 +106,7 @@ class RemoteRunnerClient(RunnerHandle):
             elif parsed.scheme == "tcp":
                 self._conn = aiohttp.TCPConnector(
                     loop=self._loop,
-                    verify_ssl=False,
+                    ssl=False,
                     limit=800,  # TODO(jiang): make it configurable
                     keepalive_timeout=1800.0,
                 )
@@ -91,9 +116,7 @@ class RemoteRunnerClient(RunnerHandle):
         return self._conn
 
     @property
-    def _client(
-        self,
-    ) -> ClientSession:
+    def _client(self) -> ClientSession:
         import aiohttp
 
         if (
@@ -188,10 +211,10 @@ class RemoteRunnerClient(RunnerHandle):
                         },
                     ) as resp:
                         body = await resp.read()
-                except aiohttp.ClientOSError as e:
-                    raise RemoteException(f"Failed to connect to runner server.")
+                except aiohttp.ClientOSError:
+                    raise RemoteException("Failed to connect to runner server.")
             else:
-                raise RemoteException(f"Failed to connect to runner server.") from e
+                raise RemoteException("Failed to connect to runner server.") from e
 
         try:
             content_type = resp.headers["Content-Type"]
@@ -237,11 +260,11 @@ class RemoteRunnerClient(RunnerHandle):
         __bentoml_method: RunnerMethod[t.Any, P, R],
         *args: P.args,
         **kwargs: P.kwargs,
-    ) -> R:
+    ) -> R | tuple[R, ...]:
         import anyio
 
         return t.cast(
-            "R",
+            "R | tuple[R, ...]",
             anyio.from_thread.run(
                 functools.partial(self.async_run_method, **kwargs),
                 __bentoml_method,
@@ -270,3 +293,198 @@ class RemoteRunnerClient(RunnerHandle):
 
     def __del__(self) -> None:
         self._close_conn()
+
+
+def handle_triton_exception(f: t.Callable[P, R]) -> t.Callable[..., R]:
+    @functools.wraps(f)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        try:
+            return f(*args, **kwargs)
+        except tritongrpcclient.InferenceServerException:
+            logger.error("Caught exception while sending payload to Triton:")
+            raise
+
+    return wrapper
+
+
+# NOTE: to support files, consider using ModelInferStream via raw_bytes_contents
+class TritonRunnerHandle(RunnerHandle):
+    def __init__(self, runner: TritonRunner):
+        self.runner = runner
+        self._client_cache: t.Any = None
+        self._grpc_client_cache: tritongrpcclient.InferenceServerClient | None = None
+        self._http_client_cache: tritonhttpclient.InferenceServerClient | None = None
+        self._use_http_client = self.runner.tritonserver_type == "http"
+
+    async def is_ready(self, timeout: int) -> bool:
+        logger.info("Waiting for Triton server to be ready...")
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                if (
+                    await self.client.is_server_ready()
+                    and await self.client.is_server_live()
+                ):
+                    return True
+                else:
+                    await asyncio.sleep(1)
+            except Exception:
+                await asyncio.sleep(1)
+        return False
+
+    # keep a copy of all client methods to avoid getattr check.
+    client_methods = [
+        "get_cuda_shared_memory_status",
+        "get_inference_statistics",
+        "get_log_settings",
+        "get_model_config",
+        "get_model_metadata",
+        "get_model_repository_index",
+        "get_server_metadata",
+        "get_system_shared_memory_status",
+        "get_trace_settings",
+        "infer",
+        "is_model_ready",
+        "is_server_live",
+        "is_server_ready",
+        "load_model",
+        "register_cuda_shared_memory",
+        "register_system_shared_memory",
+        "stream_infer",
+        "unload_model",
+        "unregister_cuda_shared_memory",
+        "unregister_system_shared_memory",
+        "update_log_settings",
+        "update_trace_settings",
+    ]
+
+    @property
+    def http_client(self) -> tritonhttpclient.InferenceServerClient:
+        from ...configuration import get_debug_mode
+
+        if self._http_client_cache is None:
+            # TODO: configuration customization
+            try:
+                self._http_client_cache = tritonhttpclient.InferenceServerClient(
+                    url=BentoMLContainer.remote_runner_mapping.get()[self.runner.name],
+                    verbose=get_debug_mode(),
+                )
+            except Exception:
+                logger.error(
+                    "Failed to instantiate Triton Inference Server client for '%s', see details:",
+                    self.runner.name,
+                )
+                logger.error(traceback.format_exc())
+                raise
+        return self._http_client_cache
+
+    @property
+    def grpc_client(self) -> tritongrpcclient.InferenceServerClient:
+        from ...configuration import get_debug_mode
+
+        if self._grpc_client_cache is None:
+            # TODO: configuration customization
+            try:
+                self._grpc_client_cache = tritongrpcclient.InferenceServerClient(
+                    url=BentoMLContainer.remote_runner_mapping.get()[self.runner.name],
+                    verbose=get_debug_mode(),
+                )
+            except Exception:
+                logger.error(
+                    "Failed to instantiate Triton Inference Server client for '%s', see details:",
+                    self.runner.name,
+                )
+                logger.error(traceback.format_exc())
+                raise
+        return self._grpc_client_cache
+
+    @property
+    def client(
+        self,
+    ) -> (
+        tritongrpcclient.InferenceServerClient | tritonhttpclient.InferenceServerClient
+    ):
+        if self._client_cache is None:
+            self._client_cache = (
+                self.http_client if self._use_http_client else self.grpc_client
+            )
+
+        return self._client_cache
+
+    @handle_triton_exception
+    async def async_run_method(
+        self,
+        __bentoml_method: RunnerMethod[t.Any, P, tritongrpcclient.InferResult],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> tritongrpcclient.InferResult | tritonhttpclient.InferResult:
+        from ..container import AutoContainer
+
+        assert (len(args) == 0) ^ (
+            len(kwargs) == 0
+        ), f"Inputs for model '{__bentoml_method.name}' can be given either as positional (args) or keyword arguments (kwargs), but not both. See https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration"
+
+        pass_args = args if len(args) > 0 else kwargs
+
+        # return metadata of a given model
+        if not self._use_http_client:
+            metadata = await self.grpc_client.get_model_metadata(
+                model_name=__bentoml_method.name, as_json=False
+            )
+
+            if len(metadata.inputs) != len(pass_args):
+                raise ValueError(
+                    f"Number of provided arguments ({len(metadata.inputs)}) does not match the number of inputs ({len(pass_args)})"
+                )
+            inputs: t.Sequence[t.Any] = metadata.inputs
+            outputs: t.Sequence[t.Any] = [
+                tritongrpcclient.InferRequestedOutput(output.name)
+                for output in metadata.outputs
+            ]
+        else:
+            metadata = await self.http_client.get_model_metadata(
+                model_name=__bentoml_method.name
+            )
+            inputs = metadata["inputs"]
+
+            if len(inputs) != len(pass_args):
+                raise ValueError(
+                    f"Number of provided arguments ({len(inputs)}) does not match the number of inputs ({len(pass_args)})"
+                )
+            outputs = [
+                tritonhttpclient.InferRequestedOutput(output["name"])
+                for output in t.cast("list[dict[str, t.Any]]", metadata["outputs"])
+            ]
+
+        param_cls = (
+            Params[tritongrpcclient.InferInput]
+            if not self._use_http_client
+            else Params[tritonhttpclient.InferInput]
+        )
+
+        params = param_cls(*args, **kwargs).map_enumerate(
+            functools.partial(
+                AutoContainer.to_triton_payload, _use_http_client=self._use_http_client
+            ),
+            inputs,
+        )
+        return await self.client.infer(
+            model_name=__bentoml_method.name,
+            inputs=list(params.args) if len(args) > 0 else list(params.kwargs.values()),
+            outputs=outputs,
+        )
+
+    @handle_triton_exception
+    def run_method(
+        self,
+        __bentoml_method: RunnerMethod[t.Any, P, tritongrpcclient.InferResult],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> tritongrpcclient.InferResult | tritonhttpclient.InferResult:
+        import anyio
+
+        return anyio.from_thread.run(
+            functools.partial(self.async_run_method, **kwargs),
+            __bentoml_method,
+            *args,
+        )

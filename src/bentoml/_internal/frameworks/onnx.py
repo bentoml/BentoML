@@ -54,20 +54,8 @@ API_VERSION = "v2"
 logger = logging.getLogger(__name__)
 
 
-# helper methods
-def _yield_providers(
-    iterable: t.Sequence[t.Any],
-) -> t.Generator[str, None, None]:  # pragma: no cover
-    if isinstance(iterable, tuple):
-        yield iterable[0]
-    elif isinstance(iterable, str):
-        yield iterable
-    else:
-        yield from iterable
-
-
-def flatten_list(lst: t.List[t.Any]) -> t.List[str]:  # pragma: no cover
-    return [k for i in lst for k in _yield_providers(i)]
+def flatten_providers_list(lst: ProvidersType) -> list[str]:
+    return [k[0] if isinstance(k, (list, tuple)) else k for k in lst]
 
 
 @attr.define
@@ -76,7 +64,7 @@ class ONNXOptions(ModelOptions):
 
     input_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
     output_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
-    providers: t.Optional[list[str]] = attr.field(default=None)
+    providers: ProvidersType = attr.field(default=None)
     session_options: t.Optional["ort.SessionOptions"] = attr.field(default=None)
 
 
@@ -156,7 +144,9 @@ def load_model(
         )
 
     if providers:
-        if not all(i in ort.get_all_providers() for i in flatten_list(providers)):
+        if not all(
+            i in ort.get_all_providers() for i in flatten_providers_list(providers)
+        ):
             raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
     else:
         providers = ["CPUExecutionProvider"]

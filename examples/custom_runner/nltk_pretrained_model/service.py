@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from statistics import mean
 
 import nltk
-from utils import exponential_buckets
 from nltk.sentiment import SentimentIntensityAnalyzer
 
 import bentoml

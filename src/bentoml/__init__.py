@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     from . import fastai
     from . import mlflow
     from . import paddle
+    from . import triton
     from . import easyocr
     from . import pycaret
     from . import pytorch
@@ -67,6 +68,7 @@ if TYPE_CHECKING:
     from . import lightgbm
     from . import onnxmlir
     from . import detectron
+    from . import diffusers
     from . import tensorflow
     from . import statsmodels
     from . import torchscript
@@ -82,6 +84,7 @@ if TYPE_CHECKING:
     from . import container  # Container API
     from . import client  # Client API
     from . import batch  # Batch API
+    from . import exceptions  # BentoML exceptions
 
     # isort: on
 else:
@@ -89,6 +92,7 @@ else:
 
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
     detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")
+    diffusers = _LazyLoader("bentoml.diffusers", globals(), "bentoml.diffusers")
     easyocr = _LazyLoader("bentoml.easyocr", globals(), "bentoml.easyocr")
     flax = _LazyLoader("bentoml.flax", globals(), "bentoml.flax")
     fastai = _LazyLoader("bentoml.fastai", globals(), "bentoml.fastai")
@@ -121,12 +125,15 @@ else:
     )
     xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
 
+    triton = _LazyLoader("bentoml.triton", globals(), "bentoml.triton")
+
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
     batch = _LazyLoader("bentoml.batch", globals(), "bentoml.batch")
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
     metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
     container = _LazyLoader("bentoml.container", globals(), "bentoml.container")
     client = _LazyLoader("bentoml.client", globals(), "bentoml.client")
+    exceptions = _LazyLoader("bentoml.exceptions", globals(), "bentoml.exceptions")
 
     del _LazyLoader
 
@@ -157,9 +164,11 @@ __all__ = [
     "pull",
     "serve",
     "Bento",
+    "exceptions",
     # Framework specific modules
     "catboost",
     "detectron",
+    "diffusers",
     "easyocr",
     "flax",
     "fastai",
@@ -183,6 +192,8 @@ __all__ = [
     "torchscript",
     "transformers",
     "xgboost",
+    # integrations
+    "triton",
     "monitor",
     "load_config",
     "save_config",

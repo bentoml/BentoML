@@ -279,7 +279,7 @@ def get_runnable(
             # conditional casting each time
 
             sig = output_sigs[0]
-            if isinstance(sig, tuple):
+            if isinstance(sig, (list, tuple)):
 
                 def _postprocess(
                     res: tuple[tf_ext.EagerTensor],

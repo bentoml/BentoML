@@ -17,3 +17,8 @@ pytorch-lightning
 # huggingface dependencies
 transformers
 tokenizer
+diffusers
+flax
+jax
+jaxlib
+chex

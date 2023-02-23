@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import typing as t
 import logging
 
 import click
@@ -12,10 +13,13 @@ DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
 
 
 def add_serve_command(cli: click.Group) -> None:
-
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml._internal.log import configure_server_logging
+    from bentoml_cli.env_manager import env_manager
     from bentoml._internal.configuration.containers import BentoMLContainer
+
+    from .utils import opt_callback
+    from .utils import flatten_opt_tuple
 
     @cli.command(aliases=["serve-http"])
     @click.argument("bento", type=click.STRING, default=".")
@@ -77,52 +81,61 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--ssl-certfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.certfile.get(),
         help="SSL certificate file",
         show_default=True,
     )
     @click.option(
         "--ssl-keyfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.keyfile.get(),
         help="SSL key file",
         show_default=True,
     )
     @click.option(
         "--ssl-keyfile-password",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.keyfile_password.get(),
         help="SSL keyfile password",
         show_default=True,
     )
     @click.option(
         "--ssl-version",
         type=int,
-        default=None,
+        default=BentoMLContainer.ssl.version.get(),
         help="SSL version to use (see stdlib 'ssl' module)",
         show_default=True,
     )
     @click.option(
         "--ssl-cert-reqs",
         type=int,
-        default=None,
+        default=BentoMLContainer.ssl.cert_reqs.get(),
         help="Whether client certificate is required (see stdlib 'ssl' module)",
         show_default=True,
     )
     @click.option(
         "--ssl-ca-certs",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.ca_certs.get(),
         help="CA certificates file",
         show_default=True,
     )
     @click.option(
         "--ssl-ciphers",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.ciphers.get(),
         help="Ciphers to use (see stdlib 'ssl' module)",
         show_default=True,
     )
+    @click.option(
+        "--triton-options",
+        help="Trition Inference Server options",
+        required=False,
+        multiple=True,
+        callback=opt_callback,
+        metavar="ARG=VALUE[,VALUE]",
+    )
+    @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,
         production: bool,
@@ -139,6 +152,8 @@ def add_serve_command(cli: click.Group) -> None:
         ssl_cert_reqs: int | None,
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
+        _memoized: dict[str, t.Any],
+        **kwargs: t.Any,  # pylint: disable=unused-argument
     ) -> None:
         """Start a HTTP BentoServer from a given 🍱
 
@@ -205,6 +220,10 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
+                **{
+                    f"triton_{attr}": flatten_opt_tuple(value)
+                    for attr, value in _memoized.items()
+                },
             )
         else:
             from bentoml.serve import serve_http_development
@@ -308,21 +327,21 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--ssl-certfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.certfile.get(),
         help="SSL certificate file",
         show_default=True,
     )
     @click.option(
         "--ssl-keyfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.keyfile.get(),
         help="SSL key file",
         show_default=True,
     )
     @click.option(
         "--ssl-ca-certs",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.ca_certs.get(),
         help="CA certificates file",
         show_default=True,
     )
@@ -334,7 +353,16 @@ def add_serve_command(cli: click.Group) -> None:
         default=LATEST_PROTOCOL_VERSION,
         show_default=True,
     )
+    @click.option(
+        "--triton-options",
+        help="Trition Inference Server options",
+        required=False,
+        multiple=True,
+        callback=opt_callback,
+        metavar="ARG=VALUE[,ARG=VALUE]",
+    )
     @add_experimental_docstring
+    @env_manager
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
         production: bool,
@@ -351,6 +379,8 @@ def add_serve_command(cli: click.Group) -> None:
         enable_channelz: bool,
         max_concurrent_streams: int | None,
         protocol_version: str,
+        _memoized: dict[str, t.Any],
+        **kwargs: t.Any,  # pylint: disable=unused-argument
     ):
         """Start a gRPC BentoServer from a given 🍱
 
@@ -413,6 +443,10 @@ def add_serve_command(cli: click.Group) -> None:
                 reflection=enable_reflection,
                 channelz=enable_channelz,
                 protocol_version=protocol_version,
+                **{
+                    f"triton_{attr}": flatten_opt_tuple(value)
+                    for attr, value in _memoized.items()
+                },
             )
         else:
             from bentoml.serve import serve_grpc_development

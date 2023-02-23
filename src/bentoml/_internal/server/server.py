@@ -9,26 +9,37 @@ import attr
 if TYPE_CHECKING:
     from types import TracebackType
 
+    from ..client import Client
+
 
 logger = logging.getLogger(__name__)
 
 
-@attr.frozen
+@attr.define
 class ServerHandle:
     process: subprocess.Popen[bytes]
     host: str
     port: int
-    timeout: int = attr.field(default=10)
+    timeout: int = 10
+    _client: Client | None = None
 
-    @property
-    def client(self):
+    def client(self) -> Client:
+        logger.warning(
+            "'ServerHandle.client()' is deprecated, use 'ServerHandle.get_client()' instead"
+        )
         return self.get_client()
 
-    def get_client(self):
-        from ..client import Client
+    def get_client(self) -> Client:
+        if self._client is None:
+            from ..client import Client
 
-        Client.wait_until_server_ready(self.host, self.port, self.timeout)
-        return Client.from_url(f"http://{self.host}:{self.port}", kind="auto")
+            Client.wait_until_server_is_ready(
+                host=self.host, port=self.port, timeout=self.timeout
+            )
+            self._client = Client.from_url(
+                f"http://{self.host}:{self.port}", kind="auto"
+            )
+        return self._client
 
     def stop(self) -> None:
         self.process.terminate()
@@ -38,7 +49,7 @@ class ServerHandle:
         return f"{self.host}:{self.port}"
 
     def __enter__(self):
-        yield self
+        return self
 
     def __exit__(
         self,

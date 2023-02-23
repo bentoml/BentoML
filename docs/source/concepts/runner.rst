@@ -79,7 +79,7 @@ analysis with a pre-trained model:
 
 .. note::
 
-    Full code example can be found :github:`here <tree/main/examples/custom_runner/nltk_pretrained_model>`_.
+    Full code example can be found :github:`here <bentoml/BentoML/tree/main/examples/custom_runner/nltk_pretrained_model>`.
 
 
 The constant attribute ``SUPPORTED_RESOURCES`` indicates which resources this Runnable class

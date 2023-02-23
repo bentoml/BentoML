@@ -350,7 +350,7 @@ When using HTTP API server, BentoML will parse all of the available fields direc
    .. dropdown:: `Expands for default configuration`
       :icon: code
 
-      .. literalinclude:: ../../../bentoml/_internal/configuration/v1/default_configuration.yaml
+      .. literalinclude:: ../../../src/bentoml/_internal/configuration/v1/default_configuration.yaml
          :language: yaml
 
 .. [#prometheus_default_bucket] The default buckets is specified `here <https://github.com/prometheus/client_python/blob/f17a8361ad3ed5bc47f193ac03b00911120a8d81/prometheus_client/metrics.py#L544>`_ for Python client.

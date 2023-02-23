@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from functools import partial
 
 if TYPE_CHECKING:
-    from prometheus_client.metrics_core import Metric
 
     from ... import external_typing as ext
 

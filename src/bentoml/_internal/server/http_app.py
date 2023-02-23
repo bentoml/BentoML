@@ -6,7 +6,6 @@ import typing as t
 import asyncio
 import logging
 import functools
-from typing import TYPE_CHECKING
 
 from simple_di import inject
 from simple_di import Provide
@@ -20,7 +19,7 @@ from ..server.base_app import BaseAppFactory
 from ..service.service import Service
 from ..configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from starlette.routing import BaseRoute
     from starlette.requests import Request
     from starlette.responses import Response
@@ -307,6 +306,7 @@ class HTTPAppFactory(BaseAppFactory):
 
         async def api_func(request: Request) -> Response:
             # handle_request may raise 4xx or 5xx exception.
+            output = None
             try:
                 input_data = await api.input.from_http_request(request)
                 ctx = None
@@ -336,12 +336,31 @@ class HTTPAppFactory(BaseAppFactory):
                             output = await run_in_threadpool(api.func, input_data)
 
                 response = await api.output.to_http_response(output, ctx)
+
                 if trace_context.request_id is not None:
                     response.headers["X-BentoML-Request-ID"] = str(
                         trace_context.request_id
                     )
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
+                if output is not None:
+                    import inspect
+
+                    signature = inspect.signature(api.output.to_proto)
+                    param = next(iter(signature.parameters.values()))
+                    ann = ""
+                    if param is not inspect.Parameter.empty:
+                        ann = param.annotation
+
+                    # more descriptive errors if output is available
+                    logger.error(
+                        "Function '%s' has 'input=%s,output=%s' as IO descriptor, and returns 'result=%s', while expected return type is '%s'",
+                        api.name,
+                        api.input,
+                        api.output,
+                        type(output),
+                        ann,
+                    )
 
                 status = e.error_code.value
                 if 400 <= status < 500 and status not in (401, 403):

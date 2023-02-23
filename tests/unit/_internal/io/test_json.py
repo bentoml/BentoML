@@ -17,6 +17,8 @@ import pydantic
 from bentoml.io import JSON
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import UnprocessableEntity
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils.pkg import pkg_version_info
 from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 
@@ -27,9 +29,6 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml._internal.service.openapi.specification import Schema
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-    from bentoml._internal.utils import LazyLoader
-
     pb, _ = import_generated_stubs()
     struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
 

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 import pydantic
+from fastapi import FastAPI
 from PIL.Image import Image as PILImage
 from PIL.Image import fromarray
 from starlette.requests import Request
@@ -189,8 +190,6 @@ class AllowPingMiddleware:
 
 svc.add_asgi_middleware(AllowPingMiddleware)  # type: ignore (hint not yet supported for hooks)
 
-
-from fastapi import FastAPI
 
 fastapi_app = FastAPI()
 

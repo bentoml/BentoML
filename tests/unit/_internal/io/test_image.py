@@ -8,6 +8,8 @@ import pytest
 from bentoml.io import Image
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import InvalidArgument
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml._internal.utils import LazyLoader
 
 if TYPE_CHECKING:
     import numpy as np
@@ -15,9 +17,6 @@ if TYPE_CHECKING:
 
     from bentoml.grpc.v1 import service_pb2 as pb
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-    from bentoml._internal.utils import LazyLoader
-
     pb, _ = import_generated_stubs()
     np = LazyLoader("np", globals(), "numpy")
     PILImage = LazyLoader("PILImage", globals(), "PIL.Image")

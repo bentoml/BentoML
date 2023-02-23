@@ -206,7 +206,7 @@ class Bento(StoreItem):
         bento_model_store = ModelStore(bento_fs.opendir("models"))
         for model in models:
             logger.info('Packing model "%s"', model.tag)
-            model._save(bento_model_store)
+            model.save(bento_model_store)
 
         # Apply default build options
         build_config = build_config.with_defaults()

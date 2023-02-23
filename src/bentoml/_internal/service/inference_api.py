@@ -127,8 +127,16 @@ class InferenceAPI:
                                 f"Expected type of argument '{second_arg}' to be '{input_type}', got '{sig.parameters[second_arg].annotation}'"
                             )
 
+        if user_defined_callback is not None:
+            self.func = user_defined_callback
+        else:
+
+            def nop(*args: t.Any, **kwargs: t.Any):
+                return
+
+            self.func = nop
+
         self.name = name
-        self.func = user_defined_callback
         self.multi_input = isinstance(input_type, dict)
         self.input = input_descriptor
         self.output = output_descriptor

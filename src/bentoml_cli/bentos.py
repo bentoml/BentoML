@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 import json
 import typing as t
-from typing import TYPE_CHECKING
 
 import yaml
 import click
@@ -13,10 +12,19 @@ from rich.syntax import Syntax
 from bentoml_cli.utils import is_valid_bento_tag
 from bentoml_cli.utils import is_valid_bento_name
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from click import Group
     from click import Context
     from click import Parameter
+
+BENTOML_FIGLET = """
+██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+"""
 
 
 def parse_delete_targets_argument_callback(
@@ -278,4 +286,14 @@ def add_bento_management_commands(cli: Group):
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 
-        build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        bento = build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        click.echo(BENTOML_FIGLET)
+        click.secho(f"Successfully built {bento}.", fg="green")
+        click.secho(
+            f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
+            fg="yellow",
+        )
+        click.secho(
+            f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
+            fg="yellow",
+        )

@@ -17,7 +17,7 @@ class BentoMLException(Exception):
 
 class StateException(Exception):
     """
-    Raise when the state of an object is not valid.
+    Raised when the state of an object is not valid.
     """
 
     error_code = HTTPStatus.BAD_REQUEST
@@ -35,7 +35,7 @@ class RemoteException(BentoMLException):
 
 class InvalidArgument(BentoMLException):
     """
-    Raise when BentoML received unexpected/invalid arguments from CLI arguments, HTTP
+    Raised when BentoML received unexpected/invalid arguments from CLI arguments, HTTP
     Request, or python API function parameters.
     """
 
@@ -44,7 +44,7 @@ class InvalidArgument(BentoMLException):
 
 class InternalServerError(BentoMLException):
     """
-    Raise when BentoML received valid arguments from CLI arguments, HTTP
+    Raised when BentoML received valid arguments from CLI arguments, HTTP
     Request, or python API function parameters, but got internal issues while
     processing.
 
@@ -55,19 +55,19 @@ class InternalServerError(BentoMLException):
 
 class APIDeprecated(BentoMLException):
     """
-    Raise when trying to use deprecated APIs of BentoML
+    Raised when trying to use deprecated APIs of BentoML
     """
 
 
 class BadInput(InvalidArgument):
-    """Raise when API server receiving bad input request"""
+    """Raised when API server receiving bad input request"""
 
     error_code = HTTPStatus.BAD_REQUEST
 
 
 class NotFound(BentoMLException):
     """
-    Raise when specified resource or name not found
+    Raised when specified resource or name not found
     """
 
     error_code = HTTPStatus.NOT_FOUND
@@ -75,7 +75,7 @@ class NotFound(BentoMLException):
 
 class UnprocessableEntity(BentoMLException):
     """
-    Raise when API server receiving unprocessable entity request
+    Raised when API server receiving unprocessable entity request
     """
 
     error_code = HTTPStatus.UNPROCESSABLE_ENTITY
@@ -83,39 +83,39 @@ class UnprocessableEntity(BentoMLException):
 
 class ServiceUnavailable(BentoMLException):
     """
-    Raise when incoming requests exceeds the capacity of a server
+    Raised when incoming requests exceeds the capacity of a server
     """
 
     error_code = HTTPStatus.SERVICE_UNAVAILABLE
 
 
 class BentoMLConfigException(BentoMLException):
-    """Raise when BentoML is mis-configured or when required configuration is missing"""
+    """Raised when BentoML is mis-configured or when required configuration is missing"""
 
 
 class MissingDependencyException(BentoMLException):
     """
-    Raise when BentoML component failed to load required dependency.
+    Raised when BentoML component failed to load required dependencies.
 
-    Some BentoML components have optional dependencies that can be installed as extensions.
+    Some BentoML components have optional dependencies that can be installed as extensions.
 
     For example, when using the :class:`~bentoml._internal.io_descriptors.json.JSON` IODescriptor,
     ``pydantic`` is considered as an optional feature if users want to use it to validate. BentoML
-    will still work without ``pydantic`` installed.
+    will still work without ``pydantic`` installed.
     """
 
 
 class CLIException(BentoMLException):
-    """Raise when CLI encounters an issue"""
+    """Raised when CLI encounters an issue"""
 
 
 class YataiRESTApiClientError(BentoMLException):
-    """Raise when there is an error during push/pull bentos/models."""
+    """Raised when communicating with BentoCloud server."""
 
     pass
 
 
 class ImportServiceError(BentoMLException):
-    """Raise when BentoML failed to import from ``service.py``."""
+    """Raised when failed to import the user's service file."""
 
     pass

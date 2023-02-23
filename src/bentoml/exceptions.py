@@ -97,11 +97,11 @@ class MissingDependencyException(BentoMLException):
     """
     Raise when BentoML component failed to load required dependency.
 
-    Some BentoML components has optional dependencies that can be installed as extensions.
+    Some BentoML components have optional dependencies that can be installed as extensions.
 
     For example, when using the :class:`~bentoml._internal.io_descriptors.json.JSON` IODescriptor,
     ``pydantic`` is considered as an optional feature if users want to use it to validate. BentoML
-    will still works without ``pydantic`` installed.
+    will still work without ``pydantic`` installed.
     """
 
 

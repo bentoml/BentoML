@@ -27,15 +27,6 @@ if t.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-BENTOML_FIGLET = """
-██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
-"""
-
 __all__ = [
     "list",
     "get",
@@ -353,14 +344,11 @@ def build(
         conda=conda,
     )
 
-    bento = Bento.create(
+    return Bento.create(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
     ).save(_bento_store)
-    logger.info(BENTOML_FIGLET)
-    logger.info("Successfully built %s.", bento)
-    return bento
 
 
 @inject
@@ -391,14 +379,11 @@ def build_bentofile(
     with open(bentofile, "r", encoding="utf-8") as f:
         build_config = BentoBuildConfig.from_yaml(f)
 
-    bento = Bento.create(
+    return Bento.create(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
     ).save(_bento_store)
-    logger.info(BENTOML_FIGLET)
-    logger.info("Successfully built %s.", bento)
-    return bento
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:

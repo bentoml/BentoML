@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 import typing as t
 import logging
-from typing import TYPE_CHECKING
 from functools import lru_cache
 
 from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
+from .base import append_from_sample_notes
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
@@ -23,7 +23,7 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import numpy as np
     import pyarrow
     import pyspark.sql.types
@@ -433,12 +433,14 @@ class NumpyNdarray(
         else:
             return Response(json.dumps(obj.tolist()), media_type=self._mime_type)
 
+    @append_from_sample_notes()
     def _from_sample(self, sample: ext.NpNDArray | t.Sequence[t.Any]) -> ext.NpNDArray:
         """
-        Create a :obj:`NumpyNdarray` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.numpy.NumpyNdarray` IO Descriptor from given inputs.
 
         Args:
-            sample: Given sample ``np.ndarray`` data
+            sample: Given sample ``np.ndarray`` data. It also accepts a sequence-like data type that
+                    can be converted to ``np.ndarray``.
             enforce_dtype: Enforce a certain data type. :code:`dtype` must be specified at function
                            signature. If you don't want to enforce a specific dtype then change
                            :code:`enforce_dtype=False`.
@@ -447,7 +449,7 @@ class NumpyNdarray(
                            :code:`enforce_shape=False`.
 
         Returns:
-            :obj:`NumpyNdarray`: :code:`NumpyNdarray` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.numpy.NumpyNdarray`: IODescriptor from given users inputs.
 
         Example:
 
@@ -471,6 +473,11 @@ class NumpyNdarray(
            @svc.api(input=input_spec, output=NumpyNdarray())
            async def predict(input: NDArray[np.int16]) -> NDArray[Any]:
                return await runner.async_run(input)
+
+        Raises:
+            :class:`BentoMLException`: If given sample is a type ``numpy.generic``. This exception
+                                       will also be raised if we failed to create a ``np.ndarray``
+                                       from given sample.
         """
         if isinstance(sample, np.generic):
             raise BentoMLException(

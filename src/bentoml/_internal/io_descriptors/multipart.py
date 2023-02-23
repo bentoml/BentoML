@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import asyncio
-from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from multipart.multipart import parse_options_header
@@ -19,7 +18,7 @@ from ..utils.formparser import concat_to_multipart_response
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from types import UnionType
 
     from google.protobuf import message as _message

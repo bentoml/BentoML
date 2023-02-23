@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import typing as t
 import functools
-from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from starlette.requests import Request
@@ -12,6 +11,7 @@ from starlette.responses import Response
 from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
+from .base import append_from_sample_notes
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils import resolve_user_filepath
@@ -27,7 +27,7 @@ from ..service.openapi.specification import MediaType
 
 PIL_EXC_MSG = "'Pillow' is required to use the Image IO descriptor. Install with 'pip install bentoml[io-image]'."
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from types import UnionType
 
     import PIL
@@ -209,9 +209,10 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         self._pilmode: _Mode | None = pilmode
         self._format: str = MIME_EXT_MAPPING[self._mime_type]
 
+    @append_from_sample_notes()
     def _from_sample(self, sample: ImageType | str) -> ImageType:
         """
-        Create a class:`Image` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.image.Image` IO Descriptor from given inputs.
 
         Args:
             sample: Given File-like object, or a path to a file.
@@ -222,7 +223,7 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
             allowed_mime_types: An optional list of MIME types to restrict input to.
 
         Returns:
-            :class:`Image`: :class:`Image` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.image.Image`: IODescriptor from given users inputs.
 
         Example:
 
@@ -230,19 +231,21 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
            :caption: `service.py`
 
            from __future__ import annotations
-           from typing import Any
+
            import bentoml
+           from typing import Any
            from bentoml.io import Image
            import numpy as np
+
            input_spec = Image.from_sample("/path/to/image.jpg")
            @svc.api(input=input_spec, output=Image())
            async def predict(input: t.IO[t.Any]) -> t.IO[t.Any]:
                return await runner.async_run(input)
 
         Raises:
-            InvalidArgument: If the given sample is not a valid image type.
-            MissingDependencyException: If 'filetype' is not installed.
-            BadInput: Given sample from file can't be parsed.
+            :class:`InvalidArgument`: If the given sample is not a valid image type.
+            :class:`MissingDependencyException`: If ``filetype`` is not installed.
+            :class:`BadInput`: Given sample from file can't be parsed with Pillow.
         """
         try:
             from filetype.match import image_match

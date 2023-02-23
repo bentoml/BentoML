@@ -6,13 +6,13 @@ import typing as t
 import logging
 import functools
 from enum import Enum
-from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
 from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
+from .base import append_from_sample_notes
 from ..types import LazyType
 from ..utils.pkg import find_spec
 from ..utils.http import set_cookies
@@ -28,7 +28,7 @@ from ..service.openapi.specification import MediaType
 
 EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install with 'pip install bentoml[io-pandas]'"
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import numpy as np
     import pandas as pd
     import pyarrow
@@ -341,9 +341,10 @@ class PandasDataFrame(
         _validate_serialization_format(self._default_format)
         self._mime_type = self._default_format.mime_type
 
+    @append_from_sample_notes()
     def _from_sample(self, sample: ext.PdDataFrame) -> ext.PdDataFrame:
         """
-        Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasDataFrame` IO Descriptor from given inputs.
 
         Args:
             sample: Given sample ``pd.DataFrame`` data
@@ -374,7 +375,7 @@ class PandasDataFrame(
                             - :obj:`csv` - CSV text format (inferred from content-type ``"text/csv"``)
 
         Returns:
-            :obj:`PandasDataFrame`: :code:`PandasDataFrame` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.pandas.PandasDataFrame`: IODescriptor from given users inputs.
 
         Example:
 
@@ -895,9 +896,10 @@ class PandasSeries(
         self._shape = shape
         self._enforce_shape = enforce_shape
 
+    @append_from_sample_notes()
     def _from_sample(self, sample: ext.PdSeries | t.Sequence[t.Any]) -> ext.PdSeries:
         """
-        Create a :obj:`PandasSeries` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries` IO Descriptor from given inputs.
 
         Args:
             sample_input: Given sample ``pd.DataFrame`` data
@@ -917,7 +919,7 @@ class PandasSeries(
                            ``enforce_shape=False``.
 
         Returns:
-            :obj:`PandasSeries`: :code:`PandasSeries` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries`: IODescriptor from given users inputs.
 
         Example:
 

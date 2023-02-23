@@ -1,21 +1,20 @@
 from __future__ import annotations
 
 import typing as t
-from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from bentoml.exceptions import BentoMLException
-
 from .base import IODescriptor
+from .base import append_from_sample_notes
 from ..utils.http import set_cookies
+from ...exceptions import BentoMLException
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
     from typing_extensions import Self
 
@@ -99,7 +98,25 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
                 f"'{self.__class__.__name__}' is not designed to take any args or kwargs during initialization."
             ) from None
 
+    @append_from_sample_notes()
     def _from_sample(self, sample: str | bytes) -> str:
+        """
+        Create a :class:`~bentoml._internal.io_descriptors.text.Text` IO Descriptor from given inputs.
+
+        Args:
+            sample: Given sample text.
+
+        Returns:
+            :class:`Text`: IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           @svc.api(input=bentoml.io.Text.from_sample('Bento box is'), output=bentoml.io.Text())
+           def predict(inputs: str) -> str: ...
+        """
         if isinstance(sample, bytes):
             sample = sample.decode("utf-8")
         return sample

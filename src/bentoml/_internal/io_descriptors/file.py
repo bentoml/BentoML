@@ -4,7 +4,6 @@ import io
 import os
 import typing as t
 import logging
-from typing import TYPE_CHECKING
 from functools import lru_cache
 
 from starlette.requests import Request
@@ -13,6 +12,7 @@ from starlette.responses import Response
 from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
+from .base import append_from_sample_notes
 from ..types import FileLike
 from ..utils import resolve_user_filepath
 from ..utils.http import set_cookies
@@ -27,7 +27,7 @@ from ..service.openapi.specification import MediaType
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
@@ -126,9 +126,10 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         res._mime_type = mime_type
         return res
 
+    @append_from_sample_notes()
     def _from_sample(self, sample: FileType | str) -> FileType:
         """
-        Create a class:`File` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.file.File` IO Descriptor from given inputs.
 
         Args:
             sample: Given File-like object, or a path to a file.
@@ -137,7 +138,7 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
                        will try to infer the MIME type from the file extension.
 
         Returns:
-            :class:`File`: :class:`File` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.file.File`: IODescriptor from given users inputs.
 
         Example:
 
@@ -145,16 +146,20 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
            :caption: `service.py`
 
            from __future__ import annotations
-           from typing import Any
+
            import bentoml
+           from typing import Any
            from bentoml.io import File
+
            input_spec = File.from_sample("/path/to/file.pdf")
            @svc.api(input=input_spec, output=File())
            async def predict(input: t.IO[t.Any]) -> t.IO[t.Any]:
                return await runner.async_run(input)
 
         Raises:
-            MissingDependencyException: If 'filetype' is not installed.
+            :class:`MissingDependencyException`: If ``filetype`` is not installed.
+            ValueError: If the MIME type cannot be inferred automatically.
+            :class:`BadInput`: Any other errors that may occur during the process of figure out the MIME type.
         """
         try:
             import filetype

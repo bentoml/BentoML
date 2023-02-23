@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import typing as t
+import functools
 from abc import ABC
 from abc import abstractmethod
-from typing import TYPE_CHECKING
 from functools import update_wrapper
 
 from ...exceptions import InvalidArgument
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from types import UnionType
 
     import pyarrow
@@ -48,6 +48,26 @@ def from_spec(spec: dict[str, t.Any]) -> IODescriptor[t.Any]:
     return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)
 
 
+def append_to_last_docstring(docstring: str):
+    def wrapper(f: F) -> F:
+        f.__doc__ += docstring
+        return f
+
+    return wrapper
+
+
+FROM_SAMPLE_NOTES = """\
+
+        .. note::
+
+            ``from_sample`` does not take positional arguments.
+"""
+
+append_from_sample_notes = functools.partial(
+    append_to_last_docstring, FROM_SAMPLE_NOTES
+)
+
+
 class _OpenAPIMeta:
     @abstractmethod
     def openapi_schema(self) -> Schema | Reference:
@@ -77,7 +97,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     endpoint IO descriptor types in BentoServer.
     """
 
-    if TYPE_CHECKING:
+    if t.TYPE_CHECKING:
         # Populated by subclasses. Makes pyright happy.
         def __init__(self, **kwargs: t.Any) -> None:
             ...
@@ -107,21 +127,15 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
 
         cls._sample: IOType | None = None
 
-        from_sample_docstring = cls._from_sample.__doc__
-        if not from_sample_docstring:
-            base_docstring = IODescriptor[t.Any]._from_sample.__doc__
-            assert base_docstring is not None
-            from_sample_docstring = base_docstring.format(name=cls.__name__)
-
         def _() -> F:
             def impl(
                 cl_: type[IODescriptor[t.Any]], sample: t.Any, **kwargs: t.Any
             ) -> IODescriptor[t.Any]:
                 klass = cl_(**kwargs)
-                object.__setattr__(klass, "_sample", klass._from_sample(sample))
+                klass.sample = klass._from_sample(sample)
                 return klass
 
-            impl.__doc__ = from_sample_docstring
+            impl.__doc__ = cls._from_sample.__doc__
             return update_wrapper(impl, cls._from_sample)
 
         cls.from_sample = classmethod(_())
@@ -140,18 +154,14 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     @abstractmethod
     def _from_sample(self, sample: t.Any) -> IOType:
         """
-        Creates an instance of :class:`{name}` from given sample.
-
-        .. note::
-
-            ``from_sample`` does not take positional arguments.
+        Creates a new instance of the IO Descriptor from given sample.
 
         Args:
             sample: The sample to create the instance from.
             **kwargs: Additional keyword arguments to pass to the constructor.
 
         Returns:
-            :class:`{name}`: The IODescriptor instance.
+            An instance of the IODescriptor.
         """
         raise NotImplementedError
 

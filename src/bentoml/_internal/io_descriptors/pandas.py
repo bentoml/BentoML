@@ -429,7 +429,8 @@ class PandasDataFrame(
                 ) from None
         self._shape = sample.shape
         self._columns = [str(i) for i in list(sample.columns)]
-        self._dtype = sample.dtypes
+        if self._dtype is None:
+            self._dtype = sample.dtypes
         return sample
 
     def _convert_dtype(

@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 import json
 import typing as t
-import logging
 
 import yaml
 import click
@@ -57,7 +56,6 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.yatai_client import yatai_client
     from bentoml._internal.configuration.containers import BentoMLContainer
 
-    logger = logging.getLogger(__name__)
     bento_store = BentoMLContainer.bento_store.get()
 
     @cli.command()
@@ -289,5 +287,13 @@ def add_bento_management_commands(cli: Group):
             sys.path.insert(0, build_ctx)
 
         bento = build_bentofile(bentofile, build_ctx=build_ctx, version=version)
-        logger.info(BENTOML_FIGLET)
-        logger.info("Successfully built %s.", bento)
+        click.echo(BENTOML_FIGLET)
+        click.secho(f"Successfully built {bento}.", fg="green")
+        click.secho(
+            f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
+            fg="yellow",
+        )
+        click.secho(
+            f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
+            fg="yellow",
+        )

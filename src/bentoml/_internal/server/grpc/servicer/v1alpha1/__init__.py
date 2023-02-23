@@ -21,13 +21,14 @@ if TYPE_CHECKING:
     from logging import _ExcInfoType as ExcInfoType  # type: ignore (private warning)
 
     import grpc
+    from grpc import aio
 
     from ......grpc.types import BentoServicerContext
     from ......grpc.v1alpha1 import service_pb2 as pb
     from ......grpc.v1alpha1 import service_pb2_grpc as services
     from .....service.service import Service
 else:
-    grpc, _ = import_grpc()
+    grpc, aio = import_grpc()
     pb, services = import_generated_stubs(version="v1alpha1")
 
 
@@ -69,7 +70,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                     validate_proto_fields(request.WhichOneof("content"), api.input),
                 )
                 input_data = await api.input.from_proto(input_proto)
-                ctx = None
+                ctx: InferenceApiContext | None = None
                 # NOTE: function should always be set here, but check anyway.
                 assert api.func is not None
                 if asyncio.iscoroutinefunction(api.func):
@@ -80,9 +81,8 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                         output = await api.func(**input_data)
                     else:
                         if api.needs_ctx:
-                            output = await api.func(
-                                input_data, InferenceApiContext.from_grpc(context)
-                            )
+                            ctx = InferenceApiContext.from_grpc(context)
+                            output = await api.func(input_data, ctx)
                         else:
                             output = await api.func(input_data)
                 else:
@@ -101,6 +101,11 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                             output = await anyio.to_thread.run_sync(
                                 api.func, input_data
                             )
+                # Set gRPC metadata if context is available
+                if ctx is not None:
+                    context.set_trailing_metadata(
+                        aio.Metadata.from_tuple(tuple(ctx.response.metadata.items()))
+                    )
                 if hasattr(api.output, "to_proto_v1alpha1"):
                     # special case for handling v1alpha1 specific to_proto logic
                     res = await getattr(api.output, "to_proto_v1alpha1")(output)

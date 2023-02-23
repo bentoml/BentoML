@@ -48,7 +48,7 @@ class AsyncContextInterceptor(aio.ServerInterceptor):
                     {f"{self.context.usage}:{self.context.accuracy_score}"}
                 )
                 resp = await behaviour(request, context)
-                context.set_trailing_metadata(
+                await context.send_initial_metadata(
                     tuple(
                         [
                             (k, str(v).encode("utf-8"))

@@ -35,7 +35,7 @@ async def test_trailing_metadata_interceptors(host: str) -> None:
             "bonjour",
             channel=channel,
             data={"text": wrappers_pb2.StringValue(value="BentoML")},
-            assert_trailing_metadata=aio.Metadata.from_tuple(
+            assert_initial_metadata=aio.Metadata.from_tuple(
                 (("usage", "NLP"), ("accuracy_score", "0.8247"))
             ),
         )

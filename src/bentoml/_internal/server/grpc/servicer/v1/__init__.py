@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from logging import _ExcInfoType as ExcInfoType  # type: ignore (private warning)
 
     import grpc
+    from grpc import aio
     from google.protobuf import struct_pb2
 
     from ......grpc.v1 import service_pb2 as pb
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
     from ......grpc.types import BentoServicerContext
     from .....service.service import Service
 else:
-    grpc, _ = import_grpc()
+    grpc, aio = import_grpc()
     pb, services = import_generated_stubs(version="v1")
     struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
 
@@ -73,7 +74,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                     validate_proto_fields(request.WhichOneof("content"), api.input),
                 )
                 input_data = await api.input.from_proto(input_proto)
-                ctx = None
+                ctx: InferenceApiContext | None = None
                 assert api.func is not None
                 # NOTE: function should always be set here, but check anyway.
                 if asyncio.iscoroutinefunction(api.func):
@@ -84,9 +85,8 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                         output = await api.func(**input_data)
                     else:
                         if api.needs_ctx:
-                            output = await api.func(
-                                input_data, InferenceApiContext.from_grpc(context)
-                            )
+                            ctx = InferenceApiContext.from_grpc(context)
+                            output = await api.func(input_data, ctx)
                         else:
                             output = await api.func(input_data)
                 else:
@@ -106,6 +106,11 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                                 api.func, input_data
                             )
 
+                if ctx is not None:
+                    # Set gRPC metadata if context is available
+                    context.set_trailing_metadata(
+                        aio.Metadata.from_tuple(tuple(ctx.response.metadata.items()))
+                    )
                 # TODO(aarnphm): support multiple proto fields
                 response = pb.Response(
                     **{api.output._proto_fields[0]: await api.output.to_proto(output)}

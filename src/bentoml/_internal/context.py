@@ -92,19 +92,13 @@ class InferenceApiContext:
         )
 
     @attr.define
-    class GrpcContext:
-        context: BentoServicerContext
-
-    @attr.define
     class RequestContext:
         metadata: Metadata
         headers: Metadata
-        grpc: BentoServicerContext
 
         def __init__(self, metadata: Metadata):
             self.metadata = metadata
             self.headers = metadata
-            self.grpc = t.cast("BentoServicerContext", metadata)
 
         @staticmethod
         def from_http(request: Request) -> InferenceApiContext.RequestContext:

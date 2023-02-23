@@ -99,6 +99,7 @@ async def async_client_call(
     assert_code: grpc.StatusCode | None = None,
     assert_details: str | None = None,
     assert_trailing_metadata: aio.Metadata | None = None,
+    assert_initial_metadata: aio.Metadata | None = None,
     protocol_version: str = LATEST_PROTOCOL_VERSION,
 ) -> pb.Response | None:
     """
@@ -134,9 +135,11 @@ async def async_client_call(
         return_code = await output.code()
         details = await output.details()
         trailing_metadata = await output.trailing_metadata()
+        initial_metadata = await output.initial_metadata()
         if sanity:
             assert isinstance(res, pb.Response)
         if assert_data:
+            assert res is not None
             if callable(assert_data):
                 assert assert_data(res), f"Failed while checking data: {output}"
             else:
@@ -145,6 +148,7 @@ async def async_client_call(
         return_code = call.code()
         details = call.details()
         trailing_metadata = call.trailing_metadata()
+        initial_metadata = call.initial_metadata()
     if assert_code is not None:
         assert (
             return_code == assert_code
@@ -157,6 +161,10 @@ async def async_client_call(
         assert (
             trailing_metadata == assert_trailing_metadata
         ), f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
+    if assert_initial_metadata is not None:
+        assert (
+            initial_metadata == assert_initial_metadata
+        ), f"Initial metadata '{initial_metadata}' while expecting '{assert_initial_metadata}'."
     return res
 
 

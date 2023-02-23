@@ -166,52 +166,51 @@ argument added to the service API function. Both the request and response contex
 accessed through the inference context for getting and setting the headers, cookies, and
 status codes.
 
-.. code-block:: python
+.. tab-set::
 
-    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-    def predict(input_array: np.ndarray, ctx: bentoml.Context) -> np.ndarray:
-        # get request headers
-        request_headers = ctx.request.headers
+    .. tab-item:: HTTP
+       :sync: http
 
-        result = runner.run(input_array)
+       .. code-block:: python
 
-        # set response headers, cookies, and status code 
-        ctx.response.status_code = 202
-        ctx.response.cookies = [
-            bentoml.Cookie(
-                key="key",
-                value="value",
-                max_age=None,
-                expires=None,
-                path="/predict",
-                domain=None,
-                secure=True,
-                httponly=True,
-                samesite="None"
-            )
-        ]
-        ctx.response.headers.append("X-Custom-Header", "value")
+           @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
+           def predict(input_array: np.ndarray, ctx: bentoml.Context) -> np.ndarray:
+               result = runner.run(input_array)
 
-        return result
+               # set response headers, cookies, and status code 
+               ctx.response.status_code = 202
+               ctx.response.cookies = [
+                   bentoml.Cookie(
+                       key="key",
+                       value="value",
+                       max_age=None,
+                       expires=None,
+                       path="/predict",
+                       domain=None,
+                       secure=True,
+                       httponly=True,
+                       samesite="None"
+                   )
+               ]
+               ctx.response.headers.append("X-Custom-Header", "value")
 
-For gRPC endpoints, the `grpc.aio.ServicerContext <https://grpc.github.io/grpc/python/grpc_asyncio.html#grpc.aio.ServicerContext>`_ can be accessed through the inference context at ``ctx.request.grpc``.
+               return result
 
+    .. tab-item:: gRPC
+       :sync: grpc
 
-.. code-block:: python
+       .. code-block:: python
 
-    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-    def predict(input_array: np.ndarray, ctx: bentoml.Context) -> np.ndarray:
-        res = runner.run(input_array)
-        accuracy = accuracy_score(res, expected)
-        ctx.request.grpc.set_trailing_metadata(
-            aio.Metadata.from_tuple((("accuracy", accuracy),))
-        )
-        return res
+           @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
+           def predict(input_array: np.ndarray, ctx: bentoml.Context) -> np.ndarray:
+               res = runner.run(input_array)
+               ctx.response.metadata['accuracy'] = accuracy_score(res, expected)
+               return res
 
 .. note::
 
-    The gRPC context is a `grpc.aio.ServicerContext <https://grpc.github.io/grpc/python/grpc_asyncio.html#grpc.aio.ServicerContext>`_ object,
-    which means that any async function such as ``send_initial_metadata`` must be called in an async API function.
+    The metadata for gRPC will be sent as a trailing metadata, via ``context.send_trailing_metadata``.
+    Make sure that any custom gRPC interceptors won't override the trailing metadata.
 
 
 IO Descriptors

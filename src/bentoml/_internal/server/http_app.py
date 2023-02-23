@@ -310,7 +310,6 @@ class HTTPAppFactory(BaseAppFactory):
             try:
                 input_data = await api.input.from_http_request(request)
                 ctx = None
-                # NOTE: function should always be set here, but check anyway.
                 assert api.func is not None
                 if asyncio.iscoroutinefunction(api.func):
                     if api.multi_input:

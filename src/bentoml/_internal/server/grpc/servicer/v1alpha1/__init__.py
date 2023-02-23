@@ -71,7 +71,6 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                 )
                 input_data = await api.input.from_proto(input_proto)
                 ctx: InferenceApiContext | None = None
-                # NOTE: function should always be set here, but check anyway.
                 assert api.func is not None
                 if asyncio.iscoroutinefunction(api.func):
                     if api.multi_input:

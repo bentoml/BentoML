@@ -59,7 +59,7 @@ else:
     )
 
 
-def _load_from_file(p: str) -> bytes:
+def load_from_file(p: str) -> bytes:
     rp = resolve_user_filepath(p, ctx=None)
     with open(rp, "rb") as f:
         return f.read()
@@ -244,12 +244,12 @@ class Server(aio._server.Server):
             ), "'ssl_keyfile' is required when 'ssl_certfile' is provided."
             if self.ssl_ca_certs is not None:
                 client_auth = True
-                ca_cert = _load_from_file(self.ssl_ca_certs)
+                ca_cert = load_from_file(self.ssl_ca_certs)
             server_credentials = grpc.ssl_server_credentials(
                 (
                     (
-                        _load_from_file(self.ssl_keyfile),
-                        _load_from_file(self.ssl_certfile),
+                        load_from_file(self.ssl_keyfile),
+                        load_from_file(self.ssl_certfile),
                     ),
                 ),
                 root_certificates=ca_cert,

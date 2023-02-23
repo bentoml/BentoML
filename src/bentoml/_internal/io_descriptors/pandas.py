@@ -427,9 +427,9 @@ class PandasDataFrame(
                 raise InvalidArgument(
                     f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
                 ) from None
-        if self.shape is None:
+        if self._shape is None:
             self._shape = sample.shape
-        if self.columns is None:
+        if self._columns is None:
             self._columns = [str(i) for i in list(sample.columns)]
         if self._dtype is None:
             self._dtype = True  # infer dtype automatically

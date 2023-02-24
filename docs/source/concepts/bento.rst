@@ -935,7 +935,7 @@ In the ``setup.sh`` file:
     echo "Downloading NLTK data.."
     python -m nltk.downloader all
 
-Now build a new bento and then run `bentoml containerize MY_BENTO --progress plain` to
+Now build a new bento and then run ``bentoml containerize MY_BENTO --progress plain`` to
 view the docker image build progress. The newly built docker image will contain
 pre-downloaded NLTK dataset.
 
@@ -1031,6 +1031,8 @@ Docker Options Table
 | python_version      | Specify which python to include on the Docker image [`3.7`, `3.8`, `3.9`, `3.10`]. Default to the Python version in build environment.    |
 +---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 | cuda_version        | Specify the cuda version to install on the Docker image [:code:`11.6.2`].                                                                 |
++---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| system_packages     | Declare system packages to be installed in the container.                                                                            |
 +---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 | env                 | Declare environment variables in the generated Dockerfile.                                                                                |
 +---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+

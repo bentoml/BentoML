@@ -387,6 +387,9 @@ def build_bentofile(
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:
+    """
+    DEPRECATED: Use :meth:`bentoml.container.build` instead.
+    """
     from .container import build
 
     # Add backward compatibility for bentoml.bentos.containerize

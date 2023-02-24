@@ -26,7 +26,6 @@ PROTOBUF_EXC_MESSAGE = "'protobuf' is required to use gRPC Client. Install with 
 REFLECTION_EXC_MESSAGE = "'grpcio-reflection' is required to use gRPC Client. Install with 'pip install bentoml[grpc-reflection]'."
 
 if TYPE_CHECKING:
-
     import grpc
     from grpc import aio
     from grpc._channel import Channel as GrpcSyncChannel
@@ -51,6 +50,7 @@ else:
         "google.protobuf.json_format",
         exc_msg=PROTOBUF_EXC_MESSAGE,
     )
+
 
 # TODO: xDS support
 class GrpcClient(Client):
@@ -298,7 +298,7 @@ class GrpcClient(Client):
         return await fn(
             **{
                 "api_name": api_fn[_bentoml_api],
-                _bentoml_api.input._proto_fields[0]: serialized_req,
+                _bentoml_api.input.proto_fields[0]: serialized_req,
             },
         )
 

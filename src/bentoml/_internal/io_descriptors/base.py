@@ -173,7 +173,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
         return None
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         raise NotImplementedError
 
     @abstractmethod

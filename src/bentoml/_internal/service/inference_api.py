@@ -130,7 +130,11 @@ class InferenceAPI:
         if user_defined_callback is not None:
             self.func = user_defined_callback
         else:
-        self.func = lambda _: None
+
+            def nop(*args: t.Any, **kwargs: t.Any):
+                return
+
+            self.func = nop
 
         self.name = name
         self.multi_input = isinstance(input_type, dict)

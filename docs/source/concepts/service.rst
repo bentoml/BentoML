@@ -192,7 +192,7 @@ status codes.
                        samesite="None"
                    )
                ]
-               ctx.response.headers.append("X-Custom-Header", "value")
+               ctx.response.headers["X-Custom-Header"] = "value"
 
                return result
 

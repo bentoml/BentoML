@@ -66,6 +66,7 @@ _API_SERVER_CONFIG = {
     "workers": s.Or(s.And(int, ensure_larger_than_zero), None),
     "timeout": s.And(int, ensure_larger_than_zero),
     "backlog": s.And(int, ensure_larger_than(64)),
+    "max_runner_connections": s.And(int, ensure_larger_than_zero),
     "metrics": {
         "enabled": bool,
         "namespace": str,

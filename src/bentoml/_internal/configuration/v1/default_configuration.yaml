@@ -3,6 +3,8 @@ api_server:
   workers: ~ # cpu_count() will be used when null
   timeout: 60
   backlog: 2048
+  # the maximum number of connections that will be made to any given runner server at once
+  max_runner_connections: 16
   metrics:
     enabled: true
     namespace: bentoml_api_server

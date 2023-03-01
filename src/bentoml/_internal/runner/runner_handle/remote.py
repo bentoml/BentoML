@@ -64,7 +64,7 @@ class RemoteRunnerClient(RunnerHandle):
         self._client_cache: ClientSession | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._addr: str | None = None
-        self._semaphore = asyncio.Semaphore(16)
+        self._semaphore = asyncio.Semaphore(BentoMLContainer.api_server_config.max_runner_connections.get())
 
     @property
     def _remote_runner_server_map(self) -> dict[str, str]:

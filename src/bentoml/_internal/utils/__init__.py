@@ -142,7 +142,7 @@ def normalize_labels_value(label: dict[str, t.Any] | None) -> dict[str, str] | N
         return label
     if any(not isinstance(v, str) for v in label.values()):
         logger.warning(
-            "'labels' should be a dict[str, str] to conform with Kubernetes label spec. Converting all values to string. See https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ for more information."
+            "'labels' should be a dict[str, str] and enforced by BentoML. Converting all values to string."
         )
     return {k: str(v) for k, v in label.items()}
 

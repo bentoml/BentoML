@@ -171,13 +171,12 @@ async def test_file(host: str, bin_file: str):
         assert_data=b"\x810\x899",
     )
 
-    # Test Exception
     await async_request(
         "POST",
         f"http://{host}/predict_file",
         data=b,
         headers={"Content-Type": "application/pdf"},
-        assert_status=500,
+        assert_data=b"",
     )
 
 

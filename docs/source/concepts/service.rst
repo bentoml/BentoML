@@ -114,7 +114,7 @@ have one or more APIs. An API consists of its input/output specs and a callback 
         # Define post-processing logic
         return result
 
-By decorating a function with ``@svc.api`, we declare that the function shall be`
+By decorating a function with ``@svc.api``, we declare that the function shall be
 invoked when this API is called. The API function is a great place for defining your
 serving logic, such as feature fetching, pre and post processing, and model inferences 
 via Runners.

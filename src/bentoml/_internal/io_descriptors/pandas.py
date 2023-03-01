@@ -783,7 +783,7 @@ class PandasSeries(
     IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
 ):
     """
-    :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
+    ``PandasSeries`` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
     :code:`pd.Series` as specified in your API function signature.
 
@@ -849,7 +849,6 @@ class PandasSeries(
                 - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                 - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
         columns: List of columns name that users wish to update.
-        apply_column_names (`bool`, `optional`, default to :code:`False`):
         apply_column_names: Whether to update incoming DataFrame columns. If :code:`apply_column_names=True`,
                             then ``columns`` must be specified.
         dtype: Data type users wish to convert their inputs/outputs to. If it is a boolean,
@@ -860,15 +859,16 @@ class PandasSeries(
         shape: Optional shape check that users can specify for their incoming HTTP
                requests. We will only check the number of columns you specified for your
                given shape:
+
                .. code-block:: python
                   :caption: `service.py`
 
-                  import pandas as pd
-                  from bentoml.io import PandasSeries
+                   import pandas as pd
+                   from bentoml.io import PandasSeries
 
-                  @svc.api(input=PandasSeries(shape=(51,), enforce_shape=True), output=PandasSeries())
-                  def infer(input_series: pd.Series) -> pd.Series:
-                  # if input_series has shape (40,), it will error
+                   @svc.api(input=PandasSeries(shape=(51,), enforce_shape=True), output=PandasSeries())
+                   def infer(input_series: pd.Series) -> pd.Series:
+                        # if input_series has shape (40,), it will error
                         ...
         enforce_shape: Whether to enforce a certain shape. If ``enforce_shape=True`` then ``shape`` must be specified.
 

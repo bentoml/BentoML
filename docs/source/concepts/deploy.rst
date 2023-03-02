@@ -18,30 +18,30 @@ Containerize Bentos
 
 Containerizing bentos as Docker images allows users to easily distribute and deploy
 bentos. Once services are built as bentos and saved to the bento store, we can
-containerize saved bentos with the CLI command `bentoml containerize`.
+containerize saved bentos with the CLI command :ref:`bentoml containerize <reference/cli:containerize>`.
 
-Start the Docker engine. Verify using `docker info`.
+Start the Docker engine. Verify using ``docker info``.
 
-.. code:: bash
+.. code-block:: bash
 
-    > docker info
+    $ docker info
 
-Run :code:`bentoml list` to view available bentos in the store.
+Run ``bentoml list`` to view available bentos in the store.
 
-.. code:: bash
+.. code-block:: bash
 
-    > bentoml list
+    $ bentoml list
 
     Tag                               Size        Creation Time        Path
     iris_classifier:ejwnswg5kw6qnuqj  803.01 KiB  2022-05-27 00:37:08  ~/bentoml/bentos/iris_classifier/ejwnswg5kw6qnuqj
     iris_classifier:h4g6jmw5kc4ixuqj  644.45 KiB  2022-05-27 00:02:08  ~/bentoml/bentos/iris_classifier/h4g6jmw5kc4ixuqj
 
 
-Run :code:`bentoml containerize` to start the containerization process.
+Run ``bentoml containerize`` to start the containerization process.
 
-.. code:: bash
+.. code-block:: bash
 
-    > bentoml containerize iris_classifier:latest                                                                                                                                             02:10:47
+    $ bentoml containerize iris_classifier:latest
 
     INFO [cli] Building docker image for Bento(tag="iris_classifier:ejwnswg5kw6qnuqj")...
     [+] Building 21.2s (20/20) FINISHED
@@ -55,32 +55,34 @@ Run :code:`bentoml containerize` to start the containerization process.
    Specify the :code:`--platform` to avoid potential compatibility issues with some
    Python libraries.
 
-   .. code:: bash
+   .. code-block:: bash
 
-      bentoml containerize --platform=linux/amd64 iris_classifier:latest
+      $ bentoml containerize --opt platform=linux/amd64 iris_classifier:latest
 
 
 View the built Docker image:
 
-.. code:: bash
+.. code-block:: bash
 
-    > docker images
+    $ docker images
 
     REPOSITORY          TAG                 IMAGE ID       CREATED         SIZE
     iris_classifier     ejwnswg5kw6qnuqj    669e3ce35013   1 minutes ago   1.12GB
 
 Run the generated docker image:
 
-.. code:: bash
+.. code-block:: bash
 
-    > docker run -p 3000:3000 iris_classifier:ejwnswg5kw6qnuqj
+    $ docker run -p 3000:3000 iris_classifier:ejwnswg5kw6qnuqj serve --production
+
+.. seealso::
+
+   :ref:`guides/containerization:Containerization with different container engines.`
+   goes into more details on our containerization process and how to use different container runtime.
 
 .. todo::
 
     - Add sample code for working with GPU and --gpu flag
-    - Add a further reading section
-    - Explain buildx requirement
-    - Explain multi-platform build
 
 
 Deploy with Yatai
@@ -97,13 +99,13 @@ eco-system.
 To get started, get an API token from Yatai Web UI and login from your :code:`bentoml`
 CLI command:
 
-.. code:: bash
+.. code-block:: bash
 
     bentoml yatai login --api-token {YOUR_TOKEN_GOES_HERE} --endpoint http://yatai.127.0.0.1.sslip.io
 
 Push your local Bentos to yatai:
 
-.. code:: python
+.. code-block:: python
 
     bentoml push iris_classifier:latest
 
@@ -144,7 +146,7 @@ automation.
     Python APIs for creating deployment on Yatai is on our roadmap. See :issue:`2405`.
     Current proposal looks like this:
 
-    .. code:: python
+    .. code-block:: python
 
         yatai_client = bentoml.YataiClient.from_env()
 
@@ -168,7 +170,7 @@ resources, the best option is to use :code:`kubectl` and directly create
 :code:`BentoDeployment` objects in the cluster, which will be handled by the Yatai
 deployment CRD controller.
 
-.. code:: yaml
+.. code-block:: yaml
 
     # my_deployment.yaml
     apiVersion: serving.yatai.ai/v1alpha2
@@ -183,7 +185,7 @@ deployment CRD controller.
         requests:
           cpu: 500m
 
-.. code:: bash
+.. code-block:: bash
 
     kubectl apply -f my_deployment.yaml
 
@@ -209,16 +211,16 @@ Quick Tour
 
 Install aws-lambda plugin for :code:`bentoctl` as an example:
 
-.. code:: bash
+.. code-block:: bash
 
     bentoctl operator install aws-lambda
 
 Initialize a bentoctl project. This enters an interactive mode asking users for related
 deployment configurations:
 
-.. code:: bash
+.. code-block:: bash
 
-    > bentoctl init
+    $ bentoctl init
 
     Bentoctl Interactive Deployment Config Builder
     ...
@@ -231,7 +233,7 @@ deployment configurations:
 
 Deployment config will be saved to :code:`./deployment_config.yaml`:
 
-.. code:: yaml
+.. code-block:: yaml
 
     api_version: v1
     name: quickstart
@@ -248,7 +250,7 @@ most cases, this step will product a new docker image specific to the target dep
 configuration:
 
 
-.. code:: bash
+.. code-block:: bash
 
     bentoctl build -b iris_classifier:btzv5wfv665trhcu -f ./deployment_config.yaml
 
@@ -256,10 +258,10 @@ Next step, use :code:`terraform` CLI command to apply the generated deployment c
 to AWS. This will require user setting up AWS credentials on the environment.
 
 
-.. code:: bash
+.. code-block:: bash
 
-    > terraform init
-    > terraform apply -var-file=bentoctl.tfvars --auto-approve
+    $ terraform init
+    $ terraform apply -var-file=bentoctl.tfvars --auto-approve
 
     ...
     base_url = "https://ka8h2p2yfh.execute-api.us-west-1.amazonaws.com/"
@@ -269,7 +271,7 @@ to AWS. This will require user setting up AWS credentials on the environment.
 
 Testing the endpoint deployed:
 
-.. code:: bash
+.. code-block:: bash
 
     URL=$(terraform output -json | jq -r .base_url.value)classify
     curl -i \

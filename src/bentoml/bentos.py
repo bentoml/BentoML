@@ -90,39 +90,47 @@ def import_bento(
         bentoml.import_bento('/path/to/folder/my_bento.bento')
 
         # imports 'my_bento' from '/path/to/folder/my_bento.tar.gz'
-        # currently supported formats are tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip
+        # currently supported formats are tar.gz ('gz'),
+        # tar.xz ('xz'), tar.bz2 ('bz2'), and zip
         bentoml.import_bento('/path/to/folder/my_bento.tar.gz')
         # treats 'my_bento.ext' as a gzipped tarfile
         bentoml.import_bento('/path/to/folder/my_bento.ext', 'gz')
 
-        # imports 'my_bento', which is stored as an uncompressed folder, from '/path/to/folder/my_bento/'
+        # imports 'my_bento', which is stored as an
+        # uncompressed folder, from '/path/to/folder/my_bento/'
         bentoml.import_bento('/path/to/folder/my_bento', 'folder')
 
-        # imports 'my_bento' from the S3 bucket 'my_bucket', path 'folder/my_bento.bento'
-        # requires `fs-s3fs <https://pypi.org/project/fs-s3fs/>`_ ('pip install fs-s3fs')
+        # imports 'my_bento' from the S3 bucket 'my_bucket',
+        # path 'folder/my_bento.bento'
+        # requires `fs-s3fs <https://pypi.org/project/fs-s3fs/>`_
         bentoml.import_bento('s3://my_bucket/folder/my_bento.bento')
         bentoml.import_bento('my_bucket/folder/my_bento.bento', protocol='s3')
-        bentoml.import_bento('my_bucket', protocol='s3', subpath='folder/my_bento.bento')
-        bentoml.import_bento('my_bucket', protocol='s3', subpath='folder/my_bento.bento',
+        bentoml.import_bento('my_bucket', protocol='s3',
+                             subpath='folder/my_bento.bento')
+        bentoml.import_bento('my_bucket', protocol='s3',
+                             subpath='folder/my_bento.bento',
                              user='<AWS access key>', passwd='<AWS secret key>',
-                             params={'acl': 'public-read', 'cache-control': 'max-age=2592000,public'})
+                             params={'acl': 'public-read',
+                                     'cache-control': 'max-age=2592000,public'})
 
-    For a more comprehensive description of what each of the keyword arguments (:code:`protocol`,
-    :code:`user`, :code:`passwd`, :code:`params`, and :code:`subpath`) mean, see the
+    For a more comprehensive description of what each of the keyword arguments
+    (:code:`protocol`, :code:`user`, :code:`passwd`,
+     :code:`params`, and :code:`subpath`) mean, see the
     `FS URL documentation <https://docs.pyfilesystem.org/en/latest/openers.html>`_.
 
     Args:
         tag: the tag of the bento to export
         path: can be one of two things:
-            * a folder on the local filesystem
-            * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_, for example
-                :code:`'s3://my_bucket/folder/my_bento.bento'`
-        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`,
-            :code:`'s3'`, and :code:`'userdata'`
+              * a folder on the local filesystem
+              * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_,
+                for example :code:`'s3://my_bucket/folder/my_bento.bento'`
+        protocol: (expert) The FS protocol to use when exporting. Some example protocols
+                  are :code:`'ftp'`, :code:`'s3'`, and :code:`'userdata'`
         user: (expert) the username used for authentication if required, e.g. for FTP
         passwd: (expert) the username used for authentication if required, e.g. for FTP
-        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}`
-            for setting a proxy for FTP
+        params: (expert) a map of parameters to be passed to the FS used for
+                export, e.g. :code:`{'proxy': 'myproxy.net'}` for setting a
+                proxy for FTP
         subpath: (expert) the path inside the FS that the bento should be exported to
         _bento_store: the bento store to save the bento to
 
@@ -198,16 +206,13 @@ def export_bento(
 
     Args:
         tag: the tag of the Bento to export
-        path: can be one of two things:
-            * a folder on the local filesystem
-            * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_
-                * for example, :code:`'s3://my_bucket/folder/my_bento.bento'`
-        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`,
-            :code:`'s3'`, and :code:`'userdata'`
+        path: can be either:
+              * a folder on the local filesystem
+              * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_. For example, :code:`'s3://my_bucket/folder/my_bento.bento'`
+        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`, :code:`'s3'`, and :code:`'userdata'`
         user: (expert) the username used for authentication if required, e.g. for FTP
         passwd: (expert) the username used for authentication if required, e.g. for FTP
-        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}`
-            for setting a proxy for FTP
+        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}` for setting a proxy for FTP
         subpath: (expert) the path inside the FS that the bento should be exported to
         _bento_store: save Bento created to this BentoStore
 
@@ -387,6 +392,9 @@ def build_bentofile(
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:
+    """
+    DEPRECATED: Use :meth:`bentoml.container.build` instead.
+    """
     from .container import build
 
     # Add backward compatibility for bentoml.bentos.containerize

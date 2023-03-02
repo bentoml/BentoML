@@ -116,6 +116,6 @@ class YataiRESTApiClientError(BentoMLException):
 
 
 class ImportServiceError(BentoMLException):
-    """Raised when failed to import the user's service file."""
+    """Raised when BentoML failed to import the user's service file."""
 
     pass

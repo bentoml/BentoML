@@ -177,9 +177,15 @@ class _BentoMLContainerClass:
         bentos = os.path.join(home, "bentos")
         models = os.path.join(home, "models")
         envs = os.path.join(home, "envs")
+        tmp_bentos = os.path.join(home, "tmp")
 
-        validate_or_create_dir(home, bentos, models, envs)
+        validate_or_create_dir(home, bentos, models, envs, tmp_bentos)
         return home
+
+    @providers.SingletonFactory
+    @staticmethod
+    def temp_bento_store_dir(bentoml_home: str = Provide[bentoml_home]):
+        return os.path.join(bentoml_home, "tmp")
 
     @providers.SingletonFactory
     @staticmethod
@@ -206,6 +212,13 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def bento_store(base_dir: str = Provide[bento_store_dir]):
+        from ..bento import BentoStore
+
+        return BentoStore(base_dir)
+
+    @providers.SingletonFactory
+    @staticmethod
+    def tmp_bento_store(base_dir: str = Provide[temp_bento_store_dir]):
         from ..bento import BentoStore
 
         return BentoStore(base_dir)

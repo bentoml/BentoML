@@ -1,1 +1,3 @@
-from ._internal.ray import deploy_bento
+from ._internal.ray import deploy
+
+__all__ = ["deploy"]

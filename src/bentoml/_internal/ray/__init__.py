@@ -7,6 +7,7 @@ from ray.serve._private.http_util import ASGIHTTPSender
 
 import bentoml
 from bentoml import Tag
+from bentoml._internal.runner import Runner
 
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
@@ -24,45 +25,33 @@ except ImportError:  # pragma: no cover
     )
 
 
-def _get_runner_deployment(
-    bento_tag: str | Tag, runner_info: BentoRunnerInfo
-) -> Deployment:
+def _get_runner_deployment(svc: bentoml.Service, runner_name: str) -> Deployment:
     class RunnerDeployment:
         def __init__(self):
-            svc = bentoml.load(bento_tag)
-            runner = next(
-                (runner for runner in svc.runners if runner.name == runner_info.name),
+            self._runner = next(
+                (runner for runner in svc.runners if runner.name == runner_name),
                 None,
             )
-            if runner is None:
-                raise BentoMLException(
-                    f"Runner '{runner_info.name}' not found in Bento({bento_tag})"
-                )
-            runner.init_local(quiet=True)
-            self._runner_instance = runner
-
-            for method in runner.runner_methods:
+            self._runner.init_local(quiet=True)
+            for method in self._runner.runner_methods:
 
                 async def _func(self, *args, **kwargs):
-                    return await getattr(self._runner_instance, method.name).async_run(
+                    return await getattr(self._runner, method.name).async_run(
                         *args, **kwargs
                     )
 
                 setattr(RunnerDeployment, method.name, _func)
 
     # TODO: apply RunnerMethod's max batch size configs
-    return serve.deployment(RunnerDeployment, name=f"bento-runner-{runner_info.name}")
+    return serve.deployment(RunnerDeployment, name=f"bento-runner-{runner_name}")
 
 
-def _get_service_deployment(bento_tag: str, *args, **kwargs) -> Deployment:
-    bento = bentoml.get(bento_tag)
-
-    @serve.deployment(name=f"bento-svc-{bento.tag.name}", *args, **kwargs)
+def _get_service_deployment(svc: bentoml.Service, *args, **kwargs) -> Deployment:
+    @serve.deployment(name=f"bento-svc-{svc.name}", *args, **kwargs)
     class BentoDeployment:
         def __init__(self, **runner_deployments: t.Dict[str, Deployment]):
             from ..server.http_app import HTTPAppFactory
 
-            svc = bentoml.load(bento_tag)
             # Use Ray's metrics setup. Ray has already initialized a prometheus client
             # for multi-process and this conflicts with BentoML's prometheus setup
             self.app = HTTPAppFactory(svc, enable_metrics=False)()
@@ -88,25 +77,24 @@ def get_bento_runtime_env(bento_tag: str | Tag) -> RuntimeEnv:
     )
 
 
-def _deploy_bento_runners(bento_tag: str | Tag) -> t.Dict[str, Deployment]:
-    bento = bentoml.get(bento_tag)
-
+def _deploy_bento_runners(svc: bentoml.Service) -> t.Dict[str, Deployment]:
     # Deploy BentoML Runners as Ray serve deployments
     runner_deployments = {}
-    for runner_info in bento.info.runners:
-        runner_deployment = _get_runner_deployment(bento_tag, runner_info).bind()
-        runner_deployments[runner_info.name] = runner_deployment
+    for runner in svc.runners:
+        runner_deployment = _get_runner_deployment(svc, runner.name).bind()
+        runner_deployments[runner.name] = runner_deployment
 
     return runner_deployments
 
 
-def deploy_bento(
-    bento_tag: str | Tag, ray_deployment_kwargs: t.Dict | None = None
+def deploy(
+    target: str | Tag | bentoml.Service, ray_deployment_kwargs: t.Dict | None = None
 ) -> None:
-    # TODO: allow user to pass through compute resource configs to Ray
-    runner_deployments = _deploy_bento_runners(bento_tag)
+    svc = target if isinstance(target, bentoml.Service) else bentoml.load(target)
+
+    runner_deployments = _deploy_bento_runners(svc)
     ray_deployment_kwargs = ray_deployment_kwargs if ray_deployment_kwargs else {}
 
-    return _get_service_deployment(bento_tag, **ray_deployment_kwargs).bind(
+    return _get_service_deployment(svc, **ray_deployment_kwargs).bind(
         **runner_deployments
     )

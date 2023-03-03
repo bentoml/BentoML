@@ -9,7 +9,7 @@ import attr
 if TYPE_CHECKING:
     from types import TracebackType
 
-    from bentoml.client import Client
+    from ..client import Client
 
 
 logger = logging.getLogger(__name__)
@@ -31,12 +31,14 @@ class ServerHandle:
 
     def get_client(self) -> Client:
         if self._client is None:
-            from bentoml.client import Client
+            from ..client import Client
 
             Client.wait_until_server_is_ready(
                 host=self.host, port=self.port, timeout=self.timeout
             )
-            self._client = Client.from_url(f"http://localhost:{self.port}")
+            self._client = Client.from_url(
+                f"http://{self.host}:{self.port}", kind="auto"
+            )
         return self._client
 
     def stop(self) -> None:

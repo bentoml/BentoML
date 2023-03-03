@@ -74,7 +74,9 @@ def add_model_management_commands(cli: Group) -> None:
             info = json.dumps(model.info.to_dict(), indent=2, default=str)
             console.print_json(info)
         else:
-            console.print(Syntax(str(model.info.dump()), "yaml"))
+            console.print(
+                Syntax(str(model.info.dump()), "yaml", background_color="default")
+            )
 
     @model_cli.command(name="list")
     @click.argument("model_name", type=click.STRING, required=False)
@@ -115,7 +117,7 @@ def add_model_management_commands(cli: Group) -> None:
             console.print_json(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            console.print(Syntax(info, "yaml"))
+            console.print(Syntax(info, "yaml"), background_color="default")
         else:
             table = Table(box=None)
             table.add_column("Tag")

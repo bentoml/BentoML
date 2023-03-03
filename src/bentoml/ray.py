@@ -1,3 +1,3 @@
-from ._internal.ray import deploy
+from ._internal.ray import deployment
 
-__all__ = ["deploy"]
+__all__ = ["deployment"]

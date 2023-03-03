@@ -7,11 +7,8 @@ from ray.serve._private.http_util import ASGIHTTPSender
 
 import bentoml
 from bentoml import Tag
-from bentoml._internal.runner import Runner
 
-from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
-from ..bento.bento import BentoRunnerInfo
 from .runner_handle import RayRunnerHandle
 
 try:
@@ -25,7 +22,11 @@ except ImportError:  # pragma: no cover
     )
 
 
-def _get_runner_deployment(svc: bentoml.Service, runner_name: str) -> Deployment:
+def _get_runner_deployment(
+    svc: bentoml.Service,
+    runner_name: str,
+    runner_deployment_config: t.Dict[str | t.Any] | None = None,
+) -> Deployment:
     class RunnerDeployment:
         def __init__(self):
             self._runner = next(
@@ -43,11 +44,13 @@ def _get_runner_deployment(svc: bentoml.Service, runner_name: str) -> Deployment
                 setattr(RunnerDeployment, method.name, _func)
 
     # TODO: apply RunnerMethod's max batch size configs
-    return serve.deployment(RunnerDeployment, name=f"bento-runner-{runner_name}")
+    return serve.deployment(
+        RunnerDeployment, name=f"bento-runner-{runner_name}", **runner_deployment_config
+    )
 
 
-def _get_service_deployment(svc: bentoml.Service, *args, **kwargs) -> Deployment:
-    @serve.deployment(name=f"bento-svc-{svc.name}", *args, **kwargs)
+def _get_service_deployment(svc: bentoml.Service, **kwargs) -> Deployment:
+    @serve.deployment(name=f"bento-svc-{svc.name}", **kwargs)
     class BentoDeployment:
         def __init__(self, **runner_deployments: t.Dict[str, Deployment]):
             from ..server.http_app import HTTPAppFactory
@@ -77,24 +80,75 @@ def get_bento_runtime_env(bento_tag: str | Tag) -> RuntimeEnv:
     )
 
 
-def _deploy_bento_runners(svc: bentoml.Service) -> t.Dict[str, Deployment]:
+def _deploy_bento_runners(
+    svc: bentoml.Service, runners_deployment_config_map: t.Dict | None = None
+) -> t.Dict[str, Deployment]:
     # Deploy BentoML Runners as Ray serve deployments
     runner_deployments = {}
     for runner in svc.runners:
-        runner_deployment = _get_runner_deployment(svc, runner.name).bind()
+        runner_deployment_config = (
+            runners_deployment_config_map.get(runner.name)
+            if runner.name in runners_deployment_config_map
+            else {}
+        )
+        runner_deployment = _get_runner_deployment(
+            svc, runner.name, runner_deployment_config
+        ).bind()
         runner_deployments[runner.name] = runner_deployment
 
     return runner_deployments
 
 
-def deploy(
-    target: str | Tag | bentoml.Service, ray_deployment_kwargs: t.Dict | None = None
-) -> None:
+def deployment(
+    target: str | Tag | bentoml.Service,
+    service_deployment_config: t.Dict[str | t.Any] | None = None,
+    runners_deployment_config_map: t.Dict[str | t.Dict[str | t.Any]] | None = None,
+) -> Deployment:
+    """
+    Deploy a Bento or bentoml.Service to Ray
+
+    Args:
+        target:
+            A bentoml.Service instance or Bento tag string
+        service_deployment_config:
+            Ray deployment config for BentoML API server
+        runners_deployment_config:
+            Ray deployment config map for all Runners
+
+    Returns:
+        A bound ray.serve.Deployment instance
+
+    Example:
+
+    .. code-block:: python
+        # ray_demo.py
+        import bentoml
+
+        classifier = bentoml.ray.deployment('iris_classifier:latest')
+
+    .. code-block:: bash
+
+        serve run ray_demo:classifier
+
+    Configuring BentoML-on-Ray deployment:
+
+    .. code-block:: python
+        import bentoml
+
+        classifier = bentoml.ray.deployment(
+            'iris_classifier:latest',
+            {"route_prefix": "/hello", "num_replicas": 3, "ray_actor_options": {"num_cpus": 1}},
+            {"iris_clf": {"num_replicas": 1, "ray_actor_options": {"num_cpus": 5}}}
+        )
+    """
+    # TODO: validate Ray deployment options
+    service_deployment_config = service_deployment_config or {}
+    runners_deployment_config_map = runners_deployment_config_map or {}
+
     svc = target if isinstance(target, bentoml.Service) else bentoml.load(target)
 
-    runner_deployments = _deploy_bento_runners(svc)
-    ray_deployment_kwargs = ray_deployment_kwargs if ray_deployment_kwargs else {}
+    runner_deployments = _deploy_bento_runners(svc, runners_deployment_config_map)
 
-    return _get_service_deployment(svc, **ray_deployment_kwargs).bind(
+    return _get_service_deployment(svc, **service_deployment_config).bind(
         **runner_deployments
     )

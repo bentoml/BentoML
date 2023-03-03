@@ -236,7 +236,7 @@ exclude = '''
 '''
 
 [tool.pytest.ini_options]
-addopts = ["-rfEX", "-pno:warnings"]
+addopts = ["-rfEX", "-pno:warnings", "-pbentoml.testing.pytest.plugin"]
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 

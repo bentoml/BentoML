@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import typing as t
+import asyncio
 import logging
 import functools
 from typing import TYPE_CHECKING
@@ -26,7 +27,6 @@ PROTOBUF_EXC_MESSAGE = "'protobuf' is required to use gRPC Client. Install with 
 REFLECTION_EXC_MESSAGE = "'grpcio-reflection' is required to use gRPC Client. Install with 'pip install bentoml[grpc-reflection]'."
 
 if TYPE_CHECKING:
-
     import grpc
     from grpc import aio
     from grpc._channel import Channel as GrpcSyncChannel
@@ -51,6 +51,7 @@ else:
         "google.protobuf.json_format",
         exc_msg=PROTOBUF_EXC_MESSAGE,
     )
+
 
 # TODO: xDS support
 class GrpcClient(Client):
@@ -221,12 +222,15 @@ class GrpcClient(Client):
             )
         }
 
-    async def health(self, service_name: str, *, timeout: int = 30) -> t.Any:
+    async def async_health(self, service_name: str, *, timeout: int = 30) -> t.Any:
         return await self._invoke(
             method_name="/grpc.health.v1.Health/Check",
             service=service_name,
             _grpc_channel_timeout=timeout,
         )
+
+    def health(self, service_name: str, *, timeout: int = 30) -> t.Any:
+        return asyncio.run(self.async_health(service_name, timeout=timeout))
 
     async def _invoke(self, method_name: str, **attrs: t.Any):
         # channel kwargs include timeout, metadata, credentials, wait_for_ready and compression

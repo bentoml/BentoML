@@ -84,7 +84,7 @@ class HTTPClient(Client):
                 return resp
 
     def health(self) -> t.Any:
-        asyncio.run(self.async_health())
+        return asyncio.run(self.async_health())
 
     @classmethod
     def from_url(cls, server_url: str, **kwargs: t.Any) -> HTTPClient:

@@ -49,7 +49,7 @@ async def test_runner_readiness(host: str) -> None:
 
 @pytest.mark.asyncio
 async def test_cors(host: str, server_config_file: str) -> None:
-    ORIGIN = "http://bentoml.ai"
+    ORIGIN = "http://bentoml.ai:8080"
 
     status, headers, body = await async_request(
         "OPTIONS",
@@ -84,8 +84,37 @@ async def test_cors(host: str, server_config_file: str) -> None:
         assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
     else:
         assert status == 200
+        assert body == b'"hi"'
         assert headers.get("Access-Control-Allow-Origin") not in ("*", ORIGIN)
         assert "Content-Length" not in headers.get("Access-Control-Expose-Headers", [])
+
+    # a origin mismatch test
+    if fname == "cors_enabled.yml":
+        ORIGIN2 = "http://bentoml.ai"
+
+        status, headers, body = await async_request(
+            "OPTIONS",
+            f"http://{host}/echo_json",
+            headers={
+                "Content-Type": "application/json",
+                "Origin": ORIGIN2,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Content-Type",
+            },
+        )
+
+        assert status != 200
+
+        status, headers, body = await async_request(
+            "POST",
+            f"http://{host}/echo_json",
+            headers={"Content-Type": "application/json", "Origin": ORIGIN2},
+            data='"hi"',
+        )
+
+        assert status == 200
+        assert body == b'"hi"'
+        assert headers.get("Access-Control-Allow-Origin") not in ("*", ORIGIN2)
 
 
 def test_service_init_checks():

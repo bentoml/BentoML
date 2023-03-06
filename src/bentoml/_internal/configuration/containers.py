@@ -243,8 +243,9 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origin: str | None = Provide[cors.access_control_allow_origin],  # deprecated
-        allow_origins: list[str] | None = Provide[cors.access_control_allow_origins],
+        allow_origins: list[str]
+        | str
+        | None = Provide[cors.access_control_allow_origins],
         allow_origin_regex: str
         | None = Provide[cors.access_control_allow_origin_regex],
         allow_credentials: bool | None = Provide[cors.access_control_allow_credentials],
@@ -260,22 +261,11 @@ class _BentoMLContainerClass:
         | None = Provide[cors.access_control_expose_headers],
     ) -> dict[str, list[str] | str | int]:
 
-        if allow_origin is not None:
-            deprecated_field: str = "api_server.http.cors.access_control_allow_origin"
-            new_field: str = "api_server.http.cors.access_control_allow_origins"
-            if allow_origins is None:
-                allow_origins = [allow_origin]
-                logger.warning(
-                    "'%s' is deprecated, please use '%s' instead."
-                    % (deprecated_field, new_field)
-                )
-            else:
-                msg = (
-                    f"'{deprecated_field}' is deprecated_field, "
-                    f"when '{deprecated_field}' and '{new_field}' are both set"
-                    f"'{deprecated_field} will be ignored"
-                )
-                logger.warning(msg)
+        if isinstance(allow_origins, str):
+            allow_origins = [allow_origins]
+
+        if isinstance(allow_headers, str):
+            allow_headers = [allow_headers]
 
         return {
             k: v

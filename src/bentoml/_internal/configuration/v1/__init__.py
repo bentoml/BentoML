@@ -98,6 +98,7 @@ _API_SERVER_CONFIG = {
         "cors": {
             "enabled": bool,
             "access_control_allow_origin": s.Or(str, None),
+            "access_control_allow_origins": s.Or([str], None),
             "access_control_allow_origin_regex": s.Or(
                 s.And(str, s.Use(re.compile)), None
             ),

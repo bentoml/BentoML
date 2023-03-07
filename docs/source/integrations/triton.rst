@@ -13,10 +13,9 @@ BentoML now supports running Triton Inference Server through the :ref:`Runner <c
 architecture. The following integration guide makes the assumption that readers are familiar with BentoML infrastructure.
 Make sure to check out our :ref:`tutorial <tutorial:Creating a Service>` should you wish to learn more about BentoML.
 
-The guide will try to be as comprehensive and detailed as possible, yet we will not be able to cover all the
-features from Triton Inference Server. For more information, please refer to their documentation [#triton_docs]_.
+The guide will try to be as comprehensive and detailed as possible, yet all the features from Triton Inference Server will not be covered. For more information, please refer to their documentation [#triton_docs]_.
 
-The code examples in this guide can also be found in our examples folder [#triton_runner]_.
+The code examples in this guide can also be found in the examples folder [#triton_runner]_.
 
 
 Prerequisites
@@ -32,7 +31,7 @@ Make sure to have at least BentoML 1.0.14 and ``tritonclient`` at least version 
 
    Triton Inference Server is currently only available in production mode (``--production`` flag) and will not work during development mode.
 
-Additonally, you will need to have Triton Inference Server installed in your system. Refer to their building documentation [#triton_build]_
+Additonally, you will need to have Triton Inference Server installed in your system. Refer to Triton's building documentation [#triton_build]_
 to setup your environment.
 
 The recommended way to run Triton is through container (Docker/Podman). To pull the latest Triton container for testing, run:
@@ -43,64 +42,11 @@ The recommended way to run Triton is through container (Docker/Podman). To pull 
 
 .. note::
 
-    ``<yy>.<mm>``: the version of Triton you wish to use. Currently the latest version is ``22.12``.
+    ``<yy>.<mm>``: the version of Triton you wish to use. For example, at the time of writing, the latest version is ``22.12``.
 
-In this guide, we will demonstrate the capabilities of Triton Inference Server with BentoML and provide constructive
-recommendationss to both BentoML and Triton Inference Server users.
+In this guide, we will demonstrate the capabilities of Triton Inference Server with BentoML and how one can take advantages of both frameworks.
 
-Finally, The example Bento built from the example project [#triton_runner]_ will be referenced throughout this guide.
-It contains a YOLOv5 model and a MNIST classifier model. If you have tried out the example, you should already have the Bento.
-If not, we provide two Bentos that support CPU and GPU. Run the following:
-
-.. tab-set::
-
-   .. tab-item:: GPU
-      :sync: gpu
-
-      .. code-block:: python
-
-          import bentoml
-          import urllib.request
-
-          urllib.request.urlretrieve(
-            "https://bentoml-public.s3.us-west-1.amazonaws.com/triton_runner/triton-integration-gpu.bento",
-            "triton-integration-gpu.bento"
-          )
-          bentoml.import_bento("triton-integration-gpu.bento")
-
-   .. tab-item:: CPU
-      :sync: cpu
-
-      .. code-block:: python
-
-          import bentoml
-          import urllib.request
-
-          urllib.request.urlretrieve(
-            "https://bentoml-public.s3.us-west-1.amazonaws.com/triton_runner/triton-integration-cpu.bento",
-            "triton-integration-cpu.bento"
-          )
-          bentoml.import_bento("triton-integration-cpu.bento")
-
-After getting the Bento, containerize it with :ref:`bentoml containerize <cli:containerize>`:
-
-.. tab-set::
-
-   .. tab-item:: GPU
-      :sync: gpu
-
-      .. code-block:: bash
-
-          $ bentoml containerize triton-integration:gpu --opt platform=linux/amd64
-
-   .. tab-item:: CPU
-      :sync: cpu
-
-      .. code-block:: bash
-
-          $ bentoml containerize triton-integration:cpu --opt platform=linux/amd64
-
-:bdg-info:`Remark:` See :ref:`concepts/deploy:Containerize Bentos` for more information on containerization process.
+Finally, The example Bento built from the example project with YoloV5 model [#triton_runner]_ will be referenced throughout this guide.
 
 .. note::
 
@@ -146,8 +92,7 @@ supports S3 path:
 
    If models are saved on the file system, using the Triton runner requires setting up the model repository explicitly through the `includes` key in the `bentofile.yaml`.
 
-From a developer perspective, remote invocation of Triton runners is similar to invoking any other BentoML runners. This means
-one can treat Triton as a standalone runtime.
+From a developer perspective, remote invocation of Triton runners is similar to invoking any other BentoML runners. 
 
 .. note::
 
@@ -184,7 +129,7 @@ However, Triton runner's attributes represent individual models defined under th
         │   └── model.pt
         └── config.pbtxt
 
-Then each model inference can be accessed as ``triton_runner.onnx_mnist.<run|async_run>``, ``triton_runner.tensorflow_mnist.<run|async_run>``, and ``triton_runner.torchscript_mnist.<run|async_run>``.
+Then each model inference can be accessed as ``triton_runner.onnx_mnist``, ``triton_runner.tensorflow_mnist``, or ``triton_runner.torchscript_mnist`` and invoked using either ``run`` or ``async_run``.
 
 An example to demonstrate how to call the Triton runner:
 
@@ -205,9 +150,7 @@ An example to demonstrate how to call the Triton runner:
 There are a few things to note here:
 
 1. Triton runners should only be called **lazily**. In other words, if ``triton_runner.torchscript_mnist.async_run`` is invoked in the
-   global scope, it will not work.
-
-   As a result, ``triton_runner.init_local()`` will not work in development mode.
+   global scope, it will not work. This is because Triton is not implemented natively in Python, and hence ``init_local`` is not supported.
 
    .. code-block:: python
 
@@ -539,10 +482,6 @@ The benefits Triton Inference Server brings:
   which enables for a wide range of use-cases and empowers ML practitioners to do what they do best. Additionally, they also support custom backends
   that can be used to implement custom inference logic.
 
-Among the powerful features Triton offers, it is worth to mention that Triton's design philosophy are engineering-driven, meaning users who excels in taking full advantages of Triton 
-are ML engineers who are familiar with the domain of MLOps. This is not to say that data scientists cannot use Triton, but rather that they will have to learn a bit more about MLOps
-and model serving to be able to fully utilize its features and capabilities.
-
 
 Should I use Triton Inference Server?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -578,7 +517,7 @@ then you might want to consider this integration as a solution.
 
 .. [#triton_docs] `Triton Inference Server documentation <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html>`_
 
-.. [#triton_runner] The :github:`example project <bentoml/BentoML/tree/main/examples/triton_runner>` includes code for both YOLOv5 and MNIST classifier model in Tensorflow, ONNX, and TorchScript.
+.. [#triton_runner] The :github:`example project <bentoml/BentoML/tree/main/examples/triton>` includes code for both YOLOv5 model in Tensorflow, ONNX, and TorchScript.
 
 .. [#triton_build] Building Triton: `[link] <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/customization_guide/build.html>`_
 

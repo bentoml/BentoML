@@ -8,6 +8,8 @@ from bentoml.client import HTTPClient
 
 pytestmark = pytest.mark.asyncio
 
+TIMEOUT = 10
+
 
 @pytest.fixture(scope="session")
 def http_client(simple_service: bentoml.Service, host: str) -> HTTPClient:
@@ -15,30 +17,32 @@ def http_client(simple_service: bentoml.Service, host: str) -> HTTPClient:
 
 
 async def test_async_health(http_client: HTTPClient) -> None:
-    timeout = 10
     start_time = time.monotonic()
     status = ""
 
-    while (time.monotonic() - start_time) < timeout:
+    while (time.monotonic() - start_time) < TIMEOUT:
         resp = await http_client.async_health()
-        await asyncio.sleep(3)
 
         if resp.status == 200:
             status = resp.status
+            break
+
+        await asyncio.sleep(3)
 
     assert status == 200
 
 
 def test_health(http_client: HTTPClient) -> None:
-    timeout = 10
     start_time = time.monotonic()
     status = ""
 
-    while (time.monotonic() - start_time) < timeout:
+    while (time.monotonic() - start_time) < TIMEOUT:
         resp = http_client.health()
-        time.sleep(3)
 
         if resp.status == 200:
             status = resp.status
+            break
+
+        time.sleep(3)
 
     assert status == 200

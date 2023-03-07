@@ -2,7 +2,7 @@ api_server:
   http:
     cors: # standard: https://fetch.spec.whatwg.org/#http-cors-protocol
       enabled: True
-      access_control_allow_origin: "*"
+      access_control_allow_origins: ["http://bentoml.ai:8080", "https://bentoml.ai:8080"]
       access_control_allow_methods: ["GET", "OPTIONS", "POST", "HEAD", "PUT"]
       access_control_allow_credentials: True
       access_control_allow_headers: Null

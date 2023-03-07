@@ -144,7 +144,7 @@ supports S3 path:
 
 .. note::
 
-   Currently, the Triton integration requires one to setup the model repository manually.
+   If models are saved on the file system, using the Triton runner requires setting up the model repository explicitly through the `includes` key in the `bentofile.yaml`.
 
 From a developer perspective, remote invocation of Triton runners is similar to invoking any other BentoML runners. This means
 one can treat Triton as a standalone runtime.

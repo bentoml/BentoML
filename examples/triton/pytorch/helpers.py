@@ -15,11 +15,8 @@ from bentoml._internal.utils import LazyLoader
 
 if t.TYPE_CHECKING:
     import cv2
-    import onnx
     import numpy as np
-    import tensorflow as tf
     import torchvision
-    import onnx.checker as onnx_checker
     from PIL import Image as PILImage
     from fs.base import FS
     from numpy.typing import NDArray
@@ -28,15 +25,10 @@ if t.TYPE_CHECKING:
     P = t.ParamSpec("P")
 
 else:
-    tf = LazyLoader("tf", globals(), "tensorflow")
-    onnx = LazyLoader("onnx", globals(), "onnx")
-    onnx_checker = LazyLoader("onnx_checker", globals(), "onnx.checker")
     np = LazyLoader("np", globals(), "numpy")
-    onnx = LazyLoader("onnx", globals(), "onnx")
     torchvision = LazyLoader("torchvision", globals(), "torchvision")
     PILImage = LazyLoader("PILImage", globals(), "PIL.Image")
     cv2 = LazyLoader("cv2", globals(), "cv2")
-    pbtxt = LazyLoader("pbtxt", globals(), "helpers.model_config")
 
 WORKING_DIR = Path(__file__).parent
 MODEL_TYPE = os.environ.get("MODEL_TYPE", "yolov5s")
@@ -60,33 +52,6 @@ def load_traced_script() -> tuple[ScriptModule, dict[str, t.Any]]:
             },
         )
     return model, d
-
-
-@attr.define
-class ModelRepositoryClass:
-    _fs: FS = attr.field(
-        init=False, default=fs.open_fs((WORKING_DIR / "model_repository").__fspath__())
-    )
-
-    def path_of(self, path: str):
-        return self._fs.getsyspath(path)
-
-    @property
-    def path(self):
-        return self.path_of("/")
-
-    def getmodelfs(self, model_name: str, version: int = 1) -> FS:
-        model_path = f"/{model_name}/{version}"
-        self._fs.makedir(model_path, recreate=True)
-        return fs.open_fs(self.path_of(model_path))
-
-    def remove_model(self, model_name: str, version: int = 1):
-        p = self.getmodelfs(model_name, version)
-        p.removetree("/")
-        assert p.isempty("/")
-
-
-ModelRepository = ModelRepositoryClass()
 
 
 def torch_tensor_from_numpy(
@@ -258,16 +223,6 @@ def xywh2xyxy(x: torch.Tensor | NDArray[t.Any]):
     y[..., 1] = x[..., 1] - x[..., 3] / 2  # top left y
     y[..., 2] = x[..., 0] + x[..., 2] / 2  # bottom right x
     y[..., 3] = x[..., 1] + x[..., 3] / 2  # bottom right y
-    return y
-
-
-def xyxy2xywh(x: torch.Tensor | NDArray[t.Any]):
-    # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
-    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-    y[..., 0] = (x[..., 0] + x[..., 2]) / 2  # x center
-    y[..., 1] = (x[..., 1] + x[..., 3]) / 2  # y center
-    y[..., 2] = x[..., 2] - x[..., 0]  # width
-    y[..., 3] = x[..., 3] - x[..., 1]  # height
     return y
 
 

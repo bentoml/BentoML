@@ -348,7 +348,7 @@ When using HTTP API server, BentoML will parse all of the available fields direc
 
 .. [#default_workers] The default number of workers is the number of CPUs count.
 
-.. [#default_configuration] The default configuration can also be found under :github:`configuration folder <bentoml/BentoML/tree/main/bentoml/_internal/configuration>`.
+.. [#default_configuration] The default configuration can also be found under :github:`configuration folder <bentoml/BentoML/tree/main/src/bentoml/_internal/configuration>`.
 
    .. dropdown:: `Expands for default configuration`
       :icon: code

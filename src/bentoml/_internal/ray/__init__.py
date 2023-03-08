@@ -141,7 +141,6 @@ def deployment(
     service_deployment_config = service_deployment_config or {}
     runners_deployment_config_map = runners_deployment_config_map or {}
 
-    target = target.tag if isinstance(target, bentoml.Bento) else target
     svc = target if isinstance(target, bentoml.Service) else bentoml.load(target)
 
     runner_deployments = _deploy_bento_runners(svc, runners_deployment_config_map)

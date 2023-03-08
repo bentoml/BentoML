@@ -127,7 +127,6 @@ class Service:
         import fs
 
         from bentoml._internal.bento.bento import Bento
-        from bentoml._internal.yatai_client import yatai_client
         from bentoml._internal.service.loader import load
         from bentoml._internal.service.loader import load_bento_dir
         from bentoml._internal.configuration.containers import BentoMLContainer
@@ -174,6 +173,7 @@ class Service:
                         bento = tmp_bento_store.get(bento_tag)
                         return load_bento_dir(bento.path)
                     except NotFound:
+                        yatai_client = BentoMLContainer.yatai_client.get()
                         yatai_client.pull_bento(bento_tag, bento_store=tmp_bento_store)
                         return get_or_pull(bento_tag)
 
@@ -261,6 +261,18 @@ class Service:
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other: Service):
+        if self.bento and other.bento:
+            return self.bento.tag == other.bento.tag
+
+        if (
+            self._working_dir == other._working_dir
+            and self._import_str == other._import_str
+        ):
+            return True
+
+        return False
 
     @property
     def doc(self) -> str:

@@ -21,6 +21,7 @@ from ._internal.configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from ._internal.models import ModelStore
     from ._internal.models.model import ModelSignaturesType
+    from ._internal.yatai_client import YataiClient
 
 
 @inject
@@ -205,20 +206,22 @@ def push(
     *,
     force: bool = False,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
 ):
-    from bentoml._internal.yatai_client import yatai_client
-
     model_obj = _model_store.get(tag)
     if not model_obj:
         raise BentoMLException(f"Model {tag} not found in local store")
-    yatai_client.push_model(model_obj, force=force)
+    _yatai_client.push_model(model_obj, force=force)
 
 
 @inject
-def pull(tag: t.Union[Tag, str], *, force: bool = False) -> Model:
-    from bentoml._internal.yatai_client import yatai_client
-
-    return yatai_client.pull_model(tag, force=force)
+def pull(
+    tag: t.Union[Tag, str],
+    *,
+    force: bool = False,
+    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
+) -> Model:
+    return _yatai_client.pull_model(tag, force=force)
 
 
 @inject

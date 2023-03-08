@@ -53,10 +53,10 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.utils import human_readable_size
     from bentoml._internal.utils import display_path_under_home
     from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-    from bentoml._internal.yatai_client import yatai_client
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     bento_store = BentoMLContainer.bento_store.get()
+    yatai_client = BentoMLContainer.yatai_client.get()
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)

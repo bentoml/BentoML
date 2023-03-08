@@ -248,6 +248,13 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
+    def yatai_client():
+        from ..yatai_client import YataiClient
+
+        return YataiClient()
+
+    @providers.SingletonFactory
+    @staticmethod
     def serve_info() -> ServeInfo:
         from ..utils.analytics import get_serve_info
 

@@ -42,10 +42,10 @@ def add_model_management_commands(cli: Group) -> None:
     from bentoml._internal.utils import rich_console as console
     from bentoml._internal.utils import calc_dir_size
     from bentoml._internal.utils import human_readable_size
-    from bentoml._internal.yatai_client import yatai_client
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     model_store = BentoMLContainer.model_store.get()
+    yatai_client = BentoMLContainer.yatai_client.get()
 
     @cli.group(name="models", cls=BentoMLCommandGroup)
     def model_cli():

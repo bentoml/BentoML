@@ -4,6 +4,7 @@ import json
 import time
 import socket
 import typing as t
+import asyncio
 import logging
 import urllib.error
 import urllib.request
@@ -76,6 +77,14 @@ class HTTPClient(Client):
             logger.error("Caught exception while connecting to %s:%s:", host, port)
             logger.error(err)
             raise
+
+    async def async_health(self) -> t.Any:
+        async with aiohttp.ClientSession(self.server_url) as sess:
+            async with sess.get("/readyz") as resp:
+                return resp
+
+    def health(self) -> t.Any:
+        return asyncio.run(self.async_health())
 
     @classmethod
     def from_url(cls, server_url: str, **kwargs: t.Any) -> HTTPClient:

@@ -10,7 +10,6 @@ from ..runner.runner_handle import RunnerHandle
 
 try:
     import ray
-    from ray import serve
     from ray.serve.deployment import Deployment as RayDeployment
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(

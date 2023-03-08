@@ -36,8 +36,6 @@ else:
 
 logger = logging.getLogger(__name__)
 
-SerializationStrategy = t.Literal["EXPORT_BENTO", "LOCAL_BENTO", "REMOTE_BENTO"]
-
 
 def add_inference_api(
     svc: Service,
@@ -122,16 +120,6 @@ class Service:
     _working_dir: str | None = attr.field(init=False, default=None)
     _import_str: str | None = attr.field(init=False, default=None)
 
-    __serialization_strategy: SerializationStrategy = "EXPORT_BENTO"
-
-    @property
-    def serialization_strategy(self):
-        return self.__serialization_strategy
-
-    @serialization_strategy.setter
-    def serialization_strategy(self, serialization_strategy: SerializationStrategy):
-        self.__serialization_strategy = serialization_strategy
-
     def __reduce__(self):
         """
         Make bentoml.Service pickle serializable
@@ -144,8 +132,10 @@ class Service:
         from bentoml._internal.service.loader import load_bento_dir
         from bentoml._internal.configuration.containers import BentoMLContainer
 
+        serialization_strategy = BentoMLContainer.serialization_strategy.get()
+
         if self.bento:
-            if self.serialization_strategy == "EXPORT_BENTO":
+            if serialization_strategy == "EXPORT_BENTO":
                 temp_fs = fs.open_fs("temp:///")
                 bento_path = self.bento.export(temp_fs.getsyspath("/"))
                 content = open(bento_path, "rb").read()
@@ -170,11 +160,15 @@ class Service:
                         content,
                     ),
                 )
-            elif self.serialization_strategy == "LOCAL_BENTO":
-                return (load, (str(self.bento.tag),))
+            elif serialization_strategy == "LOCAL_BENTO":
+                return (load, (self.bento.tag,))
             else:
-                # self.serialization_strategy == REMOTE_BENTO
+                # serialization_strategy == REMOTE_BENTO
                 def get_or_pull(bento_tag):
+                    try:
+                        return load(bento_tag)
+                    except NotFound:
+                        pass
                     tmp_bento_store = BentoMLContainer.tmp_bento_store.get()
                     try:
                         bento = tmp_bento_store.get(bento_tag)

@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
 
+    SerializationStrategy = t.Literal["EXPORT_BENTO", "LOCAL_BENTO", "REMOTE_BENTO"]
 
 config_merger = Merger(
     # merge dicts
@@ -184,7 +185,7 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def temp_bento_store_dir(bentoml_home: str = Provide[bentoml_home]):
+    def tmp_bento_store_dir(bentoml_home: str = Provide[bentoml_home]):
         return os.path.join(bentoml_home, "tmp")
 
     @providers.SingletonFactory
@@ -218,7 +219,7 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def tmp_bento_store(base_dir: str = Provide[temp_bento_store_dir]):
+    def tmp_bento_store(base_dir: str = Provide[tmp_bento_store_dir]):
         from ..bento import BentoStore
 
         return BentoStore(base_dir)
@@ -243,6 +244,7 @@ class _BentoMLContainerClass:
     ssl = api_server_config.ssl
 
     development_mode = providers.Static(True)
+    serialization_strategy: SerializationStrategy = providers.Static("EXPORT_BENTO")
 
     @providers.SingletonFactory
     @staticmethod

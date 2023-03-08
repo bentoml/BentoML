@@ -131,7 +131,7 @@ class Runner(AbstractRunner):
     _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
     def _set_handle(
-        self, handle_class: t.Type[RunnerHandle], *args: P.args, **kwargs: P.kwargs
+        self, handle_class: type[RunnerHandle], *args: P.args, **kwargs: P.kwargs
     ) -> None:
         if not isinstance(self._runner_handle, DummyRunnerHandle):
             raise StateException("Runner already initialized")
@@ -303,7 +303,7 @@ class Runner(AbstractRunner):
             raise e
 
     def init_client(
-        self, handle_class: t.Type[RunnerHandle], *args: P.args, **kwargs: P.kwargs
+        self, handle_class: type[RunnerHandle] | None, *args: P.args, **kwargs: P.kwargs
     ):
         if handle_class is None:
             from .runner_handle.remote import RemoteRunnerClient

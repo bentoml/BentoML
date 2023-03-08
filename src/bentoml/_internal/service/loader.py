@@ -258,7 +258,7 @@ def _load_bento(bento: Bento, standalone_load: bool) -> "Service":
 
 
 def load(
-    bento_identifier: str,
+    bento_identifier: str | Tag | Bento,
     working_dir: t.Optional[str] = None,
     standalone_load: bool = False,
 ) -> "Service":
@@ -317,6 +317,10 @@ def load(
         * Files required for the Service to run, if not accessed during module
           import, must be presented in the current working directory
     """
+    if isinstance(bento_identifier, (Bento, Tag)):
+        # Load from local BentoStore
+        return load_bento(bento_identifier)
+
     if os.path.isdir(os.path.expanduser(bento_identifier)):
         bento_path = os.path.abspath(os.path.expanduser(bento_identifier))
 

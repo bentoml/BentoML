@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING
 from ._internal.configuration import load_config
 from ._internal.configuration import save_config
 from ._internal.configuration import BENTOML_VERSION as __version__
+from ._internal.configuration import set_serialization_strategy
 
 # Inject dependencies and configurations
 load_config()
@@ -50,6 +51,7 @@ from ._internal.service.loader import load
 # Framework specific modules, model management and IO APIs are lazily loaded upon import.
 if TYPE_CHECKING:
     from . import h2o
+    from . import ray
     from . import flax
     from . import onnx
     from . import gluon
@@ -196,8 +198,10 @@ __all__ = [
     "transformers",
     "xgboost",
     # integrations
+    "ray",
     "triton",
     "monitor",
     "load_config",
     "save_config",
+    "set_serialization_strategy",
 ]

@@ -12,20 +12,19 @@ from ...exceptions import MissingDependencyException
 from .runner_handle import RayRunnerHandle
 
 try:
-    import ray
     from ray import serve
     from ray.runtime_env import RuntimeEnv
     from ray.serve.deployment import Deployment
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "'ray[serve]' is required in order to use module 'bentoml.ray', install with 'pip install -U \"ray[serve]\"'. For more information, refer to https://docs.ray.io/",
+        """'ray[serve]' is required in order to use module 'bentoml.ray', install with 'pip install -U "ray[serve]"'. See https://docs.ray.io/ for more information.""",
     )
 
 
 def _get_runner_deployment(
     svc: bentoml.Service,
     runner_name: str,
-    runner_deployment_config: t.Dict[str | t.Any] | None = None,
+    runner_deployment_config: dict[str | t.Any] | None = None,
 ) -> Deployment:
     class RunnerDeployment:
         def __init__(self):
@@ -52,7 +51,7 @@ def _get_runner_deployment(
 def _get_service_deployment(svc: bentoml.Service, **kwargs) -> Deployment:
     @serve.deployment(name=f"bento-svc-{svc.name}", **kwargs)
     class BentoDeployment:
-        def __init__(self, **runner_deployments: t.Dict[str, Deployment]):
+        def __init__(self, **runner_deployments: dict[str, Deployment]):
             from ..server.http_app import HTTPAppFactory
 
             # Use Ray's metrics setup. Ray has already initialized a prometheus client
@@ -81,8 +80,8 @@ def get_bento_runtime_env(bento_tag: str | Tag) -> RuntimeEnv:
 
 
 def _deploy_bento_runners(
-    svc: bentoml.Service, runners_deployment_config_map: t.Dict | None = None
-) -> t.Dict[str, Deployment]:
+    svc: bentoml.Service, runners_deployment_config_map: dict | None = None
+) -> dict[str, Deployment]:
     # Deploy BentoML Runners as Ray serve deployments
     runner_deployments = {}
     for runner in svc.runners:
@@ -100,20 +99,17 @@ def _deploy_bento_runners(
 
 
 def deployment(
-    target: str | Tag | bentoml.Service,
-    service_deployment_config: t.Dict[str | t.Any] | None = None,
-    runners_deployment_config_map: t.Dict[str | t.Dict[str | t.Any]] | None = None,
+    target: str | Tag | bentoml.Bento | bentoml.Service,
+    service_deployment_config: dict[str | t.Any] | None = None,
+    runners_deployment_config_map: dict[str | dict[str | t.Any]] | None = None,
 ) -> Deployment:
     """
     Deploy a Bento or bentoml.Service to Ray
 
     Args:
-        target:
-            A bentoml.Service instance or Bento tag string
-        service_deployment_config:
-            Ray deployment config for BentoML API server
-        runners_deployment_config:
-            Ray deployment config map for all Runners
+        target: A bentoml.Service instance, Bento tag string, or Bento object
+        service_deployment_config: Ray deployment config for BentoML API server
+        runners_deployment_config_map: Ray deployment config map for all Runners
 
     Returns:
         A bound ray.serve.Deployment instance
@@ -121,7 +117,7 @@ def deployment(
     Example:
 
     .. code-block:: python
-        # ray_demo.py
+        :caption: `ray_demo.py`
         import bentoml
 
         classifier = bentoml.ray.deployment('iris_classifier:latest')
@@ -130,7 +126,7 @@ def deployment(
 
         serve run ray_demo:classifier
 
-    Configuring BentoML-on-Ray deployment:
+    Configure BentoML-on-Ray deployment:
 
     .. code-block:: python
         import bentoml
@@ -145,6 +141,7 @@ def deployment(
     service_deployment_config = service_deployment_config or {}
     runners_deployment_config_map = runners_deployment_config_map or {}
 
+    target = target.tag if isinstance(target, bentoml.Bento) else target
     svc = target if isinstance(target, bentoml.Service) else bentoml.load(target)
 
     runner_deployments = _deploy_bento_runners(svc, runners_deployment_config_map)

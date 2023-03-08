@@ -54,7 +54,7 @@ api_server:
     port: 3000
     cors:
       enabled: false
-      access_control_allow_origin: ~
+      access_control_allow_origins: ~
       access_control_allow_credentials: ~
       access_control_allow_methods: ~
       access_control_allow_headers: ~

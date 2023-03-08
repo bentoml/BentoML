@@ -60,7 +60,7 @@ below:
    :ref:`guides/configuration:Configuration fields`
 
 
-Overrding configuration with environment variables
+Overriding configuration with environment variables
 --------------------------------------------------
 
 Users can also override configuration fields with environment variables. by defining

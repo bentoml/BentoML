@@ -3,7 +3,6 @@ import pytest
 import bentoml
 from bentoml.client import HTTPClient
 
-pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture(scope="session")

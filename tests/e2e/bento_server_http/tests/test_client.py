@@ -12,6 +12,7 @@ def http_client(host: str) -> HTTPClient:
     return HTTPClient(service, f"http://{host}")
 
 
+@pytest.mark.asyncio
 async def test_async_health(http_client: HTTPClient) -> None:
     resp = await http_client.async_health()
 

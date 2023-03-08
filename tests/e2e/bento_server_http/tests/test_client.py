@@ -4,7 +4,6 @@ import bentoml
 from bentoml.client import HTTPClient
 
 
-
 @pytest.fixture(scope="session")
 def http_client(host: str) -> HTTPClient:
     service = bentoml.load(bento_identifier="service:svc")

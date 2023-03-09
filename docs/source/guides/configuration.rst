@@ -60,7 +60,7 @@ below:
    :ref:`guides/configuration:Configuration fields`
 
 
-Overrding configuration with environment variables
+Overriding configuration with environment variables
 --------------------------------------------------
 
 Users can also override configuration fields with environment variables. by defining
@@ -275,13 +275,16 @@ If specified, all fields under ``api_server.http.cors`` will then be parsed to `
      http:
        cors:
          enabled: true
-         allow_origin: ["myorg.com"]
-         allow_methods: ["GET", "OPTIONS", "POST", "HEAD", "PUT"]
-         allow_credentials: true
-         allow_headers: "*"
-         allow_origin_regex: 'https://.*\.my_org\.com'
-         max_age: 1200
-         expose_headers: ["Content-Length"]
+         access_control_allow_origins: ["http://myorg.com:8080", "https://myorg.com:8080"]
+         access_control_allow_methods: ["GET", "OPTIONS", "POST", "HEAD", "PUT"]
+         access_control_allow_credentials: true
+         access_control_allow_headers: ["*"]
+         access_control_allow_origin_regex: 'https://.*\.my_org\.com'
+         access_control_max_age: 1200
+         access_control_expose_headers: ["Content-Length"]
+
+.. deprecated:: 1.0.16
+   :code:`access_control_allow_origin` is deprecated. Use :code:`access_control_allow_origins` instead.
 
 ``grpc``
 """"""""
@@ -345,7 +348,7 @@ When using HTTP API server, BentoML will parse all of the available fields direc
 
 .. [#default_workers] The default number of workers is the number of CPUs count.
 
-.. [#default_configuration] The default configuration can also be found under :github:`configuration folder <bentoml/BentoML/tree/main/bentoml/_internal/configuration>`.
+.. [#default_configuration] The default configuration can also be found under :github:`configuration folder <bentoml/BentoML/tree/main/src/bentoml/_internal/configuration>`.
 
    .. dropdown:: `Expands for default configuration`
       :icon: code

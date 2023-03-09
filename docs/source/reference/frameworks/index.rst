@@ -17,6 +17,7 @@ Framework APIs
     onnx
     sklearn
     transformers
+    flax
     tensorflow
     xgboost
     picklable_model

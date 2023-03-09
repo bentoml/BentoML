@@ -66,6 +66,7 @@ _API_SERVER_CONFIG = {
     "workers": s.Or(s.And(int, ensure_larger_than_zero), None),
     "timeout": s.And(int, ensure_larger_than_zero),
     "backlog": s.And(int, ensure_larger_than(64)),
+    "max_runner_connections": s.And(int, ensure_larger_than_zero),
     "metrics": {
         "enabled": bool,
         "namespace": str,
@@ -96,7 +97,7 @@ _API_SERVER_CONFIG = {
         "port": s.And(int, ensure_larger_than_zero),
         "cors": {
             "enabled": bool,
-            "access_control_allow_origin": s.Or(str, None),
+            "access_control_allow_origins": s.Or([str], str, None),
             "access_control_allow_origin_regex": s.Or(
                 s.And(str, s.Use(re.compile)), None
             ),
@@ -220,6 +221,12 @@ def migration(*, override_config: dict[str, t.Any]):
             current=f"api_server.cors.access_control_{f}",
             replace_with=f"api_server.http.cors.access_control_{f}",
         )
+
+    rename_fields(
+        override_config,
+        current="api_server.http.cors.access_control_allow_origin",
+        replace_with="api_server.http.cors.access_control_allow_origins",
+    )
 
     # 4. if ssl is present, in version 2 we introduce a api_server.ssl.enabled field to determine
     # whether user want to enable SSL.

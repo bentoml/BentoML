@@ -483,8 +483,10 @@ class NumpyNdarray(
             raise BentoMLException(
                 f"Failed to create a 'numpy.ndarray' from given sample {sample}"
             ) from None
-        self._dtype = sample.dtype
-        self._shape = sample.shape
+        if self._dtype is None:
+            self._dtype = sample.dtype
+        if self._shape is None:
+            self._shape = sample.shape
         return sample
 
     async def from_proto(self, field: pb.NDArray | bytes) -> ext.NpNDArray:

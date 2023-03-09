@@ -363,7 +363,10 @@ class CorkDispatcher:
                         continue
                     await asyncio.sleep(self.tick_interval)
                     continue
-                if n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay:
+                if (
+                    n < self.max_batch_size
+                    and n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay
+                ):
                     await asyncio.sleep(self.tick_interval)
                     continue
 

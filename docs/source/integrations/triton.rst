@@ -407,7 +407,7 @@ command now takes in additional ``--triton-options`` argument to pass options fo
 
       $ docker run --init --rm -p 3000:3000 triton-integration:gpu tritonserver --help
 
-Current caveats
+Current Caveats
 ~~~~~~~~~~~~~~~
 
 Versioning Policy Limitations

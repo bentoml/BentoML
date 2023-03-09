@@ -410,7 +410,7 @@ command now takes in additional ``--triton-options`` argument to pass options fo
 Current caveats
 ~~~~~~~~~~~~~~~
 
-Versioning policy limitations
+Versioning Policy Limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, model configuration `version policy <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html#version-policy>`_

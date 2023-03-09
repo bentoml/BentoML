@@ -9,11 +9,11 @@ It is optimized to deploy models from multiple deep learning frameworks, includi
 TensorFlow, ONNX, to various deployments target and cloud providers. Triton is also designed with 
 optimizations to maximize hardware utilization through concurrent model execution and efficient batching strategies.
 
-BentoML now supports running Triton Inference Server through the :ref:`Runner <concepts/runner:Using Runners>`
-architecture. The following integration guide makes the assumption that readers are familiar with BentoML infrastructure.
-Make sure to check out our :ref:`tutorial <tutorial:Creating a Service>` should you wish to learn more about BentoML.
+BentoML now supports running Triton Inference Server as a :ref:`Runner <concepts/runner:Using Runners>`.
+The following integration guide assumes that readers are familiar with BentoML architecture.
+Check out our :ref:`tutorial <tutorial:Creating a Service>` should you wish to learn more about BentoML service definition.
 
-The guide will try to be as comprehensive and detailed as possible, yet all the features from Triton Inference Server will not be covered. For more information, please refer to their documentation [#triton_docs]_.
+The guide is intended to be as comprehensive and detailed as possible, yet some features from Triton Inference Server are not covered. For more information, please refer to Triton  documentation [#triton_docs]_.
 
 The code examples in this guide can also be found in the examples folder [#triton_runner]_.
 
@@ -25,7 +25,7 @@ Make sure to have at least BentoML 1.0.14 and ``tritonclient`` at least version 
 
 .. code-block:: bash
 
-    $ pip install -U bentoml tritonclient[all]
+    $ pip install -U bentoml "tritonclient[all]"
 
 .. note::
 
@@ -44,7 +44,6 @@ The recommended way to run Triton is through container (Docker/Podman). To pull 
 
     ``<yy>.<mm>``: the version of Triton you wish to use. For example, at the time of writing, the latest version is ``22.12``.
 
-In this guide, we will demonstrate the capabilities of Triton Inference Server with BentoML and how one can take advantages of both frameworks.
 
 Finally, The example Bento built from the example project with YoloV5 model [#triton_runner]_ will be referenced throughout this guide.
 
@@ -55,13 +54,13 @@ Finally, The example Bento built from the example project with YoloV5 model [#tr
 Why do you want this?
 ~~~~~~~~~~~~~~~~~~~~~
 
-* For existing Triton users who are searching for a simple way to add pre/post-processing logics, comprehensive supports of multi-model inference graph
-  and a standardisation for your model packaging format, which can then be easily reused and collaborated with other teams members.
+* For Triton users, the integration provides a simple way to add pre/post-processing logics in Python, distributed deployment of multi-model inference graph
+  and a standardisation for your model packaging format, which is versioned and can be shared with collaborators.
 
 * For existing Triton users who are looking to unify model management with other machine learning frameworks/workflow.
 
-* For existing BentoML users, Triton reduces the performance gap between model server written in C++ and Python. While BentoML
-  is constantly improving, Triton provides better performance under given certain conditions.
+
+* For BentoML users, the integration improves the runner efficiency and throughput under high load thanks to Triton's C++ runtime implementation.
 
 Get started with Triton Inference Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -149,7 +148,7 @@ An example to demonstrate how to call the Triton runner:
 
 There are a few things to note here:
 
-1. Triton runners should only be called **lazily**. In other words, if ``triton_runner.torchscript_mnist.async_run`` is invoked in the
+1. Triton runners should only be called within an API function. In other words, if ``triton_runner.torchscript_mnist.async_run`` is invoked in the
    global scope, it will not work. This is because Triton is not implemented natively in Python, and hence ``init_local`` is not supported.
 
    .. code-block:: python
@@ -207,7 +206,7 @@ There are a few things to note here:
            INPUT__0=np.zeros((1, 28, 28)), INPUT__1=np.zeros((1, 28, 28))
        )
 
-   The following will result in an error:
+   Mixing positional and keyword arguments will result in an error:
 
    .. code-block:: python
 

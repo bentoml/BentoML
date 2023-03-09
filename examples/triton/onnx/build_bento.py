@@ -18,7 +18,6 @@ if __name__ == "__main__":
 
     parser.add_argument("--tag", type=str, default=None)
     parser.add_argument("--gpu", action="store_true", default=False)
-    parser.add_argument("--override", action="store_true", default=False)
 
     args = parser.parse_args()
 
@@ -28,11 +27,7 @@ if __name__ == "__main__":
 
     try:
         bentos = bentoml.get(bento_tag)
-        if args.override:
-            bentoml.delete(bento_tag)
-            raise bentoml.exceptions.NotFound("'--override', rebuilding bentos.")
-        else:
-            print(f"{bentos} already exists, use '--override' to rebuild.")
+        print(f"{bentos} already exists. Skipping...")
     except bentoml.exceptions.NotFound:
         bentofile = resolve_user_filepath("bentofile.yaml", None)
 

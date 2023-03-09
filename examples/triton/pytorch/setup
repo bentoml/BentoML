@@ -11,5 +11,5 @@ if [ -n "${BENTO_PATH}" ] || [ -f /.dockerenv ]; then
     # We need to export LD_PRELOAD inside bento container.
     SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])")
 
-    export LD_PRELOAD="$SITE_PACKAGES/torch/lib/libgomp-d22c30c5.so.1"
+    export LD_PRELOAD=$(find "$SITE_PACKAGES/torch/lib/" -name "libgomp*" -printf "%p\n")
 fi

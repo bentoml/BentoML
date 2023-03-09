@@ -27,7 +27,7 @@ main() {
     ! [ -d "${BASEDIR}/model_repository/onnx_${MODEL_TYPE}/1" ] && mkdir -p "${BASEDIR}/model_repository/onnx_${MODEL_TYPE}/1"
     [ -f "${BASEDIR}/${MODEL_TYPE}.onnx" ] && exists=1
     if [ "${exists}" -eq 0 ] || [ "$OVERRIDE" = "true" ]; then
-        python3 yolov5/export.py --weights "$MODEL_TYPE.pt" --include onnx --batch-size "$1" "--dynamic"
+        python3 yolov5/export.py --weights "$MODEL_TYPE.pt" --include onnx torchscript --batch-size "$1" "--dynamic"
     fi
     cp "${BASEDIR}/${MODEL_TYPE}.onnx" "${BASEDIR}/model_repository/onnx_${MODEL_TYPE}/1/model.onnx"
 

@@ -31,7 +31,7 @@ main() {
     [ -d "${BASEDIR}/model_repository/tensorflow_${MODEL_TYPE}/1/model.savedmodel" ] && \rm -rf "$BASEDIR/model_repository/tensorflow_${MODEL_TYPE}/1/model.savedmodel"
 
     if [ "${exists}" -eq 0 ] || [ "$OVERRIDE" = "true" ]; then
-        python3 yolov5/export.py --weights "$MODEL_TYPE.pt" --include saved_model --batch-size "$1" --dynamic
+        python3 yolov5/export.py --weights "$MODEL_TYPE.pt" --include saved_model torchscript --batch-size "$1" --dynamic
     fi
     cp -r "${BASEDIR}/${MODEL_TYPE}_saved_model" "${BASEDIR}/model_repository/tensorflow_${MODEL_TYPE}/1/model.savedmodel"
 

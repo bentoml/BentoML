@@ -32,7 +32,7 @@ async def bentoml_tensorflow_yolov5_infer(fp: Image) -> dict[str, str]:
     _, _, h, w = prep.im.shape
     im = prep.im.permute(0, 2, 3, 1)  # torch BCHW to numpy BHWC shape(1,320,192, 3)
     y = await bentoml_yolov5_tensorflow.async_run(im.cpu().numpy())
-    y = [_ if isinstance(_, np.ndarray) else _.numpy() for _ in y]
+    y = [logit if isinstance(logit, np.ndarray) else logit.numpy() for logit in y]
     y[0][..., :4] *= [w, h, w, h]
     return helpers.postprocess_yolov5_prediction(y, prep)
 
@@ -49,20 +49,20 @@ async def triton_tensorflow_yolov5_infer(fp: Image) -> dict[str, str]:
 
 # Triton Model management API
 @svc.api(
-    input=bentoml.io.JSON.from_sample({"model_name": "onnx_mnist"}),
+    input=bentoml.io.JSON.from_sample({"model_name": "tensorflow_yolov5s"}),
     output=bentoml.io.JSON(),
 )
 async def model_config(input_model: dict[t.Literal["model_name"], str]):
     return await triton_runner.get_model_config(input_model["model_name"], as_json=True)
 
 
-@svc.api(input=bentoml.io.Text.from_sample("onnx_mnist"), output=bentoml.io.JSON())
+@svc.api(input=bentoml.io.Text.from_sample("tensorflow_yolov5s"), output=bentoml.io.JSON())
 async def unload_model(input_model: str):
     await triton_runner.unload_model(input_model)
     return {"unloaded": input_model}
 
 
-@svc.api(input=bentoml.io.Text.from_sample("onnx_mnist"), output=bentoml.io.JSON())
+@svc.api(input=bentoml.io.Text.from_sample("tensorflow_yolov5s"), output=bentoml.io.JSON())
 async def load_model(input_model: str):
     await triton_runner.load_model(input_model)
     return {"loaded": input_model}

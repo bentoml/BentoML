@@ -47,20 +47,20 @@ async def triton_torchscript_yolov5_infer(im: Image) -> dict[str, str]:
 
 # Triton Model management API
 @svc.api(
-    input=bentoml.io.JSON.from_sample({"model_name": "onnx_mnist"}),
+    input=bentoml.io.JSON.from_sample({"model_name": "torchscript_yolov5s"}),
     output=bentoml.io.JSON(),
 )
 async def model_config(input_model: dict[t.Literal["model_name"], str]):
     return await triton_runner.get_model_config(input_model["model_name"], as_json=True)
 
 
-@svc.api(input=bentoml.io.Text.from_sample("onnx_mnist"), output=bentoml.io.JSON())
+@svc.api(input=bentoml.io.Text.from_sample("torchscript_yolov5s"), output=bentoml.io.JSON())
 async def unload_model(input_model: str):
     await triton_runner.unload_model(input_model)
     return {"unloaded": input_model}
 
 
-@svc.api(input=bentoml.io.Text.from_sample("onnx_mnist"), output=bentoml.io.JSON())
+@svc.api(input=bentoml.io.Text.from_sample("torchscript_yolov5s"), output=bentoml.io.JSON())
 async def load_model(input_model: str):
     await triton_runner.load_model(input_model)
     return {"loaded": input_model}

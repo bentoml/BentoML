@@ -11,32 +11,19 @@ import attr
 import torch
 import fs.errors
 
-from bentoml._internal.utils import LazyLoader
+import cv2
+import onnx
+import numpy as np
+import torch
+import torchvision
+import onnx.checker as onnx_checker
+from PIL import Image as PILImage
 
 if t.TYPE_CHECKING:
-    import cv2
-    import onnx
-    import numpy as np
-    import torch
-    import torchvision
-    import onnx.checker as onnx_checker
-    from PIL import Image as PILImage
-    from fs.base import FS
     from numpy.typing import NDArray
     from torch.jit._script import ScriptModule
 
     P = t.ParamSpec("P")
-
-else:
-    onnx = LazyLoader("onnx", globals(), "onnx")
-    onnx_checker = LazyLoader("onnx_checker", globals(), "onnx.checker")
-    np = LazyLoader("np", globals(), "numpy")
-    onnx = LazyLoader("onnx", globals(), "onnx")
-    torch = LazyLoader("torch", globals(), "torch")
-    torchvision = LazyLoader("torchvision", globals(), "torchvision")
-    PILImage = LazyLoader("PILImage", globals(), "PIL.Image")
-    cv2 = LazyLoader("cv2", globals(), "cv2")
-    pbtxt = LazyLoader("pbtxt", globals(), "helpers.model_config")
 
 WORKING_DIR = Path(__file__).parent
 MODEL_TYPE = os.environ.get("MODEL_TYPE", "yolov5s")

@@ -2,36 +2,42 @@
 Triton Inference Server
 =======================
 
-*time expected: 12 minutes*
+*time expected: 10 minutes*
 
-NVIDIA Triton Inference Server [#triton]_ is a high performance, open-source inference server for serving deep learning models.
+:github:`NVIDIA Triton Inference Server <triton-inference-server>` is a high performance, open-source inference server for serving deep learning models.
 It is optimized to deploy models from multiple deep learning frameworks, including TensorRT,
-TensorFlow, ONNX, to various deployments target and cloud providers. Triton is also designed with 
-optimizations to maximize hardware utilization through concurrent model execution and efficient batching strategies.
+TensorFlow, ONNX, to various deployments target and cloud providers. Triton is also designed with optimizations to maximize hardware utilization through concurrent model execution and efficient batching strategies.
 
 BentoML now supports running Triton Inference Server as a :ref:`Runner <concepts/runner:Using Runners>`.
 The following integration guide assumes that readers are familiar with BentoML architecture.
 Check out our :ref:`tutorial <tutorial:Creating a Service>` should you wish to learn more about BentoML service definition.
 
-The guide is intended to be as comprehensive and detailed as possible, yet some features from Triton Inference Server are not covered. For more information, please refer to Triton  documentation [#triton_docs]_.
+The guide is intended to be as comprehensive and detailed as possible, yet some features from Triton Inference Server are not covered. For more information, please refer to the `Triton Inference Server documentation <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html>`_.
 
-The code examples in this guide can also be found in the examples folder [#triton_runner]_.
+The code examples in this guide can also be found in the :github:`example folder <bentoml/BentoML/tree/main/examples/triton>`.
 
+Why do you want this?
+~~~~~~~~~~~~~~~~~~~~~
+
+* For Triton users, the integration provides a simple way to add pre/post-processing logics in Python, distributed deployment of multi-model inference graph, 
+  unifying model management with other machine learning frameworks/workflow. and a standardisation for your model packaging format, which is versioned and can be shared with collaborators.
+
+* For BentoML users, the integration improves the runner efficiency and throughput under high load thanks to Triton's C++ runtime implementation.
 
 Prerequisites
 ~~~~~~~~~~~~~
 
-Make sure to have at least BentoML 1.0.14 and ``tritonclient`` at least version 2.29.0 available in your Python environment:
+Make sure to have at least BentoML 1.0.16:
 
 .. code-block:: bash
 
-    $ pip install -U bentoml "tritonclient[all]"
+    $ pip install -U "bentoml[triton]"
 
 .. note::
 
    Triton Inference Server is currently only available in production mode (``--production`` flag) and will not work during development mode.
 
-Additonally, you will need to have Triton Inference Server installed in your system. Refer to Triton's building documentation [#triton_build]_
+Additonally, you will need to have Triton Inference Server installed in your system. Refer to Triton's `building documentation <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/customization_guide/build.html>`_
 to setup your environment.
 
 The recommended way to run Triton is through container (Docker/Podman). To pull the latest Triton container for testing, run:
@@ -45,22 +51,11 @@ The recommended way to run Triton is through container (Docker/Podman). To pull 
     ``<yy>.<mm>``: the version of Triton you wish to use. For example, at the time of writing, the latest version is ``22.12``.
 
 
-Finally, The example Bento built from the example project with YoloV5 model [#triton_runner]_ will be referenced throughout this guide.
+Finally, The example Bento built from the example project with the :github:`YOLOv5 model <bentoml/BentoML/tree/main/examples/triton>` will be referenced throughout this guide.
 
 .. note::
 
-   To develop your own Bento with Triton, you can refer to the example folder [#triton_runner]_ for more usage.
-
-Why do you want this?
-~~~~~~~~~~~~~~~~~~~~~
-
-* For Triton users, the integration provides a simple way to add pre/post-processing logics in Python, distributed deployment of multi-model inference graph
-  and a standardisation for your model packaging format, which is versioned and can be shared with collaborators.
-
-* For existing Triton users who are looking to unify model management with other machine learning frameworks/workflow.
-
-
-* For BentoML users, the integration improves the runner efficiency and throughput under high load thanks to Triton's C++ runtime implementation.
+   To develop your own Bento with Triton, you can refer to the :github:`example folder <bentoml/BentoML/tree/main/examples/triton>` for more usage.
 
 Get started with Triton Inference Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -158,7 +153,7 @@ There are a few things to note here:
        # TritonRunner 'triton_runner' will not be available for development mode.
 
 2. ``async_run`` and ``run`` for any Triton runner call either takes all positional arguments or keyword arguments. The arguments
-   should be in the same order as the inputs/outputs [#triton_inputs_outputs]_ signatures defined in ``config.pbtxt``.
+   should be in the same order as the `inputs/outputs <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html#inputs-and-outputs>`_ signatures defined in ``config.pbtxt``.
 
    For example, if the following ``config.pbtxt`` is used for ``torchscript_mnist``:
 
@@ -219,10 +214,10 @@ There are a few things to note here:
 
    - ``as_numpy(name: str) -> NDArray[T]``: returns the result as a numpy array. The argument is the name of the output defined in ``config.pbtxt``.
 
-   - ``get_output(name: str) -> InferOutputTensor | dict[str, T]``: Returns the results as a ``InferOutputTensor`` [#infer_output_tensor]_ (gRPC) or 
+   - ``get_output(name: str) -> InferOutputTensor | dict[str, T]``: Returns the results as a |infer_output_tensor|_ (gRPC) or 
      a dictionary (HTTP). The argument is the name of the output defined in ``config.pbtxt``.
 
-   - ``get_response(self) -> ModelInferResponse | dict[str, T]``: Returns the entire response as a ``ModelInferResponse`` [#model_infer_response]_ (gRPC) or 
+   - ``get_response(self) -> ModelInferResponse | dict[str, T]``: Returns the entire response as a |model_infer_response|_ (gRPC) or 
      a dictionary (HTTP).
 
    Using the above ``config.pbtxt`` as example, the model consists of two outputs, ``OUTPUT__0`` and ``OUTPUT__1``.
@@ -338,7 +333,8 @@ or use :ref:`reference/core:bentoml.bentos.build`:
          :caption: `build_bento.py`
 
 Notice that we are using ``nvcr.io/nvidia/tritonserver:22.12-py3`` as our base image. This can be substituted with any other
-custom base image that has ``tritonserver`` binary available. See Triton's documentation [#triton_build]_ to learn more about building/composing custom Triton image.
+custom base image that has ``tritonserver`` binary available. See Triton's documentation `here <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/customization_guide/build.html>`_ 
+to learn more about building/composing custom Triton image.
 
 .. epigraph::
     :bdg-primary:`Important:` The provided Triton image from NVIDIA includes Python 3.8. Therefore, if you are developing your Bento
@@ -409,6 +405,8 @@ command now takes in additional ``--triton-options`` argument to pass options fo
 Current Caveats
 ~~~~~~~~~~~~~~~
 
+At the time of writing, there are a few caveats that you should be aware of when using TritonRunner:
+
 Versioning Policy Limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -443,53 +441,29 @@ To use a specific version of said model, refer to the example below:
 Inference Protocol and Metrics Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, TritonRunner uses gRPC protocol that is defined in Inference protocol [#triton_inference_protocol]_.
+By default, TritonRunner uses `the Inference protocol <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/customization_guide/inference_protocols.html?highlight=inference%20api>`_ for both REST and gRPC.
 
-HTTP/REST APIs is disabled by default, though it can be enabled via ``BENTOML_USE_HTTP_TRITONSERVER`` environment variable.
+HTTP/REST APIs is disabled by default, though it can be enabled when creating the runner by passing ``tritonserver_type`` to the Runner:
 
-.. code-block:: bash
+.. code-block:: python
 
-    $ docker run --init --rm -p 3000:3000 triton-integration:cpu serve \
-                            --production --triton-options model-control-mode=explicit \
-                            --triton-options load-model=onnx_mnist --triton-options load-model=torchscript_yolov5s
+    triton_runner = TritonRunner(
+        "http_runner",
+        "/path/to/model_repository",
+        tritonserver_type="http"
+    )
 
 .. epigraph::
     Currently, TritonRunner does not support running `Metrics server <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html>`_.
     If you are interested in supporting the metrics server, please open an issue on :github:`GitHub <bentoml/BentoML/issues/new/choose>`
 
-Additionally, BentoML supervisors will allocate a random port for the gRPC server, hence ``grpc-port`` options that is passed to ``--triton-options`` will be omited.
-
----------------
-
-Remarks
-~~~~~~~
-
-It is worth to mention that Triton Inference Server is a highly optimized model server that aims simplify multi-models serving.
-The following list of benefits and drawbacks are based on our experience building this integration:
-
-:raw-html:`<br />`
-
-The benefits Triton Inference Server brings:
-
-* **Performance enhancement**: Triton Inference Server's concurrent model execution [#concurrent_model_execution]_
-  enables models to be executed concurrently on the same/multiple GPUs, with out the IO performance limitations introduced by Python's GIL [#constraints]_.
-
-* **Extensive configuration options**: To go along with its suite of features and optimizations, Triton Inference Server also provides
-  an extensive set of configuration options that can be used to customize models' behaviour, with ability to extend its capabilities.
-
-* **Framework supports and custom backends**: Triton supports all major frameworks, including Tensorflow, PyTorch, ONNX, TensorRT [#tensorrt_support]_ and OpenVINO,
-  which enables for a wide range of use-cases and empowers ML practitioners to do what they do best. Additionally, they also support custom backends
-  that can be used to implement custom inference logic.
-
+Additionally, BentoML will allocate a random port for the gRPC/HTTP server, hence ``grpc-port`` or ``http-port`` options that is passed to ``--triton-options`` will be omited.
 
 Should I use Triton Inference Server?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Absolutely, depending on your use-case. If you are looking for improving RPS for your production models, then Triton Inference Server through ``bentoml.triton.Runner``
 is a great option to consider. Note that you are responsible for managing the model repository and its respectively ``config.pbtxt`` to make sure it will fit your use-case.
-
-If you have a lot of models to manage, then we recommend to only use TritonRunner for larger models that requires more resources to run inference, and use BentoML's
-:ref:`Runner <concepts/runner:Using Runners>` for smaller models.
 
 If you are a Triton users who are looking for a more easier and streamlined workflow for multi-model inference graphs and more ergonomic pre/post-processing, 
 then you might want to consider this integration as a solution.
@@ -506,30 +480,10 @@ then you might want to consider this integration as a solution.
     and `documentation guide <https://github.com/bentoml/BentoML/blob/main/docs/README.md>`_
     to get started.
 
-----
+.. _infer_output_tensor: https://github.com/triton-inference-server/common/blob/7b37a244e939c69c51df74d31cd905ae6ffec2f9/protobuf/grpc_service.proto#L703
 
-.. rubric:: Footnotes
+.. |infer_output_tensor| replace:: :code:`InferOutputTensor`
 
-.. [#triton] :github:`NVIDIA Triton Inference Server <triton-inference-server>` GitHub repository.
+.. _model_infer_response: https://github.com/triton-inference-server/common/blob/7b37a244e939c69c51df74d31cd905ae6ffec2f9/protobuf/grpc_service.proto#L696
 
-.. [#constraints] The given benchmark is tested with this :github:`code <bentoml/BentoML/tree/main/examples/triton_runner/locustfile.py>`, with 8 CPUs and 1 Tesla T4 GPU, under 50u/s to 500 concurrent users.
-
-.. [#triton_docs] `Triton Inference Server documentation <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html>`_
-
-.. [#triton_runner] The :github:`example project <bentoml/BentoML/tree/main/examples/triton>` includes code for both YOLOv5 model in Tensorflow, ONNX, and TorchScript.
-
-.. [#triton_build] Building Triton: `[link] <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/customization_guide/build.html>`_
-
-.. [#triton_inputs_outputs] Inputs/Outputs specified under ``config.pbtxt``: `[link] <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html#inputs-and-outputs>`_
-
-.. [#infer_output_tensor] InferOutputTensor protobuf message: `[link] <https://github.com/triton-inference-server/common/blob/7b37a244e939c69c51df74d31cd905ae6ffec2f9/protobuf/grpc_service.proto#L703>`_
-
-.. [#model_infer_response] ModelInferResponse protobuf message: `[link] <https://github.com/triton-inference-server/common/blob/7b37a244e939c69c51df74d31cd905ae6ffec2f9/protobuf/grpc_service.proto#L696>`_
-
-.. [#triton_inference_protocol] Inference protocol: `[link] <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/customization_guide/inference_protocols.html?highlight=inference%20api>`_
-
-.. [#concurrent_model_execution] Concurrent model execution: `[link] <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/architecture.html#concurrent-model-execution>`_
-
-.. [#tensorrt_support] https://www.bloomberg.com/press-releases/2021-11-09/nvidia-announces-major-updates-to-triton-inference-server-as-25-000-companies-worldwide-deploy-nvidia-ai-inference
-
-.. [#triton_container_ngc] Triton Inference Server from NGC catalog: `[link] <https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver>`_
+.. |model_infer_response| replace:: :code:`ModelInferResponse`

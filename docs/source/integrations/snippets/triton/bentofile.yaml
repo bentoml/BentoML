@@ -9,5 +9,8 @@ exclude:
   - /train.py
   - /build_bento.py
   - /containerize_bento.py
+python:
+  packages:
+    - bentoml[triton]
 docker:
   base_image: nvcr.io/nvidia/tritonserver:22.12-py3

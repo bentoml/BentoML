@@ -105,7 +105,7 @@ From a developer perspective, remote invocation of Triton runners is similar to 
       triton_runner = bentoml.triton.Runner("triton_runner", model_repository="/path/to/model_repository", tritonserver_type="http")
 
 
-Triton Runner signatures
+Triton Runner Signatures
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Normally in a BentoML Runner, one can access the model signatures directly from the runners attributes. For example, the model signature ``predict``

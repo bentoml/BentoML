@@ -60,10 +60,9 @@ def _get_runner_deployment(
                         results = await getattr(_runner, method.name).async_run(
                             *run_params.args, **run_params.kwargs
                         )
-                        results = AutoContainer.batch_to_batches(
+                        return AutoContainer.batch_to_batches(
                             results, indices=indices, batch_dim=out_batch_dim
                         )
-                        return results
 
                     setattr(RunnerDeployment, method.name, _func)
                 else:
@@ -152,8 +151,8 @@ def deployment(
         target: A bentoml.Service instance, Bento tag string, or Bento object
         service_deployment_config: Ray deployment config for BentoML API server
         runners_deployment_config_map: Ray deployment config map for all Runners
-        enable_batching: Experimental - Enable Ray Serve batching for RunnerMethods with
-            batchable=True
+        enable_batching: Enable Ray Serve batching for RunnerMethods with batchable=True
+        batching_config: Pass through Ray batching config by Runner name and method name
 
     Returns:
         A bound ray.serve.Deployment instance
@@ -162,6 +161,7 @@ def deployment(
 
     .. code-block:: python
         :caption: `ray_demo.py`
+
         import bentoml
 
         classifier = bentoml.ray.deployment('iris_classifier:latest')
@@ -173,6 +173,7 @@ def deployment(
     Configure BentoML-on-Ray deployment:
 
     .. code-block:: python
+
         import bentoml
 
         classifier = bentoml.ray.deployment(
@@ -184,6 +185,7 @@ def deployment(
     Configure BentoML Runner's Batching behavior on Ray:
 
     .. code-block:: python
+
         import bentoml
 
         deploy = bentoml.ray.deployment(

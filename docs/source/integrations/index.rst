@@ -12,3 +12,4 @@ Integrations
     arize
     mlflow
     spark
+    ray

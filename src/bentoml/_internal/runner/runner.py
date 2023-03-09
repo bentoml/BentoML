@@ -303,7 +303,10 @@ class Runner(AbstractRunner):
             raise e
 
     def init_client(
-        self, handle_class: type[RunnerHandle] | None, *args: P.args, **kwargs: P.kwargs
+        self,
+        handle_class: type[RunnerHandle] | None = None,
+        *args: P.args,
+        **kwargs: P.kwargs,
     ):
         if handle_class is None:
             from .runner_handle.remote import RemoteRunnerClient

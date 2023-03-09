@@ -61,7 +61,7 @@ dependencies = [
     "rich>=11.2.0",
     "schema",
     "simple-di>=0.1.4",
-    "starlette",
+    "starlette<0.26",
     "uvicorn",
     "watchfiles>=0.15.0",
     "backports.cached-property;python_version<'3.8'",
@@ -236,7 +236,7 @@ exclude = '''
 '''
 
 [tool.pytest.ini_options]
-addopts = ["-rfEX", "-pbentoml.testing.pytest.plugin"]
+addopts = ["-rfEX", "-pno:warnings", "-pbentoml.testing.pytest.plugin"]
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 

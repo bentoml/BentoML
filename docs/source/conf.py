@@ -37,7 +37,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.extlinks",
-    "sphinx_click.ext",
+    "sphinx_click",
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx_issues",

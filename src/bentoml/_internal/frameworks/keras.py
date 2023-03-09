@@ -148,32 +148,21 @@ def save_model(
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (:code:`str`):
-            Name for given model instance. This should pass Python identifier check.
-        model (:obj:`tensorflow.keras.Model` | :obj:`tensorflow.keras.engine.sequential.Sequential`):
-            Instance of the Keras model to be saved to BentoML modelstore.
-        tf_signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
-            Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
-            from Tensorflow documentation for more information.
-        tf_save_options (`tf.saved_model.SaveOptions`, `optional`, default to :code:`None`):
-            :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
-        signatures (:code: `Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
-            Methods to expose for running inference on the target model. Signatures are
-             used for creating Runner instances when serving model with bentoml.Service
-        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
-            user-defined labels for managing models, e.g. team=nlp, stage=dev
-        custom_objects (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Dictionary of Keras custom objects, if specified.
-        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
-            user-defined additional python modules to be saved alongside the model or custom objects,
-            e.g. a tokenizer module, preprocessor module, model configuration module
-        metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
-            Custom metadata for given model.
+        name: Name for given model instance. This should pass Python identifier check.
+        model: Instance of the Keras model to be saved to BentoML model store.
+        tf_signatures: Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
+                       from Tensorflow documentation for more information.
+        tf_save_options: :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
+        signatures: Methods to expose for running inference on the target model. Signatures
+                    are used for creating Runner instances when serving model with bentoml.Service
+        labels: user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects: Dictionary of Keras custom objects, if specified.
+        external_modules: user-defined additional python modules to be saved alongside the model or custom objects,
+                          e.g. a tokenizer module, preprocessor module, model configuration module
+        metadata: Custom metadata for given model.
 
     Returns:
-
-        :obj:`~bentoml.Model`: A BentoML model containing the saved
-        Keras model instance.
+        :obj:`~bentoml.Model`: A BentoML model containing the saved Keras model instance.
 
     Examples:
 
@@ -232,8 +221,7 @@ def save_model(
             "custom_activation": custom_activation,
         },
         custom_bento_model = bentoml.keras.save_model("custom_obj_keras", custom_objects=custom_objects)
-
-    """  # noqa
+    """
 
     if not isinstance(
         model,
@@ -276,7 +264,6 @@ def save_model(
         metadata=metadata,
         signatures=signatures,
     ) as bento_model:
-
         model.save(
             bento_model.path,
             signatures=tf_signatures,
@@ -328,7 +315,6 @@ def get_runnable(
         def _run_method(
             runnable_self: KerasRunnable, *args: "KerasArgType"
         ) -> "ext.NpNDArray" | t.Tuple["ext.NpNDArray", ...]:
-
             params = Params["KerasArgType"](*args)
 
             with tf.device(runnable_self.device_name):

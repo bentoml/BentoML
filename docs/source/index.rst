@@ -43,7 +43,7 @@ Learn BentoML
 
         Best practices and example usages by the ML framework used for model training.
 
-    .. grid-item-card:: `🎨 Gallery Projects <https://github.com/bentoml/BentoML/tree/main/examples>`_
+    .. grid-item-card:: `🎨 Examples <https://github.com/bentoml/BentoML/tree/main/examples>`_
         :link: https://github.com/bentoml/BentoML/tree/main/examples
         :link-type: url
 
@@ -148,12 +148,11 @@ contributing to the project, helping other users and discuss all things MLOps.
    guides/index
    integrations/index
    reference/index
+   Examples <https://github.com/bentoml/BentoML/tree/main/examples>
    Community <https://l.linklyhq.com/l/ktOX>
    GitHub <https://github.com/bentoml/BentoML>
    Blog <https://modelserving.com>
 
-
-.. spelling::
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML

@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 def add_start_command(cli: click.Group) -> None:
-
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml._internal.utils import add_experimental_docstring
     from bentoml._internal.configuration.containers import BentoMLContainer
@@ -82,43 +81,43 @@ def add_start_command(cli: click.Group) -> None:
     @click.option(
         "--ssl-certfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.certfile.get(),
         help="SSL certificate file",
     )
     @click.option(
         "--ssl-keyfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.keyfile.get(),
         help="SSL key file",
     )
     @click.option(
         "--ssl-keyfile-password",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.keyfile_password.get(),
         help="SSL keyfile password",
     )
     @click.option(
         "--ssl-version",
         type=int,
-        default=None,
+        default=BentoMLContainer.ssl.version.get(),
         help="SSL version to use (see stdlib 'ssl' module)",
     )
     @click.option(
         "--ssl-cert-reqs",
         type=int,
-        default=None,
+        default=BentoMLContainer.ssl.cert_reqs.get(),
         help="Whether client certificate is required (see stdlib 'ssl' module)",
     )
     @click.option(
         "--ssl-ca-certs",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.ca_certs.get(),
         help="CA certificates file",
     )
     @click.option(
         "--ssl-ciphers",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.ciphers.get(),
         help="Ciphers to use (see stdlib 'ssl' module)",
     )
     @add_experimental_docstring
@@ -353,19 +352,19 @@ def add_start_command(cli: click.Group) -> None:
     @click.option(
         "--ssl-certfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.certfile.get(),
         help="SSL certificate file",
     )
     @click.option(
         "--ssl-keyfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.keyfile.get(),
         help="SSL key file",
     )
     @click.option(
         "--ssl-ca-certs",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.ca_certs.get(),
         help="CA certificates file",
     )
     @click.option(

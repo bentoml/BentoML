@@ -67,12 +67,10 @@ def load_model(
     Load a tensorflow model from BentoML local modelstore with given name.
 
     Args:
-        bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
-            Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
-            instance to load the model from.
-        device_name (``str`` | ``None``):
-            The device id to load the model on. The device id format should be compatible with `tf.device <https://www.tensorflow.org/api_docs/python/tf/device>`_
-
+        bento_model: Either the tag of the model to get from the store, or a
+                     BentoML `~bentoml.Model` instance to load the model from.
+        device_name: The device id to load the model on. The device id format
+                     should be compatible with `tf.device <https://www.tensorflow.org/api_docs/python/tf/device>`_
 
     Returns:
         :obj:`SavedModel`: an instance of :obj:`SavedModel` format from BentoML modelstore.
@@ -86,7 +84,7 @@ def load_model(
         # load a model back into memory
         model = bentoml.tensorflow.load_model("my_tensorflow_model")
 
-    """  # noqa: LN001
+    """  # noqa
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
 
@@ -122,40 +120,30 @@ def save_model(
     external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
-
     """
     Save a model instance to BentoML modelstore.
 
     Args:
-        name (:code:`str`):
-            Name for given model instance. This should pass Python identifier check.
-        model (``keras.Model`` | ``tf.Module``):
-            Instance of model to be saved
-        tf_signatures (:code:`Union[Callable[..., Any], dict]`, `optional`, default to :code:`None`):
-            Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
-            from Tensorflow documentation for more information.
-        tf_save_options (`tf.saved_model.SaveOptions`, `optional`, default to :code:`None`):
-            :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
-        signatures (:code: `Dict[str, bool | BatchDimType | AnyType | tuple[AnyType]]`)
-            Methods to expose for running inference on the target model. Signatures are
-             used for creating Runner instances when serving model with bentoml.Service
-        labels (:code:`Dict[str, str]`, `optional`, default to :code:`None`):
-            user-defined labels for managing models, e.g. team=nlp, stage=dev
-        custom_objects (:code:`Dict[str, Any]]`, `optional`, default to :code:`None`):
-            user-defined additional python objects to be saved alongside the model,
-            e.g. a tokenizer instance, preprocessor function, model configuration json
-        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
-            user-defined additional python modules to be saved alongside the model or custom objects,
-            e.g. a tokenizer module, preprocessor module, model configuration module
-        metadata (:code:`Dict[str, Any]`, `optional`,  default to :code:`None`):
-            Custom metadata for given model.
+        name: Name for given model instance. This should pass Python identifier check.
+        model: Instance of model to be saved
+        tf_signatures: Refer to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
+                       from Tensorflow documentation for more information.
+        tf_save_options: TensorFlow save options..
+        signatures: Methods to expose for running inference on the target model. Signatures are
+                    used for creating Runner instances when serving model with bentoml.Service
+        labels: user-defined labels for managing models, e.g. team=nlp, stage=dev
+        custom_objects: user-defined additional python objects to be saved alongside the model,
+                        e.g. a tokenizer instance, preprocessor function, model configuration json
+        external_modules: user-defined additional python modules to be saved alongside the model or custom objects,
+                          e.g. a tokenizer module, preprocessor module, model configuration module
+        metadata: Custom metadata for given model.
 
     Raises:
         ValueError: If :obj:`obj` is not trackable.
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
-        the user-defined model's name, and a generated `version` by BentoML.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format ``name:version`` where ``name`` is
+        the user-defined model's name, and a generated ``version`` by BentoML.
 
     Examples:
 
@@ -186,7 +174,7 @@ def save_model(
        :code:`bentoml.tensorflow.save_model` API also support saving `RaggedTensor <https://www.tensorflow.org/guide/ragged_tensor>`_ model and Keras model. If you choose to save a Keras model
        with :code:`bentoml.tensorflow.save_model`, then the model will be saved under a :obj:`SavedModel` format instead of :obj:`.h5`.
 
-    """
+    """  # noqa
     context = ModelContext(
         framework_name="tensorflow",
         framework_versions={"tensorflow": get_tf_version()},
@@ -221,7 +209,6 @@ def save_model(
         metadata=metadata,
         signatures=signatures,  # type: ignore
     ) as bento_model:
-
         tf.saved_model.save(
             model,
             bento_model.path,
@@ -273,7 +260,6 @@ def get_runnable(
         output_sigs = get_output_signatures_v2(raw_method)
 
         if len(output_sigs) == 1:
-
             # if there's only one output signatures, then we can
             # define the _postprocess function without doing
             # conditional casting each time
@@ -292,7 +278,6 @@ def get_runnable(
                     return t.cast("ext.NpNDArray", res.numpy())
 
         else:
-
             # if there are no output signature or more than one output
             # signatures, the post process function need to do casting
             # depends on the real output value each time
@@ -389,7 +374,6 @@ class TensorflowTensorContainer(
         batch: tf_ext.EagerTensor,
         batch_dim: int = 0,
     ) -> Payload:
-
         return cls.create_payload(
             pickle.dumps(batch),
             batch_size=batch.shape[batch_dim],
@@ -400,7 +384,6 @@ class TensorflowTensorContainer(
         cls,
         payload: Payload,
     ) -> tf_ext.EagerTensor:
-
         return pickle.loads(payload.data)
 
     @classmethod
@@ -410,7 +393,6 @@ class TensorflowTensorContainer(
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> t.List[Payload]:
-
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
         payloads = [cls.to_payload(subbatch) for subbatch in batches]

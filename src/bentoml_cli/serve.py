@@ -13,7 +13,6 @@ DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
 
 
 def add_serve_command(cli: click.Group) -> None:
-
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml._internal.log import configure_server_logging
     from bentoml_cli.env_manager import env_manager
@@ -82,49 +81,49 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--ssl-certfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.certfile.get(),
         help="SSL certificate file",
         show_default=True,
     )
     @click.option(
         "--ssl-keyfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.keyfile.get(),
         help="SSL key file",
         show_default=True,
     )
     @click.option(
         "--ssl-keyfile-password",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.keyfile_password.get(),
         help="SSL keyfile password",
         show_default=True,
     )
     @click.option(
         "--ssl-version",
         type=int,
-        default=None,
+        default=BentoMLContainer.ssl.version.get(),
         help="SSL version to use (see stdlib 'ssl' module)",
         show_default=True,
     )
     @click.option(
         "--ssl-cert-reqs",
         type=int,
-        default=None,
+        default=BentoMLContainer.ssl.cert_reqs.get(),
         help="Whether client certificate is required (see stdlib 'ssl' module)",
         show_default=True,
     )
     @click.option(
         "--ssl-ca-certs",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.ca_certs.get(),
         help="CA certificates file",
         show_default=True,
     )
     @click.option(
         "--ssl-ciphers",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.ciphers.get(),
         help="Ciphers to use (see stdlib 'ssl' module)",
         show_default=True,
     )
@@ -328,21 +327,21 @@ def add_serve_command(cli: click.Group) -> None:
     @click.option(
         "--ssl-certfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.certfile.get(),
         help="SSL certificate file",
         show_default=True,
     )
     @click.option(
         "--ssl-keyfile",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.keyfile.get(),
         help="SSL key file",
         show_default=True,
     )
     @click.option(
         "--ssl-ca-certs",
         type=str,
-        default=None,
+        default=BentoMLContainer.ssl.ca_certs.get(),
         help="CA certificates file",
         show_default=True,
     )

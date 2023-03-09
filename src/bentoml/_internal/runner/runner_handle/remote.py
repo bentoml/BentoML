@@ -64,6 +64,9 @@ class RemoteRunnerClient(RunnerHandle):
         self._client_cache: ClientSession | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._addr: str | None = None
+        self._semaphore = asyncio.Semaphore(
+            BentoMLContainer.api_server_config.max_runner_connections.get()
+        )
 
     @property
     def _remote_runner_server_map(self) -> dict[str, str]:
@@ -179,42 +182,43 @@ class RemoteRunnerClient(RunnerHandle):
                 ) from None
 
         path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
-        try:
-            async with self._client.post(
-                f"{self._addr}/{path}",
-                data=pickle.dumps(payload_params),  # FIXME: pickle inside pickle
-                headers={
-                    "Bento-Name": component_context.bento_name,
-                    "Bento-Version": component_context.bento_version,
-                    "Runner-Name": self._runner.name,
-                    "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-                    "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
-                },
-            ) as resp:
-                body = await resp.read()
-        except aiohttp.ClientOSError as e:
-            if os.getenv("BENTOML_RETRY_RUNNER_REQUESTS", "").lower() == "true":
-                try:
-                    # most likely the TCP connection has been closed; retry after reconnecting
-                    await self._reset_client()
-                    async with self._client.post(
-                        f"{self._addr}/{path}",
-                        data=pickle.dumps(
-                            payload_params
-                        ),  # FIXME: pickle inside pickle
-                        headers={
-                            "Bento-Name": component_context.bento_name,
-                            "Bento-Version": component_context.bento_version,
-                            "Runner-Name": self._runner.name,
-                            "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-                            "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
-                        },
-                    ) as resp:
-                        body = await resp.read()
-                except aiohttp.ClientOSError:
-                    raise RemoteException("Failed to connect to runner server.")
-            else:
-                raise RemoteException("Failed to connect to runner server.") from e
+        async with self._semaphore:
+            try:
+                async with self._client.post(
+                    f"{self._addr}/{path}",
+                    data=pickle.dumps(payload_params),  # FIXME: pickle inside pickle
+                    headers={
+                        "Bento-Name": component_context.bento_name,
+                        "Bento-Version": component_context.bento_version,
+                        "Runner-Name": self._runner.name,
+                        "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
+                        "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+                    },
+                ) as resp:
+                    body = await resp.read()
+            except aiohttp.ClientOSError as e:
+                if os.getenv("BENTOML_RETRY_RUNNER_REQUESTS", "").lower() == "true":
+                    try:
+                        # most likely the TCP connection has been closed; retry after reconnecting
+                        await self._reset_client()
+                        async with self._client.post(
+                            f"{self._addr}/{path}",
+                            data=pickle.dumps(
+                                payload_params
+                            ),  # FIXME: pickle inside pickle
+                            headers={
+                                "Bento-Name": component_context.bento_name,
+                                "Bento-Version": component_context.bento_version,
+                                "Runner-Name": self._runner.name,
+                                "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
+                                "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+                            },
+                        ) as resp:
+                            body = await resp.read()
+                    except aiohttp.ClientOSError:
+                        raise RemoteException("Failed to connect to runner server.")
+                else:
+                    raise RemoteException("Failed to connect to runner server.") from e
 
         try:
             content_type = resp.headers["Content-Type"]

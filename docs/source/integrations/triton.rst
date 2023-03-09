@@ -248,7 +248,7 @@ There are a few things to note here:
              InferResult = triton_runner.torchscript_mnist.run(np.zeros((1, 28, 28)), np.zeros((1, 28, 28)))
              return InferResult.as_numpy("OUTPUT__0")
 
-   To get ``OUTPUT__1`` as a json dictionary:
+   To get ``OUTPUT__1`` as a JSON dictionary:
 
    .. tab-set::
 

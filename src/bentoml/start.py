@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import json
-import typing as t
 import logging
 import contextlib
 
@@ -32,7 +31,6 @@ def start_runner_server(
     port: int | None = None,
     host: str | None = None,
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-    **attrs: t.Any,
 ) -> None:
     """
     Experimental API for serving a BentoML runner.
@@ -43,7 +41,7 @@ def start_runner_server(
 
     from . import load
     from .serve import create_watcher
-    from .serve import construct_triton_handle
+    from .serve import find_triton_binary
     from ._internal.utils import reserve_free_port
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
@@ -54,8 +52,8 @@ def start_runner_server(
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
-    watchers: t.List[Watcher] = []
-    circus_socket_map: t.Dict[str, CircusSocket] = {}
+    watchers: list[Watcher] = []
+    circus_socket_map: dict[str, CircusSocket] = {}
 
     # NOTE: We need to find and set model-repository args
     # to all TritonRunner instances (required from tritonserver if spawning multiple instances.)
@@ -100,12 +98,16 @@ def start_runner_server(
                     )
                     break
                 else:
-                    triton_handle = construct_triton_handle(runner, **attrs)
+                    cli_args = runner.cli_args + [
+                        f"--http-port={runner.protocol_address.split(':')[-1]}"
+                        if runner.tritonserver_type == "http"
+                        else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                    ]
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
-                            cmd=triton_handle.executable,
-                            args=triton_handle.args,
+                            cmd=find_triton_binary(),
+                            args=cli_args,
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,
@@ -136,7 +138,7 @@ def start_runner_server(
 @inject
 def start_http_server(
     bento_identifier: str,
-    runner_map: t.Dict[str, str],
+    runner_map: dict[str, str],
     working_dir: str,
     port: int = Provide[BentoMLContainer.api_server_config.port],
     host: str = Provide[BentoMLContainer.api_server_config.host],
@@ -172,8 +174,8 @@ def start_http_server(
         raise ValueError(
             f"{bento_identifier} requires runners {runner_requirements}, but only {set(runner_map)} are provided."
         )
-    watchers: t.List[Watcher] = []
-    circus_socket_map: t.Dict[str, CircusSocket] = {}
+    watchers: list[Watcher] = []
+    circus_socket_map: dict[str, CircusSocket] = {}
     logger.debug("Runner map: %s", runner_map)
     circus_socket_map[API_SERVER_NAME] = CircusSocket(
         name=API_SERVER_NAME,

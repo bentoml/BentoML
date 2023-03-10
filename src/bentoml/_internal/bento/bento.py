@@ -181,8 +181,11 @@ class Bento(StoreItem):
         svc = import_service(
             build_config.service, working_dir=build_ctx, standalone_load=True
         )
+        # Apply default build options
+        build_config = build_config.with_defaults()
 
-        tag = Tag(svc.name, version)
+        bento_name = build_config.name if build_config.name is not None else svc.name
+        tag = Tag(bento_name, version)
         if version is None:
             tag = tag.make_new_version()
 
@@ -190,7 +193,7 @@ class Bento(StoreItem):
             'Building BentoML service "%s" from build context "%s".', tag, build_ctx
         )
 
-        bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
+        bento_fs = fs.open_fs(f"temp://bentoml_bento_{bento_name}")
         ctx_fs = fs.open_fs(build_ctx)
 
         models: t.Set[Model] = set()
@@ -208,8 +211,6 @@ class Bento(StoreItem):
             logger.info('Packing model "%s"', model.tag)
             model.save(bento_model_store)
 
-        # Apply default build options
-        build_config = build_config.with_defaults()
         # create ignore specs
         specs = BentoPathSpec(build_config.include, build_config.exclude)  # type: ignore (unfinished attrs converter type)
 
@@ -410,7 +411,6 @@ class BentoModelInfo:
 
 @attr.frozen(repr=False)
 class BentoInfo:
-
     # for backward compatibility in case new fields are added to BentoInfo.
     __forbid_extra_keys__ = False
     # omit field in yaml file if it is not provided by the user.

@@ -12,6 +12,8 @@ set -e
 
 BASEDIR="$(cd "$(dirname "$0")" && pwd)"
 
+: "${GPU:=false}"
+
 [ "${UPDATE_YOLOV5}" = "true" ] && [ -d "$BASEDIR/yolov5" ] && \rm -rf yolov5
 
 main() {
@@ -28,7 +30,11 @@ main() {
     ! [ -d "${BASEDIR}/model_repository/torchscript_${MODEL_TYPE}/1" ] && mkdir -p "${BASEDIR}/model_repository/torchscript_${MODEL_TYPE}/1"
     [ -f "${BASEDIR}/${MODEL_TYPE}.torchscript" ] && exists=1
     if [ "${exists}" -eq 0 ] || [ "$OVERRIDE" = "true" ]; then
-        python3 yolov5/export.py --weights "$MODEL_TYPE.pt" --include torchscript --batch-size "$1" "--dynamic"
+		if [ "$GPU" = "true" ]; then
+			python3 yolov5/export.py --weights "$MODEL_TYPE.pt" --include torchscript --batch-size "$1" --dynamic --device 0
+		else
+			python3 yolov5/export.py --weights "$MODEL_TYPE.pt" --include torchscript --batch-size "$1" --dynamic
+		fi
     fi
     cp "${BASEDIR}/${MODEL_TYPE}.torchscript" "${BASEDIR}/model_repository/torchscript_${MODEL_TYPE}/1/model.pt"
 

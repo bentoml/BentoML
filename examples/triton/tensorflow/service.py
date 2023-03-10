@@ -3,15 +3,13 @@ from __future__ import annotations
 import typing as t
 
 import numpy as np
+import torch
+import helpers
 
 import bentoml
-from bentoml._internal.utils import LazyLoader
 
 if t.TYPE_CHECKING:
-    import helpers
     from PIL.Image import Image
-else:
-    helpers = LazyLoader("helpers", globals(), "helpers")
 
 # triton runner
 triton_runner = bentoml.triton.Runner(
@@ -34,7 +32,9 @@ svc = bentoml.Service(
     input=bentoml.io.Image.from_sample("./data/zidane.jpg"), output=bentoml.io.JSON()
 )
 async def bentoml_tensorflow_yolov5_infer(fp: Image) -> dict[str, str]:
-    prep = helpers.prepare_yolov5_input(fp, 640, False, "cpu", False, 32)
+    prep = helpers.prepare_yolov5_input(
+        fp, 640, False, "cpu" if not torch.cuda.is_available() else "cuda:0", False, 32
+    )
     im = prep.im
     _, _, h, w = prep.im.shape
     im = prep.im.permute(0, 2, 3, 1)  # torch BCHW to numpy BHWC shape(1,320,192, 3)
@@ -48,7 +48,9 @@ async def bentoml_tensorflow_yolov5_infer(fp: Image) -> dict[str, str]:
     input=bentoml.io.Image.from_sample("./data/zidane.jpg"), output=bentoml.io.JSON()
 )
 async def triton_tensorflow_yolov5_infer(fp: Image) -> dict[str, str]:
-    prep = helpers.prepare_yolov5_input(fp, 640, False, "cpu", False, 32)
+    prep = helpers.prepare_yolov5_input(
+        fp, 640, False, "cpu" if not torch.cuda.is_available() else "cuda:0", False, 32
+    )
     im = prep.im.permute(0, 2, 3, 1)  # torch BCHW to numpy BHWC shape(1,320,192, 3)
     InferResult = await triton_runner.tensorflow_yolov5s.async_run(im.cpu().numpy())
     return helpers.postprocess_yolov5_prediction(InferResult.as_numpy("output_0"), prep)

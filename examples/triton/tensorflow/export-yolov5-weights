@@ -10,6 +10,8 @@ set -e
 : "${MODEL_TYPE:=yolov5s}"
 : "${UPDATE_YOLOV5}"
 
+: "${GPU:=false}"
+
 BASEDIR="$(cd "$(dirname "$0")" && pwd)"
 
 [ "${UPDATE_YOLOV5}" = "true" ] && [ -d "$BASEDIR/yolov5" ] && \rm -rf yolov5
@@ -31,7 +33,11 @@ main() {
     [ -d "${BASEDIR}/model_repository/tensorflow_${MODEL_TYPE}/1/model.savedmodel" ] && \rm -rf "$BASEDIR/model_repository/tensorflow_${MODEL_TYPE}/1/model.savedmodel"
 
     if [ "${exists}" -eq 0 ] || [ "$OVERRIDE" = "true" ]; then
-        python3 yolov5/export.py --weights "$MODEL_TYPE.pt" --include saved_model torchscript --batch-size "$1" --dynamic
+		if [ "$GPU" = "true" ]; then
+			python3 yolov5/export.py --weights "$MODEL_TYPE.pt" --include saved_model torchscript --batch-size "$1" --dynamic --device 0
+		else
+			python3 yolov5/export.py --weights "$MODEL_TYPE.pt" --include saved_model torchscript --batch-size "$1" --dynamic
+		fi
     fi
     cp -r "${BASEDIR}/${MODEL_TYPE}_saved_model" "${BASEDIR}/model_repository/tensorflow_${MODEL_TYPE}/1/model.savedmodel"
 

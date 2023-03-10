@@ -265,7 +265,7 @@ There are a few things to note here:
              InferResult = triton_runner.torchscript_mnist.run(np.zeros((1, 28, 28)), np.zeros((1, 28, 28)))
              return InferResult.get_output("OUTPUT__0")
 
-Additonally, Triton runners exposes all `tritonclient <https://github.com/triton-inference-server/client>`_ to TritonRunner.
+Additonally, the Triton runner exposes all `tritonclient <https://github.com/triton-inference-server/client>`_ functions.
 
 .. dropdown:: Supported client APIs
     :icon: triangle-down

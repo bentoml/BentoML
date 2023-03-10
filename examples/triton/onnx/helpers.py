@@ -7,14 +7,12 @@ import typing as t
 from pathlib import Path
 
 import fs
-import attr
-import torch
-import fs.errors
-
 import cv2
+import attr
 import onnx
 import numpy as np
 import torch
+import fs.errors
 import torchvision
 import onnx.checker as onnx_checker
 from PIL import Image as PILImage

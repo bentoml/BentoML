@@ -7,11 +7,11 @@ import typing as t
 from pathlib import Path
 
 import fs
+import cv2
 import attr
+import numpy as np
 import torch
 import fs.errors
-import cv2
-import numpy as np
 import tensorflow as tf
 import torchvision
 from PIL import Image as PILImage

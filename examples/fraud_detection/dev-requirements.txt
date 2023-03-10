@@ -1,0 +1,8 @@
+notebook
+kaggle
+jupyter
+numpy
+pandas
+xgboost
+scikit-learn
+nbconvert

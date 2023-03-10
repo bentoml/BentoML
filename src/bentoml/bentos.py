@@ -7,7 +7,6 @@ from __future__ import annotations
 import sys
 import typing as t
 import logging
-import itertools
 import subprocess
 
 from simple_di import inject
@@ -263,15 +262,16 @@ def pull(
 def build(
     service: str,
     *,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    description: t.Optional[str] = None,
-    include: t.Optional[t.List[str]] = None,
-    exclude: t.Optional[t.List[str]] = None,
-    docker: t.Optional[t.Dict[str, t.Any]] = None,
-    python: t.Optional[t.Dict[str, t.Any]] = None,
-    conda: t.Optional[t.Dict[str, t.Any]] = None,
-    version: t.Optional[str] = None,
-    build_ctx: t.Optional[str] = None,
+    name: str | None = None,
+    labels: dict[str, str] | None = None,
+    description: str | None = None,
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+    docker: dict[str, t.Any] | None = None,
+    python: dict[str, t.Any] | None = None,
+    conda: dict[str, t.Any] | None = None,
+    version: str | None = None,
+    build_ctx: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> "Bento":
     """
@@ -286,15 +286,15 @@ def build(
         labels: optional immutable labels for carrying contextual info
         description: optional description string in markdown format
         include: list of file paths and patterns specifying files to include in Bento,
-            default is all files under build_ctx, beside the ones excluded from the
-            exclude parameter or a :code:`.bentoignore` file for a given directory
+                 default is all files under build_ctx, beside the ones excluded from the
+                 exclude parameter or a :code:`.bentoignore` file for a given directory
         exclude: list of file paths and patterns to exclude from the final Bento archive
         docker: dictionary for configuring Bento's containerization process, see details
-            in :class:`bentoml._internal.bento.build_config.DockerOptions`
+                in :class:`bentoml._internal.bento.build_config.DockerOptions`
         python: dictionary for configuring Bento's python dependencies, see details in
-            :class:`bentoml._internal.bento.build_config.PythonOptions`
+                :class:`bentoml._internal.bento.build_config.PythonOptions`
         conda: dictionary for configuring Bento's conda dependencies, see details in
-            :class:`bentoml._internal.bento.build_config.CondaOptions`
+               :class:`bentoml._internal.bento.build_config.CondaOptions`
         version: Override the default auto generated version str
         build_ctx: Build context directory, when used as
         _bento_store: save Bento created to this BentoStore
@@ -339,6 +339,7 @@ def build(
     """
     build_config = BentoBuildConfig(
         service=service,
+        name=name,
         description=description,
         labels=labels,
         include=include,
@@ -440,7 +441,6 @@ def serve(
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     grpc_protocol_version: str | None = None,
-    triton_args: t.List[str] | None = None,
 ) -> ServerHandle:
     from .serve import construct_ssl_args
     from ._internal.server.server import ServerHandle
@@ -517,12 +517,5 @@ def serve(
             server_type == "grpc"
         ), f"'grpc_protocol_version' should only be passed to gRPC server, got '{server_type}' instead."
         args.extend(["--protocol-version", str(grpc_protocol_version)])
-
-    if triton_args is not None:
-        args.extend(
-            itertools.chain.from_iterable(
-                [("--triton-options", arg) for arg in triton_args]
-            )
-        )
 
     return ServerHandle(process=subprocess.Popen(args), host=host, port=port)

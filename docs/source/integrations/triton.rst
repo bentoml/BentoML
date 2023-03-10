@@ -12,7 +12,7 @@ BentoML now supports running Triton Inference Server as a :ref:`Runner <concepts
 The following integration guide assumes that readers are familiar with BentoML architecture.
 Check out our :ref:`tutorial <tutorial:Creating a Service>` should you wish to learn more about BentoML service definition.
 
-The guide is intended to be as comprehensive and detailed as possible, yet some features from Triton Inference Server are not covered. For more information, please refer to the `Triton Inference Server documentation <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html>`_.
+For more information about Triton, please refer to the `Triton Inference Server documentation <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html>`_.
 
 The code examples in this guide can also be found in the :github:`example folder <bentoml/BentoML/tree/main/examples/triton>`.
 

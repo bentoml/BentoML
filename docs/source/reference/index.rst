@@ -6,7 +6,7 @@ This page contains detailed API specifications. This is best use for digging dee
 BentoML APIs and learn about all the options they provide.
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
 
   core
   stores
@@ -15,4 +15,5 @@ BentoML APIs and learn about all the options they provide.
   frameworks/index
   cli
   batch
+  exceptions
   container

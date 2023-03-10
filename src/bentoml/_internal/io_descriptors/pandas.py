@@ -427,8 +427,10 @@ class PandasDataFrame(
                 raise InvalidArgument(
                     f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
                 ) from None
-        self._shape = sample.shape
-        self._columns = [str(i) for i in list(sample.columns)]
+        if self._shape is None:
+            self._shape = sample.shape
+        if self._columns is None:
+            self._columns = [str(i) for i in list(sample.columns)]
         if self._dtype is None:
             self._dtype = sample.dtypes
         return sample
@@ -933,8 +935,10 @@ class PandasSeries(
         """
         if not isinstance(sample, pd.Series):
             sample = pd.Series(sample)
-        self._dtype = sample.dtype
-        self._shape = sample.shape
+        if self._dtype is None:
+            self._dtype = sample.dtype
+        if self._shape is None:
+            self._shape = sample.shape
         return sample
 
     def input_type(self) -> LazyType[ext.PdSeries]:

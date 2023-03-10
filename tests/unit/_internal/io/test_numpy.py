@@ -117,6 +117,14 @@ def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
     assert "Failed to reshape" in caplog.text
 
 
+def test_from_sample_ensure_not_override():
+    example = NumpyNdarray.from_sample(np.ones((2, 2, 3)), dtype=np.float32)
+    assert example._dtype == np.float32
+
+    example = NumpyNdarray.from_sample(np.ones((2, 2, 3)), shape=(2, 2, 3))
+    assert example._shape == (2, 2, 3)
+
+
 def generate_1d_array(dtype: pb.NDArray.DType.ValueType, length: int = 3):
     if dtype == pb.NDArray.DTYPE_BOOL:
         return [True] * length

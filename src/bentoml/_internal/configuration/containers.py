@@ -243,7 +243,9 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origin: str | None = Provide[cors.access_control_allow_origin],
+        allow_origins: list[str]
+        | str
+        | None = Provide[cors.access_control_allow_origins],
         allow_origin_regex: str
         | None = Provide[cors.access_control_allow_origin_regex],
         allow_credentials: bool | None = Provide[cors.access_control_allow_credentials],
@@ -258,10 +260,17 @@ class _BentoMLContainerClass:
         | str
         | None = Provide[cors.access_control_expose_headers],
     ) -> dict[str, list[str] | str | int]:
+
+        if isinstance(allow_origins, str):
+            allow_origins = [allow_origins]
+
+        if isinstance(allow_headers, str):
+            allow_headers = [allow_headers]
+
         return {
             k: v
             for k, v in {
-                "allow_origins": allow_origin,
+                "allow_origins": allow_origins,
                 "allow_origin_regex": allow_origin_regex,
                 "allow_credentials": allow_credentials,
                 "allow_methods": allow_methods,

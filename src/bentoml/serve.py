@@ -11,7 +11,6 @@ import contextlib
 from pathlib import Path
 from functools import partial
 
-import attr
 import psutil
 from simple_di import inject
 from simple_di import Provide
@@ -24,8 +23,6 @@ from ._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     from circus.watcher import Watcher
-
-    from .triton import Runner as TritonRunner
 
 
 logger = logging.getLogger(__name__)
@@ -309,7 +306,6 @@ def serve_http_production(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
-    **attrs: t.Any,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -725,7 +721,6 @@ def serve_grpc_production(
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     protocol_version: str = LATEST_PROTOCOL_VERSION,
-    **attrs: t.Any,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import sys
 import json
-import typing as t
 import logging
 from urllib.parse import urlparse
 

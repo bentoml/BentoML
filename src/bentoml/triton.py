@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import logging
-import itertools
 
 import attr
 from simple_di import inject as _inject

@@ -52,8 +52,8 @@ def start_runner_server(
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
 
-    watchers: t.List[Watcher] = []
-    circus_socket_map: t.Dict[str, CircusSocket] = {}
+    watchers: list[Watcher] = []
+    circus_socket_map: dict[str, CircusSocket] = {}
 
     # NOTE: We need to find and set model-repository args
     # to all TritonRunner instances (required from tritonserver if spawning multiple instances.)
@@ -138,7 +138,7 @@ def start_runner_server(
 @inject
 def start_http_server(
     bento_identifier: str,
-    runner_map: t.Dict[str, str],
+    runner_map: dict[str, str],
     working_dir: str,
     port: int = Provide[BentoMLContainer.api_server_config.port],
     host: str = Provide[BentoMLContainer.api_server_config.host],
@@ -174,8 +174,8 @@ def start_http_server(
         raise ValueError(
             f"{bento_identifier} requires runners {runner_requirements}, but only {set(runner_map)} are provided."
         )
-    watchers: t.List[Watcher] = []
-    circus_socket_map: t.Dict[str, CircusSocket] = {}
+    watchers: list[Watcher] = []
+    circus_socket_map: dict[str, CircusSocket] = {}
     logger.debug("Runner map: %s", runner_map)
     circus_socket_map[API_SERVER_NAME] = CircusSocket(
         name=API_SERVER_NAME,

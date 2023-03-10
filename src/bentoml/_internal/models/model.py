@@ -31,6 +31,7 @@ from ..types import MetadataDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
+from ..utils import normalize_labels_value
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
@@ -505,7 +506,9 @@ class ModelInfo:
     name: str
     version: str
     module: str
-    labels: t.Dict[str, str] = attr.field(validator=label_validator)
+    labels: t.Dict[str, str] = attr.field(
+        validator=label_validator, converter=normalize_labels_value
+    )
     _options: t.Dict[str, t.Any]
     metadata: MetadataDict = attr.field(validator=metadata_validator, converter=dict)
     context: ModelContext = attr.field()

@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import re
 import sys
-import uuid
 import random
 import socket
 import typing as t
@@ -67,6 +66,8 @@ __all__ = [
 
 _EXPERIMENTAL_APIS: set[str] = set()
 
+logger = logging.getLogger(__name__)
+
 
 def warn_experimental(api_name: str) -> None:
     """
@@ -81,7 +82,6 @@ def warn_experimental(api_name: str) -> None:
     if api_name not in _EXPERIMENTAL_APIS:
         _EXPERIMENTAL_APIS.add(api_name)
         msg = "'%s' is an EXPERIMENTAL API and is currently not yet stable. Proceed with caution!"
-        logger = logging.getLogger(__name__)
         logger.warning(msg, api_name)
 
 
@@ -137,8 +137,14 @@ def first_not_none(*args: T | None, default: None | T = None) -> T | None:
     return next((arg for arg in args if arg is not None), default)
 
 
-def randomize_runner_name(module_name: str):
-    return f"{module_name.split('.')[-1]}_{uuid.uuid4().hex[:6].lower()}"
+def normalize_labels_value(label: dict[str, t.Any] | None) -> dict[str, str] | None:
+    if not label:
+        return label
+    if any(not isinstance(v, str) for v in label.values()):
+        logger.warning(
+            "'labels' should be a dict[str, str] and enforced by BentoML. Converting all values to string."
+        )
+    return {k: str(v) for k, v in label.items()}
 
 
 def validate_or_create_dir(*path: PathType) -> None:
@@ -413,7 +419,6 @@ class cached_contextmanager:
     def __call__(
         self, func: "t.Callable[P, t.Generator[VT, None, None]]"
     ) -> "t.Callable[P, t.ContextManager[VT]]":
-
         func_m = contextlib.contextmanager(func)
 
         @contextlib.contextmanager

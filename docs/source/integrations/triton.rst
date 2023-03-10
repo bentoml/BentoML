@@ -408,15 +408,6 @@ HTTP/REST APIs is disabled by default, though it can be enabled when creating th
 
 Additionally, BentoML will allocate a random port for the gRPC/HTTP server, hence ``grpc-port`` or ``http-port`` options that is passed to Runner ``cli_args`` will be omitted.
 
-Should I use Triton Inference Server?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Absolutely, depending on your use-case. If you are looking for improving RPS for your production models, then Triton Inference Server through ``bentoml.triton.Runner``
-is a great option to consider. Note that you are responsible for managing the model repository and its respectively ``config.pbtxt`` to make sure it will fit your use-case.
-
-If you are a Triton users who are looking for a more easier and streamlined workflow for multi-model inference graphs and more ergonomic pre/post-processing, 
-then you might want to consider this integration as a solution.
-
 .. admonition:: 🚧 Help us improve the integration!
 
     This integration is still in its early stages and we are looking for feedbacks and contributions to make it even better!

@@ -19,10 +19,7 @@ The code examples in this guide can also be found in the :github:`example folder
 Why Integrating BentoML with Triton Inference Server?
 ~~~~~~~~~~~~~~~~~~~~~
 
-* For Triton users, the integration provides a simple way to add pre/post-processing logics in Python, distributed deployment of multi-model inference graph, 
-  unifying model management with other machine learning frameworks/workflow. and a standardisation for your model packaging format, which is versioned and can be shared with collaborators.
-
-* For BentoML users, the integration improves the runner efficiency and throughput under high load thanks to Triton's C++ runtime implementation.
+If you are an existing Triton user, the integration provides simpler ways to add custom logics in Python, deploy distributed multi-model inference graph, unify model management across different ML frameworks and workflows, and standardise model packaging format with versioning and collaboration features. If you are an existing BentoML user, the integration improves the runner efficiency and throughput under high load thanks to Triton's efficient C++ runtime.
 
 Prerequisites
 ~~~~~~~~~~~~~

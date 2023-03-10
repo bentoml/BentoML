@@ -1,0 +1,3 @@
+-r requirements.txt
+nvidia-tensorrt
+onnxruntime-gpu

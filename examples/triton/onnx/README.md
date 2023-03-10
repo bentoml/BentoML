@@ -101,7 +101,30 @@ The following project includes YOLOv5 `TritonRunner` and `bentoml.Runner`.
 python3 train.py
 ```
 
-2. To run Triton, use the following docker container:
+2. To build the Bento, use [`build_bento.py`](./build_bento.py):
+
+```bash
+python3 build_bento.py
+````
+
+> NOTE: To build with custom GPU, pass in `--gpu`. To build with custom tags
+> pass in `--tag <custom_tag>`
+
+3. To containerize use [`containerize_bento.py`](./containerize_bento.py):
+
+```bash
+python3 containerize_bento.py
+```
+
+4. To run the container with Triton, use `docker run`:
+
+```bash
+docker run --rm -it -p 3000:3000 triton-integration-onnx serve-http --production
+```
+
+#### Develop locally:
+
+1. To run Triton locally, do the following:
 
 ```bash
 BENTOML_GIT_ROOT=$(git rev-parse --show-toplevel)
@@ -139,27 +162,8 @@ cd /workspace/ && pip install -r requirements/requirements.txt
 bash ./setup
 ```
 
-Proceed to run serve:
-
-```bash
-bentoml serve --production --triton-options log-verbose=True
-```
-
-> Feel free to build your own tritonserver. See
-> [here](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/build.md)
-> for more details on building customisation.
-
-3. To build the Bento, use [`build_bento.py`](./build_bento.py):
-
-```bash
-python3 build_bento.py
-````
-
-> NOTE: To build with custom GPU, pass in `--gpu`. To build with custom tags
-> pass in `--tag <custom_tag>`
-
-4. To serve the Bento, use either `bentoml serve` or
-   [`serve_bento.py`](./serve_bento.py):
+2. To serve the Bento, use either `bentoml serve` or
+   [`serve_bento.py`](./serve_bento.py) (this requires to have `tritonserver` binary available locally on your system. To use the container, go to step 5)
 
 ```bash
 python3 serve_bento.py
@@ -170,14 +174,10 @@ python3 serve_bento.py
 > NOTE: to serve previously custom tag bento, you can also pass in `--tag` to
 > `serve_bento.py`
 
-5. To containerize use [`containerize_bento.py`](./containerize_bento.py):
 
-```bash
-python3 containerize_bento.py
-```
-
-> NOTE: to serve previously custom tag bento, you can also pass in `--tag` to
-> `serve_bento.py`
+> Feel free to build your own tritonserver. See
+> [here](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/build.md)
+> for more details on building customisation.
 
 <!-- 
 docker run --rm -it -p 3000-3030:3000-3030 -v $(pwd)/model_repository:/models -v ${PWD}:/workspace -v ${BENTOML_GIT_ROOT}:/opt/bentoml -e BENTOML_HOME=/opt/bentoml -v $BENTOML_HOME:/opt/bentoml nvcr.io/nvidia/tritonserver:22.12-py3 bash

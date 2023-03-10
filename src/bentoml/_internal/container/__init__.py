@@ -113,13 +113,14 @@ def enable_buildkit(
         raise ValueError("Either backend or builder must be provided.")
 
 
-# Sync with BentoML extra dependencies found in pyproject.toml
+# XXX: Sync with BentoML extra dependencies found in pyproject.toml
 FEATURES = frozenset(
     {
         "tracing",
         "grpc",
         "grpc-reflection",
         "grpc-channelz",
+        "triton",
         "aws",
         "all",
         "io",

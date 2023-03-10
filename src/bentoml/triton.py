@@ -517,7 +517,6 @@ class TritonServerHandle:
         if self.use_http_client:
             # This runner is using HTTP triton client
             for key in [
-                "allow_grpc",
                 "grpc_address",
                 "grpc_port",
                 "reuse_grpc_port",
@@ -535,10 +534,12 @@ class TritonServerHandle:
                 "grpc_http2_max_ping_strikes",
             ]:
                 resolved.pop(key, None)
+            resolved["allow_grpc"] = False
         else:
             # This runner is using GRPC triton client
-            for key in ["allow_http", "http_port", "http_address", "http_thread_count"]:
+            for key in ["http_port", "http_address", "http_thread_count"]:
                 resolved.pop(key, None)
+            resolved["allow_http"] = False
 
         # This server have Metrics endpoint enabled. For the scope of BentoML
         # we will always disable this. This check ensures not to break on server

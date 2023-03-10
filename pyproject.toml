@@ -120,6 +120,7 @@ all = [
     "bentoml[grpc-reflection]",
     "bentoml[grpc-channelz]",
     "bentoml[tracing]",
+    "bentoml[triton]"
 ]
 aws = ["fs-s3fs"]
 io = [

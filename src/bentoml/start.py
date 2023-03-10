@@ -43,7 +43,7 @@ def start_runner_server(
 
     from . import load
     from .serve import create_watcher
-    from .serve import construct_triton_handle
+    from .serve import find_triton_binary
     from ._internal.utils import reserve_free_port
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
@@ -100,12 +100,11 @@ def start_runner_server(
                     )
                     break
                 else:
-                    triton_handle = construct_triton_handle(runner, **attrs)
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
-                            cmd=triton_handle.executable,
-                            args=triton_handle.args,
+                            cmd=find_triton_binary(),
+                            args=runner.cli_args,
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,

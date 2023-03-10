@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import json
-import typing as t
 import logging
 import contextlib
 
@@ -32,7 +31,6 @@ def start_runner_server(
     port: int | None = None,
     host: str | None = None,
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-    **attrs: t.Any,
 ) -> None:
     """
     Experimental API for serving a BentoML runner.

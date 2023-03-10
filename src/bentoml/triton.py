@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import logging
-import itertools
 from functools import lru_cache
 
 import attr

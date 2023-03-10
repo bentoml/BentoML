@@ -7,7 +7,6 @@ from __future__ import annotations
 import sys
 import typing as t
 import logging
-import itertools
 import subprocess
 
 from simple_di import inject

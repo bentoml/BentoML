@@ -26,7 +26,6 @@ if t.TYPE_CHECKING:
     from circus.watcher import Watcher
 
     from .triton import Runner as TritonRunner
-    from .triton import TritonServerHandle
 
 
 logger = logging.getLogger(__name__)
@@ -166,52 +165,13 @@ def construct_ssl_args(
     return args
 
 
-def construct_triton_handle(
-    _runner: TritonRunner, **attrs: t.Any
-) -> TritonServerHandle:
-    from .triton import TritonServerHandle
-    from ._internal.utils import reserve_free_port
-
-    if any(
-        attrs.get(f"triton_{k}") is not None
-        for k in ("model_repository", "allow_grpc", "allow_http", "allow_metrics")
-    ):
-        raise BentoMLException(
-            "triton_model_repository, triton_allow_grpc, triton_allow_http, triton_allow_metrics are not allowed in TritonRunner"
+def find_triton_binary():
+    binary = shutil.which("tritonserver")
+    if binary is None:
+        raise RuntimeError(
+            "'tritonserver' is not found on PATH. Make sure to include the compiled binary in PATH to proceed.\nIf you are running this inside a container, make sure to use the official Triton container image as a 'base_image'. See https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver."
         )
-
-    if any(attrs.get(f"triton_{k}") is not None for k in ("grpc_port", "http_port")):
-        raise BentoMLException(
-            "triton_grpc_port, triton_http_port are currently not yet configurable."
-        )
-
-    triton_kwargs: dict[str, t.Any] = {
-        key: attrs.get(f"triton_{key}")
-        for key in [
-            i.name
-            for i in attr.fields(TritonServerHandle)
-            # model_repository is set via TritonRunner
-            if not i.name.startswith("_")
-            and i.name not in ("model_repository", "allow_grpc", "allow_http")
-        ]
-    }
-    # handle multiple model_repository for multiple TritonRunner
-    triton_kwargs["model_repository"] = _runner.repository_path
-
-    handle = TritonServerHandle(**triton_kwargs)
-
-    if _runner.tritonserver_type == "http":
-        with reserve_free_port(host=handle.http_address) as port:
-            pass
-        triton_kwargs["http_port"] = port
-    else:
-        with reserve_free_port(
-            host=handle.grpc_address, enable_so_reuseport=bool(handle.reuse_grpc_port)
-        ) as port:
-            pass
-        triton_kwargs["grpc_port"] = port
-
-    return TritonServerHandle.from_runner(_runner, **triton_kwargs)
+    return binary
 
 
 @inject
@@ -409,14 +369,13 @@ def serve_http_production(
                     )
                 )
             else:
-                triton_handle = construct_triton_handle(runner, **attrs)
                 # Make sure that the tritonserver uses the correct protocol
-                runner_bind_map[runner.name] = triton_handle.protocol_address
+                runner_bind_map[runner.name] = runner.protocol_address
                 watchers.append(
                     create_watcher(
                         name=f"tritonserver_{runner.name}",
-                        cmd=triton_handle.executable,
-                        args=triton_handle.args,
+                        cmd=find_triton_binary(),
+                        args=runner.cli_args,
                         use_sockets=False,
                         working_dir=working_dir,
                         numprocesses=1,
@@ -462,14 +421,13 @@ def serve_http_production(
                         )
                     )
                 else:
-                    triton_handle = construct_triton_handle(runner, **attrs)
                     # Make sure that the tritonserver uses the correct protocol
-                    runner_bind_map[runner.name] = triton_handle.protocol_address
+                    runner_bind_map[runner.name] = runner.protocol_address
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
-                            cmd=triton_handle.executable,
-                            args=triton_handle.args,
+                            cmd=find_triton_binary(),
+                            args=runner.cli_args,
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,
@@ -830,14 +788,13 @@ def serve_grpc_production(
                     )
                 )
             else:
-                triton_handle = construct_triton_handle(runner, **attrs)
                 # Make sure that the tritonserver uses the correct protocol
-                runner_bind_map[runner.name] = triton_handle.protocol_address
+                runner_bind_map[runner.name] = runner.protocol_address
                 watchers.append(
                     create_watcher(
                         name=f"tritonserver_{runner.name}",
-                        cmd=triton_handle.executable,
-                        args=triton_handle.args,
+                        cmd=find_triton_binary(),
+                        args=runner.cli_args,
                         use_sockets=False,
                         working_dir=working_dir,
                         numprocesses=1,
@@ -886,14 +843,13 @@ def serve_grpc_production(
                         )
                     )
                 else:
-                    triton_handle = construct_triton_handle(runner, **attrs)
                     # Make sure that the tritonserver uses the correct protocol
-                    runner_bind_map[runner.name] = triton_handle.protocol_address
+                    runner_bind_map[runner.name] = runner.protocol_address
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
-                            cmd=triton_handle.executable,
-                            args=triton_handle.args,
+                            cmd=find_triton_binary(),
+                            args=runner.cli_args,
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,

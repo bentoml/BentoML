@@ -17,8 +17,6 @@ def add_start_command(cli: click.Group) -> None:
     from bentoml._internal.utils import add_experimental_docstring
     from bentoml._internal.configuration.containers import BentoMLContainer
 
-    from .utils import opt_callback
-
     @cli.command(hidden=True)
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
@@ -230,14 +228,6 @@ def add_start_command(cli: click.Group) -> None:
         default=None,
         show_default=True,
     )
-    @click.option(
-        "--triton-options",
-        help="Trition Inference Server options",
-        required=False,
-        multiple=True,
-        callback=opt_callback,
-        metavar="ARG=VALUE[,VALUE]",
-    )
     @add_experimental_docstring
     def start_runner_server(  # type: ignore (unused warning)
         bento: str,
@@ -247,8 +237,6 @@ def add_start_command(cli: click.Group) -> None:
         host: str,
         backlog: int,
         working_dir: str,
-        _memoized: dict[str, t.Any],
-        **kwargs: t.Any,  # pylint: disable=unused-argument
     ) -> None:
         """
         Start Runner server standalone. This will be used inside Yatai.
@@ -263,8 +251,6 @@ def add_start_command(cli: click.Group) -> None:
 
         from bentoml.start import start_runner_server
 
-        from .utils import flatten_opt_tuple
-
         if bind is not None:
             parsed = urlparse(bind)
             assert parsed.scheme == "tcp"
@@ -278,10 +264,6 @@ def add_start_command(cli: click.Group) -> None:
             port=port,
             host=host,
             backlog=backlog,
-            **{
-                f"triton_{attr}": flatten_opt_tuple(value)
-                for attr, value in _memoized.items()
-            },
         )
 
     @cli.command(hidden=True)

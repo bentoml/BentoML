@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import typing as t
 
-import bentoml
 import numpy as np
+from tritonclient.grpc.aio import InferInput
+from tritonclient.grpc.aio import np_to_triton_dtype
+from tritonclient.grpc.aio import InferRequestedOutput
 
-from tritonclient.grpc.aio import InferInput, InferRequestedOutput, np_to_triton_dtype
+import bentoml
 
 if t.TYPE_CHECKING:
-    from numpy.typing import NDArray
     from PIL.Image import Image
+    from numpy.typing import NDArray
 
 # triton runner
 triton_runner = bentoml.triton.Runner("triton_runner", "./model_repository")

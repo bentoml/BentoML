@@ -14,7 +14,15 @@ if t.TYPE_CHECKING:
     from numpy.typing import NDArray
 
 # triton runner
-triton_runner = bentoml.triton.Runner("triton_runner", "./model_repository")
+triton_runner = bentoml.triton.Runner(
+    "triton_runner",
+    "./model_repository",
+    cli_args=[
+        "--load-model=onnx_mnist",
+        "--load-model=torchscript_yolov5s",
+        "--model-control-mode=explicit",
+    ],
+)
 
 svc = bentoml.Service("triton-integration", runners=[triton_runner])
 

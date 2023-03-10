@@ -80,7 +80,10 @@ supports S3 path:
 
    import bentoml
 
-   triton_runner = bentoml.triton.Runner("triton_runner", model_repository="s3://bucket/path/to/model_repository")
+   triton_runner = bentoml.triton.Runner("triton_runner",
+                                         model_repository="s3://bucket/path/to/model_repository",
+                                         cli_args=["--load-model=torchscrip_yolov5s", "--model-control-mode=explicit"]
+   )
 
 .. note::
 
@@ -340,60 +343,6 @@ to learn more about building/composing custom Triton image.
     :bdg-primary:`Important:` The provided Triton image from NVIDIA includes Python 3.8. Therefore, if you are developing your Bento
     with any other Python version, make sure that your ``service.py`` is compatible with Python 3.8.
 
-Serving BentoService with Triton Inference Server
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-After containerizing with :ref:`bentoml containerize <reference/cli:containerize>`, :ref:`serve <reference/cli:serve>`
-command now takes in additional ``--triton-options`` argument to pass options for ``tritonserver``:
-
-.. tab-set::
-
-    .. tab-item:: MacOS/Windows
-       :sync: macwin
-
-       .. tab-set::
-
-          .. tab-item:: GPU
-              :sync: gpu
-
-              .. code-block:: bash
-
-                  $ docker run --init --rm -p 3000:3000 triton-integration:gpu serve \
-                                        --production --triton-options model-control-mode=explicit \
-                                        --triton-options load-model=onnx_mnist --triton-options load-model=torchscript_yolov5s
-
-          .. tab-item:: CPU
-              :sync: cpu
-
-              .. code-block:: bash
-
-                  $ docker run --init --rm -p 3000:3000 triton-integration:cpu serve-grpc \
-                                        --production --triton-options model-control-mode=explicit \
-                                        --triton-options load-model=onnx_mnist --triton-options load-model=torchscript_yolov5s
-
-    .. tab-item:: Linux
-       :sync: linux
-
-       .. tab-set::
-
-          .. tab-item:: GPU
-              :sync: gpu
-
-              .. code-block:: bash
-
-                  $ docker run --init --rm --network=host triton-integration:gpu serve \
-                                        --production --triton-options model-control-mode=explicit \
-                                        --triton-options load-model=onnx_mnist --triton-options load-model=torchscript_yolov5s
-
-          .. tab-item:: CPU
-              :sync: cpu
-
-              .. code-block:: bash
-
-                  $ docker run --init --rm --network=host triton-integration:cpu serve-grpc \
-                                        --production --triton-options model-control-mode=explicit \
-                                        --triton-options load-model=onnx_mnist --triton-options load-model=torchscript_yolov5s
-
 .. tip::
 
    To see all available options for Triton run:
@@ -457,7 +406,7 @@ HTTP/REST APIs is disabled by default, though it can be enabled when creating th
     Currently, TritonRunner does not support running `Metrics server <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/metrics.html>`_.
     If you are interested in supporting the metrics server, please open an issue on :github:`GitHub <bentoml/BentoML/issues/new/choose>`
 
-Additionally, BentoML will allocate a random port for the gRPC/HTTP server, hence ``grpc-port`` or ``http-port`` options that is passed to ``--triton-options`` will be omited.
+Additionally, BentoML will allocate a random port for the gRPC/HTTP server, hence ``grpc-port`` or ``http-port`` options that is passed to Runner ``cli_args`` will be omitted.
 
 Should I use Triton Inference Server?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

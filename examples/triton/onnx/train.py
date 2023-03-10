@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from helpers import onnx
+import onnx
+import onnx.checker as onnx_checker
 from helpers import MODEL_FILE
-from helpers import onnx_checker
 from helpers import load_traced_script
 
 import bentoml

@@ -16,7 +16,7 @@ The guide is intended to be as comprehensive and detailed as possible, yet some 
 
 The code examples in this guide can also be found in the :github:`example folder <bentoml/BentoML/tree/main/examples/triton>`.
 
-Why do you want this?
+Why Integrating BentoML with Triton Inference Server?
 ~~~~~~~~~~~~~~~~~~~~~
 
 * For Triton users, the integration provides a simple way to add pre/post-processing logics in Python, distributed deployment of multi-model inference graph, 

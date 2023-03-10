@@ -41,6 +41,7 @@ working on :)
 | [tensorflow2_keras](https://github.com/bentoml/BentoML/tree/main/examples/tensorflow2_keras)                                                 | TensorFlow, Keras   | MNIST                                | Notebook                                |
 | [tensorflow2_native](https://github.com/bentoml/BentoML/tree/main/examples/tensorflow2_native)                                               | TensforFlow         | MNIST                                | Notebook                                |
 | [xgboost](https://github.com/bentoml/BentoML/tree/main/examples/xgboost)                                                                     | XGBoost             | DMatrix                              |                                         |
+| [Fraud Detection xgboost](https://github.com/bentoml/BentoML/tree/main/examples/fraud_detection)                                             | XGBoost             |                                      | Benchmark, Inference Graph, GPU         |
 | [flax/MNIST](https://github.com/bentoml/BentoML/tree/main/examples/flax/MNIST)                                                               | Flax                | MNIST                                | gRPC, Testing                           |
 
 ## How to contribute

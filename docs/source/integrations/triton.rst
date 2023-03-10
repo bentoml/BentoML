@@ -48,7 +48,7 @@ The recommended way to run Triton is through container (Docker/Podman). To pull 
 
 .. note::
 
-    ``<yy>.<mm>``: the version of Triton you wish to use. For example, at the time of writing, the latest version is ``22.12``.
+    ``<yy>.<mm>``: the version of Triton you wish to use. For example, at the time of writing, the latest version is ``23.01``.
 
 
 Finally, The example Bento built from the example project with the :github:`YOLOv5 model <bentoml/BentoML/tree/main/examples/triton>` will be referenced throughout this guide.
@@ -88,6 +88,11 @@ supports S3 path:
 .. note::
 
    If models are saved on the file system, using the Triton runner requires setting up the model repository explicitly through the `includes` key in the `bentofile.yaml`.
+
+.. note::
+
+   The ``cli_args`` argument is a list of arguments that will be passed to the ``tritonserver`` command. For example, the ``--load-model`` argument is used to load a specific model from the model repository.
+   See ``tritonserver --help`` for all available arguments.
 
 From a developer perspective, remote invocation of Triton runners is similar to invoking any other BentoML runners. 
 

@@ -32,10 +32,6 @@ if __name__ == "__main__":
             bento,
             server_type=server_type,
             production=True,
-            triton_args=[
-                "model-control-mode=explicit",
-                "load-model=torchscript_yolov5s",
-            ],
         )
         try:
             while True:

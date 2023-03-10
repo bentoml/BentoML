@@ -14,7 +14,11 @@ else:
     helpers = LazyLoader("helpers", globals(), "helpers")
 
 # triton runner
-triton_runner = bentoml.triton.Runner("triton_runner", "./model_repository")
+triton_runner = bentoml.triton.Runner(
+    "triton_runner",
+    "./model_repository",
+    cli_args=["--model-control-mode=explicit", "--load-model=onnx_yolov5s"],
+)
 
 bentoml_yolov5_onnx = (
     bentoml.onnx.get("onnx-yolov5")

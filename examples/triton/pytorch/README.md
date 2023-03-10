@@ -153,11 +153,6 @@ I0217 00:33:40.955605 3626 server.cc:633]
 +---------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------+
 | Model               | Version | Status                                                                                                                                 |
 +---------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------+
-| onnx_mnist          | 1       | READY                                                                                                                                  |
-| onnx_yolov5s        | 1       | READY                                                                                                                                  |
-| tensorflow_mnist    | 1       | READY                                                                                                                                  |
-| tensorflow_yolov5s  | 1       | READY                                                                                                                                  |
-| torchscript_mnist   | 1       | UNAVAILABLE: Not found: unable to load shared library: /lib/aarch64-linux-gnu/libgomp.so.1: cannot allocate memory in static TLS block |
 | torchscript_yolov5s | 1       | UNAVAILABLE: Not found: unable to load shared library: /lib/aarch64-linux-gnu/libgomp.so.1: cannot allocate memory in static TLS block |
 +---------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------+
 

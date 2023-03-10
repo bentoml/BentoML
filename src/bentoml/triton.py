@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import logging
-from functools import lru_cache
 
 import attr
 from simple_di import inject as _inject
@@ -90,8 +89,6 @@ class _TritonRunner(_AbstractRunner):
     cli_args: list[str] = attr.field(factory=list)
 
     _runner_handle: RunnerHandle = attr.field(init=False, factory=_DummyRunnerHandle)
-    _http_address: str = "127.0.0.1"
-    _grpc_address: str = "0.0.0.0"
 
     def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
         if not isinstance(self._runner_handle, _DummyRunnerHandle):
@@ -127,8 +124,7 @@ class _TritonRunner(_AbstractRunner):
             cli_args.extend(
                 [
                     "--allow-grpc=False",
-                    f"--http-address={self._http_address}",
-                    f"--http-port={self.protocol_address.split(':')[-1]}",
+                    "--http-address=127.0.0.1",
                 ]
             )
         elif tritonserver_type == "grpc":
@@ -136,8 +132,7 @@ class _TritonRunner(_AbstractRunner):
                 [
                     "--reuse-grpc-port=1",
                     "--allow-http=False",
-                    f"--grpc-address={self._grpc_address}",
-                    f"--grpc-port={self.protocol_address.split(':')[-1]}",
+                    "--grpc-address=0.0.0.0",
                 ]
             )
 
@@ -159,29 +154,20 @@ class _TritonRunner(_AbstractRunner):
             cli_args=cli_args,
         )
 
-    @lru_cache(maxsize=1)
-    def randomize_port(self):
+    @_cached_property
+    def protocol_address(self):
         from ._internal.utils import reserve_free_port
 
         if self.tritonserver_type == "http":
-            with reserve_free_port(host=self._http_address) as port:
+            with reserve_free_port(host="127.0.0.1") as port:
                 pass
-            return port
+            return f"127.0.0.1:{port}"
         elif self.tritonserver_type == "grpc":
-            with reserve_free_port(
-                host=self._grpc_address, enable_so_reuseport=True
-            ) as port:
+            with reserve_free_port(host="0.0.0.0", enable_so_reuseport=True) as port:
                 pass
-            return port
+            return f"0.0.0.0:{port}"
         else:
             raise ValueError(f"Invalid Triton Server type: {self.tritonserver_type}")
-
-    @_cached_property
-    def protocol_address(self):
-        if self.tritonserver_type == "http":
-            return f"{self._http_address}:{self.randomize_port()}"
-        else:
-            return f"{self._grpc_address}:{self.randomize_port()}"
 
     def init_local(self, quiet: bool = False) -> None:
         _logger.warning(

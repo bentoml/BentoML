@@ -367,11 +367,16 @@ def serve_http_production(
             else:
                 # Make sure that the tritonserver uses the correct protocol
                 runner_bind_map[runner.name] = runner.protocol_address
+                cli_args = runner.cli_args + [
+                    f"--http-port={runner.protocol_address.split(':')[-1]}"
+                    if runner.tritonserver_type == "http"
+                    else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                ]
                 watchers.append(
                     create_watcher(
                         name=f"tritonserver_{runner.name}",
                         cmd=find_triton_binary(),
-                        args=runner.cli_args,
+                        args=cli_args,
                         use_sockets=False,
                         working_dir=working_dir,
                         numprocesses=1,
@@ -419,11 +424,16 @@ def serve_http_production(
                 else:
                     # Make sure that the tritonserver uses the correct protocol
                     runner_bind_map[runner.name] = runner.protocol_address
+                    cli_args = runner.cli_args + [
+                        f"--http-port={runner.protocol_address.split(':')[-1]}"
+                        if runner.tritonserver_type == "http"
+                        else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                    ]
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
                             cmd=find_triton_binary(),
-                            args=runner.cli_args,
+                            args=cli_args,
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,
@@ -785,11 +795,16 @@ def serve_grpc_production(
             else:
                 # Make sure that the tritonserver uses the correct protocol
                 runner_bind_map[runner.name] = runner.protocol_address
+                cli_args = runner.cli_args + [
+                    f"--http-port={runner.protocol_address.split(':')[-1]}"
+                    if runner.tritonserver_type == "http"
+                    else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                ]
                 watchers.append(
                     create_watcher(
                         name=f"tritonserver_{runner.name}",
                         cmd=find_triton_binary(),
-                        args=runner.cli_args,
+                        args=cli_args,
                         use_sockets=False,
                         working_dir=working_dir,
                         numprocesses=1,
@@ -840,11 +855,16 @@ def serve_grpc_production(
                 else:
                     # Make sure that the tritonserver uses the correct protocol
                     runner_bind_map[runner.name] = runner.protocol_address
+                    cli_args = runner.cli_args + [
+                        f"--http-port={runner.protocol_address.split(':')[-1]}"
+                        if runner.tritonserver_type == "http"
+                        else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                    ]
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
                             cmd=find_triton_binary(),
-                            args=runner.cli_args,
+                            args=cli_args,
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,

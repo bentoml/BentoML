@@ -106,7 +106,7 @@ Triton Runner Signatures
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Normally in a BentoML Runner, one can access the model signatures directly from the runners attributes. For example, the model signature ``predict``
-of a ``iris_classifier_runner`` (as often seen in our :ref:`tutorial <tutorial:Creating a Service>`) can be accessed as ``iris_classifier_runner.predict.run``.
+of a ``iris_classifier_runner`` (see :ref:`service definition <tutorial:Creating a Service>`) can be accessed as ``iris_classifier_runner.predict.run``.
 
 However, Triton runner's attributes represent individual models defined under the model repository. For example, if the model repository has the following structure:
 

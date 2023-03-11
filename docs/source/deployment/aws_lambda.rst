@@ -379,7 +379,7 @@ generated above,
     $ kubectl apply -f aws-secret.yaml
 
 
-Confirm the secrete is created successfully by using `kubectl describe` command
+Confirm the secret is created successfully by using `kubectl describe` command
 
 .. code-block:: bash
 

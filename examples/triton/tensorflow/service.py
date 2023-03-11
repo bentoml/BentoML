@@ -16,8 +16,8 @@ triton_runner = bentoml.triton.Runner(
     "triton_runner",
     "./model_repository",
     cli_args=[
-        "model-control-mode=explicit",
-        "load-model=tensorflow_yolov5s",
+        "--model-control-mode=explicit",
+        "--load-model=tensorflow_yolov5s",
     ],
 )
 bentoml_yolov5_tensorflow = bentoml.tensorflow.get("tensorflow-yolov5").to_runner()

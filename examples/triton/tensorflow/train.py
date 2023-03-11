@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from helpers import tf
+import tensorflow as tf
 from helpers import MODEL_FILE
 from helpers import load_traced_script
 

@@ -1,0 +1,28 @@
+import numpy as np
+import pandas as pd
+from sample import sample_input
+
+import bentoml
+from bentoml.io import JSON
+from bentoml.io import PandasDataFrame
+
+fraud_detection_preprocessors = []
+fraud_detection_runners = []
+
+for model_name in ["ieee-fraud-detection-0", "ieee-fraud-detection-1", "ieee-fraud-detection-2"]:
+    model_ref = bentoml.xgboost.get(model_name)
+    fraud_detection_preprocessors.append(model_ref.custom_objects["preprocessor"])
+    fraud_detection_runners.append(model_ref.to_runner())
+
+svc = bentoml.Service("fraud_detection", runners=fraud_detection_runners)
+
+input_spec = PandasDataFrame.from_sample(sample_input)
+
+
+@svc.api(input=input_spec, output=JSON())
+async def is_fraud(input_df: pd.DataFrame):
+    input_df = input_df.astype(sample_input.dtypes)
+    input_features = fraud_detection_preprocessors[0].transform(input_df)
+    results = await fraud_detection_runners[0].predict_proba.async_run(input_features)
+    predictions = np.argmax(results, axis=1)  # 0 is not fraud, 1 is fraud
+    return {"is_fraud": list(map(bool, predictions)), "is_fraud_prob": results[:, 1]}

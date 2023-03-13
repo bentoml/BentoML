@@ -1,0 +1,10 @@
+service: "service:svc"
+include:
+- "service.py"
+- "sample.py"
+python:
+  packages:
+  - numpy
+  - pandas
+  - xgboost
+  - scikit-learn

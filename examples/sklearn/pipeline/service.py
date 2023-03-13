@@ -18,5 +18,5 @@ async def predict(input_doc: str):
 
 @svc.api(input=Text(), output=JSON())
 async def predict_proba(input_doc: str):
-    predictions = await model_runner.predict_proba.run([input_doc])
+    predictions = await model_runner.predict_proba.async_run([input_doc])
     return predictions[0]

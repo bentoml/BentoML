@@ -22,3 +22,4 @@ Framework APIs
     xgboost
     picklable_model
     lightgbm
+    ray

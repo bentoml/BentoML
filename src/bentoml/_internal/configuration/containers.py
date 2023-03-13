@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
 
+    SerializationStrategy = t.Literal["EXPORT_BENTO", "LOCAL_BENTO", "REMOTE_BENTO"]
 
 config_merger = Merger(
     # merge dicts
@@ -177,9 +178,15 @@ class _BentoMLContainerClass:
         bentos = os.path.join(home, "bentos")
         models = os.path.join(home, "models")
         envs = os.path.join(home, "envs")
+        tmp_bentos = os.path.join(home, "tmp")
 
-        validate_or_create_dir(home, bentos, models, envs)
+        validate_or_create_dir(home, bentos, models, envs, tmp_bentos)
         return home
+
+    @providers.SingletonFactory
+    @staticmethod
+    def tmp_bento_store_dir(bentoml_home: str = Provide[bentoml_home]):
+        return os.path.join(bentoml_home, "tmp")
 
     @providers.SingletonFactory
     @staticmethod
@@ -212,6 +219,13 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
+    def tmp_bento_store(base_dir: str = Provide[tmp_bento_store_dir]):
+        from ..bento import BentoStore
+
+        return BentoStore(base_dir)
+
+    @providers.SingletonFactory
+    @staticmethod
     def model_store(base_dir: str = Provide[model_store_dir]) -> "ModelStore":
         from ..models import ModelStore
 
@@ -230,6 +244,14 @@ class _BentoMLContainerClass:
     ssl = api_server_config.ssl
 
     development_mode = providers.Static(True)
+    serialization_strategy: SerializationStrategy = providers.Static("EXPORT_BENTO")
+
+    @providers.SingletonFactory
+    @staticmethod
+    def yatai_client():
+        from ..yatai_client import YataiClient
+
+        return YataiClient()
 
     @providers.SingletonFactory
     @staticmethod

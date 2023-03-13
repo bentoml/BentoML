@@ -183,14 +183,16 @@ def _setup_test_directory() -> tuple[str, str]:
     bentoml_home = tempfile.mkdtemp("bentoml-pytest")
     bentos = os.path.join(bentoml_home, "bentos")
     models = os.path.join(bentoml_home, "models")
+    tmp_bentos = os.path.join(bentoml_home, "tmp_bentos")
     multiproc_dir = os.path.join(bentoml_home, "prometheus_multiproc_dir")
-    validate_or_create_dir(bentos, models, multiproc_dir)
+    validate_or_create_dir(bentos, models, tmp_bentos, multiproc_dir)
 
     # We need to set the below value inside container due to
     # the fact that each value is a singleton, and will be cached.
     BentoMLContainer.bentoml_home.set(bentoml_home)
     BentoMLContainer.bento_store_dir.set(bentos)
     BentoMLContainer.model_store_dir.set(models)
+    BentoMLContainer.tmp_bento_store_dir.set(tmp_bentos)
     BentoMLContainer.prometheus_multiproc_dir.set(multiproc_dir)
     return bentoml_home, multiproc_dir
 

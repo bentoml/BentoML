@@ -12,6 +12,7 @@ from bentoml.exceptions import BentoMLException
 
 from ..tag import Tag
 from ..models import Model
+from ...exceptions import NotFound
 from ...grpc.utils import import_grpc
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..bento.bento import get_default_svc_readme
@@ -30,7 +31,6 @@ if TYPE_CHECKING:
     from ..bento import Bento
     from ...grpc.v1 import service_pb2_grpc as services
     from .openapi.specification import OpenAPISpecification
-
 else:
     grpc, _ = import_grpc()
 
@@ -120,6 +120,69 @@ class Service:
     _working_dir: str | None = attr.field(init=False, default=None)
     _import_str: str | None = attr.field(init=False, default=None)
 
+    def __reduce__(self):
+        """
+        Make bentoml.Service pickle serializable
+        """
+        import fs
+
+        from bentoml._internal.bento.bento import Bento
+        from bentoml._internal.service.loader import load
+        from bentoml._internal.service.loader import load_bento_dir
+        from bentoml._internal.configuration.containers import BentoMLContainer
+
+        serialization_strategy = BentoMLContainer.serialization_strategy.get()
+
+        if self.bento:
+            if serialization_strategy == "EXPORT_BENTO":
+                temp_fs = fs.open_fs("temp:///")
+                bento_path = self.bento.export(temp_fs.getsyspath("/"))
+                content = open(bento_path, "rb").read()
+
+                def load_exported_bento(bento_tag: Tag, content: bytes):
+                    tmp_bento_store = BentoMLContainer.tmp_bento_store.get()
+                    try:
+                        bento = tmp_bento_store.get(bento_tag)
+                        return load_bento_dir(bento.path)
+                    except NotFound:
+                        temp_fs = fs.open_fs("temp:///")
+                        temp_fs.writebytes("/import.bento", content)
+                        bento = Bento.import_from(
+                            temp_fs.getsyspath("/import.bento")
+                        ).save(tmp_bento_store)
+                        return load_bento_dir(bento.path)
+
+                return (
+                    load_exported_bento,
+                    (
+                        self.bento.tag,
+                        content,
+                    ),
+                )
+            elif serialization_strategy == "LOCAL_BENTO":
+                return (load, (self.bento.tag,))
+            else:
+                # serialization_strategy == REMOTE_BENTO
+                def get_or_pull(bento_tag):
+                    try:
+                        return load(bento_tag)
+                    except NotFound:
+                        pass
+                    tmp_bento_store = BentoMLContainer.tmp_bento_store.get()
+                    try:
+                        bento = tmp_bento_store.get(bento_tag)
+                        return load_bento_dir(bento.path)
+                    except NotFound:
+                        yatai_client = BentoMLContainer.yatai_client.get()
+                        yatai_client.pull_bento(bento_tag, bento_store=tmp_bento_store)
+                        return get_or_pull(bento_tag)
+
+                return (get_or_pull, (self.bento.tag,))
+        else:
+            from bentoml._internal.service.loader import import_service
+
+            return (import_service, (self._import_str, self._working_dir))
+
     def __init__(
         self,
         name: str,
@@ -198,6 +261,18 @@ class Service:
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other: Service):
+        if self.bento and other.bento:
+            return self.bento.tag == other.bento.tag
+
+        if (
+            self._working_dir == other._working_dir
+            and self._import_str == other._import_str
+        ):
+            return True
+
+        return False
 
     @property
     def doc(self) -> str:

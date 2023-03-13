@@ -4,6 +4,7 @@ import os
 import re
 import typing as t
 import logging
+from typing import TYPE_CHECKING
 from functools import lru_cache
 
 from ...exceptions import BentoMLException
@@ -20,6 +21,8 @@ except ImportError:
     __version__ = get_version(version_scheme="post-release")
     __version_tuple__ = (0, 0, 0, "dirty")
 
+if TYPE_CHECKING:
+    from .containers import SerializationStrategy
 
 # Note this file is loaded prior to logging being configured, thus logger is only
 # used within functions in this file
@@ -165,3 +168,18 @@ def save_config(config_file_handle: t.IO[t.Any]):
 
     content = yaml.safe_dump(BentoMLContainer.config)
     config_file_handle.write(content)
+
+
+def set_serialization_strategy(serialization_strategy: SerializationStrategy):
+    """
+    Configure how bentoml.Service are serialized (pickled). Default via EXPORT_BENTO
+
+    Args:
+        serialization_strategy: One of ["EXPORT_BENTO", "LOCAL_BENTO", "REMOTE_BENTO"]
+            EXPORT_BENTO: export and compress all Bento content as bytes
+            LOCAL_BENTO: load Bento by tag in other processes, assuming available in local BentoStore
+            REMOTE_BENTO: load Bento by tag in other processes, pull from Yatai/BentoCloud if not available locally
+    """
+    from ..configuration.containers import BentoMLContainer
+
+    BentoMLContainer.serialization_strategy.set(serialization_strategy)

@@ -32,6 +32,10 @@ Below is a list of integration guides with various tools within the MLOps ecosys
     .. grid-item-card:: :doc:`/integrations/triton`
         :link: /integrations/triton
         :link-type: doc
+        
+    .. grid-item-card:: :doc:`/integrations/ray`
+        :link: /integrations/ray
+        :link-type: doc
 
 .. admonition:: Help us improve the project!
 
@@ -49,4 +53,5 @@ Below is a list of integration guides with various tools within the MLOps ecosys
     arize
     mlflow
     spark
+    ray
     triton

@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING
 from ._internal.configuration import load_config
 from ._internal.configuration import save_config
 from ._internal.configuration import BENTOML_VERSION as __version__
+from ._internal.configuration import set_serialization_strategy
 
 # Inject dependencies and configurations
 load_config()
@@ -50,6 +51,7 @@ from ._internal.service.loader import load
 # Framework specific modules, model management and IO APIs are lazily loaded upon import.
 if TYPE_CHECKING:
     from . import h2o
+    from . import ray
     from . import flax
     from . import onnx
     from . import gluon
@@ -90,6 +92,7 @@ if TYPE_CHECKING:
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
 
+    # ML Frameworks
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
     detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")
     diffusers = _LazyLoader("bentoml.diffusers", globals(), "bentoml.diffusers")
@@ -125,7 +128,9 @@ else:
     )
     xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
 
+    # Integrations
     triton = _LazyLoader("bentoml.triton", globals(), "bentoml.triton")
+    ray = _LazyLoader("bentoml.ray", globals(), "bentoml.ray")
 
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
     batch = _LazyLoader("bentoml.batch", globals(), "bentoml.batch")
@@ -193,8 +198,10 @@ __all__ = [
     "transformers",
     "xgboost",
     # integrations
+    "ray",
     "triton",
     "monitor",
     "load_config",
     "save_config",
+    "set_serialization_strategy",
 ]

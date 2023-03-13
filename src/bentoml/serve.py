@@ -235,7 +235,7 @@ def serve_http_development(
             close_child_stdin=False,
         )
     )
-    scheme = "https" if len(ssl_args) > 0 else "http"
+    scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     if BentoMLContainer.api_server_config.metrics.enabled.get():
         log_host = "localhost" if host == "0.0.0.0" else host
 
@@ -463,7 +463,7 @@ def serve_http_production(
         ssl_ca_certs=ssl_ca_certs,
         ssl_ciphers=ssl_ciphers,
     )
-    scheme = "https" if len(ssl_args) > 0 else "http"
+    scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     watchers.append(
         create_watcher(
             name="api_server",
@@ -569,7 +569,7 @@ def serve_grpc_development(
         ssl_ca_certs=ssl_ca_certs,
     )
 
-    scheme = "https" if len(ssl_args) > 0 else "http"
+    scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
 
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(
@@ -882,7 +882,7 @@ def serve_grpc_production(
         ssl_keyfile=ssl_keyfile,
         ssl_ca_certs=ssl_ca_certs,
     )
-    scheme = "https" if len(ssl_args) > 0 else "http"
+    scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
 
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(
@@ -930,7 +930,6 @@ def serve_grpc_production(
             )
         )
 
-    scheme = "https" if len(ssl_args) > 0 else "http"
     if BentoMLContainer.api_server_config.metrics.enabled.get():
         metrics_host = BentoMLContainer.grpc.metrics.host.get()
         metrics_port = BentoMLContainer.grpc.metrics.port.get()

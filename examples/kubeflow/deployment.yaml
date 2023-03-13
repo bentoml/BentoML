@@ -1,15 +1,18 @@
 apiVersion: resources.yatai.ai/v1alpha1
-kind: BentoRequest
+kind: Bento
 metadata:
   name: fraud-detection
   namespace: kubeflow
 spec:
-  bentoTag: fraud_detection:o5smnagbncigycvj
-  downloadUrl: s3://bentoml.com/kubeflow/fraud-detection.bento
+  image: docker.io/bentoml/fraud_detection:dfwwm6wbqo74kcvj
   runners:
   - name: ieee-fraud-detection-0
+    runnableType: XGBoost
   - name: ieee-fraud-detection-1
+    runnableType: XGBoost
   - name: ieee-fraud-detection-2
+    runnableType: XGBoost
+  tag: fraud_detection:dfwwm6wbqo74kcvj
 ---
 apiVersion: serving.yatai.ai/v2alpha1
 kind: BentoDeployment

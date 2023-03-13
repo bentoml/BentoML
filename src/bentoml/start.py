@@ -192,7 +192,7 @@ def start_http_server(
         ssl_ca_certs=ssl_ca_certs,
         ssl_ciphers=ssl_ciphers,
     )
-    scheme = "https" if len(ssl_args) > 0 else "http"
+    scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     watchers.append(
         create_watcher(
             name="api_server",
@@ -293,7 +293,7 @@ def start_grpc_server(
         ssl_keyfile=ssl_keyfile,
         ssl_ca_certs=ssl_ca_certs,
     )
-    scheme = "https" if len(ssl_args) > 0 else "http"
+    scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(
             reserve_free_port(host=host, port=port, enable_so_reuseport=True)

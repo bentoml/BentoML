@@ -1,3 +1,4 @@
+import asyncio
 import numpy as np
 import pandas as pd
 from sample import sample_input
@@ -22,7 +23,15 @@ input_spec = PandasDataFrame.from_sample(sample_input)
 @svc.api(input=input_spec, output=JSON())
 async def is_fraud(input_df: pd.DataFrame):
     input_df = input_df.astype(sample_input.dtypes)
-    input_features = fraud_detection_preprocessors[0].transform(input_df)
-    results = await fraud_detection_runners[0].predict_proba.async_run(input_features)
-    predictions = np.argmax(results, axis=1)  # 0 is not fraud, 1 is fraud
-    return {"is_fraud": list(map(bool, predictions)), "is_fraud_prob": results[:, 1]}
+
+    async def _is_fraud(preprocessor, runner, input_df):
+        input_features = preprocessor.transform(input_df)
+        results = await runner.predict_proba.async_run(input_features)
+        predictions = np.argmax(results, axis=1) # 0 is not fraud, 1 is fraud
+        return bool(predictions[0])
+    
+    # Simultaeously run all models
+    results = await asyncio.gather(*[_is_fraud(p, r, input_df) for p, r in zip(fraud_detection_preprocessors, fraud_detection_runners)])
+
+    # Return fraud if at least one model returns fraud
+    return any(results)

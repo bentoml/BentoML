@@ -176,7 +176,7 @@ async def test_file(host: str, bin_file: str):
         f"http://{host}/predict_file",
         data=b,
         headers={"Content-Type": "application/pdf"},
-        assert_data=b"",
+        assert_data=b"\x810\x899",
     )
 
 

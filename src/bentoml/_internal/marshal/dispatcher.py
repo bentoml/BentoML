@@ -211,6 +211,9 @@ class CorkDispatcher:
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
+                for info in inputs_info:
+                    # fake wait as 0 for training requests
+                    info[0] = now
                 self._loop.create_task(self.outbound_call(inputs_info))
         except asyncio.CancelledError:
             return

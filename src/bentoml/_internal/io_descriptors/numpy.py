@@ -14,7 +14,6 @@ from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
-from ...exceptions import BentoMLException
 from ...exceptions import UnprocessableEntity
 from ...grpc.utils import import_generated_stubs
 from ...grpc.utils import LATEST_PROTOCOL_VERSION

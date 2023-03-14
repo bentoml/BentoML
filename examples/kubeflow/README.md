@@ -26,7 +26,7 @@ pip install -r requirements.txt
 
 ## Download Kaggle Dataset
 
-Set Kaggle username and key as environment variables. Accepting the [rules of the competition](https://www.kaggle.com/competitions/ieee-fraud-detection/rules) is required for downloading the dataset.
+Set Kaggle [user credentials](https://github.com/Kaggle/kaggle-api#api-credentials) for API access. Accepting the [rules of the competition](https://www.kaggle.com/competitions/ieee-fraud-detection/rules) is required for downloading the dataset.
 
 ```bash
 export KAGGLE_USERNAME=

@@ -8,7 +8,7 @@ serving and deploying models trained from TensorFlow.
 Preface
 -------
 
-Even though ``bentoml.tensorflow`` supports Keras model, we recommend our users to use :ref:`bentoml.keras <frameworks/keras>` for better development experience. 
+Even though ``bentoml.tensorflow`` supports Keras model, we recommend our users to use :doc:`bentoml.keras </frameworks/keras>` for better development experience. 
 
 If you must use TensorFlow for your Keras model, make sure that your Keras model inference callback (such as ``predict``) is decorated with :obj:`~tf.function`.
 
@@ -20,7 +20,7 @@ If you must use TensorFlow for your Keras model, make sure that your Keras model
 
 .. note::
 
-    :bdg-info:`Remarks:` We recommend users apply model optimization techniques such as **distillation** or **quantization**. Alternatively, Keras models can also be converted to :ref:`ONNX <frameworks/onnx>` models and leverage different runtimes.
+    :bdg-info:`Remarks:` We recommend users apply model optimization techniques such as **distillation** or **quantization**. Alternatively, Keras models can also be converted to :doc:`ONNX </frameworks/onnx>` models and leverage different runtimes.
 
 Compatibility
 -------------

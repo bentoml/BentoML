@@ -27,7 +27,7 @@ be installed in the Spark cluster. Most likely, the service you are hosting Spar
 mechanisms for doing this. If you are using a standalone cluster, you should install those
 dependencies on every node you expect to use.
 
-Finally, we use the quickstart bento from the :ref:`aforementioned tutorial <tutorial>`. If you have
+Finally, we use the quickstart bento from the :doc:`aforementioned tutorial </tutorial>`. If you have
 already followed that tutorial, you should already have that bento. If you have note, simply run the
 following:
 

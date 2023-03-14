@@ -169,7 +169,7 @@ class CorkDispatcher:
         return _func
 
     async def train_optimizer(
-        self, num_required_reqs: int, num_reqs_to_train: int, batch_size: int, wait: 0,
+        self, num_required_reqs: int, num_reqs_to_train: int, batch_size: int,
     ):
         if self.max_batch_size < batch_size:
             batch_size = self.max_batch_size

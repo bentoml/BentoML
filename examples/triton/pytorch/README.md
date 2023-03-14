@@ -22,6 +22,16 @@ triton_runner = bentoml.triton.Runner(
 )
 ```
 
+CLI arguments can be passed through the `cli_args` argument of `bentoml.triton.Runner`:
+
+```python
+triton_runner = bentoml.triton.Runner(
+    "triton-runners",
+    model_repository="s3://path/to/model_repository",
+    cli_args=["--load-model=torchscrip_yolov5s", "--model-control-mode=explicit"],
+)
+```
+
 An example of inference API:
 
 ```python
@@ -55,32 +65,6 @@ include:
   - /model_repository
 docker:
   base_image: nvcr.io/nvidia/tritonserver:22.12-py3
-```
-
-> tritonserver are currently only supported with `--production` tag. Make sure
-> to have `tritonserver` binary available in PATH if running locally.
-
-To pass triton arguments to `serve` do it via
-`--triton-options ARG=VALUE[, VALUE]`
-
-```bash
-bentoml serve --production --triton-options log-verbose=True
-```
-
-or via `bentoml.serve`:
-
-```python
-import bentoml
-
-server = bentoml.serve(
-    bento,
-    server_type='grpc',
-    production=True,
-    triton_args=[
-        "model-control-mode=explicit",
-        "load-model=pytorch_yolov5s",
-    ],
-)
 ```
 
 To find out more about BentoML Runner architecture, see

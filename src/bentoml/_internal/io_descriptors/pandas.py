@@ -6,7 +6,6 @@ import typing as t
 import logging
 import functools
 from enum import Enum
-from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
 from starlette.requests import Request
@@ -28,7 +27,7 @@ from ..service.openapi.specification import MediaType
 
 EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install with 'pip install bentoml[io-pandas]'"
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import numpy as np
     import pandas as pd
     import pyarrow
@@ -200,7 +199,9 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
 
 
 class PandasDataFrame(
-    IODescriptor["ext.PdDataFrame"], descriptor_id="bentoml.io.PandasDataFrame"
+    IODescriptor["ext.PdDataFrame"],
+    descriptor_id="bentoml.io.PandasDataFrame",
+    proto_fields=("dataframe",),
 ):
     """
     :obj:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
@@ -315,8 +316,6 @@ class PandasDataFrame(
         :obj:`PandasDataFrame`: IO Descriptor that represents a :code:`pd.DataFrame`.
     """
 
-    _proto_fields = ("dataframe",)
-
     def __init__(
         self,
         orient: ext.DataFrameOrient = "records",
@@ -343,7 +342,7 @@ class PandasDataFrame(
 
     def _from_sample(self, sample: ext.PdDataFrame) -> ext.PdDataFrame:
         """
-        Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasDataFrame` IO Descriptor from given inputs.
 
         Args:
             sample: Given sample ``pd.DataFrame`` data
@@ -374,7 +373,7 @@ class PandasDataFrame(
                             - :obj:`csv` - CSV text format (inferred from content-type ``"text/csv"``)
 
         Returns:
-            :obj:`PandasDataFrame`: :code:`PandasDataFrame` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.pandas.PandasDataFrame`: IODescriptor from given users inputs.
 
         Example:
 
@@ -782,7 +781,9 @@ class PandasDataFrame(
 
 
 class PandasSeries(
-    IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
+    IODescriptor["ext.PdSeries"],
+    descriptor_id="bentoml.io.PandasSeries",
+    proto_fields=("series",),
 ):
     """
     ``PandasSeries`` defines API specification for the inputs/outputs of a Service, where
@@ -878,7 +879,6 @@ class PandasSeries(
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
     """
 
-    _proto_fields = ("series",)
     _mime_type = "application/json"
 
     def __init__(
@@ -897,7 +897,7 @@ class PandasSeries(
 
     def _from_sample(self, sample: ext.PdSeries | t.Sequence[t.Any]) -> ext.PdSeries:
         """
-        Create a :obj:`PandasSeries` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries` IO Descriptor from given inputs.
 
         Args:
             sample_input: Given sample ``pd.DataFrame`` data
@@ -917,7 +917,7 @@ class PandasSeries(
                            ``enforce_shape=False``.
 
         Returns:
-            :obj:`PandasSeries`: :code:`PandasSeries` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries`: IODescriptor from given users inputs.
 
         Example:
 

@@ -4,7 +4,6 @@ import io
 import os
 import typing as t
 import logging
-from typing import TYPE_CHECKING
 from functools import lru_cache
 
 from starlette.requests import Request
@@ -27,7 +26,7 @@ from ..service.openapi.specification import MediaType
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
@@ -36,14 +35,15 @@ if TYPE_CHECKING:
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
 else:
-
     pb, _ = import_generated_stubs("v1")
     pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
 
 FileType = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
 
-class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
+class File(
+    IODescriptor[FileType], descriptor_id="bentoml.io.File", proto_fields=("file",)
+):
     """
     :obj:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as
@@ -114,8 +114,6 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
 
     """
 
-    _proto_fields = ("file",)
-
     def __new__(
         cls, kind: FileKind = "binaryio", mime_type: str | None = None, **kwargs: t.Any
     ) -> File:
@@ -128,6 +126,39 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         return res
 
     def _from_sample(self, sample: FileType | str) -> FileType:
+        """
+        Create a :class:`~bentoml._internal.io_descriptors.file.File` IO Descriptor from given inputs.
+
+        Args:
+            sample: Given File-like object, or a path to a file.
+            kind: The kind of file-like object to be used. Currently, the only accepted value is ``binaryio``.
+            mime_type: Optional MIME type for the descriptor. If not provided, ``from_sample``
+                       will try to infer the MIME type from the file extension.
+
+        Returns:
+            :class:`~bentoml._internal.io_descriptors.file.File`: IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           from __future__ import annotations
+
+           import bentoml
+           from typing import Any
+           from bentoml.io import File
+
+           input_spec = File.from_sample("/path/to/file.pdf")
+           @svc.api(input=input_spec, output=File())
+           async def predict(input: t.IO[t.Any]) -> t.IO[t.Any]:
+               return await runner.async_run(input)
+
+        Raises:
+            :class:`MissingDependencyException`: If ``filetype`` is not installed.
+            ValueError: If the MIME type cannot be inferred automatically.
+            :class:`BadInput`: Any other errors that may occur during the process of figure out the MIME type.
+        """
         try:
             import filetype
         except ModuleNotFoundError:

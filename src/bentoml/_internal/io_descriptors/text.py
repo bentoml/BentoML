@@ -25,7 +25,7 @@ else:
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
+class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("text",)):
     """
     :obj:`Text` defines API specification for the inputs/outputs of a Service. :obj:`Text`
     represents strings for all incoming requests/outcoming responses as specified in
@@ -88,7 +88,6 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
-    proto_fields = ("text",)
     _mime_type = MIME_TYPE
 
     def __init__(self, *args: t.Any, **kwargs: t.Any):

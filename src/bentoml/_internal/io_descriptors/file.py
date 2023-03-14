@@ -41,7 +41,9 @@ else:
 FileType = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
 
-class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
+class File(
+    IODescriptor[FileType], descriptor_id="bentoml.io.File", proto_fields=("file",)
+):
     """
     :obj:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as
@@ -111,8 +113,6 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         :obj:`File`: IO Descriptor that represents file-like objects.
 
     """
-
-    proto_fields = ("file",)
 
     def __new__(
         cls, kind: FileKind = "binaryio", mime_type: str | None = None, **kwargs: t.Any

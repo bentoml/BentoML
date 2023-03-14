@@ -95,7 +95,12 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     descriptor_id: str | None
     proto_fields: tuple[ProtoField]
 
-    def __init_subclass__(cls, *, descriptor_id: str | None = None):
+    def __init_subclass__(
+        cls,
+        *,
+        descriptor_id: str | None = None,
+        proto_fields: tuple[ProtoField] | None = None,
+    ):
         if descriptor_id is not None:
             if descriptor_id in IO_DESCRIPTOR_REGISTRY:
                 raise ValueError(
@@ -103,6 +108,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
                 )
             IO_DESCRIPTOR_REGISTRY[descriptor_id] = cls
         cls.descriptor_id = descriptor_id
+        cls.proto_fields = proto_fields or t.cast("tuple[ProtoField]", ())
 
         cls._sample: IOType | None = None
 

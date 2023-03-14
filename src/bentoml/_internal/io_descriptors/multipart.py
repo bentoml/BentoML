@@ -34,7 +34,11 @@ else:
     pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
 
 
-class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Multipart"):
+class Multipart(
+    IODescriptor[t.Dict[str, t.Any]],
+    descriptor_id="bentoml.io.Multipart",
+    proto_fields=("multipart",),
+):
     """
     :obj:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
     of a Service can receive/send a **multipart** request/responses as specified in your API function signature.
@@ -162,7 +166,6 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         :obj:`Multipart`: IO Descriptor that represents a Multipart request/response.
     """
 
-    proto_fields = ("multipart",)
     _mime_type = "multipart/form-data"
 
     def __init__(self, **inputs: IODescriptor[t.Any]):

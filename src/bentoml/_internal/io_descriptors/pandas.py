@@ -199,7 +199,9 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
 
 
 class PandasDataFrame(
-    IODescriptor["ext.PdDataFrame"], descriptor_id="bentoml.io.PandasDataFrame"
+    IODescriptor["ext.PdDataFrame"],
+    descriptor_id="bentoml.io.PandasDataFrame",
+    proto_fields=("dataframe",),
 ):
     """
     :obj:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
@@ -313,8 +315,6 @@ class PandasDataFrame(
     Returns:
         :obj:`PandasDataFrame`: IO Descriptor that represents a :code:`pd.DataFrame`.
     """
-
-    proto_fields = ("dataframe",)
 
     def __init__(
         self,
@@ -781,7 +781,9 @@ class PandasDataFrame(
 
 
 class PandasSeries(
-    IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
+    IODescriptor["ext.PdSeries"],
+    descriptor_id="bentoml.io.PandasSeries",
+    proto_fields=("series",),
 ):
     """
     ``PandasSeries`` defines API specification for the inputs/outputs of a Service, where
@@ -877,7 +879,6 @@ class PandasSeries(
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
     """
 
-    proto_fields = ("series",)
     _mime_type = "application/json"
 
     def __init__(

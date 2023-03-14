@@ -169,7 +169,9 @@ def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
 
 # TODO: when updating docs, add examples with gRPCurl
 class NumpyNdarray(
-    IODescriptor["ext.NpNDArray"], descriptor_id="bentoml.io.NumpyNdarray"
+    IODescriptor["ext.NpNDArray"],
+    descriptor_id="bentoml.io.NumpyNdarray",
+    proto_fields=("ndarray",),
 ):
     """
     :obj:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
@@ -259,7 +261,6 @@ class NumpyNdarray(
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that represents a :code:`np.ndarray`.
     """
 
-    proto_fields = ("ndarray",)
     _mime_type = "application/json"
 
     def __init__(

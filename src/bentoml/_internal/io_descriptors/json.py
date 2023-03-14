@@ -72,7 +72,9 @@ class DefaultJsonEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
+class JSON(
+    IODescriptor[JSONType], descriptor_id="bentoml.io.JSON", proto_fields=("json",)
+):
     """
     :obj:`JSON` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from a JSON representation
@@ -171,7 +173,6 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         :obj:`JSON`: IO Descriptor that represents JSON format.
     """
 
-    proto_fields = ("json",)
     # default mime type is application/json
     _mime_type = "application/json"
 

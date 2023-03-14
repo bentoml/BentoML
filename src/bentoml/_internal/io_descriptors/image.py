@@ -78,7 +78,9 @@ def initialize_pillow():
     READABLE_MIMES = {k for k, v in MIME_EXT_MAPPING.items() if v not in PIL_WRITE_ONLY_FORMATS}  # type: ignore (lazy constant)
 
 
-class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
+class Image(
+    IODescriptor[ImageType], descriptor_id="bentoml.io.Image", proto_fields=("file",)
+):
     """
     :obj:`Image` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from images as specified
@@ -164,8 +166,6 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
     Returns:
         :obj:`Image`: IO Descriptor that either a :code:`PIL.Image.Image` or a :code:`np.ndarray` representing an image.
     """
-
-    proto_fields = ("file",)
 
     def __init__(
         self,

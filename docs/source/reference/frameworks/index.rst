@@ -12,6 +12,8 @@ Framework APIs
 
     onnx
     sklearn
+    transformers
+    flax
     tensorflow
     torchscript
     transformers
@@ -22,3 +24,4 @@ Framework APIs
     fastai
     keras
     picklable_model
+    ray

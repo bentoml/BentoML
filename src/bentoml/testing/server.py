@@ -151,24 +151,26 @@ def containerize(
     cleanup: bool = True,
     use_grpc: bool = False,
     backend: str = "docker",
+    **attrs: t.Any,
 ) -> t.Generator[str, None, None]:
     """
     Build the docker image from a saved bento, yield the docker image tag
     """
-    from bentoml import bentos
+    from bentoml import container
 
     bento_tag = Tag.from_taglike(bento_tag)
     if image_tag is None:
-        image_tag = bento_tag.name
+        image_tag = str(bento_tag)
     try:
         print(f"Building bento server container: {bento_tag}")
-        bentos.containerize(
+        container.build(
             str(bento_tag),
-            docker_image_tag=(image_tag,),
+            backend=backend,
+            image_tag=(image_tag,),
             progress="plain",
             features=["grpc", "grpc-reflection"] if use_grpc else None,
-            labels={"testing": True, "module": __name__},
-            backend=backend,
+            label={"testing": True, "module": __name__},
+            **attrs,
         )
         yield image_tag
     finally:
@@ -177,7 +179,9 @@ def containerize(
             subprocess.call([backend, "rmi", image_tag])
 
 
-@cached_contextmanager("{image_tag}, {config_file}, {use_grpc}, {protocol_version}")
+@cached_contextmanager(
+    "{image_tag}, {config_file}, {use_grpc}, {protocol_version}, {platform}"
+)
 def run_bento_server_container(
     image_tag: str,
     config_file: str | None = None,
@@ -186,13 +190,14 @@ def run_bento_server_container(
     host: str = "127.0.0.1",
     backend: str = "docker",
     protocol_version: str = LATEST_PROTOCOL_VERSION,
+    platform: str = "linux/amd64",
 ):
     """
     Launch a bentoml service container from a container, yield the host URL
     """
     from bentoml._internal.configuration.containers import BentoMLContainer
 
-    container_name = f"bentoml-test-{image_tag}-{hash(config_file)}"
+    container_name = f"bentoml-test-{image_tag.replace(':', '_')}-{hash(config_file)}"
     with reserve_free_port(enable_so_reuseport=use_grpc) as port, reserve_free_port(
         enable_so_reuseport=use_grpc
     ) as prom_port:
@@ -206,6 +211,8 @@ def run_bento_server_container(
         container_name,
         "--publish",
         f"{port}:3000",
+        "--platform",
+        platform,
     ]
     if config_file is not None:
         cmd.extend(["--env", "BENTOML_CONFIG=/home/bentoml/bentoml_config.yml"])
@@ -440,6 +447,7 @@ def host_bento(
     timeout: float = 120,
     backend: str = "docker",
     protocol_version: str = LATEST_PROTOCOL_VERSION,
+    container_mode_options: dict[str, t.Any] = None,
 ) -> t.Generator[str, None, None]:
     """
     Host a bentoml service, yields the host URL.
@@ -502,12 +510,25 @@ def host_bento(
         elif deployment_mode == "container":
             from bentoml._internal.container import REGISTERED_BACKENDS
 
+            if container_mode_options is None:
+                container_mode_options = {}
+
+            if "platform" not in container_mode_options:
+                # NOTE: by default, we use linux/amd64 for the container image
+                container_mode_options["platform"] = "linux/amd64"
+
+            platform = container_mode_options["platform"]
             if backend not in REGISTERED_BACKENDS:
                 raise ValueError(
                     f"Unknown backend: {backend}. To register your custom backend, use 'bentoml.container.register_backend()'"
                 )
             container_tag = clean_context.enter_context(
-                containerize(bento.tag, use_grpc=use_grpc, backend=backend)
+                containerize(
+                    bento.tag,
+                    use_grpc=use_grpc,
+                    backend=backend,
+                    **container_mode_options,
+                )
             )
             with run_bento_server_container(
                 container_tag,
@@ -517,6 +538,7 @@ def host_bento(
                 timeout=timeout,
                 backend=backend,
                 protocol_version=protocol_version,
+                platform=platform,
             ) as host_url:
                 yield host_url
         elif deployment_mode == "distributed":

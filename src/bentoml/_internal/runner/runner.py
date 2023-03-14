@@ -130,11 +130,14 @@ class Runner(AbstractRunner):
     )
     _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
-    def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
+    def _set_handle(
+        self, handle_class: type[RunnerHandle], *args: P.args, **kwargs: P.kwargs
+    ) -> None:
         if not isinstance(self._runner_handle, DummyRunnerHandle):
             raise StateException("Runner already initialized")
 
-        object_setattr(self, "_runner_handle", handle_class(self))
+        runner_handle = handle_class(self, *args, **kwargs)
+        object_setattr(self, "_runner_handle", runner_handle)
 
     @inject
     async def runner_handle_is_ready(
@@ -287,7 +290,7 @@ class Runner(AbstractRunner):
         from .runner_handle.local import LocalRunnerRef
 
         try:
-            self._init(LocalRunnerRef)
+            self._set_handle(LocalRunnerRef)
         except Exception as e:
             import traceback
 
@@ -299,10 +302,18 @@ class Runner(AbstractRunner):
 
             raise e
 
-    def init_client(self):
-        from .runner_handle.remote import RemoteRunnerClient
+    def init_client(
+        self,
+        handle_class: type[RunnerHandle] | None = None,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ):
+        if handle_class is None:
+            from .runner_handle.remote import RemoteRunnerClient
 
-        self._init(RemoteRunnerClient)
+            self._set_handle(RemoteRunnerClient)
+        else:
+            self._set_handle(handle_class, *args, **kwargs)
 
     def destroy(self):
         """

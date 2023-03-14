@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import typing as t
 import functools
-from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from starlette.requests import Request
@@ -27,7 +26,7 @@ from ..service.openapi.specification import MediaType
 
 PIL_EXC_MSG = "'Pillow' is required to use the Image IO descriptor. Install with 'pip install bentoml[io-image]'."
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from types import UnionType
 
     import PIL
@@ -79,7 +78,9 @@ def initialize_pillow():
     READABLE_MIMES = {k for k, v in MIME_EXT_MAPPING.items() if v not in PIL_WRITE_ONLY_FORMATS}  # type: ignore (lazy constant)
 
 
-class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
+class Image(
+    IODescriptor[ImageType], descriptor_id="bentoml.io.Image", proto_fields=("file",)
+):
     """
     :obj:`Image` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from images as specified
@@ -166,8 +167,6 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         :obj:`Image`: IO Descriptor that either a :code:`PIL.Image.Image` or a :code:`np.ndarray` representing an image.
     """
 
-    _proto_fields = ("file",)
-
     def __init__(
         self,
         pilmode: _Mode | None = DEFAULT_PIL_MODE,
@@ -210,6 +209,42 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         self._format: str = MIME_EXT_MAPPING[self._mime_type]
 
     def _from_sample(self, sample: ImageType | str) -> ImageType:
+        """
+        Create a :class:`~bentoml._internal.io_descriptors.image.Image` IO Descriptor from given inputs.
+
+        Args:
+            sample: Given File-like object, or a path to a file.
+            pilmode: Optional color mode for PIL. Default to ``RGB``.
+            mime_type: The MIME type of the file type that this descriptor should return.
+                       If not specified, then ``from_sample`` will try to infer the MIME type
+                       from file extension.
+            allowed_mime_types: An optional list of MIME types to restrict input to.
+
+        Returns:
+            :class:`~bentoml._internal.io_descriptors.image.Image`: IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           from __future__ import annotations
+
+           import bentoml
+           from typing import Any
+           from bentoml.io import Image
+           import numpy as np
+
+           input_spec = Image.from_sample("/path/to/image.jpg")
+           @svc.api(input=input_spec, output=Image())
+           async def predict(input: t.IO[t.Any]) -> t.IO[t.Any]:
+               return await runner.async_run(input)
+
+        Raises:
+            :class:`InvalidArgument`: If the given sample is not a valid image type.
+            :class:`MissingDependencyException`: If ``filetype`` is not installed.
+            :class:`BadInput`: Given sample from file can't be parsed with Pillow.
+        """
         try:
             from filetype.match import image_match
         except ModuleNotFoundError:

@@ -43,9 +43,9 @@ message ServiceMetadataResponse {
     // name is the name of the API.
     string name = 1;
     // input is the input descriptor of the API.
-    DescriptorMetadata input = 2;
+    optional DescriptorMetadata input = 2;
     // output is the output descriptor of the API.
-    DescriptorMetadata output = 3;
+    optional DescriptorMetadata output = 3;
     // docs is the optional documentation of the API.
     optional string docs = 4;
   }

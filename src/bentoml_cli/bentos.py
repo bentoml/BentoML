@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 import json
 import typing as t
-from typing import TYPE_CHECKING
 
 import yaml
 import click
@@ -13,10 +12,19 @@ from rich.syntax import Syntax
 from bentoml_cli.utils import is_valid_bento_tag
 from bentoml_cli.utils import is_valid_bento_name
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from click import Group
     from click import Context
     from click import Parameter
+
+BENTOML_FIGLET = """
+██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+"""
 
 
 def parse_delete_targets_argument_callback(
@@ -45,10 +53,10 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.utils import human_readable_size
     from bentoml._internal.utils import display_path_under_home
     from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-    from bentoml._internal.yatai_client import yatai_client
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     bento_store = BentoMLContainer.bento_store.get()
+    yatai_client = BentoMLContainer.yatai_client.get()
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -74,7 +82,7 @@ def add_bento_management_commands(cli: Group):
             console.print_json(info)
         else:
             info = yaml.dump(bento.info, indent=2, sort_keys=False)
-            console.print(Syntax(info, "yaml"))
+            console.print(Syntax(info, "yaml", background_color="default"))
 
     @cli.command(name="list")
     @click.argument("bento_name", type=click.STRING, required=False)
@@ -115,7 +123,7 @@ def add_bento_management_commands(cli: Group):
             console.print(info)
         elif output == "yaml":
             info = yaml.safe_dump(res, indent=2)
-            console.print(Syntax(info, "yaml"))
+            console.print(Syntax(info, "yaml", background_color="default"))
         else:
             table = Table(box=None)
             table.add_column("Tag")
@@ -278,4 +286,14 @@ def add_bento_management_commands(cli: Group):
         if sys.path[0] != build_ctx:
             sys.path.insert(0, build_ctx)
 
-        build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        bento = build_bentofile(bentofile, build_ctx=build_ctx, version=version)
+        click.echo(BENTOML_FIGLET)
+        click.secho(f"Successfully built {bento}.", fg="green")
+        click.secho(
+            f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
+            fg="yellow",
+        )
+        click.secho(
+            f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
+            fg="yellow",
+        )

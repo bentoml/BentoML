@@ -6,7 +6,6 @@ import typing as t
 import logging
 import functools
 from enum import Enum
-from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
 from starlette.requests import Request
@@ -28,7 +27,7 @@ from ..service.openapi.specification import MediaType
 
 EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install with 'pip install bentoml[io-pandas]'"
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import numpy as np
     import pandas as pd
     import pyarrow
@@ -200,7 +199,9 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
 
 
 class PandasDataFrame(
-    IODescriptor["ext.PdDataFrame"], descriptor_id="bentoml.io.PandasDataFrame"
+    IODescriptor["ext.PdDataFrame"],
+    descriptor_id="bentoml.io.PandasDataFrame",
+    proto_fields=("dataframe",),
 ):
     """
     :obj:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
@@ -315,8 +316,6 @@ class PandasDataFrame(
         :obj:`PandasDataFrame`: IO Descriptor that represents a :code:`pd.DataFrame`.
     """
 
-    _proto_fields = ("dataframe",)
-
     def __init__(
         self,
         orient: ext.DataFrameOrient = "records",
@@ -343,7 +342,7 @@ class PandasDataFrame(
 
     def _from_sample(self, sample: ext.PdDataFrame) -> ext.PdDataFrame:
         """
-        Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasDataFrame` IO Descriptor from given inputs.
 
         Args:
             sample: Given sample ``pd.DataFrame`` data
@@ -374,7 +373,7 @@ class PandasDataFrame(
                             - :obj:`csv` - CSV text format (inferred from content-type ``"text/csv"``)
 
         Returns:
-            :obj:`PandasDataFrame`: :code:`PandasDataFrame` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.pandas.PandasDataFrame`: IODescriptor from given users inputs.
 
         Example:
 
@@ -427,10 +426,12 @@ class PandasDataFrame(
                 raise InvalidArgument(
                     f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
                 ) from None
-        self._shape = sample.shape
-        self._columns = [str(i) for i in list(sample.columns)]
+        if self._shape is None:
+            self._shape = sample.shape
+        if self._columns is None:
+            self._columns = [str(i) for i in list(sample.columns)]
         if self._dtype is None:
-            self._dtype = True  # infer dtype automatically
+            self._dtype = sample.dtypes
         return sample
 
     def _convert_dtype(
@@ -527,12 +528,15 @@ class PandasDataFrame(
         _validate_serialization_format(serialization_format)
 
         obj = await request.body()
+        dtype = self._dtype if self._enforce_dtype else None
         if serialization_format is SerializationFormat.JSON:
-            res = pd.read_json(io.BytesIO(obj), dtype=self._dtype, orient=self._orient)
+            if dtype is None:
+                dtype = True  # infer dtype automatically
+            res = pd.read_json(io.BytesIO(obj), dtype=dtype, orient=self._orient)
         elif serialization_format is SerializationFormat.PARQUET:
             res = pd.read_parquet(io.BytesIO(obj), engine=get_parquet_engine())
         elif serialization_format is SerializationFormat.CSV:
-            res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=self._dtype)
+            res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=dtype)
         else:
             raise InvalidArgument(
                 f"Unknown serialization format ({serialization_format})."
@@ -777,10 +781,12 @@ class PandasDataFrame(
 
 
 class PandasSeries(
-    IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
+    IODescriptor["ext.PdSeries"],
+    descriptor_id="bentoml.io.PandasSeries",
+    proto_fields=("series",),
 ):
     """
-    :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
+    ``PandasSeries`` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
     :code:`pd.Series` as specified in your API function signature.
 
@@ -846,7 +852,6 @@ class PandasSeries(
                 - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                 - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
         columns: List of columns name that users wish to update.
-        apply_column_names (`bool`, `optional`, default to :code:`False`):
         apply_column_names: Whether to update incoming DataFrame columns. If :code:`apply_column_names=True`,
                             then ``columns`` must be specified.
         dtype: Data type users wish to convert their inputs/outputs to. If it is a boolean,
@@ -857,15 +862,16 @@ class PandasSeries(
         shape: Optional shape check that users can specify for their incoming HTTP
                requests. We will only check the number of columns you specified for your
                given shape:
+
                .. code-block:: python
                   :caption: `service.py`
 
-                  import pandas as pd
-                  from bentoml.io import PandasSeries
+                   import pandas as pd
+                   from bentoml.io import PandasSeries
 
-                  @svc.api(input=PandasSeries(shape=(51,), enforce_shape=True), output=PandasSeries())
-                  def infer(input_series: pd.Series) -> pd.Series:
-                  # if input_series has shape (40,), it will error
+                   @svc.api(input=PandasSeries(shape=(51,), enforce_shape=True), output=PandasSeries())
+                   def infer(input_series: pd.Series) -> pd.Series:
+                        # if input_series has shape (40,), it will error
                         ...
         enforce_shape: Whether to enforce a certain shape. If ``enforce_shape=True`` then ``shape`` must be specified.
 
@@ -873,7 +879,6 @@ class PandasSeries(
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
     """
 
-    _proto_fields = ("series",)
     _mime_type = "application/json"
 
     def __init__(
@@ -892,7 +897,7 @@ class PandasSeries(
 
     def _from_sample(self, sample: ext.PdSeries | t.Sequence[t.Any]) -> ext.PdSeries:
         """
-        Create a :obj:`PandasSeries` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries` IO Descriptor from given inputs.
 
         Args:
             sample_input: Given sample ``pd.DataFrame`` data
@@ -912,7 +917,7 @@ class PandasSeries(
                            ``enforce_shape=False``.
 
         Returns:
-            :obj:`PandasSeries`: :code:`PandasSeries` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries`: IODescriptor from given users inputs.
 
         Example:
 
@@ -930,8 +935,10 @@ class PandasSeries(
         """
         if not isinstance(sample, pd.Series):
             sample = pd.Series(sample)
-        self._dtype = sample.dtype
-        self._shape = sample.shape
+        if self._dtype is None:
+            self._dtype = sample.dtype
+        if self._shape is None:
+            self._shape = sample.shape
         return sample
 
     def input_type(self) -> LazyType[ext.PdSeries]:
@@ -1018,7 +1025,7 @@ class PandasSeries(
             io.BytesIO(obj),
             typ="series",
             orient=self._orient,
-            dtype=self._dtype,
+            dtype=self._dtype if self._enforce_dtype else True,
         )
         return self.validate_series(res)
 

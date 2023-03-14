@@ -1108,6 +1108,3 @@ class YataiClient:
                         f'[bold green]Successfully pulled model "{_tag}"'
                     )
                     return model
-
-
-yatai_client = YataiClient()

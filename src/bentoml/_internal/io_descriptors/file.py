@@ -4,7 +4,6 @@ import io
 import os
 import typing as t
 import logging
-from typing import TYPE_CHECKING
 from functools import lru_cache
 
 from starlette.requests import Request
@@ -27,7 +26,7 @@ from ..service.openapi.specification import MediaType
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
@@ -36,14 +35,15 @@ if TYPE_CHECKING:
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
 else:
-
     pb, _ = import_generated_stubs("v1")
     pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
 
 FileType = t.Union[io.IOBase, t.IO[bytes], FileLike[bytes]]
 
 
-class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
+class File(
+    IODescriptor[FileType], descriptor_id="bentoml.io.File", proto_fields=("file",)
+):
     """
     :obj:`File` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from file-like objects as
@@ -114,12 +114,9 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
 
     """
 
-    _proto_fields = ("file",)
-
     def __new__(
         cls, kind: FileKind = "binaryio", mime_type: str | None = None, **kwargs: t.Any
     ) -> File:
-        mime_type = mime_type if mime_type is not None else "application/octet-stream"
         if kind == "binaryio":
             res = super().__new__(BytesIOFile, **kwargs)
         else:
@@ -128,6 +125,39 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         return res
 
     def _from_sample(self, sample: FileType | str) -> FileType:
+        """
+        Create a :class:`~bentoml._internal.io_descriptors.file.File` IO Descriptor from given inputs.
+
+        Args:
+            sample: Given File-like object, or a path to a file.
+            kind: The kind of file-like object to be used. Currently, the only accepted value is ``binaryio``.
+            mime_type: Optional MIME type for the descriptor. If not provided, ``from_sample``
+                       will try to infer the MIME type from the file extension.
+
+        Returns:
+            :class:`~bentoml._internal.io_descriptors.file.File`: IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           from __future__ import annotations
+
+           import bentoml
+           from typing import Any
+           from bentoml.io import File
+
+           input_spec = File.from_sample("/path/to/file.pdf")
+           @svc.api(input=input_spec, output=File())
+           async def predict(input: t.IO[t.Any]) -> t.IO[t.Any]:
+               return await runner.async_run(input)
+
+        Raises:
+            :class:`MissingDependencyException`: If ``filetype`` is not installed.
+            ValueError: If the MIME type cannot be inferred automatically.
+            :class:`BadInput`: Any other errors that may occur during the process of figure out the MIME type.
+        """
         try:
             import filetype
         except ModuleNotFoundError:
@@ -138,12 +168,7 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
             sample = FileLike[bytes](sample, "<sample>")
         elif isinstance(sample, (str, os.PathLike)):
             p = resolve_user_filepath(sample, ctx=None)
-            try:
-                mime = filetype.guess_mime(p)
-                if mime is None:
-                    raise ValueError(f"could not guess MIME type of file {p}")
-            except Exception as e:
-                raise BadInput(f"failed to guess MIME type of {p}: {e}")
+            mime = filetype.guess_mime(p)
             self._mime_type = mime
             with open(p, "rb") as f:
                 sample = FileLike[bytes](f, "<sample>")
@@ -169,7 +194,11 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
 
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                "*/*"
+                if self._mime_type is None
+                else self._mime_type: MediaType(schema=self.openapi_schema())
+            },
             "required": True,
             "x-bentoml-io-descriptor": self.to_spec(),
         }
@@ -177,7 +206,11 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
     def openapi_responses(self) -> OpenAPIResponse:
         return {
             "description": SUCCESS_DESCRIPTION,
-            "content": {self._mime_type: MediaType(schema=self.openapi_schema())},
+            "content": {
+                "*/*"
+                if self._mime_type is None
+                else self._mime_type: MediaType(schema=self.openapi_schema())
+            },
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
@@ -204,7 +237,12 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         else:
             body = obj.read()
 
-        return pb.File(kind=self._mime_type, content=body)
+        return pb.File(
+            kind="appliction/octet-stream"
+            if self._mime_type is None
+            else self._mime_type,
+            content=body,
+        )
 
     async def to_proto_v1alpha1(self, obj: FileType) -> pb_v1alpha1.File:
         if isinstance(obj, bytes):
@@ -213,7 +251,11 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
             body = obj.read()
 
         try:
-            kind = mimetype_to_filetype_pb_map()[self._mime_type]
+            kind = mimetype_to_filetype_pb_map()[
+                "application/octet-stream"
+                if self._mime_type is None
+                else self._mime_type
+            ]
         except KeyError:
             raise BadInput(
                 f"{self._mime_type} doesn't have a corresponding File 'kind'"
@@ -247,7 +289,7 @@ class BytesIOFile(File, descriptor_id=None):
             for val in form.values():  # type: ignore
                 if isinstance(val, UploadFile):
                     found_mimes.append(val.content_type)  # type: ignore (bad starlette types)
-                    if val.content_type == self._mime_type:  # type: ignore (bad starlette types)
+                    if self._mime_type is None or val.content_type == self._mime_type:  # type: ignore (bad starlette types)
                         res = FileLike[bytes](val.file, val.filename)  # type: ignore (bad starlette types)
                         break
             else:
@@ -255,10 +297,10 @@ class BytesIOFile(File, descriptor_id=None):
                     raise BentoMLException("no File found in multipart form")
                 else:
                     raise BentoMLException(
-                        f"multipart File should have Content-Type '{self._mime_type}', got files with content types {', '.join(found_mimes)}"
+                        f"The File IO descriptor requires input to be of Content-Type '{self._mime_type}', got files with content types {', '.join(found_mimes)}"
                     )
             return res  # type: ignore
-        if content_type.decode("utf-8") == self._mime_type:
+        if self.mime_type is None or content_type.decode("utf-8") == self._mime_type:
             body = await request.body()
             return FileLike[bytes](io.BytesIO(body), "<request body>")
         raise BentoMLException(
@@ -276,7 +318,7 @@ class BytesIOFile(File, descriptor_id=None):
             if field.kind:
                 try:
                     mime_type = mapping[field.kind]
-                    if mime_type != self._mime_type:
+                    if self._mime_type is not None and mime_type != self._mime_type:
                         raise BadInput(
                             f"Inferred mime_type from 'kind' is '{mime_type}', while '{self!r}' is expecting '{self._mime_type}'",
                         )
@@ -290,7 +332,11 @@ class BytesIOFile(File, descriptor_id=None):
             return FileLike[bytes](io.BytesIO(content), "<content>")
         else:
             assert isinstance(field, pb.File)
-            if field.kind and field.kind != self._mime_type:
+            if (
+                field.kind is not None
+                and self._mime_type is not None
+                and field.kind != self._mime_type
+            ):
                 raise BadInput(
                     f"MIME type from 'kind' is '{field.kind}', while '{self!r}' is expecting '{self._mime_type}'",
                 )

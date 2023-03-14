@@ -722,6 +722,7 @@ class BentoBuildConfig:
     __omit_if_default__ = False
 
     service: str
+    name: t.Optional[str] = None
     description: t.Optional[str] = None
     labels: t.Optional[t.Dict[str, t.Any]] = None
     include: t.Optional[t.List[str]] = None
@@ -748,6 +749,7 @@ class BentoBuildConfig:
         def __init__(
             self,
             service: str,
+            name: str | None = ...,
             description: str | None = ...,
             labels: dict[str, t.Any] | None = ...,
             include: list[str] | None = ...,
@@ -804,6 +806,7 @@ class BentoBuildConfig:
         """
         return FilledBentoBuildConfig(
             self.service,
+            self.name,
             self.description,
             {} if self.labels is None else self.labels,
             ["*"] if self.include is None else self.include,
@@ -883,6 +886,7 @@ class BentoPathSpec:
 
 class FilledBentoBuildConfig(BentoBuildConfig):
     service: str
+    name: t.Optional[str]
     description: t.Optional[str]
     labels: t.Dict[str, t.Any]
     include: t.List[str]

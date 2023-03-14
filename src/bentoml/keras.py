@@ -8,7 +8,7 @@ from ._internal.frameworks.keras import get
 from ._internal.frameworks.keras import load_model
 from ._internal.frameworks.keras import save_model
 from ._internal.frameworks.keras import get_runnable
-from ._internal.frameworks.keras import KerasOptions as ModelOptions  # type: ignore # noqa
+from ._internal.frameworks.keras import KerasOptions as ModelOptions
 
 if TYPE_CHECKING:
     from ._internal.tag import Tag
@@ -52,4 +52,4 @@ def load_runner(tag: Tag | str, *args: t.Any, **kwargs: t.Any):
     return get(tag).to_runner()
 
 
-__all__ = ["get", "load_model", "save_model", "get_runnable"]
+__all__ = ["get", "load_model", "save_model", "get_runnable", "ModelOptions"]

@@ -11,6 +11,7 @@ env:
   LINES: 120
   COLUMNS: 120
   BENTOML_DO_NOT_TRACK: True
+  PYTEST_PLUGINS: bentoml.testing.pytest.plugin
 
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaultsrun
 defaults:
@@ -83,7 +84,7 @@ jobs:
         run: |
           npm install -g npm@^7 pyright
       - name: Setup bufbuild/buf
-        uses: bufbuild/buf-setup-action@v1.14.0
+        uses: bufbuild/buf-setup-action@v1.15.1
         with:
           github_token: ${{ github.token }}
 

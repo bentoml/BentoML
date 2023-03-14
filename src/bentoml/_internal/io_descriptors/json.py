@@ -4,7 +4,6 @@ import json
 import typing as t
 import logging
 import dataclasses
-from typing import TYPE_CHECKING
 
 import attr
 from starlette.requests import Request
@@ -25,7 +24,7 @@ from ..service.openapi.specification import MediaType
 
 EXC_MSG = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install bentoml[io-json]'."
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from types import UnionType
 
     import pydantic
@@ -73,7 +72,9 @@ class DefaultJsonEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
+class JSON(
+    IODescriptor[JSONType], descriptor_id="bentoml.io.JSON", proto_fields=("json",)
+):
     """
     :obj:`JSON` defines API specification for the inputs/outputs of a Service, where either
     inputs will be converted to or outputs will be converted from a JSON representation
@@ -172,7 +173,6 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
         :obj:`JSON`: IO Descriptor that represents JSON format.
     """
 
-    _proto_fields = ("json",)
     # default mime type is application/json
     _mime_type = "application/json"
 
@@ -202,6 +202,54 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
             )
 
     def _from_sample(self, sample: JSONType) -> JSONType:
+        """
+        Create a :class:`~bentoml._internal.io_descriptors.json.JSON` IO Descriptor from given inputs.
+
+        Args:
+            sample: A JSON-like datatype, which can be either dict, str, list.
+                    ``sample`` will also accepting a Pydantic model.
+
+                    .. code-block:: python
+
+                        from pydantic import BaseModel
+
+                        class IrisFeatures(BaseModel):
+                            sepal_len: float
+                            sepal_width: float
+                            petal_len: float
+                            petal_width: float
+
+                        input_spec = JSON.from_sample(
+                            IrisFeatures(sepal_len=1.0, sepal_width=2.0, petal_len=3.0, petal_width=4.0)
+                        )
+
+                        @svc.api(input=input_spec, output=NumpyNdarray())
+                        async def predict(input: NDArray[np.int16]) -> NDArray[Any]:
+                            return await runner.async_run(input)
+            json_encoder: Optional JSON encoder.
+
+        Returns:
+            :class:`~bentoml._internal.io_descriptors.json.JSON`: IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           from __future__ import annotations
+
+           import bentoml
+           from typing import Any
+           from bentoml.io import JSON
+
+           input_spec = JSON.from_sample({"Hello": "World", "foo": "bar"})
+           @svc.api(input=input_spec, output=JSON())
+           async def predict(input: dict[str, Any]) -> dict[str, Any]:
+               return await runner.async_run(input)
+
+        Raises:
+            :class:`BadInput`: Given sample is not a valid JSON string, bytes, or supported nest types.
+        """
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(sample):
             self._pydantic_model = sample.__class__
         elif isinstance(sample, str):
@@ -333,7 +381,6 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
     async def to_http_response(
         self, obj: JSONType | pydantic.BaseModel, ctx: Context | None = None
     ):
-
         # This is to prevent cases where custom JSON encoder is used.
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):
             obj = obj.dict()

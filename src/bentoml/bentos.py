@@ -7,7 +7,6 @@ from __future__ import annotations
 import sys
 import typing as t
 import logging
-import itertools
 import subprocess
 
 from simple_di import inject
@@ -23,18 +22,10 @@ from ._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     from ._internal.bento import BentoStore
+    from ._internal.yatai_client import YataiClient
     from ._internal.server.server import ServerHandle
 
 logger = logging.getLogger(__name__)
-
-BENTOML_FIGLET = """
-██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
-"""
 
 __all__ = [
     "list",
@@ -99,39 +90,47 @@ def import_bento(
         bentoml.import_bento('/path/to/folder/my_bento.bento')
 
         # imports 'my_bento' from '/path/to/folder/my_bento.tar.gz'
-        # currently supported formats are tar.gz ('gz'), tar.xz ('xz'), tar.bz2 ('bz2'), and zip
+        # currently supported formats are tar.gz ('gz'),
+        # tar.xz ('xz'), tar.bz2 ('bz2'), and zip
         bentoml.import_bento('/path/to/folder/my_bento.tar.gz')
         # treats 'my_bento.ext' as a gzipped tarfile
         bentoml.import_bento('/path/to/folder/my_bento.ext', 'gz')
 
-        # imports 'my_bento', which is stored as an uncompressed folder, from '/path/to/folder/my_bento/'
+        # imports 'my_bento', which is stored as an
+        # uncompressed folder, from '/path/to/folder/my_bento/'
         bentoml.import_bento('/path/to/folder/my_bento', 'folder')
 
-        # imports 'my_bento' from the S3 bucket 'my_bucket', path 'folder/my_bento.bento'
-        # requires `fs-s3fs <https://pypi.org/project/fs-s3fs/>`_ ('pip install fs-s3fs')
+        # imports 'my_bento' from the S3 bucket 'my_bucket',
+        # path 'folder/my_bento.bento'
+        # requires `fs-s3fs <https://pypi.org/project/fs-s3fs/>`_
         bentoml.import_bento('s3://my_bucket/folder/my_bento.bento')
         bentoml.import_bento('my_bucket/folder/my_bento.bento', protocol='s3')
-        bentoml.import_bento('my_bucket', protocol='s3', subpath='folder/my_bento.bento')
-        bentoml.import_bento('my_bucket', protocol='s3', subpath='folder/my_bento.bento',
+        bentoml.import_bento('my_bucket', protocol='s3',
+                             subpath='folder/my_bento.bento')
+        bentoml.import_bento('my_bucket', protocol='s3',
+                             subpath='folder/my_bento.bento',
                              user='<AWS access key>', passwd='<AWS secret key>',
-                             params={'acl': 'public-read', 'cache-control': 'max-age=2592000,public'})
+                             params={'acl': 'public-read',
+                                     'cache-control': 'max-age=2592000,public'})
 
-    For a more comprehensive description of what each of the keyword arguments (:code:`protocol`,
-    :code:`user`, :code:`passwd`, :code:`params`, and :code:`subpath`) mean, see the
+    For a more comprehensive description of what each of the keyword arguments
+    (:code:`protocol`, :code:`user`, :code:`passwd`,
+     :code:`params`, and :code:`subpath`) mean, see the
     `FS URL documentation <https://docs.pyfilesystem.org/en/latest/openers.html>`_.
 
     Args:
         tag: the tag of the bento to export
         path: can be one of two things:
-            * a folder on the local filesystem
-            * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_, for example
-                :code:`'s3://my_bucket/folder/my_bento.bento'`
-        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`,
-            :code:`'s3'`, and :code:`'userdata'`
+              * a folder on the local filesystem
+              * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_,
+                for example :code:`'s3://my_bucket/folder/my_bento.bento'`
+        protocol: (expert) The FS protocol to use when exporting. Some example protocols
+                  are :code:`'ftp'`, :code:`'s3'`, and :code:`'userdata'`
         user: (expert) the username used for authentication if required, e.g. for FTP
         passwd: (expert) the username used for authentication if required, e.g. for FTP
-        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}`
-            for setting a proxy for FTP
+        params: (expert) a map of parameters to be passed to the FS used for
+                export, e.g. :code:`{'proxy': 'myproxy.net'}` for setting a
+                proxy for FTP
         subpath: (expert) the path inside the FS that the bento should be exported to
         _bento_store: the bento store to save the bento to
 
@@ -207,16 +206,13 @@ def export_bento(
 
     Args:
         tag: the tag of the Bento to export
-        path: can be one of two things:
-            * a folder on the local filesystem
-            * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_
-                * for example, :code:`'s3://my_bucket/folder/my_bento.bento'`
-        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`,
-            :code:`'s3'`, and :code:`'userdata'`
+        path: can be either:
+              * a folder on the local filesystem
+              * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_. For example, :code:`'s3://my_bucket/folder/my_bento.bento'`
+        protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`, :code:`'s3'`, and :code:`'userdata'`
         user: (expert) the username used for authentication if required, e.g. for FTP
         passwd: (expert) the username used for authentication if required, e.g. for FTP
-        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}`
-            for setting a proxy for FTP
+        params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}` for setting a proxy for FTP
         subpath: (expert) the path inside the FS that the bento should be exported to
         _bento_store: save Bento created to this BentoStore
 
@@ -242,14 +238,13 @@ def push(
     *,
     force: bool = False,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
 ):
     """Push Bento to a yatai server."""
-    from bentoml._internal.yatai_client import yatai_client
-
     bento = _bento_store.get(tag)
     if not bento:
         raise BentoMLException(f"Bento {tag} not found in local store")
-    yatai_client.push_bento(bento, force=force)
+    _yatai_client.push_bento(bento, force=force)
 
 
 @inject
@@ -258,25 +253,25 @@ def pull(
     *,
     force: bool = False,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
 ):
-    from bentoml._internal.yatai_client import yatai_client
-
-    yatai_client.pull_bento(tag, force=force, bento_store=_bento_store)
+    _yatai_client.pull_bento(tag, force=force, bento_store=_bento_store)
 
 
 @inject
 def build(
     service: str,
     *,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    description: t.Optional[str] = None,
-    include: t.Optional[t.List[str]] = None,
-    exclude: t.Optional[t.List[str]] = None,
-    docker: t.Optional[t.Dict[str, t.Any]] = None,
-    python: t.Optional[t.Dict[str, t.Any]] = None,
-    conda: t.Optional[t.Dict[str, t.Any]] = None,
-    version: t.Optional[str] = None,
-    build_ctx: t.Optional[str] = None,
+    name: str | None = None,
+    labels: dict[str, str] | None = None,
+    description: str | None = None,
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+    docker: dict[str, t.Any] | None = None,
+    python: dict[str, t.Any] | None = None,
+    conda: dict[str, t.Any] | None = None,
+    version: str | None = None,
+    build_ctx: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> "Bento":
     """
@@ -291,15 +286,15 @@ def build(
         labels: optional immutable labels for carrying contextual info
         description: optional description string in markdown format
         include: list of file paths and patterns specifying files to include in Bento,
-            default is all files under build_ctx, beside the ones excluded from the
-            exclude parameter or a :code:`.bentoignore` file for a given directory
+                 default is all files under build_ctx, beside the ones excluded from the
+                 exclude parameter or a :code:`.bentoignore` file for a given directory
         exclude: list of file paths and patterns to exclude from the final Bento archive
         docker: dictionary for configuring Bento's containerization process, see details
-            in :class:`bentoml._internal.bento.build_config.DockerOptions`
+                in :class:`bentoml._internal.bento.build_config.DockerOptions`
         python: dictionary for configuring Bento's python dependencies, see details in
-            :class:`bentoml._internal.bento.build_config.PythonOptions`
+                :class:`bentoml._internal.bento.build_config.PythonOptions`
         conda: dictionary for configuring Bento's conda dependencies, see details in
-            :class:`bentoml._internal.bento.build_config.CondaOptions`
+               :class:`bentoml._internal.bento.build_config.CondaOptions`
         version: Override the default auto generated version str
         build_ctx: Build context directory, when used as
         _bento_store: save Bento created to this BentoStore
@@ -344,6 +339,7 @@ def build(
     """
     build_config = BentoBuildConfig(
         service=service,
+        name=name,
         description=description,
         labels=labels,
         include=include,
@@ -353,14 +349,11 @@ def build(
         conda=conda,
     )
 
-    bento = Bento.create(
+    return Bento.create(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
     ).save(_bento_store)
-    logger.info(BENTOML_FIGLET)
-    logger.info("Successfully built %s.", bento)
-    return bento
 
 
 @inject
@@ -391,17 +384,17 @@ def build_bentofile(
     with open(bentofile, "r", encoding="utf-8") as f:
         build_config = BentoBuildConfig.from_yaml(f)
 
-    bento = Bento.create(
+    return Bento.create(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
     ).save(_bento_store)
-    logger.info(BENTOML_FIGLET)
-    logger.info("Successfully built %s.", bento)
-    return bento
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:
+    """
+    DEPRECATED: Use :meth:`bentoml.container.build` instead.
+    """
     from .container import build
 
     # Add backward compatibility for bentoml.bentos.containerize
@@ -448,7 +441,6 @@ def serve(
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     grpc_protocol_version: str | None = None,
-    triton_args: t.List[str] | None = None,
 ) -> ServerHandle:
     from .serve import construct_ssl_args
     from ._internal.server.server import ServerHandle
@@ -525,12 +517,5 @@ def serve(
             server_type == "grpc"
         ), f"'grpc_protocol_version' should only be passed to gRPC server, got '{server_type}' instead."
         args.extend(["--protocol-version", str(grpc_protocol_version)])
-
-    if triton_args is not None:
-        args.extend(
-            itertools.chain.from_iterable(
-                [("--triton-options", arg) for arg in triton_args]
-            )
-        )
 
     return ServerHandle(process=subprocess.Popen(args), host=host, port=port)

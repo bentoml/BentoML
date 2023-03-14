@@ -26,6 +26,7 @@ from ..store import StoreItem
 from ..types import PathType
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
+from ..utils import normalize_labels_value
 from ..models import ModelStore
 from ..runner import Runner
 from ...exceptions import InvalidArgument
@@ -181,8 +182,11 @@ class Bento(StoreItem):
         svc = import_service(
             build_config.service, working_dir=build_ctx, standalone_load=True
         )
+        # Apply default build options
+        build_config = build_config.with_defaults()
 
-        tag = Tag(svc.name, version)
+        bento_name = build_config.name if build_config.name is not None else svc.name
+        tag = Tag(bento_name, version)
         if version is None:
             tag = tag.make_new_version()
 
@@ -190,7 +194,7 @@ class Bento(StoreItem):
             'Building BentoML service "%s" from build context "%s".', tag, build_ctx
         )
 
-        bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
+        bento_fs = fs.open_fs(f"temp://bentoml_bento_{bento_name}")
         ctx_fs = fs.open_fs(build_ctx)
 
         models: t.Set[Model] = set()
@@ -208,8 +212,6 @@ class Bento(StoreItem):
             logger.info('Packing model "%s"', model.tag)
             model.save(bento_model_store)
 
-        # Apply default build options
-        build_config = build_config.with_defaults()
         # create ignore specs
         specs = BentoPathSpec(build_config.include, build_config.exclude)  # type: ignore (unfinished attrs converter type)
 
@@ -410,7 +412,6 @@ class BentoModelInfo:
 
 @attr.frozen(repr=False)
 class BentoInfo:
-
     # for backward compatibility in case new fields are added to BentoInfo.
     __forbid_extra_keys__ = False
     # omit field in yaml file if it is not provided by the user.
@@ -426,7 +427,9 @@ class BentoInfo:
     bentoml_version: str = attr.field(factory=lambda: BENTOML_VERSION)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
-    labels: t.Dict[str, t.Any] = attr.field(factory=dict)
+    labels: t.Dict[str, t.Any] = attr.field(
+        factory=dict, converter=normalize_labels_value
+    )
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
     apis: t.List[BentoApiInfo] = attr.field(factory=list)

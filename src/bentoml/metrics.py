@@ -40,7 +40,7 @@ _TEXT_STRING_TO_METRIC_DOCSTRING = """
 Parse Prometheus text format from a unicode string.
 
 Returns:
-    Generator[Metric, None, None]: A generator of `Metric <https://prometheus.io/docs/concepts/metric_types/>`_ objects.
+    Metric: A generator that yields `Metric <https://prometheus.io/docs/concepts/metric_types/>`_ objects.
 """
 _HISTOGRAM_DOCSTRING = """\
 A Histogram tracks the size and number of events in a given bucket.

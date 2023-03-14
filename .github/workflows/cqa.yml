@@ -4,7 +4,7 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    - cron: "0 0 * * 1/2"
+    - cron: '0 0 * * 1/2'
 env:
   LINES: 200
   COLUMNS: 200
@@ -18,7 +18,7 @@ defaults:
     shell: bash --noprofile --norc -exo pipefail {0}
 jobs:
   style:
-    if: "!github.event.repository.fork" # Don't run on fork repository
+    if: '!github.event.repository.fork' # Don't run on fork repository
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -26,10 +26,10 @@ jobs:
       - name: Setup CI
         uses: ./.github/actions/setup-repo
         with:
-          python-version: "3.8"
-          architecture: "x64"
+          python-version: '3.8'
+          architecture: 'x64'
       - name: Setup bufbuild/buf
-        uses: bufbuild/buf-setup-action@v1.14.0
+        uses: bufbuild/buf-setup-action@v1.15.1
         with:
           github_token: ${{ github.token }}
       - name: Format
@@ -51,7 +51,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: "17"
+          node-version: '17'
       - name: Install pyright
         run: npm install -g npm@^7 pyright
       - name: Type check
@@ -66,8 +66,8 @@ jobs:
       - name: Setup CI
         uses: ./.github/actions/setup-repo
         with:
-          python-version: "3.8"
-          architecture: "x64"
+          python-version: '3.8'
+          architecture: 'x64'
       - name: Install libenchant
         run: |
           sudo apt-get update && sudo apt-get install -y libenchant-2-dev

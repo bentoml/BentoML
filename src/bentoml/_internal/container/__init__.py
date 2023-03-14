@@ -113,13 +113,14 @@ def enable_buildkit(
         raise ValueError("Either backend or builder must be provided.")
 
 
-# Sync with BentoML extra dependencies found in pyproject.toml
+# XXX: Sync with BentoML extra dependencies found in pyproject.toml
 FEATURES = frozenset(
     {
         "tracing",
         "grpc",
         "grpc-reflection",
         "grpc-channelz",
+        "triton",
         "aws",
         "all",
         "io",
@@ -250,7 +251,7 @@ def register_backend(
                               and returns a list of command line arguments.
         env: Default environment variables dict for this OCI builder implementation.
         binary: Optional binary path. If not provided, the binary will use the backend name.
-                Ensure that the binary is in the PATH.
+                Make sure that the binary is on your ``PATH``.
         build_cmd: Optional build command. If not provided, the command will be 'build'.
 
     Examples:
@@ -305,6 +306,11 @@ def health(backend: str) -> bool:
     Args:
         backend: The name of the backend.
 
+    .. note::
+
+        If given backend is a type of OCIBuilder, and the backend is not registered,
+        make sure to register it with ``bentoml.container.register_backend``.
+
     Returns:
         True if the backend is healthy, False otherwise.
     """
@@ -328,6 +334,13 @@ def get_backend(backend: str) -> OCIBuilder:
     Raises:
         ``ValueError``: If given backend is not available in backend registry.
     """
+    if isinstance(backend, OCIBuilder):
+        if backend not in BUILDER_REGISTRY.values():
+            logger.warning(
+                "Backend '%s' not registered. To use with 'bentoml.container.build', make sure to regsiter it with 'bentoml.container.register_backend'",
+                backend,
+            )
+        return backend
     if backend not in BUILDER_REGISTRY:
         raise ValueError(
             f"Backend {backend} not registered. Available backends: {REGISTERED_BACKENDS}."

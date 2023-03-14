@@ -58,7 +58,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
             response = pb.Response()
             output = None
 
-            # NOTE: since IODescriptor._proto_fields is a tuple, the order is preserved.
+            # NOTE: since IODescriptor.proto_fields is a tuple, the order is preserved.
             # This is important so that we know the order of fields to process.
             # We will use fields descriptor to determine how to process that request.
             try:
@@ -78,9 +78,13 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                         output = await anyio.to_thread.run_sync(api.func, **input_data)
                     else:
                         output = await anyio.to_thread.run_sync(api.func, input_data)
-                res = await api.output.to_proto(output)
+                if hasattr(api.output, "to_proto_v1alpha1"):
+                    # special case for handling v1alpha1 specific to_proto logic
+                    res = await getattr(api.output, "to_proto_v1alpha1")(output)
+                else:
+                    res = await api.output.to_proto(output)
                 # TODO(aarnphm): support multiple proto fields
-                response = pb.Response(**{api.output._proto_fields[0]: res})
+                response = pb.Response(**{api.output.proto_fields[0]: res})
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
                 if output is not None:

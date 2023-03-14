@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 import asyncio
-from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from multipart.multipart import parse_options_header
@@ -12,29 +11,34 @@ from . import from_spec as io_descriptor_from_spec
 from .base import IODescriptor
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.formparser import populate_multipart_requests
 from ..utils.formparser import concat_to_multipart_response
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from types import UnionType
 
-    from typing_extensions import Self
+    from google.protobuf import message as _message
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .base import OpenAPIResponse
     from ..types import LazyType
     from ..context import InferenceApiContext as Context
 else:
-    from bentoml.grpc.utils import import_generated_stubs
+    pb, _ = import_generated_stubs("v1")
+    pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
 
-    pb, _ = import_generated_stubs()
 
-
-class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Multipart"):
+class Multipart(
+    IODescriptor[t.Dict[str, t.Any]],
+    descriptor_id="bentoml.io.Multipart",
+    proto_fields=("multipart",),
+):
     """
     :obj:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
     of a Service can receive/send a **multipart** request/responses as specified in your API function signature.
@@ -162,7 +166,6 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         :obj:`Multipart`: IO Descriptor that represents a Multipart request/response.
     """
 
-    _proto_fields = ("multipart",)
     _mime_type = "multipart/form-data"
 
     def __init__(self, **inputs: IODescriptor[t.Any]):
@@ -202,7 +205,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in Multipart spec: {spec}")
         return Multipart(
@@ -321,7 +324,23 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         )
         return dict(zip(self._inputs.keys(), reqs))
 
-    async def to_proto(self, obj: dict[str, t.Any]) -> pb.Multipart:
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: dict[str, t.Any], *, version: t.Literal["v1"]
+    ) -> pb.Multipart:
+        ...
+
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: dict[str, t.Any], *, version: t.Literal["v1alpha1"]
+    ) -> pb_v1alpha1.Multipart:
+        ...
+
+    async def _to_proto_impl(
+        self, obj: dict[str, t.Any], *, version: str
+    ) -> _message.Message:
+        pb, _ = import_generated_stubs(version)
+
         self.validate_input_mapping(obj)
         resps = await asyncio.gather(
             *tuple(
@@ -335,9 +354,15 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
                     obj,
                     [
                         # TODO: support multiple proto_fields
-                        pb.Part(**{io_._proto_fields[0]: resp})
+                        pb.Part(**{io_.proto_fields[0]: resp})
                         for io_, resp in zip(self._inputs.values(), resps)
                     ],
                 )
             )
         )
+
+    async def to_proto(self, obj: dict[str, t.Any]) -> pb.Multipart:
+        return await self._to_proto_impl(obj, version="v1")
+
+    async def to_proto_v1alpha1(self, obj: dict[str, t.Any]) -> pb_v1alpha1.Multipart:
+        return await self._to_proto_impl(obj, version="v1alpha1")

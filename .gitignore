@@ -150,3 +150,12 @@ composer.lock
 vendor
 *.pkl
 *.ckpt
+
+# Triton-related
+*.pt
+*.savedmodel
+*.onnx
+*.engine
+*.plan
+*.bin
+yolov5*

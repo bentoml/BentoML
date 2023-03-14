@@ -11,6 +11,7 @@ import pytest
 from bentoml.io import NumpyNdarray
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import BentoMLException
+from bentoml.grpc.utils import import_generated_stubs
 from bentoml._internal.service.openapi.specification import Schema
 
 if TYPE_CHECKING:
@@ -18,8 +19,6 @@ if TYPE_CHECKING:
 
     from bentoml.grpc.v1 import service_pb2 as pb
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
 
 
@@ -118,6 +117,14 @@ def test_verify_numpy_ndarray(caplog: LogCaptureFixture):
     assert "Failed to reshape" in caplog.text
 
 
+def test_from_sample_ensure_not_override():
+    example = NumpyNdarray.from_sample(np.ones((2, 2, 3)), dtype=np.float32)
+    assert example._dtype == np.float32
+
+    example = NumpyNdarray.from_sample(np.ones((2, 2, 3)), shape=(2, 2, 3))
+    assert example._shape == (2, 2, 3)
+
+
 def generate_1d_array(dtype: pb.NDArray.DType.ValueType, length: int = 3):
     if dtype == pb.NDArray.DTYPE_BOOL:
         return [True] * length
@@ -176,10 +183,8 @@ async def test_from_proto(dtype: pb.NDArray.DType.ValueType) -> None:
 
 @pytest.mark.asyncio
 async def test_exception_from_proto():
-    with pytest.raises(AssertionError):
-        await NumpyNdarray().from_proto(pb.NDArray(string_values="asdf"))
-        await NumpyNdarray().from_proto(pb.File(content=b"asdf"))  # type: ignore (testing exception)
     with pytest.raises(BadInput):
+        await NumpyNdarray().from_proto(pb.File(content=b"asdf"))  # type: ignore (testing exception)
         await NumpyNdarray().from_proto(b"asdf")
     with pytest.raises(BadInput) as exc_info:
         await NumpyNdarray().from_proto(pb.NDArray(dtype=123, string_values="asdf"))  # type: ignore (testing exception)

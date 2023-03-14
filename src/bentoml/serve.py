@@ -11,7 +11,6 @@ import contextlib
 from pathlib import Path
 from functools import partial
 
-import attr
 import psutil
 from simple_di import inject
 from simple_di import Provide
@@ -24,8 +23,6 @@ from ._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     from circus.watcher import Watcher
-
-    from .triton import TritonServerHandle
 
 
 logger = logging.getLogger(__name__)
@@ -165,45 +162,13 @@ def construct_ssl_args(
     return args
 
 
-def construct_triton_handle(
-    _model_repository_paths: str,
-    **attrs: t.Any,
-) -> TritonServerHandle:
-    from .triton import TritonServerHandle
-    from ._internal.utils import reserve_free_port
-
-    if any(
-        attrs.get(f"triton_{k}") is not None
-        for k in ("model_repository", "allow_grpc", "allow_http", "allow_metrics")
-    ):
-        raise BentoMLException(
-            "triton_model_repository, triton_allow_grpc, triton_allow_http, triton_allow_metrics are not allowed in TritonRunner"
+def find_triton_binary():
+    binary = shutil.which("tritonserver")
+    if binary is None:
+        raise RuntimeError(
+            "'tritonserver' is not found on PATH. Make sure to include the compiled binary in PATH to proceed.\nIf you are running this inside a container, make sure to use the official Triton container image as a 'base_image'. See https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver."
         )
-
-    if attrs.get("triton_grpc_port") is not None:
-        raise BentoMLException("triton_grpc_port is currently not supported")
-
-    triton_kwargs: dict[str, t.Any] = {
-        key: attrs.get(f"triton_{key}")
-        for key in [
-            i.name
-            for i in attr.fields(TritonServerHandle)
-            # model_repository is set via TritonRunner
-            if not i.name.startswith("_")
-            and i.name not in ("model_repository", "allow_grpc", "allow_http")
-        ]
-    }
-    # handle multiple model_repository for multiple TritonRunner
-    triton_kwargs["model_repository"] = _model_repository_paths
-
-    handle = TritonServerHandle(**triton_kwargs)
-
-    with reserve_free_port(
-        host=handle.grpc_address, enable_so_reuseport=bool(handle.reuse_grpc_port)
-    ) as triton_grpc_port:
-        pass
-
-    return handle.with_args(**{"grpc_port": triton_grpc_port})
+    return binary
 
 
 @inject
@@ -270,7 +235,7 @@ def serve_http_development(
             close_child_stdin=False,
         )
     )
-    scheme = "https" if len(ssl_args) > 0 else "http"
+    scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     if BentoMLContainer.api_server_config.metrics.enabled.get():
         log_host = "localhost" if host == "0.0.0.0" else host
 
@@ -341,7 +306,6 @@ def serve_http_production(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
-    **attrs: t.Any,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -401,15 +365,18 @@ def serve_http_production(
                     )
                 )
             else:
-                triton_handle = construct_triton_handle(runner.repository_path, **attrs)
-                runner_bind_map[
-                    runner.name
-                ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                # Make sure that the tritonserver uses the correct protocol
+                runner_bind_map[runner.name] = runner.protocol_address
+                cli_args = runner.cli_args + [
+                    f"--http-port={runner.protocol_address.split(':')[-1]}"
+                    if runner.tritonserver_type == "http"
+                    else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                ]
                 watchers.append(
                     create_watcher(
                         name=f"tritonserver_{runner.name}",
-                        cmd=triton_handle.executable,
-                        args=triton_handle.args,
+                        cmd=find_triton_binary(),
+                        args=cli_args,
                         use_sockets=False,
                         working_dir=working_dir,
                         numprocesses=1,
@@ -455,17 +422,18 @@ def serve_http_production(
                         )
                     )
                 else:
-                    triton_handle = construct_triton_handle(
-                        runner.repository_path, **attrs
-                    )
-                    runner_bind_map[
-                        runner.name
-                    ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                    # Make sure that the tritonserver uses the correct protocol
+                    runner_bind_map[runner.name] = runner.protocol_address
+                    cli_args = runner.cli_args + [
+                        f"--http-port={runner.protocol_address.split(':')[-1]}"
+                        if runner.tritonserver_type == "http"
+                        else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                    ]
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
-                            cmd=triton_handle.executable,
-                            args=triton_handle.args,
+                            cmd=find_triton_binary(),
+                            args=cli_args,
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,
@@ -495,7 +463,7 @@ def serve_http_production(
         ssl_ca_certs=ssl_ca_certs,
         ssl_ciphers=ssl_ciphers,
     )
-    scheme = "https" if len(ssl_args) > 0 else "http"
+    scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     watchers.append(
         create_watcher(
             name="api_server",
@@ -601,7 +569,7 @@ def serve_grpc_development(
         ssl_ca_certs=ssl_ca_certs,
     )
 
-    scheme = "https" if len(ssl_args) > 0 else "http"
+    scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
 
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(
@@ -753,7 +721,6 @@ def serve_grpc_production(
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     protocol_version: str = LATEST_PROTOCOL_VERSION,
-    **attrs: t.Any,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -826,15 +793,18 @@ def serve_grpc_production(
                     )
                 )
             else:
-                triton_handle = construct_triton_handle(runner.repository_path, **attrs)
-                runner_bind_map[
-                    runner.name
-                ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                # Make sure that the tritonserver uses the correct protocol
+                runner_bind_map[runner.name] = runner.protocol_address
+                cli_args = runner.cli_args + [
+                    f"--http-port={runner.protocol_address.split(':')[-1]}"
+                    if runner.tritonserver_type == "http"
+                    else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                ]
                 watchers.append(
                     create_watcher(
                         name=f"tritonserver_{runner.name}",
-                        cmd=triton_handle.executable,
-                        args=triton_handle.args,
+                        cmd=find_triton_binary(),
+                        args=cli_args,
                         use_sockets=False,
                         working_dir=working_dir,
                         numprocesses=1,
@@ -883,17 +853,18 @@ def serve_grpc_production(
                         )
                     )
                 else:
-                    triton_handle = construct_triton_handle(
-                        runner.repository_path, **attrs
-                    )
-                    runner_bind_map[
-                        runner.name
-                    ] = f"{triton_handle.grpc_address}:{triton_handle.grpc_port}"
+                    # Make sure that the tritonserver uses the correct protocol
+                    runner_bind_map[runner.name] = runner.protocol_address
+                    cli_args = runner.cli_args + [
+                        f"--http-port={runner.protocol_address.split(':')[-1]}"
+                        if runner.tritonserver_type == "http"
+                        else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                    ]
                     watchers.append(
                         create_watcher(
                             name=f"tritonserver_{runner.name}",
-                            cmd=triton_handle.executable,
-                            args=triton_handle.args,
+                            cmd=find_triton_binary(),
+                            args=cli_args,
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,
@@ -911,7 +882,7 @@ def serve_grpc_production(
         ssl_keyfile=ssl_keyfile,
         ssl_ca_certs=ssl_ca_certs,
     )
-    scheme = "https" if len(ssl_args) > 0 else "http"
+    scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
 
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(
@@ -959,7 +930,6 @@ def serve_grpc_production(
             )
         )
 
-    scheme = "https" if len(ssl_args) > 0 else "http"
     if BentoMLContainer.api_server_config.metrics.enabled.get():
         metrics_host = BentoMLContainer.grpc.metrics.host.get()
         metrics_port = BentoMLContainer.grpc.metrics.port.get()

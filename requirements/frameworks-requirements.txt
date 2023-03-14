@@ -19,3 +19,7 @@ pytorch-lightning
 transformers
 tokenizer
 diffusers
+flax
+jax
+jaxlib
+chex

@@ -258,7 +258,7 @@ def _load_bento(bento: Bento, standalone_load: bool) -> "Service":
 
 
 def load(
-    bento_identifier: str,
+    bento_identifier: str | Tag | Bento,
     working_dir: t.Optional[str] = None,
     standalone_load: bool = False,
 ) -> "Service":
@@ -268,10 +268,12 @@ def load(
         bento_identifier: target Service to import or Bento to load
         working_dir: when importing from service, set the working_dir
         standalone_load: treat target Service as standalone. This will change global
-            current working directory and global model store.
+                         current working directory and global model store.
 
+    Returns:
+        The loaded :obj:`bentoml.Service` instance.
 
-    The argument bento_identifier can be one of the following forms:
+    The argument ``bento_identifier`` can be one of the following forms:
 
     * Tag pointing to a Bento in local Bento store under `BENTOML_HOME/bentos`
     * File path to a Bento directory
@@ -309,11 +311,16 @@ def load(
         load("fraud_detector")
 
     Limitations when `standalone_load=False`:
-    * Models used in the Service being imported, if not accessed during module import,
-        must be presented in the global model store
-    * Files required for the Service to run, if not accessed during module import, must
-        be presented in the current working directory
+
+        * Models used in the Service being imported, if not accessed during
+          module import, must be presented in the global model store
+        * Files required for the Service to run, if not accessed during module
+          import, must be presented in the current working directory
     """
+    if isinstance(bento_identifier, (Bento, Tag)):
+        # Load from local BentoStore
+        return load_bento(bento_identifier)
+
     if os.path.isdir(os.path.expanduser(bento_identifier)):
         bento_path = os.path.abspath(os.path.expanduser(bento_identifier))
 

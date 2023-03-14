@@ -4,9 +4,9 @@ on:
     branches: [main]
   pull_request:
     paths:
-      - "**.py"
+      - '**.py'
   schedule:
-    - cron: "0 0 * * 1/2"
+    - cron: '0 0 * * 1/2'
 env:
   LINES: 200
   COLUMNS: 200
@@ -26,9 +26,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ['3.7', '3.8', '3.9', '3.10']
         architecture: [x64]
-    if: "!github.event.repository.fork" # Don't run on fork repository
+    if: '!github.event.repository.fork' # Don't run on fork repository
     name: ${{ matrix.os }}-tests-python${{ matrix.python-version }}
     timeout-minutes: 60
     runs-on: ${{ matrix.os }}

@@ -6,7 +6,6 @@ import typing as t
 import logging
 import functools
 from enum import Enum
-from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
 from starlette.requests import Request
@@ -20,6 +19,7 @@ from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import UnprocessableEntity
 from ...exceptions import MissingDependencyException
+from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..utils.lazy_loader import LazyLoader
 from ..service.openapi.specification import Schema
@@ -27,23 +27,23 @@ from ..service.openapi.specification import MediaType
 
 EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install with 'pip install bentoml[io-pandas]'"
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import numpy as np
     import pandas as pd
     import pyarrow
     import pyspark.sql.types
-    from typing_extensions import Self
+    from google.protobuf import message as _message
 
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
     from ..context import InferenceApiContext as Context
 
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
-    pb, _ = import_generated_stubs()
+    pb, _ = import_generated_stubs("v1")
+    pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
     pd = LazyLoader("pd", globals(), "pandas", exc_msg=EXC_MSG)
     np = LazyLoader("np", globals(), "numpy")
 
@@ -199,7 +199,9 @@ def _validate_serialization_format(serialization_format: SerializationFormat):
 
 
 class PandasDataFrame(
-    IODescriptor["ext.PdDataFrame"], descriptor_id="bentoml.io.PandasDataFrame"
+    IODescriptor["ext.PdDataFrame"],
+    descriptor_id="bentoml.io.PandasDataFrame",
+    proto_fields=("dataframe",),
 ):
     """
     :obj:`PandasDataFrame` defines API specification for the inputs/outputs of a Service,
@@ -314,8 +316,6 @@ class PandasDataFrame(
         :obj:`PandasDataFrame`: IO Descriptor that represents a :code:`pd.DataFrame`.
     """
 
-    _proto_fields = ("dataframe",)
-
     def __init__(
         self,
         orient: ext.DataFrameOrient = "records",
@@ -342,7 +342,7 @@ class PandasDataFrame(
 
     def _from_sample(self, sample: ext.PdDataFrame) -> ext.PdDataFrame:
         """
-        Create a :obj:`PandasDataFrame` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasDataFrame` IO Descriptor from given inputs.
 
         Args:
             sample: Given sample ``pd.DataFrame`` data
@@ -373,7 +373,7 @@ class PandasDataFrame(
                             - :obj:`csv` - CSV text format (inferred from content-type ``"text/csv"``)
 
         Returns:
-            :obj:`PandasDataFrame`: :code:`PandasDataFrame` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.pandas.PandasDataFrame`: IODescriptor from given users inputs.
 
         Example:
 
@@ -426,10 +426,12 @@ class PandasDataFrame(
                 raise InvalidArgument(
                     f"Failed to create a 'pd.DataFrame' from sample {sample}: {e}"
                 ) from None
-        self._shape = sample.shape
-        self._columns = [str(i) for i in list(sample.columns)]
+        if self._shape is None:
+            self._shape = sample.shape
+        if self._columns is None:
+            self._columns = [str(i) for i in list(sample.columns)]
         if self._dtype is None:
-            self._dtype = True  # infer dtype automatically
+            self._dtype = sample.dtypes
         return sample
 
     def _convert_dtype(
@@ -463,7 +465,7 @@ class PandasDataFrame(
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in PandasDataFrame spec: {spec}")
         res = PandasDataFrame(**spec["args"])
@@ -526,12 +528,15 @@ class PandasDataFrame(
         _validate_serialization_format(serialization_format)
 
         obj = await request.body()
+        dtype = self._dtype if self._enforce_dtype else None
         if serialization_format is SerializationFormat.JSON:
-            res = pd.read_json(io.BytesIO(obj), dtype=self._dtype, orient=self._orient)
+            if dtype is None:
+                dtype = True  # infer dtype automatically
+            res = pd.read_json(io.BytesIO(obj), dtype=dtype, orient=self._orient)
         elif serialization_format is SerializationFormat.PARQUET:
             res = pd.read_parquet(io.BytesIO(obj), engine=get_parquet_engine())
         elif serialization_format is SerializationFormat.CSV:
-            res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=self._dtype)
+            res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=dtype)
         else:
             raise InvalidArgument(
                 f"Unknown serialization format ({serialization_format})."
@@ -589,7 +594,6 @@ class PandasDataFrame(
     def validate_dataframe(
         self, dataframe: ext.PdDataFrame, exception_cls: t.Type[Exception] = BadInput
     ) -> ext.PdDataFrame:
-
         if not LazyType["ext.PdDataFrame"]("pandas.core.frame.DataFrame").isinstance(
             dataframe
         ):
@@ -651,7 +655,6 @@ class PandasDataFrame(
             # dtype of given fields per Series to match with types of a given
             # columns, hence, this would result in a wrong DataFrame that is not
             # expected by our users.
-            assert isinstance(field, pb.DataFrame)
             # columns orient: { column_name : {index : columns.series._value}}
             if self._orient != "columns":
                 raise BadInput(
@@ -677,7 +680,21 @@ class PandasDataFrame(
             )
         return self.validate_dataframe(dataframe)
 
-    async def to_proto(self, obj: ext.PdDataFrame) -> pb.DataFrame:
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: ext.PdDataFrame, *, version: t.Literal["v1"]
+    ) -> pb.DataFrame:
+        ...
+
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: ext.PdDataFrame, *, version: t.Literal["v1alpha1"]
+    ) -> pb_v1alpha1.DataFrame:
+        ...
+
+    async def _to_proto_impl(
+        self, obj: ext.PdDataFrame, *, version: str
+    ) -> _message.Message:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -689,6 +706,8 @@ class PandasDataFrame(
                 Protobuf representation of given ``pandas.DataFrame``
         """
         from .numpy import npdtype_to_fieldpb_map
+
+        pb, _ = import_generated_stubs(version)
 
         # TODO: support different serialization format
         obj = self.validate_dataframe(obj)
@@ -754,12 +773,20 @@ class PandasDataFrame(
                 "Only dict dtypes are currently supported for dataframes"
             )
 
+    async def to_proto(self, obj: ext.PdDataFrame) -> pb.DataFrame:
+        return await self._to_proto_impl(obj, version="v1")
+
+    async def to_proto_v1alpha1(self, obj: ext.PdDataFrame) -> pb_v1alpha1.DataFrame:
+        return await self._to_proto_impl(obj, version="v1alpha1")
+
 
 class PandasSeries(
-    IODescriptor["ext.PdSeries"], descriptor_id="bentoml.io.PandasSeries"
+    IODescriptor["ext.PdSeries"],
+    descriptor_id="bentoml.io.PandasSeries",
+    proto_fields=("series",),
 ):
     """
-    :code:`PandasSeries` defines API specification for the inputs/outputs of a Service, where
+    ``PandasSeries`` defines API specification for the inputs/outputs of a Service, where
     either inputs will be converted to or outputs will be converted from type
     :code:`pd.Series` as specified in your API function signature.
 
@@ -825,7 +852,6 @@ class PandasSeries(
                 - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                 - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
         columns: List of columns name that users wish to update.
-        apply_column_names (`bool`, `optional`, default to :code:`False`):
         apply_column_names: Whether to update incoming DataFrame columns. If :code:`apply_column_names=True`,
                             then ``columns`` must be specified.
         dtype: Data type users wish to convert their inputs/outputs to. If it is a boolean,
@@ -836,15 +862,16 @@ class PandasSeries(
         shape: Optional shape check that users can specify for their incoming HTTP
                requests. We will only check the number of columns you specified for your
                given shape:
+
                .. code-block:: python
                   :caption: `service.py`
 
-                  import pandas as pd
-                  from bentoml.io import PandasSeries
+                   import pandas as pd
+                   from bentoml.io import PandasSeries
 
-                  @svc.api(input=PandasSeries(shape=(51,), enforce_shape=True), output=PandasSeries())
-                  def infer(input_series: pd.Series) -> pd.Series:
-                  # if input_series has shape (40,), it will error
+                   @svc.api(input=PandasSeries(shape=(51,), enforce_shape=True), output=PandasSeries())
+                   def infer(input_series: pd.Series) -> pd.Series:
+                        # if input_series has shape (40,), it will error
                         ...
         enforce_shape: Whether to enforce a certain shape. If ``enforce_shape=True`` then ``shape`` must be specified.
 
@@ -852,7 +879,6 @@ class PandasSeries(
         :obj:`PandasSeries`: IO Descriptor that represents a :code:`pd.Series`.
     """
 
-    _proto_fields = ("series",)
     _mime_type = "application/json"
 
     def __init__(
@@ -871,7 +897,7 @@ class PandasSeries(
 
     def _from_sample(self, sample: ext.PdSeries | t.Sequence[t.Any]) -> ext.PdSeries:
         """
-        Create a :obj:`PandasSeries` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries` IO Descriptor from given inputs.
 
         Args:
             sample_input: Given sample ``pd.DataFrame`` data
@@ -891,7 +917,7 @@ class PandasSeries(
                            ``enforce_shape=False``.
 
         Returns:
-            :obj:`PandasSeries`: :code:`PandasSeries` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries`: IODescriptor from given users inputs.
 
         Example:
 
@@ -909,8 +935,10 @@ class PandasSeries(
         """
         if not isinstance(sample, pd.Series):
             sample = pd.Series(sample)
-        self._dtype = sample.dtype
-        self._shape = sample.shape
+        if self._dtype is None:
+            self._dtype = sample.dtype
+        if self._shape is None:
+            self._shape = sample.shape
         return sample
 
     def input_type(self) -> LazyType[ext.PdSeries]:
@@ -945,7 +973,7 @@ class PandasSeries(
         }
 
     @classmethod
-    def from_spec(cls, spec: dict[str, t.Any]) -> Self:
+    def from_spec(cls, spec: dict[str, t.Any]) -> t.Self:
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in PandasSeries spec: {spec}")
         res = PandasSeries(**spec["args"])
@@ -997,7 +1025,7 @@ class PandasSeries(
             io.BytesIO(obj),
             typ="series",
             orient=self._orient,
-            dtype=self._dtype,
+            dtype=self._dtype if self._enforce_dtype else True,
         )
         return self.validate_series(res)
 
@@ -1078,7 +1106,6 @@ class PandasSeries(
                 'Currently not yet implemented. Use "series" instead.'
             )
         else:
-            assert isinstance(field, pb.Series)
             # The behaviour of `from_proto` will mimic the behaviour of `NumpyNdArray.from_proto`,
             # where we will respect self._dtype if set.
             # since self._dtype uses numpy dtype, we will use some of numpy logics here.
@@ -1110,7 +1137,21 @@ class PandasSeries(
 
         return self.validate_series(series)
 
-    async def to_proto(self, obj: ext.PdSeries) -> pb.Series:
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: ext.PdSeries, *, version: t.Literal["v1"]
+    ) -> pb.Series:
+        ...
+
+    @t.overload
+    async def _to_proto_impl(
+        self, obj: ext.PdSeries, *, version: t.Literal["v1alpha1"]
+    ) -> pb_v1alpha1.Series:
+        ...
+
+    async def _to_proto_impl(
+        self, obj: ext.PdSeries, *, version: str
+    ) -> _message.Message:
         """
         Process given objects and convert it to grpc protobuf response.
 
@@ -1122,6 +1163,8 @@ class PandasSeries(
                 Protobuf representation of given ``pandas.Series``
         """
         from .numpy import npdtype_to_fieldpb_map
+
+        pb, _ = import_generated_stubs(version)
 
         try:
             obj = self.validate_series(obj, exception_cls=InvalidArgument)
@@ -1179,3 +1222,9 @@ class PandasSeries(
             )
 
         return StructType([StructField("out", out_spark_type)])
+
+    async def to_proto(self, obj: ext.PdSeries) -> pb.Series:
+        return await self._to_proto_impl(obj, version="v1")
+
+    async def to_proto_v1alpha1(self, obj: ext.PdSeries) -> pb_v1alpha1.Series:
+        return await self._to_proto_impl(obj, version="v1alpha1")

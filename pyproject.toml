@@ -61,7 +61,7 @@ dependencies = [
     "rich>=11.2.0",
     "schema",
     "simple-di>=0.1.4",
-    "starlette",
+    "starlette<0.26",
     "uvicorn",
     "watchfiles>=0.15.0",
     "backports.cached-property;python_version<'3.8'",
@@ -120,6 +120,7 @@ all = [
     "bentoml[grpc-reflection]",
     "bentoml[grpc-channelz]",
     "bentoml[tracing]",
+    "bentoml[triton]"
 ]
 aws = ["fs-s3fs"]
 io = [
@@ -132,6 +133,7 @@ io-file = ["filetype"] # Currently use for from_sample
 io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["bentoml[io-file]", "Pillow"]
 io-pandas = ["pandas", "pyarrow"]
+triton = ["tritonclient[all]>=2.29.0"]
 grpc = [
     "protobuf",
     "grpcio",
@@ -236,7 +238,7 @@ exclude = '''
 '''
 
 [tool.pytest.ini_options]
-addopts = ["-rfEX", "-pbentoml.testing.pytest.plugin"]
+addopts = ["-rfEX", "-pno:warnings", "-pbentoml.testing.pytest.plugin"]
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 

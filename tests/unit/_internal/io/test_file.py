@@ -7,12 +7,11 @@ import pytest
 
 from bentoml.io import File
 from bentoml.exceptions import BadInput
+from bentoml.grpc.utils import import_generated_stubs
 
 if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
 else:
-    from bentoml.grpc.utils import import_generated_stubs
-
     pb, _ = import_generated_stubs()
 
 

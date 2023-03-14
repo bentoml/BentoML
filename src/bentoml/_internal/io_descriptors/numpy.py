@@ -486,9 +486,7 @@ class NumpyNdarray(
             if not isinstance(sample, np.ndarray):
                 sample = np.array(sample)
         except ValueError:
-            raise BadInput(
-                f"Given sample ({sample}) is not a numpy ND-array"
-            ) from None
+            raise BadInput(f"Given sample ({sample}) is not a numpy ND-array") from None
         if self._dtype is None:
             self._dtype = sample.dtype
         if self._shape is None:

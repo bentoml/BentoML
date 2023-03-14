@@ -22,10 +22,8 @@ for model_name in [
 
 svc = bentoml.Service("fraud_detection", runners=fraud_detection_runners)
 
-input_spec = PandasDataFrame.from_sample(sample_input)
 
-
-@svc.api(input=input_spec, output=JSON())
+@svc.api(input=PandasDataFrame.from_sample(sample_input), output=JSON())
 async def is_fraud(input_df: pd.DataFrame):
     input_df = input_df.astype(sample_input.dtypes)
 

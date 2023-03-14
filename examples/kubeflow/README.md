@@ -19,6 +19,8 @@ kustomize build bentoml-yatai-stack/default | kubectl apply -n kubeflow --server
 Install the required packages to run this example.
 
 ```bash
+git clone --depth 1 https://github.com/bentoml/BentoML
+cd BentoML/examples/kubeflow
 pip install -r requirements.txt
 ```
 
@@ -168,7 +170,30 @@ svc = bentoml.Service("fraud_detection", runners=fraud_detection_runners)
 
 Finally, we will create the API function `is_fraud`. We'll use the `@api` decorator to declare that the function is an API and specify the input and output types as pandas.DataFrame and JSON, respectively. The function is defined as `async` so that the inference calls to the runners can happen simultaneously without waiting for the results to return before calling the next runner. The inner function `_is_fraud` defines the model inference logic for each runner. All runners are called simultaneously through the `asyncio.gather` function and the results are aggregated into a list. The function will return True if any of the models return True.
 
-For more about service definitinos, please see [Service and APIs](https://docs.bentoml.org/en/latest/concepts/service.html).
+```python
+@svc.api(input=PandasDataFrame.from_sample(sample_input), outp1t=JSON())
+async def is_fraud(input_df: pd.DataFrame):
+    input_df = input_df.astype(sample_input.dtypes)
+
+    async def _is_fraud(preprocessor, runner, input_df):
+        input_features = preprocessor.transform(input_df)
+        results = await runner.predict_proba.async_run(input_features)
+        predictions = np.argmax(results, axis=1)  # 0 is not fraud, 1 is fraud
+        return bool(predictions[0])
+
+    # Simultaeously run all models
+    results = await asyncio.gather(
+        *[
+            _is_fraud(p, r, input_df)
+            for p, r in zip(fraud_detection_preprocessors, fraud_detection_runners)
+        ]
+    )
+
+    # Return fraud if at least one model returns fraud
+    return any(results)
+```
+
+For more about service definitions, please see [Service and APIs](https://docs.bentoml.org/en/latest/concepts/service.html).
 
 ## Build Service
 
@@ -231,6 +256,12 @@ Verify the `Bento` and `BentoDeployment` resources. Note that API server and run
 
 ```bash
 kubectl -n kubeflow get pods -l yatai.ai/bento-deployment=fraud-detection
+
+NAME                                        READY   STATUS    RESTARTS   AGE
+fraud-detection-67f84686c4-9zzdz            4/4     Running   0          10s
+fraud-detection-runner-0-86dc8b5c57-q4c9f   3/3     Running   0          10s
+fraud-detection-runner-1-846bdfcf56-c5g6m   3/3     Running   0          10s
+fraud-detection-runner-2-6d48794b7-xws4j    3/3     Running   0          10s
 ```
 
 Port forward the Fraud Detection service to test locally. You should be able to visit the Swagger page of the service by requesting http://0.0.0.0:8080 while port forwarding.

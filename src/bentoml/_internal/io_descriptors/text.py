@@ -6,7 +6,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
-from .base import append_from_sample_notes
 from ..utils.http import set_cookies
 from ...exceptions import BentoMLException
 from ..service.openapi import SUCCESS_DESCRIPTION
@@ -98,7 +97,6 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
                 f"'{self.__class__.__name__}' is not designed to take any args or kwargs during initialization."
             ) from None
 
-    @append_from_sample_notes()
     def _from_sample(self, sample: str | bytes) -> str:
         """
         Create a :class:`~bentoml._internal.io_descriptors.text.Text` IO Descriptor from given inputs.

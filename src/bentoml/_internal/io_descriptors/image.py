@@ -11,7 +11,6 @@ from starlette.responses import Response
 from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
-from .base import append_from_sample_notes
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils import resolve_user_filepath
@@ -209,7 +208,6 @@ class Image(IODescriptor[ImageType], descriptor_id="bentoml.io.Image"):
         self._pilmode: _Mode | None = pilmode
         self._format: str = MIME_EXT_MAPPING[self._mime_type]
 
-    @append_from_sample_notes()
     def _from_sample(self, sample: ImageType | str) -> ImageType:
         """
         Create a :class:`~bentoml._internal.io_descriptors.image.Image` IO Descriptor from given inputs.

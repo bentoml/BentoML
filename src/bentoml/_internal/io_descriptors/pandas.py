@@ -12,7 +12,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
-from .base import append_from_sample_notes
 from ..types import LazyType
 from ..utils.pkg import find_spec
 from ..utils.http import set_cookies
@@ -341,7 +340,6 @@ class PandasDataFrame(
         _validate_serialization_format(self._default_format)
         self._mime_type = self._default_format.mime_type
 
-    @append_from_sample_notes()
     def _from_sample(self, sample: ext.PdDataFrame) -> ext.PdDataFrame:
         """
         Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasDataFrame` IO Descriptor from given inputs.
@@ -896,7 +894,6 @@ class PandasSeries(
         self._shape = shape
         self._enforce_shape = enforce_shape
 
-    @append_from_sample_notes()
     def _from_sample(self, sample: ext.PdSeries | t.Sequence[t.Any]) -> ext.PdSeries:
         """
         Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries` IO Descriptor from given inputs.

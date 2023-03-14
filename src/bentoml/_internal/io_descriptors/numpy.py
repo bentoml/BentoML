@@ -9,7 +9,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
-from .base import append_from_sample_notes
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
@@ -433,7 +432,6 @@ class NumpyNdarray(
         else:
             return Response(json.dumps(obj.tolist()), media_type=self._mime_type)
 
-    @append_from_sample_notes()
     def _from_sample(self, sample: ext.NpNDArray | t.Sequence[t.Any]) -> ext.NpNDArray:
         """
         Create a :class:`~bentoml._internal.io_descriptors.numpy.NumpyNdarray` IO Descriptor from given inputs.

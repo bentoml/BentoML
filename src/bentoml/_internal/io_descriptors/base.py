@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing as t
-import functools
 from abc import ABC
 from abc import abstractmethod
 from functools import update_wrapper
@@ -46,26 +45,6 @@ def from_spec(spec: dict[str, t.Any]) -> IODescriptor[t.Any]:
         raise InvalidArgument("No IO descriptor spec found.")
 
     return IO_DESCRIPTOR_REGISTRY[spec["id"]].from_spec(spec)
-
-
-def append_to_last_docstring(docstring: str):
-    def wrapper(f: F) -> F:
-        f.__doc__ += docstring
-        return f
-
-    return wrapper
-
-
-FROM_SAMPLE_NOTES = """\
-
-        .. note::
-
-            ``from_sample`` does not take positional arguments.
-"""
-
-append_from_sample_notes = functools.partial(
-    append_to_last_docstring, FROM_SAMPLE_NOTES
-)
 
 
 class _OpenAPIMeta:

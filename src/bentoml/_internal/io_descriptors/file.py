@@ -12,7 +12,6 @@ from starlette.responses import Response
 from starlette.datastructures import UploadFile
 
 from .base import IODescriptor
-from .base import append_from_sample_notes
 from ..types import FileLike
 from ..utils import resolve_user_filepath
 from ..utils.http import set_cookies
@@ -126,7 +125,6 @@ class File(IODescriptor[FileType], descriptor_id="bentoml.io.File"):
         res._mime_type = mime_type
         return res
 
-    @append_from_sample_notes()
     def _from_sample(self, sample: FileType | str) -> FileType:
         """
         Create a :class:`~bentoml._internal.io_descriptors.file.File` IO Descriptor from given inputs.

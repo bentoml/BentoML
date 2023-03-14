@@ -10,7 +10,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
-from .base import append_from_sample_notes
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils import bentoml_cattr
@@ -201,7 +200,6 @@ class JSON(IODescriptor[JSONType], descriptor_id="bentoml.io.JSON"):
                 "'validate_json' option from 'bentoml.io.JSON' has been deprecated. Use a Pydantic model to specify validation options instead."
             )
 
-    @append_from_sample_notes()
     def _from_sample(self, sample: JSONType) -> JSONType:
         """
         Create a :class:`~bentoml._internal.io_descriptors.json.JSON` IO Descriptor from given inputs.

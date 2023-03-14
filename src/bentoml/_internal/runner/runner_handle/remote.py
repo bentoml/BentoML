@@ -175,7 +175,7 @@ class RemoteRunnerClient(RunnerHandle):
             functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
         )
 
-        headers={
+        headers = {
             "Bento-Name": component_context.bento_name,
             "Bento-Version": component_context.bento_version,
             "Runner-Name": self._runner.name,
@@ -187,11 +187,19 @@ class RemoteRunnerClient(RunnerHandle):
 
         if total_args_num == 1:
             # FIXME: also considering kwargs
-            payload = AutoContainer.to_payload(args[0], batch_dim=inp_batch_dim)
+            if len(kwargs) == 1:
+                kwarg_name = list(kwargs.keys())[0]
+                headers["Kwarg-Name"] = kwarg_name
+                payload = AutoContainer.to_payload(
+                    kwargs[kwarg_name], batch_dim=inp_batch_dim
+                )
+            else:
+                payload = AutoContainer.to_payload(args[0], batch_dim=inp_batch_dim)
+            data = payload.data
+
             headers["Payload-Meta"] = json.dumps(payload.meta)
             headers["Payload-Container"] = payload.container
             headers["Batch-Size"] = str(payload.batch_size)
-            data = payload.data
 
         else:
             payload_params = Params[Payload](*args, **kwargs).map(

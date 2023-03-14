@@ -292,6 +292,7 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
             )
 
         import numpy as np
+
         # skip 0-dimensional array
         if batch.shape:
 
@@ -310,9 +311,8 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
                 {
                     "format": "pickle5",
                     "pickle_bytes": bs_str,
-                }
-             )
-
+                },
+            )
 
         return cls.create_payload(
             pickle.dumps(batch),

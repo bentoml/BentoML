@@ -263,8 +263,29 @@ class RunnerAppFactory(BaseAppFactory):
         async def _request_handler(request: Request) -> Response:
             assert self._is_ready
 
+            arg_num = int(request.headers["args-number"])
             r_: bytes = await request.body()
-            params: Params[t.Any] = pickle.loads(r_)
+
+            if arg_num == 1:
+                container = request.headers["Payload-Container"]
+                meta = json.loads(request.headers["Payload-Meta"])
+                batch_size = int(request.headers["Batch-Size"])
+                kwarg_name = request.headers.get("Kwarg-Name")
+                payload = Payload(
+                    data=r_,
+                    meta=meta,
+                    batch_size=batch_size,
+                    container=container,
+                )
+                if kwarg_name:
+                    d = {kwarg_name: payload}
+                    params: Params[t.Any] = Params(**d)
+                else:
+                    params: Params[t.Any] = Params(payload)
+
+            else:
+                params: Params[t.Any] = pickle.loads(r_)
+
             try:
                 payload = await infer(params)
             except BentoMLException as e:

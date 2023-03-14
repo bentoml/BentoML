@@ -359,7 +359,6 @@ def add_containerize_command(cli: Group) -> None:
     from bentoml_cli.utils import kwargs_transformers
     from bentoml_cli.utils import normalize_none_type
     from bentoml_cli.utils import validate_container_tag
-    from bentoml.exceptions import BentoMLException
     from bentoml._internal.container import FEATURES
     from bentoml._internal.container import enable_buildkit
     from bentoml._internal.container import REGISTERED_BACKENDS
@@ -485,11 +484,6 @@ def add_containerize_command(cli: Group) -> None:
         # we can filter out all options that are None or False.
         _memoized = {k: v for k, v in _memoized.items() if v}
         logger.debug("Memoized: %s", _memoized)
-
-        # Run healthcheck before containerizing
-        # build will also run healthcheck, but we want to fail early.
-        if not container.health(backend):
-            raise BentoMLException("Failed to use backend %s." % backend)
 
         # --progress is not available without BuildKit.
         if not enable_buildkit(backend=backend) and "progress" in _memoized:

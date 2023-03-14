@@ -1,4 +1,8 @@
-from typing import Any, Callable, List, Optional, Union
+from typing import Any
+from typing import List
+from typing import Union
+from typing import Callable
+from typing import Optional
 
 _StringOrFunction = Union[str, Callable[..., Any]]
 STRATEGY_END: object = ...

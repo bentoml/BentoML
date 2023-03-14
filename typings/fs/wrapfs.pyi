@@ -1,37 +1,36 @@
 import typing
+from typing import IO
+from typing import Any
+from typing import List
+from typing import Text
+from typing import Tuple
+from typing import AnyStr
+from typing import Mapping
+from typing import BinaryIO
+from typing import Callable
+from typing import Iterable
+from typing import Iterator
+from typing import Optional
+from typing import Collection
 from datetime import datetime
 from threading import RLock
-from typing import (
-    IO,
-    Any,
-    AnyStr,
-    BinaryIO,
-    Callable,
-    Collection,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Text,
-    Tuple,
-)
-import six
+
 from .base import FS
-from .enums import ResourceType
-from .info import Info, RawInfo
-from .permissions import Permissions
-from .subfs import SubFS
+from .info import Info
+from .info import RawInfo
 from .walk import BoundWalker
+from .enums import ResourceType
+from .subfs import SubFS
+from .permissions import Permissions
 
 _T = typing.TypeVar("_T", bound="FS")
 _OpendirFactory = Callable[[_T, Text], SubFS[_T]]
 _F = typing.TypeVar("_F", bound="FS", covariant=True)
 _W = typing.TypeVar("_W", bound="WrapFS[FS]")
 
-@six.python_2_unicode_compatible
 class WrapFS(FS, typing.Generic[_F]):
     wrap_name: Optional[Text] = ...
+
     def __init__(self, wrap_fs: _F) -> None: ...
     def __repr__(self) -> Text: ...
     def __str__(self) -> Text: ...
@@ -85,7 +84,7 @@ class WrapFS(FS, typing.Generic[_F]):
         path: Text,
         file: BinaryIO,
         chunk_size: Optional[int] = ...,
-        **options: Any
+        **options: Any,
     ) -> None: ...
     def exists(self, path: Text) -> bool: ...
     def filterdir(
@@ -128,7 +127,7 @@ class WrapFS(FS, typing.Generic[_F]):
         errors: Optional[Text] = ...,
         newline: Text = ...,
         line_buffering: bool = ...,
-        **options: Any
+        **options: Any,
     ) -> IO[AnyStr]: ...
     def opendir(
         self: _W, path: Text, factory: Optional[_OpendirFactory[_W]] = ...
@@ -139,7 +138,7 @@ class WrapFS(FS, typing.Generic[_F]):
         path: Text,
         file: BinaryIO,
         chunk_size: Optional[int] = ...,
-        **options: Any
+        **options: Any,
     ) -> None: ...
     def writefile(
         self,

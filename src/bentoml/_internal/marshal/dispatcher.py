@@ -199,6 +199,9 @@ class CorkDispatcher:
                     self._queue.popleft()[2].cancel()
                     continue
                 if batch_size > 1:  # only wait if batch_size
+                    a = self.optimizer.o_a
+                    b = self.optimizer.o_b
+
                     if n < batch_size and (batch_size * a + b) + w0 <= wait:
                         await asyncio.sleep(self.tick_interval)
                         continue

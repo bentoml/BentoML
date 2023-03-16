@@ -30,6 +30,7 @@ if t.TYPE_CHECKING:
 
     from .. import external_typing as ext
 else:
+    np = LazyLoader("np", globals(), "numpy")
     tritongrpcclient = LazyLoader(
         "tritongrpcclient", globals(), "tritonclient.grpc.aio", exc_msg=TRITON_EXC_MSG
     )
@@ -237,8 +238,6 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         batches: t.Sequence[ext.NpNDArray],
         batch_dim: int = 0,
     ) -> tuple[ext.NpNDArray, list[int]]:
-        import numpy as np
-
         # numpy.concatenate may consume lots of memory, need optimization later
         batch: ext.NpNDArray = np.concatenate(batches, axis=batch_dim)
         indices = list(
@@ -254,8 +253,6 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> list[ext.NpNDArray]:
-        import numpy as np
-
         return np.split(batch, indices[1:-1], axis=batch_dim)
 
     @classmethod
@@ -296,8 +293,6 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
                 batch.shape[batch_dim],
                 {"format": "plasma"},
             )
-
-        import numpy as np
 
         # skip 0-dimensional array
         if batch.shape:

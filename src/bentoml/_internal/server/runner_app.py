@@ -267,21 +267,7 @@ class RunnerAppFactory(BaseAppFactory):
             r_: bytes = await request.body()
 
             if arg_num == 1:
-                container = request.headers["Payload-Container"]
-                meta = json.loads(request.headers["Payload-Meta"])
-                batch_size = int(request.headers["Batch-Size"])
-                kwarg_name = request.headers.get("Kwarg-Name")
-                payload = Payload(
-                    data=r_,
-                    meta=meta,
-                    batch_size=batch_size,
-                    container=container,
-                )
-                if kwarg_name:
-                    d = {kwarg_name: payload}
-                    params: Params[t.Any] = Params(**d)
-                else:
-                    params: Params[t.Any] = Params(payload)
+                params: Params[t.Any] = _deserialize_single_param(request, r_)
 
             else:
                 params: Params[t.Any] = pickle.loads(r_)
@@ -343,7 +329,13 @@ class RunnerAppFactory(BaseAppFactory):
         async def _run(request: Request) -> Response:
             assert self._is_ready
 
-            params = pickle.loads(await request.body())
+            arg_num = int(request.headers["args-number"])
+            r_: bytes = await request.body()
+
+            if arg_num == 1:
+                params: Params[t.Any] = _deserialize_single_param(request, r_)
+            else:
+                params: Params[t.Any] = pickle.loads(r_)
 
             params = params.map(AutoContainer.from_payload)
 
@@ -375,3 +367,24 @@ class RunnerAppFactory(BaseAppFactory):
                 )
 
         return _run
+
+
+def _deserialize_single_param(request: Request, bs: bytes) -> Params[t.Any]:
+
+    container = request.headers["Payload-Container"]
+    meta = json.loads(request.headers["Payload-Meta"])
+    batch_size = int(request.headers["Batch-Size"])
+    kwarg_name = request.headers.get("Kwarg-Name")
+    payload = Payload(
+        data=bs,
+        meta=meta,
+        batch_size=batch_size,
+        container=container,
+    )
+    if kwarg_name:
+        d = {kwarg_name: payload}
+        params: Params[t.Any] = Params(**d)
+    else:
+        params: Params[t.Any] = Params(payload)
+
+    return params

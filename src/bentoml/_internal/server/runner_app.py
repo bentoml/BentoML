@@ -58,6 +58,7 @@ class RunnerAppFactory(BaseAppFactory):
             max_batch_size = method.max_batch_size if method.config.batchable else 1
             self.dispatchers[method.name] = CorkDispatcher(
                 max_latency_in_ms=method.max_latency_ms,
+                batching_strategy=method.batching_strategy,
                 max_batch_size=max_batch_size,
                 fallback=functools.partial(
                     ServiceUnavailable, message="process is overloaded"

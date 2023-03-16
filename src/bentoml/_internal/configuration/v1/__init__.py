@@ -142,6 +142,8 @@ _RUNNER_CONFIG = {
         s.Optional("enabled"): bool,
         s.Optional("max_batch_size"): s.And(int, ensure_larger_than_zero),
         s.Optional("max_latency_ms"): s.And(int, ensure_larger_than_zero),
+        s.Optional("strategy"): str,
+        s.Optional("strategy_options"): dict,
     },
     # NOTE: there is a distinction between being unset and None here; if set to 'None'
     # in configuration for a specific runner, it will override the global configuration.

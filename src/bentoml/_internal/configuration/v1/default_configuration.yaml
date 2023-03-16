@@ -84,6 +84,13 @@ runners:
   batching:
     enabled: true
     max_batch_size: 100
+    # which strategy to use to batch requests
+    # there are currently two available options:
+    #  - target_latency: attempt to ensure requests are served within a certain amount of time
+    #  - adaptive: wait a variable amount of time in order to optimize for minimal average latency
+    strategy: adaptive
+    strategy_options:
+      decay: 0.95
     max_latency_ms: 10000
   logging:
     access:

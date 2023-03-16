@@ -4,6 +4,7 @@ import typing as t
 import logging
 from abc import ABC
 from abc import abstractmethod
+from pprint import pprint
 
 import attr
 from simple_di import inject
@@ -19,6 +20,7 @@ from ..models.model import Model
 from .runner_handle import RunnerHandle
 from .runner_handle import DummyRunnerHandle
 from ..configuration.containers import BentoMLContainer
+from ..marshal.dispatcher import BATCHING_STRATEGY_REGISTRY
 
 if t.TYPE_CHECKING:
     from ...triton import Runner as TritonRunner
@@ -47,6 +49,7 @@ class RunnerMethod(t.Generic[T, P, R]):
     config: RunnableMethodConfig
     max_batch_size: int
     max_latency_ms: int
+    batching_strategy: BatchingStrategy
 
     def run(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self.runner._runner_handle.run_method(self, *args, **kwargs)
@@ -159,6 +162,7 @@ class Runner(AbstractRunner):
         models: list[Model] | None = None,
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
+        batching_strategy: BatchingStrategy | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
     ) -> None:
         """
@@ -177,8 +181,9 @@ class Runner(AbstractRunner):
             models: An optional list composed of ``bentoml.Model`` instances.
             max_batch_size: Max batch size config for dynamic batching. If not provided, use the default value from
                             configuration.
-            max_latency_ms: Max latency config for dynamic batching. If not provided, use the default value from
-                            configuration.
+            max_latency_ms: Max latency config. If not provided, uses the default value from configuration.
+            batching_strategy: Batching strategy for dynamic batching. If not provided, uses the default value
+                               from the configuration.
             method_configs: A dictionary per method config for this given Runner signatures.
 
         Returns:
@@ -215,6 +220,7 @@ class Runner(AbstractRunner):
 
             method_max_batch_size = None
             method_max_latency_ms = None
+            method_batching_strategy = None
             if method_name in method_configs:
                 method_max_batch_size = method_configs[method_name].get(
                     "max_batch_size"
@@ -222,6 +228,23 @@ class Runner(AbstractRunner):
                 method_max_latency_ms = method_configs[method_name].get(
                     "max_latency_ms"
                 )
+                method_batching_strategy = method_configs[method_name].get(
+                    "batching_strategy"
+                )
+
+            if config["batching"]["strategy"] not in BATCHING_STRATEGY_REGISTRY:
+                raise BentoMLConfigException(
+                    f"Unknown batching strategy '{config['batching']['strategy']}'. Available strategies are: {','.join(BATCHING_STRATEGY_REGISTRY.keys())}.",
+                )
+
+            try:
+                default_batching_strategy = BATCHING_STRATEGY_REGISTRY[
+                    config["batching"]["strategy"]
+                ](**config["batching"]["strategy_options"])
+            except Exception as e:
+                raise BentoMLConfigException(
+                    f"Initializing strategy '{config['batching']['strategy']}' with configured options ({pprint(config['batching']['strategy_options'])}) failed."
+                ) from e
 
             runner_method_map[method_name] = RunnerMethod(
                 runner=self,
@@ -236,6 +259,11 @@ class Runner(AbstractRunner):
                     method_max_latency_ms,
                     max_latency_ms,
                     default=config["batching"]["max_latency_ms"],
+                ),
+                batching_strategy=first_not_none(
+                    method_batching_strategy,
+                    batching_strategy,
+                    default=BATCHING_STRATEGY_REGISTRY[config["batching"]["strategy"]],
                 ),
             )
 

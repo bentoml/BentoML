@@ -52,28 +52,82 @@ In addition to declaring model as batchable, batch dimensions can also be config
 Configuring Batching
 --------------------
 
-If a model supports batching, adaptive batching is enabled by default. To explicitly disable or control adaptive batching behaviors at runtime, configuration can be specified under the ``batching`` key.
-Additionally, there are two configurations for customizing batching behaviors, `max_batch_size` and `max_latency_ms`.
+If a model supports batching, adaptive batching is enabled by default. To explicitly disable or
+control adaptive batching behaviors at runtime, configuration can be specified under the
+``batching`` key.  Additionally, there are three configuration keys for customizing batching
+behaviors, ``max_batch_size``, ``max_latency_ms``, and ``strategy``.
 
 Max Batch Size
 ^^^^^^^^^^^^^^
 
-Configured through the ``max_batch_size`` key, max batch size represents the maximum size a batch can reach before releasing for inferencing. Max batch size should be set based on the capacity of the available system resources, e.g. memory or GPU memory.
+Configured through the ``max_batch_size`` key, max batch size represents the maximum size a batch
+can reach before being released for inferencing. Max batch size should be set based on the capacity
+of the available system resources, e.g. memory or GPU memory.
 
 Max Latency
 ^^^^^^^^^^^
 
-Configured through the ``max_latency_ms`` key, max latency represents the maximum latency in milliseconds that a batch should wait before releasing for inferencing. Max latency should be set based on the service level objective (SLO) of the inference requests.
+Configured through the ``max_latency_ms`` key, max latency represents the maximum latency in
+milliseconds that the scheduler will attempt to uphold by cancelling requests when it thinks the
+runner server is incapable of servicing that request in time. Max latency should be set based on the
+service level objective (SLO) of the inference requests.
+
+Batching Strategy
+^^^^^^^^^^^^^^^^^
+
+Configured through the ``strategy`` and ``strategy_options`` keys, the batching strategy determines
+the way that the scheduler chooses a batching window, i.e. the time it waits for requests to combine
+them into a batch before dispatching it to begin execution. There are three options:
+
+ - target_latency: this strategy waits until it expects the first request received will take around
+                   ``latency`` time to complete before beginning execution. Choose this method if
+                   you think that your service workload will be very bursty and so the intelligent
+                   wait algorithm will do a poor job of identifying average wait times.
+
+                   It takes one option, ``latency_ms`` (default 1000), which is the latency target
+                   to use for dispatch.
+
+ - fixed_wait: this strategy will wait a fixed amount of time after the first request has been
+               received. It differs from the target_latency strategy in that it does not consider
+               the amount of time that it expects a batch will take to execute.
+
+               It takes one option, ``wait_ms`` (default 1000), the amount of time to wait after
+               receiving the first request.
+
+ - intelligent_wait: this strategy waits intelligently in an effort to optimize average latency
+                     across all requests. It takes the average the average time spent in queue, then
+                     calculates the average time it expects to take to wait for and then execute the
+                     batch including the next request. If that time, multiplied by number of
+                     requests in the queue, is less than the average wait time, it will continue
+                     waiting for the next request to arrive. This is the default, and the other
+                     options should only be chosen if undesirable latency behavior is observed.
+
+                     It has one option, ``decay`` (default 0.95), which is the rate at which the
+                     dispatcher decays the wait time, per dispatched job. Note that this does not
+                     decay the actual expected wait time, but instead reduces the batching window,
+                     which indirectly reduces the average waiting time.
+
 
 .. code-block:: yaml
     :caption: ⚙️ `configuration.yml`
 
     runners:
+        # batching options for all runners
+        batching:
+            enabled: true
+            max_batch_size: 100
+            max_latency_ms: 500
+            strategy: avg_wait
         iris_clf:
+            # batching options for specifically the iris_clf runner
+            # these options override the above
             batching:
                 enabled: true
                 max_batch_size: 100
                 max_latency_ms: 500
+                strategy: target_latency
+                strategy_options:
+                  latency_ms: 200
 
 Monitoring
 ----------

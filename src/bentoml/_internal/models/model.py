@@ -326,6 +326,7 @@ class Model(StoreItem):
         name: str = "",
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
+        batching_strategy: BatchingStrategy | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
     ) -> Runner:
         """
@@ -348,6 +349,7 @@ class Model(StoreItem):
             models=[self],
             max_batch_size=max_batch_size,
             max_latency_ms=max_latency_ms,
+            batching_strategy=batching_strategy,
             method_configs=method_configs,
         )
 

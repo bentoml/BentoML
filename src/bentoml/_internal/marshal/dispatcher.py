@@ -7,6 +7,8 @@ import logging
 import functools
 import traceback
 import collections
+from abc import ABC
+from abc import abstractmethod
 
 import numpy as np
 
@@ -41,7 +43,7 @@ class Job:
 
 class Optimizer:
     """
-    Analyse historical data to optimize CorkDispatcher.
+    Analyze historical data to predict execution time using a simple linear regression on batch size.
     """
 
     N_KEPT_SAMPLE = 50  # amount of outbound info kept for inferring params
@@ -98,14 +100,97 @@ T_IN = t.TypeVar("T_IN")
 T_OUT = t.TypeVar("T_OUT")
 
 
-class CorkDispatcher:
-    """
-    A decorator that:
-        * wrap batch function
-        * implement CORK algorithm to cork & release calling of wrapped function
-    The wrapped function should be an async function.
-    """
+BATCHING_STRATEGY_REGISTRY = {}
 
+
+class BatchingStrategy(abc.ABC):
+    strategy_id: str
+
+    @abc.abstractmethod
+    def controller(queue: t.Sequence[Job], predict_execution_time: t.Callable[t.Sequence[Job]], dispatch: t.Callable[]):
+        pass
+
+    def __init_subclass__(cls, strategy_id: str):
+        BATCHING_STRATEGY_REGISTRY[strategy_id] = cls
+        cls.strategy_id = strategy_id
+
+
+class TargetLatencyStrategy(strategy_id="target_latency"):
+    latency: float = 1
+
+    def __init__(self, options: dict[t.Any, t.Any]):
+        for key in options:
+            if key == "latency":
+                self.latency = options[key] / 1000.0
+            else:
+                logger.warning("Strategy 'target_latency' ignoring unknown configuration key '{key}'.")
+
+    async def wait(queue: t.Sequence[Job], optimizer: Optimizer, max_latency: float, max_batch_size: int, tick_interval: float):
+        now = time.time()
+        w0 = now - queue[0].enqueue_time
+        latency_0 = w0 + optimizer.o_a * n + optimizer.o_b
+
+        while latency_0 < self.latency:
+            n = len(queue)
+            now = time.time()
+            w0 = now - queue[0].enqueue_time
+            latency_0 = w0 + optimizer.o_a * n + optimizer.o_b
+
+            await asyncio.sleep(tick_interval)
+
+
+class FixedWaitStrategy(strategy_id="fixed_wait"):
+    wait: float = 1
+
+    def __init__(self, options: dict[t.Any, t.Any]):
+        for key in options:
+            if key == "wait":
+                self.wait = options[key] / 1000.0
+            else:
+                logger.warning("Strategy 'fixed_wait' ignoring unknown configuration key '{key}'")
+
+    async def wait(queue: t.Sequence[Job], optimizer: Optimizer, max_latency: float, max_batch_size: int, tick_interval: float):
+        now = time.time()
+        w0 = now - queue[0].enqueue_time
+
+        if w0 < self.wait:
+            await asyncio.sleep(self.wait - w0)
+
+
+class IntelligentWaitStrategy(strategy_id="intelligent_wait"):
+    decay: float = 0.95
+
+    def __init__(self, options: dict[t.Any, t.Any]):
+        for key in options:
+            if key == "decay":
+                self.decay = options[key]
+            else:
+                logger.warning("Strategy 'intelligent_wait' ignoring unknown configuration value")
+
+    async def wait(queue: t.Sequence[Job], optimizer: Optimizer, max_latency: float, max_batch_size: int, tick_interval: float):
+        n = len(queue)
+        now = time.time()
+        wn = now - queue[-1].enqueue_time
+        latency_0 = w0 + optimizer.o_a * n + optimizer.o_b
+        while (
+            # if we don't already have enough requests,
+            n < max_batch_size
+            # we are not about to cancel the first request,
+            and latency_0 + dt <= self.max_latency * 0.95
+            # and waiting will cause average latency to decrese
+            and n * (wn + dt + optimizer.o_a) <= optimizer.wait * decay
+        ):
+            n = len(queue)
+            now = time.time()
+            w0 = now - queue[0].enqueue_time
+            latency_0 = w0 + optimizer.o_a * n + optimizer.o_b
+
+            # wait for additional requests to arrive
+            await asyncio.sleep(tick_interval)
+
+
+
+class Dispatcher:
     def __init__(
         self,
         max_latency_in_ms: int,
@@ -283,19 +368,11 @@ class CorkDispatcher:
                         continue
                     await asyncio.sleep(self.tick_interval)
                     continue
-                if (
-                    n < self.max_batch_size
-                    and n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay
-                ):
-                    n = len(self._queue)
-                    now = time.time()
-                    wn = now - self._queue[-1].enqueue_time
-                    latency_0 += dt
 
-                    # wait for additional requests to arrive
-                    await asyncio.sleep(self.tick_interval)
-                    continue
+                # we are now free to dispatch whenever we like
+                await self.strategy.wait(self._queue, optimizer, self.max_latency, self.max_batch_size, self.tick_interval)
 
+                n = len(self._queue)
                 n_call_out = min(self.max_batch_size, n)
                 # call
                 self._sema.acquire()
@@ -305,6 +382,7 @@ class CorkDispatcher:
                 return
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)
+
 
     async def inbound_call(self, data: t.Any):
         now = time.time()

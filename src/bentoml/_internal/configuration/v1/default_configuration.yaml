@@ -84,6 +84,13 @@ runners:
   batching:
     enabled: true
     max_batch_size: 100
+    # which strategy to use to batch requests
+    # there are currently two available options:
+    #  - fixed_wait: always wait a fixed time after a request arrives
+    #  - average_wait: intelligently wait a time based on
+    strategy: intelligent_wait
+    strategy_options:
+      decay: 0.95
     max_latency_ms: 10000
   logging:
     access:

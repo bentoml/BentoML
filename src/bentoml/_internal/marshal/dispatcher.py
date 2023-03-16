@@ -300,6 +300,12 @@ class CorkDispatcher:
                     n < self.max_batch_size
                     and n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay
                 ):
+                    n = len(self._queue)
+                    now = time.time()
+                    wn = now - self._queue[-1].enqueue_time
+                    latency_0 += dt
+
+                    # wait for additional requests to arrive
                     await asyncio.sleep(self.tick_interval)
                     continue
 

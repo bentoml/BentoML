@@ -199,6 +199,8 @@ class CorkDispatcher:
                     self._queue.popleft()[2].cancel()
                     continue
                 if batch_size > 1:  # only wait if batch_size
+                    a = self.optimizer.o_a
+                    b = self.optimizer.o_b
                     if n < batch_size and (batch_size * a + b) + w0 <= wait:
                         await asyncio.sleep(self.tick_interval)
                         continue
@@ -229,7 +231,6 @@ class CorkDispatcher:
         self.train_optimizer(
             self.optimizer.N_SKIPPED_SAMPLE, self.optimizer.N_SKIPPED_SAMPLE + 6, 1
         )
-
         logger.debug("Dispatcher finished warming up model.")
 
         await self.train_optimizer(1, 6, 1)
@@ -246,7 +247,7 @@ class CorkDispatcher:
 
         if self.optimizer.o_a + self.optimizer.o_b >= self.max_latency_in_ms:
             logger.warning(
-                "BentoML has detected that a service has a max latency that is likely too low for serving. If many 429 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
+                "BentoML has detected that a service has a max latency that is likely too low for serving. If many 503 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
             )
         logger.debug("Dispatcher optimizer training complete.")
 

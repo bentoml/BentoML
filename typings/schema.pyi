@@ -1,5 +1,6 @@
-from types import BuiltinFunctionType, FunctionType
 import typing as t
+from types import FunctionType
+from types import BuiltinFunctionType
 from typing import overload
 
 OpsType = Schema | And | Or | Use | Optional | Regex | Literal | Const
@@ -32,7 +33,7 @@ class And(OpsMeta):
         *args: _SchemaLike,
         error: list[str] = ...,
         schema: Schema | None = ...,
-        ignore_extra_keys: bool = ...
+        ignore_extra_keys: bool = ...,
     ) -> None: ...
     def __repr__(self) -> str: ...
     @property
@@ -45,7 +46,7 @@ class Or(And):
         error: list[str] = ...,
         schema: None = ...,
         ignore_extra_keys: bool = ...,
-        only_one: bool = ...
+        only_one: bool = ...,
     ) -> None: ...
     def reset(self) -> None: ...
 

@@ -14,7 +14,6 @@ from ..utils import LazyLoader
 from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
-from ...exceptions import BentoMLException
 from ...exceptions import UnprocessableEntity
 from ...grpc.utils import import_generated_stubs
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
@@ -474,21 +473,19 @@ class NumpyNdarray(
                return await runner.async_run(input)
 
         Raises:
-            :class:`BentoMLException`: If given sample is a type ``numpy.generic``. This exception
+            :class:`BadInput`: If given sample is a type ``numpy.generic``. This exception
                                        will also be raised if we failed to create a ``np.ndarray``
                                        from given sample.
         """
         if isinstance(sample, np.generic):
-            raise BentoMLException(
+            raise BadInput(
                 "'NumpyNdarray.from_sample()' expects a 'numpy.array', not 'numpy.generic'."
             ) from None
         try:
             if not isinstance(sample, np.ndarray):
                 sample = np.array(sample)
         except ValueError:
-            raise BentoMLException(
-                f"Failed to create a 'numpy.ndarray' from given sample {sample}"
-            ) from None
+            raise BadInput(f"Given sample ({sample}) is not a numpy ND-array") from None
         if self._dtype is None:
             self._dtype = sample.dtype
         if self._shape is None:

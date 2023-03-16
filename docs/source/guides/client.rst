@@ -54,6 +54,7 @@ For multipart requests, all arguments to the function must currently be keyword 
 For example, for the service API function:
 
 .. code-block:: python
+
     @svc.api(input=Multipart(a=Text(), b=Text()), output=JSON())
     def combine(a, b) -> dict[typing.Any, typing.Any]:
         return {a: b}

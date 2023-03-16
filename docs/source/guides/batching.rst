@@ -85,4 +85,6 @@ Adaptive batching size is by default exposed as a histogram metric with name, ``
 Error handling
 --------------
 
-If adaptive batching cannot keep up with rate of the incoming requests while satisfying the max latency configuration, `HTTP 429 TOO MANY REQUESTS` is returned. To workaround `HTTP 429`, consider relaxing the max latency requirement and further scaling the underlying hardware resources.
+If adaptive batching cannot keep up with rate of the incoming requests while satisfying the max
+latency configuration, HTTP 503 Service Unavailable is returned. To workaround this error, consider
+relaxing the max latency requirement and further scaling the underlying hardware resources.

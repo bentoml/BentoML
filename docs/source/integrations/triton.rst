@@ -408,6 +408,17 @@ HTTP/REST APIs is disabled by default, though it can be enabled when creating th
 
 Additionally, BentoML will allocate a random port for the gRPC/HTTP server, hence ``grpc-port`` or ``http-port`` options that is passed to Runner ``cli_args`` will be omitted.
 
+Adaptive Batching
+^^^^^^^^^^^^^^^^^
+
+:ref:`Adaptive batching <guides/batching:Adaptive Batching>` is a feature supported by BentoML runners that allows for efficient batch size selection during inference. However, it's important to note that this feature is not compatible with ``TritonRunner``.
+
+``TritonRunner`` is designed as a standalone Triton server, which means that the adaptive batching logic in BentoML runners is not invoked when using ``TritonRunner``.
+
+Fortunately, Triton supports its own solution for efficient batching called `dynamic batching <https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#scheduling-and-batching>`_.
+Similar to adaptive batching, dynamic batching also allows for the selection of the optimal batch size during inference. To use dynamic batching in Triton, relevant settings can be specified in the
+`model configuration <https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration>`_ file.
+
 .. admonition:: 🚧 Help us improve the integration!
 
     This integration is still in its early stages and we are looking for feedbacks and contributions to make it even better!

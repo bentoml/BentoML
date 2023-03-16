@@ -1,32 +1,35 @@
-import abc, typing
+import abc
+import typing
+from types import TracebackType
+from typing import IO
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Text
+from typing import Type
+from typing import Tuple
+from typing import Union
+from typing import AnyStr
+from typing import Mapping
+from typing import BinaryIO
+from typing import Callable
+from typing import Iterable
+from typing import Iterator
+from typing import Optional
+from typing import Collection
 from datetime import datetime
 from threading import RLock
-from types import TracebackType
-from typing import (
-    IO,
-    Any,
-    AnyStr,
-    BinaryIO,
-    Callable,
-    Collection,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Text,
-    Tuple,
-    Type,
-    Union,
-)
+
 import six
-from .enums import ResourceType
+
 from .glob import BoundGlobber
-from .info import Info, RawInfo
-from .permissions import Permissions
+from .info import Info
+from .info import RawInfo
+from .walk import Walker
+from .walk import BoundWalker
+from .enums import ResourceType
 from .subfs import SubFS
-from .walk import BoundWalker, Walker
+from .permissions import Permissions
 
 _F = typing.TypeVar("_F", bound="FS")
 _T = typing.TypeVar("_T", bound="FS")
@@ -38,6 +41,7 @@ class FS:
     _meta: Dict[Text, Union[Text, int, bool, None]] = ...
     walker_class = Walker
     subfs_class = None
+
     def __init__(self) -> None: ...
     def __del__(self) -> None: ...
     def __enter__(self) -> FS: ...
@@ -97,15 +101,19 @@ class FS:
         page: Optional[Tuple[int, int]] = ...,
     ) -> Iterator[Info]: ...
     def readbytes(self, path: Text) -> bytes: ...
+
     getbytes = readbytes
+
     def download(
         self,
         path: Text,
         file: BinaryIO,
         chunk_size: Optional[int] = ...,
-        **options: Any
+        **options: Any,
     ) -> None: ...
+
     getfile = download
+
     def readtext(
         self,
         path: Text,
@@ -113,7 +121,9 @@ class FS:
         errors: Optional[Text] = ...,
         newline: Text = ...,
     ) -> Text: ...
+
     gettext = readtext
+
     def getmeta(self, namespace: Text = ...) -> Mapping[Text, object]: ...
     def getsize(self, path: Text) -> int: ...
     def getsyspath(self, path: Text) -> Text: ...
@@ -141,7 +151,7 @@ class FS:
         encoding: Optional[Text] = ...,
         errors: Optional[Text] = ...,
         newline: Text = ...,
-        **options: Any
+        **options: Any,
     ) -> IO[Any]: ...
     def opendir(
         self: _F, path: Text, factory: Optional[_OpendirFactory[_F]] = ...
@@ -154,15 +164,19 @@ class FS:
         page: Optional[Tuple[int, int]] = ...,
     ) -> Iterator[Info]: ...
     def writebytes(self, path: Text, contents: bytes) -> None: ...
+
     setbytes = writebytes
+
     def upload(
         self,
         path: Text,
         file: BinaryIO,
         chunk_size: Optional[int] = ...,
-        **options: Any
+        **options: Any,
     ) -> None: ...
+
     setbinfile = upload
+
     def writefile(
         self,
         path: Text,
@@ -171,7 +185,9 @@ class FS:
         errors: Optional[Text] = ...,
         newline: Text = ...,
     ) -> None: ...
+
     setfile = writefile
+
     def settimes(
         self,
         path: Text,
@@ -186,7 +202,9 @@ class FS:
         errors: Optional[Text] = ...,
         newline: Text = ...,
     ) -> None: ...
+
     settext = writetext
+
     def touch(self, path: Text) -> None: ...
     def validatepath(self, path: Text) -> Text: ...
     def getbasic(self, path: Text) -> Info: ...

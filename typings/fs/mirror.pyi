@@ -1,14 +1,14 @@
-import typing
-from typing import Optional, Text, Union
+from __future__ import annotations
+
+from typing import Text
+
 from .base import FS
 from .walk import Walker
 
-if typing.TYPE_CHECKING: ...
-
 def mirror(
-    src_fs: Union[FS, Text],
-    dst_fs: Union[FS, Text],
-    walker: Optional[Walker] = ...,
+    src_fs: FS | Text,
+    dst_fs: FS | Text,
+    walker: Walker | None = ...,
     copy_if_newer: bool = ...,
     workers: int = ...,
 ) -> None: ...

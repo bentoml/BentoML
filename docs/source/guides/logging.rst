@@ -51,7 +51,7 @@ Logging Configuration
 
 Access logs can be configured by setting the appropriate flags in the bento configuration file for
 both web requests and model serving requests. Read more about how to use a bento configuration file
-here in the - :ref:`Configuration Guide <guides/configuration>`
+here in the - :doc:`Configuration Guide </guides/configuration>`
 
 To configure other logs, please use the `default Python logging configuration <https://docs.python.org/3/howto/logging.html>`_. All BentoML logs are logged under the ``bentoml`` namespace.
 

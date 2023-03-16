@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import base64
-import pickle
+import sys
 import typing as t
 import itertools
 
@@ -12,6 +12,12 @@ from simple_di import Provide
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..configuration.containers import BentoMLContainer
+
+if sys.version_info < (3, 8):
+    import pickle5 as pickle
+else:
+    import pickle
+
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")

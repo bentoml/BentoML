@@ -68,6 +68,7 @@ dependencies = [
     "backports.shutil_copytree;python_version<'3.8'",
     "importlib-metadata;python_version<'3.8'",
     "singledispatchmethod;python_version<'3.8'",
+    "pickle5;python_version<'3.8'",
 ]
 dynamic = ["version"]
 

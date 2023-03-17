@@ -8,12 +8,15 @@ This example can also be run from the `notebook.ipynb` included in this director
 
 ## Prerequisites
 
-This guide assume that Kubeflow is already installed in Kubernetes cluster. See [Kubeflow Manifests](https://github.com/kubeflow/manifests) for installation instructions.
+Install Kubeflow and BentoML resources to the Kubernetes cluster. See [Kubeflow](https://github.com/kubeflow/manifests) and [BentoML](https://github.com/kubeflow/manifests/tree/master/contrib/bentoml) installation guides for details.
 
-Install BentoML cloud native components and custom resource definitions.
+After BentoML Kubernetes resources are installed successfully, you should have the following CRDs.
 
 ```bash
-kustomize build bentoml-yatai-stack/default | kubectl apply -n kubeflow --server-side -f -
+> k -n kubeflow get crds | grep bento
+bentodeployments.serving.yatai.ai                     2022-12-22T18:46:46Z
+bentoes.resources.yatai.ai                            2022-12-22T18:46:47Z
+bentorequests.resources.yatai.ai                      2022-12-22T18:46:47Z
 ```
 
 Install the required packages to run this example.
@@ -244,7 +247,7 @@ BentoML offers three custom resource definitions (CRDs) in the Kubernetes cluste
 
 Since we have already built and pushed image in the earlier step, we will only need to create the `Bento` and `BentoDeployment` custom resources. The `Bento` CRD describes the metadata for the Bento such as the address of the image and the runners. The `BentoDeployment` CRD describes the metadata of the deployment such as resources and autoscaling behaviors. `BentoDeployment` requires `Bento` to be ready and will reconcile a `Bento` CR of the same name before a deployment is created. See `deployment.yaml` file included for an example.
 
-The `BentoRequest` CRD describes the meta data needed for building the image such as the download URL of the Bento. Creating the `BentoRequest` CR is not needed in this example.
+The `BentoRequest` CRD describes the metadata needed for building the image such as the download URL of the Bento. Creating the `BentoRequest` CR is not needed in this example.
 
 Apply the `Bento` and `BentoDeployment` CRDs.
 

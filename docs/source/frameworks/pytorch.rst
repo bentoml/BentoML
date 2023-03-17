@@ -204,6 +204,6 @@ argument with the method name and providing :code:`batchable` and :code:`batch_d
 
 .. note::
 
-   You can find more examples for **PyTorch** in our `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_ directory.
+   You can find more examples for **PyTorch** in our :examples:`bentoml/examples <>` directory.
 
 .. currentmodule:: bentoml.pytorch

@@ -18,6 +18,8 @@ Framework APIs
     torchscript
     transformers
     xgboost
+    picklable_model
+    pytorch
     lightgbm
     mlflow
     catboost

@@ -9,6 +9,12 @@ MLflow
    in BentoML.
 
 
+.. note::
+
+   You can find more examples for **MLflow** in our :examples:`examples/mlflow <mlflow>`
+   directory.
+
+
 .. currentmodule:: bentoml.mlflow
 
 .. autofunction:: bentoml.mlflow.import_model

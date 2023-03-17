@@ -306,7 +306,8 @@ JSON
 The data type of a JSON IO descriptor can be specified through a Pydantic model. By setting 
 a pydantic model, the IO descriptor will validate the input based on the specified pydantic
 model and return. To learn more, see IO descrptor reference for
-:ref:`reference/api_io_descriptors:Structured Data with JSON`.
+:ref:`reference/api_io_descriptors:Structured Data with JSON`. We also provide
+:examples:`an example project <pydantic_validation>` using Pydantic for request validation.
 
 .. code-block:: python
 

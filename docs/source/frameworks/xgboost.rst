@@ -178,3 +178,10 @@ default, but can be enabled using the appropriate signature when saving your boo
 .. code-block:: python
 
    bento_model = bentoml.xgboost.save_model("booster_tree", booster, signatures={"predict": {"batchable": True}})
+
+.. note::
+
+   You can find more examples for **XGBoost** in our :examples:`bentoml/examples/xgboost
+   <xgboost>` directory.
+
+.. currentmodule:: bentoml.xgboost

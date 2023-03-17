@@ -125,7 +125,8 @@ Structured Data with JSON
 
    Then proceed to add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
-   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`. We also provide
+   :examples:`an example project <pydantic_validation>` using Pydantic for request validation.
 
    .. tab-set::
 

@@ -1,0 +1,8 @@
+service: 'service.py:svc'
+labels:
+  owner: bentoml-team
+  project: multi-tasks-nlp
+include:
+  - '*.py'
+python:
+  requirements_txt: ./requirements.txt

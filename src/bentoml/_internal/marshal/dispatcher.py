@@ -130,9 +130,9 @@ class CorkDispatcher:
         raises:
             * all possible exceptions the decorated function has
         """
-        self.max_latency_in_ms = max_latency_in_ms / 1000.0
+        self.max_latency = max_latency_in_ms / 1000.0
         self.fallback = fallback
-        self.optimizer = Optimizer(self.max_latency_in_ms)
+        self.optimizer = Optimizer(self.max_latency)
         self.max_batch_size = int(max_batch_size)
         self.tick_interval = 0.001
 
@@ -208,7 +208,7 @@ class CorkDispatcher:
                 w0 = now - self._queue[0].enqueue_time
 
                 # only cancel requests if there are more than enough for training
-                if n > num_required_reqs - req_count and w0 >= self.max_latency_in_ms:
+                if n > num_required_reqs - req_count and w0 >= self.max_latency:
                     # we're being very conservative and only canceling requests if they have already timed out
                     self._queue.popleft().future.cancel()
                     continue
@@ -238,31 +238,34 @@ class CorkDispatcher:
         """
         A standalone coroutine to wait/dispatch calling.
         """
-        logger.debug("Starting dispatcher optimizer training...")
-        # warm up the model
-        self.train_optimizer(
-            self.optimizer.N_SKIPPED_SAMPLE, self.optimizer.N_SKIPPED_SAMPLE + 6, 1
-        )
-
-        logger.debug("Dispatcher finished warming up model.")
-
-        await self.train_optimizer(1, 6, 1)
-        self.optimizer.trigger_refresh()
-        logger.debug("Dispatcher finished optimizer training request 1.")
-
-        await self.train_optimizer(1, 5, 2)
-        self.optimizer.trigger_refresh()
-        logger.debug("Dispatcher finished optimizer training request 2.")
-
-        await self.train_optimizer(1, 3, 3)
-        self.optimizer.trigger_refresh()
-        logger.debug("Dispatcher finished optimizer training request 3.")
-
-        if self.optimizer.o_a + self.optimizer.o_b >= self.max_latency_in_ms:
-            logger.warning(
-                "BentoML has detected that a service has a max latency that is likely too low for serving. If many 503 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
+        try:
+            logger.debug("Starting dispatcher optimizer training...")
+            # warm up the model
+            await self.train_optimizer(
+                self.optimizer.N_SKIPPED_SAMPLE, self.optimizer.N_SKIPPED_SAMPLE + 6, 1
             )
-        logger.debug("Dispatcher optimizer training complete.")
+
+            logger.debug("Dispatcher finished warming up model.")
+
+            await self.train_optimizer(6, 1, 1)
+            self.optimizer.trigger_refresh()
+            logger.debug("Dispatcher finished optimizer training request 1.")
+
+            await self.train_optimizer(5, 1, 2)
+            self.optimizer.trigger_refresh()
+            logger.debug("Dispatcher finished optimizer training request 2.")
+
+            await self.train_optimizer(3, 1, 3)
+            self.optimizer.trigger_refresh()
+            logger.debug("Dispatcher finished optimizer training request 3.")
+
+            if self.optimizer.o_a + self.optimizer.o_b >= self.max_latency:
+                logger.warning(
+                    "BentoML has detected that a service has a max latency that is likely too low for serving. If many 503 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
+                )
+            logger.debug("Dispatcher optimizer training complete.")
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error(traceback.format_exc(), exc_info=e)
 
         while True:
             try:
@@ -281,11 +284,11 @@ class CorkDispatcher:
                 # the estimated latency of the first request if we began processing now
                 latency_0 = w0 + a * n + b
 
-                if n > 1 and latency_0 >= self.max_latency_in_ms:
+                if n > 1 and latency_0 >= self.max_latency:
                     self._queue.popleft().future.cancel()
                     continue
                 if self._sema.is_locked():
-                    if n == 1 and w0 >= self.max_latency_in_ms:
+                    if n == 1 and w0 >= self.max_latency:
                         self._queue.popleft().future.cancel()
                         continue
                     await asyncio.sleep(self.tick_interval)
@@ -294,34 +297,10 @@ class CorkDispatcher:
                     n < self.max_batch_size
                     and n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay
                 ):
-                    n = len(self._queue)
-                    now = time.time()
-                    wn = now - self._queue[-1].enqueue_time
-                    latency_0 += dt
-
-                    # wait for additional requests to arrive
                     await asyncio.sleep(self.tick_interval)
                     continue
 
-                n_call_out = 0
-                batch_size = 0
-                try:
-                    for input_info in self._queue:
-                        if (
-                            batch_size + input_info.data.sample.batch_size
-                            < self.max_batch_size
-                        ):
-                            n_call_out += 1
-                            batch_size += input_info.data.sample.batch_size
-                        else:
-                            break
-                except Exception as e:
-                    n_call_out = min(n, self.max_batch_size)
-                    logger.error(
-                        "error in batch-size aware batching, falling back to regular batching method",
-                        exc_info=e,
-                    )
-
+                n_call_out = min(self.max_batch_size, n)
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))

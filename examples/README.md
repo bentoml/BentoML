@@ -45,6 +45,7 @@ working on :)
 | [triton/onnx](https://github.com/bentoml/BentoML/tree/main/examples/triton/onnx)                                                             | ONNX                | YOLOv5                               | Triton Inference Server, gRPC, Python SDK (Containerization, Serve, Build) |
 | [triton/pytorch](https://github.com/bentoml/BentoML/tree/main/examples/triton/pytorch)                                                       | Torchscript         | YOLOv5                               | Triton Inference Server, gRPC, Python SDK (Containerization, Serve, Build) |
 | [triton/tensorflow](https://github.com/bentoml/BentoML/tree/main/examples/triton/tensorflow)                                                 | Tensorflow          | YOLOv5                               | Triton Inference Server, gRPC, Python SDK (Containerization, Serve, Build) |
+| [kubeflow](https://github.com/bentoml/BentoML/tree/main/examples/kubeflow)                                                                   | XGBoost             | IEEE Fraud Detection                 | Kubeflow                                                                   |
 
 ## How to contribute
 

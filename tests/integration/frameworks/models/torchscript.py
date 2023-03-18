@@ -56,12 +56,12 @@ models = [
                         Input(
                             input_args=[x],
                             expected=lambda out: out == test_y,
-                        )
-                        for x in test_x_list
+                        ),
                     ],
                 },
             ),
         ],
     )
     for model in generate_models()
+    for x in test_x_list
 ]

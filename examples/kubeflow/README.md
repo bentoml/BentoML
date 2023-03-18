@@ -1,8 +1,8 @@
 # Developing BentoML Applications on Kubeflow
 
-Starting with the release of Kubeflow 1.7, BentoML provides a native integration with Kubeflow. This integration enables the seamless packaging and deployment of models trained in the Kubeflow notebook or pipeline as [Bentos](https://docs.bentoml.org/en/latest/concepts/bento.html). These services can then be containerized into OCI images and deployed to a Kubernetes cluster in a microservice architecture through BentoML's cloud native components and custom resource definitions (CRDs). This documentation provides a comprehensive guide on how to use BentoML and Kubeflow together to streamline the process of deploying machine learning models at scale.
+Starting with the release of Kubeflow 1.7, BentoML provides a native integration with Kubeflow. This integration allows you to package models trained in Kubeflow notebooks or pipelines as [Bentos](https://docs.bentoml.org/en/latest/concepts/bento.html), and deploy them as microservices in a Kubernetes cluster through BentoML's cloud native components and custom resource definitions (CRDs). This documentation provides a comprehensive guide on how to use BentoML and Kubeflow together to streamline the process of deploying models at scale.
 
-In this example, we will train three fraud detection models using the [Kaggle IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/c/ieee-fraud-detection) using the Kubeflow notebook and create a BentoML service that simultaneously invoke all three models and returns the decision if any one of the models predicts that a transactin is a fraud. We will build and push the BentoML service to an S3 bucket. Next we will containerize BentoML service from the S3 bucket and deploy the service to Kubeflow cluster using using BentoML custom resource definitions on Kubernetes. The service will be deployed in a microservice architecture with each model running in a separate pod, deployed on hardware that is the most ideal for running the model, and scale independently.
+In this example, we will train three fraud detection models using the Kubeflow notebook and the [Kaggle IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/c/ieee-fraud-detection). We will then create a BentoML service that can simultaneously invoke all three models and return a decision on whether a transaction is fraudulent and build it into a Bento. We will showcase two deployment workflows using BentoML's Kubernetes operators: deploying directly from the Bento, and deploying from an OCI image built from the Bento.
 
 This example can also be run from the `notebook.ipynb` included in this directory.
 
@@ -10,7 +10,7 @@ This example can also be run from the `notebook.ipynb` included in this director
 
 Install Kubeflow and BentoML resources to the Kubernetes cluster. See [Kubeflow](https://github.com/kubeflow/manifests) and [BentoML](https://github.com/kubeflow/manifests/tree/master/contrib/bentoml) installation guides for details.
 
-After BentoML Kubernetes resources are installed successfully, you should have the following CRDs.
+After BentoML Kubernetes resources are installed successfully, you should have the following CRDs in the namespace.
 
 ```bash
 > k -n kubeflow get crds | grep bento
@@ -225,37 +225,64 @@ Serving the bento will bring up a service endpoint in HTTP or gRPC for the servi
 bentoml serve-http --production
 ```
 
-## Containerize and Push Image
-
-Containerize the image through `docker build` and `push` the image to a remote repository of your choice.
-
-```bash
-bentoml containerize fraud_detection:zsk3powbr2adgcvj -t your-username/fraud_detection:zsk3powbr2adgcvj
-```
-
-```bash
-docker push your-username/fraud_detection:zsk3powbr2adgcvj
-```
-
 ## Deploy to Kubernetes Cluster
 
 BentoML offers three custom resource definitions (CRDs) in the Kubernetes cluster.
 
-- [BentoRequest](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bentorequest_crd.html)
-- [Bento](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bento_crd.html)
-- [BentoDeployment](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bentodeployment_crd.html)
+- [BentoRequest](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bentorequest_crd.html) - Describes the metadata needed for building the container image of the Bento, such as the download URL. Created by the user.
+- [Bento](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bento_crd.html) - Describes the metadata for the Bento such as the address of the image and the runners. Created by users or by the `yatai-image-builder` operator for reconsiliating `BentoRequest` resources.
+- [BentoDeployment](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bentodeployment_crd.html) - Describes the metadata of the deployment such as resources and autoscaling behaviors. Reconciled by the `yatai-deployment` operator to create Kubernetes deployments of API Servers and Runners.
 
-Since we have already built and pushed image in the earlier step, we will only need to create the `Bento` and `BentoDeployment` custom resources. The `Bento` CRD describes the metadata for the Bento such as the address of the image and the runners. The `BentoDeployment` CRD describes the metadata of the deployment such as resources and autoscaling behaviors. `BentoDeployment` requires `Bento` to be ready and will reconcile a `Bento` CR of the same name before a deployment is created. See `deployment.yaml` file included for an example.
+Next, we will demonstrate two ways of deployment.
 
-The `BentoRequest` CRD describes the metadata needed for building the image such as the download URL of the Bento. Creating the `BentoRequest` CR is not needed in this example.
+1. Deploying using a `BentoRequest` resource by providing a Bento
+2. Deploying Using a `Bento` resource by providing a pre-built container image from a Bento
 
-Apply the `Bento` and `BentoDeployment` CRDs.
+### Deploy with BentoRequest CRD
+
+In this workflow, we will export the Bento to a remote storage. We will then leverage the `yatai-image-build` operator to containerize the Bento and `yatai-deployment` operator deploy the containerized Bento image.
+
+Push the Bento built and saved in the local Bento store to a cloud storage such as AWS S3.
 
 ```bash
-kubectl apply -f deployment.yaml
+bentoml export fraud_detection:o5smnagbncigycvj s3://your_bucket/fraud_detection.bento
 ```
 
-Verify the `Bento` and `BentoDeployment` resources. Note that API server and runners are run in separate pods and created in separate deployments that can be scaled independently.
+Apply the `BentoRequest` and `BentoDeployment` resources as defined in `deployment_from_bentorequest.yaml` included in this example.
+
+```bash
+kubectl apply deployment_from_bentorequest.yaml
+```
+
+Once the resources are created, the `yatai-image-builder` operator will reconcile the `BentoRequest` resource and spawn a pod to build the container image from the provided Bento defined in the resource. The `yatai-image-builder` operator will push the built image to the container registry specified during the installation and create a `Bento` resource with the same name. At the same time, the `yatai-deployment` operator will reconcile the `BentoDeployment` resource with the provided name and create Kubernetes deployments of API Servers and Runners from the container image specified in the `Bento` resource.
+
+### Deploym with Bento CRD
+
+In this workflow, we will build and push the container image from the Bento. We will then leverage the `yatai-deployment` operator to deploy the containerized Bento image.
+
+Containerize the image through `containerzie` sub-command.
+
+```bash
+bentoml containerize fraud_detection:o5smnagbncigycvj -t your-username/fraud_detection:o5smnagbncigycvj
+```
+
+ Push the containerized Bento image to a remote repository of your choice.
+
+```bash
+docker push your-username/fraud_detection:o5smnagbncigycvj
+```
+
+Apply the `Bento` and `BentoDeployment` resources as defined in `deployment_from_bento.yaml` file included in this example.
+
+```bash
+kubectl apply deployment_from_bento.yaml
+```
+
+Once the resources are created, the `yatai-deployment` operator will reconcile the `BentoDeployment` resource with the provided name and create Kubernetes deployments of API Servers and Runners from the container image specified in the `Bento` resource.
+
+## Verify Deployment
+
+Verify the deployment of API Servers and Runners. Note that API server and runners are run in separate pods and created in separate deployments that can be scaled independently.
 
 ```bash
 kubectl -n kubeflow get pods -l yatai.ai/bento-deployment=fraud-detection
@@ -279,7 +306,7 @@ Delete the `Bento` and `BentoDeployment` resources.
 kubectl delete -f deployment.yaml
 ```
 
-# Conclusion
+## Conclusion
 
 Congratulations! You completed the example. Let's recap what we have learned.
 

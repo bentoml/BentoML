@@ -1,0 +1,12 @@
+service: 'service.py:svc'
+labels:
+  owner: bentoml-team
+  project: document-processing
+include:
+  - '*.py'
+python:
+  requirements_txt: ./requirements.txt
+docker:
+  system_packages:
+    - tesseract-ocr
+    - libtesseract-dev

@@ -39,7 +39,7 @@ class FrameworkTestModelConfiguration:
 @attr.define
 class FrameworkTestModelInput:
     input_args: list[t.Any]
-    expected: t.Any | t.Callable[[t.Any], bool]
+    expected: t.Any | t.Callable[[t.Any], bool | None]
     input_kwargs: dict[str, t.Any] = attr.Factory(dict)
 
     preprocess: t.Callable[[t.Any], t.Any] = lambda v: v  # noqa: E731
@@ -50,11 +50,11 @@ class FrameworkTestModelInput:
             if result is not None:
                 assert (
                     result
-                ), f"Output from model call ({', '.join(map(str, self.input_args))}, **{self.input_kwargs}) is not as expected"
+                ), f"Output from model call (args={', '.join(map(str, self.input_args))}, kwargs={self.input_kwargs}) is not expected (output={outp})"
         else:
             check = outp == self.expected
             if isinstance(check, np.ndarray):
                 check = check.all()
             assert (
                 check
-            ), f"Output from model call ({', '.join(map(str, self.input_args))}, **{self.input_kwargs}) is not as expected"
+            ), f"Output from model call (args={', '.join(map(str, self.input_args))}, kwargs={self.input_kwargs}) is not expected (output={outp}, expected={self.expected})"

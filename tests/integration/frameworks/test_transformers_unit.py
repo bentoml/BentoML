@@ -1,50 +1,65 @@
 from __future__ import annotations
 
+import os
 import typing as t
 import logging
 
 import pytest
+import transformers
 from transformers.pipelines import pipeline  # type: ignore
 from transformers.pipelines import check_task  # type: ignore
 from transformers.trainer_utils import set_seed
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.modeling_auto import AutoModelForAudioClassification
 from transformers.models.auto.modeling_auto import AutoModelForSequenceClassification
-from transformers.models.auto.tokenization_auto import AutoTokenizer
 from transformers.pipelines.audio_classification import AudioClassificationPipeline
 
 import bentoml
 from bentoml.exceptions import BentoMLException
 from bentoml.transformers import ModelOptions
 
+if t.TYPE_CHECKING:
+    from pathlib import Path
+
+    from bentoml._internal.frameworks.transformers import TaskDefinition
+
+    from .models.transformers import PairClassificationPipeline
+
 set_seed(124)
 
 
 def test_convert_to_auto_class():
-    from bentoml._internal.frameworks.transformers import (
-        _convert_to_auto_class,  # type: ignore
-    )
+    from bentoml._internal.frameworks.transformers import convert_to_autoclass
 
     with pytest.raises(
         BentoMLException, match="Given not_a_class is not a valid Transformers *"
     ):
-        _convert_to_auto_class("not_a_class")
+        convert_to_autoclass("not_a_class")
 
     assert (
-        _convert_to_auto_class("AutoModelForSequenceClassification")
+        convert_to_autoclass("AutoModelForSequenceClassification")
         is AutoModelForSequenceClassification
     )
-    assert _convert_to_auto_class("AutoModelForCausalLM") is AutoModelForCausalLM
+    assert convert_to_autoclass("AutoModelForCausalLM") is AutoModelForCausalLM
 
 
-alias = "sentiment-analysis"
-_, original_task, _ = check_task(alias)  # type: ignore (unfinished transformers type)
-sentiment = pipeline(alias, model="hf-internal-testing/tiny-random-distilbert")
+@pytest.fixture(name="sentiment_task")
+def fixture_sentiment() -> tuple[transformers.Pipeline, TaskDefinition]:
+    alias, original_task = t.cast(
+        "tuple[t.Literal['text-classification'], TaskDefinition, t.Any]",
+        check_task("sentiment-analysis"),
+    )[:2]
+    return (
+        pipeline(alias, model="hf-internal-testing/tiny-random-distilbert"),
+        original_task,
+    )
 
 
-def test_raise_different_default_definition():
-
+def test_raise_different_default_definition(
+    sentiment_task: tuple[transformers.Pipeline, TaskDefinition]
+):
     # implementation is different
+    sentiment, _ = sentiment_task
     task_definition = {
         "impl": AudioClassificationPipeline,
         "tf": (),
@@ -57,53 +72,56 @@ def test_raise_different_default_definition():
         "type": "text",
     }
 
-    with pytest.raises(BentoMLException) as exc_info:
+    with pytest.raises(bentoml.exceptions.BentoMLException) as exc_info:
         _ = bentoml.transformers.save_model(
             "forbidden_override",
             sentiment,
-            task_name=alias,
-            task_definition=task_definition,  # type: ignore (testing invalid type)
+            task_name="sentiment-analysis",
+            task_definition=task_definition,
         )
         assert "does not match pipeline task definition" in str(exc_info.value)
 
 
-def test_raise_does_not_match_task_name():
+def test_raise_does_not_match_task_name(
+    sentiment_task: tuple[transformers.Pipeline, TaskDefinition]
+):
     # pipeline task does not match given task name or pipeline.task is None
+    sentiment, original_task = sentiment_task
+
     with pytest.raises(
-        BentoMLException,
+        bentoml.exceptions.BentoMLException,
         match=f"Argument 'task_name' 'custom' does not match pipeline task name '{sentiment.task}'.",
     ):
         _ = bentoml.transformers.save_model(
             "forbidden_override",
             sentiment,
             task_name="custom",
-            task_definition=original_task,  # type: ignore (unfinished transformers type)
+            task_definition=original_task,
         )
 
 
-def test_raise_does_not_match_impl_field():
+def test_raise_does_not_match_impl_field(
+    sentiment_task: tuple[transformers.Pipeline, TaskDefinition]
+):
+    sentiment, original_task = sentiment_task
     # task_definition['impl'] is different from pipeline type
-    orig_impl: type = original_task["impl"]
-    try:
-        with pytest.raises(
-            BentoMLException,
-            match=f"Argument 'pipeline' is not an instance of {AudioClassificationPipeline}. It is an instance of {type(sentiment)}.",
-        ):
-            original_task["impl"] = AudioClassificationPipeline
-            _ = bentoml.transformers.save_model(
-                "forbidden_override",
-                sentiment,
-                task_name=alias,
-                task_definition=original_task,  # type: ignore (unfinished transformers type)
-            )
-    finally:
-        original_task["impl"] = orig_impl  # type: ignore (unfinished transformers type)
+    with pytest.raises(
+        bentoml.exceptions.BentoMLException,
+        match=f"Argument 'pipeline' is not an instance of {AudioClassificationPipeline}. It is an instance of {type(sentiment)}.",
+    ):
+        original_task["impl"] = AudioClassificationPipeline
+        _ = bentoml.transformers.save_model(
+            "forbidden_override",
+            sentiment,
+            task_name="text-classification",
+            task_definition=original_task,
+        )
 
 
 def test_raises_is_not_pipeline_instance():
-    with pytest.raises(BentoMLException) as exc_info:
+    with pytest.raises(bentoml.exceptions.BentoMLException) as exc_info:
         _ = bentoml.transformers.save_model(
-            "not_pipeline_type", AudioClassificationPipeline  # type: ignore (testing invalid type)
+            "not_pipeline_type", AudioClassificationPipeline
         )
     assert (
         "'pipeline' must be an instance of 'transformers.pipelines.base.Pipeline'. "
@@ -111,13 +129,17 @@ def test_raises_is_not_pipeline_instance():
     )
 
 
-def test_logs_custom_task_definition(caplog: pytest.LogCaptureFixture):
+def test_logs_custom_task_definition(
+    caplog: pytest.LogCaptureFixture,
+    sentiment_task: tuple[transformers.Pipeline, TaskDefinition],
+):
+    sentiment, original_task = sentiment_task
     with caplog.at_level(logging.INFO):
         _ = bentoml.transformers.save_model(
             "custom_sentiment_pipeline",
             sentiment,
-            task_name="sentiment-analysis",
-            task_definition=original_task,  # type: ignore (unfinished transformers type)
+            task_name=sentiment.task,
+            task_definition=original_task,
         )
     assert (
         "Arguments 'task_name' and 'task_definition' are provided. Saving model with pipeline "
@@ -127,7 +149,7 @@ def test_logs_custom_task_definition(caplog: pytest.LogCaptureFixture):
 
 def test_log_load_model(caplog: pytest.LogCaptureFixture):
     with caplog.at_level(logging.INFO):
-        _ = bentoml.transformers.save_model(
+        bento_model = bentoml.transformers.save_model(
             "sentiment_test",
             pipeline(
                 task="text-classification",
@@ -135,7 +157,10 @@ def test_log_load_model(caplog: pytest.LogCaptureFixture):
             ),
         )
         _ = bentoml.transformers.load_model("sentiment_test:latest", use_fast=True)
-    assert "with kwargs {'use_fast': True}." in caplog.text
+    assert (
+        f"Loading '{t.cast(ModelOptions, bento_model.info.options).task!s}' pipeline (tag='{bento_model.tag!s}')"
+        in caplog.text
+    )
 
 
 def test_model_options():
@@ -160,100 +185,100 @@ def test_model_options():
     assert structured_options.kwargs == {}
 
 
-def test_custom_pipeline():
+TASK_NAME: str = "pair-classification"
+
+
+@pytest.fixture(name="pair_classification_pipeline", scope="function")
+def fixture_pair_classification_pipeline(unload_registry: bool, tmp_path: Path):
+    from transformers.pipelines import PIPELINE_REGISTRY
+
+    from .models.transformers import PairClassificationPipeline
+
+    PIPELINE_REGISTRY.register_pipeline(
+        TASK_NAME,
+        pipeline_class=PairClassificationPipeline,
+        pt_model=AutoModelForSequenceClassification,
+    )
+
+    config = transformers.BertConfig(
+        vocab_size=99,
+        hidden_size=32,
+        num_hidden_layer=5,
+        num_attention_heads=4,
+        intermediate_size=37,
+    )
+    model = transformers.BertForSequenceClassification(config).eval()
+    vocab_tokens = [
+        "[UNK]",
+        "[CLS]",
+        "[SEP]",
+        "[PAD]",
+        "[MASK]",
+        "I",
+        "love",
+        "hate",
+        "you",
+    ]
+
+    vocab_file = tmp_path / "vocab.txt"
+    with vocab_file.open("w", encoding="utf-8") as vocab_writer:
+        vocab_writer.write("".join([x + "\n" for x in vocab_tokens]))
+    classifier = pipeline(
+        TASK_NAME,
+        model=model,
+        tokenizer=transformers.BertTokenizer(vocab_file.__fspath__()),
+    )
+    if unload_registry:
+        del PIPELINE_REGISTRY.supported_tasks[TASK_NAME]
+
+    return classifier
+
+
+@pytest.mark.parametrize("unload_registry", [True, False])
+def test_custom_pipeline(pair_classification_pipeline: PairClassificationPipeline):
     """
     Test saving and loading a custom pipeline from scratch. This is not covered by the framework tests
     because it does not load a custom pipeline without first adding to the transformers SUPPORTED_TASKS.
     """
-    import numpy as np
-    from transformers.pipelines import SUPPORTED_TASKS
+    from bentoml._internal.frameworks.transformers import PIPELINE_PICKLE_NAME
 
-    from .models.transformers import CustomPipeline
-    from .models.transformers import TINY_TEXT_MODEL
+    from .models.transformers import PairClassificationPipeline
 
-    TASK_NAME: str = "custom-classification-task"
-    TASK_DEFINITION: t.Dict[str, t.Any] = {
-        "impl": CustomPipeline,
-        "tf": (),
-        "pt": (AutoModelForSequenceClassification,),
-        "default": {},
-        "type": "text",
-    }
+    bento_model = bentoml.transformers.save_model(
+        "my_classification_model",
+        pipeline=pair_classification_pipeline,
+        task_name=TASK_NAME,
+        task_definition={
+            "impl": PairClassificationPipeline,
+            "pt": AutoModelForSequenceClassification,
+        },
+    )
 
-    # Ensure that the task is not already registered
+    assert os.path.exists(bento_model.path_of(PIPELINE_PICKLE_NAME))
+    assert bento_model.tag.name == "my_classification_model"
 
-    try:
-        SUPPORTED_TASKS[TASK_NAME] = TASK_DEFINITION
+    loaded_pipeline = bentoml.transformers.load_model("my_classification_model:latest")
+    assert pair_classification_pipeline(
+        "I hate you", second_text="I love you"
+    ) == loaded_pipeline("I hate you", second_text="I love you")
 
-        pipe = pipeline(
-            task=TASK_NAME,
-            model=AutoModelForSequenceClassification.from_pretrained(TINY_TEXT_MODEL),
-            tokenizer=AutoTokenizer.from_pretrained(TINY_TEXT_MODEL),
-        )
+    # Test runners
+    bento_model = bentoml.transformers.get("my_classification_model")
+    runner = bento_model.with_options(
+        partial_kwargs={"__call__": {"second_text": "I love you"}}
+    ).to_runner()
+    runner.init_local()
 
-        saved_pipe = bentoml.transformers.save_model(
-            "my_classification_model",
-            pipeline=pipe,
-            task_name=TASK_NAME,
-            task_definition=TASK_DEFINITION,
-        )
+    assert runner.run("I hate you") == pair_classification_pipeline(
+        "I hate you", second_text="I love you"
+    )
 
-        assert saved_pipe is not None
-        assert saved_pipe.tag.name == "my_classification_model"
-    finally:
-        # Remove the task definition from the list of Transformers supported tasks
-        del SUPPORTED_TASKS[TASK_NAME]
-    assert TASK_NAME not in SUPPORTED_TASKS
+    runner.destroy()
 
-    try:
-        SUPPORTED_TASKS[TASK_NAME] = TASK_DEFINITION
+    runner = bento_model.to_runner()
+    runner.init_local()
+    assert runner.run(
+        "I hate you", second_text="I love you"
+    ) == pair_classification_pipeline("I hate you", second_text="I love you")
 
-        pipe = pipeline(
-            task=TASK_NAME,
-            model=AutoModelForSequenceClassification.from_pretrained(TINY_TEXT_MODEL),
-            tokenizer=AutoTokenizer.from_pretrained(TINY_TEXT_MODEL),
-        )
-
-        saved_pipe = bentoml.transformers.save_model(
-            "my_classification_model",
-            pipeline=pipe,
-            task_name=TASK_NAME,
-            task_definition=TASK_DEFINITION,
-        )
-    finally:
-        if TASK_NAME in SUPPORTED_TASKS:
-            del SUPPORTED_TASKS[TASK_NAME]
-        assert TASK_NAME not in SUPPORTED_TASKS
-
-    assert saved_pipe is not None
-    assert saved_pipe.tag.name == "my_classification_model"
-
-    input_data: t.List[str] = [
-        "BentoML: Create an ML Powered Prediction Service in Minutes via @TDataScience https://buff.ly/3srhTw9 #Python #MachineLearning #BentoML",
-        "Top MLOps Serving frameworks — 2021 https://link.medium.com/5Elq6Aw52ib #mlops #TritonInferenceServer #opensource #nvidia #machincelearning  #serving #tensorflow #PyTorch #Bodywork #BentoML #KFServing #kubeflow #Cortex #Seldon #Sagify #Syndicai",
-        "#MLFlow provides components for experimentation management, ML project management. #BentoML only focuses on serving and deploying trained models",
-        "2000 and beyond #OpenSource #bentoml",
-        "Model Serving Made Easy https://github.com/bentoml/BentoML ⭐ 1.1K #Python #Bentoml #BentoML #Modelserving #Modeldeployment #Modelmanagement #Mlplatform #Mlinfrastructure #Ml #Ai #Machinelearning #Awssagemaker #Awslambda #Azureml #Mlops #Aiops #Machinelearningoperations #Turn",
-    ]
-
-    try:
-        pipe = bentoml.transformers.load_model("my_classification_model:latest")
-        output_data = pipe(input_data)
-    finally:
-        del SUPPORTED_TASKS[TASK_NAME]
-        assert TASK_NAME not in SUPPORTED_TASKS
-
-    assert output_data is not None
-    assert isinstance(output_data, list) and len(output_data) == len(input_data)
-    assert all([isinstance(data, np.ndarray) for data in output_data])
-
-    try:
-        runnable: bentoml.Runnable = bentoml.transformers.get_runnable(saved_pipe)()
-        output_data = runnable(input_data)
-    finally:
-        del SUPPORTED_TASKS[TASK_NAME]
-        assert TASK_NAME not in SUPPORTED_TASKS
-
-    assert output_data is not None
-    assert isinstance(output_data, list) and len(output_data) == len(input_data)
-    assert all([isinstance(data, np.ndarray) for data in output_data])
+    runner.destroy()

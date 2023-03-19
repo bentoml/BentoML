@@ -1,91 +1,92 @@
 from __future__ import annotations
 
 import typing as t
-from typing import TYPE_CHECKING
+import importlib
 
+import numpy as np
 import requests
 import transformers
 from PIL import Image
-from transformers import pipeline  # type: ignore (unfinished transformers type)
+from transformers import Pipeline
+from transformers.utils import is_tf_available
+from transformers.utils import is_torch_available
 from transformers.pipelines import get_task
-from transformers.pipelines import SUPPORTED_TASKS
-from transformers.testing_utils import (
-    nested_simplify,  # type: ignore (unfinished transformers type)
-)
+from transformers.pipelines import get_supported_tasks
+from transformers.testing_utils import nested_simplify
 from transformers.trainer_utils import set_seed
-from transformers.pipelines.base import Pipeline
-from transformers.pipelines.base import GenericTensor
 
 import bentoml
+from bentoml._internal.frameworks.transformers import TaskDefinition
+from bentoml._internal.frameworks.transformers import delete_pipeline
+from bentoml._internal.frameworks.transformers import register_pipeline
+from bentoml._internal.frameworks.transformers import convert_to_autoclass
+from bentoml._internal.frameworks.transformers import SimpleDefaultMapping
 
 from . import FrameworkTestModel
 from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
 
-framework = bentoml.transformers
-
-backward_compatible = True
-
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    import torch
+    from numpy.typing import NDArray
     from transformers.utils.generic import ModelOutput
+    from transformers.pipelines.base import GenericTensor
     from transformers.tokenization_utils_base import BatchEncoding
 
     from bentoml._internal.external_typing import transformers as transformers_ext
 
     AnyDict = dict[str, t.Any]
     AnyList = list[t.Any]
+
     PipelineGenerator = t.Generator[transformers_ext.TransformersPipeline, None, None]
+
+framework = bentoml.transformers
+
+backward_compatible = True
 
 TINY_TEXT_MODEL = "hf-internal-testing/tiny-random-distilbert"
 TINY_TEXT_TASK = get_task(TINY_TEXT_MODEL)
-TINY_TEXT_AUTO = "AutoModelForSequenceClassification"
 
 set_seed(124)
 
 
-class CustomPipeline(Pipeline):
+def softmax(outputs: NDArray[t.Any]) -> NDArray[t.Any]:
+    maxes = np.max(outputs, axis=-1, keepdims=True)
+    shifted_exp = np.exp(outputs - maxes)
+    return shifted_exp / shifted_exp.sum(axis=-1, keepdims=True)
+
+
+class PairClassificationPipeline(Pipeline):
     def _sanitize_parameters(self, **kwargs: t.Any) -> tuple[AnyDict, AnyDict, AnyDict]:
         preprocess_kwargs: AnyDict = {}
-        if "dummy_arg" in kwargs:
-            preprocess_kwargs["dummy_arg"] = kwargs["dummy_arg"]
+        if "second_text" in kwargs:
+            preprocess_kwargs["second_text"] = kwargs["second_text"]
         return preprocess_kwargs, {}, {}
 
-    def preprocess(self, text: str, dummy_arg: int = 2) -> BatchEncoding | None:
-        if self.tokenizer:
-            input_ids = self.tokenizer(text, return_tensors="pt")
-            return input_ids
+    def preprocess(self, f: str, second_text: str | None = None) -> BatchEncoding:
+        assert self.tokenizer is not None
+        return self.tokenizer(f, text_pair=second_text, return_tensors=self.framework)
 
-    def _forward(
-        self, input_tensors: dict[str, GenericTensor], **parameters: AnyDict
-    ) -> ModelOutput:
-        return self.model(**input_tensors)  # type: ignore
+    def _forward(self, input_tensors: dict[str, GenericTensor]) -> ModelOutput:
+        return t.cast("ModelOutput", self.model(**input_tensors))
 
-    def postprocess(self, model_outputs: ModelOutput, **parameters: AnyDict) -> t.Any:
-        return model_outputs["logits"].softmax(-1).numpy()  # type: ignore (unfinished transformers type)
+    def postprocess(self, model_outputs: ModelOutput) -> dict[str, t.Any]:
+        assert self.model.config.id2label is not None
+        logits: NDArray[t.Any] = t.cast("torch.Tensor", model_outputs.logits[0]).numpy()
+        probabilities = softmax(logits)
 
-
-def gen_kwargs(
-    task_name: str, model_name: str, model_auto: str, task_type: str
-) -> AnyDict:
-    task_definition = {
-        "impl": CustomPipeline,
-        **{
-            "task": task_name,
-            "tf": (),
-            "pt": (model_auto,),
-            "default": {"pt": (model_name,)},
-            "type": task_type,
-        },
-    }
-    return {"task_name": task_name, "task_definition": task_definition}
+        best_class = np.argmax(probabilities)
+        label = t.cast(str, self.model.config.id2label[best_class])
+        score = probabilities[best_class].item()
+        logits = logits.tolist()
+        return {"label": label, "score": score, "logits": logits}
 
 
 def gen_task_pipeline(
     model: str, task: str | None = None, *, frameworks: list[str] = ["pt", "tf"]
 ) -> PipelineGenerator:
-    yield from map(
-        lambda framework: pipeline(task=task, model=model, framework=framework),  # type: ignore (unfinished transformers type)
-        frameworks,
+    yield from (
+        transformers.pipeline(task=task, model=model, framework=f) for f in frameworks
     )
 
 
@@ -93,15 +94,14 @@ def expected_equal(
     expected: list[AnyDict | AnyList],
 ) -> t.Callable[[list[AnyDict | AnyList]], bool]:
     def check_output(out: list[AnyDict | AnyList]) -> bool:
-        assert nested_simplify(out, decimals=4) == expected
-        return True
+        return nested_simplify(out, decimals=4) == expected
 
     return check_output
 
 
 text_classification_pipeline: list[FrameworkTestModel] = [
     FrameworkTestModel(
-        name="text_pipeline",
+        name="text-classification-pipeline",
         model=model,
         configurations=[
             Config(
@@ -119,12 +119,12 @@ text_classification_pipeline: list[FrameworkTestModel] = [
             ),
         ],
     )
-    for model in gen_task_pipeline(model=TINY_TEXT_MODEL)
+    for model in gen_task_pipeline(model=TINY_TEXT_MODEL, task=TINY_TEXT_TASK)
 ]
 
 batched_pipeline: list[FrameworkTestModel] = [
     FrameworkTestModel(
-        name="batched_pipeline",
+        name="batchable-text-classification-pipeline",
         model=model,
         save_kwargs={
             "signatures": {
@@ -153,17 +153,16 @@ batched_pipeline: list[FrameworkTestModel] = [
             )
         ],
     )
-    for model in gen_task_pipeline(model=TINY_TEXT_MODEL)
+    for model in gen_task_pipeline(model=TINY_TEXT_MODEL, task=TINY_TEXT_TASK)
 ]
 
-tiny_image_model = "hf-internal-testing/tiny-random-vit"
-tiny_image_task = get_task(tiny_image_model)
-tiny_image_auto = "AutoModelForImageClassification"
+tiny_image_model = "hf-internal-testing/tiny-random-vit-gpt2"
+tiny_image_task = "image-to-text"
 test_url = "http://images.cocodataset.org/val2017/000000039769.jpg"
 
 image_classification: list[FrameworkTestModel] = [
     FrameworkTestModel(
-        name="image_pipeline",
+        name="image-to-text-pipeline",
         model=model,
         configurations=[
             Config(
@@ -171,73 +170,104 @@ image_classification: list[FrameworkTestModel] = [
                 test_inputs={
                     "__call__": [
                         Input(
-                            input_args=[
+                            input_args=[[test_url]],
+                            expected=[
                                 [
-                                    test_url,
-                                    Image.open(requests.get(test_url, stream=True).raw),
+                                    {
+                                        "generated_text": "growthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthGOGO"
+                                    },
                                 ]
                             ],
-                            expected=expected_equal(
+                        ),
+                        Input(
+                            input_args=[
+                                [Image.open(requests.get(test_url, stream=True).raw)]
+                            ],
+                            expected=[
                                 [
-                                    [
-                                        {"label": "LABEL_1", "score": 0.574},
-                                        {"label": "LABEL_0", "score": 0.426},
-                                    ],
-                                    [
-                                        {"label": "LABEL_1", "score": 0.574},
-                                        {"label": "LABEL_0", "score": 0.426},
-                                    ],
+                                    {
+                                        "generated_text": "growthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthGOGO"
+                                    },
                                 ]
-                            ),
-                        )
+                            ],
+                        ),
                     ],
                 },
             ),
         ],
     )
-    for model in gen_task_pipeline(model=tiny_image_model)
+    for model in gen_task_pipeline(model=tiny_image_model, task=tiny_image_task)
 ]
 
-custom_task = "custom-text-classification"
 
-
-# save_kwargs
-def create_save_kwargs() -> AnyDict:
-    save_kwargs = gen_kwargs(custom_task, TINY_TEXT_MODEL, TINY_TEXT_AUTO, "text")
-    save_kwargs["task_definition"]["pt"] = (
-        getattr(transformers, save_kwargs["task_definition"]["pt"][0]),
+def gen_custom_pipeline_kwargs(
+    task_name: str | None = None,
+    /,
+    *,
+    pt_model_auto: str = "AutoModelForSequenceClassification",
+    tf_model_auto: str = "TFAutoModelForSequenceClassification",
+    model_name: str = TINY_TEXT_MODEL,
+    task_type: str = "text",
+) -> tuple[str, TaskDefinition]:
+    if task_name is None:
+        task_name = get_task(model_name)
+    return task_name, TaskDefinition(
+        impl=PairClassificationPipeline,
+        tf=convert_to_autoclass(tf_model_auto) if is_tf_available() else None,
+        pt=convert_to_autoclass(pt_model_auto) if is_torch_available() else None,
+        default=SimpleDefaultMapping(pt=(model_name,)),
+        type=task_type,
     )
 
-    return save_kwargs
+
+custom_task, definition = gen_custom_pipeline_kwargs("custom-text-classification")
+
+register_pipeline(custom_task, **definition)
 
 
-# inject custom task to SUPPORTED_TASKS
-SUPPORTED_TASKS[custom_task] = create_save_kwargs()["task_definition"]
-
-custom_kwargs = gen_kwargs(custom_task, TINY_TEXT_MODEL, TINY_TEXT_AUTO, "text")
-load_kwargs = custom_kwargs["task_definition"]
-load_kwargs.pop("impl")
+def check_model(_: transformers_ext.TransformersPipeline, __: AnyDict) -> None:
+    assert custom_task in get_supported_tasks()
 
 
-def check_model(model: transformers_ext.TransformersPipeline, dct: AnyDict) -> None:
-    assert custom_task in SUPPORTED_TASKS
-    assert SUPPORTED_TASKS[custom_task] == create_save_kwargs()["task_definition"]
-
-
+# NOTE: Pipeline with Tensorflow does work when the custom pipelines
+# are published on the HuggingFace Hub. Otherwise, it is not possible
+# to pickle Tensorflow Model.
 custom_pipeline: list[FrameworkTestModel] = [
     FrameworkTestModel(
-        name="custom_pipeline",
+        name="custom_text_classification_pipeline",
         model=model,
-        save_kwargs=create_save_kwargs(),
+        save_kwargs={
+            "task_name": custom_task,
+            "task_definition": definition,
+            "external_modules": [
+                importlib.import_module(".", "tests.integration.frameworks.models")
+            ],
+        },
         configurations=[
             Config(
-                load_kwargs=load_kwargs,
+                load_kwargs={
+                    "pt": definition["pt"],
+                    "tf": definition["tf"],
+                    "default": definition.get("default", {}),
+                    "type": definition.get("type", "text"),
+                },
                 test_inputs={
                     "__call__": [
                         Input(
                             input_args=["i love you"],
-                            expected=expected_equal([[0.504, 0.496]]),
-                        )
+                            expected=lambda out: nested_simplify(
+                                out["score"], decimals=4
+                            )
+                            == 0.5036,
+                        ),
+                        Input(
+                            input_args=["I hate you"],
+                            input_kwargs={"second_text": "I love you"},
+                            expected=lambda out: nested_simplify(
+                                out["score"], decimals=4
+                            )
+                            == 0.5036,
+                        ),
                     ],
                 },
                 check_model=check_model,
@@ -248,6 +278,8 @@ custom_pipeline: list[FrameworkTestModel] = [
         model=TINY_TEXT_MODEL, task=custom_task, frameworks=["pt"]
     )
 ]
+
+delete_pipeline(custom_task)
 
 # NOTE: when we need to add more test cases for different models
 #  create a list of FrameworkTestModel and append to 'models' list

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import typing as t
+import inspect
 import logging
 from types import ModuleType
 from functools import lru_cache
@@ -17,6 +18,7 @@ from ..utils.pkg import find_spec
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
 from ...exceptions import NotFound
+from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import Model
@@ -48,6 +50,13 @@ if t.TYPE_CHECKING:
 
     TupleStr = tuple[str, ...]
     TupleAutoModel = tuple[ext.BaseAutoModelClass, ...]
+
+    class PreTrainedProtocol(t.Protocol):
+        def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None:
+            ...
+
+    P = t.ParamSpec("P")
+
 else:
     TupleStr = TupleAutoModel = tuple
     DefaultMapping = SimpleDefaultMapping = ModelDefaultMapping = dict
@@ -98,7 +107,7 @@ def _check_flax_supported() -> None:  # pragma: no cover
         if _flax_available:
             _jax_version = get_pkg_version("jax")
             _flax_version = get_pkg_version("flax")
-            logger.info(
+            logger.debug(
                 "Jax version %s, Flax version %s available.",
                 _jax_version,
                 _flax_version,
@@ -185,6 +194,8 @@ class TransformersOptions(ModelOptions):
         default=None,
     )
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
+    pretrained: t.Dict[str, str] = attr.field(factory=dict)
+    target: str = attr.field(factory=str)
 
     @staticmethod
     def process_task_mapping(
@@ -247,6 +258,8 @@ class TransformersOptions(ModelOptions):
             },
             "type": self.type,
             "kwargs": self.kwargs,
+            "pretrained": self.pretrained,
+            "target": self.target,
         }
 
 
@@ -370,9 +383,18 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
-    from transformers.pipelines import get_supported_tasks
-
     options = t.cast(TransformersOptions, bento_model.info.options)
+    if len(options.pretrained) > 0:
+        manual_load_instruction = [
+            f"bento_model = bentoml.transformers.get('{bento_model.tag!s}')"
+        ] + [
+            f"{name} = transformers.{klass}.from_pretrained(bento_model.path_of('{name}'))"
+            for name, klass in options.pretrained.items()
+        ]
+        raise BentoMLException(
+            f"Cannot load '{bento_model.tag!s}' since it is saved with 'import_pretrained'. Load manually with the following:\n\n"
+            + "\n".join(manual_load_instruction)
+        )
 
     task = options.task
     pipeline: ext.TransformersPipeline | None = None
@@ -384,6 +406,8 @@ def load_model(
     if os.path.exists(bento_model.path_of(PIPELINE_PICKLE_NAME)):
         with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
             pipeline_class = cloudpickle.load(f)
+
+    from transformers.pipelines import get_supported_tasks
 
     if task not in get_supported_tasks():
         logger.debug(
@@ -447,6 +471,90 @@ def load_model(
 
         # Otherwise, raise the exception.
         raise
+
+
+def import_pretrained(
+    name: str,
+    *,
+    labels: dict[str, str] | None = None,
+    metadata: dict[str, t.Any] | None = None,
+    signatures: ModelSignaturesType | None = None,
+    **kwargs: PreTrainedProtocol
+    | tuple[PreTrainedProtocol, tuple[t.Any] | dict[str, t.Any]],
+) -> bentoml.Model:
+    _check_flax_supported()
+    from transformers.utils import is_tf_available
+    from transformers.utils import is_flax_available
+    from transformers.utils import is_torch_available
+
+    versions = {"transformers": get_pkg_version("transformers")}
+    if is_torch_available():
+        versions["torch"] = get_pkg_version("torch")
+    if is_tf_available():
+        from .utils.tensorflow import get_tf_version
+
+        versions[
+            "tensorflow-macos" if platform.system() == "Darwin" else "tensorflow"
+        ] = get_tf_version()
+    if is_flax_available():
+        versions.update(
+            {
+                "flax": get_pkg_version("flax"),
+                "jax": get_pkg_version("jax"),
+                "jaxlib": get_pkg_version("jaxlib"),
+            }
+        )
+    with bentoml.models.create(
+        name,
+        module=MODULE_NAME,
+        api_version=API_VERSION,
+        labels=labels,
+        metadata=metadata,
+        context=ModelContext(
+            framework_name="transformers", framework_versions=versions
+        ),
+        options=TransformersOptions(
+            pretrained={
+                name: it[0].__class__.__name__
+                if isinstance(it, tuple)
+                else it.__class__.__name__
+                for name, it in kwargs.items()
+            }
+        ),
+        signatures=signatures or {},
+    ) as bento_model:
+        for pretrained_name, pretrained_or_with_args_kwargs in kwargs.items():
+            # NOTE: the first args is always the path.
+            save_pretrained_args = (bento_model.path_of(pretrained_name),)
+            save_pretrained_kwargs: dict[str, t.Any] = {}
+            if isinstance(pretrained_or_with_args_kwargs, tuple):
+                if len(pretrained_or_with_args_kwargs) < 2:
+                    raise InvalidArgument(
+                        f"{pretrained_name=} must have at least two arguments (model, args, kwargs)"
+                    )
+                pretrained, *additional = pretrained_or_with_args_kwargs
+                # NOTE: check if last arguments is a dictionary, then it is deemed to pass as
+                *args, maybe_args_kwargs = additional
+                save_pretrained_args += tuple(args)
+                if isinstance(maybe_args_kwargs, dict):
+                    save_pretrained_kwargs.update(maybe_args_kwargs)
+                else:
+                    save_pretrained_args += (maybe_args_kwargs,)
+            else:
+                pretrained = pretrained_or_with_args_kwargs
+            assert hasattr(
+                pretrained, "save_pretrained"
+            ), f"Given {pretrained.__class__=} doesn't have a 'save_pretrained' method. Make sure it is a valid Transformers pre-trained type."
+            try:
+                bounded = inspect.signature(pretrained.save_pretrained).bind(
+                    *save_pretrained_args, **save_pretrained_kwargs
+                )
+                pretrained.save_pretrained(*bounded.args, **bounded.kwargs)
+            except TypeError as err:
+                raise BentoMLException(
+                    f"Given arguments (args={save_pretrained_args}, kwargs={save_pretrained_kwargs}) aren't compatible with {pretrained.__class__}.save_pretrained(...) (signature is {inspect.signature(pretrained.save_pretrained)})."
+                ) from err
+        return bento_model
 
 
 @t.overload

@@ -264,14 +264,12 @@ def test_custom_pipeline(pair_classification_pipeline: PairClassificationPipelin
 
     # Test runners
     bento_model = bentoml.transformers.get("my_classification_model")
-    runner = bento_model.with_options(
-        partial_kwargs={"__call__": {"second_text": "I love you"}}
-    ).to_runner()
+    runner = bento_model.to_runner()
     runner.init_local()
 
-    assert runner.run("I hate you") == pair_classification_pipeline(
+    assert runner.run(
         "I hate you", second_text="I love you"
-    )
+    ) == pair_classification_pipeline("I hate you", second_text="I love you")
 
     runner.destroy()
 

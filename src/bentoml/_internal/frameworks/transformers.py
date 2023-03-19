@@ -237,7 +237,7 @@ class TransformersOptions(ModelOptions):
         )
 
     def to_dict(self) -> dict[str, t.Any]:
-        res = {
+        return {
             "task": self.task,
             "tf": tuple(self.tf),
             "pt": tuple(self.pt),
@@ -248,7 +248,6 @@ class TransformersOptions(ModelOptions):
             "type": self.type,
             "kwargs": self.kwargs,
         }
-        return res
 
 
 def convert_to_autoclass(cls_name: str) -> ext.BaseAutoModelClass:
@@ -338,7 +337,8 @@ def delete_pipeline(task: str) -> None:
 
 
 def load_model(
-    bento_model: str | Tag | Model, **kwargs: t.Any
+    bento_model: str | Tag | Model,
+    **kwargs: t.Any,
 ) -> ext.TransformersPipeline:
     """
     Load the Transformers model from BentoML local modelstore with given name.
@@ -485,8 +485,6 @@ def save_model(
     name: str,
     pipeline: ext.TransformersPipeline,
     task_name: str | None = None,
-    # NOTE: annotate dict[str, t.Any] so that type checker won't raise error when users
-    # pass in dictionary. The type for this should be TaskDefinition.
     task_definition: dict[str, t.Any] | TaskDefinition | None = None,
     *,
     signatures: ModelSignaturesType | None = None,
@@ -507,7 +505,7 @@ def save_model(
         task_definition: Task definition for the Transformers custom pipeline. The definition is a dictionary
                          consisting of the following keys:
 
-                        - ``impl`` (``type[transformers.base.Pipeline]``): The name of the pipeline implementation module. The name should be the same as the pipeline passed in the ``pipeline`` argument.
+                        - ``impl`` (``type[transformers.Pipeline]``): The name of the pipeline implementation module. The name should be the same as the pipeline passed in the ``pipeline`` argument.
                         - ``tf`` (:code:`tuple[AnyType]`): The name of the Tensorflow auto model class. One of ``tf`` and ``pt`` auto model class argument is required.
                         - ``pt`` (:code:`tuple[AnyType]`): The name of the PyTorch auto model class. One of ``tf`` and ``pt`` auto model class argument is required.
                         - ``default`` (:code:`Dict[str, AnyType]`): The names of the default models, tokenizers, feature extractors, etc.
@@ -600,7 +598,7 @@ def save_model(
     from transformers.pipelines import get_supported_tasks
 
     # NOTE: safe casting to annotate task_definition types
-    definition: TaskDefinition | None = (
+    task_definition = (
         t.cast(TaskDefinition, task_definition)
         if task_definition is not None
         else task_definition
@@ -610,20 +608,20 @@ def save_model(
         metadata = {}
     metadata["_is_custom_pipeline"] = False
 
-    if task_name is not None and definition is not None:
+    if task_name is not None and task_definition is not None:
         logger.info(
             "Arguments 'task_name' and 'task_definition' are provided. Saving model with pipeline task name '%s' and task definition '%s'.",
             task_name,
-            definition,
+            task_definition,
         )
         if pipeline.task != task_name:
             raise BentoMLException(
                 f"Argument 'task_name' '{task_name}' does not match pipeline task name '{pipeline.task}'."
             )
 
-        assert "impl" in definition, "'task_definition' requires 'impl' key."
+        assert "impl" in task_definition, "'task_definition' requires 'impl' key."
 
-        impl = definition["impl"]
+        impl = task_definition["impl"]
         if type(pipeline) != impl:
             raise BentoMLException(
                 f"Argument 'pipeline' is not an instance of {impl}. It is an instance of {type(pipeline)}."
@@ -631,28 +629,28 @@ def save_model(
 
         # Should only use this for custom pipelines
         metadata["_is_custom_pipeline"] = True
-        options_args = (task_name, definition)
+        options_args = (task_name, task_definition)
 
         if task_name not in get_supported_tasks():
             logger.info(
                 "Task '%s' is not available in the pipeline registry. Trying to register it.",
                 task_name,
             )
-            register_pipeline(task_name, **definition)
+            register_pipeline(task_name, **task_definition)
 
         assert (
             task_name in get_supported_tasks()
         ), f"Task '{task_name}' failed to register into pipeline registry."
     else:
         assert (
-            definition is None
+            task_definition is None
         ), "'task_definition' must be None if 'task_name' is not provided."
 
         # if task_name is None, then we derive the task from pipeline.task
         options_args = t.cast(
-            "tuple[str, TaskDefinition, t.Any]",
-            check_task(pipeline.task if task_name is None else task_name),
-        )[:2]
+            "tuple[str, TaskDefinition]",
+            check_task(pipeline.task if task_name is None else task_name)[:2],
+        )
 
     with bentoml.models.create(
         name,

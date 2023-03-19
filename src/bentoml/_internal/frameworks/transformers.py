@@ -3,19 +3,16 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
-import functools
 from types import ModuleType
+from functools import lru_cache
 
 import attr
-from cattr.gen import override
-from cattr.gen import make_dict_structure_fn
 
 import bentoml
 
 from ..tag import Tag
 from ..types import LazyType
 from ..utils import LazyLoader
-from ..utils import bentoml_cattr
 from ..utils.pkg import find_spec
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
@@ -24,7 +21,7 @@ from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ..models.model import Model
 from ..models.model import ModelContext
-from ..models.model import PartialKwargsModelOptions as ModelOptions
+from ..models.model import ModelOptions
 from ..configuration import DEBUG_ENV_VAR
 from ..configuration import get_debug_mode
 
@@ -87,7 +84,7 @@ TRANSFORMERS_VERSION = pkg_version_info("transformers")
 HAS_PIPELINE_REGISTRY = TRANSFORMERS_VERSION >= (4, 21, 0)
 
 
-@functools.lru_cache(maxsize=1)
+@lru_cache(maxsize=1)
 def _check_flax_supported() -> None:  # pragma: no cover
     _supported = TRANSFORMERS_VERSION[0] >= 4
 
@@ -251,21 +248,7 @@ class TransformersOptions(ModelOptions):
             "type": self.type,
             "kwargs": self.kwargs,
         }
-        if self.partial_kwargs:
-            t.cast("dict[str, t.Any]", res["kwargs"]).update(self.partial_kwargs)
         return res
-
-
-# provide backward compatibility with previous transformers options.
-bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, TransformersOptions),
-    make_dict_structure_fn(
-        TransformersOptions,
-        bentoml_cattr,
-        _cattrs_forbid_extra_keys=True,
-        partial_kwargs=override(omit=True),
-    ),
-)
 
 
 def convert_to_autoclass(cls_name: str) -> ext.BaseAutoModelClass:
@@ -698,7 +681,6 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
     """
 
     model_options = t.cast(TransformersOptions, bento_model.info.options)
-    partial_kwargs = model_options.partial_kwargs
 
     class TransformersRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
@@ -731,14 +713,8 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
                 self.predict_fns[method_name] = getattr(self.pipeline, method_name)
 
     def add_runnable_method(method_name: str, options: ModelSignature):
-        def _run(
-            runnable_self: TransformersRunnable, *args: t.Any, **kwargs: t.Any
-        ) -> t.Any:
-            raw_method = getattr(runnable_self.model, method_name)
-            method_partial_kwargs = partial_kwargs.get(method_name)
-            if method_partial_kwargs:
-                raw_method = functools.partial(raw_method, **method_partial_kwargs)
-            return raw_method(*args, **kwargs)
+        def _run(self: TransformersRunnable, *args: t.Any, **kwargs: t.Any) -> t.Any:
+            return getattr(self.pipeline, method_name)(*args, **kwargs)
 
         TransformersRunnable.add_method(
             _run,

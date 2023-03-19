@@ -4,6 +4,7 @@ import os
 import typing as t
 import inspect
 import logging
+import platform
 from types import ModuleType
 from functools import lru_cache
 
@@ -351,8 +352,9 @@ def delete_pipeline(task: str) -> None:
 
 def load_model(
     bento_model: str | Tag | Model,
+    _experimental_magic_load: bool = False,
     **kwargs: t.Any,
-) -> ext.TransformersPipeline:
+) -> ext.TransformersPipeline | tuple[t.Any, ...]:
     """
     Load the Transformers model from BentoML local modelstore with given name.
 
@@ -385,15 +387,42 @@ def load_model(
 
     options = t.cast(TransformersOptions, bento_model.info.options)
     if len(options.pretrained) > 0:
-        manual_load_instruction = [
-            f"bento_model = bentoml.transformers.get('{bento_model.tag!s}')"
+        magic_script = [
+            f"bento_model = bentoml.transformers.get('{bento_model.tag!s}')",
         ] + [
             f"{name} = transformers.{klass}.from_pretrained(bento_model.path_of('{name}'))"
             for name, klass in options.pretrained.items()
         ]
+        if _experimental_magic_load:
+            logger.info(
+                "Loading with '_experimental_magic_load=True', returning '(%s)'",
+                ", ".join(options.pretrained),
+            )
+            fname = "<{0} generated {1} {2}.{3}>".format(
+                t.cast(str, bento_model.tag.version),
+                "_experimental_magic_load",
+                bento_model.__class__.__module__,
+                getattr(
+                    bento_model.__class__,
+                    "__qualname__",
+                    bento_model.__class__.__name__,
+                ),
+            )
+            globs = {"bentoml": bentoml, "transformers": transformers}
+            locs = {name: None for name in options.pretrained}
+            magic_script.append("del bento_model")
+            script = "\n".join(magic_script)
+            eval(compile(script, fname, "exec"), globs, locs)
+            return tuple(locs.values())
+
+        manual_load_instruction = [
+            "import bentoml",
+            "import transformers",
+        ] + magic_script
         raise BentoMLException(
             f"Cannot load '{bento_model.tag!s}' since it is saved with 'import_pretrained'. Load manually with the following:\n\n"
             + "\n".join(manual_load_instruction)
+            + f"\n\nOptionally, if you want to load '{bento_model.tag!s}' automatically, use \"{', '.join(options.pretrained)} = bentoml.transformers.load_model('{bento_model.tag!s}', _experimental_magic_load=True)\"."
         )
 
     task = options.task

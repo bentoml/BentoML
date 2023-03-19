@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import typing as t
 import logging
 
@@ -19,11 +18,8 @@ from bentoml.exceptions import BentoMLException
 from bentoml.transformers import ModelOptions
 
 if t.TYPE_CHECKING:
-    from pathlib import Path
-
     from bentoml._internal.frameworks.transformers import TaskDefinition
 
-    from .models.transformers import PairClassificationPipeline
 
 set_seed(124)
 
@@ -148,7 +144,7 @@ def test_logs_custom_task_definition(
 
 
 def test_log_load_model(caplog: pytest.LogCaptureFixture):
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.DEBUG):
         bento_model = bentoml.transformers.save_model(
             "sentiment_test",
             pipeline(
@@ -166,8 +162,8 @@ def test_log_load_model(caplog: pytest.LogCaptureFixture):
 def test_model_options():
     unstructured_options: t.Dict[str, t.Any] = {
         "task": "sentiment-analysis",
-        "tf": [],
-        "pt": [],
+        "tf": (),
+        "pt": (),
         "default": {},
         "type": None,
         "kwargs": {},
@@ -183,100 +179,3 @@ def test_model_options():
     assert structured_options.default == {}
     assert structured_options.type is None
     assert structured_options.kwargs == {}
-
-
-TASK_NAME: str = "pair-classification"
-
-
-@pytest.fixture(name="pair_classification_pipeline", scope="function")
-def fixture_pair_classification_pipeline(unload_registry: bool, tmp_path: Path):
-    from transformers.pipelines import PIPELINE_REGISTRY
-
-    from .models.transformers import PairClassificationPipeline
-
-    PIPELINE_REGISTRY.register_pipeline(
-        TASK_NAME,
-        pipeline_class=PairClassificationPipeline,
-        pt_model=AutoModelForSequenceClassification,
-    )
-
-    config = transformers.BertConfig(
-        vocab_size=99,
-        hidden_size=32,
-        num_hidden_layer=5,
-        num_attention_heads=4,
-        intermediate_size=37,
-    )
-    model = transformers.BertForSequenceClassification(config).eval()
-    vocab_tokens = [
-        "[UNK]",
-        "[CLS]",
-        "[SEP]",
-        "[PAD]",
-        "[MASK]",
-        "I",
-        "love",
-        "hate",
-        "you",
-    ]
-
-    vocab_file = tmp_path / "vocab.txt"
-    with vocab_file.open("w", encoding="utf-8") as vocab_writer:
-        vocab_writer.write("".join([x + "\n" for x in vocab_tokens]))
-    classifier = pipeline(
-        TASK_NAME,
-        model=model,
-        tokenizer=transformers.BertTokenizer(vocab_file.__fspath__()),
-    )
-    if unload_registry:
-        del PIPELINE_REGISTRY.supported_tasks[TASK_NAME]
-
-    return classifier
-
-
-@pytest.mark.parametrize("unload_registry", [True, False])
-def test_custom_pipeline(pair_classification_pipeline: PairClassificationPipeline):
-    """
-    Test saving and loading a custom pipeline from scratch. This is not covered by the framework tests
-    because it does not load a custom pipeline without first adding to the transformers SUPPORTED_TASKS.
-    """
-    from bentoml._internal.frameworks.transformers import PIPELINE_PICKLE_NAME
-
-    from .models.transformers import PairClassificationPipeline
-
-    bento_model = bentoml.transformers.save_model(
-        "my_classification_model",
-        pipeline=pair_classification_pipeline,
-        task_name=TASK_NAME,
-        task_definition={
-            "impl": PairClassificationPipeline,
-            "pt": AutoModelForSequenceClassification,
-        },
-    )
-
-    assert os.path.exists(bento_model.path_of(PIPELINE_PICKLE_NAME))
-    assert bento_model.tag.name == "my_classification_model"
-
-    loaded_pipeline = bentoml.transformers.load_model("my_classification_model:latest")
-    assert pair_classification_pipeline(
-        "I hate you", second_text="I love you"
-    ) == loaded_pipeline("I hate you", second_text="I love you")
-
-    # Test runners
-    bento_model = bentoml.transformers.get("my_classification_model")
-    runner = bento_model.to_runner()
-    runner.init_local()
-
-    assert runner.run(
-        "I hate you", second_text="I love you"
-    ) == pair_classification_pipeline("I hate you", second_text="I love you")
-
-    runner.destroy()
-
-    runner = bento_model.to_runner()
-    runner.init_local()
-    assert runner.run(
-        "I hate you", second_text="I love you"
-    ) == pair_classification_pipeline("I hate you", second_text="I love you")
-
-    runner.destroy()

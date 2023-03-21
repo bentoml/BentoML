@@ -5,6 +5,7 @@ import requests
 import bentoml
 
 ocr_model = "microsoft/trocr-base-handwritten"
+layoutlm_model = "microsoft/layoutlmv2-base-uncased"
 
 if __name__ == "__main__":
     from PIL import Image
@@ -12,11 +13,9 @@ if __name__ == "__main__":
     from transformers import LayoutLMv2Processor
     from transformers import VisionEncoderDecoderModel
 
-    layoutlm_processor = LayoutLMv2Processor.from_pretrained(
-        "microsoft/layoutlmv2-base-uncased"
-    )
     processor = TrOCRProcessor.from_pretrained(ocr_model)
     model = VisionEncoderDecoderModel.from_pretrained(ocr_model)
+    layoutlm_processor = LayoutLMv2Processor.from_pretrained(layoutlm_model)
 
     # load image from the IAM dataset
     url = "https://fki.tic.heia-fr.ch/static/img/a01-122-02.jpg"
@@ -32,12 +31,12 @@ if __name__ == "__main__":
 
     print(f"\nProcessed text from {url}: {generated_text}\n\n{'-' * 80}\n")
     try:
-        bento_model = bentoml.transformers.get("document-processing")
-        print(f"Pretrained model '{bento_model.tag.name!s}' already exists.")
+        bento_model = bentoml.transformers.get("trocr-processor")
+        print("Already saved pretrained model. Skipping...")
     except bentoml.exceptions.NotFound:
         print(
             "Saved pretrained model:",
-            bentoml.transformers.import_pretrained(
-                "document-processing", processor=processor, model=model
-            ),
+            bentoml.transformers.save_model("trocr-processor", processor),
+            bentoml.transformers.save_model("ocr-model", model),
+            bentoml.transformers.save_model("layoutlm-processor", layoutlm_processor),
         )

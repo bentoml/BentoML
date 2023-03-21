@@ -4,28 +4,21 @@ from PIL import Image
 
 import bentoml
 
+trocr_processor = bentoml.transformers.get("trocr-processor").to_runner()
+layoutlm_processor = bentoml.transformers.get("layoutlm-processor").to_runner()
+ocr_model = bentoml.transformers.get("ocr-model").to_runner()
 
-class DocAIRunnable(
-    bentoml.transformers.PreTrainedRunnable, models=["document-processing"]
-):
-    @bentoml.Runnable.method(batchable=False)
-    def image_to_text(self, input_img: Image.Image) -> list[str]:
-        return self.document_processing.processor.batch_decode(
-            self.document_processing.model.generate(
-                self.document_processing.processor(
-                    input_img.convert("RGB"), return_tensors="pt"
-                ).pixel_values
-            ),
-            skip_special_tokens=True,
-        )
-
-
-docai_runner = bentoml.Runner(DocAIRunnable)
-
-svc = bentoml.Service(name="document-processing", runners=[docai_runner])
+svc = bentoml.Service(
+    name="document-processing", runners=[trocr_processor, layoutlm_processor, ocr_model]
+)
 
 
 @svc.api(input=bentoml.io.Image(), output=bentoml.io.Text())
-async def predict(img: Image.Image) -> str:
-    res = await docai_runner.image_to_text.async_run(img)
-    return res[0]
+async def image_to_text(img: Image.Image) -> str:
+    pixel_values = (
+        await trocr_processor.async_run(img.convert("RGB"), return_tensors="pt")
+    ).pixel_values
+    res = await trocr_processor.batch_decode.async_run(
+        await ocr_model.generate.async_run(pixel_values), skip_special_tokens=True
+    )
+    return "".join(res)

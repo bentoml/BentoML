@@ -412,33 +412,6 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
 
         # Set trust_remote_code to True to allow loading custom pipeline.
         kwargs.setdefault("trust_remote_code", False)
-
-        # v1 pickled the pipeline with 'pipeline.v1.pkl'
-        fname = "pipeline.v1.pkl"
-        if os.path.exists(bento_model.path_of(fname)):
-            with open(bento_model.path_of(fname), "rb") as f:
-                pipeline = cloudpickle.load(f)
-
-        if task not in get_supported_tasks():
-            logger.debug(
-                "'%s' is not a supported task, trying to load custom pipeline.", task
-            )
-            assert pipeline is not None
-
-            register_pipeline(
-                task,
-                pipeline.__class__,
-                tuple(convert_to_autoclass(auto_class) for auto_class in options.pt),
-                tuple(convert_to_autoclass(auto_class) for auto_class in options.tf),
-                options.default,
-                options.type,
-            )
-            return pipeline
-
-        assert (
-            task in get_supported_tasks()
-        ), f"Task '{task}' is not a valid task for pipeline (available: {get_supported_tasks()})."
-
         kwargs.update(options.kwargs)
         if len(kwargs) > 0:
             logger.debug(
@@ -447,6 +420,41 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
                 bento_model.tag,
                 kwargs,
             )
+
+        # v1 pickled the pipeline with 'pipeline.v1.pkl'.
+        fname = "pipeline.v1.pkl"
+        if os.path.exists(bento_model.path_of(fname)):
+            with open(bento_model.path_of(fname), "rb") as f:
+                pipeline = cloudpickle.load(f)
+
+        if task not in get_supported_tasks():
+            logger.debug("'%s' is a custom task. Registering it to the registry.", task)
+            kwargs["trust_remote_code"] = True
+            # most likely a custom pipeline
+            if pipeline is None:
+                # if the pipeline is not loaded from the pickle, and it is custom, then we should be able to load
+                # it with model=bento_model.path
+                return transformers.pipeline(model=bento_model.path, **kwargs)
+            else:
+                register_pipeline(
+                    task,
+                    pipeline.__class__,
+                    tuple(
+                        convert_to_autoclass(auto_class) for auto_class in options.pt
+                    ),
+                    tuple(
+                        convert_to_autoclass(auto_class) for auto_class in options.tf
+                    ),
+                    options.default,
+                    options.type,
+                )
+
+        kwargs.setdefault("pipeline_class", pipeline.__class__ if pipeline else None)
+
+        assert (
+            task in get_supported_tasks()
+        ), f"Task '{task}' is not a valid task for pipeline (available: {get_supported_tasks()})."
+
         return (
             transformers.pipeline(task=task, model=bento_model.path, **kwargs)
             if pipeline is None
@@ -464,10 +472,8 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
                 "PreTrainedProtocol", getattr(transformers, options.pretrained_class)
             ).from_pretrained(bento_model.path, **kwargs)
         else:
-            pipeline_class: type[transformers.Pipeline] | None = None
-
             with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
-                pipeline_class = cloudpickle.load(f)
+                pipeline_class: type[transformers.Pipeline] = cloudpickle.load(f)
 
             from transformers.pipelines import get_supported_tasks
 
@@ -763,10 +769,6 @@ def save_model(
 
         pipeline_ = t.cast("transformers.Pipeline", pretrained_or_pipeline)
 
-        if metadata is None:
-            metadata = {}
-        metadata["_is_custom_pipeline"] = False
-
         if task_name is not None and task_definition is not None:
             logger.info(
                 "Arguments 'task_name' and 'task_definition' are provided. Saving model with pipeline task name '%s' and task definition '%s'.",
@@ -785,9 +787,6 @@ def save_model(
                 raise BentoMLException(
                     f"Argument 'pipeline' is not an instance of {impl}. It is an instance of {type(pipeline_)}."
                 )
-
-            # Should only use this for custom pipelines
-            metadata["_is_custom_pipeline"] = True
             options_args = (task_name, task_definition)
 
             if task_name not in get_supported_tasks():

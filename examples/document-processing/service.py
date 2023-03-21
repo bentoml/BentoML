@@ -6,8 +6,7 @@ import bentoml
 
 
 class DocAIRunnable(
-    bentoml.transformers.PreTrainedRunnable,
-    models=["document-processing:toji36ggmo6vfgxi"],
+    bentoml.transformers.PreTrainedRunnable, models=["document-processing"]
 ):
     @bentoml.Runnable.method(batchable=False)
     def image_to_text(self, input_img: Image.Image) -> list[str]:

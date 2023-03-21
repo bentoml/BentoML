@@ -104,22 +104,23 @@ def _check_flax_supported() -> None:  # pragma: no cover
 
     if not _supported:
         logger.warning(
-            "Detected transformers version: %s.%s.%s, which doesn't have supports for Flax. Update 'transformers' to 4.x and above to have Flax supported.",
+            "If you are using Flax, make sure to upgrade 'transformers' to 4.x or above (detected: %s.%s.%s).",
             *TRANSFORMERS_VERSION,
         )
     else:
-        _flax_available = find_spec("jax") is not None and find_spec("flax") is not None
-        if _flax_available:
+        if all(find_spec(lib) for lib in ("jax", "flax", "jaxlib")):
             _jax_version = get_pkg_version("jax")
+            _jaxlib_version = get_pkg_version("jaxlib")
             _flax_version = get_pkg_version("flax")
             logger.debug(
-                "Jax version %s, Flax version %s available.",
+                "Jax version %s, jaxlib version %s, and Flax version %s available.",
                 _jax_version,
+                _jaxlib_version,
                 _flax_version,
             )
         else:
             logger.warning(
-                "No versions of Flax or Jax found on the current machine. In order to use Flax with transformers 4.x and above, refer to https://github.com/google/flax#quick-install"
+                "In order to use Flax with transformers 4.x and above, make sure to have 'flax', 'jax', and 'jaxlib' PyPI packages available in your environment."
             )
 
 
@@ -790,11 +791,11 @@ def save_model(
             options_args = (task_name, task_definition)
 
             if task_name not in get_supported_tasks():
+                register_pipeline(task_name, **task_definition)
                 logger.info(
-                    "Task '%s' is not available in the pipeline registry. Trying to register it.",
+                    "Task '%s' is a custom task and has been registered to the pipeline registry.",
                     task_name,
                 )
-                register_pipeline(task_name, **task_definition)
 
             assert (
                 task_name in get_supported_tasks()
@@ -855,8 +856,6 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    model_options = t.cast(TransformersOptions, bento_model.info.options)
-
     class TransformersRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
@@ -876,11 +875,10 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
             else:
                 # assign CPU resources
                 kwargs = {}
-            kwargs.update(model_options.kwargs)
 
             self.model = load_model(bento_model, **kwargs)
 
-            # backward compatibility with previous BentoML versions.
+            # NOTE: backward compatibility with previous BentoML versions.
             self.pipeline = self.model
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
@@ -889,7 +887,7 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
 
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(self: TransformersRunnable, *args: t.Any, **kwargs: t.Any) -> t.Any:
-            return getattr(self.model, method_name)(*args, **kwargs)
+            return self.predict_fns[method_name](*args, **kwargs)
 
         TransformersRunnable.add_method(
             _run,

@@ -294,6 +294,9 @@ fraud-detection-runner-1-846bdfcf56-c5g6m   3/3     Running   0          10s
 fraud-detection-runner-2-6d48794b7-xws4j    3/3     Running   0          10s
 ```
 
+![image](https://user-images.githubusercontent.com/861225/226584180-056719cf-0579-4bfb-a5e3-115f7a8808b1.png)
+
+
 Port forward the Fraud Detection service to test locally. You should be able to visit the Swagger page of the service by requesting http://0.0.0.0:8080 while port forwarding.
 
 ```bash

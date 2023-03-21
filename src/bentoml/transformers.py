@@ -11,7 +11,7 @@ from ._internal.frameworks.transformers import get
 from ._internal.frameworks.transformers import load_model
 from ._internal.frameworks.transformers import save_model
 from ._internal.frameworks.transformers import get_runnable
-from ._internal.frameworks.transformers import import_pretrained
+from ._internal.frameworks.transformers import import_model
 from ._internal.frameworks.transformers import TransformersOptions as ModelOptions
 
 if _t.TYPE_CHECKING:
@@ -103,7 +103,7 @@ class PreTrainedRunnable(_Runnable):
                 options = _t.cast(ModelOptions, ref.info.options)
                 if len(options.pretrained) == 0:
                     raise ValueError(
-                        f"Model '{model}' is not a pretrained model (not saved with 'import_pretrained')."
+                        f"Model '{model}' is not a pretrained model (not saved with 'import_model')."
                     )
                 _cached_ref_mapping[cls._normalized_name(ref.tag.name)] = ref
         cls._cached_ref_mapping = _cached_ref_mapping
@@ -132,7 +132,7 @@ class PreTrainedRunnable(_Runnable):
 __all__ = [
     "load_model",
     "save_model",
-    "import_pretrained",
+    "import_model",
     "get",
     "get_runnable",
     "ModelOptions",

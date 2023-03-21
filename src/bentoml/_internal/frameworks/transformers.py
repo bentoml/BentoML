@@ -420,7 +420,7 @@ def load_model(
             "import transformers",
         ] + magic_script
         raise BentoMLException(
-            f"Cannot load '{bento_model.tag!s}' since it is saved with 'import_pretrained'. Load manually with the following:\n\n"
+            f"Cannot load '{bento_model.tag!s}' since it is saved with 'import_model'. Load manually with the following:\n\n"
             + "\n".join(manual_load_instruction)
             + f"\n\nOptionally, if you want to load '{bento_model.tag!s}' automatically, use \"{', '.join(options.pretrained)} = bentoml.transformers.load_model('{bento_model.tag!s}', _experimental_magic_load=True)\"."
         )
@@ -502,7 +502,7 @@ def load_model(
         raise
 
 
-def import_pretrained(
+def import_model(
     name: str,
     *,
     labels: dict[str, str] | None = None,

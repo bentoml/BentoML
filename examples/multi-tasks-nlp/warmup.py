@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-import importlib
-
-import transformers
 from transformers import pipeline
-from transformers.utils import is_tf_available
-from transformers.utils import is_torch_available
 
 import bentoml
 
@@ -93,42 +88,3 @@ if __name__ == "__main__":
         print(f"Saved categorizer model: {categorizer_model}")
 
     print("\n", "=" * 50, "\n")
-
-    # NOTE: Sentiment analysis models suggestions if not using custom pipelines:
-    # - distilbert-base-uncased-finetuned-sst-2-english (default)
-    # - bhadresh-savani/distilbert-base-uncased-emotion
-    # - ProsusAI/finbert
-    sentimenter = pipeline(
-        model="aarnphm/multi-length-text-classification-pipeline",
-        top_k=None,
-        trust_remote_code=True,
-    )
-    print(
-        "\nSentiment prediction:",
-        {c["label"]: c["score"] for c in sentimenter(TEXT)[0]},
-    )
-    try:
-        sentimenter_model = bentoml.transformers.get("sentimenter-pipeline")
-        print(f"'{sentimenter_model}' already exists.")
-    except bentoml.exceptions.NotFound:
-        sentimenter_model = bentoml.transformers.save_model(
-            "sentimenter-pipeline",
-            sentimenter,
-            task_name="multi-length-text-classification",
-            task_definition={
-                "impl": sentimenter.__class__,
-                "pt": transformers.AutoModelForSequenceClassification
-                if is_torch_available()
-                else None,
-                "tf": transformers.TFAutoModelForSequenceClassification
-                if is_tf_available()
-                else None,
-                "default": {
-                    "pt": ("ProsusAI/finbert", "54bddcea"),
-                    "tf": ("ProsusAI/finbert", "54bddcea"),
-                },
-                "type": "text",
-            },
-            external_modules=[importlib.import_module(sentimenter.__module__)],
-        )
-        print(f"Saved sentimenter model: {sentimenter_model}")

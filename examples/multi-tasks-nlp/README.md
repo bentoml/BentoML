@@ -5,10 +5,9 @@ This is a quickstart project demonstrating basic usage of
 
 In this project, we will use
 [Meta's BART](https://huggingface.co/sshleifer/distilbart-cnn-12-6) model for
-summarization and zero-shot classification (categorization), and
-[a BERT variant](https://huggingface.co/ProsusAI/finbert) for sentiment
-analysis. We will build a prediction service for serving the pre-trained model,
-and containerize the model server as a container for production.
+summarization and zero-shot classification (categorization). We will build a
+prediction service for serving the pre-trained model, and containerize the model
+server as a container for production.
 
 ### Install Dependencies
 
@@ -36,8 +35,6 @@ bentoml models get summarizer-pipeline:latest
 
 bentoml models get categorizer-pipeline:latest
 
-bentoml models get sentimenter-pipeline:latest
-
 bentoml models list
 
 bentoml models --help
@@ -52,14 +49,11 @@ import bentoml
 
 summarizer = bentoml.transformers.get("summarizer-pipeline").to_runner()
 categorizer = bentoml.transformers.get("categorizer-pipeline").to_runner()
-sentimenter = bentoml.transformers.get("sentimenter-pipeline").to_runner()
 
-svc = bentoml.Service(
-    name="multi-task-nlp", runners=[summarizer, categorizer, sentimenter]
-)
+svc = bentoml.Service(name="multi-task-nlp", runners=[summarizer, categorizer])
 
 
-@svc.api(input=bentoml.io.Text.from_sample(TEXT), output=bentoml.io.Text())
+@svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
 async def summarize(text: str) -> str:
     generated = await summarizer.async_run(text, max_length=MAX_LENGTH)
     return generated[0]["summary_text"]
@@ -78,21 +72,7 @@ async def categorize(
         c: p
         for c, p in zip(predictions["labels"], predictions["scores"])
     }
-
-
-@svc.api(input=bentoml.io.Text.from_sample(TEXT), output=bentoml.io.JSON())
-async def sentiment_analysis(text: str) -> dict[str, float]:
-    predictions = await sentimenter.async_run(text)
-    return {c["label"]: c["score"] for c in predictions}
 ```
-
-Let's unpack the above code:
-
-1. We create three
-   [BentoML's Runner](https://docs.bentoml.org/en/latest/concepts/runner.html)
-   from the saved models, and create a new service named `multi-task-nlp`.
-2. We define three APIs for the service, and runs the runners corespondingly for
-   each of the tasks (summarization, categorization and sentiment analysis).
 
 Run the service locally with `bentoml serve-http` command:
 
@@ -115,11 +95,6 @@ test requests.
 > running gRPC server.
 
 ### Build Bento for deployment
-
-Bento is the distribution format in BentoML which captures all the source code,
-model files, config files and dependency specifications required for running the
-service for production deployment. Think of it as Docker/Container designed for
-machine learning models.
 
 To begin with building Bento, create a `bentofile.yaml` under your project
 directory:

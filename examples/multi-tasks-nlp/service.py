@@ -13,11 +13,8 @@ import bentoml
 
 summarizer = bentoml.transformers.get("summarizer-pipeline").to_runner()
 categorizer = bentoml.transformers.get("categorizer-pipeline").to_runner()
-sentimenter = bentoml.transformers.get("sentimenter-pipeline").to_runner()
 
-svc = bentoml.Service(
-    name="multi-tasks-nlp", runners=[summarizer, categorizer, sentimenter]
-)
+svc = bentoml.Service(name="multi-tasks-nlp", runners=[summarizer, categorizer])
 
 
 @svc.api(input=bentoml.io.Text.from_sample(TEXT), output=bentoml.io.Text())
@@ -43,16 +40,9 @@ async def categorize(
     }
 
 
-@svc.api(input=bentoml.io.Text.from_sample(TEXT), output=bentoml.io.JSON())
-async def sentiment_analysis(text: str) -> dict[str, float]:
-    predictions = await sentimenter.async_run(text)
-    return {c["label"]: c["score"] for c in predictions}
-
-
 class GeneralAnalysisOutput(pydantic.BaseModel):
     summary: str
     categories: dict[str, float]
-    sentiment: dict[str, float]
 
 
 @svc.api(
@@ -64,7 +54,6 @@ class GeneralAnalysisOutput(pydantic.BaseModel):
                 "entertainment": 0.5805651545524597,
                 "world": 0.5592136979103088,
             },
-            sentiment={"neutral": 0.8392555117607117},
         )
     ),
 )
@@ -77,7 +66,6 @@ async def make_analysis(
         for res in await asyncio.gather(
             summarizer.async_run(text, max_length=MAX_LENGTH),
             categorizer.async_run(text, categories, multi_label=True),
-            sentimenter.async_run(text),
         )
     ]
     return GeneralAnalysisOutput(
@@ -87,5 +75,4 @@ async def make_analysis(
             for c, p in zip(results[1]["labels"], results[1]["scores"])
             if p > CATEGORICAL_THRESHOLD
         },
-        sentiment={c["label"]: c["score"] for c in results[2]},
     )

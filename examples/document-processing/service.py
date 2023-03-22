@@ -1,24 +1,49 @@
 from __future__ import annotations
 
-from PIL import Image
+import io
+import os
+import typing as t
+
+import numpy as np
+from warmup import convert_pdf_to_images
 
 import bentoml
 
-trocr_processor = bentoml.transformers.get("trocr-processor").to_runner()
-layoutlm_processor = bentoml.transformers.get("layoutlm-processor").to_runner()
-ocr_model = bentoml.transformers.get("ocr-model").to_runner()
+THRESHOLD = os.getenv("OCR_THRESHOLD", 0.8)
 
-svc = bentoml.Service(
-    name="document-processing", runners=[trocr_processor, layoutlm_processor, ocr_model]
-)
+en_reader = bentoml.easyocr.get("en-reader").to_runner()
+processor = bentoml.detectron.get("dit-predictor").to_runner()
 
 
-@svc.api(input=bentoml.io.Image(), output=bentoml.io.Text())
-async def image_to_text(img: Image.Image) -> str:
-    pixel_values = (
-        await trocr_processor.async_run(img.convert("RGB"), return_tensors="pt")
-    ).pixel_values
-    res = await trocr_processor.batch_decode.async_run(
-        await ocr_model.generate.async_run(pixel_values), skip_special_tokens=True
-    )
-    return "".join(res)
+svc = bentoml.Service(name="document-processing", runners=[en_reader, processor])
+
+
+@svc.api(input=bentoml.io.File(), output=bentoml.io.JSON())
+async def image_to_text(file: io.BytesIO) -> dict[t.Literal["parsed"], str]:
+    res = []
+    with file:
+        ims = convert_pdf_to_images(file.read())
+        for im in ims:
+            output = (await processor.async_run(np.asarray(im)))["instances"]
+            segmentation = (
+                output.get("pred_classes").tolist(),
+                output.get("scores").tolist(),
+                output.get("pred_boxes"),
+            )
+            for cls, score, box in zip(*segmentation):
+                # We don't care about table in this case and any prediction lower than the given threshold
+                if cls != 4 and score >= THRESHOLD:
+                    # join text if it's in the same line
+                    text = " ".join(
+                        [
+                            t[1]
+                            for t in await en_reader.readtext.async_run(
+                                np.asarray(im.crop(box.numpy()))
+                            )
+                        ]
+                    )
+                    # ignore annotations for table footer
+                    if not text.startswith("Figure"):
+                        print("Extract text:", text)
+                        res.append(text)
+        return {"parsed": "\n".join(res)}

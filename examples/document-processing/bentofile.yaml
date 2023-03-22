@@ -4,9 +4,14 @@ labels:
   project: document-processing
 include:
   - '*.py'
+  - '/dit'
+  - '/samples'
 python:
   requirements_txt: ./requirements.txt
 docker:
   system_packages:
+    - git
     - tesseract-ocr
     - libtesseract-dev
+    - poppler-utils
+  dockerfile_template: ./Dockerfile.template

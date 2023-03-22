@@ -1,4 +1,6 @@
 bentoml[all] >= 1.0.16
 torch
-transformers
-pytesseract
+easyocr
+timm
+fvcore
+pdf2image

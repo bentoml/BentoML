@@ -6,7 +6,6 @@ import logging
 import platform
 import warnings
 from types import ModuleType
-from functools import lru_cache
 
 import attr
 
@@ -15,7 +14,6 @@ import bentoml
 from ..tag import Tag
 from ..types import LazyType
 from ..utils import LazyLoader
-from ..utils.pkg import find_spec
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
 from ...exceptions import NotFound
@@ -62,18 +60,6 @@ if t.TYPE_CHECKING:
 
     P = t.ParamSpec("P")
 
-    TransformersPreTrained = (
-        transformers.PreTrainedTokenizerBase
-        | transformers.PreTrainedTokenizer
-        | transformers.PreTrainedTokenizerFast
-        | transformers.PreTrainedModel
-        | transformers.TFPreTrainedModel
-        | transformers.FlaxPreTrainedModel
-        | transformers.image_processing_utils.BaseImageProcessor
-        | transformers.SequenceFeatureExtractor
-        | transformers.Pipeline
-    )
-
 else:
     TupleStr = TupleAutoModel = tuple
     DefaultMapping = SimpleDefaultMapping = ModelDefaultMapping = dict
@@ -93,6 +79,19 @@ except ImportError:  # pragma: no cover
         "'transformers' is required in order to use module 'bentoml.transformers'. Install transformers with 'pip install transformers'."
     )
 
+if t.TYPE_CHECKING:
+    TransformersPreTrained = (
+        transformers.PreTrainedTokenizerBase
+        | transformers.PreTrainedTokenizer
+        | transformers.PreTrainedTokenizerFast
+        | transformers.PreTrainedModel
+        | transformers.TFPreTrainedModel
+        | transformers.FlaxPreTrainedModel
+        | transformers.image_processing_utils.BaseImageProcessor
+        | transformers.SequenceFeatureExtractor
+        | transformers.Pipeline
+    )
+
 
 __all__ = ["load_model", "save_model", "get_runnable", "get"]
 
@@ -108,32 +107,6 @@ logger = logging.getLogger(__name__)
 TRANSFORMERS_VERSION = pkg_version_info("transformers")
 
 HAS_PIPELINE_REGISTRY = TRANSFORMERS_VERSION >= (4, 21, 0)
-
-
-@lru_cache(maxsize=1)
-def _check_flax_supported() -> None:  # pragma: no cover
-    _supported = TRANSFORMERS_VERSION[0] >= 4
-
-    if not _supported:
-        logger.warning(
-            "If you are using Flax, make sure to upgrade 'transformers' to 4.x or above (detected: %s.%s.%s).",
-            *TRANSFORMERS_VERSION,
-        )
-    else:
-        if all(find_spec(lib) for lib in ("jax", "flax", "jaxlib")):
-            _jax_version = get_pkg_version("jax")
-            _jaxlib_version = get_pkg_version("jaxlib")
-            _flax_version = get_pkg_version("flax")
-            logger.debug(
-                "Jax version %s, jaxlib version %s, and Flax version %s available.",
-                _jax_version,
-                _jaxlib_version,
-                _flax_version,
-            )
-        else:
-            logger.warning(
-                "In order to use Flax with transformers 4.x and above, make sure to have 'flax', 'jax', and 'jaxlib' PyPI packages available in your environment."
-            )
 
 
 def _deep_convert_to_tuple(
@@ -398,8 +371,6 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
         import bentoml
         pipeline = bentoml.transformers.load_model('my_model:latest')
     """
-    _check_flax_supported()
-
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
 
@@ -739,8 +710,6 @@ def save_model(
         generator = pipeline(task="text-generation", model=model, tokenizer=tokenizer)
         bento_model = bentoml.transformers.save_model("text-generation-pipeline", generator)
     """  # noqa
-    _check_flax_supported()
-
     # backward compatibility
     if pipeline is not None:
         warnings.warn(

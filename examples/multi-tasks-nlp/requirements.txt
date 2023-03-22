@@ -1,8 +1,5 @@
 bentoml[all] >= 1.0.16
 torch
 transformers
-flax
-jaxlib
-jax
 requests
 pydantic

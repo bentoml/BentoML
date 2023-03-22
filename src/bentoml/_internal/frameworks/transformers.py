@@ -62,6 +62,18 @@ if t.TYPE_CHECKING:
 
     P = t.ParamSpec("P")
 
+    TransformersPreTrained = (
+        transformers.PreTrainedTokenizerBase
+        | transformers.PreTrainedTokenizer
+        | transformers.PreTrainedTokenizerFast
+        | transformers.PreTrainedModel
+        | transformers.TFPreTrainedModel
+        | transformers.FlaxPreTrainedModel
+        | transformers.image_processing_utils.BaseImageProcessor
+        | transformers.SequenceFeatureExtractor
+        | transformers.Pipeline
+    )
+
 else:
     TupleStr = TupleAutoModel = tuple
     DefaultMapping = SimpleDefaultMapping = ModelDefaultMapping = dict
@@ -530,6 +542,24 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
 def save_model(
     name: str,
     pretrained_or_pipeline: PreTrainedProtocol,
+    pipeline: transformers.Pipeline | None = ...,
+    task_name: t.LiteralString | None = ...,
+    task_definition: TaskDefinition | None = ...,
+    *,
+    signatures: ModelSignaturesType | None = ...,
+    labels: dict[str, str] | None = ...,
+    custom_objects: dict[str, t.Any] | None = ...,
+    external_modules: t.List[ModuleType] | None = ...,
+    metadata: dict[str, t.Any] | None = ...,
+    **save_kwargs: t.Any,
+) -> bentoml.Model:
+    ...
+
+
+@t.overload
+def save_model(
+    name: str,
+    pretrained_or_pipeline: TransformersPreTrained,
     pipeline: transformers.Pipeline | None = ...,
     task_name: t.LiteralString | None = ...,
     task_definition: TaskDefinition | None = ...,

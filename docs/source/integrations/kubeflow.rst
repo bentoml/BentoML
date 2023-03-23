@@ -25,7 +25,7 @@ After BentoML Kubernetes resources are installed successfully, you should have t
 Kubernetes Components and CRDs
 ##############################
 
-BentoML offers three custom resource definitions (CRDs) in the Kubernetes cluster.
+BentoML offers three custom resource definitions (CRDs) in the Kubernetes cluster through `Yatai <https://docs.bentoml.org/projects/yatai/en/latest/>`_.
 
 .. list-table::
    :header-rows: 1
@@ -35,7 +35,7 @@ BentoML offers three custom resource definitions (CRDs) in the Kubernetes cluste
      - Description
    * - `BentoRequest <https://docs.bentoml.org/projects/yatai/en/latest/concepts/bentorequest_crd.html>`_
      - ``yatai-image-builder``
-     - Describes a bento's OCI image build request and to describe how to generate a `Bento <https://docs.bentoml.org/projects/yatai/en/latest/concepts/bento_crd.html>`_ CR.
+     - Describes a bento's OCI image build request and to describe how to generate a Bento CR.
    * - `Bento <https://docs.bentoml.org/projects/yatai/en/latest/concepts/bento_crd.html>`_
      - ``yatai-image-builder``
      - Describes a bento's metadata. ``yatai-deployment`` gets the bento metadata via the Bento CR. Bento CRs are often generated through the ``BentoRequest`` CR, but you can create a Bento CR manually, and ``yatai-deployment`` relies on the Bento CR to get the Bento information.

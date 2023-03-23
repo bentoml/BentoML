@@ -11,7 +11,7 @@ Install Kubeflow and BentoML resources to the Kubernetes cluster. See [Kubeflow]
 After BentoML Kubernetes resources are installed successfully, you should have the following CRDs in the namespace.
 
 ```bash
-> k -n kubeflow get crds | grep bento
+> kubectl -n kubeflow get crds | grep bento
 bentodeployments.serving.yatai.ai                     2022-12-22T18:46:46Z
 bentoes.resources.yatai.ai                            2022-12-22T18:46:47Z
 bentorequests.resources.yatai.ai                      2022-12-22T18:46:47Z

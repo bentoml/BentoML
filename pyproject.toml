@@ -40,7 +40,7 @@ dependencies = [
     # Since there are discrepancies among API and instrumentation packages,
     # we should always pin the set version of Opentelemetry suite
     "opentelemetry-api==1.14.0",
-    "opentelemetry-sdk==1.14.0",
+    "opentelemetry-sdk==1.17.0",
     "opentelemetry-exporter-otlp-proto-http==1.14.0",
     "opentelemetry-instrumentation==0.35b0",
     "opentelemetry-instrumentation-aiohttp-client==0.35b0",

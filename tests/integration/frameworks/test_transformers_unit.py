@@ -118,17 +118,6 @@ def test_raise_does_not_match_impl_field(
         )
 
 
-def test_raises_is_not_pipeline_instance():
-    with pytest.raises(bentoml.exceptions.BentoMLException) as exc_info:
-        _ = bentoml.transformers.save_model(
-            "not_pipeline_type", AudioClassificationPipeline
-        )
-    assert (
-        "'pipeline' must be an instance of 'transformers.pipelines.base.Pipeline'. "
-        in str(exc_info.value)
-    )
-
-
 def test_logs_custom_task_definition(
     caplog: pytest.LogCaptureFixture,
     sentiment_task: tuple[transformers.Pipeline, TaskDefinition],
@@ -148,7 +137,7 @@ def test_logs_custom_task_definition(
 
 
 def test_log_load_model(caplog: pytest.LogCaptureFixture):
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.DEBUG):
         bento_model = bentoml.transformers.save_model(
             "sentiment_test",
             pipeline(
@@ -166,11 +155,12 @@ def test_log_load_model(caplog: pytest.LogCaptureFixture):
 def test_model_options():
     unstructured_options: t.Dict[str, t.Any] = {
         "task": "sentiment-analysis",
-        "tf": [],
-        "pt": [],
+        "tf": (),
+        "pt": (),
         "default": {},
         "type": None,
         "kwargs": {},
+        "pretrained_class": "",
     }
 
     structured_options = ModelOptions(task="sentiment-analysis")

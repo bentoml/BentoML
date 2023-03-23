@@ -247,7 +247,8 @@ testpaths = ["tests"]
 # similar to black's
 line-length = 88
 # We ignore E501 (line too long) here because we keep user-visible strings on one line.
-ignore = ["E501"]
+# We ignore D407 (missing dashed underline after section) because it's not compatible with Google docstring style.
+ignore = ["E501", "D407"]
 exclude = [
     "bazel-*/",
     "venv",

@@ -35,6 +35,10 @@ from .bentos import delete
 from .bentos import export_bento
 from .bentos import import_bento
 
+# server API
+from .server import GrpcServer
+from .server import HTTPServer
+
 # BentoML built-in types
 from ._internal.tag import Tag
 from ._internal.bento import Bento
@@ -170,6 +174,9 @@ __all__ = [
     "serve",
     "Bento",
     "exceptions",
+    # server APIs
+    "HTTPServer",
+    "GrpcServer",
     # Framework specific modules
     "catboost",
     "detectron",

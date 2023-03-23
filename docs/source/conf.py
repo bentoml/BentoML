@@ -54,7 +54,10 @@ extlinks = {
     "pypi": ("https://pypi.org/project/%s", "%s"),  # noqa: WPS323
     "wiki": ("https://wikipedia.org/wiki/%s", "%s"),  # noqa: WPS323
     "github": ("https://github.com/%s", "%s"),  # noqa: WPS323
-    "examples": ("https://github.com/bentoml/BentoML/tree/main/examples/%s", "examples/"),  # noqa: WPS323
+    "examples": (
+        "https://github.com/bentoml/BentoML/tree/main/examples/%s",
+        "examples/",
+    ),  # noqa: WPS323
 }
 # custom roles
 rst_prolog = """

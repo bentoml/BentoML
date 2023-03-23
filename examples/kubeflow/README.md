@@ -231,6 +231,8 @@ BentoML offers three custom resource definitions (CRDs) in the Kubernetes cluste
 - [Bento](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bento_crd.html) - Describes the metadata for the Bento such as the address of the image and the runners. Created by users or by the `yatai-image-builder` operator for reconsiliating `BentoRequest` resources.
 - [BentoDeployment](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bentodeployment_crd.html) - Describes the metadata of the deployment such as resources and autoscaling behaviors. Reconciled by the `yatai-deployment` operator to create Kubernetes deployments of API Servers and Runners.
 
+![image](https://raw.githubusercontent.com/bentoml/BentoML/main/docs/source/_static/img/kubeflow-crds.png)
+
 Next, we will demonstrate two ways of deployment.
 
 1. Deploying using a `BentoRequest` resource by providing a Bento

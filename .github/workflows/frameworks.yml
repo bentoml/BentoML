@@ -28,6 +28,7 @@ jobs:
       fastai: ${{ steps.filter.outputs.fastai }}
       keras: ${{ steps.filter.outputs.keras }}
       lightgbm: ${{ steps.filter.outputs.lightgbm }}
+      detectron: ${{ steps.filter.outputs.detectron }}
       mlflow: ${{ steps.filter.outputs.mlflow }}
       onnx: ${{ steps.filter.outputs.onnx }}
       picklable_model: ${{ steps.filter.outputs.picklable_model }}
@@ -64,6 +65,11 @@ jobs:
               - src/bentoml/diffusers.py
               - src/bentoml/_internal/frameworks/diffusers.py
               - tests/integration/frameworks/models/diffusers.py
+            detectron:
+              - *related
+              - src/bentoml/detectron.py
+              - src/bentoml/_internal/frameworks/detectron.py
+              - tests/integration/frameworks/models/detectron.py
             lightgbm:
               - *related
               - src/bentoml/lightgbm.py
@@ -213,7 +219,40 @@ jobs:
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework diffusers)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+  detectron_integration_tests:
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.detectron == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - name: Get pip cache dir
+        id: cache-dir
+        run: |
+          echo ::set-output name=dir::$(pip cache dir)
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        id: cache-pip
+        with:
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+      - name: Install dependencies
+        run: |
+          apt-get install -y git
 
+          pip install .
+          pip install torch requests
+          pip install git+https://github.com/facebookresearch/detectron2.git
+          pip install -r requirements/tests-requirements.txt
+      - name: Run tests and generate coverage report
+        run: |
+          OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework detectron)
+          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
   flax_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.flax == 'true') || github.event_name == 'push' }}

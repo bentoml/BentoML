@@ -1,24 +1,20 @@
 name: Frameworks
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
   schedule:
-    - cron: "0 0 * * 1/2"
-
+    - cron: '0 0 * * 1/2'
 env:
   LINES: 120
   COLUMNS: 120
   BENTOML_DO_NOT_TRACK: True
   PYTEST_PLUGINS: bentoml.testing.pytest.plugin
-
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaultsrun
 defaults:
   run:
     shell: bash --noprofile --norc -exo pipefail {0}
-
 jobs:
   diff:
     runs-on: ubuntu-latest
@@ -29,6 +25,7 @@ jobs:
       keras: ${{ steps.filter.outputs.keras }}
       lightgbm: ${{ steps.filter.outputs.lightgbm }}
       detectron: ${{ steps.filter.outputs.detectron }}
+      easyocr: ${{ steps.filter.outputs.easyocr }}
       mlflow: ${{ steps.filter.outputs.mlflow }}
       onnx: ${{ steps.filter.outputs.onnx }}
       picklable_model: ${{ steps.filter.outputs.picklable_model }}
@@ -75,6 +72,11 @@ jobs:
               - src/bentoml/lightgbm.py
               - src/bentoml/_internal/frameworks/lightgbm.py
               - tests/integration/frameworks/models/lightgbm.py
+            easyocr:
+              - *related
+              - src/bentoml/easyocr.py
+              - src/bentoml/_internal/frameworks/easyocr.py
+              - tests/integration/frameworks/models/easyocr.py
             mlflow:
               - *related
               - src/bentoml/mlflow.py
@@ -147,7 +149,6 @@ jobs:
               - src/bentoml/xgboost.py
               - src/bentoml/_internal/frameworks/xgboost.py
               - tests/integration/frameworks/models/xgboost.py
-
   catboost_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
@@ -160,30 +161,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install catboost
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework catboost)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
   diffusers_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.diffusers == 'true') || github.event_name == 'push' }}
@@ -196,25 +192,21 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install diffusers torch transformers
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework diffusers)
@@ -253,6 +245,37 @@ jobs:
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework detectron)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+  easyocr_integration_tests:
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.easyocr == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - name: Get pip cache dir
+        id: cache-dir
+        run: |
+          echo ::set-output name=dir::$(pip cache dir)
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        id: cache-pip
+        with:
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+      - name: Install dependencies
+        run: |
+          pip install .
+          pip install easyocr torch requests Pillow
+          pip install -r requirements/tests-requirements.txt
+      - name: Run tests and generate coverage report
+        run: |
+          OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework easyocr)
+          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
   flax_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.flax == 'true') || github.event_name == 'push' }}
@@ -265,30 +288,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install flax jax jaxlib chex tensorflow
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework flax)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
   fastai_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fastai == 'true') || github.event_name == 'push' }}
@@ -301,30 +319,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install fastai "torch<1.12" torchvision pandas scikit-learn
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework fastai)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_fastai_unit.py "${OPTS[@]}"
-
   keras_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.keras == 'true') || github.event_name == 'push' }}
@@ -337,30 +350,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install "keras<2.12" "tensorflow>=2.7.3"
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework keras)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
   lightgbm_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.lightgbm == 'true') || github.event_name == 'push' }}
@@ -373,30 +381,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install lightgbm
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework lightgbm)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
   mlflow_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.mlflow == 'true') || github.event_name == 'push' }}
@@ -409,30 +412,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install mlflow scikit-learn
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append)
           coverage run -m pytest tests/integration/frameworks/mlflow "${OPTS[@]}"
-
   onnx_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnx == 'true') || github.event_name == 'push' }}
@@ -445,30 +443,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install onnx onnxruntime skl2onnx
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework onnx)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
   picklable_model_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.picklable_model == 'true') || github.event_name == 'push' }}
@@ -481,29 +474,24 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework picklable_model)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
   pytorch_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pytorch == 'true') || github.event_name == 'push' }}
@@ -516,30 +504,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install torch torchvision
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework pytorch)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_pytorch_unit.py "${OPTS[@]}"
-
   pytorch_lightning_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pytorch_lightning == 'true') || github.event_name == 'push' }}
@@ -552,30 +535,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install torch torchvision lightning
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework pytorch_lightning)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
   torchscript_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.torchscript == 'true') || github.event_name == 'push' }}
@@ -588,30 +566,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install torch torchvision
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework torchscript)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
   sklearn_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.sklearn == 'true') || github.event_name == 'push' }}
@@ -624,30 +597,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install joblib scikit-learn
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework sklearn)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
   tensorflow_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.tensorflow == 'true') || github.event_name == 'push' }}
@@ -660,44 +628,36 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install "tensorflow>=2.7.3"
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework tensorflow)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_tensorflow_unit.py "${OPTS[@]}"
-
       - name: Generate coverage
         run: coverage xml
-
       - name: Run tests for no eager execution
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --disable-tf-eager-execution --cov-report=xml:no_eager_execution.xml)
           coverage run -m pytest tests/integration/frameworks/test_tensorflow_unit.py "${OPTS[@]}"
-
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml, ./no_eager_execution.xml
           token: ${{ secrets.CODECOV_TOKEN }}
-
   transformers_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.transformers == 'true') || github.event_name == 'push' }}
@@ -710,39 +670,32 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install tensorflow tensorflow_hub datasets transformers jax jaxlib flax torch
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework transformers)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_transformers_unit.py "${OPTS[@]}"
-
       - name: Generate coverage
         run: coverage xml
-
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml, ./no_eager_execution.xml
           token: ${{ secrets.CODECOV_TOKEN }}
-
   xgboost_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.xgboost == 'true') || github.event_name == 'push' }}
@@ -755,30 +708,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
           echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v3
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-
       - name: Install dependencies
         run: |
           pip install .
           pip install xgboost
           pip install -r requirements/tests-requirements.txt
-
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework xgboost)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
 concurrency:
   group: frameworks${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

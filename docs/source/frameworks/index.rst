@@ -86,7 +86,6 @@ Roadmap
 
 The following frameworks are supported in pre-1.0 BentoML versions and are being migrated to the new 1.0 API. In the meantime, users may use :ref:`Custom Models <frameworks/index:Custom Models>` as a workaround.
 
-- EasyOCR
 - EvalML
 - FastText
 - Flax
@@ -125,6 +124,7 @@ The following frameworks are supported in pre-1.0 BentoML versions and are being
     pytorch
     pytorch_lightning
     sklearn
+    easyocr
     tensorflow
     transformers
     xgboost

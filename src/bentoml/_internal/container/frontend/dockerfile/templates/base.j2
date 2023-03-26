@@ -64,6 +64,7 @@ COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 {% set __pip_cache__ = common.mount_cache("/root/.cache/pip") %}
 # install python packages with install.sh
 {% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} bash -euxo pipefail {{ __install_python_scripts__ }}
+COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 {% if __options__setup_script is not none %}
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
 ADD ./env/docker/setup_script {{ __setup_script__ }}
@@ -71,8 +72,6 @@ RUN chmod +x {{ __setup_script__ }}
 RUN {{ __setup_script__ }}
 {% endif %}
 {% endblock %}
-
-COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 
 # Block SETUP_BENTO_ENTRYPOINT
 {% block SETUP_BENTO_ENTRYPOINT %}

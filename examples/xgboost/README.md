@@ -30,7 +30,7 @@ Verify that the model can be loaded as runner from Python shell:
 ```python
 import bentoml
 
-runner = bentoml.xgboost.load_runner("agaricus:latest")
+runner = bentoml.xgboost.get("agaricus:latest").to_runner()
 
 runner.run([0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
             0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0,
@@ -55,7 +55,7 @@ from bentoml.io import NumpyNdarray, File
 if typing.TYPE_CHECKING:
     import numpy as np
 
-agaricus_runner = bentoml.xgboost.load_runner("agaricus:latest")
+agaricus_runner = bentoml.xgboost.get("agaricus:latest").to_runner()
 
 svc = bentoml.Service("agaricus", runners=[agaricus_runner])
 

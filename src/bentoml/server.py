@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml.exceptions import StateException
+
 from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.configuration.containers import BentoMLContainer
@@ -26,6 +28,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def is_running(process: subprocess.Popen[bytes] | None) -> t.TypeGuard[subprocess.Popen[bytes]]:
+    return process is not None and process.poll() is None
+
 class Server(ABC):
     bento: str | Bento | Tag
     host: str
@@ -34,7 +39,7 @@ class Server(ABC):
     args: list[str]
 
     process: subprocess.Popen[bytes] | None = None
-    timeout: int = 10
+    timeout: float = 10
     _client: Client | None = None
 
     def __init__(
@@ -90,31 +95,31 @@ class Server(ABC):
         self.port = port
         self.start = self._create_startmanager()
 
-    def _create_startmanager(self):
+    def _create_startmanager(server):  # type: ignore # not calling self self
         class _StartManager:
-            def __init__(inner_self, blocking: bool = False):
-                logger.warning(f"starting server with arguments: {self.args}")
+            def __init__(self, blocking: bool = False):
+                logger.info(f"starting server with arguments: {server.args}")
 
-                self.process = subprocess.Popen(
-                    self.args,
+                server.process = subprocess.Popen(
+                    server.args,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     stdin=subprocess.PIPE,
                 )
 
                 if blocking:
-                    self.process.wait()
+                    server.process.wait()
 
-            def __enter__(inner_self):
-                return self.get_client()
+            def __enter__(self):
+                return server.get_client()
 
             def __exit__(
-                inner_self,
+                self,
                 exc_type: type[BaseException] | None,
                 exc_value: BaseException | None,
                 traceback: TracebackType | None,
             ):
-                self.stop()
+                server.stop()
 
         return _StartManager
 
@@ -123,7 +128,7 @@ class Server(ABC):
         pass
 
     def stop(self) -> None:
-        if self.process is None or self.process.poll() is not None:
+        if not is_running(self.process):
             logger.warning("Attempted to stop a BentoML server that was not running!")
             return
         self.process.terminate()
@@ -147,60 +152,9 @@ class Server(ABC):
             logger.error(f"Error stopping server: {e}", exc_info=e)
 
 
-class GrpcServer(Server):
-    @inject
-    def __init__(
-        self,
-        bento: str | Bento | Tag,
-        reload: bool = False,
-        production: bool = False,
-        env: t.Literal["conda"] | None = None,
-        host: str = Provide[BentoMLContainer.http.host],
-        port: int = Provide[BentoMLContainer.http.port],
-        working_dir: str | None = None,
-        api_workers: int | None = Provide[BentoMLContainer.api_server_workers],
-        backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-        enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
-        enable_channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
-        max_concurrent_streams: int
-        | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
-        grpc_protocol_version: str | None = None,
-    ):
-        super().__init__(
-            bento,
-            "serve-grpc",
-            reload,
-            production,
-            env,
-            host,
-            port,
-            working_dir,
-            api_workers,
-            backlog,
-        )
-
-        if enable_reflection:
-            self.args.append("--enable-reflection")
-        if enable_channelz:
-            self.args.append("--enable-channelz")
-        if max_concurrent_streams is not None:
-            self.args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
-
-        if grpc_protocol_version is not None:
-            self.args.extend(["--protocol-version", str(grpc_protocol_version)])
-
-    def get_client(self) -> GrpcClient:
-        if self._client is None:
-            from .client import GrpcClient
-
-            GrpcClient.wait_until_server_ready(
-                host=self.host, port=self.port, timeout=self.timeout
-            )
-            self._client = GrpcClient.from_url(f"{self.host}:{self.port}")
-        return self._client
-
-
 class HTTPServer(Server):
+    _client: HTTPClient | None = None
+
     @inject
     def __init__(
         self,
@@ -264,6 +218,9 @@ class HTTPServer(Server):
         return self.get_client()
 
     def get_client(self) -> HTTPClient:
+        if not is_running(self.process):
+            raise StateException("Attempted to get a client for a server that isn't running! Try running `Server.start()` first.")
+
         if self._client is None:
             from .client import HTTPClient
 
@@ -271,4 +228,62 @@ class HTTPServer(Server):
                 host=self.host, port=self.port, timeout=self.timeout
             )
             self._client = HTTPClient.from_url(f"http://{self.host}:{self.port}")
+        return self._client
+
+
+class GrpcServer(Server):
+    _client: GrpcClient | None = None
+
+    @inject
+    def __init__(
+        self,
+        bento: str | Bento | Tag,
+        reload: bool = False,
+        production: bool = False,
+        env: t.Literal["conda"] | None = None,
+        host: str = Provide[BentoMLContainer.http.host],
+        port: int = Provide[BentoMLContainer.http.port],
+        working_dir: str | None = None,
+        api_workers: int | None = Provide[BentoMLContainer.api_server_workers],
+        backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
+        enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
+        enable_channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
+        max_concurrent_streams: int
+        | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+        grpc_protocol_version: str | None = None,
+    ):
+        super().__init__(
+            bento,
+            "serve-grpc",
+            reload,
+            production,
+            env,
+            host,
+            port,
+            working_dir,
+            api_workers,
+            backlog,
+        )
+
+        if enable_reflection:
+            self.args.append("--enable-reflection")
+        if enable_channelz:
+            self.args.append("--enable-channelz")
+        if max_concurrent_streams is not None:
+            self.args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
+
+        if grpc_protocol_version is not None:
+            self.args.extend(["--protocol-version", str(grpc_protocol_version)])
+
+    def get_client(self) -> GrpcClient:
+        if not is_running(self.process):
+            raise StateException("Attempted to get a client for a server that isn't running! Try running `Server.start()` first.")
+
+        if self._client is None:
+            from .client import GrpcClient
+
+            GrpcClient.wait_until_server_ready(
+                host=self.host, port=self.port, timeout=self.timeout
+            )
+            self._client = GrpcClient.from_url(f"{self.host}:{self.port}")
         return self._client

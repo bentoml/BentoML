@@ -28,8 +28,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def is_running(process: subprocess.Popen[bytes] | None) -> t.TypeGuard[subprocess.Popen[bytes]]:
+def is_running(
+    process: subprocess.Popen[bytes] | None,
+) -> t.TypeGuard[subprocess.Popen[bytes]]:
     return process is not None and process.poll() is None
+
 
 class Server(ABC):
     bento: str | Bento | Tag
@@ -219,7 +222,9 @@ class HTTPServer(Server):
 
     def get_client(self) -> HTTPClient:
         if not is_running(self.process):
-            raise StateException("Attempted to get a client for a server that isn't running! Try running `Server.start()` first.")
+            raise StateException(
+                "Attempted to get a client for a server that isn't running! Try running `Server.start()` first."
+            )
 
         if self._client is None:
             from .client import HTTPClient
@@ -277,7 +282,9 @@ class GrpcServer(Server):
 
     def get_client(self) -> GrpcClient:
         if not is_running(self.process):
-            raise StateException("Attempted to get a client for a server that isn't running! Try running `Server.start()` first.")
+            raise StateException(
+                "Attempted to get a client for a server that isn't running! Try running `Server.start()` first."
+            )
 
         if self._client is None:
             from .client import GrpcClient

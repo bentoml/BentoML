@@ -330,6 +330,10 @@ def serve_http_production(
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
             if isinstance(runner, Runner):
+
+                if runner.embedded:
+                    continue
+
                 sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
                 assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 

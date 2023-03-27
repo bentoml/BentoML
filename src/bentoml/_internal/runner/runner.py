@@ -85,6 +85,7 @@ class AbstractRunner(ABC):
     )
     resource_config: dict[str, t.Any]
     runnable_class: type[Runnable]
+    embedded: bool
 
     @abstractmethod
     def init_local(self, quiet: bool = False) -> None:
@@ -160,6 +161,7 @@ class Runner(AbstractRunner):
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
+        embedded: bool = False,
     ) -> None:
         """
 
@@ -248,6 +250,7 @@ class Runner(AbstractRunner):
             workers_per_resource=config.get("workers_per_resource", 1),
             runner_methods=list(runner_method_map.values()),
             scheduling_strategy=scheduling_strategy,
+            embedded=embedded,
         )
 
         # Choose the default method:

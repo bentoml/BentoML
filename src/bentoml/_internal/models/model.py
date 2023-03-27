@@ -327,6 +327,7 @@ class Model(StoreItem):
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
+        embedded: bool = False,
     ) -> Runner:
         """
         TODO(chaoyu): add docstring
@@ -349,6 +350,7 @@ class Model(StoreItem):
             max_batch_size=max_batch_size,
             max_latency_ms=max_latency_ms,
             method_configs=method_configs,
+            embedded=embedded,
         )
 
     def to_runnable(self) -> t.Type[Runnable]:

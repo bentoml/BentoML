@@ -44,7 +44,7 @@ There are three ways to complete this tutorial:
 
 #. Local Development Environment
 
-   Download the source code of this tutorial from `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_:
+   Download the source code of this tutorial from :examples:`examples/quickstart <quickstart>`:
 
    .. code-block:: bash
 
@@ -341,7 +341,8 @@ You can test out the Runner interface this way:
 
 .. note::
 
-   For custom Runners and advanced runner options, see :doc:`concepts/runner` and :doc:`guides/batching`.
+   For custom Runners (to define our own Runner classes) and advanced runner options,
+   see :doc:`concepts/runner` and :doc:`guides/batching`.
 
 
 Service API and IO Descriptor

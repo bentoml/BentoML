@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import abc
-import pickle
+import sys
+import base64
 import typing as t
 import itertools
 
@@ -11,6 +12,12 @@ from simple_di import Provide
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..configuration.containers import BentoMLContainer
+
+if sys.version_info < (3, 8):
+    import pickle5 as pickle
+else:
+    import pickle
+
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
@@ -23,6 +30,7 @@ if t.TYPE_CHECKING:
 
     from .. import external_typing as ext
 else:
+    np = LazyLoader("np", globals(), "numpy")
     tritongrpcclient = LazyLoader(
         "tritongrpcclient", globals(), "tritonclient.grpc.aio", exc_msg=TRITON_EXC_MSG
     )
@@ -230,8 +238,6 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         batches: t.Sequence[ext.NpNDArray],
         batch_dim: int = 0,
     ) -> tuple[ext.NpNDArray, list[int]]:
-        import numpy as np
-
         # numpy.concatenate may consume lots of memory, need optimization later
         batch: ext.NpNDArray = np.concatenate(batches, axis=batch_dim)
         indices = list(
@@ -247,8 +253,6 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> list[ext.NpNDArray]:
-        import numpy as np
-
         return np.split(batch, indices[1:-1], axis=batch_dim)
 
     @classmethod
@@ -276,55 +280,63 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         return InferInput
 
     @classmethod
-    @inject
     def to_payload(
         cls,
         batch: ext.NpNDArray,
         batch_dim: int,
-        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
-        if plasma_db:
+
+        # skip 0-dimensional array
+        if batch.shape:
+
+            buffers: list[pickle.PickleBuffer] = []
+            if not (batch.flags["C_CONTIGUOUS"] or batch.flags["F_CONTIGUOUS"]):
+                # TODO: use fortan contiguous if it's faster
+                batch = np.ascontiguousarray(batch)
+            bs = pickle.dumps(batch, protocol=5, buffer_callback=buffers.append)
+            bs_str = base64.b64encode(bs).decode("ascii")
+            buffer_bs = buffers[0].raw().tobytes()
+            # release memory
+            buffers[0].release()
             return cls.create_payload(
-                plasma_db.put(batch).binary(),
+                buffer_bs,
                 batch.shape[batch_dim],
-                {"plasma": True},
+                {
+                    "format": "pickle5",
+                    "pickle_bytes": bs_str,
+                },
             )
 
         return cls.create_payload(
             pickle.dumps(batch),
             batch.shape[batch_dim],
-            {"plasma": False},
+            {"format": "default"},
         )
 
     @classmethod
-    @inject
     def from_payload(
         cls,
         payload: Payload,
-        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> ext.NpNDArray:
-        if payload.meta.get("plasma"):
-            import pyarrow.plasma as plasma
-
-            assert plasma_db
-            return plasma_db.get(plasma.ObjectID(payload.data))
+        format = payload.meta.get("format", "default")
+        if format == "pickle5":
+            bs_str = payload.meta["pickle_bytes"]
+            bs = base64.b64decode(bs_str)
+            recovered_buffers = [pickle.PickleBuffer(payload.data)]
+            return pickle.loads(bs, buffers=recovered_buffers)
 
         return pickle.loads(payload.data)
 
     @classmethod
-    @inject
     def batch_to_payloads(
         cls,
         batch: ext.NpNDArray,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> list[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
-        payloads = [
-            cls.to_payload(subbatch, batch_dim, plasma_db) for subbatch in batches
-        ]
+        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
         return payloads
 
     @classmethod
@@ -333,9 +345,8 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
     ) -> t.Tuple["ext.NpNDArray", list[int]]:
-        batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
+        batches = [cls.from_payload(payload) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
 
 

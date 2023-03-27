@@ -11,7 +11,8 @@ TensorFlow
 
 .. note::
 
-   You can find more examples for **TensorFlow** in our :github:`bentoml/examples <bentoml/BentoML/tree/main/examples>` directory.
+   You can find more examples for **TensorFlow** in our
+   :examples:`BentoML/examples <>` directory.
 
 .. currentmodule:: bentoml.tensorflow
 

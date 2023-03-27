@@ -240,3 +240,5 @@ And the `bentoml-plugins-arize` makes it easy to work with BentoML.
 
 
 You could also join the BentoML community and develop your own monitoring data collector by implementing the `bentoml.monitoring.MonitorBase` interface.
+
+The full project described in this page can be found at :examples:`Examples: monitoring example for classification tasks <monitoring/task_classification>`.

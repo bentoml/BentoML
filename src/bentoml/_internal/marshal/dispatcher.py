@@ -243,7 +243,6 @@ class CorkDispatcher:
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)
 
-
         logger.debug("Dispatcher finished optimizer training request 1.")
         self.optimizer.trigger_refresh()
 

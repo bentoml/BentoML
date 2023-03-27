@@ -200,6 +200,10 @@ Bentos between teams or moving between different deployment stages. For example:
         bentoml import s3://bentoml.com/quickstart/iris_classifier.bento
         bentoml export iris_classifier:latest s3://my_bucket/my_prefix/
 
+    To see a list of plugins usable for upload, see
+    `the list <https://www.pyfilesystem.org/page/index-of-filesystems/>`_ provided by the
+    pyfilesystem library.
+
 
 Push and Pull
 ^^^^^^^^^^^^^

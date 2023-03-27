@@ -92,16 +92,21 @@ class InferenceApiContext:
     class RequestContext:
         metadata: Metadata
         headers: Metadata
+        query_params: Metadata
 
-        def __init__(self, metadata: Metadata):
+        def __init__(self, metadata: Metadata, query_params: Metadata):
             self.metadata = metadata
             self.headers = metadata
+            self.query_params = metadata
 
         @staticmethod
         def from_http(
             request: "starlette.requests.Request",
         ) -> "InferenceApiContext.RequestContext":
-            return InferenceApiContext.RequestContext(request.headers)  # type: ignore (coercing Starlette headers to Metadata)
+            return InferenceApiContext.RequestContext(
+                request.headers,  # type: ignore # coercing Starlette types to Metadata
+                request.query_params,  # type: ignore
+            )
 
     @attr.define
     class ResponseContext:

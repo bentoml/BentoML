@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-from ._internal.utils import warn_experimental
-from ._internal.utils import add_experimental_docstring
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -387,7 +385,6 @@ class _LazyMetric:
         self._args: tuple[t.Any, ...] = ()
         self._kwargs: dict[str, t.Any] = {}
 
-    @add_experimental_docstring
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """
         Lazily initialize the metrics object.
@@ -400,7 +397,6 @@ class _LazyMetric:
             raise ValueError(
                 f"'registry' should not be passed when using '{__name__}.{self._attr}'. See https://docs.bentoml.org/en/latest/reference/metrics.html."
             )
-        warn_experimental("%s.%s" % (__name__, self._attr))
         self._args = args
         self._kwargs = kwargs
         if self._attr in _INTERNAL_FN_IMPL:

@@ -687,7 +687,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install .
-          pip install tensorflow tensorflow_hub transformers jax jaxlib flax torch
+          pip install tensorflow tensorflow_hub datasets transformers jax jaxlib flax torch
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report

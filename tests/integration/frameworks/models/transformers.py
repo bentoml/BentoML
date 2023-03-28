@@ -8,6 +8,7 @@ import requests
 import tensorflow as tf
 import transformers
 from PIL import Image
+from datasets import load_dataset
 from transformers import Pipeline
 from transformers.utils import is_tf_available
 from transformers.utils import is_torch_available
@@ -293,11 +294,16 @@ else:
     FrameworkPreTrainedMapping = dict
 
 # NOTE: the below is a map between model saved weights and its coresponding dictionary of framework - pretrained class.
-# TODO: Add vision models
+# TODO: Add audio models
 MODEL_PRETRAINED_MAPPING = {
+    # NOTE: text model
     "gpt2": FrameworkPreTrainedMapping(
         pt="GPT2Model", tf="TFGPT2Model", jax="FlaxGPT2Model"
-    )
+    ),
+    # NOTE: vit model
+    "google/vit-base-patch16-224-in21k": FrameworkPreTrainedMapping(
+        pt="ViTModel", tf="TFViTModel", jax="FlaxViTModel"
+    ),
 }
 
 
@@ -317,7 +323,6 @@ def pretrained_model(
     )
 
 
-# "Hello, my dog is cute"
 def gpt2_method_caller(
     framework: t.Literal["pt", "tf", "jax"], model_name: str
 ) -> t.Callable[
@@ -399,6 +404,93 @@ gpt2_pretrained: list[Model] = [
     ),
 ]
 
+dataset = load_dataset("huggingface/cats-image")
+im = dataset["test"]["image"][0]
+vit_processor = transformers.AutoImageProcessor.from_pretrained(
+    "google/vit-base-patch16-224-in21k"
+)
+
+
+def vit_method_caller(
+    framework: t.Literal["pt", "tf", "jax", "np"], model_name: str
+) -> t.Callable[
+    [Model, str, tuple[t.Any, ...], dict[str, t.Any]], tuple[int, int, int]
+]:
+    if framework == "jax":
+        # NOTE: for jax ViT it returns a numpy array instead.
+        framework = "np"
+
+    def caller(
+        framework_test_model: Model,
+        method: str,
+        args: tuple[t.Any, ...],
+        kwargs: dict[str, t.Any],
+    ) -> t.Any:
+        model_inputs = kwargs
+        if args:
+            model_inputs.update(
+                t.cast("dict[str, t.Any]", vit_processor(arg, return_tensors=framework))
+            )
+        last_hidden_state = getattr(framework_test_model.model, method)(
+            **model_inputs
+        ).last_hidden_state
+        return last_hidden_state.shape
+
+    return caller
+
+
+def check_vit_output(output: tuple[int, int, int] | t.Any) -> bool:
+    expected_shape = (1, 197, 768)
+    if isinstance(output, tuple):
+        return output == expected_shape
+    elif isinstance(output, tf.TensorShape):  # eh a special case for tf.
+        return output == tf.TensorShape(expected_shape)
+    else:
+        return output.last_hidden_state.shape == expected_shape
+
+
+vit_pretrained: list[Model] = [
+    Model(
+        name=f"vit_{framework}",
+        model=pretrained_model(framework, "google/vit-base-patch16-224-in21k"),
+        model_method_caller=vit_method_caller(
+            framework, "google/vit-base-patch16-224-in21k"
+        ),
+        configurations=[
+            Config(
+                test_inputs={
+                    "__call__": [
+                        Input(
+                            input_args=[],
+                            input_kwargs=vit_processor(im, return_tensors=framework),
+                            expected=check_vit_output,
+                        )
+                    ]
+                }
+            )
+        ],
+    )
+    for framework in ("pt", "tf", "jax")
+] + [
+    Model(
+        name="vit_processor",
+        model=vit_processor,
+        configurations=[
+            Config(
+                test_inputs={
+                    "__call__": [
+                        Input(
+                            input_args=[im],
+                            expected=lambda output: output["pixel_values"][0].shape
+                            == (3, 224, 224),
+                        )
+                    ]
+                }
+            )
+        ],
+    ),
+]
+
 
 # NOTE: when we need to add more test cases for different models
 #  create a list of Model and append to 'models' list
@@ -408,4 +500,5 @@ models = (
     + image_classification
     + custom_pipeline
     + gpt2_pretrained
+    + vit_pretrained
 )

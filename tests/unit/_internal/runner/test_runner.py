@@ -17,7 +17,7 @@ def test_valid_runner_basic(caplog):
     assert dummy_runner.name == "dummyrunnable"
     assert (
         "bentoml._internal.runner.runner",
-        logging.WARNING,
+        logging.DEBUG,
         "Using lowercased runnable class name 'dummyrunnable' for runner.",
     ) in caplog.record_tuples
 

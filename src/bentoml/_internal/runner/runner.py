@@ -58,7 +58,7 @@ class RunnerMethod(t.Generic[T, P, R]):
 def _to_lower_name(name: str) -> str:
     lname = name.lower()
     if name != lname:
-        logger.warning("Converting runner name '%s' to lowercase: '%s'", name, lname)
+        logger.debug("Converting runner name '%s' to lowercase: '%s'", name, lname)
 
     return lname
 

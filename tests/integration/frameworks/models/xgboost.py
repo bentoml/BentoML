@@ -64,12 +64,10 @@ cancer_model = FrameworkTestModel(
                     Input(
                         input_args=[np.array([cancer_data[0]])],
                         expected=close_to([[0.87606, 0.123939]]),
-                        preprocess=xgb.DMatrix,
                     ),
                     Input(
                         input_args=[np.array([cancer_data[1]])],
                         expected=close_to([[0.97558, 0.0244234]]),
-                        preprocess=xgb.DMatrix,
                     ),
                 ],
             },
@@ -81,12 +79,10 @@ cancer_model = FrameworkTestModel(
                     Input(
                         input_args=[pd.DataFrame([cancer_data[0]])],
                         expected=close_to([[0.87606, 0.123939]]),
-                        preprocess=xgb.DMatrix,
                     ),
                     Input(
                         input_args=[pd.DataFrame([cancer_data[1]])],
                         expected=close_to([[0.97558, 0.0244234]]),
-                        preprocess=xgb.DMatrix,
                     ),
                 ],
             },

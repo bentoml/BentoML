@@ -42,8 +42,6 @@ class FrameworkTestModelInput:
     expected: t.Any | t.Callable[[t.Any], bool | None]
     input_kwargs: dict[str, t.Any] = attr.Factory(dict)
 
-    preprocess: t.Callable[[t.Any], t.Any] = lambda v: v  # noqa: E731
-
     def check_output(self, outp: t.Any):
         if isinstance(self.expected, t.Callable):
             result = self.expected(outp)

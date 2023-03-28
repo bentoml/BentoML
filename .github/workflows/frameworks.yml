@@ -178,15 +178,6 @@ jobs:
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework catboost)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   diffusers_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.diffusers == 'true') || github.event_name == 'push' }}
@@ -222,15 +213,6 @@ jobs:
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework diffusers)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   flax_integration_tests:
     needs: diff
@@ -268,15 +250,6 @@ jobs:
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework flax)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   fastai_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fastai == 'true') || github.event_name == 'push' }}
@@ -312,15 +285,6 @@ jobs:
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework fastai)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_fastai_unit.py "${OPTS[@]}"
-
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   keras_integration_tests:
     needs: diff
@@ -358,15 +322,6 @@ jobs:
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework keras)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   lightgbm_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.lightgbm == 'true') || github.event_name == 'push' }}
@@ -402,15 +357,6 @@ jobs:
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework lightgbm)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   mlflow_integration_tests:
     needs: diff
@@ -448,15 +394,6 @@ jobs:
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append)
           coverage run -m pytest tests/integration/frameworks/mlflow "${OPTS[@]}"
 
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   onnx_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnx == 'true') || github.event_name == 'push' }}
@@ -493,15 +430,6 @@ jobs:
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework onnx)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   picklable_model_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.picklable_model == 'true') || github.event_name == 'push' }}
@@ -536,15 +464,6 @@ jobs:
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework picklable_model)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   pytorch_integration_tests:
     needs: diff
@@ -582,15 +501,6 @@ jobs:
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework pytorch)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_pytorch_unit.py "${OPTS[@]}"
 
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   pytorch_lightning_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pytorch_lightning == 'true') || github.event_name == 'push' }}
@@ -626,15 +536,6 @@ jobs:
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework pytorch_lightning)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   torchscript_integration_tests:
     needs: diff
@@ -672,15 +573,6 @@ jobs:
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework torchscript)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   sklearn_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.sklearn == 'true') || github.event_name == 'push' }}
@@ -716,15 +608,6 @@ jobs:
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework sklearn)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   tensorflow_integration_tests:
     needs: diff
@@ -856,15 +739,6 @@ jobs:
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework xgboost)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
-
-      - name: Generate coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
 
 concurrency:
   group: frameworks${{ github.event.pull_request.number || github.sha }}

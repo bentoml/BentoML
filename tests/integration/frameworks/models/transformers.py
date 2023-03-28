@@ -5,6 +5,7 @@ import importlib
 
 import numpy as np
 import requests
+import tensorflow as tf
 import transformers
 from PIL import Image
 from transformers import Pipeline
@@ -22,7 +23,7 @@ from bentoml._internal.frameworks.transformers import register_pipeline
 from bentoml._internal.frameworks.transformers import convert_to_autoclass
 from bentoml._internal.frameworks.transformers import SimpleDefaultMapping
 
-from . import FrameworkTestModel
+from . import FrameworkTestModel as Model
 from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
 
@@ -99,8 +100,8 @@ def expected_equal(
     return check_output
 
 
-text_classification_pipeline: list[FrameworkTestModel] = [
-    FrameworkTestModel(
+text_classification_pipeline: list[Model] = [
+    Model(
         name="text-classification-pipeline",
         model=model,
         configurations=[
@@ -122,8 +123,8 @@ text_classification_pipeline: list[FrameworkTestModel] = [
     for model in gen_task_pipeline(model=TINY_TEXT_MODEL, task=TINY_TEXT_TASK)
 ]
 
-batched_pipeline: list[FrameworkTestModel] = [
-    FrameworkTestModel(
+batched_pipeline: list[Model] = [
+    Model(
         name="batchable-text-classification-pipeline",
         model=model,
         save_kwargs={
@@ -160,8 +161,8 @@ tiny_image_model = "hf-internal-testing/tiny-random-vit-gpt2"
 tiny_image_task = "image-to-text"
 test_url = "http://images.cocodataset.org/val2017/000000039769.jpg"
 
-image_classification: list[FrameworkTestModel] = [
-    FrameworkTestModel(
+image_classification: list[Model] = [
+    Model(
         name="image-to-text-pipeline",
         model=model,
         configurations=[
@@ -232,8 +233,8 @@ def check_model(_: transformers_ext.TransformersPipeline, __: AnyDict) -> None:
 # NOTE: Pipeline with Tensorflow does work when the custom pipelines
 # are published on the HuggingFace Hub. Otherwise, it is not possible
 # to pickle Tensorflow Model.
-custom_pipeline: list[FrameworkTestModel] = [
-    FrameworkTestModel(
+custom_pipeline: list[Model] = [
+    Model(
         name="custom_text_classification_pipeline",
         model=model,
         save_kwargs={
@@ -281,11 +282,130 @@ custom_pipeline: list[FrameworkTestModel] = [
 
 delete_pipeline(custom_task)
 
+if t.TYPE_CHECKING:
+
+    class FrameworkPreTrainedMapping(t.TypedDict):
+        pt: str
+        tf: str
+        jax: str
+
+else:
+    FrameworkPreTrainedMapping = dict
+
+# NOTE: the below is a map between model saved weights and its coresponding dictionary of framework - pretrained class.
+# TODO: Add vision models
+MODEL_PRETRAINED_MAPPING = {
+    "gpt2": FrameworkPreTrainedMapping(
+        pt="GPT2Model", tf="TFGPT2Model", jax="FlaxGPT2Model"
+    )
+}
+
+
+def pretrained_model(
+    framework: t.Literal["pt", "tf", "jax"], model: str, /
+) -> (
+    transformers.PreTrainedModel
+    | transformers.FlaxPreTrainedModel
+    | transformers.TFPreTrainedModel
+):
+    if framework in MODEL_PRETRAINED_MAPPING[model]:
+        return getattr(
+            transformers, MODEL_PRETRAINED_MAPPING[model][framework]
+        ).from_pretrained(model)
+    raise ValueError(
+        f"Framework {framework} doesn't have a pretrained class implementation."
+    )
+
+
+# "Hello, my dog is cute"
+def gpt2_method_caller(
+    framework: t.Literal["pt", "tf", "jax"], model_name: str
+) -> t.Callable[
+    [Model, str, tuple[t.Any, ...], dict[str, t.Any]], tuple[int, int, int]
+]:
+    def caller(
+        framework_test_model: Model,
+        method: str,
+        args: tuple[t.Any, ...],
+        kwargs: dict[str, t.Any],
+    ) -> t.Any:
+        tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
+        model_inputs = kwargs
+        if args:
+            model_inputs.update(
+                t.cast("dict[str, t.Any]", tokenizer(args, return_tensors=framework))
+            )
+        last_hidden_state = getattr(framework_test_model.model, method)(
+            **model_inputs
+        ).last_hidden_state
+        return last_hidden_state.shape
+
+    return caller
+
+
+def check_gpt2_output(output: tuple[int, int, int] | t.Any) -> bool:
+    expected_shape = (1, 6, 768)
+    if isinstance(output, tuple):
+        return output == expected_shape
+    elif isinstance(output, tf.TensorShape):  # eh a special case for tf.
+        return output == tf.TensorShape(expected_shape)
+    else:
+        return output.last_hidden_state.shape == expected_shape
+
+
+gpt2_tokenizer = transformers.AutoTokenizer.from_pretrained("gpt2")
+
+gpt2_pretrained: list[Model] = [
+    Model(
+        name=f"gpt2_{framework}",
+        model=pretrained_model(framework, "gpt2"),
+        model_method_caller=gpt2_method_caller(framework, "gpt2"),
+        configurations=[
+            Config(
+                test_inputs={
+                    "__call__": [
+                        Input(
+                            input_args=[],
+                            input_kwargs=gpt2_tokenizer(
+                                "Hello, my dog is cute", return_tensors=framework
+                            ),
+                            expected=check_gpt2_output,
+                        )
+                    ]
+                }
+            )
+        ],
+    )
+    for framework in ("pt", "tf", "jax")
+] + [
+    Model(
+        name="gpt2_tokenizer",
+        model=gpt2_tokenizer,
+        configurations=[
+            Config(
+                test_inputs={
+                    "__call__": [
+                        Input(
+                            input_args=["Hello, my dog is cute"],
+                            expected={
+                                "input_ids": [15496, 11, 616, 3290, 318, 13779],
+                                "attention_mask": [1, 1, 1, 1, 1, 1],
+                            },
+                        )
+                    ]
+                }
+            )
+        ],
+    ),
+]
+
+
 # NOTE: when we need to add more test cases for different models
-#  create a list of FrameworkTestModel and append to 'models' list
+#  create a list of Model and append to 'models' list
 models = (
     text_classification_pipeline
     + batched_pipeline
     + image_classification
     + custom_pipeline
+    + gpt2_pretrained
 )

@@ -100,6 +100,7 @@ _object_setattr = object.__setattr__
 MODULE_NAME = "bentoml.transformers"
 API_VERSION = "v2"
 PIPELINE_PICKLE_NAME = f"pipeline.{API_VERSION}.pkl"
+PRETRAINED_PROTOCOL_NAME = f"pretrained.{API_VERSION}.pkl"
 
 
 logger = logging.getLogger(__name__)
@@ -185,7 +186,6 @@ class TransformersOptions(ModelOptions):
         default=None,
     )
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
-    pretrained_class: str = attr.field(factory=str)
 
     @staticmethod
     def process_task_mapping(
@@ -248,7 +248,6 @@ class TransformersOptions(ModelOptions):
             },
             "type": self.type,
             "kwargs": self.kwargs,
-            "pretrained_class": self.pretrained_class,
         }
 
 
@@ -270,6 +269,9 @@ def get(tag_like: str | Tag) -> Model:
 
     Returns:
         :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
+
+    .. note::
+
 
     Example:
 
@@ -450,10 +452,10 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
                 api_version,
             )
 
-        if options.pretrained_class != "":
-            return t.cast(
-                "PreTrainedProtocol", getattr(transformers, options.pretrained_class)
-            ).from_pretrained(bento_model.path, **kwargs)
+        if "_pretrained_class" in bento_model.info.metadata:
+            with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "rb") as f:
+                protocol: PreTrainedProtocol = cloudpickle.load(f)
+            return protocol.from_pretrained(bento_model.path, **kwargs)
         else:
             with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
                 pipeline_class: type[transformers.Pipeline] = cloudpickle.load(f)
@@ -833,19 +835,26 @@ def save_model(
         assert all(
             hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
         ), f"'{pretrained=}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+        if metadata is None:
+            metadata = {}
+
+        metadata["_pretrained_class"] = pretrained.__class__.__name__
         with bentoml.models.create(
             name,
             module=MODULE_NAME,
             api_version=API_VERSION,
             labels=labels,
             context=context,
-            options=TransformersOptions(pretrained_class=pretrained.__class__.__name__),
+            options=TransformersOptions(),
             signatures=signatures,
             custom_objects=custom_objects,
             external_modules=external_modules,
             metadata=metadata,
         ) as bento_model:
             pretrained.save_pretrained(bento_model.path, **save_kwargs)
+
+            with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "wb") as f:
+                cloudpickle.dump(pretrained.__class__, f)
             return bento_model
 
 

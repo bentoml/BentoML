@@ -160,7 +160,6 @@ def test_model_options():
         "default": {},
         "type": None,
         "kwargs": {},
-        "pretrained_class": "",
     }
 
     structured_options = ModelOptions(task="sentiment-analysis")

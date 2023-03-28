@@ -52,10 +52,4 @@ def load_runner(tag: Tag | str, *args: t.Any, **kwargs: t.Any):
     return get(tag).to_runner()
 
 
-__all__ = [
-    "load_model",
-    "save_model",
-    "get",
-    "get_runnable",
-    "ModelOptions",
-]
+__all__ = ["load_model", "save_model", "get", "get_runnable", "ModelOptions"]

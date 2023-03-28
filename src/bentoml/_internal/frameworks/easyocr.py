@@ -4,6 +4,8 @@ import typing as t
 import logging
 from types import ModuleType
 
+import cloudpickle
+
 import bentoml
 
 from ..tag import Tag
@@ -14,7 +16,6 @@ from ..models.model import Model
 from ..models.model import ModelContext
 from ..models.model import ModelOptions
 from ..models.model import ModelSignature
-from .common.pytorch import torch
 from .common.pytorch import PyTorchTensorContainer
 
 try:
@@ -22,13 +23,6 @@ try:
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'easyocr' is required in order to use module 'bentoml.easyocr'. Install easyocr with 'pip install easyocr'."
-    )
-
-try:
-    import cloudpickle
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "'cloudpickle' is required in order to use module 'bentoml.easyocr'. Install cloudpickle with 'pip install cloudpickle'."
     )
 
 if t.TYPE_CHECKING:
@@ -47,8 +41,6 @@ MODEL_FILENAME = "saved_model.pkl"
 
 
 logger = logging.getLogger(__name__)
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def get(tag_like: str | Tag) -> Model:

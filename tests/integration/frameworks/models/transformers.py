@@ -429,7 +429,9 @@ def vit_method_caller(
         model_inputs = kwargs
         if args:
             model_inputs.update(
-                t.cast("dict[str, t.Any]", vit_processor(arg, return_tensors=framework))
+                t.cast(
+                    "dict[str, t.Any]", vit_processor(args, return_tensors=framework)
+                )
             )
         last_hidden_state = getattr(framework_test_model.model, method)(
             **model_inputs

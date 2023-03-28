@@ -18,7 +18,7 @@ class FrameworkTestModel:
     # return the outputs, then use this to override default behavior
     # when testing raw model inputs with expected outputs
     model_method_caller: t.Callable[
-        [FrameworkTestModel, str, list[t.Any], dict[str, t.Any]], t.Any
+        [FrameworkTestModel, str, tuple[t.Any, ...], dict[str, t.Any]], t.Any
     ] | None = attr.field(default=None)
     # when framework has some special signatures requirements
     model_signatures: dict[str, t.Any] | None = attr.field(default=None)

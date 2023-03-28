@@ -205,6 +205,18 @@ def test_load(
     for configuration in test_model.configurations:
         model = framework.load_model(saved_model)
         configuration.check_model(model, {})
+        if test_model.model_method_caller:
+            for meth, inp in [
+                (m, _i) for m, i in configuration.test_inputs.items() for _i in i
+            ]:
+                inp.check_output(
+                    test_model.model_method_caller(
+                        test_model,
+                        meth,
+                        tuple(map(inp.preprocess, inp.input_args)),
+                        inp.input_kwargs,
+                    )
+                )
 
 
 def test_runnable(
@@ -244,7 +256,7 @@ def test_runner_batching(
 
             batch_dim = getattr(runner, meth).config.batch_dim
             paramss = [
-                Params(*inp.input_args, **inp.input_kwargs).map(
+                Params(*map(inp.preprocess, inp.input_args), **inp.input_kwargs).map(
                     # pylint: disable=cell-var-from-loop # lambda used before loop continues
                     lambda arg: AutoContainer.to_payload(arg, batch_dim=batch_dim[0])
                 )
@@ -302,7 +314,9 @@ def test_runner_cpu_multi_threading(
                 config.check_model(runnable.model, resource_cfg)
 
             for inp in inputs:
-                outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)
+                outp = getattr(runner, meth).run(
+                    *map(inp.preprocess, inp.input_args), **inp.input_kwargs
+                )
                 inp.check_output(outp)
 
             runner.destroy()
@@ -349,7 +363,9 @@ def test_runner_cpu(
                 config.check_model(runnable.model, resource_cfg)
 
             for inp in inputs:
-                outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)
+                outp = getattr(runner, meth).run(
+                    *map(inp.preprocess, inp.input_args), **inp.input_kwargs
+                )
                 inp.check_output(outp)
 
             runner.destroy()
@@ -397,7 +413,9 @@ def test_runner_nvidia_gpu(
                 config.check_model(runnable.model, resource_cfg)
 
             for inp in inputs:
-                outp = getattr(runner, meth).run(*inp.input_args, **inp.input_kwargs)
+                outp = getattr(runner, meth).run(
+                    *map(inp.preprocess, inp.input_args), **inp.input_kwargs
+                )
                 inp.check_output(outp)
 
             runner.destroy()

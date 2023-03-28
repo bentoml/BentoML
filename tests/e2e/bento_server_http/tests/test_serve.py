@@ -1,5 +1,6 @@
 import bentoml
 
+
 def test_http_server(bentoml_home: str):
     server = bentoml.HTTPServer("service.py:svc", port=12345)
 

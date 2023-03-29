@@ -4,6 +4,7 @@ import sys
 import typing as t
 import logging
 import subprocess
+import textwrap
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
@@ -26,12 +27,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
-
-def is_running(
-    process: subprocess.Popen[bytes] | None,
-) -> t.TypeGuard[subprocess.Popen[bytes]]:
-    return process is not None and process.poll() is None
 
 
 class Server(ABC):
@@ -131,9 +126,19 @@ class Server(ABC):
         pass
 
     def stop(self) -> None:
-        if not is_running(self.process):
+        if self.process is None:
             logger.warning("Attempted to stop a BentoML server that was not running!")
             return
+        out_code = self.process.poll()
+        if out_code == 0:
+            logger.warning("Attempted to stop a BentoML server that has already exited!")
+        elif out_code is not None:
+            logger.warning("Attempted to stop a BentoML server that has already exited with an error!\n" +
+                           "Server Output:\n" +
+                           textwrap.indent(self.process.stdout.readall()) + "\n" +
+                           "Server Stderr:\n" +
+                           textwrap.indent(self.process.stderr.readall())
+                           )
         self.process.terminate()
 
     def __enter__(self):
@@ -221,10 +226,19 @@ class HTTPServer(Server):
         return self.get_client()
 
     def get_client(self) -> HTTPClient:
-        if not is_running(self.process):
-            raise StateException(
-                "Attempted to get a client for a server that isn't running! Try running `Server.start()` first."
-            )
+        if self.process is None:
+            logger.warning("Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first.")
+            return
+        out_code = self.process.poll()
+        if out_code == 0:
+            logger.warning("Attempted to stop a BentoML server that has already exited! You can run '.start()' again to restart it.")
+        elif out_code is not None:
+            logger.warning("Attempted to stop a BentoML server that has already exited with an error!\n" +
+                           "Server Output:\n" +
+                           textwrap.indent(self.process.stdout.readall()) + "\n" +
+                           "Server Stderr:\n" +
+                           textwrap.indent(self.process.stderr.readall())
+                           )
 
         if self._client is None:
             from .client import HTTPClient
@@ -281,10 +295,19 @@ class GrpcServer(Server):
             self.args.extend(["--protocol-version", str(grpc_protocol_version)])
 
     def get_client(self) -> GrpcClient:
-        if not is_running(self.process):
-            raise StateException(
-                "Attempted to get a client for a server that isn't running! Try running `Server.start()` first."
-            )
+        if self.process is None:
+            logger.warning("Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first.")
+            return
+        out_code = self.process.poll()
+        if out_code == 0:
+            logger.warning("Attempted to stop a BentoML server that has already exited! You can run '.start()' again to restart it.")
+        elif out_code is not None:
+            logger.warning("Attempted to stop a BentoML server that has already exited with an error!\n" +
+                           "Server Output:\n" +
+                           textwrap.indent(self.process.stdout.readall()) + "\n" +
+                           "Server Stderr:\n" +
+                           textwrap.indent(self.process.stderr.readall())
+                           )
 
         if self._client is None:
             from .client import GrpcClient

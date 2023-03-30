@@ -36,7 +36,7 @@ SCRIPT_RUNNER = "bentoml_cli.worker.runner"
 SCRIPT_API_SERVER = "bentoml_cli.worker.http_api_server"
 SCRIPT_DEV_API_SERVER = "bentoml_cli.worker.http_api_server"
 SCRIPT_GRPC_API_SERVER = "bentoml_cli.worker.grpc_api_server"
-SCRIPT_GRPC_DEV_API_SERVER = "bentoml_cli.worker.grpc_dev_api_server"
+SCRIPT_GRPC_DEV_API_SERVER = "bentoml_cli.worker.grpc_api_server"
 SCRIPT_GRPC_PROMETHEUS_SERVER = "bentoml_cli.worker.grpc_prometheus_server"
 
 API_SERVER_NAME = "_bento_api_server"
@@ -766,6 +766,7 @@ def serve_grpc_production(
     working_dir: str,
     port: int = Provide[BentoMLContainer.grpc.port],
     host: str = Provide[BentoMLContainer.grpc.host],
+    bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: int = Provide[BentoMLContainer.api_server_workers],
     ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
@@ -776,6 +777,8 @@ def serve_grpc_production(
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     protocol_version: str = LATEST_PROTOCOL_VERSION,
+    reload: bool = False,
+    development_mode: bool = False,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -785,8 +788,10 @@ def serve_grpc_production(
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
 
+    standalone_load = False if development_mode else True
+
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+    svc = load(bento_identifier, working_dir=working_dir, standalone_load=standalone_load)
 
     from circus.sockets import CircusSocket  # type: ignore
 
@@ -816,7 +821,7 @@ def serve_grpc_production(
         for runner in svc.runners:
             if isinstance(runner, Runner):
 
-                if runner.embedded:
+                if runner.embedded or development_mode:
                     continue
 
                 sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
@@ -876,7 +881,7 @@ def serve_grpc_production(
             for runner in svc.runners:
                 if isinstance(runner, Runner):
 
-                    if runner.embedded:
+                    if runner.embedded or development_mode:
                         continue
 
                     runner_port = port_stack.enter_context(reserve_free_port())
@@ -947,11 +952,13 @@ def serve_grpc_production(
     )
     scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
 
+    close_child_stdin: bool = False if development_mode else True
+
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(
             reserve_free_port(host, port=port, enable_so_reuseport=True)
         )
-        args = [
+        api_server_args = [
             "-m",
             SCRIPT_GRPC_API_SERVER,
             bento_identifier,
@@ -971,25 +978,30 @@ def serve_grpc_production(
             "--protocol-version",
             protocol_version,
         ]
+
         if reflection:
-            args.append("--enable-reflection")
+            api_server_args.append("--enable-reflection")
         if channelz:
-            args.append("--enable-channelz")
+            api_server_args.append("--enable-channelz")
         if max_concurrent_streams:
-            args.extend(
+            api_server_args.extend(
                 [
                     "--max-concurrent-streams",
                     str(max_concurrent_streams),
                 ]
             )
 
+        if development_mode:
+            api_server_args.append("--development-mode")
+
         watchers.append(
             create_watcher(
                 name="grpc_api_server",
-                args=args,
+                args=api_server_args,
                 use_sockets=False,
                 working_dir=working_dir,
                 numprocesses=api_workers,
+                close_child_stdin=close_child_stdin,
             )
         )
 
@@ -1020,6 +1032,7 @@ def serve_grpc_production(
                 working_dir=working_dir,
                 numprocesses=1,
                 singleton=True,
+                close_child_stdin=close_child_stdin,
             )
         )
 
@@ -1031,11 +1044,44 @@ def serve_grpc_production(
             bento_identifier,
             f"http://{log_metrics_host}:{metrics_port}",
         )
-    arbiter = create_standalone_arbiter(
-        watchers=watchers, sockets=list(circus_socket_map.values())
-    )
 
-    with track_serve(svc, production=True, serve_kind="grpc"):
+    arbiter_kwargs: dict[str, t.Any] = {
+        "watchers": watchers,
+        "sockets": list(circus_socket_map.values()),
+    }
+
+    if development_mode:
+
+        plugins = []
+
+        if reload:
+            if sys.platform == "win32":
+                logger.warning(
+                    "Due to circus limitations, output from the reloader plugin will not be shown on Windows."
+                )
+            logger.debug(
+                "--reload is passed. BentoML will watch file changes based on 'bentofile.yaml' and '.bentoignore' respectively."
+            )
+
+            # NOTE: {} is faster than dict()
+            plugins = [
+                # reloader plugin
+                {
+                    "use": "bentoml._internal.utils.circus.watchfilesplugin.ServiceReloaderPlugin",
+                    "working_dir": working_dir,
+                    "bentoml_home": bentoml_home,
+                },
+            ]
+
+        arbiter_kwargs["plugins"] = plugins
+        arbiter_kwargs["debug"] = True if sys.platform != "win32" else False
+        arbiter_kwargs["loggerconfig"] = SERVER_LOGGING_CONFIG
+        arbiter_kwargs["loglevel"] = "WARNING"
+
+    arbiter = create_standalone_arbiter(**arbiter_kwargs)
+
+    production: bool = False if development_mode else True
+    with track_serve(svc, production=production, serve_kind="grpc"):
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore

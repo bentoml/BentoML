@@ -233,9 +233,9 @@ def add_serve_command(cli: click.Group) -> None:
     @cli.command(name="serve-grpc")
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
-        "--production",
+        "--development",
         type=click.BOOL,
-        help="Run the BentoServer in production mode",
+        help="Run the BentoServer in development mode",
         is_flag=True,
         default=False,
         show_default=True,
@@ -342,7 +342,7 @@ def add_serve_command(cli: click.Group) -> None:
     @env_manager
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
-        production: bool,
+        development: bool,
         port: int,
         host: str,
         api_workers: int | None,
@@ -395,21 +395,42 @@ def add_serve_command(cli: click.Group) -> None:
                 working_dir = os.path.expanduser(bento)
             else:
                 working_dir = "."
-        if production:
-            if reload:
-                click.echo(
-                    "'--reload' is not supported with '--production'; ignoring",
-                    err=True,
-                )
 
-            from bentoml.serve import serve_grpc_production
+        from bentoml.serve import serve_grpc_production
+
+        if development:
 
             serve_grpc_production(
                 bento,
                 working_dir=working_dir,
                 port=port,
-                host=host,
+                host=DEFAULT_DEV_SERVER_HOST if not host else host,
                 backlog=backlog,
+                api_workers=1,
+                ssl_keyfile=ssl_keyfile,
+                ssl_certfile=ssl_certfile,
+                ssl_ca_certs=ssl_ca_certs,
+                max_concurrent_streams=max_concurrent_streams,
+                reflection=enable_reflection,
+                channelz=enable_channelz,
+                protocol_version=protocol_version,
+                reload=reload,
+                development_mode=True,
+            )
+        else:
+
+            if reload:
+                click.echo(
+                    "'--reload' is only supported with '--development'; ignoring",
+                    err=True,
+                )
+
+            serve_grpc_production(
+                bento,
+                working_dir=working_dir,
+                port=port,
+                backlog=backlog,
+                host=host,
                 api_workers=api_workers,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
@@ -418,22 +439,5 @@ def add_serve_command(cli: click.Group) -> None:
                 reflection=enable_reflection,
                 channelz=enable_channelz,
                 protocol_version=protocol_version,
-            )
-        else:
-            from bentoml.serve import serve_grpc_development
-
-            serve_grpc_development(
-                bento,
-                working_dir=working_dir,
-                port=port,
-                backlog=backlog,
-                reload=reload,
-                host=DEFAULT_DEV_SERVER_HOST if not host else host,
-                ssl_keyfile=ssl_keyfile,
-                ssl_certfile=ssl_certfile,
-                ssl_ca_certs=ssl_ca_certs,
-                max_concurrent_streams=max_concurrent_streams,
-                reflection=enable_reflection,
-                channelz=enable_channelz,
-                protocol_version=protocol_version,
+                development_mode=False,
             )

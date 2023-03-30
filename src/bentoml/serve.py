@@ -392,6 +392,10 @@ def serve_http_production(
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
                 if isinstance(runner, Runner):
+
+                    if runner.embedded:
+                        continue
+
                     runner_port = port_stack.enter_context(reserve_free_port())
                     runner_host = "127.0.0.1"
 
@@ -764,6 +768,10 @@ def serve_grpc_production(
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
             if isinstance(runner, Runner):
+
+                if runner.embedded:
+                    continue
+
                 sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
                 assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
 
@@ -820,6 +828,10 @@ def serve_grpc_production(
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
                 if isinstance(runner, Runner):
+
+                    if runner.embedded:
+                        continue
+
                     runner_port = port_stack.enter_context(reserve_free_port())
                     runner_host = "127.0.0.1"
 

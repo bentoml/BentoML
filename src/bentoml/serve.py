@@ -327,7 +327,9 @@ def serve_http_production(
 
     standalone_load: bool = False if development_mode else True
 
-    svc = load(bento_identifier, working_dir=working_dir, standalone_load=standalone_load)
+    svc = load(
+        bento_identifier, working_dir=working_dir, standalone_load=standalone_load
+    )
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
@@ -524,7 +526,6 @@ def serve_http_production(
             bento_identifier,
             f"{scheme}://{log_host}:{port}/metrics",
         )
-
 
     arbiter_kwargs: dict[str, t.Any] = {
         "watchers": watchers,
@@ -791,7 +792,9 @@ def serve_grpc_production(
     standalone_load = False if development_mode else True
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    svc = load(bento_identifier, working_dir=working_dir, standalone_load=standalone_load)
+    svc = load(
+        bento_identifier, working_dir=working_dir, standalone_load=standalone_load
+    )
 
     from circus.sockets import CircusSocket  # type: ignore
 

@@ -20,9 +20,9 @@ def add_serve_command(cli: click.Group) -> None:
     @cli.command(aliases=["serve-http"])
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
-        "--production",
+        "--development",
         type=click.BOOL,
-        help="Run the BentoServer in production mode",
+        help="Run the BentoServer in development mode",
         is_flag=True,
         default=False,
         show_default=True,
@@ -126,7 +126,7 @@ def add_serve_command(cli: click.Group) -> None:
     @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,
-        production: bool,
+        development: bool,
         port: int,
         host: str,
         api_workers: int | None,
@@ -183,21 +183,40 @@ def add_serve_command(cli: click.Group) -> None:
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
-        if production:
+        from bentoml.serve import serve_http_production
+
+        if development:
+
+            serve_http_production(
+                bento,
+                working_dir=working_dir,
+                port=port,
+                host=DEFAULT_DEV_SERVER_HOST if not host else host,
+                backlog=backlog,
+                api_workers=1,
+                ssl_keyfile=ssl_keyfile,
+                ssl_certfile=ssl_certfile,
+                ssl_keyfile_password=ssl_keyfile_password,
+                ssl_version=ssl_version,
+                ssl_cert_reqs=ssl_cert_reqs,
+                ssl_ca_certs=ssl_ca_certs,
+                ssl_ciphers=ssl_ciphers,
+                reload=reload,
+                development_mode=True,
+            )
+        else:
+
             if reload:
                 click.echo(
-                    "'--reload' is not supported with '--production'; ignoring",
+                    "'--reload' is only supported with '--development'; ignoring",
                     err=True,
                 )
-
-            from bentoml.serve import serve_http_production
 
             serve_http_production(
                 bento,
                 working_dir=working_dir,
                 port=port,
                 host=host,
-                backlog=backlog,
                 api_workers=api_workers,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
@@ -206,23 +225,7 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
-            )
-        else:
-            from bentoml.serve import serve_http_development
-
-            serve_http_development(
-                bento,
-                working_dir=working_dir,
-                port=port,
-                host=DEFAULT_DEV_SERVER_HOST if not host else host,
-                reload=reload,
-                ssl_keyfile=ssl_keyfile,
-                ssl_certfile=ssl_certfile,
-                ssl_keyfile_password=ssl_keyfile_password,
-                ssl_version=ssl_version,
-                ssl_cert_reqs=ssl_cert_reqs,
-                ssl_ca_certs=ssl_ca_certs,
-                ssl_ciphers=ssl_ciphers,
+                development_mode=False,
             )
 
     from bentoml._internal.utils import add_experimental_docstring

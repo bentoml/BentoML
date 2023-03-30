@@ -15,6 +15,8 @@ import psutil
 from simple_di import inject
 from simple_di import Provide
 
+from bentoml._internal.log import SERVER_LOGGING_CONFIG
+
 from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
 from ._internal.utils import experimental
@@ -32,7 +34,7 @@ PROMETHEUS_MESSAGE = (
 
 SCRIPT_RUNNER = "bentoml_cli.worker.runner"
 SCRIPT_API_SERVER = "bentoml_cli.worker.http_api_server"
-SCRIPT_DEV_API_SERVER = "bentoml_cli.worker.http_dev_api_server"
+SCRIPT_DEV_API_SERVER = "bentoml_cli.worker.http_api_server"
 SCRIPT_GRPC_API_SERVER = "bentoml_cli.worker.grpc_api_server"
 SCRIPT_GRPC_DEV_API_SERVER = "bentoml_cli.worker.grpc_dev_api_server"
 SCRIPT_GRPC_PROMETHEUS_SERVER = "bentoml_cli.worker.grpc_prometheus_server"
@@ -306,6 +308,9 @@ def serve_http_production(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+    bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
+    development_mode: bool = False,
+    reload: bool = False,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -319,7 +324,10 @@ def serve_http_production(
     from ._internal.configuration.containers import BentoMLContainer
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+
+    standalone_load: bool = False if development_mode else True
+
+    svc = load(bento_identifier, working_dir=working_dir, standalone_load=standalone_load)
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
@@ -331,7 +339,7 @@ def serve_http_production(
         for runner in svc.runners:
             if isinstance(runner, Runner):
 
-                if runner.embedded:
+                if runner.embedded or development_mode:
                     continue
 
                 sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
@@ -393,7 +401,7 @@ def serve_http_production(
             for runner in svc.runners:
                 if isinstance(runner, Runner):
 
-                    if runner.embedded:
+                    if runner.embedded or development_mode:
                         continue
 
                     runner_port = port_stack.enter_context(reserve_free_port())
@@ -471,30 +479,39 @@ def serve_http_production(
         ssl_ca_certs=ssl_ca_certs,
         ssl_ciphers=ssl_ciphers,
     )
+
+    api_server_args = [
+        "-m",
+        SCRIPT_API_SERVER,
+        bento_identifier,
+        "--fd",
+        f"$(circus.sockets.{API_SERVER_NAME})",
+        "--runner-map",
+        json.dumps(runner_bind_map),
+        "--working-dir",
+        working_dir,
+        "--backlog",
+        f"{backlog}",
+        "--worker-id",
+        "$(CIRCUS.WID)",
+        "--prometheus-dir",
+        prometheus_dir,
+        *ssl_args,
+    ]
+
+    if development_mode:
+        api_server_args.append("--development-mode")
+
+    close_child_stdin = False if development_mode else True
+
     scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     watchers.append(
         create_watcher(
             name="api_server",
-            args=[
-                "-m",
-                SCRIPT_API_SERVER,
-                bento_identifier,
-                "--fd",
-                f"$(circus.sockets.{API_SERVER_NAME})",
-                "--runner-map",
-                json.dumps(runner_bind_map),
-                "--working-dir",
-                working_dir,
-                "--backlog",
-                f"{backlog}",
-                "--worker-id",
-                "$(CIRCUS.WID)",
-                "--prometheus-dir",
-                prometheus_dir,
-                *ssl_args,
-            ],
+            args=api_server_args,
             working_dir=working_dir,
             numprocesses=api_workers,
+            close_child_stdin=close_child_stdin,
         )
     )
 
@@ -508,12 +525,42 @@ def serve_http_production(
             f"{scheme}://{log_host}:{port}/metrics",
         )
 
-    arbiter = create_standalone_arbiter(
-        watchers=watchers,
-        sockets=list(circus_socket_map.values()),
-    )
 
-    with track_serve(svc, production=True):
+    arbiter_kwargs: dict[str, t.Any] = {
+        "watchers": watchers,
+        "sockets": list(circus_socket_map.values()),
+    }
+    if development_mode:
+        plugins = []
+        if reload:
+            if sys.platform == "win32":
+                logger.warning(
+                    "Due to circus limitations, output from the reloader plugin will not be shown on Windows."
+                )
+            logger.debug(
+                "--reload is passed. BentoML will watch file changes based on 'bentofile.yaml' and '.bentoignore' respectively."
+            )
+
+            # NOTE: {} is faster than dict()
+            plugins = [
+                # reloader plugin
+                {
+                    "use": "bentoml._internal.utils.circus.watchfilesplugin.ServiceReloaderPlugin",
+                    "working_dir": working_dir,
+                    "bentoml_home": bentoml_home,
+                },
+            ]
+
+        arbiter_kwargs["plugins"] = plugins
+        arbiter_kwargs["debug"] = True if sys.platform != "win32" else False
+        arbiter_kwargs["loggerconfig"] = SERVER_LOGGING_CONFIG
+        arbiter_kwargs["loglevel"] = "WARNING"
+
+    arbiter = create_standalone_arbiter(**arbiter_kwargs)
+
+    production = False if development_mode else True
+
+    with track_serve(svc, production=production):
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore

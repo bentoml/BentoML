@@ -6,7 +6,6 @@ import os
 
 
 def test_http_server(bentoml_home: str):
-    print(os.getcwd())
     server = bentoml.HTTPServer("service.py:svc", port=12345)
 
     server.start()

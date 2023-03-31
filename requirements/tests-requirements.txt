@@ -15,7 +15,7 @@ pytest-xdist[psutil]==3.2.1
 pytest-asyncio==0.21.0
 imageio==2.27.0
 pyarrow==11.0.0
-tritonclient[all]==2.31.0
+tritonclient[all]==2.32.0
 build[virtualenv]==0.10.0
 protobuf<4.0dev
 grpcio

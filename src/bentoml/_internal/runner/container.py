@@ -320,7 +320,7 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         if format == "pickle5":
             bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
             bs = base64.b64decode(bs_str)
-            indices = t.cast(list[int], payload.meta["indices"])
+            indices = t.cast(t.List[int], payload.meta["indices"])
             return t.cast("ext.NpNDArray", pep574_loads(bs, payload.data, indices))
 
         return pickle.loads(payload.data)
@@ -503,7 +503,7 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
             data = bs
 
         if isinstance(batch, list):
-            batch_size = len(t.cast(list[t.Any], batch))
+            batch_size = len(t.cast(t.List[t.Any], batch))
         else:
             batch_size = 1
 
@@ -519,7 +519,7 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         if payload.meta["with_buffer"]:
             bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
             bs = base64.b64decode(bs_str)
-            indices = t.cast(list[int], payload.meta["indices"])
+            indices = t.cast(t.List[int], payload.meta["indices"])
             return pep574_loads(bs, payload.data, indices)
         else:
             return pep574_loads(payload.data, b"", [])

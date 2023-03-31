@@ -23,7 +23,7 @@ def test_pep574_restore() -> None:
     indices: list[int]
     bs, concat_buffer_bs, indices = pep574_dumps(lst)
     restored = t.cast(
-        list["ext.NpNDArray"], pep574_loads(bs, concat_buffer_bs, indices)
+        t.List["ext.NpNDArray"], pep574_loads(bs, concat_buffer_bs, indices)
     )
     for idx, arr in enumerate(lst):
         assert np.isclose(arr, restored[idx]).all()
@@ -31,7 +31,7 @@ def test_pep574_restore() -> None:
     dic: dict[str, ext.NpNDArray] = dict(a=arr1, b=arr2, c=arr3)
     bs, concat_buffer_bs, indices = pep574_dumps(dic)
     restored = t.cast(
-        dict[str, "ext.NpNDArray"], pep574_loads(bs, concat_buffer_bs, indices)
+        t.Dict[str, "ext.NpNDArray"], pep574_loads(bs, concat_buffer_bs, indices)
     )
     for key, arr in dic.items():
         assert np.isclose(arr, restored[key]).all()

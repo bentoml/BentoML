@@ -243,7 +243,7 @@ jobs:
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
       - name: Install dependencies
         run: |
-          apt-get install -y git
+          sudo apt-get install -y git
 
           pip install .
           pip install torch requests

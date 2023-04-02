@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing as t
-import logging as logging
+import logging
 
 from ._internal.frameworks.transformers import get
 from ._internal.frameworks.transformers import load_model

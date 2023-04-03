@@ -4,6 +4,8 @@ import typing as t
 import logging
 from types import ModuleType
 
+import cloudpickle
+
 import bentoml
 
 from ..tag import Tag
@@ -29,12 +31,6 @@ try:
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'detectron2' is required in order to use module 'bentoml.detectron'. Install detectron2 with 'pip install 'git+https://github.com/facebookresearch/detectron2.git''."
-    )
-try:
-    import cloudpickle
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "'cloudpickle' is required in order to use module 'bentoml.detectron'. Install cloudpickle with 'pip install cloudpickle'."
     )
 
 if t.TYPE_CHECKING:

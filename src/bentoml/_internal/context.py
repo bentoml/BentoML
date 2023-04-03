@@ -97,7 +97,7 @@ class InferenceApiContext:
         def __init__(self, metadata: Metadata, query_params: Metadata):
             self.metadata = metadata
             self.headers = metadata
-            self.query_params = metadata
+            self.query_params = query_params
 
         @staticmethod
         def from_http(

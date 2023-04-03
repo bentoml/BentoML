@@ -289,7 +289,7 @@ class CorkDispatcher:
                 except asyncio.CancelledError:
                     return
                 except Exception as e:  # pylint: disable=broad-except
-                    logger.error("error batching, falling back to normal batching method", exc_info=e)
+                    logger.error(traceback.format_exc(), exc_info=e)
 
             logger.debug("Dispatcher finished optimizer training request 2.")
             self.optimizer.trigger_refresh()
@@ -385,7 +385,7 @@ class CorkDispatcher:
                             break
                 except Exception as e:
                     n_call_out = min(n, self.max_batch_size)
-                    logger.error(traceback.format_exc(), exc_info=e)
+                    logger.error("error in batch-size aware batching, falling back to regular batching method", exc_info=e)
 
                 # call
                 self._sema.acquire()

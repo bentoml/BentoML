@@ -84,7 +84,7 @@ jobs:
         run: |
           npm install -g npm@^7 pyright
       - name: Setup bufbuild/buf
-        uses: bufbuild/buf-setup-action@v1.15.1
+        uses: bufbuild/buf-setup-action@v1.16.0
         with:
           github_token: ${{ github.token }}
 

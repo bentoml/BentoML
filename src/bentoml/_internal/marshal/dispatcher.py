@@ -398,7 +398,7 @@ class CorkDispatcher:
 
     async def inbound_call(self, data: Params[Payload]):
         if data.sample.batch_size > self.max_batch_size:
-            raise RuntimeError(f"batch of size {data.sample.batch_size} exceeds configured max batch size of {self.max_batch_size}. Batch: {data.sample}");
+            raise RuntimeError(f"batch of size {data.sample.batch_size} exceeds configured max batch size of {self.max_batch_size}.")
 
         now = time.time()
         future = self._loop.create_future()

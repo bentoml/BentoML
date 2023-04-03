@@ -33,11 +33,15 @@ async def test_api_server_meta(host: str) -> None:
     status, _, body = await async_request("POST", f"http://{host}//api/v1/with_prefix")
     assert status == 404
 
+
 @pytest.mark.asyncio
 async def test_context(host: str):
-    status, _, body = await async_request("POST", f"http://{host}/use_context?error=yes")
+    status, _, body = await async_request(
+        "POST", f"http://{host}/use_context?error=yes"
+    )
     assert status == 400
-    assert body == b'yes'
+    assert body == b"yes"
+
 
 @pytest.mark.asyncio
 async def test_runner_readiness(host: str) -> None:

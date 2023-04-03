@@ -416,7 +416,7 @@ class CorkDispatcher:
         batch_size = len(inputs_info)
         logger.debug("Dynamic batching cork released, batch size: %d", batch_size)
         try:
-            outputs = await self.callback(tuple(t.cast(t.Any, d) for _, d , _ in inputs_info))
+            outputs = await self.callback(tuple(t.cast(t.Any, d) for _, d, _ in inputs_info))
             assert len(outputs) == len(inputs_info)
             for (_, _, fut), out in zip(inputs_info, outputs):
                 if not fut.done():

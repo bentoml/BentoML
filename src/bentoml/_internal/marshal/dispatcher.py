@@ -16,6 +16,10 @@ from ..utils.alg import TokenBucket
 logger = logging.getLogger(__name__)
 
 
+if t.TYPE_CHECKING:
+    from ..runner.container import Payload
+    from ..runner.utils import Params
+
 class NonBlockSema:
     def __init__(self, count: int):
         self.sema = count
@@ -124,7 +128,7 @@ class CorkDispatcher:
 
         self._controller = None
         self._queue: collections.deque[
-            tuple[float, t.Any, asyncio.Future[t.Any]]
+            tuple[float, Params[Payload], asyncio.Future[t.Any]]
         ] = collections.deque()  # TODO(bojiang): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
@@ -370,7 +374,19 @@ class CorkDispatcher:
                     await asyncio.sleep(self.tick_interval)
                     continue
 
-                n_call_out = min(self.max_batch_size, n)
+                n_call_out = 0
+                batch_size = 0
+                try:
+                    for input_info in self._queue:
+                        if batch_size + input_info[1].sample.batch_size < self.max_batch_size:
+                            n_call_out += 1
+                            batch_size += input_info[1].sample.batch_size
+                        else:
+                            break
+                except Exception as e:
+                    n_call_out = min(n, self.max_batch_size)
+                    logger.error(traceback.format_exc(), exc_info=e)
+
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
@@ -380,7 +396,10 @@ class CorkDispatcher:
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)
 
-    async def inbound_call(self, data: t.Any):
+    async def inbound_call(self, data: Params[Payload]):
+        if data.sample.batch_size > self.max_batch_size:
+            raise RuntimeError(f"batch of size {data.sample.batch_size} exceeds configured max batch size of {self.max_batch_size}. Batch: {data.sample}");
+
         now = time.time()
         future = self._loop.create_future()
         input_info = (now, data, future)
@@ -390,14 +409,14 @@ class CorkDispatcher:
         return await future
 
     async def outbound_call(
-        self, inputs_info: tuple[tuple[float, t.Any, asyncio.Future[t.Any]]]
+        self, inputs_info: tuple[tuple[float, Params[Payload], asyncio.Future[t.Any]]]
     ):
         _time_start = time.time()
         _done = False
         batch_size = len(inputs_info)
         logger.debug("Dynamic batching cork released, batch size: %d", batch_size)
         try:
-            outputs = await self.callback(tuple(d for _, d, _ in inputs_info))
+            outputs = await self.callback(tuple(t.cast(t.Any, d) for _, d , _ in inputs_info))
             assert len(outputs) == len(inputs_info)
             for (_, _, fut), out in zip(inputs_info, outputs):
                 if not fut.done():

@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 if t.TYPE_CHECKING:
-    from ..runner.container import Payload
     from ..runner.utils import Params
+    from ..runner.container import Payload
 
 
 class NonBlockSema:

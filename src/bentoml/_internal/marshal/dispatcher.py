@@ -20,6 +20,7 @@ if t.TYPE_CHECKING:
     from ..runner.container import Payload
     from ..runner.utils import Params
 
+
 class NonBlockSema:
     def __init__(self, count: int):
         self.sema = count
@@ -378,14 +379,20 @@ class CorkDispatcher:
                 batch_size = 0
                 try:
                     for input_info in self._queue:
-                        if batch_size + input_info[1].sample.batch_size < self.max_batch_size:
+                        if (
+                            batch_size + input_info[1].sample.batch_size
+                            < self.max_batch_size
+                        ):
                             n_call_out += 1
                             batch_size += input_info[1].sample.batch_size
                         else:
                             break
                 except Exception as e:
                     n_call_out = min(n, self.max_batch_size)
-                    logger.error("error in batch-size aware batching, falling back to regular batching method", exc_info=e)
+                    logger.error(
+                        "error in batch-size aware batching, falling back to regular batching method",
+                        exc_info=e,
+                    )
 
                 # call
                 self._sema.acquire()
@@ -398,7 +405,9 @@ class CorkDispatcher:
 
     async def inbound_call(self, data: Params[Payload]):
         if data.sample.batch_size > self.max_batch_size:
-            raise RuntimeError(f"batch of size {data.sample.batch_size} exceeds configured max batch size of {self.max_batch_size}.")
+            raise RuntimeError(
+                f"batch of size {data.sample.batch_size} exceeds configured max batch size of {self.max_batch_size}."
+            )
 
         now = time.time()
         future = self._loop.create_future()
@@ -416,7 +425,9 @@ class CorkDispatcher:
         batch_size = len(inputs_info)
         logger.debug("Dynamic batching cork released, batch size: %d", batch_size)
         try:
-            outputs = await self.callback(tuple(t.cast(t.Any, d) for _, d, _ in inputs_info))
+            outputs = await self.callback(
+                tuple(t.cast(t.Any, d) for _, d, _ in inputs_info)
+            )
             assert len(outputs) == len(inputs_info)
             for (_, _, fut), out in zip(inputs_info, outputs):
                 if not fut.done():

@@ -205,6 +205,15 @@ def test_load(
     for configuration in test_model.configurations:
         model = framework.load_model(saved_model)
         configuration.check_model(model, {})
+        if test_model.model_method_caller:
+            for meth, inp in [
+                (m, _i) for m, i in configuration.test_inputs.items() for _i in i
+            ]:
+                inp.check_output(
+                    test_model.model_method_caller(
+                        test_model, meth, tuple(inp.input_args), inp.input_kwargs
+                    )
+                )
 
 
 def test_runnable(

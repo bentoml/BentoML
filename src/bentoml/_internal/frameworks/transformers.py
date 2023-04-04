@@ -3,29 +3,74 @@ from __future__ import annotations
 import os
 import typing as t
 import logging
+import platform
+import warnings
 from types import ModuleType
-from typing import TYPE_CHECKING
 
 import attr
 
 import bentoml
-from bentoml import Tag
-from bentoml.models import Model
-from bentoml.models import ModelContext
-from bentoml.models import ModelOptions
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import MissingDependencyException
 
+from ..tag import Tag
 from ..types import LazyType
-from ..utils.pkg import find_spec
+from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
+from ..utils.pkg import pkg_version_info
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
+from ..models.model import Model
+from ..models.model import ModelContext
+from ..models.model import ModelOptions
+from ..models.model import ModelSignature
 
-if TYPE_CHECKING:
-    from bentoml.types import ModelSignature
+if t.TYPE_CHECKING:
+    import cloudpickle
+    from transformers.models.auto.auto_factory import (
+        _BaseAutoModelClass as BaseAutoModelClass,
+    )
 
     from ..models.model import ModelSignaturesType
-    from ..external_typing import transformers as ext
+
+    class SimpleDefaultMapping(t.TypedDict, total=False):
+        pt: tuple[str, ...]
+        tf: tuple[str, ...]
+
+    class ModelDefaultMapping(t.TypedDict):
+        model: SimpleDefaultMapping
+
+    DefaultMapping = (
+        ModelDefaultMapping
+        | SimpleDefaultMapping
+        | dict[tuple[str, ...], ModelDefaultMapping]
+    )
+
+    TupleStr = tuple[str, ...]
+    TupleAutoModel = tuple[BaseAutoModelClass, ...]
+
+    class PreTrainedProtocol(t.Protocol):
+        def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None:
+            ...
+
+        @classmethod
+        def from_pretrained(
+            cls, pretrained_model_name_or_path: str, **kwargs: t.Any
+        ) -> PreTrainedProtocol:
+            ...
+
+    P = t.ParamSpec("P")
+
+else:
+    TupleStr = TupleAutoModel = tuple
+    DefaultMapping = SimpleDefaultMapping = ModelDefaultMapping = dict
+
+    cloudpickle = LazyLoader(
+        "cloudpickle",
+        globals(),
+        "cloudpickle",
+        exc_msg="'cloudpickle' is required to save/load custom pipeline.",
+    )
+
 
 try:
     import transformers
@@ -34,50 +79,53 @@ except ImportError:  # pragma: no cover
         "'transformers' is required in order to use module 'bentoml.transformers'. Install transformers with 'pip install transformers'."
     )
 
+if t.TYPE_CHECKING:
+    TransformersPreTrained = (
+        transformers.PreTrainedTokenizerBase
+        | transformers.PreTrainedTokenizer
+        | transformers.PreTrainedTokenizerFast
+        | transformers.PreTrainedModel
+        | transformers.TFPreTrainedModel
+        | transformers.FlaxPreTrainedModel
+        | transformers.image_processing_utils.BaseImageProcessor
+        | transformers.SequenceFeatureExtractor
+        | transformers.Pipeline
+    )
+
 
 __all__ = ["load_model", "save_model", "get_runnable", "get"]
 
+_object_setattr = object.__setattr__
 
 MODULE_NAME = "bentoml.transformers"
-API_VERSION = "v1"
+API_VERSION = "v2"
 PIPELINE_PICKLE_NAME = f"pipeline.{API_VERSION}.pkl"
+PRETRAINED_PROTOCOL_NAME = f"pretrained.{API_VERSION}.pkl"
 
 
 logger = logging.getLogger(__name__)
 
+TRANSFORMERS_VERSION = pkg_version_info("transformers")
 
-def _check_flax_supported() -> None:  # pragma: no cover
-    _supported: bool = get_pkg_version("transformers").startswith("4")
-
-    if not _supported:
-        logger.warning(
-            "Detected transformers version: %s, which doesn't have supports for Flax. Update 'transformers' to 4.x and above to have Flax supported.",
-            get_pkg_version("transformers"),
-        )
-    else:
-        _flax_available = find_spec("jax") is not None and find_spec("flax") is not None
-        if _flax_available:
-            _jax_version = get_pkg_version("jax")
-            _flax_version = get_pkg_version("flax")
-            logger.info(
-                "Jax version %s, Flax version %s available.",
-                _jax_version,
-                _flax_version,
-            )
-        else:
-            logger.warning(
-                "No versions of Flax or Jax found on the current machine. In order to use Flax with transformers 4.x and above, refer to https://github.com/google/flax#quick-install"
-            )
+HAS_PIPELINE_REGISTRY = TRANSFORMERS_VERSION >= (4, 21, 0)
 
 
-def _deep_convert_to_tuple(dct: dict[str, t.Any]) -> dict[str, tuple[str, str | None]]:
+def _deep_convert_to_tuple(
+    dct: dict[str, str | TupleStr | list[str] | dict[str, t.Any]]
+) -> dict[str, str | TupleStr | list[str] | dict[str, t.Any]]:
     for k, v in dct.items():
+        override = v
         if isinstance(v, list):
-            dct[k] = tuple(v)  # type: ignore
+            override = tuple(v)
+        elif isinstance(v, dict):
+            override = _deep_convert_to_tuple(v)
+        dct[k] = override
     return dct
 
 
-def _validate_type(_: t.Any, attribute: attr.Attribute[t.Any], value: t.Any) -> None:
+def _validate_pipeline_type(
+    _: t.Any, attribute: attr.Attribute[str | list[str]], value: str | list[str]
+) -> None:
     """
     Validate the type of the given pipeline definition. The value is expected to be a `str`.
     `list` type is also allowed here to maintain compatibility with an earlier introduced bug.
@@ -88,40 +136,122 @@ def _validate_type(_: t.Any, attribute: attr.Attribute[t.Any], value: t.Any) -> 
         raise ValueError(f"{attribute.name} must be a string")
 
 
+if t.TYPE_CHECKING:
+
+    class TaskDefinition(t.TypedDict):
+        impl: type[transformers.Pipeline]
+        tf: TupleAutoModel | BaseAutoModelClass | None
+        pt: TupleAutoModel | BaseAutoModelClass | None
+        default: t.NotRequired[DefaultMapping]
+        type: t.NotRequired[str]
+
+else:
+    TaskDefinition = dict
+
+
+def _autoclass_converter(
+    value: tuple[BaseAutoModelClass | str, ...] | None
+) -> TupleStr:
+    if value is None:
+        return TupleStr()
+    elif isinstance(value, t.Iterable):
+        value = tuple(value)
+    elif not isinstance(value, tuple):
+        value = (value,)
+    return tuple(it if isinstance(it, str) else it.__qualname__ for it in value)
+
+
 @attr.define
 class TransformersOptions(ModelOptions):
     """Options for the Transformers model."""
 
-    task: str = attr.field(validator=attr.validators.instance_of(str))
-    tf: t.Tuple[str] = attr.field(
-        validator=attr.validators.optional(
-            attr.validators.deep_iterable(
-                member_validator=attr.validators.instance_of(str)
-            )
-        ),  # type: ignore
-        factory=tuple,
-        converter=tuple,
+    task: str = attr.field(factory=str, validator=attr.validators.instance_of(str))
+    tf: TupleStr = attr.field(
+        validator=attr.validators.deep_iterable(
+            attr.validators.instance_of(str), attr.validators.instance_of(TupleStr)
+        ),
+        factory=TupleStr,
+        converter=_autoclass_converter,
     )
-    pt: t.Tuple[str] = attr.field(
-        validator=attr.validators.optional(
-            attr.validators.deep_iterable(
-                member_validator=attr.validators.instance_of(str)
-            )
-        ),  # type: ignore
-        factory=tuple,
-        converter=tuple,
+    pt: TupleStr = attr.field(
+        validator=attr.validators.deep_iterable(
+            attr.validators.instance_of(str), attr.validators.instance_of(TupleStr)
+        ),
+        factory=TupleStr,
+        converter=_autoclass_converter,
     )
-    default: t.Dict[str, t.Any] = attr.field(
-        factory=dict, converter=_deep_convert_to_tuple
-    )
+    default: DefaultMapping = attr.field(factory=dict, converter=_deep_convert_to_tuple)
     type: str = attr.field(
-        validator=attr.validators.optional(_validate_type),
+        validator=attr.validators.optional(_validate_pipeline_type),
         default=None,
     )
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
+    @staticmethod
+    def process_task_mapping(
+        impl: type[transformers.Pipeline],
+        pt: tuple[BaseAutoModelClass | str, ...]
+        | TupleAutoModel
+        | BaseAutoModelClass
+        | None = None,
+        tf: tuple[BaseAutoModelClass | str, ...]
+        | TupleAutoModel
+        | BaseAutoModelClass
+        | None = None,
+        default: DefaultMapping | None = None,
+        type: str | None = None,
+    ) -> TaskDefinition:
+        if pt is None:
+            pt = TupleAutoModel()
+        elif not isinstance(pt, tuple):
+            pt = (pt,)
+        pt = tuple(convert_to_autoclass(it) if isinstance(it, str) else it for it in pt)
 
-def _convert_to_auto_class(cls_name: str) -> ext.BaseAutoModelClass:
+        if tf is None:
+            tf = TupleAutoModel()
+        elif not isinstance(tf, tuple):
+            tf = (tf,)
+        tf = tuple(convert_to_autoclass(it) if isinstance(it, str) else it for it in tf)
+
+        task_impl = TaskDefinition(impl=impl, pt=pt, tf=tf)
+
+        if default is not None:
+            if "model" not in default and ("pt" in default or "tf" in default):
+                # case for SimpleDefaultMapping, needs then to convert to ModelDefaultMapping
+                default = ModelDefaultMapping(
+                    model=t.cast(SimpleDefaultMapping, default)
+                )
+            task_impl["default"] = default
+        if type is not None:
+            task_impl["type"] = type
+
+        return task_impl
+
+    @classmethod
+    def from_task(cls, task: str, definition: TaskDefinition) -> TransformersOptions:
+        return cls(
+            task=task,
+            tf=definition.get("tf", None),  # type: ignore (handle by cattrs converter)
+            pt=definition.get("pt", None),  # type: ignore (handle by cattrs converter)
+            default=definition.get("default", {}),
+            type=definition.get("type", "text"),
+        )
+
+    def to_dict(self) -> dict[str, t.Any]:
+        return {
+            "task": self.task,
+            "tf": tuple(self.tf),
+            "pt": tuple(self.pt),
+            "default": {
+                "_".join(k) if isinstance(k, tuple) else k: v
+                for k, v in self.default.items()
+            },
+            "type": self.type,
+            "kwargs": self.kwargs,
+        }
+
+
+def convert_to_autoclass(cls_name: str) -> BaseAutoModelClass:
     if not hasattr(transformers, cls_name):
         raise BentoMLException(
             f"Given {cls_name} is not a valid Transformers auto class. For more information, "
@@ -140,6 +270,9 @@ def get(tag_like: str | Tag) -> Model:
     Returns:
         :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
 
+    .. note::
+
+
     Example:
 
     .. code-block:: python
@@ -156,23 +289,82 @@ def get(tag_like: str | Tag) -> Model:
     return model
 
 
+def register_pipeline(
+    task: str,
+    impl: type[transformers.Pipeline],
+    pt: tuple[BaseAutoModelClass | str, ...]
+    | TupleAutoModel
+    | BaseAutoModelClass
+    | None = None,
+    tf: tuple[BaseAutoModelClass | str, ...]
+    | TupleAutoModel
+    | BaseAutoModelClass
+    | None = None,
+    default: DefaultMapping | None = None,
+    type: str | None = None,
+):
+    task_impl = TransformersOptions.process_task_mapping(impl, pt, tf, default, type)
+
+    if HAS_PIPELINE_REGISTRY:
+        from transformers.pipelines import PIPELINE_REGISTRY
+
+        PIPELINE_REGISTRY.register_pipeline(
+            task,
+            pipeline_class=impl,
+            pt_model=task_impl["pt"],
+            tf_model=task_impl["tf"],
+            default=task_impl.get("default", None),
+            type=task_impl.get("type", None),
+        )
+    else:
+        # For backward compatibility
+        from transformers.pipelines import SUPPORTED_TASKS
+
+        SUPPORTED_TASKS.setdefault(task, task_impl)
+
+        _object_setattr(impl, "_registered_impl", {task: task_impl})
+
+
+def delete_pipeline(task: str) -> None:
+    """
+    Remove pipelines from current registry by task name.
+    """
+    if HAS_PIPELINE_REGISTRY:
+        from transformers.pipelines import PIPELINE_REGISTRY
+
+        del PIPELINE_REGISTRY.supported_tasks[task]
+    else:
+        # For backward compatibility
+        from transformers.pipelines import SUPPORTED_TASKS
+
+        del SUPPORTED_TASKS[task]
+
+
+@t.overload
 def load_model(
-    bento_model: str | Tag | Model,
-    **kwargs: t.Any,
-) -> ext.TransformersPipeline:
+    bento_model: str | Tag | Model, **kwargs: t.Any
+) -> transformers.Pipeline:
+    ...
+
+
+@t.overload
+def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> PreTrainedProtocol:
+    ...
+
+
+def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
     """
     Load the Transformers model from BentoML local modelstore with given name.
 
     Args:
-        bento_model (``str`` ``|`` :obj:`~bentoml.Tag` ``|`` :obj:`~bentoml.Model`):
-            Either the tag of the model to get from the store, or a BentoML `~bentoml.Model`
-            instance to load the model from.
-        kwargs (:code:`Any`):
-            Additional keyword arguments to pass to the model.
+        bento_model: Either the tag of the model to get from the store,
+                     or a BentoML :class:`~bentoml.Model` instance to load the
+                     model from.
+        kwargs: Additional keyword arguments to pass into the pipeline.
 
     Returns:
-        ``Pipeline``:
-            The Transformers pipeline loaded from the model store.
+        ``transformers.pipeline.base.Pipeline``: The Transformers pipeline loaded
+        from the model store.
 
     Example:
 
@@ -181,8 +373,6 @@ def load_model(
         import bentoml
         pipeline = bentoml.transformers.load_model('my_model:latest')
     """
-    _check_flax_supported()
-
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
 
@@ -191,75 +381,289 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
-    from transformers.pipelines import TASK_ALIASES
-    from transformers.pipelines import SUPPORTED_TASKS
+    options = t.cast(TransformersOptions, bento_model.info.options)
+    api_version = bento_model.info.api_version
+    task = options.task
+    pipeline: transformers.Pipeline | None = None
 
-    if TYPE_CHECKING:
-        options = t.cast(TransformersOptions, bento_model.info.options)
-    else:
-        options = bento_model.info.options
+    if api_version == "v1":
+        # NOTE: backward compatibility
+        from transformers.pipelines import get_supported_tasks
 
-    task: str = bento_model.info.options.task  # type: ignore
-    if task not in SUPPORTED_TASKS and task not in TASK_ALIASES:
-        try:
-            import cloudpickle  # type: ignore
-        except ImportError:  # pragma: no cover
-            raise MissingDependencyException(
-                "Module `cloudpickle` is required in order to use to load custom pipelines."
+        logger.warning(
+            "Upgrading '%s' to with newer 'save_model' is recommended. Loading model with version 1.",
+            bento_model,
+        )
+
+        # Set trust_remote_code to True to allow loading custom pipeline.
+        kwargs.setdefault("trust_remote_code", False)
+        kwargs.update(options.kwargs)
+        if len(kwargs) > 0:
+            logger.debug(
+                "Loading '%s' pipeline (tag='%s') with kwargs %s.",
+                task,
+                bento_model.tag,
+                kwargs,
             )
 
-        with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
-            pipeline = cloudpickle.load(f)
+        # v1 pickled the pipeline with 'pipeline.v1.pkl'.
+        fname = "pipeline.v1.pkl"
+        if os.path.exists(bento_model.path_of(fname)):
+            with open(bento_model.path_of(fname), "rb") as f:
+                pipeline = cloudpickle.load(f)
 
-        SUPPORTED_TASKS[task] = {
-            "impl": type(pipeline),
-            "tf": tuple(
-                _convert_to_auto_class(auto_class) for auto_class in options.tf
-            ),
-            "pt": tuple(
-                _convert_to_auto_class(auto_class) for auto_class in options.pt
-            ),
-            "default": options.default,
-            "type": options.type,
-        }
+        if task not in get_supported_tasks():
+            logger.debug("'%s' is a custom task. Registering it to the registry.", task)
+            kwargs["trust_remote_code"] = True
+            # most likely a custom pipeline
+            if pipeline is None:
+                # if the pipeline is not loaded from the pickle, and it is custom, then we should be able to load
+                # it with model=bento_model.path
+                return transformers.pipeline(model=bento_model.path, **kwargs)
+            else:
+                register_pipeline(
+                    task,
+                    pipeline.__class__,
+                    tuple(
+                        convert_to_autoclass(auto_class) for auto_class in options.pt
+                    ),
+                    tuple(
+                        convert_to_autoclass(auto_class) for auto_class in options.tf
+                    ),
+                    options.default,
+                    options.type,
+                )
 
-    extra_kwargs: dict[str, t.Any] = options.kwargs
-    extra_kwargs.update(kwargs)
-    if len(extra_kwargs) > 0:
-        logger.info(
-            "Loading '%s' pipeline '%s' with kwargs %s.",
-            task,
-            bento_model.tag,
-            extra_kwargs,
+        kwargs.setdefault("pipeline_class", pipeline.__class__ if pipeline else None)
+
+        assert (
+            task in get_supported_tasks()
+        ), f"Task '{task}' is not a valid task for pipeline (available: {get_supported_tasks()})."
+
+        return (
+            transformers.pipeline(task=task, model=bento_model.path, **kwargs)
+            if pipeline is None
+            else pipeline
         )
-    return transformers.pipeline(task=task, model=bento_model.path, **extra_kwargs)
+    else:
+        if api_version != "v2":
+            logger.warning(
+                "Got unknown API version '%s', unexpected errors may occur.",
+                api_version,
+            )
+
+        if "_pretrained_class" in bento_model.info.metadata:
+            with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "rb") as f:
+                protocol: PreTrainedProtocol = cloudpickle.load(f)
+            return protocol.from_pretrained(bento_model.path, **kwargs)
+        else:
+            with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
+                pipeline_class: type[transformers.Pipeline] = cloudpickle.load(f)
+
+            from transformers.pipelines import get_supported_tasks
+
+            if task not in get_supported_tasks():
+                logger.debug(
+                    "'%s' is not a supported task, trying to load custom pipeline.",
+                    task,
+                )
+
+                register_pipeline(
+                    task,
+                    pipeline_class,
+                    tuple(
+                        convert_to_autoclass(auto_class) for auto_class in options.pt
+                    ),
+                    tuple(
+                        convert_to_autoclass(auto_class) for auto_class in options.tf
+                    ),
+                    options.default,
+                    options.type,
+                )
+                kwargs["trust_remote_code"] = True
+
+            kwargs.setdefault("pipeline_class", pipeline_class)
+
+            assert (
+                task in get_supported_tasks()
+            ), f"Task '{task}' is not a valid task for pipeline (available: {get_supported_tasks()})."
+
+            kwargs.update(options.kwargs)
+            if len(kwargs) > 0:
+                logger.debug(
+                    "Loading '%s' pipeline (tag='%s') with kwargs %s.",
+                    task,
+                    bento_model.tag,
+                    kwargs,
+                )
+            try:
+                return transformers.pipeline(
+                    task=task, model=bento_model.path, **kwargs
+                )
+            except Exception:
+                # NOTE: When loading a custom pipeline that is not available on huggingface hub,
+                # the class registered in the pipeline registry will be a path to a Python file path.
+                # Currently, it doesn't handle relative imports correctly, so users will need to use
+                # external_modules when using 'save_model'.
+                logger.debug(
+                    "If you are loading a custom pipeline, See https://huggingface.co/docs/transformers/main/en/add_new_pipeline#how-to-create-a-custom-pipeline for more information. We recommend to upload the custom pipeline to HuggingFace Hub to ensure consistency. You can also try adding the pipeline instance to 'external_modules': 'import importlib; bentoml.transformers.save_model(..., external_modules=[importlib.import_module(pipeline_instance.__module__)])'"
+                )
+                raise
+
+
+@t.overload
+def save_model(
+    name: str,
+    pretrained_or_pipeline: PreTrainedProtocol,
+    pipeline: transformers.Pipeline | None = ...,
+    task_name: t.LiteralString | None = ...,
+    task_definition: TaskDefinition | None = ...,
+    *,
+    signatures: ModelSignaturesType | None = ...,
+    labels: dict[str, str] | None = ...,
+    custom_objects: dict[str, t.Any] | None = ...,
+    external_modules: t.List[ModuleType] | None = ...,
+    metadata: dict[str, t.Any] | None = ...,
+    **save_kwargs: t.Any,
+) -> bentoml.Model:
+    ...
+
+
+@t.overload
+def save_model(
+    name: str,
+    pretrained_or_pipeline: TransformersPreTrained,
+    pipeline: transformers.Pipeline | None = ...,
+    task_name: t.LiteralString | None = ...,
+    task_definition: TaskDefinition | None = ...,
+    *,
+    signatures: ModelSignaturesType | None = ...,
+    labels: dict[str, str] | None = ...,
+    custom_objects: dict[str, t.Any] | None = ...,
+    external_modules: t.List[ModuleType] | None = ...,
+    metadata: dict[str, t.Any] | None = ...,
+    **save_kwargs: t.Any,
+) -> bentoml.Model:
+    ...
+
+
+@t.overload
+def save_model(
+    name: str,
+    pretrained_or_pipeline: transformers.Pipeline,
+    pipeline: transformers.Pipeline | None = ...,
+    task_name: t.LiteralString | None = ...,
+    task_definition: TaskDefinition | None = ...,
+    *,
+    signatures: ModelSignaturesType | None = ...,
+    labels: dict[str, str] | None = ...,
+    custom_objects: dict[str, t.Any] | None = ...,
+    external_modules: t.List[ModuleType] | None = ...,
+    metadata: dict[str, t.Any] | None = ...,
+    **save_kwargs: t.Any,
+) -> bentoml.Model:
+    ...
+
+
+def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
+    default_config = ModelSignature(batchable=False)
+    infer_fn = ("__call__",)
+
+    # NOTE: for all processor type recommend to use custom signatures since it is
+    # a per case basis.
+    if transformers.processing_utils.ProcessorMixin in pretrained.__class__.__bases__:
+        logger.info(
+            "Given '%s' extends the 'transformers.ProcessorMixin'. Make sure to specify the signatures manually if it has additional functions.",
+            pretrained.__class__.__name__,
+        )
+        return {k: default_config for k in ("__call__", "batch_decode", "decode")}
+
+    if isinstance(pretrained, transformers.PreTrainedTokenizerBase):
+        infer_fn = (
+            "__call__",
+            "tokenize",
+            "encode",
+            "encode_plus",
+            "batch_encode_plus",
+            "pad",
+            "create_token_type_ids_from_sequences",
+            "build_inputs_with_special_tokens",
+            "prepare_for_model",
+            "truncate_sequences",
+            "convert_tokens_to_string",
+            "batch_decode",
+            "decode",
+            "get_special_tokens_mask",
+            "clean_up_tokenization",
+            "prepare_seq2seq_batch",
+        )
+    elif isinstance(pretrained, transformers.PreTrainedModel):
+        infer_fn = (
+            "__call__",
+            "forward",
+            "generate",
+            "contrastive_search",
+            "greedy_search",
+            "sample",
+            "beam_search",
+            "beam_sample",
+            "group_beam_search",
+            "constrained_beam_search",
+        )
+    elif isinstance(pretrained, transformers.TFPreTrainedModel):
+        infer_fn = (
+            "__call__",
+            "predict",
+            "call",
+            "generate",
+            "compute_transition_scores",
+            "greedy_search",
+            "sample",
+            "beam_search",
+            "contrastive_search",
+        )
+    elif isinstance(pretrained, transformers.FlaxPreTrainedModel):
+        infer_fn = ("__call__", "generate")
+    elif isinstance(pretrained, transformers.image_processing_utils.BaseImageProcessor):
+        infer_fn = ("__call__", "preprocess")
+    elif isinstance(pretrained, transformers.SequenceFeatureExtractor):
+        infer_fn = ("pad",)
+    elif not isinstance(pretrained, transformers.Pipeline):
+        logger.warning(
+            "Unable to infer default signatures for '%s'. Make sure to specify it manually.",
+            pretrained,
+        )
+        return {}
+
+    return {k: default_config for k in infer_fn}
 
 
 def save_model(
     name: str,
-    pipeline: ext.TransformersPipeline,
+    pretrained_or_pipeline: t.Any = None,
+    pipeline: transformers.Pipeline | None = None,
     task_name: str | None = None,
-    task_definition: dict[str, t.Any] | None = None,
+    task_definition: dict[str, t.Any] | TaskDefinition | None = None,
     *,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
+    **save_kwargs: t.Any,
 ) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
 
     Args:
         name: Name for given model instance. This should pass Python identifier check.
-        pipeline: Instance of the Transformers pipeline to be saved.
-
-                  See module `src/transformers/pipelines/__init__.py <https://github.com/huggingface/transformers/blob/main/src/transformers/pipelines/__init__.py#L129>`_ for more details.
-        task_name: Name of pipeline task. If not provided, the task name will be derived from ``pipeline.task``.
+        pretrained_or_pipeline: Instance of the Transformers pipeline to be saved, or any instance that ``transformers`` supports.
+                                The object instance should have ``save_pretrained`` and ``from_pretrained`` (follows the protocol that is defined by `transformers`.)
+        task_name: Name of pipeline task. If not provided, the task name will be derived from ``pipeline.task``. Only needed when the target is a custom pipeline.
         task_definition: Task definition for the Transformers custom pipeline. The definition is a dictionary
                          consisting of the following keys:
 
-                        - ``impl`` (:code:`str`): The name of the pipeline implementation module. The name should be the same as the pipeline passed in the ``pipeline`` argument.
+                        - ``impl`` (``type[transformers.Pipeline]``): The name of the pipeline implementation module. The name should be the same as the pipeline passed in the ``pipeline`` argument.
                         - ``tf`` (:code:`tuple[AnyType]`): The name of the Tensorflow auto model class. One of ``tf`` and ``pt`` auto model class argument is required.
                         - ``pt`` (:code:`tuple[AnyType]`): The name of the PyTorch auto model class. One of ``tf`` and ``pt`` auto model class argument is required.
                         - ``default`` (:code:`Dict[str, AnyType]`): The names of the default models, tokenizers, feature extractors, etc.
@@ -283,18 +687,17 @@ def save_model(
         custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
 
                         Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
-        external_modules (:code:`List[ModuleType]`, `optional`, default to :code:`None`):
-            user-defined additional python modules to be saved alongside the model or custom objects,
-            e.g. a tokenizer module, preprocessor module, model configuration module
+        external_modules: user-defined additional python modules to be saved alongside the model or custom objects,
+                          e.g. a tokenizer module, preprocessor module, model configuration module
         metadata: Custom metadata for given model.
+        save_kwargs: Additional keyword arguments to be pass to ````
 
     .. note::
 
         Both arguments ``task_name`` and ``task_definition`` must be provided to set save a custom pipeline.
 
     Returns:
-        :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is
-        the user-defined model's name, and a generated `version`.
+        :obj:`~bentoml.Tag`: A :obj:`tag` with a format ``name:version`` where ``name`` is the user-defined model's name, and a generated ``version``.
 
     Examples:
 
@@ -309,99 +712,104 @@ def save_model(
         generator = pipeline(task="text-generation", model=model, tokenizer=tokenizer)
         bento_model = bentoml.transformers.save_model("text-generation-pipeline", generator)
     """  # noqa
-    _check_flax_supported()
-    if not isinstance(
-        pipeline,
-        LazyType["ext.TransformersPipeline"]("transformers.pipelines.base.Pipeline"),  # type: ignore
-    ):
-        raise BentoMLException(
-            "'pipeline' must be an instance of 'transformers.pipelines.base.Pipeline'. "
-            "To save other Transformers types like models, tokenizers, configs, feature "
-            "extractors, construct a pipeline with the model, tokenizer, config, or feature "
-            "extractor specified as arguments, then call save_model with the pipeline. "
-            "Refer to https://huggingface.co/docs/transformers/main_classes/pipelines "
-            "for more information on pipelines. If transformers doesn't provide a task you "
-            "need, refer to the custom pipeline section to create your own pipelines."
-            """
-            ```python
-            import bentoml
-            from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
-
-            tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
-            model = AutoModelForCausalLM.from_pretrained("distilgpt2")
-            generator = pipeline(task="text-generation", model=model, tokenizer=tokenizer)
-
-            bentoml.transformers.save_model("text-generation-pipeline", generator)
-            ```
-            """
+    # backward compatibility
+    if pipeline is not None:
+        warnings.warn(
+            f"The '{pipeline=}' argument is deprecated and will be removed in the future. Please use 'pretrained_or_pipeline' instead.",
+            DeprecationWarning,
         )
+        pretrained_or_pipeline = pipeline
 
+    assert (
+        pretrained_or_pipeline is not None
+    ), "Please provide a pipeline or a pretrained object as a second argument."
+
+    from transformers.utils import is_tf_available
+    from transformers.utils import is_flax_available
+    from transformers.utils import is_torch_available
+
+    framework_versions = {"transformers": get_pkg_version("transformers")}
+    if is_torch_available():
+        framework_versions["torch"] = get_pkg_version("torch")
+    if is_tf_available():
+        from .utils.tensorflow import get_tf_version
+
+        framework_versions[
+            "tensorflow-macos" if platform.system() == "Darwin" else "tensorflow"
+        ] = get_tf_version()
+    if is_flax_available():
+        framework_versions.update(
+            {
+                "flax": get_pkg_version("flax"),
+                "jax": get_pkg_version("jax"),
+                "jaxlib": get_pkg_version("jaxlib"),
+            }
+        )
     context = ModelContext(
-        framework_name="transformers",
-        framework_versions={"transformers": get_pkg_version("transformers")},
+        framework_name="transformers", framework_versions=framework_versions
     )
 
     if signatures is None:
-        signatures = {
-            "__call__": {"batchable": False},
-        }
+        signatures = make_default_signatures(pretrained_or_pipeline)
         logger.info(
             'Using the default model signature for Transformers (%s) for model "%s".',
             signatures,
             name,
         )
 
-    if task_name is not None and task_definition is not None:
-        from transformers.pipelines import TASK_ALIASES
-        from transformers.pipelines import SUPPORTED_TASKS
+    if LazyType("transformers.Pipeline").isinstance(pretrained_or_pipeline):
+        from transformers.pipelines import check_task
+        from transformers.pipelines import get_supported_tasks
 
-        try:
-            import cloudpickle  # type: ignore
-        except ImportError:  # pragma: no cover
-            raise MissingDependencyException(
-                "Module `cloudpickle` is required in order to use to save custom pipelines."
-            )
-
-        logger.info(
-            "Arguments 'task_name' and 'task_definition' are provided. Saving model with pipeline task name '%s' and task definition '%s'.",
-            task_name,
-            task_definition,
+        # NOTE: safe casting to annotate task_definition types
+        task_definition = (
+            t.cast(TaskDefinition, task_definition)
+            if task_definition is not None
+            else task_definition
         )
 
-        if pipeline.task is None or pipeline.task != task_name:
-            raise BentoMLException(
-                f"Argument 'task_name' '{task_name}' does not match pipeline task name '{pipeline.task}'."
+        pipeline_ = t.cast("transformers.Pipeline", pretrained_or_pipeline)
+
+        if task_name is not None and task_definition is not None:
+            logger.info(
+                "Arguments 'task_name' and 'task_definition' are provided. Saving model with pipeline task name '%s' and task definition '%s'.",
+                task_name,
+                task_definition,
             )
-
-        impl: type = task_definition["impl"]
-        if type(pipeline) != impl:
-            raise BentoMLException(
-                f"Argument 'pipeline' is not an instance of {impl}. It is an instance of {type(pipeline)}."
-            )
-
-        if task_name in TASK_ALIASES:
-            task_name = TASK_ALIASES[task_name]
-
-        if task_name in SUPPORTED_TASKS:
-            if SUPPORTED_TASKS[task_name] != task_definition:
+            if pipeline_.task != task_name:
                 raise BentoMLException(
-                    f"Argument `task_definition` '{task_definition}' does not match pipeline task "
-                    "definition '{SUPPORTED_TASKS[task_name]}'."
+                    f"Argument 'task_name' '{task_name}' does not match pipeline task name '{pipeline_.task}'."
                 )
+
+            assert "impl" in task_definition, "'task_definition' requires 'impl' key."
+
+            impl = task_definition["impl"]
+            if type(pipeline_) != impl:
+                raise BentoMLException(
+                    f"Argument 'pipeline' is not an instance of {impl}. It is an instance of {type(pipeline_)}."
+                )
+            options_args = (task_name, task_definition)
+
+            if task_name not in get_supported_tasks():
+                register_pipeline(task_name, **task_definition)
+                logger.info(
+                    "Task '%s' is a custom task and has been registered to the pipeline registry.",
+                    task_name,
+                )
+
+            assert (
+                task_name in get_supported_tasks()
+            ), f"Task '{task_name}' failed to register into pipeline registry."
         else:
-            SUPPORTED_TASKS[task_name] = task_definition
+            assert (
+                task_definition is None
+            ), "'task_definition' must be None if 'task_name' is not provided."
 
-        options = TransformersOptions(
-            task=task_name,
-            pt=tuple(
-                auto_class.__qualname__ for auto_class in task_definition.get("pt", ())
-            ),
-            tf=tuple(
-                auto_class.__qualname__ for auto_class in task_definition.get("tf", ())
-            ),
-            default=task_definition.get("default", {}),
-            type=task_definition.get("type", "text"),
-        )
+            # if task_name is None, then we derive the task from pipeline.task
+            options_args = t.cast(
+                "tuple[str, TaskDefinition]",
+                check_task(pipeline_.task if task_name is None else task_name)[:2],
+            )
 
         with bentoml.models.create(
             name,
@@ -409,42 +817,48 @@ def save_model(
             api_version=API_VERSION,
             labels=labels,
             context=context,
-            options=options,
+            options=TransformersOptions.from_task(*options_args),
             signatures=signatures,
             custom_objects=custom_objects,
             external_modules=external_modules,
             metadata=metadata,
         ) as bento_model:
-            pipeline.save_pretrained(bento_model.path)
+            pipeline_.save_pretrained(bento_model.path, **save_kwargs)
 
+            # NOTE: we want to pickle the class so that tensorflow, flax pipeline will also work.
+            # the weights is already save, so we only need to save the class.
             with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "wb") as f:
-                cloudpickle.dump(pipeline, f)
-
+                cloudpickle.dump(pipeline_.__class__, f)
             return bento_model
-
     else:
-        options = TransformersOptions(task=pipeline.task)
+        pretrained = t.cast("PreTrainedProtocol", pretrained_or_pipeline)
+        assert all(
+            hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
+        ), f"'{pretrained=}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+        if metadata is None:
+            metadata = {}
 
+        metadata["_pretrained_class"] = pretrained.__class__.__name__
         with bentoml.models.create(
             name,
             module=MODULE_NAME,
             api_version=API_VERSION,
             labels=labels,
             context=context,
-            options=options,
+            options=TransformersOptions(),
             signatures=signatures,
             custom_objects=custom_objects,
             external_modules=external_modules,
             metadata=metadata,
         ) as bento_model:
-            pipeline.save_pretrained(bento_model.path)
+            pretrained.save_pretrained(bento_model.path, **save_kwargs)
 
+            with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "wb") as f:
+                cloudpickle.dump(pretrained.__class__, f)
             return bento_model
 
 
-def get_runnable(
-    bento_model: bentoml.Model,
-) -> t.Type[bentoml.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
@@ -456,30 +870,31 @@ def get_runnable(
         def __init__(self):
             super().__init__()
 
-            available_gpus: str = os.getenv("CUDA_VISIBLE_DEVICES", "")
-            if available_gpus is not None and available_gpus not in ("", "-1"):
+            available_gpus = os.getenv("CUDA_VISIBLE_DEVICES", "")
+            if available_gpus not in ("", "-1"):
                 # assign GPU resources
                 if not available_gpus.isdigit():
                     raise ValueError(
                         f"Expecting numeric value for CUDA_VISIBLE_DEVICES, got {available_gpus}."
                     )
                 else:
-                    kwargs = {
-                        "device": int(available_gpus),
-                    }
+                    kwargs = {"device": int(available_gpus)}
             else:
                 # assign CPU resources
                 kwargs = {}
 
-            self.pipeline = load_model(bento_model, **kwargs)
+            self.model = load_model(bento_model, **kwargs)
+
+            # NOTE: backward compatibility with previous BentoML versions.
+            self.pipeline = self.model
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
             for method_name in bento_model.info.signatures:
-                self.predict_fns[method_name] = getattr(self.pipeline, method_name)
+                self.predict_fns[method_name] = getattr(self.model, method_name)
 
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(self: TransformersRunnable, *args: t.Any, **kwargs: t.Any) -> t.Any:
-            return getattr(self.pipeline, method_name)(*args, **kwargs)
+            return self.predict_fns[method_name](*args, **kwargs)
 
         TransformersRunnable.add_method(
             _run,

@@ -38,12 +38,14 @@ class NonBlockSema:
     def release(self):
         self.sema += 1
 
+
 @attr.define
 class Job:
     enqueue_time: float
     data: Params[Payload]
     future: asyncio.Future[t.Any]
     dispatch_time: float = 0
+
 
 class Optimizer:
     """
@@ -135,7 +137,9 @@ class CorkDispatcher:
         self.tick_interval = 0.001
 
         self._controller = None
-        self._queue: collections.deque[Job] = collections.deque()  # TODO(bojiang): maxlen
+        self._queue: collections.deque[
+            Job
+        ] = collections.deque()  # TODO(bojiang): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
     def shutdown(self):
@@ -431,9 +435,7 @@ class CorkDispatcher:
             self._wake_event.notify_all()
         return await future
 
-    async def outbound_call(
-        self, inputs_info: tuple[Job, ...]
-    ):
+    async def outbound_call(self, inputs_info: tuple[Job, ...]):
         _time_start = time.time()
         _done = False
         batch_size = len(inputs_info)

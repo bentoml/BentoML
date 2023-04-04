@@ -8,6 +8,7 @@ import functools
 import traceback
 import collections
 
+import attr
 import numpy as np
 
 from ..utils import cached_property
@@ -37,6 +38,12 @@ class NonBlockSema:
     def release(self):
         self.sema += 1
 
+@attr.define
+class Job:
+    enqueue_time: float
+    data: Params[Payload]
+    future: asyncio.Future[t.Any]
+    dispatch_time: float = 0
 
 class Optimizer:
     """
@@ -128,9 +135,7 @@ class CorkDispatcher:
         self.tick_interval = 0.001
 
         self._controller = None
-        self._queue: collections.deque[
-            tuple[float, Params[Payload], asyncio.Future[t.Any]]
-        ] = collections.deque()  # TODO(bojiang): maxlen
+        self._queue: collections.deque[Job] = collections.deque()  # TODO(bojiang): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
     def shutdown(self):
@@ -138,7 +143,7 @@ class CorkDispatcher:
             self._controller.cancel()
         try:
             while True:
-                _, _, fut = self._queue.pop()
+                fut = self._queue.pop().future
                 fut.cancel()
         except IndexError:
             pass
@@ -186,7 +191,7 @@ class CorkDispatcher:
 
                 n = len(self._queue)
                 now = time.time()
-                w0 = now - self._queue[0][0]
+                w0 = now - self._queue[0].enqueue_time
 
                 # only cancel requests if there are more than enough for training
                 if (
@@ -197,7 +202,7 @@ class CorkDispatcher:
                     and w0 >= self.max_latency_in_ms
                 ):
                     # we're being very conservative and only canceling requests if they have already timed out
-                    self._queue.popleft()[2].cancel()
+                    self._queue.popleft().future.cancel()
                     continue
                 # don't try to be smart here, just serve the first few requests
                 if self._sema.is_locked():
@@ -224,12 +229,12 @@ class CorkDispatcher:
 
                 n = len(self._queue)
                 now = time.time()
-                w0 = now - self._queue[0][0]
+                w0 = now - self._queue[0].enqueue_time
 
                 # only cancel requests if there are more than enough for training
                 if n > 6 and w0 >= self.max_latency_in_ms:
                     # we're being very conservative and only canceling requests if they have already timed out
-                    self._queue.popleft()[2].cancel()
+                    self._queue.popleft().future.cancel()
                     continue
                 if self._sema.is_locked():
                     await asyncio.sleep(self.tick_interval)
@@ -266,14 +271,14 @@ class CorkDispatcher:
                     n = len(self._queue)
                     dt = self.tick_interval
                     now = time.time()
-                    w0 = now - self._queue[0][0]
+                    w0 = now - self._queue[0].enqueue_time
                     a = self.optimizer.o_a
                     b = self.optimizer.o_b
 
                     # only cancel requests if there are more than enough for training
                     if n > 5 and w0 >= self.max_latency_in_ms:
                         # we're being very conservative and only canceling requests if they have already timed out
-                        self._queue.popleft()[2].cancel()
+                        self._queue.popleft().future.cancel()
                         continue
                     if n < 2 and (2 * a + b) + w0 <= step_2_wait:
                         await asyncio.sleep(self.tick_interval)
@@ -313,14 +318,14 @@ class CorkDispatcher:
                     n = len(self._queue)
                     dt = self.tick_interval
                     now = time.time()
-                    w0 = now - self._queue[0][0]
+                    w0 = now - self._queue[0].enqueue_time
                     a = self.optimizer.o_a
                     b = self.optimizer.o_b
 
                     # only cancel requests if there are more than enough for training
                     if n > 3 and w0 >= self.max_latency_in_ms:
                         # we're being very conservative and only canceling requests if they have already timed out
-                        self._queue.popleft()[2].cancel()
+                        self._queue.popleft().future.cancel()
                         continue
                     if n < 3 and (3 * a + b) + w0 <= step_3_wait:
                         await asyncio.sleep(self.tick_interval)
@@ -354,17 +359,20 @@ class CorkDispatcher:
                 dt = self.tick_interval
                 decay = 0.95  # the decay rate of wait time
                 now = time.time()
-                w0 = now - self._queue[0][0]
-                wn = now - self._queue[-1][0]
+                w0 = now - self._queue[0].enqueue_time
+                wn = now - self._queue[-1].enqueue_time
                 a = self.optimizer.o_a
                 b = self.optimizer.o_b
 
-                if n > 1 and (w0 + a * n + b) >= self.max_latency_in_ms:
-                    self._queue.popleft()[2].cancel()
+                # the estimated latency of the first request if we began processing now
+                latency_0 = w0 + a * n + b
+
+                if n > 1 and latency_0 >= self.max_latency_in_ms:
+                    self._queue.popleft().future.cancel()
                     continue
                 if self._sema.is_locked():
                     if n == 1 and w0 >= self.max_latency_in_ms:
-                        self._queue.popleft()[2].cancel()
+                        self._queue.popleft().future.cancel()
                         continue
                     await asyncio.sleep(self.tick_interval)
                     continue
@@ -372,6 +380,12 @@ class CorkDispatcher:
                     n < self.max_batch_size
                     and n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay
                 ):
+                    n = len(self._queue)
+                    now = time.time()
+                    wn = now - self._queue[-1].enqueue_time
+                    latency_0 += dt
+
+                    # wait for additional requests to arrive
                     await asyncio.sleep(self.tick_interval)
                     continue
 
@@ -380,11 +394,11 @@ class CorkDispatcher:
                 try:
                     for input_info in self._queue:
                         if (
-                            batch_size + input_info[1].sample.batch_size
+                            batch_size + input_info.data.sample.batch_size
                             < self.max_batch_size
                         ):
                             n_call_out += 1
-                            batch_size += input_info[1].sample.batch_size
+                            batch_size += input_info.data.sample.batch_size
                         else:
                             break
                 except Exception as e:
@@ -411,14 +425,14 @@ class CorkDispatcher:
 
         now = time.time()
         future = self._loop.create_future()
-        input_info = (now, data, future)
+        input_info = Job(now, data, future)
         self._queue.append(input_info)
         async with self._wake_event:
             self._wake_event.notify_all()
         return await future
 
     async def outbound_call(
-        self, inputs_info: tuple[tuple[float, Params[Payload], asyncio.Future[t.Any]]]
+        self, inputs_info: tuple[Job, ...]
     ):
         _time_start = time.time()
         _done = False
@@ -426,28 +440,31 @@ class CorkDispatcher:
         logger.debug("Dynamic batching cork released, batch size: %d", batch_size)
         try:
             outputs = await self.callback(
-                tuple(t.cast(t.Any, d) for _, d, _ in inputs_info)
+                tuple(t.cast(t.Any, input_info.data) for input_info in inputs_info)
             )
             assert len(outputs) == len(inputs_info)
-            for (_, _, fut), out in zip(inputs_info, outputs):
+            for input_info, out in zip(inputs_info, outputs):
+                fut = input_info.future
                 if not fut.done():
                     fut.set_result(out)
             _done = True
             self.optimizer.log_outbound(
                 n=len(inputs_info),
-                wait=_time_start - inputs_info[-1][0],
+                wait=_time_start - inputs_info[-1].enqueue_time,
                 duration=time.time() - _time_start,
             )
         except asyncio.CancelledError:
             pass
         except Exception as e:  # pylint: disable=broad-except
-            for _, _, fut in inputs_info:
+            for input_info in inputs_info:
+                fut = input_info.future
                 if not fut.done():
                     fut.set_result(e)
             _done = True
         finally:
             if not _done:
-                for _, _, fut in inputs_info:
+                for input_info in inputs_info:
+                    fut = input_info.future
                     if not fut.done():
                         fut.cancel()
             self._sema.release()

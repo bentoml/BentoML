@@ -177,7 +177,7 @@ class IntelligentWaitStrategy(strategy_id="intelligent_wait"):
             n < max_batch_size
             # we are not about to cancel the first request,
             and latency_0 + dt <= self.max_latency * 0.95
-            # and waiting will cause average latency to decrese
+            # and waiting will cause average latency to decrease
             and n * (wn + dt + optimizer.o_a) <= optimizer.wait * decay
         ):
             n = len(queue)

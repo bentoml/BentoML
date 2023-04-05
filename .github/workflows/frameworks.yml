@@ -314,7 +314,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install .
-          pip install keras "tensorflow>=2.7.3"
+          pip install "keras<2.12" "tensorflow>=2.7.3"
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report

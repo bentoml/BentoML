@@ -8,6 +8,7 @@ if t.TYPE_CHECKING:
 
 def test_pep574_restore() -> None:
     import numpy as np
+    import pandas as pd
 
     from bentoml._internal.utils.pickle import pep574_dumps
     from bentoml._internal.utils.pickle import pep574_loads
@@ -35,3 +36,24 @@ def test_pep574_restore() -> None:
     )
     for key, arr in dic.items():
         assert np.isclose(arr, restored[key]).all()
+
+    df1: ext.PdDataFrame = pd.DataFrame(arr1)
+    df2: ext.PdDataFrame = pd.DataFrame(arr2)
+    df3: ext.PdDataFrame = pd.DataFrame(arr3)
+
+    df_lst = [df1, df2, df3]
+
+    bs, concat_buffer_bs, indices = pep574_dumps(df_lst)
+    restored = t.cast(
+        t.List["ext.PdDataFrame"], pep574_loads(bs, concat_buffer_bs, indices)
+    )
+    for idx, df in enumerate(df_lst):
+        assert np.isclose(df.to_numpy(), restored[idx].to_numpy()).all()
+
+    df_dic: dict[str, ext.PdDataFrame] = dict(a=df1, b=df2, c=df3)
+    bs, concat_buffer_bs, indices = pep574_dumps(df_dic)
+    restored = t.cast(
+        t.Dict[str, "ext.PdDataFrame"], pep574_loads(bs, concat_buffer_bs, indices)
+    )
+    for key, df in df_dic.items():
+        assert np.isclose(df.to_numpy(), restored[key].to_numpy()).all()

@@ -2,8 +2,10 @@
 Transformers
 ============
 
-`🤗 Transformers <https://huggingface.co/docs/transformers/main/en/index>`_ is a library that helps download and fine-tune popular 
-pretrained models for common machine learning tasks. BentoML provides native support for serving and deploying models trained from 
+`🤗 Transformers <https://huggingface.co/docs/transformers/main/en/index>`_ is a popular open-source library for natural language processing,
+providing pre-trained models and tools for building, training, and deploying custom language models. It offers support for a wide
+range of transformer-based architectures, access to pre-trained models for various NLP tasks, and the ability to fine-tune pre-trained models on
+specific tasks. BentoML provides native support for serving and deploying models trained from 
 Transformers.
 
 Compatibility 
@@ -61,15 +63,13 @@ fine-tuning pretrained models. To learn more, refer to the Transformers guide on
 
 .. tip::
 
-    Saving and getting pre-trained instances with ``bentoml.transformers.save_model`` and ``bentoml.transformers.get`` are supported starting
-    release ``v1.0.17``.
+    Saving and loading pre-trained instances with the ``bentoml.transformers`` APIs are supported starting release ``v1.0.17``.
 
 Saving Pre-Trained Models and Instances
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Pre-trained models can be saved either as a pipeline or as a standalone model. Other pre-trained instances from Transformers,
-such as tokenizers, preprocessors, and feature extractors, can also be saved as standalone models. The ``bentoml.transformers.save_model`` API
-supports saving other pre-trained instances from Transformers, including tokenizers, preprocessors, and feature extractors.
+such as tokenizers, preprocessors, and feature extractors, can also be saved as standalone models using the ``bentoml.transformers.save_model`` API.
 
 .. code-block:: python
     :caption: `train.py`
@@ -161,10 +161,10 @@ references and load them in a custom runner. The pretrained instances can then b
     async def generate_speech(inp: str):
         return await text2speech_runner.generate_speech.async_run(inp)
 
-Pipelines
----------
+Built-in Pipelines
+------------------
 
-Hugging Face Transformers pipelines are a high-level API for performing common natural language processing tasks using pre-trained transformer models.
+Transformers pipelines are a high-level API for performing common natural language processing tasks using pre-trained transformer models.
 See `Transformers Pipelines tutorial <https://huggingface.co/docs/transformers/pipeline_tutorial>`_ to learn more.
 
 Saving a Pipeline

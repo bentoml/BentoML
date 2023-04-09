@@ -4,6 +4,7 @@ from ._internal.io_descriptors import from_spec
 from ._internal.io_descriptors.base import IODescriptor
 from ._internal.io_descriptors.file import File
 from ._internal.io_descriptors.json import JSON
+from ._internal.io_descriptors.typed_json import TypedJSON
 from ._internal.io_descriptors.text import Text
 from ._internal.io_descriptors.image import Image
 from ._internal.io_descriptors.numpy import NumpyNdarray
@@ -16,6 +17,7 @@ __all__ = [
     "Image",
     "IODescriptor",
     "JSON",
+    "TypedJSON",
     "Multipart",
     "NumpyNdarray",
     "PandasDataFrame",

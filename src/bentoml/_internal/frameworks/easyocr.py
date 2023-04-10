@@ -16,7 +16,7 @@ from ..models.model import Model
 from ..models.model import ModelContext
 from ..models.model import ModelOptions
 from ..models.model import ModelSignature
-from .common.pytorch import PyTorchTensorContainer
+from .common.pytorch import PyTorchTensorContainer  # noqa # type: ignore
 
 try:
     import easyocr
@@ -33,7 +33,7 @@ else:
     ListStr = list
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get", "PyTorchTensorContainer"]
+__all__ = ["load_model", "save_model", "get_runnable", "get"]
 
 MODULE_NAME = "bentoml.easyocr"
 API_VERSION = "v1"

@@ -715,7 +715,7 @@ def save_model(
     # backward compatibility
     if pipeline is not None:
         warnings.warn(
-            f"The '{pipeline=}' argument is deprecated and will be removed in the future. Please use 'pretrained_or_pipeline' instead.",
+            f"The 'pipeline={pipeline}' argument is deprecated and will be removed in the future. Please use 'pretrained_or_pipeline' instead.",
             DeprecationWarning,
         )
         pretrained_or_pipeline = pipeline
@@ -834,7 +834,7 @@ def save_model(
         pretrained = t.cast("PreTrainedProtocol", pretrained_or_pipeline)
         assert all(
             hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
-        ), f"'{pretrained=}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+        ), f"'pretrained={pretrained}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
         if metadata is None:
             metadata = {}
 

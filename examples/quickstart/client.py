@@ -14,7 +14,7 @@ if __name__ == "__main__":
         res = client.classify(np.array([[4.9, 3.0, 1.4, 0.2]]))
         print(f"Successfully received results, {res}")
 
-        # Alternatively, you can use Client.from_url to connect to a already running server
+        # Alternatively, you can use Client.from_url to connect to an already running server
         client = Client.from_url("http://localhost:3000")
         res = client.classify(np.array([[4.9, 3.0, 1.4, 0.2]]))
         print(f"Successfully received results, {res}")

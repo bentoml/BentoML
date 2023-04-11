@@ -9,7 +9,6 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from functools import wraps
 from contextlib import contextmanager
-from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 
 import fs
@@ -19,8 +18,6 @@ from simple_di import inject
 from simple_di import Provide
 from rich.panel import Panel
 from rich.console import Group
-from rich.console import ConsoleRenderable
-from rich.progress import TaskID
 from rich.progress import Progress
 from rich.progress import BarColumn
 from rich.progress import TextColumn
@@ -61,6 +58,12 @@ from ..yatai_rest_api_client.schemas import CreateModelRepositorySchema
 from ..yatai_rest_api_client.schemas import CompleteMultipartUploadSchema
 from ..yatai_rest_api_client.schemas import PreSignMultipartUploadUrlSchema
 
+if t.TYPE_CHECKING:
+    from concurrent.futures import Future
+
+    from rich.progress import TaskID
+
+
 FILE_CHUNK_SIZE = 100 * 1024 * 1024  # 100Mb
 
 
@@ -86,7 +89,7 @@ class ObjectWrapper(object):
         self.wrapper_setattr("_wrapped", wrapped)
 
 
-class _CallbackIOWrapper(ObjectWrapper):
+class CallbackIOWrapper(ObjectWrapper):
     def __init__(
         self,
         callback: t.Callable[[int], None],
@@ -121,55 +124,26 @@ class _CallbackIOWrapper(ObjectWrapper):
             raise KeyError("Can only wrap read/write methods")
 
 
-# Just make type checker happy
-class BinaryIOCast(io.BytesIO):
-    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        ...
-
-
-CallbackIOWrapper: type[BinaryIOCast] = t.cast("type[BinaryIOCast]", _CallbackIOWrapper)
-
-
-# Just make type checker happy
-class ProgressCast(Progress):
-    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        ...
-
-    def __rich__(self) -> t.Union[ConsoleRenderable, str]:  # pragma: no cover
-        ...
-
-
-ProgressWrapper: type[ProgressCast] = t.cast("type[ProgressCast]", ObjectWrapper)
-
-
 class YataiClient:
-    log_progress = ProgressWrapper(
-        Progress(
-            TextColumn("{task.description}"),
-        )
+    log_progress = Progress(TextColumn("{task.description}"))
+
+    spinner_progress = Progress(
+        TextColumn("  "),
+        TimeElapsedColumn(),
+        TextColumn("[bold purple]{task.fields[action]}"),
+        SpinnerColumn("simpleDots"),
     )
 
-    spinner_progress = ProgressWrapper(
-        Progress(
-            TextColumn("  "),
-            TimeElapsedColumn(),
-            TextColumn("[bold purple]{task.fields[action]}"),
-            SpinnerColumn("simpleDots"),
-        )
-    )
-
-    transmission_progress = ProgressWrapper(
-        Progress(
-            TextColumn("[bold blue]{task.description}", justify="right"),
-            BarColumn(bar_width=None),
-            "[progress.percentage]{task.percentage:>3.1f}%",
-            "•",
-            DownloadColumn(),
-            "•",
-            TransferSpeedColumn(),
-            "•",
-            TimeRemainingColumn(),
-        )
+    transmission_progress = Progress(
+        TextColumn("[bold blue]{task.description}", justify="right"),
+        BarColumn(bar_width=None),
+        "[progress.percentage]{task.percentage:>3.1f}%",
+        "•",
+        DownloadColumn(),
+        "•",
+        TransferSpeedColumn(),
+        "•",
+        TimeRemainingColumn(),
     )
 
     progress_group = Group(
@@ -325,9 +299,6 @@ class YataiClient:
                     presigned_upload_url = remote_bento.presigned_upload_url
 
         with io.BytesIO() as tar_io:
-            bento_dir_path = bento.path
-            if bento_dir_path is None:
-                raise BentoMLException(f'Bento "{bento}" path cannot be None')
             with self.spin(text=f'Creating tar archive for bento "{bento.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
 
@@ -340,7 +311,7 @@ class YataiClient:
                             return None
                         return tar_info
 
-                    tar.add(bento_dir_path, arcname="./", filter=filter_)
+                    tar.add(bento.path, arcname="./", filter=filter_)
             tar_io.seek(0, 0)
 
             with self.spin(text=f'Start uploading bento "{bento.tag}"..'):
@@ -361,11 +332,7 @@ class YataiClient:
                 with io_mutex:
                     self.transmission_progress.update(upload_task_id, advance=x)
 
-            wrapped_file = CallbackIOWrapper(
-                io_cb,
-                tar_io,
-                "read",
-            )
+            wrapped_file = CallbackIOWrapper(io_cb, tar_io, "read")
 
             if transmission_strategy == "proxy":
                 try:
@@ -445,9 +412,7 @@ class YataiClient:
 
                             with io.BytesIO(chunk) as chunk_io:
                                 wrapped_file = CallbackIOWrapper(
-                                    io_cb,
-                                    chunk_io,
-                                    "read",
+                                    io_cb, chunk_io, "read"
                                 )
 
                                 resp = requests.put(
@@ -785,10 +750,9 @@ class YataiClient:
                     presigned_upload_url = remote_model.presigned_upload_url
 
         with io.BytesIO() as tar_io:
-            bento_dir_path = model.path
             with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
-                    tar.add(bento_dir_path, arcname="./")
+                    tar.add(model.path, arcname="./")
             tar_io.seek(0, 0)
             with self.spin(text=f'Start uploading model "{model.tag}"..'):
                 yatai_rest_client.start_upload_model(
@@ -809,11 +773,7 @@ class YataiClient:
                 with io_mutex:
                     self.transmission_progress.update(upload_task_id, advance=x)
 
-            wrapped_file = CallbackIOWrapper(
-                io_cb,
-                tar_io,
-                "read",
-            )
+            wrapped_file = CallbackIOWrapper(io_cb, tar_io, "read")
             if transmission_strategy == "proxy":
                 try:
                     yatai_rest_client.upload_model(

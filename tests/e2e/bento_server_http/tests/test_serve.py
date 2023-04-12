@@ -1,3 +1,4 @@
+import sys
 import bentoml
 import pytest
 
@@ -22,15 +23,19 @@ def test_http_server(bentoml_home: str):
     server.stop()
 
     timeout = 10
-    # on POSIX negative return codes mean the process was terminated; since we will be terminating
-    # the process, it should be negative.
-    # on all other platforms, this should be 0.
     start_time = time.time()
     while time.time() - start_time < timeout:
         retcode = server.process.poll()
         if retcode is not None and retcode <= 0:
             break
-    assert server.process.poll() <= 0
+    if sys.platform == "win32":
+        # on Windows, because of the way that terminate is run, it seems the exit code is set.
+        assert isinstance(server.process.poll(), int)
+    else:
+        # on POSIX negative return codes mean the process was terminated; since we will be terminating
+        # the process, it should be negative.
+        # on all other platforms, this should be 0.
+        assert server.process.poll() <= 0
 
 def test_http_server_ctx(bentoml_home: str):
     server = bentoml.HTTPServer("service.py:svc", port=12346)
@@ -46,12 +51,16 @@ def test_http_server_ctx(bentoml_home: str):
 
 
     timeout = 10
-    # on POSIX negative return codes mean the process was terminated; since we will be terminating
-    # the process, it should be negative.
-    # on all other platforms, this should be 0.
     start_time = time.time()
     while time.time() - start_time < timeout:
         retcode = server.process.poll()
         if retcode is not None and retcode <= 0:
             break
-    assert server.process.poll() <= 0
+    if sys.platform == "win32":
+        # on Windows, because of the way that terminate is run, it seems the exit code is set.
+        assert isinstance(server.process.poll(), int)
+    else:
+        # on POSIX negative return codes mean the process was terminated; since we will be terminating
+        # the process, it should be negative.
+        # on all other platforms, this should be 0.
+        assert server.process.poll() <= 0

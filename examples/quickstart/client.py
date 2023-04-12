@@ -1,4 +1,5 @@
 import logging
+
 import numpy as np
 
 from bentoml import HTTPServer
@@ -7,7 +8,7 @@ from bentoml.client import Client
 logging.basicConfig(level=logging.WARN)
 
 if __name__ == "__main__":
-    server  = HTTPServer("iris_classifier:latest", production=True, port=3000)
+    server = HTTPServer("iris_classifier:latest", production=True, port=3000)
 
     # Start the server in a separate process and connect to it using a client
     with server.start() as client:

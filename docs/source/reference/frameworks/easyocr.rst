@@ -9,12 +9,6 @@ EasyOCR
    how to use EasyOCR in BentoML.
 
 
-.. note::
-
-   You can find more examples for **EasyOCR** in our
-   :examples:`BentoML/examples <>` directory.
-
-
 .. currentmodule:: bentoml.easyocr
 
 .. autofunction:: bentoml.easyocr.save_model

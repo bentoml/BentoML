@@ -63,6 +63,10 @@ projects in the `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/
         :link: /frameworks/detectron
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/frameworks/easyocr`
+        :link: /frameworks/easyocr
+        :link-type: doc
+
 
 Custom Models
 -------------

@@ -17,13 +17,13 @@ Install python packages required for running this project:
 pip install -r ./requirements.txt
 ```
 
-### Model Warmup
+### Model download
 
-Firstly, we will run a warmup step to save all required models to BentoML model
-store, via `warmup.py` script:
+Firstly, we will run a script to save all required models to BentoML model
+store:
 
 ```bash
-python3 warmup.py
+python3 download_model.py
 ```
 
 This will save required models in the BentoML local model store, a new version

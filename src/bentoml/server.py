@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
-
 from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.configuration.containers import BentoMLContainer

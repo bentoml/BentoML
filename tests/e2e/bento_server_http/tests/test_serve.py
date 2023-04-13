@@ -1,9 +1,8 @@
 import sys
-import bentoml
-import pytest
-
 import time
-import os
+
+
+import bentoml
 
 
 def test_http_server(bentoml_home: str):

@@ -206,7 +206,9 @@ class JSON(
                 "JSON argument 'sample' only support with typed_dict if you want to set sample "
                 "use JSON.from_sample()"
             )
-        if typed_dict and typed_dict is not dict:  # there is no way to check isinstance TypedDict in runtime
+        if (
+            typed_dict and typed_dict is not dict
+        ):  # there is no way to check isinstance TypedDict in runtime
             assert issubclass(
                 typed_dict, dict
             ), "'typed_dict' must be a subclass of 'typing.TypedDict or dict'."

@@ -31,7 +31,7 @@ class HTTPClient(Client):
     def wait_until_server_ready(
         host: str,
         port: int,
-        timeout: int = 30,
+        timeout: float = 30,
         check_interval: int = 1,
         # set kwargs here to omit gRPC kwargs
         **kwargs: t.Any,
@@ -74,7 +74,7 @@ class HTTPClient(Client):
             ConnectionRefusedError,
             TimeoutError,
         ) as err:
-            logger.error("Caught exception while connecting to %s:%s:", host, port)
+            logger.error("Timed out while connecting to %s:%s:", host, port)
             logger.error(err)
             raise
 

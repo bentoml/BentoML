@@ -137,7 +137,7 @@ class GrpcClient(Client):
     def wait_until_server_ready(
         host: str,
         port: int,
-        timeout: int = 30,
+        timeout: float = 30,
         check_interval: int = 1,
         # set kwargs here to omit gRPC kwargs
         **kwargs: t.Any,

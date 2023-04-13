@@ -42,7 +42,14 @@ def fixture_server_config_file(request: FixtureRequest) -> str:
     return os.path.join(PROJECT_DIR, "configs", request.param)
 
 
-@pytest.mark.usefixtures("change_test_dir")
+@pytest.fixture(autouse=True, scope="package")
+def bento_directory(request):
+    bento_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    os.chdir(bento_path)
+    yield
+    os.chdir(request.config.invocation_dir)
+
+
 @pytest.fixture(scope="session")
 def host(
     bentoml_home: str,

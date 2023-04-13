@@ -4,8 +4,6 @@ import typing as t
 import logging
 from types import ModuleType
 
-import cloudpickle
-
 import bentoml
 
 from ..tag import Tag
@@ -21,7 +19,7 @@ from ..models.model import PartialKwargsModelOptions as ModelOptions
 from ..runner.utils import Params
 from .common.pytorch import torch
 from .common.pytorch import inference_mode_ctx
-from .common.pytorch import PyTorchTensorContainer
+from .common.pytorch import PyTorchTensorContainer  # noqa # type: ignore
 
 try:
     import detectron2.config as Cf
@@ -42,13 +40,12 @@ else:
     nn = LazyLoader("nn", globals(), "torch.nn")
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get", "PyTorchTensorContainer"]
+__all__ = ["load_model", "save_model", "get_runnable", "get"]
 
 MODULE_NAME = "bentoml.detectron"
 API_VERSION = "v1"
 MODEL_FILENAME = "saved_model"
 DETECTOR_EXTENSION = ".pth"
-DETECTOR_CFG_FILENAME = "detector_cfgnode.pkl"
 
 
 logger = logging.getLogger(__name__)
@@ -82,29 +79,9 @@ def get(tag_like: str | Tag) -> Model:
     return model
 
 
-@t.overload
 def load_model(
-    bento_model: str | Tag | Model,
-    device_id: str | None = ...,
-    return_cfg: t.Literal[False] = ...,
-) -> nn.Module:
-    ...
-
-
-@t.overload
-def load_model(
-    bento_model: str | Tag | Model,
-    device_id: str | None = ...,
-    return_cfg: t.Literal[True] = ...,
-) -> tuple[nn.Module, Cf.CfgNode]:
-    ...
-
-
-def load_model(
-    bento_model: str | Tag | Model,
-    device_id: str | None = "cpu",
-    return_cfg: bool = False,
-) -> E.DefaultPredictor | nn.Module | tuple[nn.Module, Cf.CfgNode]:
+    bento_model: str | Tag | Model, device_id: str | None = "cpu"
+) -> E.DefaultPredictor | nn.Module:
     """
     Load the detectron2 model from BentoML local model store with given name.
 
@@ -113,13 +90,11 @@ def load_model(
                      or a BentoML :class:`~bentoml.Model` instance to load the
                      model from.
         device_id: The device to load the model to. Default to "cpu".
-        return_cfg: Whether to return the config node of the model. Default to False.
 
     Returns:
         One of the following:
         - ``detectron2.engine.DefaultPredictor`` if the the checkpointables is saved as a Predictor.
-        - ``torch.nn.Module`` if the checkpointables is saved as a nn.Module and ``return_cfg`` is False
-        - ``torch.nn.Module`` and ``detectron2.config.CfgNode`` if the checkpointables is saved as a nn.Module and ``return_cfg`` is True
+        - ``torch.nn.Module`` if the checkpointables is saved as a nn.Module
 
     Example:
 
@@ -129,7 +104,6 @@ def load_model(
         predictor = bentoml.detectron2.load_model('predictor:latest')
 
         model = bentoml.detectron2.load_model('model:latest')
-        model, cfg = bentoml.detectron2.load_model('model:latest', return_cfg=True)
     """
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
@@ -138,8 +112,8 @@ def load_model(
         raise NotFound(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
-    with open(bento_model.path_of(DETECTOR_CFG_FILENAME), "rb") as f:
-        cfg = cloudpickle.load(f)
+
+    cfg = bento_model.custom_objects["config"]
     cfg.MODEL.DEVICE = device_id
 
     metadata = bento_model.info.metadata
@@ -151,9 +125,6 @@ def load_model(
         C.DetectionCheckpointer(model).load(
             bento_model.path_of(f"{MODEL_FILENAME}{DETECTOR_EXTENSION}")
         )
-        if return_cfg:
-            return model, cfg
-
         return model
 
 
@@ -251,6 +222,26 @@ def save_model(
 
     metadata["_is_predictor"] = isinstance(checkpointables, E.DefaultPredictor)
 
+    if custom_objects is None:
+        custom_objects = {}
+
+    if isinstance(checkpointables, nn.Module):
+        if config is None:
+            raise ValueError(
+                "config is required when 'checkpointables' is a derived 'torch.nn.Module'."
+            )
+        model = checkpointables
+        model.eval()
+    else:
+        model = checkpointables.model
+        if config is not None:
+            logger.warning(
+                "config is ignored when 'checkpointables' is a 'DefaultPredictor'."
+            )
+        config = t.cast(Cf.CfgNode, checkpointables.cfg)
+
+    custom_objects["config"] = config
+
     with bentoml.models.create(
         name,
         module=MODULE_NAME,
@@ -263,24 +254,8 @@ def save_model(
         external_modules=external_modules,
         metadata=metadata,
     ) as bento_model:
-        if isinstance(checkpointables, nn.Module):
-            if config is None:
-                raise ValueError(
-                    "config is required when 'checkpointables' is a derived 'torch.nn.Module'."
-                )
-            model = checkpointables
-            model.eval()
-        else:
-            model = checkpointables.model
-            if config is not None:
-                logger.warning(
-                    "config is ignored when 'checkpointables' is a 'DefaultPredictor'."
-                )
-            config = t.cast(Cf.CfgNode, checkpointables.cfg)
         checkpointer = C.Checkpointer(model, save_dir=bento_model.path)
         checkpointer.save(MODEL_FILENAME)
-        with open(bento_model.path_of(DETECTOR_CFG_FILENAME), "wb") as f:
-            cloudpickle.dump(config, f)
         return bento_model
 
 
@@ -304,11 +279,12 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
             else:
                 self.device_id = "cpu"
 
-            self.model = load_model(
-                bento_model, device_id=self.device_id, return_cfg=False
-            )
+            self.model = load_model(bento_model, device_id=self.device_id)
+
             if not is_predictor:
-                self.model.train(False)
+                # This predictor is a torch.nn.Module
+                self.model.train(False)  # type: ignore
+
             self.is_predictor = is_predictor
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}

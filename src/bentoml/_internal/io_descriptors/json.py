@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import sys
 import json
 import typing as t
 import logging
 import dataclasses
-
-import sys
 
 if sys.version_info >= (3, 9, 2):
     from typing import TypedDict

@@ -5,6 +5,13 @@ import typing as t
 import logging
 import dataclasses
 
+from pydantic import create_model_from_typeddict
+
+try:
+    from typing import TypedDict
+except:
+    from typing_extensions import TypedDict
+
 import attr
 from starlette.requests import Request
 from starlette.responses import Response
@@ -180,6 +187,8 @@ class JSON(
         self,
         *,
         pydantic_model: t.Type[pydantic.BaseModel] | None = None,
+        typed_dict: t.Type[TypedDict] | None = None,
+        sample: JSONType | None = None,
         validate_json: bool | None = None,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
@@ -192,6 +201,17 @@ class JSON(
                 pydantic_model, pydantic.BaseModel
             ), "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
 
+        if not typed_dict and sample:
+            raise BadInput(
+                "JSON argument 'sample' only support with typed_dict if you want to set sample "
+                "use JSON.from_sample()"
+            )
+        if typed_dict and typed_dict is not dict:  # there is no way to check isinstance TypedDict in runtime
+            assert issubclass(
+                typed_dict, dict
+            ), "'typed_dict' must be a subclass of 'typing.TypedDict or dict'."
+
+        self._typed_dict = typed_dict
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder
 
@@ -300,8 +320,19 @@ class JSON(
         return JSONType
 
     def openapi_schema(self) -> Schema:
-        if not self._pydantic_model:
+        if not self._pydantic_model and not self._typed_dict:
             return Schema(type="object")
+        elif not self._pydantic_model:
+            _model = create_model_from_typeddict(self._typed_dict)
+            return Schema(
+                **schema.model_process_schema(
+                    _model,
+                    model_name_map=schema.get_model_name_map(
+                        schema.get_flat_models_from_model(_model)
+                    ),
+                    ref_prefix=REF_PREFIX,
+                )[0]
+            )
 
         # returns schemas from pydantic_model.
         return Schema(

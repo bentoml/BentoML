@@ -1,8 +1,6 @@
-import bentoml
-import pytest
-
 import time
-import os
+
+import bentoml
 
 
 def test_http_server(bentoml_home: str):
@@ -32,6 +30,7 @@ def test_http_server(bentoml_home: str):
             break
     assert server.process.poll() <= 0
 
+
 def test_http_server_ctx(bentoml_home: str):
     server = bentoml.HTTPServer("service.py:svc", port=12346)
 
@@ -43,7 +42,6 @@ def test_http_server_ctx(bentoml_home: str):
         res = client.echo_json_sync({"more_test": "and more json"})
 
         assert res == {"more_test": "and more json"}
-
 
     timeout = 10
     # on POSIX negative return codes mean the process was terminated; since we will be terminating

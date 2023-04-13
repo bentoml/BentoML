@@ -16,7 +16,6 @@ __all__ = [
     "Image",
     "IODescriptor",
     "JSON",
-    "TypedJSON",
     "Multipart",
     "NumpyNdarray",
     "PandasDataFrame",

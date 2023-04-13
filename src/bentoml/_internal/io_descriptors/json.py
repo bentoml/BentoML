@@ -5,11 +5,11 @@ import typing as t
 import logging
 import dataclasses
 
-from pydantic import create_model_from_typeddict
+import sys
 
-try:
+if sys.version_info >= (3, 9, 2):
     from typing import TypedDict
-except:
+else:
     from typing_extensions import TypedDict
 
 import attr
@@ -213,7 +213,12 @@ class JSON(
                 typed_dict, dict
             ), "'typed_dict' must be a subclass of 'typing.TypedDict or dict'."
 
-        self._typed_dict = typed_dict
+        if typed_dict:
+            from pydantic import create_model_from_typeddict
+
+            self._typed_dict_model = create_model_from_typeddict(typed_dict)
+        else:
+            self._typed_dict_model = None
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder
 
@@ -322,15 +327,14 @@ class JSON(
         return JSONType
 
     def openapi_schema(self) -> Schema:
-        if not self._pydantic_model and not self._typed_dict:
+        if not self._pydantic_model and not self._typed_dict_model:
             return Schema(type="object")
-        elif not self._pydantic_model:
-            _model = create_model_from_typeddict(self._typed_dict)
+        elif self._typed_dict_model:
             return Schema(
                 **schema.model_process_schema(
-                    _model,
+                    self._typed_dict_model,
                     model_name_map=schema.get_model_name_map(
-                        schema.get_flat_models_from_model(_model)
+                        schema.get_flat_models_from_model(self._typed_dict_model)
                     ),
                     ref_prefix=REF_PREFIX,
                 )[0]

@@ -6,6 +6,8 @@ import logging
 import dataclasses
 
 import attr
+from typing_extensions import TypedDict
+from typing_extensions import is_typeddict
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -19,6 +21,7 @@ from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ..service.openapi import REF_PREFIX
 from ..service.openapi import SUCCESS_DESCRIPTION
+from ..service.openapi.utils import typed_dict_to_schema
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
@@ -45,7 +48,7 @@ else:
     np = LazyLoader("np", globals(), "numpy")
 
 
-JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", None]
+JSONType = t.Union[str, t.Dict[str, t.Any], TypedDict, "pydantic.BaseModel", None]
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +87,7 @@ class JSON(
 
     .. code-block:: python
        :caption: `service.py`
+       # pydantic Example
 
        from __future__ import annotations
 
@@ -127,6 +131,51 @@ class JSON(
 
            input_df = pd.DataFrame([input_data.dict(exclude={"request_id"})])
            return iris_clf_runner.run(input_df)
+
+        :caption: `service.py`
+        # TypedDict example
+        from __future__ import annotations
+        from typing import List, Union
+        # from typing_extensions import TypedDict # version >= 3.8
+        from typing import TypedDict  # version >= py3.9
+
+        import pandas as pd
+        from typing_extensions import NotRequired # version < py3.11
+        # from typing import NotRequired # version >= 3.11
+
+        import bentoml
+        from bentoml.io import JSON
+
+        iris_clf_runner = bentoml.sklearn.get("iris_clf_with_feature_names:latest").to_runner()
+
+        svc = bentoml.Service("i_am_iris_classifier_typeddict", runners=[iris_clf_runner])
+
+
+        class IrisFeatures(TypedDict, total=False):
+            sepal_len: Union[float, int]
+            sepal_width: float
+            petal_len: float | int
+            petal_width: float
+
+            request_id: NotRequired[int]
+            # use NotRequired instead of Optional
+            # Optional is rejected Spec in TypedDict (https://peps.python.org/pep-0655/#special-syntax-around-the-key-of-a-typeddict-item)
+
+        class Response(TypedDict):
+            result: List[int]
+
+
+        @svc.api(input=JSON(typeddict=IrisFeatures), output=JSON(typeddict=Response))
+        async def classify(input_data: IrisFeatures) -> Response:
+            if input_data.get("request_id") is not None:
+                print("Received request ID: ", input_data["request_id"])
+
+            input_data.pop("request_id")
+            input_df = pd.DataFrame([input_data])
+            result = await iris_clf_runner.predict.async_run(input_df)
+
+            # it is same to 'return { "result": result.tolist() }'
+            return Response(result=result.tolist())
 
     Users then can then serve this service with :code:`bentoml serve`:
 
@@ -180,6 +229,7 @@ class JSON(
         self,
         *,
         pydantic_model: t.Type[pydantic.BaseModel] | None = None,
+        typeddict: t.Type[t.TypedDict] | None = None,
         validate_json: bool | None = None,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
@@ -192,6 +242,10 @@ class JSON(
                 pydantic_model, pydantic.BaseModel
             ), "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
 
+        if typeddict and is_typeddict(typeddict) is False:
+            raise BadInput("'typeddict' must be inherited 'TypedDict'.")
+
+        self._typeddict = typeddict
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder
 
@@ -300,10 +354,10 @@ class JSON(
         return JSONType
 
     def openapi_schema(self) -> Schema:
-        if not self._pydantic_model:
+        if not self._pydantic_model and not self._typeddict:
             return Schema(type="object")
-
-        # returns schemas from pydantic_model.
+        elif self._typeddict:
+            return typed_dict_to_schema(typeddict=self._typeddict)
         return Schema(
             **schema.model_process_schema(
                 self._pydantic_model,
@@ -315,12 +369,16 @@ class JSON(
         )
 
     def openapi_components(self) -> dict[str, t.Any] | None:
-        if not self._pydantic_model:
+        if not self._pydantic_model and not self._typeddict:
             return {}
+        elif self._pydantic_model:
+            from ..service.openapi.utils import pydantic_components_schema
 
-        from ..service.openapi.utils import pydantic_components_schema
+            return {"schemas": pydantic_components_schema(self._pydantic_model)}
+        elif self._typeddict:
+            from ..service.openapi.utils import typeddict_components_schema
 
-        return {"schemas": pydantic_components_schema(self._pydantic_model)}
+            return {"schemas": typeddict_components_schema(self._typeddict)}
 
     def openapi_example(self):
         if self.sample is not None:

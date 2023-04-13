@@ -62,6 +62,12 @@ else:
     from typing import get_args
     from typing import get_origin
 
+if sys.version_info < (3, 11):
+    from typing_extensions import is_typeddict
+else:
+    from typing import is_typeddict
+
+
 __all__ = [
     "MetadataType",
     "MetadataDict",
@@ -263,6 +269,8 @@ def is_compatible_type(t1: AnyType, t2: AnyType) -> bool:
     Note: this will resolve ``LazyType``s, so should not be used in any
     peformance-critical contexts.
     """
+    if is_typeddict(t2):
+        return True
     if get_origin(t1) is t.Union:
         return any((is_compatible_type(t2, arg_type) for arg_type in get_args(t1)))
 

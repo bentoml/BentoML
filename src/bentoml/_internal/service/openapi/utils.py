@@ -1,8 +1,39 @@
 from __future__ import annotations
 
+import sys
 import typing as t
 from typing import TYPE_CHECKING
 from functools import lru_cache
+
+if sys.version_info >= (3, 10):
+
+    from types import UnionType
+
+    def is_union(tp):  # check Union[A,B] or A | B
+        return tp == t.Union or get_origin(tp) == UnionType
+
+else:
+
+    def is_union(tp):  # check Union[A,B]
+        return tp == t.Union
+
+
+if sys.version_info >= (3, 11):
+    from typing import get_args
+    from typing import Required
+    from typing import TypedDict
+    from typing import get_origin
+    from typing import NotRequired
+    from typing import is_typeddict
+    from typing import get_type_hints
+else:
+    from typing_extensions import get_args
+    from typing_extensions import Required
+    from typing_extensions import TypedDict
+    from typing_extensions import get_origin
+    from typing_extensions import NotRequired
+    from typing_extensions import get_type_hints
+    from typing_extensions import is_typeddict
 
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import InvalidArgument
@@ -10,6 +41,7 @@ from bentoml.exceptions import InternalServerError
 
 from ...utils import LazyLoader
 from .specification import Schema
+from .specification import Reference
 
 if TYPE_CHECKING:
     import pydantic
@@ -43,6 +75,33 @@ def pydantic_components_schema(pydantic_model: t.Type[pydantic.BaseModel]):
     return {k: Schema(**definitions[k]) for k in sorted(definitions)}
 
 
+def typeddict_components_schema(typeddict: t.Type[TypedDict]):
+    typeddict_set = get_flat_typeddicts_from_typeddict(
+        typeddict=typeddict, typeddict_set=set()
+    )
+    definitions: dict[str, Schema] = {}
+    for typeddict in typeddict_set:
+        definitions[typeddict.__name__] = typed_dict_to_schema(typeddict)
+    return definitions
+
+
+def get_flat_typeddicts_from_typeddict(
+    typeddict: t.Type[TypedDict], typeddict_set: t.Set[t.Type[t.Any]]
+) -> t.Set[t.Type[t.Any]]:
+    typeddict_set.add(typeddict)
+    field_types: t.Dict[str, t.Any] = get_type_hints(typeddict, include_extras=True)
+
+    for _, field_type in field_types.items():
+        if is_typeddict(field_type) is True:
+            typeddict_set.union(
+                get_flat_typeddicts_from_typeddict(
+                    typeddict=field_type, typeddict_set=typeddict_set
+                )
+            )
+
+    return typeddict_set
+
+
 @lru_cache(maxsize=1)
 def exception_components_schema() -> dict[str, Schema]:
     return {
@@ -71,3 +130,93 @@ def exception_schema(ex: t.Type[BentoMLException]) -> t.Iterable[FilledException
 class FilledExceptionSchema(Schema):
     title: str
     description: str
+
+
+def python_type_to_openapi_type(
+    python_type: t.Any, field_name: str
+) -> t.Union[str, dict[str, t.Any] | Reference]:
+    _python_type = getattr(python_type, "__origin__", python_type)
+    if _python_type == int:
+        return {
+            "title": field_name,
+            "type": "integer",
+        }
+    elif _python_type == float:
+        return {
+            "title": field_name,
+            "type": "number",
+        }
+    elif _python_type == bool:
+        return {
+            "title": field_name,
+            "type": "boolean",
+        }
+    elif _python_type == str:
+        return {
+            "title": field_name,
+            "type": "string",
+        }
+    elif is_typeddict(python_type) is True:
+        return Reference(f"{REF_PREFIX}{python_type.__name__}")
+
+    elif _python_type == list or _python_type is set:
+        items_type = python_type_to_openapi_type(python_type.__args__[0], "")["type"]
+        return {"title": field_name, "type": "array", "items": {"type": items_type}}
+    elif _python_type == tuple:
+        items_types = [
+            {"type": python_type_to_openapi_type(_item_type, "")["type"]}
+            for _item_type in python_type.__args__
+        ]
+        return {"title": field_name, "type": "array", "items": items_types}
+    elif _python_type == dict:
+        return {
+            "title": field_name,
+            "type": "object",
+            "additionalProperties": {
+                "type": python_type_to_openapi_type(python_type.__args__[1], "")["type"]
+            },
+        }
+    elif is_union(_python_type):
+        types = [
+            python_type_to_openapi_type(x, "")["type"] for x in python_type.__args__
+        ]
+        return {"oneOf": [{"type": t} for t in types]}
+    elif _python_type == t.Any:
+        return {"title": field_name, "type": "any"}
+    elif _python_type == type(None):
+        return {"title": field_name, "type": "null"}
+    else:
+        return {}
+
+
+def typed_dict_to_schema(typeddict: t.Type[TypedDict]) -> Schema:
+    dict_types: t.Dict[str, t.Any] = get_type_hints(typeddict, include_extras=True)
+    required_fields: t.List[str] = [
+        field_name
+        for field_name, v in dict_types.items()
+        if get_origin(v) is not NotRequired
+    ]
+
+    fields_type: t.Dict[str, t.Any] = {}
+    for field_name, v in dict_types.items():
+        if (get_origin(v) is Required or get_origin(v) is NotRequired) and get_args(v):
+            fields_type[field_name] = python_type_to_openapi_type(
+                get_args(v)[0], field_name
+            )
+        else:
+            fields_type[field_name] = python_type_to_openapi_type(v, field_name)
+
+    return Schema(
+        type="object",
+        title=typeddict.__name__,
+        required=required_fields,
+        properties={
+            field_name: {
+                "title": field_name,
+                "type": field_type,
+            }
+            if isinstance(fields_type, str)
+            else field_type
+            for field_name, field_type in fields_type.items()
+        },
+    )

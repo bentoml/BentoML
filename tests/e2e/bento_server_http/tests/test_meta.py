@@ -35,6 +35,15 @@ async def test_api_server_meta(host: str) -> None:
 
 
 @pytest.mark.asyncio
+async def test_context(host: str):
+    status, _, body = await async_request(
+        "POST", f"http://{host}/use_context?error=yes"
+    )
+    assert status == 400
+    assert body == b"yes"
+
+
+@pytest.mark.asyncio
 async def test_runner_readiness(host: str) -> None:
     timeout = 20
     start_time = time.time()

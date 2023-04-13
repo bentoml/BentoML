@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import typing as t
-
 import torch
 import torch.nn
 import pytorch_lightning as pl
@@ -26,7 +24,7 @@ def generate_models():
             self.linear = torch.nn.Linear(5, 1, bias=False)
             torch.nn.init.ones_(self.linear.weight)
 
-        def forward(self, x: t.Any):
+        def forward(self, x: torch.Tensor):  # noqa
             return self.linear(x)
 
     yield LightningLinearModel()

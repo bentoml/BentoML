@@ -14,6 +14,7 @@ from starlette.requests import Request
 import bentoml
 from bentoml.io import File
 from bentoml.io import JSON
+from bentoml.io import Text
 from bentoml.io import Image
 from bentoml.io import Multipart
 from bentoml.io import NumpyNdarray
@@ -168,6 +169,17 @@ async def predict_different_args(compared: Image, original: Image):
     )
     img = fromarray(output_array)
     return dict(img1=img, img2=img)
+
+
+@svc.api(
+    input=Text(),
+    output=Text(),
+)
+async def use_context(inp: str, ctx: bentoml.Context):
+    if "error" in ctx.request.query_params:
+        ctx.response.status_code = 400
+        return ctx.request.query_params["error"]
+    return inp
 
 
 # customise the service

@@ -84,7 +84,7 @@ jobs:
         run: |
           npm install -g npm@^7 pyright
       - name: Setup bufbuild/buf
-        uses: bufbuild/buf-setup-action@v1.15.1
+        uses: bufbuild/buf-setup-action@v1.17.0
         with:
           github_token: ${{ github.token }}
 
@@ -207,15 +207,6 @@ jobs:
           # Now run the unit tests
           coverage run -m pytest tests/unit "${OPTS[@]}"
 
-      - name: Generage coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   bento_server_e2e_tests:
     needs:
       - diff
@@ -288,15 +279,6 @@ jobs:
         run: |
           OPTS=(--cov-config pyproject.toml --cov=src/bentoml --cov-append)
           coverage run -m pytest tests/e2e/bento_server_${{ matrix.server_type }} "${OPTS[@]}"
-
-      - name: Generage coverage
-        run: coverage xml
-
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}

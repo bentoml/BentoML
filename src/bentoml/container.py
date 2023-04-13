@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 def build(
     bento_tag: Tag | str,
     backend: t.Literal["docker"] = ...,
-    image_tag: tuple[str] | None = ...,
+    image_tag: tuple[str, ...] | None = ...,
     features: t.Sequence[str] | None = ...,
     *,
     file: PathType | None = ...,

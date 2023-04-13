@@ -37,6 +37,7 @@ def test_http_server(bentoml_home: str):
         # on all other platforms, this should be 0.
         assert server.process.poll() <= 0
 
+
 def test_http_server_ctx(bentoml_home: str):
     server = bentoml.HTTPServer("service.py:svc", port=12346)
 
@@ -48,7 +49,6 @@ def test_http_server_ctx(bentoml_home: str):
         res = client.echo_json_sync({"more_test": "and more json"})
 
         assert res == {"more_test": "and more json"}
-
 
     timeout = 10
     start_time = time.time()

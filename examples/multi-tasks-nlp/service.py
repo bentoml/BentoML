@@ -4,10 +4,10 @@ import typing as t
 import asyncio
 
 import pydantic
-from warmup import TEXT
-from warmup import CATEGORIES
-from warmup import MAX_LENGTH
-from warmup import CATEGORICAL_THRESHOLD
+from download_model import TEXT
+from download_model import CATEGORIES
+from download_model import MAX_LENGTH
+from download_model import CATEGORICAL_THRESHOLD
 
 import bentoml
 

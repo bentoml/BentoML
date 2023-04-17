@@ -163,7 +163,7 @@ class HTTPClient(Client):
 
         async with aiohttp.ClientSession(self.server_url) as sess:
             async with sess.post(
-                "/" + api.route,
+                "/" + api.route if not api.route.startswith("/") else api.route,
                 data=req_body,
                 headers={"content-type": fake_resp.headers["content-type"]},
             ) as resp:

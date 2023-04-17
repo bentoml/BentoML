@@ -64,7 +64,7 @@ class Server(ABC):
             sys.executable,
             "-m",
             "bentoml",
-            "serve-http",
+            serve_cmd,
             bento_str,
             "--host",
             host,
@@ -93,7 +93,7 @@ class Server(ABC):
 
     def _create_startmanager(server):  # type: ignore # not calling self self
         class _StartManager:
-            def __init__(self, blocking: bool = False):
+            def __init__(self, blocking: bool = False, **kwargs: t.Any):
                 logger.info(f"starting server with arguments: {server.args}")
 
                 server.process = subprocess.Popen(
@@ -101,6 +101,7 @@ class Server(ABC):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     stdin=subprocess.PIPE,
+                    **kwargs,
                 )
 
                 if blocking:

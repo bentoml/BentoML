@@ -93,7 +93,9 @@ class Server(ABC):
 
     def _create_startmanager(server):  # type: ignore # not calling self self
         class _StartManager:
-            def __init__(self, blocking: bool = False, **kwargs: t.Any):
+            def __init__(
+                self, blocking: bool = False, env: dict[str, str] | None = None
+            ):
                 logger.info(f"starting server with arguments: {server.args}")
 
                 server.process = subprocess.Popen(
@@ -101,7 +103,7 @@ class Server(ABC):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     stdin=subprocess.PIPE,
-                    **kwargs,
+                    env=env,
                 )
 
                 if blocking:

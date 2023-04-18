@@ -24,7 +24,7 @@ from ..utils.metrics import exponential_buckets
 from ..server.base_app import BaseAppFactory
 from ..runner.container import Payload
 from ..runner.container import AutoContainer
-from ..marshal.dispatcher import CorkDispatcher
+from ..marshal.dispatcher import Dispatcher
 from ..configuration.containers import BentoMLContainer
 
 feedback_logger = logging.getLogger("bentoml.feedback")
@@ -53,15 +53,19 @@ class RunnerAppFactory(BaseAppFactory):
         self.worker_index = worker_index
         self.enable_metrics = enable_metrics
 
-        self.dispatchers: dict[str, CorkDispatcher] = {}
+        self.dispatchers: dict[str, Dispatcher] = {}
         for method in runner.runner_methods:
             max_batch_size = method.max_batch_size if method.config.batchable else 1
-            self.dispatchers[method.name] = CorkDispatcher(
+
+            strategy = method.config
+
+            self.dispatchers[method.name] = Dispatcher(
                 max_latency_in_ms=method.max_latency_ms,
-                batching_strategy=method.batching_strategy,
                 max_batch_size=max_batch_size,
+                optimizer=method.optimizer,
+                strategy=method.batching_strategy,
                 fallback=functools.partial(
-                    ServiceUnavailable, message="process is overloaded"
+                    ServiceUnavailable, message="runner process is overloaded"
                 ),
             )
 

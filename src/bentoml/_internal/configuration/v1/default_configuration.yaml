@@ -81,6 +81,9 @@ api_server:
 runners:
   resources: ~
   timeout: 300
+  optimizer:
+    name: linear
+    options: {}
   batching:
     enabled: true
     max_batch_size: 100

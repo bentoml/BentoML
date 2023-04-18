@@ -15,16 +15,20 @@ from ..utils import first_not_none
 from .runnable import Runnable
 from .strategy import Strategy
 from .strategy import DefaultStrategy
+from ...exceptions import BentoMLConfigException
 from ...exceptions import StateException
 from ..models.model import Model
 from .runner_handle import RunnerHandle
 from .runner_handle import DummyRunnerHandle
 from ..configuration.containers import BentoMLContainer
+from ..marshal.dispatcher import OPTIMIZER_REGISTRY
 from ..marshal.dispatcher import BATCHING_STRATEGY_REGISTRY
 
 if t.TYPE_CHECKING:
     from ...triton import Runner as TritonRunner
     from .runnable import RunnableMethodConfig
+    from ..marshal.dispatcher import Optimizer
+    from ..marshal.dispatcher import BatchingStrategy
 
     # only use ParamSpec in type checking, as it's only in 3.10
     P = t.ParamSpec("P")
@@ -49,6 +53,7 @@ class RunnerMethod(t.Generic[T, P, R]):
     config: RunnableMethodConfig
     max_batch_size: int
     max_latency_ms: int
+    optimizer: Optimizer
     batching_strategy: BatchingStrategy
 
     def run(self, *args: P.args, **kwargs: P.kwargs) -> R:
@@ -162,6 +167,7 @@ class Runner(AbstractRunner):
         models: list[Model] | None = None,
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
+        optimizer: Optimizer | None = None,
         batching_strategy: BatchingStrategy | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
     ) -> None:
@@ -182,6 +188,8 @@ class Runner(AbstractRunner):
             max_batch_size: Max batch size config for dynamic batching. If not provided, use the default value from
                             configuration.
             max_latency_ms: Max latency config. If not provided, uses the default value from configuration.
+            optimizer: Optimizer to use to predict runtime for runners. If not provided, uses the default value
+                       from the configuration
             batching_strategy: Batching strategy for dynamic batching. If not provided, uses the default value
                                from the configuration.
             method_configs: A dictionary per method config for this given Runner signatures.
@@ -220,6 +228,7 @@ class Runner(AbstractRunner):
 
             method_max_batch_size = None
             method_max_latency_ms = None
+            method_optimizer = None
             method_batching_strategy = None
             if method_name in method_configs:
                 method_max_batch_size = method_configs[method_name].get(
@@ -227,6 +236,9 @@ class Runner(AbstractRunner):
                 )
                 method_max_latency_ms = method_configs[method_name].get(
                     "max_latency_ms"
+                )
+                method_optimizer = method_configs[method_name].get(
+                    "optimizer"
                 )
                 method_batching_strategy = method_configs[method_name].get(
                     "batching_strategy"
@@ -237,11 +249,26 @@ class Runner(AbstractRunner):
                     f"Unknown batching strategy '{config['batching']['strategy']}'. Available strategies are: {','.join(BATCHING_STRATEGY_REGISTRY.keys())}.",
                 )
 
+            if config["optimizer"]["name"] not in OPTIMIZER_REGISTRY:
+                raise BentoMLConfigException(
+                    f"Unknown optimizer '{config['optimizer']['name']}'. Available optimizers are: {','.join(OPTIMIZER_REGISTRY.keys())}."
+                )
+
+            try:
+                default_optimizer = OPTIMIZER_REGISTRY[
+                    config["optimizer"]["name"]
+                ](config["optimizer"]["options"])
+            except Exception as e:
+                raise BentoMLConfigException(
+                    f"Initializing strategy '{config['optimizer']['name']}' with configured options ({pprint(config['optimizer']['options'])}) failed."
+                ) from e
+
             try:
                 default_batching_strategy = BATCHING_STRATEGY_REGISTRY[
                     config["batching"]["strategy"]
-                ](**config["batching"]["strategy_options"])
+                ](config["batching"]["strategy_options"])
             except Exception as e:
+                raise e
                 raise BentoMLConfigException(
                     f"Initializing strategy '{config['batching']['strategy']}' with configured options ({pprint(config['batching']['strategy_options'])}) failed."
                 ) from e
@@ -260,10 +287,15 @@ class Runner(AbstractRunner):
                     max_latency_ms,
                     default=config["batching"]["max_latency_ms"],
                 ),
+                optimizer=first_not_none(
+                    method_optimizer,
+                    optimizer,
+                    default=default_optimizer,
+                ),
                 batching_strategy=first_not_none(
                     method_batching_strategy,
                     batching_strategy,
-                    default=BATCHING_STRATEGY_REGISTRY[config["batching"]["strategy"]],
+                    default=default_batching_strategy,
                 ),
             )
 

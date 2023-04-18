@@ -49,25 +49,81 @@ class Job:
     dispatch_time: float = 0
 
 
-class Optimizer:
+
+OPTIMIZER_REGISTRY = {}
+
+
+class Optimizer(ABC):
+    optimizer_id: str
+
+    @abstractmethod
+    def __init__(self, options: dict[str, t.Any]):
+        pass
+
+    @abstractmethod
+    def log_outbound(self, n: int, wait: float, duration: float):
+        pass
+
+    @abstractmethod
+    def predict(self, batch_size: int) -> float:
+        pass
+
+    def predict_diff(self, first_batch_size: int, second_batch_size: int) -> float:
+        """
+        Predict the difference
+        """
+        return self.predict(second_batch_size) - self.predict(first_batch_size)
+
+    def __init_subclass__(cls, optimizer_id: str):
+        OPTIMIZER_REGISTRY[optimizer_id] = cls
+        cls.strategy_id = optimizer_id
+
+
+class FixedOptimizer(Optimizer, optimizer_id="fixed"):
+    time: float
+
+    def __init__(self, options: dict[str, t.Any]):
+        if "time_ms" not in options:
+            raise BadInput("Attempted to initialize ")
+        self.time = options["time_ms"]
+
+    def predict(self, batch_size: int):
+        return self.time
+
+
+class LinearOptimizer(Optimizer, optimizer_id="linear"):
     """
     Analyze historical data to predict execution time using a simple linear regression on batch size.
     """
+    o_a: int = 2
+    o_b: int = 1
 
-    N_KEPT_SAMPLE = 50  # amount of outbound info kept for inferring params
-    N_SKIPPED_SAMPLE = 2  # amount of outbound info skipped after init
-    INTERVAL_REFRESH_PARAMS = 5  # seconds between each params refreshing
+    n_kept_sample = 50  # amount of outbound info kept for inferring params
+    n_skipped_sample = 2  # amount of outbound info skipped after init
+    param_refresh_interval = 5  # seconds between each params refreshing
 
-    def __init__(self, max_latency: float):
+    def __init__(self, options: dict[str, t.Any]):
         """
         assume the outbound duration follows duration = o_a * n + o_b
         (all in seconds)
         """
+        for key in options:
+            if key == "initial_slope":
+                self.o_a = options[key]
+            elif key == "initial_intercept":
+                self.o_b = options[key]
+            elif key == "n_kept_sample":
+                self.n_kept_sample = options[key]
+            elif key == "n_skipped_sample":
+                self.n_skipped_sample = options[key]
+            elif key == "param_refresh_interval":
+                self.param_refresh_interval = options[key]
+            else:
+                logger.warning("Strategy 'target_latency' ignoring unknown configuration key '{key}'.")
+
         self.o_stat: collections.deque[tuple[int, float, float]] = collections.deque(
-            maxlen=self.N_KEPT_SAMPLE
+            maxlen=self.n_kept_sample
         )  # to store outbound stat data
-        self.o_a = min(2, max_latency * 2.0 / 30)
-        self.o_b = min(1, max_latency * 1.0 / 30)
 
         self.wait = 0  # the avg wait time before outbound called
 
@@ -75,16 +131,22 @@ class Optimizer:
         self.outbound_counter = 0
 
     def log_outbound(self, n: int, wait: float, duration: float):
-        if self.outbound_counter <= self.N_SKIPPED_SAMPLE + 4:
+        if self.outbound_counter <= self.n_skipped_sample + 4:
             self.outbound_counter += 1
             # skip inaccurate info at beginning
-            if self.outbound_counter <= self.N_SKIPPED_SAMPLE:
+            if self.outbound_counter <= self.n_skipped_sample:
                 return
 
         self.o_stat.append((n, duration, wait))
 
-        if self._refresh_tb.consume(1, 1.0 / self.INTERVAL_REFRESH_PARAMS, 1):
+        if self._refresh_tb.consume(1, 1.0 / self.param_refresh_interval, 1):
             self.trigger_refresh()
+
+    def predict(self, batch_size: int):
+        return self.o_a * batch_size + self.o_b
+
+    def predict_diff(self, first_batch_size: int, second_batch_size: int):
+        return self.o_a * (second_batch_size - first_batch_size)
 
     def trigger_refresh(self):
         x = tuple((i, 1) for i, _, _ in self.o_stat)
@@ -111,11 +173,15 @@ T_OUT = t.TypeVar("T_OUT")
 BATCHING_STRATEGY_REGISTRY = {}
 
 
-class BatchingStrategy(abc.ABC):
+class BatchingStrategy(ABC):
     strategy_id: str
 
-    @abc.abstractmethod
-    def controller(queue: t.Sequence[Job], predict_execution_time: t.Callable[t.Sequence[Job]], dispatch: t.Callable[]):
+    @abstractmethod
+    def __init__(self, optimizer: Optimizer, options: dict[t.Any, t.Any]):
+        pass
+
+    @abstractmethod
+    def wait(self, optimizer: Optimizer, queue: t.Sequence[Job], max_latency: float, max_batch_size: int, tick_interval: float):
         pass
 
     def __init_subclass__(cls, strategy_id: str):
@@ -123,8 +189,8 @@ class BatchingStrategy(abc.ABC):
         cls.strategy_id = strategy_id
 
 
-class TargetLatencyStrategy(strategy_id="target_latency"):
-    latency: float = 1
+class TargetLatencyStrategy(BatchingStrategy, strategy_id="target_latency"):
+    latency: float = 1.
 
     def __init__(self, options: dict[t.Any, t.Any]):
         for key in options:
@@ -133,21 +199,22 @@ class TargetLatencyStrategy(strategy_id="target_latency"):
             else:
                 logger.warning("Strategy 'target_latency' ignoring unknown configuration key '{key}'.")
 
-    async def wait(queue: t.Sequence[Job], optimizer: Optimizer, max_latency: float, max_batch_size: int, tick_interval: float):
+
+    async def wait(self, optimizer: Optimizer, queue: t.Sequence[Job], max_latency: float, max_batch_size: int, tick_interval: float):
         now = time.time()
         w0 = now - queue[0].enqueue_time
-        latency_0 = w0 + optimizer.o_a * n + optimizer.o_b
+        latency_0 = w0 + optimizer.predict(n)
 
         while latency_0 < self.latency:
             n = len(queue)
             now = time.time()
             w0 = now - queue[0].enqueue_time
-            latency_0 = w0 + optimizer.o_a * n + optimizer.o_b
+            latency_0 = w0 + optimizer.predict(n)
 
             await asyncio.sleep(tick_interval)
 
 
-class AdaptiveStrategy(strategy_id="adaptive"):
+class AdaptiveStrategy(BatchingStrategy, strategy_id="adaptive"):
     decay: float = 0.95
 
     def __init__(self, options: dict[t.Any, t.Any]):
@@ -155,25 +222,26 @@ class AdaptiveStrategy(strategy_id="adaptive"):
             if key == "decay":
                 self.decay = options[key]
             else:
-                logger.warning("Strategy 'intelligent_wait' ignoring unknown configuration value")
+                logger.warning("Strategy 'adaptive' ignoring unknown configuration value")
 
-    async def wait(queue: t.Sequence[Job], optimizer: Optimizer, max_latency: float, max_batch_size: int, tick_interval: float):
+    async def wait(self, optimizer: Optimizer, queue: t.Sequence[Job], max_latency: float, max_batch_size: int, tick_interval: float):
         n = len(queue)
         now = time.time()
+        w0 = now - queue[0].enqueue_time
         wn = now - queue[-1].enqueue_time
-        latency_0 = w0 + optimizer.o_a * n + optimizer.o_b
+        latency_0 = w0 + optimizer.predict(n)
         while (
             # if we don't already have enough requests,
             n < max_batch_size
             # we are not about to cancel the first request,
-            and latency_0 + dt <= self.max_latency * 0.95
+            and latency_0 + tick_interval <= max_latency * 0.95
             # and waiting will cause average latency to decrese
-            and n * (wn + dt + optimizer.o_a) <= optimizer.wait * decay
+            and n * (wn + tick_interval + optimizer.predict_diff(n, n+1)) <= optimizer.wait * self.decay
         ):
             n = len(queue)
             now = time.time()
             w0 = now - queue[0].enqueue_time
-            latency_0 = w0 + optimizer.o_a * n + optimizer.o_b
+            latency_0 = w0 + optimizer.predict(n)
 
             # wait for additional requests to arrive
             await asyncio.sleep(tick_interval)
@@ -185,6 +253,8 @@ class Dispatcher:
         self,
         max_latency_in_ms: int,
         max_batch_size: int,
+        optimizer: Optimizer,
+        strategy: BatchingStrategy,
         shared_sema: t.Optional[NonBlockSema] = None,
         fallback: t.Callable[[], t.Any] | type[t.Any] | None = None,
     ):
@@ -199,7 +269,8 @@ class Dispatcher:
         """
         self.max_latency = max_latency_in_ms / 1000.0
         self.fallback = fallback
-        self.optimizer = Optimizer(self.max_latency)
+        self.optimizer = optimizer
+        self.strategy = strategy
         self.max_batch_size = int(max_batch_size)
         self.tick_interval = 0.001
 
@@ -363,7 +434,7 @@ class Dispatcher:
                     continue
 
                 # we are now free to dispatch whenever we like
-                await self.strategy.wait(self._queue, optimizer, self.max_latency, self.max_batch_size, self.tick_interval)
+                await self.strategy.wait(self.optimizer, self._queue, self.max_latency, self.max_batch_size, self.tick_interval)
 
                 n = len(self._queue)
                 n_call_out = min(self.max_batch_size, n)
@@ -400,7 +471,7 @@ class Dispatcher:
                 if not fut.done():
                     fut.set_result(out)
             _done = True
-            self.optimizer.log_outbound(
+            self.strategy.log_outbound(
                 n=len(inputs_info),
                 wait=_time_start - inputs_info[-1].enqueue_time,
                 duration=time.time() - _time_start,

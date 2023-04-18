@@ -140,6 +140,7 @@ class BentoMLConfiguration:
 
     def _finalize(self):
         RUNNER_CFG_KEYS = [
+            "optimizer",
             "batching",
             "resources",
             "logging",

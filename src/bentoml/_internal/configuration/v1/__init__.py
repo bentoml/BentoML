@@ -138,6 +138,10 @@ _API_SERVER_CONFIG = {
     },
 }
 _RUNNER_CONFIG = {
+    s.Optional("optimizer"): {
+        s.Optional("name"): str,
+        s.Optional("options"): dict,
+    },
     s.Optional("batching"): {
         s.Optional("enabled"): bool,
         s.Optional("max_batch_size"): s.And(int, ensure_larger_than_zero),

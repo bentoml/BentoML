@@ -268,7 +268,6 @@ class Runner(AbstractRunner):
                     config["batching"]["strategy"]
                 ](config["batching"]["strategy_options"])
             except Exception as e:
-                raise e
                 raise BentoMLConfigException(
                     f"Initializing strategy '{config['batching']['strategy']}' with configured options ({pprint(config['batching']['strategy_options'])}) failed."
                 ) from e

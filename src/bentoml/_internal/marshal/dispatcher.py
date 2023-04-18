@@ -124,6 +124,8 @@ class LinearOptimizer(Optimizer, optimizer_id="linear"):
         self.o_stat: collections.deque[tuple[int, float, float]] = collections.deque(
             maxlen=self.n_kept_sample
         )  # to store outbound stat data
+        self.o_a = min(2, max_latency * 2.0 / 30)
+        self.o_b = min(1, max_latency * 1.0 / 30)
 
         self.wait = 0  # the avg wait time before outbound called
 

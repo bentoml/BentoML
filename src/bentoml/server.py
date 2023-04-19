@@ -96,6 +96,18 @@ class Server(ABC):
             def __init__(
                 self, blocking: bool = False, env: dict[str, str] | None = None
             ):
+                """Start the server programmatically.
+
+                To get the client, use the context manager.
+
+                .. note::
+
+                   ``blocking=True`` and using ``start()`` as a context manager is mutually exclusive.
+
+                Args:
+                    blocking: If True, the server will block until it is stopped.
+                    env: A dictionary of environment variables to pass to the server. Default to ``None``.
+                """
                 logger.info(f"starting server with arguments: {server.args}")
 
                 server.process = subprocess.Popen(

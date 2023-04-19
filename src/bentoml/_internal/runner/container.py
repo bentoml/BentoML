@@ -1,23 +1,15 @@
 from __future__ import annotations
 
 import abc
-import sys
 import base64
+import pickle
 import typing as t
 import itertools
 
-from simple_di import inject
-from simple_di import Provide
-
 from ..types import LazyType
 from ..utils import LazyLoader
-from ..configuration.containers import BentoMLContainer
-
-if sys.version_info < (3, 8):
-    import pickle5 as pickle
-else:
-    import pickle
-
+from ..utils.pickle import pep574_dumps
+from ..utils.pickle import pep574_loads
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
@@ -41,7 +33,7 @@ else:
 
 class Payload(t.NamedTuple):
     data: bytes
-    meta: dict[str, bool | int | float | str]
+    meta: dict[str, bool | int | float | str | list[int]]
     container: str
     batch_size: int = -1
 
@@ -52,7 +44,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         cls,
         data: bytes,
         batch_size: int,
-        meta: dict[str, bool | int | float | str] | None = None,
+        meta: dict[str, bool | int | float | str | list[int]] | None = None,
     ) -> Payload:
         return Payload(data, meta or {}, container=cls.__name__, batch_size=batch_size)
 
@@ -289,21 +281,23 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         # skip 0-dimensional array
         if batch.shape:
 
-            buffers: list[pickle.PickleBuffer] = []
             if not (batch.flags["C_CONTIGUOUS"] or batch.flags["F_CONTIGUOUS"]):
                 # TODO: use fortan contiguous if it's faster
                 batch = np.ascontiguousarray(batch)
-            bs = pickle.dumps(batch, protocol=5, buffer_callback=buffers.append)
+
+            bs: bytes
+            concat_buffer_bs: bytes
+            indices: list[int]
+            bs, concat_buffer_bs, indices = pep574_dumps(batch)
             bs_str = base64.b64encode(bs).decode("ascii")
-            buffer_bs = buffers[0].raw().tobytes()
-            # release memory
-            buffers[0].release()
+
             return cls.create_payload(
-                buffer_bs,
+                concat_buffer_bs,
                 batch.shape[batch_dim],
                 {
                     "format": "pickle5",
-                    "pickle_bytes": bs_str,
+                    "pickle_bytes_str": bs_str,
+                    "indices": indices,
                 },
             )
 
@@ -320,10 +314,10 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
     ) -> ext.NpNDArray:
         format = payload.meta.get("format", "default")
         if format == "pickle5":
-            bs_str = payload.meta["pickle_bytes"]
+            bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
             bs = base64.b64decode(bs_str)
-            recovered_buffers = [pickle.PickleBuffer(payload.data)]
-            return pickle.loads(bs, buffers=recovered_buffers)
+            indices = t.cast(t.List[int], payload.meta["indices"])
+            return t.cast("ext.NpNDArray", pep574_loads(bs, payload.data, indices))
 
         return pickle.loads(payload.data)
 
@@ -340,7 +334,6 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         return payloads
 
     @classmethod
-    @inject
     def from_batch_payloads(
         cls,
         payloads: t.Sequence[Payload],
@@ -387,12 +380,10 @@ class PandasDataFrameContainer(
         ]
 
     @classmethod
-    @inject
     def to_payload(
         cls,
         batch: ext.PdDataFrame | ext.PdSeries,
         batch_dim: int,
-        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
         import pandas as pd
 
@@ -403,59 +394,60 @@ class PandasDataFrameContainer(
         if isinstance(batch, pd.Series):
             batch = pd.DataFrame([batch])
 
-        if plasma_db:
-            return cls.create_payload(
-                plasma_db.put(batch).binary(),
-                batch.size,
-                {"plasma": True},
-            )
+        meta: dict[str, bool | int | float | str | list[int]] = {"format": "pickle5"}
+
+        bs: bytes
+        concat_buffer_bs: bytes
+        indices: list[int]
+        bs, concat_buffer_bs, indices = pep574_dumps(batch)
+
+        if indices:
+            meta["with_buffer"] = True
+            data = concat_buffer_bs
+            meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
+            meta["indices"] = indices
+        else:
+            meta["with_buffer"] = False
+            data = bs
 
         return cls.create_payload(
-            pickle.dumps(batch),
+            data,
             batch.size,
-            {"plasma": False},
+            meta=meta,
         )
 
     @classmethod
-    @inject
     def from_payload(
         cls,
         payload: Payload,
-        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> ext.PdDataFrame:
-        if payload.meta.get("plasma"):
-            import pyarrow.plasma as plasma
-
-            assert plasma_db
-            return plasma_db.get(plasma.ObjectID(payload.data))
-
-        return pickle.loads(payload.data)
+        if payload.meta["with_buffer"]:
+            bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
+            bs = base64.b64decode(bs_str)
+            indices = t.cast(t.List[int], payload.meta["indices"])
+            return pep574_loads(bs, payload.data, indices)
+        else:
+            return pep574_loads(payload.data, b"", [])
 
     @classmethod
-    @inject
     def batch_to_payloads(
         cls,
         batch: ext.PdDataFrame,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> list[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
-        payloads = [
-            cls.to_payload(subbatch, batch_dim, plasma_db) for subbatch in batches
-        ]
+        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
         return payloads
 
     @classmethod
-    @inject
     def from_batch_payloads(  # pylint: disable=arguments-differ
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> tuple[ext.PdDataFrame, list[int]]:
-        batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
+        batches = [cls.from_payload(payload) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
 
 
@@ -487,20 +479,45 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     def to_payload(cls, batch: t.Any, batch_dim: int) -> Payload:
         if isinstance(batch, t.Generator):  # Generators can't be pickled
             batch = list(t.cast(t.Generator[t.Any, t.Any, t.Any], batch))
-        if isinstance(batch, list):
-            return cls.create_payload(
-                pickle.dumps(batch), len(t.cast(t.List[t.Any], batch))
-            )
+
+        meta: dict[str, bool | int | float | str | list[int]] = {"format": "pickle5"}
+
+        bs: bytes
+        concat_buffer_bs: bytes
+        indices: list[int]
+        bs, concat_buffer_bs, indices = pep574_dumps(batch)
+
+        if indices:
+            meta["with_buffer"] = True
+            data = concat_buffer_bs
+            meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
+            meta["indices"] = indices
         else:
-            return cls.create_payload(pickle.dumps(batch), 1)
+            meta["with_buffer"] = False
+            data = bs
+
+        if isinstance(batch, list):
+            batch_size = len(t.cast(t.List[t.Any], batch))
+        else:
+            batch_size = 1
+
+        return cls.create_payload(
+            data=data,
+            batch_size=batch_size,
+            meta=meta,
+        )
 
     @classmethod
-    @inject
     def from_payload(cls, payload: Payload) -> t.Any:
-        return pickle.loads(payload.data)
+        if payload.meta["with_buffer"]:
+            bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
+            bs = base64.b64decode(bs_str)
+            indices = t.cast(t.List[int], payload.meta["indices"])
+            return pep574_loads(bs, payload.data, indices)
+        else:
+            return pep574_loads(payload.data, b"", [])
 
     @classmethod
-    @inject
     def batch_to_payloads(
         cls,
         batch: list[t.Any],
@@ -513,7 +530,6 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         return payloads
 
     @classmethod
-    @inject
     def from_batch_payloads(
         cls,
         payloads: t.Sequence[Payload],

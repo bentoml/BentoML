@@ -13,6 +13,17 @@ from bentoml.testing.utils import async_request
 
 
 @pytest.mark.asyncio
+async def test_api_server_load(host: str):
+    for _ in range(20):
+        status, _, _ = await async_request(
+            "POST",
+            f"http://{host}/echo_json",
+            headers={"Content-Type": "application/json"},
+            data='"hi"',
+        )
+
+
+@pytest.mark.asyncio
 async def test_api_server_meta(host: str) -> None:
     status, _, _ = await async_request("GET", f"http://{host}/")
     assert status == 200

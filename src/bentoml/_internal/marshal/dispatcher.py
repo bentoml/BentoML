@@ -439,6 +439,7 @@ class Dispatcher:
                 await self.strategy.wait(self.optimizer, self._queue, self.max_latency, self.max_batch_size, self.tick_interval)
 
                 n = len(self._queue)
+
                 n_call_out = min(self.max_batch_size, n)
                 # call
                 self._sema.acquire()

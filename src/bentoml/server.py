@@ -64,7 +64,7 @@ class Server(ABC):
             sys.executable,
             "-m",
             "bentoml",
-            "serve-http",
+            serve_cmd,
             bento_str,
             "--host",
             host,
@@ -93,7 +93,21 @@ class Server(ABC):
 
     def _create_startmanager(server):  # type: ignore # not calling self self
         class _StartManager:
-            def __init__(self, blocking: bool = False):
+            def __init__(
+                self, blocking: bool = False, env: dict[str, str] | None = None
+            ):
+                """Start the server programmatically.
+
+                To get the client, use the context manager.
+
+                .. note::
+
+                   ``blocking=True`` and using ``start()`` as a context manager is mutually exclusive.
+
+                Args:
+                    blocking: If True, the server will block until it is stopped.
+                    env: A dictionary of environment variables to pass to the server. Default to ``None``.
+                """
                 logger.info(f"starting server with arguments: {server.args}")
 
                 server.process = subprocess.Popen(
@@ -101,6 +115,7 @@ class Server(ABC):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     stdin=subprocess.PIPE,
+                    env=env,
                 )
 
                 if blocking:
@@ -268,8 +283,8 @@ class GrpcServer(Server):
         reload: bool = False,
         production: bool = False,
         env: t.Literal["conda"] | None = None,
-        host: str = Provide[BentoMLContainer.http.host],
-        port: int = Provide[BentoMLContainer.http.port],
+        host: str = Provide[BentoMLContainer.grpc.host],
+        port: int = Provide[BentoMLContainer.grpc.port],
         working_dir: str | None = None,
         api_workers: int | None = Provide[BentoMLContainer.api_server_workers],
         backlog: int = Provide[BentoMLContainer.api_server_config.backlog],

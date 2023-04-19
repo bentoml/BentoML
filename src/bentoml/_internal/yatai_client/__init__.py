@@ -5,12 +5,10 @@ import typing as t
 import tarfile
 import tempfile
 import threading
-from typing import TYPE_CHECKING
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from functools import wraps
 from contextlib import contextmanager
-from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 
 import fs
@@ -20,8 +18,6 @@ from simple_di import inject
 from simple_di import Provide
 from rich.panel import Panel
 from rich.console import Group
-from rich.console import ConsoleRenderable
-from rich.progress import TaskID
 from rich.progress import Progress
 from rich.progress import BarColumn
 from rich.progress import TextColumn
@@ -30,9 +26,6 @@ from rich.progress import DownloadColumn
 from rich.progress import TimeElapsedColumn
 from rich.progress import TimeRemainingColumn
 from rich.progress import TransferSpeedColumn
-
-if TYPE_CHECKING:
-    from typing_extensions import Literal
 
 from ..tag import Tag
 from ..bento import Bento
@@ -65,6 +58,12 @@ from ..yatai_rest_api_client.schemas import CreateModelRepositorySchema
 from ..yatai_rest_api_client.schemas import CompleteMultipartUploadSchema
 from ..yatai_rest_api_client.schemas import PreSignMultipartUploadUrlSchema
 
+if t.TYPE_CHECKING:
+    from concurrent.futures import Future
+
+    from rich.progress import TaskID
+
+
 FILE_CHUNK_SIZE = 100 * 1024 * 1024  # 100Mb
 
 
@@ -90,12 +89,12 @@ class ObjectWrapper(object):
         self.wrapper_setattr("_wrapped", wrapped)
 
 
-class _CallbackIOWrapper(ObjectWrapper):
+class CallbackIOWrapper(ObjectWrapper):
     def __init__(
         self,
         callback: t.Callable[[int], None],
         stream: t.BinaryIO,
-        method: Literal["read", "write"] = "read",
+        method: t.Literal["read", "write"] = "read",
     ):
         """
         Wrap a given `file`-like object's `read()` or `write()` to report
@@ -125,59 +124,26 @@ class _CallbackIOWrapper(ObjectWrapper):
             raise KeyError("Can only wrap read/write methods")
 
 
-# Just make type checker happy
-class BinaryIOCast(io.BytesIO):
-    def __init__(  # pylint: disable=useless-super-delegation
-        self, *args: t.Any, **kwargs: t.Any
-    ) -> None:
-        super().__init__(*args, **kwargs)
-
-
-CallbackIOWrapper: t.Type[BinaryIOCast] = t.cast(
-    t.Type[BinaryIOCast], _CallbackIOWrapper
-)
-
-
-# Just make type checker happy
-class ProgressCast(Progress):
-    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        super().__init__(*args, **kwargs)
-
-    def __rich__(self) -> t.Union[ConsoleRenderable, str]:  # pragma: no cover
-        ...
-
-
-ProgressWrapper: t.Type[ProgressCast] = t.cast(t.Type[ProgressCast], ObjectWrapper)
-
-
 class YataiClient:
-    log_progress = ProgressWrapper(
-        Progress(
-            TextColumn("{task.description}"),
-        )
+    log_progress = Progress(TextColumn("{task.description}"))
+
+    spinner_progress = Progress(
+        TextColumn("  "),
+        TimeElapsedColumn(),
+        TextColumn("[bold purple]{task.fields[action]}"),
+        SpinnerColumn("simpleDots"),
     )
 
-    spinner_progress = ProgressWrapper(
-        Progress(
-            TextColumn("  "),
-            TimeElapsedColumn(),
-            TextColumn("[bold purple]{task.fields[action]}"),
-            SpinnerColumn("simpleDots"),
-        )
-    )
-
-    transmission_progress = ProgressWrapper(
-        Progress(
-            TextColumn("[bold blue]{task.description}", justify="right"),
-            BarColumn(bar_width=None),
-            "[progress.percentage]{task.percentage:>3.1f}%",
-            "•",
-            DownloadColumn(),
-            "•",
-            TransferSpeedColumn(),
-            "•",
-            TimeRemainingColumn(),
-        )
+    transmission_progress = Progress(
+        TextColumn("[bold blue]{task.description}", justify="right"),
+        BarColumn(bar_width=None),
+        "[progress.percentage]{task.percentage:>3.1f}%",
+        "•",
+        DownloadColumn(),
+        "•",
+        TransferSpeedColumn(),
+        "•",
+        TimeRemainingColumn(),
     )
 
     progress_group = Group(
@@ -195,11 +161,11 @@ class YataiClient:
 
     def push_bento(
         self,
-        bento: "Bento",
+        bento: Bento,
         *,
         force: bool = False,
         threads: int = 10,
-        context: t.Optional[str] = None,
+        context: str | None = None,
     ):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
@@ -211,12 +177,12 @@ class YataiClient:
 
     def _do_push_bento(
         self,
-        bento: "Bento",
+        bento: Bento,
         upload_task_id: TaskID,
         *,
         force: bool = False,
         threads: int = 10,
-        context: t.Optional[str] = None,
+        context: str | None = None,
     ):
         yatai_rest_client = get_yatai_rest_api_client(context)
         name = bento.tag.name
@@ -229,7 +195,7 @@ class YataiClient:
         models = (model_store.get(name) for name in model_tags)
         with ThreadPoolExecutor(max_workers=max(len(model_tags), 1)) as executor:
 
-            def push_model(model: "Model") -> None:
+            def push_model(model: Model) -> None:
                 model_upload_task_id = self.transmission_progress.add_task(
                     f'Pushing model "{model.tag}"', start=False, visible=False
                 )
@@ -265,10 +231,10 @@ class YataiClient:
                 f'[bold blue]Push failed: Bento "{bento.tag}" already exists in Yatai'
             )
             return
-        labels: t.List[LabelItemSchema] = [
+        labels: list[LabelItemSchema] = [
             LabelItemSchema(key=key, value=value) for key, value in info.labels.items()
         ]
-        apis: t.Dict[str, BentoApiSchema] = {}
+        apis: dict[str, BentoApiSchema] = {}
         models = [str(m.tag) for m in info.models]
         runners = [
             BentoRunnerSchema(
@@ -333,9 +299,6 @@ class YataiClient:
                     presigned_upload_url = remote_bento.presigned_upload_url
 
         with io.BytesIO() as tar_io:
-            bento_dir_path = bento.path
-            if bento_dir_path is None:
-                raise BentoMLException(f'Bento "{bento}" path cannot be None')
             with self.spin(text=f'Creating tar archive for bento "{bento.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
 
@@ -348,7 +311,7 @@ class YataiClient:
                             return None
                         return tar_info
 
-                    tar.add(bento_dir_path, arcname="./", filter=filter_)
+                    tar.add(bento.path, arcname="./", filter=filter_)
             tar_io.seek(0, 0)
 
             with self.spin(text=f'Start uploading bento "{bento.tag}"..'):
@@ -369,11 +332,7 @@ class YataiClient:
                 with io_mutex:
                     self.transmission_progress.update(upload_task_id, advance=x)
 
-            wrapped_file = CallbackIOWrapper(
-                io_cb,
-                tar_io,
-                "read",
-            )
+            wrapped_file = CallbackIOWrapper(io_cb, tar_io, "read")
 
             if transmission_strategy == "proxy":
                 try:
@@ -422,7 +381,7 @@ class YataiClient:
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int
-                    ) -> FinishUploadBentoSchema | t.Tuple[str, int]:
+                    ) -> FinishUploadBentoSchema | tuple[str, int]:
                         with self.spin(
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of Bento "{bento.tag}"...'
                         ):
@@ -439,7 +398,6 @@ class YataiClient:
                         with self.spin(
                             text=f'({chunk_number}/{chunks_count}) Uploading chunk of Bento "{bento.tag}"...'
                         ):
-
                             chunk = (
                                 tar_io.getbuffer()[
                                     (chunk_number - 1)
@@ -454,9 +412,7 @@ class YataiClient:
 
                             with io.BytesIO(chunk) as chunk_io:
                                 wrapped_file = CallbackIOWrapper(
-                                    io_cb,
-                                    chunk_io,
-                                    "read",
+                                    io_cb, chunk_io, "read"
                                 )
 
                                 resp = requests.put(
@@ -469,8 +425,8 @@ class YataiClient:
                                     )
                                 return resp.headers["ETag"], chunk_number
 
-                    futures_: t.List[
-                        Future[FinishUploadBentoSchema | t.Tuple[str, int]]
+                    futures_: list[
+                        Future[FinishUploadBentoSchema | tuple[str, int]]
                     ] = []
 
                     with ThreadPoolExecutor(
@@ -484,7 +440,7 @@ class YataiClient:
                             )
                             futures_.append(future)
 
-                    parts: t.List[CompletePartSchema] = []
+                    parts: list[CompletePartSchema] = []
 
                     for future in futures_:
                         result = future.result()
@@ -541,12 +497,12 @@ class YataiClient:
     @inject
     def pull_bento(
         self,
-        tag: t.Union[str, Tag],
+        tag: str | Tag,
         *,
         force: bool = False,
-        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-        context: t.Optional[str] = None,
-    ) -> "Bento":
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        context: str | None = None,
+    ) -> Bento:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
                 f'Pulling bento "{tag}"', start=False, visible=False
@@ -562,13 +518,13 @@ class YataiClient:
     @inject
     def _do_pull_bento(
         self,
-        tag: t.Union[str, Tag],
+        tag: str | Tag,
         download_task_id: TaskID,
         *,
         force: bool = False,
-        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-        context: t.Optional[str] = None,
-    ) -> "Bento":
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        context: str | None = None,
+    ) -> Bento:
         try:
             bento = bento_store.get(tag)
             if not force:
@@ -701,11 +657,11 @@ class YataiClient:
 
     def push_model(
         self,
-        model: "Model",
+        model: Model,
         *,
         force: bool = False,
         threads: int = 10,
-        context: t.Optional[str] = None,
+        context: str | None = None,
     ):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
@@ -717,12 +673,12 @@ class YataiClient:
 
     def _do_push_model(
         self,
-        model: "Model",
+        model: Model,
         upload_task_id: TaskID,
         *,
         force: bool = False,
         threads: int = 10,
-        context: t.Optional[str] = None,
+        context: str | None = None,
     ):
         yatai_rest_client = get_yatai_rest_api_client(context)
         name = model.tag.name
@@ -753,7 +709,7 @@ class YataiClient:
             )
             return
         if not remote_model:
-            labels: t.List[LabelItemSchema] = [
+            labels: list[LabelItemSchema] = [
                 LabelItemSchema(key=key, value=value)
                 for key, value in info.labels.items()
             ]
@@ -794,10 +750,9 @@ class YataiClient:
                     presigned_upload_url = remote_model.presigned_upload_url
 
         with io.BytesIO() as tar_io:
-            bento_dir_path = model.path
             with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
-                    tar.add(bento_dir_path, arcname="./")
+                    tar.add(model.path, arcname="./")
             tar_io.seek(0, 0)
             with self.spin(text=f'Start uploading model "{model.tag}"..'):
                 yatai_rest_client.start_upload_model(
@@ -818,11 +773,7 @@ class YataiClient:
                 with io_mutex:
                     self.transmission_progress.update(upload_task_id, advance=x)
 
-            wrapped_file = CallbackIOWrapper(
-                io_cb,
-                tar_io,
-                "read",
-            )
+            wrapped_file = CallbackIOWrapper(io_cb, tar_io, "read")
             if transmission_strategy == "proxy":
                 try:
                     yatai_rest_client.upload_model(
@@ -870,7 +821,7 @@ class YataiClient:
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int
-                    ) -> FinishUploadModelSchema | t.Tuple[str, int]:
+                    ) -> FinishUploadModelSchema | tuple[str, int]:
                         with self.spin(
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of model "{model.tag}"...'
                         ):
@@ -917,8 +868,8 @@ class YataiClient:
                                     )
                                 return resp.headers["ETag"], chunk_number
 
-                    futures_: t.List[
-                        Future[FinishUploadModelSchema | t.Tuple[str, int]]
+                    futures_: list[
+                        Future[FinishUploadModelSchema | tuple[str, int]]
                     ] = []
 
                     with ThreadPoolExecutor(
@@ -932,7 +883,7 @@ class YataiClient:
                             )
                             futures_.append(future)
 
-                    parts: t.List[CompletePartSchema] = []
+                    parts: list[CompletePartSchema] = []
 
                     for future in futures_:
                         result = future.result()
@@ -989,12 +940,12 @@ class YataiClient:
     @inject
     def pull_model(
         self,
-        tag: t.Union[str, Tag],
+        tag: str | Tag,
         *,
         force: bool = False,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-        context: t.Optional[str] = None,
-    ) -> "Model":
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+        context: str | None = None,
+    ) -> Model:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
                 f'Pulling model "{tag}"', start=False, visible=False
@@ -1010,13 +961,13 @@ class YataiClient:
     @inject
     def _do_pull_model(
         self,
-        tag: t.Union[str, Tag],
+        tag: str | Tag,
         download_task_id: TaskID,
         *,
         force: bool = False,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-        context: t.Optional[str] = None,
-    ) -> "Model":
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+        context: str | None = None,
+    ) -> Model:
         try:
             model = model_store.get(tag)
             if not force:

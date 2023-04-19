@@ -165,7 +165,7 @@ def add_env_command(cli: click.Group) -> None:
             info_dict["conda_packages"] = conda_packages
 
         # process info from `pip freeze`
-        pip_packages = run_cmd(["pip", "freeze"])
+        pip_packages = run_cmd([sys.executable, "-m", "pip", "freeze"])
         info_dict["pip_packages"] = pip_packages
         click.echo(pretty_format(info_dict, output=output))
         ctx.exit(0)

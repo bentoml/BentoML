@@ -4,14 +4,13 @@ User facing python APIs for managing local bentos and build new bentos.
 
 from __future__ import annotations
 
-import sys
 import typing as t
 import logging
-import subprocess
 
 from simple_di import inject
 from simple_di import Provide
 
+from .exceptions import BadInput
 from .exceptions import InvalidArgument
 from .exceptions import BentoMLException
 from ._internal.tag import Tag
@@ -21,9 +20,10 @@ from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
+    from .server import Server
     from ._internal.bento import BentoStore
     from ._internal.yatai_client import YataiClient
-    from ._internal.server.server import ServerHandle
+
 
 logger = logging.getLogger(__name__)
 
@@ -441,81 +441,62 @@ def serve(
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     grpc_protocol_version: str | None = None,
-) -> ServerHandle:
-    from .serve import construct_ssl_args
-    from ._internal.server.server import ServerHandle
+) -> Server:
+    logger.warning(
+        "bentoml.serve and bentoml.bentos.serve are deprecated; use bentoml.Server instead."
+    )
 
-    if isinstance(bento, Bento):
-        bento = str(bento.tag)
-    elif isinstance(bento, Tag):
-        bento = str(bento)
-
-    server_type = server_type.lower()
-    if server_type not in ["http", "grpc"]:
-        raise ValueError('Server type must either be "http" or "grpc"')
-
-    ssl_args: dict[str, t.Any] = {
-        "ssl_certfile": ssl_certfile,
-        "ssl_keyfile": ssl_keyfile,
-        "ssl_ca_certs": ssl_ca_certs,
-    }
     if server_type == "http":
-        serve_cmd = "serve-http"
-        if host is None:
-            host = BentoMLContainer.http.host.get()
-        if port is None:
-            port = BentoMLContainer.http.port.get()
+        from .server import HTTPServer
 
-        ssl_args.update(
-            ssl_keyfile_password=ssl_keyfile_password,
-            ssl_version=ssl_version,
-            ssl_cert_reqs=ssl_cert_reqs,
-            ssl_ciphers=ssl_ciphers,
+        if host is None:
+            host = t.cast(str, BentoMLContainer.http.host.get())
+        if port is None:
+            port = t.cast(int, BentoMLContainer.http.port.get())
+
+        res = HTTPServer(
+            bento,
+            reload,
+            production,
+            env,
+            host,
+            port,
+            working_dir,
+            api_workers,
+            backlog,
+            ssl_certfile,
+            ssl_keyfile,
+            ssl_keyfile_password,
+            ssl_version,
+            ssl_cert_reqs,
+            ssl_ca_certs,
+            ssl_ciphers,
+        )
+    elif server_type == "grpc":
+        from .server import GrpcServer
+
+        if host is None:
+            host = t.cast(str, BentoMLContainer.grpc.host.get())
+        if port is None:
+            port = t.cast(int, BentoMLContainer.grpc.port.get())
+
+        res = GrpcServer(
+            bento,
+            reload,
+            production,
+            env,
+            host,
+            port,
+            working_dir,
+            api_workers,
+            backlog,
+            enable_reflection,
+            enable_channelz,
+            max_concurrent_streams,
+            grpc_protocol_version,
         )
     else:
-        serve_cmd = "serve-grpc"
-        if host is None:
-            host = BentoMLContainer.grpc.host.get()
-        if port is None:
-            port = BentoMLContainer.grpc.port.get()
+        raise BadInput(f"Unknown server type: '{server_type}'")
 
-    assert host is not None and port is not None
-    args: t.List[str] = [
-        sys.executable,
-        "-m",
-        "bentoml",
-        serve_cmd,
-        bento,
-        "--host",
-        host,
-        "--port",
-        str(port),
-        "--backlog",
-        str(backlog),
-        *construct_ssl_args(**ssl_args),
-    ]
-    if production:
-        args.append("--production")
-    if reload:
-        args.append("--reload")
-    if env:
-        args.extend(["--env", env])
-
-    if api_workers is not None:
-        args.extend(["--api-workers", str(api_workers)])
-    if working_dir is not None:
-        args.extend(["--working-dir", str(working_dir)])
-    if enable_reflection:
-        args.append("--enable-reflection")
-    if enable_channelz:
-        args.append("--enable-channelz")
-    if max_concurrent_streams is not None:
-        args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
-
-    if grpc_protocol_version is not None:
-        assert (
-            server_type == "grpc"
-        ), f"'grpc_protocol_version' should only be passed to gRPC server, got '{server_type}' instead."
-        args.extend(["--protocol-version", str(grpc_protocol_version)])
-
-    return ServerHandle(process=subprocess.Popen(args), host=host, port=port)
+    res.start()
+    return res

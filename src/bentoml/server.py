@@ -87,7 +87,7 @@ class Server(ABC):
             args.extend(["--working-dir", str(working_dir)])
 
         self.args = args
-        self.host = "127.0.0.1" if host == "0.0.0.0" else host
+        self.host = host
         self.port = port
         self.start = self._create_startmanager()
 
@@ -291,14 +291,10 @@ class GrpcServer(Server):
             api_workers,
             backlog,
         )
-
-        if host == "0.0.0.0":
-            # NOTE: override default host since gRPC doesn't support 127.0.0.1
-            self.host = host
-
+        
         if enable_reflection:
             self.args.append("--enable-reflection")
-        if enable_channelz:
+
             self.args.append("--enable-channelz")
         if max_concurrent_streams is not None:
             self.args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])

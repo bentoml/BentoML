@@ -94,7 +94,8 @@ class RemoteRunnerClient(RunnerHandle):
             or self._conn.closed
             or self._loop.is_closed()
         ):
-            self._loop = asyncio.get_event_loop()  # get the loop lazily
+            # get the loop lazily
+            self._loop = asyncio.get_event_loop_policy().get_event_loop()
             bind_uri = self._remote_runner_server_map[self._runner.name]
             parsed = urlparse(bind_uri)
             if parsed.scheme == "file":

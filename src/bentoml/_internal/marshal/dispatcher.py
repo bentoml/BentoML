@@ -154,7 +154,7 @@ class CorkDispatcher:
 
     @cached_property
     def _loop(self):
-        return asyncio.get_event_loop()
+        return asyncio.get_event_loop_policy().get_event_loop()
 
     @cached_property
     def _wake_event(self):

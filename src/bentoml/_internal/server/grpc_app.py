@@ -222,7 +222,7 @@ class Server(aio._server.Server):
 
     @cached_property
     def loop(self) -> asyncio.AbstractEventLoop:
-        return asyncio.get_event_loop()
+        return asyncio.get_event_loop_policy().get_event_loop()
 
     def run(self) -> None:
         try:

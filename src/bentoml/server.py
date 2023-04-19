@@ -64,7 +64,7 @@ class Server(ABC):
             sys.executable,
             "-m",
             "bentoml",
-            "serve-http",
+            serve_cmd,
             bento_str,
             "--host",
             host,
@@ -291,6 +291,10 @@ class GrpcServer(Server):
             api_workers,
             backlog,
         )
+
+        if host == "0.0.0.0":
+            # NOTE: override default host since gRPC doesn't support 127.0.0.1
+            self.host = host
 
         if enable_reflection:
             self.args.append("--enable-reflection")

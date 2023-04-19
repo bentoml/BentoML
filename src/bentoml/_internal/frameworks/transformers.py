@@ -724,9 +724,15 @@ def save_model(
         pretrained_or_pipeline is not None
     ), "Please provide a pipeline or a pretrained object as a second argument."
 
-    from transformers.utils import is_tf_available
-    from transformers.utils import is_flax_available
-    from transformers.utils import is_torch_available
+    # The below API are introduced since 4.18
+    if pkg_version_info("transformers")[:2] >= (4, 18):
+        from transformers.utils import is_tf_available
+        from transformers.utils import is_flax_available
+        from transformers.utils import is_torch_available
+    else:
+        from .utils.transformers import is_tf_available
+        from .utils.transformers import is_flax_available
+        from .utils.transformers import is_torch_available
 
     framework_versions = {"transformers": get_pkg_version("transformers")}
     if is_torch_available():

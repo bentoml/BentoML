@@ -29,6 +29,7 @@ jobs:
       keras: ${{ steps.filter.outputs.keras }}
       lightgbm: ${{ steps.filter.outputs.lightgbm }}
       detectron: ${{ steps.filter.outputs.detectron }}
+      easyocr: ${{ steps.filter.outputs.easyocr }}
       mlflow: ${{ steps.filter.outputs.mlflow }}
       onnx: ${{ steps.filter.outputs.onnx }}
       picklable_model: ${{ steps.filter.outputs.picklable_model }}
@@ -75,6 +76,11 @@ jobs:
               - src/bentoml/lightgbm.py
               - src/bentoml/_internal/frameworks/lightgbm.py
               - tests/integration/frameworks/models/lightgbm.py
+            easyocr:
+              - *related
+              - src/bentoml/easyocr.py
+              - src/bentoml/_internal/frameworks/easyocr.py
+              - tests/integration/frameworks/models/easyocr.py
             mlflow:
               - *related
               - src/bentoml/mlflow.py
@@ -252,6 +258,37 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework detectron)
+          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+  easyocr_integration_tests:
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.easyocr == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - name: Get pip cache dir
+        id: cache-dir
+        run: |
+          echo ::set-output name=dir::$(pip cache dir)
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        id: cache-pip
+        with:
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+      - name: Install dependencies
+        run: |
+          pip install .
+          pip install easyocr torch requests Pillow
+          pip install -r requirements/tests-requirements.txt
+      - name: Run tests and generate coverage report
+        run: |
+          OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework easyocr)
           coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
   flax_integration_tests:
     needs: diff

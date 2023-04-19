@@ -1,0 +1,3 @@
+from .easyocr import Reader as Reader
+
+__version__ = ...

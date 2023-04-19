@@ -1,5 +1,0 @@
-bentoml[all] >= 1.0.16
-torch
-transformers
-requests
-pydantic

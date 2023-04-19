@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import requests
 import detectron2.config as Cf
+import detectron2.engine as E
 import detectron2.modeling as M
 import detectron2.model_zoo as Mz
 from PIL import Image
@@ -73,4 +74,32 @@ rcnn = Model(
     ],
 )
 
-models = [rcnn]
+predictor = Model(
+    name="predictor-masked-rcnn",
+    model=E.DefaultPredictor(cfg),
+    configurations=[
+        Config(
+            test_inputs={
+                "__call__": [
+                    Input(
+                        input_args=[
+                            np.asarray(
+                                Image.open(requests.get(url, stream=True).raw).convert(
+                                    "RGB"
+                                )
+                            )
+                        ],
+                        expected=lambda output: all(
+                            map(
+                                lambda o: o > 0.5,
+                                output["instances"].get("scores").tolist(),
+                            )
+                        ),
+                    )
+                ]
+            }
+        )
+    ],
+)
+
+models = [rcnn, predictor]

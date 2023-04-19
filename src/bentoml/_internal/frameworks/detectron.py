@@ -22,10 +22,10 @@ from .common.pytorch import inference_mode_ctx
 from .common.pytorch import PyTorchTensorContainer  # noqa # type: ignore
 
 try:
-    import detectron2.config as Cf
-    import detectron2.engine as E
-    import detectron2.modeling as M
-    import detectron2.checkpoint as C
+    import detectron2.config as Config
+    import detectron2.engine as Engine
+    import detectron2.modeling as Modeling
+    import detectron2.checkpoint as Checkpoint
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'detectron2' is required in order to use module 'bentoml.detectron'. Install detectron2 with 'pip install 'git+https://github.com/facebookresearch/detectron2.git''."
@@ -80,8 +80,8 @@ def get(tag_like: str | Tag) -> Model:
 
 
 def load_model(
-    bento_model: str | Tag | Model, device_id: str | None = "cpu"
-) -> E.DefaultPredictor | nn.Module:
+    bento_model: str | Tag | Model, device_id: str = "cpu"
+) -> Engine.DefaultPredictor | nn.Module:
     """
     Load the detectron2 model from BentoML local model store with given name.
 
@@ -118,11 +118,11 @@ def load_model(
 
     metadata = bento_model.info.metadata
     if metadata.get("_is_predictor", True):
-        return E.DefaultPredictor(cfg)
+        return Engine.DefaultPredictor(cfg)
     else:
-        model = M.build_model(cfg)
+        model = Modeling.build_model(cfg)
         model.to(device).eval()
-        C.DetectionCheckpointer(model).load(
+        Checkpoint.DetectionCheckpointer(model).load(
             bento_model.path_of(f"{MODEL_FILENAME}{DETECTOR_EXTENSION}")
         )
         return model
@@ -130,8 +130,8 @@ def load_model(
 
 def save_model(
     name: str,
-    checkpointables: E.DefaultPredictor | nn.Module,
-    config: Cf.CfgNode | None = None,
+    checkpointables: Engine.DefaultPredictor | nn.Module,
+    config: Config.CfgNode | None = None,
     *,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
@@ -213,14 +213,14 @@ def save_model(
     if signatures is None:
         signatures = {"__call__": {"batchable": False}}
         logger.info(
-            'Using the default model signature for Transformers (%s) for model "%s".',
+            'Using the default model signature for Detectron (%s) for model "%s".',
             signatures,
             name,
         )
     if metadata is None:
         metadata = {}
 
-    metadata["_is_predictor"] = isinstance(checkpointables, E.DefaultPredictor)
+    metadata["_is_predictor"] = isinstance(checkpointables, Engine.DefaultPredictor)
 
     if custom_objects is None:
         custom_objects = {}
@@ -238,7 +238,7 @@ def save_model(
             logger.warning(
                 "config is ignored when 'checkpointables' is a 'DefaultPredictor'."
             )
-        config = t.cast(Cf.CfgNode, checkpointables.cfg)
+        config = t.cast(Config.CfgNode, checkpointables.cfg)
 
     custom_objects["config"] = config
 
@@ -254,7 +254,7 @@ def save_model(
         external_modules=external_modules,
         metadata=metadata,
     ) as bento_model:
-        checkpointer = C.Checkpointer(model, save_dir=bento_model.path)
+        checkpointer = Checkpoint.Checkpointer(model, save_dir=bento_model.path)
         checkpointer.save(MODEL_FILENAME)
         return bento_model
 
@@ -282,8 +282,9 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
             self.model = load_model(bento_model, device_id=self.device_id)
 
             if not is_predictor:
+                assert isinstance(self.model, torch.nn.Module)
                 # This predictor is a torch.nn.Module
-                self.model.train(False)  # type: ignore
+                self.model.train(False)
 
             self.is_predictor = is_predictor
 

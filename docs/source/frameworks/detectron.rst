@@ -96,6 +96,10 @@ The signatures used for creating a Runner is ``{"__call__": {"batchable": False}
 
    bentoml.detectron.save_model("dit-predictor", predictor, signatures={"__call__": {"batch_dim": 0, "batchable": True}})
 
+.. admonition:: About ``custom_objects``
+
+   BentoML will save the Detectron ``config`` ConfigNode instance into the ``custom_objects`` attribute via ``config``. Make sure when using ``custom_objects`` to not overwrite this naming.
+
 
 Building a Service
 ------------------
@@ -145,6 +149,6 @@ argument with the method name and providing :code:`batchable` and :code:`batch_d
 
 .. note::
 
-   You can find more examples for **Detectron** in our :examples:`bentoml/examples` directory.
+   You can find more examples for **Detectron** in our :examples:`bentoml/examples <>` directory.
 
 .. currentmodule:: bentoml.detectron

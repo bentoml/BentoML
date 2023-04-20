@@ -356,7 +356,7 @@ class Model(StoreItem):
             self._runnable = self.info.imported_module.get_runnable(self)
         return self._runnable
 
-    def load_model(self, *args, **kwargs) -> t.Any:
+    def load_model(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """
         Load the model into memory from the model store directory.
         This is a shortcut to the ``load_model`` function defined in the framework module

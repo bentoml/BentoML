@@ -47,7 +47,7 @@ Configuration Options
 Examples
 --------
 
-The following configuration spawns 4 processes on CPU, but if the runner supports multi-threading, it will be 4 threads with only one worker.
+The following configuration spawns 4 workers on CPU for runners not supporting multi-threading. If the runner supports multi-threading, it will be 4 threads with only one worker.
 
 .. tab-set::
 
@@ -72,7 +72,7 @@ The following configuration spawns 4 processes on CPU, but if the runner support
                resources:
                  cpu: 4
 
-Under multi-threading mode, the following configuration will spawn 2 processes with 4 threads each:
+Under multi-threading mode, the following configuration will spawn 2 workers with 4 threads each:
 
 .. tab-set::
 
@@ -99,7 +99,7 @@ Under multi-threading mode, the following configuration will spawn 2 processes w
                  cpu: 4
                workers_per_resource: 2
 
-If the runner supports running on GPU, the following configuration will spawn 2 workers on each of the 2 GPUs:
+If the runner supports running on GPU, the following configuration will spawn 2 workers on each GPU, hence 4 workers will be spawned for 2 GPUs in total:
 
 .. tab-set::
 

@@ -8,7 +8,7 @@ The following configuration options are available:
 
 .. tab-set::
 
-    .. tab-item:: All Runners
+    .. tab-item:: Global configuration (Applies to all runners)
        :sync: all_runners
 
        .. code-block:: yaml
@@ -51,7 +51,7 @@ The following configuration spawns 4 processes on CPU, but if the runner support
 
 .. tab-set::
 
-    .. tab-item:: All Runners
+    .. tab-item:: Global configuration (Applies to all runners)
        :sync: all_runners
 
        .. code-block:: yaml
@@ -76,7 +76,7 @@ Under multi-threading mode, the following configuration will spawn 2 processes w
 
 .. tab-set::
 
-    .. tab-item:: All Runners
+    .. tab-item:: Global configuration (Applies to all runners)
        :sync: all_runners
 
        .. code-block:: yaml
@@ -103,7 +103,7 @@ If the runner supports running on GPU, the following configuration will spawn 2 
 
 .. tab-set::
 
-    .. tab-item:: All Runners
+    .. tab-item:: Global configuration (Applies to all runners)
        :sync: all_runners
 
        .. code-block:: yaml

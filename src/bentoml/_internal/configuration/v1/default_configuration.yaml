@@ -80,6 +80,7 @@ api_server:
     period: 10
 runners:
   resources: ~
+  workers_per_resource: 1
   timeout: 300
   batching:
     enabled: true

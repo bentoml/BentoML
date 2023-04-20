@@ -104,7 +104,6 @@ class AbstractRunner(ABC):
 
 @attr.define(slots=False, frozen=True, eq=False)
 class Runner(AbstractRunner):
-
     if t.TYPE_CHECKING:
         # This will be set by __init__. This is for type checking only.
         run: t.Callable[..., t.Any]
@@ -125,13 +124,14 @@ class Runner(AbstractRunner):
 
     runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: type[Strategy]
+    workers_per_resource: int = 1
     runnable_init_params: dict[str, t.Any] = attr.field(
         default=None, converter=attr.converters.default_if_none(factory=dict)
     )
     _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
     def _set_handle(
-        self, handle_class: type[RunnerHandle], *args: P.args, **kwargs: P.kwargs
+        self, handle_class: type[RunnerHandle], *args: t.Any, **kwargs: t.Any
     ) -> None:
         if not isinstance(self._runner_handle, DummyRunnerHandle):
             raise StateException("Runner already initialized")
@@ -245,6 +245,7 @@ class Runner(AbstractRunner):
             runnable_class=runnable_class,
             runnable_init_params=runnable_init_params,
             resource_config=config["resources"],
+            workers_per_resource=config.get("workers_per_resource", 1),
             runner_methods=list(runner_method_map.values()),
             scheduling_strategy=scheduling_strategy,
         )
@@ -305,8 +306,8 @@ class Runner(AbstractRunner):
     def init_client(
         self,
         handle_class: type[RunnerHandle] | None = None,
-        *args: P.args,
-        **kwargs: P.kwargs,
+        *args: t.Any,
+        **kwargs: t.Any,
     ):
         if handle_class is None:
             from .runner_handle.remote import RemoteRunnerClient
@@ -327,6 +328,7 @@ class Runner(AbstractRunner):
         return self.scheduling_strategy.get_worker_count(
             self.runnable_class,
             self.resource_config,
+            self.workers_per_resource,
         )
 
     @property
@@ -335,6 +337,7 @@ class Runner(AbstractRunner):
             worker_id: self.scheduling_strategy.get_worker_env(
                 self.runnable_class,
                 self.resource_config,
+                self.workers_per_resource,
                 worker_id,
             )
             for worker_id in range(self.scheduled_worker_count)

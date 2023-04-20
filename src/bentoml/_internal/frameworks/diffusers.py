@@ -51,6 +51,7 @@ class DiffusersOptions(PartialKwargsModelOptions):
     pipeline_class: type[diffusers.pipelines.DiffusionPipeline] | None = None
     scheduler_class: type[diffusers.SchedulerMixin] | None = None
     torch_dtype: str | torch.dtype | None = None
+    device_map: str | dict[str, int | str | torch.device] | None = "auto"
     custom_pipeline: str | None = None
     enable_xformers: bool | None = None
     enable_attention_slicing: int | str | None = None
@@ -88,7 +89,7 @@ def load_model(
     pipeline_class: type[
         diffusers.pipelines.DiffusionPipeline
     ] = diffusers.StableDiffusionPipeline,
-    device_map: str | dict[str, int | str | torch.device] | None = None,
+    device_map: str | dict[str, int | str | torch.device] | None = "auto",
     custom_pipeline: str | None = None,
     scheduler_class: type[diffusers.SchedulerMixin] | None = None,
     torch_dtype: str | torch.dtype | None = None,
@@ -151,13 +152,6 @@ def load_model(
 
     diffusion_model_dir = bento_model.path_of(DIFFUSION_MODEL_FOLDER)
 
-    if (
-        device_map is None
-        and is_torch_version(">=", "1.9.0")
-        and is_accelerate_available()
-    ):
-        device_map = "auto"
-
     if low_cpu_mem_usage is None:
         if is_torch_version(">=", "1.9.0") and is_accelerate_available():
             low_cpu_mem_usage = True
@@ -179,7 +173,10 @@ def load_model(
         pipeline.scheduler = scheduler
 
     if device_id is not None:
-        pipeline = pipeline.to(device_id)
+        # when device_map is "auto", we should move the pipeline to gpu again
+        # see https://github.com/huggingface/diffusers/issues/2782
+        if not (str(device_id).lower().startswith("cuda") and device_map == "auto"):
+            pipeline = pipeline.to(device_id)
 
     if enable_xformers:
         pipeline.enable_xformers_memory_efficient_attention()
@@ -405,19 +402,21 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
+    bento_options: DiffusersOptions = t.cast(DiffusersOptions, bento_model.info.options)
+    partial_kwargs: t.Dict[str, t.Any] = bento_options.partial_kwargs  # type: ignore
     pipeline_class: type[diffusers.DiffusionPipeline] = (
-        bento_model.info.options.pipeline_class or diffusers.StableDiffusionPipeline
+        bento_options.pipeline_class or diffusers.StableDiffusionPipeline
     )
     scheduler_class: type[
         diffusers.SchedulerMixin
-    ] | None = bento_model.info.options.scheduler_class
-    custom_pipeline: str | None = bento_model.info.options.custom_pipeline
-    _enable_xformers: str | None = bento_model.info.options.enable_xformers
-    enable_attention_slicing: int | str | None = (
-        bento_model.info.options.enable_attention_slicing
-    )
-    _torch_dtype: str | torch.dtype | None = bento_model.info.options.torch_dtype
+    ] | None = bento_options.scheduler_class
+    custom_pipeline: str | None = bento_options.custom_pipeline
+    _enable_xformers: bool | None = bento_options.enable_xformers
+    enable_attention_slicing: int | str | None = bento_options.enable_attention_slicing
+    _torch_dtype: str | torch.dtype | None = bento_options.torch_dtype
+    device_map: str | dict[
+        str, int | str | torch.device
+    ] | None = bento_options.device_map
 
     class DiffusersRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
@@ -443,6 +442,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             self.pipeline: diffusers.DiffusionPipeline = load_model(
                 bento_model,
                 device_id=device_id,
+                device_map=device_map,
                 pipeline_class=pipeline_class,
                 scheduler_class=scheduler_class,
                 torch_dtype=torch_dtype,

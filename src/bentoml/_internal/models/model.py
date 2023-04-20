@@ -359,12 +359,12 @@ class Model(StoreItem):
     def load_model(self, *args, **kwargs) -> t.Any:
         """
         Load the model into memory from the model store directory.
-        This is a shortcut to the `load_model` function defined in the framework module
+        This is a shortcut to the ``load_model`` function defined in the framework module
         used for saving the target model.
 
-        For example, if the BentoModel(`self`) is saved with `save_model` in the
-        `bentoml.tensorflow` module, this method will pass `self` to the
-        `bentoml.tensorflow.load_model` method, along with any additional arguments.
+        For example, if the ``BentoModel`` is saved with
+        ``bentoml.tensorflow.save_model``, this method will pass it to the
+        ``bentoml.tensorflow.load_model`` method, along with any additional arguments.
         """
         if self._model is None:
             self._model = self.info.imported_module.load_model(self, *args, **kwargs)

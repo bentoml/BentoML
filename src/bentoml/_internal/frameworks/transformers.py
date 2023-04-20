@@ -571,6 +571,12 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
 
     # NOTE: for all processor type recommend to use custom signatures since it is
     # a per case basis.
+    if pkg_version_info("transformers")[:2] < (4, 17):
+        logger.warning(
+            "Given transformers version is less than 4.17.0, signatures inference will be disabled. Make sure to specify the signatures manually."
+        )
+        return {}
+
     if transformers.processing_utils.ProcessorMixin in pretrained.__class__.__bases__:
         logger.info(
             "Given '%s' extends the 'transformers.ProcessorMixin'. Make sure to specify the signatures manually if it has additional functions.",
@@ -724,9 +730,15 @@ def save_model(
         pretrained_or_pipeline is not None
     ), "Please provide a pipeline or a pretrained object as a second argument."
 
-    from transformers.utils import is_tf_available
-    from transformers.utils import is_flax_available
-    from transformers.utils import is_torch_available
+    # The below API are introduced since 4.18
+    if pkg_version_info("transformers")[:2] >= (4, 18):
+        from transformers.utils import is_tf_available
+        from transformers.utils import is_flax_available
+        from transformers.utils import is_torch_available
+    else:
+        from .utils.transformers import is_tf_available
+        from .utils.transformers import is_flax_available
+        from .utils.transformers import is_torch_available
 
     framework_versions = {"transformers": get_pkg_version("transformers")}
     if is_torch_available():
@@ -751,11 +763,14 @@ def save_model(
 
     if signatures is None:
         signatures = make_default_signatures(pretrained_or_pipeline)
-        logger.info(
-            'Using the default model signature for Transformers (%s) for model "%s".',
-            signatures,
-            name,
-        )
+        # NOTE: ``make_default_signatures`` can return an empty dict, hence we will only
+        # log when signatures are available.
+        if signatures:
+            logger.info(
+                'Using the default model signature for Transformers (%s) for model "%s".',
+                signatures,
+                name,
+            )
 
     if LazyType("transformers.Pipeline").isinstance(pretrained_or_pipeline):
         from transformers.pipelines import check_task

@@ -72,7 +72,8 @@ The following configuration spawns 4 workers on CPU for runners not supporting m
                resources:
                  cpu: 4
 
-Under multi-threading mode, the following configuration will spawn 2 workers with 4 threads each:
+When running in multi-threading mode, the following configuration will create 2 workers with 4 threads each.
+However, if multi-threading is not supported, it will instead create 8 workers by multiplying 2 and 4.
 
 .. tab-set::
 

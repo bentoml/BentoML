@@ -173,9 +173,9 @@ def load_model(
         pipeline.scheduler = scheduler
 
     if device_id is not None:
-        # when device_map is "auto", we should move the pipeline to gpu again
+        # when device_map is not None, we should not move the pipeline to gpu again
         # see https://github.com/huggingface/diffusers/issues/2782
-        if not (str(device_id).lower().startswith("cuda") and device_map == "auto"):
+        if not (str(device_id).lower().startswith("cuda") and device_map is not None):
             pipeline = pipeline.to(device_id)
 
     if enable_xformers:

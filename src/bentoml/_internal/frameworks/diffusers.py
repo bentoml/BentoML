@@ -51,7 +51,7 @@ class DiffusersOptions(PartialKwargsModelOptions):
     pipeline_class: type[diffusers.pipelines.DiffusionPipeline] | None = None
     scheduler_class: type[diffusers.SchedulerMixin] | None = None
     torch_dtype: str | torch.dtype | None = None
-    device_map: str | dict[str, int | str | torch.device] | None = "auto"
+    device_map: str | dict[str, int | str | torch.device] | None = None
     custom_pipeline: str | None = None
     enable_xformers: bool | None = None
     enable_attention_slicing: int | str | None = None
@@ -89,7 +89,7 @@ def load_model(
     pipeline_class: type[
         diffusers.pipelines.DiffusionPipeline
     ] = diffusers.StableDiffusionPipeline,
-    device_map: str | dict[str, int | str | torch.device] | None = "auto",
+    device_map: str | dict[str, int | str | torch.device] | None = None,
     custom_pipeline: str | None = None,
     scheduler_class: type[diffusers.SchedulerMixin] | None = None,
     torch_dtype: str | torch.dtype | None = None,

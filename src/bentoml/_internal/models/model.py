@@ -356,6 +356,20 @@ class Model(StoreItem):
             self._runnable = self.info.imported_module.get_runnable(self)
         return self._runnable
 
+    def load_model(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        """
+        Load the model into memory from the model store directory.
+        This is a shortcut to the ``load_model`` function defined in the framework module
+        used for saving the target model.
+
+        For example, if the ``BentoModel`` is saved with
+        ``bentoml.tensorflow.save_model``, this method will pass it to the
+        ``bentoml.tensorflow.load_model`` method, along with any additional arguments.
+        """
+        if self._model is None:
+            self._model = self.info.imported_module.load_model(self, *args, **kwargs)
+        return self._model
+
     def with_options(self, **kwargs: t.Any) -> Model:
         res = Model(
             self._tag,

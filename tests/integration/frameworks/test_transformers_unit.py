@@ -44,7 +44,7 @@ def test_load_model_options():
     _model = bentomodel.load_model()
     assert isinstance(_model, transformers.PreTrainedModel)
     _tokenizer = bentomodel.custom_objects["tokenizer"]
-    assert isinstance(_tokenizer, transformers.PreTrainedTokenizer)
+    assert isinstance(_tokenizer, transformers.PreTrainedTokenizerBase)
 
 
 def test_convert_to_auto_class():

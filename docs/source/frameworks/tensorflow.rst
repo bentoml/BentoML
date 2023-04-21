@@ -70,9 +70,9 @@ Saving a Trained Model
             gradients = tape.gradient(loss, model.trainable_variables)
             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-        bentoml.tensorflow.save(
-            model,
+        bentoml.tensorflow.save_model(
             "my_tf_model",
+            model,
             signatures={"__call__": {"batchable": True, "batch_dim": 0}}
         )
 
@@ -98,9 +98,9 @@ Saving a Trained Model
         model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
         model.fit(train_x, train_y, epochs=10)
 
-        bentoml.tensorflow.save(
-            model,
+        bentoml.tensorflow.save_model(
             "my_keras_model",
+            model,
             signatures={"__call__": {"batchable": True, "batch_dim": 0}}
         )
 
@@ -125,7 +125,7 @@ Saving a Trained Model
         model.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
         model.fit(train_x, train_y, epochs=10)
 
-        bentoml.tensorflow.save(
+        bentoml.tensorflow.save_model(
             model,
             "my_keras_model",
             signatures={"__call__": {"batchable": True, "batch_dim": 0}}
@@ -147,9 +147,9 @@ Saving a Trained Model
         model.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
         model.fit(train_x, train_y, epochs=10)
 
-        bentoml.tensorflow.save(
+        bentoml.tensorflow.save_model(
+            "my_keras_model", 
             model,
-            "my_keras_model",
             signatures={"__call__": {"batchable": True, "batch_dim": 0}}
         )
 
@@ -175,9 +175,9 @@ Saving a Trained Model
    model = MultiInputModel()
    ... # training
 
-   bentoml.tensorflow.save(
-       model,
+   bentoml.tensorflow.save_model(
        "my_tf_model",
+       model,
        signatures={"__call__": {"batchable": True, "batch_dim": 0}}
    )
 
@@ -200,7 +200,7 @@ If you want to utilize adaptive batching behavior and know your model's dynamic 
 
 .. code-block:: python
 
-    bentoml.tensorflow.save(model, "my_model", signatures={"__call__": {"batch_dim": 0, "batchable": True}})
+    bentoml.tensorflow.save_model("my_model", model, signatures={"__call__": {"batch_dim": 0, "batchable": True}})
 
 
 Building a Service
@@ -265,10 +265,10 @@ Enable adaptive batching by overriding ``signatures`` argument with the method n
            ...
 
    model = NativeModel()
-   -bentoml.tensorflow.save(model, "test_model")
-   +bentoml.tensorflow.save(
-   +    model,
+   -bentoml.tensorflow.save_model("test_model", model)
+   +bentoml.tensorflow.save_model(
    +    "test_model",
+   +    model,
    +    signatures={"__call__": {"batchable": True, "batch_dim": 0}},
    +)
 

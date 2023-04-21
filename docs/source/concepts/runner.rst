@@ -228,7 +228,7 @@ Sequential Runs
         ocr_text = ocr_runner.run(input)
         return transformers_runner.run(ocr_text)
 
-It’s as simple as creating two runners and invoking them synchronously in your prediction endpoint. Note that an async endpoint is often preferred in these use cases as the primary event loop is yielded while waiting for other IO-expensive tasks. 
+It’s as simple as creating two runners and invoking them synchronously in your prediction endpoint. Note that an async endpoint is often preferred in these use cases as the primary event loop is yielded while waiting for other IO-expensive tasks.
 
 For example, the same API above can be achieved as an ``async`` endpoint:
 
@@ -415,6 +415,8 @@ can be specified for the ``nvidia.com/gpu`` key. For example, the following conf
             iris_clf:
               resources:
                 nvidia.com/gpu: [2, 4]
+
+For the detailed information on the meaning of each resource allocation configuration, see :doc:`/guides/scheduling`.
 
 Timeout
 ^^^^^^^

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import os
 import io
+import os
 import typing as t
 import logging
 import importlib

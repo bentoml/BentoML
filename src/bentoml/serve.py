@@ -508,11 +508,11 @@ def serve_grpc_production(
     # also raising warning if users running on MacOS or FreeBSD
     if psutil.WINDOWS:
         raise BentoMLException(
-            "'grpc' is not supported on Windows with '--production'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
+            "'grpc' is not supported on Windows without '--development'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
         )
     if psutil.MACOS or psutil.FREEBSD:
         logger.warning(
-            "Due to gRPC implementation on exposing SO_REUSEPORT, '--production' behaviour on %s is not correct. We recommend to containerize BentoServer as a Linux container instead.",
+            "Due to gRPC implementation on exposing SO_REUSEPORT, BentoML production server's behaviour on %s is not correct. We recommend to containerize BentoServer as a Linux container instead. For testing locally, use `bentoml serve --development`",
             "MacOS" if psutil.MACOS else "FreeBSD",
         )
 

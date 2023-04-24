@@ -367,6 +367,7 @@ class BentoStore(Store[Bento]):
 class BentoRunnerInfo:
     name: str
     runnable_type: str
+    embedded: bool = attr.field(default=False)
     models: t.List[str] = attr.field(factory=list)
     resource_config: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
 
@@ -375,6 +376,7 @@ class BentoRunnerInfo:
         return cls(
             name=r.name,
             runnable_type=r.runnable_class.__name__,
+            embedded=r.embedded,
             models=[str(model.tag) for model in r.models],
             resource_config=r.resource_config,
         )

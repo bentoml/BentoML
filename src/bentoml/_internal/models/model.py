@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import io
 import typing as t
 import logging
@@ -342,6 +343,14 @@ class Model(StoreItem):
 
         """
         from ..runner import Runner
+
+        # TODO: @larme @yetone run this branch only yatai version is incompatible with embedded runner
+        yatai_version = os.environ.get("YATAI_T_VERSION")
+        if embedded and yatai_version:
+            logger.warning(
+                f"Yatai of version {yatai_version} is incompatible with embedded runner, set `embedded=False` for runner {name}"
+            )
+            embedded = False
 
         return Runner(
             self.to_runnable(),

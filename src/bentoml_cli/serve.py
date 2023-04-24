@@ -206,12 +206,6 @@ def add_serve_command(cli: click.Group) -> None:
             )
         else:
 
-            if reload:
-                click.echo(
-                    "'--reload' is only supported with '--development'; ignoring",
-                    err=True,
-                )
-
             serve_http_production(
                 bento,
                 working_dir=working_dir,
@@ -225,6 +219,7 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
+                reload=reload,
                 development_mode=False,
             )
 
@@ -419,12 +414,6 @@ def add_serve_command(cli: click.Group) -> None:
             )
         else:
 
-            if reload:
-                click.echo(
-                    "'--reload' is only supported with '--development'; ignoring",
-                    err=True,
-                )
-
             serve_grpc_production(
                 bento,
                 working_dir=working_dir,
@@ -439,5 +428,6 @@ def add_serve_command(cli: click.Group) -> None:
                 reflection=enable_reflection,
                 channelz=enable_channelz,
                 protocol_version=protocol_version,
+                reload=reload,
                 development_mode=False,
             )

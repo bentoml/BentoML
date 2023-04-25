@@ -74,8 +74,8 @@ class Server(ABC):
             str(backlog),
         ]
 
-        if production:
-            args.append("--production")
+        if not production:
+            args.append("--development")
         if reload:
             args.append("--reload")
         if env:

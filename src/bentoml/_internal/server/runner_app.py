@@ -61,7 +61,6 @@ class RunnerAppFactory(BaseAppFactory):
 
             self.dispatchers[method.name] = Dispatcher(
                 max_latency_in_ms=method.max_latency_ms,
-                batching_strategy=method.batching_strategy,
                 max_batch_size=max_batch_size,
                 optimizer=method.optimizer,
                 strategy=method.batching_strategy,

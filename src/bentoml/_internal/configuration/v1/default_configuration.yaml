@@ -83,7 +83,9 @@ runners:
   timeout: 300
   optimizer:
     name: linear
-    options: {}
+    options:
+      initial_slope_ms: 2.
+      initial_intercept_ms: 1.
   batching:
     enabled: true
     max_batch_size: 100

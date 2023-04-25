@@ -46,7 +46,7 @@ working on :)
 | [triton/pytorch](https://github.com/bentoml/BentoML/tree/main/examples/triton/pytorch)                                                       | Torchscript         | YOLOv5                               | Triton Inference Server, gRPC, Python SDK (Containerization, Serve, Build) |
 | [triton/tensorflow](https://github.com/bentoml/BentoML/tree/main/examples/triton/tensorflow)                                                 | Tensorflow          | YOLOv5                               | Triton Inference Server, gRPC, Python SDK (Containerization, Serve, Build) |
 | [kubeflow](https://github.com/bentoml/BentoML/tree/main/examples/kubeflow)                                                                   | XGBoost             | Fraud Detection                      | Kubeflow, Notebook                                                         |
-| [multi-tasks-nlp](https://github.com/bentoml/multi-tasks-nlp-transformers)                                                                   | Transformers        | BART, DistilBART, Pegasus            |                                                                            |
+| [multi-tasks-nlp](https://github.com/bentoml/NLP-multi-task-service)                                                                         | Transformers        | BART, DistilBART                     |                                                                            |
 
 ## How to contribute
 

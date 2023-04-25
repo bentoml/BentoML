@@ -63,7 +63,7 @@ def add_serve_command(cli: click.Group) -> None:
         "--reload",
         type=click.BOOL,
         is_flag=True,
-        help="Reload Service when code changes detected, this is only available in development mode",
+        help="Reload Service when code changes detected",
         default=False,
         show_default=True,
     )
@@ -264,7 +264,7 @@ def add_serve_command(cli: click.Group) -> None:
         "--reload",
         type=click.BOOL,
         is_flag=True,
-        help="Reload Service when code changes detected, this is only available in development mode",
+        help="Reload Service when code changes detected",
         default=False,
         show_default=True,
     )

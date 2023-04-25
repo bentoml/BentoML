@@ -1,6 +1,0 @@
-bentoml[all] >= 1.0.16
-torch
-easyocr
-timm
-fvcore
-pdf2image

@@ -1,5 +1,0 @@
-{% extends bento_base_template %}
-{% block SETUP_BENTO_COMPONENTS %}
-{{ super() }}
-RUN pip install 'git+https://github.com/facebookresearch/detectron2.git' -vv
-{% endblock %}

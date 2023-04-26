@@ -102,7 +102,7 @@ def import_service(
                 '"<module>:<attribute>" or "<module>'
             )
 
-        if os.path.exists(import_path):
+        if os.path.isfile(import_path):
             import_path = os.path.realpath(import_path)
             # Importing from a module file path:
             if not import_path.startswith(working_dir):

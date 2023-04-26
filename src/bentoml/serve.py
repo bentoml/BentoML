@@ -34,9 +34,7 @@ PROMETHEUS_MESSAGE = (
 
 SCRIPT_RUNNER = "bentoml_cli.worker.runner"
 SCRIPT_API_SERVER = "bentoml_cli.worker.http_api_server"
-SCRIPT_DEV_API_SERVER = "bentoml_cli.worker.http_api_server"
 SCRIPT_GRPC_API_SERVER = "bentoml_cli.worker.grpc_api_server"
-SCRIPT_GRPC_DEV_API_SERVER = "bentoml_cli.worker.grpc_api_server"
 SCRIPT_GRPC_PROMETHEUS_SERVER = "bentoml_cli.worker.grpc_prometheus_server"
 
 API_SERVER_NAME = "_bento_api_server"

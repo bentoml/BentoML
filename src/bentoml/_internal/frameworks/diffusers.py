@@ -402,8 +402,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    bento_options: DiffusersOptions = t.cast(DiffusersOptions, bento_model.info.options)
-    partial_kwargs: t.Dict[str, t.Any] = bento_options.partial_kwargs  # type: ignore
+    bento_options = t.cast(DiffusersOptions, bento_model.info.options)
+    partial_kwargs: dict[str, t.Any] = bento_options.partial_kwargs  # type: ignore
     pipeline_class: type[diffusers.DiffusionPipeline] = (
         bento_options.pipeline_class or diffusers.StableDiffusionPipeline
     )

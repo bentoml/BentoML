@@ -85,6 +85,12 @@ class Optimizer:
             self.trigger_refresh()
 
     def trigger_refresh(self):
+        if not self.o_stat:
+            logger.debug(
+                "o_stat is empty, skip dynamic batching optimizer params update"
+            )
+            return
+
         x = tuple((i, 1) for i, _, _ in self.o_stat)
         y = tuple(i for _, i, _ in self.o_stat)
 

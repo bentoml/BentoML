@@ -151,12 +151,8 @@ class CorkDispatcher:
     def shutdown(self):
         if self._controller is not None:
             self._controller.cancel()
-        try:
-            while True:
-                fut = self._queue.pop().future
-                fut.cancel()
-        except IndexError:
-            pass
+        for job in self._queue:
+            job.future.cancel()
 
     @cached_property
     def _loop(self):

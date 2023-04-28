@@ -171,6 +171,22 @@ def find_triton_binary():
     return binary
 
 
+def make_reload_plugin(working_dir: str, bentoml_home: str) -> dict[str, str]:
+    if sys.platform == "win32":
+        logger.warning(
+            "Due to circus limitations, output from the reloader plugin will not be shown on Windows."
+        )
+    logger.debug(
+        "reload is enabled. BentoML will watch file changes based on 'bentofile.yaml' and '.bentoignore' respectively."
+    )
+
+    return {
+        "use": "bentoml._internal.utils.circus.watchfilesplugin.ServiceReloaderPlugin",
+        "working_dir": working_dir,
+        "bentoml_home": bentoml_home,
+    }
+
+
 MAX_AF_UNIX_PATH_LENGTH = 103
 
 
@@ -412,23 +428,9 @@ def serve_http_production(
     plugins = []
 
     if reload:
-        if sys.platform == "win32":
-            logger.warning(
-                "Due to circus limitations, output from the reloader plugin will not be shown on Windows."
-            )
-        logger.debug(
-            "--reload is passed. BentoML will watch file changes based on 'bentofile.yaml' and '.bentoignore' respectively."
-        )
+        reload_plugin = make_reload_plugin(working_dir, bentoml_home)
+        plugins.append(reload_plugin)
 
-        # NOTE: {} is faster than dict()
-        plugins = [
-            # reloader plugin
-            {
-                "use": "bentoml._internal.utils.circus.watchfilesplugin.ServiceReloaderPlugin",
-                "working_dir": working_dir,
-                "bentoml_home": bentoml_home,
-            },
-        ]
     arbiter_kwargs["plugins"] = plugins
 
     if development_mode:
@@ -746,30 +748,15 @@ def serve_grpc_production(
         "sockets": list(circus_socket_map.values()),
     }
 
+    plugins = []
+
+    if reload:
+        reload_plugin = make_reload_plugin(working_dir, bentoml_home)
+        plugins.append(reload_plugin)
+
+    arbiter_kwargs["plugins"] = plugins
+
     if development_mode:
-
-        plugins = []
-
-        if reload:
-            if sys.platform == "win32":
-                logger.warning(
-                    "Due to circus limitations, output from the reloader plugin will not be shown on Windows."
-                )
-            logger.debug(
-                "--reload is passed. BentoML will watch file changes based on 'bentofile.yaml' and '.bentoignore' respectively."
-            )
-
-            # NOTE: {} is faster than dict()
-            plugins = [
-                # reloader plugin
-                {
-                    "use": "bentoml._internal.utils.circus.watchfilesplugin.ServiceReloaderPlugin",
-                    "working_dir": working_dir,
-                    "bentoml_home": bentoml_home,
-                },
-            ]
-
-        arbiter_kwargs["plugins"] = plugins
         arbiter_kwargs["debug"] = True if sys.platform != "win32" else False
         arbiter_kwargs["loggerconfig"] = SERVER_LOGGING_CONFIG
         arbiter_kwargs["loglevel"] = "WARNING"

@@ -206,11 +206,7 @@ def serve_http_production(
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
-    standalone_load: bool = False if development_mode else True
-
-    svc = load(
-        bento_identifier, working_dir=working_dir, standalone_load=standalone_load
-    )
+    svc = load(bento_identifier, working_dir=working_dir)
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
@@ -490,12 +486,8 @@ def serve_grpc_production(
     from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
 
-    standalone_load = False if development_mode else True
-
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    svc = load(
-        bento_identifier, working_dir=working_dir, standalone_load=standalone_load
-    )
+    svc = load(bento_identifier, working_dir=working_dir)
 
     from circus.sockets import CircusSocket  # type: ignore
 

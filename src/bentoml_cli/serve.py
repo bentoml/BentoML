@@ -135,7 +135,7 @@ def add_serve_command(cli: click.Group) -> None:
     def serve(  # type: ignore (unused warning)
         bento: str,
         development: bool,
-        production: bool, # deprecated and ignored
+        production: bool,  # deprecated and ignored
         port: int,
         host: str,
         api_workers: int | None,
@@ -355,7 +355,7 @@ def add_serve_command(cli: click.Group) -> None:
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
         development: bool,
-        production: bool, # deprecated and ignored
+        production: bool,  # deprecated and ignored
         port: int,
         host: str,
         api_workers: int | None,

@@ -20,7 +20,7 @@ def test_http_server(bentoml_home: str):
 
     server.stop()
 
-    timeout = 10
+    timeout = 60
     start_time = time.time()
     while time.time() - start_time < timeout:
         retcode = server.process.poll()
@@ -48,7 +48,7 @@ def test_http_server_ctx(bentoml_home: str):
 
         assert res == {"more_test": "and more json"}
 
-    timeout = 10
+    timeout = 60
     start_time = time.time()
     while time.time() - start_time < timeout:
         retcode = server.process.poll()

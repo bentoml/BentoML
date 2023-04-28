@@ -145,7 +145,8 @@ class BentoMLConfiguration:
             "logging",
             "metrics",
             "timeout",
-            "workers_per_resource",
+            "workers_per_resource",  # Deprecated, use resources_per_worker
+            "resources_per_worker",
         ]
         global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
         custom_runners_cfg = dict(

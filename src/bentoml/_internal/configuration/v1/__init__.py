@@ -8,6 +8,7 @@ import schema as s
 from ..helpers import depth
 from ..helpers import ensure_range
 from ..helpers import rename_fields
+from ..helpers import warn_deprecated
 from ..helpers import ensure_larger_than
 from ..helpers import is_valid_ip_address
 from ..helpers import ensure_iterable_type
@@ -146,7 +147,20 @@ _RUNNER_CONFIG = {
     # NOTE: there is a distinction between being unset and None here; if set to 'None'
     # in configuration for a specific runner, it will override the global configuration.
     s.Optional("resources"): s.Or({s.Optional(str): object}, lambda s: s == "system", None),  # type: ignore (incomplete schema typing)
-    s.Optional("workers_per_resource"): s.And(int, ensure_larger_than_zero),
+    # NOTE: 'workers_per_resource' option is deprecated and is replaced with the `resources_per_worker` option.
+    s.Optional("workers_per_resource"): s.Or(
+        s.And(
+            int,
+            ensure_larger_than_zero,
+            lambda value: warn_deprecated(
+                value, "workers_per_resource", "resources_per_worker"
+            ),
+        ),
+        None,
+    ),
+    s.Optional("resources_per_worker"): {
+        s.Optional(str): s.And(s.Or(float, int), ensure_larger_than_zero)
+    },
     s.Optional("logging"): {
         s.Optional("access"): {
             s.Optional("enabled"): bool,

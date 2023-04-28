@@ -19,7 +19,7 @@ class Strategy(abc.ABC):
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any],
-        workers_per_resource: int,
+        resources_per_worker: dict[str, float],
     ) -> int:
         ...
 
@@ -29,7 +29,7 @@ class Strategy(abc.ABC):
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any],
-        workers_per_resource: int,
+        resources_per_worker: dict[str, float],
         worker_index: int,
     ) -> dict[str, t.Any]:
         """
@@ -66,7 +66,7 @@ class DefaultStrategy(Strategy):
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any] | None,
-        workers_per_resource: int,
+        resources_per_worker: dict[str, float],
     ) -> int:
         if resource_request is None:
             resource_request = system_resources()
@@ -78,7 +78,8 @@ class DefaultStrategy(Strategy):
             and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            return len(nvidia_gpus) * workers_per_resource
+            gpu_per_worker = resources_per_worker.get("nvidia.com/gpu", 1)
+            return math.ceil(len(nvidia_gpus) / gpu_per_worker)
 
         # use CPU
         cpus = get_resource(resource_request, "cpu")
@@ -89,10 +90,13 @@ class DefaultStrategy(Strategy):
                     runnable_class,
                 )
 
-            if runnable_class.SUPPORTS_CPU_MULTI_THREADING:
-                return workers_per_resource
+            if "cpu" in resources_per_worker:
+                return math.ceil(cpus / resources_per_worker["cpu"])
+            else:
+                if runnable_class.SUPPORTS_CPU_MULTI_THREADING:
+                    return 1
 
-            return math.ceil(cpus) * workers_per_resource
+                return math.ceil(cpus)
 
         # this should not be reached by user since we always read system resource as default
         raise ValueError(
@@ -105,7 +109,7 @@ class DefaultStrategy(Strategy):
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any] | None,
-        workers_per_resource: int,
+        resources_per_worker: dict[str, float],
         worker_index: int,
     ) -> dict[str, t.Any]:
         """
@@ -129,7 +133,8 @@ class DefaultStrategy(Strategy):
             and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            dev = str(nvidia_gpus[worker_index // workers_per_resource])
+            gpu_per_worker = resources_per_worker.get("nvidia.com/gpu", 1)
+            dev = str(nvidia_gpus[math.floor(worker_index * gpu_per_worker)])
             environ["CUDA_VISIBLE_DEVICES"] = dev
             logger.info(
                 "Environ for worker %s: set CUDA_VISIBLE_DEVICES to %s",
@@ -143,7 +148,8 @@ class DefaultStrategy(Strategy):
         if cpus is not None and cpus > 0:
             environ["CUDA_VISIBLE_DEVICES"] = "-1"  # disable gpu
             if runnable_class.SUPPORTS_CPU_MULTI_THREADING:
-                thread_count = math.ceil(cpus)
+                cpu_per_worker = resources_per_worker.get("cpu", math.ceil(cpus))
+                thread_count = cpu_per_worker
                 for thread_env in THREAD_ENVS:
                     environ[thread_env] = str(thread_count)
                 logger.info(

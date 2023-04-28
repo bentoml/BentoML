@@ -165,3 +165,13 @@ def is_valid_ip_address(addr: str) -> bool:
         return True
     except socket.error:
         return False
+
+
+def warn_deprecated(value: t.Any, deprecated: str, replacement: str) -> bool:
+    """Warn user that given field is deprecated and has been replaced with another field."""
+    if value is not None:
+        logger.warning(
+            "Field '%s' is deprecated and has been replaced with '%s'"
+            % (deprecated, replacement)
+        )
+    return True

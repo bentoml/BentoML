@@ -28,6 +28,14 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
+        "--production",
+        type=click.BOOL,
+        help="Deprecated option, by default BentoServer will run in production mode",
+        is_flag=True,
+        default=True,
+        show_default=True,
+    )
+    @click.option(
         "-p",
         "--port",
         type=click.INT,
@@ -127,6 +135,7 @@ def add_serve_command(cli: click.Group) -> None:
     def serve(  # type: ignore (unused warning)
         bento: str,
         development: bool,
+        production: bool, # deprecated and ignored
         port: int,
         host: str,
         api_workers: int | None,
@@ -236,6 +245,14 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
+        "--production",
+        type=click.BOOL,
+        help="Deprecated option, by default BentoServer will run in production mode",
+        is_flag=True,
+        default=True,
+        show_default=True,
+    )
+    @click.option(
         "-p",
         "--port",
         type=click.INT,
@@ -338,6 +355,7 @@ def add_serve_command(cli: click.Group) -> None:
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
         development: bool,
+        production: bool, # deprecated and ignored
         port: int,
         host: str,
         api_workers: int | None,

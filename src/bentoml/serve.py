@@ -187,6 +187,48 @@ def make_reload_plugin(working_dir: str, bentoml_home: str) -> dict[str, str]:
     }
 
 
+@inject
+def serve_http_development(
+    bento_identifier: str,
+    working_dir: str,
+    port: int = Provide[BentoMLContainer.http.port],
+    host: str = Provide[BentoMLContainer.http.host],
+    backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
+    bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
+    ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+    ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+    ssl_keyfile_password: str | None = Provide[BentoMLContainer.ssl.keyfile_password],
+    ssl_version: int | None = Provide[BentoMLContainer.ssl.version],
+    ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
+    ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
+    ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+    reload: bool = False,
+) -> None:
+
+    logger.warning(
+        "serve_http_development is deprecated. Please use serve_http_production with api_workers=1 and development_mode=True"
+    )
+
+    serve_http_production(
+        bento_identifier,
+        working_dir,
+        port=port,
+        host=host,
+        backlog=backlog,
+        bentoml_home=bentoml_home,
+        ssl_certfile=ssl_certfile,
+        ssl_keyfile=ssl_keyfile,
+        ssl_keyfile_password=ssl_keyfile_password,
+        ssl_version=ssl_version,
+        ssl_cert_reqs=ssl_cert_reqs,
+        ssl_ca_certs=ssl_ca_certs,
+        ssl_ciphers=ssl_ciphers,
+        reload=reload,
+        api_workers=1,
+        development_mode=True,
+    )
+
+
 MAX_AF_UNIX_PATH_LENGTH = 103
 
 

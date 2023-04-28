@@ -4,7 +4,7 @@ pydantic
 scikit-learn
 yamllint==1.31.0
 black[jupyter]==22.12.0
-coverage[toml]==7.2.3
+coverage[toml]==7.2.4
 setuptools>=63
 isort==5.11.4
 ruff==0.0.263

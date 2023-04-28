@@ -273,7 +273,10 @@ class Server(aio._server.Server):
                 on_startup.append(partial(runner.init_local, quiet=True))
         else:
             for runner in self.bento_service.runners:
-                on_startup.append(runner.init_client)
+                if runner.embedded:
+                    on_startup.append(partial(runner.init_local, quiet=True))
+                else:
+                    on_startup.append(runner.init_client)
 
         on_startup.append(self.wait_for_runner_ready)
         return on_startup

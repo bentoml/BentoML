@@ -74,8 +74,8 @@ class Server(ABC):
             str(backlog),
         ]
 
-        if production:
-            args.append("--production")
+        if not production:
+            args.append("--development")
         if reload:
             args.append("--reload")
         if env:
@@ -185,7 +185,7 @@ class HTTPServer(Server):
         self,
         bento: str | Bento | Tag,
         reload: bool = False,
-        production: bool = False,
+        production: bool = True,
         env: t.Literal["conda"] | None = None,
         host: str = Provide[BentoMLContainer.http.host],
         port: int = Provide[BentoMLContainer.http.port],
@@ -281,7 +281,7 @@ class GrpcServer(Server):
         self,
         bento: str | Bento | Tag,
         reload: bool = False,
-        production: bool = False,
+        production: bool = True,
         env: t.Literal["conda"] | None = None,
         host: str = Provide[BentoMLContainer.grpc.host],
         port: int = Provide[BentoMLContainer.grpc.port],

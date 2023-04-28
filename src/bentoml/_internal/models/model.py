@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import typing as t
 import logging
 import importlib
@@ -327,6 +328,7 @@ class Model(StoreItem):
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
+        embedded: bool = False,
     ) -> Runner:
         """
         TODO(chaoyu): add docstring
@@ -342,6 +344,14 @@ class Model(StoreItem):
         """
         from ..runner import Runner
 
+        # TODO: @larme @yetone run this branch only yatai version is incompatible with embedded runner
+        yatai_version = os.environ.get("YATAI_T_VERSION")
+        if embedded and yatai_version:
+            logger.warning(
+                f"Yatai of version {yatai_version} is incompatible with embedded runner, set `embedded=False` for runner {name}"
+            )
+            embedded = False
+
         return Runner(
             self.to_runnable(),
             name=name if name != "" else self.tag.name,
@@ -349,6 +359,7 @@ class Model(StoreItem):
             max_batch_size=max_batch_size,
             max_latency_ms=max_latency_ms,
             method_configs=method_configs,
+            embedded=embedded,
         )
 
     def to_runnable(self) -> t.Type[Runnable]:

@@ -263,7 +263,10 @@ class HTTPAppFactory(BaseAppFactory):
                 on_startup.append(functools.partial(runner.init_local, quiet=True))
         else:
             for runner in self.bento_service.runners:
-                on_startup.append(runner.init_client)
+                if runner.embedded:
+                    on_startup.append(functools.partial(runner.init_local, quiet=True))
+                else:
+                    on_startup.append(runner.init_client)
         on_startup.extend(super().on_startup)
         return on_startup
 

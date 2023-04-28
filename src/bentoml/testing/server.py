@@ -225,7 +225,7 @@ def run_bento_server_container(
         )
     cmd.append(image_tag)
     serve_cmd = "serve-grpc" if use_grpc else "serve-http"
-    cmd.extend([serve_cmd, "--production"])
+    cmd.extend([serve_cmd])
     print(f"Running API server in container: '{' '.join(cmd)}'")
     with subprocess.Popen(
         cmd,
@@ -275,7 +275,6 @@ def run_bento_server_standalone(
             "-m",
             "bentoml",
             "serve-grpc" if use_grpc else "serve",
-            "--production",
             "--port",
             f"{server_port}",
         ]

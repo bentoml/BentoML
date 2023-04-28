@@ -197,7 +197,7 @@ class Exportable(ABC):
                 protocol = "osfs"
                 resource = path if os.sep == "/" else path.replace(os.sep, "/")
             else:
-                resource = ""
+                resource = path
         else:
             if any(v is not None for v in [protocol, user, passwd, params, subpath]):
                 raise ValueError(

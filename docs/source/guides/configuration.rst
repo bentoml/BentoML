@@ -45,7 +45,7 @@ below:
 
 .. code-block:: bash
 
-   » BENTOML_CONFIG=~/bentoml_configuration.yaml bentoml serve iris_classifier:latest --production
+   » BENTOML_CONFIG=~/bentoml_configuration.yaml bentoml serve iris_classifier:latest
 
 .. note::
 
@@ -69,7 +69,7 @@ an oneline value of a "flat" JSON via ``BENTOML_CONFIG_OPTIONS``:
 .. code-block:: yaml
 
    $ BENTOML_CONFIG_OPTIONS='runners.pytorch_mnist.resources."nvidia.com/gpu"[0]=0 runners.pytorch_mnist.resources."nvidia.com/gpu"[1]=2' \
-            bentoml serve pytorch_mnist_demo:latest --production
+            bentoml serve pytorch_mnist_demo:latest
 
 Which the override configuration will be intepreted as:
 
@@ -100,7 +100,7 @@ To mount a configuration file to a containerized BentoService, user can use the
 
    $ docker run --rm -v /path/to/configuration.yml:/home/bentoml/configuration.yml \
                 -e BENTOML_CONFIG=/home/bentoml/configuration.yml \
-                iris_classifier:6otbsmxzq6lwbgxi serve --production
+                iris_classifier:6otbsmxzq6lwbgxi serve
 
 Voila! You have successfully mounted a configuration file to your containerized BentoService.
 

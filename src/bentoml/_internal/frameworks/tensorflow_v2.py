@@ -283,9 +283,8 @@ def get_runnable(
             # depends on the real output value each time
 
             def _postprocess(res: TFModelOutputType) -> TFRunnableOutputType:
-               if isinstance(res, tuple) or isinstance(res, list):
-                    type_collection = tuple if isinstance(res, tuple) else list
-                    return type_collection(t.cast("ext.NpNDArray", r.numpy()) for r in res)
+               if isinstance(res, (tuple, list)):
+                    return tuple(t.cast("ext.NpNDArray", r.numpy()) for r in res)
                 else:
                     return t.cast("ext.NpNDArray", res.numpy())
 

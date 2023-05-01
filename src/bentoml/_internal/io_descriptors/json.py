@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import sys
 import json
 import typing as t
 import logging
 import dataclasses
 
 import attr
-from typing_extensions import TypedDict
-from typing_extensions import is_typeddict
+from pydantic import create_model_from_typeddict
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -26,6 +26,13 @@ from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
 EXC_MSG = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install bentoml[io-json]'."
+
+if sys.version_info >= (3, 8):
+    from typing import TypedDict
+    from typing import is_typeddict
+else:
+    from typing_extensions import TypedDict
+    from typing_extensions import is_typeddict
 
 if t.TYPE_CHECKING:
     from types import UnionType
@@ -87,7 +94,6 @@ class JSON(
 
     .. code-block:: python
        :caption: `service.py`
-       # pydantic Example
 
        from __future__ import annotations
 
@@ -132,9 +138,11 @@ class JSON(
            input_df = pd.DataFrame([input_data.dict(exclude={"request_id"})])
            return iris_clf_runner.run(input_df)
 
+    .. code-block:: python
         :caption: `service.py`
-        # TypedDict example
+
         from __future__ import annotations
+
         from typing import List, Union
         # from typing_extensions import TypedDict # version >= 3.8
         from typing import TypedDict  # version >= py3.9
@@ -178,6 +186,7 @@ class JSON(
             return Response(result=result.tolist())
 
     Users then can then serve this service with :code:`bentoml serve`:
+
 
     .. code-block:: bash
 
@@ -233,6 +242,11 @@ class JSON(
         validate_json: bool | None = None,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
+        if pydantic_model is not None and typeddict is not None:
+            raise BadInput(
+                "typeddict and pydantic_model are mutually exclusive. use only typeddict or pydantic_model"
+            )
+
         if pydantic_model is not None:
             if pkg_version_info("pydantic")[0] >= 2:
                 raise BadInput(
@@ -242,7 +256,7 @@ class JSON(
                 pydantic_model, pydantic.BaseModel
             ), "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
 
-        if typeddict and is_typeddict(typeddict) is False:
+        if typeddict is not None and not is_typeddict(typeddict):
             raise BadInput("'typeddict' must be inherited 'TypedDict'.")
 
         self._typeddict = typeddict

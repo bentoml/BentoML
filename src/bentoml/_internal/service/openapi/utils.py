@@ -81,8 +81,8 @@ def typeddict_components_schema(typeddict: t.Type[TypedDict]):
     )
     definitions: dict[str, Schema] = {}
     for typeddict in typeddict_set:
-        definitions[typeddict.__name__] = typed_dict_to_schema(typeddict)
-    return definitions
+        definitions[typeddict.__name__] = typed_dict_to_dict(typeddict)
+    return {k: Schema(**definitions[k]) for k in sorted(definitions)}
 
 
 def get_flat_typeddicts_from_typeddict(
@@ -134,7 +134,7 @@ class FilledExceptionSchema(Schema):
 
 def python_type_to_openapi_type(
     python_type: t.Any, field_name: str
-) -> t.Union[str, dict[str, t.Any] | Reference]:
+) -> t.Union[str, dict[str, t.Any]]:
     _python_type = getattr(python_type, "__origin__", python_type)
     if _python_type == int:
         return {
@@ -157,7 +157,7 @@ def python_type_to_openapi_type(
             "type": "string",
         }
     elif is_typeddict(python_type) is True:
-        return Reference(f"{REF_PREFIX}{python_type.__name__}")
+        return {"$ref": f"{REF_PREFIX}{python_type.__name__}"}
 
     elif _python_type == list or _python_type is set:
         items_type = python_type_to_openapi_type(python_type.__args__[0], "")["type"]
@@ -189,7 +189,7 @@ def python_type_to_openapi_type(
         return {}
 
 
-def typed_dict_to_schema(typeddict: t.Type[TypedDict]) -> Schema:
+def typed_dict_to_dict(typeddict: t.Type[TypedDict]) -> t.Dict[str, t.Any]:
     dict_types: t.Dict[str, t.Any] = get_type_hints(typeddict, include_extras=True)
     required_fields: t.List[str] = [
         field_name
@@ -206,11 +206,11 @@ def typed_dict_to_schema(typeddict: t.Type[TypedDict]) -> Schema:
         else:
             fields_type[field_name] = python_type_to_openapi_type(v, field_name)
 
-    return Schema(
-        type="object",
-        title=typeddict.__name__,
-        required=required_fields,
-        properties={
+    return {
+        "type": "object",
+        "title": typeddict.__name__,
+        "required": required_fields,
+        "properties": {
             field_name: {
                 "title": field_name,
                 "type": field_type,
@@ -219,4 +219,4 @@ def typed_dict_to_schema(typeddict: t.Type[TypedDict]) -> Schema:
             else field_type
             for field_name, field_type in fields_type.items()
         },
-    )
+    }

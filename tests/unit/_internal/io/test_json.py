@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import json
 import typing as t
 import asyncio
@@ -21,6 +22,17 @@ from bentoml.grpc.utils import import_generated_stubs
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils.pkg import pkg_version_info
 from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
+
+if sys.version_info >= (3, 11):
+    from typing import Required
+    from typing import TypedDict
+    from typing import NotRequired
+
+else:
+    from typing_extensions import Required
+    from typing_extensions import TypedDict
+    from typing_extensions import NotRequired
+
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture
@@ -290,3 +302,144 @@ async def test_exception_to_proto():
 async def test_to_proto(o: t.Any) -> None:
     res = await JSON().to_proto(o)
     assert res and isinstance(res, struct_pb2.Value)
+
+
+class InnerTypedDict(TypedDict):
+    str1: str
+    any1: t.Any
+
+
+class NestedTypedDict(TypedDict):
+    num1: float
+    num2: int
+    str1: str
+    nested_typeddict1: InnerTypedDict
+
+
+class ExampleTypedDictSchema(TypedDict, total=False):
+    num1: float
+    num2: int
+    str1: str
+    dict1: t.Dict[str, int]
+    tuple1: t.Tuple[int, str, bool]
+    set1: t.Set[int]
+    list1: t.List[str]
+    union1: t.Union[int, float]
+    required_num: Required[float]
+    notrequired_str: NotRequired[str]
+    any1: t.Any
+
+
+class ExamplePydanticSchema(BaseSchema):
+    num1: float
+    num2: int
+    str1: str
+    dict1: t.Dict[str, int]
+    tuple1: t.Tuple[int, str, bool]
+    set1: t.Set[int]
+    list1: t.List[str]
+    union1: t.Union[int, float]
+    required_num: float
+    notrequired_str: t.Optional[str]
+
+
+def test_exception_typeddict():
+    with pytest.raises(BadInput, match="'typeddict' must be inherited 'TypedDict'."):
+        _ = JSON(typeddict=ExampleAttrsClass)
+
+
+def test_exception_typeddict_and_pydantic_model_are_mutually_exclusive():
+    with pytest.raises(
+        BadInput,
+        match="typeddict and pydantic_model are mutually exclusive. use only typeddict or pydantic_model",
+    ):
+        _ = JSON(typeddict=ExampleTypedDictSchema, pydantic_model=ExamplePydanticSchema)
+
+
+def test_json_typeddict_openapi_schema():
+    assert JSON().openapi_schema().type == "object"
+
+    schema = JSON(pydantic_model=BaseSchema).openapi_schema()
+    assert schema.type == "object"
+    assert schema.required == ["name", "endpoints"]
+    assert schema.properties == {
+        "name": {"title": "Name", "type": "string"},
+        "endpoints": {
+            "title": "Endpoints",
+            "type": "array",
+            "items": {"type": "string"},
+        },
+    }
+
+
+def test_typeddict_json_openapi_components():
+    assert JSON().openapi_components() == {}
+
+    components = JSON(typeddict=ExampleTypedDictSchema).openapi_components()
+
+    assert components
+
+    schema: Schema = components["schemas"]["ExampleTypedDictSchema"]
+
+    assert schema.properties == {
+        "any1": {"title": "any1", "type": "any"},
+        "dict1": {
+            "additionalProperties": {"type": "integer"},
+            "title": "dict1",
+            "type": "object",
+        },
+        "list1": {"items": {"type": "string"}, "title": "list1", "type": "array"},
+        "notrequired_str": {"title": "notrequired_str", "type": "string"},
+        "num1": {"title": "num1", "type": "number"},
+        "num2": {"title": "num2", "type": "integer"},
+        "required_num": {"title": "required_num", "type": "number"},
+        "set1": {"items": {"type": "integer"}, "title": "set1", "type": "array"},
+        "str1": {"title": "str1", "type": "string"},
+        "tuple1": {
+            "items": [{"type": "integer"}, {"type": "string"}, {"type": "boolean"}],
+            "title": "tuple1",
+            "type": "array",
+        },
+        "union1": {"oneOf": [{"type": "integer"}, {"type": "number"}]},
+    }
+    assert schema.type == "object"
+    assert schema.required == [
+        "num1",
+        "num2",
+        "str1",
+        "dict1",
+        "tuple1",
+        "set1",
+        "list1",
+        "union1",
+        "required_num",
+        "any1",
+    ]
+
+    nested = JSON(typeddict=NestedTypedDict).openapi_components()
+
+    assert nested
+
+    assert all(a in nested["schemas"] for a in ["InnerTypedDict", "NestedTypedDict"])
+    assert (
+        "$ref" in nested["schemas"]["NestedTypedDict"].properties["nested_typeddict1"]
+    )
+
+
+def test_typeddict_json_openapi_request_responses():
+    request_body = JSON(typeddict=ExampleTypedDictSchema).openapi_request_body()
+
+    assert request_body["required"]
+
+    assert (
+        "notrequired_str"
+        not in request_body["content"]["application/json"].schema.required
+    )
+
+    assert "application/json" in request_body["content"]
+
+    responses = JSON().openapi_responses()
+
+    assert responses["content"]
+
+    assert "application/json" in responses["content"]

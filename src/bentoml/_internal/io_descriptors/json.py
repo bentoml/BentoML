@@ -7,9 +7,10 @@ import logging
 import dataclasses
 
 import attr
-from pydantic import create_model_from_typeddict
+from pydantic.typing import is_typeddict_special
 from starlette.requests import Request
 from starlette.responses import Response
+from pydantic.annotated_types import is_legacy_typeddict
 
 from .base import IODescriptor
 from ..types import LazyType
@@ -21,13 +22,13 @@ from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ..service.openapi import REF_PREFIX
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.utils import typed_dict_to_schema
+from ..service.openapi.utils import typed_dict_to_dict
 from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
 
 EXC_MSG = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install bentoml[io-json]'."
 
-if sys.version_info >= (3, 8):
+if sys.version_info >= (3, 11):
     from typing import TypedDict
     from typing import is_typeddict
 else:
@@ -259,6 +260,13 @@ class JSON(
         if typeddict is not None and not is_typeddict(typeddict):
             raise BadInput("'typeddict' must be inherited 'TypedDict'.")
 
+        if is_legacy_typeddict(typeddict) and any(
+            is_typeddict_special(t) for t in typeddict.__annotations__.values()
+        ):
+            raise BadInput(
+                "You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.11."
+            )
+
         self._typeddict = typeddict
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder
@@ -368,24 +376,23 @@ class JSON(
         return JSONType
 
     def openapi_schema(self) -> Schema:
-        if not self._pydantic_model and not self._typeddict:
-            return Schema(type="object")
+        if self._pydantic_model is not None:
+            return Schema(
+                **schema.model_process_schema(
+                    self._pydantic_model,
+                    model_name_map=schema.get_model_name_map(
+                        schema.get_flat_models_from_model(self._pydantic_model)
+                    ),
+                    ref_prefix=REF_PREFIX,
+                )[0]
+            )
         elif self._typeddict:
-            return typed_dict_to_schema(typeddict=self._typeddict)
-        return Schema(
-            **schema.model_process_schema(
-                self._pydantic_model,
-                model_name_map=schema.get_model_name_map(
-                    schema.get_flat_models_from_model(self._pydantic_model)
-                ),
-                ref_prefix=REF_PREFIX,
-            )[0]
-        )
+            return Schema(**typed_dict_to_dict(typeddict=self._typeddict))
+        else:
+            return Schema(type="object")
 
     def openapi_components(self) -> dict[str, t.Any] | None:
-        if not self._pydantic_model and not self._typeddict:
-            return {}
-        elif self._pydantic_model:
+        if self._pydantic_model:
             from ..service.openapi.utils import pydantic_components_schema
 
             return {"schemas": pydantic_components_schema(self._pydantic_model)}
@@ -393,6 +400,8 @@ class JSON(
             from ..service.openapi.utils import typeddict_components_schema
 
             return {"schemas": typeddict_components_schema(self._typeddict)}
+        else:
+            return {}
 
     def openapi_example(self):
         if self.sample is not None:

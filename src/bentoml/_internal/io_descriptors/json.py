@@ -7,10 +7,8 @@ import logging
 import dataclasses
 
 import attr
-from pydantic.typing import is_typeddict_special
 from starlette.requests import Request
 from starlette.responses import Response
-from pydantic.annotated_types import is_legacy_typeddict
 
 from .base import IODescriptor
 from ..types import LazyType
@@ -31,9 +29,19 @@ EXC_MSG = "'pydantic' must be installed to use 'pydantic_model'. Install with 'p
 if sys.version_info >= (3, 11):
     from typing import TypedDict
     from typing import is_typeddict
+
+    def is_legacy_typeddict(_: t.Any) -> t.Any:
+        return False
+
 else:
     from typing_extensions import TypedDict
     from typing_extensions import is_typeddict
+
+    def is_legacy_typeddict(typeddict_cls: t.Type["TypedDict"]) -> bool:  # type: ignore[valid-type]
+        return (
+            is_typeddict(typeddict_cls) and type(typeddict_cls).__module__ == "typing"
+        )
+
 
 if t.TYPE_CHECKING:
     from types import UnionType
@@ -260,9 +268,7 @@ class JSON(
         if typeddict is not None and not is_typeddict(typeddict):
             raise BadInput("'typeddict' must be inherited 'TypedDict'.")
 
-        if is_legacy_typeddict(typeddict) and any(
-            is_typeddict_special(t) for t in typeddict.__annotations__.values()
-        ):
+        if is_legacy_typeddict(typeddict):
             raise BadInput(
                 "You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.11."
             )

@@ -41,7 +41,6 @@ from bentoml.exceptions import InternalServerError
 
 from ...utils import LazyLoader
 from .specification import Schema
-from .specification import Reference
 
 if TYPE_CHECKING:
     import pydantic

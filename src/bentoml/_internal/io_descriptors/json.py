@@ -269,11 +269,6 @@ class JSON(
         if typeddict is not None and not is_typeddict(typeddict):
             raise BadInput("'typeddict' must be inherited 'TypedDict'.")
 
-        if is_legacy_typeddict(typeddict):
-            raise BadInput(
-                "You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.11."
-            )
-
         self._typeddict = typeddict
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import sys
 import typing as t
+from typing import get_args
+from typing import TypedDict
+from typing import get_origin
 from typing import TYPE_CHECKING
 from functools import lru_cache
 
@@ -19,21 +22,18 @@ else:
 
 
 if sys.version_info >= (3, 11):
-    from typing import get_args
     from typing import Required
-    from typing import TypedDict
-    from typing import get_origin
     from typing import NotRequired
+else:
+    from typing_extensions import Required
+    from typing_extensions import NotRequired
+
+if sys.version_info >= (3, 10):
     from typing import is_typeddict
     from typing import get_type_hints
 else:
-    from typing_extensions import get_args
-    from typing_extensions import Required
-    from typing_extensions import TypedDict
-    from typing_extensions import get_origin
-    from typing_extensions import NotRequired
-    from typing_extensions import get_type_hints
     from typing_extensions import is_typeddict
+    from typing_extensions import get_type_hints
 
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import InvalidArgument

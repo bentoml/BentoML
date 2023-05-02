@@ -59,6 +59,7 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.utils import display_path_under_home
     from bentoml._internal.bento.bento import Bento
     from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
+    from bentoml._internal.configuration import get_quiet_mode
     from bentoml._internal.bento.build_config import BentoBuildConfig
     from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -337,17 +338,18 @@ def add_bento_management_commands(cli: Group):
             click.echo(bento.tag)
             return
 
-        click.echo(BENTOML_FIGLET)
-        click.secho(f"Successfully built {bento}.", fg="green")
+        if not get_quiet_mode():
+            click.echo(BENTOML_FIGLET)
+            click.secho(f"Successfully built {bento}.", fg="green")
 
-        click.secho(
-            f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
-            fg="blue",
-        )
-        click.secho(
-            f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
-            fg="blue",
-        )
+            click.secho(
+                f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
+                fg="blue",
+            )
+            click.secho(
+                f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
+                fg="blue",
+            )
 
         # We need to pop the build_ctx from sys.path to avoid conflicts.
         if sys.path[0] == build_ctx:

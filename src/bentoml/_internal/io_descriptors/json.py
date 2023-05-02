@@ -37,7 +37,7 @@ else:
     from typing_extensions import TypedDict
     from typing_extensions import is_typeddict
 
-    def is_legacy_typeddict(typeddict_cls: t.Type["TypedDict"]) -> bool:  # type: ignore[valid-type]
+    def is_legacy_typeddict(typeddict_cls: type[t.TypedDict]) -> bool:  # type: ignore[valid-type]
         return (
             is_typeddict(typeddict_cls) and type(typeddict_cls).__module__ == "typing"
         )

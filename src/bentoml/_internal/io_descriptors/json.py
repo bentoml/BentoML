@@ -147,51 +147,52 @@ class JSON(
            input_df = pd.DataFrame([input_data.dict(exclude={"request_id"})])
            return iris_clf_runner.run(input_df)
 
+    :obj:`JSON` also supports ``typing.TypedDict`` in addition to ``pydantic.BaseModel`` as a validation schema. Note that for Python < 3.9, you can add the following code block to your code in order to use ``TypedDict``:
+
+    .. code-block:: python
+
+        import sys
+
+        if sys.version_info[:2] >= 3.8
+            from typing import TypedDict
+        else:
+            from typing_extensions import TypedDict
+
+    .. note::
+
+       Make sure to install ``bentoml`` with ``pip install 'bentoml[io-json]'`` to ensure the extra dependencies is installed.
+
+    One can then add the following TypedDict to one's service definition:
+
     .. code-block:: python
         :caption: `service.py`
-
         from __future__ import annotations
 
-        from typing import List, Union
-        # from typing_extensions import TypedDict # version >= 3.8
-        from typing import TypedDict  # version >= py3.9
-
+        import typing as t
+        import sys
         import pandas as pd
-        from typing_extensions import NotRequired # version < py3.11
-        # from typing import NotRequired # version >= 3.11
-
         import bentoml
         from bentoml.io import JSON
-
-        iris_clf_runner = bentoml.sklearn.get("iris_clf_with_feature_names:latest").to_runner()
-
-        svc = bentoml.Service("i_am_iris_classifier_typeddict", runners=[iris_clf_runner])
-
+        if sys.version_info[:2] >= (3,11):
+            from typing import NotRequired
+        else:
+            from typing_extensions import NotRequired
 
         class IrisFeatures(TypedDict, total=False):
             sepal_len: Union[float, int]
             sepal_width: float
-            petal_len: float | int
+            petal_len: Union[float, int]
             petal_width: float
-
             request_id: NotRequired[int]
-            # use NotRequired instead of Optional
-            # Optional is rejected Spec in TypedDict (https://peps.python.org/pep-0655/#special-syntax-around-the-key-of-a-typeddict-item)
-
         class Response(TypedDict):
             result: List[int]
-
-
         @svc.api(input=JSON(typeddict=IrisFeatures), output=JSON(typeddict=Response))
         async def classify(input_data: IrisFeatures) -> Response:
             if input_data.get("request_id") is not None:
                 print("Received request ID: ", input_data["request_id"])
-
             input_data.pop("request_id")
             input_df = pd.DataFrame([input_data])
             result = await iris_clf_runner.predict.async_run(input_df)
-
-            # it is same to 'return { "result": result.tolist() }'
             return Response(result=result.tolist())
 
     Users then can then serve this service with :code:`bentoml serve`:
@@ -253,7 +254,7 @@ class JSON(
     ):
         if pydantic_model is not None and typeddict is not None:
             raise BadInput(
-                "typeddict and pydantic_model are mutually exclusive. use only typeddict or pydantic_model"
+                "'typeddict' and 'pydantic_model' are mutually exclusive. Make sure to only use one of them."
             )
 
         if pydantic_model is not None:

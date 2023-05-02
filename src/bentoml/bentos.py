@@ -5,7 +5,6 @@ User facing python APIs for managing local bentos and build new bentos.
 from __future__ import annotations
 
 import os
-import re
 import typing as t
 import logging
 import tempfile
@@ -361,6 +360,7 @@ def build(
 
     if version is not None:
         build_args.extend(["--version", version])
+    build_args.extend(["--output", "machine"])
 
     with tempfile.NamedTemporaryFile(
         "w", encoding="utf-8", prefix="bentoml-build-", suffix=".yaml"
@@ -374,9 +374,7 @@ def build(
             logger.error("Failed to build BentoService bundle: %s", e)
             raise
 
-    rgx = re.compile(r"^Successfully built.*")
-    tag_parse = [s for s in output.decode("utf-8").split("\n") if rgx.match(s)][0]
-    return get(tag_parse.split(" ")[-1])
+    return get(output.decode("utf-8").strip().split("\n")[-1])
 
 
 @inject
@@ -410,7 +408,7 @@ def build_bentofile(
     build_args.append(build_ctx)
     if version is not None:
         build_args.extend(["--version", version])
-    build_args.extend(["--bentofile", bentofile])
+    build_args.extend(["--bentofile", bentofile, "--output", "machine"])
 
     try:
         output = subprocess.check_output(build_args)
@@ -418,9 +416,7 @@ def build_bentofile(
         logger.error("Failed to build BentoService bundle: %s", e)
         raise
 
-    rgx = re.compile(r"^Successfully built.*")
-    tag_parse = [s for s in output.decode("utf-8").split("\n") if rgx.match(s)][0]
-    return get(tag_parse.split(" ")[-1])
+    return get(output.decode("utf-8").strip().split("\n")[-1])
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:

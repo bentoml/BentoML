@@ -297,11 +297,20 @@ def add_bento_management_commands(cli: Group):
         default=None,
         help="Bento version. By default the version will be generated.",
     )
+    @click.option(
+        "-o",
+        "--output",
+        type=click.Choice(["machine", "default"]),
+        default="default",
+        show_default=True,
+        help="Output log format. '-o machine' to display only bento tag.",
+    )
     @inject
     def build(  # type: ignore (not accessed)
         build_ctx: str,
         bentofile: str,
         version: str,
+        output: t.Literal["machine", "default"],
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> None:
         """Build a new Bento from current directory."""
@@ -323,6 +332,10 @@ def add_bento_management_commands(cli: Group):
             version=version,
             build_ctx=build_ctx,
         ).save(_bento_store)
+
+        if output == "machine":
+            click.echo(bento.tag)
+            return
 
         click.echo(BENTOML_FIGLET)
 

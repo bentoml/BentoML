@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import json
 import typing as t
 
@@ -315,9 +314,6 @@ def add_bento_management_commands(cli: Group):
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> None:
         """Build a new Bento from current directory."""
-        if sys.path[0] != build_ctx:
-            sys.path.insert(0, build_ctx)
-
         try:
             bentofile = resolve_user_filepath(bentofile, build_ctx)
         except FileNotFoundError:
@@ -350,7 +346,3 @@ def add_bento_management_commands(cli: Group):
                 f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
                 fg="blue",
             )
-
-        # We need to pop the build_ctx from sys.path to avoid conflicts.
-        if sys.path[0] == build_ctx:
-            sys.path.pop(0)

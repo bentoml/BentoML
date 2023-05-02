@@ -4,8 +4,12 @@ User facing python APIs for managing local bentos and build new bentos.
 
 from __future__ import annotations
 
+import os
+import re
 import typing as t
 import logging
+import tempfile
+import subprocess
 
 from simple_di import inject
 from simple_di import Provide
@@ -273,7 +277,7 @@ def build(
     version: str | None = None,
     build_ctx: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-) -> "Bento":
+) -> Bento:
     """
     User-facing API for building a Bento. The available build options are identical to the keys of a
     valid 'bentofile.yaml' file.
@@ -349,21 +353,40 @@ def build(
         conda=conda,
     )
 
-    return Bento.create(
-        build_config=build_config,
-        version=version,
-        build_ctx=build_ctx,
-    ).save(_bento_store)
+    build_args = ["bentoml", "build"]
+
+    if build_ctx is None:
+        build_ctx = "."
+    build_args.append(build_ctx)
+
+    if version is not None:
+        build_args.extend(["--version", version])
+
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", prefix="bentoml-build-", suffix=".yaml"
+    ) as f:
+        build_config.to_yaml(f)
+        bentofile_path = os.path.join(os.path.dirname(f.name), f.name)
+        build_args.extend(["--bentofile", bentofile_path])
+        try:
+            output = subprocess.check_output(build_args)
+        except subprocess.CalledProcessError as e:
+            logger.error("Failed to build BentoService bundle: %s", e)
+            raise
+
+    rgx = re.compile(r"^Successfully built.*")
+    tag_parse = [s for s in output.decode("utf-8").split("\n") if rgx.match(s)][0]
+    return get(tag_parse.split(" ")[-1])
 
 
 @inject
 def build_bentofile(
     bentofile: str = "bentofile.yaml",
     *,
-    version: t.Optional[str] = None,
-    build_ctx: t.Optional[str] = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> "Bento":
+    version: str | None = None,
+    build_ctx: str | None = None,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+) -> Bento:
     """
     Build a Bento base on options specified in a bentofile.yaml file.
 
@@ -381,14 +404,23 @@ def build_bentofile(
     except FileNotFoundError:
         raise InvalidArgument(f'bentofile "{bentofile}" not found')
 
-    with open(bentofile, "r", encoding="utf-8") as f:
-        build_config = BentoBuildConfig.from_yaml(f)
+    build_args = ["bentoml", "build"]
+    if build_ctx is None:
+        build_ctx = "."
+    build_args.append(build_ctx)
+    if version is not None:
+        build_args.extend(["--version", version])
+    build_args.extend(["--bentofile", bentofile])
 
-    return Bento.create(
-        build_config=build_config,
-        version=version,
-        build_ctx=build_ctx,
-    ).save(_bento_store)
+    try:
+        output = subprocess.check_output(build_args)
+    except subprocess.CalledProcessError as e:
+        logger.error("Failed to build BentoService bundle: %s", e)
+        raise
+
+    rgx = re.compile(r"^Successfully built.*")
+    tag_parse = [s for s in output.decode("utf-8").split("\n") if rgx.match(s)][0]
+    return get(tag_parse.split(" ")[-1])
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:

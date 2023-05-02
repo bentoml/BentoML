@@ -213,7 +213,7 @@ class Bento(StoreItem):
             model.save(bento_model_store)
 
         # create ignore specs
-        specs = BentoPathSpec(build_config.include, build_config.exclude)  # type: ignore (unfinished attrs converter type)
+        specs = BentoPathSpec(build_config.include, build_config.exclude)
 
         # Copy all files base on include and exclude, into `src` directory
         relpaths = [s for s in build_config.include if s.startswith("../")]

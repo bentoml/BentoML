@@ -150,6 +150,20 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
         """
         raise NotImplementedError
 
+    @t.overload
+    @classmethod
+    def from_sample(cls, sample: IOType) -> IODescriptor[IOType]:
+        ...
+
+    @t.overload
+    @classmethod
+    def from_sample(cls, sample: IOType, **kwargs: t.Any) -> IODescriptor[IOType]:
+        ...
+
+    @classmethod
+    def from_sample(cls, *args: IOType, **kwargs: t.Any) -> IODescriptor[IOType]:
+        ...
+
     @property
     def mime_type(self) -> str:
         return self._mime_type

@@ -360,7 +360,7 @@ def build(
 
     if version is not None:
         build_args.extend(["--version", version])
-    build_args.extend(["--output", "machine"])
+    build_args.extend(["--output", "tag"])
 
     with tempfile.NamedTemporaryFile(
         "w", encoding="utf-8", prefix="bentoml-build-", suffix=".yaml"
@@ -408,7 +408,7 @@ def build_bentofile(
     build_args.append(build_ctx)
     if version is not None:
         build_args.extend(["--version", version])
-    build_args.extend(["--bentofile", bentofile, "--output", "machine"])
+    build_args.extend(["--bentofile", bentofile, "--output", "tag"])
 
     try:
         output = subprocess.check_output(build_args)

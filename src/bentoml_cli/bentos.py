@@ -300,17 +300,17 @@ def add_bento_management_commands(cli: Group):
     @click.option(
         "-o",
         "--output",
-        type=click.Choice(["machine", "default"]),
+        type=click.Choice(["tag", "default"]),
         default="default",
         show_default=True,
-        help="Output log format. '-o machine' to display only bento tag.",
+        help="Output log format. '-o tag' to display only bento tag.",
     )
     @inject
     def build(  # type: ignore (not accessed)
         build_ctx: str,
         bentofile: str,
         version: str,
-        output: t.Literal["machine", "default"],
+        output: t.Literal["tag", "default"],
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> None:
         """Build a new Bento from current directory."""
@@ -333,14 +333,12 @@ def add_bento_management_commands(cli: Group):
             build_ctx=build_ctx,
         ).save(_bento_store)
 
-        if output == "machine":
+        if output == "tag":
             click.echo(bento.tag)
             return
 
         click.echo(BENTOML_FIGLET)
-
-        # NOTE: Don't change the following message, since it is used by 'bentoml build' to parse for the bento.tag
-        click.secho(f"Successfully built {bento.tag}", fg="green")
+        click.secho(f"Successfully built {bento}.", fg="green")
 
         click.secho(
             f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",

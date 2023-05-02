@@ -838,6 +838,7 @@ class BentoBuildConfig:
         try:
             yaml.dump(bentoml_cattr.unstructure(self), stream)
         except yaml.YAMLError as e:
+            logger.error("Error while deserializing BentoBuildConfig to yaml:")
             logger.error(e)
             raise
 

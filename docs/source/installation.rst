@@ -31,7 +31,7 @@ This will install the bleeding edge ``main`` version of BentoML. The ``main`` ve
 useful for stay-up-to-date with the latest features and bug fixes. However, this means
 that ``main`` version is not always stable. If you run into any issues, please either
 create `an issue <https://github.com/bentoml/BentoML/issues/new/choose>`_ or join our
-`community Slack <https://l.linklyhq.com/l/ktOX>`_ to get help.
+`community Slack <https://l.bentoml.com/join-slack>`_ to get help.
 
 Editable Install
 ----------------

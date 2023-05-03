@@ -1279,7 +1279,7 @@ because BentoML gRPC server is an async implementation of gRPC server.
    If you are using ``grpc.ServerInterceptor``, you will need to migrate it over
    to use the new ``grpc.aio.ServerInterceptor`` in order to use this feature.
 
-   Feel free to reach out to us at `#support on Slack <https://l.linklyhq.com/l/ktOX>`_
+   Feel free to reach out to us at `#support on Slack <https://l.bentoml.com/join-slack>`_
 
 .. dropdown:: A toy implementation ``AppendMetadataInterceptor``
 

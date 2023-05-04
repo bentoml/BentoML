@@ -105,15 +105,11 @@ class HTTPAppFactory(BaseAppFactory):
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
-        enable_trace_id_in_response: bool = Provide[
-            BentoMLContainer.http.response.trace_id
-        ],
     ):
         self.bento_service = bento_service
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
         self.enable_metrics = enable_metrics
-        self.enable_trace_id_in_response = enable_trace_id_in_response
 
     @property
     def name(self) -> str:
@@ -349,7 +345,7 @@ class HTTPAppFactory(BaseAppFactory):
                         trace_context.request_id
                     )
                 if (
-                    self.enable_trace_id_in_response
+                    BentoMLContainer.http.response.trace_id.get()
                     and trace_context.trace_id is not None
                 ):
                     response.headers["X-BentoML-Trace-ID"] = str(trace_context.trace_id)

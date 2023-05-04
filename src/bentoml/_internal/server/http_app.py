@@ -230,7 +230,7 @@ class HTTPAppFactory(BaseAppFactory):
                     if trace_context.service_name is None:
                         trace_context.service_name = service_name
                     else:
-                        raise ValueError(
+                        logger.warning(
                             f"'service.name={service_name}' found inconsistent from incoming trace with current trace context ({trace_context.service_name})."
                         )
 

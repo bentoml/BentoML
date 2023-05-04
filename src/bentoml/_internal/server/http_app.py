@@ -220,15 +220,23 @@ class HTTPAppFactory(BaseAppFactory):
             middlewares.append(Middleware(HTTPTrafficMetricsMiddleware))
 
         # otel middleware
-        import opentelemetry.instrumentation.asgi as otel_asgi
+        from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
         def client_request_hook(span: Span, _: dict[str, t.Any]) -> None:
-            if span is not None:
+            if span:
                 trace_context.request_id = span.context.span_id
+                service_name = span.resource.attributes.get("service.name")
+                if service_name != trace_context.service_name:
+                    if trace_context.service_name is None:
+                        trace_context.service_name = service_name
+                    else:
+                        raise ValueError(
+                            f"'service.name={service_name}' found inconsistent from incoming trace with current trace context ({trace_context.service_name})."
+                        )
 
         middlewares.append(
             Middleware(
-                otel_asgi.OpenTelemetryMiddleware,
+                OpenTelemetryMiddleware,
                 excluded_urls=BentoMLContainer.tracing_excluded_urls.get(),
                 default_span_details=None,
                 server_request_hook=None,

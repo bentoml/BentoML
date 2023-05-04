@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import sys
 import json
 import typing as t
 
 import yaml
 import click
+from simple_di import inject
+from simple_di import Provide
 from rich.table import Table
 from rich.syntax import Syntax
 
@@ -16,6 +17,8 @@ if t.TYPE_CHECKING:
     from click import Group
     from click import Context
     from click import Parameter
+
+    from bentoml._internal.bento import BentoStore
 
 BENTOML_FIGLET = """
 ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
@@ -45,14 +48,18 @@ def parse_delete_targets_argument_callback(
 
 
 def add_bento_management_commands(cli: Group):
+    import bentoml
     from bentoml import Tag
     from bentoml.bentos import import_bento
-    from bentoml.bentos import build_bentofile
     from bentoml._internal.utils import rich_console as console
     from bentoml._internal.utils import calc_dir_size
     from bentoml._internal.utils import human_readable_size
+    from bentoml._internal.utils import resolve_user_filepath
     from bentoml._internal.utils import display_path_under_home
+    from bentoml._internal.bento.bento import Bento
     from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
+    from bentoml._internal.configuration import get_quiet_mode
+    from bentoml._internal.bento.build_config import BentoBuildConfig
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     bento_store = BentoMLContainer.bento_store.get()
@@ -278,22 +285,64 @@ def add_bento_management_commands(cli: Group):
     @cli.command()
     @click.argument("build_ctx", type=click.Path(), default=".")
     @click.option(
-        "-f", "--bentofile", type=click.STRING, default=DEFAULT_BENTO_BUILD_FILE
+        "-f",
+        "--bentofile",
+        type=click.STRING,
+        default=DEFAULT_BENTO_BUILD_FILE,
+        help="Path to bentofile. Default to 'bentofile.yaml'",
     )
-    @click.option("--version", type=click.STRING, default=None)
-    def build(build_ctx: str, bentofile: str, version: str) -> None:  # type: ignore (not accessed)
+    @click.option(
+        "--version",
+        type=click.STRING,
+        default=None,
+        help="Bento version. By default the version will be generated.",
+    )
+    @click.option(
+        "-o",
+        "--output",
+        type=click.Choice(["tag", "default"]),
+        default="default",
+        show_default=True,
+        help="Output log format. '-o tag' to display only bento tag.",
+    )
+    @inject
+    def build(  # type: ignore (not accessed)
+        build_ctx: str,
+        bentofile: str,
+        version: str,
+        output: t.Literal["tag", "default"],
+        _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> None:
         """Build a new Bento from current directory."""
-        if sys.path[0] != build_ctx:
-            sys.path.insert(0, build_ctx)
+        try:
+            bentofile = resolve_user_filepath(bentofile, build_ctx)
+        except FileNotFoundError:
+            raise bentoml.exceptions.InvalidArgument(
+                f'bentofile "{bentofile}" not found'
+            )
 
-        bento = build_bentofile(bentofile, build_ctx=build_ctx, version=version)
-        click.echo(BENTOML_FIGLET)
-        click.secho(f"Successfully built {bento}.", fg="green")
-        click.secho(
-            f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
-            fg="yellow",
-        )
-        click.secho(
-            f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
-            fg="yellow",
-        )
+        with open(bentofile, "r", encoding="utf-8") as f:
+            build_config = BentoBuildConfig.from_yaml(f)
+
+        bento = Bento.create(
+            build_config=build_config,
+            version=version,
+            build_ctx=build_ctx,
+        ).save(_bento_store)
+
+        if output == "tag":
+            click.echo(bento.tag)
+            return
+
+        if not get_quiet_mode():
+            click.echo(BENTOML_FIGLET)
+            click.secho(f"Successfully built {bento}.", fg="green")
+
+            click.secho(
+                f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
+                fg="blue",
+            )
+            click.secho(
+                f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
+                fg="blue",
+            )

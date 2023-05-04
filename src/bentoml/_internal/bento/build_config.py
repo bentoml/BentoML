@@ -835,9 +835,12 @@ class BentoBuildConfig:
                 raise InvalidArgument(str(e)) from e
 
     def to_yaml(self, stream: t.TextIO) -> None:
-        # TODO: Save BentoBuildOptions to a yaml file
-        # This is reserved for building interactive build file creation CLI
-        raise NotImplementedError
+        try:
+            yaml.dump(bentoml_cattr.unstructure(self), stream)
+        except yaml.YAMLError as e:
+            logger.error("Error while deserializing BentoBuildConfig to yaml:")
+            logger.error(e)
+            raise
 
 
 @attr.define(frozen=True)

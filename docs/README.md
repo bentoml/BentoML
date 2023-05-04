@@ -12,7 +12,7 @@ documentation.
 
 Before starting to make a contribution to the docs, make sure to check the 
 [issues page](https://github.com/bentoml/BentoML/issues) and the `#bentoml-contributors` 
-channel in the [community slack](https://l.linklyhq.com/l/ktOX), to make sure no one 
+channel in the [community slack](https://l.bentoml.com/join-slack), to make sure no one 
 else is working on the same thing and to get feedback from the community for larger 
 proposals.
 

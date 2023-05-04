@@ -225,9 +225,6 @@ class HTTPAppFactory(BaseAppFactory):
         def client_request_hook(span: Span, _: dict[str, t.Any]) -> None:
             if span is not None:
                 trace_context.request_id = span.context.span_id
-                trace_context.service_name = span.resource.attributes.get(
-                    "service.name"
-                )
 
         middlewares.append(
             Middleware(

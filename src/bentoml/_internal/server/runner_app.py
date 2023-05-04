@@ -166,9 +166,6 @@ class RunnerAppFactory(BaseAppFactory):
         def client_request_hook(span: Span, _scope: t.Dict[str, t.Any]) -> None:
             if span is not None:
                 trace_context.request_id = span.context.span_id
-                trace_context.service_name = span.resource.attributes.get(
-                    "service.name"
-                )
 
         middlewares.append(
             Middleware(

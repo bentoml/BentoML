@@ -5,6 +5,7 @@ import math
 import uuid
 import typing as t
 import logging
+import urllib.parse
 from copy import deepcopy
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
@@ -22,6 +23,7 @@ from .helpers import flatten_dict
 from .helpers import load_config_file
 from .helpers import get_default_config
 from .helpers import import_configuration_spec
+from ..context import trace_context
 from ..context import component_context
 from ..resource import CpuResource
 from ..resource import system_resources
@@ -289,7 +291,6 @@ class _BentoMLContainerClass:
         | str
         | None = Provide[cors.access_control_expose_headers],
     ) -> dict[str, list[str] | str | int]:
-
         if isinstance(allow_origins, str):
             allow_origins = [allow_origins]
 
@@ -363,6 +364,19 @@ class _BentoMLContainerClass:
                 "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
             )
         resource = {}
+
+        def process_resource_attributes(
+            resource_attributes: str, target_resource: dict[str, str]
+        ):
+            for item in resource_attributes.split(","):
+                try:
+                    key, value = item.split("=", maxsplit=1)
+                except ValueError as e:
+                    logger.warning("Invalid key,value resource pair %s: %s", item, e)
+                    continue
+                value_url_decoded = urllib.parse.unquote(value)
+                target_resource[key.strip()] = value_url_decoded
+
         # User can optionally configure the resource with the following environment variables. Only
         # configure resource if user has not explicitly configured it.
         if (
@@ -371,12 +385,67 @@ class _BentoMLContainerClass:
         ):
             if component_context.component_name:
                 resource[SERVICE_NAME] = component_context.component_name
+                trace_context.service_name = component_context.component_name
             if component_context.component_index:
                 resource[SERVICE_INSTANCE_ID] = component_context.component_index
             if component_context.bento_name:
                 resource[SERVICE_NAMESPACE] = component_context.bento_name
             if component_context.bento_version:
                 resource[SERVICE_VERSION] = component_context.bento_version
+
+        elif (
+            OTEL_RESOURCE_ATTRIBUTES in os.environ
+            and OTEL_SERVICE_NAME not in os.environ
+        ):
+            process_resource_attributes(os.environ[OTEL_RESOURCE_ATTRIBUTES], resource)
+            if SERVICE_NAME in resource:
+                trace_context.service_name = resource[SERVICE_NAME]
+            else:
+                if component_context.component_name:
+                    resource[SERVICE_NAME] = component_context.component_name
+                    trace_context.service_name = component_context.component_name
+            if (
+                component_context.component_index
+                and SERVICE_INSTANCE_ID not in resource
+            ):
+                resource[SERVICE_INSTANCE_ID] = component_context.component_index
+            if component_context.bento_name and SERVICE_NAMESPACE not in resource:
+                resource[SERVICE_NAMESPACE] = component_context.bento_name
+            if component_context.bento_version and SERVICE_VERSION not in resource:
+                resource[SERVICE_VERSION] = component_context.bento_version
+
+        elif (
+            OTEL_SERVICE_NAME in os.environ
+            and OTEL_RESOURCE_ATTRIBUTES not in os.environ
+        ):
+            resource[SERVICE_NAME] = os.environ[OTEL_SERVICE_NAME]
+            trace_context.service_name = os.environ[OTEL_SERVICE_NAME]
+            if (
+                component_context.component_index
+                and SERVICE_INSTANCE_ID not in resource
+            ):
+                resource[SERVICE_INSTANCE_ID] = component_context.component_index
+            if component_context.bento_name and SERVICE_NAMESPACE not in resource:
+                resource[SERVICE_NAMESPACE] = component_context.bento_name
+            if component_context.bento_version and SERVICE_VERSION not in resource:
+                resource[SERVICE_VERSION] = component_context.bento_version
+        else:
+            # the branch that contains both environment variables
+            process_resource_attributes(os.environ[OTEL_RESOURCE_ATTRIBUTES], resource)
+            # OTEL_SERVICE_NAME will always take precedent.
+            # See https://opentelemetry.io/docs/reference/specification/sdk-environment-variables/
+            resource[SERVICE_NAME] = os.environ[OTEL_SERVICE_NAME]
+            trace_context.service_name = os.environ[OTEL_SERVICE_NAME]
+            if (
+                component_context.component_index
+                and SERVICE_INSTANCE_ID not in resource
+            ):
+                resource[SERVICE_INSTANCE_ID] = component_context.component_index
+            if component_context.bento_name and SERVICE_NAMESPACE not in resource:
+                resource[SERVICE_NAMESPACE] = component_context.bento_name
+            if component_context.bento_version and SERVICE_VERSION not in resource:
+                resource[SERVICE_VERSION] = component_context.bento_version
+
         # create tracer provider
         provider = TracerProvider(
             sampler=ParentBasedTraceIdRatio(sample_rate),

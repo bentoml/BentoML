@@ -351,7 +351,7 @@ def test_exception_typeddict():
 def test_exception_typeddict_and_pydantic_model_are_mutually_exclusive():
     with pytest.raises(
         BadInput,
-        match="typeddict and pydantic_model are mutually exclusive. use only typeddict or pydantic_model",
+        match="'typeddict' and 'pydantic_model' are mutually exclusive. Make sure to only use one of them.",
     ):
         _ = JSON(typeddict=ExampleTypedDictSchema, pydantic_model=ExamplePydanticSchema)
 

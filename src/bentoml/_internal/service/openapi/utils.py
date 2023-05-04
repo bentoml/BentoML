@@ -2,20 +2,29 @@ from __future__ import annotations
 
 import sys
 import typing as t
-from typing import get_args
-from typing import TypedDict
-from typing import get_origin
 from typing import TYPE_CHECKING
 from functools import lru_cache
 
-if sys.version_info >= (3, 10):
+if sys.version_info >= (3, 8):
+    from typing import get_args
+    from typing import TypedDict
+    from typing import get_origin
+else:
+    from typing_extensions import get_args
+    from typing_extensions import TypedDict
+    from typing_extensions import get_origin
 
+if sys.version_info >= (3, 10):
     from types import UnionType
+    from typing import is_typeddict
+    from typing import get_type_hints
 
     def is_union(tp):  # check Union[A,B] or A | B
         return tp == t.Union or get_origin(tp) == UnionType
 
 else:
+    from typing_extensions import is_typeddict
+    from typing_extensions import get_type_hints
 
     def is_union(tp):  # check Union[A,B]
         return tp == t.Union
@@ -27,13 +36,6 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import Required
     from typing_extensions import NotRequired
-
-if sys.version_info >= (3, 10):
-    from typing import is_typeddict
-    from typing import get_type_hints
-else:
-    from typing_extensions import is_typeddict
-    from typing_extensions import get_type_hints
 
 from bentoml.exceptions import NotFound
 from bentoml.exceptions import InvalidArgument

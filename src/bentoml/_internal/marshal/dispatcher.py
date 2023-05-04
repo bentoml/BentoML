@@ -234,6 +234,8 @@ class CorkDispatcher:
                     # fake wait as 0 for training requests
                     info.enqueue_time = now
                 self._loop.create_task(self.outbound_call(inputs_info))
+        except asyncio.CancelledError:
+            raise
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 
@@ -267,6 +269,8 @@ class CorkDispatcher:
                     "BentoML has detected that a service has a max latency that is likely too low for serving. If many 503 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
                 )
             logger.debug("Dispatcher optimizer training complete.")
+        except asyncio.CancelledError:
+            raise
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 

@@ -164,16 +164,11 @@ class RunnerAppFactory(BaseAppFactory):
         from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
         def client_request_hook(span: Span, _scope: t.Dict[str, t.Any]) -> None:
-            if span:
+            if span is not None:
                 trace_context.request_id = span.context.span_id
-                service_name = span.resource.attributes.get("service.name")
-                if service_name != trace_context.service_name:
-                    if trace_context.service_name is None:
-                        trace_context.service_name = service_name
-                    else:
-                        logger.warning(
-                            f"'service.name={service_name}' found inconsistent from incoming trace with current trace context ({trace_context.service_name})."
-                        )
+                trace_context.service_name = span.resource.attributes.get(
+                    "service.name"
+                )
 
         middlewares.append(
             Middleware(

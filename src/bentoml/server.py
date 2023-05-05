@@ -343,7 +343,6 @@ class GrpcServer(Server):
         ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
         ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
         protocol_version: str | None = None,
-        grpc_protocol_version: str | None = None,
     ):
         from .serve import construct_ssl_args
 
@@ -359,17 +358,6 @@ class GrpcServer(Server):
             api_workers,
             backlog,
         )
-
-        if grpc_protocol_version is not None:
-            if protocol_version is None:
-                logger.warning(
-                    "Setting 'grpc_protocol_version' as kwargs is now deprecated and will be removed in future versions. Please use 'protocol_version' instead."
-                )
-                protocol_version = grpc_protocol_version
-            else:
-                raise ValueError(
-                    "Cannot set both 'grpc_protocol_version' and 'protocol_version' as kwargs."
-                )
 
         ssl_args: dict[str, t.Any] = {
             "ssl_certfile": ssl_certfile,

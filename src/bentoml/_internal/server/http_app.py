@@ -105,7 +105,7 @@ class HTTPAppFactory(BaseAppFactory):
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
-    ) -> None:
+    ):
         self.bento_service = bento_service
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
@@ -220,7 +220,7 @@ class HTTPAppFactory(BaseAppFactory):
             middlewares.append(Middleware(HTTPTrafficMetricsMiddleware))
 
         # otel middleware
-        import opentelemetry.instrumentation.asgi as otel_asgi
+        from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
         def client_request_hook(span: Span, _: dict[str, t.Any]) -> None:
             if span is not None:
@@ -228,7 +228,7 @@ class HTTPAppFactory(BaseAppFactory):
 
         middlewares.append(
             Middleware(
-                otel_asgi.OpenTelemetryMiddleware,
+                OpenTelemetryMiddleware,
                 excluded_urls=BentoMLContainer.tracing_excluded_urls.get(),
                 default_span_details=None,
                 server_request_hook=None,
@@ -344,6 +344,11 @@ class HTTPAppFactory(BaseAppFactory):
                     response.headers["X-BentoML-Request-ID"] = str(
                         trace_context.request_id
                     )
+                if (
+                    BentoMLContainer.http.response.trace_id.get()
+                    and trace_context.trace_id is not None
+                ):
+                    response.headers["X-BentoML-Trace-ID"] = str(trace_context.trace_id)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
                 if output is not None:

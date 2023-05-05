@@ -220,7 +220,7 @@ class HTTPAppFactory(BaseAppFactory):
             middlewares.append(Middleware(HTTPTrafficMetricsMiddleware))
 
         # otel middleware
-        import opentelemetry.instrumentation.asgi as otel_asgi
+        from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
         def client_request_hook(span: Span, _: dict[str, t.Any]) -> None:
             if span is not None:
@@ -228,7 +228,7 @@ class HTTPAppFactory(BaseAppFactory):
 
         middlewares.append(
             Middleware(
-                otel_asgi.OpenTelemetryMiddleware,
+                OpenTelemetryMiddleware,
                 excluded_urls=BentoMLContainer.tracing_excluded_urls.get(),
                 default_span_details=None,
                 server_request_hook=None,

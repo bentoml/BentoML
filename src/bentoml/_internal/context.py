@@ -152,6 +152,9 @@ class _ServiceTraceContext:
     _request_id_var = contextvars.ContextVar(
         "_request_id_var", default=t.cast("t.Optional[int]", None)
     )
+    _service_name_var = contextvars.ContextVar(
+        "_service_name_var", default=t.cast("t.Optional[str]", None)
+    )
 
     @property
     def trace_id(self) -> t.Optional[int]:
@@ -164,7 +167,7 @@ class _ServiceTraceContext:
 
     @property
     def sampled(self) -> int:
-        from opentelemetry import trace  # type: ignore
+        from opentelemetry import trace
 
         span = trace.get_current_span()
         if span is None:
@@ -173,7 +176,7 @@ class _ServiceTraceContext:
 
     @property
     def span_id(self) -> t.Optional[int]:
-        from opentelemetry import trace  # type: ignore
+        from opentelemetry import trace
 
         span = trace.get_current_span()
         if span is None:
@@ -190,6 +193,14 @@ class _ServiceTraceContext:
     @request_id.setter
     def request_id(self, request_id: t.Optional[int]) -> None:
         self._request_id_var.set(request_id)
+
+    @property
+    def service_name(self) -> t.Optional[str]:
+        return self._service_name_var.get()
+
+    @service_name.setter
+    def service_name(self, service_name: t.Optional[str]) -> None:
+        self._service_name_var.set(service_name)
 
 
 class _ComponentContext:

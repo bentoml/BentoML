@@ -22,6 +22,7 @@ from .helpers import flatten_dict
 from .helpers import load_config_file
 from .helpers import get_default_config
 from .helpers import import_configuration_spec
+from ..context import trace_context
 from ..context import component_context
 from ..resource import CpuResource
 from ..resource import system_resources
@@ -289,7 +290,6 @@ class _BentoMLContainerClass:
         | str
         | None = Provide[cors.access_control_expose_headers],
     ) -> dict[str, list[str] | str | int]:
-
         if isinstance(allow_origins, str):
             allow_origins = [allow_origins]
 
@@ -349,9 +349,8 @@ class _BentoMLContainerClass:
         from opentelemetry.sdk.resources import SERVICE_VERSION
         from opentelemetry.sdk.resources import SERVICE_NAMESPACE
         from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
+        from opentelemetry.sdk.resources import OTELResourceDetector
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
-        from opentelemetry.sdk.environment_variables import OTEL_SERVICE_NAME
-        from opentelemetry.sdk.environment_variables import OTEL_RESOURCE_ATTRIBUTES
 
         from ...exceptions import InvalidArgument
         from ..utils.telemetry import ParentBasedTraceIdRatio
@@ -362,25 +361,29 @@ class _BentoMLContainerClass:
             logger.debug(
                 "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
             )
-        resource = {}
+
         # User can optionally configure the resource with the following environment variables. Only
         # configure resource if user has not explicitly configured it.
-        if (
-            OTEL_SERVICE_NAME not in os.environ
-            and OTEL_RESOURCE_ATTRIBUTES not in os.environ
-        ):
-            if component_context.component_name:
-                resource[SERVICE_NAME] = component_context.component_name
-            if component_context.component_index:
-                resource[SERVICE_INSTANCE_ID] = component_context.component_index
-            if component_context.bento_name:
-                resource[SERVICE_NAMESPACE] = component_context.bento_name
-            if component_context.bento_version:
-                resource[SERVICE_VERSION] = component_context.bento_version
+        system_otel_resources: Resource = OTELResourceDetector().detect()
+
+        _resource = {}
+        if component_context.component_name:
+            _resource[SERVICE_NAME] = component_context.component_name
+        if component_context.component_index:
+            _resource[SERVICE_INSTANCE_ID] = component_context.component_index
+        if component_context.bento_name:
+            _resource[SERVICE_NAMESPACE] = component_context.bento_name
+        if component_context.bento_version:
+            _resource[SERVICE_VERSION] = component_context.bento_version
+
+        bentoml_resource = Resource.create(_resource)
+
+        resources = bentoml_resource.merge(system_otel_resources)
+        trace_context.service_name = resources.attributes.get(SERVICE_NAME)
+
         # create tracer provider
         provider = TracerProvider(
-            sampler=ParentBasedTraceIdRatio(sample_rate),
-            resource=Resource.create(resource),
+            sampler=ParentBasedTraceIdRatio(sample_rate), resource=resources
         )
         if tracer_type == "zipkin" and any(zipkin.values()):
             from opentelemetry.exporter.zipkin.json import ZipkinExporter

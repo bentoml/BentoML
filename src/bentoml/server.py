@@ -12,8 +12,10 @@ from typing import TYPE_CHECKING
 from simple_di import inject
 from simple_di import Provide
 
+from .exceptions import BentoMLException
 from ._internal.tag import Tag
 from ._internal.bento import Bento
+from ._internal.service import Service
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -40,7 +42,7 @@ class Server(ABC):
 
     def __init__(
         self,
-        bento: str | Bento | Tag,
+        bento: str | Bento | Tag | Service,
         serve_cmd: str,
         reload: bool,
         production: bool,
@@ -52,11 +54,17 @@ class Server(ABC):
         backlog: int,
     ):
         self.bento = bento
-
+        working_dir = None
         if isinstance(bento, Bento):
             bento_str = str(bento.tag)
         elif isinstance(bento, Tag):
             bento_str = str(bento)
+        elif isinstance(bento, Service):
+            if bento._caller_module == "__main__":
+                raise BentoMLException(
+                    "Cannot use bentoml.Service as a server if it is defined in __main__ module."
+                )
+            bento_str, working_dir = bento.get_service_import_origin()
         else:
             bento_str = bento
 
@@ -74,6 +82,8 @@ class Server(ABC):
             str(backlog),
         ]
 
+        if working_dir:
+            args.extend(["--working-dir", working_dir])
         if not production:
             args.append("--development")
         if reload:
@@ -183,7 +193,7 @@ class HTTPServer(Server):
     @inject
     def __init__(
         self,
-        bento: str | Bento | Tag,
+        bento: str | Bento | Tag | Service,
         reload: bool = False,
         production: bool = True,
         env: t.Literal["conda"] | None = None,
@@ -279,7 +289,7 @@ class GrpcServer(Server):
     @inject
     def __init__(
         self,
-        bento: str | Bento | Tag,
+        bento: str | Bento | Tag | Service,
         reload: bool = False,
         production: bool = True,
         env: t.Literal["conda"] | None = None,

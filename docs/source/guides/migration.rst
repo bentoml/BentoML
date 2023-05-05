@@ -346,4 +346,4 @@ in one place, and enables advanced GitOps and CI/CD workflow.
 
 
 🎉 Ta-da, you have migrated your project to BentoML 1.0.0. Have more questions?
-`Join the BentoML Slack community <https://l.linklyhq.com/l/ktPp>`_.
+`Join the BentoML Slack community <https://l.bentoml.com/join-slack>`_.

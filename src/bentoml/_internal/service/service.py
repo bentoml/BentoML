@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import os
+import sys
 import typing as t
+import inspect
 import logging
 import importlib
 from typing import TYPE_CHECKING
@@ -119,6 +122,7 @@ class Service:
     # Working dir and Import path of the service, set when the service was imported
     _working_dir: str | None = attr.field(init=False, default=None)
     _import_str: str | None = attr.field(init=False, default=None)
+    _caller_module: str | None = attr.field(init=False, default=None)
 
     def __reduce__(self):
         """
@@ -181,7 +185,7 @@ class Service:
         else:
             from bentoml._internal.service.loader import import_service
 
-            return (import_service, (self._import_str, self._working_dir))
+            return (import_service, self.get_service_import_origin())
 
     def __init__(
         self,
@@ -226,6 +230,30 @@ class Service:
             models=[] if models is None else models,
         )
 
+        # Set import origin info - import_str can not be determined at this stage yet as
+        # the variable name is only available in module vars after __init__ is returned
+        # get_service_import_origin below will use the _caller_module for retriving the
+        # correct import_str for this service
+        caller_module = inspect.currentframe().f_back.f_globals["__name__"]
+        object.__setattr__(self, "_caller_module", caller_module)
+        object.__setattr__(self, "_working_dir", os.getcwd())
+
+    def get_service_import_origin(self) -> tuple[str, str]:
+        """
+        Returns the module name and working directory of the service
+        """
+        if not self._import_str:
+            for name, value in vars(sys.modules[self._caller_module]).items():
+                if value is self:
+                    object.__setattr__(
+                        self, "_import_str", f"{self._caller_module}:{name}"
+                    )
+                    break
+            if not self._import_str:
+                raise BentoMLException("Failed to get service import origin")
+
+        return self._import_str, self._working_dir
+
     def api(
         self,
         input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
@@ -247,11 +275,13 @@ class Service:
     def __str__(self):
         if self.bento:
             return f'bentoml.Service(tag="{self.tag}", ' f'path="{self.bento.path}")'
-        elif self._import_str and self._working_dir:
+
+        if self._caller_module != "__main__":
+            import_str, working_dir = self.get_service_import_origin()
             return (
                 f'bentoml.Service(name="{self.name}", '
-                f'import_str="{self._import_str}", '
-                f'working_dir="{self._working_dir}")'
+                f'import_str="{import_str}", '
+                f'working_dir="{working_dir}")'
             )
         else:
             return (
@@ -266,10 +296,7 @@ class Service:
         if self.bento and other.bento:
             return self.bento.tag == other.bento.tag
 
-        if (
-            self._working_dir == other._working_dir
-            and self._import_str == other._import_str
-        ):
+        if self.get_service_import_origin() == other.get_service_import_origin():
             return True
 
         return False
@@ -384,8 +411,3 @@ class Service:
 def on_load_bento(svc: Service, bento: Bento):
     object.__setattr__(svc, "bento", bento)
     object.__setattr__(svc, "tag", bento.info.tag)
-
-
-def on_import_svc(svc: Service, working_dir: str, import_str: str):
-    object.__setattr__(svc, "_working_dir", working_dir)
-    object.__setattr__(svc, "_import_str", import_str)

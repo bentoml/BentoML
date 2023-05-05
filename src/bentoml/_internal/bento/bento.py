@@ -421,7 +421,9 @@ class BentoInfo:
 
     tag: Tag
     service: str = attr.field(
-        converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
+        converter=lambda svc: svc.get_service_import_origin()[0]
+        if isinstance(svc, Service)
+        else svc
     )
     name: str = attr.field(init=False)
     version: str = attr.field(init=False)

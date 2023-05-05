@@ -25,7 +25,6 @@ from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
-from ..runner.strategy import DefaultStrategy, Strategy
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
@@ -37,6 +36,8 @@ from ..utils import normalize_labels_value
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
+from ..runner.strategy import Strategy
+from ..runner.strategy import DefaultStrategy
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:

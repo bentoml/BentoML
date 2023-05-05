@@ -25,6 +25,7 @@ from cattr.gen import make_dict_unstructure_fn
 from simple_di import inject
 from simple_di import Provide
 
+from ..runner.strategy import DefaultStrategy, Strategy
 from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
@@ -329,6 +330,7 @@ class Model(StoreItem):
         max_latency_ms: int | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
         embedded: bool = False,
+        scheduling_strategy: type[Strategy] = DefaultStrategy,
     ) -> Runner:
         """
         TODO(chaoyu): add docstring
@@ -360,6 +362,7 @@ class Model(StoreItem):
             max_latency_ms=max_latency_ms,
             method_configs=method_configs,
             embedded=embedded,
+            scheduling_strategy=scheduling_strategy,
         )
 
     def to_runnable(self) -> t.Type[Runnable]:

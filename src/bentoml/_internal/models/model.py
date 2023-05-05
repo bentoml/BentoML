@@ -36,8 +36,6 @@ from ..utils import normalize_labels_value
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
-from ..runner.strategy import Strategy
-from ..runner.strategy import DefaultStrategy
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -45,6 +43,7 @@ if TYPE_CHECKING:
     from ..types import PathType
     from ..runner import Runner
     from ..runner import Runnable
+    from ..runner.strategy import Strategy
 
     class ModelSignatureDict(t.TypedDict, total=False):
         batchable: bool
@@ -331,7 +330,7 @@ class Model(StoreItem):
         max_latency_ms: int | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
         embedded: bool = False,
-        scheduling_strategy: type[Strategy] = DefaultStrategy,
+        scheduling_strategy: type[Strategy] | None = None,
     ) -> Runner:
         """
         TODO(chaoyu): add docstring
@@ -346,6 +345,10 @@ class Model(StoreItem):
 
         """
         from ..runner import Runner
+        from ..runner.strategy import DefaultStrategy
+
+        if scheduling_strategy is None:
+            scheduling_strategy = DefaultStrategy
 
         # TODO: @larme @yetone run this branch only yatai version is incompatible with embedded runner
         yatai_version = os.environ.get("YATAI_T_VERSION")

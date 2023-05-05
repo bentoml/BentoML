@@ -243,16 +243,26 @@ class Service:
         Returns the module name and working directory of the service
         """
         if not self._import_str:
+            import_module = self._caller_module
+            if import_module == "__main__":
+                if hasattr(sys.modules["__main__"], "__file__"):
+                    import_module = sys.modules["__main__"].__file__
+
             for name, value in vars(sys.modules[self._caller_module]).items():
                 if value is self:
-                    object.__setattr__(
-                        self, "_import_str", f"{self._caller_module}:{name}"
-                    )
+                    object.__setattr__(self, "_import_str", f"{import_module}:{name}")
                     break
             if not self._import_str:
                 raise BentoMLException("Failed to get service import origin")
 
         return self._import_str, self._working_dir
+
+    def is_service_importable(self) -> bool:
+        if self._caller_module == "__main__":
+            if not hasattr(sys.modules["__main__"], "__file__"):
+                return False
+
+        return True
 
     def api(
         self,

@@ -60,9 +60,9 @@ class Server(ABC):
         elif isinstance(bento, Tag):
             bento_str = str(bento)
         elif isinstance(bento, Service):
-            if bento._caller_module == "__main__":
+            if not bento.is_service_importable():
                 raise BentoMLException(
-                    "Cannot use bentoml.Service as a server if it is defined in __main__ module."
+                    "Cannot use bentoml.Service as a server if it is defined in interactive session or Jupyter Notebooks."
                 )
             bento_str, working_dir = bento.get_service_import_origin()
         else:

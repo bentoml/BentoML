@@ -37,7 +37,7 @@ class Server(ABC):
     args: list[str]
 
     process: subprocess.Popen[bytes] | None = None
-    timeout: float = 10
+    timeout: int = 10
     _client: Client | None = None
 
     def __init__(
@@ -117,10 +117,16 @@ class Server(ABC):
         self.port = port
         self.start = self._create_startmanager()
 
-    def _create_startmanager(server):  # type: ignore # not calling self self
+    def _create_startmanager(self):
         class _StartManager:
             def __init__(
-                self, blocking: bool = False, env: dict[str, str] | None = None
+                __start_self,
+                blocking: bool = False,
+                stdout: int | None = None,
+                stderr: int | None = None,
+                stdin: int | None = None,
+                env: dict[str, str] | None = None,
+                encoding: str = "utf-8",
             ):
                 """Start the server programmatically.
 
@@ -133,30 +139,35 @@ class Server(ABC):
                 Args:
                     blocking: If True, the server will block until it is stopped.
                     env: A dictionary of environment variables to pass to the server. Default to ``None``.
+                    stdout: The stdout of the server. Default to ``subprocess.PIPE``.
+                    stderr: The stderr of the server. Default to ``subprocess.PIPE``.
+                    stdin: The stdin of the server. Default to ``subprocess.PIPE``.
+                    encoding: The encoding of the server's stdout and stderr. Default to ``utf-8``.
                 """
-                logger.info(f"starting server with arguments: {server.args}")
+                logger.debug(f"Starting server with arguments: {server.args}")
 
-                server.process = subprocess.Popen(
-                    server.args,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    stdin=subprocess.PIPE,
+                self.process = subprocess.Popen(
+                    self.args,
+                    stdout=stdout or subprocess.PIPE,
+                    stderr=stderr or subprocess.PIPE,
+                    stdin=stdin or subprocess.PIPE,
+                    encoding=encoding,
                     env=env,
                 )
 
                 if blocking:
-                    server.process.wait()
+                    self.process.wait()
 
-            def __enter__(self):
-                return server.get_client()
+            def __enter__(__start_self):
+                return self.get_client()
 
             def __exit__(
-                self,
+                __start_self,
                 exc_type: type[BaseException] | None,
                 exc_value: BaseException | None,
                 traceback: TracebackType | None,
             ):
-                server.stop()
+                self.stop()
 
         return _StartManager
 
@@ -164,7 +175,7 @@ class Server(ABC):
     def get_client(self) -> Client:
         pass
 
-    def stop(self) -> None:
+    def _check_process(self):
         if self.process is None:
             logger.warning("Attempted to stop a BentoML server that was not running!")
             return
@@ -174,15 +185,43 @@ class Server(ABC):
                 "Attempted to stop a BentoML server that has already exited!"
             )
         elif out_code is not None:
-            logger.warning(
+            logs = [
                 "Attempted to stop a BentoML server that has already exited with an error!\n"
-                + "Server Output:\n"
-                + textwrap.indent(self.process.stdout.readall())
-                + "\n"
-                + "Server Stderr:\n"
-                + textwrap.indent(self.process.stderr.readall())
-            )
+            ]
+            if self.process.stdout:
+                stdout = self.process.stdout.readlines()
+                if stdout:
+                    logs.extend(
+                        [
+                            "\nServer Output:\n",
+                            *map(
+                                lambda s: textwrap.indent(s, " " * 4),
+                                stdout,
+                            ),
+                        ]
+                    )
+
+            if self.process.stderr:
+                stderr = self.process.stderr.readlines()
+                if stderr:
+                    logs.extend(
+                        [
+                            "\nServer Stderr:\n",
+                            *map(
+                                lambda s: textwrap.indent(s, " " * 4),
+                                stderr,
+                            ),
+                        ]
+                    )
+            logger.warning("".join(logs))
+
+    def stop(self):
+        self._check_process()
+
+        assert self.process is not None
         self.process.terminate()
+        # NOTE: After terminate the process, make sure to call `communicate` to avoid zombie process.
+        self.process.communicate()
 
     def __enter__(self):
         logger.warning(
@@ -269,25 +308,7 @@ class HTTPServer(Server):
         return self.get_client()
 
     def get_client(self) -> HTTPClient:
-        if self.process is None:
-            logger.warning(
-                "Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first."
-            )
-            return
-        out_code = self.process.poll()
-        if out_code == 0:
-            logger.warning(
-                "Attempted to stop a BentoML server that has already exited! You can run '.start()' again to restart it."
-            )
-        elif out_code is not None:
-            logger.warning(
-                "Attempted to stop a BentoML server that has already exited with an error!\n"
-                + "Server Output:\n"
-                + textwrap.indent(self.process.stdout.readall())
-                + "\n"
-                + "Server Stderr:\n"
-                + textwrap.indent(self.process.stderr.readall())
-            )
+        self._check_process()
 
         if self._client is None:
             from .client import HTTPClient
@@ -318,8 +339,14 @@ class GrpcServer(Server):
         enable_channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
         max_concurrent_streams: int
         | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+        ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+        ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+        ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
+        protocol_version: str | None = None,
         grpc_protocol_version: str | None = None,
     ):
+        from .serve import construct_ssl_args
+
         super().__init__(
             bento,
             "serve-grpc",
@@ -333,6 +360,25 @@ class GrpcServer(Server):
             backlog,
         )
 
+        if grpc_protocol_version is not None:
+            if protocol_version is None:
+                logger.warning(
+                    "Setting 'grpc_protocol_version' as kwargs is now deprecated and will be removed in future versions. Please use 'protocol_version' instead."
+                )
+                protocol_version = grpc_protocol_version
+            else:
+                raise ValueError(
+                    "Cannot set both 'grpc_protocol_version' and 'protocol_version' as kwargs."
+                )
+
+        ssl_args: dict[str, t.Any] = {
+            "ssl_certfile": ssl_certfile,
+            "ssl_keyfile": ssl_keyfile,
+            "ssl_ca_certs": ssl_ca_certs,
+        }
+
+        self.args.extend(construct_ssl_args(**ssl_args))
+
         if enable_reflection:
             self.args.append("--enable-reflection")
         if enable_channelz:
@@ -340,29 +386,11 @@ class GrpcServer(Server):
         if max_concurrent_streams is not None:
             self.args.extend(["--max-concurrent-streams", str(max_concurrent_streams)])
 
-        if grpc_protocol_version is not None:
-            self.args.extend(["--protocol-version", str(grpc_protocol_version)])
+        if protocol_version is not None:
+            self.args.extend(["--protocol-version", str(protocol_version)])
 
     def get_client(self) -> GrpcClient:
-        if self.process is None:
-            logger.warning(
-                "Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first."
-            )
-            return
-        out_code = self.process.poll()
-        if out_code == 0:
-            logger.warning(
-                "Attempted to stop a BentoML server that has already exited! You can run '.start()' again to restart it."
-            )
-        elif out_code is not None:
-            logger.warning(
-                "Attempted to stop a BentoML server that has already exited with an error!\n"
-                + "Server Output:\n"
-                + textwrap.indent(self.process.stdout.readall())
-                + "\n"
-                + "Server Stderr:\n"
-                + textwrap.indent(self.process.stderr.readall())
-            )
+        self._check_process()
 
         if self._client is None:
             from .client import GrpcClient

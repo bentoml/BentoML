@@ -247,13 +247,20 @@ class Service:
             if import_module == "__main__":
                 if hasattr(sys.modules["__main__"], "__file__"):
                     import_module = sys.modules["__main__"].__file__
+                else:
+                    raise BentoMLException(
+                        "Failed to get service import origin, bentoml.Service object defined interactively in console or notebook is not supported"
+                    )
 
             for name, value in vars(sys.modules[self._caller_module]).items():
                 if value is self:
                     object.__setattr__(self, "_import_str", f"{import_module}:{name}")
                     break
+
             if not self._import_str:
-                raise BentoMLException("Failed to get service import origin")
+                raise BentoMLException(
+                    "Failed to get service import origin, bentoml.Service object must be assigned to a variable at module level"
+                )
 
         return self._import_str, self._working_dir
 
@@ -286,14 +293,14 @@ class Service:
         if self.bento:
             return f'bentoml.Service(tag="{self.tag}", ' f'path="{self.bento.path}")'
 
-        if self._caller_module != "__main__":
+        try:
             import_str, working_dir = self.get_service_import_origin()
             return (
                 f'bentoml.Service(name="{self.name}", '
                 f'import_str="{import_str}", '
                 f'working_dir="{working_dir}")'
             )
-        else:
+        except BentoMLException:
             return (
                 f'bentoml.Service(name="{self.name}", '
                 f'runners=[{",".join([r.name for r in self.runners])}])'
@@ -303,13 +310,17 @@ class Service:
         return self.__str__()
 
     def __eq__(self, other: Service):
+        if self is other:
+            return True
+
         if self.bento and other.bento:
             return self.bento.tag == other.bento.tag
 
-        if self.get_service_import_origin() == other.get_service_import_origin():
-            return True
-
-        return False
+        try:
+            if self.get_service_import_origin() == other.get_service_import_origin():
+                return True
+        except BentoMLException:
+            return False
 
     @property
     def doc(self) -> str:

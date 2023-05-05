@@ -313,7 +313,7 @@ class CorkDispatcher:
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
                 self._loop.create_task(self.outbound_call(inputs_info))
             except asyncio.CancelledError:
-                return
+                raise
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)
 

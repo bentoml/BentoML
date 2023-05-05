@@ -107,6 +107,7 @@ _API_SERVER_CONFIG = {
             "access_control_max_age": s.Or(int, None),
             "access_control_expose_headers": s.Or([str], str, None),
         },
+        "response": {"trace_id": bool},
     },
     "grpc": {
         "host": s.And(str, is_valid_ip_address),

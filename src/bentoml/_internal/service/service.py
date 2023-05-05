@@ -238,7 +238,7 @@ class Service:
         object.__setattr__(self, "_caller_module", caller_module)
         object.__setattr__(self, "_working_dir", os.getcwd())
 
-    def get_service_import_origin(self) -> tuple[str, str]:
+    def get_service_import_origin(self) -> tuple[str, str | None]:
         """
         Returns the module name and working directory of the service
         """
@@ -251,6 +251,11 @@ class Service:
                     raise BentoMLException(
                         "Failed to get service import origin, bentoml.Service object defined interactively in console or notebook is not supported"
                     )
+
+            if self._caller_module not in sys.modules:
+                raise BentoMLException(
+                    "Failed to get service import origin, bentoml.Service object must be defined in a module"
+                )
 
             for name, value in vars(sys.modules[self._caller_module]).items():
                 if value is self:

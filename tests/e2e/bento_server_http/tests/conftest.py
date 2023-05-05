@@ -50,11 +50,13 @@ def fixture_server_config_file(request: FixtureRequest) -> str:
 
 
 @pytest.fixture(autouse=True, scope="package")
-def bento_directory(request):
+def bento_directory(request: FixtureRequest):
     bento_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     os.chdir(bento_path)
+    sys.path.insert(0, bento_path)
     yield
     os.chdir(request.config.invocation_dir)
+    sys.path.pop(0)
 
 
 @pytest.fixture(scope="session")

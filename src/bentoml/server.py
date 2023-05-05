@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 class Server(ABC):
-    bento: str | Bento | Tag
+    servable: str | Bento | Tag | Service
     host: str
     port: int
 
@@ -42,7 +42,7 @@ class Server(ABC):
 
     def __init__(
         self,
-        bento: str | Bento | Tag | Service,
+        servable: str | Bento | Tag | Service,
         serve_cmd: str,
         reload: bool,
         production: bool,
@@ -52,21 +52,37 @@ class Server(ABC):
         working_dir: str | None,
         api_workers: int | None,
         backlog: int,
+        bento: str | Bento | Tag | Service | None = None,
     ):
-        self.bento = bento
-        working_dir = None
-        if isinstance(bento, Bento):
-            bento_str = str(bento.tag)
-        elif isinstance(bento, Tag):
-            bento_str = str(bento)
-        elif isinstance(bento, Service):
-            if not bento.is_service_importable():
-                raise BentoMLException(
-                    "Cannot use bentoml.Service as a server if it is defined in interactive session or Jupyter Notebooks."
+        if bento is not None:
+            if not servable:
+                logger.warning(
+                    "'bento' is deprecated, either remove it as a kwargs or pass '%s' as the first positional argument",
+                    bento,
                 )
-            bento_str, working_dir = bento.get_service_import_origin()
+                servable = bento
+            else:
+                raise BentoMLException(
+                    "Cannot use both 'bento' and 'servable' as kwargs as 'bento' is deprecated."
+                )
+
+        self.servable = servable
+        # backward compatibility
+        self.bento = servable
+
+        working_dir = None
+        if isinstance(servable, Bento):
+            bento_str = str(servable.tag)
+        elif isinstance(servable, Tag):
+            bento_str = str(servable)
+        elif isinstance(servable, Service):
+            if not servable.is_service_importable():
+                raise BentoMLException(
+                    "Cannot use 'bentoml.Service' as a server if it is defined in interactive session or Jupyter Notebooks."
+                )
+            bento_str, working_dir = servable.get_service_import_origin()
         else:
-            bento_str = bento
+            bento_str = servable
 
         args: list[str] = [
             sys.executable,

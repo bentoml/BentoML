@@ -16,10 +16,10 @@ Here are the four most common deployment options with BentoML:
      - Cons 💔 
    * - `🍱 BentoCloud <https://www.bentoml.com/>`_
      - Serverless cloud for AI, fully managed, made for BentoML
-     - Limited availability, `sign up here <https://www.bentoml.com/bento-cloud/>`_ today for early access
+     - Invite only today, `sign up here <https://www.bentoml.com/bento-cloud/>`_ for early access
    * - Docker Containers 
      - Flexible for deploying almost anywhere, easy to get started 
-     - Requires DevOps work for production deployment, lacks advanced scaling capabilities
+     - Rigid deployment as a single container. Inflexible for scaling and maximizing hardware utilization.
    * - `Yatai on Kubernetes <https://github.com/bentoml/Yatai>`_
      - Cloud-native AI deployment on Kubernetes, comes with advanced auto-scaling and CI/CD workflows
      - Requires professional DevOps team to maintain and operate
@@ -43,9 +43,9 @@ Feature comparison across deployment options:
      - ✅ Fast auto-scaling optimized for AI
      - 💦 Possible via container orchastration tools
      - ✅ Kubernetes-native with custom metrics
-     - ❓ Depending on the Cloud Service, supported on ECS
+     - ❌ Depending on the Cloud Service, supported on ECS
    * - Scaling-to-zero
-     - ✅ Both CPU and GPU
+     - ✅ Scaling at individual Model/Runner level
      - 💦 Possible via Knative, no optimization for AI or GPU workload
      - ❓ Not currently supported
      - 💦 Supported on AWS Lambda, GCP Functions with limitations
@@ -58,7 +58,7 @@ Feature comparison across deployment options:
      - ✅ Auto-generated dashboards for key metrics
      - 💦 Requires setting up Prometheus scraping job
      - 💦 Requires setting up Prometheus scraping job
-     - ❓ Requires manual configurations with cloud provider
+     - ❌ Requires manual configurations with cloud provider
    * - Logging
      - ✅ Turnkey solution for log collection and delivery
      - 💦 Manual setup

@@ -14,7 +14,6 @@ from simple_di import Provide
 from ..tag import Tag
 from ..bento import Bento
 from ..models import ModelStore
-from .service import on_import_svc
 from .service import on_load_bento
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
@@ -169,11 +168,8 @@ def import_service(
             instance, Service
         ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
 
-        on_import_svc(
-            svc=instance,
-            working_dir=working_dir,
-            import_str=f"{module_name}:{attrs_str}",
-        )
+        # set import_str for retrieving the service import origin
+        object.__setattr__(instance, "_import_str", f"{module_name}:{attrs_str}")
         return instance
     except ImportServiceError:
         if sys_path_modified and working_dir:

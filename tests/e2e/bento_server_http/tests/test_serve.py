@@ -62,3 +62,29 @@ def test_http_server_ctx(bentoml_home: str):
         # the process, it should be negative.
         # on all other platforms, this should be 0.
         assert server.process.poll() <= 0
+
+
+def test_serve_from_svc():
+    from service import svc
+
+    server = bentoml.HTTPServer(svc, port=12348)
+    server.start()
+    client = server.get_client()
+    resp = client.health()
+    assert resp.status == 200
+    server.stop()
+
+    timeout = 60
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        retcode = server.process.poll()
+        if retcode is not None and retcode <= 0:
+            break
+    if sys.platform == "win32":
+        # on Windows, because of the way that terminate is run, it seems the exit code is set.
+        assert isinstance(server.process.poll(), int)
+    else:
+        # on POSIX negative return codes mean the process was terminated; since we will be terminating
+        # the process, it should be negative.
+        # on all other platforms, this should be 0.
+        assert server.process.poll() <= 0

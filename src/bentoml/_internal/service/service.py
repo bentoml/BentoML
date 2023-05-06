@@ -238,7 +238,7 @@ class Service:
         object.__setattr__(self, "_caller_module", caller_module)
         object.__setattr__(self, "_working_dir", os.getcwd())
 
-    def get_service_import_origin(self) -> tuple[str, str | None]:
+    def get_service_import_origin(self) -> tuple[str, str]:
         """
         Returns the module name and working directory of the service
         """
@@ -266,6 +266,8 @@ class Service:
                 raise BentoMLException(
                     "Failed to get service import origin, bentoml.Service object must be assigned to a variable at module level"
                 )
+
+        assert self._working_dir is not None
 
         return self._import_str, self._working_dir
 

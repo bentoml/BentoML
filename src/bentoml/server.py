@@ -120,13 +120,7 @@ class Server(ABC):
     def _create_startmanager(self):
         class _StartManager:
             def __init__(
-                __start_self,
-                blocking: bool = False,
-                stdout: int | None = None,
-                stderr: int | None = None,
-                stdin: int | None = None,
-                env: dict[str, str] | None = None,
-                encoding: str = "utf-8",
+                __start_self, blocking: bool = False, env: dict[str, str] | None = None
             ):
                 """Start the server programmatically.
 
@@ -139,27 +133,22 @@ class Server(ABC):
                 Args:
                     blocking: If True, the server will block until it is stopped.
                     env: A dictionary of environment variables to pass to the server. Default to ``None``.
-                    stdout: The stdout of the server. Default to ``subprocess.PIPE``.
-                    stderr: The stderr of the server. Default to ``subprocess.PIPE``.
-                    stdin: The stdin of the server. Default to ``subprocess.PIPE``.
-                    encoding: The encoding of the server's stdout and stderr. Default to ``utf-8``.
                 """
-                logger.debug(f"Starting server with arguments: {server.args}")
+                logger.debug(f"Starting server with arguments: {self.args}")
 
                 self.process = subprocess.Popen(
                     self.args,
-                    stdout=stdout or subprocess.PIPE,
-                    stderr=stderr or subprocess.PIPE,
-                    stdin=stdin or subprocess.PIPE,
-                    encoding=encoding,
+                    stdout=subprocess.PIPE if not blocking else None,
+                    stderr=subprocess.PIPE if not blocking else None,
+                    stdin=subprocess.PIPE if not blocking else None,
                     env=env,
                 )
 
                 if blocking:
-                    server.process.wait()
+                    self.process.wait()
 
-            def __enter__(self):
-                return server.get_client()
+            def __enter__(__start_self):
+                return self.get_client()
 
             def __exit__(
                 __start_self,
@@ -167,7 +156,7 @@ class Server(ABC):
                 exc_value: BaseException | None,
                 traceback: TracebackType | None,
             ):
-                server.stop()
+                self.stop()
 
         return _StartManager
 
@@ -194,6 +183,8 @@ class Server(ABC):
                 + textwrap.indent(self.process.stderr.readall())
             )
         self.process.terminate()
+        # NOTE: Need to call communicate to avoid zombie processes
+        self.process.communicate()
 
     def __enter__(self):
         logger.warning(
@@ -329,7 +320,10 @@ class GrpcServer(Server):
         enable_channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
         max_concurrent_streams: int
         | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
-        grpc_protocol_version: str | None = None,
+        ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+        ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+        ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
+        protocol_version: str | None = None,
     ):
         from .serve import construct_ssl_args
 

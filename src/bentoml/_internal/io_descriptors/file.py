@@ -230,7 +230,11 @@ class File(
         else:
             res = Response(
                 body,
-                headers={"content-type": self._mime_type if self._mime_type else "*/*"},
+                headers={
+                    "content-type": self._mime_type
+                    if self._mime_type
+                    else "application/octet-stream"
+                },
             )
         return res
 

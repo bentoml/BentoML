@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+__all__ = ["Server", "GrpcServer", "HTTPServer"]
+
 
 class Server(ABC):
     servable: str | Bento | Tag | Service
@@ -172,6 +174,8 @@ class Server(ABC):
     def get_client(self) -> Client | None:
         pass
 
+    _logs: list[str] | None = None
+
     def stop(self) -> None:
         if self.process is None:
             logger.warning("Attempted to stop a BentoML server that was not running!")
@@ -184,6 +188,11 @@ class Server(ABC):
             )
         elif out_code is not None:
             self._log_server_error()
+            logger.warning(
+                "Attempted to stop a BentoML server that has already exited with an error!\n"
+            )
+            if self._logs:
+                logger.warning("".join(self._logs))
 
         # NOTE: On Windows, terminate() will send TerminateProcess to stop the child process.
         self.process.terminate()
@@ -192,25 +201,24 @@ class Server(ABC):
         self.process.communicate()
 
     def _log_server_error(self):
-        logs = [
-            "Attempted to stop a BentoML server that has already exited with an error!\n"
-        ]
-        if self.process.stdout and not self.process.stdout.closed:
-            stdout = [
-                textwrap.indent(s.decode("utf-8"), " " * 4)
-                for s in self.process.stdout.readlines()
-            ]
-            if stdout:
-                logs.extend(["\nServer Output:\n", *stdout, "\n"])
-        if self.process.stderr and not self.process.stderr.closed:
-            stderr = [
-                textwrap.indent(s.decode("utf-8"), " " * 4)
-                for s in self.process.stderr.readlines()
-            ]
-            if stderr:
-                logs.extend(["\nServer Error:\n", *stderr, "\n"])
-
-        logger.warning("".join(logs))
+        assert self.process
+        if self._logs is None:
+            logs: list[str] = []
+            if self.process.stdout and not self.process.stdout.closed:
+                stdout = [
+                    textwrap.indent(s.decode("utf-8"), " " * 4)
+                    for s in self.process.stdout.readlines()
+                ]
+                if stdout:
+                    logs.extend(["\nServer Output:\n", *stdout, "\n"])
+            if self.process.stderr and not self.process.stderr.closed:
+                stderr = [
+                    textwrap.indent(s.decode("utf-8"), " " * 4)
+                    for s in self.process.stderr.readlines()
+                ]
+                if stderr:
+                    logs.extend(["\nServer Error:\n", *stderr, "\n"])
+            self._logs = logs
 
     def __enter__(self):
         logger.warning(
@@ -306,10 +314,17 @@ class HTTPServer(Server):
         out_code = self.process.poll()
         if out_code == 0:
             logger.warning(
-                "Attempted to stop a BentoML server that has already exited! You can run '.start()' again to restart it."
+                "Attempted to get a client from a BentoML server that has already exited! You can run '.start()' again to restart it."
             )
+            return
         elif out_code is not None:
             self._log_server_error()
+            logger.warning(
+                "Attempted to get a client from a BentoML server that has already exited with an error!\n"
+            )
+            if self._logs:
+                logger.warning("".join(self._logs))
+            return
 
         if self._client is None:
             from .client import HTTPClient
@@ -388,10 +403,17 @@ class GrpcServer(Server):
         out_code = self.process.poll()
         if out_code == 0:
             logger.warning(
-                "Attempted to stop a BentoML server that has already exited! You can run '.start()' again to restart it."
+                "Attempted to get a client from a BentoML server that has already exited! You can run '.start()' again to restart it."
             )
+            return
         elif out_code is not None:
             self._log_server_error()
+            logger.warning(
+                "Attempted to get a client from a BentoML server that has already exited with an error!\n"
+            )
+            if self._logs:
+                logger.warning("".join(self._logs))
+            return
 
         if self._client is None:
             from .client import GrpcClient

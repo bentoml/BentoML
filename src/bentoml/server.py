@@ -169,30 +169,48 @@ class Server(ABC):
         return _Manager()
 
     @abstractmethod
-    def get_client(self) -> Client:
+    def get_client(self) -> Client | None:
         pass
 
     def stop(self) -> None:
         if self.process is None:
             logger.warning("Attempted to stop a BentoML server that was not running!")
             return
+        assert self.process is not None
         out_code = self.process.poll()
         if out_code == 0:
             logger.warning(
                 "Attempted to stop a BentoML server that has already exited!"
             )
         elif out_code is not None:
-            logger.warning(
-                "Attempted to stop a BentoML server that has already exited with an error!\n"
-                + "Server Output:\n"
-                + textwrap.indent(self.process.stdout.readall())
-                + "\n"
-                + "Server Stderr:\n"
-                + textwrap.indent(self.process.stderr.readall())
-            )
+            self._log_server_error()
+
+        # NOTE: On Windows, terminate() will send TerminateProcess to stop the child process.
         self.process.terminate()
+
         # NOTE: Need to call communicate to avoid zombie processes
         self.process.communicate()
+
+    def _log_server_error(self):
+        logs = [
+            "Attempted to stop a BentoML server that has already exited with an error!\n"
+        ]
+        if self.process.stdout and not self.process.stdout.closed:
+            stdout = [
+                textwrap.indent(s.decode("utf-8"), " " * 4)
+                for s in self.process.stdout.readlines()
+            ]
+            if stdout:
+                logs.extend(["\nServer Output:\n", *stdout, "\n"])
+        if self.process.stderr and not self.process.stderr.closed:
+            stderr = [
+                textwrap.indent(s.decode("utf-8"), " " * 4)
+                for s in self.process.stderr.readlines()
+            ]
+            if stderr:
+                logs.extend(["\nServer Error:\n", *stderr, "\n"])
+
+        logger.warning("".join(logs))
 
     def __enter__(self):
         logger.warning(
@@ -272,7 +290,7 @@ class HTTPServer(Server):
         if working_dir is not None:
             self.args.extend(["--working-dir", str(working_dir)])
 
-    def client(self) -> HTTPClient:
+    def client(self) -> HTTPClient | None:
         logger.warning(
             "'Server.client()' is deprecated, use 'Server.get_client()' instead."
         )
@@ -284,20 +302,14 @@ class HTTPServer(Server):
                 "Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first."
             )
             return
+        assert self.process is not None
         out_code = self.process.poll()
         if out_code == 0:
             logger.warning(
                 "Attempted to stop a BentoML server that has already exited! You can run '.start()' again to restart it."
             )
         elif out_code is not None:
-            logger.warning(
-                "Attempted to stop a BentoML server that has already exited with an error!\n"
-                + "Server Output:\n"
-                + textwrap.indent(self.process.stdout.readall())
-                + "\n"
-                + "Server Stderr:\n"
-                + textwrap.indent(self.process.stderr.readall())
-            )
+            self._log_server_error()
 
         if self._client is None:
             from .client import HTTPClient
@@ -372,20 +384,14 @@ class GrpcServer(Server):
                 "Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first."
             )
             return
+        assert self.process is not None
         out_code = self.process.poll()
         if out_code == 0:
             logger.warning(
                 "Attempted to stop a BentoML server that has already exited! You can run '.start()' again to restart it."
             )
         elif out_code is not None:
-            logger.warning(
-                "Attempted to stop a BentoML server that has already exited with an error!\n"
-                + "Server Output:\n"
-                + textwrap.indent(self.process.stdout.readall())
-                + "\n"
-                + "Server Stderr:\n"
-                + textwrap.indent(self.process.stderr.readall())
-            )
+            self._log_server_error()
 
         if self._client is None:
             from .client import GrpcClient

@@ -153,6 +153,7 @@ class Server(ABC):
                     stdin=None if blocking else (stdin or subprocess.PIPE),
                     env=env,
                 )
+                self._logs = None
 
                 if blocking:
                     try:

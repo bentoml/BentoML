@@ -25,6 +25,8 @@ if TYPE_CHECKING:
     from ._internal.client import GrpcClient
     from ._internal.client import HTTPClient
 
+    _FILE: t.TypeAlias = None | int | t.IO[t.Any]
+
 
 logger = logging.getLogger(__name__)
 
@@ -115,50 +117,56 @@ class Server(ABC):
         self.args = args
         self.host = "127.0.0.1" if host == "0.0.0.0" else host
         self.port = port
-        self.start = self._create_startmanager()
 
-    def _create_startmanager(self):
-        class _StartManager:
-            def __init__(
-                __start_self, blocking: bool = False, env: dict[str, str] | None = None
-            ):
-                """Start the server programmatically.
+    def start(
+        self,
+        blocking: bool = False,
+        env: dict[str, str] | None = None,
+        stdin: _FILE = None,
+        stdout: _FILE = None,
+        stderr: _FILE = None,
+    ):
+        """Start the server programmatically.
 
-                To get the client, use the context manager.
+        To get the client, use the context manager.
 
-                .. note::
+        .. note::
+           ``blocking=True`` and using ``start()`` as a context manager is mutually exclusive.
 
-                   ``blocking=True`` and using ``start()`` as a context manager is mutually exclusive.
+        Args:
+            blocking: If True, the server will block until it is stopped.
+            env: A dictionary of environment variables to pass to the server. Default to ``None``.
+            stdin: The stdin to pass to the server. Default to ``None``.
+            stdout: The stdout to pass to the server. Default to ``None``.
+            stderr: The stderr to pass to the server. Default to ``None``.
+        """
 
-                Args:
-                    blocking: If True, the server will block until it is stopped.
-                    env: A dictionary of environment variables to pass to the server. Default to ``None``.
-                """
+        class _Manager:
+            def __init__(__inner_self):
                 logger.debug(f"Starting server with arguments: {self.args}")
-
                 self.process = subprocess.Popen(
                     self.args,
-                    stdout=subprocess.PIPE if not blocking else None,
-                    stderr=subprocess.PIPE if not blocking else None,
-                    stdin=subprocess.PIPE if not blocking else None,
+                    stdout=None if blocking else (stdout or subprocess.PIPE),
+                    stderr=None if blocking else (stderr or subprocess.PIPE),
+                    stdin=None if blocking else (stdin or subprocess.PIPE),
                     env=env,
                 )
 
                 if blocking:
                     self.process.wait()
 
-            def __enter__(__start_self):
+            def __enter__(__inner_self):
                 return self.get_client()
 
             def __exit__(
-                __start_self,
+                __inner_self,
                 exc_type: type[BaseException] | None,
                 exc_value: BaseException | None,
                 traceback: TracebackType | None,
             ):
                 self.stop()
 
-        return _StartManager
+        return _Manager()
 
     @abstractmethod
     def get_client(self) -> Client:
@@ -270,7 +278,7 @@ class HTTPServer(Server):
         )
         return self.get_client()
 
-    def get_client(self) -> HTTPClient:
+    def get_client(self) -> HTTPClient | None:
         if self.process is None:
             logger.warning(
                 "Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first."
@@ -358,7 +366,7 @@ class GrpcServer(Server):
         if protocol_version is not None:
             self.args.extend(["--protocol-version", str(protocol_version)])
 
-    def get_client(self) -> GrpcClient:
+    def get_client(self) -> GrpcClient | None:
         if self.process is None:
             logger.warning(
                 "Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first."

@@ -228,7 +228,10 @@ class File(
             )
             set_cookies(res, ctx.response.cookies)
         else:
-            res = Response(body)
+            res = Response(
+                body,
+                headers={"content-type": self._mime_type if self._mime_type else "*/*"},
+            )
         return res
 
     async def to_proto(self, obj: FileType) -> pb.File:

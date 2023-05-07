@@ -155,7 +155,10 @@ class Server(ABC):
                 )
 
                 if blocking:
-                    self.process.wait()
+                    try:
+                        self.process.wait()
+                    except KeyboardInterrupt:
+                        self.stop()
 
             def __enter__(__inner_self):
                 return self.get_client()

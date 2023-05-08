@@ -813,8 +813,8 @@ Here's a basic Docker options configuration:
           - liblapack-dev
           - gfortran
         env:
-          - FOO=value1
-          - BAR=value2
+          FOO: value1
+          BAR: value2
 
 .. note::
 

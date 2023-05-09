@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+import asyncio
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -208,6 +209,12 @@ fastapi_app = FastAPI()
 
 @fastapi_app.get("/hello")
 def hello():
+    return {"Hello": "World"}
+
+
+@fastapi_app.get("/delay")
+async def hello_delay(n: int = 30):
+    await asyncio.sleep(n)
     return {"Hello": "World"}
 
 

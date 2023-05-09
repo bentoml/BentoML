@@ -253,6 +253,11 @@ class HTTPAppFactory(BaseAppFactory):
                     )
                 )
 
+        from .http.timeout import TimeoutMiddleware
+
+        api_server_timeout = BentoMLContainer.api_server_config.timeout.get()
+        middlewares.append(Middleware(TimeoutMiddleware, timeout=api_server_timeout))
+
         return middlewares
 
     @property

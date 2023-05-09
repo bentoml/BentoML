@@ -7,7 +7,7 @@ import asyncio
 import numpy as np
 import pytest
 
-from bentoml.testing.utils import async_request
+from bentoml.testing.http import async_request
 
 
 @pytest.fixture()
@@ -38,21 +38,19 @@ async def test_numpy(host, img_data):
     # request one by one
     for data in datas[:-3]:
         await async_request(
-            "POST",
-            f"http://{host}/predict_ndarray",
+            f"http://{host}",
+            api_name="predict_ndarray",
             headers={"Content-Type": "application/json"},
             data=datas[0],
-            assert_status=200,
         )
 
     # request all at once, should trigger micro-batch prediction
     tasks = tuple(
         async_request(
-            "POST",
-            f"http://{host}/predict_ndarray",
+            f"http://{host}",
+            api_name="predict_ndarray",
             headers={"Content-Type": "application/json"},
             data=data,
-            assert_status=200,
         )
         for data in datas[-3:]
     )
@@ -64,9 +62,8 @@ async def test_image(host, img_data):
     for d in img_data.values():
         img_bytes = d["bytes"]
         await async_request(
-            "POST",
-            f"http://{host}/predict_image",
+            f"http://{host}",
+            api_name="predict_image",
             data=img_bytes,
             headers={"Content-Type": "image/png"},
-            assert_status=200,
         )

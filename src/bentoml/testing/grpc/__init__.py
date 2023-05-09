@@ -3,22 +3,21 @@ from __future__ import annotations
 import typing as t
 import importlib
 import traceback
-from typing import TYPE_CHECKING
 from contextlib import ExitStack
 from contextlib import asynccontextmanager
 
+import numpy as np
+
+from ...client import GrpcClient
 from ...exceptions import BentoMLException
 from ...grpc.utils import import_grpc
 from ...grpc.utils import import_generated_stubs
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ..._internal.utils import LazyLoader
 from ..._internal.utils import reserve_free_port
 from ..._internal.utils import cached_contextmanager
-from ..._internal.utils import add_experimental_docstring
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import grpc
-    import numpy as np
     from grpc import aio
     from numpy.typing import NDArray
     from grpc.aio._channel import Channel
@@ -28,7 +27,6 @@ if TYPE_CHECKING:
     from ..._internal.service import Service
 else:
     grpc, aio = import_grpc()  # pylint: disable=E1111
-    np = LazyLoader("np", globals(), "numpy")
 
 __all__ = [
     "async_client_call",
@@ -91,7 +89,7 @@ def make_pb_ndarray(
 
 async def async_client_call(
     method: str,
-    channel: Channel,
+    server_url: str,
     data: dict[str, Message | pb.Part | bytes | str | dict[str, t.Any]],
     sanity: bool = True,
     timeout: int | None = 90,
@@ -118,24 +116,28 @@ async def async_client_call(
     Returns:
         The response from the server.
     """
-    pb, _ = import_generated_stubs(protocol_version)
+    client = GrpcClient.from_url(
+        server_url,
+        options=[
+            ("grpc.lb_policy_name", "pick_first"),
+            ("grpc.enable_retries", 0),
+            ("grpc.keepalive_timeout_ms", 10000),
+        ],
+        protocol_version=protocol_version,
+    )
 
     res: pb.Response | None = None
     try:
-        Call = channel.unary_unary(
-            f"/bentoml.grpc.{protocol_version}.BentoService/Call",
-            request_serializer=pb.Request.SerializeToString,
-            response_deserializer=pb.Response.FromString,
+        stubs = client._services.BentoServiceStub(client.create_channel())
+        output: aio.UnaryUnaryCall[pb.Request, pb.Response] = stubs.Call(
+            client._pb.Request(api_name=method, **data), timeout=timeout
         )
-        output: aio.UnaryUnaryCall[pb.Request, pb.Response] = Call(
-            pb.Request(api_name=method, **data), timeout=timeout
-        )
-        res = await t.cast(t.Awaitable[pb.Response], output)
+        res = await t.cast("t.Awaitable[pb.Response]", output)
         return_code = await output.code()
         details = await output.details()
         trailing_metadata = await output.trailing_metadata()
         if sanity:
-            assert isinstance(res, pb.Response)
+            assert isinstance(res, client._pb.Response)
         if assert_data:
             if callable(assert_data):
                 assert assert_data(res), f"Failed while checking data: {output}"
@@ -161,7 +163,6 @@ async def async_client_call(
 
 
 @asynccontextmanager
-@add_experimental_docstring
 async def create_channel(
     host_url: str,
     interceptors: t.Sequence[aio.ClientInterceptor] | None = None,
@@ -190,7 +191,6 @@ async def create_channel(
             await channel.close()
 
 
-@add_experimental_docstring
 @cached_contextmanager("{interceptors}")
 def make_standalone_server(
     interceptors: t.Sequence[aio.ServerInterceptor] | None = None,

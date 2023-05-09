@@ -123,13 +123,13 @@ async def test_metrics_interceptors(
         )
         try:
             await server.start()
-            async with create_channel(host_url) as channel:
-                await async_client_call(
-                    "noop_sync",
-                    channel=channel,
-                    data={"text": wrappers_pb2.StringValue(value="BentoML")},
-                    protocol_version=protocol_version,
-                )
+            await server.wait_for_termination()
+            await async_client_call(
+                "noop_sync",
+                host_url,
+                data={"text": wrappers_pb2.StringValue(value="BentoML")},
+                protocol_version=protocol_version,
+            )
             for m in metrics_client.text_string_to_metric_families():
                 for sample in m.samples:
                     if m.type == metric_type:

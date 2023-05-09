@@ -17,5 +17,5 @@ def pytest_configure(config):  # pylint: disable=unused-argument
 
 @pytest.fixture(scope="session")
 def host() -> t.Generator[str, None, None]:
-    with host_bento(bento="tensorflow_mnist_demo:latest") as host:
+    with host_bento(bento_name="tensorflow_mnist_demo:latest") as host:
         yield host

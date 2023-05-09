@@ -82,6 +82,7 @@ async def test_success_logs(caplog: LogCaptureFixture):
                 TestServiceServicer(), server
             )
             await server.start()
+            await server.wait_for_termination()
             with caplog.at_level(logging.INFO, "bentoml.access"):
                 async with create_channel(host_url) as channel:
                     stub = services_test.TestServiceStub(channel)
@@ -112,6 +113,7 @@ async def test_trailing_metadata(caplog: LogCaptureFixture):
                 TestServiceServicer(), server
             )
             await server.start()
+            await server.wait_for_termination()
             with caplog.at_level(logging.INFO, "bentoml.access"):
                 async with create_channel(host_url) as channel:
                     stub = services_test.TestServiceStub(channel)
@@ -142,15 +144,15 @@ async def test_access_log_exception(
         )
         try:
             await server.start()
+            await server.wait_for_termination()
             with caplog.at_level(logging.INFO):
-                async with create_channel(host_url) as channel:
-                    await async_client_call(
-                        "invalid",
-                        channel=channel,
-                        data={"text": wrappers_pb2.StringValue(value="asdf")},
-                        assert_code=grpc.StatusCode.INTERNAL,
-                        protocol_version=protocol_version,
-                    )
+                await async_client_call(
+                    "invalid",
+                    host_url,
+                    data={"text": wrappers_pb2.StringValue(value="asdf")},
+                    assert_code=grpc.StatusCode.INTERNAL,
+                    protocol_version=protocol_version,
+                )
             assert (
                 f"(scheme=http,path=/bentoml.grpc.{protocol_version}.BentoService/Call,type=application/grpc,size=17) (http_status=500,grpc_status=13,type=application/grpc,size=0)"
                 in caplog.text

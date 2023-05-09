@@ -12,14 +12,12 @@ import pytest
 from pytest import MonkeyPatch
 
 import bentoml
-from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import validate_or_create_dir
 from bentoml._internal.models import ModelContext
-from bentoml._internal.configuration import CLEAN_BENTOML_VERSION
+from bentoml._internal.configuration import BENTOML_VERSION
 from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    import numpy as np
     from _pytest.main import Session
     from _pytest.nodes import Item
     from _pytest.config import Config
@@ -30,9 +28,6 @@ if TYPE_CHECKING:
 
     from bentoml._internal.server.metrics.prometheus import PrometheusClient
 
-else:
-    np = LazyLoader("np", globals(), "numpy")
-
 
 TEST_MODEL_CONTEXT = ModelContext(
     framework_name="testing",
@@ -40,12 +35,11 @@ TEST_MODEL_CONTEXT = ModelContext(
 )
 
 _RUN_GPU_TESTS_MARKER = "--run-gpu-tests"
-_RUN_GRPC_TESTS_MARKER = "--run-grpc-tests"
 
 
 @pytest.mark.tryfirst
 def pytest_report_header(config: Config) -> list[str]:
-    return [f"bentoml: version={CLEAN_BENTOML_VERSION}"]
+    return [f"bentoml: version={BENTOML_VERSION}"]
 
 
 @pytest.hookimpl
@@ -57,12 +51,6 @@ def pytest_addoption(parser: Parser) -> None:
         default=False,
         help="run gpus related tests.",
     )
-    group.addoption(
-        _RUN_GRPC_TESTS_MARKER,
-        action="store_true",
-        default=False,
-        help="run grpc related tests.",
-    )
 
 
 def pytest_configure(config: Config) -> None:
@@ -70,10 +58,6 @@ def pytest_configure(config: Config) -> None:
     config.addinivalue_line(
         "markers",
         "requires_gpus: requires GPU to run given test.",
-    )
-    config.addinivalue_line(
-        "markers",
-        "requires_grpc: requires gRPC support to run given test.",
     )
 
 
@@ -84,15 +68,6 @@ def pytest_runtest_setup(item: Item) -> None:
         item.add_marker(
             pytest.mark.skip(
                 reason=f"need {_RUN_GPU_TESTS_MARKER} option to run gpus related tests."
-            )
-        )
-    # We don't run gRPC tests on Windows
-    if "requires_grpc" in item.keywords and not config.getoption(
-        _RUN_GRPC_TESTS_MARKER
-    ):
-        item.add_marker(
-            pytest.mark.skip(
-                reason=f"need {_RUN_GRPC_TESTS_MARKER} option to run grpc related tests."
             )
         )
 
@@ -183,7 +158,7 @@ def _setup_test_directory() -> tuple[str, str]:
     bentoml_home = tempfile.mkdtemp("bentoml-pytest")
     bentos = os.path.join(bentoml_home, "bentos")
     models = os.path.join(bentoml_home, "models")
-    tmp_bentos = os.path.join(bentoml_home, "tmp_bentos")
+    tmp_bentos = os.path.join(bentoml_home, "tmp")
     multiproc_dir = os.path.join(bentoml_home, "prometheus_multiproc_dir")
     validate_or_create_dir(bentos, models, tmp_bentos, multiproc_dir)
 
@@ -273,26 +248,6 @@ def clean_context() -> t.Generator[contextlib.ExitStack, None, None]:
     stack = contextlib.ExitStack()
     yield stack
     stack.close()
-
-
-@pytest.fixture()
-def img_file(tmpdir: str) -> str:
-    """Create a random image/bmp file."""
-    from PIL.Image import fromarray
-
-    img_file_ = tmpdir.join("test_img.bmp")
-    img = fromarray(np.random.randint(255, size=(10, 10, 3)).astype("uint8"))
-    img.save(str(img_file_))
-    return str(img_file_)
-
-
-@pytest.fixture()
-def bin_file(tmpdir: str) -> str:
-    """Create a random binary file."""
-    bin_file_ = tmpdir.join("bin_file.bin")
-    with open(bin_file_, "wb") as of:
-        of.write("â".encode("gb18030"))
-    return str(bin_file_)
 
 
 @pytest.fixture(scope="module", name="prom_client")

@@ -6,7 +6,7 @@ import json
 import numpy as np
 import pytest
 
-from bentoml.testing.utils import async_request
+from bentoml.testing.http import async_request
 
 
 @pytest.fixture()
@@ -37,12 +37,11 @@ async def test_numpy(host, img_data):
         img_arr_json = json.dumps(img_arr.tolist())
         bdigit = f"{digit}".encode()
         await async_request(
-            "POST",
-            f"http://{host}/predict_ndarray",
+            f"http://{host}",
+            api_name="predict_ndarray",
             headers={"Content-Type": "application/json"},
             data=img_arr_json,
-            assert_status=200,
-            assert_data=bdigit,
+            assert_output=bdigit,
         )
 
 
@@ -52,10 +51,9 @@ async def test_image(host, img_data):
         img_bytes = d["bytes"]
         bdigit = f"{digit}".encode()
         await async_request(
-            "POST",
-            f"http://{host}/predict_image",
+            f"http://{host}",
+            api_name="predict_image",
             data=img_bytes,
             headers={"Content-Type": "image/png"},
-            assert_status=200,
-            assert_data=bdigit,
+            assert_output=bdigit,
         )

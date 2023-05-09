@@ -4,21 +4,20 @@ from __future__ import annotations
 import os
 import sys
 import typing as t
+import functools
 import subprocess
-from typing import TYPE_CHECKING
 
 import pytest
 
-if TYPE_CHECKING:
+from bentoml.testing.http import async_request
+
+if t.TYPE_CHECKING:
     from contextlib import ExitStack
 
     from _pytest.main import Session
     from _pytest.nodes import Item
     from _pytest.config import Config
-    from _pytest.fixtures import FixtureRequest as _PytestFixtureRequest
-
-    class FixtureRequest(_PytestFixtureRequest):
-        param: str
+    from _pytest.fixtures import FixtureRequest
 
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,16 +26,6 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def pytest_collection_modifyitems(
     session: Session, config: Config, items: list[Item]
 ) -> None:
-    subprocess.check_call(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-r",
-            f"{os.path.join(PROJECT_DIR, 'requirements.txt')}",
-        ]
-    )
     subprocess.check_call([sys.executable, f"{os.path.join(PROJECT_DIR, 'train.py')}"])
 
 
@@ -77,3 +66,8 @@ def host(
         clean_context=clean_context,
     ) as _host:
         yield _host
+
+
+@pytest.fixture()
+def arequest(host: str) -> functools.partial[t.Coroutine[t.Any, t.Any, t.Any]]:
+    return functools.partial(async_request, f"http://{host}")

@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import typing as t
-from typing import TYPE_CHECKING
+import logging
+import traceback
 
+import numpy as np
 import aiohttp
 import multidict
 
-if TYPE_CHECKING:
+import bentoml
+
+logger = logging.getLogger(__name__)
+
+if t.TYPE_CHECKING:
     from starlette.types import Send
     from starlette.types import Scope
     from starlette.types import Receive
@@ -15,7 +21,7 @@ if TYPE_CHECKING:
     from starlette.datastructures import FormData
 
 
-async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":
+async def parse_multipart_form(headers: Headers, body: bytes) -> FormData:
     """
     parse starlette forms from headers and body
     """
@@ -31,73 +37,77 @@ async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":
     return await parser.parse()
 
 
-def handle_assert_exception(assert_object: t.Any, obj: t.Any, msg: str):
-    res = assert_object
-    try:
-        if callable(assert_object):
-            res = assert_object(obj)
-            assert res
-        else:
-            assert obj == assert_object
-    except AssertionError:
-        raise ValueError(f"Expected: {res}. {msg}") from None
-    except Exception as e:  # pylint: disable=broad-except
-        # if callable has some errors, then we raise it here
-        raise ValueError(
-            f"Exception while excuting '{assert_object.__name__}': {e}"
-        ) from None
-
-
 async def async_request(
-    method: str,
     url: str,
+    api_name: str,
     headers: None | tuple[tuple[str, str], ...] | LooseHeaders = None,
     data: t.Any = None,
     timeout: int | None = None,
-    assert_status: int | t.Callable[[int], bool] | None = None,
-    assert_data: bytes | t.Callable[[bytes], bool] | None = None,
-    assert_headers: t.Callable[[t.Any], bool] | None = None,
-) -> tuple[int, Headers, bytes]:
-    from starlette.datastructures import Headers
+    assert_output: t.Any | t.Callable[[t.Any], bool] | None = None,
+    assert_exception: type[Exception] | tuple[type[Exception]] | None = None,
+    assert_exception_match: str | t.Pattern[str] | None = None,
+) -> t.Any:
+    client = bentoml.client.HTTPClient.from_url(url)
+    _assert_called_from_test = False
 
-    async with aiohttp.ClientSession() as sess:
-        try:
-            async with sess.request(
-                method, url, data=data, headers=headers, timeout=timeout
-            ) as resp:
-                body = await resp.read()
-        except Exception:
-            raise RuntimeError("Unable to reach host.") from None
-    if assert_status is not None:
-        handle_assert_exception(
-            assert_status,
-            resp.status,
-            f"Return status [{resp.status}] with body: {body!r}",
-        )
-    if assert_data is not None:
-        if callable(assert_data):
-            msg = f"'{assert_data.__name__}' returns {assert_data(body)}"
+    def _assert_output(resp: t.Any):
+        if assert_output is not None:
+            nonlocal _assert_called_from_test
+            _assert_called_from_test = True
+            if callable(assert_output):
+                result = assert_output(resp)
+                if result is not None:
+                    assert (
+                        result
+                    ), f"'{assert_output.__name__}' returns {result}, which is not expected."
+            else:
+                check = resp == assert_output
+                if isinstance(check, np.ndarray):
+                    check = check.all()
+                assert check, f"Expects data {assert_output}, while got {resp} instead."
+
+    try:
+        if assert_exception is not None:
+            try:
+                import pytest
+                import _pytest.outcomes
+            except ImportError:
+                raise bentoml.exceptions.MissingDependencyException(
+                    "'pytest' is required when 'assert_exception' is not None. Make sure to install it with 'pip install -U pytest'"
+                )
+            try:
+                with pytest.raises(assert_exception, match=assert_exception_match):
+                    resp = await client.async_call(
+                        api_name,
+                        inp=data,
+                        _http_headers=headers,
+                        _http_timeout=timeout,
+                    )
+                    _assert_output(resp)
+                    return resp
+            except _pytest.outcomes.Failed:
+                # In this case, the tests success, which means pytest.raises did not raise.
+                pass
         else:
-            msg = f"Expects data '{assert_data}'"
-        handle_assert_exception(
-            assert_data,
-            body,
-            f"{msg}\nReceived response: {body}.",
-        )
-    if assert_headers is not None:
-        handle_assert_exception(
-            assert_headers,
-            resp.headers,
-            f"Headers assertion failed: {resp.headers!r}",
-        )
-    return resp.status, Headers(resp.headers), body
+            resp = await client.async_call(
+                api_name, inp=data, _http_headers=headers, _http_timeout=timeout
+            )
+            _assert_output(resp)
+            return resp
+    except AssertionError:
+        if not _assert_called_from_test:
+            raise
+    except Exception as e:
+        logger.error("Exception caught while sending test requests:\n")
+        traceback.print_exception(type(e), e, e.__traceback__)
+        raise
 
 
 def assert_distributed_header(headers: multidict.CIMultiDict[str]) -> None:
     assert (
         headers.get("Yatai-Bento-Deployment-Name") == "test-deployment"
         and headers.get("Yatai-Bento-Deployment-Namespace") == "yatai"
-    )
+    ), "'http_proxy_app' should only be used for simulating distributed environment similar to Yatai."
 
 
 async def http_proxy_app(scope: Scope, receive: Receive, send: Send):

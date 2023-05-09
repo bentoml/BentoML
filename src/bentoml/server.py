@@ -199,12 +199,12 @@ class Server(ABC):
             )
         elif out_code is not None:
             logs = "Attempted to stop a BentoML server that has already exited with an error!\nServer Output:\n"
-            if self.process.stdout and not self.process.stdout.closed:
+            if self.process.stdout is not None and not self.process.stdout.closed:
                 s = self.process.stdout.read()
                 logs += textwrap.indent(
                     s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
                 )
-            if self.process.stderr and not self.process.stderr.closed:
+            if self.process.stderr is not None and not self.process.stderr.closed:
                 logs += "\nServer Error:\n"
                 s = self.process.stderr.read()
                 logs += textwrap.indent(
@@ -315,12 +315,12 @@ class HTTPServer(Server):
             return
         elif out_code is not None:
             logs = "Attempted to get a client from a BentoML server that has already exited with an error!\nServer Output:\n"
-            if self.process.stdout and not self.process.stdout.closed:
+            if self.process.stdout is not None and not self.process.stdout.closed:
                 s = self.process.stdout.read()
                 logs += textwrap.indent(
                     s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
                 )
-            if self.process.stderr and not self.process.stderr.closed:
+            if self.process.stderr is not None and not self.process.stderr.closed:
                 logs += "\nServer Error:\n"
                 s = self.process.stderr.read()
                 logs += textwrap.indent(
@@ -411,12 +411,12 @@ class GrpcServer(Server):
             return
         elif out_code is not None:
             logs = "Attempted to get a client from a BentoML server that has already exited with an error!\nServer Output:\n"
-            if self.process.stdout and not self.process.stdout.closed:
+            if self.process.stdout is not None and not self.process.stdout.closed:
                 s = self.process.stdout.read()
                 logs += textwrap.indent(
                     s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
                 )
-            if self.process.stderr and not self.process.stderr.closed:
+            if self.process.stderr is not None and not self.process.stderr.closed:
                 logs += "\nServer Error:\n"
                 s = self.process.stderr.read()
                 logs += textwrap.indent(

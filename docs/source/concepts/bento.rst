@@ -1014,6 +1014,8 @@ enable additional features for the generated Bento container image.
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 | ``--enable-features=tracing-zipkin``  | enable :ref:`Zipkin Exporter <guides/tracing:Tracing>`  for distributed tracing                                         |
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=monitor-otlp``    | enable :ref:`Monitoring feature <guides/monitoring:Inference Data Collection & Model Monitoring>`                       |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 
 Advanced Options
 """"""""""""""""

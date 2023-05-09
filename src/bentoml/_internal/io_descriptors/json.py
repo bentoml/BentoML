@@ -179,9 +179,9 @@ class JSON(
     def __init__(
         self,
         *,
-        pydantic_model: t.Type[pydantic.BaseModel] | None = None,
+        pydantic_model: type[pydantic.BaseModel] | None = None,
         validate_json: bool | None = None,
-        json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
+        json_encoder: type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
             if pkg_version_info("pydantic")[0] >= 2:
@@ -277,7 +277,9 @@ class JSON(
             "id": self.descriptor_id,
             "args": {
                 "has_pydantic_model": self._pydantic_model is not None,
-                "has_json_encoder": self._json_encoder is not None,
+                "has_json_encoder": not isinstance(
+                    self._json_encoder, DefaultJsonEncoder
+                ),
             },
         }
 
@@ -286,11 +288,11 @@ class JSON(
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in JSON spec: {spec}")
         if "has_pydantic_model" in spec["args"] and spec["args"]["has_pydantic_model"]:
-            logger.warning(
+            logger.debug(
                 "BentoML does not support loading pydantic models from URLs; output will be a normal dictionary."
             )
         if "has_json_encoder" in spec["args"] and spec["args"]["has_json_encoder"]:
-            logger.warning(
+            logger.debug(
                 "BentoML does not support loading JSON encoders from URLs; output will be a normal dictionary."
             )
 

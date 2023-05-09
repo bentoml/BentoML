@@ -288,11 +288,11 @@ class JSON(
         if "args" not in spec:
             raise InvalidArgument(f"Missing args key in JSON spec: {spec}")
         if "has_pydantic_model" in spec["args"] and spec["args"]["has_pydantic_model"]:
-            logger.debug(
+            logger.warning(
                 "BentoML does not support loading pydantic models from URLs; output will be a normal dictionary."
             )
         if "has_json_encoder" in spec["args"] and spec["args"]["has_json_encoder"]:
-            logger.debug(
+            logger.warning(
                 "BentoML does not support loading JSON encoders from URLs; output will be a normal dictionary."
             )
 

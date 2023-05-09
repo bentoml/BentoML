@@ -19,6 +19,14 @@ fi
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit 1
 
+# Check for uncommitted changes
+git update-index -q --refresh
+if ! git diff-index --quiet HEAD --; then
+    # Uncommitted changes found
+    echo "Uncommitted changes detected. Please commit or stash them before proceeding."
+    exit 1
+fi
+
 # Currently only BentoML maintainer has permission to create new pypi
 # releases
 if [ ! -f "$HOME"/.pypirc ]; then

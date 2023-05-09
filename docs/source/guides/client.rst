@@ -64,3 +64,41 @@ The client call would look like:
 .. code-block:: python
 
     res = client.combine(a="a", b="b")
+
+.. note:: 
+
+   For all API functions that use ``pydantic_model`` for validation, The output from the client will
+   be a dictionary. The keys of the dictionary will be the names of the fields in the output model.
+   One can then use ``pydantic_model.parse_obj`` to parse the dictionary into the model.
+
+   .. code-block:: python
+
+      class ModelOutput(pydantic.BaseModel):
+          a: str
+          b: str
+
+      @svc.api(input=JSON(), output=JSON(pydantic_model=ModelOutput))
+      def combine_json(inputs) -> ModelOutput:
+          outputs = iris_clf_runner.run(inputs)
+          return ModelOutput(**outputs)
+
+   The output of the client would then be:
+
+   .. code-block:: python
+
+      res = client.combine_json({"a": "a", "b": "b"})
+      # res = {"a": "a", "b": "b"}
+      model_output = ModelOutput.parse_obj(res)
+
+.. note::
+
+   If a custom ``json_encoder`` is used, the output from the client will also be a dictionary. Make sure 
+   to use the same ``json_encoder`` if you need to parse the outputs to somewhere else.
+
+   .. code-block:: python
+
+      import json
+
+      res = client.combine_json_with_custom_encoder({"a": "a", "b": "b"})
+      # res = {"a": "a", "b": "b"}
+      o = json.dumps(res, cls=MyCustomJsonEncoder, ...)

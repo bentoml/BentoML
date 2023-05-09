@@ -188,7 +188,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework catboost)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
   diffusers_integration_tests:
     needs: diff
@@ -224,7 +224,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework diffusers)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
   detectron_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.detectron == 'true') || github.event_name == 'push' }}
@@ -258,7 +258,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework detectron)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
   easyocr_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.easyocr == 'true') || github.event_name == 'push' }}
@@ -289,7 +289,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework easyocr)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
   flax_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.flax == 'true') || github.event_name == 'push' }}
@@ -324,7 +324,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework flax)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
   fastai_integration_tests:
     needs: diff
@@ -360,7 +360,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework fastai)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_fastai_unit.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_fastai_unit.py "${OPTS[@]}"
 
   keras_integration_tests:
     needs: diff
@@ -396,7 +396,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework keras)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
   lightgbm_integration_tests:
     needs: diff
@@ -432,7 +432,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework lightgbm)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
   mlflow_integration_tests:
     needs: diff
@@ -468,7 +468,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append)
-          coverage run -m pytest tests/integration/frameworks/mlflow "${OPTS[@]}"
+          pytest tests/integration/frameworks/mlflow "${OPTS[@]}"
 
   onnx_integration_tests:
     needs: diff
@@ -504,7 +504,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework onnx)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
   picklable_model_integration_tests:
     needs: diff
@@ -539,7 +539,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework picklable_model)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
   pytorch_integration_tests:
     needs: diff
@@ -575,7 +575,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework pytorch)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_pytorch_unit.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_pytorch_unit.py "${OPTS[@]}"
 
   pytorch_lightning_integration_tests:
     needs: diff
@@ -611,7 +611,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework pytorch_lightning)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
   torchscript_integration_tests:
     needs: diff
@@ -647,7 +647,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework torchscript)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
   sklearn_integration_tests:
     needs: diff
@@ -683,7 +683,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework sklearn)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
   tensorflow_integration_tests:
     needs: diff
@@ -719,7 +719,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework tensorflow)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_tensorflow_unit.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_tensorflow_unit.py "${OPTS[@]}"
 
       - name: Generate coverage
         run: coverage xml
@@ -727,7 +727,7 @@ jobs:
       - name: Run tests for no eager execution
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --disable-tf-eager-execution --cov-report=xml:no_eager_execution.xml)
-          coverage run -m pytest tests/integration/frameworks/test_tensorflow_unit.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_tensorflow_unit.py "${OPTS[@]}"
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -769,7 +769,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework transformers)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_transformers_unit.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_transformers_unit.py "${OPTS[@]}"
 
       - name: Generate coverage
         run: coverage xml
@@ -814,7 +814,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework xgboost)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
 
 concurrency:
   group: frameworks${{ github.event.pull_request.number || github.sha }}

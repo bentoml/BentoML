@@ -41,7 +41,7 @@ class Server(ABC):
     args: list[str]
 
     process: subprocess.Popen[bytes] | None = None
-    timeout: int = 10
+    timeout: float = 10
     _client: Client | None = None
 
     def __init__(

@@ -54,6 +54,12 @@ def echo_data_metric(data: str) -> str:
 
 
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
+async def echo_delay(data: str) -> str:
+    await asyncio.sleep(5)
+    return data
+
+
+@svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
 def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-argument
     counters = [
         m.name
@@ -209,12 +215,6 @@ fastapi_app = FastAPI()
 
 @fastapi_app.get("/hello")
 def hello():
-    return {"Hello": "World"}
-
-
-@fastapi_app.get("/delay")
-async def hello_delay(n: int = 30):
-    await asyncio.sleep(n)
     return {"Hello": "World"}
 
 

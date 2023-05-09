@@ -5,7 +5,7 @@ import time
 import pytest
 
 import bentoml
-from bentoml.testing.utils import async_request
+from bentoml.exceptions import BentoMLException
 
 
 def test_http_server(bentoml_home: str):
@@ -94,14 +94,12 @@ def test_serve_from_svc():
         assert server.process.poll() <= 0
 
 
-@pytest.mark.asyncio
-async def test_serve_with_timeout(bentoml_home: str):
+def test_serve_with_timeout(bentoml_home: str):
     server = bentoml.HTTPServer("service.py:svc", port=12346)
     config_file = os.path.abspath("configs/timeout.yml")
     env = os.environ.copy()
     env.update(BENTOML_CONFIG=config_file)
 
     with server.start(env=env) as client:
-        status, _, body = await async_request("GET", client.server_url + "/delay")
-        assert status == 504
-        assert body == b"Not able to process the request in 1 seconds"
+        with pytest.raises(BentoMLException, match="504: b'Not able to process the request in 1 seconds'"):
+            client.echo_delay()

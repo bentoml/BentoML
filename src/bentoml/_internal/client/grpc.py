@@ -15,9 +15,9 @@ from ..utils import cached_property
 from ..service import Service
 from ...exceptions import BentoMLException
 from ...grpc.utils import import_grpc
+from ...grpc.utils import load_from_file
 from ...grpc.utils import import_generated_stubs
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ..server.grpc_app import load_from_file
 from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)

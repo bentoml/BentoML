@@ -168,7 +168,7 @@ class Server(ABC):
                     try:
                         self.process.wait()
                     except KeyboardInterrupt:
-                        self.stop()
+                        pass
 
             def __enter__(__inner_self):
                 return self.get_client()

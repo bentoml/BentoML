@@ -12,11 +12,12 @@ from http.client import HTTPConnection
 from urllib.parse import urlparse
 
 import aiohttp
+import multidict
 import starlette.requests
 import starlette.datastructures
 
 from . import Client
-from .. import io_descriptors as io
+from .. import io_descriptors
 from ..service import Service
 from ...exceptions import RemoteException
 from ...exceptions import BentoMLException
@@ -27,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 
 class HTTPClient(Client):
+    _session: aiohttp.ClientSession
+
     @staticmethod
     def wait_until_server_ready(
         host: str,
@@ -79,12 +82,10 @@ class HTTPClient(Client):
             raise
 
     async def async_health(self) -> t.Any:
-        async with aiohttp.ClientSession(self.server_url) as sess:
-            async with sess.get("/readyz") as resp:
-                return resp
+        return await self._session.get("/healthz")
 
     def health(self) -> t.Any:
-        return asyncio.run(self.async_health())
+        return self._ensure_exec_coro(self.async_health())
 
     @classmethod
     def from_url(cls, server_url: str, **kwargs: t.Any) -> HTTPClient:
@@ -124,10 +125,10 @@ class HTTPClient(Client):
                     try:
                         api = InferenceAPI(
                             None,
-                            io.from_spec(
+                            io_descriptors.from_spec(
                                 meth_spec["requestBody"]["x-bentoml-io-descriptor"]
                             ),
-                            io.from_spec(
+                            io_descriptors.from_spec(
                                 meth_spec["responses"]["200"]["x-bentoml-io-descriptor"]
                             ),
                             name=meth_spec["x-bentoml-name"],
@@ -142,34 +143,137 @@ class HTTPClient(Client):
                             e,
                         )
 
-        return cls(dummy_service, server_url)
+        HttpClient = cls(dummy_service, server_url)
+        HttpClient._session = aiohttp.ClientSession(HttpClient.server_url)
+        return HttpClient
+
+    async def async_request(self, *args: t.Any, **kwargs: t.Any):
+        """
+        Expose the internal ``aiohttp.ClientSession.request`` method.
+
+        Returns:
+
+            ``aiohttp.ClientResponse``
+
+        .. note::
+
+            Should only be used when you need to send some requests other than
+            the defined APIs endpoints to the server
+        """
+        if not self._session:
+            raise RuntimeError("Client is not created correctly.")
+        return await self._session.request(*args, **kwargs)
+
+    @staticmethod
+    def _ensure_exec_coro(coro: t.Coroutine[t.Any, t.Any, t.Any]) -> t.Any:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            future = asyncio.run_coroutine_threadsafe(coro, loop)
+            return future.result()
+        else:
+            return loop.run_until_complete(coro)
+
+    def request(self, *args: t.Any, **kwargs: t.Any):
+        """
+        Sync version of ``async_request``.
+        This exposes the underlying ``aiohttp.ClientSession.request`` method.
+        """
+        # NOTE: We can't use asyncio.run here because timer context for
+        # self._session.request must be used inside a task.
+        return self._ensure_exec_coro(self.async_request(*args, **kwargs))
+
+    def __del__(self):
+        # Close connection when this object is destroyed
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(self._session.close())
+            else:
+                loop.run_until_complete(self._session.close())
+        except Exception as e:
+            logger.error("Exception caught while gc the client object:\n")
+            logger.error(e)
+            raise
+
+    def _sync_call(
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
+    ):
+        # NOTE: We need a check here so that client.call()
+        # shouldn't be called inside a async context, since _sync_call
+        # will actually create a new event loop via asyncio.run
+        # Chances are if you are already inside a async context, then you should
+        # use async_call instead.
+        if asyncio.get_event_loop().is_running():
+            raise RuntimeError(
+                "Cannot call sync_call inside a async context. Since you are already inside a async context, consider using 'async_call' or 'async_<api>' instead."
+            )
+        return self._ensure_exec_coro(
+            self._call(inp, _bentoml_api=_bentoml_api, **kwargs)
+        )
 
     async def _call(
         self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
     ) -> t.Any:
+        assert self._session, "Client is not created correctly."
         # All gRPC kwargs should be poped out.
         kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_grpc_")}
-        api = _bentoml_api
 
+        # Check for all kwargs that can be parsed to ClientSession.
+        # Currently, we only support parsing headers.
+        _request_kwargs = {
+            k[6:]: v for k, v in kwargs.items() if k.startswith("_http_")
+        }
+        multi_input_kwargs = {
+            k: v for k, v in kwargs.items() if not k.startswith("_http_")
+        }
+
+        api = _bentoml_api
         if api.multi_input:
             if inp is not None:
                 raise BentoMLException(
                     f"'{api.name}' takes multiple inputs; all inputs must be passed as keyword arguments."
                 )
-            fake_resp = await api.input.to_http_response(kwargs, None)
+            fake_resp = await api.input.to_http_response(multi_input_kwargs, None)
         else:
             fake_resp = await api.input.to_http_response(inp, None)
         req_body = fake_resp.body
 
-        async with aiohttp.ClientSession(self.server_url) as sess:
-            async with sess.post(
+        headers = multidict.MultiDict(
+            {"Content-Type": fake_resp.headers["content-type"]}
+        )
+        if "headers" in _request_kwargs:
+            _headers = multidict.MultiDict(_request_kwargs.pop("headers") or {})
+            if "content-type" in _headers:
+                logger.warning(
+                    "Overwritting default content-type header %s with %s",
+                    fake_resp.headers["content-type"],
+                    _headers["content-type"],
+                )
+                headers["Content-Type"] = _headers.pop("content-type")
+            # update the rest with user provided headers
+            headers.update(_headers)
+        if "data" in _request_kwargs:
+            logger.warning("'data' is passed to call, which will be ignored.")
+            _request_kwargs.pop("data")
+        if "json" in _request_kwargs:
+            logger.warning("'json' is passed to call, which will be ignored.")
+            _request_kwargs.pop("json")
+
+        logger.debug("Sending request to %s with headers %s", api.route, headers)
+        if _request_kwargs:
+            logger.debug("Request arguments: %s", _request_kwargs)
+
+        try:
+            async with self._session.post(
                 "/" + api.route if not api.route.startswith("/") else api.route,
                 data=req_body,
-                headers={"content-type": fake_resp.headers["content-type"]},
+                headers=headers,
+                **_request_kwargs,
             ) as resp:
                 if resp.status != 200:
+                    res = await resp.read()
                     raise BentoMLException(
-                        f"Error making request: {resp.status}: {str(await resp.read())}"
+                        f"Error making request [status={resp.status}]: {str(res.decode())}"
                     )
 
                 fake_req = starlette.requests.Request(scope={"type": "http"})
@@ -178,5 +282,11 @@ class HTTPClient(Client):
                 # Request.headers sets a _headers variable. We will need to set this
                 # value to our fake request object.
                 fake_req._headers = headers  # type: ignore (request._headers is property)
+        except Exception as e:
+            logger.error(
+                "Exception caught while making inference request to %s:\n", api.route
+            )
+            logger.error(e)
+            raise
 
         return await api.output.from_http_request(fake_req)

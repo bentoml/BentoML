@@ -1,24 +1,23 @@
 from __future__ import annotations
 
+import inspect
 import logging
 import sys
 import typing as t
-from typing import TYPE_CHECKING
 
 import anyio
 
-from ......exceptions import BentoMLException
-from ......exceptions import InvalidArgument
-from ......grpc.utils import grpc_status_code
-from ......grpc.utils import import_generated_stubs
-from ......grpc.utils import import_grpc
-from ......grpc.utils import validate_proto_fields
 from .....utils import LazyLoader
-from .....utils import is_async_callable
+from ......exceptions import InvalidArgument
+from ......exceptions import BentoMLException
+from ......grpc.utils import import_grpc
+from ......grpc.utils import grpc_status_code
+from ......grpc.utils import validate_proto_fields
+from ......grpc.utils import import_generated_stubs
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from logging import _ExcInfoType as ExcInfoType  # type: ignore (private warning)
 
     import grpc
@@ -27,6 +26,7 @@ if TYPE_CHECKING:
     from ......grpc.types import BentoServicerContext
     from ......grpc.v1 import service_pb2 as pb
     from ......grpc.v1 import service_pb2_grpc as services
+    from .....service.inference_api import InferenceAPI
     from .....service.service import Service
 else:
     grpc, _ = import_grpc()
@@ -39,6 +39,15 @@ def log_exception(request: pb.Request, exc_info: ExcInfoType) -> None:
     logger.error("Exception on /%s [POST]", request.api_name, exc_info=exc_info)
 
 
+def get_func_kwds(api: InferenceAPI) -> list[struct_pb2.Value]:
+    sig = inspect.signature(api.func)
+    # We probably want to pop out ctx from the signature.
+    val = (
+        list(sig.parameters)[:-1] if len(sig.parameters) == 2 else list(sig.parameters)
+    )
+    return [struct_pb2.Value(string_value=v) for v in val]
+
+
 def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
     """
     This is the actual implementation of BentoServicer.
@@ -48,7 +57,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
     class BentoServiceImpl(services.BentoServiceServicer):
         """An asyncio implementation of BentoService servicer."""
 
-        async def Call(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
+        async def Call(  # type: ignore (no async types)
             self,
             request: pb.Request,
             context: BentoServicerContext,
@@ -89,8 +98,6 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
                 if output is not None:
-                    import inspect
-
                     signature = inspect.signature(api.output.to_proto)
                     param = next(iter(signature.parameters.values()))
                     ann = ""
@@ -121,10 +128,10 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                 )
             return response
 
-        async def ServiceMetadata(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
+        async def ServiceMetadata(  # type: ignore (no async types)
             self,
-            request: pb.ServiceMetadataRequest,  # pylint: disable=unused-argument
-            context: BentoServicerContext,  # pylint: disable=unused-argument
+            request: pb.ServiceMetadataRequest,
+            context: BentoServicerContext,
         ) -> pb.ServiceMetadataResponse:
             return pb.ServiceMetadataResponse(
                 name=service.name,
@@ -139,6 +146,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                         output=make_descriptor_spec(
                             api.output.to_spec(), pb.ServiceMetadataResponse
                         ),
+                        signatures=struct_pb2.ListValue(values=get_func_kwds(api)),
                     )
                     for api in service.apis.values()
                 ],
@@ -147,7 +155,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
     return BentoServiceImpl()
 
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     NestedDictStrAny = dict[str, dict[str, t.Any] | t.Any]
     TupleAny = tuple[t.Any, ...]
 

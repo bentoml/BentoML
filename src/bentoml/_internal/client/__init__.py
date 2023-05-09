@@ -8,7 +8,6 @@ import logging
 import functools
 from abc import ABC
 from abc import abstractmethod
-from http.client import BadStatusLine
 
 from ...exceptions import BentoMLException
 from ..service.inference_api import InferenceAPI
@@ -228,12 +227,12 @@ class Client(ABC):
                 # when address is a RPC
                 from .grpc import GrpcClient
 
-            GrpcClient.wait_until_server_ready(host, port, timeout, **kwargs)
-        except Exception as err:
-            # caught all other exceptions
-            logger.error("Failed to connect to server %s:%s", host, port)
-            logger.error(err)
-            raise
+                GrpcClient.wait_until_server_ready(host, port, timeout, **kwargs)
+            except Exception as err:
+                # caught all other exceptions
+                logger.error("Failed to connect to server %s:%s", host, port)
+                logger.error(err)
+                raise
 
     @t.overload
     @staticmethod

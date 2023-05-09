@@ -75,6 +75,7 @@ class ServiceMetadataResponse(google.protobuf.message.Message):
         INPUT_FIELD_NUMBER: builtins.int
         OUTPUT_FIELD_NUMBER: builtins.int
         DOCS_FIELD_NUMBER: builtins.int
+        SIGNATURES_FIELD_NUMBER: builtins.int
         name: builtins.str
         """name is the name of the API."""
         @property
@@ -85,6 +86,11 @@ class ServiceMetadataResponse(google.protobuf.message.Message):
             """output is the output descriptor of the API."""
         docs: builtins.str
         """docs is the optional documentation of the API."""
+        @property
+        def signatures(self) -> google.protobuf.struct_pb2.ListValue:
+            """signatures is the signatures of the given API function.
+            This can be used from client side to allow parsing kwargs.
+            """
         def __init__(
             self,
             *,
@@ -92,15 +98,18 @@ class ServiceMetadataResponse(google.protobuf.message.Message):
             input: global___ServiceMetadataResponse.DescriptorMetadata | None = ...,
             output: global___ServiceMetadataResponse.DescriptorMetadata | None = ...,
             docs: builtins.str | None = ...,
+            signatures: google.protobuf.struct_pb2.ListValue | None = ...,
         ) -> None: ...
-        def HasField(self, field_name: typing_extensions.Literal["_docs", b"_docs", "_input", b"_input", "_output", b"_output", "docs", b"docs", "input", b"input", "output", b"output"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing_extensions.Literal["_docs", b"_docs", "_input", b"_input", "_output", b"_output", "docs", b"docs", "input", b"input", "name", b"name", "output", b"output"]) -> None: ...
+        def HasField(self, field_name: typing_extensions.Literal["_docs", b"_docs", "_input", b"_input", "_output", b"_output", "_signatures", b"_signatures", "docs", b"docs", "input", b"input", "output", b"output", "signatures", b"signatures"]) -> builtins.bool: ...
+        def ClearField(self, field_name: typing_extensions.Literal["_docs", b"_docs", "_input", b"_input", "_output", b"_output", "_signatures", b"_signatures", "docs", b"docs", "input", b"input", "name", b"name", "output", b"output", "signatures", b"signatures"]) -> None: ...
         @typing.overload
         def WhichOneof(self, oneof_group: typing_extensions.Literal["_docs", b"_docs"]) -> typing_extensions.Literal["docs"] | None: ...
         @typing.overload
         def WhichOneof(self, oneof_group: typing_extensions.Literal["_input", b"_input"]) -> typing_extensions.Literal["input"] | None: ...
         @typing.overload
         def WhichOneof(self, oneof_group: typing_extensions.Literal["_output", b"_output"]) -> typing_extensions.Literal["output"] | None: ...
+        @typing.overload
+        def WhichOneof(self, oneof_group: typing_extensions.Literal["_signatures", b"_signatures"]) -> typing_extensions.Literal["signatures"] | None: ...
 
     NAME_FIELD_NUMBER: builtins.int
     APIS_FIELD_NUMBER: builtins.int

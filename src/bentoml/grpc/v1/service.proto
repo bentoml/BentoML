@@ -48,6 +48,9 @@ message ServiceMetadataResponse {
     optional DescriptorMetadata output = 3;
     // docs is the optional documentation of the API.
     optional string docs = 4;
+    // signatures is the signatures of the given API function.
+    // This can be used from client side to allow parsing kwargs.
+    optional google.protobuf.ListValue signatures = 5;
   }
   // name is the service name.
   string name = 1;

@@ -8,15 +8,16 @@ import numpy as np
 import bentoml
 
 
-async def async_run(client: bentoml.client.Client):
-
-    res = await client.async_classify(np.array([[5.9, 3, 5.1, 1.8]]))
+async def async_run(client: bentoml.client.AsyncGrpcClient):
+    logger.info("Health check: %s", await client.health("bentoml.grpc.v1.BentoService"))
+    res = await client.classify(np.array([[5.9, 3, 5.1, 1.8]]))
     logger.info("Result from 'client.async_classify':\n%s", res)
-    res = await client.async_call("classify", np.array([[5.9, 3, 5.1, 1.8]]))
+    res = await client.call("classify", np.array([[5.9, 3, 5.1, 1.8]]))
     logger.info("Result from 'client.async_call':\n%s", res)
 
 
-def run(client: bentoml.client.Client):
+def run(client: bentoml.client.GrpcClient):
+    logger.info("Health check: %s", client.health("bentoml.grpc.v1.BentoService"))
     res = client.classify(np.array([[5.9, 3, 5.1, 1.8]]))
     logger.info("Result from 'client.classify':\n%s", res)
     res = client.call("classify", np.array([[5.9, 3, 5.1, 1.8]]))
@@ -38,7 +39,9 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--sync", action="store_true", default=False)
     args = parser.parse_args()
 
-    c = bentoml.client.Client.from_url("localhost:3000")
+    c = bentoml.client.Client.from_url(
+        "localhost:3000", kind="async_grpc" if not args.sync else "grpc"
+    )
 
     if args.sync:
         run(c)

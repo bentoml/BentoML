@@ -204,7 +204,6 @@ def serve_http_development(
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
     reload: bool = False,
 ) -> None:
-
     logger.warning(
         "serve_http_development is deprecated. Please use serve_http_production with api_workers=1 and development_mode=True"
     )
@@ -275,7 +274,6 @@ def serve_http_production(
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
             if isinstance(runner, Runner):
-
                 if runner.embedded or development_mode:
                     continue
 
@@ -337,7 +335,6 @@ def serve_http_production(
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
                 if isinstance(runner, Runner):
-
                     if runner.embedded or development_mode:
                         continue
 
@@ -560,7 +557,6 @@ def serve_grpc_production(
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
             if isinstance(runner, Runner):
-
                 if runner.embedded or development_mode:
                     continue
 
@@ -620,7 +616,6 @@ def serve_grpc_production(
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
                 if isinstance(runner, Runner):
-
                     if runner.embedded or development_mode:
                         continue
 

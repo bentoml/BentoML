@@ -6,7 +6,6 @@ import logging
 import functools
 from abc import ABC
 from abc import abstractmethod
-from http.client import BadStatusLine
 
 from ...exceptions import BentoMLException
 from ..service.inference_api import InferenceAPI
@@ -69,16 +68,17 @@ class Client(ABC):
             from .http import HTTPClient
 
             HTTPClient.wait_until_server_ready(host, port, timeout, **kwargs)
-        except BadStatusLine:
-            # when address is a RPC
-            from .grpc import GrpcClient
+        except Exception:
+            try:
+                # when address is a RPC
+                from .grpc import GrpcClient
 
-            GrpcClient.wait_until_server_ready(host, port, timeout, **kwargs)
-        except Exception as err:
-            # caught all other exceptions
-            logger.error("Failed to connect to server %s:%s", host, port)
-            logger.error(err)
-            raise
+                GrpcClient.wait_until_server_ready(host, port, timeout, **kwargs)
+            except Exception as err:
+                # caught all other exceptions
+                logger.error("Failed to connect to server %s:%s", host, port)
+                logger.error(err)
+                raise
 
     @t.overload
     @staticmethod
@@ -106,14 +106,17 @@ class Client(ABC):
                 from .http import HTTPClient
 
                 return HTTPClient.from_url(server_url, **kwargs)
-            except BadStatusLine:
-                from .grpc import GrpcClient
+            # In cases where server is not HTTP, then we will try gRPC
+            # NOTE: We might want to look into exception group here.
+            except Exception:
+                try:
+                    from .grpc import GrpcClient
 
-                return GrpcClient.from_url(server_url, **kwargs)
-            except Exception as e:  # pylint: disable=broad-except
-                raise BentoMLException(
-                    f"Failed to create a BentoML client from given URL '{server_url}': {e} ({e.__class__.__name__})"
-                ) from e
+                    return GrpcClient.from_url(server_url, **kwargs)
+                except Exception as e:  # pylint: disable=broad-except
+                    raise BentoMLException(
+                        f"Failed to create a BentoML client from given URL '{server_url}': {e} ({e.__class__.__name__})"
+                    ) from e
         elif kind == "http":
             from .http import HTTPClient
 

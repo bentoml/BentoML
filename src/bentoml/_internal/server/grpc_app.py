@@ -18,7 +18,7 @@ from bentoml.grpc.utils import import_generated_stubs
 
 from ..utils import LazyLoader
 from ..utils import cached_property
-from ..utils import resolve_user_filepath
+from ...grpc.utils import load_from_file
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..configuration.containers import BentoMLContainer
 

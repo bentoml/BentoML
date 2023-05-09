@@ -101,5 +101,8 @@ def test_serve_with_timeout(bentoml_home: str):
     env.update(BENTOML_CONFIG=config_file)
 
     with server.start(env=env) as client:
-        with pytest.raises(BentoMLException, match="504: b'Not able to process the request in 1 seconds'"):
+        with pytest.raises(
+            BentoMLException,
+            match="504: b'Not able to process the request in 1 seconds'",
+        ):
             client.echo_delay()

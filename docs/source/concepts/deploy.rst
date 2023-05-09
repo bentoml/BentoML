@@ -36,39 +36,42 @@ Feature comparison across deployment options:
 
    * - Feature
      - `🍱 BentoCloud <https://www.bentoml.com/>`_
-     - Docker Containers 
      - `Yatai on Kubernetes <https://github.com/bentoml/Yatai>`_
      - Cloud Deployment with `BentoCTL <https://github.com/bentoml/bentoctl>`_ 
+     - Docker Containers 
    * - Auto-scaling
      - ✅ Fast auto-scaling optimized for AI
-     - 💦 Possible via container orchastration tools
      - ✅ Kubernetes-native with custom metrics
-     - ❌ Depending on the Cloud Service, supported on ECS
+     - 💦 Only available on some Cloud Services, e.g. ECS, requires manual configurations
+     - ❌  Possible via container orchastration tools
    * - Scaling-to-zero
      - ✅ Scaling at individual Model/Runner level
-     - 💦 Possible via Knative, no optimization for AI or GPU workload
-     - ❓ Not currently supported
-     - 💦 Supported on AWS Lambda, GCP Functions with limitations
+     - ❌ Not supported
+     - 💦 Supported on AWS Lambda, GCP Functions with limitations on model size and access to GPU
+     - ❌ Not supported
    * - GPU Support
      - ✅
      - ✅
-     - ✅
      - 💦 Supported on EC2, AWS SageMaker, requires manual configurations
-   * - Monitoring
+     - ✅
+   * - Observability
      - ✅ Auto-generated dashboards for key metrics
-     - 💦 Requires setting up Prometheus scraping job
-     - 💦 Requires setting up Prometheus scraping job
-     - ❌ Requires manual configurations with cloud provider
-   * - Logging
-     - ✅ Turnkey solution for log collection and delivery
+     - 💦 Requires manual configurations
+     - 💦 Requires manual configurations with cloud provider
+     - 💦 Requires manual configurations
+   * - Endpoint Security
+     - ✅ Access token management and authentication
      - 💦 Manual setup
      - 💦 Manual setup
      - 💦 Manual setup
-   * - Tracing
-     - ✅ Turnkey solution for OpenTelemetry and 3rd party integration
-     - 💦 Manual setup
-     - 💦 Manual setup
-     - 💦 Manual setup
+   * - User Interface
+     - ✅ Web UI, REST API, CLI command, and Python API, designed for AI workflows
+     - 💦 CLI via kubectl, Kubernetes REST API
+     - 💦 CLI, Cloud Platform specific dashboards
+     - 💦 CLI
+   * - CI/CD
+     - ✅ Rich integration API, native support for common Git and MLOps workflows
+     - 
 
 
 Docker Containers

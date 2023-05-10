@@ -243,7 +243,7 @@ class HTTPClient(BaseSyncClient, HTTPClientMixin):
             async with sess.get("/readyz") as resp:
                 return resp
 
-    def health(self) -> t.Any:
+    def health(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         assert self._conn_type, "Session not found (error during client initialisation)"
         return self._conn_type.get("/readyz")
 
@@ -363,7 +363,7 @@ class HTTPClient(BaseSyncClient, HTTPClientMixin):
 class AsyncHTTPClient(BaseAsyncClient, HTTPClientMixin):
     _conn_type: aiohttp.ClientSession
 
-    async def health(self) -> t.Any:
+    async def health(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._conn_type.get("/healthz")
 
     @classmethod

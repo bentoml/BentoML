@@ -3,7 +3,6 @@ from __future__ import annotations
 import enum
 import typing as t
 import asyncio
-import inspect
 import logging
 import functools
 from abc import ABC
@@ -58,43 +57,6 @@ def ensure_exec_coro(coro: t.Coroutine[t.Any, t.Any, t.Any]) -> t.Any:
         return future.result()
     else:
         return loop.run_until_complete(coro)
-
-
-def deprecated_async_warning(
-    func: t.Callable[P, t.Any] | functools.partial[t.Any]
-) -> t.Callable[..., t.Any]:
-    if isinstance(func, functools.partial):
-        callable_ = func.func
-    else:
-        callable_ = func
-
-    fname = callable_.__name__
-    frame = inspect.currentframe()
-    assert (
-        frame and frame.f_back
-    ), "This wrapper can only be used for a function within a class."
-
-    locals = frame.f_back.f_locals
-    qualname = (
-        locals["self"].__class__.__qualname__
-        if "self" in locals
-        else locals["__qualname__"]
-    )
-    if fname.startswith("async_"):
-        fname = fname[len("async_") :]
-
-    @functools.wraps(callable_)
-    def decorator(*args: P.args, **kwargs: P.kwargs) -> t.Any:
-        logger.warning(
-            "Calling 'async_%s' from '%s' is deprecated. Please create a 'Async%s' and use '%s' instead.",
-            fname,
-            qualname,
-            qualname,
-            fname,
-        )
-        return callable_(*args, **kwargs)
-
-    return decorator
 
 
 # NOTE: The purpose of this function is to wraps auto generated client function
@@ -380,7 +342,7 @@ class Client(ABC):
         raise ValueError("Given API Service doesn't support keyword assignment.")
 
     def _prepare_call_inputs(
-        self: ClientProtocol,
+        self,
         inp: t.Any | None = None,
         *,
         io_kwargs: dict[str, t.Any],
@@ -437,14 +399,12 @@ class BaseSyncClient(Client, client_type="sync"):
                 setattr(
                     self,
                     f"async_{name}",
-                    deprecated_async_warning(
-                        wraps_call_attributes(
-                            functools.partial(self._call, _bentoml_api=api),
-                            api,
-                            svc,
-                            _func_name=f"async_{name}",
-                            _async_doc=True,
-                        )
+                    wraps_call_attributes(
+                        functools.partial(self._call, _bentoml_api=api),
+                        api,
+                        svc,
+                        _func_name=f"async_{name}",
+                        _async_doc=True,
                     ),
                 )
 

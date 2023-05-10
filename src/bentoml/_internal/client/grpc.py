@@ -253,9 +253,10 @@ class GrpcClient(BaseSyncClient, GrpcClientMixin):
             )
         return self._conn_type
 
-    def health(self, service_name: str, *, timeout: int = 30) -> t.Any:
-        req = pb_health.HealthCheckRequest()
-        req.service = service_name
+    def health(self, service_name: str | None = None, *, timeout: int = 30) -> t.Any:
+        if service_name is None:
+            service_name = ""
+        req = pb_health.HealthCheckRequest(service=service_name)
         health_stub = services_health.HealthStub(self.channel)
         return health_stub.Check(req, timeout=timeout)
 
@@ -432,9 +433,12 @@ class AsyncGrpcClient(BaseAsyncClient, GrpcClientMixin):
             )
         return self._conn_type
 
-    async def health(self, service_name: str, *, timeout: int = 30) -> t.Any:
-        req = pb_health.HealthCheckRequest()
-        req.service = service_name
+    async def health(
+        self, service_name: str | None = None, *, timeout: int = 30
+    ) -> t.Any:
+        if service_name is None:
+            service_name = ""
+        req = pb_health.HealthCheckRequest(service=service_name)
         health_stub = services_health.HealthStub(self.channel)
         return await health_stub.Check(req, timeout=timeout)
 

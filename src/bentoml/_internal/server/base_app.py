@@ -1,6 +1,7 @@
 import abc
 import typing as t
 import logging
+import contextlib
 from typing import TYPE_CHECKING
 
 from starlette.responses import PlainTextResponse
@@ -53,12 +54,19 @@ class BaseAppFactory(abc.ABC):
 
         from ..configuration import get_debug_mode
 
+        @contextlib.asynccontextmanager
+        async def lifespan(_: "Starlette") -> t.AsyncGenerator[None, None]:
+            for on_startup in self.on_startup:
+                on_startup()
+            yield
+            for on_shutdown in self.on_shutdown:
+                on_shutdown()
+
         return Starlette(
             debug=get_debug_mode(),
             routes=self.routes,
             middleware=self.middlewares,
-            on_startup=self.on_startup,
-            on_shutdown=self.on_shutdown,
+            lifespan=lifespan,
         )
 
     @property

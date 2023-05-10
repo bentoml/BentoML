@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     from ..._internal.io_descriptors import IODescriptor
 
 else:
-
     pb, _ = import_generated_stubs()
     grpc, _ = import_grpc()
 

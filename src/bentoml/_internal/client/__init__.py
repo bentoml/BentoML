@@ -173,7 +173,7 @@ class Client(ABC):
             raise BentoMLException("No APIs were found when constructing client.")
 
         self.endpoints = []
-        for name, api in self._svc.apis.items():
+        for name in self._svc.apis:
             self.endpoints.append(name)
 
     @staticmethod

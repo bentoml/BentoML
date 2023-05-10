@@ -21,7 +21,6 @@ import starlette.datastructures
 from . import BaseSyncClient
 from . import BaseAsyncClient
 from . import ensure_exec_coro
-from . import deprecated_async_warning
 from .. import io_descriptors
 from ..service import Service
 from ...exceptions import RemoteException
@@ -237,8 +236,10 @@ class _Session(requests.Session):
 class HTTPClient(BaseSyncClient, HTTPClientMixin):
     _conn_type: _Session
 
-    @deprecated_async_warning
     async def async_health(self) -> t.Any:
+        logger.warning(
+            "Calling 'async_health' from HTTPClient is now deprecated. Create a AsyncHTTPClient and use 'health' instead."
+        )
         async with aiohttp.ClientSession(self.server_url) as sess:
             async with sess.get("/readyz") as resp:
                 return resp
@@ -322,6 +323,11 @@ class HTTPClient(BaseSyncClient, HTTPClientMixin):
     async def _call(
         self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
     ) -> t.Any:
+        logger.warning(
+            "Calling 'async_%s' from HTTPClient is now deprecated. Create a AsyncHTTPClient and use '%s' instead.",
+            _bentoml_api.name,
+            _bentoml_api.name,
+        )
         _request_kwargs, io_kwargs = self._process_call_kwargs(**kwargs)
         fake_resp = await _bentoml_api.input.to_http_response(
             self._prepare_call_inputs(inp=inp, io_kwargs=io_kwargs, api=_bentoml_api),

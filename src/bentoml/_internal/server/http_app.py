@@ -253,6 +253,11 @@ class HTTPAppFactory(BaseAppFactory):
                     )
                 )
 
+        from .http.timeout import TimeoutMiddleware
+
+        api_server_timeout = BentoMLContainer.api_server_config.timeout.get()
+        middlewares.append(Middleware(TimeoutMiddleware, timeout=api_server_timeout))
+
         return middlewares
 
     @property
@@ -378,6 +383,9 @@ class HTTPAppFactory(BaseAppFactory):
                     )
                 else:
                     response = JSONResponse("", status_code=status)
+            except asyncio.CancelledError:
+                # Special handling for Python 3.7 compatibility
+                raise
             except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.

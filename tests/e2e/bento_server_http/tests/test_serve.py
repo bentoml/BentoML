@@ -1,7 +1,11 @@
+import os
 import sys
 import time
 
+import pytest
+
 import bentoml
+from bentoml.exceptions import BentoMLException
 
 
 def test_http_server(bentoml_home: str):
@@ -88,3 +92,17 @@ def test_serve_from_svc():
         # the process, it should be negative.
         # on all other platforms, this should be 0.
         assert server.process.poll() <= 0
+
+
+def test_serve_with_timeout(bentoml_home: str):
+    server = bentoml.HTTPServer("service.py:svc", port=12346)
+    config_file = os.path.abspath("configs/timeout.yml")
+    env = os.environ.copy()
+    env.update(BENTOML_CONFIG=config_file)
+
+    with server.start(env=env) as client:
+        with pytest.raises(
+            BentoMLException,
+            match="504: b'Not able to process the request in 1 seconds'",
+        ):
+            client.echo_delay()

@@ -32,7 +32,7 @@ Make sure to have at least BentoML 1.0.16:
 
 .. note::
 
-   Triton Inference Server is currently only available in production mode (``--production`` flag) and will not work during development mode.
+   Triton Inference Server is currently only available in production mode (the default mode) and will not work during development mode (``--development`` flag).
 
 Additonally, you will need to have Triton Inference Server installed in your system. Refer to Triton's `building documentation <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/customization_guide/build.html>`_
 to setup your environment. The recommended way to run Triton is through container (Docker/Podman). To pull the latest Triton container for testing, run:

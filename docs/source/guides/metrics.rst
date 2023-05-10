@@ -183,7 +183,7 @@ invocation for ``analysis`` by polarity scores.
 
        .. code-block:: bash
 
-          » bentoml serve-http --production
+          » bentoml serve-http
 
        Use the following ``prometheus.yml`` config:
 
@@ -211,7 +211,7 @@ invocation for ``analysis`` by polarity scores.
 
        .. code-block:: bash
 
-          » bentoml serve-grpc --production --enable-reflection
+          » bentoml serve-grpc --enable-reflection
 
        Use the following ``prometheus.yml`` config:
 

@@ -112,11 +112,11 @@ Deploy the service and collect monitoring data
 
 With BentoML, once we have the bento, it's easy to :ref:`deploy <concepts/deploy:Deploying Bento>` the ML application to any target.
 
-Use ``serve --production`` to start the bento in production mode as a standalone server:
+Use ``serve`` to start the bento in production mode as a standalone server:
 
 .. code-block:: bash
 
-    $ bentoml serve iris_classifier --production
+    $ bentoml serve iris_classifier
 
 Then we can send a request to the server to get the prediction. BentoML will log the request features and predictions to the configured place.
 

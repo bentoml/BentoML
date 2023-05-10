@@ -73,7 +73,7 @@ Run the generated docker image:
 
 .. code-block:: bash
 
-    $ docker run -p 3000:3000 iris_classifier:ejwnswg5kw6qnuqj serve --production
+    $ docker run -p 3000:3000 iris_classifier:ejwnswg5kw6qnuqj serve
 
 .. seealso::
 

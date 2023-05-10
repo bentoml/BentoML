@@ -7,7 +7,7 @@ pip install -r ./dev-requirements.txt
 
 2. Benchmark with Locust
 ```bash
-bentoml serve service:svc --production
+bentoml serve service:svc
 ```
 ```bash
 locust -H http://0.0.0.0:3000 -u 200 -r 10
@@ -19,12 +19,12 @@ Visit http://0.0.0.0:8089/ and start the test.
 
 * BentoML with distributed Runner architecture (default, recommended for most use cases)
   ```bash
-  bentoml serve service:svc --production
+  bentoml serve service:svc
   ```
 
 * BentoML with embedded local Runner (recommended for light-weight models)
   ```bash
-  bentoml serve service_local_runner:svc --production
+  bentoml serve service_local_runner:svc
   ```
 
 * A typical FastAPI implementation with XGBoost syncrounous API for inference:

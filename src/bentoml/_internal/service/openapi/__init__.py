@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+import inspect
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from functools import lru_cache
@@ -28,7 +29,6 @@ from .specification import Components
 from .specification import OpenAPISpecification
 
 if TYPE_CHECKING:
-
     from .. import Service
     from ..inference_api import InferenceAPI
 
@@ -98,6 +98,14 @@ def generate_service_components(svc: Service) -> Components:
     return Components(**components)
 
 
+def get_func_kwds(api: InferenceAPI) -> list[str]:
+    sig = inspect.signature(api.func)
+    # We probably want to pop out ctx from the signature.
+    return (
+        list(sig.parameters)[:-1] if len(sig.parameters) == 2 else list(sig.parameters)
+    )
+
+
 def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
     """Generate a OpenAPI specification for a service."""
     mounted_app_paths = {}
@@ -162,6 +170,7 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
                         "consumes": [api.input.mime_type],
                         "produces": [api.output.mime_type],
                         "x-bentoml-name": api.name,
+                        "x-bentoml-func-kwds": get_func_kwds(api),
                         "summary": str(api),
                         "description": api.doc or "",
                         "requestBody": api.input.openapi_request_body(),

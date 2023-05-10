@@ -8,7 +8,6 @@ import logging
 import functools
 from abc import ABC
 from abc import abstractmethod
-from http.client import BadStatusLine
 
 from ...exceptions import BentoMLException
 from ..service.inference_api import InferenceAPI
@@ -226,14 +225,14 @@ class Client(ABC):
         except Exception:
             try:
                 # when address is a RPC
-                from .grpc import GrpcClient
+                from .grpc import GrpcClientMixin
 
-            GrpcClient.wait_until_server_ready(host, port, timeout, **kwargs)
-        except Exception as err:
-            # caught all other exceptions
-            logger.error("Failed to connect to server %s:%s", host, port)
-            logger.error(err)
-            raise
+                GrpcClientMixin.wait_until_server_ready(host, port, timeout, **kwargs)
+            except Exception as err:
+                # caught all other exceptions
+                logger.error("Failed to connect to server %s:%s", host, port)
+                logger.error(err)
+                raise
 
     @t.overload
     @staticmethod
@@ -492,7 +491,7 @@ class BaseSyncClient(Client, client_type="sync"):
     ) -> t.Any:
         raise NotImplementedError
 
-    def health(self) -> t.Any:
+    def health(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         raise NotImplementedError("'health' is not implemented.")
 
     def __del__(self):
@@ -523,6 +522,9 @@ class BaseAsyncClient(Client, client_type="async"):
                         _async_doc=True,
                     ),
                 )
+
+    async def health(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        raise NotImplementedError("'health' is not implemented.")
 
     async def call(
         self, bentoml_api_name: str, inp: t.Any = None, **kwargs: t.Any

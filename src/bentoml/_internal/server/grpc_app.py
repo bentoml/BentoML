@@ -59,12 +59,6 @@ else:
     )
 
 
-def load_from_file(p: str) -> bytes:
-    rp = resolve_user_filepath(p, ctx=None)
-    with open(rp, "rb") as f:
-        return f.read()
-
-
 # NOTE: we are using the internal aio._server.Server (which is initialized with aio.server)
 class Server(aio._server.Server):
     """An async implementation of a gRPC server."""

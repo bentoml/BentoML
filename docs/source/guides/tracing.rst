@@ -112,7 +112,7 @@ Provide this configuration via environment variable ``BENTOML_CONFIG`` to ``bent
 
 .. code-block:: bash
 
-   » BENTOML_CONFIG=bentoml_configuration.yaml bentoml serve iris_classifier:latest --production
+   » BENTOML_CONFIG=bentoml_configuration.yaml bentoml serve iris_classifier:latest
 
 Send any request to the BentoService, and then you can visit the `Jaeger UI <http://localhost:16686>`_ to see the traces.
 

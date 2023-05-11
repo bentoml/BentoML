@@ -220,7 +220,7 @@ bentoml build
 Serving the bento will bring up a service endpoint in HTTP or gRPC for the service API we defined. Use `--help` to see more serving options.
 
 ```bash
-bentoml serve-http --production
+bentoml serve-http
 ```
 
 ## Deploy to Kubernetes Cluster

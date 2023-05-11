@@ -456,7 +456,7 @@ Further tuning of event loop configuration is not needed under common use cases.
     Running Server:
         bentoml serve arguments
         --reload
-        --production
+        --development
 
         other options and configs:
         --api-workers

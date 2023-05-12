@@ -64,7 +64,10 @@ TRACING_CFG = {
 }
 _API_SERVER_CONFIG = {
     "workers": s.Or(s.And(int, ensure_larger_than_zero), None),
-    "timeout": s.And(int, ensure_larger_than_zero),
+    s.Optional("traffic"): {
+        "timeout": s.And(int, ensure_larger_than_zero),
+        "max_concurrency": s.Or(s.And(int, ensure_larger_than_zero), None),
+    },
     "backlog": s.And(int, ensure_larger_than(64)),
     "max_runner_connections": s.And(int, ensure_larger_than_zero),
     "metrics": {
@@ -161,7 +164,10 @@ _RUNNER_CONFIG = {
         "enabled": bool,
         "namespace": str,
     },
-    s.Optional("timeout"): s.And(int, ensure_larger_than_zero),
+    s.Optional("traffic"): {
+        "timeout": s.And(int, ensure_larger_than_zero),
+        "max_concurrency": s.Or(s.And(int, ensure_larger_than_zero), None),
+    },
 }
 SCHEMA = s.Schema(
     {

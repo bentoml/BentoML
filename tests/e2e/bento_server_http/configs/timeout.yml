@@ -1,2 +1,4 @@
 api_server:
-  timeout: 1
+  traffic:
+    timeout: 1
+    max_concurrency: 2

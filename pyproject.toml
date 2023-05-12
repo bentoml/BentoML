@@ -271,6 +271,7 @@ convention = "google"
 [tool.ruff.isort]
 lines-after-imports = 2
 force-single-line = true
+known-first-party = ["bentoml"]
 
 [tool.isort]
 profile = "black"

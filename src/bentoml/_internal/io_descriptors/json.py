@@ -184,10 +184,6 @@ class JSON(
         json_encoder: type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
-            if pkg_version_info("pydantic")[0] >= 2:
-                raise BadInput(
-                    "pydantic 2.x is not yet supported. Add upper bound to 'pydantic': 'pip install \"pydantic<2\"'"
-                ) from None
             assert issubclass(
                 pydantic_model, pydantic.BaseModel
             ), "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
@@ -329,7 +325,10 @@ class JSON(
             if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(
                 self.sample
             ):
-                return self.sample.dict()
+                if pkg_version_info("pydantic")[0] >= 2:
+                    return self.sample.model_dump()
+                else:
+                    return self.sample.dict()
             elif isinstance(self.sample, (str, list)):
                 return json.dumps(
                     self.sample,
@@ -373,7 +372,10 @@ class JSON(
 
         if self._pydantic_model:
             try:
-                pydantic_model = self._pydantic_model.parse_obj(json_obj)
+                if pkg_version_info("pydantic")[0] >= 2:
+                    pydantic_model = self._pydantic_model.model_validate(json_obj)
+                else:
+                    pydantic_model = self._pydantic_model.parse_obj(json_obj)
                 return pydantic_model
             except pydantic.ValidationError as e:
                 raise BadInput(f"Invalid JSON input received: {e}") from None
@@ -385,7 +387,10 @@ class JSON(
     ):
         # This is to prevent cases where custom JSON encoder is used.
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):
-            obj = obj.dict()
+            if pkg_version_info("pydantic")[0] >= 2:
+                obj = obj.model_dump()
+            else:
+                obj = obj.dict()
 
         json_str = (
             json.dumps(
@@ -419,7 +424,12 @@ class JSON(
             content = field
             if self._pydantic_model:
                 try:
-                    return self._pydantic_model.parse_raw(content)
+                    if pkg_version_info("pydantic")[0] >= 2:
+                        return self._pydantic_model.model_validate_json(
+                            json.loads(content)
+                        )
+                    else:
+                        return self._pydantic_model.parse_raw(content)
                 except pydantic.ValidationError as e:
                     raise BadInput(f"Invalid JSON input received: {e}") from None
             try:
@@ -432,14 +442,20 @@ class JSON(
 
             if self._pydantic_model:
                 try:
-                    return self._pydantic_model.parse_obj(parsed)
+                    if pkg_version_info("pydantic")[0] >= 2:
+                        return self._pydantic_model.model_validate(parsed)
+                    else:
+                        return self._pydantic_model.parse_obj(parsed)
                 except pydantic.ValidationError as e:
                     raise BadInput(f"Invalid JSON input received: {e}") from None
         return parsed
 
     async def to_proto(self, obj: JSONType) -> struct_pb2.Value:
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):
-            obj = obj.dict()
+            if pkg_version_info("pydantic")[0] >= 2:
+                obj = obj.model_dump()
+            else:
+                obj = obj.dict()
         msg = struct_pb2.Value()
         return parse_dict_to_proto(obj, msg, json_encoder=self._json_encoder)
 

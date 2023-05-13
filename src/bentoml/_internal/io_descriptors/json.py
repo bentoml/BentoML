@@ -29,6 +29,10 @@ if t.TYPE_CHECKING:
 
     import pydantic
     import pydantic.schema as schema
+
+    if pkg_version_info("pydantic")[0] >= 2:
+        import pydantic.json_schema as jschema
+
     from google.protobuf import message as _message
     from google.protobuf import struct_pb2
     from typing_extensions import Self
@@ -39,6 +43,9 @@ if t.TYPE_CHECKING:
 else:
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=EXC_MSG)
     schema = LazyLoader("schema", globals(), "pydantic.schema", exc_msg=EXC_MSG)
+    jschema = LazyLoader(
+        "jschema", globals(), "pydantic.json_schema", exc_msg="Pydantic v2 is required."
+    )
     # lazy load our proto generated.
     struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
     # lazy load numpy for processing ndarray.
@@ -302,15 +309,24 @@ class JSON(
             return Schema(type="object")
 
         # returns schemas from pydantic_model.
-        return Schema(
-            **schema.model_process_schema(
-                self._pydantic_model,
-                model_name_map=schema.get_model_name_map(
-                    schema.get_flat_models_from_model(self._pydantic_model)
-                ),
-                ref_prefix=REF_PREFIX,
-            )[0]
-        )
+        if pkg_version_info("pydantic")[0] >= 2:
+            json_schema = jschema.model_json_schema(
+                self._pydantic_model, ref_template=REF_PREFIX + "{model}"
+            )
+            # NOTE: we don't need def here, as these will be available in openapi.components.
+            if "$defs" in json_schema:
+                json_schema.pop("$defs", None)
+            return Schema(**json_schema)
+        else:
+            return Schema(
+                **schema.model_process_schema(
+                    self._pydantic_model,
+                    model_name_map=schema.get_model_name_map(
+                        schema.get_flat_models_from_model(self._pydantic_model)
+                    ),
+                    ref_prefix=REF_PREFIX,
+                )[0]
+            )
 
     def openapi_components(self) -> dict[str, t.Any] | None:
         if not self._pydantic_model:

@@ -13,6 +13,39 @@ from datetime import datetime
 from datetime import timedelta
 from dataclasses import dataclass
 
+if sys.version_info >= (3, 8):
+
+    from typing import TypedDict
+
+else:
+
+    from typing_extensions import TypedDict
+
+
+if sys.version_info >= (3, 10):
+    from types import UnionType
+    from typing import is_typeddict
+    from typing import get_type_hints
+
+    def is_union(tp):  # check Union[A,B] or A | B
+        return tp == t.Union or get_origin(tp) == UnionType
+
+else:
+    from typing_extensions import is_typeddict
+    from typing_extensions import get_type_hints
+
+    def is_union(tp):  # check Union[A,B]
+        return tp == t.Union
+
+
+if sys.version_info >= (3, 11):
+    from typing import Required
+    from typing import NotRequired
+else:
+    from typing_extensions import Required
+    from typing_extensions import NotRequired
+
+
 if sys.version_info < (3, 8):
     import collections
 
@@ -75,6 +108,14 @@ __all__ = [
     "LazyType",
     "is_compatible_type",
     "FileLike",
+    "get_origin",
+    "TypedDict",
+    "get_type_hints",
+    "is_typeddict",
+    "is_union",
+    "NotRequired",
+    "Required",
+    "get_args",
 ]
 
 logger = logging.getLogger(__name__)

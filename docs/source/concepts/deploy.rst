@@ -6,27 +6,20 @@ Deploying Bento
 Deployment Overview
 -------------------
 
-Here are the four most common deployment options with BentoML:
+BentoML is designed to provide a unified packaging format, for deploying AI applications
+via a wide range of serving patterns, including real-time inference API, offline batch inference, 
+streaming inference, and custom integrations.
 
-.. list-table::
-   :header-rows: 1
+For online API use cases, here are the three most common cloud deployment solutions:
 
-   * - Deploy Method 
-     - Pros ❤️ 
-     - Cons 💔 
-   * - `🍱 BentoCloud <https://www.bentoml.com/>`_
-     - Serverless cloud for AI, fully managed, made for BentoML
-     - Invite only today, `sign up here <https://www.bentoml.com/bento-cloud/>`_ for early access
-   * - Docker Containers 
-     - Flexible for deploying almost anywhere, easy to get started 
-     - Rigid deployment as a single container. Inflexible for scaling and maximizing hardware utilization.
-   * - `Yatai on Kubernetes <https://github.com/bentoml/Yatai>`_
-     - Cloud-native AI deployment on Kubernetes, comes with advanced auto-scaling and CI/CD workflows
-     - Requires professional DevOps team to maintain and operate
-   * - Cloud Deployment with `BentoCTL <https://github.com/bentoml/bentoctl>`_ 
-     - Great for proof-of-concept deployments directly running on public cloud services (EC2, ECS, SageMaker, Lambda, GCP, etc) 
-     - Requires working knowledge of Cloud Services and their limitations for AI-specific workloads
-
+* `☁️ Deploy to BentoCloud <https://www.bentoml.com/>`_
+  - Serverless cloud for AI, the best place to deploy and operate BentoML for AI teams. `Sign up here <https://www.bentoml.com/bento-cloud/>`_ for early access.
+* `🦄️ Deploy on Kubernetes with Yatai <https://github.com/bentoml/Yatai>`_
+  - Cloud-native AI deployment on Kubernetes, comes with advanced auto-scaling 
+  and CI/CD workflows. Requires professional DevOps team to maintain and operate.
+* `🚀 Fast Cloud Deployment with BentoCTL <https://github.com/bentoml/bentoctl>`_
+  - Great for proof-of-concept deployments directly running on public cloud services (EC2, ECS, SageMaker, Lambda, GCP, etc).
+  Requires working knowledge of Cloud Services and their limitations for AI-specific workloads.
 
 
 Feature comparison across deployment options:
@@ -38,47 +31,54 @@ Feature comparison across deployment options:
      - `🍱 BentoCloud <https://www.bentoml.com/>`_
      - `Yatai on Kubernetes <https://github.com/bentoml/Yatai>`_
      - Cloud Deployment with `BentoCTL <https://github.com/bentoml/bentoctl>`_ 
-     - Docker Containers 
    * - Auto-scaling
      - ✅ Fast auto-scaling optimized for AI
      - ✅ Kubernetes-native with custom metrics
-     - 💦 Only available on some Cloud Services, e.g. ECS, requires manual configurations
-     - ❌  Possible via container orchastration tools
+     - Only available on some Cloud Services, e.g. ECS, requires manual configurations
    * - Scaling-to-zero
      - ✅ Scaling at individual Model/Runner level
-     - ❌ Not supported
-     - 💦 Supported on AWS Lambda, GCP Functions with limitations on model size and access to GPU
-     - ❌ Not supported
+     - Not supported
+     - Supported on AWS Lambda, GCP Functions with limitations on model size and access to GPU
    * - GPU Support
      - ✅
      - ✅
-     - 💦 Supported on EC2, AWS SageMaker, requires manual configurations
-     - ✅
+     - Supported on EC2, AWS SageMaker, requires manual configurations
    * - Observability
      - ✅ Auto-generated dashboards for key metrics
-     - 💦 Requires manual configurations
-     - 💦 Requires manual configurations with cloud provider
-     - 💦 Requires manual configurations
+     - Requires manual configurations
+     - Requires manual configurations with cloud provider
    * - Endpoint Security
      - ✅ Access token management and authentication
-     - 💦 Manual setup
-     - 💦 Manual setup
-     - 💦 Manual setup
-   * - User Interface
-     - ✅ Web UI, REST API, CLI command, and Python API, designed for AI workflows
-     - 💦 CLI via kubectl, Kubernetes REST API
-     - 💦 CLI, Cloud Platform specific dashboards
-     - 💦 CLI
+     - Requires manual setup
+     - Requires manual setup
+   * - UI and API
+     - ✅ Web UI dashboards, REST API, CLI command, and Python API
+     - ✅ CLI(kubectl) + k8s CRD resource definition
+     - ✅ CLI(bentoctl, terraform)
    * - CI/CD
-     - ✅ Rich integration API, native support for common Git and MLOps workflows
-     - 
+     - ✅ Rich integrated API for programmatic access in CI/CD, support common GitOps and MLOps workflows
+     - ✅ Cloud-native design supporting Kubernetes CRD and GitOps workflow
+     - ✅ Native Terraform integration, easily customizable
+   * - Access control
+     - ✅ Flexible API token management and Role-based access control
+     - Inherits Kubernetes' account and RBAC mechanism, no model/bento/endpoint level access control 
+     - No access control besides basic cloud platform permissions such as creating/deleting resources
+
+
+All three deployment solutions above rely on BentoML's Docker containerization feature
+underneath. In order to ensure a smooth path to production with BentoML, it is important
+to understand the Bento specification, how to run inference with it, and how to build
+docker images from a Bento. This is not only useful for testing a Bento's environment
+and lifecycle configurations, but also for building custom integrations with the BentoML
+eco-system.
+
 
 
 Docker Containers
 -----------------
 
-Containerizing bentos as Docker images allows users to easily distribute and deploy
-bentos. Once services are built as bentos and saved to the bento store, we can
+Containerizing bentos as Docker images allows users to easily test out Bento's environment and
+dependency configurations locally. Once Bentos are built and saved to the bento store, we can
 containerize saved bentos with the CLI command :ref:`bentoml containerize <reference/cli:containerize>`.
 
 Start the Docker engine. Verify using ``docker info``.
@@ -134,28 +134,24 @@ Run the generated docker image:
 
 .. code-block:: bash
 
-    $ docker run -p 3000:3000 iris_classifier:ejwnswg5kw6qnuqj serve --production
+    $ docker run -p 3000:3000 iris_classifier:ejwnswg5kw6qnuqj
 
 .. seealso::
 
    :ref:`guides/containerization:Containerization with different container engines.`
    goes into more details on our containerization process and how to use different container runtime.
 
-.. todo::
-
-    - Add sample code for working with GPU and --gpu flag
-
 
 Deploy with Yatai on Kubernetes
 -------------------------------
 
 Yatai helps ML teams to deploy large scale model serving workloads on Kubernetes. It
-standardizes BentoML deployment on Kubernetes, provides UI and APis for managing all
+standardizes BentoML deployment on Kubernetes, provides UI and APIs for managing all
 your ML models and deployments in one place, and enables advanced GitOps and CI/CD
 workflows.
 
-Yatai is Kubernetes native, integrates well with other cloud native tools in the K8s
-eco-system.
+Yatai is Kubernetes native, providing native CRD for managing BentoML deployments, and
+integrates well with other tools in the K8s eco-system.
 
 To get started, get an API token from Yatai Web UI and login from your :code:`bentoml`
 CLI command:
@@ -286,8 +282,12 @@ Testing the endpoint deployed:
         $URL
 
 
-Supported Cloud Platforms
+Learn More about BentoCTL
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Check out BentoCTL docs `here <https://github.com/bentoml/bentoctl/blob/main/docs/README.md>`_.
+
+Supported cloud platforms:
 
 - AWS Lambda: https://github.com/bentoml/aws-lambda-deploy
 - AWS SageMaker: https://github.com/bentoml/aws-sagemaker-deploy
@@ -297,3 +297,10 @@ Supported Cloud Platforms
 - Azure Functions: https://github.com/bentoml/azure-functions-deploy
 - Azure Container Instances: https://github.com/bentoml/azure-container-instances-deploy
 - Heroku: https://github.com/bentoml/heroku-deploy
+
+
+Deploy to BentoCloud
+--------------------
+
+`BentoCloud <https://www.bentoml.com>`_ is currently under private beta. Please contact
+us by scheduling a demo request `here <https://www.bentoml.com/bento-cloud/>`_.

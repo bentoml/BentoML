@@ -412,6 +412,15 @@ class BentoModelInfo:
         )
 
 
+def get_service_import_str(svc: Service | str):
+    from ..service import Service
+
+    if isinstance(svc, Service):
+        return svc.get_service_import_origin()[0]
+    else:
+        return svc
+
+
 @attr.frozen(repr=False)
 class BentoInfo:
     # for backward compatibility in case new fields are added to BentoInfo.
@@ -420,9 +429,7 @@ class BentoInfo:
     __omit_if_default__ = True
 
     tag: Tag
-    service: str = attr.field(
-        converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
-    )
+    service: str = attr.field(converter=get_service_import_str)
     name: str = attr.field(init=False)
     version: str = attr.field(init=False)
     # using factory explicitly instead of default because omit_if_default is enabled for BentoInfo

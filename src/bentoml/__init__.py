@@ -12,7 +12,7 @@ BentoML to:
 
 To learn more, visit BentoML documentation at: http://docs.bentoml.org
 To get involved with the development, find us on GitHub: https://github.com/bentoml
-And join us in the BentoML slack community: https://l.linklyhq.com/l/ktOh
+And join us in the BentoML slack community: https://l.bentoml.com/join-slack
 """
 
 from typing import TYPE_CHECKING

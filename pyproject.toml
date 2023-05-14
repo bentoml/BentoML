@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries",
@@ -41,7 +42,6 @@ dependencies = [
     # we should always pin the set version of Opentelemetry suite
     "opentelemetry-api==1.14.0",
     "opentelemetry-sdk==1.14.0",
-    "opentelemetry-exporter-otlp-proto-http==1.14.0",
     "opentelemetry-instrumentation==0.35b0",
     "opentelemetry-instrumentation-aiohttp-client==0.35b0",
     "opentelemetry-instrumentation-asgi==0.35b0",
@@ -61,7 +61,7 @@ dependencies = [
     "rich>=11.2.0",
     "schema",
     "simple-di>=0.1.4",
-    "starlette<0.26",
+    "starlette>=0.13.5,<0.27",
     "uvicorn",
     "watchfiles>=0.15.0",
     "backports.cached-property;python_version<'3.8'",
@@ -121,7 +121,8 @@ all = [
     "bentoml[grpc-reflection]",
     "bentoml[grpc-channelz]",
     "bentoml[tracing]",
-    "bentoml[triton]"
+    "bentoml[triton]",
+    "bentoml[monitor-otlp]",
 ]
 aws = ["fs-s3fs"]
 io = [
@@ -154,6 +155,7 @@ tracing = [
 tracing-jaeger = ["opentelemetry-exporter-jaeger==1.14.0"]
 tracing-zipkin = ["opentelemetry-exporter-zipkin==1.14.0"]
 tracing-otlp = ["opentelemetry-exporter-otlp==1.14.0"]
+monitor-otlp = ["opentelemetry-exporter-otlp-proto-http==1.14.0"]
 
 [tool.setuptools_scm]
 write_to = "src/bentoml/_version.py"

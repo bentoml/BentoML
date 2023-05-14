@@ -105,7 +105,7 @@ class HTTPAppFactory(BaseAppFactory):
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
-    ) -> None:
+    ):
         self.bento_service = bento_service
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
@@ -220,7 +220,7 @@ class HTTPAppFactory(BaseAppFactory):
             middlewares.append(Middleware(HTTPTrafficMetricsMiddleware))
 
         # otel middleware
-        import opentelemetry.instrumentation.asgi as otel_asgi
+        from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
         def client_request_hook(span: Span, _: dict[str, t.Any]) -> None:
             if span is not None:
@@ -228,7 +228,7 @@ class HTTPAppFactory(BaseAppFactory):
 
         middlewares.append(
             Middleware(
-                otel_asgi.OpenTelemetryMiddleware,
+                OpenTelemetryMiddleware,
                 excluded_urls=BentoMLContainer.tracing_excluded_urls.get(),
                 default_span_details=None,
                 server_request_hook=None,
@@ -252,6 +252,11 @@ class HTTPAppFactory(BaseAppFactory):
                         has_response_content_type=access_log_config.response_content_type.get(),
                     )
                 )
+
+        from .http.timeout import TimeoutMiddleware
+
+        api_server_timeout = BentoMLContainer.api_server_config.timeout.get()
+        middlewares.append(Middleware(TimeoutMiddleware, timeout=api_server_timeout))
 
         return middlewares
 
@@ -344,6 +349,11 @@ class HTTPAppFactory(BaseAppFactory):
                     response.headers["X-BentoML-Request-ID"] = str(
                         trace_context.request_id
                     )
+                if (
+                    BentoMLContainer.http.response.trace_id.get()
+                    and trace_context.trace_id is not None
+                ):
+                    response.headers["X-BentoML-Trace-ID"] = str(trace_context.trace_id)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
                 if output is not None:
@@ -373,6 +383,9 @@ class HTTPAppFactory(BaseAppFactory):
                     )
                 else:
                     response = JSONResponse("", status_code=status)
+            except asyncio.CancelledError:
+                # Special handling for Python 3.7 compatibility
+                raise
             except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.

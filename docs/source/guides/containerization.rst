@@ -449,7 +449,7 @@ By default, a Bento sets:
 
     ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 
-    CMD ["bentoml", "serve", "{{ bento__path }}", "--production"]
+    CMD ["bentoml", "serve", "{{ bento__path }}"]
 
 This aboved instructions ensure that whenever :code:`docker run` is invoked on the 🍱 container, :code:`bentoml` is called correctly. 
 

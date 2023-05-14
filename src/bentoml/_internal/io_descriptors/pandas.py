@@ -442,6 +442,8 @@ class PandasDataFrame(
             return str(value.dtype)
         elif isinstance(value, bool):
             return str(value)
+        elif isinstance(value, str):
+            return value
         elif isinstance(value, dict):
             return {str(k): self._convert_dtype(v) for k, v in value.items()}
         elif value is None:
@@ -950,6 +952,10 @@ class PandasSeries(
         # TODO: support extension dtypes
         if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(value):
             return str(value.dtype)
+        elif isinstance(value, np.dtype):
+            return str(value)
+        elif isinstance(value, str):
+            return value
         elif isinstance(value, bool):
             return str(value)
         elif isinstance(value, dict):
@@ -1180,7 +1186,7 @@ class PandasSeries(
             ) from None
         try:
             fieldpb = npdtype_to_fieldpb_map()[obj.dtype]
-            return pb.Series(**{fieldpb: obj.ravel().tolist()})
+            return pb.Series(**{fieldpb: obj.tolist()})
         except KeyError:
             raise InvalidArgument(
                 f"Unsupported dtype '{obj.dtype}' for response message."

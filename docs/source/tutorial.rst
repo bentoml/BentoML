@@ -165,7 +165,7 @@ We can now run the BentoML server for our new service in development mode:
 
        .. code-block:: bash
 
-          » bentoml serve service:svc --reload
+          » bentoml serve service:svc --development --reload
           2022-09-18T21:11:22-0700 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service.py:svc" can be accessed at http://localhost:3000/metrics.
           2022-09-18T21:11:22-0700 [INFO] [cli] Starting development HTTP BentoServer from "service.py:svc" listening on 0.0.0.0:3000 (Press CTRL+C to quit)
           2022-09-18 21:11:23 circus[80177] [INFO] Loading the plugin...
@@ -178,7 +178,7 @@ We can now run the BentoML server for our new service in development mode:
 
        .. code-block:: bash
 
-          » bentoml serve-grpc service:svc --reload --enable-reflection
+          » bentoml serve-grpc service:svc --development --reload --enable-reflection
           2022-09-18T21:12:18-0700 [INFO] [cli] Prometheus metrics for gRPC BentoServer from "service.py:svc" can be accessed at http://localhost:3001.
           2022-09-18T21:12:18-0700 [INFO] [cli] Starting development gRPC BentoServer from "service.py:svc" listening on 0.0.0.0:3000 (Press CTRL+C to quit)
           2022-09-18 21:12:19 circus[81102] [INFO] Loading the plugin...
@@ -469,7 +469,7 @@ For starters, you can now serve it with the ``bentoml serve`` CLI command:
 
        .. code-block:: bash
 
-          » bentoml serve iris_classifier:latest --production
+          » bentoml serve iris_classifier:latest
 
           2022-09-18T21:22:17-0700 [INFO] [cli] Environ for worker 0: set CPU thread count to 10
           2022-09-18T21:22:17-0700 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "iris_classifier:latest" can be accessed at http://0.0.0.0:3000/metrics.
@@ -480,7 +480,7 @@ For starters, you can now serve it with the ``bentoml serve`` CLI command:
 
        .. code-block:: bash
 
-          » bentoml serve-grpc iris_classifier:latest --production
+          » bentoml serve-grpc iris_classifier:latest
 
           2022-09-18T21:23:11-0700 [INFO] [cli] Environ for worker 0: set CPU thread count to 10
           2022-09-18T21:23:11-0700 [INFO] [cli] Prometheus metrics for gRPC BentoServer from "iris_classifier:latest" can be accessed at http://0.0.0.0:3001.
@@ -514,7 +514,7 @@ via the ``bentoml containerize`` CLI command:
 
           Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
           Successfully built docker image for "iris_classifier:6otbsmxzq6lwbgxi" with tags "iris_classifier:6otbsmxzq6lwbgxi"
-          To run your newly built Bento container, pass "iris_classifier:6otbsmxzq6lwbgxi" to "docker run". For example: "docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve --production".
+          To run your newly built Bento container, pass "iris_classifier:6otbsmxzq6lwbgxi" to "docker run". For example: "docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve".
 
     .. tab-item:: gRPC
        :sync: grpc
@@ -525,8 +525,8 @@ via the ``bentoml containerize`` CLI command:
 
           Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
           Successfully built docker image for "iris_classifier:6otbsmxzq6lwbgxi" with tags "iris_classifier:6otbsmxzq6lwbgxi"
-          To run your newly built Bento container, pass "iris_classifier:6otbsmxzq6lwbgxi" to "docker run". For example: "docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve --production".
-          Additionally, to run your Bento container as a gRPC server, do: "docker run -it --rm -p 3000:3000 -p 3001:3001 iris_classifier:6otbsmxzq6lwbgxi serve-grpc --production"
+          To run your newly built Bento container, pass "iris_classifier:6otbsmxzq6lwbgxi" to "docker run". For example: "docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve".
+          Additionally, to run your Bento container as a gRPC server, do: "docker run -it --rm -p 3000:3000 -p 3001:3001 iris_classifier:6otbsmxzq6lwbgxi serve-grpc"
 
 .. note::
 
@@ -563,7 +563,7 @@ Run the docker image to start the BentoServer:
 
        .. code-block:: bash
 
-          » docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve --production
+          » docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve
 
           2022-09-19T05:27:31+0000 [INFO] [cli] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
           2022-09-19T05:27:31+0000 [WARNING] [cli] GPU not detected. Unable to initialize pynvml lib.
@@ -581,7 +581,7 @@ Run the docker image to start the BentoServer:
 
        .. code-block:: bash
 
-          » docker run -it --rm -p 3000:3000 -p 3001:3001 iris_classifier:6otbsmxzq6lwbgxi serve-grpc --production
+          » docker run -it --rm -p 3000:3000 -p 3001:3001 iris_classifier:6otbsmxzq6lwbgxi serve-grpc
 
           2022-09-19T05:28:29+0000 [INFO] [cli] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
           2022-09-19T05:28:29+0000 [WARNING] [cli] GPU not detected. Unable to initialize pynvml lib.

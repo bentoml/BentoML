@@ -813,8 +813,8 @@ Here's a basic Docker options configuration:
           - liblapack-dev
           - gfortran
         env:
-          - FOO=value1
-          - BAR=value2
+          FOO: value1
+          BAR: value2
 
 .. note::
 
@@ -1013,6 +1013,8 @@ enable additional features for the generated Bento container image.
 | ``--enable-features=tracing-otlp``    | enable :ref:`OTLP Exporter <guides/tracing:Tracing>`   for distributed tracing                                          |
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 | ``--enable-features=tracing-zipkin``  | enable :ref:`Zipkin Exporter <guides/tracing:Tracing>`  for distributed tracing                                         |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=monitor-otlp``    | enable :ref:`Monitoring feature <guides/monitoring:Inference Data Collection & Model Monitoring>`                       |
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 
 Advanced Options

@@ -112,7 +112,7 @@ def test_serve_with_timeout(bentoml_home: str):
 @pytest.mark.asyncio
 async def test_serve_with_api_max_concurrency(bentoml_home: str):
     server = bentoml.HTTPServer("service.py:svc", port=12350, api_workers=1)
-    config_file = os.path.abspath("configs/timeout.yml")
+    config_file = os.path.abspath("configs/max_concurrency.yml")
     env = os.environ.copy()
     env.update(BENTOML_CONFIG=config_file)
 

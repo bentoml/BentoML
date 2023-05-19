@@ -92,7 +92,7 @@ relaxing the max latency requirement and further scaling the underlying hardware
 Custom Batching
 ---------------
 
-Currently, adaptive batching is only effective for certain types of parameters including ``numpy.ndarray``, ``pandas.Series`` and framework-specific types such as ``torch.Tensor``.
+Currently, adaptive batching is only effective for certain types of parameters including(non-exhaustive) ``numpy.ndarray``, ``pandas.Series`` and framework-specific types such as ``torch.Tensor``.
 Batch parameters of other types are simply collected into a list and passed to the inference function. If your model accepts parameters that are not batchable by default,
 you can achieve adaptive batching by wrapping the inference function with a :ref:`Runner <concepts/runner:Custom Runner>`.
 
@@ -114,7 +114,7 @@ We will demonstrate this with a PyTorch example which accepts a dictionary of ``
                 torch.set_default_tensor_type("torch.cuda.FloatTensor")
             else:
                 self.device_id = "cpu"
-            self.model: ModelType = model.load_model(device_id=self.device_id)
+            self.model = model.load_model(device_id=self.device_id)
             # We want to turn off dropout and batchnorm when running inference.
             self.model.train(False)
 

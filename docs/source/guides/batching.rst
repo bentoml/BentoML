@@ -114,7 +114,7 @@ We will demonstrate this with a PyTorch example which accepts a dictionary of ``
                 torch.set_default_tensor_type("torch.cuda.FloatTensor")
             else:
                 self.device_id = "cpu"
-            self.model = model.load_model(device_id=self.device_id)
+            self.model = bentoml.pytorch.load_model(device_id=self.device_id)
             # We want to turn off dropout and batchnorm when running inference.
             self.model.train(False)
 

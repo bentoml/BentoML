@@ -107,7 +107,6 @@ def add_model_management_commands(cli: Group) -> None:
                 "creation_time": model.info.creation_time.astimezone().strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
-                "path": model.path,
             }
             for model in sorted(
                 models, key=lambda x: x.info.creation_time, reverse=True
@@ -125,14 +124,12 @@ def add_model_management_commands(cli: Group) -> None:
             table.add_column("Module")
             table.add_column("Size")
             table.add_column("Creation Time")
-            table.add_column("Path")
             for model in res:
                 table.add_row(
                     model["tag"],
                     model["module"],
                     model["size"],
                     model["creation_time"],
-                    model["path"],
                 )
             console.print(table)
 

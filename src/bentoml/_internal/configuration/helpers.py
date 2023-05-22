@@ -113,9 +113,7 @@ def get_default_config(version: int) -> dict[str, t.Any]:
             % (version, e)
         ) from e
     except Exception as err:
-        logger.error("Unexpected error while setting configuration:\n")
-        logger.error(err)
-        raise
+        raise BentoMLException("Unexpected error while setting configuration:\n") from err
     finally:
         return config
 

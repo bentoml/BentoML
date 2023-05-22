@@ -11,6 +11,7 @@ import yaml
 import schema as s
 
 from ..utils import LazyLoader
+from ...exceptions import BentoMLException
 from ...exceptions import BentoMLConfigException
 
 if TYPE_CHECKING:
@@ -113,7 +114,9 @@ def get_default_config(version: int) -> dict[str, t.Any]:
             % (version, e)
         ) from e
     except Exception as err:
-        raise BentoMLException("Unexpected error while setting configuration:\n") from err
+        raise BentoMLException(
+            "Unexpected error while setting configuration:\n"
+        ) from err
     finally:
         return config
 

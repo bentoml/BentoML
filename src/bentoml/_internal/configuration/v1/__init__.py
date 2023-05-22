@@ -285,4 +285,11 @@ def migration(*, override_config: dict[str, t.Any]):
             current=f"logging.formatting.{f}_format",
             replace_with=f"api_server.logging.access.format.{f}",
         )
+    # 7. move timeout to traffic.timeout
+    for namespace in ("api_server", "runners"):
+        rename_fields(
+            override_config,
+            current=f"{namespace}.timeout",
+            replace_with=f"{namespace}.traffic.timeout",
+        )
     return unflatten(override_config)

@@ -8,6 +8,7 @@ import logging
 import importlib
 from typing import TYPE_CHECKING
 from functools import partial
+from collections import UserDict
 
 import attr
 
@@ -34,10 +35,21 @@ if TYPE_CHECKING:
     from ..bento import Bento
     from ...grpc.v1 import service_pb2_grpc as services
     from .openapi.specification import OpenAPISpecification
+
+    APIDictBase = UserDict[str, InferenceAPI]
 else:
     grpc, _ = import_grpc()
+    APIDictBase = UserDict
 
 logger = logging.getLogger(__name__)
+
+
+class APIDict(APIDictBase):
+    def __getattr__(self, name):
+        try:
+            return self.__getitem__(name)
+        except KeyError:
+            raise AttributeError(f"InferenceAPI '{attr}' not found")
 
 
 def add_inference_api(
@@ -113,7 +125,7 @@ class Service:
     grpc_handlers: list[grpc.GenericRpcHandler] = attr.field(init=False, factory=list)
 
     # list of APIs from @svc.api
-    apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
+    apis: APIDict = attr.field(init=False, factory=APIDict)
 
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)
@@ -434,6 +446,15 @@ class Service:
 
     def add_grpc_handlers(self, handlers: list[grpc.GenericRpcHandler]) -> None:
         self.grpc_handlers.extend(handlers)
+
+    def init_local(self):
+        """
+        Initiate this service instance in local mode, which will load all runners in
+        current Python process. This should be used for one-off inference task, testing
+        and debugging purpose only.
+        """
+        for runner in self.runners:
+            runner.init_local(quiet=True)
 
 
 def on_load_bento(svc: Service, bento: Bento):

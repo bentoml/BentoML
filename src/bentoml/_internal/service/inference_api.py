@@ -176,6 +176,9 @@ class InferenceAPI:
                 "Reserved API route: '{}' is reserved for infra endpoints".format(route)
             )
 
+    def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return self.func(*args, **kwargs)
+
 
 def _InferenceAPI_dumper(dumper: yaml.Dumper, api: InferenceAPI) -> yaml.Node:
     return dumper.represent_dict(

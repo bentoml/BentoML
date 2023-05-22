@@ -127,7 +127,6 @@ We will demonstrate this with a PyTorch example which accepts a dictionary of ``
             with torch.inference_mode():
                 return self.model(batch)
 
-    model = bentoml.pytorch.get("my_pytorch_model")
     # Build the runner from the runnable manually, instead of calling model.to_runner() method
     runner = bentoml.Runner(MyRunnable)
     svc = bentoml.Service(name="my_ml_service", runners=[runner])

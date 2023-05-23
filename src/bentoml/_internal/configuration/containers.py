@@ -65,6 +65,18 @@ class BentoMLConfiguration:
         self.config = get_default_config(version=use_version)
         spec_module = import_configuration_spec(version=use_version)
 
+        if override_config_dict is not None:
+            assert isinstance(
+                override_config_dict, dict
+            ), "override_config_dict must be a dict"
+            try:
+                override = unflatten(override_config_dict)
+            except ValueError as e:
+                raise BentoMLConfigException(
+                    f"Failed to unflatten the override_config_dict:\n{e}\n ** Note: You can just simply use a non flatten dict that follows the default BentoML configuration structure."
+                ) from None
+            config_merger.merge(self.config, override_config_dict)
+
         # User override configuration
         if override_config_file is not None:
             logger.info(
@@ -128,18 +140,6 @@ class BentoMLConfiguration:
                     f"Failed to parse config options from the env var:\n{e}.\n*** Note: You can use '\"' to quote the key if it contains special characters. ***"
                 ) from None
             config_merger.merge(self.config, override)
-
-        if override_config_dict is not None:
-            assert isinstance(
-                override_config_dict, dict
-            ), "override_config_dict must be a dict"
-            try:
-                override = unflatten(override_config_dict)
-            except ValueError as e:
-                raise BentoMLConfigException(
-                    f"Failed to unflatten the override_config_dict:\n{e}\n ** Note: You can just simply use a non flatten dict that follows the default BentoML configuration structure."
-                ) from None
-            config_merger.merge(self.config, override_config_dict)
 
         if (
             override_config_file is not None

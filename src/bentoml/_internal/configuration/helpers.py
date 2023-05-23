@@ -108,6 +108,7 @@ def get_default_config(version: int) -> dict[str, t.Any]:
     mod = import_configuration_spec(version)
     try:
         mod.SCHEMA.validate(config)
+        return config
     except s.SchemaError as e:
         raise BentoMLConfigException(
             "Default configuration for version %d does not conform to given schema:\n%s"
@@ -117,8 +118,6 @@ def get_default_config(version: int) -> dict[str, t.Any]:
         raise BentoMLException(
             "Unexpected error while setting configuration:\n"
         ) from err
-    finally:
-        return config
 
 
 def validate_tracing_type(tracing_type: str) -> bool:

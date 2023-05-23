@@ -372,7 +372,7 @@ def build(
         bentofile_path = os.path.join(os.path.dirname(f.name), f.name)
         build_args.extend(["--bentofile", bentofile_path])
         try:
-            output = subprocess.check_output(build_args, env=os.environ.copy())
+            output = subprocess.check_output(build_args)
         except subprocess.CalledProcessError as e:
             logger.error("Failed to build BentoService bundle: %s", e)
             raise
@@ -414,7 +414,7 @@ def build_bentofile(
     build_args.extend(["--bentofile", bentofile, "--output", "tag"])
 
     try:
-        output = subprocess.check_output(build_args, env=os.environ.copy())
+        output = subprocess.check_output(build_args)
     except subprocess.CalledProcessError as e:
         logger.error("Failed to build BentoService bundle: %s", e)
         raise

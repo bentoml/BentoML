@@ -134,7 +134,10 @@ def get_quiet_mode() -> bool:
     return False
 
 
-def load_config(bentoml_config_file: str | None = None):
+def load_config(
+    bentoml_config_file: str | None = None,
+    override_config: dict[str, t.Any] | None = None,
+):
     """Load global configuration of BentoML"""
 
     from .containers import BentoMLContainer
@@ -157,6 +160,7 @@ def load_config(bentoml_config_file: str | None = None):
         BentoMLConfiguration(
             override_config_file=bentoml_config_file,
             override_config_values=get_bentoml_override_config_from_env(),
+            override_config_dict=override_config,
         ).to_dict()
     )
 

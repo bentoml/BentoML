@@ -56,6 +56,7 @@ class BentoMLConfiguration:
         self,
         override_config_file: str | None = None,
         override_config_values: str | None = None,
+        override_config_dict: dict[str, t.Any] | None = None,
         *,
         validate_schema: bool = True,
         use_version: int = 1,
@@ -128,7 +129,23 @@ class BentoMLConfiguration:
                 ) from None
             config_merger.merge(self.config, override)
 
-        if override_config_file is not None or override_config_values is not None:
+        if override_config_dict is not None:
+            assert isinstance(
+                override_config_dict, dict
+            ), "override_config_dict must be a dict"
+            try:
+                override = unflatten(override_config_dict)
+            except ValueError as e:
+                raise BentoMLConfigException(
+                    f"Failed to unflatten the override_config_dict:\n{e}\n ** Note: You can just simply use a non flatten dict that follows the default BentoML configuration structure."
+                ) from None
+            config_merger.merge(self.config, override_config_dict)
+
+        if (
+            override_config_file is not None
+            or override_config_values is not None
+            or override_config_dict is not None
+        ):
             self._finalize()
 
         if validate_schema:

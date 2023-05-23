@@ -25,6 +25,8 @@ from ..models.model import ModelOptions
 from ..models.model import ModelSignature
 
 if t.TYPE_CHECKING:
+    import torch
+    import tensorflow as tf
     import cloudpickle
     from transformers.models.auto.auto_factory import (
         _BaseAutoModelClass as BaseAutoModelClass,
@@ -49,6 +51,10 @@ if t.TYPE_CHECKING:
     TupleAutoModel = tuple[BaseAutoModelClass, ...]
 
     class PreTrainedProtocol(t.Protocol):
+        @property
+        def framework(self) -> str:
+            ...
+
         def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None:
             ...
 
@@ -64,6 +70,8 @@ else:
     TupleStr = TupleAutoModel = tuple
     DefaultMapping = SimpleDefaultMapping = ModelDefaultMapping = dict
 
+    torch = LazyLoader("torch", globals(), "torch")
+    tf = LazyLoader("tf", globals(), "tensorflow")
     cloudpickle = LazyLoader(
         "cloudpickle",
         globals(),
@@ -853,7 +861,13 @@ def save_model(
         if metadata is None:
             metadata = {}
 
-        metadata["_pretrained_class"] = pretrained.__class__.__name__
+        metadata.update(
+            {
+                "_pretrained_class": pretrained.__class__.__name__,
+                "_framework": pretrained.framework,
+            }
+        )
+
         with bentoml.models.create(
             name,
             module=MODULE_NAME,
@@ -886,19 +900,56 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
             super().__init__()
 
             available_gpus = os.getenv("CUDA_VISIBLE_DEVICES", "")
+            # assign CPU resources
+            kwargs = {}
+
             if available_gpus not in ("", "-1"):
                 # assign GPU resources
                 if not available_gpus.isdigit():
                     raise ValueError(
                         f"Expecting numeric value for CUDA_VISIBLE_DEVICES, got {available_gpus}."
                     )
-                else:
-                    kwargs = {"device": int(available_gpus)}
+                if "_pretrained_class" not in bento_model.info.metadata:
+                    # NOTE: then this is a pipeline. We then pass the device to it.
+                    kwargs["device"] = int(available_gpus)
+            if "_pretrained_class" not in bento_model.info.metadata:
+                self.model = load_model(bento_model, **kwargs)
             else:
-                # assign CPU resources
-                kwargs = {}
-
-            self.model = load_model(bento_model, **kwargs)
+                if "_framework" in bento_model.info.metadata:
+                    if "torch" == bento_model.info.metadata["_framework"]:
+                        self.model = t.cast(
+                            transformers.PreTrainedModel,
+                            load_model(bento_model, **kwargs),
+                        ).to(
+                            torch.device(
+                                "cuda" if available_gpus not in ("", "-1") else "cpu"
+                            )
+                        )
+                        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+                    elif "tf" == bento_model.info.metadata["_framework"]:
+                        with tf.device(
+                            "/device:CPU:0"
+                            if available_gpus in ("", "-1")
+                            else f"/device:GPU:{available_gpus}"
+                        ):
+                            self.model = t.cast(
+                                transformers.TFPreTrainedModel,
+                                load_model(bento_model, **kwargs),
+                            )
+                    else:
+                        # NOTE: we need to hide all GPU from TensorFlow, otherwise it will try to allocate
+                        # memory on the GPU and make it unavailable for JAX.
+                        tf.config.experimental.set_visible_devices([], "GPU")
+                        self.model = t.cast(
+                            transformers.FlaxPreTrainedModel,
+                            load_model(bento_model, **kwargs),
+                        )
+                else:
+                    logger.warning(
+                        "Current %s is saved with an older version of BentoML. Setting GPUs on this won't work as expected. Make sure to save it with a newer version of BentoML.",
+                        bento_model,
+                    )
+                    self.model = load_model(bento_model, **kwargs)
 
             # NOTE: backward compatibility with previous BentoML versions.
             self.pipeline = self.model

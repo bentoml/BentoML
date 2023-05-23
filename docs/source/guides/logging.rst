@@ -132,6 +132,16 @@ When using BentoML as a library, BentoML does not configure any logs. By default
     bentoml_logger.addHandler(ch)
     bentoml_logger.setLevel(logging.DEBUG)
 
+.. note::
+    Important Notice: When using the BentoML serving API with the ``bentoml serve service.py:svc --production`` command,
+    please be aware that the execution of ``service.py`` takes place within a new forked child process.
+    It is crucial to avoid implementing any type of rotation FileHandler within service.py.
+
+    The Python logging module is thread-safe within a single process
+    However, when utilizing multiple processes, each process has its own instance of the logger, and they write to their respective log files independently.
+    The logging module does not provide synchronization mechanisms for sharing loggers or log files across different processes.
+
+    In this scenario, each process performs its own file rotation independently, which can result in overwritten archived log files.
 ----
 
 .. rubric:: Notes

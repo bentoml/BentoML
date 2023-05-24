@@ -57,14 +57,17 @@ runners:
         max_batch_size: 10
     resources:
         cpu: 4
+    workers_per_resource: 1
     logging:
         access:
             enabled: False
     test_runner_1:
         resources: system
+        workers_per_resource: 2
     test_runner_2:
         resources:
             cpu: 2
+        workers_per_resource: 4
     test_runner_gpu:
         resources:
             nvidia.com/gpu: 1
@@ -84,6 +87,7 @@ runners:
     assert test_runner_1["batching"]["enabled"] is False
     assert test_runner_1["batching"]["max_batch_size"] == 10
     assert test_runner_1["logging"]["access"]["enabled"] is False
+    assert test_runner_1["workers_per_resource"] == 2
     # assert test_runner_1["resources"]["cpu"] == 4
 
     # test_runner_2
@@ -92,6 +96,7 @@ runners:
     assert test_runner_2["batching"]["max_batch_size"] == 10
     assert test_runner_2["logging"]["access"]["enabled"] is False
     assert test_runner_2["resources"]["cpu"] == 2
+    assert test_runner_2["workers_per_resource"] == 4
 
     # test_runner_gpu
     test_runner_gpu = runner_cfg["test_runner_gpu"]
@@ -100,6 +105,7 @@ runners:
     assert test_runner_gpu["logging"]["access"]["enabled"] is False
     assert test_runner_gpu["resources"]["cpu"] == 4  # should use global
     assert test_runner_gpu["resources"]["nvidia.com/gpu"] == 1
+    assert test_runner_gpu["workers_per_resource"] == 1
 
     # test_runner_batching
     test_runner_batching = runner_cfg["test_runner_batching"]
@@ -117,18 +123,22 @@ def test_runner_gpu_configuration(
 runners:
     resources:
         nvidia.com/gpu: [1, 2, 4]
+    workers_per_resource: 1
 """
     bentoml_cfg = container_from_file(GPU_INDEX)
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": [1, 2, 4]}
+    assert bentoml_cfg["runners"]["workers_per_resource"] == 1
 
     GPU_INDEX_WITH_STRING = """\
 runners:
     resources:
         nvidia.com/gpu: "[1, 2, 4]"
+    workers_per_resource: 2
 """
     bentoml_cfg = container_from_file(GPU_INDEX_WITH_STRING)
     # this behaviour can be confusing
     assert bentoml_cfg["runners"]["resources"] == {"nvidia.com/gpu": "[1, 2, 4]"}
+    assert bentoml_cfg["runners"]["workers_per_resource"] == 2
 
 
 @pytest.mark.usefixtures("container_from_file")

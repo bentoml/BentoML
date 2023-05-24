@@ -31,7 +31,7 @@ _main() {
 				set -- bentoml start-runner-server "$@" "$BENTO_PATH"
 			fi
 		else
-			set -- bentoml serve --production "$@" "$BENTO_PATH"
+			set -- bentoml serve "$@" "$BENTO_PATH"
 		fi
 	fi
 	# Overide the BENTOML_PORT if PORT env var is present. Used for Heroku and Yatai.

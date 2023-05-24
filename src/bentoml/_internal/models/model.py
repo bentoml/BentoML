@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import typing as t
 import logging
 import importlib
@@ -42,6 +43,7 @@ if TYPE_CHECKING:
     from ..types import PathType
     from ..runner import Runner
     from ..runner import Runnable
+    from ..runner.strategy import Strategy
 
     class ModelSignatureDict(t.TypedDict, total=False):
         batchable: bool
@@ -328,6 +330,8 @@ class Model(StoreItem):
         max_latency_ms: int | None = None,
         batching_strategy: BatchingStrategy | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
+        embedded: bool = False,
+        scheduling_strategy: type[Strategy] | None = None,
     ) -> Runner:
         """
         TODO(chaoyu): add docstring
@@ -342,6 +346,18 @@ class Model(StoreItem):
 
         """
         from ..runner import Runner
+        from ..runner.strategy import DefaultStrategy
+
+        if scheduling_strategy is None:
+            scheduling_strategy = DefaultStrategy
+
+        # TODO: @larme @yetone run this branch only yatai version is incompatible with embedded runner
+        yatai_version = os.environ.get("YATAI_T_VERSION")
+        if embedded and yatai_version:
+            logger.warning(
+                f"Yatai of version {yatai_version} is incompatible with embedded runner, set `embedded=False` for runner {name}"
+            )
+            embedded = False
 
         return Runner(
             self.to_runnable(),
@@ -351,12 +367,28 @@ class Model(StoreItem):
             max_latency_ms=max_latency_ms,
             batching_strategy=batching_strategy,
             method_configs=method_configs,
+            embedded=embedded,
+            scheduling_strategy=scheduling_strategy,
         )
 
     def to_runnable(self) -> t.Type[Runnable]:
         if self._runnable is None:
             self._runnable = self.info.imported_module.get_runnable(self)
         return self._runnable
+
+    def load_model(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        """
+        Load the model into memory from the model store directory.
+        This is a shortcut to the ``load_model`` function defined in the framework module
+        used for saving the target model.
+
+        For example, if the ``BentoModel`` is saved with
+        ``bentoml.tensorflow.save_model``, this method will pass it to the
+        ``bentoml.tensorflow.load_model`` method, along with any additional arguments.
+        """
+        if self._model is None:
+            self._model = self.info.imported_module.load_model(self, *args, **kwargs)
+        return self._model
 
     def with_options(self, **kwargs: t.Any) -> Model:
         res = Model(

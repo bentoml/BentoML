@@ -132,11 +132,10 @@ class LinearOptimizer(Optimizer, optimizer_id="linear"):
         self.outbound_counter = 0
 
     def log_outbound(self, batch_size: int, duration: float):
-        if self.outbound_counter <= self.n_skipped_sample + 4:
-            self.outbound_counter += 1
+        if self.outbound_counter <= self.n_skipped_sample:
             # skip inaccurate info at beginning
-            if self.outbound_counter <= self.n_skipped_sample:
-                return
+            self.outbound_counter += 1
+            return
 
         self.o_stat.append((batch_size, duration))
 
@@ -307,7 +306,7 @@ class Dispatcher:
         raises:
             * all possible exceptions the decorated function has
         """
-        self.max_latency = max_latency_in_ms / 1000.0
+        self.max_latency_in_ms = max_latency_in_ms / 1000.0
         self.fallback = fallback
         self.optimizer = optimizer
         self.strategy = strategy
@@ -325,8 +324,8 @@ class Dispatcher:
             task.cancel()
         try:
             while True:
-                fut = self._queue.pop().future
-                fut.cancel()
+                for job in self._queue:
+                job.future.cancel()
         except IndexError:
             pass
 
@@ -409,7 +408,7 @@ class Dispatcher:
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
                 dispatch(inputs_info, batch_size)
         except asyncio.CancelledError:
-            return
+            raise
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 
@@ -443,6 +442,8 @@ class Dispatcher:
                     "BentoML has detected that a service has a max latency that is likely too low for serving. If many 503 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
                 )
             logger.debug("Dispatcher optimizer training complete.")
+        except asyncio.CancelledError:
+            raise
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 
@@ -471,7 +472,7 @@ class Dispatcher:
                 # we are now free to dispatch whenever we like
                 await self.strategy.batch(self.optimizer, self._queue, self.max_latency, self.max_batch_size, self.tick_interval, self._dispatch)
             except asyncio.CancelledError:
-                return
+                raise
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)
 

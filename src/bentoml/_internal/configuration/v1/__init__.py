@@ -107,6 +107,7 @@ _API_SERVER_CONFIG = {
             "access_control_max_age": s.Or(int, None),
             "access_control_expose_headers": s.Or([str], str, None),
         },
+        "response": {"trace_id": bool},
     },
     "grpc": {
         "host": s.And(str, is_valid_ip_address),
@@ -152,6 +153,7 @@ _RUNNER_CONFIG = {
     # NOTE: there is a distinction between being unset and None here; if set to 'None'
     # in configuration for a specific runner, it will override the global configuration.
     s.Optional("resources"): s.Or({s.Optional(str): object}, lambda s: s == "system", None),  # type: ignore (incomplete schema typing)
+    s.Optional("workers_per_resource"): s.And(int, ensure_larger_than_zero),
     s.Optional("logging"): {
         s.Optional("access"): {
             s.Optional("enabled"): bool,

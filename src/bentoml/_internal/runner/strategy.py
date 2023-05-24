@@ -19,6 +19,7 @@ class Strategy(abc.ABC):
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any],
+        workers_per_resource: int,
     ) -> int:
         ...
 
@@ -28,6 +29,7 @@ class Strategy(abc.ABC):
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any],
+        workers_per_resource: int,
         worker_index: int,
     ) -> dict[str, t.Any]:
         """
@@ -64,6 +66,7 @@ class DefaultStrategy(Strategy):
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any] | None,
+        workers_per_resource: int,
     ) -> int:
         if resource_request is None:
             resource_request = system_resources()
@@ -75,7 +78,7 @@ class DefaultStrategy(Strategy):
             and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            return len(nvidia_gpus)
+            return len(nvidia_gpus) * workers_per_resource
 
         # use CPU
         cpus = get_resource(resource_request, "cpu")
@@ -87,9 +90,9 @@ class DefaultStrategy(Strategy):
                 )
 
             if runnable_class.SUPPORTS_CPU_MULTI_THREADING:
-                return 1
+                return workers_per_resource
 
-            return math.ceil(cpus)
+            return math.ceil(cpus) * workers_per_resource
 
         # this should not be reached by user since we always read system resource as default
         raise ValueError(
@@ -102,6 +105,7 @@ class DefaultStrategy(Strategy):
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any] | None,
+        workers_per_resource: int,
         worker_index: int,
     ) -> dict[str, t.Any]:
         """
@@ -125,7 +129,7 @@ class DefaultStrategy(Strategy):
             and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            dev = str(nvidia_gpus[worker_index])
+            dev = str(nvidia_gpus[worker_index // workers_per_resource])
             environ["CUDA_VISIBLE_DEVICES"] = dev
             logger.info(
                 "Environ for worker %s: set CUDA_VISIBLE_DEVICES to %s",

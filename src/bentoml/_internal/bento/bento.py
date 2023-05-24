@@ -213,7 +213,7 @@ class Bento(StoreItem):
             model.save(bento_model_store)
 
         # create ignore specs
-        specs = BentoPathSpec(build_config.include, build_config.exclude)  # type: ignore (unfinished attrs converter type)
+        specs = BentoPathSpec(build_config.include, build_config.exclude)
 
         # Copy all files base on include and exclude, into `src` directory
         relpaths = [s for s in build_config.include if s.startswith("../")]
@@ -367,6 +367,7 @@ class BentoStore(Store[Bento]):
 class BentoRunnerInfo:
     name: str
     runnable_type: str
+    embedded: bool = attr.field(default=False)
     models: t.List[str] = attr.field(factory=list)
     resource_config: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
 
@@ -375,6 +376,7 @@ class BentoRunnerInfo:
         return cls(
             name=r.name,
             runnable_type=r.runnable_class.__name__,
+            embedded=r.embedded,
             models=[str(model.tag) for model in r.models],
             resource_config=r.resource_config,
         )
@@ -410,6 +412,15 @@ class BentoModelInfo:
         )
 
 
+def get_service_import_str(svc: Service | str):
+    from ..service import Service
+
+    if isinstance(svc, Service):
+        return svc.get_service_import_origin()[0]
+    else:
+        return svc
+
+
 @attr.frozen(repr=False)
 class BentoInfo:
     # for backward compatibility in case new fields are added to BentoInfo.
@@ -418,9 +429,7 @@ class BentoInfo:
     __omit_if_default__ = True
 
     tag: Tag
-    service: str = attr.field(
-        converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
-    )
+    service: str = attr.field(converter=get_service_import_str)
     name: str = attr.field(init=False)
     version: str = attr.field(init=False)
     # using factory explicitly instead of default because omit_if_default is enabled for BentoInfo

@@ -63,7 +63,7 @@ class Client(ABC):
 
     @staticmethod
     def wait_until_server_ready(
-        host: str, port: int, timeout: int = 30, **kwargs: t.Any
+        host: str, port: int, timeout: float = 30, **kwargs: t.Any
     ) -> None:
         try:
             from .http import HTTPClient

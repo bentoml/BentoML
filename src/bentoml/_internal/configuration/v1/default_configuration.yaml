@@ -10,23 +10,7 @@ api_server:
     namespace: bentoml_api_server
     duration:
       # https://github.com/prometheus/client_python/blob/f17a8361ad3ed5bc47f193ac03b00911120a8d81/prometheus_client/metrics.py#L544
-      buckets:
-        [
-          0.005,
-          0.01,
-          0.025,
-          0.05,
-          0.075,
-          0.1,
-          0.25,
-          0.5,
-          0.75,
-          1.0,
-          2.5,
-          5.0,
-          7.5,
-          10.0,
-        ]
+      buckets: [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0]
       min: ~
       max: ~
       factor: ~
@@ -61,6 +45,8 @@ api_server:
       access_control_allow_origin_regex: ~
       access_control_max_age: ~
       access_control_expose_headers: ~
+    response:
+      trace_id: false
   grpc:
     host: 0.0.0.0
     port: 3000
@@ -80,6 +66,7 @@ api_server:
     period: 10
 runners:
   resources: ~
+  workers_per_resource: 1
   timeout: 300
   optimizer:
     name: linear

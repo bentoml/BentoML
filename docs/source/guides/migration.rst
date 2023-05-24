@@ -202,19 +202,19 @@ Test Services
 ~~~~~~~~~~~~~
 
 To improve development agility, BentoML version 1.0.0 adds the capability to test the service in development before
-saving. Executing the :code:`bentoml serve` command will bring up an API server for rapid development iterations. The
-:code:`--reload` option allows the development API server to reload upon every change of the service module.
+saving. Executing the :code:`bentoml serve --development` command will bring up an API server for rapid development
+iterations. The :code:`--reload` option allows the development API server to reload upon every change of the service module.
 
 .. code-block:: bash
 
-    > bentoml serve --reload
+    > bentoml serve --development --reload
 
-To bring up the API server and runners in a production like setting, use the :code:`--production` option. In production
-mode, API servers and runners will run in separate processes to maximize server utility and parallelism.
+To bring up the API server and runners in a production like setting, run without the :code:`--development` option. In
+production mode, API servers and runners will run in separate processes to maximize server utility and parallelism.
 
 .. code-block:: bash
 
-    > bentoml serve --production
+    > bentoml serve
 
 
 Building Bentos
@@ -290,12 +290,12 @@ You can view and manage all saved models via the :code:`bentoml` CLI command.
 Serve Bentos
 ~~~~~~~~~~~~
 
-We can serve the saved bentos by running the :code:`bentoml serve` command. We can add :code:`--production` to have
-API servers and runners will run in separate processes to maximize server utility and parallelism.
+We can serve the saved bentos in production mode by running the :code:`bentoml serve` command.
+The API servers and runners will run in separate processes to maximize server utility and parallelism.
 
 .. code-block:: bash
 
-    > bentoml serve iris_classifier:latest --production
+    > bentoml serve iris_classifier:latest
 
     2022-07-06T02:02:30-0700 [INFO] [] Starting production BentoServer from "." running on http://0.0.0.0:3000 (Press CTRL+C to quit)
     2022-07-06T02:02:31-0700 [INFO] [runner-iris_clf:1] Setting up worker: set CPU thread count to 10
@@ -346,4 +346,4 @@ in one place, and enables advanced GitOps and CI/CD workflow.
 
 
 🎉 Ta-da, you have migrated your project to BentoML 1.0.0. Have more questions?
-`Join the BentoML Slack community <https://l.linklyhq.com/l/ktPp>`_.
+`Join the BentoML Slack community <https://l.bentoml.com/join-slack>`_.

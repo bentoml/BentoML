@@ -18,7 +18,7 @@ from bentoml.grpc.utils import import_generated_stubs
 
 from ..utils import LazyLoader
 from ..utils import cached_property
-from ..utils import resolve_user_filepath
+from ...grpc.utils import load_from_file
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..configuration.containers import BentoMLContainer
 
@@ -57,12 +57,6 @@ else:
         "grpc_health.v1.health",
         exc_msg="'grpcio-health-checking' is required for using health checking endpoints. Install with 'pip install grpcio-health-checking'.",
     )
-
-
-def load_from_file(p: str) -> bytes:
-    rp = resolve_user_filepath(p, ctx=None)
-    with open(rp, "rb") as f:
-        return f.read()
 
 
 # NOTE: we are using the internal aio._server.Server (which is initialized with aio.server)
@@ -273,7 +267,10 @@ class Server(aio._server.Server):
                 on_startup.append(partial(runner.init_local, quiet=True))
         else:
             for runner in self.bento_service.runners:
-                on_startup.append(runner.init_client)
+                if runner.embedded:
+                    on_startup.append(partial(runner.init_local, quiet=True))
+                else:
+                    on_startup.append(runner.init_client)
 
         on_startup.append(self.wait_for_runner_ready)
         return on_startup

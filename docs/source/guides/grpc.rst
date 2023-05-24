@@ -41,7 +41,7 @@ Thats it! You can now serve your Bento with gRPC via :ref:`bentoml serve-grpc <r
 
 .. code-block:: bash
 
-   » bentoml serve-grpc iris_classifier:latest --production
+   » bentoml serve-grpc iris_classifier:latest
 
 Using your gRPC BentoService
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,7 +54,7 @@ There are two ways to interact with your gRPC BentoService:
 
    .. code-block:: bash
 
-      » bentoml serve-grpc iris_classifier:latest --production --enable-reflection
+      » bentoml serve-grpc iris_classifier:latest --enable-reflection
 
    .. include:: ./snippets/grpc/grpc_tools.rst
 
@@ -748,7 +748,7 @@ After containerization, your Bento container can now be used with gRPC:
 
    » docker run -it --rm \
                 -p 3000:3000 -p 3001:3001 \
-                iris_classifier:6otbsmxzq6lwbgxi serve-grpc --production
+                iris_classifier:6otbsmxzq6lwbgxi serve-grpc
 
 Congratulations! You have successfully served, containerized and tested your BentoService with gRPC.
 
@@ -1279,7 +1279,7 @@ because BentoML gRPC server is an async implementation of gRPC server.
    If you are using ``grpc.ServerInterceptor``, you will need to migrate it over
    to use the new ``grpc.aio.ServerInterceptor`` in order to use this feature.
 
-   Feel free to reach out to us at `#support on Slack <https://l.linklyhq.com/l/ktOX>`_
+   Feel free to reach out to us at `#support on Slack <https://l.bentoml.com/join-slack>`_
 
 .. dropdown:: A toy implementation ``AppendMetadataInterceptor``
 

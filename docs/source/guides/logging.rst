@@ -132,6 +132,9 @@ When using BentoML as a library, BentoML does not configure any logs. By default
     bentoml_logger.addHandler(ch)
     bentoml_logger.setLevel(logging.DEBUG)
 
+.. note::
+
+    :bdg-info:`Important:` ``bentoml serve`` will fork the given `service.py` into the child process. This means any type of rotation FileHandler are not supported within the service definition. See `notes from Python logging module <https://docs.python.org/3/howto/logging-cookbook.html#logging-to-a-single-file-from-multiple-processes>`_ for more information.
 ----
 
 .. rubric:: Notes

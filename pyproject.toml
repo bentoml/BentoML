@@ -62,7 +62,7 @@ dependencies = [
     "schema",
     "simple-di>=0.1.4",
     "starlette>=0.13.5,<0.29",
-    "uvicorn",
+    "uvicorn[standard]",
     "watchfiles>=0.15.0",
     "backports.cached-property;python_version<'3.8'",
     "backports.shutil_copytree;python_version<'3.8'",

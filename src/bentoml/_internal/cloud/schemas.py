@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import typing as t
 from enum import Enum
@@ -184,20 +186,21 @@ class BentoSchema(ResourceSchema):
     build_at: datetime = attr.field(factory=datetime.now)
 
 
-
-
 @attr.define
 class BentoRepositorySchema(ResourceSchema):
     description: str
     latest_bento: t.Optional[BentoSchema]
 
+
 @attr.define
 class BentoWithRepositorySchema(BentoSchema):
-    repository: BentoRepositorySchema  = attr.field(default=None)
+    repository: BentoRepositorySchema = attr.field(default=None)
+
 
 @attr.define
 class BentoWithRepositoryListSchema(BaseListSchema):
-    items: t.List[BentoWithRepositorySchema]  = attr.field(factory=list)
+    items: t.List[BentoWithRepositorySchema] = attr.field(factory=list)
+
 
 @attr.define
 class CreateBentoSchema:
@@ -308,9 +311,11 @@ class FinishUploadModelSchema:
     status: t.Optional[ModelUploadStatus]
     reason: t.Optional[str]
 
+
 @attr.define
 class BentoRepositoryListSchema(BaseListSchema):
     items: t.List[BentoRepositorySchema]
+
 
 @attr.define
 class BentoListSchema(BaseListSchema):

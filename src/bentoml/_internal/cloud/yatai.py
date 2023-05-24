@@ -16,38 +16,37 @@ from rich.live import Live
 from simple_di import inject
 from simple_di import Provide
 
+from . import CloudClient
 from ..tag import Tag
 from ..bento import Bento
 from ..bento import BentoStore
 from ..utils import calc_dir_size
+from .config import get_yatai_rest_api_client
 from ..models import Model
 from ..models import copy_model
 from ..models import ModelStore
+from .schemas import BentoApiSchema
+from .schemas import LabelItemSchema
+from .schemas import BentoRunnerSchema
+from .schemas import BentoUploadStatus
+from .schemas import CreateBentoSchema
+from .schemas import CreateModelSchema
+from .schemas import ModelUploadStatus
+from .schemas import UpdateBentoSchema
+from .schemas import CompletePartSchema
+from .schemas import BentoManifestSchema
+from .schemas import ModelManifestSchema
+from .schemas import TransmissionStrategy
+from .schemas import FinishUploadBentoSchema
+from .schemas import FinishUploadModelSchema
+from .schemas import BentoRunnerResourceSchema
+from .schemas import CreateBentoRepositorySchema
+from .schemas import CreateModelRepositorySchema
+from .schemas import CompleteMultipartUploadSchema
+from .schemas import PreSignMultipartUploadUrlSchema
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
-from ..yatai_rest_api_client.config import get_yatai_rest_api_client
-from ..yatai_rest_api_client.schemas import BentoApiSchema
-from ..yatai_rest_api_client.schemas import LabelItemSchema
-from ..yatai_rest_api_client.schemas import BentoRunnerSchema
-from ..yatai_rest_api_client.schemas import BentoUploadStatus
-from ..yatai_rest_api_client.schemas import BentoListSchema
-from ..yatai_rest_api_client.schemas import CreateBentoSchema
-from ..yatai_rest_api_client.schemas import CreateModelSchema
-from ..yatai_rest_api_client.schemas import ModelUploadStatus
-from ..yatai_rest_api_client.schemas import UpdateBentoSchema
-from ..yatai_rest_api_client.schemas import CompletePartSchema
-from ..yatai_rest_api_client.schemas import BentoManifestSchema
-from ..yatai_rest_api_client.schemas import ModelManifestSchema
-from ..yatai_rest_api_client.schemas import TransmissionStrategy
-from ..yatai_rest_api_client.schemas import FinishUploadBentoSchema
-from ..yatai_rest_api_client.schemas import FinishUploadModelSchema
-from ..yatai_rest_api_client.schemas import BentoRunnerResourceSchema
-from ..yatai_rest_api_client.schemas import CreateBentoRepositorySchema
-from ..yatai_rest_api_client.schemas import CreateModelRepositorySchema
-from ..yatai_rest_api_client.schemas import CompleteMultipartUploadSchema
-from ..yatai_rest_api_client.schemas import PreSignMultipartUploadUrlSchema
-from ..cloud import CloudClient
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
@@ -1016,22 +1015,24 @@ class YataiClient(CloudClient):
                         f'[bold green]Successfully pulled model "{_tag}"'
                     )
                     return model
+
     def push(
-            self,
-            item:Bento | Model | str | Tag,
-            *,
-            force: bool = False,
-            threads: int = 10,
-            context: str | None = None,
+        self,
+        item: Bento | Model | str | Tag,
+        *,
+        force: bool = False,
+        threads: int = 10,
+        context: str | None = None,
     ):
         if item is Bento:
-            return self.push_bento(item, force=force,threads = threads,context=context)
+            return self.push_bento(item, force=force, threads=threads, context=context)
         elif item is Model:
-            self.push_model(item, force=force, threads = threads,context=context)
+            self.push_model(item, force=force, threads=threads, context=context)
 
-    def list_model(self,
+    def list_model(
+        self,
         context: str | None = None,
-                   ):
+    ):
         yatai_rest_client = get_yatai_rest_api_client(context)
         res = yatai_rest_client.get_bentos_list()
         return res

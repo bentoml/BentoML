@@ -257,7 +257,7 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def yatai_client():
-        from ..yatai_client import YataiClient
+        from ..cloud.yatai import YataiClient
 
         return YataiClient()
 

@@ -15,19 +15,16 @@ from .schemas import CreateModelSchema
 from .schemas import UpdateBentoSchema
 from .schemas import OrganizationSchema
 from .schemas import BentoRepositorySchema
-from .schemas import BentoWithRepositoryListSchema
-from .schemas import BentoWithRepositorySchema
 from .schemas import ModelRepositorySchema
 from .schemas import FinishUploadBentoSchema
 from .schemas import FinishUploadModelSchema
 from .schemas import CreateBentoRepositorySchema
 from .schemas import CreateModelRepositorySchema
+from .schemas import BentoWithRepositoryListSchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import PreSignMultipartUploadUrlSchema
 from ...exceptions import YataiRESTApiClientError
 from ..configuration import BENTOML_VERSION
-import json
-import cattr
 
 logger = logging.getLogger(__name__)
 
@@ -392,21 +389,15 @@ class YataiRESTApiClient:
     def get_bento_repositories_list(
         self, bento_repository_name: str
     ) -> Optional[BentoWithRepositoryListSchema]:
-        url = urljoin(
-            self.endpoint, f"/api/v1/bento_repositories"
-        )
+        url = urljoin(self.endpoint, "/api/v1/bento_repositories")
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoWithRepositoryListSchema)
 
-    def get_bentos_list(
-        self
-    ) -> Optional[BentoWithRepositoryListSchema]:
-        url = urljoin(
-            self.endpoint, f"/api/v1/bentos"
-        )
+    def get_bentos_list(self) -> Optional[BentoWithRepositoryListSchema]:
+        url = urljoin(self.endpoint, "/api/v1/bentos")
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None

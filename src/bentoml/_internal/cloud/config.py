@@ -11,9 +11,8 @@ import cattr
 from simple_di import inject
 from simple_di import Provide
 
-from bentoml.exceptions import YataiRESTApiClientError
-
-from .yatai import YataiRESTApiClient
+from .client import YataiRESTApiClient
+from ...exceptions import YataiRESTApiClientError
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)

@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
-from ..tag import Tag
-from ..bento import Bento
-from ..models import ModelStore
-from ..models import Model
+from __future__ import annotations
+
+from abc import ABC
+from abc import abstractmethod
+from contextlib import contextmanager
+
 from simple_di import Provide
-from ..configuration.containers import BentoMLContainer
-from ..bento import BentoStore
 from rich.panel import Panel
 from rich.console import Group
 from rich.progress import Progress
@@ -16,9 +15,16 @@ from rich.progress import DownloadColumn
 from rich.progress import TimeElapsedColumn
 from rich.progress import TimeRemainingColumn
 from rich.progress import TransferSpeedColumn
-from contextlib import contextmanager
 
-class CloudClient(ABC):
+from ..tag import Tag
+from ..bento import Bento
+from ..bento import BentoStore
+from ..models import Model
+from ..models import ModelStore
+from ..configuration.containers import BentoMLContainer
+
+
+class BaseCloudClient(ABC):
     log_progress = Progress(TextColumn("{task.description}"))
 
     spinner_progress = Progress(
@@ -53,7 +59,6 @@ class CloudClient(ABC):
             self.spinner_progress.stop_task(task_id)
             self.spinner_progress.update(task_id, visible=False)
 
-
     @abstractmethod
     def push_model(
         self,
@@ -75,6 +80,7 @@ class CloudClient(ABC):
         context: str | None = None,
     ):
         pass
+
     @abstractmethod
     def pull_model(
         self,
@@ -85,6 +91,7 @@ class CloudClient(ABC):
         context: str | None = None,
     ) -> Model:
         pass
+
     @abstractmethod
     def pull_bento(
         self,
@@ -98,22 +105,22 @@ class CloudClient(ABC):
 
     @abstractmethod
     def push(
-            self,
-            item:Bento | Model | str | Tag,
-            *,
-            force: bool = False,
-            threads: int = 10,
-            context: str | None = None,
+        self,
+        item: Bento | Model | str | Tag,
+        *,
+        force: bool = False,
+        threads: int = 10,
+        context: str | None = None,
     ):
         pass
 
     @abstractmethod
     def pull(
-            self,
-            item:Bento | Model | str | Tag,
-            *,
-            force: bool = False,
-            threads: int = 10,
-            context: str | None = None,
+        self,
+        item: Bento | Model | str | Tag,
+        *,
+        force: bool = False,
+        threads: int = 10,
+        context: str | None = None,
     ) -> Bento | Model:
         pass

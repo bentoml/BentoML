@@ -8,7 +8,6 @@ import threading
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from functools import wraps
-from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
 
 import fs
@@ -16,16 +15,6 @@ import requests
 from rich.live import Live
 from simple_di import inject
 from simple_di import Provide
-from rich.panel import Panel
-from rich.console import Group
-from rich.progress import Progress
-from rich.progress import BarColumn
-from rich.progress import TextColumn
-from rich.progress import SpinnerColumn
-from rich.progress import DownloadColumn
-from rich.progress import TimeElapsedColumn
-from rich.progress import TimeRemainingColumn
-from rich.progress import TransferSpeedColumn
 
 from ..tag import Tag
 from ..bento import Bento
@@ -42,6 +31,7 @@ from ..yatai_rest_api_client.schemas import BentoApiSchema
 from ..yatai_rest_api_client.schemas import LabelItemSchema
 from ..yatai_rest_api_client.schemas import BentoRunnerSchema
 from ..yatai_rest_api_client.schemas import BentoUploadStatus
+from ..yatai_rest_api_client.schemas import BentoListSchema
 from ..yatai_rest_api_client.schemas import CreateBentoSchema
 from ..yatai_rest_api_client.schemas import CreateModelSchema
 from ..yatai_rest_api_client.schemas import ModelUploadStatus
@@ -57,6 +47,7 @@ from ..yatai_rest_api_client.schemas import CreateBentoRepositorySchema
 from ..yatai_rest_api_client.schemas import CreateModelRepositorySchema
 from ..yatai_rest_api_client.schemas import CompleteMultipartUploadSchema
 from ..yatai_rest_api_client.schemas import PreSignMultipartUploadUrlSchema
+from ..cloud import CloudClient
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
@@ -124,41 +115,7 @@ class CallbackIOWrapper(ObjectWrapper):
             raise KeyError("Can only wrap read/write methods")
 
 
-class YataiClient:
-    log_progress = Progress(TextColumn("{task.description}"))
-
-    spinner_progress = Progress(
-        TextColumn("  "),
-        TimeElapsedColumn(),
-        TextColumn("[bold purple]{task.fields[action]}"),
-        SpinnerColumn("simpleDots"),
-    )
-
-    transmission_progress = Progress(
-        TextColumn("[bold blue]{task.description}", justify="right"),
-        BarColumn(bar_width=None),
-        "[progress.percentage]{task.percentage:>3.1f}%",
-        "•",
-        DownloadColumn(),
-        "•",
-        TransferSpeedColumn(),
-        "•",
-        TimeRemainingColumn(),
-    )
-
-    progress_group = Group(
-        Panel(Group(log_progress, spinner_progress)), transmission_progress
-    )
-
-    @contextmanager
-    def spin(self, *, text: str):
-        task_id = self.spinner_progress.add_task("", action=text)
-        try:
-            yield
-        finally:
-            self.spinner_progress.stop_task(task_id)
-            self.spinner_progress.update(task_id, visible=False)
-
+class YataiClient(CloudClient):
     def push_bento(
         self,
         bento: Bento,
@@ -1059,3 +1016,22 @@ class YataiClient:
                         f'[bold green]Successfully pulled model "{_tag}"'
                     )
                     return model
+    def push(
+            self,
+            item:Bento | Model | str | Tag,
+            *,
+            force: bool = False,
+            threads: int = 10,
+            context: str | None = None,
+    ):
+        if item is Bento:
+            return self.push_bento(item, force=force,threads = threads,context=context)
+        elif item is Model:
+            self.push_model(item, force=force, threads = threads,context=context)
+
+    def list_model(self,
+        context: str | None = None,
+                   ):
+        yatai_rest_client = get_yatai_rest_api_client(context)
+        res = yatai_rest_client.get_bentos_list()
+        return res

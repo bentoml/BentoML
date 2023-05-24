@@ -176,7 +176,6 @@ class BentoSchema(ResourceSchema):
     presigned_upload_url: str
     presigned_download_url: str
     manifest: BentoManifestSchema
-
     transmission_strategy: t.Optional[TransmissionStrategy] = attr.field(default=None)
     upload_id: t.Optional[str] = attr.field(default=None)
 
@@ -185,11 +184,20 @@ class BentoSchema(ResourceSchema):
     build_at: datetime = attr.field(factory=datetime.now)
 
 
+
+
 @attr.define
 class BentoRepositorySchema(ResourceSchema):
     description: str
     latest_bento: t.Optional[BentoSchema]
 
+@attr.define
+class BentoWithRepositorySchema(BentoSchema):
+    repository: BentoRepositorySchema  = attr.field(default=None)
+
+@attr.define
+class BentoWithRepositoryListSchema(BaseListSchema):
+    items: t.List[BentoWithRepositorySchema]  = attr.field(factory=list)
 
 @attr.define
 class CreateBentoSchema:
@@ -299,3 +307,11 @@ class CreateModelSchema:
 class FinishUploadModelSchema:
     status: t.Optional[ModelUploadStatus]
     reason: t.Optional[str]
+
+@attr.define
+class BentoRepositoryListSchema(BaseListSchema):
+    items: t.List[BentoRepositorySchema]
+
+@attr.define
+class BentoListSchema(BaseListSchema):
+    items: t.List[BentoSchema]

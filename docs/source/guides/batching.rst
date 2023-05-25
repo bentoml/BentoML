@@ -120,8 +120,9 @@ We will demonstrate this with a PyTorch example which accepts a dictionary of ``
 
         @bentoml.Runnable.method(batchable=True)
         def __call__(self, **batch):
-            # Our model accepts a dictionary as input, but we use ``**``
+            # Our model accepts a dictionary of Tensor as input, but we use ``**``
             # to deconstruct it to keyword arguments, so they can be batched rightly.
+            # It works only if every parameter is "batchable" such as torch.Tensor/np.ndarray.
             # Move the tensors to the target device and pass it to the model as a dict.
             batch = {k: tensor.to(self.device_id) for k, tensor in batch.items()}
             with torch.inference_mode():

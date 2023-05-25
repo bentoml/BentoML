@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import typing as t
 from enum import Enum
@@ -176,7 +178,6 @@ class BentoSchema(ResourceSchema):
     presigned_upload_url: str
     presigned_download_url: str
     manifest: BentoManifestSchema
-
     transmission_strategy: t.Optional[TransmissionStrategy] = attr.field(default=None)
     upload_id: t.Optional[str] = attr.field(default=None)
 
@@ -189,6 +190,16 @@ class BentoSchema(ResourceSchema):
 class BentoRepositorySchema(ResourceSchema):
     description: str
     latest_bento: t.Optional[BentoSchema]
+
+
+@attr.define
+class BentoWithRepositorySchema(BentoSchema):
+    repository: BentoRepositorySchema = attr.field(default=None)
+
+
+@attr.define
+class BentoWithRepositoryListSchema(BaseListSchema):
+    items: t.List[BentoWithRepositorySchema] = attr.field(factory=list)
 
 
 @attr.define
@@ -287,6 +298,16 @@ class ModelRepositorySchema(ResourceSchema):
 
 
 @attr.define
+class ModelWithRepositorySchema(ModelSchema):
+    repository: ModelRepositorySchema = attr.field(default=None)
+
+
+@attr.define
+class ModelWithRepositoryListSchema(BaseListSchema):
+    items: t.List[ModelWithRepositorySchema] = attr.field(factory=list)
+
+
+@attr.define
 class CreateModelSchema:
     description: str
     version: str
@@ -299,3 +320,13 @@ class CreateModelSchema:
 class FinishUploadModelSchema:
     status: t.Optional[ModelUploadStatus]
     reason: t.Optional[str]
+
+
+@attr.define
+class BentoRepositoryListSchema(BaseListSchema):
+    items: t.List[BentoRepositorySchema]
+
+
+@attr.define
+class BentoListSchema(BaseListSchema):
+    items: t.List[BentoSchema]

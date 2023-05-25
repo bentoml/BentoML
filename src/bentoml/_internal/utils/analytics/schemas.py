@@ -18,10 +18,10 @@ from simple_di import inject
 from simple_di import Provide
 
 from ...utils import bentoml_cattr
+from ...cloud.config import get_config_path
+from ...cloud.config import get_current_context
 from ...configuration import BENTOML_VERSION
 from ...configuration.containers import BentoMLContainer
-from ...yatai_rest_api_client.config import get_config_path
-from ...yatai_rest_api_client.config import get_current_context
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")

@@ -6,7 +6,6 @@ import tarfile
 import tempfile
 import threading
 from pathlib import Path
-from datetime import datetime
 from tempfile import NamedTemporaryFile
 from concurrent.futures import ThreadPoolExecutor
 
@@ -44,18 +43,20 @@ from .schemas import CreateModelRepositorySchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import PreSignMultipartUploadUrlSchema
 from .basecloud import BaseCloudClient
-from .basecloud import CallbackIOWrapper
 from .basecloud import FILE_CHUNK_SIZE
+from .basecloud import CallbackIOWrapper
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
-
-import typing as t
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
     from rich.progress import TaskID
+
+    from .schemas import BentoWithRepositoryListSchema
+    from .schemas import ModelWithRepositoryListSchema
+
 
 class BentoCloudClient(BaseCloudClient):
     def push_bento(
@@ -959,33 +960,26 @@ class BentoCloudClient(BaseCloudClient):
                     )
                     return model
 
-    def list_bento(
-        self,
-        context: str | None = None,
-    ) -> list[dict[str, Tag | int | datetime | list[str]]]:
+    def list_bento(self, context: str | None = None) -> BentoWithRepositoryListSchema:
         yatai_rest_client = get_rest_api_client(context)
         res = yatai_rest_client.get_bentos_list()
         if res is None:
             raise BentoMLException("List bentos request failed")
-        
+
         res.items = [
             bento
             for bento in sorted(res.items, key=lambda x: x.created_at, reverse=True)
         ]
         return res
 
-    def list_model(
-        self,
-        context: str | None = None,
-    ) -> list[dict[str, Tag | int | datetime | str]]:
+    def list_models(self, context: str | None = None) -> ModelWithRepositoryListSchema:
         yatai_rest_client = get_rest_api_client(context)
         res = yatai_rest_client.get_models_list()
         if res is None:
             raise BentoMLException("List models request failed")
-        
+
         res.items = [
             model
             for model in sorted(res.items, key=lambda x: x.created_at, reverse=True)
         ]
         return res
-

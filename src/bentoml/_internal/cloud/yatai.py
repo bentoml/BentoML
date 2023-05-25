@@ -16,7 +16,7 @@ from rich.live import Live
 from simple_di import inject
 from simple_di import Provide
 
-from . import CloudClient
+from .basecloud import BaseCloudClient
 from ..tag import Tag
 from ..bento import Bento
 from ..bento import BentoStore
@@ -114,7 +114,7 @@ class CallbackIOWrapper(ObjectWrapper):
             raise KeyError("Can only wrap read/write methods")
 
 
-class YataiClient(CloudClient):
+class YataiClient(BaseCloudClient):
     def push_bento(
         self,
         bento: Bento,
@@ -1016,23 +1016,3 @@ class YataiClient(CloudClient):
                     )
                     return model
 
-    def push(
-        self,
-        item: Bento | Model | str | Tag,
-        *,
-        force: bool = False,
-        threads: int = 10,
-        context: str | None = None,
-    ):
-        if item is Bento:
-            return self.push_bento(item, force=force, threads=threads, context=context)
-        elif item is Model:
-            self.push_model(item, force=force, threads=threads, context=context)
-
-    def list_model(
-        self,
-        context: str | None = None,
-    ):
-        yatai_rest_client = get_yatai_rest_api_client(context)
-        res = yatai_rest_client.get_bentos_list()
-        return res

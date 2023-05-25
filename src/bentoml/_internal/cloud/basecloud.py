@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from abc import abstractmethod
+from functools import wraps
 from contextlib import contextmanager
 
 from rich.panel import Panel
@@ -20,8 +21,6 @@ from ..bento import Bento
 from ..bento import BentoStore
 from ..models import Model
 from ..models import ModelStore
-from functools import wraps
-
 
 FILE_CHUNK_SIZE = 100 * 1024 * 1024  # 100Mb
 

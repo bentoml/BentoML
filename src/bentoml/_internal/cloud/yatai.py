@@ -43,13 +43,11 @@ from .schemas import CreateModelRepositorySchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import PreSignMultipartUploadUrlSchema
 from .basecloud import BaseCloudClient
-from .basecloud import CallbackIOWrapper
 from .basecloud import FILE_CHUNK_SIZE
+from .basecloud import CallbackIOWrapper
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
-
-import typing as t
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future

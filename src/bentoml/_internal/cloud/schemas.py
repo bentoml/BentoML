@@ -296,6 +296,7 @@ class ModelRepositorySchema(ResourceSchema):
     description: str
     latest_model: t.Optional[ModelSchema]
 
+
 @attr.define
 class ModelWithRepositorySchema(ModelSchema):
     repository: ModelRepositorySchema = attr.field(default=None)
@@ -303,7 +304,7 @@ class ModelWithRepositorySchema(ModelSchema):
 
 @attr.define
 class ModelWithRepositoryListSchema(BaseListSchema):
-    items: t.List[ModelWithRepositorySchema]  = attr.field(factory=list)
+    items: t.List[ModelWithRepositorySchema] = attr.field(factory=list)
 
 
 @attr.define

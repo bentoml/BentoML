@@ -65,9 +65,6 @@ class YataiClientConfig:
         return self.get_context(self.current_context_name)
 
 
-_config: YataiClientConfig = YataiClientConfig()
-
-
 def store_config(config: YataiClientConfig) -> None:
     with open(get_config_path(), "w") as f:
         dct = cattr.unstructure(config)
@@ -113,7 +110,7 @@ def get_context(context: t.Optional[str]) -> YataiClientContext:
     return config.get_context(context)
 
 
-def get_yatai_rest_api_client(context: t.Optional[str]) -> YataiRESTApiClient:
+def get_rest_api_client(context: t.Optional[str]) -> YataiRESTApiClient:
     if context:
         ctx = get_context(context)
     else:

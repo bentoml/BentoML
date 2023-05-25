@@ -178,7 +178,7 @@ class Service:
                         return load_bento_dir(bento.path)
                     except NotFound:
                         yatai_client = BentoMLContainer.yatai_client.get()
-                        yatai_client.pull_bento(bento_tag, bento_store=tmp_bento_store)
+                        yatai_client.pull_bento(bento_tag, _bento_store=tmp_bento_store)
                         return get_or_pull(bento_tag)
 
                 return (get_or_pull, (self.bento.tag,))

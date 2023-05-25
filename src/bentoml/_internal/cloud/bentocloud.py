@@ -6,11 +6,10 @@ import tarfile
 import tempfile
 import threading
 from pathlib import Path
+from datetime import datetime
 from tempfile import NamedTemporaryFile
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
-
 
 import fs
 import requests
@@ -18,12 +17,11 @@ from rich.live import Live
 from simple_di import inject
 from simple_di import Provide
 
-from .basecloud import BaseCloudClient
 from ..tag import Tag
 from ..bento import Bento
 from ..bento import BentoStore
 from ..utils import calc_dir_size
-from .config import get_yatai_rest_api_client
+from .config import get_rest_api_client
 from ..models import Model
 from ..models import copy_model
 from ..models import ModelStore
@@ -46,6 +44,7 @@ from .schemas import CreateBentoRepositorySchema
 from .schemas import CreateModelRepositorySchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import PreSignMultipartUploadUrlSchema
+from .basecloud import BaseCloudClient
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
@@ -142,7 +141,7 @@ class BentoCloudClient(BaseCloudClient):
         threads: int = 10,
         context: str | None = None,
     ):
-        yatai_rest_client = get_yatai_rest_api_client(context)
+        yatai_rest_client = get_rest_api_client(context)
         name = bento.tag.name
         version = bento.tag.version
         if version is None:
@@ -458,8 +457,8 @@ class BentoCloudClient(BaseCloudClient):
         tag: str | Tag,
         *,
         force: bool = False,
-        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         context: str | None = None,
+        _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> Bento:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
@@ -469,7 +468,7 @@ class BentoCloudClient(BaseCloudClient):
                 tag,
                 download_task_id,
                 force=force,
-                bento_store=bento_store,
+                bento_store=_bento_store,
                 context=context,
             )
 
@@ -499,7 +498,7 @@ class BentoCloudClient(BaseCloudClient):
         if version is None:
             raise BentoMLException(f'Bento "{_tag}" version can not be None')
 
-        yatai_rest_client = get_yatai_rest_api_client(context)
+        yatai_rest_client = get_rest_api_client(context)
 
         with self.spin(text=f'Fetching bento "{_tag}"'):
             remote_bento = yatai_rest_client.get_bento(
@@ -638,7 +637,7 @@ class BentoCloudClient(BaseCloudClient):
         threads: int = 10,
         context: str | None = None,
     ):
-        yatai_rest_client = get_yatai_rest_api_client(context)
+        yatai_rest_client = get_rest_api_client(context)
         name = model.tag.name
         version = model.tag.version
         if version is None:
@@ -901,8 +900,8 @@ class BentoCloudClient(BaseCloudClient):
         tag: str | Tag,
         *,
         force: bool = False,
-        model_store: ModelStore = Provide[BentoMLContainer.model_store],
         context: str | None = None,
+        _model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Model:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
@@ -912,7 +911,7 @@ class BentoCloudClient(BaseCloudClient):
                 tag,
                 download_task_id,
                 force=force,
-                model_store=model_store,
+                model_store=_model_store,
                 context=context,
             )
 
@@ -937,7 +936,7 @@ class BentoCloudClient(BaseCloudClient):
                 model_store.delete(tag)
         except NotFound:
             pass
-        yatai_rest_client = get_yatai_rest_api_client(context)
+        yatai_rest_client = get_rest_api_client(context)
         _tag = Tag.from_taglike(tag)
         name = _tag.name
         version = _tag.version
@@ -1022,32 +1021,30 @@ class BentoCloudClient(BaseCloudClient):
         self,
         context: str | None = None,
     ) -> list[dict[str, Tag | int | datetime | list[str]]]:
-        yatai_rest_client = get_yatai_rest_api_client(context)
+        yatai_rest_client = get_rest_api_client(context)
         res = yatai_rest_client.get_bentos_list()
         if res is None:
-            raise BentoMLException(f'List bentos request failed')
-        
+            raise BentoMLException("List bentos request failed")
+
         res = [
             {
                 "tag": Tag(bento.repository.name, bento.name),
                 "size": bento.manifest.size_bytes,
                 "creation_time": bento.created_at,
-                "models": bento.manifest.models
+                "models": bento.manifest.models,
             }
-            for bento in sorted(
-                res.items, key=lambda x: x.created_at, reverse=True
-            )
+            for bento in sorted(res.items, key=lambda x: x.created_at, reverse=True)
         ]
         return res
-    
+
     def list_model(
         self,
-        context: str | None = None, 
+        context: str | None = None,
     ) -> list[dict[str, Tag | int | datetime | str]]:
-        yatai_rest_client = get_yatai_rest_api_client(context)
+        yatai_rest_client = get_rest_api_client(context)
         res = yatai_rest_client.get_models_list()
         if res is None:
-            raise BentoMLException(f'List models request failed')
+            raise BentoMLException("List models request failed")
         res = [
             {
                 "tag": Tag(model.repository.name, model.name),
@@ -1055,8 +1052,6 @@ class BentoCloudClient(BaseCloudClient):
                 "creation_time": model.created_at,
                 "module": model.manifest.module,
             }
-            for model in sorted(
-                res.items, key=lambda x: x.created_at, reverse=True
-            )
+            for model in sorted(res.items, key=lambda x: x.created_at, reverse=True)
         ]
         return res

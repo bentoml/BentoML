@@ -16,12 +16,11 @@ from rich.live import Live
 from simple_di import inject
 from simple_di import Provide
 
-from .basecloud import BaseCloudClient
 from ..tag import Tag
 from ..bento import Bento
 from ..bento import BentoStore
 from ..utils import calc_dir_size
-from .config import get_yatai_rest_api_client
+from .config import get_rest_api_client
 from ..models import Model
 from ..models import copy_model
 from ..models import ModelStore
@@ -44,6 +43,7 @@ from .schemas import CreateBentoRepositorySchema
 from .schemas import CreateModelRepositorySchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import PreSignMultipartUploadUrlSchema
+from .basecloud import BaseCloudClient
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
@@ -140,7 +140,7 @@ class YataiClient(BaseCloudClient):
         threads: int = 10,
         context: str | None = None,
     ):
-        yatai_rest_client = get_yatai_rest_api_client(context)
+        yatai_rest_client = get_rest_api_client(context)
         name = bento.tag.name
         version = bento.tag.version
         if version is None:
@@ -456,7 +456,7 @@ class YataiClient(BaseCloudClient):
         tag: str | Tag,
         *,
         force: bool = False,
-        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         context: str | None = None,
     ) -> Bento:
         with Live(self.progress_group):
@@ -467,7 +467,7 @@ class YataiClient(BaseCloudClient):
                 tag,
                 download_task_id,
                 force=force,
-                bento_store=bento_store,
+                bento_store=_bento_store,
                 context=context,
             )
 
@@ -497,7 +497,7 @@ class YataiClient(BaseCloudClient):
         if version is None:
             raise BentoMLException(f'Bento "{_tag}" version can not be None')
 
-        yatai_rest_client = get_yatai_rest_api_client(context)
+        yatai_rest_client = get_rest_api_client(context)
 
         with self.spin(text=f'Fetching bento "{_tag}"'):
             remote_bento = yatai_rest_client.get_bento(
@@ -636,7 +636,7 @@ class YataiClient(BaseCloudClient):
         threads: int = 10,
         context: str | None = None,
     ):
-        yatai_rest_client = get_yatai_rest_api_client(context)
+        yatai_rest_client = get_rest_api_client(context)
         name = model.tag.name
         version = model.tag.version
         if version is None:
@@ -899,8 +899,8 @@ class YataiClient(BaseCloudClient):
         tag: str | Tag,
         *,
         force: bool = False,
-        model_store: ModelStore = Provide[BentoMLContainer.model_store],
         context: str | None = None,
+        _model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Model:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
@@ -910,7 +910,7 @@ class YataiClient(BaseCloudClient):
                 tag,
                 download_task_id,
                 force=force,
-                model_store=model_store,
+                model_store=_model_store,
                 context=context,
             )
 
@@ -935,7 +935,7 @@ class YataiClient(BaseCloudClient):
                 model_store.delete(tag)
         except NotFound:
             pass
-        yatai_rest_client = get_yatai_rest_api_client(context)
+        yatai_rest_client = get_rest_api_client(context)
         _tag = Tag.from_taglike(tag)
         name = _tag.name
         version = _tag.version
@@ -1015,4 +1015,3 @@ class YataiClient(BaseCloudClient):
                         f'[bold green]Successfully pulled model "{_tag}"'
                     )
                     return model
-

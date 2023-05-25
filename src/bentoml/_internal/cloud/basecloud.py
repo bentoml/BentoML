@@ -4,7 +4,6 @@ from abc import ABC
 from abc import abstractmethod
 from contextlib import contextmanager
 
-from simple_di import Provide
 from rich.panel import Panel
 from rich.console import Group
 from rich.progress import Progress
@@ -21,7 +20,7 @@ from ..bento import Bento
 from ..bento import BentoStore
 from ..models import Model
 from ..models import ModelStore
-from ..configuration.containers import BentoMLContainer
+
 
 class BaseCloudClient(ABC):
     log_progress = Progress(TextColumn("{task.description}"))
@@ -86,8 +85,8 @@ class BaseCloudClient(ABC):
         tag: str | Tag,
         *,
         force: bool = False,
-        model_store: ModelStore = Provide[BentoMLContainer.model_store],
         context: str | None = None,
+        _model_store: ModelStore,
     ) -> Model:
         pass
 
@@ -97,7 +96,7 @@ class BaseCloudClient(ABC):
         tag: str | Tag,
         *,
         force: bool = False,
-        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         context: str | None = None,
+        _bento_store: BentoStore,
     ) -> Bento:
         pass

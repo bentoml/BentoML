@@ -817,11 +817,7 @@ def save_model(
         if metadata is None:
             metadata = {}
 
-        metadata.update(
-            {
-                "_pretrained_class": pretrained.__class__.__name__,
-            }
-        )
+        metadata.update({"_pretrained_class": pretrained.__class__.__name__})
         if hasattr(pretrained, "framework") and isinstance(
             pretrained,
             (

@@ -960,7 +960,7 @@ class BentoCloudClient(BaseCloudClient):
                     )
                     return model
 
-    def list_bento(self, context: str | None = None) -> BentoWithRepositoryListSchema:
+    def list_bentos(self, context: str | None = None) -> BentoWithRepositoryListSchema:
         yatai_rest_client = get_rest_api_client(context)
         res = yatai_rest_client.get_bentos_list()
         if res is None:

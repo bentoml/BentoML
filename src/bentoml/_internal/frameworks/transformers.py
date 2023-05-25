@@ -866,7 +866,14 @@ def save_model(
                 "_pretrained_class": pretrained.__class__.__name__,
             }
         )
-        if hasattr(pretrained, "framework"):
+        if hasattr(pretrained, "framework") and isinstance(
+            pretrained,
+            (
+                transformers.PreTrainedModel,
+                transformers.TFPreTrainedModel,
+                transformers.FlaxPreTrainedModel,
+            ),
+        ):
             # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
             metadata["_framework"] = pretrained.framework
 

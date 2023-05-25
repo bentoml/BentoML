@@ -864,9 +864,11 @@ def save_model(
         metadata.update(
             {
                 "_pretrained_class": pretrained.__class__.__name__,
-                "_framework": pretrained.framework,
             }
         )
+        if hasattr(pretrained, "framework"):
+            # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
+            metadata["_framework"] = pretrained.framework
 
         with bentoml.models.create(
             name,

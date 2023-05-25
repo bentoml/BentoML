@@ -49,6 +49,7 @@ from ._internal.context import InferenceApiContext as Context
 from ._internal.service import Service
 from ._internal.utils.http import Cookie
 from ._internal.cloud.yatai import YataiClient
+from ._internal.cloud.bentocloud import BentoCloudClient
 from ._internal.monitoring.api import monitor
 from ._internal.service.loader import load
 

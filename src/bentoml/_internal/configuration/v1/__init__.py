@@ -292,4 +292,14 @@ def migration(*, override_config: dict[str, t.Any]):
             current=f"{namespace}.timeout",
             replace_with=f"{namespace}.traffic.timeout",
         )
+    for key in override_config:
+        if key.startswith("runners."):
+            runner_name = key.split(".")[1]
+            if any(key.schema == runner_name for key in _RUNNER_CONFIG):
+                continue
+            rename_fields(
+                override_config,
+                current=f"runners.{runner_name}.timeout",
+                replace_with=f"runners.{runner_name}.traffic.timeout",
+            )
     return unflatten(override_config)

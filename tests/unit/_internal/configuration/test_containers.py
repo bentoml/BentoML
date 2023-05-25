@@ -152,9 +152,12 @@ runners:
             timeout: 100
     test_runner_2:
         resources: system
+    test_runner_3:
+        timeout: 60
 """
     bentoml_cfg = container_from_file(RUNNER_TIMEOUTS)
     runner_cfg = bentoml_cfg["runners"]
     assert runner_cfg["traffic"]["timeout"] == 50
     assert runner_cfg["test_runner_1"]["traffic"]["timeout"] == 100
     assert runner_cfg["test_runner_2"]["traffic"]["timeout"] == 50
+    assert runner_cfg["test_runner_3"]["traffic"]["timeout"] == 60

@@ -7,7 +7,6 @@ import tempfile
 import threading
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
 
 import fs
@@ -44,74 +43,18 @@ from .schemas import CreateModelRepositorySchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import PreSignMultipartUploadUrlSchema
 from .basecloud import BaseCloudClient
+from .basecloud import CallbackIOWrapper
+from .basecloud import FILE_CHUNK_SIZE
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
+
+import typing as t
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
     from rich.progress import TaskID
-
-
-FILE_CHUNK_SIZE = 100 * 1024 * 1024  # 100Mb
-
-
-class ObjectWrapper(object):
-    def __getattr__(self, name: str) -> t.Any:
-        return getattr(self._wrapped, name)
-
-    def __setattr__(self, name: str, value: t.Any) -> None:
-        return setattr(self._wrapped, name, value)
-
-    def wrapper_getattr(self, name: str):
-        """Actual `self.getattr` rather than self._wrapped.getattr"""
-        return getattr(self, name)
-
-    def wrapper_setattr(self, name: str, value: t.Any) -> None:
-        """Actual `self.setattr` rather than self._wrapped.setattr"""
-        return object.__setattr__(self, name, value)
-
-    def __init__(self, wrapped: t.Any):
-        """
-        Thin wrapper around a given object
-        """
-        self.wrapper_setattr("_wrapped", wrapped)
-
-
-class CallbackIOWrapper(ObjectWrapper):
-    def __init__(
-        self,
-        callback: t.Callable[[int], None],
-        stream: t.BinaryIO,
-        method: t.Literal["read", "write"] = "read",
-    ):
-        """
-        Wrap a given `file`-like object's `read()` or `write()` to report
-        lengths to the given `callback`
-        """
-        super().__init__(stream)
-        func = getattr(stream, method)
-        if method == "write":
-
-            @wraps(func)
-            def write(data: t.Union[bytes, bytearray], *args: t.Any, **kwargs: t.Any):
-                res = func(data, *args, **kwargs)
-                callback(len(data))
-                return res
-
-            self.wrapper_setattr("write", write)
-        elif method == "read":
-
-            @wraps(func)
-            def read(*args: t.Any, **kwargs: t.Any):
-                data = func(*args, **kwargs)
-                callback(len(data))
-                return data
-
-            self.wrapper_setattr("read", read)
-        else:
-            raise KeyError("Can only wrap read/write methods")
 
 
 class YataiClient(BaseCloudClient):

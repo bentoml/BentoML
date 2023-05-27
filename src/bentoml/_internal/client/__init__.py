@@ -369,11 +369,7 @@ class Client(ABC):
         else:
             # NOTE: Currently, we only support one input per service APIs.
             attr = self._getitem_from_kwds_map(api)[0]
-            if inp is None:
-                if attr not in io_kwargs:
-                    raise ValueError(
-                        f"'inp' is not set, and '{attr}' kwargs is missing."
-                    )
+            if inp is None and attr in io_kwargs:
                 inp = io_kwargs[attr]
         return inp
 

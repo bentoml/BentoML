@@ -126,6 +126,7 @@ def _track_serve_init(
     svc: Service,
     production: bool,
     serve_kind: str,
+    from_server_api: bool,
     serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
 ):
     if svc.bento is not None:
@@ -133,6 +134,7 @@ def _track_serve_init(
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,
             serve_from_bento=True,
+            serve_from_server_api=from_server_api,
             production=production,
             serve_kind=serve_kind,
             bento_creation_timestamp=bento.info.creation_time,
@@ -148,6 +150,7 @@ def _track_serve_init(
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,
             serve_from_bento=False,
+            serve_from_server_api=from_server_api,
             production=production,
             serve_kind=serve_kind,
             bento_creation_timestamp=None,
@@ -237,6 +240,7 @@ def track_serve(
     svc: Service,
     *,
     production: bool = False,
+    from_server_api: bool = False,
     serve_kind: str = "http",
     component: str = "standalone",
     metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
@@ -246,7 +250,12 @@ def track_serve(
         yield
         return
 
-    _track_serve_init(svc=svc, production=production, serve_kind=serve_kind)
+    _track_serve_init(
+        svc=svc,
+        production=production,
+        serve_kind=serve_kind,
+        from_server_api=from_server_api,
+    )
 
     if _usage_event_debugging():
         tracking_interval = 5
@@ -267,6 +276,8 @@ def track_serve(
                 serve_kind=serve_kind,
                 # Current accept components are "standalone", "api_server" and "runner"
                 component=component,
+                # check if serve is running from server API or just normal CLI
+                serve_from_server_api=from_server_api,
                 triggered_at=now,
                 duration_in_seconds=int((now - last_tracked_timestamp).total_seconds()),
                 metrics=get_metrics_report(metrics_client, serve_kind=serve_kind),

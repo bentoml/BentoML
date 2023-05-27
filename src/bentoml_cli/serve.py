@@ -2,13 +2,48 @@ from __future__ import annotations
 
 import os
 import sys
+import typing as t
 import logging
 
 import click
 
+if t.TYPE_CHECKING:
+    P = t.ParamSpec("P")
+    F = t.Callable[P, t.Any]
+
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_DEV_SERVER_HOST = "127.0.0.1"
+
+
+def deprecated_option(*param_decls: str, **attrs: t.Any):
+    """Marks a given options as deprecated, and omit a warning when it's used"""
+    deprecated = attrs.pop("deprecated", True)
+    new_behaviour = attrs.pop("current_behaviour", None)
+    assert new_behaviour is not None, "current_behaviour is required"
+
+    def show_deprecated_callback(
+        ctx: click.Context, param: click.Parameter, value: t.Any
+    ):
+        if value is not param.default and deprecated:
+            name = "'--%(name)s'" if attrs.get("is_flag", False) else "'%(name)s'"
+            DEPRECATION_WARNING = f"DeprecationWarning: The parameter {name} is deprecated and will be removed in the future. (Current behaviour: %(new_behaviour)s)"
+            click.secho(
+                DEPRECATION_WARNING
+                % {"name": param.name, "new_behaviour": new_behaviour},
+                fg="yellow",
+                err=True,
+            )
+
+    def decorator(f: F[t.Any]) -> t.Callable[[F[t.Any]], click.Command]:
+        msg = attrs.pop("help", "")
+        msg += " (Deprecated)" if msg else "(Deprecated)"
+        attrs.setdefault("help", msg)
+        attrs.setdefault("callback", show_deprecated_callback)
+        return click.option(*param_decls, **attrs)(f)
+
+    return decorator
 
 
 def add_serve_command(cli: click.Group) -> None:
@@ -16,6 +51,11 @@ def add_serve_command(cli: click.Group) -> None:
     from bentoml._internal.log import configure_server_logging
     from bentoml_cli.env_manager import env_manager
     from bentoml._internal.configuration.containers import BentoMLContainer
+
+    # NOTE: This flag is used for tracking when users are using the new server API.
+    from_server_api = click.option(
+        "--from-server-api", is_flag=True, hidden=True, default=False
+    )
 
     @cli.command(aliases=["serve-http"])
     @click.argument("bento", type=click.STRING, default=".")
@@ -27,13 +67,14 @@ def add_serve_command(cli: click.Group) -> None:
         default=False,
         show_default=True,
     )
-    @click.option(
+    @deprecated_option(
         "--production",
         type=click.BOOL,
-        help="Deprecated option, by default BentoServer will run in production mode",
+        help="Run BentoServer in production mode",
+        current_behaviour="This is enabled by default. To run in development mode, use '--development'.",
         is_flag=True,
         default=True,
-        show_default=True,
+        show_default=False,
     )
     @click.option(
         "-p",
@@ -131,17 +172,17 @@ def add_serve_command(cli: click.Group) -> None:
         help="Ciphers to use (see stdlib 'ssl' module)",
         show_default=True,
     )
+    @from_server_api
     @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,
         development: bool,
-        production: bool,  # deprecated and ignored
         port: int,
         host: str,
         api_workers: int | None,
         backlog: int,
         reload: bool,
-        working_dir: str,
+        working_dir: str | None,
         ssl_certfile: str | None,
         ssl_keyfile: str | None,
         ssl_keyfile_password: str | None,
@@ -149,6 +190,8 @@ def add_serve_command(cli: click.Group) -> None:
         ssl_cert_reqs: int | None,
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
+        from_server_api: bool,
+        **attrs: t.Any,
     ) -> None:
         """Start a HTTP BentoServer from a given 🍱
 
@@ -195,7 +238,6 @@ def add_serve_command(cli: click.Group) -> None:
         from bentoml.serve import serve_http_production
 
         if development:
-
             serve_http_production(
                 bento,
                 working_dir=working_dir,
@@ -212,9 +254,9 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
                 reload=reload,
                 development_mode=True,
+                _from_server_api=from_server_api,
             )
         else:
-
             serve_http_production(
                 bento,
                 working_dir=working_dir,
@@ -230,6 +272,7 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
                 reload=reload,
                 development_mode=False,
+                _from_server_api=from_server_api,
             )
 
     from bentoml._internal.utils import add_experimental_docstring
@@ -244,13 +287,14 @@ def add_serve_command(cli: click.Group) -> None:
         default=False,
         show_default=True,
     )
-    @click.option(
+    @deprecated_option(
         "--production",
         type=click.BOOL,
-        help="Deprecated option, by default BentoServer will run in production mode",
+        help="Run BentoServer in production mode",
+        current_behaviour="This is enabled by default. To run in development mode, use '--development'.",
         is_flag=True,
         default=True,
-        show_default=True,
+        show_default=False,
     )
     @click.option(
         "-p",
@@ -352,16 +396,16 @@ def add_serve_command(cli: click.Group) -> None:
     )
     @add_experimental_docstring
     @env_manager
+    @from_server_api
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
         development: bool,
-        production: bool,  # deprecated and ignored
         port: int,
         host: str,
         api_workers: int | None,
         backlog: int,
         reload: bool,
-        working_dir: str,
+        working_dir: str | None,
         ssl_certfile: str | None,
         ssl_keyfile: str | None,
         ssl_ca_certs: str | None,
@@ -369,6 +413,8 @@ def add_serve_command(cli: click.Group) -> None:
         enable_channelz: bool,
         max_concurrent_streams: int | None,
         protocol_version: str,
+        from_server_api: bool,
+        **attrs: t.Any,
     ):
         """Start a gRPC BentoServer from a given 🍱
 
@@ -412,7 +458,6 @@ def add_serve_command(cli: click.Group) -> None:
         from bentoml.serve import serve_grpc_production
 
         if development:
-
             serve_grpc_production(
                 bento,
                 working_dir=working_dir,
@@ -429,9 +474,9 @@ def add_serve_command(cli: click.Group) -> None:
                 protocol_version=protocol_version,
                 reload=reload,
                 development_mode=True,
+                _from_server_api=from_server_api,
             )
         else:
-
             serve_grpc_production(
                 bento,
                 working_dir=working_dir,
@@ -448,4 +493,5 @@ def add_serve_command(cli: click.Group) -> None:
                 protocol_version=protocol_version,
                 reload=reload,
                 development_mode=False,
+                _from_server_api=from_server_api,
             )

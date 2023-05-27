@@ -116,6 +116,9 @@ class Server(ABC):
         if working_dir is not None:
             args.extend(["--working-dir", str(working_dir)])
 
+        # NOTE: the below is used for telemetry
+        args.extend(["--from-server-api"])
+
         self.args = args
         self.host = "127.0.0.1" if host == "0.0.0.0" else host
         self.port = port

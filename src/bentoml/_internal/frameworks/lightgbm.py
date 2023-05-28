@@ -94,7 +94,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:  # 
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: lgb.basic.Booster,  # type: ignore (incomplete ligthgbm type stubs)
     *,
     signatures: dict[str, ModelSignatureDict] | None = None,

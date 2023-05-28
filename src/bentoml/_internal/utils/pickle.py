@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import sys
 import typing as t
 
@@ -37,7 +38,7 @@ def pep574_loads(
     main_bytes: bytes, concat_buffer_bytes: bytes, indices: list[int]
 ) -> t.Any:
     if not indices:
-        return pickle.loads(main_bytes)
+        return loads_or_fix_torch(main_bytes)
 
     mem = memoryview(concat_buffer_bytes)
     partitions = zip(indices, indices[1:])
@@ -47,3 +48,34 @@ def pep574_loads(
         recover_buffers.append(buff)
 
     return pickle.loads(main_bytes, buffers=recover_buffers)
+
+
+def _safe_torch_tensor_loads(bs: bytes) -> t.Any:
+    import torch
+
+    f = io.BytesIO(bs)
+    if not torch.cuda.is_available():
+        return torch.load(f, map_location="cpu")
+    else:
+        return torch.load(f)
+
+
+class FixTorchUnpickler(pickle.Unpickler):
+    def find_class(self, module: str, name: str) -> t.Callable[[bytes], t.Any]:
+        if module == "torch.storage" and name == "_load_from_bytes":
+            return _safe_torch_tensor_loads
+        else:
+            return super().find_class(module, name)
+
+
+def _fix_torch_loads(bs: bytes) -> t.Any:
+    f = io.BytesIO(bs)
+    unpickler = FixTorchUnpickler(f)
+    return unpickler.load()
+
+
+def loads_or_fix_torch(bs: bytes):
+    try:
+        return pickle.loads(bs)
+    except RuntimeError:
+        return _fix_torch_loads(bs)

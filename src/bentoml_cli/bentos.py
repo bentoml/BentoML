@@ -60,6 +60,7 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.configuration import get_quiet_mode
     from bentoml._internal.bento.build_config import BentoBuildConfig
     from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.utils.analytics.usage_stats import _usage_event_debugging
 
     bento_store = BentoMLContainer.bento_store.get()
     yatai_client = BentoMLContainer.yatai_client.get()
@@ -306,7 +307,7 @@ def add_bento_management_commands(cli: Group):
         build_ctx: str,
         bentofile: str,
         version: str,
-        output: t.Literal["tag", "default"],
+        output: t.Literal["tag", "default", "yaml"],
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> None:
         """Build a new Bento from current directory."""
@@ -327,7 +328,14 @@ def add_bento_management_commands(cli: Group):
         ).save(_bento_store)
 
         if output == "tag":
-            click.echo(bento.tag)
+            if _usage_event_debugging():
+                # NOTE: Since we are logging all of the trackintg id to stdout
+                # We will prefix the tag with __tag__ and we can use regex to correctly
+                # get the tag from 'bentoml.bentos.build|build_bentofile'
+                click.echo(f"__tag__:{bento.tag}")
+            else:
+                # Current behaviour
+                click.echo(bento.tag)
             return
 
         if not get_quiet_mode():

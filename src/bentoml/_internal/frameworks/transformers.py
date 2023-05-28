@@ -519,60 +519,6 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
                 raise
 
 
-@t.overload
-def save_model(
-    name: str,
-    pretrained_or_pipeline: PreTrainedProtocol,
-    pipeline: transformers.Pipeline | None = ...,
-    task_name: t.LiteralString | None = ...,
-    task_definition: TaskDefinition | None = ...,
-    *,
-    signatures: ModelSignaturesType | None = ...,
-    labels: dict[str, str] | None = ...,
-    custom_objects: dict[str, t.Any] | None = ...,
-    external_modules: t.List[ModuleType] | None = ...,
-    metadata: dict[str, t.Any] | None = ...,
-    **save_kwargs: t.Any,
-) -> bentoml.Model:
-    ...
-
-
-@t.overload
-def save_model(
-    name: str,
-    pretrained_or_pipeline: TransformersPreTrained,
-    pipeline: transformers.Pipeline | None = ...,
-    task_name: t.LiteralString | None = ...,
-    task_definition: TaskDefinition | None = ...,
-    *,
-    signatures: ModelSignaturesType | None = ...,
-    labels: dict[str, str] | None = ...,
-    custom_objects: dict[str, t.Any] | None = ...,
-    external_modules: t.List[ModuleType] | None = ...,
-    metadata: dict[str, t.Any] | None = ...,
-    **save_kwargs: t.Any,
-) -> bentoml.Model:
-    ...
-
-
-@t.overload
-def save_model(
-    name: str,
-    pretrained_or_pipeline: transformers.Pipeline,
-    pipeline: transformers.Pipeline | None = ...,
-    task_name: t.LiteralString | None = ...,
-    task_definition: TaskDefinition | None = ...,
-    *,
-    signatures: ModelSignaturesType | None = ...,
-    labels: dict[str, str] | None = ...,
-    custom_objects: dict[str, t.Any] | None = ...,
-    external_modules: t.List[ModuleType] | None = ...,
-    metadata: dict[str, t.Any] | None = ...,
-    **save_kwargs: t.Any,
-) -> bentoml.Model:
-    ...
-
-
 def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
     default_config = ModelSignature(batchable=False)
     infer_fn = ("__call__",)
@@ -653,8 +599,11 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
 
 
 def save_model(
-    name: str,
-    pretrained_or_pipeline: t.Any = None,
+    name: Tag | str,
+    pretrained_or_pipeline: TransformersPreTrained
+    | transformers.Pipeline
+    | PreTrainedProtocol
+    | None = None,
     pipeline: transformers.Pipeline | None = None,
     task_name: str | None = None,
     task_definition: dict[str, t.Any] | TaskDefinition | None = None,

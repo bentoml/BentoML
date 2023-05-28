@@ -81,7 +81,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: "torch.nn.Module",
     *,
     signatures: ModelSignaturesType | None = None,

@@ -100,7 +100,7 @@ def load_model(bento_model: str | Tag | Model) -> easyocr.Reader:
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     reader: easyocr.Reader,
     *,
     signatures: ModelSignaturesType | None = None,

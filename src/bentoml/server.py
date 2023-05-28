@@ -149,6 +149,10 @@ class Server(ABC):
         # NOTE: User shouldn't manually set this since this envvar will be managed by BentoML.
         os.environ[BENTOML_SERVE_FROM_SERVER_API] = str(True)
 
+        if env is None:
+            env = {}
+        env.update(os.environ.copy())
+
         class _Manager:
             def __init__(__inner_self):
                 logger.debug(f"Starting server with arguments: {self.args}")

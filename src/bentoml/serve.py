@@ -249,7 +249,6 @@ def serve_http_production(
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     development_mode: bool = False,
     reload: bool = False,
-    _from_server_api: bool = False,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -482,7 +481,7 @@ def serve_http_production(
 
     production = False if development_mode else True
 
-    with track_serve(svc, production=production, from_server_api=_from_server_api):
+    with track_serve(svc, production=production):
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore
@@ -519,7 +518,6 @@ def serve_grpc_production(
     protocol_version: str = LATEST_PROTOCOL_VERSION,
     reload: bool = False,
     development_mode: bool = False,
-    _from_server_api: bool = False,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -803,9 +801,7 @@ def serve_grpc_production(
     arbiter = create_standalone_arbiter(**arbiter_kwargs)
 
     production: bool = False if development_mode else True
-    with track_serve(
-        svc, production=production, serve_kind="grpc", from_server_api=_from_server_api
-    ):
+    with track_serve(svc, production=production, serve_kind="grpc"):
         try:
             arbiter.start(
                 cb=lambda _: logger.info(  # type: ignore

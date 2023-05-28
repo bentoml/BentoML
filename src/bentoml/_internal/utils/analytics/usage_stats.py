@@ -40,9 +40,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 BENTOML_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
+BENTOML_SERVE_FROM_SERVER_API = "__BENTOML_SERVE_FROM_SERVER_API__"
 USAGE_TRACKING_URL = "https://t.bentoml.com"
 SERVE_USAGE_TRACKING_INTERVAL_SECONDS = int(12 * 60 * 60)  # every 12 hours
 USAGE_REQUEST_TIMEOUT_SECONDS = 1
+
+
+@lru_cache(maxsize=1)
+def _bentoml_serve_from_server_api() -> bool:
+    return os.environ.get(BENTOML_SERVE_FROM_SERVER_API, str(False)).lower() == "true"
 
 
 @lru_cache(maxsize=1)
@@ -240,7 +246,7 @@ def track_serve(
     svc: Service,
     *,
     production: bool = False,
-    from_server_api: bool = False,
+    from_server_api: bool | None = None,
     serve_kind: str = "http",
     component: str = "standalone",
     metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
@@ -249,6 +255,9 @@ def track_serve(
     if do_not_track():
         yield
         return
+
+    if from_server_api is None:
+        from_server_api = _bentoml_serve_from_server_api()
 
     _track_serve_init(
         svc=svc,

@@ -52,11 +52,6 @@ def add_serve_command(cli: click.Group) -> None:
     from bentoml_cli.env_manager import env_manager
     from bentoml._internal.configuration.containers import BentoMLContainer
 
-    # NOTE: This flag is used for tracking when users are using the new server API.
-    from_server_api = click.option(
-        "--from-server-api", is_flag=True, hidden=True, default=False
-    )
-
     @cli.command(aliases=["serve-http"])
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
@@ -172,7 +167,6 @@ def add_serve_command(cli: click.Group) -> None:
         help="Ciphers to use (see stdlib 'ssl' module)",
         show_default=True,
     )
-    @from_server_api
     @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,
@@ -190,7 +184,6 @@ def add_serve_command(cli: click.Group) -> None:
         ssl_cert_reqs: int | None,
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
-        from_server_api: bool,
         **attrs: t.Any,
     ) -> None:
         """Start a HTTP BentoServer from a given 🍱
@@ -254,7 +247,6 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
                 reload=reload,
                 development_mode=True,
-                _from_server_api=from_server_api,
             )
         else:
             serve_http_production(
@@ -272,7 +264,6 @@ def add_serve_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
                 reload=reload,
                 development_mode=False,
-                _from_server_api=from_server_api,
             )
 
     from bentoml._internal.utils import add_experimental_docstring
@@ -396,7 +387,6 @@ def add_serve_command(cli: click.Group) -> None:
     )
     @add_experimental_docstring
     @env_manager
-    @from_server_api
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
         development: bool,
@@ -413,7 +403,6 @@ def add_serve_command(cli: click.Group) -> None:
         enable_channelz: bool,
         max_concurrent_streams: int | None,
         protocol_version: str,
-        from_server_api: bool,
         **attrs: t.Any,
     ):
         """Start a gRPC BentoServer from a given 🍱
@@ -474,7 +463,6 @@ def add_serve_command(cli: click.Group) -> None:
                 protocol_version=protocol_version,
                 reload=reload,
                 development_mode=True,
-                _from_server_api=from_server_api,
             )
         else:
             serve_grpc_production(
@@ -493,5 +481,4 @@ def add_serve_command(cli: click.Group) -> None:
                 protocol_version=protocol_version,
                 reload=reload,
                 development_mode=False,
-                _from_server_api=from_server_api,
             )

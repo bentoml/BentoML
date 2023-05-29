@@ -52,19 +52,22 @@ def pydantic_components_schema(pydantic_model: t.Type[pydantic.BaseModel]):
     return {k: Schema(**definitions[k]) for k in sorted(definitions)}
 
 
-def typeddict_components_schema(typeddict: t.Type[TypedDict]):
+def typeddict_components_schema(typeddict: type[TypedDict]):
     typeddict_set = get_flat_typeddicts_from_typeddict(
         typeddict=typeddict, typeddict_set=set()
     )
     definitions: dict[str, Schema] = {}
     for typeddict in typeddict_set:
-        definitions[typeddict.__name__] = typed_dict_to_dict(typeddict)
+        typeddict_title = f"{typeddict.__module__}__{typeddict.__qualname__}".replace(
+            ".", "__"
+        )
+        definitions[typeddict_title] = typed_dict_to_dict(typeddict)
     return {k: Schema(**definitions[k]) for k in sorted(definitions)}
 
 
 def get_flat_typeddicts_from_typeddict(
-    typeddict: t.Type[TypedDict], typeddict_set: t.Set[t.Type[t.Any]]
-) -> t.Set[t.Type[t.Any]]:
+    typeddict: type[TypedDict], typeddict_set: set[type[TypedDict]]
+) -> set[type[TypedDict]]:
     typeddict_set.add(typeddict)
     field_types: t.Dict[str, t.Any] = get_type_hints(typeddict, include_extras=True)
 

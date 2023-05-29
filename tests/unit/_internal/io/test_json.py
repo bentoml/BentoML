@@ -379,7 +379,7 @@ def test_typeddict_json_openapi_components():
 
     assert components
 
-    schema: Schema = components["schemas"]["ExampleTypedDictSchema"]
+    schema: Schema = components["schemas"][f"{__name__}__ExampleTypedDictSchema"]
 
     assert schema.properties == {
         "any1": {"title": "any1", "type": "any"},
@@ -420,9 +420,15 @@ def test_typeddict_json_openapi_components():
 
     assert nested
 
-    assert all(a in nested["schemas"] for a in ["InnerTypedDict", "NestedTypedDict"])
+    assert all(
+        a in nested["schemas"]
+        for a in [f"{__name__}__InnerTypedDict", f"{__name__}__NestedTypedDict"]
+    )
     assert (
-        "$ref" in nested["schemas"]["NestedTypedDict"].properties["nested_typeddict1"]
+        "$ref"
+        in nested["schemas"][f"{__name__}__NestedTypedDict"].properties[
+            "nested_typeddict1"
+        ]
     )
 
 

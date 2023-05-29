@@ -33,6 +33,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
    ```bash
    git switch main # ensure you're on the main branch
+   git fetch upstream --tags
    git branch --set-upstream-to=upstream/main
    ```
 

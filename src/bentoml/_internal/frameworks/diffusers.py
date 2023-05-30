@@ -57,6 +57,7 @@ class DiffusersOptions(PartialKwargsModelOptions):
     enable_attention_slicing: int | str | None = None
     enable_model_cpu_offload: bool | None = None
     enable_sequential_cpu_offload: bool | None = None
+    low_cpu_mem_usage: bool | None = None
     variant: str | None = None
     load_pretrained_extra_kwargs: dict[str, t.Any] | None = None
 
@@ -481,12 +482,14 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         bento_options.enable_sequential_cpu_offload
     )
     enable_model_cpu_offload: bool | None = bento_options.enable_model_cpu_offload
+    low_cpu_mem_usage: bool | None = bento_options.low_cpu_mem_usage
     variant: str | None = bento_options.variant
     _torch_dtype: str | torch.dtype | None = bento_options.torch_dtype
     device_map: str | dict[
         str, int | str | torch.device
     ] | None = bento_options.device_map
     load_pretrained_extra_kwargs = bento_options.load_pretrained_extra_kwargs
+
 
     class DiffusersRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
@@ -521,6 +524,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 enable_attention_slicing=enable_attention_slicing,
                 enable_sequential_cpu_offload=enable_sequential_cpu_offload,
                 enable_model_cpu_offload=enable_model_cpu_offload,
+                low_cpu_mem_usage=low_cpu_mem_usage,
                 variant=variant,
                 load_pretrained_extra_kwargs=load_pretrained_extra_kwargs,
             )

@@ -55,7 +55,6 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.utils import calc_dir_size
     from bentoml._internal.utils import human_readable_size
     from bentoml._internal.utils import resolve_user_filepath
-    from bentoml._internal.utils import display_path_under_home
     from bentoml._internal.bento.bento import Bento
     from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
     from bentoml._internal.configuration import get_quiet_mode
@@ -114,7 +113,6 @@ def add_bento_management_commands(cli: Group):
         res = [
             {
                 "tag": str(bento.tag),
-                "path": display_path_under_home(bento.path),
                 "size": human_readable_size(calc_dir_size(bento.path)),
                 "creation_time": bento.info.creation_time.astimezone().strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -136,13 +134,11 @@ def add_bento_management_commands(cli: Group):
             table.add_column("Tag")
             table.add_column("Size")
             table.add_column("Creation Time")
-            table.add_column("Path")
             for bento in res:
                 table.add_row(
                     bento["tag"],
                     bento["size"],
                     bento["creation_time"],
-                    bento["path"],
                 )
             console.print(table)
 

@@ -77,7 +77,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: pl.LightningModule,
     *,
     signatures: ModelSignaturesType | None = None,

@@ -118,7 +118,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> learner.Learner:
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     learner_: learner.Learner,
     *,
     signatures: ModelSignaturesType | None = None,

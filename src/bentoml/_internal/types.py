@@ -154,6 +154,7 @@ def is_callable_type(type_: type[t.Any]) -> bool:
 
 
 LITERAL_TYPES: set[t.Any] = {Literal}
+
 if hasattr(t, "Literal"):
     LITERAL_TYPES.add(t.Literal)
 
@@ -189,9 +190,12 @@ def is_namedtuple(type_: type[t.Any]) -> bool:
 
 NoneType = None.__class__
 
+if sys.version_info[:2] < (3, 8):
+    _none_type: tuple[t.Any, t.Any, t.Any] = (None, NoneType, Literal[None])
+else:
+    _none_type: tuple[t.Any, t.Any, t.Any] = (None, NoneType, t.Literal[None])
 
-NONE_TYPES: tuple[t.Any, t.Any, t.Any] = (None, NoneType, t.Literal[None])
-
+NONE_TYPES = _none_type
 
 if sys.version_info < (3, 8):
     # Even though this implementation is slower, we need it for python 3.7:

@@ -196,9 +196,8 @@ def get_flat_attrs_from_attr_model(
     attrs_model: type[AttrsInstance], known_attrs: TypeAttrsSet | None = None
 ) -> TypeAttrsSet:
     known_attrs = known_attrs or set()
-    flat_attrs: TypeAttrsSet = set()
-    flat_attrs.add(attrs_model)
-    known_attrs |= flat_attrs
+    flat_attrs: TypeAttrsSet = {attrs_model}
+    known_attrs.add(attrs_model)
     flat_attrs |= get_flat_attrs_from_fields(
         attr.fields(attrs_model), known_attrs=known_attrs
     )

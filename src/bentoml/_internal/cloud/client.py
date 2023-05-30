@@ -24,6 +24,7 @@ from .schemas import BentoWithRepositoryListSchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import ModelWithRepositoryListSchema
 from .schemas import PreSignMultipartUploadUrlSchema
+from .schemas import DeploymentListSchema
 from ...exceptions import YataiRESTApiClientError
 from ..configuration import BENTOML_VERSION
 
@@ -412,3 +413,11 @@ class YataiRESTApiClient:
             return None
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelWithRepositoryListSchema)
+
+    def get_deployment_list(self) -> Optional[DeploymentListSchema]:
+        url = urljoin(self.endpoint, "/api/v1/clusters/default/deployments")
+        resp = self.session.get(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentListSchema)

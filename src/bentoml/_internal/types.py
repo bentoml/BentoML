@@ -170,7 +170,7 @@ if hasattr(t, "Literal"):
 
 
 def is_literal_type(type_: type[t.Any]) -> bool:
-    return t.Literal is not None and get_origin(type_) in LITERAL_TYPES
+    return get_origin(type_) in LITERAL_TYPES
 
 
 def literal_values(type_: type[t.Any]) -> tuple[t.Any, ...]:

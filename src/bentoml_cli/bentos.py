@@ -326,6 +326,8 @@ def add_bento_management_commands(cli: Group):
             build_ctx=build_ctx,
         ).save(_bento_store)
 
+        # NOTE: Don't remove the return statement here, since we will need this
+        # for usage stats collection if users are opt-in.
         if output == "tag":
             click.echo(bento.tag)
             return bento

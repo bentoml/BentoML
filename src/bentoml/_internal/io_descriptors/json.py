@@ -265,7 +265,7 @@ class JSON(
         """
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(sample):
             self._pydantic_model = sample.__class__
-        elif attr.has(type(sample)):
+        elif attr.has(sample):
             self._attr_model = sample.__class__
         elif isinstance(sample, str):
             try:
@@ -371,7 +371,7 @@ class JSON(
                     return self.sample.model_dump()
                 else:
                     return self.sample.dict()
-            elif attr.has(type(self.sample)):
+            elif attr.has(self.sample):
                 return bentoml_cattr.unstructure(self.sample)
             elif isinstance(self.sample, (str, list)):
                 return json.dumps(
@@ -440,7 +440,7 @@ class JSON(
                 obj = obj.model_dump()
             else:
                 obj = obj.dict()
-        elif attr.has(type(obj)):
+        elif attr.has(obj):
             obj = bentoml_cattr.unstructure(obj)
 
         json_str = (
@@ -520,7 +520,7 @@ class JSON(
                 obj = obj.model_dump()
             else:
                 obj = obj.dict()
-        elif attr.has(type(obj)):
+        elif attr.has(obj):
             obj = bentoml_cattr.unstructure(obj)
         msg = struct_pb2.Value()
         return parse_dict_to_proto(obj, msg, json_encoder=self._json_encoder)

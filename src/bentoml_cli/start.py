@@ -16,7 +16,7 @@ def add_start_command(cli: click.Group) -> None:
     from bentoml._internal.utils import add_experimental_docstring
     from bentoml._internal.configuration.containers import BentoMLContainer
 
-    @cli.command(hidden=True)
+    @cli.command(name="start-http-server", hidden=True)
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
         "--remote-runner",
@@ -118,7 +118,7 @@ def add_start_command(cli: click.Group) -> None:
         help="Ciphers to use (see stdlib 'ssl' module)",
     )
     @add_experimental_docstring
-    def start_http_server(  # type: ignore (unused warning)
+    def _(
         bento: str,
         remote_runner: list[str] | None,
         runner_map: str | None,
@@ -182,7 +182,7 @@ def add_start_command(cli: click.Group) -> None:
             ssl_ciphers=ssl_ciphers,
         )
 
-    @cli.command(hidden=True)
+    @cli.command(name="start-runner-server", hidden=True)
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
         "--runner-name",
@@ -228,7 +228,7 @@ def add_start_command(cli: click.Group) -> None:
         show_default=True,
     )
     @add_experimental_docstring
-    def start_runner_server(  # type: ignore (unused warning)
+    def _(
         bento: str,
         runner_name: str,
         bind: str | None,
@@ -265,7 +265,7 @@ def add_start_command(cli: click.Group) -> None:
             backlog=backlog,
         )
 
-    @cli.command(hidden=True)
+    @cli.command(name="start-grpc-server", hidden=True)
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
         "--remote-runner",
@@ -357,7 +357,7 @@ def add_start_command(cli: click.Group) -> None:
         show_default=True,
     )
     @add_experimental_docstring
-    def start_grpc_server(  # type: ignore (unused warning)
+    def _(
         bento: str,
         remote_runner: list[str] | None,
         port: int,

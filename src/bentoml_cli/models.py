@@ -51,7 +51,7 @@ def add_model_management_commands(cli: Group) -> None:
     def model_cli():
         """Model Subcommands Groups"""
 
-    @model_cli.command()
+    @model_cli.command(name="get")
     @click.argument("model_tag", type=click.STRING)
     @click.option(
         "-o",
@@ -59,7 +59,7 @@ def add_model_management_commands(cli: Group) -> None:
         type=click.Choice(["json", "yaml", "path"]),
         default="yaml",
     )
-    def get(model_tag: str, output: str) -> None:  # type: ignore (not accessed)
+    def _(model_tag: str, output: str) -> None:
         """Print Model details by providing the model_tag
 
         \b
@@ -86,7 +86,7 @@ def add_model_management_commands(cli: Group) -> None:
         type=click.Choice(["json", "yaml", "table"]),
         default="table",
     )
-    def list_models(model_name: str, output: str) -> None:  # type: ignore (not accessed)
+    def _(model_name: str, output: str) -> None:
         """List Models in local store
 
         \b
@@ -133,7 +133,7 @@ def add_model_management_commands(cli: Group) -> None:
                 )
             console.print(table)
 
-    @model_cli.command()
+    @model_cli.command(name="delete")
     @click.argument(
         "delete_targets",
         type=click.STRING,
@@ -147,7 +147,7 @@ def add_model_management_commands(cli: Group) -> None:
         is_flag=True,
         help="Skip confirmation when deleting a specific model",
     )
-    def delete(delete_targets: str, yes: bool) -> None:  # type: ignore (not accessed)
+    def _(delete_targets: str, yes: bool) -> None:
         """Delete Model in local model store.
 
         \b
@@ -179,10 +179,10 @@ def add_model_management_commands(cli: Group) -> None:
         for target in delete_targets:
             delete_target(target)
 
-    @model_cli.command()
+    @model_cli.command(name="export")
     @click.argument("model_tag", type=click.STRING)
     @click.argument("out_path", type=click.STRING, default="", required=False)
-    def export(model_tag: str, out_path: str) -> None:  # type: ignore (not accessed)
+    def _(model_tag: str, out_path: str) -> None:
         """Export a Model to an external archive file
 
         arguments:
@@ -216,7 +216,7 @@ def add_model_management_commands(cli: Group) -> None:
         bentomodel = import_model(model_path)
         click.echo(f"{bentomodel} imported.")
 
-    @model_cli.command()
+    @model_cli.command(name="pull")
     @click.argument("model_tag", type=click.STRING)
     @click.option(
         "-f",
@@ -228,11 +228,11 @@ def add_model_management_commands(cli: Group) -> None:
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
     )
-    def pull(model_tag: str, force: bool, context: str):  # type: ignore (not accessed)
+    def _(model_tag: str, force: bool, context: str):
         """Pull Model from a yatai server."""
         yatai_client.pull_model(model_tag, force=force, context=context)
 
-    @model_cli.command()
+    @model_cli.command(name="push")
     @click.argument("model_tag", type=click.STRING)
     @click.option(
         "-f",
@@ -250,7 +250,7 @@ def add_model_management_commands(cli: Group) -> None:
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
     )
-    def push(model_tag: str, force: bool, threads: int, context: str):  # type: ignore (not accessed)
+    def _(model_tag: str, force: bool, threads: int, context: str):
         """Push Model to a yatai server."""
         model_obj = model_store.get(model_tag)
         if not model_obj:

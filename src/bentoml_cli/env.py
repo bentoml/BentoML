@@ -110,7 +110,7 @@ def add_env_command(cli: click.Group) -> None:
     from bentoml._internal.utils.pkg import get_pkg_version
     from bentoml._internal.utils.pkg import PackageNotFoundError
 
-    @cli.command(help=gettext("Print environment info and exit"))
+    @cli.command(name="env", help=gettext("Print environment info and exit"))
     @click.option(
         "-o",
         "--output",
@@ -120,7 +120,7 @@ def add_env_command(cli: click.Group) -> None:
         help="Output format. '-o bash' to display without format.",
     )
     @click.pass_context
-    def env(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:  # type: ignore (unused warning)
+    def _(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:
         if output not in ["md", "bash"]:
             raise CLIException(f"Unknown output format: {output}")
 

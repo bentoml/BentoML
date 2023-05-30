@@ -366,7 +366,7 @@ def add_containerize_command(cli: Group) -> None:
     from bentoml._internal.container import determine_container_tag
     from bentoml._internal.configuration import get_debug_mode
 
-    @cli.command()
+    @cli.command(name="containerize")
     @click.argument("bento_tag", type=click.STRING, metavar="BENTO:TAG")
     @click.option(
         "-t",
@@ -420,14 +420,14 @@ def add_containerize_command(cli: Group) -> None:
     @optgroup.group("Buildx options", help="[Only available with '--backend=buildx']")
     @buildx_options_group
     @kwargs_transformers(transformer=normalize_none_type)
-    def containerize(  # type: ignore
+    def _(
         bento_tag: str,
         image_tag: tuple[str] | None,
         backend: DefaultBuilder,
         enable_features: tuple[str] | None,
         run_as_root: bool,
         _memoized: dict[str, t.Any],
-        **kwargs: t.Any,  # pylint: disable=unused-argument
+        **kwargs: t.Any,
     ) -> None:
         """Containerizes given Bento into an OCI-compliant container, with any given OCI builder.
 

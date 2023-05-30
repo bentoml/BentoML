@@ -17,7 +17,7 @@ def add_serve_command(cli: click.Group) -> None:
     from bentoml_cli.env_manager import env_manager
     from bentoml._internal.configuration.containers import BentoMLContainer
 
-    @cli.command(aliases=["serve-http"])
+    @cli.command(name="serve", aliases=["serve-http"])
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
         "--development",
@@ -132,7 +132,7 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @env_manager
-    def serve(  # type: ignore (unused warning)
+    def _(
         bento: str,
         development: bool,
         production: bool,  # deprecated and ignored
@@ -195,7 +195,6 @@ def add_serve_command(cli: click.Group) -> None:
         from bentoml.serve import serve_http_production
 
         if development:
-
             serve_http_production(
                 bento,
                 working_dir=working_dir,
@@ -214,7 +213,6 @@ def add_serve_command(cli: click.Group) -> None:
                 development_mode=True,
             )
         else:
-
             serve_http_production(
                 bento,
                 working_dir=working_dir,
@@ -352,7 +350,7 @@ def add_serve_command(cli: click.Group) -> None:
     )
     @add_experimental_docstring
     @env_manager
-    def serve_grpc(  # type: ignore (unused warning)
+    def _(
         bento: str,
         development: bool,
         production: bool,  # deprecated and ignored
@@ -412,7 +410,6 @@ def add_serve_command(cli: click.Group) -> None:
         from bentoml.serve import serve_grpc_production
 
         if development:
-
             serve_grpc_production(
                 bento,
                 working_dir=working_dir,
@@ -431,7 +428,6 @@ def add_serve_command(cli: click.Group) -> None:
                 development_mode=True,
             )
         else:
-
             serve_grpc_production(
                 bento,
                 working_dir=working_dir,

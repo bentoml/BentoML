@@ -64,7 +64,7 @@ def add_bento_management_commands(cli: Group):
     bento_store = BentoMLContainer.bento_store.get()
     yatai_client = BentoMLContainer.yatai_client.get()
 
-    @cli.command()
+    @cli.command(name="get")
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-o",
@@ -72,7 +72,7 @@ def add_bento_management_commands(cli: Group):
         type=click.Choice(["json", "yaml", "path"]),
         default="yaml",
     )
-    def get(bento_tag: str, output: str) -> None:  # type: ignore (not accessed)
+    def _(bento_tag: str, output: str) -> None:
         """Print Bento details by providing the bento_tag.
 
         \b
@@ -98,7 +98,7 @@ def add_bento_management_commands(cli: Group):
         type=click.Choice(["json", "yaml", "table"]),
         default="table",
     )
-    def list_bentos(bento_name: str, output: str) -> None:  # type: ignore (not accessed)
+    def _(bento_name: str, output: str) -> None:
         """List Bentos in local store
 
         \b
@@ -142,7 +142,7 @@ def add_bento_management_commands(cli: Group):
                 )
             console.print(table)
 
-    @cli.command()
+    @cli.command(name="delete")
     @click.argument(
         "delete_targets",
         type=click.STRING,
@@ -156,7 +156,7 @@ def add_bento_management_commands(cli: Group):
         is_flag=True,
         help="Skip confirmation when deleting a specific bento bundle",
     )
-    def delete(delete_targets: list[str], yes: bool) -> None:  # type: ignore (not accessed)
+    def _(delete_targets: list[str], yes: bool) -> None:
         """Delete Bento in local bento store.
 
         \b
@@ -188,7 +188,7 @@ def add_bento_management_commands(cli: Group):
         for target in delete_targets:
             delete_target(target)
 
-    @cli.command()
+    @cli.command(name="export")
     @click.argument("bento_tag", type=click.STRING)
     @click.argument(
         "out_path",
@@ -196,7 +196,7 @@ def add_bento_management_commands(cli: Group):
         default="",
         required=False,
     )
-    def export(bento_tag: str, out_path: str) -> None:  # type: ignore (not accessed)
+    def _(bento_tag: str, out_path: str) -> None:
         """Export a Bento to an external file archive
 
         \b
@@ -220,7 +220,7 @@ def add_bento_management_commands(cli: Group):
 
     @cli.command(name="import")
     @click.argument("bento_path", type=click.STRING)
-    def import_bento_(bento_path: str) -> None:  # type: ignore (not accessed)
+    def _(bento_path: str) -> None:
         """Import a previously exported Bento archive file
 
         \b
@@ -235,7 +235,7 @@ def add_bento_management_commands(cli: Group):
         bento = import_bento(bento_path)
         click.echo(f"{bento} imported.")
 
-    @cli.command()
+    @cli.command(name="pull")
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-f",
@@ -247,11 +247,11 @@ def add_bento_management_commands(cli: Group):
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
     )
-    def pull(bento_tag: str, force: bool, context: str) -> None:  # type: ignore (not accessed)
+    def _(bento_tag: str, force: bool, context: str) -> None:
         """Pull Bento from a yatai server."""
         yatai_client.pull_bento(bento_tag, force=force, context=context)
 
-    @cli.command()
+    @cli.command(name="push")
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-f",
@@ -269,7 +269,7 @@ def add_bento_management_commands(cli: Group):
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
     )
-    def push(bento_tag: str, force: bool, threads: int, context: str) -> None:  # type: ignore (not accessed)
+    def _(bento_tag: str, force: bool, threads: int, context: str) -> None:
         """Push Bento to a yatai server."""
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
@@ -278,7 +278,7 @@ def add_bento_management_commands(cli: Group):
             bento_obj, force=force, threads=threads, context=context
         )
 
-    @cli.command()
+    @cli.command(name="build")
     @click.argument("build_ctx", type=click.Path(), default=".")
     @click.option(
         "-f",
@@ -302,7 +302,7 @@ def add_bento_management_commands(cli: Group):
         help="Output log format. '-o tag' to display only bento tag.",
     )
     @inject
-    def build(  # type: ignore (not accessed)
+    def _(
         build_ctx: str,
         bentofile: str,
         version: str,

@@ -15,7 +15,7 @@ def add_login_command(cli: click.Group) -> None:
     def yatai_cli():
         """Yatai Subcommands Groups"""
 
-    @yatai_cli.command()
+    @yatai_cli.command(name="login")
     @click.option(
         "--endpoint", type=click.STRING, help="Yatai endpoint, i.e: https://yatai.com"
     )
@@ -26,7 +26,7 @@ def add_login_command(cli: click.Group) -> None:
         help="Yatai context name for the endpoint and API token",
         default=default_context_name,
     )
-    def login(endpoint: str, api_token: str, context: str) -> None:  # type: ignore (not accessed)
+    def _(endpoint: str, api_token: str, context: str) -> None:
         """Login to Yatai server."""
         if not endpoint:
             raise CLIException("need --endpoint")

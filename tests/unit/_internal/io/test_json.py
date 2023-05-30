@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+import enum
 import json
 import typing as t
 import asyncio
@@ -13,6 +15,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import pydantic
+from typing_extensions import Literal
 
 from bentoml.io import JSON
 from bentoml.exceptions import BadInput
@@ -45,6 +48,47 @@ class ExampleGeneric(str, np.generic):
 class ExampleAttrsClass:
     name: str
     endpoints: t.List[str]
+
+
+@attr.define
+class FirstNestedAttrsClass:
+    example: ExampleAttrsClass
+
+
+@attr.define
+class ContainerAttrsClass:
+    example: t.List[ExampleAttrsClass]
+
+
+class TestEnum(enum.Enum):
+    first = enum.auto()
+    second = enum.auto()
+
+
+@attr.define
+class EnumAttrsClass:
+    enum: TestEnum
+
+
+if sys.version_info[:2] < (3, 8):
+
+    @attr.define
+    class LiteralAttrsClass:
+        tests: Literal["a", "b", "c"]
+
+    @attr.define
+    class CompositeLiteralAttrsClass:
+        tests: Literal["1", 1]
+
+else:
+
+    @attr.define
+    class LiteralAttrsClass:
+        tests: t.Literal["a", "b", "c"]
+
+    @attr.define
+    class CompositeLiteralAttrsClass:
+        tests: t.Literal["1", 1]
 
 
 class BaseSchema(pydantic.BaseModel):

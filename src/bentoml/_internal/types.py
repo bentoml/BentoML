@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os
 import sys
+import types
 import typing as t
 import logging
 from types import TracebackType
@@ -12,6 +13,8 @@ from datetime import time
 from datetime import datetime
 from datetime import timedelta
 from dataclasses import dataclass
+
+from typing_extensions import Literal
 
 if sys.version_info < (3, 8):
     import collections
@@ -121,6 +124,102 @@ else:
 
 
 T = t.TypeVar("T")
+
+
+try:
+    from typing import GenericAlias as TypingGenericAlias  # type: ignore
+except ImportError:
+    # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
+    TypingGenericAlias = ()
+
+if sys.version_info < (3, 10):
+    WithArgsTypes = (TypingGenericAlias,)
+else:
+    WithArgsTypes: t.Any = (t._GenericAlias, types.GenericAlias, types.UnionType)
+
+
+def lenient_issubclass(
+    cls: t.Any, class_or_tuple: type[t.Any] | tuple[type[t.Any], ...] | None
+) -> bool:
+    try:
+        return isinstance(cls, type) and issubclass(cls, class_or_tuple)  # type: ignore[arg-type]
+    except TypeError:
+        if isinstance(cls, WithArgsTypes):
+            return False
+        raise  # pragma: no cover
+
+
+def is_callable_type(type_: type[t.Any]) -> bool:
+    return type_ is t.Callable or get_origin(type_) is t.Callable
+
+
+LITERAL_TYPES: set[t.Any] = {Literal}
+if hasattr(t, "Literal"):
+    LITERAL_TYPES.add(t.Literal)
+
+
+def is_literal_type(type_: type[t.Any]) -> bool:
+    return t.Literal is not None and get_origin(type_) in LITERAL_TYPES
+
+
+def literal_values(type_: type[t.Any]) -> tuple[t.Any, ...]:
+    return get_args(type_)
+
+
+def all_literal_values(type_: type[t.Any]) -> tuple[t.Any, ...]:
+    """
+    This method is used to retrieve all Literal values as
+    Literal can be used recursively (see https://www.python.org/dev/peps/pep-0586)
+    e.g. `Literal[Literal[Literal[1, 2, 3], "foo"], 5, None]`
+    """
+    if not is_literal_type(type_):
+        return (type_,)
+
+    values = literal_values(type_)
+    return tuple(x for value in values for x in all_literal_values(value))
+
+
+def is_namedtuple(type_: type[t.Any]) -> bool:
+    """
+    Check if a given class is a named tuple.
+    It can be either a `typing.NamedTuple` or `collections.namedtuple`
+    """
+    return lenient_issubclass(type_, tuple) and hasattr(type_, "_fields")
+
+
+NoneType = None.__class__
+
+
+NONE_TYPES: tuple[t.Any, t.Any, t.Any] = (None, NoneType, t.Literal[None])
+
+
+if sys.version_info < (3, 8):
+    # Even though this implementation is slower, we need it for python 3.7:
+    # In python 3.7 "Literal" is not a builtin type and uses a different
+    # mechanism.
+    # for this reason `Literal[None] is Literal[None]` evaluates to `False`,
+    # breaking the faster implementation used for the other python versions.
+
+    def is_none_type(type_: t.Any) -> bool:
+        return type_ in NONE_TYPES
+
+elif sys.version_info[:2] == (3, 8):
+
+    def is_none_type(type_: t.Any) -> bool:
+        for none_type in NONE_TYPES:
+            if type_ is none_type:
+                return True
+        # With python 3.8, specifically 3.8.10, Literal "is" check sare very flakey
+        # can change on very subtle changes like use of types in other modules,
+        # hopefully this check avoids that issue.
+        if is_literal_type(type_):  # pragma: no cover
+            return all_literal_values(type_) == (None,)
+        return False
+
+else:
+
+    def is_none_type(type_: t.Any) -> bool:
+        return type_ in NONE_TYPES
 
 
 class LazyType(t.Generic[T]):

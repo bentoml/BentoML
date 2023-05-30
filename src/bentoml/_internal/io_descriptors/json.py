@@ -1,44 +1,40 @@
 from __future__ import annotations
 
-import json
-import typing as t
-import logging
 import dataclasses
+import json
+import logging
+import typing as t
 
 import attr
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .base import IODescriptor
+from ...exceptions import BadInput, InvalidArgument
+from ..service.openapi import REF_PREFIX, SUCCESS_DESCRIPTION
+from ..service.openapi.specification import MediaType, Schema
 from ..types import LazyType
-from ..utils import LazyLoader
-from ..utils import bentoml_cattr
-from ..utils.pkg import pkg_version_info
+from ..utils import LazyLoader, bentoml_cattr
 from ..utils.http import set_cookies
-from ...exceptions import BadInput
-from ...exceptions import InvalidArgument
-from ..service.openapi import REF_PREFIX
-from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import Schema
-from ..service.openapi.specification import MediaType
+from ..utils.pkg import pkg_version_info
+from .base import IODescriptor
 
 EXC_MSG = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install bentoml[io-json]'."
 
 if t.TYPE_CHECKING:
-    from types import UnionType
-
     import pydantic
     import pydantic.schema as schema
 
     if pkg_version_info("pydantic")[0] >= 2:
         import pydantic.json_schema as jschema
 
+    from attrs import AttrsInstance
     from google.protobuf import message as _message
     from google.protobuf import struct_pb2
     from typing_extensions import Self
 
-    from .base import OpenAPIResponse
+    from .. import external_typing as ext  # noqa: F401
     from ..context import ServiceContext as Context
+    from .base import OpenAPIResponse
 
 else:
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=EXC_MSG)
@@ -52,7 +48,7 @@ else:
     np = LazyLoader("np", globals(), "numpy")
 
 
-JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", None]
+JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", "AttrsInstance", None]
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +66,13 @@ class DefaultJsonEncoder(json.JSONEncoder):
         if LazyType["ext.PdSeries"]("pandas.Series").isinstance(o):
             return o.to_dict()  # type: ignore
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(o):
-            obj_dict = o.dict()
-            if "__root__" in obj_dict:
-                obj_dict = obj_dict.get("__root__")
-            return obj_dict
+            if pkg_version_info("pydantic")[0] >= 2:
+                return o.model_dump()
+            else:
+                obj_dict = o.dict()
+                if "__root__" in obj_dict:
+                    obj_dict = obj_dict.get("__root__")
+                return obj_dict
         if attr.has(o):
             return bentoml_cattr.unstructure(o)
         return super().default(o)
@@ -186,6 +185,7 @@ class JSON(
     def __init__(
         self,
         *,
+        attr_model: type[AttrsInstance] | None = None,
         pydantic_model: type[pydantic.BaseModel] | None = None,
         validate_json: bool | None = None,
         json_encoder: type[json.JSONEncoder] = DefaultJsonEncoder,
@@ -194,7 +194,13 @@ class JSON(
             assert issubclass(
                 pydantic_model, pydantic.BaseModel
             ), "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
+        if attr_model is not None:
+            assert (
+                pydantic_model is None
+            ), "attr_model and pydantic_model are mutually exclusive."
+            assert attr.has(attr_model), "'attr_model' must be an attrs class instance."
 
+        self._attr_model = attr_model
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder
 
@@ -210,7 +216,7 @@ class JSON(
 
         Args:
             sample: A JSON-like datatype, which can be either dict, str, list.
-                    ``sample`` will also accepting a Pydantic model.
+                    ``sample`` will also accepting a Pydantic model, Attr class instance or any arbitrary dict-like object.
 
                     .. code-block:: python
 
@@ -255,6 +261,8 @@ class JSON(
         """
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(sample):
             self._pydantic_model = sample.__class__
+        elif attr.has(type(sample)):
+            self._attr_model = sample.__class__
         elif isinstance(sample, str):
             try:
                 sample = json.loads(sample)
@@ -269,7 +277,10 @@ class JSON(
                 raise BadInput(
                     f"Unable to parse JSON bytes. Please make sure the input is a valid JSON bytes: {e}"
                 ) from None
-        elif not isinstance(sample, (dict, list)):
+        elif not (
+            LazyType["dict[str, t.Any]"](dict).isinstance(sample)
+            or LazyType["list[t.Any]"](list).isinstance(sample)
+        ):
             raise BadInput(
                 f"Unable to infer JSON type from sample: {sample}. Please make sure the input is a valid JSON object."
             )
@@ -280,9 +291,8 @@ class JSON(
             "id": self.descriptor_id,
             "args": {
                 "has_pydantic_model": self._pydantic_model is not None,
-                "has_json_encoder": not isinstance(
-                    self._json_encoder, DefaultJsonEncoder
-                ),
+                "has_json_encoder": self._json_encoder is not DefaultJsonEncoder,
+                "has_attr_model": self._attr_model is not None,
             },
         }
 
@@ -298,43 +308,55 @@ class JSON(
             logger.warning(
                 "BentoML does not support loading JSON encoders from URLs; output will be a normal dictionary."
             )
+        if "has_attr_model" in spec["args"] and spec["args"]["has_attr_model"]:
+            logger.warning(
+                "BentoML does not support loading attr models from URLs; output will be a normal dictionary."
+            )
 
         return cls()
 
-    def input_type(self) -> UnionType:
+    def input_type(self) -> t.Any:
         return JSONType
 
     def openapi_schema(self) -> Schema:
-        if not self._pydantic_model:
+        if self._pydantic_model:
+            # returns schemas from pydantic_model.
+            if pkg_version_info("pydantic")[0] >= 2:
+                json_schema = jschema.model_json_schema(
+                    self._pydantic_model, ref_template=REF_PREFIX + "{model}"
+                )
+                # NOTE: we don't need def here, as these will be available in openapi.components.
+                if "$defs" in json_schema:
+                    json_schema.pop("$defs", None)
+                return Schema(**json_schema)
+            else:
+                return Schema(
+                    **schema.model_process_schema(
+                        self._pydantic_model,
+                        model_name_map=schema.get_model_name_map(
+                            schema.get_flat_models_from_model(self._pydantic_model)
+                        ),
+                        ref_prefix=REF_PREFIX,
+                    )[0]
+                )
+        elif self._attr_model:
+            from ..service.openapi.utils import attrs_process_schema
+
+            return Schema(**attrs_process_schema(self._attr_model)[0])
+        else:
             return Schema(type="object")
 
-        # returns schemas from pydantic_model.
-        if pkg_version_info("pydantic")[0] >= 2:
-            json_schema = jschema.model_json_schema(
-                self._pydantic_model, ref_template=REF_PREFIX + "{model}"
-            )
-            # NOTE: we don't need def here, as these will be available in openapi.components.
-            if "$defs" in json_schema:
-                json_schema.pop("$defs", None)
-            return Schema(**json_schema)
-        else:
-            return Schema(
-                **schema.model_process_schema(
-                    self._pydantic_model,
-                    model_name_map=schema.get_model_name_map(
-                        schema.get_flat_models_from_model(self._pydantic_model)
-                    ),
-                    ref_prefix=REF_PREFIX,
-                )[0]
-            )
-
     def openapi_components(self) -> dict[str, t.Any] | None:
-        if not self._pydantic_model:
+        if self._pydantic_model:
+            from ..service.openapi.utils import pydantic_components_schema
+
+            return {"schemas": pydantic_components_schema(self._pydantic_model)}
+        elif self._attr_model:
+            from ..service.openapi.utils import attrs_components_schema
+
+            return {"schemas": attrs_components_schema(self._attr_model)}
+        else:
             return {}
-
-        from ..service.openapi.utils import pydantic_components_schema
-
-        return {"schemas": pydantic_components_schema(self._pydantic_model)}
 
     def openapi_example(self):
         if self.sample is not None:
@@ -345,6 +367,8 @@ class JSON(
                     return self.sample.model_dump()
                 else:
                     return self.sample.dict()
+            elif attr.has(type(self.sample)):
+                return bentoml_cattr.unstructure(self.sample)
             elif isinstance(self.sample, (str, list)):
                 return json.dumps(
                     self.sample,
@@ -354,7 +378,7 @@ class JSON(
                     indent=None,
                     separators=(",", ":"),
                 )
-            elif isinstance(self.sample, dict):
+            elif LazyType["dict[str, t.Any]"](dict).isinstance(self.sample):
                 return self.sample
 
     def openapi_request_body(self) -> dict[str, t.Any]:
@@ -395,6 +419,11 @@ class JSON(
                 return pydantic_model
             except pydantic.ValidationError as e:
                 raise BadInput(f"Invalid JSON input received: {e}") from None
+        elif self._attr_model:
+            try:
+                return bentoml_cattr.structure(json_obj, self._attr_model)
+            except Exception as e:
+                raise BadInput(f"Invalid JSON input received: {e}") from e
         else:
             return json_obj
 
@@ -407,6 +436,8 @@ class JSON(
                 obj = obj.model_dump()
             else:
                 obj = obj.dict()
+        elif attr.has(type(obj)):
+            obj = bentoml_cattr.unstructure(obj)
 
         json_str = (
             json.dumps(
@@ -448,6 +479,13 @@ class JSON(
                         return self._pydantic_model.parse_raw(content)
                 except pydantic.ValidationError as e:
                     raise BadInput(f"Invalid JSON input received: {e}") from None
+            elif self._attr_model:
+                try:
+                    return bentoml_cattr.structure(
+                        json.loads(content), self._attr_model
+                    )
+                except Exception as e:
+                    raise BadInput(f"Invalid JSON input received: {e}") from e
             try:
                 parsed = json.loads(content)
             except json.JSONDecodeError as e:
@@ -464,6 +502,12 @@ class JSON(
                         return self._pydantic_model.parse_obj(parsed)
                 except pydantic.ValidationError as e:
                     raise BadInput(f"Invalid JSON input received: {e}") from None
+            elif self._attr_model:
+                try:
+                    return bentoml_cattr.structure(parsed, self._attr_model)
+                except Exception as e:
+                    raise BadInput(f"Invalid JSON input received: {e}") from e
+
         return parsed
 
     async def to_proto(self, obj: JSONType) -> struct_pb2.Value:
@@ -472,6 +516,8 @@ class JSON(
                 obj = obj.model_dump()
             else:
                 obj = obj.dict()
+        elif attr.has(type(obj)):
+            obj = bentoml_cattr.unstructure(obj)
         msg = struct_pb2.Value()
         return parse_dict_to_proto(obj, msg, json_encoder=self._json_encoder)
 

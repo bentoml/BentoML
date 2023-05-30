@@ -6,7 +6,6 @@ import json
 import typing as t
 import asyncio
 import logging
-from typing import TYPE_CHECKING
 from functools import partial
 from dataclasses import dataclass
 
@@ -23,7 +22,8 @@ from bentoml.grpc.utils import import_generated_stubs
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from attr import AttrsInstance
     from _pytest.logging import LogCaptureFixture
     from google.protobuf import struct_pb2
 
@@ -89,6 +89,18 @@ else:
     @attr.define
     class CompositeLiteralAttrsClass:
         tests: t.Literal["1", 1]
+
+
+@pytest.mark.parametrize(
+    "attr_class", [v for i, v in globals().items() if i.endswith("AttrsClass")]
+)
+def test_json_with_attrs_class(attr_class: type[AttrsInstance]):
+    descriptor = JSON(attr_model=attr_class)
+    assert descriptor
+
+    # openapi_schema
+    schema = descriptor.openapi_schema()
+    assert schema
 
 
 class BaseSchema(pydantic.BaseModel):

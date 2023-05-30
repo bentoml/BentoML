@@ -149,6 +149,16 @@ def lenient_issubclass(
         raise  # pragma: no cover
 
 
+def lenient_resolve_types(tp: t.Any) -> t.Any:
+    """A very loosely resolve type function, checking for str type"""
+    if isinstance(tp, str):
+        try:
+            return eval(tp, {}, {})
+        except Exception:
+            return str
+    return tp
+
+
 def is_callable_type(type_: type[t.Any]) -> bool:
     return type_ is t.Callable or get_origin(type_) is t.Callable
 

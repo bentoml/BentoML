@@ -328,7 +328,7 @@ def add_bento_management_commands(cli: Group):
 
         if output == "tag":
             click.echo(bento.tag)
-            return
+            return bento
 
         if not get_quiet_mode():
             click.echo(BENTOML_FIGLET)

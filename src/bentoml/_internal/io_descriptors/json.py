@@ -195,10 +195,12 @@ class JSON(
                 pydantic_model, pydantic.BaseModel
             ), "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
         if attr_model is not None:
-            assert (
-                pydantic_model is None
-            ), "attr_model and pydantic_model are mutually exclusive."
-            assert attr.has(attr_model), "'attr_model' must be an attrs class instance."
+            if pydantic_model is not None:
+                raise ValueError(
+                    "'attr_model' and 'pydantic_model' are mutually exclusive."
+                )
+            if not attr.has(attr_model):
+                raise TypeError("'attr_model' must be an attrs class instance.")
 
         self._attr_model = attr_model
         self._pydantic_model = pydantic_model

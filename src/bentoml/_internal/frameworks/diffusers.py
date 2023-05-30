@@ -4,24 +4,23 @@ import os
 import shutil
 import typing as t
 import logging
-from typing import TYPE_CHECKING
 
 import attr
 
 import bentoml
-from bentoml import Tag
-from bentoml.models import ModelContext
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import MissingDependencyException
 
+from ..tag import Tag
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
+from ..models.model import ModelContext
 from ..models.model import PartialKwargsModelOptions
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from types import ModuleType
 
-    from bentoml.types import ModelSignature
-    from bentoml.types import ModelSignatureDict
+    from ..models.model import ModelSignature
+    from ..models.model import ModelSignatureDict
 
 
 try:
@@ -224,7 +223,7 @@ def import_model(
         signatures:
             Signatures of predict methods to be used. If not provided, the signatures
             default to {"__call__": {"batchable": False}}. See
-            :obj:`~bentoml.types.ModelSignature` for more details.
+            :obj:`~bentoml._internal.models.model.ModelSignature` for more details.
         labels:
             A default set of management labels to be associated with the model. For
             example: ``{"training-set": "data-v1"}``.
@@ -335,7 +334,7 @@ def save_model(
         signatures:
             Signatures of predict methods to be used. If not provided, the signatures
             default to {"__call__": {"batchable": False}}. See
-            :obj:`~bentoml.types.ModelSignature` for more details.
+            :obj:`~bentoml._internal.models.model.ModelSignature` for more details.
         labels:
             A default set of management labels to be associated with the model. For
             example: ``{"training-set": "data-v1"}``.

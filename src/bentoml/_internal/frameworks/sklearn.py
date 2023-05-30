@@ -3,25 +3,23 @@ from __future__ import annotations
 import typing as t
 import logging
 from types import ModuleType
-from typing import TYPE_CHECKING
 
 import bentoml
-from bentoml import Tag
-from bentoml.models import Model
-from bentoml.models import ModelContext
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import MissingDependencyException
 
+from ..tag import Tag
 from ..types import LazyType
+from ...models import Model
+from ...models import ModelContext
 from ..utils.pkg import get_pkg_version
+from ...exceptions import NotFound
+from ...exceptions import MissingDependencyException
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from sklearn.base import BaseEstimator
     from sklearn.pipeline import Pipeline
 
-    from bentoml.types import ModelSignature
-
     from .. import external_typing as ext
+    from ..models.model import ModelSignature
     from ..models.model import ModelSignaturesType
 
     SklearnModel: t.TypeAlias = BaseEstimator | Pipeline

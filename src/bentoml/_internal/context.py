@@ -73,7 +73,7 @@ class Metadata(t.Mapping[str, str], ABC):
 
 
 @attr.define
-class InferenceApiContext:
+class Context:  # NOTE: This is the InferenceApiContext
     request: "RequestContext"
     response: "ResponseContext"
 
@@ -82,11 +82,11 @@ class InferenceApiContext:
         self.response = response
 
     @staticmethod
-    def from_http(request: "starlette.requests.Request") -> "InferenceApiContext":
-        request_ctx = InferenceApiContext.RequestContext.from_http(request)
-        response_ctx = InferenceApiContext.ResponseContext()
+    def from_http(request: "starlette.requests.Request") -> "Context":
+        request_ctx = Context.RequestContext.from_http(request)
+        response_ctx = Context.ResponseContext()
 
-        return InferenceApiContext(request_ctx, response_ctx)
+        return Context(request_ctx, response_ctx)
 
     @attr.define
     class RequestContext:
@@ -102,8 +102,8 @@ class InferenceApiContext:
         @staticmethod
         def from_http(
             request: "starlette.requests.Request",
-        ) -> "InferenceApiContext.RequestContext":
-            return InferenceApiContext.RequestContext(
+        ) -> "Context.RequestContext":
+            return Context.RequestContext(
                 request.headers,  # type: ignore # coercing Starlette types to Metadata
                 request.query_params,  # type: ignore
             )

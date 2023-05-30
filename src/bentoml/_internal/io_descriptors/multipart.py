@@ -28,7 +28,7 @@ if t.TYPE_CHECKING:
 
     from .base import OpenAPIResponse
     from ..types import LazyType
-    from ..context import InferenceApiContext as Context
+    from ..context import Context as Context
 else:
     pb, _ = import_generated_stubs("v1")
     pb_v1alpha1, _ = import_generated_stubs("v1alpha1")

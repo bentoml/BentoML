@@ -39,7 +39,7 @@ if t.TYPE_CHECKING:
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
-    from ..context import InferenceApiContext as Context
+    from ..context import Context as Context
 
 else:
     pb, _ = import_generated_stubs("v1")

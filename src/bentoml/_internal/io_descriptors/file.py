@@ -31,7 +31,7 @@ if t.TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .base import OpenAPIResponse
-    from ..context import InferenceApiContext as Context
+    from ..context import Context as Context
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
 else:

@@ -21,7 +21,7 @@ from .http import set_cookies
 from ...exceptions import BentoMLException
 
 if t.TYPE_CHECKING:
-    from ..context import InferenceApiContext as Context
+    from ..context import Context as Context
 
 # Code below adapted from starlette's formparser. See the license: https://github.com/encode/starlette/blob/fc480890fe1f1e421746de303c6f8da1323e5626/LICENSE.md
 

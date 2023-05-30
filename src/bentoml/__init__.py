@@ -14,204 +14,167 @@ To learn more, visit BentoML documentation at: http://docs.bentoml.org
 To get involved with the development, find us on GitHub: https://github.com/bentoml
 And join us in the BentoML slack community: https://l.bentoml.com/join-slack
 """
+from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import typing as t
 
 from ._internal.configuration import load_config
-from ._internal.configuration import save_config
+from ._internal.configuration import save_config as save_config
 from ._internal.configuration import BENTOML_VERSION as __version__
-from ._internal.configuration import set_serialization_strategy
 
 # Inject dependencies and configurations
 load_config()
 
-# Bento management APIs
-from .bentos import get
-from .bentos import list  # pylint: disable=W0622
-from .bentos import pull
-from .bentos import push
-from .bentos import serve
-from .bentos import delete
-from .bentos import export_bento
-from .bentos import import_bento
+from . import utils as utils
 
-# server API
-from .server import GrpcServer
-from .server import HTTPServer
+_import_structure = {
+    # NOTE: Bento management APIs.
+    "bentos": [
+        "get",
+        "list",
+        "pull",
+        "push",
+        "serve",
+        "delete",
+        "export_bento",
+        "import_bento",
+    ],
+    # NOTE: server APIs.
+    "server": ["GrpcServer", "HTTPServer"],
+    # NOTE: BentoML built-in types
+    "_internal.tag": ["Tag"],
+    "_internal.bento": ["Bento"],
+    "_internal.models": ["Model"],
+    "_internal.runner": ["Runner", "Runnable"],
+    "_internal.context": ["Context"],
+    "_internal.service": ["Service"],
+    "_internal.utils.http": ["Cookie"],
+    "_internal.yatai_client": ["YataiClient"],
+    "_internal.configuration": ["set_serialization_strategy"],
+    "_internal.monitoring.api": ["monitor"],
+    "_internal.service.loader": ["load"],
+    # NOTE: Provisional import. For better ease-of-use.
+    # A mixed of BentoML's and framework exports
+    "batch": [],
+    "catboost": [],
+    "client": [],
+    "container": [],
+    "detectron": [],
+    "diffusers": [],
+    "easyocr": [],
+    "evalml": [],
+    "exceptions": [],
+    "fastai": [],
+    "fasttext": [],
+    "flax": [],
+    "gluon": [],
+    "h2o": [],
+    "io": [],
+    "keras": [],
+    "lightgbm": [],
+    "metrics": [],
+    "mlflow": [],
+    "models": [],
+    "monitoring": [],
+    "onnx": [],
+    "onnxmlir": [],
+    "paddle": [],
+    "picklable_model": [],
+    "pycaret": [],
+    "pyspark": [],
+    "pytorch": [],
+    "pytorch_lightning": [],
+    "ray": [],
+    "sklearn": [],
+    "spacy": [],
+    "statsmodels": [],
+    "tensorflow": [],
+    "tensorflow_v1": [],
+    "torchscript": [],
+    "transformers": [],
+    "triton": [],
+    "utils": [],
+    "xgboost": [],
+}
 
-# BentoML built-in types
-from ._internal.tag import Tag
-from ._internal.bento import Bento
-from ._internal.models import Model
-from ._internal.runner import Runner
-from ._internal.runner import Runnable
-from ._internal.context import InferenceApiContext as Context
-from ._internal.service import Service
-from ._internal.utils.http import Cookie
-from ._internal.yatai_client import YataiClient
-from ._internal.monitoring.api import monitor
-from ._internal.service.loader import load
 
-# Framework specific modules, model management and IO APIs are lazily loaded upon import.
-if TYPE_CHECKING:
-    from . import h2o
-    from . import ray
-    from . import flax
-    from . import onnx
-    from . import gluon
-    from . import keras
-    from . import spacy
-    from . import fastai
-    from . import mlflow
-    from . import paddle
-    from . import triton
-    from . import easyocr
-    from . import pycaret
-    from . import pytorch
-    from . import sklearn
-    from . import xgboost
-    from . import catboost
-    from . import lightgbm
-    from . import onnxmlir
-    from . import detectron
-    from . import diffusers
-    from . import tensorflow
-    from . import statsmodels
-    from . import torchscript
-    from . import transformers
-    from . import tensorflow_v1
-    from . import picklable_model
-    from . import pytorch_lightning
+# NOTE: The actual import are lazily loaded. All imports defined under TYPE_CHECKING
+# are for IDE and linter to be nice with.
+if t.TYPE_CHECKING:
+    # Framework imports
+    from . import io as io
+    from . import h2o as h2o
+    from . import ray as ray
+    from . import flax as flax
+    from . import onnx as onnx
+    from . import batch as batch  # Batch API
+    from . import gluon as gluon
+    from . import keras as keras
+    from . import spacy as spacy
+    from . import client as client  # Client API
+    from . import fastai as fastai
+    from . import mlflow as mlflow
+    from . import models as models
+    from . import paddle as paddle
+    from . import server as server  # Server API
+    from . import triton as triton
+    from . import easyocr as easyocr
+    from . import metrics as metrics  # Prometheus metrics client
+    from . import pycaret as pycaret
+    from . import pytorch as pytorch
+    from . import sklearn as sklearn
+    from . import xgboost as xgboost
+    from . import catboost as catboost
+    from . import lightgbm as lightgbm
+    from . import onnxmlir as onnxmlir
+    from . import container as container  # Container API
+    from . import detectron as detectron
+    from . import diffusers as diffusers
+    from . import exceptions as exceptions  # BentoML exceptions
+    from . import tensorflow as tensorflow
+    from . import statsmodels as statsmodels
+    from . import torchscript as torchscript
+    from . import transformers as transformers
+    from . import tensorflow_v1 as tensorflow_v1
+    from . import picklable_model as picklable_model
+    from . import pytorch_lightning as pytorch_lightning
 
-    # isort: off
-    from . import io
-    from . import models
-    from . import metrics  # Prometheus metrics client
-    from . import container  # Container API
-    from . import client  # Client API
-    from . import batch  # Batch API
-    from . import exceptions  # BentoML exceptions
-    from . import server  # Server API
+    # Bento management APIs
+    from .bentos import get as get
+    from .bentos import list as list  # pylint: disable=W0622
+    from .bentos import pull as pull
+    from .bentos import push as push
+    from .bentos import serve as serve
+    from .bentos import delete as delete
+    from .bentos import export_bento as export_bento
+    from .bentos import import_bento as import_bento
 
-    # isort: on
+    # server API
+    from .server import GrpcServer as GrpcServer
+    from .server import HTTPServer as HTTPServer
+
+    # BentoML built-in types
+    from ._internal.tag import Tag as Tag
+    from ._internal.bento import Bento as Bento
+    from ._internal.models import Model as Model
+    from ._internal.runner import Runner as Runner
+    from ._internal.runner import Runnable as Runnable
+    from ._internal.context import Context as Context
+    from ._internal.service import Service as Service
+    from ._internal.utils.http import Cookie as Cookie
+    from ._internal.yatai_client import YataiClient as YataiClient
+    from ._internal.configuration import (
+        set_serialization_strategy as set_serialization_strategy,
+    )
+    from ._internal.monitoring.api import monitor as monitor
+    from ._internal.service.loader import load as load
 else:
-    from ._internal.utils import LazyLoader as _LazyLoader
+    import sys
 
-    # ML Frameworks
-    catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
-    detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")
-    diffusers = _LazyLoader("bentoml.diffusers", globals(), "bentoml.diffusers")
-    easyocr = _LazyLoader("bentoml.easyocr", globals(), "bentoml.easyocr")
-    flax = _LazyLoader("bentoml.flax", globals(), "bentoml.flax")
-    fastai = _LazyLoader("bentoml.fastai", globals(), "bentoml.fastai")
-    gluon = _LazyLoader("bentoml.gluon", globals(), "bentoml.gluon")
-    h2o = _LazyLoader("bentoml.h2o", globals(), "bentoml.h2o")
-    lightgbm = _LazyLoader("bentoml.lightgbm", globals(), "bentoml.lightgbm")
-    mlflow = _LazyLoader("bentoml.mlflow", globals(), "bentoml.mlflow")
-    onnx = _LazyLoader("bentoml.onnx", globals(), "bentoml.onnx")
-    onnxmlir = _LazyLoader("bentoml.onnxmlir", globals(), "bentoml.onnxmlir")
-    keras = _LazyLoader("bentoml.keras", globals(), "bentoml.keras")
-    paddle = _LazyLoader("bentoml.paddle", globals(), "bentoml.paddle")
-    pycaret = _LazyLoader("bentoml.pycaret", globals(), "bentoml.pycaret")
-    pytorch = _LazyLoader("bentoml.pytorch", globals(), "bentoml.pytorch")
-    pytorch_lightning = _LazyLoader(
-        "bentoml.pytorch_lightning", globals(), "bentoml.pytorch_lightning"
+    sys.modules[__name__] = utils.LazyModule(
+        __name__,
+        globals()["__file__"],
+        _import_structure,
+        module_spec=__spec__,
+        extra_objects={"__version__": __version__},
     )
-    sklearn = _LazyLoader("bentoml.sklearn", globals(), "bentoml.sklearn")
-    picklable_model = _LazyLoader(
-        "bentoml.picklable_model", globals(), "bentoml.picklable_model"
-    )
-    spacy = _LazyLoader("bentoml.spacy", globals(), "bentoml.spacy")
-    statsmodels = _LazyLoader("bentoml.statsmodels", globals(), "bentoml.statsmodels")
-    tensorflow = _LazyLoader("bentoml.tensorflow", globals(), "bentoml.tensorflow")
-    tensorflow_v1 = _LazyLoader(
-        "bentoml.tensorflow_v1", globals(), "bentoml.tensorflow_v1"
-    )
-    torchscript = _LazyLoader("bentoml.torchscript", globals(), "bentoml.torchscript")
-    transformers = _LazyLoader(
-        "bentoml.transformers", globals(), "bentoml.transformers"
-    )
-    xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
-
-    # Integrations
-    triton = _LazyLoader("bentoml.triton", globals(), "bentoml.triton")
-    ray = _LazyLoader("bentoml.ray", globals(), "bentoml.ray")
-
-    io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
-    batch = _LazyLoader("bentoml.batch", globals(), "bentoml.batch")
-    models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
-    metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
-    container = _LazyLoader("bentoml.container", globals(), "bentoml.container")
-    client = _LazyLoader("bentoml.client", globals(), "bentoml.client")
-    server = _LazyLoader("bentoml.server", globals(), "bentoml.server")
-    exceptions = _LazyLoader("bentoml.exceptions", globals(), "bentoml.exceptions")
-
-    del _LazyLoader
-
-__all__ = [
-    "__version__",
-    "Context",
-    "Cookie",
-    "Service",
-    "models",
-    "batch",
-    "metrics",
-    "container",
-    "client",
-    "server",
-    "io",
-    "Tag",
-    "Model",
-    "Runner",
-    "Runnable",
-    "YataiClient",  # Yatai REST API Client
-    # bento APIs
-    "list",
-    "get",
-    "delete",
-    "import_bento",
-    "export_bento",
-    "load",
-    "push",
-    "pull",
-    "serve",
-    "Bento",
-    "exceptions",
-    # server APIs
-    "HTTPServer",
-    "GrpcServer",
-    # Framework specific modules
-    "catboost",
-    "detectron",
-    "diffusers",
-    "easyocr",
-    "flax",
-    "fastai",
-    "gluon",
-    "h2o",
-    "lightgbm",
-    "mlflow",
-    "onnx",
-    "onnxmlir",
-    "paddle",
-    "picklable_model",
-    "pycaret",
-    "pytorch",
-    "pytorch_lightning",
-    "keras",
-    "sklearn",
-    "spacy",
-    "statsmodels",
-    "tensorflow",
-    "tensorflow_v1",
-    "torchscript",
-    "transformers",
-    "xgboost",
-    # integrations
-    "ray",
-    "triton",
-    "monitor",
-    "load_config",
-    "save_config",
-    "set_serialization_strategy",
-]

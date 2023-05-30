@@ -4,27 +4,25 @@ import os
 import typing as t
 import logging
 from types import ModuleType
-from typing import TYPE_CHECKING
 
 import attr
 
 import bentoml
-from bentoml import Tag
-from bentoml.models import ModelContext
-from bentoml.models import ModelOptions
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import MissingDependencyException
 
+from ..tag import Tag
+from ..models import ModelContext
+from ..models import ModelOptions
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import PackageNotFoundError
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 
-if TYPE_CHECKING:
-    from bentoml.types import ModelSignature
-    from bentoml.types import ModelSignatureDict
-
+if t.TYPE_CHECKING:
     from .utils.onnx import ONNXArgType
     from .utils.onnx import ONNXArgCastedType
+    from ..models.model import ModelSignature
+    from ..models.model import ModelSignatureDict
 
     ProvidersType = list[str | tuple[str, dict[str, t.Any]]]
 
@@ -176,7 +174,7 @@ def save_model(
             The ONNX model to be saved.
         signatures (``dict[str, ModelSignatureDict]``, optional):
             Signatures of predict methods to be used. If not provided, the signatures default to
-            ``{"run": {"batchable": False}}``. See :obj:`~bentoml.types.ModelSignature` for more details.
+            ``{"run": {"batchable": False}}``. See :obj:`~bentoml._internal.models.model.ModelSignature` for more details.
             ``bentoml.onnx`` internally use ``onnxruntime.InferenceSession`` to run inference.
             When the original model is converted to ONNX format and loaded by
             ``onnxruntime.InferenceSession``, the inference method of the original model is

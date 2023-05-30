@@ -177,7 +177,7 @@ def save_model(
               :obj:`~bentoml.Tag` name.
         module: ``flax.linen.Module`` to be saved.
         signatures: Signatures of predict methods to be used. If not provided, the signatures default to
-                    ``predict``. See :obj:`~bentoml.types.ModelSignature` for more details.
+                    ``predict``. See :obj:`~bentoml._internal.models.model.ModelSignature` for more details.
         labels: A default set of management labels to be associated with the model. An example is ``{"training-set": "data-1"}``.
         custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
                         Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.

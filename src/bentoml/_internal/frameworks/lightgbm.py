@@ -3,24 +3,22 @@ from __future__ import annotations
 import typing as t
 import logging
 from types import ModuleType
-from typing import TYPE_CHECKING
 
 import numpy as np
 
 import bentoml
-from bentoml import Tag
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import InvalidArgument
-from bentoml.exceptions import MissingDependencyException
 
+from ..tag import Tag
 from ..utils.pkg import get_pkg_version
+from ...exceptions import NotFound
+from ...exceptions import InvalidArgument
+from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
 
-if TYPE_CHECKING:
-    from bentoml.types import ModelSignature
-    from bentoml.types import ModelSignatureDict
-
+if t.TYPE_CHECKING:
     from .. import external_typing as ext
+    from ..models.model import ModelSignature
+    from ..models.model import ModelSignatureDict
 
 try:
     import lightgbm as lgb
@@ -114,7 +112,7 @@ def save_model(
             The LightGBM model (booster) to be saved.
         signatures (``dict[str, ModelSignatureDict]``, optional):
             Signatures of predict methods to be used. If not provided, the signatures default to
-            ``{"predict": {"batchable": False}}``. See :obj:`~bentoml.types.ModelSignature` for more
+            ``{"predict": {"batchable": False}}``. See :obj:`~bentoml._internal.models.model.ModelSignature` for more
             details.
         labels (``dict[str, str]``, optional):
             A default set of management labels to be associated with the model. An example is

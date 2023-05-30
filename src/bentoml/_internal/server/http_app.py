@@ -12,8 +12,8 @@ from simple_di import Provide
 from starlette.responses import PlainTextResponse
 from starlette.exceptions import HTTPException
 
+from ..context import Context as Context
 from ..context import trace_context
-from ..context import InferenceApiContext as Context
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service

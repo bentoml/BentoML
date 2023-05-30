@@ -36,6 +36,7 @@ from ...types import is_literal_type
 from ...types import is_callable_type
 from ...types import all_literal_values
 from ...types import lenient_issubclass
+from ...types import lenient_resolve_types
 from ...utils import LazyLoader
 from ...utils import bentoml_cattr
 from ...utils.pkg import pkg_version_info
@@ -448,7 +449,7 @@ def attrs_attribute_singleton_schema(
     definitions: dict[str, t.Any] = {}
     nested_models: set[str] = set()
 
-    # This branch is hit when attribute is a generic type when handling container type
+    # This branch is an early hit when attribute is a generic type when handling container type
     # Hmm, maybe we should handling this in attrs_attribute_type_schema?
     # XXX: This is probably a bug, but it works for now.
     if not hasattr(attribute, "type"):
@@ -456,7 +457,8 @@ def attrs_attribute_singleton_schema(
         add_field_type_to_schema(attribute, schema_)
         return schema_, definitions, nested_models
 
-    tp = attribute.type
+    # NOTE: resolve attribute.type if it is a string type, possibly a forward reference
+    tp = lenient_resolve_types(attribute.type)
 
     if get_origin(tp) in {list, tuple, t.Sequence, set, frozenset, t.Iterable, deque}:
         return attrs_attribute_singleton_container_schema(

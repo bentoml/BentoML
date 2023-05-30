@@ -68,9 +68,7 @@ def _str2cls(
 
     import importlib
 
-    splitted = full_cls_str.rsplit(".", 1)
-    module_str = splitted[0]
-    cls_str = splitted[1]
+    module_name, _, class_name = full_cls_str.rpartition(".")
 
     module = importlib.import_module(module_str)
     cls = getattr(module, cls_str)

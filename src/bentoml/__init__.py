@@ -25,7 +25,7 @@ from ._internal.configuration import BENTOML_VERSION as __version__
 # Inject dependencies and configurations
 load_config()
 
-from . import utils as utils
+from ._internal import utils as utils
 
 _import_structure = {
     # NOTE: Bento management APIs.

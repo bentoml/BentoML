@@ -198,7 +198,7 @@ def is_namedtuple(type_: type[t.Any]) -> bool:
     return lenient_issubclass(type_, tuple) and hasattr(type_, "_fields")
 
 
-NoneType = None.__class__
+NoneType = types.NoneType
 
 if sys.version_info[:2] < (3, 8):
     _none_type: tuple[t.Any, t.Any, t.Any] = (None, NoneType, Literal[None])

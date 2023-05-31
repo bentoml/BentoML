@@ -16,14 +16,14 @@ def test_regression():
     The core runtime for loading bentoml library is around 170ms, and hence the threshold is set.
     This upper bound is loosely defined, but provide a good enough upper bound for the regression test.
     """
-    from bentoml_cli.cli import cli
+    from bentoml_cli.cli import bentoml_cli
 
     # note that this should only be run in a single process.
     with runner.isolation():
-        prog_name = runner.get_default_prog_name(cli)
+        prog_name = runner.get_default_prog_name(bentoml_cli)
         start = time.perf_counter_ns()
         try:
-            _ = cli.main(args=shlex.split("--help"), prog_name=prog_name)
+            _ = bentoml_cli.main(args=shlex.split("--help"), prog_name=prog_name)
         except SystemExit:
             finish = time.perf_counter_ns() - start
 

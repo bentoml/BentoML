@@ -70,8 +70,8 @@ def _str2cls(
 
     module_name, _, class_name = full_cls_str.rpartition(".")
 
-    module = importlib.import_module(module_str)
-    cls = getattr(module, cls_str)
+    module = importlib.import_module(module_name)
+    cls = getattr(module, class_name)
     return cls
 
 

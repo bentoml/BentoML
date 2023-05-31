@@ -105,11 +105,15 @@ class HTTPAppFactory(BaseAppFactory):
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
+        timeout: int = Provide[BentoMLContainer.api_server_config.traffic.timeout],
+        max_concurrency: int
+        | None = Provide[BentoMLContainer.api_server_config.traffic.max_concurrency],
     ):
         self.bento_service = bento_service
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
         self.enable_metrics = enable_metrics
+        super().__init__(timeout=timeout, max_concurrency=max_concurrency)
 
     @property
     def name(self) -> str:
@@ -252,11 +256,6 @@ class HTTPAppFactory(BaseAppFactory):
                         has_response_content_type=access_log_config.response_content_type.get(),
                     )
                 )
-
-        from .http.timeout import TimeoutMiddleware
-
-        api_server_timeout = BentoMLContainer.api_server_config.timeout.get()
-        middlewares.append(Middleware(TimeoutMiddleware, timeout=api_server_timeout))
 
         return middlewares
 

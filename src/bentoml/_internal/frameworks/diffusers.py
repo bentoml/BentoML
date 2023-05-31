@@ -188,7 +188,7 @@ def load_model(
 
 
 def import_model(
-    name: str,
+    name: Tag | str,
     model_name_or_path: str | os.PathLike,
     *,
     proxies: dict[str, str] | None = None,
@@ -284,7 +284,6 @@ def import_model(
         metadata=metadata,
         context=context,
     ) as bento_model:
-
         diffusion_model_dir = bento_model.path_of(DIFFUSION_MODEL_FOLDER)
         ignore = shutil.ignore_patterns(".git")
 
@@ -292,7 +291,6 @@ def import_model(
             src_dir = model_name_or_path
 
         else:
-
             try:
                 from huggingface_hub import snapshot_download
             except ImportError:  # pragma: no cover
@@ -316,7 +314,7 @@ def import_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     pipeline: diffusers.DiffusionPipeline,
     *,
     signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
@@ -390,7 +388,6 @@ def save_model(
         metadata=metadata,
         context=context,
     ) as bento_model:
-
         diffusion_model_dir = bento_model.path_of(DIFFUSION_MODEL_FOLDER)
         pipeline.save_pretrained(diffusion_model_dir)
 
@@ -459,7 +456,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             *args: t.Any,
             **kwargs: t.Any,
         ) -> t.Any:
-
             if method_partial_kwargs is not None:
                 kwargs = dict(method_partial_kwargs, **kwargs)
 

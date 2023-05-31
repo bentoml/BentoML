@@ -118,7 +118,7 @@ bentoml serve
 Sent a prediction request:
 
 ```bash
-curl -F 'image=@samples/1.png' http://127.0.0.1:3000/predict_image
+curl -F 'image=@samples/1.png' http://127.0.0.1:3000/predict
 ```
 
 Build a Bento and generate a docker image:

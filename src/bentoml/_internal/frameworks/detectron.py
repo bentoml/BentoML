@@ -129,7 +129,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     checkpointables: Engine.DefaultPredictor | nn.Module,
     config: Config.CfgNode | None = None,
     *,

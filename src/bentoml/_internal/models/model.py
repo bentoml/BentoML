@@ -146,7 +146,7 @@ class Model(StoreItem):
     @classmethod
     def create(
         cls,
-        name: str,
+        name: Tag | str,
         *,
         module: str,
         api_version: str,
@@ -180,7 +180,7 @@ class Model(StoreItem):
         Returns:
             object: Model instance created in temporary filesystem
         """
-        tag = Tag.from_str(name)
+        tag = Tag.from_taglike(name)
         if tag.version is None:
             tag = tag.make_new_version()
         labels = {} if labels is None else labels

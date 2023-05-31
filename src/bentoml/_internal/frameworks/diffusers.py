@@ -488,7 +488,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     ] | None = bento_options.device_map
     load_pretrained_extra_kwargs = bento_options.load_pretrained_extra_kwargs
 
-
     class DiffusersRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True

@@ -64,6 +64,7 @@ yatai_client = BentoMLContainer.yatai_client.get()
 
 @click.group('bentos')
 def bento_commands():
+    """Bento management commands"""
     pass
 
 @bento_commands.command()

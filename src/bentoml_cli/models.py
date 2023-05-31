@@ -49,7 +49,7 @@ def add_model_management_commands(cli: Group) -> None:
 
     @cli.group(name="models", cls=BentoMLCommandGroup)
     def model_cli():
-        """Model Subcommands Groups"""
+        """Model management commands"""
 
     @model_cli.command()
     @click.argument("model_tag", type=click.STRING)

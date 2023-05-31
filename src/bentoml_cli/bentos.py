@@ -10,12 +10,11 @@ from simple_di import Provide
 from rich.table import Table
 from rich.syntax import Syntax
 
-from bentoml_cli.utils import is_valid_bento_tag
-from bentoml_cli.utils import is_valid_bento_name
-
 import bentoml
 from bentoml import Tag
 from bentoml.bentos import import_bento
+from bentoml_cli.utils import is_valid_bento_tag
+from bentoml_cli.utils import is_valid_bento_name
 from bentoml._internal.utils import rich_console as console
 from bentoml._internal.utils import calc_dir_size
 from bentoml._internal.utils import human_readable_size
@@ -25,7 +24,7 @@ from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
 from bentoml._internal.configuration import get_quiet_mode
 from bentoml._internal.bento.build_config import BentoBuildConfig
 from bentoml._internal.configuration.containers import BentoMLContainer
-    
+
 if t.TYPE_CHECKING:
     from click import Context
     from click import Parameter
@@ -62,10 +61,12 @@ def parse_delete_targets_argument_callback(
 bento_store = BentoMLContainer.bento_store.get()
 yatai_client = BentoMLContainer.yatai_client.get()
 
-@click.group('bentos')
+
+@click.group("bentos")
 def bento_commands():
     """Bento management commands"""
     pass
+
 
 @bento_commands.command()
 @click.argument("bento_tag", type=click.STRING)
@@ -92,6 +93,7 @@ def get(bento_tag: str, output: str) -> None:
     else:
         info = yaml.dump(bento.info, indent=2, sort_keys=False)
         console.print(Syntax(info, "yaml", background_color="default"))
+
 
 @bento_commands.command(name="list")
 @click.argument("bento_name", type=click.STRING, required=False)
@@ -121,9 +123,7 @@ def list_bentos(bento_name: str, output: str) -> None:
                 "%Y-%m-%d %H:%M:%S"
             ),
         }
-        for bento in sorted(
-            bentos, key=lambda x: x.info.creation_time, reverse=True
-        )
+        for bento in sorted(bentos, key=lambda x: x.info.creation_time, reverse=True)
     ]
 
     if output == "json":
@@ -144,6 +144,7 @@ def list_bentos(bento_name: str, output: str) -> None:
                 bento["creation_time"],
             )
         console.print(table)
+
 
 @bento_commands.command()
 @click.argument(
@@ -191,6 +192,7 @@ def delete(delete_targets: list[str], yes: bool) -> None:
     for target in delete_targets:
         delete_target(target)
 
+
 @bento_commands.command()
 @click.argument("bento_tag", type=click.STRING)
 @click.argument(
@@ -221,6 +223,7 @@ def export(bento_tag: str, out_path: str) -> None:
     out_path = bento.export(out_path)
     click.echo(f"{bento} exported to {out_path}.")
 
+
 @bento_commands.command(name="import")
 @click.argument("bento_path", type=click.STRING)
 def import_bento_(bento_path: str) -> None:
@@ -238,6 +241,7 @@ def import_bento_(bento_path: str) -> None:
     bento = import_bento(bento_path)
     click.echo(f"{bento} imported.")
 
+
 @bento_commands.command()
 @click.argument("bento_tag", type=click.STRING)
 @click.option(
@@ -247,12 +251,11 @@ def import_bento_(bento_path: str) -> None:
     default=False,
     help="Force pull from yatai to local and overwrite even if it already exists in local",
 )
-@click.option(
-    "--context", type=click.STRING, default=None, help="Yatai context name."
-)
+@click.option("--context", type=click.STRING, default=None, help="Yatai context name.")
 def pull(bento_tag: str, force: bool, context: str) -> None:
     """Pull Bento from a yatai server."""
     yatai_client.pull_bento(bento_tag, force=force, context=context)
+
 
 @bento_commands.command()
 @click.argument("bento_tag", type=click.STRING)
@@ -269,17 +272,14 @@ def pull(bento_tag: str, force: bool, context: str) -> None:
     default=10,
     help="Number of threads to use for upload",
 )
-@click.option(
-    "--context", type=click.STRING, default=None, help="Yatai context name."
-)
+@click.option("--context", type=click.STRING, default=None, help="Yatai context name.")
 def push(bento_tag: str, force: bool, threads: int, context: str) -> None:
     """Push Bento to a yatai server."""
     bento_obj = bento_store.get(bento_tag)
     if not bento_obj:
         raise click.ClickException(f"Bento {bento_tag} not found in local store")
-    yatai_client.push_bento(
-        bento_obj, force=force, threads=threads, context=context
-    )
+    yatai_client.push_bento(bento_obj, force=force, threads=threads, context=context)
+
 
 @bento_commands.command()
 @click.argument("build_ctx", type=click.Path(), default=".")
@@ -316,9 +316,7 @@ def build(
     try:
         bentofile = resolve_user_filepath(bentofile, build_ctx)
     except FileNotFoundError:
-        raise bentoml.exceptions.InvalidArgument(
-            f'bentofile "{bentofile}" not found'
-        )
+        raise bentoml.exceptions.InvalidArgument(f'bentofile "{bentofile}" not found')
 
     with open(bentofile, "r", encoding="utf-8") as f:
         build_config = BentoBuildConfig.from_yaml(f)

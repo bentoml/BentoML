@@ -63,14 +63,15 @@ class RunnerAppFactory(BaseAppFactory):
             timeout=traffic["timeout"], max_concurrency=traffic["max_concurrency"]
         )
 
+        def fallback():
+            return ServiceUnavailable("process is overloaded")
+        
         for method in runner.runner_methods:
             max_batch_size = method.max_batch_size if method.config.batchable else 1
             self.dispatchers[method.name] = CorkDispatcher(
                 max_latency_in_ms=method.max_latency_ms,
                 max_batch_size=max_batch_size,
-                fallback=functools.partial(
-                    ServiceUnavailable, message="process is overloaded"
-                ),
+                fallback=fallback,
             )
 
     @property

@@ -9,11 +9,13 @@ from .schemas import UserSchema
 from .schemas import BentoSchema
 from .schemas import ModelSchema
 from .schemas import schema_to_json
+from .schemas import DeploymentSchema
 from .schemas import schema_from_json
 from .schemas import CreateBentoSchema
 from .schemas import CreateModelSchema
 from .schemas import UpdateBentoSchema
 from .schemas import OrganizationSchema
+from .schemas import DeploymentListSchema
 from .schemas import BentoRepositorySchema
 from .schemas import ModelRepositorySchema
 from .schemas import FinishUploadBentoSchema
@@ -24,7 +26,6 @@ from .schemas import BentoWithRepositoryListSchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import ModelWithRepositoryListSchema
 from .schemas import PreSignMultipartUploadUrlSchema
-from .schemas import DeploymentListSchema
 from ...exceptions import YataiRESTApiClientError
 from ..configuration import BENTOML_VERSION
 
@@ -414,10 +415,31 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelWithRepositoryListSchema)
 
-    def get_deployment_list(self) -> Optional[DeploymentListSchema]:
-        url = urljoin(self.endpoint, "/api/v1/clusters/default/deployments")
+    def get_deployment_list(self, clusterName: str) -> Optional[DeploymentListSchema]:
+        url = urljoin(self.endpoint, f"/api/v1/clusters/{clusterName}/deployments")
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentListSchema)
+
+    def create_deployment(
+        self, clusterName: str, json_content: str
+    ) -> Optional[DeploymentListSchema]:
+        url = urljoin(self.endpoint, f"/api/v1/clusters/{clusterName}/deployments")
+        resp = self.session.post(url, data=json_content)
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+    def get_deployment(
+        self, clusterName: str, kubeNamespace: str, deploymentName: str
+    ) -> Optional[DeploymentListSchema]:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/clusters/{clusterName}/namespaces/{kubeNamespace}/deployments/{deploymentName}",
+        )
+        resp = self.session.get(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)

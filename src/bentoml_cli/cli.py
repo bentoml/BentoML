@@ -53,4 +53,4 @@ if psutil.WINDOWS:
 
 
 if __name__ == "__main__":
-    bentoml_cli()
+    cli()

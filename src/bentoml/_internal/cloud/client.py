@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import io
 import logging
-from typing import Optional
 from urllib.parse import urljoin
 
 import requests
@@ -54,7 +55,7 @@ class YataiRESTApiClient:
                 f"request failed with status code {resp.status_code}: {resp.text}"
             )
 
-    def get_current_user(self) -> Optional[UserSchema]:
+    def get_current_user(self) -> UserSchema | None:
         url = urljoin(self.endpoint, "/api/v1/auth/current")
         resp = self.session.get(url)
         if self._is_not_found(resp):
@@ -62,7 +63,7 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, UserSchema)
 
-    def get_current_organization(self) -> Optional[OrganizationSchema]:
+    def get_current_organization(self) -> OrganizationSchema | None:
         url = urljoin(self.endpoint, "/api/v1/current_org")
         resp = self.session.get(url)
         if self._is_not_found(resp):
@@ -72,7 +73,7 @@ class YataiRESTApiClient:
 
     def get_bento_repository(
         self, bento_repository_name: str
-    ) -> Optional[BentoRepositorySchema]:
+    ) -> BentoRepositorySchema | None:
         url = urljoin(
             self.endpoint, f"/api/v1/bento_repositories/{bento_repository_name}"
         )
@@ -90,9 +91,7 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoRepositorySchema)
 
-    def get_bento(
-        self, bento_repository_name: str, version: str
-    ) -> Optional[BentoSchema]:
+    def get_bento(self, bento_repository_name: str, version: str) -> BentoSchema | None:
         url = urljoin(
             self.endpoint,
             f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}",
@@ -237,7 +236,7 @@ class YataiRESTApiClient:
 
     def get_model_repository(
         self, model_repository_name: str
-    ) -> Optional[ModelRepositorySchema]:
+    ) -> ModelRepositorySchema | None:
         url = urljoin(
             self.endpoint, f"/api/v1/model_repositories/{model_repository_name}"
         )
@@ -255,9 +254,7 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelRepositorySchema)
 
-    def get_model(
-        self, model_repository_name: str, version: str
-    ) -> Optional[ModelSchema]:
+    def get_model(self, model_repository_name: str, version: str) -> ModelSchema | None:
         url = urljoin(
             self.endpoint,
             f"/api/v1/model_repositories/{model_repository_name}/models/{version}",
@@ -391,7 +388,7 @@ class YataiRESTApiClient:
 
     def get_bento_repositories_list(
         self, bento_repository_name: str
-    ) -> Optional[BentoWithRepositoryListSchema]:
+    ) -> BentoWithRepositoryListSchema | None:
         url = urljoin(self.endpoint, "/api/v1/bento_repositories")
         resp = self.session.get(url)
         if self._is_not_found(resp):
@@ -399,7 +396,7 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoWithRepositoryListSchema)
 
-    def get_bentos_list(self) -> Optional[BentoWithRepositoryListSchema]:
+    def get_bentos_list(self) -> BentoWithRepositoryListSchema | None:
         url = urljoin(self.endpoint, "/api/v1/bentos")
         resp = self.session.get(url)
         if self._is_not_found(resp):
@@ -407,7 +404,7 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoWithRepositoryListSchema)
 
-    def get_models_list(self) -> Optional[ModelWithRepositoryListSchema]:
+    def get_models_list(self) -> ModelWithRepositoryListSchema | None:
         url = urljoin(self.endpoint, "/api/v1/models")
         resp = self.session.get(url)
         if self._is_not_found(resp):
@@ -415,7 +412,7 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelWithRepositoryListSchema)
 
-    def get_deployment_list(self, clusterName: str) -> Optional[DeploymentListSchema]:
+    def get_deployment_list(self, clusterName: str) -> DeploymentListSchema | None:
         url = urljoin(self.endpoint, f"/api/v1/clusters/{clusterName}/deployments")
         resp = self.session.get(url)
         if self._is_not_found(resp):
@@ -425,7 +422,7 @@ class YataiRESTApiClient:
 
     def create_deployment(
         self, clusterName: str, json_content: str
-    ) -> Optional[DeploymentListSchema]:
+    ) -> DeploymentListSchema | None:
         url = urljoin(self.endpoint, f"/api/v1/clusters/{clusterName}/deployments")
         resp = self.session.post(url, data=json_content)
         self._check_resp(resp)
@@ -433,7 +430,7 @@ class YataiRESTApiClient:
 
     def get_deployment(
         self, clusterName: str, kubeNamespace: str, deploymentName: str
-    ) -> Optional[DeploymentListSchema]:
+    ) -> DeploymentListSchema | None:
         url = urljoin(
             self.endpoint,
             f"/api/v1/clusters/{clusterName}/namespaces/{kubeNamespace}/deployments/{deploymentName}",

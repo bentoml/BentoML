@@ -82,12 +82,6 @@ class ResourceSchema(BaseSchema):
 
 
 @attr.define
-class LabelItemSchema:
-    key: str
-    value: str
-
-
-@attr.define
 class UserSchema:
     name: str
     email: str
@@ -542,11 +536,6 @@ class CreateDeploymentTargetSchema:
     canary_rules: t.Optional[t.List[DeploymentTargetCanaryRule]] = attr.field(
         factory=list
     )
-
-
-class DeploymentMode(Enum):
-    Deployment = "deployment"
-    Function = "function"
 
 
 class DeploymentStatus(Enum):

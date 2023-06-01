@@ -88,8 +88,6 @@ jobs:
           pip install pre-commit
       - name: Format and lint check
         run: pre-commit run --all-files
-      - name: Lint check
-        run: ruff check src tests examples
       - name: Type check
         if: ${{ github.event_name == 'pull_request' }}
         run: git diff --name-only --diff-filter=AM "origin/$GITHUB_BASE_REF" -z -- '*.py{,i}' | xargs -0 --no-run-if-empty pyright

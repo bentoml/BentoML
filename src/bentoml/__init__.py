@@ -17,10 +17,11 @@ And join us in the BentoML slack community: https://l.bentoml.com/join-slack
 from __future__ import annotations
 
 import typing as t
+import importlib
+import itertools
 
 from ._internal.configuration import load_config
 from ._internal.configuration import save_config as save_config
-from ._internal.configuration import BENTOML_VERSION as __version__
 
 # Inject dependencies and configurations
 load_config()
@@ -168,13 +169,24 @@ if t.TYPE_CHECKING:
     )
     from ._internal.monitoring.api import monitor as monitor
     from ._internal.service.loader import load as load
-else:
-    import sys
 
-    sys.modules[__name__] = utils.LazyModule(
-        __name__,
-        globals()["__file__"],
-        _import_structure,
-        module_spec=__spec__,
-        extra_objects={"__version__": __version__},
-    )
+
+__all__: list[str] = list(_import_structure) + list(
+    itertools.chain.from_iterable(_import_structure.values())
+)
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name: str):
+    if name in _import_structure:
+        return importlib.import_module(f".{name}", __name__)
+    try:
+        module = next(
+            module for module, attrs in _import_structure.items() if name in attrs
+        )
+    except StopIteration:
+        raise AttributeError(f"module {__name__} has no attribute {name}") from None
+    return getattr(importlib.import_module(f".{module}", __name__), name)

@@ -15,6 +15,8 @@ from ...exceptions import MissingDependencyException
 from ..models.model import ModelContext
 
 if t.TYPE_CHECKING:
+    from types import ModuleType
+
     from ..models.model import ModelSignature
     from ..models.model import ModelSignatureDict
 

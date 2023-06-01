@@ -32,7 +32,6 @@ else:
 from .cattr import bentoml_cattr
 from ..types import LazyType
 from .lazy_loader import LazyLoader
-from .lazy_loader import LazyModule
 
 if TYPE_CHECKING:
     from fs.base import FS

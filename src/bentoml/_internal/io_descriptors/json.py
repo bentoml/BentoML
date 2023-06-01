@@ -38,7 +38,7 @@ if t.TYPE_CHECKING:
     from typing_extensions import Self
 
     from .base import OpenAPIResponse
-    from ..context import InferenceApiContext as Context
+    from ..context import Context
 
 else:
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=EXC_MSG)

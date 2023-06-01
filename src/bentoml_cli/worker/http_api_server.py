@@ -83,6 +83,14 @@ import click
     default=None,
     help="Ciphers to use (see stdlib 'ssl' module)",
 )
+@click.option(
+    "--development-mode",
+    type=click.BOOL,
+    help="Run the API server in development mode",
+    is_flag=True,
+    default=False,
+    show_default=True,
+)
 def main(
     bento_identifier: str,
     fd: int,
@@ -98,6 +106,7 @@ def main(
     ssl_cert_reqs: int | None,
     ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
+    development_mode: bool,
 ):
     """
     Start a HTTP api server worker.
@@ -118,7 +127,7 @@ def main(
         # and should not be concerned with the status of its runners
         BentoMLContainer.config.runner_probe.enabled.set(False)
 
-    BentoMLContainer.development_mode.set(False)
+    BentoMLContainer.development_mode.set(development_mode)
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
 

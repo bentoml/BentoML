@@ -65,7 +65,7 @@ class RunnerAppFactory(BaseAppFactory):
 
         def fallback():
             return ServiceUnavailable("process is overloaded")
-        
+
         for method in runner.runner_methods:
             max_batch_size = method.max_batch_size if method.config.batchable else 1
             self.dispatchers[method.name] = CorkDispatcher(

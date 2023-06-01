@@ -8,7 +8,6 @@ import logging
 import subprocess
 from sys import version_info
 from shlex import quote
-from typing import TYPE_CHECKING
 
 import fs
 import attr
@@ -34,7 +33,7 @@ from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
 from ..container.frontend.dockerfile import SUPPORTED_PYTHON_VERSIONS
 from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from attr import Attribute
     from fs.base import FS
 
@@ -278,7 +277,7 @@ class DockerOptions:
         return bentoml_cattr.unstructure(self)
 
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     CondaPipType = dict[t.Literal["pip"], list[str]]
     DependencyType = list[str | CondaPipType]
 else:
@@ -312,7 +311,7 @@ def conda_dependencies_validator(
                 )
 
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     ListStr: t.TypeAlias = list[str]
     CondaYamlDict = dict[str, DependencyType | list[str]]
 else:
@@ -689,7 +688,7 @@ def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> Python
 bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     OptionsCls = DockerOptions | CondaOptions | PythonOptions
 
 
@@ -740,7 +739,7 @@ class BentoBuildConfig:
         converter=dict_options_converter(CondaOptions),
     )
 
-    if TYPE_CHECKING:
+    if t.TYPE_CHECKING:
         # NOTE: This is to ensure that BentoBuildConfig __init__
         # satisfies type checker. docker, python, and conda accepts
         # dict[str, t.Any] since our converter will handle the conversion.

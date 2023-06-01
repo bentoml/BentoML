@@ -64,7 +64,10 @@ TRACING_CFG = {
 }
 _API_SERVER_CONFIG = {
     "workers": s.Or(s.And(int, ensure_larger_than_zero), None),
-    "timeout": s.And(int, ensure_larger_than_zero),
+    s.Optional("traffic"): {
+        "timeout": s.And(int, ensure_larger_than_zero),
+        "max_concurrency": s.Or(s.And(int, ensure_larger_than_zero), None),
+    },
     "backlog": s.And(int, ensure_larger_than(64)),
     "max_runner_connections": s.And(int, ensure_larger_than_zero),
     "metrics": {
@@ -161,7 +164,10 @@ _RUNNER_CONFIG = {
         "enabled": bool,
         "namespace": str,
     },
-    s.Optional("timeout"): s.And(int, ensure_larger_than_zero),
+    s.Optional("traffic"): {
+        "timeout": s.And(int, ensure_larger_than_zero),
+        "max_concurrency": s.Or(s.And(int, ensure_larger_than_zero), None),
+    },
 }
 SCHEMA = s.Schema(
     {
@@ -279,4 +285,21 @@ def migration(*, override_config: dict[str, t.Any]):
             current=f"logging.formatting.{f}_format",
             replace_with=f"api_server.logging.access.format.{f}",
         )
+    # 7. move timeout to traffic.timeout
+    for namespace in ("api_server", "runners"):
+        rename_fields(
+            override_config,
+            current=f"{namespace}.timeout",
+            replace_with=f"{namespace}.traffic.timeout",
+        )
+    for key in list(override_config):
+        if key.startswith("runners."):
+            runner_name = key.split(".")[1]
+            if any(key.schema == runner_name for key in _RUNNER_CONFIG):
+                continue
+            rename_fields(
+                override_config,
+                current=f"runners.{runner_name}.timeout",
+                replace_with=f"runners.{runner_name}.traffic.timeout",
+            )
     return unflatten(override_config)

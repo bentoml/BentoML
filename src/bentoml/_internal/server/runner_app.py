@@ -54,14 +54,24 @@ class RunnerAppFactory(BaseAppFactory):
         self.enable_metrics = enable_metrics
 
         self.dispatchers: dict[str, CorkDispatcher] = {}
+
+        runners_config = BentoMLContainer.runners_config.get()
+        traffic = runners_config.get("traffic", {}).copy()
+        if runner.name in runners_config:
+            traffic.update(runners_config[runner.name].get("traffic", {}))
+        super().__init__(
+            timeout=traffic["timeout"], max_concurrency=traffic["max_concurrency"]
+        )
+
+        def fallback():
+            return ServiceUnavailable("process is overloaded")
+
         for method in runner.runner_methods:
             max_batch_size = method.max_batch_size if method.config.batchable else 1
             self.dispatchers[method.name] = CorkDispatcher(
                 max_latency_in_ms=method.max_latency_ms,
                 max_batch_size=max_batch_size,
-                fallback=functools.partial(
-                    ServiceUnavailable, message="process is overloaded"
-                ),
+                fallback=fallback,
             )
 
     @property

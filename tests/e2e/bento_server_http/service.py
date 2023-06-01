@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing as t
-import asyncio
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -53,10 +52,10 @@ def echo_data_metric(data: str) -> str:
     return data
 
 
-@svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
-async def echo_delay(data: str) -> str:
-    await asyncio.sleep(5)
-    return data
+@svc.api(input=JSON(), output=JSON())
+async def echo_delay(data: dict[str, t.Any]) -> JSONSerializable:
+    ret = await py_model.echo_delay.async_run(data)
+    return ret
 
 
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())

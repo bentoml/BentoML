@@ -23,9 +23,25 @@ logger = logging.getLogger(__name__)
 # Python supported versions
 SUPPORTED_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 # CUDA supported versions
-SUPPORTED_CUDA_VERSIONS = ["11.7.0", "11.6.2", "11.4.3", "11.2.2"]
+SUPPORTED_CUDA_VERSIONS = [
+    "12.0.0",
+    "12.0.1",
+    "12.1.0",
+    "12.1.1",
+    "11.7.0",
+    "11.6.2",
+    "11.4.3",
+    "11.2.2",
+]
 # Mapping from user provided version argument to the full version target to install
 ALLOWED_CUDA_VERSION_ARGS = {
+    "12": "12.1.1",
+    "12.1": "12.1.1",
+    "12.1.1": "12.1.1",
+    "12.1.0": "12.1.0",
+    "12.0": "12.0.1",
+    "12.0.1": "12.0.1",
+    "12.0.0": "12.0.0",
     "11": "11.7.0",
     "11.7": "11.7.0",
     "11.7.0": "11.7.0",

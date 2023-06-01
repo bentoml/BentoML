@@ -86,7 +86,7 @@ def load_model(bento_model: str | Tag | Model) -> SklearnModel:
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: SklearnModel,
     *,
     signatures: ModelSignaturesType | None = None,

@@ -418,10 +418,12 @@ can be specified for the ``nvidia.com/gpu`` key. For example, the following conf
 
 For the detailed information on the meaning of each resource allocation configuration, see :doc:`/guides/scheduling`.
 
-Timeout
-^^^^^^^
+Traffic Control
+^^^^^^^^^^^^^^^
 
-Runner timeout defines the amount of time in seconds to wait before calls a runner is timed out on the API server.
+Same as API server, you can also configure the traffic settings for both all runners and individual runner.
+Specifcally, ``traffic.timeout`` defines the amount of time in seconds that the runner will wait for a response from the model before timing out.
+``traffic.max_concurrency`` defines the maximum number of concurrent requests the runner will accept before returning an error.
 
 .. tab-set::
 
@@ -432,7 +434,9 @@ Runner timeout defines the amount of time in seconds to wait before calls a runn
           :caption: ⚙️ `configuration.yml`
 
           runners:
-            timeout: 60
+            traffic:
+              timeout: 60
+              max_concurrency: 10
 
     .. tab-item:: Individual Runner
        :sync: individual_runner
@@ -442,7 +446,9 @@ Runner timeout defines the amount of time in seconds to wait before calls a runn
 
           runners:
             iris_clf:
-              timeout: 60
+              traffic:
+                timeout: 60
+                max_concurrency: 10
 
 Access Logging
 ^^^^^^^^^^^^^^

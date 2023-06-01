@@ -401,7 +401,7 @@ class BentoCloudClient(BaseCloudClient):
         *,
         force: bool = False,
         context: str | None = None,
-        _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> Bento:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
@@ -411,7 +411,7 @@ class BentoCloudClient(BaseCloudClient):
                 tag,
                 download_task_id,
                 force=force,
-                bento_store=_bento_store,
+                bento_store=bento_store,
                 context=context,
             )
 
@@ -844,7 +844,7 @@ class BentoCloudClient(BaseCloudClient):
         *,
         force: bool = False,
         context: str | None = None,
-        _model_store: ModelStore = Provide[BentoMLContainer.model_store],
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Model:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
@@ -854,7 +854,7 @@ class BentoCloudClient(BaseCloudClient):
                 tag,
                 download_task_id,
                 force=force,
-                model_store=_model_store,
+                model_store=model_store,
                 context=context,
             )
 

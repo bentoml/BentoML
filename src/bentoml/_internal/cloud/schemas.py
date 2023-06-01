@@ -67,18 +67,18 @@ class ResourceType(Enum):
     BENTO = "bento"
     MODEL_REPOSITORY = "model_repository"
     MODEL = "model"
+    DEPLOYMENT = "deployment"
+    DEPLOYMENT_REVISION = "deployment_revision"
+    TERMINAL_RECORD = "terminal_record"
+    LABEL = "label"
+    API_TOKEN = "api_token"
+    YATAI_COMPONENT = "yatai_component"
 
 
 @attr.define
 class ResourceSchema(BaseSchema):
     name: str
     resource_type: ResourceType
-
-
-@attr.define
-class LabelItemSchema:
-    key: str
-    value: str
 
 
 @attr.define
@@ -107,6 +107,7 @@ class OrganizationListSchema(BaseListSchema):
 @attr.define
 class ClusterSchema(ResourceSchema):
     description: str
+    creator: UserSchema
 
 
 @attr.define
@@ -215,6 +216,11 @@ class CreateBentoSchema:
 class UpdateBentoSchema:
     manifest: t.Optional[BentoManifestSchema] = attr.field(default=None)
     labels: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
+
+
+@attr.define
+class BentoFullSchema(BentoWithRepositorySchema):
+    models: t.List[ModelWithRepositorySchema] = attr.field(factory=list)
 
 
 @attr.define
@@ -330,3 +336,286 @@ class BentoRepositoryListSchema(BaseListSchema):
 @attr.define
 class BentoListSchema(BaseListSchema):
     items: t.List[BentoSchema]
+
+
+class DeploymentTargetCanaryRuleType(Enum):
+    WEIGHT = "weight"
+    HEADER = "header"
+    COOKIE = "cookie"
+
+
+@attr.define
+class DeploymentTargetCanaryRule:
+    type: DeploymentTargetCanaryRuleType
+    weight: int
+    header: str
+    cookie: str
+    header_value: str
+
+
+@attr.define
+class ApiServerBentoDeploymentOverrides:
+    monitorExporter: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+
+
+@attr.define
+class RunnerBentoDeploymentOverrides:
+    extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+
+
+@attr.define
+class BentoRequestOverrides:
+    imageBuildTimeout: int = attr.field(default=None)
+    imageBuilderExtraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(
+        default=None
+    )
+    imageBuilderExtraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    imageBuilderExtraContainerEnv: t.Optional[t.List[t.Dict[str, t.Any]]] = attr.field(
+        default=None
+    )
+    imageBuilderContainerResources: t.Optional[t.Dict[str, t.Any]] = attr.field(
+        default=None
+    )
+    dockerConfigJsonSecretName: t.Optional[str] = attr.field(default=None)
+    downloaderContainerEnvFrom: t.Optional[t.Dict[str, t.Any]] = attr.field(
+        default=None
+    )
+
+
+@attr.define
+class LabelItemSchema:
+    key: str
+    value: str
+
+
+class HPAMetricType(Enum):
+    MEMORY = "memory"
+    CPU = "cpu"
+    GPU = "gpu"
+    QPS = "qps"
+
+
+@attr.define
+class HPAMetric:
+    type: HPAMetricType  # enum
+    value: t.Any  # resource.Quantity
+
+
+class HPAScaleBehavior(Enum):
+    DISABLED = "disabled"
+    STABLE = "stable"
+    FAST = "fast"
+
+
+@attr.define
+class HPAPolicy:
+    metrics: t.List[HPAMetric] = attr.field(default=None)
+    scale_down_behavior: t.Optional[HPAScaleBehavior] = attr.field(default=None)
+    scale_up_behavior: t.Optional[HPAScaleBehavior] = attr.field(default=None)
+
+
+@attr.define
+class DeploymentTargetHPAConf:
+    cpu: t.Optional[int] = attr.field(default=None)
+    gpu: t.Optional[int] = attr.field(default=None)
+    memory: t.Optional[str] = attr.field(default=None)
+    qps: t.Optional[int] = attr.field(default=None)
+    min_replicas: t.Optional[int] = attr.field(default=None)
+    max_replicas: t.Optional[int] = attr.field(default=None)
+    policy: t.Optional[HPAPolicy] = attr.field(default=None)
+
+
+@attr.define
+class DeploymentTargetResourceItem:
+    cpu: t.Optional[str] = attr.field(default=None)
+    memory: t.Optional[str] = attr.field(default=None)
+    gpu: t.Optional[str] = attr.field(default=None)
+    custom: t.Optional[t.Dict[str, str]] = attr.field(default=None)
+
+
+@attr.define
+class DeploymentTargetResources:
+    requests: t.Optional[DeploymentTargetResourceItem] = attr.field(default=None)
+    limits: t.Optional[DeploymentTargetResourceItem] = attr.field(default=None)
+
+
+@attr.define
+class RequestQueueConfig:
+    enabled: t.Optional[bool] = attr.field(
+        default=None, converter=attr.converters.default_if_none(False)
+    )
+    max_consume_concurrency: t.Optional[int] = attr.field(default=None)
+
+
+@attr.define
+class TrafficControlConfig:
+    timeout: t.Optional[int] = attr.field(default=None)
+    request_queue: t.Optional[RequestQueueConfig] = attr.field(default=None)
+
+
+class DeploymentStrategy(Enum):
+    RollingUpdate = "RollingUpdate"
+    Recreate = "Recreate"
+    RampedSlowRollout = "RampedSlowRollout"
+    BestEffortControlledRollout = "BestEffortControlledRollout"
+
+
+@attr.define
+class DeploymentTargetRunnerConfig:
+    resource_instance: t.Optional[str] = attr.field(default=None)
+    resources: t.Optional[DeploymentTargetResources] = attr.field(default=None)
+    hpa_conf: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
+    envs: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
+    enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(
+        default=None, converter=attr.converters.default_if_none(False)
+    )
+    enable_debug_mode: t.Optional[bool] = attr.field(
+        default=None, converter=attr.converters.default_if_none(False)
+    )
+    enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
+        default=None, converter=attr.converters.default_if_none(False)
+    )
+    deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(default=None)
+    bento_deployment_overrides: t.Optional[RunnerBentoDeploymentOverrides] = attr.field(
+        default=None
+    )
+    traffic_control: t.Optional[TrafficControlConfig] = attr.field(default=None)
+    deployment_cold_start_wait_timeout: t.Optional[int] = attr.field(default=None)
+
+
+class DeploymentTargetType(Enum):
+    STABLE = "stable"
+    CANARY = "canary"
+
+
+@attr.define
+class DeploymentTargetConfig:
+    resources: DeploymentTargetResources
+    kubeResourceUid: str = attr.field(default="")  # empty str
+    kubeResourceVersion: str = attr.field(default="")
+    resource_instance: t.Optional[str] = attr.field(default=None)
+    hpa_conf: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
+    envs: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
+    runners: t.Optional[t.Dict[str, DeploymentTargetRunnerConfig]] = attr.field(
+        default=None
+    )
+    enable_ingress: t.Optional[bool] = attr.field(
+        default=None, converter=attr.converters.default_if_none(False)
+    )  # false for enables
+    enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(
+        default=None, converter=attr.converters.default_if_none(False)
+    )
+    enable_debug_mode: t.Optional[bool] = attr.field(
+        default=None, converter=attr.converters.default_if_none(False)
+    )
+    enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
+        default=None, converter=attr.converters.default_if_none(False)
+    )
+    deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(
+        default=None
+    )  # Specific
+    bento_deployment_overrides: t.Optional[
+        ApiServerBentoDeploymentOverrides
+    ] = attr.field(default=None)
+    bento_request_overrides: t.Optional[BentoRequestOverrides] = attr.field(
+        default=None
+    )  # Put into image builder
+    traffic_control: t.Optional[TrafficControlConfig] = attr.field(default=None)
+    deployment_cold_start_wait_timeout: t.Optional[int] = attr.field(default=None)
+
+
+@attr.define
+class CreateDeploymentTargetSchema:
+    type: DeploymentTargetType  # stable by default
+    bento_repository: str
+    bento: str
+    config: DeploymentTargetConfig
+    canary_rules: t.Optional[t.List[DeploymentTargetCanaryRule]] = attr.field(
+        factory=list
+    )
+
+
+class DeploymentStatus(Enum):
+    Unknown = "unknown"
+    NonDeployed = "non-deployed"
+    Running = "running"
+    Unhealthy = "unhealthy"
+    Failed = "failed"
+    Deploying = "deploying"
+    Terminating = "terminating"
+    Terminated = "terminated"
+    ImageBuilding = "image-building"
+    ImageBuildFailed = "image-build-failed"
+    ImageBuildSucceeded = "image-build-succeeded"
+
+
+@attr.define
+class DeploymentSchema(ResourceSchema):
+    creator: UserSchema
+    cluster: ClusterFullSchema
+    status: DeploymentStatus
+    urls: t.List[str]
+    latest_revision: DeploymentRevisionSchema
+    kube_namespace: str
+    mode: t.Optional[DeploymentMode] = attr.field(default=None)
+
+
+@attr.define
+class DeploymentTargetSchema(ResourceSchema):
+    creator: UserSchema
+    type: DeploymentTargetType
+    bento: BentoFullSchema
+    config: DeploymentTargetConfig
+    canary_rules: t.Optional[t.List[DeploymentTargetCanaryRule]] = attr.field(
+        factory=list
+    )
+
+
+class DeploymentRevisionStatus(Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+
+@attr.define
+class DeploymentRevisionSchema(ResourceSchema):
+    creator: UserSchema
+    status: DeploymentRevisionStatus
+    targets: t.List[DeploymentTargetSchema]
+
+
+@attr.define
+class ClusterFullSchema(ClusterSchema):
+    grafana_root_path: str
+    organization: t.Optional[OrganizationSchema] = attr.field(default=None)
+    kube_config: t.Optional[str] = attr.field(default=None)
+    config: t.Optional[str] = attr.field(default=None)
+
+
+@attr.define
+class DeploymentListSchema(BaseListSchema):
+    items: t.List[DeploymentSchema]
+
+
+class DeploymentMode(Enum):
+    Deployment = "deployment"
+    Function = "function"
+
+
+@attr.define
+class UpdateDeploymentSchema:
+    mode: t.Optional[DeploymentMode] = attr.field(default=None)
+    targets: t.Optional[t.List[CreateDeploymentTargetSchema]] = attr.field(factory=list)
+    labels: t.Optional[t.List[LabelItemSchema]] = attr.field(factory=list)
+    description: t.Optional[str] = attr.field(default=None)
+    do_not_deploy: t.Optional[bool] = attr.field(
+        default=None, converter=attr.converters.default_if_none(False)
+    )
+
+
+@attr.define
+class CreateDeploymentSchema(UpdateDeploymentSchema):
+    name: str = attr.field(default=None)
+    kube_namespace: str = attr.field(default=None)

@@ -25,7 +25,7 @@ from ._internal.configuration.containers import BentoMLContainer
 if t.TYPE_CHECKING:
     from .server import Server
     from ._internal.bento import BentoStore
-    from ._internal.yatai_client import YataiClient
+    from ._internal.cloud.yatai import YataiClient
 
 
 logger = logging.getLogger(__name__)
@@ -255,7 +255,7 @@ def pull(
     tag: t.Union[Tag, str],
     *,
     force: bool = False,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
 ):
     _yatai_client.pull_bento(tag, force=force, bento_store=_bento_store)

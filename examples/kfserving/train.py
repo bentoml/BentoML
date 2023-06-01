@@ -8,6 +8,7 @@ import bentoml
 logging.basicConfig(level=logging.WARN)
 
 if __name__ == "__main__":
+
     # Load training data
     iris = datasets.load_iris()
     X, y = iris.data, iris.target

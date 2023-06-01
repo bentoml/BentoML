@@ -18,7 +18,7 @@ bazel run :train -- --num-epochs 2
 Serve with either gRPC or HTTP:
 
 ```bash
-bentoml serve-grpc --enable-reflection
+bentoml serve-grpc --production --enable-reflection
 ```
 
 Run the test suite:

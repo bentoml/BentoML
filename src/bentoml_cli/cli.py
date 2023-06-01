@@ -14,6 +14,7 @@ from bentoml_cli.containerize import add_containerize_command
 
 
 def create_bentoml_cli() -> click.Group:
+
     from bentoml import __version__ as BENTOML_VERSION
     from bentoml._internal.context import component_context
 

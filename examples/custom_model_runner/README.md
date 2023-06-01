@@ -38,7 +38,7 @@ wget -qO- https://github.com/myleott/mnist_png/raw/master/mnist_png.tar.gz | tar
 <td>
 
 ```bash
-bentoml serve-http service.py:svc --development
+bentoml serve-http service.py:svc
 ```
 
 </td>
@@ -48,7 +48,7 @@ bentoml serve-http service.py:svc --development
 <td>
 
 ```bash
-bentoml serve-grpc service.py:svc --development
+bentoml serve-grpc service.py:svc
 ```
 
 </td>
@@ -92,7 +92,7 @@ EOM
 Start production server:
 
 ```bash
-bentoml serve
+bentoml serve --production
 ```
 
 From another terminal:

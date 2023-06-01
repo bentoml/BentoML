@@ -38,6 +38,7 @@ def assert_tensor_equal(t1: ext.TensorLike, t2: ext.TensorLike) -> None:
 @pytest.mark.requires_eager_execution
 @pytest.mark.parametrize("batch_axis", [0, 1])
 def test_tensorflow_container(batch_axis: int):
+
     from bentoml._internal.frameworks.tensorflow_v2 import TensorflowTensorContainer
 
     one_batch: ext.TensorLike = tf.reshape(tf.convert_to_tensor(np.arange(6)), (2, 3))
@@ -73,6 +74,7 @@ def test_tensorflow_container(batch_axis: int):
 
 @requires_disable_eager_execution
 def test_register_container():
+
     assert not tf.executing_eagerly()
 
     from bentoml._internal.frameworks.tensorflow_v2 import (  # type: ignore # noqa

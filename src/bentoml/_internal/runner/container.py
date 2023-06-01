@@ -277,8 +277,10 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         batch: ext.NpNDArray,
         batch_dim: int,
     ) -> Payload:
+
         # skip 0-dimensional array
         if batch.shape:
+
             if not (batch.flags["C_CONTIGUOUS"] or batch.flags["F_CONTIGUOUS"]):
                 # TODO: use fortan contiguous if it's faster
                 batch = np.ascontiguousarray(batch)

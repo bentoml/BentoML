@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from functools import partial
 
 if TYPE_CHECKING:
+
     from ... import external_typing as ext
 
 logger = logging.getLogger(__name__)

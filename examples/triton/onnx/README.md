@@ -67,7 +67,7 @@ docker:
   base_image: nvcr.io/nvidia/tritonserver:22.12-py3
 ```
 
-> tritonserver are currently unsupported with `--development` tag. Make sure
+> tritonserver are currently only supported with `--production` tag. Make sure
 > to have `tritonserver` binary available in PATH if running locally.
 
 To find out more about BentoML Runner architecture, see
@@ -106,7 +106,7 @@ python3 containerize_bento.py
 4. To run the container with Triton, use `docker run`:
 
 ```bash
-docker run --rm -it -p 3000:3000 triton-integration-onnx serve-http
+docker run --rm -it -p 3000:3000 triton-integration-onnx serve-http --production
 ```
 
 #### Develop locally:
@@ -155,7 +155,7 @@ bash ./setup
 ```bash
 python3 serve_bento.py
 
-# bentoml serve-http | serve-grpc triton-integration-onnx
+# bentoml serve-http | serve-grpc triton-integration-onnx --production
 ```
 
 > NOTE: to serve previously custom tag bento, you can also pass in `--tag` to
@@ -169,5 +169,5 @@ python3 serve_bento.py
 <!-- 
 docker run --rm -it -p 3000-3030:3000-3030 -v $(pwd)/model_repository:/models -v ${PWD}:/workspace -v ${BENTOML_GIT_ROOT}:/opt/bentoml -e BENTOML_HOME=/opt/bentoml -v $BENTOML_HOME:/opt/bentoml nvcr.io/nvidia/tritonserver:22.12-py3 bash
 
-cd /opt/bentoml && pip install -r requirements/dev-requirements.txt && cd /workspace && pip install -r requirements/requirements.txt && python3 train.py && ./setup && bentoml serve-http
+cd /opt/bentoml && pip install -r requirements/dev-requirements.txt && cd /workspace && pip install -r requirements/requirements.txt && python3 train.py && ./setup && bentoml serve-http --production 
 -->

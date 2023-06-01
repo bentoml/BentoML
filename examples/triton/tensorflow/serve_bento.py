@@ -35,7 +35,7 @@ if __name__ == "__main__":
         )
         try:
             while True:
-                bentoml.client.Client.wait_until_server_ready(
+                bentoml.client.Client.wait_until_server_is_ready(
                     server.host, server.port, 1000
                 )
                 client = bentoml.client.Client.from_url(

@@ -90,6 +90,7 @@ def cross_validate(dataset, epochs=NUM_EPOCHS, k_folds=K_FOLDS, device="cpu"):
 
     # K-fold Cross Validation model evaluation
     for fold, (train_ids, test_ids) in enumerate(kfold.split(dataset)):
+
         print(f"FOLD {fold}")
         print("--------------------------------")
 
@@ -141,6 +142,7 @@ def cross_validate(dataset, epochs=NUM_EPOCHS, k_folds=K_FOLDS, device="cpu"):
 
 
 def train(dataset, epochs=NUM_EPOCHS, device="cpu"):
+
     print("Training using %s." % device)
     train_sampler = torch.utils.data.RandomSampler(dataset)
     train_loader = torch.utils.data.DataLoader(
@@ -159,6 +161,7 @@ def train(dataset, epochs=NUM_EPOCHS, device="cpu"):
 
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(description="BentoML PyTorch MNIST Example")
     parser.add_argument(
         "--epochs",

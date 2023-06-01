@@ -5,8 +5,7 @@ matplotlib>=3.2.2
 numpy>=1.18.5
 opencv-python>=4.1.1
 pandas>=1.1.4
-protobuf<=3.20.1 # https://github.com/ultralytics/yolov5/issues/8012
-ipython
+protobuf<4.21.3  # https://github.com/ultralytics/yolov5/issues/8012
 requests>=2.23.0
 scipy>=1.4.1  # Google Colab version
 seaborn>=0.11.0

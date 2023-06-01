@@ -11,7 +11,6 @@ from ...exceptions import InvalidArgument
 from ._import_hook import import_grpc
 from ._import_hook import import_generated_stubs
 from ._import_hook import LATEST_PROTOCOL_VERSION
-from ..._internal.utils import resolve_user_filepath
 
 if TYPE_CHECKING:
     from enum import Enum
@@ -26,6 +25,7 @@ if TYPE_CHECKING:
     from ..._internal.io_descriptors import IODescriptor
 
 else:
+
     pb, _ = import_generated_stubs()
     grpc, _ = import_grpc()
 
@@ -38,19 +38,12 @@ __all__ = [
     "import_grpc",
     "validate_proto_fields",
     "LATEST_PROTOCOL_VERSION",
-    "load_from_file",
 ]
 
 logger = logging.getLogger(__name__)
 
 # content-type is always application/grpc
 GRPC_CONTENT_TYPE = "application/grpc"
-
-
-def load_from_file(p: str) -> bytes:
-    rp = resolve_user_filepath(p, ctx=None)
-    with open(rp, "rb") as f:
-        return f.read()
 
 
 def validate_proto_fields(

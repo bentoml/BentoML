@@ -28,25 +28,6 @@ if t.TYPE_CHECKING:
 set_seed(124)
 
 
-def test_load_model_options():
-    model: transformers.PreTrainedModel = (
-        transformers.AutoModelForCausalLM.from_pretrained("gpt2")
-    )
-    tokenizer: transformers.PreTrainedTokenizer = (
-        transformers.AutoTokenizer.from_pretrained("gpt2")
-    )
-
-    bentoml.transformers.save_model(
-        "gpt2", model, custom_objects={"tokenizer": tokenizer}
-    )
-
-    bentomodel = bentoml.models.get("gpt2")
-    _model = bentomodel.load_model()
-    assert isinstance(_model, transformers.PreTrainedModel)
-    _tokenizer = bentomodel.custom_objects["tokenizer"]
-    assert isinstance(_tokenizer, transformers.PreTrainedTokenizerBase)
-
-
 def test_convert_to_auto_class():
     from bentoml._internal.frameworks.transformers import convert_to_autoclass
 

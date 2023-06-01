@@ -583,7 +583,7 @@ def add_containerize_command(cli: Group) -> None:
             )
             instructions = (
                 "To run your newly built Bento container, run:\n"
-                + f"    {container_runtime} run -it --rm -p 3000:3000 {tags[0]} serve\n"
+                + f"    {container_runtime} run -it --rm -p 3000:3000 {tags[0]} serve --production\n"
             )
 
             if features is not None and any(
@@ -592,7 +592,7 @@ def add_containerize_command(cli: Group) -> None:
             ):
                 instructions += (
                     "To serve with gRPC instead, run:\n"
-                    + f"    {container_runtime} run -it -p 3000:3000 -p 3001:3001 {tags[0]} serve-grpc\n"
+                    + f"    {container_runtime} run -it -p 3000:3000 -p 3001:3001 {tags[0]} serve-grpc --production\n"
                 )
             click.echo(instructions, nl=False)
             raise SystemExit(0)

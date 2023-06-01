@@ -68,7 +68,7 @@ def classify(input_data: "np.ndarray") -> "np.ndarray":
 Start an API server locally to test the service code above:
 
 ```bash
-bentoml serve agaricus:svc --development --reload
+bentoml serve agaricus:svc --reload
 ```
 
 With the `--reload` flag, the API server will automatically restart when the source
@@ -125,7 +125,7 @@ all dependency versions:
 This Bento can now be served:
 
 ```bash
-bentoml serve agaricus:latest
+bentoml serve agaricus:latest --production
 ```
 
 The Bento directory contains all code, files, models and configuration required to run this service.

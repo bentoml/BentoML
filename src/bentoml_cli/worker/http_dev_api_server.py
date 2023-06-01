@@ -1,45 +1,19 @@
 from __future__ import annotations
 
-import json
 import socket
-import typing as t
 
 import click
 
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
-@click.option(
-    "--fd",
-    type=click.INT,
-    required=True,
-    help="File descriptor of the socket to listen on",
-)
-@click.option(
-    "--runner-map",
-    type=click.STRING,
-    envvar="BENTOML_RUNNER_MAP",
-    help="JSON string of runners map, default sets to envars `BENTOML_RUNNER_MAP`",
-)
-@click.option(
-    "--backlog", type=click.INT, default=2048, help="Backlog size for the socket"
-)
-@click.option(
-    "--working-dir",
-    type=click.Path(exists=True),
-    help="Working directory for the API server",
-)
+@click.option("--fd", type=click.INT, required=True)
+@click.option("--working-dir", required=False, type=click.Path(), default=None)
+@click.option("--backlog", type=click.INT, default=2048)
 @click.option(
     "--prometheus-dir",
     type=click.Path(exists=True),
     help="Required by prometheus to pass the metrics in multi-process mode",
-)
-@click.option(
-    "--worker-id",
-    required=False,
-    type=click.INT,
-    default=None,
-    help="If set, start the server as a bare worker with the given worker ID. Otherwise start a standalone server with a supervisor process.",
 )
 @click.option(
     "--ssl-certfile",
@@ -86,10 +60,8 @@ import click
 def main(
     bento_identifier: str,
     fd: int,
-    runner_map: str | None,
-    backlog: int,
     working_dir: str | None,
-    worker_id: int,
+    backlog: int,
     prometheus_dir: str | None,
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
@@ -100,31 +72,24 @@ def main(
     ssl_ciphers: str | None,
 ):
     """
-    Start a HTTP api server worker.
+    Start a development server for the BentoML service.
     """
-    import psutil
 
-    import bentoml
+    import psutil
+    import uvicorn
+
+    from bentoml import load
     from bentoml._internal.log import configure_server_logging
     from bentoml._internal.context import component_context
     from bentoml._internal.configuration.containers import BentoMLContainer
 
-    component_context.component_type = "api_server"
-    component_context.component_index = worker_id
+    component_context.component_type = "dev_api_server"
     configure_server_logging()
 
-    if worker_id is None:
-        # worker ID is not set; this server is running in standalone mode
-        # and should not be concerned with the status of its runners
-        BentoMLContainer.config.runner_probe.enabled.set(False)
-
-    BentoMLContainer.development_mode.set(False)
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
 
-    if runner_map is not None:
-        BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
-    svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
+    svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
     component_context.component_name = svc.name
@@ -135,10 +100,13 @@ def main(
         component_context.bento_name = svc.tag.name
         component_context.bento_version = svc.tag.version or "not available"
 
-    uvicorn_options: dict[str, t.Any] = {
+    sock = socket.socket(fileno=fd)
+
+    uvicorn_options = {
         "backlog": backlog,
         "log_config": None,
         "workers": 1,
+        "lifespan": "on",
     }
 
     if ssl_certfile:
@@ -168,10 +136,6 @@ def main(
 
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-    import uvicorn
-
-    # skip the uvicorn internal supervisor
-    sock = socket.socket(fileno=fd)
     config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
     uvicorn.Server(config).run(sockets=[sock])
 

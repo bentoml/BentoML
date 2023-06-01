@@ -13,7 +13,7 @@ class IrisHttpUser(HttpUser):
     Usage:
         Run the iris_classifier service in production mode:
 
-            bentoml serve-http iris_classifier:latest
+            bentoml serve-http iris_classifier:latest --production
 
         Start locust load testing client with:
 

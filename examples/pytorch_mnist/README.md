@@ -115,7 +115,7 @@ We defined two api endpoints `/predict_ndarray` and `/predict_image` with single
 Start an API server locally to test the service code above:
 
 ```bash
-bentoml serve service:svc --development --reload
+bentoml serve service:svc --reload
 ```
 
 With the `--reload` flag, the API server will automatically restart when the source
@@ -184,7 +184,7 @@ time for BentoML to resolve all dependency versions:
 This Bento can now be loaded for serving:
 
 ```bash
-bentoml serve pytorch_mnist_demo:latest
+bentoml serve pytorch_mnist_demo:latest --production
 ```
 
 The Bento directory contains all code, files, models and configs required for running this service.

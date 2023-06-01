@@ -7,6 +7,7 @@ with open("samples/1.png", "rb") as f:
 
 
 class PyTorchMNISTLoadTestUser(HttpUser):
+
     wait_time = between(0.01, 2)
 
     @task

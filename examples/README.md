@@ -1,4 +1,4 @@
-# BentoML Examples 🎨 [![Twitter Follow](https://img.shields.io/twitter/follow/bentomlai?style=social)](https://twitter.com/bentomlai) [![Slack](https://img.shields.io/badge/Slack-Join-4A154B?style=social)](https://l.bentoml.com/join-slack)
+# BentoML Examples 🎨 [![Twitter Follow](https://img.shields.io/twitter/follow/bentomlai?style=social)](https://twitter.com/bentomlai) [![Slack](https://img.shields.io/badge/Slack-Join-4A154B?style=social)](https://l.linklyhq.com/l/ktO8)
 
 BentoML is an open platform for machine learning in production. It simplifies
 model packaging and model management, optimizes model serving workloads to run

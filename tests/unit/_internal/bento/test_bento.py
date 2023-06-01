@@ -93,7 +93,6 @@ models:
 runners:
 - name: runner_a
   runnable_type: test_runnable_a
-  embedded: false
   models:
   - runner_a_model
   resource_config:

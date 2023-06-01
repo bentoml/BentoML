@@ -13,6 +13,7 @@ from bentoml._internal.types import MetadataDict
 
 
 def test_typeref():
+
     # assert __eq__
     assert LazyType("numpy", "ndarray") == np.ndarray
     assert LazyType("numpy", "ndarray") == LazyType(type(np.array([2, 3])))

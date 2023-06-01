@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing as t
-import asyncio
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -50,12 +49,6 @@ metric_test = bentoml.metrics.Counter(
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
 def echo_data_metric(data: str) -> str:
     metric_test.inc()
-    return data
-
-
-@svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
-async def echo_delay(data: str) -> str:
-    await asyncio.sleep(5)
     return data
 
 

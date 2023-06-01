@@ -16,8 +16,10 @@ import pydantic
 
 from bentoml.io import JSON
 from bentoml.exceptions import BadInput
+from bentoml.exceptions import UnprocessableEntity
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml._internal.utils import LazyLoader
+from bentoml._internal.utils.pkg import pkg_version_info
 from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 
 if TYPE_CHECKING:
@@ -76,6 +78,16 @@ dumps = partial(
     indent=None,
     separators=(",", ":"),
 )
+
+
+@pytest.mark.skipif(
+    pkg_version_info("pydantic")[0] < 2 and pkg_version_info("bentoml")[:2] <= (1, 1),
+    reason="Pydantic 2.x is not yet supported until official releases of Pydantic.",
+)
+def test_not_yet_supported_pydantic():
+    with pytest.raises(UnprocessableEntity) as exc_info:
+        JSON(pydantic_model=Nested)
+    assert "pydantic 2.x is not yet supported" in str(exc_info.value)
 
 
 def test_invalid_init():

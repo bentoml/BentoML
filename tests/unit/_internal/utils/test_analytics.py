@@ -136,6 +136,7 @@ def test_track_serve_init(
     production: bool,
     caplog: LogCaptureFixture,
 ):
+
     mock_do_not_track.return_value = False
     mock_usage_event_debugging.return_value = False
 

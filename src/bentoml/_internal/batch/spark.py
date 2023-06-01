@@ -79,7 +79,7 @@ def _get_process(
             pass
 
         server = serve(bento_tag, port=port)
-        Client.wait_until_server_is_ready("localhost", server.port, 30)
+        Client.wait_until_server_ready("localhost", server.port, 30)
         client = HTTPClient(svc, f"http://localhost:{server.port}")
 
         for batch in iterator:

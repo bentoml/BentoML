@@ -76,7 +76,7 @@ def load_model(bento_model: str | Tag | Model) -> ModelType:
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: ModelType,
     *,
     signatures: dict[str, ModelSignature] | None = None,

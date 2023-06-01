@@ -145,14 +145,19 @@ runners:
 def test_runner_timeouts(container_from_file: t.Callable[[str], ConfigDictType]):
     RUNNER_TIMEOUTS = """\
 runners:
-    timeout: 50
+    traffic:
+        timeout: 50
     test_runner_1:
-        timeout: 100
+        traffic:
+            timeout: 100
     test_runner_2:
         resources: system
+    test_runner_3:
+        timeout: 60
 """
     bentoml_cfg = container_from_file(RUNNER_TIMEOUTS)
     runner_cfg = bentoml_cfg["runners"]
-    assert runner_cfg["timeout"] == 50
-    assert runner_cfg["test_runner_1"]["timeout"] == 100
-    assert runner_cfg["test_runner_2"]["timeout"] == 50
+    assert runner_cfg["traffic"]["timeout"] == 50
+    assert runner_cfg["test_runner_1"]["traffic"]["timeout"] == 100
+    assert runner_cfg["test_runner_2"]["traffic"]["timeout"] == 50
+    assert runner_cfg["test_runner_3"]["traffic"]["timeout"] == 60

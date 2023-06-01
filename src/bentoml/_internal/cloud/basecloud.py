@@ -147,7 +147,7 @@ class BaseCloudClient(ABC):
         *,
         force: bool = False,
         context: str | None = None,
-        _model_store: ModelStore,
+        model_store: ModelStore,
     ) -> Model:
         pass
 
@@ -158,6 +158,6 @@ class BaseCloudClient(ABC):
         *,
         force: bool = False,
         context: str | None = None,
-        _bento_store: BentoStore,
+        bento_store: BentoStore,
     ) -> Bento:
         pass

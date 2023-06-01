@@ -18,4 +18,3 @@ with BentoML.
     `BentoML development guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_
     and `documentation guide <https://github.com/bentoml/BentoML/blob/main/docs/README.md>`_
     to get started.
-

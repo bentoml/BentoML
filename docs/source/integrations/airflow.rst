@@ -167,4 +167,3 @@ that demonstrates how to use BentoML with Airflow:
 
 * 📖 `Deploying BentoML using Airflow <https://medium.com/codex/deploying-bentoml-using-airflow-28972343ac68>`_
 * 💻 `Source Code <https://github.com/sdf94/bentoml-airflow>`_
-

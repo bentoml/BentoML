@@ -4,7 +4,7 @@ This is a sample project demonstrating basic usage of [BentoML](https://github.c
 Scikit-learn.
 
 In this project, we will train a classifier model using Scikit-learn and the Iris dataset, build
-an prediction service for serving the trained model via an HTTP server, and containerize the 
+an prediction service for serving the trained model via an HTTP server, and containerize the
 model server as a docker image for production deployment.
 
 This project is also available to run from a notebook: https://github.com/bentoml/BentoML/blob/main/examples/quickstart/iris_classifier.ipynb
@@ -59,8 +59,8 @@ loaded_model = bentoml.sklearn.load_model("iris_clf:latest")
 loaded_model.predict([[5.9, 3. , 5.1, 1.8]])  # => array(2)
 ```
 
-In BentoML, the recommended way of running ML model inference in serving is via Runner, which 
-gives BentoML more flexibility in terms of how to schedule the inference computation, how to 
+In BentoML, the recommended way of running ML model inference in serving is via Runner, which
+gives BentoML more flexibility in terms of how to schedule the inference computation, how to
 batch inference requests and take advantage of hardware resoureces available. Saved models can
 be loaded as Runner instance as shown below:
 
@@ -114,7 +114,7 @@ curl -X POST -H "content-type: application/json" --data "[[5.9, 3, 5.1, 1.8]]" h
 ### Build Bento for deployment
 
 Bento is the distribution format in BentoML which captures all the source code, model files, config
-files and dependency specifications required for running the service for production deployment. Think 
+files and dependency specifications required for running the service for production deployment. Think
 of it as Docker/Container designed for machine learning models.
 
 To begin with building Bento, create a `bentofile.yaml` under your project directory:
@@ -153,14 +153,14 @@ Next, run `bentoml build` from current directory to start the Bento build:
 05/05/2022 19:19:17 INFO     [cli] Successfully built Bento(tag="iris_classifier:5wtigdwm4kwzduqj") at "/Users/bentoml/bentoml/bentos/iris_classifier/5wtigdwm4kwzduqj/"
 ```
 
-A new Bento is now built and saved to local Bento store. You can view and manage it via 
+A new Bento is now built and saved to local Bento store. You can view and manage it via
 `bentoml list`,`bentoml get` and `bentoml delete` CLI command.
 
 
 ### Containerize and Deployment
 
 Bento is designed to be deployed to run efficiently in a variety of different environments.
-And there are lots of deployment options and tools as part of the BentoML eco-system, such as 
+And there are lots of deployment options and tools as part of the BentoML eco-system, such as
 [Yatai](https://github.com/bentoml/Yatai) and [bentoctl](https://github.com/bentoml/bentoctl) for
 direct deployment to cloud platforms.
 
@@ -177,7 +177,7 @@ This will build a new docker image with all source code, model files and depende
 and ready for production deployment. To start a container with this docker image locally, run:
 
 ```bash
-docker run -p 3000:3000 iris_classifier:invwzzsw7li6zckb2ie5eubhd 
+docker run -p 3000:3000 iris_classifier:invwzzsw7li6zckb2ie5eubhd
 ```
 
 ## What's Next?
@@ -188,4 +188,3 @@ docker run -p 3000:3000 iris_classifier:invwzzsw7li6zckb2ie5eubhd
 - Learn more about model deployment options for Bento:
   - [🦄️ Yatai](https://github.com/bentoml/Yatai): Model Deployment at scale on Kubernetes
   - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
-

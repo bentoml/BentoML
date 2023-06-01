@@ -7,10 +7,10 @@ for researchers to build new approaches. To learn more about fastai, visit their
 
 BentoML provides native support for `fastai <https://github.com/fastai/fastai>`_, and this guide provides an overview of how to use BentoML with fastai.
 
-Compatibility 
+Compatibility
 -------------
 
-BentoML requires fastai **version 2** or higher to be installed. 
+BentoML requires fastai **version 2** or higher to be installed.
 
 BentoML does not support fastai version 1. If you are using fastai version 1, consider using :ref:`concepts/runner:Custom Runner`.
 
@@ -141,8 +141,8 @@ Using Runners
    See :ref:`concepts/runner:Using Runners` doc for a general introduction to the Runner concept and its usage.
 
 
-``runner.predict.run`` is generally a drop-in replacement for ``learner.predict`` regardless of the learner type 
-for executing the prediction in the model runner. A fastai runner will receive the same inputs type as 
+``runner.predict.run`` is generally a drop-in replacement for ``learner.predict`` regardless of the learner type
+for executing the prediction in the model runner. A fastai runner will receive the same inputs type as
 the given learner.
 
 
@@ -181,7 +181,7 @@ See `mixed precision <https://docs.fast.ai/callback.fp16.html>`_ to learn more a
 
 If you need to use GPU for inference, you can :ref:`use the PyTorch layer <frameworks/fastai:Using PyTorch layer>`.
 
-Adaptive batching 
+Adaptive batching
 ~~~~~~~~~~~~~~~~~
 
 fastai's ``Learner#predict`` does not support taking batch input for inference, hence

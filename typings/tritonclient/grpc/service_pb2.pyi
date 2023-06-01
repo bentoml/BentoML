@@ -1218,7 +1218,7 @@ class InferStatistics(google.protobuf.message.Message):
         """@@  .. cpp:var:: StatisticDuration queue
         @@
         @@     The count and cumulative duration that inference requests wait in
-        @@     scheduling or other queues. The "queue" count and cumulative 
+        @@     scheduling or other queues. The "queue" count and cumulative
         @@     duration includes cache hits.
         @@
         """
@@ -1264,7 +1264,7 @@ class InferStatistics(google.protobuf.message.Message):
         @@     and extract output tensor data from the Response Cache on a cache
         @@     hit. For example, this duration should include the time to copy
         @@     output tensor data from the Response Cache to the response object.
-        @@     On cache hits, triton does not need to go to the model/backend 
+        @@     On cache hits, triton does not need to go to the model/backend
         @@     for the output tensor data, so the "compute_input", "compute_infer",
         @@     and "compute_output" fields are not updated. Assuming the response
         @@     cache is enabled for a given model, a cache hit occurs for a

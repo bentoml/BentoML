@@ -255,7 +255,6 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
             async def new_behaviour(
                 request: Request, context: BentoServicerContext
             ) -> Response | t.Awaitable[Response]:
-
                 async with self.set_remote_context(context):
                     with self.start_span(method_name, context) as span:
                         # wrap context

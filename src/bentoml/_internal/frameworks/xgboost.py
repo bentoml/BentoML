@@ -142,7 +142,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: xgb.Booster | xgb.XGBModel,
     *,
     signatures: dict[str, ModelSignatureDict] | None = None,

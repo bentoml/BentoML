@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import asyncio
 
 import pytest
 
@@ -95,7 +96,7 @@ def test_serve_from_svc():
 
 
 def test_serve_with_timeout(bentoml_home: str):
-    server = bentoml.HTTPServer("service.py:svc", port=12346)
+    server = bentoml.HTTPServer("service.py:svc", port=12349)
     config_file = os.path.abspath("configs/timeout.yml")
     env = os.environ.copy()
     env.update(BENTOML_CONFIG=config_file)
@@ -105,4 +106,26 @@ def test_serve_with_timeout(bentoml_home: str):
             BentoMLException,
             match="504: b'Not able to process the request in 1 seconds'",
         ):
-            client.echo_delay()
+            client.echo_delay({})
+
+
+@pytest.mark.asyncio
+async def test_serve_with_api_max_concurrency(bentoml_home: str):
+    server = bentoml.HTTPServer("service.py:svc", port=12350, api_workers=1)
+    config_file = os.path.abspath("configs/max_concurrency.yml")
+    env = os.environ.copy()
+    env.update(BENTOML_CONFIG=config_file)
+
+    with server.start(env=env) as client:
+        tasks = [
+            asyncio.create_task(client.async_echo_delay({"delay": 0.5})),
+            asyncio.create_task(client.async_echo_delay({"delay": 0.5})),
+        ]
+        await asyncio.sleep(0.1)
+        tasks.append(asyncio.create_task(client.async_echo_delay({"delay": 0.5})))
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for i in range(2):
+        assert results[i] == {"delay": 0.5}, i
+    assert isinstance(results[-1], BentoMLException), "unexpected success"
+    assert "Too many requests" in str(results[-1]), "unexpected error message"

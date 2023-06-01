@@ -43,7 +43,6 @@ class Server(ABC):
     args: list[str]
 
     process: subprocess.Popen[bytes] | None = None
-    timeout: float = 10
     _client: Client | None = None
 
     def __init__(
@@ -59,6 +58,7 @@ class Server(ABC):
         api_workers: int | None,
         backlog: int,
         bento: str | Bento | Tag | Service | None = None,
+        timeout: float = 10,
     ):
         if bento is not None:
             if not servable:
@@ -121,6 +121,7 @@ class Server(ABC):
         self.args = args
         self.host = "127.0.0.1" if host == "0.0.0.0" else host
         self.port = port
+        self.timeout = timeout
 
     def start(
         self,
@@ -258,6 +259,7 @@ class HTTPServer(Server):
         env: t.Literal["conda"] | None = None,
         host: str = Provide[BentoMLContainer.http.host],
         port: int = Provide[BentoMLContainer.http.port],
+        timeout: float = 10,
         working_dir: str | None = None,
         api_workers: int | None = Provide[BentoMLContainer.api_server_workers],
         backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
@@ -284,6 +286,7 @@ class HTTPServer(Server):
             working_dir,
             api_workers,
             backlog,
+            timeout=timeout,
         )
 
         ssl_args: dict[str, t.Any] = {
@@ -368,6 +371,7 @@ class GrpcServer(Server):
         env: t.Literal["conda"] | None = None,
         host: str = Provide[BentoMLContainer.grpc.host],
         port: int = Provide[BentoMLContainer.grpc.port],
+        timeout: float = 10,
         working_dir: str | None = None,
         api_workers: int | None = Provide[BentoMLContainer.api_server_workers],
         backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
@@ -393,6 +397,7 @@ class GrpcServer(Server):
             working_dir,
             api_workers,
             backlog,
+            timeout=timeout,
         )
 
         ssl_args: dict[str, t.Any] = {

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .config import get_rest_api_client
 from .config import default_context_name
 from .config import default_kube_namespace

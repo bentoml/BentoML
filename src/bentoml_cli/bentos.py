@@ -308,7 +308,7 @@ def add_bento_management_commands(cli: Group):
         version: str,
         output: t.Literal["tag", "default"],
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    ) -> None:
+    ):
         """Build a new Bento from current directory."""
         try:
             bentofile = resolve_user_filepath(bentofile, build_ctx)
@@ -326,9 +326,11 @@ def add_bento_management_commands(cli: Group):
             build_ctx=build_ctx,
         ).save(_bento_store)
 
+        # NOTE: Don't remove the return statement here, since we will need this
+        # for usage stats collection if users are opt-in.
         if output == "tag":
             click.echo(bento.tag)
-            return
+            return bento
 
         if not get_quiet_mode():
             click.echo(BENTOML_FIGLET)
@@ -342,3 +344,4 @@ def add_bento_management_commands(cli: Group):
                 f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
                 fg="blue",
             )
+        return bento

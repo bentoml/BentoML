@@ -55,7 +55,6 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.utils import calc_dir_size
     from bentoml._internal.utils import human_readable_size
     from bentoml._internal.utils import resolve_user_filepath
-    from bentoml._internal.utils import display_path_under_home
     from bentoml._internal.bento.bento import Bento
     from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
     from bentoml._internal.configuration import get_quiet_mode
@@ -114,7 +113,6 @@ def add_bento_management_commands(cli: Group):
         res = [
             {
                 "tag": str(bento.tag),
-                "path": display_path_under_home(bento.path),
                 "size": human_readable_size(calc_dir_size(bento.path)),
                 "creation_time": bento.info.creation_time.astimezone().strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -136,13 +134,11 @@ def add_bento_management_commands(cli: Group):
             table.add_column("Tag")
             table.add_column("Size")
             table.add_column("Creation Time")
-            table.add_column("Path")
             for bento in res:
                 table.add_row(
                     bento["tag"],
                     bento["size"],
                     bento["creation_time"],
-                    bento["path"],
                 )
             console.print(table)
 
@@ -312,7 +308,7 @@ def add_bento_management_commands(cli: Group):
         version: str,
         output: t.Literal["tag", "default"],
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    ) -> None:
+    ):
         """Build a new Bento from current directory."""
         try:
             bentofile = resolve_user_filepath(bentofile, build_ctx)
@@ -330,9 +326,11 @@ def add_bento_management_commands(cli: Group):
             build_ctx=build_ctx,
         ).save(_bento_store)
 
+        # NOTE: Don't remove the return statement here, since we will need this
+        # for usage stats collection if users are opt-in.
         if output == "tag":
             click.echo(bento.tag)
-            return
+            return bento
 
         if not get_quiet_mode():
             click.echo(BENTOML_FIGLET)
@@ -346,3 +344,4 @@ def add_bento_management_commands(cli: Group):
                 f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
                 fg="blue",
             )
+        return bento

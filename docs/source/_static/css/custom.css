@@ -44,5 +44,9 @@ body[data-theme="dark"] .bottom-of-page .left-details a {
 
 .sidebar-drawer {
   width: calc(45% - 26em);
+} 
+
+.sidebar-brand {
+  text-align: center;
 }
 

@@ -61,7 +61,7 @@ dependencies = [
     "rich>=11.2.0",
     "schema",
     "simple-di>=0.1.4",
-    "starlette<0.26",
+    "starlette>=0.13.5,<0.27",
     "uvicorn",
     "watchfiles>=0.15.0",
     "backports.cached-property;python_version<'3.8'",
@@ -269,8 +269,8 @@ target-version = "py310"
 convention = "google"
 
 [tool.ruff.isort]
-lines-after-imports = 2
 force-single-line = true
+known-first-party = ["bentoml"]
 
 [tool.isort]
 profile = "black"

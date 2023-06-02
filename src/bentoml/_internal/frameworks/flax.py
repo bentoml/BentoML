@@ -159,7 +159,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     module: nn.Module,
     state: dict[str, t.Any] | FrozenDict[str, t.Any] | struct.PyTreeNode,
     *,

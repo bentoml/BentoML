@@ -52,6 +52,12 @@ def echo_data_metric(data: str) -> str:
     return data
 
 
+@svc.api(input=JSON(), output=JSON())
+async def echo_delay(data: dict[str, t.Any]) -> JSONSerializable:
+    ret = await py_model.echo_delay.async_run(data)
+    return ret
+
+
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
 def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-argument
     counters = [

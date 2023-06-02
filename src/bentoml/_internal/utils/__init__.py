@@ -58,7 +58,6 @@ __all__ = [
     "reserve_free_port",
     "LazyLoader",
     "validate_or_create_dir",
-    "display_path_under_home",
     "rich_console",
     "experimental",
     "compose",
@@ -160,16 +159,6 @@ def validate_or_create_dir(*path: PathType) -> None:
 
 def calc_dir_size(path: PathType) -> int:
     return sum(f.stat().st_size for f in Path(path).glob("**/*") if f.is_file())
-
-
-def display_path_under_home(path: str) -> str:
-    # Shorten path under home directory with leading `~`
-    # e.g. from `/Users/foo/bar` to just `~/bar`
-    try:
-        return str("~" / Path(path).relative_to(Path.home()))
-    except ValueError:
-        # when path is not under home directory, return original full path
-        return path
 
 
 def human_readable_size(size: t.Union[int, float], decimal_places: int = 2) -> str:

@@ -26,6 +26,9 @@ if t.TYPE_CHECKING:
     from .server import Server
     from ._internal.bento import BentoStore
     from ._internal.yatai_client import YataiClient
+    from ._internal.bento.build_config import CondaOptions
+    from ._internal.bento.build_config import DockerOptions
+    from ._internal.bento.build_config import PythonOptions
 
 
 logger = logging.getLogger(__name__)
@@ -268,11 +271,11 @@ def build(
     name: str | None = None,
     labels: dict[str, str] | None = None,
     description: str | None = None,
-    include: list[str] | None = None,
-    exclude: list[str] | None = None,
-    docker: dict[str, t.Any] | None = None,
-    python: dict[str, t.Any] | None = None,
-    conda: dict[str, t.Any] | None = None,
+    include: t.List[str] | None = None,
+    exclude: t.List[str] | None = None,
+    docker: DockerOptions | dict[str, t.Any] | None = None,
+    python: PythonOptions | dict[str, t.Any] | None = None,
+    conda: CondaOptions | dict[str, t.Any] | None = None,
     version: str | None = None,
     build_ctx: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],

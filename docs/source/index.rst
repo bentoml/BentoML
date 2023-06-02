@@ -68,27 +68,6 @@ Learn BentoML
         Join us in our Slack community where hundreds of ML practitioners are contributing to the project, helping other users, and discuss all things MLOps.
 
 
-Beyond Model Serving
---------------------
-
-.. grid:: 1 2 2 2
-    :gutter: 3
-    :margin: 0
-    :padding: 3 4 0 0
-
-    .. grid-item-card:: `🦄️ Yatai <https://github.com/bentoml/Yatai>`_
-        :link: https://github.com/bentoml/Yatai
-        :link-type: url
-
-        Model Deployment at scale on Kubernetes.
-
-    .. grid-item-card:: `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_
-        :link: https://github.com/bentoml/bentoctl
-        :link-type: url
-
-        Fast model deployment on any cloud platform.
-
-
 Staying Informed
 ----------------
 
@@ -153,7 +132,15 @@ contributing to the project, helping other users and discuss all things MLOps.
    GitHub <https://github.com/bentoml/BentoML>
    Blog <https://modelserving.com>
 
+.. toctree::
+   :caption: Ecosystem
+   :hidden:
 
+   ☁️ BentoML Cloud <https://www.bentoml.com/bento-cloud/>
+   🦄️ Yatai <https://github.com/bentoml/Yatai>
+   🚀 bentoctl <https://github.com/bentoml/bentoctl>
+   
+   
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML
 .. |downloads| image:: https://pepy.tech/badge/bentoml?style=flat-square

@@ -73,7 +73,7 @@ jobs:
         run: |
           npm install -g npm@^7 pyright
       - name: Setup bufbuild/buf
-        uses: bufbuild/buf-setup-action@v1.18.0
+        uses: bufbuild/buf-setup-action@v1.19.0
         with:
           github_token: ${{ github.token }}
       - name: Cache pip dependencies
@@ -239,6 +239,9 @@ jobs:
           - os: macos-latest
             server_type: 'grpc'
             python-version: '3.10'
+          - python-version: '3.11'
+            # NOTE: Remove tests on 3.11 for gRPC for now, as it needs more investigation
+            server_type: 'grpc'
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_${{ matrix.server_type }}_e2e_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

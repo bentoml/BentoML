@@ -105,11 +105,15 @@ class HTTPAppFactory(BaseAppFactory):
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
+        timeout: int = Provide[BentoMLContainer.api_server_config.traffic.timeout],
+        max_concurrency: int
+        | None = Provide[BentoMLContainer.api_server_config.traffic.max_concurrency],
     ):
         self.bento_service = bento_service
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
         self.enable_metrics = enable_metrics
+        super().__init__(timeout=timeout, max_concurrency=max_concurrency)
 
     @property
     def name(self) -> str:
@@ -378,6 +382,9 @@ class HTTPAppFactory(BaseAppFactory):
                     )
                 else:
                     response = JSONResponse("", status_code=status)
+            except asyncio.CancelledError:
+                # Special handling for Python 3.7 compatibility
+                raise
             except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.

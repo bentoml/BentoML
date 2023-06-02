@@ -1,5 +1,7 @@
 ci:
   autoupdate_schedule: monthly
+
+exclude: '.*\.(css|js|svg)$'
 repos:
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: 'v0.0.263'
@@ -14,8 +16,7 @@ repos:
         additional_dependencies:  # black[jupyter] dependencies
           - ipython>=7.8.0
           - tokenize-rt>=3.2.0
-        args: ["src", "tests", "docs", "examples", "typings"]
-        pass_filenames: false
+        files: '/(src|tests|docs|examples|typings)/'
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0

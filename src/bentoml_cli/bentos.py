@@ -168,6 +168,7 @@ def add_bento_management_commands(cli: Group):
             * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
             * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
             * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+            * Bulk delete multiple bento bundles by name and version, separated by " ", e.g.: `benotml delete Irisclassifier:v1 MyPredictService:v2`
             * Bulk delete without confirmation, e.g.: `bentoml delete IrisClassifier --yes`
         """
 

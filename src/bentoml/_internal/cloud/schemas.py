@@ -452,7 +452,7 @@ class RequestQueueConfig:
 
 @attr.define
 class TrafficControlConfig:
-    timeout: t.Optional[int] = attr.field(default=None)
+    timeout: t.Optional[str] = attr.field(default=None)
     request_queue: t.Optional[RequestQueueConfig] = attr.field(default=None)
 
 

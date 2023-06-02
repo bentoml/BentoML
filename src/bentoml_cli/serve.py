@@ -195,7 +195,6 @@ def add_serve_command(cli: click.Group) -> None:
         from bentoml.serve import serve_http_production
 
         if development:
-
             serve_http_production(
                 bento,
                 working_dir=working_dir,
@@ -214,7 +213,6 @@ def add_serve_command(cli: click.Group) -> None:
                 development_mode=True,
             )
         else:
-
             serve_http_production(
                 bento,
                 working_dir=working_dir,
@@ -412,7 +410,6 @@ def add_serve_command(cli: click.Group) -> None:
         from bentoml.serve import serve_grpc_production
 
         if development:
-
             serve_grpc_production(
                 bento,
                 working_dir=working_dir,
@@ -431,7 +428,6 @@ def add_serve_command(cli: click.Group) -> None:
                 development_mode=True,
             )
         else:
-
             serve_grpc_production(
                 bento,
                 working_dir=working_dir,

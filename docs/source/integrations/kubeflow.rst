@@ -48,7 +48,7 @@ BentoML offers three custom resource definitions (CRDs) in the Kubernetes cluste
 Workflow on Notebook
 ####################
 
-In this example, we will train three fraud detection models using the Kubeflow notebook and the 
+In this example, we will train three fraud detection models using the Kubeflow notebook and the
 `Kaggle IEEE-CIS Fraud Detection dataset <https://www.kaggle.com/c/ieee-fraud-detection>`_. We will then create a BentoML service that can
 simultaneously invoke all three models and return a decision on whether a transaction is fraudulent and build it into a Bento. We will showcase
 two deployment workflows using BentoML's Kubernetes operators: deploying directly from the Bento, and deploying from an OCI image built from the Bento.
@@ -56,4 +56,4 @@ two deployment workflows using BentoML's Kubernetes operators: deploying directl
 .. image:: ../_static/img/kubeflow-fraud-detection.png
 
 See the BentoML `Fraud Detection Example <https://github.com/bentoml/BentoML/tree/main/examples/kubeflow>`_ for a detailed workflow from model training
-to end-to-end deployment on Kubernetes. 
+to end-to-end deployment on Kubernetes.

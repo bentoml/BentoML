@@ -85,14 +85,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install .
-          pip install -r requirements/dev-requirements.txt
-      - name: Format check
-        run: |
-          black --check src examples tests
-          black --check --pyi typings
-          isort --check .
-      - name: Lint check
-        run: ruff check src tests examples
+          pip install pre-commit
+      - name: Format and lint check
+        run: pre-commit run --all-files
       - name: Type check
         if: ${{ github.event_name == 'pull_request' }}
         run: git diff --name-only --diff-filter=AM "origin/$GITHUB_BASE_REF" -z -- '*.py{,i}' | xargs -0 --no-run-if-empty pyright

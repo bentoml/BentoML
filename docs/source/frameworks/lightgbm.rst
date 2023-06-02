@@ -56,5 +56,3 @@ Users can now use LightGBM with BentoML with the following API: :code:`load_mode
 .. note::
 
    You can find more examples for **LightGBM** in our `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_ repo.
-
-

@@ -9,7 +9,7 @@ plugins {
 repositories {
     // The google mirror is less flaky than mavenCentral()
     maven {
-        url "https://maven-central.storage-download.googleapis.com/maven2/" 
+        url "https://maven-central.storage-download.googleapis.com/maven2/"
     }
     mavenCentral()
     mavenLocal()

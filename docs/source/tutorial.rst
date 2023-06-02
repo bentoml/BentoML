@@ -449,7 +449,7 @@ Next, run the ``bentoml build`` CLI command from the same directory:
     Building BentoML service "iris_classifier:6otbsmxzq6lwbgxi" from build context "/home/user/gallery/quickstart"
     Packing model "iris_clf:zy3dfgxzqkjrlgxi"
     Locking PyPI package versions..
- 
+
     ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
     ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
     ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░

@@ -11,14 +11,13 @@ from simple_di import Provide
 from .base import MT
 from .base import MonitorBase
 from .base import NoOpMonitor
-from .base import MONITOR_REGISTRY
 from ..types import LazyType
 from .default import DefaultMonitor
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
-_monitor_instance_cache: dict[str, MonitorBase[t.Any]] = {}  # cache of monitors
+_MONITOR_INSTANCES: dict[str, MonitorBase[t.Any]] = {}  # cache of monitors
 
 
 @t.overload
@@ -108,20 +107,16 @@ def monitor(
             {"name": "prediction", "role": "prediction", "type": "numerical"},
         ]
     """
-    if name not in _monitor_instance_cache:
+    if name not in _MONITOR_INSTANCES:
         if not BentoMLContainer.config.monitoring.enabled.get():
             monitor_klass = NoOpMonitor
-        elif monitor_class is None:
+        elif monitor_class is None or monitor_class == "default":
             logger.debug("No monitor class is provided, will use default monitor.")
-            monitor_klass = DefaultMonitor
-        elif monitor_class == "default":
             monitor_klass = DefaultMonitor
         elif monitor_class == "otlp":
             from .otlp import OTLPMonitor
 
             monitor_klass = OTLPMonitor
-        elif monitor_class in MONITOR_REGISTRY:
-            monitor_klass = MONITOR_REGISTRY[monitor_class]
         elif isinstance(monitor_class, str):
             monitor_klass = LazyType["MonitorBase[t.Any]"](monitor_class).get_class()
         elif isinstance(monitor_class, type):
@@ -132,10 +127,12 @@ def monitor(
             )
             monitor_klass = NoOpMonitor
 
-        monitor_options = monitor_options or {}
-        _monitor_instance_cache[name] = monitor_klass(name, **monitor_options)
+        if monitor_options is None:
+            monitor_options = {}
 
-    mon = _monitor_instance_cache[name]
+        _MONITOR_INSTANCES[name] = monitor_klass(name, **monitor_options)
+
+    mon = _MONITOR_INSTANCES[name]
     mon.start_record()
     yield mon
     mon.stop_record()

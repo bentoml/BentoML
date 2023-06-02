@@ -15,8 +15,6 @@ MON_DATAS_VAR: contextvars.ContextVar[
 DT = t.TypeVar("DT")
 MT = t.TypeVar("MT", bound="MonitorBase[t.Any]")
 
-MONITOR_REGISTRY: dict[str, type[MonitorBase[t.Any]]] = {}
-
 BENTOML_MONITOR_ROLES = {"feature", "prediction", "target"}
 BENTOML_MONITOR_TYPES = {"numerical", "categorical", "numerical_sequence"}
 
@@ -34,17 +32,6 @@ class MonitorBase(t.Generic[DT]):
     """
 
     PRESERVED_COLUMNS: tuple[str, ...] = ()
-
-    monitor_type: str | None
-
-    def __init_subclass__(cls, *, monitor_type: str | None = None):
-        if monitor_type is not None:
-            if monitor_type in MONITOR_REGISTRY:
-                raise ValueError(
-                    f"Monitor {monitor_type} is already registered to default monitor registry. Use a different type."
-                )
-            MONITOR_REGISTRY[monitor_type] = cls
-        cls.monitor_type = monitor_type
 
     def __init__(
         self,

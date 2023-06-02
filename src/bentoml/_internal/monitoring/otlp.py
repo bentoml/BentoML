@@ -21,11 +21,10 @@ from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_INSECURE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_CERTIFICATE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_COMPRESSION
 
-from bentoml.exceptions import MissingDependencyException
-
 from .base import MonitorBase
 from ..context import trace_context
 from ..context import component_context
+from ...exceptions import MissingDependencyException
 
 try:
     from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
@@ -38,7 +37,7 @@ if t.TYPE_CHECKING:
     from ..types import JSONSerializable
 
 
-class OTLPMonitor(MonitorBase["JSONSerializable"], monitor_type="otlp"):
+class OTLPMonitor(MonitorBase["JSONSerializable"]):
     """
     The monitor implementation to log data to OTLP endpoint.
     The otlp exporter could be configured by environment variables or

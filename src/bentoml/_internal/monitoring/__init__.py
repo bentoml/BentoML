@@ -7,7 +7,6 @@ import importlib
 from .api import monitor
 from .base import MonitorBase
 from .base import NoOpMonitor
-from .base import MONITOR_REGISTRY
 from .default import DefaultMonitor
 from ...exceptions import MissingDependencyException
 
@@ -25,7 +24,6 @@ except (ImportError, MissingDependencyException):
 __all__ = [
     "monitor",
     "MonitorBase",
-    "MONITOR_REGISTRY",
     "DefaultMonitor",
     "NoOpMonitor",
 ]

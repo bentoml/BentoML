@@ -5,7 +5,6 @@ import logging
 import datetime
 import collections
 import logging.config
-from typing import TYPE_CHECKING
 from pathlib import Path
 
 import yaml
@@ -14,7 +13,7 @@ from .base import MonitorBase
 from ..context import trace_context
 from ..context import component_context
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from ..types import JSONSerializable
 
 
@@ -50,7 +49,7 @@ formatters:
 """
 
 
-class DefaultMonitor(MonitorBase["JSONSerializable"], monitor_type="default"):
+class DefaultMonitor(MonitorBase["JSONSerializable"]):
     """
     The default monitor implementation. It uses a logger to log data and schema, and will
     write monitor data to rotating files. The schema is logged as a JSON object, and the
@@ -128,7 +127,7 @@ class DefaultMonitor(MonitorBase["JSONSerializable"], monitor_type="default"):
 
     def export_data(
         self,
-        datas: t.Dict[str, collections.deque[JSONSerializable]],
+        datas: dict[str, collections.deque[JSONSerializable]],
     ) -> None:
         """
         Export data. This method should be called after all data is logged.

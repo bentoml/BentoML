@@ -35,7 +35,11 @@ def parse_delete_targets_argument_callback(
 ) -> list[str]:
     if value is None:
         return value
-    delete_targets = value.split(",")
+    value = " ".join(value)
+    if "," in value:
+        delete_targets = value.split(",")
+    else:
+        delete_targets = value.split()
     delete_targets = list(map(str.strip, delete_targets))
     for delete_target in delete_targets:
         if not (
@@ -145,7 +149,7 @@ def add_bento_management_commands(cli: Group):
     @cli.command()
     @click.argument(
         "delete_targets",
-        type=click.STRING,
+        nargs=-1,
         callback=parse_delete_targets_argument_callback,
         required=True,
     )
@@ -163,7 +167,8 @@ def add_bento_management_commands(cli: Group):
         Examples:
             * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
             * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
-            * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+            * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `bentoml delete Irisclassifier:v1,MyPredictService:v2`
+            * Bulk delete multiple bento bundles by name and version, separated by " ", e.g.: `bentoml delete Irisclassifier:v1 MyPredictService:v2`
             * Bulk delete without confirmation, e.g.: `bentoml delete IrisClassifier --yes`
         """
 

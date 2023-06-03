@@ -92,6 +92,7 @@ if TYPE_CHECKING:
     from . import batch  # Batch API
     from . import exceptions  # BentoML exceptions
     from . import server  # Server API
+    from . import types  # types API
 
     # isort: on
 else:
@@ -145,6 +146,7 @@ else:
     client = _LazyLoader("bentoml.client", globals(), "bentoml.client")
     server = _LazyLoader("bentoml.server", globals(), "bentoml.server")
     exceptions = _LazyLoader("bentoml.exceptions", globals(), "bentoml.exceptions")
+    types = _LazyLoader("bentoml.types", globals(), "bentoml.types")
 
     del _LazyLoader
 
@@ -214,4 +216,5 @@ __all__ = [
     "load_config",
     "save_config",
     "set_serialization_strategy",
+    "types"
 ]

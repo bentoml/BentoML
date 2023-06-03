@@ -216,5 +216,4 @@ __all__ = [
     "load_config",
     "save_config",
     "set_serialization_strategy",
-    "types"
 ]

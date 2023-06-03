@@ -146,7 +146,6 @@ else:
     client = _LazyLoader("bentoml.client", globals(), "bentoml.client")
     server = _LazyLoader("bentoml.server", globals(), "bentoml.server")
     exceptions = _LazyLoader("bentoml.exceptions", globals(), "bentoml.exceptions")
-    types = _LazyLoader("bentoml.types", globals(), "bentoml.types")
 
     del _LazyLoader
 

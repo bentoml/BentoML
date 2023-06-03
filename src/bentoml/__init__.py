@@ -92,7 +92,6 @@ if TYPE_CHECKING:
     from . import batch  # Batch API
     from . import exceptions  # BentoML exceptions
     from . import server  # Server API
-    from . import types  # types API
 
     # isort: on
 else:

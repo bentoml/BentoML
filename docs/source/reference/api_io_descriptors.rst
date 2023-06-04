@@ -61,7 +61,7 @@ To use the IO descriptor, install bentoml with extra ``io-pandas`` dependency:
 .. note::
 
    The :code:`pandas` package is required to use the :obj:`bentoml.io.PandasDataFrame`
-   or :obj:`bentoml.io.PandasSeries`. 
+   or :obj:`bentoml.io.PandasSeries`.
 
    Install it with ``pip install pandas`` and add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 

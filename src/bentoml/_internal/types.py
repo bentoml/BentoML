@@ -113,9 +113,17 @@ if TYPE_CHECKING:
         | list["JSONSerializable"]
         | dict[str, "JSONSerializable"]
     )
+
+    class ModelSignatureDict(t.TypedDict, total=False):
+        batchable: bool
+        batch_dim: tuple[int, int] | int | None
+        input_spec: tuple[AnyType] | AnyType | None
+        output_spec: AnyType | None
+
 else:
     # NOTE: remove this when registering hook for MetadataType
     MetadataDict = dict
+    ModelSignatureDict = dict
 
     JSONSerializable = t.NewType("JSONSerializable", object)
 

@@ -7,7 +7,7 @@ Deployment Overview
 -------------------
 
 BentoML is designed to provide a unified packaging format, for deploying AI applications
-via a wide range of serving patterns, including real-time inference API, offline batch inference, 
+via a wide range of serving patterns, including real-time inference API, offline batch inference,
 streaming inference, and custom integrations.
 
 For online API use cases, here are the three most common cloud deployment solutions:
@@ -15,7 +15,7 @@ For online API use cases, here are the three most common cloud deployment soluti
 * `☁️ Deploy to BentoCloud <https://www.bentoml.com/>`_
   - Serverless cloud for AI, the best place to deploy and operate BentoML for AI teams. `Sign up here <https://www.bentoml.com/bento-cloud/>`_ for early access.
 * `🦄️ Deploy on Kubernetes with Yatai <https://github.com/bentoml/Yatai>`_
-  - Cloud-native AI deployment on Kubernetes, comes with advanced auto-scaling 
+  - Cloud-native AI deployment on Kubernetes, comes with advanced auto-scaling
   and CI/CD workflows. Requires professional DevOps team to maintain and operate.
 * `🚀 Fast Cloud Deployment with BentoCTL <https://github.com/bentoml/bentoctl>`_
   - Great for proof-of-concept deployments directly running on public cloud services (EC2, ECS, SageMaker, Lambda, GCP, etc).
@@ -30,7 +30,7 @@ Feature comparison across deployment options:
    * - Feature
      - `🍱 BentoCloud <https://www.bentoml.com/>`_
      - `Yatai on Kubernetes <https://github.com/bentoml/Yatai>`_
-     - Cloud Deployment with `BentoCTL <https://github.com/bentoml/bentoctl>`_ 
+     - Cloud Deployment with `BentoCTL <https://github.com/bentoml/bentoctl>`_
    * - Auto-scaling
      - ✅ Fast auto-scaling optimized for AI
      - ✅ Kubernetes-native with custom metrics
@@ -61,7 +61,7 @@ Feature comparison across deployment options:
      - ✅ Native Terraform integration, easily customizable
    * - Access control
      - ✅ Flexible API token management and Role-based access control
-     - Inherits Kubernetes' account and RBAC mechanism, no model/bento/endpoint level access control 
+     - Inherits Kubernetes' account and RBAC mechanism, no model/bento/endpoint level access control
      - No access control besides basic cloud platform permissions such as creating/deleting resources
 
 

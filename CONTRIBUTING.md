@@ -12,12 +12,12 @@ To follow development updates and discussion, join the #bentoml-contributors cha
 There are many ways to contribute to BentoML.
 
 * Supporting new users by answering questions on the
-    [github issues tracker](https://github.com/bentoml/BentoML/issues) and the 
+    [github issues tracker](https://github.com/bentoml/BentoML/issues) and the
     [#bentoml-users slack channel](https://join.slack.bentoml.org).
- 
-* Report issues you're facing and "Thumbs up" on issues and feature requests that are 
+
+* Report issues you're facing and "Thumbs up" on issues and feature requests that are
     relevant to you in BentoML's [issues tracker](https://github.com/bentoml/BentoML/issues).
- 
+
 * Investigate bugs and reviewing other developer's pull requests.
 
 * Contributing code or documentation to the project by submitting a Github pull request.
@@ -31,8 +31,8 @@ There are many ways to contribute to BentoML.
 We use Github issues to track all bugs and feature requests. Feel free to open an issue
 if you have found a bug or wish to see a new feature implemented.
 
-Before submitting a github issue, ensure the bug was not already reported under 
-[issues](https://github.com/bentoml/bentoml/issues) or currently being addressed by 
+Before submitting a github issue, ensure the bug was not already reported under
+[issues](https://github.com/bentoml/bentoml/issues) or currently being addressed by
 other [pull requests](https://github.com/bentoml/BentoML/pulls).
 
 If you're unable to find an open issue addressing the problem,
@@ -44,10 +44,10 @@ the expected behavior that is not occurring.
 
 ## Contributing Code
 
-To avoid duplicating work, it is highly recommended to search through the 
-[issue tracker](https://github.com/bentoml/bentoml/issues) and 
+To avoid duplicating work, it is highly recommended to search through the
+[issue tracker](https://github.com/bentoml/bentoml/issues) and
 [pull requests list](https://github.com/bentoml/BentoML/pulls). If in doubt about
-duplicated work, or if you want to work on a non-trivial feature, it's recommended to 
+duplicated work, or if you want to work on a non-trivial feature, it's recommended to
 first open an issue in the [issue tracker](https://github.com/bentoml/bentoml/issues)
 to get some feedbacks from core developers.
 
@@ -66,11 +66,11 @@ prior knoledge and help you get familiar with its codebase.
 ## Documentation
 
 Improving the documentation is no less important than improving the library. If you find
-a typo in the documentation, or have made improvements, do not hesitate to submit a 
-GitHub pull request. 
+a typo in the documentation, or have made improvements, do not hesitate to submit a
+GitHub pull request.
 
 Full documentation can be found under the `docs/source` directory. You can edit the
-documentation `.rst` or `.md` files using any text editor. Follow the instructions 
+documentation `.rst` or `.md` files using any text editor. Follow the instructions
 [here](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md#how-to-edit-run-build-documentation-site)
 to build documentation site locally, generate HTML output and preview your changes.
 
@@ -108,9 +108,9 @@ Tags for managing issues:
 High quality testing is extremely important for BentoML project. Currently BentoML has
 three kind of tests: Unit tests(`tests/`) and integrations (`tests/integration/`) are
 running on Travis CI for every pull request.  End-to-end tests(`e2e_tests/`) is manually
-executed by the maintainer before every release and for pull requests that are 
+executed by the maintainer before every release and for pull requests that are
 introducing major changes.
 
-We expect pull requests that are introducing new features to have at least 90% test 
+We expect pull requests that are introducing new features to have at least 90% test
 coverages. Pull requests that are fixing a bug should add a test covering the issue
 being fixed if possible.

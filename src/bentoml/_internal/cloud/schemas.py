@@ -606,8 +606,8 @@ class DeploymentMode(Enum):
 
 @attr.define
 class UpdateDeploymentSchema:
+    targets: t.List[CreateDeploymentTargetSchema]
     mode: t.Optional[DeploymentMode] = attr.field(default=None)
-    targets: t.Optional[t.List[CreateDeploymentTargetSchema]] = attr.field(factory=list)
     labels: t.Optional[t.List[LabelItemSchema]] = attr.field(factory=list)
     description: t.Optional[str] = attr.field(default=None)
     do_not_deploy: t.Optional[bool] = attr.field(

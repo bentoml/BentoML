@@ -41,4 +41,4 @@ Visit http://0.0.0.0:8089/ and start the test.
 
 * BentoML deployed on Ray
 
-  serve run ray_deploy:deploy -p 3000 
+  serve run ray_deploy:deploy -p 3000

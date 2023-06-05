@@ -85,14 +85,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install .
-          pip install -r requirements/dev-requirements.txt
-      - name: Format check
-        run: |
-          black --check src examples tests
-          black --check --pyi typings
-          isort --check .
-      - name: Lint check
-        run: ruff check src tests examples
+          pip install pre-commit
+      - name: Format and lint check
+        run: pre-commit run --all-files
       - name: Type check
         if: ${{ github.event_name == 'pull_request' }}
         run: git diff --name-only --diff-filter=AM "origin/$GITHUB_BASE_REF" -z -- '*.py{,i}' | xargs -0 --no-run-if-empty pyright
@@ -175,6 +170,55 @@ jobs:
           fi
           # Now run the unit tests
           coverage run -m pytest tests/unit "${OPTS[@]}"
+  monitoring_e2e_tests:
+    needs:
+      - diff
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
+    name: python${{ matrix.python-version }}_monitoring_e2e_tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      SETUPTOOLS_USE_DISTUTILS: stdlib
+      BENTOML_BUNDLE_LOCAL_BUILD: True
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Set up Docker Buildx
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Get pip cache dir
+        id: cache-dir
+        run: |
+          echo ::set-output name=dir::$(pip cache dir)
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        id: cache-pip
+        with:
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+      - name: Install dependencies
+        run: |
+          pip install -e '.[monitor-otlp]' -r requirements/tests-requirements.txt
+      - name: Run the monitoring tests
+        working-directory: examples/monitoring/task_classification
+        run: |
+          pip install -r requirements.txt
+          mkdir -p monitoring && pytest . -vvv --capture=tee-sys
   bento_server_e2e_tests:
     needs:
       - diff
@@ -196,7 +240,7 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_${{ matrix.server_type }}_e2e_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 90
     env:
       SETUPTOOLS_USE_DISTUTILS: stdlib
       BENTOML_BUNDLE_LOCAL_BUILD: True

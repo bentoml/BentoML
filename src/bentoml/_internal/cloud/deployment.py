@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 import typing as t
 
 import attr
-import json
+
 from ..tag import Tag
 from ..utils import bentoml_cattr
 from .config import get_rest_api_client
@@ -12,7 +13,6 @@ from .config import default_kube_namespace
 from .schemas import DeploymentMode
 from .schemas import schema_to_json
 from .schemas import DeploymentSchema
-from .schemas import schema_from_json
 from .schemas import DeploymentListSchema
 from .schemas import DeploymentTargetType
 from .schemas import CreateDeploymentSchema
@@ -178,7 +178,7 @@ class Deployment:
         *,
         path: str,
     ) -> DeploymentSchema:
-        with open(path, 'r') as file:
+        with open(path, "r") as file:
             data = json.load(file)
 
         yatai_rest_client = get_rest_api_client(context)

@@ -399,7 +399,7 @@ class BentoMLCommandGroup(click.Group):
             if hasattr(cmd, "hidden") and cmd.hidden:
                 continue
             if sub_command in self._commands:
-                aliases = ",".join(sorted(self._commands[sub_command]))
+                aliases = ", ".join(sorted(self._commands[sub_command]))
                 sub_command = "%s (%s)" % (sub_command, aliases)
             # this cmd_help is available since click>=7
             # BentoML requires click>=7.

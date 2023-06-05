@@ -370,7 +370,7 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
         bento_model: Either the tag of the model to get from the store,
                      or a BentoML :class:`~bentoml.Model` instance to load the
                      model from.
-        args: Additional model args to be parse into the model if the object is a Transformers PreTrained protocol.
+        args: Additional model args to be passed into the model if the object is a Transformers PreTrained protocol.
               This shouldn't be used when the bento_model is a pipeline.
         kwargs: Additional keyword arguments to pass into the pipeline.
 
@@ -471,7 +471,7 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
         else:
             assert (
                 len(args) == 0
-            ), "Additional args are not supported for pipeline. Make sure to only use kwargs instead."
+            ), "Positional args are not supported for pipeline. Make sure to only use kwargs instead."
             with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
                 pipeline_class: type[transformers.Pipeline] = cloudpickle.load(f)
 

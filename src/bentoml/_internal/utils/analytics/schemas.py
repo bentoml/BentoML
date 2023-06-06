@@ -190,6 +190,7 @@ class ServeInitEvent(EventMeta):
     serve_id: str
     production: bool
     serve_from_bento: bool
+    serve_from_server_api: bool
 
     bento_creation_timestamp: t.Optional[datetime]
     serve_kind: str = attr.field(validator=attr.validators.in_(SERVE_KIND))
@@ -209,6 +210,7 @@ class ServeUpdateEvent(EventMeta):
     triggered_at: datetime
     duration_in_seconds: int
     serve_kind: str = attr.field(validator=attr.validators.in_(SERVE_KIND))
+    serve_from_server_api: bool
     component: str = attr.field(
         validator=attr.validators.and_(
             attr.validators.instance_of(str), attr.validators.in_(COMPONENT_KIND)

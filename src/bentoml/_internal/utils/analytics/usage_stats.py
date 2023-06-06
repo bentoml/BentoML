@@ -40,9 +40,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 BENTOML_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
+BENTOML_SERVE_FROM_SERVER_API = "__BENTOML_SERVE_FROM_SERVER_API"
 USAGE_TRACKING_URL = "https://t.bentoml.com"
 SERVE_USAGE_TRACKING_INTERVAL_SECONDS = int(12 * 60 * 60)  # every 12 hours
 USAGE_REQUEST_TIMEOUT_SECONDS = 1
+
+
+@lru_cache(maxsize=None)
+def _bentoml_serve_from_server_api() -> bool:
+    return os.environ.get(BENTOML_SERVE_FROM_SERVER_API, str(False)).lower() == "true"
 
 
 @lru_cache(maxsize=1)
@@ -126,6 +132,7 @@ def _track_serve_init(
     svc: Service,
     production: bool,
     serve_kind: str,
+    from_server_api: bool,
     serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
 ):
     if svc.bento is not None:
@@ -133,6 +140,7 @@ def _track_serve_init(
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,
             serve_from_bento=True,
+            serve_from_server_api=from_server_api,
             production=production,
             serve_kind=serve_kind,
             bento_creation_timestamp=bento.info.creation_time,
@@ -148,6 +156,7 @@ def _track_serve_init(
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,
             serve_from_bento=False,
+            serve_from_server_api=from_server_api,
             production=production,
             serve_kind=serve_kind,
             bento_creation_timestamp=None,
@@ -237,6 +246,7 @@ def track_serve(
     svc: Service,
     *,
     production: bool = False,
+    from_server_api: bool | None = None,
     serve_kind: str = "http",
     component: str = "standalone",
     metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
@@ -246,7 +256,15 @@ def track_serve(
         yield
         return
 
-    _track_serve_init(svc=svc, production=production, serve_kind=serve_kind)
+    if from_server_api is None:
+        from_server_api = _bentoml_serve_from_server_api()
+
+    _track_serve_init(
+        svc=svc,
+        production=production,
+        serve_kind=serve_kind,
+        from_server_api=from_server_api,
+    )
 
     if _usage_event_debugging():
         tracking_interval = 5
@@ -267,6 +285,8 @@ def track_serve(
                 serve_kind=serve_kind,
                 # Current accept components are "standalone", "api_server" and "runner"
                 component=component,
+                # check if serve is running from server API or just normal CLI
+                serve_from_server_api=from_server_api,
                 triggered_at=now,
                 duration_in_seconds=int((now - last_tracked_timestamp).total_seconds()),
                 metrics=get_metrics_report(metrics_client, serve_kind=serve_kind),

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import typing as t
 import logging
@@ -17,6 +18,7 @@ from ._internal.tag import Tag
 from ._internal.bento import Bento
 from ._internal.service import Service
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.utils.analytics.usage_stats import BENTOML_SERVE_FROM_SERVER_API
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -145,6 +147,12 @@ class Server(ABC):
             stderr: The stderr to pass to the server. Default to ``None``.
             text: Whether to output as text or bytes for stdout and stderr. Default to ``None``.
         """
+        # NOTE: User shouldn't manually set this since this envvar will be managed by BentoML.
+        os.environ[BENTOML_SERVE_FROM_SERVER_API] = str(True)
+
+        if env is None:
+            env = {}
+        env.update(os.environ.copy())
 
         class _Manager:
             def __init__(__inner_self):
@@ -184,11 +192,50 @@ class Server(ABC):
 
         return _Manager()
 
-    @abstractmethod
     def get_client(self) -> Client | None:
+        if self.process is None:
+            # NOTE: if the process is None, we reset this envvar
+            del os.environ[BENTOML_SERVE_FROM_SERVER_API]
+            logger.warning(
+                "Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first."
+            )
+            return
+        assert self.process is not None
+        out_code = self.process.poll()
+        if out_code == 0:
+            # NOTE: if the process is None, we reset this envvar
+            del os.environ[BENTOML_SERVE_FROM_SERVER_API]
+            logger.warning(
+                "Attempted to get a client from a BentoML server that has already exited! You can run '.start()' again to restart it."
+            )
+            return
+        elif out_code is not None:
+            # NOTE: if the process is None, we reset this envvar
+            del os.environ[BENTOML_SERVE_FROM_SERVER_API]
+            logs = "Attempted to get a client from a BentoML server that has already exited with an error!\nServer Output:\n"
+            if self.process.stdout is not None and not self.process.stdout.closed:
+                s = self.process.stdout.read()
+                logs += textwrap.indent(
+                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
+                )
+            if self.process.stderr is not None and not self.process.stderr.closed:
+                logs += "\nServer Error:\n"
+                s = self.process.stderr.read()
+                logs += textwrap.indent(
+                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
+                )
+            logger.warning(logs)
+            return
+        return self._get_client()
+
+    @abstractmethod
+    def _get_client(self) -> Client | None:
         pass
 
     def stop(self) -> None:
+        # NOTE: User shouldn't manually set this since this envvar will be managed by BentoML.
+        del os.environ[BENTOML_SERVE_FROM_SERVER_API]
+
         if self.process is None:
             logger.warning("Attempted to stop a BentoML server that was not running!")
             return
@@ -301,37 +348,9 @@ class HTTPServer(Server):
         logger.warning(
             "'Server.client()' is deprecated, use 'Server.get_client()' instead."
         )
-        return self.get_client()
+        return t.cast("HTTPClient | None", self.get_client())
 
-    def get_client(self) -> HTTPClient | None:
-        if self.process is None:
-            logger.warning(
-                "Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first."
-            )
-            return
-        assert self.process is not None
-        out_code = self.process.poll()
-        if out_code == 0:
-            logger.warning(
-                "Attempted to get a client from a BentoML server that has already exited! You can run '.start()' again to restart it."
-            )
-            return
-        elif out_code is not None:
-            logs = "Attempted to get a client from a BentoML server that has already exited with an error!\nServer Output:\n"
-            if self.process.stdout is not None and not self.process.stdout.closed:
-                s = self.process.stdout.read()
-                logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
-                )
-            if self.process.stderr is not None and not self.process.stderr.closed:
-                logs += "\nServer Error:\n"
-                s = self.process.stderr.read()
-                logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
-                )
-            logger.warning(logs)
-            return
-
+    def _get_client(self) -> HTTPClient | None:
         if self._client is None:
             from .client import HTTPClient
 
@@ -401,35 +420,7 @@ class GrpcServer(Server):
         if grpc_protocol_version is not None:
             self.args.extend(["--protocol-version", str(grpc_protocol_version)])
 
-    def get_client(self) -> GrpcClient | None:
-        if self.process is None:
-            logger.warning(
-                "Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first."
-            )
-            return
-        assert self.process is not None
-        out_code = self.process.poll()
-        if out_code == 0:
-            logger.warning(
-                "Attempted to get a client from a BentoML server that has already exited! You can run '.start()' again to restart it."
-            )
-            return
-        elif out_code is not None:
-            logs = "Attempted to get a client from a BentoML server that has already exited with an error!\nServer Output:\n"
-            if self.process.stdout is not None and not self.process.stdout.closed:
-                s = self.process.stdout.read()
-                logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
-                )
-            if self.process.stderr is not None and not self.process.stderr.closed:
-                logs += "\nServer Error:\n"
-                s = self.process.stderr.read()
-                logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
-                )
-            logger.warning(logs)
-            return
-
+    def _get_client(self) -> GrpcClient | None:
         if self._client is None:
             from .client import GrpcClient
 

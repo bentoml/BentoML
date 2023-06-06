@@ -1,26 +1,26 @@
 from __future__ import annotations
 
-import os
-import sys
-import typing as t
 import asyncio
 import inspect
 import logging
-from typing import TYPE_CHECKING
-from functools import partial
+import os
+import sys
+import typing as t
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
+from typing import TYPE_CHECKING
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import import_generated_stubs
+from bentoml.grpc.utils import import_grpc
 
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ...grpc.utils import load_from_file
+from ..configuration.containers import BentoMLContainer
 from ..utils import LazyLoader
 from ..utils import cached_property
-from ...grpc.utils import load_from_file
-from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +31,9 @@ if TYPE_CHECKING:
     from grpc_health.v1 import health_pb2 as pb_health
     from grpc_health.v1 import health_pb2_grpc as services_health
 
-    from ..service import Service
     from ...grpc.types import Interceptors
-
-    OnStartup = list[t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]]
+    from ..service import Service
+    from ..types import LifecycleHook
 
 else:
     grpc, aio = import_grpc()
@@ -260,8 +259,11 @@ class Server(aio._server.Server):
         await self.wait_for_termination()
 
     @property
-    def on_startup(self) -> OnStartup:
-        on_startup: OnStartup = [self.bento_service.on_grpc_server_startup]
+    def on_startup(self) -> list[LifecycleHook]:
+        on_startup = [
+            *self.bento_service.startup_hooks,
+            self.bento_service.on_grpc_server_startup,
+        ]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 on_startup.append(partial(runner.init_local, quiet=True))
@@ -329,15 +331,18 @@ class Server(aio._server.Server):
         await self.start()
 
     @property
-    def on_shutdown(self) -> list[t.Callable[[], None]]:
-        on_shutdown = [self.bento_service.on_grpc_server_shutdown]
+    def on_shutdown(self) -> list[LifecycleHook]:
+        on_shutdown = [
+            *self.bento_service.shutdown_hooks,
+            self.bento_service.on_grpc_server_shutdown,
+        ]
         for runner in self.bento_service.runners:
             on_shutdown.append(runner.destroy)
 
         return on_shutdown
 
     async def shutdown(self):
-        # Running on_startup callback.
+        # Running on_shutdown callback.
         for handler in self.on_shutdown:
             out = handler()
             if inspect.isawaitable(out):

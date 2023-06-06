@@ -300,7 +300,7 @@ class YataiClient:
 
         with io.BytesIO() as tar_io:
             with self.spin(text=f'Creating tar archive for bento "{bento.tag}"..'):
-                with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
+                with tarfile.open(fileobj=tar_io, mode="w:") as tar:
 
                     def filter_(
                         tar_info: tarfile.TarInfo,
@@ -751,7 +751,7 @@ class YataiClient:
 
         with io.BytesIO() as tar_io:
             with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
-                with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
+                with tarfile.open(fileobj=tar_io, mode="w:") as tar:
                     tar.add(model.path, arcname="./")
             tar_io.seek(0, 0)
             with self.spin(text=f'Start uploading model "{model.tag}"..'):

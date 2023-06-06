@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import typing as t
+import logging
 
 import attr
 
 from ..tag import Tag
 from ..utils import bentoml_cattr
+from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
 from .config import default_context_name
 from .config import default_kube_namespace
@@ -21,6 +23,8 @@ from .schemas import DeploymentTargetHPAConf
 from .schemas import DeploymentTargetCanaryRule
 from .schemas import DeploymentTargetRunnerConfig
 from ...exceptions import BentoMLException
+
+logger = logging.getLogger(__name__)
 
 
 @attr.define
@@ -45,11 +49,9 @@ class Resource:
 
 
 class Deployment:
-    def __init__(self) -> None:
-        self.resource = Resource()
-
+    @classmethod
     def _create_deployment(
-        self,
+        cls,
         context: str | None = None,
         cluster_name: str | None = None,
         *,
@@ -77,11 +79,11 @@ class Deployment:
         )
         if res is None:
             raise BentoMLException("Create deployment request failed")
-        print(f"{create_deployment_schema.name} is created.")
         return res
 
-    def create_deployment(
-        self,
+    @classmethod
+    def create(
+        cls,
         deployment_name: str,
         bento_repository: Tag | str,
         description: str = None,
@@ -102,7 +104,6 @@ class Deployment:
     ) -> DeploymentSchema:
         if isinstance(bento_repository, str):
             bento_repository = bentoml_cattr.structure(bento_repository, Tag)
-        print(bento_repository)
         dct = {
             "name": deployment_name,
             "kube_namespace": kube_namespace,
@@ -137,29 +138,54 @@ class Deployment:
                 }
             ]
         if cpu or gpu or memory:
-            resource_spec = {"requests": {"cpu": cpu, "gpu": gpu, "memory": memory}}
+            resource_spec = {"cpu": cpu, "gpu": gpu, "memory": memory}
             for target in dct["targets"]:
-                target["config"]["resources"] = resource_spec
-                if target["config"]["runners"] is not None:
-                    for k, v in target["config"]["runners"].items():
-                        v["resources"] = resource_spec
+                if target["config"]["resources"] is None:
+                    target["config"]["resources"] = {"requests": resource_spec}
+                elif target["config"]["resources"].get("requests") is None:
+                    target["config"]["resources"]["requests"] = resource_spec
+                else:
+                    for k, v in resource_spec.items():
+                        if (
+                            v is not None
+                            and target["config"]["resources"]["requests"].get(k) is None
+                        ):
+                            target["config"]["resources"]["requests"][k] = v
+                if target["config"].get("runners") is not None:
+                    for _, config in target["config"]["runners"].items():
+                        if config.get("resources") is None:
+                            config["resources"] = {"requests": resource_spec}
+                        elif config["resources"].get("requests") is None:
+                            config["resources"]["requests"] = resource_spec
+                        else:
+                            for k, v in resource_spec.items():
+                                if (
+                                    v is not None
+                                    and config["resources"]["requests"].get(k) is None
+                                ):
+                                    config["resources"]["requests"][k] = v
+
         if hpa_conf:
             hpa_conf_dct = bentoml_cattr.unstructure_attrs_asdict(hpa_conf)
             for target in dct["targets"]:
-                target["config"]["hpa_conf"] = hpa_conf_dct
+                if target["config"].get("hpa_conf") is None:
+                    target["config"]["hpa_conf"] = hpa_conf_dct
                 if target["config"]["runners"] is not None:
-                    for k, v in target["config"]["runners"].items():
-                        v["hpa_conf"] = hpa_conf_dct
+                    for _, config in target["config"]["runners"].items():
+                        if config.get("hpa_conf") is None:
+                            config["hpa_conf"] = hpa_conf_dct
 
         create_deployment_schema = bentoml_cattr.structure(dct, CreateDeploymentSchema)
-        return self._create_deployment(
+        logger.info(f"{create_deployment_schema.name} is created.")
+        return cls._create_deployment(
             context=context,
             cluster_name=cluster_name,
             create_deployment_schema=create_deployment_schema,
         )
 
+    @classmethod
     def list_deployment(
-        self, context: str | None = None, cluster_name: str | None = None
+        cls, context: str | None = None, cluster_name: str | None = None
     ) -> DeploymentListSchema:
 
         yatai_rest_client = get_rest_api_client(context)
@@ -171,15 +197,16 @@ class Deployment:
             raise BentoMLException("List deployments request failed")
         return res
 
+    @classmethod
     def create_deployment_from_file(
-        self,
+        cls,
+        path: str,
         context: str | None = None,
         cluster_name: str | None = None,
-        *,
-        path: str,
+        path_context: str | None = None,
     ) -> DeploymentSchema:
-        with open(path, "r") as file:
-            data = json.load(file)
+        with open(path, "r"):
+            data = json.load(resolve_user_filepath(path, path_context))
 
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
@@ -196,13 +223,14 @@ class Deployment:
         )
         if res is not None:
             raise BentoMLException("Create deployment: Deployment already exists")
-        res = self._create_deployment(cluster_name, deployment_schema)
+        res = cls._create_deployment(cluster_name, deployment_schema)
         if res is None:
             raise BentoMLException("Create deployment request failed")
         return res
 
+    @classmethod
     def get_deployment(
-        self,
+        cls,
         context: str | None = None,
         cluster_name: str | None = None,
         kubeNamespace: str | None = None,

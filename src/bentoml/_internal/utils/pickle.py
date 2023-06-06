@@ -38,7 +38,8 @@ def pep574_loads(
     main_bytes: bytes, concat_buffer_bytes: bytes, indices: list[int]
 ) -> t.Any:
     if not indices:
-        return loads_or_fix_torch(main_bytes)
+        # TODO: @larme monitor https://github.com/pytorch/pytorch/issues/102977 and may use this function later
+        return _fix_torch_loads(main_bytes)
 
     mem = memoryview(concat_buffer_bytes)
     partitions = zip(indices, indices[1:])

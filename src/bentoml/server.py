@@ -76,7 +76,6 @@ class Server(ABC):
         # backward compatibility
         self.bento = servable
 
-        working_dir = None
         if isinstance(servable, Bento):
             bento_str = str(servable.tag)
         elif isinstance(servable, Tag):
@@ -104,8 +103,6 @@ class Server(ABC):
             str(backlog),
         ]
 
-        if working_dir:
-            args.extend(["--working-dir", working_dir])
         if not production:
             args.append("--development")
         if reload:
@@ -338,11 +335,6 @@ class HTTPServer(Server):
         )
 
         self.args.extend(construct_ssl_args(**ssl_args))
-
-        if api_workers is not None:
-            self.args.extend(["--api-workers", str(api_workers)])
-        if working_dir is not None:
-            self.args.extend(["--working-dir", str(working_dir)])
 
     def client(self) -> HTTPClient | None:
         logger.warning(

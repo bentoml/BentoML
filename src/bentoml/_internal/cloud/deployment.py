@@ -89,6 +89,7 @@ class Deployment:
         description: str = None,
         cluster_name: str = default_context_name,
         kube_namespace: str = default_kube_namespace,
+        resource_instance: str | None = None,
         cpu: str | None = None,
         gpu: str | None = None,
         memory: str | None = None,
@@ -174,6 +175,16 @@ class Deployment:
                     for _, config in target["config"]["runners"].items():
                         if config.get("hpa_conf") is None:
                             config["hpa_conf"] = hpa_conf_dct
+        
+        if resource_instance:
+            for target in dct["targets"]:
+                if target["config"].get("resource_instance") is None:
+                    target["config"]["resource_instance"] = resource_instance
+                if target["config"]["runners"] is not None:
+                    for _, config in target["config"]["runners"].items():
+                        if config.get("resource_instance") is None:
+                            config["resource_instance"] = resource_instance
+
 
         create_deployment_schema = bentoml_cattr.structure(dct, CreateDeploymentSchema)
         logger.info(f"{create_deployment_schema.name} is created.")

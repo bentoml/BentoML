@@ -61,15 +61,21 @@ class Deployment:
         if cluster_name is None:
             cluster_name = default_context_name
         for target in create_deployment_schema.targets:
-            if yatai_rest_client.get_bento(target.bento_repository, target.bento) is None:
+            if (
+                yatai_rest_client.get_bento(target.bento_repository, target.bento)
+                is None
+            ):
                 raise BentoMLException(
                     f"Create deployment: {target.bento_repository}:{target.bento} does not exist"
                 )
-        if yatai_rest_client.get_deployment(
-            cluster_name,
-            create_deployment_schema.kube_namespace,
-            create_deployment_schema.name,
-        ) is not None:
+        if (
+            yatai_rest_client.get_deployment(
+                cluster_name,
+                create_deployment_schema.kube_namespace,
+                create_deployment_schema.name,
+            )
+            is not None
+        ):
             raise BentoMLException("Create deployment: Deployment already exists")
         res = yatai_rest_client.create_deployment(
             cluster_name, schema_to_json(create_deployment_schema)
@@ -191,13 +197,17 @@ class Deployment:
         except json.JSONDecodeError as e:
             raise ValueError(f"Error decoding JSON file: {real_path}\n{e}")
         except Exception as e:
-            raise ValueError(f"An error occurred while reading the file: {real_path}\n{e}")
+            raise ValueError(
+                f"An error occurred while reading the file: {real_path}\n{e}"
+            )
         if cluster_name is None:
             cluster_name = default_context_name
         deployment_schema = bentoml_cattr.structure(data, CreateDeploymentSchema)
-        return cls._create_deployment(create_deployment_schema = deployment_schema,
-                                      context = context,
-                                      cluster_name = cluster_name)
+        return cls._create_deployment(
+            create_deployment_schema=deployment_schema,
+            context=context,
+            cluster_name=cluster_name,
+        )
 
     @classmethod
     def get(

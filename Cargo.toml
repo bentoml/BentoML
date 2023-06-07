@@ -1,0 +1,11 @@
+[package]
+name = "bentoml"
+version = "1.1.2-dev"
+edition = "2021"
+
+[[bin]]
+name = "bentoml"
+path = "src/main.rs"
+
+[dependencies]
+pyo3 = "0.18.3"

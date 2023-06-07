@@ -108,31 +108,8 @@ tracing-otlp = ["opentelemetry-exporter-otlp==1.18.0"]
 monitor-otlp = ["opentelemetry-exporter-otlp-proto-http==1.18.0"]
 
 [build-system]
-requires = ['hatchling', "hatch-vcs>=0.3.0"]
-build-backend = 'hatchling.build'
-
-[tool.hatch.version]
-source = "vcs"
-fallback-version = "0.0.0"
-[tool.hatch.build.hooks.vcs]
-version-file = "src/bentoml/_version.py"
-[tool.hatch.version.raw-options]
-git_describe_command = [
-    "git",
-    "describe",
-    "--dirty",
-    "--tags",
-    "--long",
-    "--first-parent",
-]
-version_scheme = "post-release"
-fallback_version = "0.0.0"
-[tool.hatch.metadata]
-allow-direct-references = true
-[tool.hatch.build.targets.sdist]
-only-include = ["src/bentoml", "src/bentoml_cli"]
-[tool.hatch.build.targets.wheel]
-packages = ["src/bentoml", "src/bentoml_cli"]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
 
 [[tool.pdm.source]]
 url = "https://download.pytorch.org/whl/cpu"

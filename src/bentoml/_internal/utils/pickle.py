@@ -48,7 +48,7 @@ def pep574_loads(
         buff = pickle.PickleBuffer(mem[slice(*partition)])
         recover_buffers.append(buff)
 
-    return pickle.loads(main_bytes, buffers=recover_buffers)
+    return _fix_torch_loads(main_bytes, buffers=recover_buffers)
 
 
 def _safe_torch_tensor_loads(bs: bytes) -> t.Any:
@@ -69,9 +69,9 @@ class FixTorchUnpickler(pickle.Unpickler):
             return super().find_class(module, name)
 
 
-def _fix_torch_loads(bs: bytes) -> t.Any:
+def _fix_torch_loads(bs: bytes, **kwargs: t.Any) -> t.Any:
     f = io.BytesIO(bs)
-    unpickler = FixTorchUnpickler(f)
+    unpickler = FixTorchUnpickler(f, **kwargs)
     return unpickler.load()
 
 

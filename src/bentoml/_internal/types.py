@@ -127,7 +127,7 @@ else:
 
     JSONSerializable = t.NewType("JSONSerializable", object)
 
-LifecycleHook = t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]
+LifecycleHook = t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]
 
 T = t.TypeVar("T")
 

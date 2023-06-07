@@ -47,11 +47,10 @@ from ._internal.runner import Runner
 from ._internal.runner import Runnable
 from ._internal.context import InferenceApiContext as Context
 from ._internal.service import Service
+from ._internal.monitoring import monitor
 from ._internal.utils.http import Cookie
 from ._internal.cloud.yatai import YataiClient
-from ._internal.monitoring.api import monitor
 from ._internal.service.loader import load
-from ._internal.cloud.bentocloud import BentoCloudClient
 
 # Framework specific modules, model management and IO APIs are lazily loaded upon import.
 if TYPE_CHECKING:
@@ -93,6 +92,8 @@ if TYPE_CHECKING:
     from . import batch  # Batch API
     from . import exceptions  # BentoML exceptions
     from . import server  # Server API
+    from . import monitoring  # Monitoring API
+    from . import cloud  # Cloud API
 
     # isort: on
 else:
@@ -146,6 +147,8 @@ else:
     client = _LazyLoader("bentoml.client", globals(), "bentoml.client")
     server = _LazyLoader("bentoml.server", globals(), "bentoml.server")
     exceptions = _LazyLoader("bentoml.exceptions", globals(), "bentoml.exceptions")
+    monitoring = _LazyLoader("bentoml.monitoring", globals(), "bentoml.monitoring")
+    cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
 
     del _LazyLoader
 
@@ -166,7 +169,6 @@ __all__ = [
     "Runner",
     "Runnable",
     "YataiClient",  # Yatai REST API Client
-    "BentoCloudClient",  # BentoCloud REST API Client
     # bento APIs
     "list",
     "get",
@@ -211,9 +213,11 @@ __all__ = [
     "xgboost",
     # integrations
     "ray",
+    "cloud",
     "triton",
     "monitor",
     "load_config",
     "save_config",
     "set_serialization_strategy",
+    "monitoring",
 ]

@@ -204,7 +204,7 @@ class BentoCloudClient(BaseCloudClient):
 
         with io.BytesIO() as tar_io:
             with self.spin(text=f'Creating tar archive for bento "{bento.tag}"..'):
-                with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
+                with tarfile.open(fileobj=tar_io, mode="w:") as tar:
 
                     def filter_(
                         tar_info: tarfile.TarInfo,
@@ -532,7 +532,7 @@ class BentoCloudClient(BaseCloudClient):
                     f'[bold green]Finished downloading all bento "{_tag}" files'
                 )
                 tar_file.seek(0, 0)
-                tar = tarfile.open(fileobj=tar_file, mode="r:gz")
+                tar = tarfile.open(fileobj=tar_file, mode="r")
                 with self.spin(text=f'Extracting bento "{_tag}" tar file'):
                     with fs.open_fs("temp://") as temp_fs:
                         for member in tar.getmembers():
@@ -655,7 +655,7 @@ class BentoCloudClient(BaseCloudClient):
 
         with io.BytesIO() as tar_io:
             with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
-                with tarfile.open(fileobj=tar_io, mode="w:gz") as tar:
+                with tarfile.open(fileobj=tar_io, mode="w:") as tar:
                     tar.add(model.path, arcname="./")
             tar_io.seek(0, 0)
             with self.spin(text=f'Start uploading model "{model.tag}"..'):
@@ -947,7 +947,7 @@ class BentoCloudClient(BaseCloudClient):
                 f'[bold green]Finished downloading model "{_tag}" files'
             )
             tar_file.seek(0, 0)
-            tar = tarfile.open(fileobj=tar_file, mode="r:gz")
+            tar = tarfile.open(fileobj=tar_file, mode="r")
             with self.spin(text=f'Extracting model "{_tag}" tar file'):
                 with fs.open_fs("temp://") as temp_fs:
                     for member in tar.getmembers():

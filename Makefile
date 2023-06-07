@@ -12,19 +12,13 @@ help: ## Show all Makefile targets
 .PHONY: format format-proto lint lint-proto type style clean
 format: ## Running code formatter: black and isort
 	@echo "(black) Formatting codebase..."
-	@black --config pyproject.toml src tests docs examples
-	@echo "(black) Formatting stubs..."
-	@find src -name "*.pyi" ! -name "*_pb2*" -exec black --pyi --config pyproject.toml {} \;
-	@echo "(isort) Reordering imports..."
-	@isort .
-	@echo "(ruff) Running fix only..."
-	@ruff check src examples tests --fix-only
+	@pre-commit run --all-files black
 format-proto: ## Running proto formatter: buf
 	@echo "Formatting proto files..."
 	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf format --config "/workspace/bentoml/grpc/buf.yaml" -w bentoml/grpc
 lint: ## Running lint checker: ruff
 	@echo "(ruff) Linting development project..."
-	@ruff check src examples tests
+	@pre-commit run --all-files ruff
 lint-proto: ## Running proto lint checker: buf
 	@echo "Linting proto files..."
 	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf lint --config "/workspace/bentoml/grpc/buf.yaml" --error-format msvs bentoml/grpc

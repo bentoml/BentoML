@@ -4,7 +4,7 @@ Advanced Containerization
 
 *time expected: 12 minutes*
 
-This guide describes advanced containerization options 
+This guide describes advanced containerization options
 provided by BentoML:
 
 - :ref:`Using base image <guides/containerization:Custom Base Image>`
@@ -156,7 +156,7 @@ Proceed to build your Bento with :code:`bentoml build` and containerize with :co
 
    bentoml containerize <bento>:<tag>
 
-.. tip:: 
+.. tip::
 
    You can also provide :code:`--progress plain` to see the progress from
    `buildkit <https://github.com/moby/buildkit>`_ in plain text
@@ -175,7 +175,7 @@ We will now demonstrate how to provide AWS credentials to a Bento via two approa
 
 .. note::
 
-   :bdg-info:`Remarks:` We recommend for most cases 
+   :bdg-info:`Remarks:` We recommend for most cases
    to use the second option (:ref:`guides/containerization:Mount credentials from host`)
    as it prevents any securities leak.
 
@@ -208,7 +208,7 @@ Define the following :code:`Dockerfile.template`:
 
    ARG AWS_SECRET_ACCESS_KEY
    ARG AWS_ACCESS_KEY_ID
-   
+
    ENV AWS_SECRET_ACCESS_KEY=$ARG AWS_SECRET_ACCESS_KEY
    ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
    {% endblock %}
@@ -238,7 +238,7 @@ Define the following :code:`Dockerfile.template`:
    {% extends bento_base_template %}
    {% block SETUP_BENTO_COMPONENTS %}
    {{ super() }}
-   
+
    RUN --mount=type=secret,id=aws,target=/root/.aws/credentials \
         aws s3 cp s3://path/to/file {{ bento__path }}
 
@@ -266,7 +266,7 @@ structure a :code:`Dockerfile.template`.
 
 The Dockerfile template is a mix between :code:`Jinja2` syntax and :code:`Dockerfile`
 syntax. BentoML set both `trim_blocks` and `lstrip_blocks` in Jinja
-templates environment to :code:`True`. 
+templates environment to :code:`True`.
 
 .. note::
 
@@ -337,14 +337,14 @@ To construct a custom :code:`Dockerfile` template, users have to provide an `ext
 
    This is an expected behaviour from Jinja2, where Jinja2 accepts **any file** as a template.
 
-   We decided not to put any restrictions to validate the template file, simply because we want to enable 
-   users to customize to their own needs. 
+   We decided not to put any restrictions to validate the template file, simply because we want to enable
+   users to customize to their own needs.
 
 :code:`{{ super() }}`
 ^^^^^^^^^^^^^^^^^^^^^
 
 As you can notice throughout this guides, we use a special function :code:`{{ super() }}`. This is a Jinja
-features that allow users to call content of `parent block <https://jinja.palletsprojects.com/en/3.1.x/templates/#super-blocks>`_. This 
+features that allow users to call content of `parent block <https://jinja.palletsprojects.com/en/3.1.x/templates/#super-blocks>`_. This
 enables users to fully extend base templates provided by BentoML to ensure that
 the result Bentos can be containerized.
 
@@ -451,7 +451,7 @@ By default, a Bento sets:
 
     CMD ["bentoml", "serve", "{{ bento__path }}"]
 
-This aboved instructions ensure that whenever :code:`docker run` is invoked on the 🍱 container, :code:`bentoml` is called correctly. 
+This aboved instructions ensure that whenever :code:`docker run` is invoked on the 🍱 container, :code:`bentoml` is called correctly.
 
 In scenarios where one needs to setup a custom :code:`ENTRYPOINT`, make sure to use
 the :code:`ENTRYPOINT` instruction under the :code:`SETUP_BENTO_ENTRYPOINT` block as follows:
@@ -536,7 +536,7 @@ To use any of the aforementioned backends, they must be installed on your system
 
 .. note::
 
-   By default, BentoML will use Docker as the container backend. 
+   By default, BentoML will use Docker as the container backend.
    To use other container engines, please set the environment variable ``BENTOML_CONTAINERIZE_BACKEND`` or
    pass in ``--backend`` to :ref:`bentoml containerize <reference/cli:containerize>`:
 
@@ -615,7 +615,7 @@ To register a new backend, use :meth:`bentoml.container.register_backend`:
 BuildKit interop
 ^^^^^^^^^^^^^^^^
 
-BentoML leverages `BuildKit <https://github.com/moby/buildkit>`_ for a more extensive feature set. However, we recognise that  
+BentoML leverages `BuildKit <https://github.com/moby/buildkit>`_ for a more extensive feature set. However, we recognise that
 BuildKit has come with a lot of friction for migration purposes as well as restrictions to use with other build tools (such as podman, buildah, kaniko).
 
 Therefore, since BentoML version 1.0.11, BuildKit will be an opt-out. To disable BuildKit, pass ``DOCKER_BUILDKIT=0`` to

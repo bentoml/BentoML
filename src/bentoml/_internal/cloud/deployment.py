@@ -56,7 +56,6 @@ class Deployment:
         context: str | None = None,
         cluster_name: str | None = None,
     ) -> DeploymentSchema:
-
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = default_context_name
@@ -170,7 +169,6 @@ class Deployment:
     def list(
         cls, context: str | None = None, cluster_name: str | None = None
     ) -> DeploymentListSchema:
-
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = default_context_name
@@ -187,7 +185,6 @@ class Deployment:
         context: str | None = None,
         cluster_name: str | None = None,
     ) -> DeploymentSchema:
-
         real_path = resolve_user_filepath(path, path_context)
         try:
             with open(real_path, "r") as file:
@@ -217,7 +214,6 @@ class Deployment:
         cluster_name: str | None = None,
         kube_namespace: str | None = None,
     ) -> DeploymentSchema:
-
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = default_context_name

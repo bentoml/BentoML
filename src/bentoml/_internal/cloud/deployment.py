@@ -221,8 +221,8 @@ class Deployment:
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = default_context_name
-        if kubeNamespace is None:
-            kubeNamespace = default_kube_namespace
+        if kube_namespace is None:
+            kube_namespace = default_kube_namespace
         res = yatai_rest_client.get_deployment(
             cluster_name, kube_namespace, deployment_name
         )

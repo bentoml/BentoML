@@ -23,7 +23,6 @@ from ..models import Model
 from ..runner.runner import AbstractRunner
 from ..runner.runner import Runner
 from ..tag import Tag
-from ..utils import cached_property
 from .inference_api import InferenceAPI
 
 if TYPE_CHECKING:
@@ -38,10 +37,9 @@ if TYPE_CHECKING:
     from ..types import LifecycleHook
     from .openapi.specification import OpenAPISpecification
 
+    ContextFunc = t.Callable[[Context], None | t.Coroutine[t.Any, t.Any, None]]
     F = t.TypeVar("F", bound=LifecycleHook)
-    F_ctx = t.TypeVar(
-        "F_ctx", bound=t.Callable[[Context], None | t.Coroutine[t.Any, t.Any, None]]
-    )
+    F_ctx = t.TypeVar("F_ctx", bound=ContextFunc)
 else:
     grpc, _ = import_grpc()
 
@@ -133,8 +131,8 @@ class Service:
     _caller_module: str | None = attr.field(init=False, default=None)
 
     # hooks
-    startup_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
-    shutdown_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
+    startup_hooks: list[ContextFunc] = attr.field(init=False, factory=list)
+    shutdown_hooks: list[ContextFunc] = attr.field(init=False, factory=list)
     deployment_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
 
     def __reduce__(self):
@@ -291,10 +289,6 @@ class Service:
 
         return True
 
-    @cached_property
-    def context(self) -> Context:
-        return Context()
-
     def api(
         self,
         input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
@@ -360,11 +354,11 @@ class Service:
         return generate_spec(self)
 
     def on_startup(self, func: F_ctx) -> F_ctx:
-        self.startup_hooks.append(partial(func, self.context))
+        self.startup_hooks.append(func)
         return func
 
     def on_shutdown(self, func: F_ctx) -> F_ctx:
-        self.startup_hooks.append(partial(func, self.context))
+        self.shutdown_hooks.append(func)
         return func
 
     def on_deployment(self, func: F) -> F:

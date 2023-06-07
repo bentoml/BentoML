@@ -13,12 +13,12 @@ from typing import TYPE_CHECKING
 from simple_di import Provide
 from simple_di import inject
 
-from bentoml.grpc.utils import import_generated_stubs
-from bentoml.grpc.utils import import_grpc
-
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import import_grpc
 from ...grpc.utils import load_from_file
 from ..configuration.containers import BentoMLContainer
+from ..context import InferenceApiContext
 from ..utils import LazyLoader
 from ..utils import cached_property
 
@@ -228,6 +228,10 @@ class Server(aio._server.Server):
             except Exception as e:  # pylint: disable=broad-except
                 raise RuntimeError(f"Server failed unexpectedly: {e}") from None
 
+    @cached_property
+    def context(self) -> InferenceApiContext:
+        return InferenceApiContext()
+
     def configure_port(self, addr: str):
         if self.ssl_certfile:
             client_auth = False
@@ -261,9 +265,8 @@ class Server(aio._server.Server):
     @property
     def on_startup(self) -> list[LifecycleHook]:
         on_startup = [
-            *self.bento_service.startup_hooks,
-            self.bento_service.on_grpc_server_startup,
-        ]
+            partial(hook, self.context) for hook in self.bento_service.startup_hooks
+        ] + [self.bento_service.on_grpc_server_startup]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 on_startup.append(partial(runner.init_local, quiet=True))
@@ -333,9 +336,8 @@ class Server(aio._server.Server):
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
         on_shutdown = [
-            *self.bento_service.shutdown_hooks,
-            self.bento_service.on_grpc_server_shutdown,
-        ]
+            partial(hook, self.context) for hook in self.bento_service.startup_hooks
+        ] + [self.bento_service.on_grpc_server_shutdown]
         for runner in self.bento_service.runners:
             on_shutdown.append(runner.destroy)
 

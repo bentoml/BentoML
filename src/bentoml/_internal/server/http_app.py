@@ -14,9 +14,11 @@ from starlette.responses import PlainTextResponse
 
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
+from ..context import InferenceApiContext
 from ..context import trace_context
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
+from ..utils import cached_property
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
@@ -119,6 +121,10 @@ class HTTPAppFactory(BaseAppFactory):
     @property
     def name(self) -> str:
         return self.bento_service.name
+
+    @cached_property
+    def context(self) -> InferenceApiContext:
+        return InferenceApiContext()
 
     async def index_view_func(self, _: Request) -> Response:
         """
@@ -263,9 +269,9 @@ class HTTPAppFactory(BaseAppFactory):
     @property
     def on_startup(self) -> list[LifecycleHook]:
         on_startup = [
-            *self.bento_service.startup_hooks,
-            self.bento_service.on_asgi_app_startup,
-        ]
+            functools.partial(hook, self.context)
+            for hook in self.bento_service.startup_hooks
+        ] + [self.bento_service.on_asgi_app_startup]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 on_startup.append(functools.partial(runner.init_local, quiet=True))
@@ -293,9 +299,9 @@ class HTTPAppFactory(BaseAppFactory):
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
         on_shutdown = [
-            *self.bento_service.shutdown_hooks,
-            self.bento_service.on_asgi_app_shutdown,
-        ]
+            functools.partial(hook, self.context)
+            for hook in self.bento_service.shutdown_hooks
+        ] + [self.bento_service.on_asgi_app_shutdown]
         for runner in self.bento_service.runners:
             on_shutdown.append(runner.destroy)
         on_shutdown.extend(super().on_shutdown)
@@ -323,40 +329,28 @@ class HTTPAppFactory(BaseAppFactory):
         async def api_func(request: Request) -> Response:
             # handle_request may raise 4xx or 5xx exception.
             output = None
-            with self.bento_service.context.in_request(request):
+            with self.context.in_request(request):
                 try:
                     input_data = await api.input.from_http_request(request)
-                    ctx = None
-                    if is_async_callable(api.func):
-                        if api.multi_input:
-                            if api.needs_ctx:
-                                ctx = self.bento_service.context
-                                input_data[api.ctx_param] = ctx
+                    if api.multi_input:
+                        if api.needs_ctx:
+                            input_data[api.ctx_param] = self.context
+                        if is_async_callable(api.func):
                             output = await api.func(**input_data)
                         else:
-                            if api.needs_ctx:
-                                ctx = self.bento_service.context
-                                output = await api.func(input_data, ctx)
-                            else:
-                                output = await api.func(input_data)
+                            output = await run_in_threadpool(api.func, **input_data)
                     else:
-                        if api.multi_input:
-                            if api.needs_ctx:
-                                ctx = self.bento_service.context
-                                input_data[api.ctx_param] = ctx
-                            output: t.Any = await run_in_threadpool(
-                                api.func, **input_data
-                            )
+                        args = (input_data,)
+                        if api.needs_ctx:
+                            args = (input_data, self.context)
+                        if is_async_callable(api.func):
+                            output = await api.func(*args)
                         else:
-                            if api.needs_ctx:
-                                ctx = self.bento_service.context
-                                output = await run_in_threadpool(
-                                    api.func, input_data, ctx
-                                )
-                            else:
-                                output = await run_in_threadpool(api.func, input_data)
+                            output = await run_in_threadpool(api.func, *args)
 
-                    response = await api.output.to_http_response(output, ctx)
+                    response = await api.output.to_http_response(
+                        output, self.context if api.needs_ctx else None
+                    )
 
                     if trace_context.request_id is not None:
                         response.headers["X-BentoML-Request-ID"] = str(

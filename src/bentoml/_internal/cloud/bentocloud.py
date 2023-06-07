@@ -61,7 +61,7 @@ if t.TYPE_CHECKING:
 
 class BentoCloudClient(BaseCloudClient):
     def __init__(self):
-        self.deploy = Deployment()
+        self.deployment = Deployment()
 
     def push_bento(
         self,

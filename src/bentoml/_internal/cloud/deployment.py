@@ -184,7 +184,7 @@ class Deployment:
         )
 
     @classmethod
-    def list_deployment(
+    def list(
         cls, context: str | None = None, cluster_name: str | None = None
     ) -> DeploymentListSchema:
 
@@ -198,7 +198,7 @@ class Deployment:
         return res
 
     @classmethod
-    def create_deployment_from_file(
+    def create_from_file(
         cls,
         path: str,
         context: str | None = None,
@@ -229,7 +229,7 @@ class Deployment:
         return res
 
     @classmethod
-    def get_deployment(
+    def get(
         cls,
         context: str | None = None,
         cluster_name: str | None = None,

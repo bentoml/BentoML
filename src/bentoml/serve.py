@@ -450,6 +450,9 @@ def serve_http_production(
 
     close_child_stdin = False if development_mode else True
 
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(on_service_deployment(svc))
+
     scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     watchers.append(
         create_watcher(
@@ -701,7 +704,8 @@ def serve_grpc_production(
 
     close_child_stdin: bool = False if development_mode else True
 
-    asyncio.run(on_service_deployment(svc))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(on_service_deployment(svc))
 
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(

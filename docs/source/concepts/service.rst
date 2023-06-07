@@ -163,7 +163,8 @@ Inference Context
 The context of an inference call can be accessed through the additional ``bentoml.Context``
 argument added to the service API function. Both the request and response contexts can be
 accessed through the inference context for getting and setting the headers, cookies, and
-status codes.
+status codes. Additionaly, you can read and write to the global state dictionary via the
+``ctx.state`` attribute.
 
 .. code-block:: python
 
@@ -196,6 +197,42 @@ status codes.
 
         return result
 
+
+Lifecycle Hooks
+^^^^^^^^^^^^^^^
+
+BentoML service provides a set of lifecycle hooks that can be used to execute code before startup and after shutdown.
+In the hook function, you can access the inference context introduced in the previous section.
+
+.. code-block:: python
+
+    @svc.on_startup
+    async def connect_db_on_startup(context: bentoml.Context):
+        context.state["db"] = await get_db_connection()
+        # ctx.request  # this will raise an error because no request has been served yet.
+
+    @svc.on_shutdown
+    async def close_db_on_shutdown(context: bentoml.Context):
+        await context.state["db"].close()
+
+``on_startup`` and ``on_shutdown`` hooks will be evaluated on each API server process(worker).
+Users should avoid accessing file system for possible contest. More used for init a in process object like db connections.
+
+BentoML service also provides an ``on_deployment`` hook that will be evaluated only once when the service starts.
+This is a good place to download models files once shared by all API server processes(workers).
+
+.. code-block:: python
+
+    @svc.on_deployment
+    def download_model_on_serve():
+        download_model_files()
+
+
+This hook will be executed on ``bentoml serve`` and before any process(worker) starts.
+However, users can not access the inference context from the ``on_deployment`` hook.
+
+You can register multiple functions for each hook, and they will be executed in the order they are registered.
+All hooks support both synchronous and asynchronous functions.
 
 IO Descriptors
 --------------

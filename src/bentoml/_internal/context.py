@@ -82,7 +82,7 @@ class InferenceApiContext:
             InferenceApiContext.ResponseContext
         ] = contextvars.ContextVar("response")
         # A dictionary for storing global state shared by the process
-        self.service: dict[str, t.Any] = {}
+        self.state: dict[str, t.Any] = {}
 
     @contextlib.contextmanager
     def in_request(

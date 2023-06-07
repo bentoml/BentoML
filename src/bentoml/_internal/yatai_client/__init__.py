@@ -628,7 +628,7 @@ class YataiClient:
                     f'[bold green]Finished downloading all bento "{_tag}" files'
                 )
                 tar_file.seek(0, 0)
-                tar = tarfile.open(fileobj=tar_file, mode="r:gz")
+                tar = tarfile.open(fileobj=tar_file, mode="r")
                 with self.spin(text=f'Extracting bento "{_tag}" tar file'):
                     with fs.open_fs("temp://") as temp_fs:
                         for member in tar.getmembers():
@@ -1043,7 +1043,7 @@ class YataiClient:
                 f'[bold green]Finished downloading model "{_tag}" files'
             )
             tar_file.seek(0, 0)
-            tar = tarfile.open(fileobj=tar_file, mode="r:gz")
+            tar = tarfile.open(fileobj=tar_file, mode="r")
             with self.spin(text=f'Extracting model "{_tag}" tar file'):
                 with fs.open_fs("temp://") as temp_fs:
                     for member in tar.getmembers():

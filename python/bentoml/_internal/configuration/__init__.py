@@ -1,19 +1,22 @@
 from __future__ import annotations
 
-import importlib.metadata
-import logging
 import os
 import re
 import typing as t
+import logging
+from typing import TYPE_CHECKING
 from functools import lru_cache
 
-from ...exceptions import BentoMLConfigException
+from packaging.version import parse
+from importlib_metadata import version
+
 from ...exceptions import BentoMLException
+from ...exceptions import BentoMLConfigException
 
 # Find BentoML version managed by setuptools_scm
 BENTOML_VERSION = importlib.metadata.version("bentoml")
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from .containers import SerializationStrategy
 
 # Note this file is loaded prior to logging being configured, thus logger is only
@@ -40,12 +43,10 @@ def expand_env_var(env_var: str) -> str:
             env_var = interpolated
 
 
-def clean_bentoml_version(bentoml_version: str) -> str:
-    post_version = bentoml_version.split("+")[0]
-    match = re.match(r"^(\d+)\.(\d+)\.(\d+)(?:(a|rc)\d)*", post_version)
-    if match is None:
-        raise BentoMLException("Errors while parsing BentoML version.")
-    return match.group()
+BENTOML_VERSION = version("bentoml")
+BENTOML_VERSION_PARSED = parse(BENTOML_VERSION)
+# Get clean BentoML version indicating latest PyPI release. E.g. 1.0.0.post => 1.0.0
+CLEAN_BENTOML_VERSION: str = BENTOML_VERSION_PARSED.base_version
 
 
 @lru_cache(maxsize=1)
@@ -71,16 +72,7 @@ def is_pypi_installed_bentoml() -> bool:
     This function looks at the version str and decide if BentoML installation is
     base on a recent official release.
     """
-    # In a git repo with no tag, setuptools_scm generated version starts with "0.1."
-    try:
-        from ..._version import __version_tuple__
-    except ImportError:
-        __version_tuple__ = (0, 0, 0, "dirty")
-
-    is_tagged = not BENTOML_VERSION.startswith("0.1.")
-    is_clean = not str(__version_tuple__[-1]).split(".")[-1].startswith("d")
-    not_been_modified = BENTOML_VERSION == BENTOML_VERSION.split("+")[0]
-    return is_tagged and is_clean and not_been_modified
+    return BENTOML_VERSION_PARSED.pre is None
 
 
 def get_bentoml_config_file_from_env() -> str | None:

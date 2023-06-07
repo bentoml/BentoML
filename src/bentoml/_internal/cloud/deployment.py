@@ -175,7 +175,7 @@ class Deployment:
                     for _, config in target["config"]["runners"].items():
                         if config.get("hpa_conf") is None:
                             config["hpa_conf"] = hpa_conf_dct
-        
+
         if resource_instance:
             for target in dct["targets"]:
                 if target["config"].get("resource_instance") is None:
@@ -184,7 +184,6 @@ class Deployment:
                     for _, config in target["config"]["runners"].items():
                         if config.get("resource_instance") is None:
                             config["resource_instance"] = resource_instance
-
 
         create_deployment_schema = bentoml_cattr.structure(dct, CreateDeploymentSchema)
         logger.info(f"{create_deployment_schema.name} is created.")

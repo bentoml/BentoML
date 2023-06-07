@@ -45,6 +45,7 @@ from .schemas import PreSignMultipartUploadUrlSchema
 from .basecloud import BaseCloudClient
 from .basecloud import FILE_CHUNK_SIZE
 from .basecloud import CallbackIOWrapper
+from .deployment import Deployment
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
@@ -59,6 +60,9 @@ if t.TYPE_CHECKING:
 
 
 class BentoCloudClient(BaseCloudClient):
+    def __init__(self):
+        self.deployment = Deployment()
+
     def push_bento(
         self,
         bento: Bento,

@@ -87,13 +87,13 @@ class ServiceContext:
     @contextlib.contextmanager
     def in_request(
         self, request: starlette.requests.Request
-    ) -> t.Generator[None, None, None]:
+    ) -> t.Generator[ServiceContext, None, None]:
         request_token = self._request_var.set(
             ServiceContext.RequestContext.from_http(request)
         )
         response_token = self._response_var.set(ServiceContext.ResponseContext())
         try:
-            yield
+            yield self
         finally:
             self._request_var.reset(request_token)
             self._response_var.reset(response_token)

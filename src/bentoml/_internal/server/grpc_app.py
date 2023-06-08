@@ -265,8 +265,9 @@ class Server(aio._server.Server):
     @property
     def on_startup(self) -> list[LifecycleHook]:
         on_startup = [
-            partial(hook, self.context) for hook in self.bento_service.startup_hooks
-        ] + [self.bento_service.on_grpc_server_startup]
+            *self.bento_service.startup_hooks,
+            self.bento_service.on_grpc_server_startup,
+        ]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 on_startup.append(partial(runner.init_local, quiet=True))
@@ -336,8 +337,9 @@ class Server(aio._server.Server):
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
         on_shutdown = [
-            partial(hook, self.context) for hook in self.bento_service.startup_hooks
-        ] + [self.bento_service.on_grpc_server_shutdown]
+            *self.bento_service.shutdown_hooks,
+            self.bento_service.on_grpc_server_shutdown,
+        ]
         for runner in self.bento_service.runners:
             on_shutdown.append(runner.destroy)
 

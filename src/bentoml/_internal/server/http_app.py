@@ -14,11 +14,9 @@ from starlette.responses import PlainTextResponse
 
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
-from ..context import ServiceContext as Context
 from ..context import trace_context
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
-from ..utils import cached_property
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
@@ -121,10 +119,6 @@ class HTTPAppFactory(BaseAppFactory):
     @property
     def name(self) -> str:
         return self.bento_service.name
-
-    @cached_property
-    def context(self) -> Context:
-        return Context()
 
     async def index_view_func(self, _: Request) -> Response:
         """
@@ -269,9 +263,9 @@ class HTTPAppFactory(BaseAppFactory):
     @property
     def on_startup(self) -> list[LifecycleHook]:
         on_startup = [
-            functools.partial(hook, self.context)
-            for hook in self.bento_service.startup_hooks
-        ] + [self.bento_service.on_asgi_app_startup]
+            *self.bento_service.startup_hooks,
+            self.bento_service.on_asgi_app_startup,
+        ]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 on_startup.append(functools.partial(runner.init_local, quiet=True))
@@ -299,9 +293,9 @@ class HTTPAppFactory(BaseAppFactory):
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
         on_shutdown = [
-            functools.partial(hook, self.context)
-            for hook in self.bento_service.shutdown_hooks
-        ] + [self.bento_service.on_asgi_app_shutdown]
+            *self.bento_service.shutdown_hooks,
+            self.bento_service.on_asgi_app_shutdown,
+        ]
         for runner in self.bento_service.runners:
             on_shutdown.append(runner.destroy)
         on_shutdown.extend(super().on_shutdown)
@@ -329,12 +323,12 @@ class HTTPAppFactory(BaseAppFactory):
         async def api_func(request: Request) -> Response:
             # handle_request may raise 4xx or 5xx exception.
             output = None
-            with self.context.in_request(request):
+            with self.bento_service.context.in_request(request) as ctx:
                 try:
                     input_data = await api.input.from_http_request(request)
                     if api.multi_input:
                         if api.needs_ctx:
-                            input_data[api.ctx_param] = self.context
+                            input_data[api.ctx_param] = ctx
                         if is_async_callable(api.func):
                             output = await api.func(**input_data)
                         else:
@@ -342,14 +336,14 @@ class HTTPAppFactory(BaseAppFactory):
                     else:
                         args = (input_data,)
                         if api.needs_ctx:
-                            args = (input_data, self.context)
+                            args = (input_data, ctx)
                         if is_async_callable(api.func):
                             output = await api.func(*args)
                         else:
                             output = await run_in_threadpool(api.func, *args)
 
                     response = await api.output.to_http_response(
-                        output, self.context if api.needs_ctx else None
+                        output, ctx if api.needs_ctx else None
                     )
 
                     if trace_context.request_id is not None:

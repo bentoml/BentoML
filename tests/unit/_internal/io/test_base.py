@@ -8,7 +8,7 @@ import pytest
 from bentoml.io import IODescriptor
 
 if TYPE_CHECKING:
-    from bentoml._internal.context import InferenceApiContext as Context
+    from bentoml._internal.context import ServiceContext as Context
 
 
 class DummyDescriptor(

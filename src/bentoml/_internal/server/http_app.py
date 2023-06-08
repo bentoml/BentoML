@@ -14,7 +14,7 @@ from starlette.responses import PlainTextResponse
 
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
-from ..context import InferenceApiContext
+from ..context import ServiceContext as Context
 from ..context import trace_context
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
@@ -123,8 +123,8 @@ class HTTPAppFactory(BaseAppFactory):
         return self.bento_service.name
 
     @cached_property
-    def context(self) -> InferenceApiContext:
-        return InferenceApiContext()
+    def context(self) -> Context:
+        return Context()
 
     async def index_view_func(self, _: Request) -> Response:
         """

@@ -73,13 +73,13 @@ class Metadata(t.Mapping[str, str], ABC):
         """
 
 
-class InferenceApiContext:
+class ServiceContext:
     def __init__(self) -> None:
         self._request_var: contextvars.ContextVar[
-            InferenceApiContext.RequestContext
+            ServiceContext.RequestContext
         ] = contextvars.ContextVar("request")
         self._response_var: contextvars.ContextVar[
-            InferenceApiContext.ResponseContext
+            ServiceContext.ResponseContext
         ] = contextvars.ContextVar("response")
         # A dictionary for storing global state shared by the process
         self.state: dict[str, t.Any] = {}
@@ -89,9 +89,9 @@ class InferenceApiContext:
         self, request: starlette.requests.Request
     ) -> t.Generator[None, None, None]:
         request_token = self._request_var.set(
-            InferenceApiContext.RequestContext.from_http(request)
+            ServiceContext.RequestContext.from_http(request)
         )
-        response_token = self._response_var.set(InferenceApiContext.ResponseContext())
+        response_token = self._response_var.set(ServiceContext.ResponseContext())
         try:
             yield
         finally:
@@ -120,7 +120,7 @@ class InferenceApiContext:
         @classmethod
         def from_http(
             cls, request: starlette.requests.Request
-        ) -> InferenceApiContext.RequestContext:
+        ) -> ServiceContext.RequestContext:
             return cls(
                 request.headers,  # type: ignore # coercing Starlette types to Metadata
                 request.query_params,  # type: ignore

@@ -164,7 +164,8 @@ The context of an inference call can be accessed through the additional ``bentom
 argument added to the service API function. Both the request and response contexts can be
 accessed through the inference context for getting and setting the headers, cookies, and
 status codes. Additionaly, you can read and write to the global state dictionary via the
-``ctx.state`` attribute.
+``ctx.state`` attribute, which is a per-worker dictionary that can be read and written across
+API endpoints.
 
 .. code-block:: python
 
@@ -230,6 +231,10 @@ This is a good place to download models files once shared by all API server proc
 
 This hook will be executed on ``bentoml serve`` and before any process(worker) starts.
 However, users can not access the inference context from the ``on_deployment`` hook.
+
+.. note::
+    The ``on_deployment`` hook can be executed every time the service is started, and we still recommend putting
+    one-time initialization work in the :ref:`Setup Script <concepts/bento:Setup Script>` to avoid repeated execution.
 
 You can register multiple functions for each hook, and they will be executed in the order they are registered.
 All hooks support both synchronous and asynchronous functions.

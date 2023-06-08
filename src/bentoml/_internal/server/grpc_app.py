@@ -18,7 +18,7 @@ from ...grpc.utils import import_generated_stubs
 from ...grpc.utils import import_grpc
 from ...grpc.utils import load_from_file
 from ..configuration.containers import BentoMLContainer
-from ..context import InferenceApiContext
+from ..context import ServiceContext as Context
 from ..utils import LazyLoader
 from ..utils import cached_property
 
@@ -229,8 +229,8 @@ class Server(aio._server.Server):
                 raise RuntimeError(f"Server failed unexpectedly: {e}") from None
 
     @cached_property
-    def context(self) -> InferenceApiContext:
-        return InferenceApiContext()
+    def context(self) -> Context:
+        return Context()
 
     def configure_port(self, addr: str):
         if self.ssl_certfile:

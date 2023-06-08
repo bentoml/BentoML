@@ -23,7 +23,6 @@ from ..models import Model
 from ..runner.runner import AbstractRunner
 from ..runner.runner import Runner
 from ..tag import Tag
-from ..utils import cached_property
 from .inference_api import InferenceAPI
 
 if TYPE_CHECKING:
@@ -130,6 +129,9 @@ class Service:
     _working_dir: str | None = attr.field(init=False, default=None)
     _import_str: str | None = attr.field(init=False, default=None)
     _caller_module: str | None = attr.field(init=False, default=None)
+
+    # service context
+    context: Context = attr.field(init=False, factory=Context)
 
     # hooks
     startup_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
@@ -249,10 +251,6 @@ class Service:
         caller_module = inspect.currentframe().f_back.f_globals["__name__"]
         object.__setattr__(self, "_caller_module", caller_module)
         object.__setattr__(self, "_working_dir", os.getcwd())
-
-    @cached_property
-    def context(self) -> Context:
-        return Context()
 
     def get_service_import_origin(self) -> tuple[str, str]:
         """

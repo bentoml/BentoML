@@ -136,7 +136,7 @@ contributing to the project, helping other users and discuss all things MLOps.
    :caption: Ecosystem
    :hidden:
 
-   ☁️ BentoML Cloud <https://www.bentoml.com/bento-cloud/>
+   ☁️ BentoCloud <https://www.bentoml.com/bento-cloud/>
    🦄️ Yatai <https://github.com/bentoml/Yatai>
    🚀 bentoctl <https://github.com/bentoml/bentoctl>
 

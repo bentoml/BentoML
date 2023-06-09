@@ -538,7 +538,7 @@ desired version, install from a custom PyPI source, or install from a GitHub rep
 
 .. note::
     There's no need to specify :code:`bentoml` as a dependency here since BentoML will
-    addd the current version of BentoML to the Bento's dependency list by default. User
+    add the current version of BentoML to the Bento's dependency list by default. User
     can override this by specifying a different BentoML version.
 
 

@@ -17,7 +17,7 @@ from bentoml._internal.service.openapi.specification import MediaType
 if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
 
-    from bentoml._internal.context import InferenceApiContext as Context
+    from bentoml._internal.context import ServiceContext as Context
     from bentoml._internal.io_descriptors.base import OpenAPIResponse
 
 

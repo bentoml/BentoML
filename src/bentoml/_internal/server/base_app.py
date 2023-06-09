@@ -1,20 +1,24 @@
 from __future__ import annotations
 
 import abc
-import typing as t
-import logging
 import contextlib
+import logging
+import typing as t
 from typing import TYPE_CHECKING
 
-from starlette.responses import PlainTextResponse
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
+from starlette.responses import PlainTextResponse
+
+from ..utils import is_async_callable
 
 if TYPE_CHECKING:
-    from starlette.routing import BaseRoute
+    from starlette.applications import Starlette
     from starlette.requests import Request
     from starlette.responses import Response
-    from starlette.applications import Starlette
+    from starlette.routing import BaseRoute
+
+    from ..types import LifecycleHook
 
 
 logger = logging.getLogger(__name__)
@@ -35,11 +39,11 @@ class BaseAppFactory(abc.ABC):
         ...
 
     @property
-    def on_startup(self) -> list[t.Callable[[], None]]:
+    def on_startup(self) -> list[LifecycleHook]:
         return [self.mark_as_ready]
 
     @property
-    def on_shutdown(self) -> list[t.Callable[[], None]]:
+    def on_shutdown(self) -> list[LifecycleHook]:
         return []
 
     def mark_as_ready(self) -> None:
@@ -65,10 +69,16 @@ class BaseAppFactory(abc.ABC):
         @contextlib.asynccontextmanager
         async def lifespan(_: Starlette) -> t.AsyncGenerator[None, None]:
             for on_startup in self.on_startup:
-                on_startup()
+                if is_async_callable(on_startup):
+                    await on_startup()
+                else:
+                    on_startup()
             yield
             for on_shutdown in self.on_shutdown:
-                on_shutdown()
+                if is_async_callable(on_shutdown):
+                    await on_shutdown()
+                else:
+                    on_shutdown()
 
         return Starlette(
             debug=get_debug_mode(),
@@ -89,8 +99,8 @@ class BaseAppFactory(abc.ABC):
 
     @property
     def middlewares(self) -> list[Middleware]:
-        from .http.traffic import TimeoutMiddleware
         from .http.traffic import MaxConcurrencyMiddleware
+        from .http.traffic import TimeoutMiddleware
 
         results: list[Middleware] = []
         if self.timeout:

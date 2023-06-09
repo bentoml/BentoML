@@ -1,28 +1,29 @@
 from __future__ import annotations
 
+import importlib
+import inspect
+import logging
 import os
 import sys
 import typing as t
-import inspect
-import logging
-import importlib
-from typing import TYPE_CHECKING
 from functools import partial
+from typing import TYPE_CHECKING
 
 import attr
 
 from bentoml.exceptions import BentoMLException
 
-from ..tag import Tag
-from ..models import Model
 from ...exceptions import NotFound
-from ...grpc.utils import import_grpc
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ...grpc.utils import import_grpc
 from ..bento.bento import get_default_svc_readme
-from .inference_api import InferenceAPI
-from ..runner.runner import Runner
-from ..runner.runner import AbstractRunner
+from ..context import ServiceContext as Context
 from ..io_descriptors import IODescriptor
+from ..models import Model
+from ..runner.runner import AbstractRunner
+from ..runner.runner import Runner
+from ..tag import Tag
+from .inference_api import InferenceAPI
 
 if TYPE_CHECKING:
     import grpc
@@ -30,10 +31,15 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
 
+    from ...grpc.v1 import service_pb2_grpc as services
     from .. import external_typing as ext
     from ..bento import Bento
-    from ...grpc.v1 import service_pb2_grpc as services
+    from ..types import LifecycleHook
     from .openapi.specification import OpenAPISpecification
+
+    ContextFunc = t.Callable[[Context], None | t.Coroutine[t.Any, t.Any, None]]
+    HookF = t.TypeVar("HookF", bound=LifecycleHook)
+    HookF_ctx = t.TypeVar("HookF_ctx", bound=ContextFunc)
 else:
     grpc, _ = import_grpc()
 
@@ -124,6 +130,14 @@ class Service:
     _import_str: str | None = attr.field(init=False, default=None)
     _caller_module: str | None = attr.field(init=False, default=None)
 
+    # service context
+    context: Context = attr.field(init=False, factory=Context)
+
+    # hooks
+    startup_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
+    shutdown_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
+    deployment_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
+
     def __reduce__(self):
         """
         Make bentoml.Service pickle serializable
@@ -131,9 +145,9 @@ class Service:
         import fs
 
         from bentoml._internal.bento.bento import Bento
+        from bentoml._internal.configuration.containers import BentoMLContainer
         from bentoml._internal.service.loader import load
         from bentoml._internal.service.loader import load_bento_dir
-        from bentoml._internal.configuration.containers import BentoMLContainer
 
         serialization_strategy = BentoMLContainer.serialization_strategy.get()
 
@@ -341,6 +355,18 @@ class Service:
         from .openapi import generate_spec
 
         return generate_spec(self)
+
+    def on_startup(self, func: HookF_ctx) -> HookF_ctx:
+        self.startup_hooks.append(partial(func, self.context))
+        return func
+
+    def on_shutdown(self, func: HookF_ctx) -> HookF_ctx:
+        self.shutdown_hooks.append(partial(func, self.context))
+        return func
+
+    def on_deployment(self, func: HookF) -> HookF:
+        self.deployment_hooks.append(func)
+        return func
 
     def on_asgi_app_startup(self) -> None:
         pass

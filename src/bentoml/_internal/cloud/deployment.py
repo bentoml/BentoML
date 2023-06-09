@@ -13,7 +13,6 @@ from .config import get_rest_api_client
 from .config import default_context_name
 from .config import default_kube_namespace
 from .schemas import DeploymentMode
-from .schemas import schema_to_json
 from .schemas import DeploymentSchema
 from .schemas import DeploymentListSchema
 from .schemas import DeploymentTargetType
@@ -112,7 +111,7 @@ class Deployment:
         ):
             raise BentoMLException("Create deployment: Deployment already exists")
         res = yatai_rest_client.create_deployment(
-            cluster_name, schema_to_json(create_deployment_schema)
+            cluster_name, create_deployment_schema
         )
         if res is None:
             raise BentoMLException("Create deployment request failed")

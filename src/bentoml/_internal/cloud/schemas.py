@@ -412,7 +412,7 @@ class HPAScaleBehavior(Enum):
 
 @attr.define
 class HPAPolicy:
-    metrics: t.List[HPAMetric] = attr.field(default=None)
+    metrics: t.Optional[t.List[HPAMetric]] = attr.field(default=None)
     scale_down_behavior: t.Optional[HPAScaleBehavior] = attr.field(default=None)
     scale_up_behavior: t.Optional[HPAScaleBehavior] = attr.field(default=None)
 
@@ -445,7 +445,7 @@ class DeploymentTargetResources:
 @attr.define
 class RequestQueueConfig:
     enabled: t.Optional[bool] = attr.field(
-        default=None, converter=attr.converters.default_if_none(False)
+        default=None
     )
     max_consume_concurrency: t.Optional[int] = attr.field(default=None)
 
@@ -470,13 +470,13 @@ class DeploymentTargetRunnerConfig:
     hpa_conf: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
     envs: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
     enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(
-        default=None, converter=attr.converters.default_if_none(False)
+        default=None
     )
     enable_debug_mode: t.Optional[bool] = attr.field(
-        default=None, converter=attr.converters.default_if_none(False)
+        default=None
     )
     enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
-        default=None, converter=attr.converters.default_if_none(False)
+        default=None
     )
     deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(default=None)
     bento_deployment_overrides: t.Optional[RunnerBentoDeploymentOverrides] = attr.field(
@@ -503,16 +503,16 @@ class DeploymentTargetConfig:
         default=None
     )
     enable_ingress: t.Optional[bool] = attr.field(
-        default=None, converter=attr.converters.default_if_none(False)
+        default=None
     )  # false for enables
     enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(
-        default=None, converter=attr.converters.default_if_none(False)
+        default=None
     )
     enable_debug_mode: t.Optional[bool] = attr.field(
-        default=None, converter=attr.converters.default_if_none(False)
+        default=None
     )
     enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
-        default=None, converter=attr.converters.default_if_none(False)
+        default=None
     )
     deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(
         default=None
@@ -611,7 +611,7 @@ class UpdateDeploymentSchema:
     labels: t.Optional[t.List[LabelItemSchema]] = attr.field(factory=list)
     description: t.Optional[str] = attr.field(default=None)
     do_not_deploy: t.Optional[bool] = attr.field(
-        default=None, converter=attr.converters.default_if_none(False)
+        default=None
     )
 
 

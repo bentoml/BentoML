@@ -19,6 +19,8 @@ from .schemas import OrganizationSchema
 from .schemas import DeploymentListSchema
 from .schemas import BentoRepositorySchema
 from .schemas import ModelRepositorySchema
+from .schemas import CreateDeploymentSchema
+from .schemas import UpdateDeploymentSchema
 from .schemas import FinishUploadBentoSchema
 from .schemas import FinishUploadModelSchema
 from .schemas import CreateBentoRepositorySchema
@@ -412,8 +414,8 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelWithRepositoryListSchema)
 
-    def get_deployment_list(self, clusterName: str) -> DeploymentListSchema | None:
-        url = urljoin(self.endpoint, f"/api/v1/clusters/{clusterName}/deployments")
+    def get_deployment_list(self, cluster_name: str) -> DeploymentListSchema | None:
+        url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}/deployments")
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -421,22 +423,65 @@ class YataiRESTApiClient:
         return schema_from_json(resp.text, DeploymentListSchema)
 
     def create_deployment(
-        self, clusterName: str, json_content: str
-    ) -> DeploymentListSchema | None:
-        url = urljoin(self.endpoint, f"/api/v1/clusters/{clusterName}/deployments")
-        resp = self.session.post(url, data=json_content)
+        self, cluster_name: str, create_schema: CreateDeploymentSchema
+    ) -> DeploymentSchema | None:
+        url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}/deployments")
+        resp = self.session.post(url, data=schema_to_json(create_schema))
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentSchema)
 
     def get_deployment(
-        self, clusterName: str, kubeNamespace: str, deploymentName: str
-    ) -> DeploymentListSchema | None:
+        self, cluster_name: str, kube_namespace: str, deployment_name: str
+    ) -> DeploymentSchema | None:
         url = urljoin(
             self.endpoint,
-            f"/api/v1/clusters/{clusterName}/namespaces/{kubeNamespace}/deployments/{deploymentName}",
+            f"/api/v1/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}",
         )
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentSchema)
+
+    def update_deployment(
+        self,
+        cluster_name: str,
+        kube_namespace: str,
+        deployment_name: str,
+        update_schema: UpdateDeploymentSchema,
+    ) -> DeploymentSchema | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}",
+        )
+        resp = self.session.patch(url, data=schema_to_json(update_schema))
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+    def terminate_deployment(
+        self, cluster_name: str, kube_namespace: str, deployment_name: str
+    ) -> DeploymentSchema | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}/terminate",
+        )
+        resp = self.session.post(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+    def delete_deployment(
+        self, cluster_name: str, kube_namespace: str, deployment_name: str
+    ) -> DeploymentSchema | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}",
+        )
+        resp = self.session.delete(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return resp.text

@@ -100,7 +100,7 @@ example, to debug a service called ``svc`` in ``service.py``:
 Service APIs
 ------------
 
-Inference APIs define how the service functionality can be called remotely. A service can 
+Inference APIs define how the service functionality can be called remotely. A service can
 have one or more APIs. An API consists of its input/output specs and a callback function:
 
 .. code-block:: python
@@ -116,11 +116,11 @@ have one or more APIs. An API consists of its input/output specs and a callback 
 
 By decorating a function with ``@svc.api``, we declare that the function shall be
 invoked when this API is called. The API function is a great place for defining your
-serving logic, such as feature fetching, pre and post processing, and model inferences 
+serving logic, such as feature fetching, pre and post processing, and model inferences
 via Runners.
 
 When running ``bentoml serve`` with the example above, this API function is
-transformed into an HTTP endpoint, ``/predict``, that takes in a ``np.ndarray`` as 
+transformed into an HTTP endpoint, ``/predict``, that takes in a ``np.ndarray`` as
 input, and returns a ``np.ndarray`` as output. The endpoint can be called with the following
 ``curl`` command:
 
@@ -161,9 +161,11 @@ Inference Context
 ^^^^^^^^^^^^^^^^^
 
 The context of an inference call can be accessed through the additional ``bentoml.Context``
-argument added to the service API function. Both the request and response contexts can be 
+argument added to the service API function. Both the request and response contexts can be
 accessed through the inference context for getting and setting the headers, cookies, and
-status codes.
+status codes. Additionaly, you can read and write to the global state dictionary via the
+``ctx.state`` attribute, which is a per-worker dictionary that can be read and written across
+API endpoints.
 
 .. code-block:: python
 
@@ -177,7 +179,7 @@ status codes.
 
         result = runner.run(input_array)
 
-        # set response headers, cookies, and status code 
+        # set response headers, cookies, and status code
         ctx.response.status_code = 202
         ctx.response.cookies = [
             bentoml.Cookie(
@@ -196,6 +198,46 @@ status codes.
 
         return result
 
+
+Lifecycle Hooks
+^^^^^^^^^^^^^^^
+
+BentoML service provides a set of lifecycle hooks that can be used to execute code before startup and after shutdown.
+In the hook function, you can access the inference context introduced in the previous section.
+
+.. code-block:: python
+
+    @svc.on_startup
+    async def connect_db_on_startup(context: bentoml.Context):
+        context.state["db"] = await get_db_connection()
+        # ctx.request  # this will raise an error because no request has been served yet.
+
+    @svc.on_shutdown
+    async def close_db_on_shutdown(context: bentoml.Context):
+        await context.state["db"].close()
+
+``on_startup`` and ``on_shutdown`` hooks will be evaluated on each API server process(worker).
+Users should avoid accessing file system for possible contest. More used for init a in process object like db connections.
+
+BentoML service also provides an ``on_deployment`` hook that will be evaluated only once when the service starts.
+This is a good place to download models files once shared by all API server processes(workers).
+
+.. code-block:: python
+
+    @svc.on_deployment
+    def download_model_on_serve():
+        download_model_files()
+
+
+This hook will be executed on ``bentoml serve`` and before any process(worker) starts.
+However, users can not access the inference context from the ``on_deployment`` hook.
+
+.. note::
+    The ``on_deployment`` hook can be executed every time the service is started, and we still recommend putting
+    one-time initialization work in the :ref:`Setup Script <concepts/bento:Setup Script>` to avoid repeated execution.
+
+You can register multiple functions for each hook, and they will be executed in the order they are registered.
+All hooks support both synchronous and asynchronous functions.
 
 IO Descriptors
 --------------
@@ -230,18 +272,18 @@ declare and invoke these descriptors please see the
 Schema and Validation
 ^^^^^^^^^^^^^^^^^^^^^
 
-IO descriptors allow users to define the expected data types, shape, and schema, based 
-on the type of the input and output descriptor specified. IO descriptors can also be defined 
-through  examples with the ``from_sample`` API to simplify the development of service 
+IO descriptors allow users to define the expected data types, shape, and schema, based
+on the type of the input and output descriptor specified. IO descriptors can also be defined
+through  examples with the ``from_sample`` API to simplify the development of service
 definitions.
 
 Numpy
 ~~~~~
 
-The data type and shape of the ``NumpyNdarray`` can be specified with the ``dtype`` 
-and ``shape`` arguments. By setting the ``enforce_shape`` and ``enforce_dtype`` 
-arguments to `True`, the IO descriptor will strictly validate the input and output data 
-based the specified data type and shape. To learn more, see IO descrptor reference for 
+The data type and shape of the ``NumpyNdarray`` can be specified with the ``dtype``
+and ``shape`` arguments. By setting the ``enforce_shape`` and ``enforce_dtype``
+arguments to `True`, the IO descriptor will strictly validate the input and output data
+based the specified data type and shape. To learn more, see IO descrptor reference for
 :ref:`reference/api_io_descriptors:NumPy ``ndarray```.
 
 .. code-block:: python
@@ -270,10 +312,10 @@ based the specified data type and shape. To learn more, see IO descrptor referen
 Pandas DataFrame
 ~~~~~~~~~~~~~~~~
 
-The data type and shape of the ``PandasDataFrame`` can be specified with the ``dtype`` 
-and ``shape`` arguments. By setting the ``enforce_shape`` and ``enforce_dtype`` 
-arguments to `True`, the IO descriptor will strictly validate the input and output data 
-based the specified data type and shape. To learn more, see IO descrptor reference for 
+The data type and shape of the ``PandasDataFrame`` can be specified with the ``dtype``
+and ``shape`` arguments. By setting the ``enforce_shape`` and ``enforce_dtype``
+arguments to `True`, the IO descriptor will strictly validate the input and output data
+based the specified data type and shape. To learn more, see IO descrptor reference for
 :ref:`reference/api_io_descriptors:Tabular Data with Pandas`.
 
 .. code-block:: python
@@ -303,7 +345,7 @@ based the specified data type and shape. To learn more, see IO descrptor referen
 JSON
 ~~~~
 
-The data type of a JSON IO descriptor can be specified through a Pydantic model. By setting 
+The data type of a JSON IO descriptor can be specified through a Pydantic model. By setting
 a pydantic model, the IO descriptor will validate the input based on the specified pydantic
 model and return. To learn more, see IO descrptor reference for
 :ref:`reference/api_io_descriptors:Structured Data with JSON`. We also provide
@@ -476,6 +518,3 @@ Further tuning of event loop configuration is not needed under common use cases.
     Exception handling
         custom error code
         custom error msg
-
-
-

@@ -8,7 +8,7 @@ Our collaboration with Arize AI makes it easy to integrate end-to-end solutions 
 
 
 .. seealso::
-   
+
    :ref:`The Arize section under the monitoring guide <guides/monitoring:Plugins and Third-party Monitoring Data Collectors>` demonstrates how to use the integration.
 
 

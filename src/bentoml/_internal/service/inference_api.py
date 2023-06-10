@@ -8,7 +8,7 @@ from typing import Optional
 import yaml
 
 from ..types import is_compatible_type
-from ..context import Context as Context
+from ..context import ServiceContext as Context
 from ...exceptions import InvalidArgument
 from ..io_descriptors import IODescriptor
 

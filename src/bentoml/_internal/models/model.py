@@ -37,22 +37,13 @@ from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..types import ModelSignatureDict
 
-if TYPE_CHECKING:
-    from ..types import AnyType
+if t.TYPE_CHECKING:
     from ..types import PathType
     from ..runner import Runner
     from ..runner import Runnable
     from ..runner.strategy import Strategy
-
-    class ModelSignatureDict(t.TypedDict, total=False):
-        batchable: bool
-        batch_dim: tuple[int, int] | int | None
-        input_spec: tuple[AnyType] | AnyType | None
-        output_spec: AnyType | None
-
-else:
-    ModelSignaturesDict = dict
 
 
 T = t.TypeVar("T")

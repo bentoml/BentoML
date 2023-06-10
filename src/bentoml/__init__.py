@@ -18,9 +18,9 @@ from __future__ import annotations
 
 import typing as t
 
+from ._internal.configuration import BENTOML_VERSION as __version__
 from ._internal.configuration import load_config
 from ._internal.configuration import save_config as save_config
-from ._internal.configuration import BENTOML_VERSION as __version__
 
 # Inject dependencies and configurations
 load_config()
@@ -102,72 +102,68 @@ _import_structure = {
 # are for IDE and linter to be nice with.
 if t.TYPE_CHECKING:
     # Framework imports
-    from . import io as io
-    from . import h2o as h2o
-    from . import ray as ray
-    from . import flax as flax
-    from . import onnx as onnx
     from . import batch as batch  # Batch API
-    from . import gluon as gluon
-    from . import keras as keras
-    from . import spacy as spacy
-    from . import client as client  # Client API
-    from . import fastai as fastai
-    from . import mlflow as mlflow
-    from . import models as models
-    from . import paddle as paddle
-    from . import server as server  # Server API
-    from . import triton as triton
-    from . import easyocr as easyocr
-    from . import metrics as metrics  # Prometheus metrics client
-    from . import pycaret as pycaret
-    from . import pytorch as pytorch
-    from . import sklearn as sklearn
-    from . import xgboost as xgboost
     from . import catboost as catboost
-    from . import lightgbm as lightgbm
-    from . import onnxmlir as onnxmlir
+    from . import client as client  # Client API
     from . import container as container  # Container API
     from . import detectron as detectron
     from . import diffusers as diffusers
+    from . import easyocr as easyocr
     from . import exceptions as exceptions  # BentoML exceptions
-    from . import tensorflow as tensorflow
+    from . import fastai as fastai
+    from . import flax as flax
+    from . import gluon as gluon
+    from . import h2o as h2o
+    from . import io as io
+    from . import keras as keras
+    from . import lightgbm as lightgbm
+    from . import metrics as metrics  # Prometheus metrics client
+    from . import mlflow as mlflow
+    from . import models as models
+    from . import onnx as onnx
+    from . import onnxmlir as onnxmlir
+    from . import paddle as paddle
+    from . import picklable_model as picklable_model
+    from . import pycaret as pycaret
+    from . import pytorch as pytorch
+    from . import pytorch_lightning as pytorch_lightning
+    from . import ray as ray
+    from . import server as server  # Server API
+    from . import sklearn as sklearn
+    from . import spacy as spacy
     from . import statsmodels as statsmodels
+    from . import tensorflow as tensorflow
+    from . import tensorflow_v1 as tensorflow_v1
     from . import torchscript as torchscript
     from . import transformers as transformers
-    from . import tensorflow_v1 as tensorflow_v1
-    from . import picklable_model as picklable_model
-    from . import pytorch_lightning as pytorch_lightning
-
+    from . import triton as triton
+    from . import xgboost as xgboost
+    from ._internal.bento import Bento as Bento
+    from ._internal.configuration import \
+        set_serialization_strategy as set_serialization_strategy
+    from ._internal.context import Context as Context
+    from ._internal.models import Model as Model
+    from ._internal.monitoring.api import monitor as monitor
+    from ._internal.runner import Runnable as Runnable
+    from ._internal.runner import Runner as Runner
+    from ._internal.service import Service as Service
+    from ._internal.service.loader import load as load
+    # BentoML built-in types
+    from ._internal.tag import Tag as Tag
+    from ._internal.utils.http import Cookie as Cookie
+    from ._internal.yatai_client import YataiClient as YataiClient
     # Bento management APIs
+    from .bentos import delete as delete
+    from .bentos import export_bento as export_bento
     from .bentos import get as get
+    from .bentos import import_bento as import_bento
     from .bentos import list as list  # pylint: disable=W0622
     from .bentos import pull as pull
     from .bentos import push as push
     from .bentos import serve as serve
-    from .bentos import delete as delete
-    from .bentos import export_bento as export_bento
-    from .bentos import import_bento as import_bento
-
     # server API
     from .server import GrpcServer as GrpcServer
     from .server import HTTPServer as HTTPServer
-
-    # BentoML built-in types
-    from ._internal.tag import Tag as Tag
-    from ._internal.bento import Bento as Bento
-    from ._internal.models import Model as Model
-    from ._internal.runner import Runner as Runner
-    from ._internal.runner import Runnable as Runnable
-    from ._internal.context import Context as Context
-    from ._internal.service import Service as Service
-    from ._internal.utils.http import Cookie as Cookie
-    from ._internal.yatai_client import YataiClient as YataiClient
-    from ._internal.configuration import (
-        set_serialization_strategy as set_serialization_strategy,
-    )
-    from ._internal.monitoring.api import monitor as monitor
-    from ._internal.service.loader import load as load
 else:
     import sys
 

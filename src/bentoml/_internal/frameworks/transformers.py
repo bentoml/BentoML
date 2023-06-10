@@ -60,7 +60,7 @@ if t.TYPE_CHECKING:
 
         @classmethod
         def from_pretrained(
-            cls, pretrained_model_name_or_path: str, **kwargs: t.Any
+            cls, pretrained_model_name_or_path: str, *args: t.Any, **kwargs: t.Any
         ) -> PreTrainedProtocol:
             ...
 
@@ -356,11 +356,13 @@ def load_model(
 
 
 @t.overload
-def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> PreTrainedProtocol:
+def load_model(
+    bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any
+) -> TransformersPreTrained:
     ...
 
 
-def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
+def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) -> t.Any:
     """
     Load the Transformers model from BentoML local modelstore with given name.
 
@@ -368,6 +370,8 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
         bento_model: Either the tag of the model to get from the store,
                      or a BentoML :class:`~bentoml.Model` instance to load the
                      model from.
+        args: Additional model args to be passed into the model if the object is a Transformers PreTrained protocol.
+              This shouldn't be used when the bento_model is a pipeline.
         kwargs: Additional keyword arguments to pass into the pipeline.
 
     Returns:
@@ -463,8 +467,11 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
         if "_pretrained_class" in bento_model.info.metadata:
             with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "rb") as f:
                 protocol: PreTrainedProtocol = cloudpickle.load(f)
-            return protocol.from_pretrained(bento_model.path, **kwargs)
+            return protocol.from_pretrained(bento_model.path, *args, **kwargs)
         else:
+            assert (
+                len(args) == 0
+            ), "Positional args are not supported for pipeline. Make sure to only use kwargs instead."
             with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
                 pipeline_class: type[transformers.Pipeline] = cloudpickle.load(f)
 
@@ -813,9 +820,18 @@ def save_model(
         metadata.update(
             {
                 "_pretrained_class": pretrained.__class__.__name__,
-                "_framework": pretrained.framework,
             }
         )
+        if hasattr(pretrained, "framework") and isinstance(
+            pretrained,
+            (
+                transformers.PreTrainedModel,
+                transformers.TFPreTrainedModel,
+                transformers.FlaxPreTrainedModel,
+            ),
+        ):
+            # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
+            metadata["_framework"] = pretrained.framework
 
         with bentoml.models.create(
             name,

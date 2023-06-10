@@ -18,7 +18,7 @@ if t.TYPE_CHECKING:
     from bentoml.grpc.types import ProtoField
 
     from ..types import LazyType
-    from ..context import Context as Context
+    from ..context import ServiceContext as Context
     from ..service.openapi.specification import Schema
     from ..service.openapi.specification import Reference
 

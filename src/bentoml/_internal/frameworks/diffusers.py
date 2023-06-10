@@ -64,7 +64,6 @@ class DiffusersOptions(PartialKwargsModelOptions):
 def _str2cls(
     full_cls_str: str,
 ) -> type[diffusers.pipelines.DiffusionPipeline | diffusers.SchedulerMixin]:
-
     import importlib
 
     module_name, _, class_name = full_cls_str.rpartition(".")
@@ -199,11 +198,9 @@ def load_model(
         pipeline.scheduler = scheduler
 
     if device_id is not None:
-
         move_model_to_device = True
 
         if str(device_id).lower().startswith("cuda"):
-
             # when device_map is not None, we should not move the
             # pipeline to gpu again see
             # https://github.com/huggingface/diffusers/issues/2782

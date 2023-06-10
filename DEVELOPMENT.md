@@ -209,13 +209,13 @@ bentoml get IrisClassifier --verbose
 
 ## Style check, auto-formatting, type-checking
 
-formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyCQA/isort), [buf](https://github.com/bufbuild/buf)
+formatter: [black](https://github.com/psf/black), [buf](https://github.com/bufbuild/buf)
 
 linter: [ruff](https://github.com/charliermarsh/ruff), [buf](https://github.com/bufbuild/buf)
 
 type checker: [pyright](https://github.com/microsoft/pyright)
 
-We are using [buf](https://github.com/bufbuild/buf) for formatting and linting
+We are using [pre-commit](https://pre-commit.com/) to manage our hooks, and [buf](https://github.com/bufbuild/buf) for formatting and linting
 of our proto files. Configuration can be found [here](./bentoml/grpc/buf.yaml).
 Currently, we are running `buf` with docker, hence we kindly ask our developers
 to have docker available. Docker installation can be found [here](https://docs.docker.com/get-docker/).
@@ -223,9 +223,7 @@ to have docker available. Docker installation can be found [here](https://docs.d
 Run linter/format script:
 
 ```bash
-make format
-
-make lint
+pre-commit run --all-files
 ```
 
 Run type checker:

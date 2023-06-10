@@ -1,22 +1,20 @@
 from __future__ import annotations
 
-import typing as t
 import asyncio
+import typing as t
 
-from starlette.requests import Request
 from multipart.multipart import parse_options_header
+from starlette.requests import Request
 from starlette.responses import Response
 
-from . import from_spec as io_descriptor_from_spec
-from .base import IODescriptor
-from ...exceptions import InvalidArgument
-from ...exceptions import BentoMLException
+from ...exceptions import BentoMLException, InvalidArgument
 from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..utils.formparser import populate_multipart_requests
-from ..utils.formparser import concat_to_multipart_response
-from ..service.openapi.specification import Schema
-from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import MediaType, Schema
+from ..utils.formparser import (concat_to_multipart_response,
+                                populate_multipart_requests)
+from . import from_spec as io_descriptor_from_spec
+from .base import IODescriptor
 
 if t.TYPE_CHECKING:
     from types import UnionType
@@ -26,9 +24,9 @@ if t.TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
-    from .base import OpenAPIResponse
+    from ..context import ServiceContext as Context
     from ..types import LazyType
-    from ..context import Context as Context
+    from .base import OpenAPIResponse
 else:
     pb, _ = import_generated_stubs("v1")
     pb_v1alpha1, _ = import_generated_stubs("v1alpha1")

@@ -5,19 +5,19 @@ Flink
 Apache Flink DataStream
 -----------------------
 
-BentoML support stream model inferencing in 
-`Apache Flink DataStream API <https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/overview/>`_ 
-through either embedded runners or remote calls to a separated deployed Bento Service. This guide assumes prior knowledge 
+BentoML support stream model inferencing in
+`Apache Flink DataStream API <https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/overview/>`_
+through either embedded runners or remote calls to a separated deployed Bento Service. This guide assumes prior knowledge
 on using runners and service APIs.
 
 Embedded Model Runners
 ^^^^^^^^^^^^^^^^^^^^^^
-In BentoML, a :ref:`Runner <concepts/runner:Using Runners>` 
-represents a unit of computation, such as model inferencing, that can executed on either a remote runner process or an 
-embedded runner instance. If available system resources allow loading the ML model in memory, invoking runners as embedded 
+In BentoML, a :ref:`Runner <concepts/runner:Using Runners>`
+represents a unit of computation, such as model inferencing, that can executed on either a remote runner process or an
+embedded runner instance. If available system resources allow loading the ML model in memory, invoking runners as embedded
 instances can typically achieve a better performance by avoiding the overhead incurred in the interprocess communication.
 
-Runners can be initialized as embedded instances by calling `init_local()`. Once a runner is initialized, inference functions 
+Runners can be initialized as embedded instances by calling `init_local()`. Once a runner is initialized, inference functions
 can be invoked on the runners.
 
 .. code:: python
@@ -29,7 +29,7 @@ can be invoked on the runners.
     iris_runner.predict.run(INPUT_TEXT)
 
 
-To integrate with Flink DataRunners API, runners can be used in `ProcessWindowFunction`` for iterative inferencing or a 
+To integrate with Flink DataRunners API, runners can be used in `ProcessWindowFunction`` for iterative inferencing or a
 `WindowFunction` for batched inferencing.
 
 .. code:: python
@@ -50,7 +50,7 @@ To integrate with Flink DataRunners API, runners can be used in `ProcessWindowFu
             # transform(data)
             return data[0], self.runner.run(data[1])
 
-The following is an end-to-end word classification example of using embedded runners in a Flink DataStream program. 
+The following is an end-to-end word classification example of using embedded runners in a Flink DataStream program.
 For simplicity, the input stream and output sink are abstracted out using in-memory collections and stdout sink.
 
 .. code:: python
@@ -91,7 +91,7 @@ For simplicity, the input stream and output sink are abstracted out using in-mem
 
         # Define the execution logic
         ds = ds.map(ClassifyFunction())
-        
+
         # Create sink and emit result to sink, e.g. Kafka, File, Table, etc. Example prints to stdout for simplicity.
         ds.print()
 
@@ -107,11 +107,11 @@ For simplicity, the input stream and output sink are abstracted out using in-mem
 Remote Bento Service
 ^^^^^^^^^^^^^^^^^^^^
 
-Model runners can also be invoked remotely as a separately deployed Bento Service. Calling a remote Bento Service may be 
-preferred if the model cannot be loaded into memory of the Flink DataStream program. This options is also advantageous because 
+Model runners can also be invoked remotely as a separately deployed Bento Service. Calling a remote Bento Service may be
+preferred if the model cannot be loaded into memory of the Flink DataStream program. This options is also advantageous because
 model runners can be scaled more easily with deployment frameworks like :ref:`Yatai <concepts/deploy:Deploy with Yatai>`.
 
-To send a prediction request to a remotely deployed Bento Service in the DataStream program, you can use any HTTP client 
+To send a prediction request to a remotely deployed Bento Service in the DataStream program, you can use any HTTP client
 implementation of your choice inside the `MapFunction` or `ProcessWindowFunction`.
 
 
@@ -126,5 +126,5 @@ implementation of your choice inside the `MapFunction` or `ProcessWindowFunction
             ).text
 
 
-Using a client with asynchronous IO support combined with Flink AsyncFunction is recommended to handle requests and responses 
+Using a client with asynchronous IO support combined with Flink AsyncFunction is recommended to handle requests and responses
 concurrent and minimize IO waiting time of calling a remote Bento Service.

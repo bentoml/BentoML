@@ -5,6 +5,7 @@ import shutil
 import typing as t
 import logging
 import tempfile
+import types
 
 import bentoml
 
@@ -100,7 +101,7 @@ def import_model(
     signatures: dict[str, ModelSignature] | dict[str, ModelSignatureDict] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: t.List[types.ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
     # ...
 ) -> bentoml.Model:

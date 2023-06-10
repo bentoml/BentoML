@@ -13,7 +13,7 @@ webservices are logged along with requests to each of the model runner services.
 The request log format is as follows:
 
 .. parsed-literal::
- 
+
     time [LEVEL] [component] ClientIP:ClientPort (scheme,method,path,type,length) (status,type,length) Latency (trace,span,sampled)
 
 For example, a log message might look like:
@@ -144,4 +144,3 @@ When using BentoML as a library, BentoML does not configure any logs. By default
 .. [#span_documentation] `OpenTelemetry Span Documentation <https://opentelemetry.lightstep.com/spans/>`_
 
 .. [#sampling_documentation] `OpenTelemetry SDK Documentation <https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md>`_
-

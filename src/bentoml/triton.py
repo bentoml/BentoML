@@ -7,7 +7,6 @@ import attr
 from simple_di import inject as _inject
 from simple_di import Provide as _Provide
 
-from .exceptions import StateException as _StateException
 from ._internal.utils import LazyLoader as _LazyLoader
 from ._internal.utils import cached_property as _cached_property
 from ._internal.configuration import get_debug_mode as _get_debug_mode
@@ -90,12 +89,6 @@ class _TritonRunner(_AbstractRunner):
 
     _runner_handle: RunnerHandle = attr.field(init=False, factory=_DummyRunnerHandle)
 
-    def _init(self, handle_class: t.Type[RunnerHandle]) -> None:
-        if not isinstance(self._runner_handle, _DummyRunnerHandle):
-            raise _StateException("Runner already initialized")
-
-        _object_setattr(self, "_runner_handle", handle_class(self))
-
     @_inject
     async def runner_handle_is_ready(
         self,
@@ -152,6 +145,7 @@ class _TritonRunner(_AbstractRunner):
             repository_path=model_repository,
             tritonserver_type=tritonserver_type,
             cli_args=cli_args,
+            embedded=False,  # NOTE: TritonRunner shouldn't be used as embedded.
         )
 
     @_cached_property
@@ -174,10 +168,18 @@ class _TritonRunner(_AbstractRunner):
             "TritonRunner '%s' will not be available for development mode.", self.name
         )
 
-    def init_client(self):
+    def init_client(
+        self,
+        handle_class: type[RunnerHandle] | None = None,
+        *args: t.Any,
+        **kwargs: t.Any,
+    ):
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle
 
-        self._init(TritonRunnerHandle)
+        if handle_class is None:
+            handle_class = TritonRunnerHandle
+
+        super().init_client(handle_class=handle_class, *args, **kwargs)
 
     def destroy(self):
         _object_setattr(self, "_runner_handle", _DummyRunnerHandle())

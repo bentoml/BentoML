@@ -32,7 +32,7 @@ if t.TYPE_CHECKING:
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
-    from ..context import Context as Context
+    from ..context import ServiceContext as Context
 else:
     pb, _ = import_generated_stubs("v1")
     pb_v1alpha1, _ = import_generated_stubs("v1alpha1")

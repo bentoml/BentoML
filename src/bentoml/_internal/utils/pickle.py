@@ -36,7 +36,6 @@ def pep574_dumps(obj: t.Any) -> tuple[bytes, bytes, list[int]]:
 def pep574_loads(
     main_bytes: bytes, concat_buffer_bytes: bytes, indices: list[int]
 ) -> t.Any:
-
     if not indices:
         return pickle.loads(main_bytes)
 

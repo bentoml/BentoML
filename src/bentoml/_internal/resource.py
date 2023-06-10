@@ -224,6 +224,9 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
 
         try:
             if isinstance(spec, int):
+                if spec == 0:
+                    # NOTE: this is a special case for the default GPU placement.
+                    return [0]
                 if spec < -1:
                     raise ValueError
                 return list(range(spec))

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import abc
-import contextvars
 import logging
 import math
 import typing as t
@@ -10,10 +9,6 @@ from ..resource import get_resource, system_resources
 from .runnable import Runnable
 
 logger = logging.getLogger(__name__)
-
-GPU_UNAVAILABLE_VAR: contextvars.ContextVar[
-    t.Optional[t.List[int]]
-] = contextvars.ContextVar("GPU_UNAVAILABLE_VAR", default=None)
 
 
 class Strategy(abc.ABC):
@@ -144,13 +139,11 @@ class DefaultStrategy(Strategy):
                     raise IndexError(
                         f"There aren't enough assigned GPU for given worker id {worker_index}."
                     )
-                unavailable = GPU_UNAVAILABLE_VAR.get()
-                if unavailable is not None:
-                    nvidia_gpus = [i for i in nvidia_gpus if i not in unavailable]
-                    assigned_gpu = nvidia_gpus[:assigned_resource_per_worker]
-                else:
-                    assigned_gpu = nvidia_gpus[:assigned_resource_per_worker]
-                    GPU_UNAVAILABLE_VAR.set(assigned_gpu)
+                assigned_gpu = nvidia_gpus[
+                    assigned_resource_per_worker
+                    * worker_index : assigned_resource_per_worker
+                    * (worker_index + 1)
+                ]
                 dev = ",".join(map(str, assigned_gpu))
             else:
                 dev = str(nvidia_gpus[worker_index // workers_per_resource])

@@ -89,6 +89,20 @@ def test_default_gpu_strategy(monkeypatch: MonkeyPatch):
     envs = DefaultStrategy.get_worker_env(
         GPURunnable, {"nvidia.com/gpu": [2, 7]}, 0.5, 0
     )
+    assert envs.get("CUDA_VISIBLE_DEVICES") == "2,7"
+
+    envs = DefaultStrategy.get_worker_env(
+        GPURunnable, {"nvidia.com/gpu": [2, 7, 8, 9]}, 0.5, 0
+    )
+    assert envs.get("CUDA_VISIBLE_DEVICES") == "2,7"
+    envs = DefaultStrategy.get_worker_env(
+        GPURunnable, {"nvidia.com/gpu": [2, 7, 8, 9]}, 0.5, 1
+    )
+    assert envs.get("CUDA_VISIBLE_DEVICES") == "8,9"
+    envs = DefaultStrategy.get_worker_env(
+        GPURunnable, {"nvidia.com/gpu": [2, 7, 8, 9]}, 0.25, 0
+    )
+    assert envs.get("CUDA_VISIBLE_DEVICES") == "2,7,8,9"
 
 
 def test_default_cpu_strategy(monkeypatch: MonkeyPatch):

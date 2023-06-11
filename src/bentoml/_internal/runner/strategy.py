@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import abc
+import contextvars
+import logging
 import math
 import typing as t
-import logging
 
+from ..resource import get_resource, system_resources
 from .runnable import Runnable
-from ..resource import get_resource
-from ..resource import system_resources
 
 logger = logging.getLogger(__name__)
+
+GPU_UNAVAILABLE_VAR: contextvars.ContextVar[
+    t.Optional[t.List[int]]
+] = contextvars.ContextVar("GPU_UNAVAILABLE_VAR", default=None)
 
 
 class Strategy(abc.ABC):
@@ -18,8 +22,8 @@ class Strategy(abc.ABC):
     def get_worker_count(
         cls,
         runnable_class: t.Type[Runnable],
-        resource_request: dict[str, t.Any],
-        workers_per_resource: int,
+        resource_request: dict[str, t.Any] | None,
+        workers_per_resource: int | float,
     ) -> int:
         ...
 
@@ -28,8 +32,8 @@ class Strategy(abc.ABC):
     def get_worker_env(
         cls,
         runnable_class: t.Type[Runnable],
-        resource_request: dict[str, t.Any],
-        workers_per_resource: int,
+        resource_request: dict[str, t.Any] | None,
+        workers_per_resource: int | float,
         worker_index: int,
     ) -> dict[str, t.Any]:
         """
@@ -66,7 +70,7 @@ class DefaultStrategy(Strategy):
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any] | None,
-        workers_per_resource: int,
+        workers_per_resource: int | float,
     ) -> int:
         if resource_request is None:
             resource_request = system_resources()
@@ -78,7 +82,7 @@ class DefaultStrategy(Strategy):
             and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            return len(nvidia_gpus) * workers_per_resource
+            return int(len(nvidia_gpus) * workers_per_resource)
 
         # use CPU
         cpus = get_resource(resource_request, "cpu")
@@ -90,6 +94,10 @@ class DefaultStrategy(Strategy):
                 )
 
             if runnable_class.SUPPORTS_CPU_MULTI_THREADING:
+                if isinstance(workers_per_resource, float):
+                    raise ValueError(
+                        "Fractional CPU multi threading support is not yet supported."
+                    )
                 return workers_per_resource
 
             return math.ceil(cpus) * workers_per_resource
@@ -105,7 +113,7 @@ class DefaultStrategy(Strategy):
         cls,
         runnable_class: t.Type[Runnable],
         resource_request: dict[str, t.Any] | None,
-        workers_per_resource: int,
+        workers_per_resource: int | float,
         worker_index: int,
     ) -> dict[str, t.Any]:
         """
@@ -121,15 +129,31 @@ class DefaultStrategy(Strategy):
         environ: dict[str, t.Any] = {}
         if resource_request is None:
             resource_request = system_resources()
-
         # use nvidia gpu
-        nvidia_gpus = get_resource(resource_request, "nvidia.com/gpu")
+        nvidia_gpus: list[int] | None = get_resource(resource_request, "nvidia.com/gpu")
         if (
             nvidia_gpus is not None
             and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            dev = str(nvidia_gpus[worker_index // workers_per_resource])
+            if isinstance(workers_per_resource, float):
+                # NOTE: We hit this branch when workers_per_resource is set to
+                # float, for example 0.5 or 0.25
+                assigned_resource_per_worker = int(1 / workers_per_resource)
+                if len(nvidia_gpus) < assigned_resource_per_worker:
+                    raise IndexError(
+                        f"There aren't enough assigned GPU for given worker id {worker_index}."
+                    )
+                unavailable = GPU_UNAVAILABLE_VAR.get()
+                if unavailable is not None:
+                    nvidia_gpus = [i for i in nvidia_gpus if i not in unavailable]
+                    assigned_gpu = nvidia_gpus[:assigned_resource_per_worker]
+                else:
+                    assigned_gpu = nvidia_gpus[:assigned_resource_per_worker]
+                    GPU_UNAVAILABLE_VAR.set(assigned_gpu)
+                dev = ",".join(map(str, assigned_gpu))
+            else:
+                dev = str(nvidia_gpus[worker_index // workers_per_resource])
             environ["CUDA_VISIBLE_DEVICES"] = dev
             logger.info(
                 "Environ for worker %s: set CUDA_VISIBLE_DEVICES to %s",

@@ -77,7 +77,7 @@ class DefaultStrategy(Strategy):
             and len(nvidia_gpus) > 0
             and "nvidia.com/gpu" in runnable_class.SUPPORTED_RESOURCES
         ):
-            return int(len(nvidia_gpus) * workers_per_resource)
+            return math.ceil(len(nvidia_gpus) * workers_per_resource)
 
         # use CPU
         cpus = get_resource(resource_request, "cpu")
@@ -136,8 +136,14 @@ class DefaultStrategy(Strategy):
                 # float, for example 0.5 or 0.25
                 assigned_resource_per_worker = int(1 / workers_per_resource)
                 if len(nvidia_gpus) < assigned_resource_per_worker:
+                    logger.warning(
+                        "Failed to allocate %s GPUs for %s (number of available GPUs < assigned workers per resource [%s])",
+                        nvidia_gpus,
+                        worker_index,
+                        assigned_resource_per_worker,
+                    )
                     raise IndexError(
-                        f"There aren't enough assigned GPU for given worker id {worker_index}."
+                        f"There aren't enough assigned GPU(s) for given worker id '{worker_index}' [required: {assigned_resource_per_worker}]."
                     )
                 assigned_gpu = nvidia_gpus[
                     assigned_resource_per_worker

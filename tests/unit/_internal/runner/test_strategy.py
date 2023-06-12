@@ -59,11 +59,17 @@ def test_default_gpu_strategy(monkeypatch: MonkeyPatch):
         DefaultStrategy.get_worker_count(
             GPURunnable, {"nvidia.com/gpu": [2, 7, 9]}, 0.5
         )
-        == 1
+        == 2
     )
     assert (
         DefaultStrategy.get_worker_count(
             GPURunnable, {"nvidia.com/gpu": [2, 7, 8, 9]}, 0.5
+        )
+        == 2
+    )
+    assert (
+        DefaultStrategy.get_worker_count(
+            GPURunnable, {"nvidia.com/gpu": [2, 5, 7, 8, 9]}, 0.4
         )
         == 2
     )
@@ -103,6 +109,19 @@ def test_default_gpu_strategy(monkeypatch: MonkeyPatch):
         GPURunnable, {"nvidia.com/gpu": [2, 7, 8, 9]}, 0.25, 0
     )
     assert envs.get("CUDA_VISIBLE_DEVICES") == "2,7,8,9"
+
+    envs = DefaultStrategy.get_worker_env(
+        GPURunnable, {"nvidia.com/gpu": [2, 6, 7, 8, 9]}, 0.4, 0
+    )
+    assert envs.get("CUDA_VISIBLE_DEVICES") == "2,6"
+    envs = DefaultStrategy.get_worker_env(
+        GPURunnable, {"nvidia.com/gpu": [2, 6, 7, 8, 9]}, 0.4, 1
+    )
+    assert envs.get("CUDA_VISIBLE_DEVICES") == "7,8"
+    envs = DefaultStrategy.get_worker_env(
+        GPURunnable, {"nvidia.com/gpu": [2, 6, 7, 8, 9]}, 0.4, 2
+    )
+    assert envs.get("CUDA_VISIBLE_DEVICES") == "9"
 
 
 def test_default_cpu_strategy(monkeypatch: MonkeyPatch):

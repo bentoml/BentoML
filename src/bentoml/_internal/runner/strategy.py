@@ -32,14 +32,10 @@ class Strategy(abc.ABC):
         worker_index: int,
     ) -> dict[str, t.Any]:
         """
-        Parameters
-        ----------
-        runnable_class : type[Runnable]
-            The runnable class to be run.
-        resource_request : dict[str, Any]
-            The resource request of the runnable.
-        worker_index : int
-            The index of the worker, start from 0.
+        Args:
+            runnable_class : The runnable class to be run.
+            resource_request : The resource request of the runnable.
+            worker_index : The index of the worker, start from 0.
         """
         ...
 
@@ -112,14 +108,10 @@ class DefaultStrategy(Strategy):
         worker_index: int,
     ) -> dict[str, t.Any]:
         """
-        Parameters
-        ----------
-        runnable_class : type[Runnable]
-            The runnable class to be run.
-        resource_request : dict[str, Any]
-            The resource request of the runnable.
-        worker_index : int
-            The index of the worker, start from 0.
+        Args:
+            runnable_class : The runnable class to be run.
+            resource_request : The resource request of the runnable.
+            worker_index : The index of the worker, start from 0.
         """
         environ: dict[str, t.Any] = {}
         if resource_request is None:
@@ -134,7 +126,13 @@ class DefaultStrategy(Strategy):
             if isinstance(workers_per_resource, float):
                 # NOTE: We hit this branch when workers_per_resource is set to
                 # float, for example 0.5 or 0.25
-                assigned_resource_per_worker = int(1 / workers_per_resource)
+                if workers_per_resource > 1:
+                    raise ValueError(
+                        "Currently the default strategy doesn't support workers_per_resource > 1"
+                    )
+                # We are round the assigned resource here. This means if workers_per_resource=.4
+                # then it will round down to 2. If workers_per_source=0.6, then it will also round up to 2.
+                assigned_resource_per_worker = round(1 / workers_per_resource)
                 if len(nvidia_gpus) < assigned_resource_per_worker:
                     logger.warning(
                         "Failed to allocate %s GPUs for %s (number of available GPUs < assigned workers per resource [%s])",

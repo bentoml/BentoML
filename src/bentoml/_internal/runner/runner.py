@@ -130,7 +130,7 @@ class Runner(AbstractRunner):
 
     runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: type[Strategy]
-    workers_per_resource: int = 1
+    workers_per_resource: int | float = 1
     runnable_init_params: dict[str, t.Any] = attr.field(
         default=None, converter=attr.converters.default_if_none(factory=dict)
     )

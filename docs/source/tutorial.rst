@@ -29,9 +29,9 @@ There are three ways to complete this tutorial:
    side by side with this guide. As you go through this guide, you can simply run the
    sample code from the Colab Notebook.
 
-   You will be able to try out most of the content in the tutorial on Colab besides
-   the docker container part towards the end. This is because Google Colab currently
-   does not support docker.
+   You will be able to try out most of the tutorial content on Colab. Note that the Docker 
+   container deployment section is not executable on Google Colab due to its current lack of 
+   Docker support.
 
 #. Run the tutorial notebook from Docker
 

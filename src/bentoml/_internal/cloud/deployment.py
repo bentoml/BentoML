@@ -10,7 +10,7 @@ from ..tag import Tag
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
-from .config import default_context_name
+from .config import default_cluster_name
 from .config import default_kube_namespace
 from .schemas import DeploymentMode
 from .schemas import DeploymentSchema
@@ -45,9 +45,7 @@ def delete_none(dct):
         elif value is None:
             del dct[key]
         elif isinstance(value, list):
-            for v_i in value:
-                delete_none(v_i)
-
+            value = [v for v in value if v is not None]
     return dct
 
 @attr.define
@@ -68,8 +66,6 @@ class Resource:
 
     @classmethod
     def for_api_server(cls, **kwargs) -> DeploymentTargetConfig:
-        if kwargs.get("resources") is None:
-            kwargs["resources"] = {}
         return bentoml_cattr.structure(kwargs, DeploymentTargetConfig)
 
 
@@ -83,7 +79,7 @@ class Deployment:
     ) -> DeploymentSchema:
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_context_name
+            cluster_name = default_cluster_name
         for target in create_deployment_schema.targets:
             if (
                 yatai_rest_client.get_bento(target.bento_repository, target.bento)
@@ -120,7 +116,7 @@ class Deployment:
 
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_context_name
+            cluster_name = default_cluster_name
         for target in update_deployment_schema.targets:
             if (
                 yatai_rest_client.get_bento(target.bento_repository, target.bento)
@@ -148,7 +144,7 @@ class Deployment:
         deployment_name: str,
         bento: Tag | str | None = None,
         description: str = None,
-        cluster_name: str = default_context_name,
+        cluster_name: str = default_cluster_name,
         resource_instance: str | None = None,
         kube_namespace: str = default_kube_namespace,
         hpa_conf: DeploymentTargetHPAConf | None = None,
@@ -225,7 +221,7 @@ class Deployment:
         deployment_name: str,
         bento: Tag | str,
         description: str = None,
-        cluster_name: str = default_context_name,
+        cluster_name: str = default_cluster_name,
         kube_namespace: str = default_kube_namespace,
         resource_instance: str | None = None,
         hpa_conf: DeploymentTargetHPAConf | None = None,
@@ -303,7 +299,7 @@ class Deployment:
     ) -> DeploymentListSchema:
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_context_name
+            cluster_name = default_cluster_name
         res = yatai_rest_client.get_deployment_list(cluster_name)
         if res is None:
             raise BentoMLException("List deployments request failed")
@@ -330,7 +326,7 @@ class Deployment:
                 f"An error occurred while reading the file: {real_path}\n{e}"
             )
         if cluster_name is None:
-            cluster_name = default_context_name
+            cluster_name = default_cluster_name
         deployment_schema = bentoml_cattr.structure(data, CreateDeploymentSchema)
         return cls._create_deployment(
             create_deployment_schema=deployment_schema,
@@ -348,7 +344,7 @@ class Deployment:
     ) -> DeploymentSchema:
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_context_name
+            cluster_name = default_cluster_name
         if kube_namespace is None:
             kube_namespace = default_kube_namespace
         res = yatai_rest_client.get_deployment(
@@ -369,7 +365,7 @@ class Deployment:
 
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_context_name
+            cluster_name = default_cluster_name
         if kube_namespace is None:
             kube_namespace = default_kube_namespace
         res = yatai_rest_client.get_deployment(
@@ -398,7 +394,7 @@ class Deployment:
 
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_context_name
+            cluster_name = default_cluster_name
         if kube_namespace is None:
             kube_namespace = default_kube_namespace
         res = yatai_rest_client.get_deployment(

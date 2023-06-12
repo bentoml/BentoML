@@ -570,8 +570,8 @@ class DeploymentSchema(ResourceSchema):
     cluster: ClusterFullSchema
     status: DeploymentStatus
     urls: t.List[str]
-    latest_revision: DeploymentRevisionSchema
     kube_namespace: str
+    latest_revision: t.Optional[DeploymentRevisionSchema] = attr.field(default=None) # Delete returns no latest revision
     mode: t.Optional[DeploymentMode] = attr.field(default=None)
 
 

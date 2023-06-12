@@ -23,6 +23,7 @@ from .schemas import DeploymentTargetHPAConf
 from .schemas import DeploymentTargetCanaryRule
 from .schemas import DeploymentTargetRunnerConfig
 from deepmerge.merger import Merger
+from ..utils import first_not_none
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
@@ -45,8 +46,7 @@ def delete_none(dct):
             del dct[key]
         elif isinstance(value, list):
             for v_i in value:
-                if isinstance(v_i, dict):
-                    delete_none(v_i)
+                delete_none(v_i)
 
     return dct
 
@@ -74,15 +74,6 @@ class Resource:
 
 
 class Deployment:
-    @classmethod
-    def _swap_schema_value(cls, key: str, value: t.Any, dct: dict):
-        if dct.get(key) is None:
-            dct[key] = value
-        if dct["runners"] is not None:
-            for _, config in dct["runners"].items():
-                if config.get(key) is None:
-                    config[key] = value
-
     @classmethod
     def _create_deployment(
         cls,
@@ -155,7 +146,7 @@ class Deployment:
     def update(
         cls,
         deployment_name: str,
-        bento_repository: Tag | str | None = None,
+        bento: Tag | str | None = None,
         description: str = None,
         cluster_name: str = default_context_name,
         resource_instance: str | None = None,
@@ -170,59 +161,60 @@ class Deployment:
         canary_rules: t.List[DeploymentTargetCanaryRule] | None = None,
     ):
 
-        if bento_repository:
-            bento_repository = bento_repository.from_taglike(bento_repository)
-
         original_deployment_schema = cls.get(
             deployment_name, context, cluster_name, kube_namespace
         )
         # Deployment target always has length of 1
         deployment_target = original_deployment_schema.latest_revision.targets[0]
-        dct_orig = {
-            "mode": mode if mode else original_deployment_schema.mode,
-            "labels": labels if labels else original_deployment_schema.labels,
+        if bento is None:
+            # NOTE: bento.repository.name is the bento.name, and bento.name is the bento.version
+            # from bentocloud to bentoml.Tag concept
+            bento = f"{deployment_target.bento.repository.name}:{deployment_target.bento.name}"
+        bento = Tag.from_taglike(bento)
+        new_config = bentoml_cattr.unstructure_attrs_asdict(deployment_target.config)
+        if hpa_conf is not None:
+            hpa_conf_dct = delete_none(bentoml_cattr.unstructure(hpa_conf))
+            if 'hpa_conf' in new_config:
+                if new_config['hpa_conf'] is None:
+                    new_config['hpa_conf'] = {}
+                config_merger.merge(new_config['hpa_conf'], hpa_conf_dct)
+            if 'runners' in new_config and new_config['runners'] is not None:
+                for _,runner in new_config['runners'].items():
+                    if runner['hpa_conf'] is None:
+                        runner['hpa_conf'] = {}
+                    config_merger.merge(runner['hpa_conf'], hpa_conf_dct)
+        if resource_instance is not None:
+            new_config['resource_instance'] = resource_instance
+            if new_config.get('runners') is not None:
+                for _,runner in new_config['runners'].items():
+                    runner['resource_instance'] = resource_instance
+        if api_server_config:
+            if runners_config is not None:
+                api_server_config.runners = runners_config
+                api_server_config_dct = delete_none(bentoml_cattr.unstructure_attrs_asdict(api_server_config))
+                config_merger.merge(new_config, api_server_config_dct)
+        elif runners_config is not None:
+            config_merger.merge(new_config, {"runners":{k:delete_none(bentoml_cattr.unstructure_attrs_asdict(v)) for k,v in runners_config.items()}})
+
+        dct_update = {
+            "mode": first_not_none(mode, original_deployment_schema.mode),
+            "labels": first_not_none(labels, [bentoml_cattr.unstructure_attrs_asdict(i) for i in original_deployment_schema.labels] if original_deployment_schema.labels is not None else None),
             "description": description,
             "targets": [
                 {
-                    "type": type if type else deployment_target.type,
-                    "bento": bento_repository.version
-                    if bento_repository
-                    else deployment_target.bento.name,
-                    "bento_repository": bento_repository.name
-                    if bento_repository
-                    else deployment_target.bento.repository.name,
-                    "canary_rules": canary_rules
-                    if canary_rules
-                    else deployment_target.canary_rules,
-                    "config": bentoml_cattr.unstructure_attrs_asdict(deployment_target.config)
+                    "type": first_not_none(type,deployment_target.type),
+                    "bento": first_not_none(bento.version, deployment_target.bento.name),
+                    "bento_repository": first_not_none(bento.name, deployment_target.bento.repository.name),
+                    "canary_rules": first_not_none(canary_rules, [bentoml_cattr.unstructure_attrs_asdict(i) for i in deployment_target.canary_rules] if deployment_target.canary_rules else None),
+                    "config": new_config
                 }
             ],
         }
 
-        dct_config = {}
-        if api_server_config is None:
-            dct_config["runners"] = {k:bentoml_cattr.unstructure_attrs_asdict(v) for k,v in runners_config.items()} if runners_config else None
-
-        else:
-            api_server_config.runners = runners_config
-            dct_config = bentoml_cattr.unstructure_attrs_asdict(api_server_config)
-
-        if hpa_conf:
-            hpa_conf_dct = bentoml_cattr.unstructure_attrs_asdict(hpa_conf)
-            cls._swap_schema_value("hpa_conf",hpa_conf_dct,dct_config)
-            cls._swap_schema_value("hpa_conf",hpa_conf_dct, dct_orig["targets"][0]["config"])
-
-        if resource_instance:
-            cls._swap_schema_value("resource_instance",resource_instance,dct_config)
-            cls._swap_schema_value("resource_instance",resource_instance, dct_orig["targets"][0]["config"])
-        delete_none(dct_config)
-        if dct_config.get('resources') == {}:
-            del dct_config['resources']
-        config_merger.merge(dct_orig["targets"][0]["config"],dct_config)
         cls._update_deployment(
             deployment_name,
             kube_namespace,
-            bentoml_cattr.structure(dct_orig, UpdateDeploymentSchema),
+            bentoml_cattr.structure(dct_update, UpdateDeploymentSchema),
             context,
             cluster_name,
         )
@@ -231,7 +223,7 @@ class Deployment:
     def create(
         cls,
         deployment_name: str,
-        bento_repository: Tag | str,
+        bento: Tag | str,
         description: str = None,
         cluster_name: str = default_context_name,
         kube_namespace: str = default_kube_namespace,
@@ -246,7 +238,7 @@ class Deployment:
         labels: t.List[dict[str, str]] | None = None,
         canary_rules: t.List[DeploymentTargetCanaryRule] | None = None,
     ) -> DeploymentSchema:
-        bento_repository = Tag.from_taglike(bento_repository)
+        bento = Tag.from_taglike(bento)
         dct = {
             "name": deployment_name,
             "kube_namespace": kube_namespace,
@@ -259,11 +251,10 @@ class Deployment:
             dct["targets"] = [
                 {
                     "type": type,
-                    "bento_repository": bento_repository.name,
-                    "bento": bento_repository.version,
+                    "bento_repository": bento.name,
+                    "bento": bento.version,
                     "canary_rules": canary_rules,
                     "config": {
-                        "resources": {},
                         "runners": {k:bentoml_cattr.unstructure_attrs_asdict(v) for k,v in runners_config.items()} if runners_config else None,
                     },
                 }
@@ -274,8 +265,8 @@ class Deployment:
             dct["targets"] = [
                 {
                     "type": type,
-                    "bento_repository": bento_repository.name,
-                    "bento": bento_repository.version,
+                    "bento_repository": bento.name,
+                    "bento": bento.version,
                     "canary_rules": canary_rules,
                     "config": bentoml_cattr.unstructure_attrs_asdict(api_server_config),
                 }
@@ -283,10 +274,19 @@ class Deployment:
 
         if hpa_conf:
             hpa_conf_dct = bentoml_cattr.unstructure_attrs_asdict(hpa_conf)
-            cls._swap_schema_value("hpa_conf",hpa_conf_dct,dct["targets"][0]["config"])
-
+            if dct["targets"][0]["config"].get("hpa_conf") is None:
+                dct["targets"][0]["config"]["hpa_conf"] = hpa_conf_dct
+            if dct["targets"][0]["config"]["runners"] is not None:
+                for _, config in dct["targets"][0]["config"]["runners"].items():
+                    if config.get("hpa_conf") is None:
+                        config["hpa_conf"] = hpa_conf_dct
         if resource_instance:
-            cls._swap_schema_value("resource_instance",resource_instance,dct["targets"][0]["config"])
+            if dct["targets"][0]["config"].get("resource_instance") is None:
+                dct["targets"][0]["config"]["resource_instance"] = resource_instance
+            if dct["targets"][0]["config"]["runners"] is not None:
+                for _, config in dct["targets"][0]["config"]["runners"].items():
+                    if config.get("resource_instance") is None:
+                        config["resource_instance"] = resource_instance
 
         create_deployment_schema = bentoml_cattr.structure(dct, CreateDeploymentSchema)
         logger.debug("%s is created.", create_deployment_schema.name)

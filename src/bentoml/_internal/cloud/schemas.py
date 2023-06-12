@@ -24,6 +24,17 @@ def datetime_decoder(datetime_str: t.Optional[str], _: t.Any) -> t.Optional[date
         return None
     return parse(datetime_str)
 
+def dict_options_converter(
+    options_type: type[t.Any],
+) -> t.Callable[[type[t.Any] | dict[str, t.Any]], t.Any]:
+    def _converter(value: type[t.Any] | dict[str, t.Any] | None) -> options_type:
+        if value is None:
+            return options_type()
+        if isinstance(value, dict):
+            return options_type(**value)
+        return value
+
+    return _converter
 
 converter = cattr.Converter()
 
@@ -79,7 +90,7 @@ class ResourceType(Enum):
 class ResourceSchema(BaseSchema):
     name: str
     resource_type: ResourceType
-
+    labels: t.List[LabelItemSchema]
 
 @attr.define
 class UserSchema:
@@ -493,7 +504,8 @@ class DeploymentTargetType(Enum):
 
 @attr.define
 class DeploymentTargetConfig:
-    resources: DeploymentTargetResources
+    resources: DeploymentTargetResources = attr.field(
+    default=None, converter=dict_options_converter(DeploymentTargetResources))
     kubeResourceUid: str = attr.field(default="")  # empty str
     kubeResourceVersion: str = attr.field(default="")
     resource_instance: t.Optional[str] = attr.field(default=None)

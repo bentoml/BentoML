@@ -128,7 +128,7 @@ class DefaultStrategy(Strategy):
                 # float, for example 0.5 or 0.25
                 if workers_per_resource > 1:
                     raise ValueError(
-                        "Currently the default strategy doesn't support workers_per_resource > 1"
+                        "Currently, the default strategy doesn't support workers_per_resource > 1. It is recommended that one should implement a custom strategy in this case."
                     )
                 # We are round the assigned resource here. This means if workers_per_resource=.4
                 # then it will round down to 2. If workers_per_source=0.6, then it will also round up to 2.

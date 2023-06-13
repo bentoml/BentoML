@@ -484,4 +484,4 @@ class YataiRESTApiClient:
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return resp.text
+        return schema_from_json(resp.text, DeploymentSchema)

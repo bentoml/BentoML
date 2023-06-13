@@ -37,17 +37,6 @@ config_merger = Merger(
     type_conflict_strategies=["override"],
 )
 
-def delete_none(dct):
-    """Delete None values recursively from all of the dictionaries"""
-    for key, value in list(dct.items()):
-        if isinstance(value, dict):
-            delete_none(value)
-        elif value is None:
-            del dct[key]
-        elif isinstance(value, list):
-            value = [v for v in value if v is not None]
-    return dct
-
 @attr.define
 class Resource:
     @classmethod
@@ -102,6 +91,8 @@ class Deployment:
         )
         if res is None:
             raise BentoMLException("Create deployment request failed")
+        logger.debug("%s is created.", create_deployment_schema.name)
+        logger.debug("Deployment Schema: %s", create_deployment_schema)
         return res
 
     @classmethod
@@ -136,6 +127,8 @@ class Deployment:
         )
         if res is None:
             raise BentoMLException("Update deployment request failed")
+        logger.debug("%s is created.", update_deployment_schema.name)
+        logger.debug("Deployment Schema: %s", update_deployment_schema)
         return res
 
     @classmethod
@@ -143,7 +136,8 @@ class Deployment:
         cls,
         deployment_name: str,
         bento: Tag | str | None = None,
-        description: str = None,
+        description: str | None = None,
+        expose_endpoint: bool | None = None,
         cluster_name: str = default_cluster_name,
         resource_instance: str | None = None,
         kube_namespace: str = default_kube_namespace,
@@ -167,9 +161,9 @@ class Deployment:
             # from bentocloud to bentoml.Tag concept
             bento = f"{deployment_target.bento.repository.name}:{deployment_target.bento.name}"
         bento = Tag.from_taglike(bento)
-        new_config = bentoml_cattr.unstructure_attrs_asdict(deployment_target.config)
+        new_config = bentoml_cattr.unstructure(deployment_target.config)
         if hpa_conf is not None:
-            hpa_conf_dct = delete_none(bentoml_cattr.unstructure(hpa_conf))
+            hpa_conf_dct = bentoml_cattr.unstructure(hpa_conf)
             if 'hpa_conf' in new_config:
                 if new_config['hpa_conf'] is None:
                     new_config['hpa_conf'] = {}
@@ -184,24 +178,26 @@ class Deployment:
             if new_config.get('runners') is not None:
                 for _,runner in new_config['runners'].items():
                     runner['resource_instance'] = resource_instance
-        if api_server_config:
-            if runners_config is not None:
-                api_server_config.runners = runners_config
-                api_server_config_dct = delete_none(bentoml_cattr.unstructure_attrs_asdict(api_server_config))
-                config_merger.merge(new_config, api_server_config_dct)
+        if expose_endpoint is not None:
+            new_config["enable_ingress"] = expose_endpoint
+
+        if api_server_config is not None and runners_config is not None:
+            api_server_config.runners = runners_config
+            api_server_config_dct = bentoml_cattr.unstructure(api_server_config)
+            config_merger.merge(new_config, api_server_config_dct)
         elif runners_config is not None:
-            config_merger.merge(new_config, {"runners":{k:delete_none(bentoml_cattr.unstructure_attrs_asdict(v)) for k,v in runners_config.items()}})
+            config_merger.merge(new_config, {"runners":{k:bentoml_cattr.unstructure(v) for k,v in runners_config.items()}})
 
         dct_update = {
             "mode": first_not_none(mode, original_deployment_schema.mode),
-            "labels": first_not_none(labels, [bentoml_cattr.unstructure_attrs_asdict(i) for i in original_deployment_schema.labels] if original_deployment_schema.labels is not None else None),
+            "labels": first_not_none(labels, [bentoml_cattr.unstructure(i) for i in original_deployment_schema.labels] if original_deployment_schema.labels is not None else None),
             "description": description,
             "targets": [
                 {
                     "type": first_not_none(type,deployment_target.type),
                     "bento": first_not_none(bento.version, deployment_target.bento.name),
                     "bento_repository": first_not_none(bento.name, deployment_target.bento.repository.name),
-                    "canary_rules": first_not_none(canary_rules, [bentoml_cattr.unstructure_attrs_asdict(i) for i in deployment_target.canary_rules] if deployment_target.canary_rules else None),
+                    "canary_rules": first_not_none(canary_rules, [bentoml_cattr.unstructure(i) for i in deployment_target.canary_rules] if deployment_target.canary_rules else None),
                     "config": new_config
                 }
             ],
@@ -220,7 +216,8 @@ class Deployment:
         cls,
         deployment_name: str,
         bento: Tag | str,
-        description: str = None,
+        description: str | None = None,
+        expose_endpoint: bool | None = None,
         cluster_name: str = default_cluster_name,
         kube_namespace: str = default_kube_namespace,
         resource_instance: str | None = None,
@@ -251,7 +248,7 @@ class Deployment:
                     "bento": bento.version,
                     "canary_rules": canary_rules,
                     "config": {
-                        "runners": {k:bentoml_cattr.unstructure_attrs_asdict(v) for k,v in runners_config.items()} if runners_config else None,
+                        "runners": {k:bentoml_cattr.unstructure(v) for k,v in runners_config.items()} if runners_config else None,
                     },
                 }
             ]
@@ -264,12 +261,12 @@ class Deployment:
                     "bento_repository": bento.name,
                     "bento": bento.version,
                     "canary_rules": canary_rules,
-                    "config": bentoml_cattr.unstructure_attrs_asdict(api_server_config),
+                    "config": bentoml_cattr.unstructure(api_server_config),
                 }
             ]
 
         if hpa_conf:
-            hpa_conf_dct = bentoml_cattr.unstructure_attrs_asdict(hpa_conf)
+            hpa_conf_dct = bentoml_cattr.unstructure(hpa_conf)
             if dct["targets"][0]["config"].get("hpa_conf") is None:
                 dct["targets"][0]["config"]["hpa_conf"] = hpa_conf_dct
             if dct["targets"][0]["config"]["runners"] is not None:
@@ -284,9 +281,10 @@ class Deployment:
                     if config.get("resource_instance") is None:
                         config["resource_instance"] = resource_instance
 
+        if expose_endpoint is not None and dct["targets"][0]["config"].get("enable_ingress") is None:
+            dct["targets"][0]["config"]["enable_ingress"] = expose_endpoint
+
         create_deployment_schema = bentoml_cattr.structure(dct, CreateDeploymentSchema)
-        logger.debug("%s is created.", create_deployment_schema.name)
-        logger.debug("Deployment Schema: %s", create_deployment_schema)
         return cls._create_deployment(
             context=context,
             cluster_name=cluster_name,

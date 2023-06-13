@@ -89,7 +89,7 @@ autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth = 10
 
 ogp_site_url = "http://docs.bentoml.org"
-ogp_image = "https://docs.bentoml.org/en/latest/_images/bentoml-banner.png"
+ogp_image = "https://docs.bentoml.org/en/latest/_static/img/bentoml-banner.png"
 ogp_site_name = "BentoML Documentation"
 ogp_use_first_image = True
 

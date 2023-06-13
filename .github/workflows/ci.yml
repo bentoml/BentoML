@@ -73,7 +73,7 @@ jobs:
         run: |
           npm install -g npm@^7 pyright
       - name: Setup bufbuild/buf
-        uses: bufbuild/buf-setup-action@v1.20.0
+        uses: bufbuild/buf-setup-action@v1.21.0
         with:
           github_token: ${{ github.token }}
       - name: Cache pip dependencies
@@ -230,7 +230,6 @@ jobs:
         server_type: ['http', 'grpc']
         exclude:
           - os: windows-latest
-            server_type: 'grpc'
           - os: macos-latest
             server_type: 'grpc'
             python-version: '3.10'

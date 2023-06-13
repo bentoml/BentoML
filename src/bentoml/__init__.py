@@ -45,7 +45,7 @@ from ._internal.bento import Bento
 from ._internal.models import Model
 from ._internal.runner import Runner
 from ._internal.runner import Runnable
-from ._internal.context import InferenceApiContext as Context
+from ._internal.context import ServiceContext as Context
 from ._internal.service import Service
 from ._internal.monitoring import monitor
 from ._internal.utils.http import Cookie

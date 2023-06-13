@@ -246,7 +246,7 @@ MAX_AF_UNIX_PATH_LENGTH = 103
 @inject
 def serve_http_production(
     bento_identifier: str,
-    working_dir: str,
+    working_dir: str = Provide[BentoMLContainer.working_dir],
     port: int = Provide[BentoMLContainer.http.port],
     host: str = Provide[BentoMLContainer.http.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
@@ -517,7 +517,7 @@ def serve_http_production(
 @inject
 def serve_grpc_production(
     bento_identifier: str,
-    working_dir: str,
+    working_dir: str = Provide[BentoMLContainer.working_dir],
     port: int = Provide[BentoMLContainer.grpc.port],
     host: str = Provide[BentoMLContainer.grpc.host],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],

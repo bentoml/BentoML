@@ -709,6 +709,7 @@ def dict_options_converter(
 class ModelSpec:
     tag: str
     filter: t.Optional[str] = None
+    alias: t.Optional[str] = None
 
     @classmethod
     def from_item(cls, item: str | dict[str, t.Any]) -> ModelSpec:
@@ -835,7 +836,7 @@ class BentoBuildConfig:
             self.docker.with_defaults(),
             self.python.with_defaults(),
             self.conda.with_defaults(),
-            [],
+            self.models,
         )
 
     @classmethod

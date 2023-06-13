@@ -105,6 +105,9 @@ def main(
         access_log_config = BentoMLContainer.runners_config.logging.access
         access_log_config.enabled.set(False)
 
+    if working_dir is not None:
+        BentoMLContainer.working_dir.set(working_dir)
+
     from bentoml._internal.server.runner_app import RunnerAppFactory
 
     service = load(bento_identifier, working_dir=working_dir, standalone_load=True)

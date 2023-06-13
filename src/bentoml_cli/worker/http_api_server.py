@@ -128,6 +128,8 @@ def main(
         BentoMLContainer.config.runner_probe.enabled.set(False)
 
     BentoMLContainer.development_mode.set(development_mode)
+    if working_dir is not None:
+        BentoMLContainer.working_dir.set(working_dir)
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
 

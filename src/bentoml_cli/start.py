@@ -126,7 +126,7 @@ def add_start_command(cli: click.Group) -> None:
         port: int,
         host: str,
         backlog: int,
-        working_dir: str,
+        working_dir: str | None,
         api_workers: int | None,
         ssl_certfile: str | None,
         ssl_keyfile: str | None,
@@ -146,6 +146,7 @@ def add_start_command(cli: click.Group) -> None:
                 working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
+        BentoMLContainer.working_dir.set(working_dir)
 
         from bentoml.start import start_http_server
 
@@ -247,6 +248,7 @@ def add_start_command(cli: click.Group) -> None:
                 working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
+        BentoMLContainer.working_dir.set(working_dir)
 
         from bentoml.start import start_runner_server
 
@@ -383,6 +385,7 @@ def add_start_command(cli: click.Group) -> None:
                 working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
+        BentoMLContainer.working_dir.set(working_dir)
 
         from bentoml.start import start_grpc_server
 

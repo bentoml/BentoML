@@ -228,6 +228,8 @@ def add_serve_command(cli: click.Group) -> None:
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
+        BentoMLContainer.working_dir.set(working_dir)
+
         from bentoml.serve import serve_http_production
 
         if development:
@@ -444,6 +446,7 @@ def add_serve_command(cli: click.Group) -> None:
             else:
                 working_dir = "."
 
+        BentoMLContainer.working_dir.set(working_dir)
         from bentoml.serve import serve_grpc_production
 
         if development:

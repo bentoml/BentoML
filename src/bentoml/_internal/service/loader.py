@@ -241,7 +241,7 @@ def _load_bento(bento: Bento, standalone_load: bool) -> "Service":
     working_dir = bento._fs.getsyspath(BENTO_PROJECT_DIR_NAME)
 
     # Use Bento's local "{base_dir}/models/" directory as its model store
-    model_store = ModelStore(bento._fs.getsyspath("models"))
+    model_store = bento._model_store
 
     svc = import_service(
         bento.info.service,
@@ -345,9 +345,10 @@ def load(
                 assert (
                     build_config.service
                 ), '"service" field in "bentofile.yaml" is required for loading the service, e.g. "service: my_service.py:svc"'
+                BentoMLContainer.working_dir.set(bento_path)
                 svc = import_service(
                     build_config.service,
-                    working_dir=working_dir,
+                    working_dir=bento_path,
                     standalone_load=standalone_load,
                 )
             except ImportServiceError as e:

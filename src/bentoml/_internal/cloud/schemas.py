@@ -56,6 +56,10 @@ def schema_to_json(obj: t.Any) -> str:
     return json.dumps(res)
 
 
+def schema_from_object(obj: t.Any, cls: t.Type[T]) -> T:
+    return cloud_converter.structure(obj, cls)
+
+
 @attr.define
 class BaseSchema:
     uid: str

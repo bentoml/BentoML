@@ -4,6 +4,7 @@ import io
 import typing as t
 import tarfile
 import tempfile
+import warnings
 import threading
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -849,6 +850,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         context: str | None = None,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
+        query: str | None = None,
     ) -> Model:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
@@ -860,6 +862,7 @@ class BentoCloudClient(CloudClient):
                 force=force,
                 model_store=model_store,
                 context=context,
+                query=query,
             )
 
     @inject
@@ -871,6 +874,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
         context: str | None = None,
+        query: str | None = None,
     ) -> Model:
         try:
             model = model_store.get(tag)
@@ -887,8 +891,18 @@ class BentoCloudClient(CloudClient):
         _tag = Tag.from_taglike(tag)
         name = _tag.name
         version = _tag.version
-        if version is None:
-            raise BentoMLException(f'Model "{_tag}" version cannot be None')
+        if version in (None, "latest"):
+            latest_model = yatai_rest_client.get_latest_model(name, query=query)
+            if latest_model is None:
+                raise BentoMLException(
+                    f'Model "{_tag}" not found on Yatai, you may need to specify a version'
+                )
+            version = latest_model.version
+        elif query:
+            warnings.warn(
+                "`query` is ignored when model version is specified", UserWarning
+            )
+
         with self.spin(text=f'Getting a presigned download url for model "{_tag}"..'):
             remote_model = yatai_rest_client.presign_model_download_url(name, version)
 

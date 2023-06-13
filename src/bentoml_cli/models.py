@@ -43,9 +43,13 @@ def parse_delete_targets_argument_callback(
 def add_model_management_commands(cli: Group) -> None:
     from bentoml import Tag
     from bentoml.models import import_model
+    from bentoml.exceptions import InvalidArgument
     from bentoml._internal.utils import rich_console as console
     from bentoml._internal.utils import calc_dir_size
     from bentoml._internal.utils import human_readable_size
+    from bentoml._internal.utils import resolve_user_filepath
+    from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
+    from bentoml._internal.bento.build_config import BentoBuildConfig
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     model_store = BentoMLContainer.model_store.get()
@@ -222,7 +226,7 @@ def add_model_management_commands(cli: Group) -> None:
         click.echo(f"{bentomodel} imported.")
 
     @model_cli.command()
-    @click.argument("model_tag", type=click.STRING)
+    @click.argument("model_tag", type=click.STRING, required=False)
     @click.option(
         "-f",
         "--force",
@@ -233,9 +237,37 @@ def add_model_management_commands(cli: Group) -> None:
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
     )
-    def pull(model_tag: str, force: bool, context: str):  # type: ignore (not accessed)
-        """Pull Model from a yatai server."""
-        cloud_client.pull_model(model_tag, force=force, context=context)
+    @click.option(
+        "-f",
+        "--bentofile",
+        type=click.STRING,
+        default=DEFAULT_BENTO_BUILD_FILE,
+        help="Path to bentofile. Default to 'bentofile.yaml'",
+    )
+    def pull(model_tag: str | None, force: bool, context: str, bentofile: str):  # type: ignore (not accessed)
+        """Pull Model from a yatai server. If model_tag is not provided,
+        it will pull models defined in bentofile.yaml.
+        """
+        if model_tag is not None:
+            cloud_client.pull_model(model_tag, force=force, context=context)
+            return
+
+        try:
+            bentofile = resolve_user_filepath(bentofile, None)
+        except FileNotFoundError:
+            raise InvalidArgument(f'bentofile "{bentofile}" not found')
+
+        with open(bentofile, "r", encoding="utf-8") as f:
+            build_config = BentoBuildConfig.from_yaml(f)
+
+        if not build_config.models:
+            raise InvalidArgument(
+                "No model to pull, please provide a model tag or define models in bentofile.yaml"
+            )
+        for model_spec in build_config.models:
+            cloud_client.pull_model(
+                model_spec.tag, force=force, context=context, query=model_spec.filter
+            )
 
     @model_cli.command()
     @click.argument("model_tag", type=click.STRING)

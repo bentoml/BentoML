@@ -167,6 +167,7 @@ class Bento(StoreItem):
         build_ctx: t.Optional[str] = None,
     ) -> Bento:
         from ..service.loader import import_service
+        from ...models import get as get_model
 
         build_ctx = (
             os.getcwd()
@@ -198,13 +199,18 @@ class Bento(StoreItem):
         ctx_fs = fs.open_fs(build_ctx)
 
         models: t.Set[Model] = set()
-        # Add all models required by the service
-        for model in svc.models:
-            models.add(model)
-        # Add all models required by service runners
-        for runner in svc.runners:
-            for model in runner.models:
+        if build_config.models:
+            for model_spec in build_config.models:
+                models.add(get_model(model_spec.tag))
+        else:
+            # XXX: legacy way to get models from service
+            # Add all models required by the service
+            for model in svc.models:
                 models.add(model)
+            # Add all models required by service runners
+            for runner in svc.runners:
+                for model in runner.models:
+                    models.add(model)
 
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))

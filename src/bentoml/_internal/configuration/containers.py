@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from fs.base import FS
 
     from .. import external_typing as ext
+    from ..bento import BentoStore
     from ..models import ModelStore
     from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
@@ -221,7 +222,7 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def bento_store(base_dir: str = Provide[bento_store_dir]):
+    def bento_store(base_dir: str = Provide[bento_store_dir]) -> BentoStore:
         from ..bento import BentoStore
 
         return BentoStore(base_dir)

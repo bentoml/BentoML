@@ -240,8 +240,11 @@ def _load_bento(bento: Bento, standalone_load: bool) -> "Service":
     # Use Bento's user project path as working directory when importing the service
     working_dir = bento._fs.getsyspath(BENTO_PROJECT_DIR_NAME)
 
-    # Use Bento's local "{base_dir}/models/" directory as its model store
-    model_store = bento._model_store
+    # XXX: for compatibility, read from bento's local model store if it exists and is not empty
+    model_store = BentoMLContainer.model_store.get()
+    local_model_store = bento._model_store
+    if local_model_store is not None and len(local_model_store.list()) > 0:
+        model_store = local_model_store
 
     svc = import_service(
         bento.info.service,

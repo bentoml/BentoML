@@ -80,6 +80,7 @@ class BentoCloudClient(CloudClient):
                 bento, upload_task_id, force=force, threads=threads, context=context
             )
 
+    @inject
     def _do_push_bento(
         self,
         bento: Bento,
@@ -88,6 +89,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ):
         yatai_rest_client = get_rest_api_client(context)
         name = bento.tag.name
@@ -96,7 +98,9 @@ class BentoCloudClient(CloudClient):
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
         model_tags = [m.tag for m in info.models]
-        model_store = bento._model_store  # type: ignore
+        local_model_store = bento._model_store
+        if local_model_store is not None and len(bento._model_store.list()) > 0:
+            model_store = local_model_store
         models = (model_store.get(name) for name in model_tags)
         with ThreadPoolExecutor(max_workers=max(len(model_tags), 1)) as executor:
 
@@ -429,6 +433,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         context: str | None = None,
+        global_model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Bento:
         try:
             bento = bento_store.get(tag)
@@ -547,12 +552,12 @@ class BentoCloudClient(CloudClient):
                         bento = Bento.from_fs(temp_fs)
                         for model_tag in remote_bento.manifest.models:
                             with self.spin(
-                                text=f'Copying model "{model_tag}" to bento'
+                                text=f'Copying model "{model_tag}" to model store'
                             ):
                                 copy_model(
                                     model_tag,
                                     src_model_store=model_store,
-                                    target_model_store=bento._model_store,  # type: ignore
+                                    target_model_store=global_model_store,
                                 )
                         bento = bento.save(bento_store)
                         self.log_progress.add_task(

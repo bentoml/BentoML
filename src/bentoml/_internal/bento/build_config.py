@@ -712,18 +712,29 @@ class ModelSpec:
     alias: t.Optional[str] = None
 
     @classmethod
-    def from_item(cls, item: str | dict[str, t.Any]) -> ModelSpec:
+    def from_item(cls, item: str | dict[str, t.Any] | ModelSpec) -> ModelSpec:
         if isinstance(item, str):
             return cls(tag=item)
+        if isinstance(item, ModelSpec):
+            return item
         return cls(**item)
 
 
 def convert_models_config(
-    models_config: list[str | dict[str, t.Any]] | None,
+    models_config: list[str | dict[str, t.Any] | ModelSpec] | None,
 ) -> list[ModelSpec]:
     if not models_config:
         return []
     return [ModelSpec.from_item(item) for item in models_config]
+
+
+def _model_spec_structure_hook(
+    d: str | dict[str, t.Any], cls: t.Type[ModelSpec]
+) -> ModelSpec:
+    return cls.from_item(d)
+
+
+bentoml_cattr.register_structure_hook(ModelSpec, _model_spec_structure_hook)
 
 
 @attr.frozen

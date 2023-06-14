@@ -13,6 +13,7 @@ import yaml
 import fs.osfs
 import fs.errors
 import fs.mirror
+import fs.walk
 from fs.copy import copy_file
 from cattr.gen import override
 from cattr.gen import make_dict_structure_fn
@@ -27,7 +28,7 @@ from ..types import PathType
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
 from ..utils import normalize_labels_value
-from ..models import ModelStore
+from ..models import ModelStore, copy_model
 from ..runner import Runner
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
@@ -123,7 +124,7 @@ class Bento(StoreItem):
 
     _info: BentoInfo
 
-    _model_store: ModelStore
+    _model_store: t.Optional[ModelStore] = None
     _doc: t.Optional[str] = None
 
     @staticmethod
@@ -133,12 +134,11 @@ class Bento(StoreItem):
     @__fs.validator  # type:ignore # attrs validators not supported by pyright
     def check_fs(self, _attr: t.Any, new_fs: FS):
         try:
-            new_fs.makedir("models", recreate=True)
-        except fs.errors.ResourceReadOnly:
-            # when we import a tarfile, it will be read-only, so just skip the step where we create
-            # the models folder.
-            pass
-        self._model_store = ModelStore(new_fs.opendir("models"))
+            models = new_fs.opendir("models")
+        except fs.errors.ResourceNotFound:
+            return
+        else:
+            self._model_store = ModelStore(models)
 
     def __init__(self, tag: Tag, bento_fs: "FS", info: "BentoInfo"):
         self._tag = tag
@@ -211,12 +211,6 @@ class Bento(StoreItem):
             for runner in svc.runners:
                 for model in runner.models:
                     models.add(model)
-
-        bento_fs.makedir("models", recreate=True)
-        bento_model_store = ModelStore(bento_fs.opendir("models"))
-        for model in models:
-            logger.info('Packing model "%s"', model.tag)
-            model.save(bento_model_store)
 
         # create ignore specs
         specs = BentoPathSpec(build_config.include, build_config.exclude)
@@ -312,6 +306,40 @@ class Bento(StoreItem):
 
         return res
 
+    def export(
+        self,
+        path: str,
+        output_format: t.Optional[str] = None,
+        *,
+        protocol: t.Optional[str] = None,
+        user: t.Optional[str] = None,
+        passwd: t.Optional[str] = None,
+        params: t.Optional[t.Dict[str, str]] = None,
+        subpath: t.Optional[str] = None,
+    ) -> str:
+        # copy the models to fs
+        models_dir = self._fs.makedir("models", recreate=True)
+        model_store = ModelStore(models_dir)
+        global_model_store = BentoMLContainer.model_store.get()
+        for model in self.info.models:
+            copy_model(
+                model.tag,
+                src_model_store=global_model_store,
+                target_model_store=model_store,
+            )
+        try:
+            return super().export(
+                path,
+                output_format,
+                protocol=protocol,
+                user=user,
+                passwd=passwd,
+                params=params,
+                subpath=subpath,
+            )
+        finally:
+            self._fs.removetree("models")
+
     @property
     def path(self) -> str:
         return self.path_of("/")
@@ -340,6 +368,7 @@ class Bento(StoreItem):
     def save(
         self,
         bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
         try:
             self.validate()
@@ -348,7 +377,20 @@ class Bento(StoreItem):
 
         with bento_store.register(self.tag) as bento_path:
             out_fs = fs.open_fs(bento_path, create=True, writeable=True)
+            if self._model_store is not None:
+                # Move models to the global model store, if any
+                for model in self._model_store.list():
+                    copy_model(
+                        model.tag,
+                        src_model_store=self._model_store,
+                        target_model_store=model_store,
+                    )
+                self._model_store = None
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
+            try:
+                out_fs.removetree("models")
+            except fs.errors.ResourceNotFound:
+                pass
             self._fs.close()
             self.__fs = out_fs
 

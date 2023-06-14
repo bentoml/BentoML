@@ -317,7 +317,7 @@ def build(
     version: str,
     output: t.Literal["tag", "default", "yaml"],
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-) -> None:
+):
     """Build a new Bento from current directory."""
     if output == "tag":
         from bentoml._internal.configuration import set_quiet_mode

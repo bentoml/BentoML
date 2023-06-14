@@ -54,6 +54,7 @@ def add_model_management_commands(cli: Group) -> None:
 
     model_store = BentoMLContainer.model_store.get()
     cloud_client = BentoMLContainer.bentocloud_client.get()
+    bento_store = BentoMLContainer.bento_store.get()
 
     @cli.group(name="models", cls=BentoMLCommandGroup)
     def model_cli():
@@ -166,6 +167,20 @@ def add_model_management_commands(cli: Group) -> None:
             * Bulk delete multiple models by name and version, separated by " ", e.g.: `bentoml models delete iris_clf:v1 iris_clf:v2`
             * Bulk delete without confirmation, e.g.: `bentoml models delete IrisClassifier --yes`
         """  # noqa
+        from bentoml.exceptions import BentoMLException
+
+        def check_model_is_used(tag: Tag) -> None:
+            in_use: list[Tag] = []
+            for bento in bento_store.list():
+                if bento._model_store is not None:
+                    continue
+                if any(model.tag == tag for model in bento.info.models):
+                    in_use.append(bento.tag)
+            if in_use:
+                raise BentoMLException(
+                    f"Model {tag} is being used by the following bentos and can't be deleted:\n  "
+                    + "\n  ".join(map(str, in_use))
+                )
 
         def delete_target(target: str) -> None:
             tag = Tag.from_str(target)
@@ -182,6 +197,7 @@ def add_model_management_commands(cli: Group) -> None:
                     delete_confirmed = click.confirm(f"delete model {model.tag}?")
 
                 if delete_confirmed:
+                    check_model_is_used(model.tag)
                     model_store.delete(model.tag)
                     click.echo(f"{model} deleted.")
 

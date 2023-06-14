@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING
@@ -39,24 +38,10 @@ def get(
     tag: t.Union[Tag, str],
     *,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    working_dir: str = Provide[BentoMLContainer.working_dir],
+    model_aliases: t.Dict[str, str] = Provide[BentoMLContainer.model_aliases],
 ) -> "Model":
-    from ._internal.bento.bento import BentoBuildConfig
-    from ._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-
-    if isinstance(tag, str) and os.path.isfile(
-        os.path.join(working_dir, DEFAULT_BENTO_BUILD_FILE)
-    ):
-        # Maybe an alias, try to read the model version from build config
-        with open(
-            os.path.join(working_dir, DEFAULT_BENTO_BUILD_FILE),
-            encoding="utf-8",
-        ) as f:
-            build_config = BentoBuildConfig.from_yaml(f)
-            for model in build_config.models:
-                if model.alias == tag:
-                    tag = model.tag
-                    break
+    if isinstance(tag, str) and tag in model_aliases:
+        tag = model_aliases[tag]
     return _model_store.get(tag)
 
 

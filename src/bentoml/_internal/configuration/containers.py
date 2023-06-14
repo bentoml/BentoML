@@ -173,8 +173,8 @@ class BentoMLConfiguration:
 
 @dataclass
 class _BentoMLContainerClass:
-    working_dir = providers.Static(".")
     config = providers.Configuration()
+    model_aliases = providers.Static({})
 
     @providers.SingletonFactory
     @staticmethod

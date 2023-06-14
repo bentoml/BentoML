@@ -26,8 +26,8 @@ RUNNER = "runner"
 @inject
 def start_runner_server(
     bento_identifier: str,
+    working_dir: str,
     runner_name: str,
-    working_dir: str = Provide[BentoMLContainer.working_dir],
     port: int | None = None,
     host: str | None = None,
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
@@ -139,7 +139,7 @@ def start_runner_server(
 def start_http_server(
     bento_identifier: str,
     runner_map: dict[str, str],
-    working_dir: str = Provide[BentoMLContainer.working_dir],
+    working_dir: str,
     port: int = Provide[BentoMLContainer.api_server_config.port],
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
@@ -247,7 +247,7 @@ def start_http_server(
 def start_grpc_server(
     bento_identifier: str,
     runner_map: dict[str, str],
-    working_dir: str = Provide[BentoMLContainer.working_dir],
+    working_dir: str,
     port: int = Provide[BentoMLContainer.grpc.port],
     host: str = Provide[BentoMLContainer.grpc.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],

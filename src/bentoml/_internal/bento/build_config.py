@@ -770,7 +770,9 @@ class BentoBuildConfig:
         default=None,
         converter=dict_options_converter(CondaOptions),
     )
-    models: list[ModelSpec] = attr.field(factory=list, converter=convert_models_config)
+    models: t.List[ModelSpec] = attr.field(
+        factory=list, converter=convert_models_config
+    )
 
     if t.TYPE_CHECKING:
         # NOTE: This is to ensure that BentoBuildConfig __init__
@@ -789,7 +791,7 @@ class BentoBuildConfig:
             docker: DockerOptions | dict[str, t.Any] | None = ...,
             python: PythonOptions | dict[str, t.Any] | None = ...,
             conda: CondaOptions | dict[str, t.Any] | None = ...,
-            models: list[ModelSpec] | list[str | dict[str, t.Any]] | None = ...,
+            models: list[ModelSpec | str | dict[str, t.Any]] | None = ...,
         ) -> None:
             ...
 
@@ -849,6 +851,10 @@ class BentoBuildConfig:
             self.conda.with_defaults(),
             self.models,
         )
+
+    @property
+    def model_aliases(self) -> t.Dict[str, str]:
+        return {model.alias: model.tag for model in self.models if model.alias}
 
     @classmethod
     def from_yaml(cls, stream: t.TextIO) -> BentoBuildConfig:

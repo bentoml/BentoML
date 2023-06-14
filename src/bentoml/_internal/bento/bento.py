@@ -165,9 +165,9 @@ class Bento(StoreItem):
         build_config: BentoBuildConfig,
         version: t.Optional[str] = None,
         build_ctx: t.Optional[str] = None,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Bento:
         from ..service.loader import import_service
-        from ...models import get as get_model
 
         build_ctx = (
             os.getcwd()
@@ -179,6 +179,7 @@ class Bento(StoreItem):
                 f"Bento build context {build_ctx} does not exist or is not a directory."
             )
 
+        BentoMLContainer.model_aliases.set(build_config.model_aliases)
         # This also verifies that svc can be imported correctly
         svc = import_service(
             build_config.service, working_dir=build_ctx, standalone_load=True
@@ -199,9 +200,13 @@ class Bento(StoreItem):
         ctx_fs = fs.open_fs(build_ctx)
 
         models: t.Set[Model] = set()
+        resolved_aliases: t.Dict[Tag, str] = {}
         if build_config.models:
             for model_spec in build_config.models:
-                models.add(get_model(model_spec.tag))
+                model = model_store.get(model_spec.tag)
+                models.add(model)
+                if model_spec.alias:
+                    resolved_aliases[model.tag] = model_spec.alias
         else:
             # XXX: legacy way to get models from service
             # Add all models required by the service
@@ -269,7 +274,12 @@ class Bento(StoreItem):
                 tag=tag,
                 service=svc,  # type: ignore # attrs converters do not typecheck
                 labels=build_config.labels,
-                models=[BentoModelInfo.from_bento_model(m) for m in models],
+                models=[
+                    BentoModelInfo.from_bento_model(
+                        m, alias=resolved_aliases.get(m.tag)
+                    )
+                    for m in models
+                ],
                 runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners],
                 apis=[
                     BentoApiInfo.from_inference_api(api) for api in svc.apis.values()
@@ -450,13 +460,17 @@ class BentoModelInfo:
     tag: Tag = attr.field(converter=Tag.from_taglike)
     module: str
     creation_time: datetime
+    alias: t.Optional[str] = None
 
     @classmethod
-    def from_bento_model(cls, bento_model: Model) -> BentoModelInfo:
+    def from_bento_model(
+        cls, bento_model: Model, alias: str | None = None
+    ) -> BentoModelInfo:
         return cls(
             tag=bento_model.tag,
             module=bento_model.info.module,
             creation_time=bento_model.info.creation_time,
+            alias=alias,
         )
 
 
@@ -565,6 +579,12 @@ bentoml_cattr.register_structure_hook_func(
         bentoml_cattr,
         name=override(omit=True),
         version=override(omit=True),
+    ),
+)
+bentoml_cattr.register_unstructure_hook(
+    BentoModelInfo,
+    make_dict_unstructure_fn(
+        BentoModelInfo, bentoml_cattr, alias=override(omit_if_default=True)
     ),
 )
 bentoml_cattr.register_unstructure_hook(

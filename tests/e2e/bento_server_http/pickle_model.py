@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -23,6 +24,11 @@ class PickleModel:
 
     @classmethod
     def echo_obj(cls, input_datas: t.Any) -> t.Any:
+        return input_datas
+
+    def echo_delay(self, input_datas: dict[str, t.Any]) -> JSONSerializable:
+        delay = input_datas.get("delay", 5)
+        time.sleep(delay)
         return input_datas
 
     def echo_multi_ndarray(self, *input_arr: NDArray[t.Any]) -> tuple[NDArray[t.Any]]:

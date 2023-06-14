@@ -18,7 +18,7 @@ if t.TYPE_CHECKING:
     from typing_extensions import Self
 
     from .base import OpenAPIResponse
-    from ..context import InferenceApiContext as Context
+    from ..context import ServiceContext as Context
 else:
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
 

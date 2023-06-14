@@ -45,7 +45,7 @@ BentoML supports HTTPS with self-signed certificates. To enable HTTPS, you can t
 to the :code:`bentoml serve` command. Use :code:`bentoml serve --help` to see the full list of options.
 
 .. code::
-    
+
     bentoml serve iris_classifier:latest --ssl-certfile /path/to/cert.pem --ssl-keyfile /path/to/key.pem
 
 

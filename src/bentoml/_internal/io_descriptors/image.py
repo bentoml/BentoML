@@ -34,7 +34,7 @@ if t.TYPE_CHECKING:
 
     from .. import external_typing as ext
     from .base import OpenAPIResponse
-    from ..context import InferenceApiContext as Context
+    from ..context import ServiceContext as Context
     from ...grpc.v1 import service_pb2 as pb
     from ...grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 

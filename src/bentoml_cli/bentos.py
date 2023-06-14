@@ -24,6 +24,7 @@ from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
 from bentoml._internal.configuration import get_quiet_mode
 from bentoml._internal.bento.build_config import BentoBuildConfig
 from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.utils.analytics.usage_stats import _usage_event_debugging
 
 if t.TYPE_CHECKING:
     from click import Context
@@ -46,7 +47,11 @@ def parse_delete_targets_argument_callback(
 ) -> list[str]:
     if value is None:
         return value
-    delete_targets = value.split(",")
+    value = " ".join(value)
+    if "," in value:
+        delete_targets = value.split(",")
+    else:
+        delete_targets = value.split()
     delete_targets = list(map(str.strip, delete_targets))
     for delete_target in delete_targets:
         if not (
@@ -149,6 +154,7 @@ def list_bentos(bento_name: str, output: str) -> None:
 @bento_commands.command()
 @click.argument(
     "delete_targets",
+    nargs=-1,
     type=click.STRING,
     callback=parse_delete_targets_argument_callback,
     required=True,
@@ -167,7 +173,7 @@ def delete(delete_targets: list[str], yes: bool) -> None:
     Examples:
         * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
         * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
-        * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+        * Bulk delete multiple bento bundles by name and version, separated by " ", e.g.: `benotml delete Irisclassifier:v1 MyPredictService:v2`
         * Bulk delete without confirmation, e.g.: `bentoml delete IrisClassifier --yes`
     """
 
@@ -309,10 +315,18 @@ def build(
     build_ctx: str,
     bentofile: str,
     version: str,
-    output: t.Literal["tag", "default"],
+    output: t.Literal["tag", "default", "yaml"],
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> None:
     """Build a new Bento from current directory."""
+    if output == "tag":
+        from bentoml._internal.configuration import set_quiet_mode
+
+        from bentoml._internal.log import configure_logging
+
+        set_quiet_mode(True)
+        configure_logging()
+
     try:
         bentofile = resolve_user_filepath(bentofile, build_ctx)
     except FileNotFoundError:
@@ -327,9 +341,18 @@ def build(
         build_ctx=build_ctx,
     ).save(_bento_store)
 
+    # NOTE: Don't remove the return statement here, since we will need this
+    # for usage stats collection if users are opt-in.
     if output == "tag":
-        click.echo(bento.tag)
-        return
+        if _usage_event_debugging():
+            # NOTE: Since we are logging all of the tracking id to stdout
+            # We will prefix the tag with __tag__ and we can use regex to correctly
+            # get the tag from 'bentoml.bentos.build|build_bentofile'
+            click.echo(f"__tag__:{bento.tag}")
+        else:
+            # Current behaviour
+            click.echo(bento.tag)
+        return bento
 
     if not get_quiet_mode():
         click.echo(BENTOML_FIGLET)
@@ -343,3 +366,4 @@ def build(
             f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
             fg="blue",
         )
+    return bento

@@ -49,7 +49,7 @@ with a ``bentofile.yaml`` build file. Here's an example from the
     Building BentoML service "iris_classifier:dpijemevl6nlhlg6" from build context "/home/user/gallery/quickstart"
     Packing model "iris_clf:zy3dfgxzqkjrlgxi"
     Locking PyPI package versions..
- 
+
     ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
     ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
     ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
@@ -364,7 +364,7 @@ Service
 ^^^^^^^
 
 ``service`` is a **required** field which specifies where the
-``bentoml.Service`` object is defined. 
+``bentoml.Service`` object is defined.
 
 In the :doc:`tutorial </tutorial>`, we defined ``service: "service:svc"``, which can be
 interpreted as:
@@ -538,7 +538,7 @@ desired version, install from a custom PyPI source, or install from a GitHub rep
 
 .. note::
     There's no need to specify :code:`bentoml` as a dependency here since BentoML will
-    addd the current version of BentoML to the Bento's dependency list by default. User
+    add the current version of BentoML to the Bento's dependency list by default. User
     can override this by specifying a different BentoML version.
 
 

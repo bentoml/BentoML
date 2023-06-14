@@ -152,7 +152,7 @@ The following options are available for the ``api_server`` section:
 +=============+=============================================================+=================================================+
 | ``workers`` | Number of API workers for to spawn                          | null [#default_workers]_                        |
 +-------------+-------------------------------------------------------------+-------------------------------------------------+
-| ``timeout`` | Timeout for API server in seconds                           | 60                                              |
+| ``traffic`` | Traffic control for API server                              | See :ref:`guides/configuration:\`\`traffic\`\`` |
 +-------------+-------------------------------------------------------------+-------------------------------------------------+
 | ``backlog`` | Maximum number of connections to hold in backlog            | 2048                                            |
 +-------------+-------------------------------------------------------------+-------------------------------------------------+
@@ -168,6 +168,27 @@ The following options are available for the ``api_server`` section:
 +-------------+-------------------------------------------------------------+-------------------------------------------------+
 | ``tracing`` | Key and values to configure tracing exporter for API server | See :doc:`/guides/tracing`                      |
 +-------------+-------------------------------------------------------------+-------------------------------------------------+
+
+``traffic``
+"""""""""""
+
+You can control the traffic of the API server by setting the ``traffic`` field.
+
+To set the maximum number of seconds to wait before a response is received, set ``api_server.traffic.timeout``, the default value is ``60``s:
+
+.. code-block:: yaml
+
+   api_server:
+     traffic:
+       timeout: 120
+
+To set the maximum number of requests in the process queue across all runners, set ``api_server.traffic.max_concurrency``, the default value is infinite:
+
+.. code-block:: yaml
+
+   api_server:
+     traffic:
+       max_concurrency: 50
 
 ``metrics``
 """""""""""

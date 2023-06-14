@@ -77,9 +77,9 @@ class RemoteRunnerClient(RunnerHandle):
         "return the configured timeout for this runner."
         runner_cfg = BentoMLContainer.runners_config.get()
         if self._runner.name in runner_cfg:
-            return runner_cfg[self._runner.name]["timeout"]
+            return runner_cfg[self._runner.name].get("traffic", {})["timeout"]
         else:
-            return runner_cfg["timeout"]
+            return runner_cfg.get("traffic", {})["timeout"]
 
     def _close_conn(self) -> None:
         if self._conn:

@@ -5,7 +5,6 @@ import typing as t
 from enum import Enum
 from typing import TYPE_CHECKING
 from datetime import datetime
-
 import attr
 import cattr
 from dateutil.parser import parse
@@ -24,6 +23,7 @@ def datetime_decoder(datetime_str: t.Optional[str], _: t.Any) -> t.Optional[date
         return None
     return parse(datetime_str)
 
+
 def dict_options_converter(
     options_type: type[t.Any],
 ) -> t.Callable[[type[t.Any] | dict[str, t.Any]], t.Any]:
@@ -35,6 +35,7 @@ def dict_options_converter(
         return value
 
     return _converter
+
 
 converter = cattr.Converter()
 
@@ -91,6 +92,7 @@ class ResourceSchema(BaseSchema):
     name: str
     resource_type: ResourceType
     labels: t.List[LabelItemSchema]
+
 
 @attr.define
 class UserSchema:
@@ -465,9 +467,7 @@ class DeploymentTargetResources:
 @attr.define
 class RequestQueueConfig:
     __omit_if_default__ = True
-    enabled: t.Optional[bool] = attr.field(
-        default=None
-    )
+    enabled: t.Optional[bool] = attr.field(default=None)
     max_consume_concurrency: t.Optional[int] = attr.field(default=None)
 
 
@@ -492,12 +492,8 @@ class DeploymentTargetRunnerConfig:
     resources: t.Optional[DeploymentTargetResources] = attr.field(default=None)
     hpa_conf: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
     envs: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
-    enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(
-        default=None
-    )
-    enable_debug_mode: t.Optional[bool] = attr.field(
-        default=None
-    )
+    enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(default=None)
+    enable_debug_mode: t.Optional[bool] = attr.field(default=None)
     enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
         default=None
     )
@@ -518,7 +514,8 @@ class DeploymentTargetType(Enum):
 class DeploymentTargetConfig:
     __omit_if_default__ = True
     resources: DeploymentTargetResources = attr.field(
-    default=None, converter=dict_options_converter(DeploymentTargetResources))
+        default=None, converter=dict_options_converter(DeploymentTargetResources)
+    )
     kubeResourceUid: str = attr.field(default="")  # empty str
     kubeResourceVersion: str = attr.field(default="")
     resource_instance: t.Optional[str] = attr.field(default=None)
@@ -527,15 +524,9 @@ class DeploymentTargetConfig:
     runners: t.Optional[t.Dict[str, DeploymentTargetRunnerConfig]] = attr.field(
         default=None
     )
-    enable_ingress: t.Optional[bool] = attr.field(
-        default=None
-    )  # false for enables
-    enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(
-        default=None
-    )
-    enable_debug_mode: t.Optional[bool] = attr.field(
-        default=None
-    )
+    enable_ingress: t.Optional[bool] = attr.field(default=None)  # false for enables
+    enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(default=None)
+    enable_debug_mode: t.Optional[bool] = attr.field(default=None)
     enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
         default=None
     )
@@ -586,7 +577,9 @@ class DeploymentSchema(ResourceSchema):
     status: DeploymentStatus
     urls: t.List[str]
     kube_namespace: str
-    latest_revision: t.Optional[DeploymentRevisionSchema] = attr.field(default=None) # Delete returns no latest revision
+    latest_revision: t.Optional[DeploymentRevisionSchema] = attr.field(
+        default=None
+    )  # Delete returns no latest revision
     mode: t.Optional[DeploymentMode] = attr.field(default=None)
 
 
@@ -642,9 +635,7 @@ class UpdateDeploymentSchema:
     mode: t.Optional[DeploymentMode] = attr.field(default=None)
     labels: t.Optional[t.List[LabelItemSchema]] = attr.field(factory=list)
     description: t.Optional[str] = attr.field(default=None)
-    do_not_deploy: t.Optional[bool] = attr.field(
-        default=None
-    )
+    do_not_deploy: t.Optional[bool] = attr.field(default=None)
 
 
 @attr.define

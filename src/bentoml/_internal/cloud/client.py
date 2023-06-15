@@ -49,7 +49,11 @@ class YataiRESTApiClient:
 
     def _is_not_found(self, resp: requests.Response) -> bool:
         # Forgive me, I don't know how to map the error returned by gorm to juju/errors
-        return resp.status_code == 400 and "record not found" in resp.text
+        return (
+            resp.status_code == 404
+            or resp.status_code == 400
+            and "record not found" in resp.text
+        )
 
     def _check_resp(self, resp: requests.Response) -> None:
         if resp.status_code != 200:
@@ -414,9 +418,9 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelWithRepositoryListSchema)
 
-    def get_deployment_list(self, cluster_name: str) -> DeploymentListSchema | None:
+    def get_deployment_list(self, cluster_name: str, params: dict[str,str|int] | None = None) -> DeploymentListSchema | None:
         url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}/deployments")
-        resp = self.session.get(url)
+        resp = self.session.get(url, params=params)
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)

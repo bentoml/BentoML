@@ -421,16 +421,10 @@ def add_deployment_command(cli: click.Group) -> None:
         "--cluster-name", type=click.STRING, default=None, help="Name of the cluster."
     )
     @click.option(
-        "--query", type=click.STRING, default=None, help="Query for list request."
-    )
-    @click.option(
-        "--search", type=click.STRING, default=None, help="Search for list request."
-    )
-    @click.option(
-        "--start", type=click.STRING, default=None, help="Start for list request."
-    )
-    @click.option(
-        "--count", type=click.STRING, default=None, help="Count for list request."
+        "--kube-namespace",
+        type=click.STRING,
+        default=None,
+        help="Kubernetes namespace.",
     )
     def delete(  # type: ignore
         deployment_name: str,
@@ -464,8 +458,6 @@ def add_deployment_command(cli: click.Group) -> None:
     @click.option(
         "--count", type=click.STRING, default=None, help="Count for list request."
     )
-
-
     def list(  # type: ignore
         context: str | None = None,
         cluster_name: str | None = None,

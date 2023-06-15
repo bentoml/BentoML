@@ -94,7 +94,7 @@ def _extract_commit_hash(resolved_dir: str, regex_commit_hash: t.Pattern[str]) -
 
 def _try_import_huggingface_hub():
     try:
-        import huggingface_hub
+        import huggingface_hub # noqa: F401
     except ImportError:  # pragma: no cover
         raise MissingDependencyException(
             "'huggingface_hub' is required in order to download pretrained diffusion models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",

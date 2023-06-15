@@ -298,7 +298,7 @@ def import_model(
             Variant of the model to import. For example there's "fp16" and "fp32" variant for "DeepFloyd/IF-I-XL-v1.0".
             This may save download bandwidth and local disk space.
         sync_with_hub_version (`bool`, default to False):
-            If sync_with_hub_version is true, then the model imported by 
+            If sync_with_hub_version is true, then the model imported by
         signatures:
             Signatures of predict methods to be used. If not provided, the signatures
             default to {"__call__": {"batchable": False}}. See

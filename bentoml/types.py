@@ -231,7 +231,7 @@ class HTTPRequest:
             return None, None, {}
         environ = {
             "wsgi.input": io.BytesIO(self.body),
-            "CONTENT_LENGTH": len(self.body),
+            "CONTENT_LENGTH": str(len(self.body)),
             "CONTENT_TYPE": self.headers.get("content-type", ""),
             "REQUEST_METHOD": "POST",
         }

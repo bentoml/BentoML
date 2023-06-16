@@ -25,7 +25,6 @@ from ..runner.utils import payload_paramss_to_batch_params
 from ..server.base_app import BaseAppFactory
 from ..types import LazyType
 from ..utils.metrics import exponential_buckets
-from ..utils.metrics import metric_name
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
@@ -81,21 +80,6 @@ class RunnerAppFactory(BaseAppFactory):
 
     def _init_metrics_wrappers(self):
         metrics_client = BentoMLContainer.metrics_client.get()
-
-        self.legacy_adaptive_batch_size_hist_map = {
-            method.name: metrics_client.Histogram(
-                name=metric_name(
-                    self.runner.name,
-                    self.worker_index,
-                    method.name,
-                    "adaptive_batch_size",
-                ),
-                documentation="Legacy runner adaptive batch size",
-                labelnames=[],
-                buckets=exponential_buckets(1, 2, method.max_batch_size),
-            )
-            for method in self.runner.runner_methods
-        }
 
         max_max_batch_size = max(
             method.max_batch_size for method in self.runner.runner_methods
@@ -223,9 +207,6 @@ class RunnerAppFactory(BaseAppFactory):
         async def infer_batch(
             params_list: t.Sequence[Params[t.Any]],
         ) -> list[Payload] | list[tuple[Payload, ...]]:
-            self.legacy_adaptive_batch_size_hist_map[runner_method.name].observe(  # type: ignore
-                len(params_list)
-            )
             self.adaptive_batch_size_hist.labels(  # type: ignore
                 runner_name=self.runner.name,
                 worker_index=self.worker_index,

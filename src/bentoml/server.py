@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import signal
 import typing as t
 import logging
 import textwrap
@@ -257,9 +258,15 @@ class Server(ABC):
                 )
             logger.warning(logs)
 
-        self.process.terminate()
-        # NOTE: Need to call communicate to avoid zombie processes
-        self.process.communicate()
+        if sys.platform == "win32":
+            os.kill(self.process.pid, signal.CTRL_C_EVENT)
+        else:
+            self.process.terminate()
+        # NOTE: To avoid zombie processes
+        try:
+            self.process.communicate()
+        except KeyboardInterrupt:
+            pass
 
     def __enter__(self):
         logger.warning(

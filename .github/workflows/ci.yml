@@ -281,8 +281,8 @@ jobs:
           if [ -f "tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt" ]; then
             pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
           fi
-      - name: Setup tmate session for debugging
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup tmate session for debugging
+      #   uses: mxschmitt/action-tmate@v3
       - name: Run ${{ matrix.server_type }} tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov=src/bentoml --cov-append)

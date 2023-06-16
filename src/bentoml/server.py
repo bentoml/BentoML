@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     _FILE: t.TypeAlias = None | int | t.IO[t.Any]
 
 
+STOP_TIMEOUT = 5
 logger = logging.getLogger(__name__)
 
 __all__ = ["Server", "GrpcServer", "HTTPServer"]
@@ -262,11 +263,13 @@ class Server(ABC):
             os.kill(self.process.pid, signal.CTRL_C_EVENT)
         else:
             self.process.terminate()
-        # NOTE: To avoid zombie processes
         try:
-            self.process.communicate()
+            # NOTE: To avoid zombie processes
+            self.process.communicate(timeout=STOP_TIMEOUT)
         except KeyboardInterrupt:
             pass
+        except subprocess.TimeoutExpired:
+            self.process.kill()  # force kill
 
     def __enter__(self):
         logger.warning(

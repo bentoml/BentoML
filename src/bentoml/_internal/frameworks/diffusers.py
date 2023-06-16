@@ -381,7 +381,6 @@ def import_model(
         if sync_with_hub_version:
             from huggingface_hub.file_download import REGEX_COMMIT_HASH
             version = _extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
-            print("gogog", version)
             if version is not None:
                 if variant is not None:
                     version = version + "-" + variant
@@ -400,7 +399,6 @@ def import_model(
         if sync_with_hub_version:
             from huggingface_hub.file_download import REGEX_COMMIT_HASH
             version = _extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
-            print("yoyoyo", version, src_dir)
             if version is not None:
                 tag.version = version
 

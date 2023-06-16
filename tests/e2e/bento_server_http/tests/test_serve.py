@@ -133,9 +133,13 @@ async def test_serve_with_api_max_concurrency(bentoml_home: str):
     assert "Too many requests" in str(results[-1]), "unexpected error message"
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Windows runner doesn't have enough cores to run this test",
+)
 @pytest.mark.asyncio
 async def test_serve_with_lifecycle_hooks(bentoml_home: str, tmp_path: Path):
-    server = bentoml.HTTPServer("service.py:svc", port=12351, api_workers=2)
+    server = bentoml.HTTPServer("service.py:svc", port=12351, api_workers=4)
     env = os.environ.copy()
     env["BENTOML_TEST_DATA"] = str(tmp_path)
 
@@ -149,7 +153,7 @@ async def test_serve_with_lifecycle_hooks(bentoml_home: str, tmp_path: Path):
         assert body == b"hello", "The state data can't be read correctly"
 
     data_files = list(tmp_path.glob("data-*.txt"))
-    assert len(data_files) == 2, "on_startup should be run 2 times"
+    assert len(data_files) == 4, "on_startup should be run 4 times"
     for f in data_files:
         assert f.read_text().strip() == "closed"
 

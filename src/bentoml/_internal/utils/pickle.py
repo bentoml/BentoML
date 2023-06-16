@@ -52,7 +52,9 @@ def pep574_loads(
     main_bytes: bytes, concat_buffer_bytes: bytes, indices: list[int]
 ) -> t.Any:
     if not indices:
-        # TODO: @larme monitor https://github.com/pytorch/pytorch/issues/102977 and may use this function later
+        # TODO: @larme monitor
+        # https://github.com/pytorch/pytorch/issues/102977 and may change
+        # this function later
         return fixed_torch_loads(main_bytes)
 
     mem = memoryview(concat_buffer_bytes)

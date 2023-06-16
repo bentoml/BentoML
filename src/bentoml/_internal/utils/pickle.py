@@ -39,7 +39,7 @@ def pep574_loads(
 ) -> t.Any:
     if not indices:
         # TODO: @larme monitor https://github.com/pytorch/pytorch/issues/102977 and may use this function later
-        return _fix_torch_loads(main_bytes)
+        return fixed_torch_loads(main_bytes)
 
     mem = memoryview(concat_buffer_bytes)
     partitions = zip(indices, indices[1:])
@@ -48,7 +48,7 @@ def pep574_loads(
         buff = pickle.PickleBuffer(mem[slice(*partition)])
         recover_buffers.append(buff)
 
-    return _fix_torch_loads(main_bytes, buffers=recover_buffers)
+    return fixed_torch_loads(main_bytes, buffers=recover_buffers)
 
 
 def _safe_torch_tensor_loads(bs: bytes) -> t.Any:
@@ -69,7 +69,7 @@ class FixTorchUnpickler(pickle.Unpickler):
             return super().find_class(module, name)
 
 
-def _fix_torch_loads(bs: bytes, **kwargs: t.Any) -> t.Any:
+def fixed_torch_loads(bs: bytes, **kwargs: t.Any) -> t.Any:
     f = io.BytesIO(bs)
     unpickler = FixTorchUnpickler(f, **kwargs)
     return unpickler.load()
@@ -79,4 +79,4 @@ def loads_or_fix_torch(bs: bytes):
     try:
         return pickle.loads(bs)
     except RuntimeError:
-        return _fix_torch_loads(bs)
+        return fixed_torch_loads(bs)

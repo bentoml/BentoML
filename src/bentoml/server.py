@@ -270,6 +270,7 @@ class Server(ABC):
             pass
         except subprocess.TimeoutExpired:
             self.process.kill()  # force kill
+            self.process.wait()
 
     def __enter__(self):
         logger.warning(

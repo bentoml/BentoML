@@ -135,7 +135,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-    if: ${{ false }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     steps:
@@ -178,7 +178,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-    if: ${{ false }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_monitoring_e2e_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -225,8 +225,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
-        python-version: ['3.10']
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
         server_type: ['http', 'grpc']
         exclude:
           - os: windows-latest
@@ -281,8 +281,6 @@ jobs:
           if [ -f "tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt" ]; then
             pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
           fi
-      # - name: Setup tmate session for debugging
-      #   uses: mxschmitt/action-tmate@v3
       - name: Run ${{ matrix.server_type }} tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov=src/bentoml --cov-append)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import signal
 import typing as t
 import logging
 import textwrap
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
     _FILE: t.TypeAlias = None | int | t.IO[t.Any]
 
 
+STOP_TIMEOUT = 5
 logger = logging.getLogger(__name__)
 
 __all__ = ["Server", "GrpcServer", "HTTPServer"]
@@ -257,9 +259,18 @@ class Server(ABC):
                 )
             logger.warning(logs)
 
-        self.process.terminate()
-        # NOTE: Need to call communicate to avoid zombie processes
-        self.process.communicate()
+        if sys.platform == "win32":
+            os.kill(self.process.pid, signal.CTRL_C_EVENT)
+        else:
+            self.process.terminate()
+        try:
+            # NOTE: To avoid zombie processes
+            self.process.communicate(timeout=STOP_TIMEOUT)
+        except KeyboardInterrupt:
+            pass
+        except subprocess.TimeoutExpired:
+            self.process.kill()  # force kill
+            self.process.wait()
 
     def __enter__(self):
         logger.warning(

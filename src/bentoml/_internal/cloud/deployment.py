@@ -46,7 +46,13 @@ class Resource:
 
     @classmethod
     def for_runner(cls, **kwargs) -> DeploymentTargetRunnerConfig:
-        return bentoml_cattr.structure(kwargs, DeploymentTargetRunnerConfig)
+        exclusive_api_server_key = {
+            v for v in kwargs if v not in attr.fields_dict(DeploymentTargetRunnerConfig)
+        }
+        return bentoml_cattr.structure(
+            {k: v for k, v in kwargs.items() if k not in exclusive_api_server_key},
+            DeploymentTargetRunnerConfig,
+        )
 
     @classmethod
     def for_api_server(cls, **kwargs) -> DeploymentTargetConfig:
@@ -234,7 +240,7 @@ class Deployment:
             ],
         }
 
-        cls._update_deployment(
+        return cls._update_deployment(
             deployment_name,
             kube_namespace,
             bentoml_cattr.structure(dct_update, UpdateDeploymentSchema),
@@ -358,23 +364,27 @@ class Deployment:
     @classmethod
     def create_from_file(
         cls,
-        path: str,
+        path_or_stream: str | t.TextIO,
         path_context: str | None = None,
         context: str | None = None,
         cluster_name: str | None = None,
     ) -> DeploymentSchema:
-        real_path = resolve_user_filepath(path, path_context)
-        try:
-            with open(real_path, "r") as file:
-                data = json.load(file)
-        except FileNotFoundError:
-            raise ValueError(f"File not found: {real_path}")
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Error decoding JSON file: {real_path}\n{e}")
-        except Exception as e:
-            raise ValueError(
-                f"An error occurred while reading the file: {real_path}\n{e}"
-            )
+        if isinstance(path_or_stream, str):
+            real_path = resolve_user_filepath(path_or_stream, path_context)
+            try:
+                with open(real_path, "r") as file:
+                    data = json.load(file)
+            except FileNotFoundError:
+                raise ValueError(f"File not found: {real_path}")
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Error decoding JSON file: {real_path}\n{e}")
+            except Exception as e:
+                raise ValueError(
+                    f"An error occurred while reading the file: {real_path}\n{e}"
+                )
+        else:
+            data = json.load(path_or_stream)
+
         if cluster_name is None:
             cluster_name = default_cluster_name
         deployment_schema = bentoml_cattr.structure(data, CreateDeploymentSchema)

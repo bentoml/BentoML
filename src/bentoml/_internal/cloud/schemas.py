@@ -360,6 +360,7 @@ class DeploymentTargetCanaryRuleType(Enum):
 @attr.define
 class DeploymentTargetCanaryRule:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     type: DeploymentTargetCanaryRuleType
     weight: int
     header: str
@@ -370,6 +371,7 @@ class DeploymentTargetCanaryRule:
 @attr.define
 class ApiServerBentoDeploymentOverrides:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     monitorExporter: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
     extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
     extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
@@ -378,6 +380,7 @@ class ApiServerBentoDeploymentOverrides:
 @attr.define
 class RunnerBentoDeploymentOverrides:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
     extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
 
@@ -385,6 +388,7 @@ class RunnerBentoDeploymentOverrides:
 @attr.define
 class BentoRequestOverrides:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     imageBuildTimeout: int = attr.field(default=None)
     imageBuilderExtraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(
         default=None
@@ -418,6 +422,7 @@ class HPAMetricType(Enum):
 @attr.define
 class HPAMetric:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     type: HPAMetricType  # enum
     value: t.Any  # resource.Quantity
 
@@ -431,6 +436,7 @@ class HPAScaleBehavior(Enum):
 @attr.define
 class HPAPolicy:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     metrics: t.Optional[t.List[HPAMetric]] = attr.field(default=None)
     scale_down_behavior: t.Optional[HPAScaleBehavior] = attr.field(default=None)
     scale_up_behavior: t.Optional[HPAScaleBehavior] = attr.field(default=None)
@@ -439,6 +445,7 @@ class HPAPolicy:
 @attr.define
 class DeploymentTargetHPAConf:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     cpu: t.Optional[int] = attr.field(default=None)
     gpu: t.Optional[int] = attr.field(default=None)
     memory: t.Optional[str] = attr.field(default=None)
@@ -451,6 +458,7 @@ class DeploymentTargetHPAConf:
 @attr.define
 class DeploymentTargetResourceItem:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     cpu: t.Optional[str] = attr.field(default=None)
     memory: t.Optional[str] = attr.field(default=None)
     gpu: t.Optional[str] = attr.field(default=None)
@@ -460,6 +468,7 @@ class DeploymentTargetResourceItem:
 @attr.define
 class DeploymentTargetResources:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     requests: t.Optional[DeploymentTargetResourceItem] = attr.field(default=None)
     limits: t.Optional[DeploymentTargetResourceItem] = attr.field(default=None)
 
@@ -467,6 +476,7 @@ class DeploymentTargetResources:
 @attr.define
 class RequestQueueConfig:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     enabled: t.Optional[bool] = attr.field(default=None)
     max_consume_concurrency: t.Optional[int] = attr.field(default=None)
 
@@ -474,6 +484,7 @@ class RequestQueueConfig:
 @attr.define
 class TrafficControlConfig:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     timeout: t.Optional[str] = attr.field(default=None)
     request_queue: t.Optional[RequestQueueConfig] = attr.field(default=None)
 
@@ -488,6 +499,7 @@ class DeploymentStrategy(Enum):
 @attr.define
 class DeploymentTargetRunnerConfig:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     resource_instance: t.Optional[str] = attr.field(default=None)
     resources: t.Optional[DeploymentTargetResources] = attr.field(default=None)
     hpa_conf: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
@@ -513,6 +525,7 @@ class DeploymentTargetType(Enum):
 @attr.define
 class DeploymentTargetConfig:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     resources: DeploymentTargetResources = attr.field(
         default=None, converter=dict_options_converter(DeploymentTargetResources)
     )
@@ -546,6 +559,7 @@ class DeploymentTargetConfig:
 @attr.define
 class CreateDeploymentTargetSchema:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     type: DeploymentTargetType  # stable by default
     bento_repository: str
     bento: str
@@ -572,6 +586,7 @@ class DeploymentStatus(Enum):
 @attr.define
 class DeploymentSchema(ResourceSchema):
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     creator: UserSchema
     cluster: ClusterFullSchema
     status: DeploymentStatus
@@ -586,6 +601,7 @@ class DeploymentSchema(ResourceSchema):
 @attr.define
 class DeploymentTargetSchema(ResourceSchema):
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     creator: UserSchema
     type: DeploymentTargetType
     bento: BentoFullSchema
@@ -603,6 +619,7 @@ class DeploymentRevisionStatus(Enum):
 @attr.define
 class DeploymentRevisionSchema(ResourceSchema):
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     creator: UserSchema
     status: DeploymentRevisionStatus
     targets: t.List[DeploymentTargetSchema]
@@ -611,6 +628,7 @@ class DeploymentRevisionSchema(ResourceSchema):
 @attr.define
 class ClusterFullSchema(ClusterSchema):
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     grafana_root_path: str
     organization: t.Optional[OrganizationSchema] = attr.field(default=None)
     kube_config: t.Optional[str] = attr.field(default=None)
@@ -620,6 +638,7 @@ class ClusterFullSchema(ClusterSchema):
 @attr.define
 class DeploymentListSchema(BaseListSchema):
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     items: t.List[DeploymentSchema]
 
 
@@ -631,6 +650,7 @@ class DeploymentMode(Enum):
 @attr.define
 class UpdateDeploymentSchema:
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     targets: t.List[CreateDeploymentTargetSchema]
     mode: t.Optional[DeploymentMode] = attr.field(default=None)
     labels: t.Optional[t.List[LabelItemSchema]] = attr.field(factory=list)
@@ -641,5 +661,6 @@ class UpdateDeploymentSchema:
 @attr.define
 class CreateDeploymentSchema(UpdateDeploymentSchema):
     __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     name: str = attr.field(default=None)
     kube_namespace: str = attr.field(default=None)

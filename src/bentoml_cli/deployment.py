@@ -3,6 +3,7 @@ from __future__ import annotations
 import click
 import typing as t
 from bentoml._internal.types import LazyType
+
 if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
     from bentoml._internal.cloud.schemas import DeploymentTargetType
@@ -25,9 +26,7 @@ class NargsOptions(click.Option):
         if nargs != -1:
             raise (f"'nargs' is set, and must be -1 instead of {nargs}")
         super(NargsOptions, self).__init__(*args, **attrs)
-        self._prev_parser_process: t.Callable[
-            [t.Any, click.parser.ParsingState], None
-        ]
+        self._prev_parser_process: t.Callable[[t.Any, click.parser.ParsingState], None]
         self._nargs_parser: click.parser.Option
 
     def add_to_parser(self, parser: click.OptionParser, ctx: click.Context) -> None:
@@ -60,6 +59,7 @@ class NargsOptions(click.Option):
                 break
         return retval
 
+
 def parse_runners_callback(
     _: click.Context, params: click.Parameter, value: tuple[str, ...] | None
 ) -> t.Any:
@@ -80,9 +80,6 @@ def parse_runners_callback(
         parsedLs.append(
             dict(map(lambda x: x.strip()[1:-1].split("="), filter(lambda x: x, parsed)))
         )
-        # Remove trailing space then single quotation mark in front and end, split by = to make a key,val pair
-        # --runner a b c d
-        # ("'a'", "'b'")
     return parsedLs
 
 
@@ -90,12 +87,20 @@ class Mutex(click.Option):
     """An option that supports mutually exclusive required options.
     Derived from https://stackoverflow.com/a/51235564
     """
+
     def __init__(self, *args, **kwargs):
         self.must_exist_if_none: list[str] = kwargs.pop("must_exist_if_none", None)
-        self.cannot_exist_together: list[str] = kwargs.pop("cannot_exist_together", None)
+        self.cannot_exist_together: list[str] = kwargs.pop(
+            "cannot_exist_together", None
+        )
         assert self.must_exist_if_none, "'must_exist_if_none' parameter required"
         assert self.cannot_exist_together, "'cannot_exist_together' parameter required"
-        kwargs["help"] = (kwargs.get("help", "") + "Option is mutually exclusive with " + ", ".join(self.cannot_exist_together) + ".").strip()
+        kwargs["help"] = (
+            kwargs.get("help", "")
+            + "Option is mutually exclusive with "
+            + ", ".join(self.cannot_exist_together)
+            + "."
+        ).strip()
         super(Mutex, self).__init__(*args, **kwargs)
 
     def handle_parse_result(self, ctx, opts, args):
@@ -103,13 +108,22 @@ class Mutex(click.Option):
         if current_opt:
             for mutex_opt in self.cannot_exist_together:
                 if mutex_opt in opts:
-                    raise click.UsageError("Illegal usage: '" + str(self.name) + "' is mutually exclusive with '" + str(mutex_opt) + "'.")
+                    raise click.UsageError(
+                        "Illegal usage: '"
+                        + str(self.name)
+                        + "' is mutually exclusive with '"
+                        + str(mutex_opt)
+                        + "'."
+                    )
         else:
             for mutex_opt in self.must_exist_if_none:
                 if mutex_opt not in opts:
-                    raise click.UsageError(f"Either {['--'+i for i in self.must_exist_if_none]} or {['--' + self.name]} is required for this operation")
+                    raise click.UsageError(
+                        f"Either {['--'+i for i in self.must_exist_if_none]} or {['--' + self.name]} is required for this operation"
+                    )
         self.prompt = None
         return super(Mutex, self).handle_parse_result(ctx, opts, args)
+
 
 def add_deployment_command(cli: click.Group) -> None:
     import json
@@ -121,31 +135,37 @@ def add_deployment_command(cli: click.Group) -> None:
 
     bento_store = BentoMLContainer.bento_store.get()
     client = BentoMLContainer.bentocloud_client.get()
-    output_option = click.option("-o", '--output', type=click.Choice(['json', 'default']), default='default')
+    output_option = click.option(
+        "-o", "--output", type=click.Choice(["json", "default"]), default="default"
+    )
 
     def shared_decorator(f: t.Callable[..., t.Any]):
-        options = [click.argument(
-        "deployment_name",
-        type=click.STRING,
-        required=True,
-    ),
-    click.option(
-        "--context", type=click.STRING, default=None, help="Yatai context name."
-    ),
-    click.option(
-        "--cluster-name", type=click.STRING, default=None, help="Name of the cluster."
-    ),
-    click.option(
-        "--kube-namespace",
-        type=click.STRING,
-        default=None,
-        help="Kubernetes namespace.",
-    ),
-    output_option]
+        options = [
+            click.argument(
+                "deployment_name",
+                type=click.STRING,
+                required=True,
+            ),
+            click.option(
+                "--context", type=click.STRING, default=None, help="Yatai context name."
+            ),
+            click.option(
+                "--cluster-name",
+                type=click.STRING,
+                default=None,
+                help="Name of the cluster.",
+            ),
+            click.option(
+                "--kube-namespace",
+                type=click.STRING,
+                default=None,
+                help="Kubernetes namespace.",
+            ),
+            output_option,
+        ]
         for opt in reversed(options):
             f = opt(f)
         return f
-
 
     @cli.group(name="deployment", cls=BentoMLCommandGroup)
     def deployment_cli():
@@ -159,7 +179,7 @@ def add_deployment_command(cli: click.Group) -> None:
         default=None,
         help="Create deployment using json file. ",
         cls=Mutex,
-        must_exist_if_none=["deployment_name", 'bento'],
+        must_exist_if_none=["deployment_name", "bento"],
         cannot_exist_together=[
             "deployment_name",
             "bento",
@@ -174,7 +194,7 @@ def add_deployment_command(cli: click.Group) -> None:
             "runner",
             "force",
             "threads",
-            "push"
+            "push",
         ],
     )
     @click.option(
@@ -183,7 +203,9 @@ def add_deployment_command(cli: click.Group) -> None:
         help="Name of the deployment.",
     )
     @click.option(
-        "--bento", type=click.STRING, help="Bento tag or name.",
+        "--bento",
+        type=click.STRING,
+        help="Bento tag or name.",
     )
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
@@ -278,7 +300,9 @@ def add_deployment_command(cli: click.Group) -> None:
         mode: DeploymentMode,
         runner: dict[str, t.Any],
         output: t.Literal["json", "default"],
-        force: bool, threads: int, push: bool
+        force: bool,
+        threads: int,
+        push: bool,
     ) -> DeploymentSchema:
         """Create a deployment."""
         if file is not None:
@@ -288,7 +312,8 @@ def add_deployment_command(cli: click.Group) -> None:
         hpa_conf = Resource.for_hpa_conf(
             min_replicas=min_replicas, max_replicas=max_replicas
         )
-        runners_conf = {
+        runners_conf = (
+            {
                 i["runner-name"]: Resource.for_runner(
                     hpa_conf={
                         "min_replicas": i.get("min-replicas"),
@@ -297,14 +322,15 @@ def add_deployment_command(cli: click.Group) -> None:
                     resource_instance=i.get("resource-instance"),
                 )
                 for i in runner
-            } if runner else None
+            }
+            if runner
+            else None
+        )
         if push:
             bento_obj = bento_store.get(bento)
             if not bento_obj:
                 raise click.ClickException(f"Bento {bento} not found in local store")
-            client.push_bento(
-            bento_obj, force=force, threads=threads, context=context
-            )
+            client.push_bento(bento_obj, force=force, threads=threads, context=context)
 
         res = client.deployment.create(
             deployment_name=deployment_name,
@@ -320,9 +346,9 @@ def add_deployment_command(cli: click.Group) -> None:
             runners_config=runners_conf,
             hpa_conf=hpa_conf,
         )
-        if output =="default":
+        if output == "default":
             console.print(res)
-        elif output =="json":
+        elif output == "json":
             unstructured = bentoml_cattr.unstructure(res)
             click.echo(json.dumps(unstructured, indent=2))
         return res
@@ -334,7 +360,9 @@ def add_deployment_command(cli: click.Group) -> None:
         help="Name of the deployment.",
     )
     @click.option(
-        "--bento", type=click.STRING, help="Bento tag or name.",
+        "--bento",
+        type=click.STRING,
+        help="Bento tag or name.",
     )
     @click.option(
         "-f",
@@ -430,7 +458,7 @@ def add_deployment_command(cli: click.Group) -> None:
         type: DeploymentTargetType,
         mode: DeploymentMode,
         runner: dict[str, t.Any],
-        output: t.Literal["json", "default"]
+        output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Update a deployment"""
         if file is not None:
@@ -440,7 +468,8 @@ def add_deployment_command(cli: click.Group) -> None:
         hpa_conf = Resource.for_hpa_conf(
             min_replicas=min_replicas, max_replicas=max_replicas
         )
-        runners_conf = {
+        runners_conf = (
+            {
                 i["runner-name"]: Resource.for_runner(
                     hpa_conf={
                         "min_replicas": i.get("min-replicas"),
@@ -449,7 +478,10 @@ def add_deployment_command(cli: click.Group) -> None:
                     resource_instance=i.get("resource-instance"),
                 )
                 for i in runner
-            } if runner else None
+            }
+            if runner
+            else None
+        )
         # Updated schema
         breakpoint()
         res = client.deployment.update(
@@ -466,9 +498,9 @@ def add_deployment_command(cli: click.Group) -> None:
             runners_config=runners_conf,
             hpa_conf=hpa_conf,
         )
-        if output=="default":
+        if output == "default":
             console.print(res)
-        elif output=="json":
+        elif output == "json":
             unstructured = bentoml_cattr.unstructure(res)
             click.echo(json.dumps(unstructured, indent=2))
         return res
@@ -480,15 +512,17 @@ def add_deployment_command(cli: click.Group) -> None:
         context: str,
         cluster_name: str,
         kube_namespace: str,
-        output: t.Literal["json", "default"]
+        output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
-        res = client.deployment.get(deployment_name=deployment_name,
-                                context=context,
-                                cluster_name=cluster_name,
-                                kube_namespace=kube_namespace)
-        if output=="default":
+        res = client.deployment.get(
+            deployment_name=deployment_name,
+            context=context,
+            cluster_name=cluster_name,
+            kube_namespace=kube_namespace,
+        )
+        if output == "default":
             console.print(res)
-        elif output=="json":
+        elif output == "json":
             unstructured = bentoml_cattr.unstructure(res)
             click.echo(json.dumps(unstructured, indent=2))
         return res
@@ -500,15 +534,17 @@ def add_deployment_command(cli: click.Group) -> None:
         context: str,
         cluster_name: str,
         kube_namespace: str,
-        output: t.Literal["json", "default"]
+        output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
-        res = client.deployment.terminate(deployment_name=deployment_name,
-                                context=context,
-                                cluster_name=cluster_name,
-                                kube_namespace=kube_namespace)
-        if output=="default":
+        res = client.deployment.terminate(
+            deployment_name=deployment_name,
+            context=context,
+            cluster_name=cluster_name,
+            kube_namespace=kube_namespace,
+        )
+        if output == "default":
             console.print(res)
-        elif output=="json":
+        elif output == "json":
             unstructured = bentoml_cattr.unstructure(res)
             click.echo(json.dumps(unstructured, indent=2))
         return res
@@ -520,15 +556,17 @@ def add_deployment_command(cli: click.Group) -> None:
         context: str,
         cluster_name: str,
         kube_namespace: str,
-        output: t.Literal["json", "default"]
+        output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
-        res = client.deployment.delete(deployment_name=deployment_name,
-                                context=context,
-                                cluster_name=cluster_name,
-                                kube_namespace=kube_namespace)
-        if output=="default":
+        res = client.deployment.delete(
+            deployment_name=deployment_name,
+            context=context,
+            cluster_name=cluster_name,
+            kube_namespace=kube_namespace,
+        )
+        if output == "default":
             console.print(res)
-        elif output=="json":
+        elif output == "json":
             unstructured = bentoml_cattr.unstructure(res)
             click.echo(json.dumps(unstructured, indent=2))
         return res
@@ -552,7 +590,13 @@ def add_deployment_command(cli: click.Group) -> None:
     @click.option(
         "--count", type=click.STRING, default=None, help="Count for list request."
     )
-    @click.option("-o", '--output', help='display the output of this command', type=click.Choice(['json', 'default', 'table']), default = "table")
+    @click.option(
+        "-o",
+        "--output",
+        help="display the output of this command",
+        type=click.Choice(["json", "default", "table"]),
+        default="table",
+    )
     def list(  # type: ignore
         context: str,
         cluster_name: str,
@@ -560,15 +604,17 @@ def add_deployment_command(cli: click.Group) -> None:
         search: str,
         count: str,
         start: str,
-        output: t.Literal['json', 'default', 'table'],
+        output: t.Literal["json", "default", "table"],
     ) -> DeploymentSchema:
-        res = client.deployment.list(context=context,
-                                cluster_name=cluster_name,
-                                query=query,
-                                search=search,
-                                count=count,
-                                start=start,)
-        if output=="table":
+        res = client.deployment.list(
+            context=context,
+            cluster_name=cluster_name,
+            query=query,
+            search=search,
+            count=count,
+            start=start,
+        )
+        if output == "table":
             table = Table(box=None)
             table.add_column("Deployment")
             table.add_column("Bento")
@@ -580,14 +626,12 @@ def add_deployment_command(cli: click.Group) -> None:
                     deployment.name,
                     f"{target.bento.repository.name}:{target.bento.name}",
                     deployment.status.value,
-                    deployment.created_at.astimezone().strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    ),
+                    deployment.created_at.astimezone().strftime("%Y-%m-%d %H:%M:%S"),
                 )
             console.print(table)
-        elif output=="default":
+        elif output == "default":
             console.print(res)
-        elif output=="json":
+        elif output == "json":
             unstructured = bentoml_cattr.unstructure(res)
             click.echo(json.dumps(unstructured, indent=2))
         return res

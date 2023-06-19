@@ -18,8 +18,6 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 default_context_name = "default"
-default_cluster_name = "default"
-default_kube_namespace = "yatai"
 
 
 @inject

@@ -10,12 +10,11 @@ from ..tag import Tag
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
-from .config import default_cluster_name
-from .config import default_kube_namespace
 from .schemas import DeploymentMode
 from .schemas import DeploymentSchema
 from .schemas import DeploymentListSchema
 from .schemas import DeploymentTargetType
+from .schemas import FullDeploymentSchema
 from .schemas import CreateDeploymentSchema
 from .schemas import DeploymentTargetConfig
 from .schemas import UpdateDeploymentSchema
@@ -61,15 +60,40 @@ class Resource:
 
 class Deployment:
     @classmethod
+    def _get_default_kube_namespace(
+        cls,
+        cluster_name: str,
+        context: str | None = None,
+    ) -> str:
+        yatai_rest_client = get_rest_api_client(context)
+        res = yatai_rest_client.get_cluster(cluster_name)
+        if not res:
+            raise BentoMLException("Cannot get default kube namespace")
+        return res.config.default_deployment_kube_namespace
+
+    @classmethod
+    def _get_default_cluster(cls, context: str | None = None) -> str:
+        yatai_rest_client = get_rest_api_client(context)
+        res = yatai_rest_client.get_cluster_list(params={"count": 1})
+        if not res.items:
+            raise BentoMLException("Cannot get default clusters")
+        return res.items[0].name
+
+    @classmethod
     def _create_deployment(
         cls,
         create_deployment_schema: CreateDeploymentSchema,
         context: str | None = None,
         cluster_name: str | None = None,
     ) -> DeploymentSchema:
+        breakpoint()
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_cluster_name
+            cluster_name = cls._get_default_cluster(context)
+        if create_deployment_schema.kube_namespace is None:
+            create_deployment_schema.kube_namespace = cls._get_default_kube_namespace(
+                cluster_name, context
+            )
         for target in create_deployment_schema.targets:
             if (
                 yatai_rest_client.get_bento(target.bento_repository, target.bento)
@@ -100,22 +124,23 @@ class Deployment:
     def _update_deployment(
         cls,
         deployment_name: str,
-        kube_namespace: str,
         update_deployment_schema: UpdateDeploymentSchema,
+        kube_namespace: str | None = None,
         context: str | None = None,
         cluster_name: str | None = None,
     ) -> DeploymentSchema:
-
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_cluster_name
+            cluster_name = cls._get_default_cluster(context)
+        if kube_namespace is None:
+            kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
         for target in update_deployment_schema.targets:
             if (
                 yatai_rest_client.get_bento(target.bento_repository, target.bento)
                 is None
             ):
                 raise BentoMLException(
-                    f"Create deployment: {target.bento_repository}:{target.bento} does not exist"
+                    f"Update deployment: {target.bento_repository}:{target.bento} does not exist"
                 )
             yatai_rest_client.get_deployment(
                 cluster_name,
@@ -155,10 +180,10 @@ class Deployment:
             mode = DeploymentMode.Function
         if type is None:
             type = DeploymentTargetType.STABLE
-        if kube_namespace is None:
-            kube_namespace = default_kube_namespace
         if cluster_name is None:
-            cluster_name = default_cluster_name
+            cluster_name = cls._get_default_cluster(context)
+        if kube_namespace is None:
+            kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
 
         original_deployment_schema = cls.get(
             deployment_name, context, cluster_name, kube_namespace
@@ -241,11 +266,13 @@ class Deployment:
         }
 
         return cls._update_deployment(
-            deployment_name,
-            kube_namespace,
-            bentoml_cattr.structure(dct_update, UpdateDeploymentSchema),
-            context,
-            cluster_name,
+            deployment_name=deployment_name,
+            update_deployment_schema=bentoml_cattr.structure(
+                dct_update, UpdateDeploymentSchema
+            ),
+            context=context,
+            cluster_name=cluster_name,
+            kube_namespace=kube_namespace,
         )
 
     @classmethod
@@ -271,10 +298,6 @@ class Deployment:
             mode = DeploymentMode.Function
         if type is None:
             type = DeploymentTargetType.STABLE
-        if kube_namespace is None:
-            kube_namespace = default_kube_namespace
-        if cluster_name is None:
-            cluster_name = default_cluster_name
         bento = Tag.from_taglike(bento)
         dct = {
             "name": deployment_name,
@@ -345,16 +368,23 @@ class Deployment:
 
     @classmethod
     def list(
-        cls, context: str | None = None, cluster_name: str | None = None,
-        query: str | None = None, search: str | None = None, count: int | None = None, start: int | None = None
+        cls,
+        context: str | None = None,
+        cluster_name: str | None = None,
+        query: str | None = None,
+        search: str | None = None,
+        count: int | None = None,
+        start: int | None = None,
     ) -> DeploymentListSchema:
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_cluster_name
+            cluster_name = cls._get_default_cluster(context)
         if query or start or count or search:
             params = {"start": start, "count": count, "search": search, "q": query}
         else:
-            params = {"count": yatai_rest_client.get_deployment_list(cluster_name).total}
+            params = {
+                "count": yatai_rest_client.get_deployment_list(cluster_name).total
+            }
 
         res = yatai_rest_client.get_deployment_list(cluster_name, params)
         if res is None:
@@ -367,7 +397,6 @@ class Deployment:
         path_or_stream: str | t.TextIO,
         path_context: str | None = None,
         context: str | None = None,
-        cluster_name: str | None = None,
     ) -> DeploymentSchema:
         if isinstance(path_or_stream, str):
             real_path = resolve_user_filepath(path_or_stream, path_context)
@@ -385,42 +414,43 @@ class Deployment:
         else:
             data = json.load(path_or_stream)
 
-        if cluster_name is None:
-            cluster_name = default_cluster_name
-        deployment_schema = bentoml_cattr.structure(data, CreateDeploymentSchema)
+        deployment_schema = bentoml_cattr.structure(data, FullDeploymentSchema)
         return cls._create_deployment(
             create_deployment_schema=deployment_schema,
             context=context,
-            cluster_name=cluster_name,
+            cluster_name=deployment_schema.cluster_name,
         )
 
     @classmethod
     def update_from_file(
         cls,
-        path: str,
+        path_or_stream: str | t.TextIO,
         path_context: str | None = None,
         context: str | None = None,
-        cluster_name: str | None = None,
     ) -> DeploymentSchema:
-        real_path = resolve_user_filepath(path, path_context)
-        try:
-            with open(real_path, "r") as file:
-                data = json.load(file)
-        except FileNotFoundError:
-            raise ValueError(f"File not found: {real_path}")
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Error decoding JSON file: {real_path}\n{e}")
-        except Exception as e:
-            raise ValueError(
-                f"An error occurred while reading the file: {real_path}\n{e}"
-            )
-        if cluster_name is None:
-            cluster_name = default_cluster_name
-        deployment_schema = bentoml_cattr.structure(data, UpdateDeploymentSchema)
+        if isinstance(path_or_stream, str):
+            real_path = resolve_user_filepath(path_or_stream, path_context)
+            try:
+                with open(real_path, "r") as file:
+                    data = json.load(file)
+            except FileNotFoundError:
+                raise ValueError(f"File not found: {real_path}")
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Error decoding JSON file: {real_path}\n{e}")
+            except Exception as e:
+                raise ValueError(
+                    f"An error occurred while reading the file: {real_path}\n{e}"
+                )
+        else:
+            data = json.load(path_or_stream)
+
+        deployment_schema = bentoml_cattr.structure(data, FullDeploymentSchema)
         return cls._update_deployment(
+            deployment_name=deployment_schema.name,
             update_deployment_schema=deployment_schema,
             context=context,
-            cluster_name=cluster_name,
+            cluster_name=deployment_schema.cluster_name,
+            kube_namespace=deployment_schema.kube_namespace,
         )
 
     @classmethod
@@ -433,9 +463,9 @@ class Deployment:
     ) -> DeploymentSchema:
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_cluster_name
+            cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
-            kube_namespace = default_kube_namespace
+            kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
         res = yatai_rest_client.get_deployment(
             cluster_name, kube_namespace, deployment_name
         )
@@ -454,9 +484,9 @@ class Deployment:
 
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_cluster_name
+            cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
-            kube_namespace = default_kube_namespace
+            kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
         res = yatai_rest_client.get_deployment(
             cluster_name,
             kube_namespace,
@@ -483,9 +513,9 @@ class Deployment:
 
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
-            cluster_name = default_cluster_name
+            cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
-            kube_namespace = default_kube_namespace
+            kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
         res = yatai_rest_client.get_deployment(
             cluster_name,
             kube_namespace,

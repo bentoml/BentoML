@@ -83,48 +83,6 @@ def parse_runners_callback(
     return parsedLs
 
 
-class Mutex(click.Option):
-    """An option that supports mutually exclusive required options.
-    Derived from https://stackoverflow.com/a/51235564
-    """
-
-    def __init__(self, *args, **kwargs):
-        self.must_exist_if_none: list[str] = kwargs.pop("must_exist_if_none", None)
-        self.cannot_exist_together: list[str] = kwargs.pop(
-            "cannot_exist_together", None
-        )
-        assert self.must_exist_if_none, "'must_exist_if_none' parameter required"
-        assert self.cannot_exist_together, "'cannot_exist_together' parameter required"
-        kwargs["help"] = (
-            kwargs.get("help", "")
-            + "Option is mutually exclusive with "
-            + ", ".join(self.cannot_exist_together)
-            + "."
-        ).strip()
-        super(Mutex, self).__init__(*args, **kwargs)
-
-    def handle_parse_result(self, ctx, opts, args):
-        current_opt: bool = self.name in opts
-        if current_opt:
-            for mutex_opt in self.cannot_exist_together:
-                if mutex_opt in opts:
-                    raise click.UsageError(
-                        "Illegal usage: '"
-                        + str(self.name)
-                        + "' is mutually exclusive with '"
-                        + str(mutex_opt)
-                        + "'."
-                    )
-        else:
-            for mutex_opt in self.must_exist_if_none:
-                if mutex_opt not in opts:
-                    raise click.UsageError(
-                        f"Either {['--'+i for i in self.must_exist_if_none]} or {['--' + self.name]} is required for this operation"
-                    )
-        self.prompt = None
-        return super(Mutex, self).handle_parse_result(ctx, opts, args)
-
-
 def add_deployment_command(cli: click.Group) -> None:
     import json
     from bentoml_cli.utils import BentoMLCommandGroup
@@ -142,7 +100,7 @@ def add_deployment_command(cli: click.Group) -> None:
     def shared_decorator(f: t.Callable[..., t.Any]):
         options = [
             click.argument(
-                "deployment_name",
+                "deployment-name",
                 type=click.STRING,
                 required=True,
             ),
@@ -171,36 +129,18 @@ def add_deployment_command(cli: click.Group) -> None:
     def deployment_cli():
         """Deployment Subcommands Groups"""
 
-    @deployment_cli.command()
+    @deployment_cli.command(context_settings={"ignore_unknown_options": True})
+    @click.argument(
+        "deployment-name",
+        type=click.STRING,
+        default="",
+    )
     @click.option(
         "-f",
         "--file",
         type=click.File(),
         default=None,
         help="Create deployment using json file. ",
-        cls=Mutex,
-        must_exist_if_none=["deployment_name", "bento"],
-        cannot_exist_together=[
-            "deployment_name",
-            "bento",
-            "description",
-            "expose_endpoint",
-            "kube_namespace",
-            "resource_instance",
-            "min_replicas",
-            "max_replicas",
-            "type",
-            "mode",
-            "runner",
-            "force",
-            "threads",
-            "push",
-        ],
-    )
-    @click.option(
-        "--deployment-name",
-        type=click.STRING,
-        help="Name of the deployment.",
     )
     @click.option(
         "--bento",
@@ -299,65 +239,77 @@ def add_deployment_command(cli: click.Group) -> None:
         type: DeploymentTargetType,
         mode: DeploymentMode,
         runner: dict[str, t.Any],
-        output: t.Literal["json", "default"],
         force: bool,
         threads: int,
         push: bool,
+        output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Create a deployment."""
         if file is not None:
-            return client.deployment.create_from_file(
-                path_or_stream=file, context=context, cluster_name=cluster_name
+            click.echo(
+                "--file is passed, all of the other options except '--context' and '--output' for creating deployment are ignored."
             )
-        hpa_conf = Resource.for_hpa_conf(
-            min_replicas=min_replicas, max_replicas=max_replicas
-        )
-        runners_conf = (
-            {
-                i["runner-name"]: Resource.for_runner(
-                    hpa_conf={
-                        "min_replicas": i.get("min-replicas"),
-                        "max_replicas": i.get("max-replicas"),
-                    },
-                    resource_instance=i.get("resource-instance"),
+            res = client.deployment.create_from_file(
+                path_or_stream=file, context=context
+            )
+        else:
+            if not deployment_name:
+                raise click.BadArgumentUsage("deployment-name is required")
+            if not bento:
+                raise click.BadArgumentUsage("bento is required")
+            hpa_conf = Resource.for_hpa_conf(
+                min_replicas=min_replicas, max_replicas=max_replicas
+            )
+            runners_conf = (
+                {
+                    i["runner-name"]: Resource.for_runner(
+                        hpa_conf={
+                            "min_replicas": i.get("min-replicas"),
+                            "max_replicas": i.get("max-replicas"),
+                        },
+                        resource_instance=i.get("resource-instance"),
+                    )
+                    for i in runner
+                }
+                if runner
+                else None
+            )
+            if push:
+                bento_obj = bento_store.get(bento)
+                if not bento_obj:
+                    raise click.ClickException(
+                        f"Bento {bento} not found in local store"
+                    )
+                client.push_bento(
+                    bento_obj, force=force, threads=threads, context=context
                 )
-                for i in runner
-            }
-            if runner
-            else None
-        )
-        if push:
-            bento_obj = bento_store.get(bento)
-            if not bento_obj:
-                raise click.ClickException(f"Bento {bento} not found in local store")
-            client.push_bento(bento_obj, force=force, threads=threads, context=context)
 
-        res = client.deployment.create(
-            deployment_name=deployment_name,
-            bento=bento,
-            expose_endpoint=expose_endpoint,
-            cluster_name=cluster_name,
-            kube_namespace=kube_namespace,
-            resource_instance=resource_instance,
-            context=context,
-            description=description,
-            type=type,
-            mode=mode,
-            runners_config=runners_conf,
-            hpa_conf=hpa_conf,
-        )
+            res = client.deployment.create(
+                deployment_name=deployment_name,
+                bento=bento,
+                expose_endpoint=expose_endpoint,
+                cluster_name=cluster_name,
+                kube_namespace=kube_namespace,
+                resource_instance=resource_instance,
+                context=context,
+                description=description,
+                type=type,
+                mode=mode,
+                runners_config=runners_conf,
+                hpa_conf=hpa_conf,
+            )
+
         if output == "default":
             console.print(res)
         elif output == "json":
-            unstructured = bentoml_cattr.unstructure(res)
-            click.echo(json.dumps(unstructured, indent=2))
+            click.echo(json.dumps(bentoml_cattr.unstructure(res), indent=2))
         return res
 
     @deployment_cli.command()
-    @click.option(
-        "--deployment-name",
+    @click.argument(
+        "deployment-name",
         type=click.STRING,
-        help="Name of the deployment.",
+        default="",
     )
     @click.option(
         "--bento",
@@ -370,21 +322,6 @@ def add_deployment_command(cli: click.Group) -> None:
         type=click.File(),
         default=None,
         help="Create deployment using json file. ",
-        cls=Mutex,
-        must_exist_if_none=["deployment_name"],
-        cannot_exist_together=[
-            "deployment_name",
-            "bento",
-            "description",
-            "expose_endpoint",
-            "kube_namespace",
-            "resource_instance",
-            "min_replicas",
-            "max_replicas",
-            "type",
-            "mode",
-            "runner",
-        ],
     )
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
@@ -462,42 +399,48 @@ def add_deployment_command(cli: click.Group) -> None:
     ) -> DeploymentSchema:
         """Update a deployment"""
         if file is not None:
-            return client.deployment.update_from_file(
-                path=file, context=context, cluster_name=cluster_name
+            click.echo(
+                "--file is passed, all of the other options except '--context' and '--output' for updating deployment are ignored."
             )
-        hpa_conf = Resource.for_hpa_conf(
-            min_replicas=min_replicas, max_replicas=max_replicas
-        )
-        runners_conf = (
-            {
-                i["runner-name"]: Resource.for_runner(
-                    hpa_conf={
-                        "min_replicas": i.get("min-replicas"),
-                        "max_replicas": i.get("max-replicas"),
-                    },
-                    resource_instance=i.get("resource-instance"),
-                )
-                for i in runner
-            }
-            if runner
-            else None
-        )
-        # Updated schema
-        breakpoint()
-        res = client.deployment.update(
-            deployment_name=deployment_name,
-            bento=bento,
-            expose_endpoint=expose_endpoint,
-            cluster_name=cluster_name,
-            kube_namespace=kube_namespace,
-            resource_instance=resource_instance,
-            context=context,
-            description=description,
-            type=type,
-            mode=mode,
-            runners_config=runners_conf,
-            hpa_conf=hpa_conf,
-        )
+            res = client.deployment.update_from_file(
+                path_or_stream=file,
+                context=context,
+            )
+        else:
+            if not deployment_name:
+                raise click.BadArgumentUsage("deployment-name is required")
+            hpa_conf = Resource.for_hpa_conf(
+                min_replicas=min_replicas, max_replicas=max_replicas
+            )
+            runners_conf = (
+                {
+                    i["runner-name"]: Resource.for_runner(
+                        hpa_conf={
+                            "min_replicas": i.get("min-replicas"),
+                            "max_replicas": i.get("max-replicas"),
+                        },
+                        resource_instance=i.get("resource-instance"),
+                    )
+                    for i in runner
+                }
+                if runner
+                else None
+            )
+            # Updated schema
+            res = client.deployment.update(
+                deployment_name=deployment_name,
+                bento=bento,
+                expose_endpoint=expose_endpoint,
+                cluster_name=cluster_name,
+                kube_namespace=kube_namespace,
+                resource_instance=resource_instance,
+                context=context,
+                description=description,
+                type=type,
+                mode=mode,
+                runners_config=runners_conf,
+                hpa_conf=hpa_conf,
+            )
         if output == "default":
             console.print(res)
         elif output == "json":

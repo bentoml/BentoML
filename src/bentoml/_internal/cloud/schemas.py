@@ -124,6 +124,30 @@ class ClusterSchema(ResourceSchema):
 
 
 @attr.define
+class ResourceInstance:
+    id: str
+    name: str
+    group: str
+    description: str
+    node_selectors: t.Dict[str, str]
+    resources: DeploymentTargetResources
+    price: str
+
+
+@attr.define
+class ClusterConfigSchema:
+    default_deployment_kube_namespace: str
+    ingress_ip: str
+    aws: str
+    resource_instances: t.List[ResourceInstance]
+
+
+@attr.define
+class ClusterListSchema(BaseListSchema):
+    items: t.List[ClusterSchema]
+
+
+@attr.define
 class CreateBentoRepositorySchema:
     name: str
     description: str
@@ -629,10 +653,10 @@ class DeploymentRevisionSchema(ResourceSchema):
 class ClusterFullSchema(ClusterSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
+    organization: OrganizationSchema
+    kube_config: str
+    config: ClusterConfigSchema
     grafana_root_path: str
-    organization: t.Optional[OrganizationSchema] = attr.field(default=None)
-    kube_config: t.Optional[str] = attr.field(default=None)
-    config: t.Optional[str] = attr.field(default=None)
 
 
 @attr.define
@@ -662,5 +686,12 @@ class UpdateDeploymentSchema:
 class CreateDeploymentSchema(UpdateDeploymentSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
-    name: str = attr.field(default=None)
-    kube_namespace: str = attr.field(default=None)
+    name: t.Optional[str] = attr.field(default=None)
+    kube_namespace: t.Optional[str] = attr.field(default=None)
+
+
+@attr.define
+class FullDeploymentSchema(CreateDeploymentSchema):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = True
+    cluster_name: t.Optional[str] = attr.field(default=None)

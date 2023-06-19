@@ -29,6 +29,8 @@ from .schemas import BentoWithRepositoryListSchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import ModelWithRepositoryListSchema
 from .schemas import PreSignMultipartUploadUrlSchema
+from .schemas import ClusterListSchema
+from .schemas import ClusterFullSchema
 from ...exceptions import YataiRESTApiClientError
 from ..configuration import BENTOML_VERSION
 
@@ -418,7 +420,9 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelWithRepositoryListSchema)
 
-    def get_deployment_list(self, cluster_name: str, params: dict[str,str|int] | None = None) -> DeploymentListSchema | None:
+    def get_deployment_list(
+        self, cluster_name: str, params: dict[str, str | int] | None = None
+    ) -> DeploymentListSchema | None:
         url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}/deployments")
         resp = self.session.get(url, params=params)
         if self._is_not_found(resp):
@@ -489,3 +493,21 @@ class YataiRESTApiClient:
             return None
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentSchema)
+
+    def get_cluster_list(
+        self, params: dict[str, str | int] | None = None
+    ) -> ClusterListSchema | None:
+        url = urljoin(self.endpoint, "/api/v1/clusters")
+        resp = self.session.get(url, params=params)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, ClusterListSchema)
+
+    def get_cluster(self, cluster_name: str) -> ClusterFullSchema | None:
+        url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}")
+        resp = self.session.get(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, ClusterFullSchema)

@@ -86,7 +86,6 @@ class Deployment:
         context: str | None = None,
         cluster_name: str | None = None,
     ) -> DeploymentSchema:
-        breakpoint()
         yatai_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)

@@ -20,10 +20,6 @@ def check_output(out):
     return arr.shape == (256, 256, 3)
 
 
-def check_replace_scheduler_failed_output(out):
-    return not out["success"]
-
-
 def check_replace_scheduler_factory(expected_output):
 
     def _check(d):
@@ -83,6 +79,10 @@ diffusers_model = FrameworkTestModel(
                     Input(
                         input_args=["diffusers.schedulers.scheduling_repaint.RePaintSchedulerOutput"],
                         expected=check_replace_scheduler_factory(replace_incompatible_failure),
+                    ),
+                    Input(
+                        input_args=["diffusers.schedulers.scheduling_dpmsolver_multistep.DPMSolverMultistepScheduler"],
+                        expected=check_replace_scheduler_factory(replace_success),
                     ),
                 ],
             },

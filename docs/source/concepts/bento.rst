@@ -728,6 +728,24 @@ Python Options Table
 | wheels            | List of paths to wheels to include in the bento                                    |
 +-------------------+------------------------------------------------------------------------------------+
 
+Models
+^^^^^^
+
+You can specify the model to be used for building a bento using a string model tag or a dictionary, which will be written to the ``bento.yaml`` file in the bento package.
+
+See the following example for details. Note that if you don't define ``models`` in ``bentofile.yaml``, the model specified in the service is used to build the bento. 
+
+.. code-block:: yaml
+
+    models:
+      - "iris_clf:latest" # A string model tag
+      - tag: "iris_clf:version1" # A dictionary
+        filter: "label:staging"
+        alias: "iris_clf_v1"
+
+- ``tag``: The name and version of the model, separated by a colon.
+- ``filter``: This field uses the same filter syntax in Yatai. You use a filter to list specific models, such as the models with the same label. You can add multiple comma-separated filters to a model.
+- ``alias``: An alias for the model. If this is specified, you can use it directly in code like ``bentoml.models.get(alias)``.
 
 Conda Options
 ^^^^^^^^^^^^^

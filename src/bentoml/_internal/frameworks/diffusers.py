@@ -34,7 +34,7 @@ try:
     from diffusers.utils.import_utils import is_accelerate_available
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "'diffusers' is required in order to use module 'bentoml.diffusers', install diffusers with 'pip install --upgrade diffusers transformers accelerate'. For more information, refer to https://github.com/huggingface/diffusers",
+        "'diffusers' and 'transformers' is required in order to use module 'bentoml.diffusers', install diffusers and its dependencies with 'pip install --upgrade diffusers transformers accelerate'. For more information, refer to https://github.com/huggingface/diffusers",
     )
 
 
@@ -577,6 +577,30 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 variant=variant,
                 load_pretrained_extra_kwargs=load_pretrained_extra_kwargs,
             )
+
+        @bentoml.Runnable.method(batchable=False)
+        def _replace_scheduler(self, scheduler_txt: str):
+
+            try:
+                scheduler_cls = _str2cls(scheduler_txt)
+                if isinstance(self.pipeline.scheduler, scheduler_cls):
+                    return dict(success=True)
+                if scheduler_cls in self.pipeline.scheduler.compatibles:
+                    self.pipeline.scheduler = scheduler_cls.from_config(
+                        self.pipeline.scheduler.config,
+                    )
+                    return dict(success=True)
+                else:
+                    return dict(
+                        success=False,
+                        error_message="scheduler class is incompatible to this pipeline",
+                    )
+
+            except (ModuleNotFoundError, ValueError, AttributeError):
+                logger.info(f"Cannot import {scheduler_txt}")
+                return dict(
+                    success=False, error_message="cannot import scheduler class",
+                )
 
     def make_run_method(
         method_name: str, partial_kwargs: dict[str, t.Any] | None

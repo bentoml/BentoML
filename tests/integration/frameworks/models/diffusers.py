@@ -20,6 +20,30 @@ def check_output(out):
     return arr.shape == (256, 256, 3)
 
 
+def check_replace_scheduler_failed_output(out):
+    return not out["success"]
+
+
+def check_replace_scheduler_factory(expected_output):
+
+    def _check(d):
+        return d == expected_output
+
+    return _check
+
+
+replace_success = {"success": True}
+replace_import_failure = {
+    "success": False,
+    "error_message": "cannot import scheduler class"
+}
+replace_incompatible_failure = {
+    "success": False,
+    "error_message": "scheduler class is incompatible to this pipeline",
+}
+
+
+
 pipeline = diffusers.StableDiffusionPipeline.from_pretrained(
     "hf-internal-testing/tiny-stable-diffusion-torch"
 )
@@ -42,6 +66,24 @@ diffusers_model = FrameworkTestModel(
                         },
                         expected=check_output,
                     )
+                ],
+            },
+        ),
+        Config(
+            test_inputs={
+                "_replace_scheduler": [
+                    Input(
+                        input_args=["diffusers.schedulers.scheduling_dpmsolver_multistep.NonExistScheduler"],
+                        expected=check_replace_scheduler_factory(replace_import_failure),
+                    ),
+                    Input(
+                        input_args=["diffusers.schedulers.nonexist_module.NonExistScheduler"],
+                        expected=check_replace_scheduler_factory(replace_import_failure),
+                    ),
+                    Input(
+                        input_args=["diffusers.schedulers.scheduling_repaint.RePaintSchedulerOutput"],
+                        expected=check_replace_scheduler_factory(replace_incompatible_failure),
+                    ),
                 ],
             },
         ),

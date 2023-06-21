@@ -732,7 +732,7 @@ Models
 ^^^^^^
 
 You can specify the model to be used for building a bento using a string model tag or a dictionary, which will be written to the ``bento.yaml`` file in the bento package.
-These configurations are used to fetch models from Yatai. You can download models to your local model store by running ``bentoml models pull``.
+When you start from an existing project, you can download models from Yatai to your local model store with these configurations by running ``bentoml models pull``.
 Note that you need to log in to Yatai first by running ``bentoml yatai login``.
 
 See the following example for details. If you don't define ``models`` in ``bentofile.yaml``, the model specified in the service is used to build the bento. 

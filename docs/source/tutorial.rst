@@ -414,6 +414,8 @@ To build a Bento, first create a ``bentofile.yaml`` file in your project directo
              packages:  # Additional pip packages required by the service
              - scikit-learn
              - pandas
+          models: # The model to be used for building the bento.
+            - iris_clf:latest
 
     .. tab-item:: gRPC
        :sync: grpc
@@ -431,6 +433,8 @@ To build a Bento, first create a ``bentofile.yaml`` file in your project directo
              - bentoml[grpc]
              - scikit-learn
              - pandas
+          models: # The model to be used for building the bento.
+            - iris_clf:latest
 
 .. tip::
 

@@ -139,7 +139,7 @@ class ClusterConfigSchema:
     default_deployment_kube_namespace: str
     ingress_ip: str
     aws: str
-    resource_instances: t.List[ResourceInstance]
+    resource_instances: t.Optional[t.List[ResourceInstance]] = attr.field(factory=list)
 
 
 @attr.define

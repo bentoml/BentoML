@@ -312,7 +312,7 @@ class HTTPAppFactory(BaseAppFactory):
         api: InferenceAPI,
     ) -> t.Callable[[Request], t.Coroutine[t.Any, t.Any, Response]]:
         """
-        Create api function for flask route, it wraps around user defined API
+        Create api function for starlette route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
         from starlette.concurrency import run_in_threadpool  # type: ignore

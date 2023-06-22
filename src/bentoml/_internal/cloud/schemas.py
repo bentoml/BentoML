@@ -139,7 +139,6 @@ class ClusterConfigSchema:
     default_deployment_kube_namespace: str
     ingress_ip: str
     aws: str
-    resource_instances: t.Optional[t.List[ResourceInstance]] = attr.field(factory=list)
 
 
 @attr.define
@@ -612,9 +611,8 @@ class DeploymentSchema(ResourceSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
     creator: UserSchema
-    cluster: ClusterFullSchema
+    cluster: ClusterSchema
     status: DeploymentStatus
-    urls: t.List[str]
     kube_namespace: str
     latest_revision: t.Optional[DeploymentRevisionSchema] = attr.field(
         default=None
@@ -657,6 +655,7 @@ class ClusterFullSchema(ClusterSchema):
     kube_config: str
     config: ClusterConfigSchema
     grafana_root_path: str
+    resource_instances: t.List[ResourceInstance]
 
 
 @attr.define

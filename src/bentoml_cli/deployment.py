@@ -58,12 +58,11 @@ def add_deployment_command(cli: click.Group) -> None:
     def deployment_cli():
         """Deployment Subcommands Groups"""
 
-    @deployment_cli.command(context_settings={"ignore_unknown_options": True})
+    @deployment_cli.command()
     @click.option(
         "-f",
         "--file",
         type=click.File(),
-        required=True,
         help="Create deployment using json file. Use only with '--context' and '--output'.",
     )
     @click.option(
@@ -88,7 +87,6 @@ def add_deployment_command(cli: click.Group) -> None:
         "-f",
         "--file",
         type=click.File(),
-        required=True,
         help="Create deployment using json file. ",
     )
     @click.option(

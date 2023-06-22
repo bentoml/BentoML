@@ -224,11 +224,17 @@ def hello():
 svc.mount_asgi_app(fastapi_app)
 
 
+def get_uid():
+    import uuid
+
+    return str(uuid.uuid4())
+
+
 @svc.on_deployment
 def on_deployment():
     if not TEST_DIR or not os.path.exists(TEST_DIR):
         return
-    deployment_file = os.path.join(TEST_DIR, f"deployment-{os.getpid()}.txt")
+    deployment_file = os.path.join(TEST_DIR, f"deployment-{get_uid()}.txt")
     with open(deployment_file, "w"):
         pass
 
@@ -238,7 +244,7 @@ def on_startup(ctx: bentoml.Context):
     ctx.state["data"] = "hello"
     if not TEST_DIR or not os.path.exists(TEST_DIR):
         return
-    text_file = os.path.join(TEST_DIR, f"data-{os.getpid()}.txt")
+    text_file = os.path.join(TEST_DIR, f"data-{get_uid()}.txt")
     with open(text_file, "w"):
         pass
     ctx.state["text_file"] = text_file

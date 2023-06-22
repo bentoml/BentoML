@@ -50,7 +50,6 @@ class YataiRESTApiClient:
         )
 
     def _is_not_found(self, resp: requests.Response) -> bool:
-        # Forgive me, I don't know how to map the error returned by gorm to juju/errors
         return (
             resp.status_code == 404
             or resp.status_code == 400

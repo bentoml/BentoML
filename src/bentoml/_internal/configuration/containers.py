@@ -263,6 +263,13 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
+    def bentocloud_client():
+        from ..cloud.bentocloud import BentoCloudClient
+
+        return BentoCloudClient()
+
+    @providers.SingletonFactory
+    @staticmethod
     def serve_info() -> ServeInfo:
         from ..utils.analytics import get_serve_info
 

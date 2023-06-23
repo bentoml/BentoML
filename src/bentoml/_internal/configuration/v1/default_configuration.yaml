@@ -75,7 +75,7 @@ runners:
   batching:
     enabled: true
     max_batch_size: 100
-    max_latency_ms: 10000
+    max_latency_ms: 60000
   logging:
     access:
       enabled: true

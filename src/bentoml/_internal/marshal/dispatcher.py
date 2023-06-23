@@ -225,7 +225,29 @@ class CorkDispatcher:
                     await asyncio.sleep(self.tick_interval)
                     continue
 
-                n_call_out = min(n, batch_size)
+                if self.max_batch_size == -1:  # batching is disabled
+                    n_call_out = 1
+                    batch_size = self._queue[0].data.sample.batch_size
+                else:
+                    n_call_out = 0
+                    batch_size = 0
+                    try:
+                        for input_info in self._queue:
+                            if (
+                                batch_size + input_info.data.sample.batch_size
+                                < self.max_batch_size
+                            ):
+                                n_call_out += 1
+                                batch_size += input_info.data.sample.batch_size
+                            else:
+                                break
+                    except Exception as e:
+                        n_call_out = min(n, self.max_batch_size)
+                        logger.error(
+                            "error in batch-size aware batching, falling back to regular batching method",
+                            exc_info=e,
+                        )
+
                 req_count += 1
                 # call
                 self._sema.acquire()
@@ -307,7 +329,28 @@ class CorkDispatcher:
                     await asyncio.sleep(self.tick_interval)
                     continue
 
-                n_call_out = min(self.max_batch_size, n)
+                if self.max_batch_size == -1:  # batching is disabled
+                    n_call_out = 1
+                    batch_size = self._queue[0].data.sample.batch_size
+                else:
+                    n_call_out = 0
+                    batch_size = 0
+                    try:
+                        for input_info in self._queue:
+                            if (
+                                batch_size + input_info.data.sample.batch_size
+                                < self.max_batch_size
+                            ):
+                                n_call_out += 1
+                                batch_size += input_info.data.sample.batch_size
+                            else:
+                                break
+                    except Exception as e:
+                        n_call_out = min(n, self.max_batch_size)
+                        logger.error(
+                            "error in batch-size aware batching, falling back to regular batching method",
+                            exc_info=e,
+                        )
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
@@ -318,7 +361,7 @@ class CorkDispatcher:
                 logger.error(traceback.format_exc(), exc_info=e)
 
     async def inbound_call(self, data: Params[Payload]):
-        if data.sample.batch_size > self.max_batch_size:
+        if self.max_batch_size > 0 and data.sample.batch_size > self.max_batch_size:
             raise RuntimeError(
                 f"batch of size {data.sample.batch_size} exceeds configured max batch size of {self.max_batch_size}."
             )

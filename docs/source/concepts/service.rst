@@ -413,7 +413,7 @@ logic:
     import numpy as np
     from pydantic import BaseModel
 
-    from bentoml.io import NumpyNdarray, Json
+    from bentoml.io import Multipart, NumpyNdarray, Json
 
     class FooModel(BaseModel):
         field1: int

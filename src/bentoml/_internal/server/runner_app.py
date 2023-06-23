@@ -67,7 +67,7 @@ class RunnerAppFactory(BaseAppFactory):
             return ServiceUnavailable("process is overloaded")
 
         for method in runner.runner_methods:
-            max_batch_size = method.max_batch_size if method.config.batchable else -1
+            max_batch_size = method.max_batch_size if method.config.batchable else 1
             self.dispatchers[method.name] = CorkDispatcher(
                 max_latency_in_ms=method.max_latency_ms,
                 max_batch_size=max_batch_size,
@@ -133,13 +133,22 @@ class RunnerAppFactory(BaseAppFactory):
         routes = super().routes
         for method in self.runner.runner_methods:
             path = "/" if method.name == "__call__" else "/" + method.name
-            routes.append(
-                Route(
-                    path=path,
-                    endpoint=self._mk_request_handler(runner_method=method),
-                    methods=["POST"],
+            if method.config.batchable:
+                routes.append(
+                    Route(
+                        path=path,
+                        endpoint=self._mk_request_handler(runner_method=method),
+                        methods=["POST"],
+                    )
                 )
-            )
+            else:
+                routes.append(
+                    Route(
+                        path=path,
+                        endpoint=self.async_run(runner_method=method),
+                        methods=["POST"],
+                    )
+                )
         return routes
 
     @property
@@ -300,6 +309,54 @@ class RunnerAppFactory(BaseAppFactory):
             )
 
         return _request_handler
+
+    def async_run(
+        self,
+        runner_method: RunnerMethod[t.Any, t.Any, t.Any],
+    ) -> t.Callable[[Request], t.Coroutine[None, None, Response]]:
+        from starlette.responses import Response
+
+        async def _run(request: Request) -> Response:
+            assert self._is_ready
+
+            arg_num = int(request.headers["args-number"])
+            r_: bytes = await request.body()
+
+            if arg_num == 1:
+                params: Params[t.Any] = _deserialize_single_param(request, r_)
+            else:
+                params: Params[t.Any] = pickle.loads(r_)
+
+            params = params.map(AutoContainer.from_payload)
+
+            try:
+                ret = await runner_method.async_run(*params.args, **params.kwargs)
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.error(
+                    "Exception on runner '%s' method '%s'",
+                    runner_method.runner.name,
+                    runner_method.name,
+                    exc_info=exc,
+                )
+                return Response(
+                    status_code=500,
+                    headers={
+                        "Content-Type": "text/plain",
+                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
+                    },
+                )
+            else:
+                payload = AutoContainer.to_payload(ret, 0)
+                return Response(
+                    payload.data,
+                    headers={
+                        PAYLOAD_META_HEADER: json.dumps(payload.meta),
+                        "Content-Type": f"application/vnd.bentoml.{payload.container}",
+                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
+                    },
+                )
+
+        return _run
 
 
 def _deserialize_single_param(request: Request, bs: bytes) -> Params[t.Any]:

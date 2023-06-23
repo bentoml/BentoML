@@ -8,13 +8,18 @@ What is `BentoCloud <https://cloud.bentoml.com/>`_?
 BentoCloud is a fully managed platform for building and operating AI applications, bringing agile product delivery to AI teams.
 BentoCloud gives your AI application developers a collaborative environment and a user-friendly toolkit to ship and iterate AI products quickly.
 
+.. raw:: html
+
+    <a href="https://kdyvd8c5ifq.typeform.com/to/eTujPAaE" class="custom-button demo">Schedule a Demo</a>  
+    <a href="https://cloud.bentoml.com" class="custom-button trial">Start Free Trial</a>
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Increase developer velocity
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 BentoCloud offers a consistent and reliable framework for the entire AI application delivery lifecycle, simplifying deploying new models and applications to production and making maintenance easily accessible via a centralized dashboard.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Streamline Collaboration across teams
+Streamline collaboration across teams
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 BentoCloud captures all your ML models and Prediction Services in a central place, making them easily reusable and composable, so developers can easily leverage them for building applications. 
 

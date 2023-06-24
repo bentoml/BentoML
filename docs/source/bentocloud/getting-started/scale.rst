@@ -17,8 +17,7 @@ Resource Management
 Auto Scaling Instances
 ~~~~~~~~~~~~~~~~~~~~~~
 
-BentoCloud is built distributedly, taking full advantage of the auto scaling capabilities provided by its  `Horizontal Pod Autoscaler <https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/>`_ (HPA). 
-We've set up a range of metrics that trigger the autoscaler, while also giving expert users the freedom to override these default scaling policies. This can be done via a JSON editor or directly through the BentoCloud API.
+BentoCloud is designed with scalability at its core. Scaling operations can be performed based on various parameters including CPU or GPU usage, or metrics related to traffic volume. The platform's advanced configuration settings enable a wide range of scaling behaviors, accommodating needs from rapid scaling for high-growth scenarios to stable scaling for consistent demand levels. Importantly, BentoCloud operates on a pay-as-you-go model, ensuring users are only charged for the resources they have actually utilized, promoting cost-efficiency and flexibility.
 
 .. image:: ../../_static/img/bentocloud/scale-autoscale.png
 

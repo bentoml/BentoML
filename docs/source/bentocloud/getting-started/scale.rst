@@ -7,7 +7,7 @@ In the previous parts of our 'Getting Started' series:
 - :doc:`Getting Started -- Build AI Application <build>`
 - :doc:`Getting Started -- Ship To Production <ship>`
 
-We've shown you how to build your application with BentoML and deploy it using BentoCloud. Now, in this final article, we'll explain how BentoCloud makes scaling your application straightforward. BentoCloud is a fully managed platform that aims to relieve users of hardware concerns, allowing you to pay only for what you use.
+We've shown you how to build your application with BentoML and deploy it using BentoCloud. Now, in this final article, we'll explain how BentoCloud makes scaling your application straightforward. BentoCloud is a fully managed platform that aims to relieve users of infrastructure concerns, allowing you to pay only for what you use.
 
 -------------------
 Resource Management

@@ -65,10 +65,8 @@ You can find the API Tokens tab on each deployment page.
 Here, you can view the metadata associated with each API token. To create a new token:
 
 1. Click the `Create` button in the top-right corner.
-
-Just like with BentoCloud resource tokens, you can specify the scope and
-set an expiration date for each token. Remember, setting an expiration date
-for all access tokens is considered a best practice for security.
+2. Select the scopes and expiration.
+3. Click submit.
 
 Using the API Token
 -------------------

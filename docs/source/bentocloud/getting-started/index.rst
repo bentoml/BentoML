@@ -42,7 +42,7 @@ Go through a series of tutorials to learn how to use BentoCloud to **BUILD, SHIP
         :link: build
         :link-type: doc
 
-        Streamline your model creation with BentoML's flexible and integrated development environment.
+        Prototype AI applications with rapid iterations with BentoML.
 
     .. grid-item-card:: 🚢 Ship 
         :link: ship

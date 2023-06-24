@@ -9,8 +9,18 @@ Online Service vs On-Demand Function
 
 There are two modes of deployment on BentoCloud:
 
-1. **Online Service:** This type of deployment spins up a persistent server that serves your model and is ideal for cases where low latency responses are crucial. A minimum of one running instance is required.
-2. **On-Demand Function:** In this mode, instances are created when requests come in and are shut down when idle. During cold start, requests will be queued while the instance is spinning up. This approach is cost-effective for sporadic workloads, and for larger models like LLMs and Image models, as GPU instances can scale to zero when not in use.
+--------------
+Online Service
+--------------
+
+The online service mode of deployment offered by BentoCloud is ideal for low-latency serving scenarios. To ensure requests can be promptly addressed, instances in this mode are never scaled down to zero, maintaining a ready state for immediate processing. Furthermore, requests are directly routed to the serving instances of the API Server and Runners, bypassing any queuing mechanisms. This direct routing mechanism ensures minimum latency, providing an efficient and swift response to incoming requests.
+
+----------------------
+On-Demand Function
+----------------------
+
+The on-demand function mode of deployment offered by BentoCloud is particularly suited for situations that prioritize cost-efficiency and reliability. In scenarios where requests are sporadic, this mode enables instances to scale down to zero, thereby conserving resources. This feature proves particularly beneficial for GPU-accelerated instances, which are generally more expensive to maintain. To ensure maximum reliability, especially during periods of cold-start or overload, requests are queued prior to processing. This mechanism enables the system to handle bursts of requests effectively, thus enhancing the robustness and dependability of your application under varying load conditions.
+
 
 Building Your Bento
 ===================

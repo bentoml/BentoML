@@ -166,6 +166,7 @@ __all__ = [
     "Model",
     "Runner",
     "Runnable",
+    "monitoring",
     "YataiClient",  # Yatai REST API Client
     # bento APIs
     "list",

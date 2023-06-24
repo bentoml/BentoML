@@ -52,7 +52,7 @@ To learn how to deploy your Bento with BentoCloud, read :doc:`Getting Started --
 Bento Gallery
 -------------
 
-The Bento Gallery is a curated collection showcasing various types of ML models built and served using BentoML. Explore, learn, and draw inspiration from these showcased projects.
+The `Bento Gallery <https://bentoml.com/gallery>`_ is a curated collection showcasing various types of ML models built and served using BentoML. Explore, learn, and draw inspiration from these showcased projects.
 
 .. grid:: 2 3 3 3
     :gutter: 3

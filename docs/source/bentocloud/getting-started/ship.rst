@@ -2,7 +2,7 @@
 Ship to Production
 ==================
 
-BentoCloud offers a full suite of MLOps lifecycle management tools right off the bat, enabling developers and ML practitioners to zero in on **BUILDING** while we take care of the intricate infrastructure work - **WE SHIP**.
+BentoCloud offers a full suite of MLOps lifecycle management tools right off the bat, enabling developers and ML practitioners to zero in on **BUILDING** while we take care of the intricate infrastructure work.
 
 The topics covered in this article are:
 

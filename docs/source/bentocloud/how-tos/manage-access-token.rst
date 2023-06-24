@@ -27,7 +27,7 @@ To create a new token:
     
 
 1. In the dialog box that appears, select the desired scope for the token
-   and set an expiration date if needed.It's a best practice to always
+   and set an expiration date if needed. It's a best practice to always
    set an expiration date for access tokens.
 
 

@@ -13,7 +13,7 @@ The topics covered in this article are:
 - Utilize out-of-the-box DevOps and ML **Observability**
 
 
-Having crafted a Bento as illustrated in the preceding section,  :doc:`Getting Started -- Build AI Application <build>`, we now progress to the next stage: launching it into production using BentoCloud.
+Having crafted a Bento as illustrated in the preceding section, :doc:`/bentocloud/getting-started/build`, we now progress to the next stage: launching it into production using BentoCloud.
 
 .. note::
     BentoML offers various deployment alternatives, for more details visit `Deploying Bento <https://docs.bentoml.org/en/latest/concepts/deploy.html>`_.

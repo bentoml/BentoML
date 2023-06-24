@@ -16,9 +16,9 @@ BentoML embraces **open standards** for AI applications and promotes **best prac
 
 In essence, BentoML aims to simplifies the process of building ML models, ensuring your team can focus on what truly matters: creating AI applications that solve real-world problem.
 
----------------------------
-Building Bento Applications
----------------------------
+---------------------
+Building Applications
+---------------------
 
 Let's delve into how to **BUILD** an NLP application that categorizes and summarizes text with HuggingFace’s Transformers. We will be demonstrating with `Transformers NLP Service <https://github.com/bentoml/transformers-nlp-service>`_ project.
 

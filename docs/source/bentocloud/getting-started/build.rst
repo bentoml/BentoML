@@ -20,7 +20,7 @@ In essence, BentoML aims to simplifies the process of building ML models, ensuri
 Building Bento Applications
 ---------------------------
 
-Let's delve into how to **BUILD** a service with HuggingFace’s transformers.
+Let's delve into how to **BUILD** an NLP application that categorizes and summarizes text with HuggingFace’s Transformers. We will be demonstrating with `Transformers NLP Service <https://github.com/bentoml/transformers-nlp-service>`_ project.
 
 Start by cloning the repository:
 

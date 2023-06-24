@@ -4,8 +4,8 @@ Deploy Bentos
 
 Deploying a machine learning model can be quite a task. However, BentoCloud simplifies the process by enabling you to serve your model as an online service or on-demand function. This guide will walk you through how to deploy a Bento on BentoCloud.
 
-Online Service vs On-Demand Function
-=====================================
+Deployment Mode
+==============
 
 There are two modes of deployment on BentoCloud:
 

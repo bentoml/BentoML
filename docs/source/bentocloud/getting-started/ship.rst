@@ -129,7 +129,7 @@ Much like traditional software development, engineers modify the code base, impl
 2. **Data/Model Changes**:
 Without altering any code, Machine Learning practitioners may retrain an existing model with a different dataset. This adjustment can result in the system producing different output behavior.
 
-Both types of changes merit the creation of a newly built Bento. In BentoML, Bentos are **namespaced** with the **name** and **versioned** according to their **tags**, allowing you to track the evolution of your projects over time. You can also assign additional **labels** to each version, providing extra granularity for downstream deployment filtering.
+Both types of changes merit the creation of a newly built Bento. In BentoML, Bentos are **uniquely referenced** with the **name** and **versioned** according to their **tags**, allowing you to track the evolution of your projects over time. You can also assign additional **labels** to each version, providing extra granularity for downstream deployment filtering.
 
 The same principles apply to **Deployments**. You can iteratively create new revisions of your service with various configurations, such as a new Bento Version or different resource settings. If a new deployment exhibits undesired behavior, you have the flexibility to revert back to a previous, stable version at any time.
 

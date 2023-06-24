@@ -12,9 +12,6 @@ The topics covered in this article are:
 - Activate **GPU** acceleration with a simple click
 - Utilize out-of-the-box DevOps and ML **Observability**
 
-------------------------
-Deploying to BentoCloud
-------------------------
 
 Having crafted a Bento as illustrated in the preceding section,  :doc:`Getting Started -- Build AI Application <build>`, we now progress to the next stage: launching it into production using BentoCloud.
 

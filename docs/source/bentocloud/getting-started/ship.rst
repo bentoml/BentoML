@@ -73,7 +73,7 @@ After successfully pushing your Bento, navigate to `<https://cloud.bentoml.com/b
 Deploying your Bento
 --------------------
 
-Bento can be deployed in two ways: as an Online Service or as a Serverless Function. The choice depends on your specific use-case. You can learn more about the implications and best scenarios for each method in `Deploying Bento <https://www.notion.so/Deploying-Bento-6b38db89b1bf4319adbb6d33a8a30e8f?pvs=21>`_.
+Bento can be deployed in two ways: as an Online Service or as a Serverless Function. The choice depends on your specific use-case. You can learn more about the implications and best scenarios for each method in `:ref:Deploying Bento <concepts/deploy:Deploying Bento>`.
 
 In this tutorial, we'll proceed with the "Online Service" mode:
 

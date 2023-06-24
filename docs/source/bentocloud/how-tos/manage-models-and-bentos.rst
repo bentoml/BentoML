@@ -87,9 +87,10 @@ You can view your models in BentoCloud’s UI in `cloud.bentoml.com/bento_reposi
 Python SDK
 ==========
 
-In addition to CLI operations, BentoCloud also supports client operations
-for pulling and pushing Models and Bentos. Here's a list of common APIs
-of the ``BentoCloudClient``:
+In addition to CLI operations, BentoCloud also provides a Pythonic API for managing models and bentos.
+
+.. TODO::
+    Link Python API reference.
 
 That's it! You've learned how to effectively manage your Models and Bentos in BentoML.
 By understanding these fundamental operations, you can improve your model development

@@ -54,7 +54,7 @@ Go through a series of tutorials to learn how to use BentoCloud to **BUILD, SHIP
         :link: scale
         :link-type: doc
 
-        Scaling your work with a fully managed platform that aims to relieve users of hardware concerns, 
+        Scaling your work with a fully managed platform that aims to relieve users of infrastructure concerns, 
         allowing you to pay only for what you use.
 
 .. toctree::

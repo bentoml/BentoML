@@ -139,9 +139,7 @@ The same principles apply to **Deployments**. You can iteratively create new rev
 Observability
 -------------
 
-In Machine Learning systems, there are two distinct types of observability: **DevOps Observability** and **ML Observability.** 
-DevOps Observability focuses on the monitoring, logging, and tracing of technical resources. 
-On the other hand, ML Observability concentrates on the tracking of feature and model drift. 
+On the BentoCloud platform, you have the capability to monitor the status and health of both deployments and models. For application-level monitoring, the platform provides access to logs, metrics, and traces for each individual deployment, providing you with a comprehensive overview of application performance. For model-level monitoring, you can collect inference data with the :ref:`model monitoring API <guides/monitoring:Build an ML Application with monitoring API>` and track model drift over time using a monitoring platform of your choice. 
 For a more detailed understanding of the observability offerings of BentoCloud, see :doc:`Observability </bentocloud/topics/observability>`
 
 -----------

@@ -45,6 +45,6 @@ Or you might want to track all the actions performed by a certain user.
 
 In addition to filtering, events are also searchable.
 The search syntax is similar to GitHub's, allowing for advanced search queries.
-For example, to see all events created by a specific user, you could use `creator:username`.
+For example, to see all events created by a specific user, you could use ``creator:username``.
 For more information on how to use the search syntax,
 refer to `GitHub's search syntax documentation <https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests>`_.

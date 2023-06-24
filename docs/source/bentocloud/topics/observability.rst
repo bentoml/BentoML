@@ -1,7 +1,6 @@
 Observability
 ================
 
-Machine Learning systems necessitate two types of observability: **DevOps Observability** and **ML Observability**.
 
 DevOps Observability
 --------------------

@@ -137,7 +137,6 @@ contributing to the project, helping other users and discuss all things MLOps.
    bentocloud/getting-started/index
    bentocloud/how-tos/index
    bentocloud/topics/index
-   bentocloud/tutorials/index
    bentocloud/reference/index
 
 .. toctree::

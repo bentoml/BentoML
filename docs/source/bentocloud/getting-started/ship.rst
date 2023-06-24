@@ -81,12 +81,9 @@ In this tutorial, we'll proceed with the "Online Service" mode:
 
 Please follow these steps:
 
-1. Select **Basic** on the upper left.
-2. Choose the appropriate **Cluster**.
-3. Give your **deployment** a unique name, for instance, ``my-first-deployment``.
-4. Enable **Public Access**.
-5. Choose the desired **Bento Repository**.
-6. Select the correct **Bento Version**.
+1. Choose the appropriate **Cluster**.
+2. Give your **deployment** a unique name, for instance, ``my-first-deployment``.
+3. Choose the desired **Bento Repository** and select the correct **Bento Version**.
 
 After setting up, wait for the deployment status to turn green. This indicates your Bento is successfully deployed and ready to serve.
 

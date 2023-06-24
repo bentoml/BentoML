@@ -28,9 +28,7 @@ This feature is exclusively available to users with **Enterprise** plan.
 Scale-To-Zero
 ~~~~~~~~~~
 
-When you deploy a Bento, you can opt for an on-demand function mode of deployment. 
-This is BentoML's serverless approach, ideally suited for use cases where ML models are large, such as high-resolution image models or large language models. 
-Instances can scale down to zero when not in use, offering a cost-effective solution, especially when using pricier GPU instances.
+BentoCloud supports deploying applications as on-demand functions, enhancing its flexibility and resource efficiency. In this deployment mode, instances can scale down to zero when there's no usage on the API server or runners, minimizing idle resources. To ensure high reliability during a cold start, BentoCloud queues requests, preventing potential overloads. This deployment strategy is particularly advantageous for applications handling a large number of models and sporadic requests, as only those models actively in use are allocated resources. Additionally, this mode of operation provides significant cost efficiency, especially for GPU-accelerated instances, by tailoring resource allocation to real-time demand.
 
 .. image:: ../../_static/img/bentocloud/scale-serverless.png
 

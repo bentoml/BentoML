@@ -2,7 +2,7 @@
 How-to Guides
 =============
 
-How-to guides take the reader through the steps required to solve a problem
+How-to guides take the reader through the steps required to solve a problem.
 
 They are recipes, directions to achieve a specific end result, and are wholly **goal-oriented**.
 

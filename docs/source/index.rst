@@ -137,7 +137,7 @@ contributing to the project, helping other users and discuss all things MLOps.
    bentocloud/getting-started/index
    bentocloud/how-tos/index
    bentocloud/topics/index
-   bentocloud/reference/index
+   bentocloud/references/index
 
 .. toctree::
    :caption: Ecosystem

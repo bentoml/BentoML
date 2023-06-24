@@ -4,8 +4,8 @@ Scale for Growth
 
 In the previous parts of our 'Getting Started' series:
 
-- :doc:`Getting Started -- Build AI Application <build>`
-- :doc:`Getting Started -- Ship To Production <ship>`
+- :ref:`<build>`
+- :ref:`<ship>`
 
 We've shown you how to build your application with BentoML and deploy it using BentoCloud. Now, in this final article, we'll explain how BentoCloud makes scaling your application straightforward. BentoCloud is a fully managed platform that aims to relieve users of infrastructure concerns, allowing you to pay only for what you use.
 

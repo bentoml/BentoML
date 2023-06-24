@@ -34,7 +34,7 @@ Then, install the required dependencies:
 
    pip install -r requirements.txt
 
-To serve your model as an HTTP server, utilize the **`bentoml serve`** CLI command. This starts a local server at `localhost:3000`, making your model accessible as a web service.
+To serve your model as an HTTP server, utilize the ``bentoml serve`` CLI command. This starts a local server at `localhost:3000`, making your model accessible as a web service.
 
 Next, build your Bento:
 

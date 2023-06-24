@@ -1,5 +1,5 @@
 ==========================
-Getting Started
+Tutorial: Intro to BentoML
 ==========================
 
 *time expected: 10 minutes*

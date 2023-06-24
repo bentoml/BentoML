@@ -7,9 +7,9 @@ BentoCloud offers a full suite of MLOps lifecycle management tools right off the
 The topics covered in this article are:
 
 - **Deploy** your Bento into production within minutes
-- Manage Versioning and Revisions for your Bento and Deployment
-- Integrate with popular **MLOps workflow** engines, like Kubeflow and Airflow
-- Activate **GPU usage** with a simple click
+- Manage application versioning and deployment revisions
+- Integrate with popular **MLOps** ecosystem tooling
+- Activate **GPU** acceleration with a simple click
 - Utilize out-of-the-box DevOps and ML **Observability**
 
 ------------------------

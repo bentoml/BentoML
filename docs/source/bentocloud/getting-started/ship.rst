@@ -113,7 +113,7 @@ Team Collaboration
 Scaling isn't limited to handling larger workloads; it's also about fostering collaboration within and across teams. 
 BentoCloud facilitates this process through its **Model and Bento Repositories**. 
 
-These repositories provide a platform for ML practitioners and engineers to **publish**, **share**, and **distribute** their work with ease. You can also **download pre-built models** from popular repositories such as HuggingFace's model hub.
+These repositories provide a platform for team members to **publish**, **share**, and **distribute** their work with ease. You can also **import pre-trained models** from popular repositories such as HuggingFace's model hub.
 
 Furthermore, it promotes **reusability** as different teams can leverage the same models for different projects, enhancing efficiency and consistency in model deployment.
 

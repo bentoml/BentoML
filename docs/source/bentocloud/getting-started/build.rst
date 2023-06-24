@@ -6,7 +6,7 @@ Build AI Application
 BentoML Overview
 ----------------
 
-BentoML is an open-source platform that provides a streamlined solution to the challenges faced by teams in building and serving ML models. It supports work in an **Integrated Development Environment (IDE)** as well as in a flexible **Notebook** environment, ensuring a seamless model serving experience.
+BentoML is a unified open source framework for building AI applications incorporating traditional ML, pre-trained AI models, Generative and Large Language Models.
 
 Its strength lies in its extensive **integration** with a wide range of AI frameworks, thus guaranteeing support for your AI models regardless of their complexity. To learn about the various frameworks that integrate with BentoML, see the :doc:`Framework Guide </frameworks/index>`.
 

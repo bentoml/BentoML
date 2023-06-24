@@ -106,9 +106,9 @@ Feel free to click `Try it out` with the input sample data. Alternatively, you c
       -H 'Content-Type: text/plain' \
       -d 'Your Text Here'
 
----------------------
-Collaborative Scaling
----------------------
+--------------------
+Team Collaboration
+--------------------
 
 Scaling isn't limited to handling larger workloads; it's also about fostering collaboration within and across teams. 
 BentoCloud facilitates this process through its **Model and Bento Repositories**. 

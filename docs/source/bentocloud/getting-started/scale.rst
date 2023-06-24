@@ -51,10 +51,10 @@ These settings can be found under the `Advanced` tab when creating a new deploym
 ~~~~~~~~~~~~~~~
 Instance Rightsizing
 ~~~~~~~~~~~~~~~
-BentoCloud offers the flexibility to define the instance sizes for your **API Server** and **Runners** independently. 
+BentoCloud offers the flexibility to define the instance types and sizes for your **API Server** and **Runners** independently. 
 This allows you to optimize your resource allocation based on your specific needs. 
 For example, you might choose to have a greater number of smaller nodes for your **API Server**, which handles many small tasks concurrently. 
-In contrast, for **Runners** that often require more computational power for data processing or machine learning tasks, you may opt for fewer but larger-sized nodes.
+In contrast, for **Runners** that often require more computational power for data processing or model inference, you may opt for fewer but GPU accelerated nodes.
 
 ----------
 Next Steps

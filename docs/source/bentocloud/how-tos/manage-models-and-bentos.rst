@@ -91,24 +91,6 @@ In addition to CLI operations, BentoCloud also supports client operations
 for pulling and pushing Models and Bentos. Here's a list of common APIs
 of the ``BentoCloudClient``:
 
-.. code-block:: python
-
-   from bentoml.client import BentoCloudClient
-
-   client = BentoCloudClient()
-
-   client.list_bentos()
-
-   client.list_models()
-
-   client.push_model(model)
-
-   client.push_bento(bento)
-
-   client.pull_model("model-tag")
-
-   client.pull_bento("bento-tag")
-
 That's it! You've learned how to effectively manage your Models and Bentos in BentoML.
 By understanding these fundamental operations, you can improve your model development
 workflow and make your team's work more efficient.

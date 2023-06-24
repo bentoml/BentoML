@@ -41,6 +41,9 @@ If the login is successful, you should see the following output:
 
     Successfully logged in as user "user" in organization "mybentocloud".
 
+.. note::
+    BentoCloud organizations function as collaborative workspaces where your team can effectively manage models and bentos. Additionally, these organizations facilitate the management and monitoring of active deployments, enabling you to track the creations of your team efficiently.
+
 ------------------
 Pushing Your Bento
 ------------------

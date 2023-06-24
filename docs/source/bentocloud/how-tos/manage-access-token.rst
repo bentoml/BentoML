@@ -2,13 +2,7 @@
 Manage Access Tokens
 ======================
 
-This guide will help you understand how to manage access and permissions for
-programmatic interaction with BentoCloud using access tokens. BentoCloud uses
-two types of access tokens:
-
-1. Access tokens for interacting with BentoCloud resources (e.g., clusters,
-   models, Bentos, deployments, user management).
-2. Access tokens for accessing deployed API servers.
+In BentoCloud, API tokens serve as the means of authorization for two distinct scopes: **BentoCloud resources** and **Bento deployment** authorization. The scope of BentoCloud resources includes authorization for APIs that facilitate the pushing and pulling of models and bentos, along with actions related to creating, updating, and terminating deployments. On the other hand, the deployment scope encapsulates the authorization required for invoking deployed Bento applications.
 
 
 Access Tokens for BentoCloud Resources

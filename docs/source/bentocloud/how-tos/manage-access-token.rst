@@ -79,7 +79,7 @@ For HTTP-based servers, include the token in the header of your HTTP request lik
 
 .. code-block:: bash
 
-   curl "http://cloud.bentoml.com" \
+   curl "http://app-name.organization.cloud-apps.bentoml.com" \
      -H "Content-Type: application/json" \
      -H "Authorization: Basic $YOUR_TOKEN" \
      --data '{"prompt": "What state is Los Angeles in?", "max_length": 100}'

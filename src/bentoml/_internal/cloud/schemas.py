@@ -579,7 +579,9 @@ class CreateDeploymentTargetSchema:
     bento_repository: str
     bento: str
     config: DeploymentTargetConfig
-    canary_rules: t.List[DeploymentTargetCanaryRule] = attr.field(factory=list)
+    canary_rules: t.Optional[t.List[DeploymentTargetCanaryRule]] = attr.field(
+        default=None
+    )
 
 
 class DeploymentStatus(Enum):
@@ -618,7 +620,9 @@ class DeploymentTargetSchema(ResourceSchema):
     type: DeploymentTargetType
     bento: BentoFullSchema
     config: DeploymentTargetConfig
-    canary_rules: t.List[DeploymentTargetCanaryRule] = attr.field(default=list)
+    canary_rules: t.Optional[t.List[DeploymentTargetCanaryRule]] = attr.field(
+        default=None
+    )
 
 
 class DeploymentRevisionStatus(Enum):

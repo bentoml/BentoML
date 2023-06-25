@@ -31,13 +31,13 @@ from .schemas import ModelWithRepositoryListSchema
 from .schemas import PreSignMultipartUploadUrlSchema
 from .schemas import ClusterListSchema
 from .schemas import ClusterFullSchema
-from ...exceptions import YataiRESTApiClientError
+from ...exceptions import CloudRESTApiClientError
 from ..configuration import BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
 
 
-class YataiRESTApiClient:
+class CloudRESTApiClient:
     def __init__(self, endpoint: str, api_token: str) -> None:
         self.endpoint = endpoint
         self.session = requests.Session()
@@ -58,7 +58,7 @@ class YataiRESTApiClient:
 
     def _check_resp(self, resp: requests.Response) -> None:
         if resp.status_code != 200:
-            raise YataiRESTApiClientError(
+            raise CloudRESTApiClientError(
                 f"request failed with status code {resp.status_code}: {resp.text}"
             )
 

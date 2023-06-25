@@ -11,8 +11,8 @@ import cattr
 from simple_di import inject
 from simple_di import Provide
 
-from .client import YataiRESTApiClient
-from ...exceptions import YataiRESTApiClientError
+from .client import CloudRESTApiClient
+from ...exceptions import CloudRESTApiClientError
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -26,21 +26,21 @@ def get_config_path(bentoml_home: str = Provide[BentoMLContainer.bentoml_home]) 
 
 
 @attr.define
-class YataiClientContext:
+class CloudClientContext:
     name: str
     endpoint: str
     api_token: str
     email: Optional[str] = attr.field(default=None)
 
-    def get_yatai_rest_api_client(self) -> YataiRESTApiClient:
-        return YataiRESTApiClient(self.endpoint, self.api_token)
+    def get_yatai_rest_api_client(self) -> CloudRESTApiClient:
+        return CloudRESTApiClient(self.endpoint, self.api_token)
 
     def get_email(self) -> str:
         if not self.email:
             cli = self.get_yatai_rest_api_client()
             user = cli.get_current_user()
             if user is None:
-                raise YataiRESTApiClientError(
+                raise CloudRESTApiClientError(
                     "Unable to get current user from yatai server"
                 )
             self.email = user.email
@@ -50,18 +50,18 @@ class YataiClientContext:
 
 @attr.define
 class YataiClientConfig:
-    contexts: List[YataiClientContext] = attr.field(factory=list)
+    contexts: List[CloudClientContext] = attr.field(factory=list)
     current_context_name: str = attr.field(default=default_context_name)
 
-    def get_context(self, context: t.Optional[str]) -> YataiClientContext:
+    def get_context(self, context: t.Optional[str]) -> CloudClientContext:
         for ctx in self.contexts:
             if ctx.name == context:
                 return ctx
-        raise YataiRESTApiClientError(
+        raise CloudRESTApiClientError(
             f"Not found {context} yatai context, please login!"
         )
 
-    def get_current_context(self) -> YataiClientContext:
+    def get_current_context(self) -> CloudClientContext:
         return self.get_context(self.current_context_name)
 
 
@@ -87,7 +87,7 @@ def get_config() -> YataiClientConfig:
         return cattr.structure(dct, YataiClientConfig)
 
 
-def add_context(context: YataiClientContext, *, ignore_warning: bool = False) -> None:
+def add_context(context: CloudClientContext, *, ignore_warning: bool = False) -> None:
     config = get_config()
     for idx, ctx in enumerate(config.contexts):
         if ctx.name == context.name:
@@ -100,17 +100,17 @@ def add_context(context: YataiClientContext, *, ignore_warning: bool = False) ->
     store_config(config)
 
 
-def get_current_context() -> YataiClientContext:
+def get_current_context() -> CloudClientContext:
     config = get_config()
     return config.get_current_context()
 
 
-def get_context(context: t.Optional[str]) -> YataiClientContext:
+def get_context(context: t.Optional[str]) -> CloudClientContext:
     config = get_config()
     return config.get_context(context)
 
 
-def get_rest_api_client(context: t.Optional[str]) -> YataiRESTApiClient:
+def get_rest_api_client(context: t.Optional[str]) -> CloudRESTApiClient:
     if context:
         ctx = get_context(context)
     else:

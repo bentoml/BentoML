@@ -6,9 +6,9 @@ import click
 def add_login_command(cli: click.Group) -> None:
     from bentoml_cli.utils import BentoMLCommandGroup
     from bentoml.exceptions import CLIException
-    from bentoml._internal.cloud.client import YataiRESTApiClient
+    from bentoml._internal.cloud.client import CloudRESTApiClient
     from bentoml._internal.cloud.config import add_context
-    from bentoml._internal.cloud.config import YataiClientContext
+    from bentoml._internal.cloud.config import CloudClientContext
     from bentoml._internal.cloud.config import default_context_name
 
     @cli.group(name="cloud", alias=["yatai"], cls=BentoMLCommandGroup)
@@ -38,18 +38,18 @@ def add_login_command(cli: click.Group) -> None:
         if not api_token:
             raise CLIException("need --api-token")
 
-        yatai_rest_client = YataiRESTApiClient(endpoint, api_token)
-        user = yatai_rest_client.get_current_user()
+        cloud_rest_client = CloudRESTApiClient(endpoint, api_token)
+        user = cloud_rest_client.get_current_user()
 
         if user is None:
             raise CLIException("current user is not found")
 
-        org = yatai_rest_client.get_current_organization()
+        org = cloud_rest_client.get_current_organization()
 
         if org is None:
             raise CLIException("current organization is not found")
 
-        ctx = YataiClientContext(
+        ctx = CloudClientContext(
             name=context,
             endpoint=endpoint,
             api_token=api_token,

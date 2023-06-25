@@ -11,23 +11,27 @@ def add_login_command(cli: click.Group) -> None:
     from bentoml._internal.cloud.config import YataiClientContext
     from bentoml._internal.cloud.config import default_context_name
 
-    @cli.group(name="yatai", cls=BentoMLCommandGroup)
-    def yatai_cli():
-        """Yatai Subcommands Groups"""
+    @cli.group(name="cloud", alias=["yatai"], cls=BentoMLCommandGroup)
+    def cloud_cli():
+        """BentoCloud Subcommands Groups"""
 
-    @yatai_cli.command()
+    @cloud_cli.command()
     @click.option(
-        "--endpoint", type=click.STRING, help="Yatai endpoint, i.e: https://yatai.com"
+        "--endpoint",
+        type=click.STRING,
+        help="BentoCloud or Yatai endpoint, i.e: https://cloud.bentoml.com",
     )
-    @click.option("--api-token", type=click.STRING, help="Yatai user API token")
+    @click.option(
+        "--api-token", type=click.STRING, help="BentoCloud or Yatai user API token"
+    )
     @click.option(
         "--context",
         type=click.STRING,
-        help="Yatai context name for the endpoint and API token",
+        help="BentoCloud or Yatai context name for the endpoint and API token",
         default=default_context_name,
     )
     def login(endpoint: str, api_token: str, context: str) -> None:  # type: ignore (not accessed)
-        """Login to Yatai server."""
+        """Login to BentoCloud or Yatai server."""
         if not endpoint:
             raise CLIException("need --endpoint")
 

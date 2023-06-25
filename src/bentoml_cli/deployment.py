@@ -63,7 +63,7 @@ def add_deployment_command(cli: click.Group) -> None:
         "-f",
         "--file",
         type=click.File(),
-        help="Create deployment using json file. Use only with '--context' and '--output'.",
+        help="JSON file path for the deployment configuration",
     )
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
@@ -74,7 +74,12 @@ def add_deployment_command(cli: click.Group) -> None:
         context: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
-        """Create a deployment."""
+        """Create a deployment on BentoCloud.
+
+        \b
+        A deployment can be created using a json file with configurations.
+        The json file has the exact format as the one on BentoCloud Deployment UI.
+        """
         res = client.deployment.create_from_file(path_or_stream=file, context=context)
         if output == "default":
             console.print(res)
@@ -87,7 +92,7 @@ def add_deployment_command(cli: click.Group) -> None:
         "-f",
         "--file",
         type=click.File(),
-        help="Create deployment using json file. ",
+        help="JSON file path for the deployment configuration",
     )
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
@@ -98,7 +103,12 @@ def add_deployment_command(cli: click.Group) -> None:
         context: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
-        """Update a deployment"""
+        """Update a deployment on BentoCloud.
+
+        \b
+        A deployment can be updated using a json file with needed configurations.
+        The json file has the exact format as the one on BentoCloud Deployment UI.
+        """
         res = client.deployment.update_from_file(
             path_or_stream=file,
             context=context,
@@ -119,7 +129,7 @@ def add_deployment_command(cli: click.Group) -> None:
         kube_namespace: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
-        """Get a deployment."""
+        """Get a deployment on BentoCloud."""
         res = client.deployment.get(
             deployment_name=deployment_name,
             context=context,
@@ -142,7 +152,7 @@ def add_deployment_command(cli: click.Group) -> None:
         kube_namespace: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
-        """Terminate a deployment."""
+        """Terminate a deployment on BentoCloud."""
         res = client.deployment.terminate(
             deployment_name=deployment_name,
             context=context,
@@ -165,7 +175,7 @@ def add_deployment_command(cli: click.Group) -> None:
         kube_namespace: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
-        """Delete a deployment."""
+        """Delete a deployment on BentoCloud."""
         res = client.deployment.delete(
             deployment_name=deployment_name,
             context=context,
@@ -214,7 +224,7 @@ def add_deployment_command(cli: click.Group) -> None:
         start: str,
         output: t.Literal["json", "default", "table"],
     ) -> DeploymentSchema:
-        """List deployments."""
+        """List existing deployments on BentoCloud."""
         res = client.deployment.list(
             context=context,
             cluster_name=cluster_name,

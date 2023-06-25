@@ -343,6 +343,7 @@ class Deployment:
                 bentoml_cattr.unstructure(i) for i in canary_rules
             ]
 
+        # Only change the value by the top-level param if it is not provided already in api_server_config or runner_config
         if hpa_conf:
             hpa_conf_dct = bentoml_cattr.unstructure(hpa_conf)
             if dct["targets"][0]["config"].get("hpa_conf") is None:

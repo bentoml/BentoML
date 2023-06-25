@@ -16,7 +16,7 @@ The topics covered in this article are:
 Having crafted a Bento as illustrated in the preceding section, :doc:`/bentocloud/getting-started/build`, we now progress to the next stage: launching it into production using BentoCloud.
 
 .. note::
-    BentoML offers various deployment alternatives, for more details visit `Deploying Bento <https://docs.bentoml.org/en/latest/concepts/deploy.html>`_.
+    BentoML offers various deployment alternatives, for more details visit :doc:`/concepts/deploy`.
 
 -------------------
 Acquiring API Token
@@ -70,7 +70,7 @@ After successfully pushing your Bento, navigate to `<https://cloud.bentoml.com/b
 Deploying your Bento
 --------------------
 
-Bento can be deployed in two ways: as an Online Service or as a Serverless Function. The choice depends on your specific use-case. You can learn more about the implications and best scenarios for each method in `:ref:Deploying Bento <concepts/deploy:Deploying Bento>`.
+Bento can be deployed in two ways: as an Online Service or as a Serverless Function. The choice depends on your specific use-case. You can learn more about the implications and best scenarios for each method in :doc:`/concepts/deploy`.
 
 In this tutorial, we'll proceed with the "Online Service" mode:
 

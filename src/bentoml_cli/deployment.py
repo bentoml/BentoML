@@ -6,6 +6,7 @@ import typing as t
 if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
     from bentoml._internal.cloud.schemas import DeploymentSchema
+    from bentoml._internal.cloud.schemas import DeploymentListSchema
 else:
     TupleStrAny = tuple
 
@@ -220,8 +221,8 @@ def add_deployment_command(cli: click.Group) -> None:
         cluster_name: str,
         query: str,
         search: str,
-        count: str,
-        start: str,
+        count: int,
+        start: int,
         output: t.Literal["json", "default", "table"],
     ) -> DeploymentSchema:
         """List existing deployments on BentoCloud."""

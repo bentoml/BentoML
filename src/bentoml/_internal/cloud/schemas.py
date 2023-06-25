@@ -75,6 +75,7 @@ class ResourceType(Enum):
     USER = "user"
     ORG = "organization"
     CLUSTER = "cluster"
+    HostCluster = "host_cluster"
     BENTO_REPOSITORY = "bento_repository"
     BENTO = "bento"
     MODEL_REPOSITORY = "model_repository"
@@ -85,6 +86,8 @@ class ResourceType(Enum):
     LABEL = "label"
     API_TOKEN = "api_token"
     YATAI_COMPONENT = "yatai_component"
+    LimitGroup = "limit_group"
+    ResourceInstance = "resource_instance"
 
 
 @attr.define
@@ -121,17 +124,6 @@ class OrganizationListSchema(BaseListSchema):
 class ClusterSchema(ResourceSchema):
     description: str
     creator: UserSchema
-
-
-@attr.define
-class ResourceInstance:
-    id: str
-    name: str
-    group: str
-    description: str
-    node_selectors: t.Dict[str, str]
-    resources: DeploymentTargetResources
-    price: str
 
 
 @attr.define
@@ -587,9 +579,7 @@ class CreateDeploymentTargetSchema:
     bento_repository: str
     bento: str
     config: DeploymentTargetConfig
-    canary_rules: t.Optional[t.List[DeploymentTargetCanaryRule]] = attr.field(
-        factory=list
-    )
+    canary_rules: t.List[DeploymentTargetCanaryRule] = attr.field(factory=list)
 
 
 class DeploymentStatus(Enum):
@@ -628,9 +618,7 @@ class DeploymentTargetSchema(ResourceSchema):
     type: DeploymentTargetType
     bento: BentoFullSchema
     config: DeploymentTargetConfig
-    canary_rules: t.Optional[t.List[DeploymentTargetCanaryRule]] = attr.field(
-        factory=list
-    )
+    canary_rules: t.List[DeploymentTargetCanaryRule] = attr.field(default=list)
 
 
 class DeploymentRevisionStatus(Enum):
@@ -648,6 +636,21 @@ class DeploymentRevisionSchema(ResourceSchema):
 
 
 @attr.define
+class ResourceInstanceConfigSchema:
+    group: str
+    resources: DeploymentTargetResources
+    price: str
+    node_selectors: t.Optional[t.Dict[str, str]] = attr.field(factory=dict)
+
+
+@attr.define
+class ResourceInstanceSchema(ResourceSchema):
+    display_name: str
+    description: str
+    config: ResourceInstanceConfigSchema
+
+
+@attr.define
 class ClusterFullSchema(ClusterSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
@@ -655,7 +658,7 @@ class ClusterFullSchema(ClusterSchema):
     kube_config: str
     config: ClusterConfigSchema
     grafana_root_path: str
-    resource_instances: t.List[ResourceInstance]
+    resource_instances: t.List[ResourceInstanceSchema]
 
 
 @attr.define
@@ -676,7 +679,7 @@ class UpdateDeploymentSchema:
     __forbid_extra_keys__ = True
     targets: t.List[CreateDeploymentTargetSchema]
     mode: t.Optional[DeploymentMode] = attr.field(default=None)
-    labels: t.Optional[t.List[LabelItemSchema]] = attr.field(factory=list)
+    labels: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
     description: t.Optional[str] = attr.field(default=None)
     do_not_deploy: t.Optional[bool] = attr.field(default=None)
 

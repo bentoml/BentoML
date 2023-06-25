@@ -139,13 +139,6 @@ contributing to the project, helping other users and discuss all things MLOps.
    bentocloud/topics/index
    bentocloud/references/index
 
-.. toctree::
-   :caption: Ecosystem
-   :hidden:
-
-   🦄️ Yatai <https://github.com/bentoml/Yatai>
-   🚀 bentoctl <https://github.com/bentoml/bentoctl>
-
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML

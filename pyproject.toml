@@ -73,7 +73,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-"Documentation" = "https://docs.bentoml.org/en/latest/"
+"Documentation" = "https://docs.bentoml.com/en/latest/"
 "Bug Reports" = "https://github.com/bentoml/BentoML/issues"
 "BentoML Community Slack" = "https://bit.ly/2N5IpbB"
 "BentoML Official Blog" = "https://modelserving.com"

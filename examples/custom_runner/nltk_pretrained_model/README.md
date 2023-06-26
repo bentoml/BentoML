@@ -94,4 +94,4 @@ bentoml build
 bentoml containerize sentiment_analyzer:latest
 ```
 
-[#custom-runner]: https://docs.bentoml.org/en/latest/concepts/runner.html#custom-runner
+[#custom-runner]: https://docs.bentoml.com/en/latest/concepts/runner.html#custom-runner

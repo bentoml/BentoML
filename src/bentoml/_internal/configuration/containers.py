@@ -359,7 +359,7 @@ class _BentoMLContainerClass:
             sample_rate = 0.0
         if sample_rate == 0.0:
             logger.debug(
-                "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
+                "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.com/en/latest/guides/tracing.html for more details."
             )
 
         # User can optionally configure the resource with the following environment variables. Only

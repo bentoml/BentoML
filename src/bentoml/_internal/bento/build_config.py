@@ -64,7 +64,7 @@ def _convert_python_version(py_version: str | None) -> str | None:
     target_python_version = f"{major}.{minor}"
     if target_python_version != py_version:
         logger.warning(
-            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced",
+            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.com/en/latest/concepts/bento.html#custom-base-image-advanced",
             target_python_version,
             py_version,
         )
@@ -765,7 +765,7 @@ class BentoBuildConfig:
 
         if use_cuda and use_conda:
             logger.warning(
-                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced"
+                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.com/en/latest/concepts/bento.html#custom-base-image-advanced"
             )
 
         if self.docker.distro is not None:

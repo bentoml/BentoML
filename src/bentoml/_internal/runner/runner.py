@@ -171,7 +171,7 @@ class Runner(AbstractRunner):
         """
 
         Runner represents a unit of computation that can be executed on a remote Python worker and scales independently
-        See https://docs.bentoml.org/en/latest/concepts/runner.html for more details.
+        See https://docs.bentoml.com/en/latest/concepts/runner.html for more details.
 
         Args:
             runnable_class: Runnable class that can be executed on a remote Python worker.

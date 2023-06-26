@@ -70,7 +70,7 @@ import transformers
 pipe = transformers.pipeline("text-classification")
 
 bentoml.transformers.save_model(
-  "text-classification-pipe", 
+  "text-classification-pipe",
   pipe,
   signatures={
     "__call__": {"batchable": True}  # Enable dynamic batching for model
@@ -112,7 +112,7 @@ Sent a prediction request:
 ```bash
 $ curl -X POST -H "Content-Type: text/plain" --data "BentoML is awesome" http://localhost:3000/classify
 
-{"label":"POSITIVE","score":0.9129443168640137}%  
+{"label":"POSITIVE","score":0.9129443168640137}%
 ```
 
 Define how a [Bento](https://docs.bentoml.com/en/latest/concepts/bento.html) can be built for deployment, with `bentofile.yaml`:

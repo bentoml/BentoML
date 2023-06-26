@@ -77,7 +77,7 @@ er.com/bentomlai>`_ on Twitter are the official source for
 updates from the BentoML team. Anything important, including major releases and announcements, will be posted there. We also frequently
 share tutorials, case studies, and community updates there.
 
-To receive release notification, star & watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_. 
+To receive release notification, star & watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_.
 For release notes and detailed changelog, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.
 
 

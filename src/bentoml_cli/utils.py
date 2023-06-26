@@ -205,7 +205,7 @@ class BentoMLCommandGroup(click.Group):
         @click.group(cls=BentoMLCommandGroup)
         def cli(): ...
 
-        @click.group(name="cloud", alias=["cloud"], cls=BentoMLCommandGroup)
+        @click.group(name="cloud", aliases=["cloud"], cls=BentoMLCommandGroup)
         def cli(): ...
 
         @cli.command(aliases=["serve-http"])
@@ -382,20 +382,15 @@ class BentoMLCommandGroup(click.Group):
         return wrapper
 
     def group(self, *args: t.Any, **kwargs: t.Any) -> t.Callable[[F[P]], Group]:
+        aliases = kwargs.pop("aliases", None)
         def decorator(f: F[P]):
             # create the main group
-            alias_list = kwargs.pop("alias", None)
             grp = super(BentoMLCommandGroup, self).group(*args, **kwargs)(f)
 
-            if alias_list:
-                name = kwargs.pop("name", None)
-                # we have a list so create group aliases
-                for alias in alias_list:
-                    grp_alias = super(BentoMLCommandGroup, self).group(
-                        *args, name=alias, **kwargs
-                    )(f)
-                    grp_alias.short_help = "Alias for '{}'".format(name)
-                    grp_alias.commands = grp.commands
+            if aliases is not None:
+                assert grp.name
+                self._commands[grp.name] = aliases
+                self._aliases.update({k: grp.name for k in aliases})
 
             return grp
 

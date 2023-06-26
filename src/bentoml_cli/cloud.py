@@ -11,9 +11,14 @@ def add_login_command(cli: click.Group) -> None:
     from bentoml._internal.cloud.config import CloudClientContext
     from bentoml._internal.cloud.config import default_context_name
 
-    @cli.group(name="cloud", alias=["yatai"], cls=BentoMLCommandGroup)
+    @cli.group(name="cloud", aliases=["yatai"], cls=BentoMLCommandGroup)
     def cloud_cli():
-        """BentoCloud Subcommands Groups"""
+        """BentoCloud Subcommands Groups
+
+        \b
+        Note that 'bentoml yatai' is mainly for backward compatible reason. It is recommended
+        to use 'bentoml cloud'.
+        """
 
     @cloud_cli.command()
     @click.option(

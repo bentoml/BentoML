@@ -67,7 +67,7 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.utils.analytics.usage_stats import _usage_event_debugging
 
     bento_store = BentoMLContainer.bento_store.get()
-    yatai_client = BentoMLContainer.yatai_client.get()
+    cloud_client = BentoMLContainer.bentocloud_client.get()
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -255,7 +255,7 @@ def add_bento_management_commands(cli: Group):
     )
     def pull(bento_tag: str, force: bool, context: str) -> None:  # type: ignore (not accessed)
         """Pull Bento from a yatai server."""
-        yatai_client.pull_bento(bento_tag, force=force, context=context)
+        cloud_client.pull_bento(bento_tag, force=force, context=context)
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -280,7 +280,7 @@ def add_bento_management_commands(cli: Group):
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
-        yatai_client.push_bento(
+        cloud_client.push_bento(
             bento_obj, force=force, threads=threads, context=context
         )
 

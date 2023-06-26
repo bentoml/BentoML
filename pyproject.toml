@@ -180,8 +180,6 @@ omit = [
     "src/bentoml/grpc/v1alpha1/*",
     "src/bentoml/grpc/v1/*",
     "src/bentoml/_internal/external_typing/*",
-    "src/bentoml/_internal/yatai_client/*",
-    "src/bentoml/_internal/yatai_rest_api_client/*",
 ]
 
 [tool.coverage.report]
@@ -197,8 +195,6 @@ omit = [
     "src/bentoml/grpc/v1alpha1/*",
     "src/bentoml/grpc/v1/*",
     "src/bentoml/_internal/external_typing/*",
-    "src/bentoml/_internal/yatai_client/*",
-    "src/bentoml/_internal/yatai_rest_api_client/*",
 ]
 exclude_lines = [
     "\\#\\s*pragma: no cover",

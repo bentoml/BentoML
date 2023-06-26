@@ -27,7 +27,7 @@ from ._internal.utils.analytics.usage_stats import _usage_event_debugging
 if t.TYPE_CHECKING:
     from .server import Server
     from ._internal.bento import BentoStore
-    from ._internal.cloud.yatai import YataiClient
+    from ._internal.cloud import BentoCloudClient
     from ._internal.bento.build_config import CondaOptions
     from ._internal.bento.build_config import DockerOptions
     from ._internal.bento.build_config import PythonOptions
@@ -246,13 +246,13 @@ def push(
     *,
     force: bool = False,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     """Push Bento to a yatai server."""
     bento = _bento_store.get(tag)
     if not bento:
         raise BentoMLException(f"Bento {tag} not found in local store")
-    _yatai_client.push_bento(bento, force=force)
+    _cloud_client.push_bento(bento, force=force)
 
 
 @inject
@@ -261,9 +261,9 @@ def pull(
     *,
     force: bool = False,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
-    _yatai_client.pull_bento(tag, force=force, bento_store=_bento_store)
+    _cloud_client.pull_bento(tag, force=force, bento_store=_bento_store)
 
 
 @inject

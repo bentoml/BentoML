@@ -35,4 +35,3 @@ Admins are advised to practice good security habits when managing users. Here ar
 * Regularly review user roles and permissions
 * Enforce strong password policies
 * Promptly remove access for users who no longer need it.
-

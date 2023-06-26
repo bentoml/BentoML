@@ -70,5 +70,5 @@ For HTTP-based servers, include the token in the header of your HTTP request lik
      -H "Authorization: Bearer $YOUR_TOKEN" \
      --data '{"prompt": "What state is Los Angeles in?", "max_length": 100}'
 
-The exact way you interact with your deployment will depend on the :doc:`Service </concepts/service>` 
+The exact way you interact with your deployment will depend on the :doc:`Service </concepts/service>`
 endpoints and the :ref:`io-descriptors` of the endpoint.

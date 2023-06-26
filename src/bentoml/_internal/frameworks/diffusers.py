@@ -76,7 +76,9 @@ def _str2cls(
     return cls
 
 
-def _extract_commit_hash(resolved_dir: str, regex_commit_hash: t.Pattern[str]) -> str | None:
+def _extract_commit_hash(
+    resolved_dir: str, regex_commit_hash: t.Pattern[str]
+) -> str | None:
     """
     Extracts the commit hash from a resolved filename toward a cache file.
     modified from https://github.com/huggingface/transformers/blob/0b7b4429c78de68acaf72224eb6dae43616d820c/src/transformers/utils/hub.py#L219
@@ -94,7 +96,7 @@ def _extract_commit_hash(resolved_dir: str, regex_commit_hash: t.Pattern[str]) -
 
 def _try_import_huggingface_hub():
     try:
-        import huggingface_hub # noqa: F401
+        import huggingface_hub  # noqa: F401
     except ImportError:  # pragma: no cover
         raise MissingDependencyException(
             "'huggingface_hub' is required in order to download pretrained diffusion models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
@@ -340,7 +342,9 @@ def import_model(
 
     if sync_with_hub_version:
         if tag.version is not None:
-            logger.warn(f"sync_with_hub_version is True, user provided version {tag.version} may be overridden by huggingface hub's commit hash")
+            logger.warn(
+                f"sync_with_hub_version is True, user provided version {tag.version} may be overridden by huggingface hub's commit hash"
+            )
 
     context = ModelContext(
         framework_name="diffusers",
@@ -369,7 +373,9 @@ def import_model(
     if os.path.isdir(model_name_or_path):
         src_dir = model_name_or_path
         if sync_with_hub_version:
-            raise BentoMLException("Cannot sync version with huggingface hub when importing a local model")
+            raise BentoMLException(
+                "Cannot sync version with huggingface hub when importing a local model"
+            )
 
     elif pipeline_class:
         _try_import_huggingface_hub()
@@ -380,6 +386,7 @@ def import_model(
 
         if sync_with_hub_version:
             from huggingface_hub.file_download import REGEX_COMMIT_HASH
+
             version = _extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
             if version is not None:
                 if variant is not None:
@@ -398,10 +405,10 @@ def import_model(
 
         if sync_with_hub_version:
             from huggingface_hub.file_download import REGEX_COMMIT_HASH
+
             version = _extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
             if version is not None:
                 tag.version = version
-
 
     with bentoml.models.create(
         tag,
@@ -580,7 +587,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 
         @bentoml.Runnable.method(batchable=False)
         def _replace_scheduler(self, scheduler_txt: str):
-
             try:
                 scheduler_cls = _str2cls(scheduler_txt)
                 if isinstance(self.pipeline.scheduler, scheduler_cls):
@@ -599,7 +605,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             except (ModuleNotFoundError, ValueError, AttributeError):
                 logger.info(f"Cannot import {scheduler_txt}")
                 return dict(
-                    success=False, error_message="cannot import scheduler class",
+                    success=False,
+                    error_message="cannot import scheduler class",
                 )
 
     def make_run_method(

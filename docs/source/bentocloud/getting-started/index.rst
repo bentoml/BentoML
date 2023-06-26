@@ -10,7 +10,7 @@ BentoCloud gives your AI application developers a collaborative environment and 
 
 .. raw:: html
 
-    <a href="https://kdyvd8c5ifq.typeform.com/to/eTujPAaE" class="custom-button demo">Schedule a Demo</a>  
+    <a href="https://kdyvd8c5ifq.typeform.com/to/eTujPAaE" class="custom-button demo">Schedule a Demo</a>
     <a href="https://cloud.bentoml.com" class="custom-button trial">Start Free Trial</a>
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -21,7 +21,7 @@ BentoCloud offers a consistent and reliable framework for the entire AI applicat
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Streamline collaboration across teams
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-BentoCloud captures all your ML models and Prediction Services in a central place, making them easily reusable and composable, so developers can easily leverage them for building applications. 
+BentoCloud captures all your ML models and Prediction Services in a central place, making them easily reusable and composable, so developers can easily leverage them for building applications.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Use the tools you already love
@@ -38,13 +38,13 @@ Go through a series of tutorials to learn how to use BentoCloud to **BUILD, SHIP
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: 🔨 Build 
+    .. grid-item-card:: 🔨 Build
         :link: build
         :link-type: doc
 
         Prototype AI applications with rapid iterations with BentoML.
 
-    .. grid-item-card:: 🚢 Ship 
+    .. grid-item-card:: 🚢 Ship
         :link: ship
         :link-type: doc
 
@@ -54,7 +54,7 @@ Go through a series of tutorials to learn how to use BentoCloud to **BUILD, SHIP
         :link: scale
         :link-type: doc
 
-        Scaling your work with a fully managed platform that aims to relieve users of infrastructure concerns, 
+        Scaling your work with a fully managed platform that aims to relieve users of infrastructure concerns,
         allowing you to pay only for what you use.
 
 .. toctree::

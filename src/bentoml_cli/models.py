@@ -49,7 +49,7 @@ def add_model_management_commands(cli: Group) -> None:
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     model_store = BentoMLContainer.model_store.get()
-    yatai_client = BentoMLContainer.yatai_client.get()
+    cloud_client = BentoMLContainer.bentocloud_client.get()
 
     @cli.group(name="models", cls=BentoMLCommandGroup)
     def model_cli():
@@ -235,7 +235,7 @@ def add_model_management_commands(cli: Group) -> None:
     )
     def pull(model_tag: str, force: bool, context: str):  # type: ignore (not accessed)
         """Pull Model from a yatai server."""
-        yatai_client.pull_model(model_tag, force=force, context=context)
+        cloud_client.pull_model(model_tag, force=force, context=context)
 
     @model_cli.command()
     @click.argument("model_tag", type=click.STRING)
@@ -260,6 +260,6 @@ def add_model_management_commands(cli: Group) -> None:
         model_obj = model_store.get(model_tag)
         if not model_obj:
             raise click.ClickException(f"Model {model_tag} not found in local store")
-        yatai_client.push_model(
+        cloud_client.push_model(
             model_obj, force=force, threads=threads, context=context
         )

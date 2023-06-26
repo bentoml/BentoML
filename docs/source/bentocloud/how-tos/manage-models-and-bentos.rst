@@ -16,7 +16,7 @@ account. If you're not yet logged in, use the following command:
 
    bentoml yatai login --api-token <your-api-token> --endpoint <your-bentocloud-endpoint>
 
-.. note:: 
+.. note::
 
    Refer to :doc:`Manage Access Tokens <manage-access-token>`
    on how to obtain your access token.

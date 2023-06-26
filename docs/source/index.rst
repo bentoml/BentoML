@@ -133,7 +133,7 @@ contributing to the project, helping other users and discuss all things MLOps.
 .. toctree::
    :caption: BentoCloud
    :hidden:
-   
+
    bentocloud/getting-started/index
    bentocloud/how-tos/index
    bentocloud/topics/index

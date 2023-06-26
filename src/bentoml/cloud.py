@@ -1,4 +1,3 @@
-from ._internal.cloud.bentocloud import BentoCloudClient
-from ._internal.cloud.deployment import Resource
-
-__all__ = ["BentoCloudClient", "Resource"]
+from ._internal.cloud import YataiClient as YataiClient
+from ._internal.cloud import BentoCloudClient as BentoCloudClient
+from ._internal.cloud import Resource as Resource

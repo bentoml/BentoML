@@ -42,9 +42,9 @@ from .schemas import CreateBentoRepositorySchema
 from .schemas import CreateModelRepositorySchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import PreSignMultipartUploadUrlSchema
-from .basecloud import BaseCloudClient
-from .basecloud import FILE_CHUNK_SIZE
-from .basecloud import CallbackIOWrapper
+from .base import CloudClient
+from .base import FILE_CHUNK_SIZE
+from .base import CallbackIOWrapper
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
@@ -55,7 +55,7 @@ if t.TYPE_CHECKING:
     from rich.progress import TaskID
 
 
-class YataiClient(BaseCloudClient):
+class YataiClient(CloudClient):
     def push_bento(
         self,
         bento: Bento,

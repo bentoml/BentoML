@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import math
+from pathlib import Path
 import uuid
 import typing as t
 import logging
@@ -243,6 +244,11 @@ class _BentoMLContainerClass:
     @staticmethod
     def session_id() -> str:
         return uuid.uuid1().hex
+
+    @providers.SingletonFactory
+    @staticmethod
+    def cloud_config(bentoml_home: str = Provide[bentoml_home]) -> Path:
+        return Path(bentoml_home) / ".yatai.yaml"
 
     api_server_config = config.api_server
     runners_config = config.runners

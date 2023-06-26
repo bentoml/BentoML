@@ -83,7 +83,7 @@ class CallbackIOWrapper(ObjectWrapper):
             raise KeyError("Can only wrap read/write methods")
 
 
-class BaseCloudClient(ABC):
+class CloudClient(ABC):
     log_progress = Progress(TextColumn("{task.description}"))
 
     spinner_progress = Progress(

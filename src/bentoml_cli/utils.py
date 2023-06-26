@@ -383,6 +383,7 @@ class BentoMLCommandGroup(click.Group):
 
     def group(self, *args: t.Any, **kwargs: t.Any) -> t.Callable[[F[P]], Group]:
         aliases = kwargs.pop("aliases", None)
+
         def decorator(f: F[P]):
             # create the main group
             grp = super(BentoMLCommandGroup, self).group(*args, **kwargs)(f)

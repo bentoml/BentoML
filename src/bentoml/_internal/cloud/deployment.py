@@ -40,11 +40,11 @@ config_merger = Merger(
 @attr.define
 class Resource:
     @classmethod
-    def for_hpa_conf(cls, **kwargs) -> DeploymentTargetHPAConf:
+    def for_hpa_conf(cls, **kwargs: t.Any) -> DeploymentTargetHPAConf:
         return bentoml_cattr.structure(kwargs, DeploymentTargetHPAConf)
 
     @classmethod
-    def for_runner(cls, **kwargs) -> DeploymentTargetRunnerConfig:
+    def for_runner(cls, **kwargs: t.Any) -> DeploymentTargetRunnerConfig:
         exclusive_api_server_key = {
             v for v in kwargs if v not in attr.fields_dict(DeploymentTargetRunnerConfig)
         }
@@ -54,7 +54,7 @@ class Resource:
         )
 
     @classmethod
-    def for_api_server(cls, **kwargs) -> DeploymentTargetConfig:
+    def for_api_server(cls, **kwargs: t.Any) -> DeploymentTargetConfig:
         return bentoml_cattr.structure(kwargs, DeploymentTargetConfig)
 
 
@@ -75,8 +75,10 @@ class Deployment:
     def _get_default_cluster(cls, context: str | None = None) -> str:
         cloud_rest_client = get_rest_api_client(context)
         res = cloud_rest_client.get_cluster_list(params={"count": 1})
+        if not res:
+            raise BentoMLException("Failed to get list of clusters.")
         if not res.items:
-            raise BentoMLException("Cannot get default clusters")
+            raise BentoMLException("Cannot get default clusters.")
         return res.items[0].name
 
     @classmethod
@@ -115,7 +117,6 @@ class Deployment:
         )
         if res is None:
             raise BentoMLException("Create deployment request failed")
-        logger.debug("%s is created.", create_deployment_schema.name)
         logger.debug("Deployment Schema: %s", create_deployment_schema)
         return res
 
@@ -179,49 +180,55 @@ class Deployment:
             mode = DeploymentMode.Function
         if type is None:
             type = DeploymentTargetType.STABLE
+
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
             kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
 
-        original_deployment_schema = cls.get(
-            deployment_name, context, cluster_name, kube_namespace
-        )
+        base_schema = cls.get(deployment_name, context, cluster_name, kube_namespace)
         # Deployment target always has length of 1
-        deployment_target = original_deployment_schema.latest_revision.targets[0]
+        if base_schema.latest_revision is None:
+            raise BentoMLException(
+                f"Deployment {deployment_name} has no latest revision"
+            )
+        deployment_target = base_schema.latest_revision.targets[0]
+
         if bento is None:
             # NOTE: bento.repository.name is the bento.name, and bento.name is the bento.version
             # from bentocloud to bentoml.Tag concept
             bento = f"{deployment_target.bento.repository.name}:{deployment_target.bento.name}"
         bento = Tag.from_taglike(bento)
-        new_config = bentoml_cattr.unstructure(deployment_target.config)
+
+        updated_config = bentoml_cattr.unstructure(deployment_target.config)
         if hpa_conf is not None:
             hpa_conf_dct = bentoml_cattr.unstructure(hpa_conf)
-            if "hpa_conf" in new_config:
-                if new_config["hpa_conf"] is None:
-                    new_config["hpa_conf"] = {}
-                config_merger.merge(new_config["hpa_conf"], hpa_conf_dct)
-            if "runners" in new_config and new_config["runners"] is not None:
-                for _, runner in new_config["runners"].items():
+            if "hpa_conf" in updated_config:
+                if updated_config["hpa_conf"] is None:
+                    updated_config["hpa_conf"] = {}
+                config_merger.merge(updated_config["hpa_conf"], hpa_conf_dct)
+            if "runners" in updated_config and updated_config["runners"] is not None:
+                for _, runner in updated_config["runners"].items():
                     if runner["hpa_conf"] is None:
                         runner["hpa_conf"] = {}
                     config_merger.merge(runner["hpa_conf"], hpa_conf_dct)
         if resource_instance is not None:
-            new_config["resource_instance"] = resource_instance
-            if new_config.get("runners") is not None:
-                for _, runner in new_config["runners"].items():
+            updated_config["resource_instance"] = resource_instance
+            if updated_config.get("runners") is not None:
+                for runner in updated_config["runners"].values():
                     runner["resource_instance"] = resource_instance
         if expose_endpoint is not None:
-            new_config["enable_ingress"] = expose_endpoint
+            updated_config["enable_ingress"] = expose_endpoint
 
         if api_server_config is not None:
             if runners_config is not None:
                 api_server_config.runners = runners_config
-            api_server_config_dct = bentoml_cattr.unstructure(api_server_config)
-            config_merger.merge(new_config, api_server_config_dct)
+            config_merger.merge(
+                updated_config, bentoml_cattr.unstructure(api_server_config)
+            )
         elif runners_config is not None:
             config_merger.merge(
-                new_config,
+                updated_config,
                 {
                     "runners": {
                         k: bentoml_cattr.unstructure(v)
@@ -230,33 +237,27 @@ class Deployment:
                 },
             )
 
-        dct_update = {
-            "mode": first_not_none(mode, original_deployment_schema.mode),
+        dct_update: dict[str, t.Any] = {
+            "mode": first_not_none(mode, base_schema.mode),
             "labels": first_not_none(
                 [{"key": key, "value": value} for key, value in labels.items()]
                 if labels
                 else None,
-                [
-                    bentoml_cattr.unstructure(i)
-                    for i in original_deployment_schema.labels
-                ]
-                if original_deployment_schema.labels is not None
+                [bentoml_cattr.unstructure(i) for i in base_schema.labels]
+                if base_schema.labels
                 else None,
             ),
             "description": description,
-            "targets": [
-                {
-                    "type": first_not_none(type, deployment_target.type),
-                    "bento": first_not_none(
-                        bento.version, deployment_target.bento.name
-                    ),
-                    "bento_repository": first_not_none(
-                        bento.name, deployment_target.bento.repository.name
-                    ),
-                    "config": new_config,
-                }
-            ],
         }
+        update_target = {
+            "type": first_not_none(type, deployment_target.type),
+            "bento": first_not_none(bento.version, deployment_target.bento.name),
+            "bento_repository": first_not_none(
+                bento.name, deployment_target.bento.repository.name
+            ),
+            "config": updated_config,
+        }
+
         rules = first_not_none(
             [bentoml_cattr.unstructure(i) for i in canary_rules]
             if canary_rules
@@ -266,7 +267,11 @@ class Deployment:
             else None,
         )
         if rules:
-            dct_update["targets"][0]["canary_rules"] = rules
+            update_target["canary_rules"] = rules
+
+        # update the target
+        dct_update["targets"] = [update_target]
+
         return cls._update_deployment(
             deployment_name=deployment_name,
             update_deployment_schema=bentoml_cattr.structure(
@@ -300,8 +305,9 @@ class Deployment:
             mode = DeploymentMode.Function
         if type is None:
             type = DeploymentTargetType.STABLE
-        bento = Tag.from_taglike(bento)
-        dct = {
+        bento_tag = Tag.from_taglike(bento)
+
+        dct: dict[str, t.Any] = {
             "name": deployment_name,
             "kube_namespace": kube_namespace,
             "mode": mode,
@@ -312,70 +318,81 @@ class Deployment:
                 {"key": key, "value": value} for key, value in labels.items()
             ]
         if api_server_config is None:
-            dct["targets"] = [
-                {
-                    "type": type,
-                    "bento_repository": bento.name,
-                    "bento": bento.version,
-                    "config": {
-                        "runners": {
-                            k: bentoml_cattr.unstructure(v)
-                            for k, v in runners_config.items()
-                        }
-                        if runners_config
-                        else None,
-                    },
+            _config: dict[str, t.Any] = {
+                "runners": {
+                    k: bentoml_cattr.unstructure(v) for k, v in runners_config.items()
                 }
-            ]
-
+                if runners_config
+                else None,
+            }
         else:
             api_server_config.runners = runners_config
-            dct["targets"] = [
-                {
-                    "type": type,
-                    "bento_repository": bento.name,
-                    "bento": bento.version,
-                    "config": bentoml_cattr.unstructure(api_server_config),
-                }
-            ]
+            _config = bentoml_cattr.unstructure(api_server_config)
+
+        create_target: dict[str, t.Any] = {
+            "type": type,
+            "bento_repository": bento_tag.name,
+            "bento": bento_tag.version,
+            "config": _config,
+        }
         if canary_rules:
-            dct["targets"][0]["canary_rules"] = [
+            create_target["canary_rules"] = [
                 bentoml_cattr.unstructure(i) for i in canary_rules
             ]
 
         # Only change the value by the top-level param if it is not provided already in api_server_config or runner_config
         if hpa_conf:
             hpa_conf_dct = bentoml_cattr.unstructure(hpa_conf)
-            if dct["targets"][0]["config"].get("hpa_conf") is None:
-                dct["targets"][0]["config"]["hpa_conf"] = {}
+            _config_hpa_conf = _config.get("hpa_conf", None)
+            if _config_hpa_conf is None:
+                _config_hpa_conf = {}
             for k, v in hpa_conf_dct.items():
-                if dct["targets"][0]["config"]["hpa_conf"].get(k) is None:
-                    dct["targets"][0]["config"]["hpa_conf"][k] = v
-            if dct["targets"][0]["config"].get("runners") is not None:
-                for _, runner in dct["targets"][0]["config"]["runners"].items():
-                    if runner.get("hpa_conf") is None:
-                        runner["hpa_conf"] = {}
+                if k not in _config_hpa_conf:
+                    _config_hpa_conf[k] = v
+                else:
+                    logger.warning(
+                        "Key %s is already set in API server config and will not be overwritten with hpa_conf.%s",
+                        k,
+                        k,
+                    )
+            _config["hpa_conf"] = _config_hpa_conf
+            if "runners" in _config:
+                _runner_config = _config["runners"]
+                for runner in _runner_config.values():
+                    _runner_hpa_conf = runner.get("hpa_conf", None)
+                    if _runner_hpa_conf is None:
+                        _runner_hpa_conf = {}
                     for k, v in hpa_conf_dct.items():
-                        if runner["hpa_conf"].get(k) is None:
-                            runner["hpa_conf"][k] = v
+                        if k not in _runner_hpa_conf:
+                            _runner_hpa_conf[k] = v
+                        else:
+                            logger.warning(
+                                "Key %s is already set in runner config and will not be overwritten with hpa_conf.%s",
+                                k,
+                                k,
+                            )
+                    runner["hpa_conf"] = _runner_hpa_conf
+
         if resource_instance:
-            if dct["targets"][0]["config"].get("resource_instance") is None:
-                dct["targets"][0]["config"]["resource_instance"] = resource_instance
-            if dct["targets"][0]["config"].get("runners") is not None:
-                for _, runner in dct["targets"][0]["config"]["runners"].items():
-                    if runner.get("resource_instance") is None:
+            if "resource_instance" not in _config:
+                _config["resource_instance"] = resource_instance
+            if "runners" in _config:
+                for runner in _config["runners"].values():
+                    if "resource_instance" not in runner:
                         runner["resource_instance"] = resource_instance
 
-        if (
-            expose_endpoint is not None
-            and dct["targets"][0]["config"].get("enable_ingress") is None
-        ):
-            dct["targets"][0]["config"]["enable_ingress"] = expose_endpoint
-        create_deployment_schema = bentoml_cattr.structure(dct, CreateDeploymentSchema)
+        if expose_endpoint is not None and _config.get("enable_ingress", None) is None:
+            _config["enable_ingress"] = expose_endpoint
+
+        # setup the create target itself
+        dct["targets"] = [create_target]
+
         return cls._create_deployment(
             context=context,
             cluster_name=cluster_name,
-            create_deployment_schema=create_deployment_schema,
+            create_deployment_schema=bentoml_cattr.structure(
+                dct, CreateDeploymentSchema
+            ),
         )
 
     @classmethod
@@ -393,15 +410,15 @@ class Deployment:
             cluster_name = cls._get_default_cluster(context)
         if query or start or count or search:
             params = {"start": start, "count": count, "search": search, "q": query}
+            res = cloud_rest_client.get_deployment_list(cluster_name, **params)
+            if res is None:
+                raise BentoMLException("List deployments request failed")
+            return res
         else:
-            params = {
-                "count": cloud_rest_client.get_deployment_list(cluster_name).total
-            }
-
-        res = cloud_rest_client.get_deployment_list(cluster_name, params)
-        if res is None:
-            raise BentoMLException("List deployments request failed")
-        return res
+            all_deployment = cloud_rest_client.get_deployment_list(cluster_name)
+            if all_deployment is None:
+                raise BentoMLException("List deployments request failed")
+            return all_deployment
 
     @classmethod
     def create_from_file(
@@ -424,6 +441,7 @@ class Deployment:
                     f"An error occurred while reading the file: {real_path}\n{e}"
                 )
         else:
+            # load the data from trusted stream
             data = json.load(path_or_stream)
         deployment_schema = bentoml_cattr.structure(data, FullDeploymentSchema)
         return cls._create_deployment(

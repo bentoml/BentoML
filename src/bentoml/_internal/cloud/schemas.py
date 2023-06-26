@@ -37,10 +37,10 @@ def dict_options_converter(
     return _converter
 
 
-converter = cattr.Converter()
+cloud_converter = cattr.Converter()
 
-converter.register_unstructure_hook(datetime, datetime_encoder)
-converter.register_structure_hook(datetime, datetime_decoder)
+cloud_converter.register_unstructure_hook(datetime, datetime_encoder)
+cloud_converter.register_structure_hook(datetime, datetime_decoder)
 
 
 T = t.TypeVar("T")
@@ -48,11 +48,11 @@ T = t.TypeVar("T")
 
 def schema_from_json(json_content: str, cls: t.Type[T]) -> T:
     dct = json.loads(json_content)
-    return converter.structure(dct, cls)
+    return cloud_converter.structure(dct, cls)
 
 
 def schema_to_json(obj: t.Any) -> str:
-    res = converter.unstructure(obj, obj.__class__)
+    res = cloud_converter.unstructure(obj, obj.__class__)
     return json.dumps(res)
 
 
@@ -692,7 +692,7 @@ class UpdateDeploymentSchema:
 class CreateDeploymentSchema(UpdateDeploymentSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
-    name: t.Optional[str] = attr.field(default=None)
+    name: str = attr.field(default=None)
     kube_namespace: t.Optional[str] = attr.field(default=None)
 
 

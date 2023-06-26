@@ -1,9 +1,9 @@
+from __future__ import annotations
 import os
 import re
 import uuid
 import typing as t
 from abc import ABC
-from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
 from platform import platform
@@ -18,12 +18,13 @@ from simple_di import inject
 from simple_di import Provide
 
 from ...utils import bentoml_cattr
-from ...cloud.config import get_config_path
-from ...cloud.config import get_current_context
+from ...cloud.config import CloudClientConfig
 from ...configuration import BENTOML_VERSION
 from ...configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from pathlib import Path
+
     P = t.ParamSpec("P")
     GenericFunction = t.Callable[P, t.Any]
 
@@ -74,10 +75,13 @@ def get_client_info(
         return new_client_info
 
 
+@inject
 @lru_cache(maxsize=1)
-def get_yatai_user_email() -> t.Optional[str]:
-    if os.path.exists(get_config_path()):
-        return get_current_context().email
+def get_yatai_user_email(
+    cloud_config: Path = Provide[BentoMLContainer.cloud_config],
+) -> str | None:
+    if cloud_config.exists():
+        return CloudClientConfig.get_config(cloud_config).get_current_context().email
 
 
 @lru_cache(maxsize=1)

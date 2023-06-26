@@ -26,6 +26,7 @@ else:
 # be huge, hence we barely save any time while having a large header
 # (that may cause errors).
 
+
 def pep574_dumps(obj: t.Any) -> tuple[bytes, bytes, list[int]]:
     buffers: list[pickle.PickleBuffer] = []
     main_bytes: bytes = pickle.dumps(obj, protocol=5, buffer_callback=buffers.append)

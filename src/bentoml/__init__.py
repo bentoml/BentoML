@@ -49,7 +49,7 @@ from ._internal.context import ServiceContext as Context
 from ._internal.service import Service
 from ._internal.monitoring import monitor
 from ._internal.utils.http import Cookie
-from ._internal.cloud.yatai import YataiClient
+from ._internal.cloud import YataiClient
 from ._internal.service.loader import load
 
 # Framework specific modules, model management and IO APIs are lazily loaded upon import.

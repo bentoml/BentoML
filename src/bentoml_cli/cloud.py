@@ -1,18 +1,23 @@
 from __future__ import annotations
 
 import click
+import json
+import click_option_group as cog
 
 
-def add_login_command(cli: click.Group) -> None:
+def add_cloud_command(cli: click.Group) -> click.Group:
     from bentoml_cli.utils import BentoMLCommandGroup
     from bentoml.exceptions import CLIException
-    from bentoml._internal.cloud.client import CloudRESTApiClient
+    from bentoml._internal.configuration import get_quiet_mode
+    from bentoml._internal.utils import bentoml_cattr
+    from bentoml._internal.cloud.client import RestApiClient
     from bentoml._internal.cloud.config import add_context
     from bentoml._internal.cloud.config import CloudClientContext
     from bentoml._internal.cloud.config import default_context_name
+    from bentoml._internal.cloud.config import CloudClientConfig
 
     @cli.group(name="cloud", aliases=["yatai"], cls=BentoMLCommandGroup)
-    def cloud_cli():
+    def cloud():
         """BentoCloud Subcommands Groups
 
         \b
@@ -20,14 +25,19 @@ def add_login_command(cli: click.Group) -> None:
         to use 'bentoml cloud'.
         """
 
-    @cloud_cli.command()
-    @click.option(
+    @cloud.command()
+    @cog.optgroup.group(
+        "Login", help="Required login options", cls=cog.RequiredAllOptionGroup
+    )
+    @cog.optgroup.option(
         "--endpoint",
         type=click.STRING,
         help="BentoCloud or Yatai endpoint, i.e: https://cloud.bentoml.com",
     )
-    @click.option(
-        "--api-token", type=click.STRING, help="BentoCloud or Yatai user API token"
+    @cog.optgroup.option(
+        "--api-token",
+        type=click.STRING,
+        help="BentoCloud or Yatai user API token",
     )
     @click.option(
         "--context",
@@ -37,13 +47,7 @@ def add_login_command(cli: click.Group) -> None:
     )
     def login(endpoint: str, api_token: str, context: str) -> None:  # type: ignore (not accessed)
         """Login to BentoCloud or Yatai server."""
-        if not endpoint:
-            raise CLIException("need --endpoint")
-
-        if not api_token:
-            raise CLIException("need --api-token")
-
-        cloud_rest_client = CloudRESTApiClient(endpoint, api_token)
+        cloud_rest_client = RestApiClient(endpoint, api_token)
         user = cloud_rest_client.get_current_user()
 
         if user is None:
@@ -62,7 +66,22 @@ def add_login_command(cli: click.Group) -> None:
         )
 
         add_context(ctx)
-
         click.echo(
-            f'Successfully logged in as user "{user.name}" in organization "{org.name}".'
+            f"Successfully logged in to BentoCloud for {user.name} in {org.name}"
         )
+
+    @cloud.command(aliases=["current-context"])
+    def get_current_context() -> None:  # type: ignore (not accessed)
+        """Get current cloud context."""
+        cur = CloudClientConfig.get_config().get_current_context()
+        if not get_quiet_mode():
+            click.echo(json.dumps(bentoml_cattr.unstructure(cur), indent=2))
+
+    @cloud.command()
+    @click.argument("context", type=click.STRING)
+    def update_current_context(context: str) -> None:  # type: ignore (not accessed)
+        """Update current context"""
+        ctx = CloudClientConfig.get_config().set_current_context(context)
+        click.echo(f"Successfully switched to context: {ctx.name}")
+
+    return cli

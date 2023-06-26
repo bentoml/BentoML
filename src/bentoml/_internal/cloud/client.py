@@ -37,7 +37,7 @@ from ..configuration import BENTOML_VERSION
 logger = logging.getLogger(__name__)
 
 
-class CloudRESTApiClient:
+class RestApiClient:
     def __init__(self, endpoint: str, api_token: str) -> None:
         self.endpoint = endpoint
         self.session = requests.Session()
@@ -420,7 +420,7 @@ class CloudRESTApiClient:
         return schema_from_json(resp.text, ModelWithRepositoryListSchema)
 
     def get_deployment_list(
-        self, cluster_name: str, params: dict[str, str | int] | None = None
+        self, cluster_name: str, **params: str | int | None
     ) -> DeploymentListSchema | None:
         url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}/deployments")
         resp = self.session.get(url, params=params)

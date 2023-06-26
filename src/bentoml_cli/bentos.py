@@ -316,7 +316,7 @@ def add_bento_management_commands(cli: Group):
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ):
         """Build a new Bento from current directory."""
-        if output == 'tag':
+        if output == "tag":
             from bentoml._internal.configuration import set_quiet_mode
 
             from bentoml._internal.log import configure_logging

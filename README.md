@@ -42,7 +42,7 @@ packaging, and production deployment.</p>
 
 ---
 
-## Documentation
+# Documentation
 
 * Installation: `pip install bentoml`
 * Full Documentation: [docs.bentoml.com](https://docs.bentoml.com/en/latest/)
@@ -60,7 +60,7 @@ packaging, and production deployment.</p>
 * Check out more examples [here](https://github.com/bentoml/BentoML/tree/main/examples).
 
 
-## Getting Started
+# Getting Started
 
 Save or import models in BentoML local model store:
 

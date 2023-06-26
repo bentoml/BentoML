@@ -5,7 +5,7 @@
   <a href="https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://github.com/bentoml/bentoml/workflows/CI/badge.svg?branch=main" alt="CI" /></a>
   <a href="https://twitter.com/bentomlai"><img src="https://badgen.net/badge/icon/@bentomlai/1DA1F2?icon=twitter&label=Follow%20Us" alt="Twitter" /></a>
   <a href="https://join.slack.bentoml.org"><img src="https://badgen.net/badge/Join/Community/cyan?icon=slack" alt="Community" /></a>
-  <p>BentoML is a framework for building <b>reliable, scalable and cost-efficient AI
+  <p>BentoML is a framework for building <b>reliable, scalable, and cost-efficient AI
 applications</b>. It comes with everything you need for model serving, application
 packaging, and production deployment.</p>
   <i><a href="https://l.bentoml.com/join-slack">👉 Join our Slack community!</a></i>
@@ -23,7 +23,7 @@ packaging, and production deployment.</p>
 ### 🍭 Simplify modern AI application architecture
 
 * Python-first! Effortlessly scale complex AI workloads.
-* Enable GPU inference [without the headache](https://docs.bentoml.com/en/latest/guides/gpu.html) - no code change and CUDA dependencies automatically configured
+* Enable GPU inference [without the headache](https://docs.bentoml.com/en/latest/guides/gpu.html).
 * [Compose multiple models](https://docs.bentoml.com/en/latest/guides/graph.html) to run concurrently or sequentially, [over multiple GPUs or Nodes](https://docs.bentoml.com/en/latest/guides/scheduling.html).
 * Natively integrates with [MLFlow](https://docs.bentoml.com/en/latest/integrations/mlflow.html), [LangChain](https://github.com/ssheng/BentoChain), [Kubeflow](https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/), [Triton](https://docs.bentoml.com/en/latest/integrations/triton.html), [Spark](https://docs.bentoml.com/en/latest/integrations/spark.html), [Ray](https://docs.bentoml.com/en/latest/reference/frameworks/ray.html), and many more to complete your production AI stack.
 

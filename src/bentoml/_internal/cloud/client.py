@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import io
 import logging
-from typing import Optional
 from urllib.parse import urljoin
 
 import requests
@@ -9,26 +10,34 @@ from .schemas import UserSchema
 from .schemas import BentoSchema
 from .schemas import ModelSchema
 from .schemas import schema_to_json
+from .schemas import DeploymentSchema
 from .schemas import schema_from_json
 from .schemas import CreateBentoSchema
 from .schemas import CreateModelSchema
 from .schemas import UpdateBentoSchema
 from .schemas import OrganizationSchema
+from .schemas import DeploymentListSchema
 from .schemas import BentoRepositorySchema
 from .schemas import ModelRepositorySchema
+from .schemas import CreateDeploymentSchema
+from .schemas import UpdateDeploymentSchema
 from .schemas import FinishUploadBentoSchema
 from .schemas import FinishUploadModelSchema
 from .schemas import CreateBentoRepositorySchema
 from .schemas import CreateModelRepositorySchema
+from .schemas import BentoWithRepositoryListSchema
 from .schemas import CompleteMultipartUploadSchema
+from .schemas import ModelWithRepositoryListSchema
 from .schemas import PreSignMultipartUploadUrlSchema
-from ...exceptions import YataiRESTApiClientError
+from .schemas import ClusterListSchema
+from .schemas import ClusterFullSchema
+from ...exceptions import CloudRESTApiClientError
 from ..configuration import BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
 
 
-class YataiRESTApiClient:
+class RestApiClient:
     def __init__(self, endpoint: str, api_token: str) -> None:
         self.endpoint = endpoint
         self.session = requests.Session()
@@ -49,11 +58,11 @@ class YataiRESTApiClient:
 
     def _check_resp(self, resp: requests.Response) -> None:
         if resp.status_code != 200:
-            raise YataiRESTApiClientError(
+            raise CloudRESTApiClientError(
                 f"request failed with status code {resp.status_code}: {resp.text}"
             )
 
-    def get_current_user(self) -> Optional[UserSchema]:
+    def get_current_user(self) -> UserSchema | None:
         url = urljoin(self.endpoint, "/api/v1/auth/current")
         resp = self.session.get(url)
         if self._is_not_found(resp):
@@ -61,7 +70,7 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, UserSchema)
 
-    def get_current_organization(self) -> Optional[OrganizationSchema]:
+    def get_current_organization(self) -> OrganizationSchema | None:
         url = urljoin(self.endpoint, "/api/v1/current_org")
         resp = self.session.get(url)
         if self._is_not_found(resp):
@@ -71,7 +80,7 @@ class YataiRESTApiClient:
 
     def get_bento_repository(
         self, bento_repository_name: str
-    ) -> Optional[BentoRepositorySchema]:
+    ) -> BentoRepositorySchema | None:
         url = urljoin(
             self.endpoint, f"/api/v1/bento_repositories/{bento_repository_name}"
         )
@@ -89,9 +98,7 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoRepositorySchema)
 
-    def get_bento(
-        self, bento_repository_name: str, version: str
-    ) -> Optional[BentoSchema]:
+    def get_bento(self, bento_repository_name: str, version: str) -> BentoSchema | None:
         url = urljoin(
             self.endpoint,
             f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}",
@@ -236,7 +243,7 @@ class YataiRESTApiClient:
 
     def get_model_repository(
         self, model_repository_name: str
-    ) -> Optional[ModelRepositorySchema]:
+    ) -> ModelRepositorySchema | None:
         url = urljoin(
             self.endpoint, f"/api/v1/model_repositories/{model_repository_name}"
         )
@@ -254,9 +261,7 @@ class YataiRESTApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelRepositorySchema)
 
-    def get_model(
-        self, model_repository_name: str, version: str
-    ) -> Optional[ModelSchema]:
+    def get_model(self, model_repository_name: str, version: str) -> ModelSchema | None:
         url = urljoin(
             self.endpoint,
             f"/api/v1/model_repositories/{model_repository_name}/models/{version}",
@@ -387,3 +392,121 @@ class YataiRESTApiClient:
         resp = self.session.get(url, stream=True)
         self._check_resp(resp)
         return resp
+
+    def get_bento_repositories_list(
+        self, bento_repository_name: str
+    ) -> BentoWithRepositoryListSchema | None:
+        url = urljoin(self.endpoint, "/api/v1/bento_repositories")
+        resp = self.session.get(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, BentoWithRepositoryListSchema)
+
+    def get_bentos_list(self) -> BentoWithRepositoryListSchema | None:
+        url = urljoin(self.endpoint, "/api/v1/bentos")
+        resp = self.session.get(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, BentoWithRepositoryListSchema)
+
+    def get_models_list(self) -> ModelWithRepositoryListSchema | None:
+        url = urljoin(self.endpoint, "/api/v1/models")
+        resp = self.session.get(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, ModelWithRepositoryListSchema)
+
+    def get_deployment_list(
+        self, cluster_name: str, **params: str | int | None
+    ) -> DeploymentListSchema | None:
+        url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}/deployments")
+        resp = self.session.get(url, params=params)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentListSchema)
+
+    def create_deployment(
+        self, cluster_name: str, create_schema: CreateDeploymentSchema
+    ) -> DeploymentSchema | None:
+        url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}/deployments")
+        resp = self.session.post(url, data=schema_to_json(create_schema))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+    def get_deployment(
+        self, cluster_name: str, kube_namespace: str, deployment_name: str
+    ) -> DeploymentSchema | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}",
+        )
+        resp = self.session.get(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+    def update_deployment(
+        self,
+        cluster_name: str,
+        kube_namespace: str,
+        deployment_name: str,
+        update_schema: UpdateDeploymentSchema,
+    ) -> DeploymentSchema | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}",
+        )
+        resp = self.session.patch(url, data=schema_to_json(update_schema))
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+    def terminate_deployment(
+        self, cluster_name: str, kube_namespace: str, deployment_name: str
+    ) -> DeploymentSchema | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}/terminate",
+        )
+        resp = self.session.post(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+    def delete_deployment(
+        self, cluster_name: str, kube_namespace: str, deployment_name: str
+    ) -> DeploymentSchema | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}",
+        )
+        resp = self.session.delete(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+    def get_cluster_list(
+        self, params: dict[str, str | int] | None = None
+    ) -> ClusterListSchema | None:
+        url = urljoin(self.endpoint, "/api/v1/clusters")
+        resp = self.session.get(url, params=params)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, ClusterListSchema)
+
+    def get_cluster(self, cluster_name: str) -> ClusterFullSchema | None:
+        url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}")
+        resp = self.session.get(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, ClusterFullSchema)

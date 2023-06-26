@@ -16,6 +16,7 @@ from click.exceptions import UsageError
 if TYPE_CHECKING:
     from click import Option
     from click import Command
+    from click import Group
     from click import Context
     from click import Parameter
     from click import HelpFormatter
@@ -195,13 +196,16 @@ class BentoMLCommandGroup(click.Group):
     Click command class customized for BentoML CLI, allow specifying a default
     command for each group defined.
 
-    This command groups will also introduce support for aliases for commands.
+    This command groups will also introduce support for aliases for commands and groups.
 
     Example:
 
     .. code-block:: python
 
         @click.group(cls=BentoMLCommandGroup)
+        def cli(): ...
+
+        @click.group(name="cloud", aliases=["cloud"], cls=BentoMLCommandGroup)
         def cli(): ...
 
         @cli.command(aliases=["serve-http"])
@@ -376,6 +380,22 @@ class BentoMLCommandGroup(click.Group):
             return cmd
 
         return wrapper
+
+    def group(self, *args: t.Any, **kwargs: t.Any) -> t.Callable[[F[P]], Group]:
+        aliases = kwargs.pop("aliases", None)
+
+        def decorator(f: F[P]):
+            # create the main group
+            grp = super(BentoMLCommandGroup, self).group(*args, **kwargs)(f)
+
+            if aliases is not None:
+                assert grp.name
+                self._commands[grp.name] = aliases
+                self._aliases.update({k: grp.name for k in aliases})
+
+            return grp
+
+        return decorator
 
     def resolve_alias(self, cmd_name: str):
         return self._aliases[cmd_name] if cmd_name in self._aliases else cmd_name

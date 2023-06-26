@@ -181,7 +181,7 @@ class Service:
                 return (load, (self.bento.tag,))
             else:
                 # serialization_strategy == REMOTE_BENTO
-                def get_or_pull(bento_tag):
+                def get_or_pull(bento_tag: Tag) -> Service:
                     try:
                         return load(bento_tag)
                     except NotFound:
@@ -191,8 +191,8 @@ class Service:
                         bento = tmp_bento_store.get(bento_tag)
                         return load_bento_dir(bento.path)
                     except NotFound:
-                        yatai_client = BentoMLContainer.yatai_client.get()
-                        yatai_client.pull_bento(bento_tag, bento_store=tmp_bento_store)
+                        cloud_client = BentoMLContainer.bentocloud_client.get()
+                        cloud_client.pull_bento(bento_tag, bento_store=tmp_bento_store)
                         return get_or_pull(bento_tag)
 
                 return (get_or_pull, (self.bento.tag,))

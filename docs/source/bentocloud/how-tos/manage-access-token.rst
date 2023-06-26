@@ -24,7 +24,7 @@ To create a new token:
 1. Click the `Create` button in the top-right corner of the page.
 
 .. image:: ../../_static/img/bentocloud/ship-get-api-token.png
-    
+
 
 1. In the dialog box that appears, select the desired scope for the token
    and set an expiration date if needed. It's a best practice to always

@@ -91,7 +91,7 @@ After setting up, wait for the deployment status to turn green. This indicates y
 Interacting with Your Deployment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now it's time to test out your newly deployed service! Visit your `Deploymnet URL` and you'll be greeted with a Swagger UI. This interface lets you conveniently send requests to your deployment for testing. 
+Now it's time to test out your newly deployed service! Visit your `Deploymnet URL` and you'll be greeted with a Swagger UI. This interface lets you conveniently send requests to your deployment for testing.
 
 Feel free to click `Try it out` with the input sample data. Alternatively, you can send a request directly from your terminal using `cURL`:
 
@@ -107,8 +107,8 @@ Feel free to click `Try it out` with the input sample data. Alternatively, you c
 Team Collaboration
 --------------------
 
-Scaling isn't limited to handling larger workloads; it's also about fostering collaboration within and across teams. 
-BentoCloud facilitates this process through its **Model and Bento Repositories**. 
+Scaling isn't limited to handling larger workloads; it's also about fostering collaboration within and across teams.
+BentoCloud facilitates this process through its **Model and Bento Repositories**.
 
 These repositories provide a platform for team members to **publish**, **share**, and **distribute** their work with ease. You can also **import pre-trained models** from popular repositories such as HuggingFace's model hub.
 
@@ -136,13 +136,13 @@ The same principles apply to **Deployments**. You can iteratively create new rev
 Observability
 -------------
 
-On the BentoCloud platform, you have the capability to monitor the status and health of both deployments and models. For application-level monitoring, the platform provides access to logs, metrics, and traces for each individual deployment, providing you with a comprehensive overview of application performance. For model-level monitoring, you can collect inference data with the :ref:`model monitoring API <guides/monitoring:Build an ML Application with monitoring API>` and track model drift over time using a monitoring platform of your choice. 
+On the BentoCloud platform, you have the capability to monitor the status and health of both deployments and models. For application-level monitoring, the platform provides access to logs, metrics, and traces for each individual deployment, providing you with a comprehensive overview of application performance. For model-level monitoring, you can collect inference data with the :ref:`model monitoring API <guides/monitoring:Build an ML Application with monitoring API>` and track model drift over time using a monitoring platform of your choice.
 For a more detailed understanding of the observability offerings of BentoCloud, see :doc:`Observability </bentocloud/topics/observability>`
 
 -----------
 Wrapping Up
 -----------
 
-This article has guided you through the process of deploying your ML application using BentoCloud. 
+This article has guided you through the process of deploying your ML application using BentoCloud.
 
 Next up, in our :doc:`following article <scale>`, we'll explore how BentoCloud supports the scaling of your application.

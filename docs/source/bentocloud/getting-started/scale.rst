@@ -21,7 +21,7 @@ BentoCloud is designed with scalability at its core. Scaling operations can be p
 
 .. image:: ../../_static/img/bentocloud/scale-autoscale.png
 
-For those seeking advanced scaling behaviour, your services can scale according to `custom metrics <https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#scaling-on-custom-metrics>`_. 
+For those seeking advanced scaling behaviour, your services can scale according to `custom metrics <https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#scaling-on-custom-metrics>`_.
 This feature is exclusively available to users with **Enterprise** plan.
 
 ~~~~~~~~~~
@@ -37,7 +37,7 @@ Traffic Control
 ~~~~~~~~~~~~~~~
 
 You can adjust timeouts and queue management strategies for each component of a deployment (**Runners** and **API Servers**).
-Queuing request allowing requests to be served more reliably, during cold-start and service overload. 
+Queuing request allowing requests to be served more reliably, during cold-start and service overload.
 The figure below illustrates how a BentoML Service works.
 
 .. image:: ../../_static/img/bentocloud/scale-service.png
@@ -49,16 +49,16 @@ These settings can be found under the `Advanced` tab when creating a new deploym
 ~~~~~~~~~~~~~~~
 Instance Rightsizing
 ~~~~~~~~~~~~~~~
-BentoCloud offers the flexibility to define the instance types and sizes for your **API Server** and **Runners** independently. 
-This allows you to optimize your resource allocation based on your specific needs. 
-For example, you might choose to have a greater number of smaller nodes for your **API Server**, which handles many small tasks concurrently. 
+BentoCloud offers the flexibility to define the instance types and sizes for your **API Server** and **Runners** independently.
+This allows you to optimize your resource allocation based on your specific needs.
+For example, you might choose to have a greater number of smaller nodes for your **API Server**, which handles many small tasks concurrently.
 In contrast, for **Runners** that often require more computational power for data processing or model inference, you may opt for fewer but GPU accelerated nodes.
 
 ----------
 Next Steps
 ----------
 
-Through the **BUILD, SHIP, and SCALE** series, we've showcased the key features of BentoCloud. 
+Through the **BUILD, SHIP, and SCALE** series, we've showcased the key features of BentoCloud.
 
 Next up, you can:
 
@@ -67,4 +67,3 @@ Next up, you can:
     - :doc:`Manage Models and Bentos </bentocloud/how-tos/manage-models-and-bentos>`
     - :doc:`Deploy Bentos </bentocloud/how-tos/deploy-bentos>`
 - Start Building your :doc:`BentoML application </index>`
-

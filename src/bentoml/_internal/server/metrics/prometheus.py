@@ -32,7 +32,7 @@ class PrometheusClient:
            is called. This has to do with ``prometheus_client`` relies on ``PROMEHEUS_MULTIPROC_DIR``, which
            will be set by this client.
 
-        For API documentation, refer to https://docs.bentoml.org/en/latest/reference/metrics.html.
+        For API documentation, refer to https://docs.bentoml.com/en/latest/reference/metrics.html.
         """
         if multiproc:
             assert multiproc_dir is not None, "multiproc_dir must be provided"

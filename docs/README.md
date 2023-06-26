@@ -3,7 +3,7 @@
 ## A guide for docs contributors
 
 The `docs` directory contains the sphinx source text for BentoML docs, visit
-http://docs.bentoml.org/ to read the full documentation.
+http://docs.bentoml.com/ to read the full documentation.
 
 This guide is made for anyone who's interested in running BentoML documentation locally,
 making changes to it and make contributions. BentoML is made by the thriving community

@@ -18,3 +18,4 @@ sphinx-autobuild
 sphinx-hoverxref
 pyspark
 tritonclient[all]
+ray[serve]

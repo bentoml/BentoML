@@ -40,8 +40,6 @@ packaging, and production deployment.</p>
 * Deploy auto-generated container images anywhere docker runs.
 
 
----
-
 # Documentation
 
 * Installation: `pip install bentoml`

@@ -5,10 +5,10 @@ Observability
 DevOps Observability
 --------------------
 
-DevOps Observability encapsulates **metrics**, **logging**, and **tracing**. 
-BentoCloud automatically collects and visualizes all engineering **metrics** related to the deployment within the ``Dashboard`` tab in your respective ``Deployment`` page. 
+DevOps Observability encapsulates **metrics**, **logging**, and **tracing**.
+BentoCloud automatically collects and visualizes all engineering **metrics** related to the deployment within the ``Dashboard`` tab in your respective ``Deployment`` page.
 Additionally, a **built-in log viewer** lets you examine the logs of your app and its infrastructure.
-These **logs** can be queried, downloaded, or routed into downstream log processing frameworks for more in-depth analysis. 
+These **logs** can be queried, downloaded, or routed into downstream log processing frameworks for more in-depth analysis.
 **Tracing** is an ongoing development within BentoCloud and will be supported in future releases.
 
 For Enterprise Users, you will have access to a dedicated Grafana service where you can use full Grafana capabilities for monitoring and alerting.

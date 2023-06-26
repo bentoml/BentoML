@@ -95,5 +95,3 @@ The `Bento Gallery <https://bentoml.com/gallery>`_ is a curated collection showc
         :link-type: url
 
         An efficient solution for converting PDFs into text 🚀
-
-    

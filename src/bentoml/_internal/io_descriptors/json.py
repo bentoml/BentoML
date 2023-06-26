@@ -280,9 +280,7 @@ class JSON(
             "id": self.descriptor_id,
             "args": {
                 "has_pydantic_model": self._pydantic_model is not None,
-                "has_json_encoder": not isinstance(
-                    self._json_encoder, DefaultJsonEncoder
-                ),
+                "has_json_encoder": self._json_encoder is not DefaultJsonEncoder,
             },
         }
 

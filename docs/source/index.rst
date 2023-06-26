@@ -25,7 +25,7 @@ Learn BentoML
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`💻 Tutorial: Intro to BentoML <tutorial>`
+    .. grid-item-card:: :doc:`💻 Getting Started <tutorial>`
         :link: tutorial
         :link-type: doc
 
@@ -118,6 +118,7 @@ contributing to the project, helping other users and discuss all things MLOps.
 
 
 .. toctree::
+   :caption: BentoML
    :hidden:
 
    installation
@@ -128,17 +129,15 @@ contributing to the project, helping other users and discuss all things MLOps.
    integrations/index
    reference/index
    Examples <https://github.com/bentoml/BentoML/tree/main/examples>
-   Community <https://l.bentoml.com/join-slack>
-   GitHub <https://github.com/bentoml/BentoML>
-   Blog <https://modelserving.com>
 
 .. toctree::
-   :caption: Ecosystem
+   :caption: BentoCloud
    :hidden:
-
-   ☁️ BentoCloud <https://www.bentoml.com/bento-cloud/>
-   🦄️ Yatai <https://github.com/bentoml/Yatai>
-   🚀 bentoctl <https://github.com/bentoml/bentoctl>
+   
+   bentocloud/getting-started/index
+   bentocloud/how-tos/index
+   bentocloud/topics/index
+   bentocloud/references/index
 
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square

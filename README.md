@@ -54,6 +54,7 @@ packaging, and production deployment.</p>
 * [StableDiffusion](https://github.com/bentoml/stable-diffusion-bentoml) - Create your own text-to-image service with any diffusion models.
 * [CLIP-API-service](https://github.com/bentoml/CLIP-API-service) - Embed images and sentences, object recognition, visual reasoning, image classification and reverse image search.
 * [Transformer NLP Service](https://github.com/bentoml/transformers-nlp-service) - Online inference API for Transformer models.
+* [Distributed TaskMatrix(Visual ChatGPT)](https://github.com/bentoml/Distributed-Visual-ChatGPT) - Scalable deployment for TaskMatrix from Microsoft.
 * [Fraud Detection](https://github.com/bentoml/Fraud-Detection-Model-Serving) - Online model serving with custom XGBoost model.
 * [OCR as a Service](https://github.com/bentoml/OCR-as-a-Service) - Turn any OCR models into online inference API endpoints.
 * Check out more examples [here](https://github.com/bentoml/BentoML/tree/main/examples).

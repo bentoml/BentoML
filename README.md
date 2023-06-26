@@ -22,9 +22,9 @@ packaging, and production deployment.</p>
 
 ### 🍭 Simplify modern AI application architecture
 
-* Python-first design, effortlessly scale complex AI workloads.
-* Enable GPU inference with [a one-line config change](https://docs.bentoml.com/en/latest/guides/gpu.html), everything else auto-configured for you.
-* [Compose multiple models](https://docs.bentoml.com/en/latest/guides/graph.html) to run concurrently or sequentially [over multiple GPUs or Nodes](https://docs.bentoml.com/en/latest/guides/scheduling.html).
+* Python-first! Effortlessly scale complex AI workloads.
+* Enable GPU inference [without the headache](https://docs.bentoml.com/en/latest/guides/gpu.html) - no code change and CUDA dependencies automatically configured
+* [Compose multiple models](https://docs.bentoml.com/en/latest/guides/graph.html) to run concurrently or sequentially, [over multiple GPUs or Nodes](https://docs.bentoml.com/en/latest/guides/scheduling.html).
 * Natively integrates with [MLFlow](https://docs.bentoml.com/en/latest/integrations/mlflow.html), [LangChain](https://github.com/ssheng/BentoChain), [Kubeflow](https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/), [Triton](https://docs.bentoml.com/en/latest/integrations/triton.html), [Spark](https://docs.bentoml.com/en/latest/integrations/spark.html), [Ray](https://docs.bentoml.com/en/latest/reference/frameworks/ray.html), and many more to complete your production AI stack.
 
 ### 🍱 Bento is the container for AI apps

@@ -57,6 +57,7 @@ packaging, and production deployment.</p>
 * [Distributed TaskMatrix(Visual ChatGPT)](https://github.com/bentoml/Distributed-Visual-ChatGPT) - Scalable deployment for TaskMatrix from Microsoft.
 * [Fraud Detection](https://github.com/bentoml/Fraud-Detection-Model-Serving) - Online model serving with custom XGBoost model.
 * [OCR as a Service](https://github.com/bentoml/OCR-as-a-Service) - Turn any OCR models into online inference API endpoints.
+* [Replace Anything](https://github.com/yuqwu/Replace-Anything) - Combining the power of Segment Anything and Stable Diffusion.
 * Check out more examples [here](https://github.com/bentoml/BentoML/tree/main/examples).
 
 

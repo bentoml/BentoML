@@ -48,7 +48,7 @@ packaging, and production deployment.</p>
 * Full Documentation: [docs.bentoml.com](https://docs.bentoml.com/en/latest/)
 * Tutorial: [Intro to BentoML](https://docs.bentoml.com/en/latest/tutorial.html)
 
-### Common Applications Built w/ BentoML
+### Example AI Apps built with BentoML:
 
 * [OpenLLM](https://github.com/bentoml/OpenLLM) - An open platform for operating large language models (LLMs) in production.
 * [StableDiffusion](https://github.com/bentoml/stable-diffusion-bentoml) - Create your own text-to-image service with any diffusion models.

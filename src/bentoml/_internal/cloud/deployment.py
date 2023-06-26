@@ -65,16 +65,16 @@ class Deployment:
         cluster_name: str,
         context: str | None = None,
     ) -> str:
-        yatai_rest_client = get_rest_api_client(context)
-        res = yatai_rest_client.get_cluster(cluster_name)
+        cloud_rest_client = get_rest_api_client(context)
+        res = cloud_rest_client.get_cluster(cluster_name)
         if not res:
             raise BentoMLException("Cannot get default kube namespace")
         return res.config.default_deployment_kube_namespace
 
     @classmethod
     def _get_default_cluster(cls, context: str | None = None) -> str:
-        yatai_rest_client = get_rest_api_client(context)
-        res = yatai_rest_client.get_cluster_list(params={"count": 1})
+        cloud_rest_client = get_rest_api_client(context)
+        res = cloud_rest_client.get_cluster_list(params={"count": 1})
         if not res.items:
             raise BentoMLException("Cannot get default clusters")
         return res.items[0].name
@@ -86,7 +86,7 @@ class Deployment:
         context: str | None = None,
         cluster_name: str | None = None,
     ) -> DeploymentSchema:
-        yatai_rest_client = get_rest_api_client(context)
+        cloud_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)
         if create_deployment_schema.kube_namespace is None:
@@ -95,14 +95,14 @@ class Deployment:
             )
         for target in create_deployment_schema.targets:
             if (
-                yatai_rest_client.get_bento(target.bento_repository, target.bento)
+                cloud_rest_client.get_bento(target.bento_repository, target.bento)
                 is None
             ):
                 raise BentoMLException(
                     f"Create deployment: {target.bento_repository}:{target.bento} does not exist"
                 )
         if (
-            yatai_rest_client.get_deployment(
+            cloud_rest_client.get_deployment(
                 cluster_name,
                 create_deployment_schema.kube_namespace,
                 create_deployment_schema.name,
@@ -110,7 +110,7 @@ class Deployment:
             is not None
         ):
             raise BentoMLException("Create deployment: Deployment already exists")
-        res = yatai_rest_client.create_deployment(
+        res = cloud_rest_client.create_deployment(
             cluster_name, create_deployment_schema
         )
         if res is None:
@@ -128,26 +128,26 @@ class Deployment:
         context: str | None = None,
         cluster_name: str | None = None,
     ) -> DeploymentSchema:
-        yatai_rest_client = get_rest_api_client(context)
+        cloud_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
             kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
         for target in update_deployment_schema.targets:
             if (
-                yatai_rest_client.get_bento(target.bento_repository, target.bento)
+                cloud_rest_client.get_bento(target.bento_repository, target.bento)
                 is None
             ):
                 raise BentoMLException(
                     f"Update deployment: {target.bento_repository}:{target.bento} does not exist"
                 )
-            yatai_rest_client.get_deployment(
+            cloud_rest_client.get_deployment(
                 cluster_name,
                 kube_namespace,
                 deployment_name,
             )
 
-        res = yatai_rest_client.update_deployment(
+        res = cloud_rest_client.update_deployment(
             cluster_name, kube_namespace, deployment_name, update_deployment_schema
         )
         if res is None:
@@ -388,17 +388,17 @@ class Deployment:
         count: int | None = None,
         start: int | None = None,
     ) -> DeploymentListSchema:
-        yatai_rest_client = get_rest_api_client(context)
+        cloud_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)
         if query or start or count or search:
             params = {"start": start, "count": count, "search": search, "q": query}
         else:
             params = {
-                "count": yatai_rest_client.get_deployment_list(cluster_name).total
+                "count": cloud_rest_client.get_deployment_list(cluster_name).total
             }
 
-        res = yatai_rest_client.get_deployment_list(cluster_name, params)
+        res = cloud_rest_client.get_deployment_list(cluster_name, params)
         if res is None:
             raise BentoMLException("List deployments request failed")
         return res
@@ -471,12 +471,12 @@ class Deployment:
         cluster_name: str | None = None,
         kube_namespace: str | None = None,
     ) -> DeploymentSchema:
-        yatai_rest_client = get_rest_api_client(context)
+        cloud_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
             kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
-        res = yatai_rest_client.get_deployment(
+        res = cloud_rest_client.get_deployment(
             cluster_name, kube_namespace, deployment_name
         )
         if res is None:
@@ -491,12 +491,12 @@ class Deployment:
         cluster_name: str | None = None,
         kube_namespace: str | None = None,
     ) -> DeploymentSchema:
-        yatai_rest_client = get_rest_api_client(context)
+        cloud_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
             kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
-        res = yatai_rest_client.get_deployment(
+        res = cloud_rest_client.get_deployment(
             cluster_name,
             kube_namespace,
             deployment_name,
@@ -504,7 +504,7 @@ class Deployment:
         if res is None:
             raise BentoMLException("Delete deployment: Deployment does not exist")
 
-        res = yatai_rest_client.delete_deployment(
+        res = cloud_rest_client.delete_deployment(
             cluster_name, kube_namespace, deployment_name
         )
         if res is None:
@@ -519,19 +519,19 @@ class Deployment:
         cluster_name: str | None = None,
         kube_namespace: str | None = None,
     ) -> DeploymentSchema:
-        yatai_rest_client = get_rest_api_client(context)
+        cloud_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
             kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
-        res = yatai_rest_client.get_deployment(
+        res = cloud_rest_client.get_deployment(
             cluster_name,
             kube_namespace,
             deployment_name,
         )
         if res is None:
             raise BentoMLException("Teminate deployment: Deployment does not exist")
-        res = yatai_rest_client.terminate_deployment(
+        res = cloud_rest_client.terminate_deployment(
             cluster_name, kube_namespace, deployment_name
         )
         if res is None:

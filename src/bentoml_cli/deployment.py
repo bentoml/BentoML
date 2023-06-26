@@ -224,7 +224,7 @@ def add_deployment_command(cli: click.Group) -> None:
         count: int,
         start: int,
         output: t.Literal["json", "default", "table"],
-    ) -> DeploymentSchema:
+    ) -> DeploymentListSchema:
         """List existing deployments on BentoCloud."""
         res = client.deployment.list(
             context=context,

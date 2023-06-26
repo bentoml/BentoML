@@ -49,7 +49,7 @@ from ._internal.context import ServiceContext as Context
 from ._internal.service import Service
 from ._internal.monitoring import monitor
 from ._internal.utils.http import Cookie
-from ._internal.yatai_client import YataiClient
+from ._internal.cloud import YataiClient
 from ._internal.service.loader import load
 
 # Framework specific modules, model management and IO APIs are lazily loaded upon import.
@@ -93,6 +93,7 @@ if TYPE_CHECKING:
     from . import exceptions  # BentoML exceptions
     from . import server  # Server API
     from . import monitoring  # Monitoring API
+    from . import cloud  # Cloud API
 
     # isort: on
 else:
@@ -147,6 +148,7 @@ else:
     server = _LazyLoader("bentoml.server", globals(), "bentoml.server")
     exceptions = _LazyLoader("bentoml.exceptions", globals(), "bentoml.exceptions")
     monitoring = _LazyLoader("bentoml.monitoring", globals(), "bentoml.monitoring")
+    cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
 
     del _LazyLoader
 
@@ -166,6 +168,7 @@ __all__ = [
     "Model",
     "Runner",
     "Runnable",
+    "monitoring",
     "YataiClient",  # Yatai REST API Client
     # bento APIs
     "list",
@@ -211,6 +214,7 @@ __all__ = [
     "xgboost",
     # integrations
     "ray",
+    "cloud",
     "triton",
     "monitor",
     "load_config",

@@ -48,8 +48,8 @@ DEFAULT_INDEX_HTML = """\
     <!-- End Google Tag Manager -->
     <link rel="stylesheet" type="text/css" href="./static_content/swagger-ui.css" />
     <link rel="stylesheet" type="text/css" href="./static_content/index.css" />
-    <link rel="icon" type="image/png" href="./static_content/favicon-32x32.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="./static_content/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/png" href="./static_content/favicon-light-32x32.png" sizes="32x32" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/png" href="./static_content/favicon-dark-32x32.png" sizes="32x32" media="(prefers-color-scheme: dark)" />
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
@@ -312,7 +312,7 @@ class HTTPAppFactory(BaseAppFactory):
         api: InferenceAPI,
     ) -> t.Callable[[Request], t.Coroutine[t.Any, t.Any, Response]]:
         """
-        Create api function for flask route, it wraps around user defined API
+        Create api function for starlette route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
         from starlette.concurrency import run_in_threadpool  # type: ignore

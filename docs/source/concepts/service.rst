@@ -239,6 +239,8 @@ However, users can not access the inference context from the ``on_deployment`` h
 You can register multiple functions for each hook, and they will be executed in the order they are registered.
 All hooks support both synchronous and asynchronous functions.
 
+.. _io-descriptors:
+
 IO Descriptors
 --------------
 
@@ -413,7 +415,7 @@ logic:
     import numpy as np
     from pydantic import BaseModel
 
-    from bentoml.io import NumpyNdarray, Json
+    from bentoml.io import Multipart, NumpyNdarray, Json
 
     class FooModel(BaseModel):
         field1: int

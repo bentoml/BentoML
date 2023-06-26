@@ -153,9 +153,9 @@ For a more detailed user guide, check out the [BentoML Tutorial](https://docs.be
 
 ## Community
 
-BentoML is supporting billions of model runs per day and is used by thousands of organizations around the globe.
+BentoML supports billions of model runs per day and is used by thousands of organizations around the globe.
 
-Join our [Community Slack 💬](https://l.bentoml.com/join-slack) to connect with thousands of AI application developers using and contributing to BentoML.
+Join our [Community Slack 💬](https://l.bentoml.com/join-slack), where thousands of AI application developers contribute to the project and help each other.
 
 To report a bug or suggest a feature request, use [GitHub Issues](https://github.com/bentoml/BentoML/issues/new/choose).
 

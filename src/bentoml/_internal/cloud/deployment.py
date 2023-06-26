@@ -243,9 +243,7 @@ class Deployment:
                 [{"key": key, "value": value} for key, value in labels.items()]
                 if labels
                 else None,
-                [bentoml_cattr.unstructure(i) for i in base_schema.labels]
-                if base_schema.labels
-                else None,
+                [bentoml_cattr.unstructure(i) for i in base_schema.labels],
             ),
             "description": description,
         }
@@ -356,7 +354,7 @@ class Deployment:
                         k,
                     )
             _config["hpa_conf"] = _config_hpa_conf
-            if "runners" in _config:
+            if "runners" in _config and _config["runners"] is not None:
                 _runner_config = _config["runners"]
                 for runner in _runner_config.values():
                     _runner_hpa_conf = runner.get("hpa_conf", None)
@@ -376,7 +374,7 @@ class Deployment:
         if resource_instance:
             if "resource_instance" not in _config:
                 _config["resource_instance"] = resource_instance
-            if "runners" in _config:
+            if "runners" in _config and _config["runners"] is not None:
                 for runner in _config["runners"].values():
                     if "resource_instance" not in runner:
                         runner["resource_instance"] = resource_instance

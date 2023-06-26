@@ -48,7 +48,7 @@ packaging, and production deployment.</p>
 * Full Documentation: [docs.bentoml.com](https://docs.bentoml.com/en/latest/)
 * Tutorial: [Intro to BentoML](https://docs.bentoml.com/en/latest/tutorial.html)
 
-### Example AI Apps built with BentoML:
+### 🛠️ What you can build with BentoML
 
 * [OpenLLM](https://github.com/bentoml/OpenLLM) - An open platform for operating large language models (LLMs) in production.
 * [StableDiffusion](https://github.com/bentoml/stable-diffusion-bentoml) - Create your own text-to-image service with any diffusion models.
@@ -81,7 +81,7 @@ bentoml.transformers.save_model(
 View all models saved locally:
 
 ```bash
-> bentoml models list
+$ bentoml models list
  Tag                                     Module                Size        Creation Time
  text-classification-pipe:kn6mr3aubcuf…  bentoml.transformers  256.35 MiB  2023-05-17 14:36:25
 ```

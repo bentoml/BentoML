@@ -1,11 +1,11 @@
 <div align="center">
   <img src="https://github.com/bentoml/BentoML/assets/489344/398274c1-a572-477b-b115-52497a085496" width="180px" alt="bentoml" />
-  <h2 align="center">BentoML: The Unified AI Application Framework</h2>
+  <h1 align="center">BentoML: The Unified AI Application Framework</h1>
   <a href="https://pypi.org/project/bentoml"><img src="https://img.shields.io/pypi/v/bentoml.svg" alt="pypi_status" /></a>
   <a href="https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://github.com/bentoml/bentoml/workflows/CI/badge.svg?branch=main" alt="CI" /></a>
   <a href="https://twitter.com/bentomlai"><img src="https://badgen.net/badge/icon/@bentomlai/1DA1F2?icon=twitter&label=Follow%20Us" alt="Twitter" /></a>
   <a href="https://join.slack.bentoml.org"><img src="https://badgen.net/badge/Join/Community/cyan?icon=slack" alt="Community" /></a>
-  <p>BentoML is a framework for building <b>reliable, scalable and cost-efficient AI
+  <p>BentoML is a framework for building <b>reliable, scalable, and cost-efficient AI
 applications</b>. It comes with everything you need for model serving, application
 packaging, and production deployment.</p>
   <i><a href="https://l.bentoml.com/join-slack">👉 Join our Slack community!</a></i>
@@ -23,7 +23,7 @@ packaging, and production deployment.</p>
 ### 🍭 Simplify modern AI application architecture
 
 * Python-first! Effortlessly scale complex AI workloads.
-* Enable GPU inference [without the headache](https://docs.bentoml.com/en/latest/guides/gpu.html) - no code change and CUDA dependencies automatically configured
+* Enable GPU inference [without the headache](https://docs.bentoml.com/en/latest/guides/gpu.html).
 * [Compose multiple models](https://docs.bentoml.com/en/latest/guides/graph.html) to run concurrently or sequentially, [over multiple GPUs or Nodes](https://docs.bentoml.com/en/latest/guides/scheduling.html).
 * Natively integrates with [MLFlow](https://docs.bentoml.com/en/latest/integrations/mlflow.html), [LangChain](https://github.com/ssheng/BentoChain), [Kubeflow](https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/), [Triton](https://docs.bentoml.com/en/latest/integrations/triton.html), [Spark](https://docs.bentoml.com/en/latest/integrations/spark.html), [Ray](https://docs.bentoml.com/en/latest/reference/frameworks/ray.html), and many more to complete your production AI stack.
 
@@ -40,9 +40,7 @@ packaging, and production deployment.</p>
 * Deploy auto-generated container images anywhere docker runs.
 
 
----
-
-## Documentation
+# Documentation
 
 * Installation: `pip install bentoml`
 * Full Documentation: [docs.bentoml.com](https://docs.bentoml.com/en/latest/)
@@ -52,15 +50,16 @@ packaging, and production deployment.</p>
 
 * [OpenLLM](https://github.com/bentoml/OpenLLM) - An open platform for operating large language models (LLMs) in production.
 * [StableDiffusion](https://github.com/bentoml/stable-diffusion-bentoml) - Create your own text-to-image service with any diffusion models.
-* [CLIP-API-service](https://github.com/bentoml/CLIP-API-service) - Embed images and sentences, object recognition, visual reasoning, image classification and reverse image search.
-* [Transformer NLP Service](https://github.com/bentoml/transformers-nlp-service) - Online inference API for Transformer models.
+* [CLIP-API-service](https://github.com/bentoml/CLIP-API-service) - Embed images and sentences, object recognition, visual reasoning, image classification, and reverse image search.
+* [Transformer NLP Service](https://github.com/bentoml/transformers-nlp-service) - Online inference API for Transformer NLP models.
 * [Distributed TaskMatrix(Visual ChatGPT)](https://github.com/bentoml/Distributed-Visual-ChatGPT) - Scalable deployment for TaskMatrix from Microsoft.
 * [Fraud Detection](https://github.com/bentoml/Fraud-Detection-Model-Serving) - Online model serving with custom XGBoost model.
 * [OCR as a Service](https://github.com/bentoml/OCR-as-a-Service) - Turn any OCR models into online inference API endpoints.
+* [Replace Anything](https://github.com/yuqwu/Replace-Anything) - Combining the power of Segment Anything and Stable Diffusion.
 * Check out more examples [here](https://github.com/bentoml/BentoML/tree/main/examples).
 
 
-## Getting Started
+# Getting Started
 
 Save or import models in BentoML local model store:
 
@@ -154,9 +153,9 @@ For a more detailed user guide, check out the [BentoML Tutorial](https://docs.be
 
 ## Community
 
-BentoML is supporting billions of model runs per day and is used by thousands of organizations around the globe.
+BentoML supports billions of model runs per day and is used by thousands of organizations around the globe.
 
-Join our [Community Slack 💬](https://l.bentoml.com/join-slack) to connect with thousands of AI application developers using and contributing to BentoML.
+Join our [Community Slack 💬](https://l.bentoml.com/join-slack), where thousands of AI application developers contribute to the project and help each other.
 
 To report a bug or suggest a feature request, use [GitHub Issues](https://github.com/bentoml/BentoML/issues/new/choose).
 

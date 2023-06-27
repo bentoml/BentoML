@@ -171,10 +171,6 @@ class RemoteRunnerClient(RunnerHandle):
 
         inp_batch_dim = __bentoml_method.config.batch_dim[0]
 
-        payload_params = Params[Payload](*args, **kwargs).map(
-            functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
-        )
-
         headers = {
             "Bento-Name": component_context.bento_name,
             "Bento-Version": component_context.bento_version,

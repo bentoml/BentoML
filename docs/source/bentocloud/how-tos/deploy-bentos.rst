@@ -54,7 +54,7 @@ After your Bento is deployed, you can check the status of the deployment by:
 
 This will display various details about your deployment, such as its status, health, URL, number of instances, and more.
 
-.. image:: ../../_static/img/bentocloud/viewing-deployment.gif
+.. image:: ../../_static/img/bentocloud/viewing-deployment.png
 
 Interacting with Your Deployment
 ================================

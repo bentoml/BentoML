@@ -40,11 +40,9 @@ You can adjust timeouts and queue management strategies for each component of a 
 Queuing request allowing requests to be served more reliably, during cold-start and service overload.
 The figure below illustrates how a BentoML Service works.
 
-.. image:: ../../_static/img/bentocloud/scale-service.png
+.. image:: ../../_static/img/bentocloud/scale-traffic-control.png
 
 These settings can be found under the `Advanced` tab when creating a new deployment. This flexibility allows teams to align their service to meet business SLOs (Service Level Objectives) and engineering SLAs (Service Level Agreements).
-
-.. image:: ../../_static/img/bentocloud/scale-traffic-control.png
 
 ~~~~~~~~~~~~~~~
 Instance Rightsizing

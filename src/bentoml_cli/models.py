@@ -260,11 +260,16 @@ def add_model_management_commands(cli: Group) -> None:
         default=DEFAULT_BENTO_BUILD_FILE,
         help="Path to bentofile. Default to 'bentofile.yaml'",
     )
-    def pull(model_tag: str | None, force: bool, context: str, bentofile: str):  # type: ignore (not accessed)
+    @click.pass_context
+    def pull(ctx: click.Context, model_tag: str | None, force: bool, context: str, bentofile: str):  # type: ignore (not accessed)
         """Pull Model from a yatai server. If model_tag is not provided,
         it will pull models defined in bentofile.yaml.
         """
+        from click.core import ParameterSource
+
         if model_tag is not None:
+            if ctx.get_parameter_source("bentofile") != ParameterSource.DEFAULT:
+                click.echo("-f bentofile is ignored when model_tag is provided")
             cloud_client.pull_model(model_tag, force=force, context=context)
             return
 

@@ -1,26 +1,26 @@
 from __future__ import annotations
 
-import asyncio
-import inspect
-import logging
 import os
 import sys
 import typing as t
-from concurrent.futures import ThreadPoolExecutor
-from functools import partial
+import asyncio
+import inspect
+import logging
 from typing import TYPE_CHECKING
+from functools import partial
+from concurrent.futures import ThreadPoolExecutor
 
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
-from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ...grpc.utils import import_generated_stubs
-from ...grpc.utils import import_grpc
-from ...grpc.utils import load_from_file
-from ..configuration.containers import BentoMLContainer
-from ..context import ServiceContext as Context
 from ..utils import LazyLoader
 from ..utils import cached_property
+from ..context import ServiceContext as Context
+from ...grpc.utils import import_grpc
+from ...grpc.utils import load_from_file
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +31,9 @@ if TYPE_CHECKING:
     from grpc_health.v1 import health_pb2 as pb_health
     from grpc_health.v1 import health_pb2_grpc as services_health
 
-    from ...grpc.types import Interceptors
-    from ..service import Service
     from ..types import LifecycleHook
+    from ..service import Service
+    from ...grpc.types import Interceptors
 
 else:
     grpc, aio = import_grpc()

@@ -5,10 +5,10 @@ import logging
 
 import attr
 import yaml
-from ..utils import bentoml_cattr
 from simple_di import inject
 from simple_di import Provide
 
+from ..utils import bentoml_cattr
 from .client import RestApiClient
 from ...exceptions import CloudRESTApiClientError
 from ..configuration.containers import BentoMLContainer

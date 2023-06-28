@@ -1,30 +1,30 @@
 from __future__ import annotations
 
-import asyncio
-import functools
-import logging
 import os
 import sys
 import typing as t
+import asyncio
+import logging
+import functools
 
-from simple_di import Provide
 from simple_di import inject
-from starlette.exceptions import HTTPException
+from simple_di import Provide
 from starlette.responses import PlainTextResponse
+from starlette.exceptions import HTTPException
 
-from ...exceptions import BentoMLException
-from ..configuration.containers import BentoMLContainer
 from ..context import trace_context
+from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
+from ..configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
-    from opentelemetry.sdk.trace import Span
-    from starlette.applications import Starlette
-    from starlette.middleware import Middleware
+    from starlette.routing import BaseRoute
     from starlette.requests import Request
     from starlette.responses import Response
-    from starlette.routing import BaseRoute
+    from starlette.middleware import Middleware
+    from starlette.applications import Starlette
+    from opentelemetry.sdk.trace import Span
 
     from ..service.inference_api import InferenceAPI
 
@@ -315,8 +315,8 @@ class HTTPAppFactory(BaseAppFactory):
         Create api function for starlette route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
-        from starlette.concurrency import run_in_threadpool  # type: ignore
         from starlette.responses import JSONResponse
+        from starlette.concurrency import run_in_threadpool  # type: ignore
 
         from ..utils import is_async_callable
 

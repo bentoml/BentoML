@@ -1,29 +1,29 @@
 from __future__ import annotations
 
-import importlib
-import inspect
-import logging
 import os
 import sys
 import typing as t
-from functools import partial
+import inspect
+import logging
+import importlib
 from typing import TYPE_CHECKING
+from functools import partial
 
 import attr
 
 from bentoml.exceptions import BentoMLException
 
-from ...exceptions import NotFound
-from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ...grpc.utils import import_grpc
-from ..bento.bento import get_default_svc_readme
-from ..context import ServiceContext as Context
-from ..io_descriptors import IODescriptor
-from ..models import Model
-from ..runner.runner import AbstractRunner
-from ..runner.runner import Runner
 from ..tag import Tag
+from ..models import Model
+from ..context import ServiceContext as Context
+from ...exceptions import NotFound
+from ...grpc.utils import import_grpc
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ..bento.bento import get_default_svc_readme
 from .inference_api import InferenceAPI
+from ..runner.runner import Runner
+from ..runner.runner import AbstractRunner
+from ..io_descriptors import IODescriptor
 
 if TYPE_CHECKING:
     import grpc
@@ -31,10 +31,10 @@ if TYPE_CHECKING:
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
 
-    from ...grpc.v1 import service_pb2_grpc as services
     from .. import external_typing as ext
     from ..bento import Bento
     from ..types import LifecycleHook
+    from ...grpc.v1 import service_pb2_grpc as services
     from .openapi.specification import OpenAPISpecification
 
     ContextFunc = t.Callable[[Context], None | t.Coroutine[t.Any, t.Any, None]]
@@ -145,9 +145,9 @@ class Service:
         import fs
 
         from bentoml._internal.bento.bento import Bento
-        from bentoml._internal.configuration.containers import BentoMLContainer
         from bentoml._internal.service.loader import load
         from bentoml._internal.service.loader import load_bento_dir
+        from bentoml._internal.configuration.containers import BentoMLContainer
 
         serialization_strategy = BentoMLContainer.serialization_strategy.get()
 

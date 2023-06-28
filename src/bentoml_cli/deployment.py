@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import click
 import typing as t
+
+import click
 
 if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
@@ -13,10 +14,13 @@ else:
 
 def add_deployment_command(cli: click.Group) -> None:
     import json
-    from bentoml_cli.utils import BentoMLCommandGroup
-    from bentoml._internal.configuration.containers import BentoMLContainer
-    from bentoml._internal.utils import rich_console as console, bentoml_cattr
+
     from rich.table import Table
+
+    from bentoml_cli.utils import BentoMLCommandGroup
+    from bentoml._internal.utils import rich_console as console
+    from bentoml._internal.utils import bentoml_cattr
+    from bentoml._internal.configuration.containers import BentoMLContainer
 
     client = BentoMLContainer.bentocloud_client.get()
     output_option = click.option(

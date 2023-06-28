@@ -14,9 +14,9 @@ from click import ClickException
 from click.exceptions import UsageError
 
 if TYPE_CHECKING:
+    from click import Group
     from click import Option
     from click import Command
-    from click import Group
     from click import Context
     from click import Parameter
     from click import HelpFormatter

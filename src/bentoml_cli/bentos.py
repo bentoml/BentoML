@@ -317,9 +317,8 @@ def add_bento_management_commands(cli: Group):
     ):
         """Build a new Bento from current directory."""
         if output == "tag":
-            from bentoml._internal.configuration import set_quiet_mode
-
             from bentoml._internal.log import configure_logging
+            from bentoml._internal.configuration import set_quiet_mode
 
             set_quiet_mode(True)
             configure_logging()

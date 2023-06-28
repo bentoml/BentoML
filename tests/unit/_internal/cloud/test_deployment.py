@@ -1,38 +1,38 @@
 from __future__ import annotations
-from datetime import datetime
 
 import typing as t
+from datetime import datetime
 from unittest.mock import patch
-import pytest
-from bentoml._internal.cloud.schemas import (
-    BentoFullSchema,
-    BentoImageBuildStatus,
-    BentoManifestSchema,
-    BentoRepositorySchema,
-    BentoUploadStatus,
-    ClusterSchema,
-    DeploymentMode,
-    DeploymentRevisionSchema,
-    DeploymentRevisionStatus,
-    DeploymentSchema,
-    DeploymentStatus,
-    DeploymentTargetSchema,
-    ResourceType,
-)
-from bentoml._internal.cloud.schemas import DeploymentTargetType
-from bentoml._internal.cloud.schemas import UpdateDeploymentSchema
-from bentoml.cloud import BentoCloudClient
-from bentoml.cloud import Resource
-from bentoml._internal.cloud.schemas import CreateDeploymentSchema
-from bentoml._internal.cloud.schemas import CreateDeploymentTargetSchema
-from bentoml._internal.cloud.schemas import DeploymentTargetConfig
-from bentoml._internal.cloud.schemas import DeploymentTargetRunnerConfig
-from bentoml._internal.cloud.schemas import LabelItemSchema
-from bentoml._internal.cloud.schemas import DeploymentTargetCanaryRule
-from bentoml._internal.cloud.schemas import DeploymentTargetCanaryRuleType
-from bentoml._internal.cloud.schemas import DeploymentTargetHPAConf
-from bentoml._internal.cloud.schemas import UserSchema
+
 import attr
+import pytest
+
+from bentoml.cloud import Resource
+from bentoml.cloud import BentoCloudClient
+from bentoml._internal.cloud.schemas import UserSchema
+from bentoml._internal.cloud.schemas import ResourceType
+from bentoml._internal.cloud.schemas import ClusterSchema
+from bentoml._internal.cloud.schemas import DeploymentMode
+from bentoml._internal.cloud.schemas import BentoFullSchema
+from bentoml._internal.cloud.schemas import LabelItemSchema
+from bentoml._internal.cloud.schemas import DeploymentSchema
+from bentoml._internal.cloud.schemas import DeploymentStatus
+from bentoml._internal.cloud.schemas import BentoUploadStatus
+from bentoml._internal.cloud.schemas import BentoManifestSchema
+from bentoml._internal.cloud.schemas import DeploymentTargetType
+from bentoml._internal.cloud.schemas import BentoImageBuildStatus
+from bentoml._internal.cloud.schemas import BentoRepositorySchema
+from bentoml._internal.cloud.schemas import CreateDeploymentSchema
+from bentoml._internal.cloud.schemas import DeploymentTargetConfig
+from bentoml._internal.cloud.schemas import DeploymentTargetSchema
+from bentoml._internal.cloud.schemas import UpdateDeploymentSchema
+from bentoml._internal.cloud.schemas import DeploymentTargetHPAConf
+from bentoml._internal.cloud.schemas import DeploymentRevisionSchema
+from bentoml._internal.cloud.schemas import DeploymentRevisionStatus
+from bentoml._internal.cloud.schemas import DeploymentTargetCanaryRule
+from bentoml._internal.cloud.schemas import CreateDeploymentTargetSchema
+from bentoml._internal.cloud.schemas import DeploymentTargetRunnerConfig
+from bentoml._internal.cloud.schemas import DeploymentTargetCanaryRuleType
 
 if t.TYPE_CHECKING:
     from unittest.mock import MagicMock

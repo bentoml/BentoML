@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import re
 import os
+import re
 import shutil
 import typing as t
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import attr
 

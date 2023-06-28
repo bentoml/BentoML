@@ -1,27 +1,27 @@
 from __future__ import annotations
 
+import os
+import re
+import sys
+import random
+import socket
+import typing as t
 import asyncio
-import contextlib
-import functools
 import inspect
 import logging
-import os
-import random
-import re
-import socket
-import sys
-import typing as t
-from datetime import date
-from datetime import datetime
-from datetime import time
-from datetime import timedelta
+import functools
+import contextlib
+from typing import overload
+from typing import TYPE_CHECKING
 from pathlib import Path
 from reprlib import recursive_repr as _recursive_repr
-from typing import TYPE_CHECKING
-from typing import overload
+from datetime import date
+from datetime import time
+from datetime import datetime
+from datetime import timedelta
 
-import attr
 import fs
+import attr
 import fs.copy
 from rich.console import Console
 
@@ -30,17 +30,17 @@ if sys.version_info >= (3, 8):
 else:
     from backports.cached_property import cached_property
 
-from ..types import LazyType
 from .cattr import bentoml_cattr
+from ..types import LazyType
 from .lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
     from fs.base import FS
     from typing_extensions import Self
 
+    from ..types import PathType
     from ..types import MetadataDict
     from ..types import MetadataType
-    from ..types import PathType
 
     P = t.ParamSpec("P")
     F = t.Callable[P, t.Any]

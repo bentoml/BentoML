@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-import logging
 import sys
+import logging
 from typing import TYPE_CHECKING
 
 import anyio
 
-from ......exceptions import BentoMLException
-from ......exceptions import InvalidArgument
-from ......grpc.utils import grpc_status_code
-from ......grpc.utils import import_generated_stubs
-from ......grpc.utils import import_grpc
-from ......grpc.utils import validate_proto_fields
 from .....utils import is_async_callable
+from ......exceptions import InvalidArgument
+from ......exceptions import BentoMLException
+from ......grpc.utils import import_grpc
+from ......grpc.utils import grpc_status_code
+from ......grpc.utils import validate_proto_fields
+from ......grpc.utils import import_generated_stubs
 
 logger = logging.getLogger(__name__)
 

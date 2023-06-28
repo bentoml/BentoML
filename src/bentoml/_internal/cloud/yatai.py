@@ -16,6 +16,9 @@ from simple_di import inject
 from simple_di import Provide
 
 from ..tag import Tag
+from .base import CloudClient
+from .base import FILE_CHUNK_SIZE
+from .base import CallbackIOWrapper
 from ..bento import Bento
 from ..bento import BentoStore
 from ..utils import calc_dir_size
@@ -42,9 +45,6 @@ from .schemas import CreateBentoRepositorySchema
 from .schemas import CreateModelRepositorySchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import PreSignMultipartUploadUrlSchema
-from .base import CloudClient
-from .base import FILE_CHUNK_SIZE
-from .base import CallbackIOWrapper
 from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer

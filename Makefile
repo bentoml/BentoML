@@ -12,6 +12,7 @@ help: ## Show all Makefile targets
 .PHONY: format format-proto lint lint-proto type style clean
 format: ## Running code formatter: black and isort
 	@echo "(black) Formatting codebase..."
+	@pre-commit run --all-files isort
 	@pre-commit run --all-files black-jupyter
 format-proto: ## Running proto formatter: buf
 	@echo "Formatting proto files..."

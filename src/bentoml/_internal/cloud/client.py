@@ -12,6 +12,8 @@ from .schemas import ModelSchema
 from .schemas import schema_to_json
 from .schemas import DeploymentSchema
 from .schemas import schema_from_json
+from .schemas import ClusterFullSchema
+from .schemas import ClusterListSchema
 from .schemas import CreateBentoSchema
 from .schemas import CreateModelSchema
 from .schemas import UpdateBentoSchema
@@ -29,8 +31,6 @@ from .schemas import BentoWithRepositoryListSchema
 from .schemas import CompleteMultipartUploadSchema
 from .schemas import ModelWithRepositoryListSchema
 from .schemas import PreSignMultipartUploadUrlSchema
-from .schemas import ClusterListSchema
-from .schemas import ClusterFullSchema
 from ...exceptions import CloudRESTApiClientError
 from ..configuration import BENTOML_VERSION
 

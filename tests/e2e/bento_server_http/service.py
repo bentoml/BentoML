@@ -13,20 +13,20 @@ from PIL.Image import fromarray
 from starlette.requests import Request
 
 import bentoml
-from bentoml.io import JSON
 from bentoml.io import File
+from bentoml.io import JSON
+from bentoml.io import Text
 from bentoml.io import Image
 from bentoml.io import Multipart
 from bentoml.io import NumpyNdarray
 from bentoml.io import PandasDataFrame
-from bentoml.io import Text
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
+    from starlette.types import Send
+    from starlette.types import Scope
     from starlette.types import ASGIApp
     from starlette.types import Receive
-    from starlette.types import Scope
-    from starlette.types import Send
 
     from bentoml._internal.types import FileLike
     from bentoml._internal.types import JSONSerializable

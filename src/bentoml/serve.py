@@ -1,29 +1,29 @@
 from __future__ import annotations
 
-import asyncio
-import contextlib
-import json
-import logging
 import os
-import shutil
 import sys
-import tempfile
+import json
+import shutil
 import typing as t
-from functools import partial
+import asyncio
+import logging
+import tempfile
+import contextlib
 from pathlib import Path
+from functools import partial
 
 import psutil
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
 from bentoml._internal.log import SERVER_LOGGING_CONFIG
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.runner.runner import Runner
-from ._internal.utils import experimental
-from ._internal.utils import is_async_callable
 from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
+from ._internal.utils import experimental
+from ._internal.utils import is_async_callable
+from ._internal.runner.runner import Runner
+from ._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     from circus.watcher import Watcher
@@ -267,11 +267,11 @@ def serve_http_production(
     from circus.sockets import CircusSocket
 
     from . import load
-    from ._internal.configuration.containers import BentoMLContainer
     from ._internal.utils import reserve_free_port
-    from ._internal.utils.analytics import track_serve
-    from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.uri import path_to_uri
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
+    from ._internal.configuration.containers import BentoMLContainer
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
@@ -538,9 +538,9 @@ def serve_grpc_production(
 
     from . import load
     from ._internal.utils import reserve_free_port
-    from ._internal.utils.analytics import track_serve
-    from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.uri import path_to_uri
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)

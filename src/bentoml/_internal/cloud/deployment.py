@@ -5,9 +5,11 @@ import typing as t
 import logging
 
 import attr
+from deepmerge.merger import Merger
 
 from ..tag import Tag
 from ..utils import bentoml_cattr
+from ..utils import first_not_none
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
 from .schemas import DeploymentMode
@@ -21,8 +23,6 @@ from .schemas import UpdateDeploymentSchema
 from .schemas import DeploymentTargetHPAConf
 from .schemas import DeploymentTargetCanaryRule
 from .schemas import DeploymentTargetRunnerConfig
-from deepmerge.merger import Merger
-from ..utils import first_not_none
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)

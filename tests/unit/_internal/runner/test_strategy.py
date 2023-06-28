@@ -8,8 +8,8 @@ if t.TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch
 
 import bentoml
-from bentoml._internal.resource import get_resource
 from bentoml._internal.runner import strategy
+from bentoml._internal.resource import get_resource
 from bentoml._internal.runner.strategy import DefaultStrategy
 
 

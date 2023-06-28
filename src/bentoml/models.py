@@ -19,9 +19,9 @@ from ._internal.utils.analytics import ModelSaveEvent
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
+    from ._internal.cloud import BentoCloudClient
     from ._internal.models import ModelStore
     from ._internal.models.model import ModelSignaturesType
-    from ._internal.cloud import BentoCloudClient
 
 
 @inject

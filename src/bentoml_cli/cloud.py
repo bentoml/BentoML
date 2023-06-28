@@ -1,20 +1,21 @@
 from __future__ import annotations
 
-import click
 import json
+
+import click
 import click_option_group as cog
 
 
 def add_cloud_command(cli: click.Group) -> click.Group:
     from bentoml_cli.utils import BentoMLCommandGroup
     from bentoml.exceptions import CLIException
-    from bentoml._internal.configuration import get_quiet_mode
     from bentoml._internal.utils import bentoml_cattr
     from bentoml._internal.cloud.client import RestApiClient
     from bentoml._internal.cloud.config import add_context
+    from bentoml._internal.cloud.config import CloudClientConfig
     from bentoml._internal.cloud.config import CloudClientContext
     from bentoml._internal.cloud.config import default_context_name
-    from bentoml._internal.cloud.config import CloudClientConfig
+    from bentoml._internal.configuration import get_quiet_mode
 
     @cli.group(name="cloud", aliases=["yatai"], cls=BentoMLCommandGroup)
     def cloud():

@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-import logging
 import sys
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 import anyio
 
-from ......exceptions import BentoMLException
-from ......exceptions import InvalidArgument
-from ......grpc.utils import grpc_status_code
-from ......grpc.utils import import_generated_stubs
-from ......grpc.utils import import_grpc
-from ......grpc.utils import validate_proto_fields
 from .....utils import LazyLoader
 from .....utils import is_async_callable
+from ......exceptions import InvalidArgument
+from ......exceptions import BentoMLException
+from ......grpc.utils import import_grpc
+from ......grpc.utils import grpc_status_code
+from ......grpc.utils import validate_proto_fields
+from ......grpc.utils import import_generated_stubs
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +24,9 @@ if TYPE_CHECKING:
     import grpc
     from google.protobuf import struct_pb2
 
-    from ......grpc.types import BentoServicerContext
     from ......grpc.v1 import service_pb2 as pb
     from ......grpc.v1 import service_pb2_grpc as services
+    from ......grpc.types import BentoServicerContext
     from .....service.service import Service
 else:
     grpc, _ = import_grpc()

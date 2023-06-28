@@ -29,6 +29,7 @@ from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
 from ..types import MetadataDict
+from ..types import ModelSignatureDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
@@ -37,7 +38,6 @@ from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
-from ..types import ModelSignatureDict
 
 if t.TYPE_CHECKING:
     from ..types import PathType

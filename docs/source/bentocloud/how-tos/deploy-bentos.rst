@@ -58,7 +58,7 @@ After your Bento is deployed, do the following to check the status of the Deploy
 1. Navigate to the `Deployments <http://cloud.bentoml.com/deployment>`_ section.
 2. Select the desired Deployment. On the Deployment details page, view the Deployment information, such as status, events, replicas, and revisions.
 
-   .. image:: ../../_static/img/bentocloud/viewing-deployment.gif
+   .. image:: ../../_static/img/bentocloud/viewing-deployment.png
 
 3. To update the Deployment, click **Update** in the upper-right corner, update your desired field, and click **Submit**.
 

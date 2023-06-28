@@ -74,7 +74,7 @@ Bento can be deployed in two ways: as an Online Service or as a Serverless Funct
 
 In this tutorial, we'll proceed with the "Online Service" mode:
 
-.. image:: ../../_static/img/bentocloud/ship-deploy-bento.png
+.. image:: ../../_static/img/bentocloud/create-deployment.png
 
 Please follow these steps:
 

@@ -124,8 +124,8 @@ class Bento(StoreItem):
 
     _info: BentoInfo
 
-    _model_store: t.Optional[ModelStore] = None
-    _doc: t.Optional[str] = None
+    _model_store: ModelStore | None = None
+    _doc: str | None = None
 
     @staticmethod
     def _export_ext() -> str:

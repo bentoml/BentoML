@@ -11,7 +11,7 @@ import collections
 import attr
 import numpy as np
 
-from ..utils import cached_property
+from functools import cached_property
 from ..utils.alg import TokenBucket
 
 logger = logging.getLogger(__name__)

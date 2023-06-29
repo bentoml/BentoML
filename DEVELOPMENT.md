@@ -10,7 +10,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 <details><summary><h3>with the Command Line</h3></summary>
 
-1. Make sure to have [Git](https://git-scm.com/), [pip](https://pip.pypa.io/en/stable/installation/), and [Python3.7+](https://www.python.org/downloads/) installed.
+1. Make sure to have [Git](https://git-scm.com/), [pip](https://pip.pypa.io/en/stable/installation/), and [Python3.8+](https://www.python.org/downloads/) installed.
 
    Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using a UNIX-based system for a better developer experience.
    If you don't want to use `make` then please refer to the [Makefile](./Makefile) for specific commands on a given make target.
@@ -70,7 +70,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 1. Confirm that you have the following installed:
 
-   - [Python3.7+](https://www.python.org/downloads/)
+   - [Python3.8+](https://www.python.org/downloads/)
    - VS Code with the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) extensions
 
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).

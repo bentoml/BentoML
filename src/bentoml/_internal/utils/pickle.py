@@ -1,13 +1,9 @@
 from __future__ import annotations
 
 import io
-import sys
 import typing as t
 
-if sys.version_info < (3, 8):
-    import pickle5 as pickle
-else:
-    import pickle
+import pickle
 
 
 # Pickle protocol 5 with out-of-band data. ref: https://peps.python.org/pep-0574/

@@ -58,7 +58,7 @@ def _convert_python_version(py_version: str | None) -> str | None:
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '
-            f"version must follow standard python semver format, e.g. 3.7.10 ",
+            "version must follow standard python semver format, e.g. 3.8.15",
         )
     major, minor = match.groups()
     target_python_version = f"{major}.{minor}"

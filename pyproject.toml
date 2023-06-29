@@ -270,7 +270,7 @@ force-single-line = true
 known-first-party = ["bentoml"]
 
 [tool.pyright]
-pythonVersion = "3.11"
+pythonVersion = "3.12"
 include = ["src/", "examples/", "tests/"]
 exclude = [
     'src/bentoml/_version.py',

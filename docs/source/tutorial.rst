@@ -50,7 +50,7 @@ There are three ways to complete this tutorial:
       » git clone --depth=1 git@github.com:bentoml/BentoML.git
       » cd bentoml/examples/quickstart/
 
-   BentoML supports Linux, Windows and MacOS. You will need Python 3.7 or above to run
+   BentoML supports Linux, Windows and MacOS. You will need Python 3.8 or above to run
    this tutorial. We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_
    to create an isolated local environment. However this is not required.
 

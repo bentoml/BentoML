@@ -8,6 +8,7 @@ import inspect
 import logging
 from typing import TYPE_CHECKING
 from functools import partial
+from functools import cached_property
 from concurrent.futures import ThreadPoolExecutor
 
 from simple_di import inject

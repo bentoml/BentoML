@@ -5,10 +5,7 @@ import string
 from sys import version_info as pyver
 from typing import TYPE_CHECKING
 
-try:
-    import importlib.metadata as importlib_metadata
-except ModuleNotFoundError:
-    import importlib_metadata
+import importlib.metadata
 
 import pytest
 
@@ -21,7 +18,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
-BENTOML_VERSION: str = importlib_metadata.version("bentoml")
+BENTOML_VERSION: str = importlib.metadata.version("bentoml")
 
 
 def createfile(filepath: str) -> str:

@@ -197,6 +197,7 @@ class RunnerAppFactory(BaseAppFactory):
         server_str = f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}"
 
         if batching:
+
             async def infer_batch(
                 params_list: t.Sequence[Params[t.Any]],
             ) -> list[Payload] | list[tuple[Payload, ...]]:
@@ -243,6 +244,7 @@ class RunnerAppFactory(BaseAppFactory):
 
             infer = self.dispatchers[runner_method.name](infer_batch)
         else:
+
             async def infer_single(paramss: t.Sequence[Params[t.Any]]):
                 assert len(paramss) == 1
 
@@ -254,7 +256,6 @@ class RunnerAppFactory(BaseAppFactory):
                 return (payload,)
 
             infer = self.dispatchers[runner_method.name](infer_single)
-
 
         async def _request_handler(request: Request) -> Response:
             assert self._is_ready

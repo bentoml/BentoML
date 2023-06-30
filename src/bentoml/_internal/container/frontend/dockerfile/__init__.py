@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 # Python supported versions
-SUPPORTED_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+SUPPORTED_PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
 # CUDA supported versions
 SUPPORTED_CUDA_VERSIONS = [
     "12.0.0",
@@ -63,7 +63,7 @@ SUPPORTED_RELEASE_TYPES = ["python", "miniconda", "cuda"]
 # versions and list of supported CUDA versions.
 CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
     "amazonlinux": {
-        "supported_python_versions": ["3.7", "3.8"],
+        "supported_python_versions": ["3.8"],
         "supported_cuda_versions": None,
         "python": {
             "image": "amazonlinux:2",

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 import random
 import socket
 import typing as t
@@ -11,6 +10,7 @@ import inspect
 import logging
 import functools
 import contextlib
+from functools import cached_property
 from typing import overload
 from typing import TYPE_CHECKING
 from pathlib import Path
@@ -25,11 +25,7 @@ import attr
 import fs.copy
 from rich.console import Console
 
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-else:
-    from backports.cached_property import cached_property
-
+from ..types import LazyType
 from .cattr import bentoml_cattr
 from ..types import LazyType
 from .lazy_loader import LazyLoader
@@ -54,7 +50,6 @@ rich_console = Console(theme=None)
 
 __all__ = [
     "bentoml_cattr",
-    "cached_property",
     "cached_contextmanager",
     "reserve_free_port",
     "LazyLoader",

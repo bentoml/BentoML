@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "bentoml"
 description = "BentoML: The Unified Model Serving Framework"
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = ["MLOps", "AI", "BentoML", "Model Serving", "Model Deployment"]
 license = { text = "Apache-2.0" }
 authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
@@ -15,7 +15,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -64,11 +63,6 @@ dependencies = [
     "starlette>=0.13.5,<0.29",
     "uvicorn",
     "watchfiles>=0.15.0",
-    "backports.cached-property;python_version<'3.8'",
-    "backports.shutil_copytree;python_version<'3.8'",
-    "importlib-metadata;python_version<'3.8'",
-    "singledispatchmethod;python_version<'3.8'",
-    "pickle5;python_version<'3.8'",
 ]
 dynamic = ["version"]
 

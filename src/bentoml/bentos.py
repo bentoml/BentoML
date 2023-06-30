@@ -31,6 +31,7 @@ if t.TYPE_CHECKING:
     from ._internal.bento.build_config import CondaOptions
     from ._internal.bento.build_config import DockerOptions
     from ._internal.bento.build_config import PythonOptions
+    from ._internal.bento.build_config import ModelSpec
 
 
 logger = logging.getLogger(__name__)
@@ -278,6 +279,7 @@ def build(
     docker: DockerOptions | dict[str, t.Any] | None = None,
     python: PythonOptions | dict[str, t.Any] | None = None,
     conda: CondaOptions | dict[str, t.Any] | None = None,
+    models: t.List[ModelSpec | str | dict[str, t.Any]] | None = None,
     version: str | None = None,
     build_ctx: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
@@ -355,6 +357,7 @@ def build(
         docker=docker,
         python=python,
         conda=conda,
+        models=models or [],
     )
 
     build_args = ["bentoml", "build"]

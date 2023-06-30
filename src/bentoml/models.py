@@ -38,7 +38,10 @@ def get(
     tag: t.Union[Tag, str],
     *,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    model_aliases: t.Dict[str, str] = Provide[BentoMLContainer.model_aliases],
 ) -> "Model":
+    if isinstance(tag, str) and tag in model_aliases:
+        tag = model_aliases[tag]
     return _model_store.get(tag)
 
 

@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 
 import requests
 
-from .schemas import UserSchema
+from .schemas import UserSchema, schema_from_object
 from .schemas import BentoSchema
 from .schemas import ModelSchema
 from .schemas import schema_to_json
@@ -50,6 +50,7 @@ class RestApiClient:
         )
 
     def _is_not_found(self, resp: requests.Response) -> bool:
+        # We used to return 400 for record not found, handle both cases
         return (
             resp.status_code == 404
             or resp.status_code == 400
@@ -510,3 +511,18 @@ class RestApiClient:
             return None
         self._check_resp(resp)
         return schema_from_json(resp.text, ClusterFullSchema)
+
+    def get_latest_model(
+        self, model_repository_name: str, query: str | None = None
+    ) -> ModelSchema | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/model_repositories/{model_repository_name}/models",
+        )
+        params = {"start": 0, "count": 10}
+        if query:
+            params["q"] = query
+        resp = self.session.get(url, params=params)
+        self._check_resp(resp)
+        models = resp.json()["items"]
+        return schema_from_object(models[0], ModelSchema) if models else None

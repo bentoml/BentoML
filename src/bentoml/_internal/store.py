@@ -144,7 +144,8 @@ class Store(ABC, t.Generic[Item]):
         counts = matches.count().directories
         if counts == 0:
             raise NotFound(
-                f"{self._item_type.get_typename()} '{tag}' is not found in BentoML store {self._fs}"
+                f"{self._item_type.get_typename()} '{tag}' is not found in BentoML store {self._fs}, "
+                "you may need to run `bentoml models pull` first"
             )
         elif counts == 1:
             match = next(iter(matches))

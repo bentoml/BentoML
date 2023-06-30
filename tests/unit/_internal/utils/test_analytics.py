@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 import pytest
-from prometheus_client.parser import \
-    text_string_to_metric_families  # type: ignore (no prometheus types)
+from prometheus_client.parser import (
+    text_string_to_metric_families,
+)  # type: ignore (no prometheus types)
 from schema import And, Or, Schema
 
 import bentoml

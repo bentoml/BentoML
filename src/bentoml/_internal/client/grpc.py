@@ -11,7 +11,7 @@ from packaging.version import parse
 from . import Client
 from .. import io_descriptors
 from ..utils import LazyLoader
-from ..utils import cached_property
+from functools import cached_property
 from ..service import Service
 from ...exceptions import BentoMLException
 from ...grpc.utils import import_grpc

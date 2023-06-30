@@ -6,7 +6,7 @@ Installation
 Install BentoML alongside with whichever deep learning library you are working with, and you are ready to go!
 
 * BentoML supports Linux/UNIX, Windows, and MacOS.
-* BentoML requires Python 3.7 or above.
+* BentoML requires Python 3.8 or above.
 
 .. code-block::
 
@@ -46,7 +46,7 @@ You may want an editable install if:
    Make sure that you have the following requirements:
     - `Git <https://git-scm.com/>`_
     - `pip <https://pip.pypa.io/en/stable/installation/>`_
-    - `Python3.7+ <https://www.python.org/downloads/>`_
+    - `Python3.8+ <https://www.python.org/downloads/>`_
 
 .. seealso::
 

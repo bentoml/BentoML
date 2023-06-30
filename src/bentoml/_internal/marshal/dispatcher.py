@@ -11,7 +11,7 @@ import collections
 import attr
 import numpy as np
 
-from ..utils import cached_property
+from functools import cached_property
 from ..utils.alg import TokenBucket
 
 logger = logging.getLogger(__name__)
@@ -256,8 +256,6 @@ class CorkDispatcher:
                     # fake wait as 0 for training requests
                     info.enqueue_time = now
                 self._loop.create_task(self.outbound_call(inputs_info))
-        except asyncio.CancelledError:
-            raise
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 
@@ -291,8 +289,6 @@ class CorkDispatcher:
                     "BentoML has detected that a service has a max latency that is likely too low for serving. If many 503 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
                 )
             logger.debug("Dispatcher optimizer training complete.")
-        except asyncio.CancelledError:
-            raise
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 
@@ -355,8 +351,6 @@ class CorkDispatcher:
                 self._sema.acquire()
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
                 self._loop.create_task(self.outbound_call(inputs_info))
-            except asyncio.CancelledError:
-                raise
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)
 
@@ -394,8 +388,6 @@ class CorkDispatcher:
                 wait=_time_start - inputs_info[-1].enqueue_time,
                 duration=time.time() - _time_start,
             )
-        except asyncio.CancelledError:
-            pass
         except Exception as e:  # pylint: disable=broad-except
             for input_info in inputs_info:
                 fut = input_info.future

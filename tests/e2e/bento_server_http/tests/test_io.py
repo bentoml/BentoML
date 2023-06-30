@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import sys
 import json
 from typing import TYPE_CHECKING
 
@@ -125,16 +124,14 @@ async def test_pandas(host: str):
         assert_data=b'[{"col1":202}]',
     )
 
-    # pyarrow only support python 3.7+
-    if sys.version_info >= (3, 7):
-        await async_request(
-            "POST",
-            f"http://{host}/predict_dataframe",
-            headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
-            data=df.to_parquet(),
-            assert_status=200,
-            assert_data=b'[{"col1":202}]',
-        )
+    await async_request(
+        "POST",
+        f"http://{host}/predict_dataframe",
+        headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
+        data=df.to_parquet(),
+        assert_status=200,
+        assert_data=b'[{"col1":202}]',
+    )
 
     await async_request(
         "POST",

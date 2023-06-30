@@ -5,10 +5,7 @@ import importlib.util
 
 from packaging import version
 
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
+import importlib.metadata
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +17,9 @@ def is_flax_available():
     )
     if _flax_available:
         try:
-            _jax_version = importlib_metadata.version("jax")
-            _flax_version = importlib_metadata.version("flax")
-        except importlib_metadata.PackageNotFoundError:
+            importlib.metadata.version("jax")
+            importlib.metadata.version("flax")
+        except importlib.metadata.PackageNotFoundError:
             _flax_available = False
     return _flax_available
 
@@ -31,8 +28,8 @@ def is_torch_available():
     _torch_available = importlib.util.find_spec("torch") is not None
     if _torch_available:
         try:
-            _torch_version = importlib_metadata.version("torch")
-        except importlib_metadata.PackageNotFoundError:
+            importlib.metadata.version("torch")
+        except importlib.metadata.PackageNotFoundError:
             _torch_available = False
     return _torch_available
 

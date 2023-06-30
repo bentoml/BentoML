@@ -74,7 +74,7 @@ def test_local_bento_strategy(build_bento: bentoml.Bento):
 @pytest.mark.usefixtures(
     "change_test_dir", "reset_serialization_strategy", "reload_service_instance"
 )
-def test_remote_bento_strategy_with_local_store_hit(build_bento:bentoml.Bento):
+def test_remote_bento_strategy_with_local_store_hit(build_bento: bentoml.Bento):
     bentoml.set_serialization_strategy("REMOTE_BENTO")
     svc = bentoml.load(build_bento.tag)
     del sys.modules["simplebento"]

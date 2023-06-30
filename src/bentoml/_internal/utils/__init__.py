@@ -9,7 +9,6 @@ import os
 import random
 import re
 import socket
-import sys
 import typing as t
 from datetime import date
 from datetime import datetime
@@ -24,11 +23,6 @@ import attr
 import fs
 import fs.copy
 from rich.console import Console
-
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-else:
-    from backports.cached_property import cached_property
 
 from ..types import LazyType
 from .cattr import bentoml_cattr
@@ -54,7 +48,6 @@ rich_console = Console(theme=None)
 
 __all__ = [
     "bentoml_cattr",
-    "cached_property",
     "cached_contextmanager",
     "reserve_free_port",
     "LazyLoader",

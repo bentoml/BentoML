@@ -20,7 +20,8 @@ from ...grpc.utils import load_from_file
 from ..configuration.containers import BentoMLContainer
 from ..context import ServiceContext as Context
 from ..utils import LazyLoader
-from ..utils import cached_property
+from functools import cached_property
+
 
 logger = logging.getLogger(__name__)
 

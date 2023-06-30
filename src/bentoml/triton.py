@@ -4,11 +4,13 @@ import typing as t
 import logging
 
 import attr
+
+from functools import cached_property
+
 from simple_di import inject as _inject
 from simple_di import Provide as _Provide
 
 from ._internal.utils import LazyLoader as _LazyLoader
-from ._internal.utils import cached_property as _cached_property
 from ._internal.configuration import get_debug_mode as _get_debug_mode
 from ._internal.runner.runner import RunnerMethod as _RunnerMethod
 from ._internal.runner.runner import AbstractRunner as _AbstractRunner
@@ -148,7 +150,7 @@ class _TritonRunner(_AbstractRunner):
             embedded=False,  # NOTE: TritonRunner shouldn't be used as embedded.
         )
 
-    @_cached_property
+    @cached_property
     def protocol_address(self):
         from ._internal.utils import reserve_free_port
 

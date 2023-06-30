@@ -159,7 +159,10 @@ html_theme_options = {
 
 html_title = "BentoML"
 html_static_path = ["_static"]
-html_css_files = ["css/custom.css", "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"]
+html_css_files = [
+    "css/custom.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css",
+]
 html_js_files = ["js/custom.js"]
 html_show_sphinx = False
 html_favicon = "_static/img/favicon-32x32.png"

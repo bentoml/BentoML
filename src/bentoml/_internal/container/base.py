@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import typing as t
 import logging
 import subprocess
@@ -16,10 +15,7 @@ import attr
 from ..utils import resolve_user_filepath
 from ...exceptions import BentoMLException
 
-if sys.version_info >= (3, 8):
-    from functools import singledispatchmethod
-else:
-    from singledispatchmethod import singledispatchmethod
+from functools import singledispatchmethod
 
 
 if TYPE_CHECKING:

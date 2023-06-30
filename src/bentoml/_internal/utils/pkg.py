@@ -3,13 +3,8 @@ from __future__ import annotations
 from types import ModuleType
 from typing import cast
 
-try:
-    import importlib.metadata as importlib_metadata
-    from importlib.metadata import PackageNotFoundError
-except ImportError:
-    import importlib_metadata
-    from importlib_metadata import PackageNotFoundError
-
+import importlib.metadata
+from importlib.metadata import PackageNotFoundError
 import importlib.util
 
 from packaging.version import Version
@@ -22,7 +17,7 @@ __all__ = [
     "find_spec",
 ]
 
-get_pkg_version = importlib_metadata.version
+get_pkg_version = importlib.metadata.version
 find_spec = importlib.util.find_spec
 
 

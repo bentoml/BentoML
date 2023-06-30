@@ -13,6 +13,7 @@ import yaml
 import fs.osfs
 import fs.errors
 import fs.mirror
+import fs.walk
 from fs.copy import copy_file
 from cattr.gen import override
 from cattr.gen import make_dict_structure_fn
@@ -27,7 +28,7 @@ from ..types import PathType
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
 from ..utils import normalize_labels_value
-from ..models import ModelStore
+from ..models import ModelStore, copy_model
 from ..runner import Runner
 from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
@@ -123,8 +124,8 @@ class Bento(StoreItem):
 
     _info: BentoInfo
 
-    _model_store: ModelStore
-    _doc: t.Optional[str] = None
+    _model_store: ModelStore | None = None
+    _doc: str | None = None
 
     @staticmethod
     def _export_ext() -> str:
@@ -133,12 +134,11 @@ class Bento(StoreItem):
     @__fs.validator  # type:ignore # attrs validators not supported by pyright
     def check_fs(self, _attr: t.Any, new_fs: FS):
         try:
-            new_fs.makedir("models", recreate=True)
-        except fs.errors.ResourceReadOnly:
-            # when we import a tarfile, it will be read-only, so just skip the step where we create
-            # the models folder.
-            pass
-        self._model_store = ModelStore(new_fs.opendir("models"))
+            models = new_fs.opendir("models")
+        except fs.errors.ResourceNotFound:
+            return
+        else:
+            self._model_store = ModelStore(models)
 
     def __init__(self, tag: Tag, bento_fs: "FS", info: "BentoInfo"):
         self._tag = tag
@@ -165,6 +165,7 @@ class Bento(StoreItem):
         build_config: BentoBuildConfig,
         version: t.Optional[str] = None,
         build_ctx: t.Optional[str] = None,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Bento:
         from ..service.loader import import_service
 
@@ -178,6 +179,7 @@ class Bento(StoreItem):
                 f"Bento build context {build_ctx} does not exist or is not a directory."
             )
 
+        BentoMLContainer.model_aliases.set(build_config.model_aliases)
         # This also verifies that svc can be imported correctly
         svc = import_service(
             build_config.service, working_dir=build_ctx, standalone_load=True
@@ -198,19 +200,22 @@ class Bento(StoreItem):
         ctx_fs = fs.open_fs(build_ctx)
 
         models: t.Set[Model] = set()
-        # Add all models required by the service
-        for model in svc.models:
-            models.add(model)
-        # Add all models required by service runners
-        for runner in svc.runners:
-            for model in runner.models:
+        resolved_aliases: t.Dict[Tag, str] = {}
+        if build_config.models:
+            for model_spec in build_config.models:
+                model = model_store.get(model_spec.tag)
                 models.add(model)
-
-        bento_fs.makedir("models", recreate=True)
-        bento_model_store = ModelStore(bento_fs.opendir("models"))
-        for model in models:
-            logger.info('Packing model "%s"', model.tag)
-            model.save(bento_model_store)
+                if model_spec.alias:
+                    resolved_aliases[model.tag] = model_spec.alias
+        else:
+            # XXX: legacy way to get models from service
+            # Add all models required by the service
+            for model in svc.models:
+                models.add(model)
+            # Add all models required by service runners
+            for runner in svc.runners:
+                for model in runner.models:
+                    models.add(model)
 
         # create ignore specs
         specs = BentoPathSpec(build_config.include, build_config.exclude)
@@ -269,7 +274,12 @@ class Bento(StoreItem):
                 tag=tag,
                 service=svc,  # type: ignore # attrs converters do not typecheck
                 labels=build_config.labels,
-                models=[BentoModelInfo.from_bento_model(m) for m in models],
+                models=[
+                    BentoModelInfo.from_bento_model(
+                        m, alias=resolved_aliases.get(m.tag)
+                    )
+                    for m in models
+                ],
                 runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners],
                 apis=[
                     BentoApiInfo.from_inference_api(api) for api in svc.apis.values()
@@ -306,6 +316,40 @@ class Bento(StoreItem):
 
         return res
 
+    def export(
+        self,
+        path: str,
+        output_format: t.Optional[str] = None,
+        *,
+        protocol: t.Optional[str] = None,
+        user: t.Optional[str] = None,
+        passwd: t.Optional[str] = None,
+        params: t.Optional[t.Dict[str, str]] = None,
+        subpath: t.Optional[str] = None,
+    ) -> str:
+        # copy the models to fs
+        models_dir = self._fs.makedir("models", recreate=True)
+        model_store = ModelStore(models_dir)
+        global_model_store = BentoMLContainer.model_store.get()
+        for model in self.info.models:
+            copy_model(
+                model.tag,
+                src_model_store=global_model_store,
+                target_model_store=model_store,
+            )
+        try:
+            return super().export(
+                path,
+                output_format,
+                protocol=protocol,
+                user=user,
+                passwd=passwd,
+                params=params,
+                subpath=subpath,
+            )
+        finally:
+            self._fs.removetree("models")
+
     @property
     def path(self) -> str:
         return self.path_of("/")
@@ -334,6 +378,7 @@ class Bento(StoreItem):
     def save(
         self,
         bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
         try:
             self.validate()
@@ -342,7 +387,20 @@ class Bento(StoreItem):
 
         with bento_store.register(self.tag) as bento_path:
             out_fs = fs.open_fs(bento_path, create=True, writeable=True)
+            if self._model_store is not None:
+                # Move models to the global model store, if any
+                for model in self._model_store.list():
+                    copy_model(
+                        model.tag,
+                        src_model_store=self._model_store,
+                        target_model_store=model_store,
+                    )
+                self._model_store = None
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
+            try:
+                out_fs.removetree("models")
+            except fs.errors.ResourceNotFound:
+                pass
             self._fs.close()
             self.__fs = out_fs
 
@@ -402,13 +460,17 @@ class BentoModelInfo:
     tag: Tag = attr.field(converter=Tag.from_taglike)
     module: str
     creation_time: datetime
+    alias: t.Optional[str] = None
 
     @classmethod
-    def from_bento_model(cls, bento_model: Model) -> BentoModelInfo:
+    def from_bento_model(
+        cls, bento_model: Model, alias: str | None = None
+    ) -> BentoModelInfo:
         return cls(
             tag=bento_model.tag,
             module=bento_model.info.module,
             creation_time=bento_model.info.creation_time,
+            alias=alias,
         )
 
 
@@ -517,6 +579,12 @@ bentoml_cattr.register_structure_hook_func(
         bentoml_cattr,
         name=override(omit=True),
         version=override(omit=True),
+    ),
+)
+bentoml_cattr.register_unstructure_hook(
+    BentoModelInfo,
+    make_dict_unstructure_fn(
+        BentoModelInfo, bentoml_cattr, alias=override(omit_if_default=True)
     ),
 )
 bentoml_cattr.register_unstructure_hook(

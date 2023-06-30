@@ -126,7 +126,7 @@ def add_start_command(cli: click.Group) -> None:
         port: int,
         host: str,
         backlog: int,
-        working_dir: str,
+        working_dir: str | None,
         api_workers: int | None,
         ssl_certfile: str | None,
         ssl_keyfile: str | None,

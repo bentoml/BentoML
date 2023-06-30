@@ -4,6 +4,7 @@ import io
 import typing as t
 import tarfile
 import tempfile
+import warnings
 import threading
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -79,6 +80,7 @@ class BentoCloudClient(CloudClient):
                 bento, upload_task_id, force=force, threads=threads, context=context
             )
 
+    @inject
     def _do_push_bento(
         self,
         bento: Bento,
@@ -87,6 +89,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ):
         yatai_rest_client = get_rest_api_client(context)
         name = bento.tag.name
@@ -95,7 +98,9 @@ class BentoCloudClient(CloudClient):
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
         model_tags = [m.tag for m in info.models]
-        model_store = bento._model_store  # type: ignore
+        local_model_store = bento._model_store
+        if local_model_store is not None and len(bento._model_store.list()) > 0:
+            model_store = local_model_store
         models = (model_store.get(name) for name in model_tags)
         with ThreadPoolExecutor(max_workers=max(len(model_tags), 1)) as executor:
 
@@ -428,6 +433,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         context: str | None = None,
+        global_model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Bento:
         try:
             bento = bento_store.get(tag)
@@ -546,12 +552,12 @@ class BentoCloudClient(CloudClient):
                         bento = Bento.from_fs(temp_fs)
                         for model_tag in remote_bento.manifest.models:
                             with self.spin(
-                                text=f'Copying model "{model_tag}" to bento'
+                                text=f'Copying model "{model_tag}" to model store'
                             ):
                                 copy_model(
                                     model_tag,
                                     src_model_store=model_store,
-                                    target_model_store=bento._model_store,  # type: ignore
+                                    target_model_store=global_model_store,
                                 )
                         bento = bento.save(bento_store)
                         self.log_progress.add_task(
@@ -849,6 +855,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         context: str | None = None,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
+        query: str | None = None,
     ) -> Model:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
@@ -860,6 +867,7 @@ class BentoCloudClient(CloudClient):
                 force=force,
                 model_store=model_store,
                 context=context,
+                query=query,
             )
 
     @inject
@@ -871,6 +879,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
         context: str | None = None,
+        query: str | None = None,
     ) -> Model:
         try:
             model = model_store.get(tag)
@@ -887,8 +896,18 @@ class BentoCloudClient(CloudClient):
         _tag = Tag.from_taglike(tag)
         name = _tag.name
         version = _tag.version
-        if version is None:
-            raise BentoMLException(f'Model "{_tag}" version cannot be None')
+        if version in (None, "latest"):
+            latest_model = yatai_rest_client.get_latest_model(name, query=query)
+            if latest_model is None:
+                raise BentoMLException(
+                    f'Model "{_tag}" not found on Yatai, you may need to specify a version'
+                )
+            version = latest_model.version
+        elif query:
+            warnings.warn(
+                "`query` is ignored when model version is specified", UserWarning
+            )
+
         with self.spin(text=f'Getting a presigned download url for model "{_tag}"..'):
             remote_model = yatai_rest_client.presign_model_download_url(name, version)
 

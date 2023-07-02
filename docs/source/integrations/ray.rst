@@ -20,6 +20,9 @@ The Ray Serve Deployment can then be deployed locally or to a Ray cluster using 
   serve run bento_ray:classifier
 
 
+Scaling Resources and Autoscaling
+---------------------------------
+
 The ``bentoml.ray.deployment`` API also supports configuring `scaling resources and autoscaling behaviors <https://docs.ray.io/en/latest/serve/scaling-and-resource-allocation.html>`_. In addition to the Bento tag, ``service_deployment_config`` and ``runner_deployment_config`` arguments can be passed in to configure the Deployments of API Server and Runners respectively.
 All parameters allowed in Ray Serve Deployment can be specified in the ``service_deployment_config`` and ``runner_deployment_config``. The Runner name should be specified as the key in the ``runner_deployment_config``.
 
@@ -52,6 +55,9 @@ All parameters allowed in Ray Serve Deployment can be specified in the ``service
     Arguments in the ``service_deployment_config`` and ``runner_deployment_config`` dictionaries are passed through directly to Deployment. Please refer to `Ray Serve Scaling and Resource Allocation <https://docs.ray.io/en/latest/serve/scaling-and-resource-allocation.html>`_ for the full list of supported arguments.
 
 
+Batching
+--------
+
 `Batching behaviors <https://docs.ray.io/en/latest/serve/tutorials/batch.html>`_ can be configured through the ``enable_batching`` and ``batching_config`` arguments. Using Runner name as the key, both ``max_batch_size`` and ``batch_wait_timeout_s`` can be configured for each Runner independently through ``batching_config``.
 
 .. code-block:: python
@@ -76,5 +82,8 @@ All parameters allowed in Ray Serve Deployment can be specified in the ``service
 
     Arguments in the ``batching_config`` dictionary are passed through directly to Ray Serve. Please refer to `Ray Serve Batching <https://docs.ray.io/en/latest/serve/tutorials/batch.html>`_ for the full list of supported arguments.
 
+
+Reference
+---------
 
 See the :ref:`API references <reference/frameworks/ray:Ray>` to learn more about the Ray Serve integration in BentoML.

@@ -14,28 +14,30 @@ packaging, and production deployment.</p>
 
 # Highlights
 
+
+### 🍱 Bento is the container for AI apps
+
+* Open standard and SDK for AI apps, pack your code, inference pipelines, model files, dependencies, and runtime configurations in a [Bento](https://docs.bentoml.com/en/latest/concepts/bento.html).
+* Auto-generate API servers, supporting REST API, gRPC, and long-running inference jobs.
+* Auto-generate Docker container images.
+
 ### 🏄 Freedom to build with any AI models
 
-* Import from any model hub or bring your own models built with frameworks like PyTorch, TensorFlow, Keras, Scikit-Learn, and XGBoost.
-* Support [all major ML frameworks](https://docs.bentoml.com/en/latest/frameworks/index.html), model formats, and model runtime.
+* Import from any model hub or bring your own models built with frameworks like PyTorch, TensorFlow, Keras, Scikit-Learn, XGBoost and [many more](https://docs.bentoml.com/en/latest/frameworks/index.html).
+* Native support for [LLM inference](https://github.com/bentoml/openllm/#bentoml), [generative AI](https://github.com/bentoml/stable-diffusion-bentoml), [embedding creation](https://github.com/bentoml/CLIP-API-service), and [multi-modal AI apps](https://github.com/bentoml/Distributed-Visual-ChatGPT).
 * Run and debug your BentoML apps locally on Mac, Windows, or Linux.
 
 ### 🍭 Simplify modern AI application architecture
 
 * Python-first! Effortlessly scale complex AI workloads.
 * Enable GPU inference [without the headache](https://docs.bentoml.com/en/latest/guides/gpu.html).
-* [Compose multiple models](https://docs.bentoml.com/en/latest/guides/graph.html) to run concurrently or sequentially, [over multiple GPUs or Nodes](https://docs.bentoml.com/en/latest/guides/scheduling.html).
-* Natively integrates with [MLFlow](https://docs.bentoml.com/en/latest/integrations/mlflow.html), [LangChain](https://github.com/ssheng/BentoChain), [Kubeflow](https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/), [Triton](https://docs.bentoml.com/en/latest/integrations/triton.html), [Spark](https://docs.bentoml.com/en/latest/integrations/spark.html), [Ray](https://docs.bentoml.com/en/latest/reference/frameworks/ray.html), and many more to complete your production AI stack.
+* [Compose multiple models](https://docs.bentoml.com/en/latest/guides/graph.html) to run concurrently or sequentially, over [multiple GPUs](https://docs.bentoml.com/en/latest/guides/scheduling.html) or [on a Kubernetes Cluster](https://github.com/bentoml/yatai).
+* Natively integrates with [MLFlow](https://docs.bentoml.com/en/latest/integrations/mlflow.html), [LangChain](https://github.com/ssheng/BentoChain), [Kubeflow](https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/), [Triton](https://docs.bentoml.com/en/latest/integrations/triton.html), [Spark](https://docs.bentoml.com/en/latest/integrations/spark.html), [Ray](https://docs.bentoml.com/en/latest/integrations/ray.html), and many more to complete your production AI stack.
 
-### 🍱 Bento is the container for AI apps
-
-* Open standard for building AI apps, pack your code, model files, dependencies, and runtime configurations in one [Bento “to-go”](https://docs.bentoml.com/en/latest/concepts/bento.html).
-* Auto-generate API servers, supporting REST API, gRPC, and long-running inference jobs.
-* Auto-generate Docker container images with just one command.
 
 ### 🚀 Deploy Anywhere
 
-* One-click deployment to [☁️ BentoCloud](https://bentoml.com/cloud), the Serverless platform made for hosting AI apps.
+* One-click deployment to [☁️ BentoCloud](https://bentoml.com/cloud), the Serverless platform made for hosting and operating AI apps.
 * Scalable BentoML deployment with [🦄️ Yatai](https://github.com/bentoml/yatai) on Kubernetes.
 * Deploy auto-generated container images anywhere docker runs.
 
@@ -56,6 +58,7 @@ packaging, and production deployment.</p>
 * [Fraud Detection](https://github.com/bentoml/Fraud-Detection-Model-Serving) - Online model serving with custom XGBoost model.
 * [OCR as a Service](https://github.com/bentoml/OCR-as-a-Service) - Turn any OCR models into online inference API endpoints.
 * [Replace Anything](https://github.com/yuqwu/Replace-Anything) - Combining the power of Segment Anything and Stable Diffusion.
+* [DeepFloyd IF Multi-GPU serving](https://github.com/bentoml/IF-multi-GPUs-demo) - Serve IF models easily across multiple GPUs
 * Check out more examples [here](https://github.com/bentoml/BentoML/tree/main/examples).
 
 
@@ -82,8 +85,9 @@ View all models saved locally:
 
 ```bash
 $ bentoml models list
- Tag                                     Module                Size        Creation Time
- text-classification-pipe:kn6mr3aubcuf…  bentoml.transformers  256.35 MiB  2023-05-17 14:36:25
+
+Tag                                     Module                Size        Creation Time
+text-classification-pipe:kn6mr3aubcuf…  bentoml.transformers  256.35 MiB  2023-05-17 14:36:25
 ```
 
 Define how your model runs in a `service.py` file:
@@ -97,7 +101,7 @@ svc = bentoml.Service("text-classification-service", runners=[model_runner])
 
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.JSON())
 async def classify(text: str) -> str:
-    results = await model_runner.async_run(text)
+    results = await model_runner.async_run([text])
     return results[0]
 ```
 

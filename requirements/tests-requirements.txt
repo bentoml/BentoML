@@ -17,4 +17,4 @@ protobuf<4.0dev
 grpcio
 grpcio-health-checking
 opentelemetry-instrumentation-grpc==0.38b0
-Pillow<10
+Pillow<11

@@ -285,7 +285,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install .
-          pip install easyocr torch requests Pillow
+          pip install easyocr torch requests
           pip install -r requirements/tests-requirements.txt
       - name: Run tests and generate coverage report
         run: |

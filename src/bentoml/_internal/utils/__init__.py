@@ -29,6 +29,7 @@ from ..types import LazyType
 from .cattr import bentoml_cattr
 from ..types import LazyType
 from .lazy_loader import LazyLoader
+from .uri import encode_path_for_uri
 
 if TYPE_CHECKING:
     from fs.base import FS
@@ -267,7 +268,7 @@ def copy_file_to_fs_folder(
     """
     src_path = os.path.realpath(os.path.expanduser(src_path))
     dir_name, file_name = os.path.split(src_path)
-    src_fs = fs.open_fs(dir_name)
+    src_fs = fs.open_fs(encode_path_for_uri(dir_name))
     dst_filename = file_name if dst_filename is None else dst_filename
     dst_path = fs.path.join(dst_folder_path, dst_filename)
     dst_fs.makedir(dst_folder_path, recreate=True)

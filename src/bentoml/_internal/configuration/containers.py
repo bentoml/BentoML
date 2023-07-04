@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import math
+from pathlib import Path
 import uuid
 import typing as t
 import logging
@@ -33,6 +34,7 @@ if TYPE_CHECKING:
     from fs.base import FS
 
     from .. import external_typing as ext
+    from ..bento import BentoStore
     from ..models import ModelStore
     from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
@@ -145,7 +147,7 @@ class BentoMLConfiguration:
             "resources",
             "logging",
             "metrics",
-            "timeout",
+            "traffic",
             "workers_per_resource",
         ]
         global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
@@ -172,6 +174,7 @@ class BentoMLConfiguration:
 @dataclass
 class _BentoMLContainerClass:
     config = providers.Configuration()
+    model_aliases = providers.Static({})
 
     @providers.SingletonFactory
     @staticmethod
@@ -220,7 +223,7 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def bento_store(base_dir: str = Provide[bento_store_dir]):
+    def bento_store(base_dir: str = Provide[bento_store_dir]) -> BentoStore:
         from ..bento import BentoStore
 
         return BentoStore(base_dir)
@@ -244,6 +247,11 @@ class _BentoMLContainerClass:
     def session_id() -> str:
         return uuid.uuid1().hex
 
+    @providers.SingletonFactory
+    @staticmethod
+    def cloud_config(bentoml_home: str = Provide[bentoml_home]) -> Path:
+        return Path(bentoml_home) / ".yatai.yaml"
+
     api_server_config = config.api_server
     runners_config = config.runners
 
@@ -257,9 +265,16 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def yatai_client():
-        from ..yatai_client import YataiClient
+        from ..cloud.yatai import YataiClient
 
         return YataiClient()
+
+    @providers.SingletonFactory
+    @staticmethod
+    def bentocloud_client():
+        from ..cloud.bentocloud import BentoCloudClient
+
+        return BentoCloudClient()
 
     @providers.SingletonFactory
     @staticmethod
@@ -359,7 +374,7 @@ class _BentoMLContainerClass:
             sample_rate = 0.0
         if sample_rate == 0.0:
             logger.debug(
-                "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
+                "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.com/en/latest/guides/tracing.html for more details."
             )
 
         # User can optionally configure the resource with the following environment variables. Only

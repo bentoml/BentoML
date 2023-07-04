@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "bentoml"
 description = "BentoML: The Unified Model Serving Framework"
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = ["MLOps", "AI", "BentoML", "Model Serving", "Model Deployment"]
 license = { text = "Apache-2.0" }
 authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
@@ -15,7 +15,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -40,13 +39,13 @@ dependencies = [
     # OpenTelemetry is the server dependencies, rather than SDK
     # Since there are discrepancies among API and instrumentation packages,
     # we should always pin the set version of Opentelemetry suite
-    "opentelemetry-api==1.14.0",
-    "opentelemetry-sdk==1.14.0",
-    "opentelemetry-instrumentation==0.35b0",
-    "opentelemetry-instrumentation-aiohttp-client==0.35b0",
-    "opentelemetry-instrumentation-asgi==0.35b0",
-    "opentelemetry-semantic-conventions==0.35b0",
-    "opentelemetry-util-http==0.35b0",
+    "opentelemetry-api==1.17.0",
+    "opentelemetry-sdk==1.17.0",
+    "opentelemetry-instrumentation==0.38b0",
+    "opentelemetry-instrumentation-aiohttp-client==0.38b0",
+    "opentelemetry-instrumentation-asgi==0.38b0",
+    "opentelemetry-semantic-conventions==0.38b0",
+    "opentelemetry-util-http==0.38b0",
     "packaging>=22.0",
     "pathspec",
     "pip-tools>=6.6.2",
@@ -61,19 +60,14 @@ dependencies = [
     "rich>=11.2.0",
     "schema",
     "simple-di>=0.1.4",
-    "starlette>=0.13.5,<0.27",
+    "starlette>=0.13.5,<0.29",
     "uvicorn",
     "watchfiles>=0.15.0",
-    "backports.cached-property;python_version<'3.8'",
-    "backports.shutil_copytree;python_version<'3.8'",
-    "importlib-metadata;python_version<'3.8'",
-    "singledispatchmethod;python_version<'3.8'",
-    "pickle5;python_version<'3.8'",
 ]
 dynamic = ["version"]
 
 [project.urls]
-"Documentation" = "https://docs.bentoml.org/en/latest/"
+"Documentation" = "https://docs.bentoml.com/en/latest/"
 "Bug Reports" = "https://github.com/bentoml/BentoML/issues"
 "BentoML Community Slack" = "https://bit.ly/2N5IpbB"
 "BentoML Official Blog" = "https://modelserving.com"
@@ -140,7 +134,7 @@ grpc = [
     "protobuf",
     "grpcio",
     "grpcio-health-checking",
-    "opentelemetry-instrumentation-grpc==0.35b0",
+    "opentelemetry-instrumentation-grpc==0.38b0",
 ]
 grpc-reflection = ["bentoml[grpc]", "grpcio-reflection"]
 grpc-channelz = ["bentoml[grpc]", "grpcio-channelz"]
@@ -152,10 +146,10 @@ tracing = [
     "bentoml[tracing-otlp]",
     "bentoml[tracing-zipkin]",
 ]
-tracing-jaeger = ["opentelemetry-exporter-jaeger==1.14.0"]
-tracing-zipkin = ["opentelemetry-exporter-zipkin==1.14.0"]
-tracing-otlp = ["opentelemetry-exporter-otlp==1.14.0"]
-monitor-otlp = ["opentelemetry-exporter-otlp-proto-http==1.14.0"]
+tracing-jaeger = ["opentelemetry-exporter-jaeger==1.17.0"]
+tracing-zipkin = ["opentelemetry-exporter-zipkin==1.17.0"]
+tracing-otlp = ["opentelemetry-exporter-otlp==1.17.0"]
+monitor-otlp = ["opentelemetry-exporter-otlp-proto-http==1.17.0"]
 
 [tool.setuptools_scm]
 write_to = "src/bentoml/_version.py"
@@ -180,8 +174,6 @@ omit = [
     "src/bentoml/grpc/v1alpha1/*",
     "src/bentoml/grpc/v1/*",
     "src/bentoml/_internal/external_typing/*",
-    "src/bentoml/_internal/yatai_client/*",
-    "src/bentoml/_internal/yatai_rest_api_client/*",
 ]
 
 [tool.coverage.report]
@@ -197,8 +189,6 @@ omit = [
     "src/bentoml/grpc/v1alpha1/*",
     "src/bentoml/grpc/v1/*",
     "src/bentoml/_internal/external_typing/*",
-    "src/bentoml/_internal/yatai_client/*",
-    "src/bentoml/_internal/yatai_rest_api_client/*",
 ]
 exclude_lines = [
     "\\#\\s*pragma: no cover",
@@ -254,6 +244,7 @@ exclude = [
     "bazel-*/",
     "venv",
     "typings",
+    "docs/source",
     "src/bentoml/_internal/external_typing",
     "src/bentoml/grpc/v1alpha1",
     "src/bentoml/grpc/v1",
@@ -269,27 +260,8 @@ target-version = "py310"
 convention = "google"
 
 [tool.ruff.isort]
-lines-after-imports = 2
 force-single-line = true
-
-[tool.isort]
-profile = "black"
-line_length = 88
-length_sort = true
-force_single_line = true
-order_by_type = true
-known_first_party = ["bentoml"]
-force_alphabetical_sort_within_sections = true
-skip_glob = [
-    "typings/*",
-    "test/*",
-    "**/*_pb2*",
-    "venv/*",
-    "lib/*",
-    "grpc-client/thirdparty",
-    "grpc-client/bentoml",
-    "bazel-*",
-]
+known-first-party = ["bentoml"]
 
 [tool.pyright]
 pythonVersion = "3.11"

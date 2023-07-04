@@ -37,22 +37,13 @@ from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..types import ModelSignatureDict
 
-if TYPE_CHECKING:
-    from ..types import AnyType
+if t.TYPE_CHECKING:
     from ..types import PathType
     from ..runner import Runner
     from ..runner import Runnable
     from ..runner.strategy import Strategy
-
-    class ModelSignatureDict(t.TypedDict, total=False):
-        batchable: bool
-        batch_dim: tuple[int, int] | int | None
-        input_spec: tuple[AnyType] | AnyType | None
-        output_spec: AnyType | None
-
-else:
-    ModelSignaturesDict = dict
 
 
 T = t.TypeVar("T")
@@ -146,7 +137,7 @@ class Model(StoreItem):
     @classmethod
     def create(
         cls,
-        name: str,
+        name: Tag | str,
         *,
         module: str,
         api_version: str,
@@ -180,7 +171,7 @@ class Model(StoreItem):
         Returns:
             object: Model instance created in temporary filesystem
         """
-        tag = Tag.from_str(name)
+        tag = Tag.from_taglike(name)
         if tag.version is None:
             tag = tag.make_new_version()
         labels = {} if labels is None else labels

@@ -77,9 +77,9 @@ class RemoteRunnerClient(RunnerHandle):
         "return the configured timeout for this runner."
         runner_cfg = BentoMLContainer.runners_config.get()
         if self._runner.name in runner_cfg:
-            return runner_cfg[self._runner.name]["timeout"]
+            return runner_cfg[self._runner.name].get("traffic", {})["timeout"]
         else:
-            return runner_cfg["timeout"]
+            return runner_cfg.get("traffic", {})["timeout"]
 
     def _close_conn(self) -> None:
         if self._conn:
@@ -170,10 +170,6 @@ class RemoteRunnerClient(RunnerHandle):
         from ...runner.container import AutoContainer
 
         inp_batch_dim = __bentoml_method.config.batch_dim[0]
-
-        payload_params = Params[Payload](*args, **kwargs).map(
-            functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
-        )
 
         headers = {
             "Bento-Name": component_context.bento_name,

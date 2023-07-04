@@ -68,7 +68,7 @@ docker:
 ```
 
 To find out more about BentoML Runner architecture, see
-[our latest documentation](https://docs.bentoml.org/en/latest/concepts/runner.html#)
+[our latest documentation](https://docs.bentoml.com/en/latest/concepts/runner.html#)
 
 For more information about Triton Inference Server, see
 [here](https://github.com/triton-inference-server/server)
@@ -119,7 +119,7 @@ docker run --rm -it -p 3000-4000:3000-4000 \
            nvcr.io/nvidia/tritonserver:22.12-py3 bash
 ```
 
-If you have NVIDIA GPU available, make sure to install 
+If you have NVIDIA GPU available, make sure to install
 [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) on your system.
 Afterward, passing in `--gpus all` to `docker`:
 
@@ -164,7 +164,7 @@ python3 serve_bento.py
 > [here](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/build.md)
 > for more details on building customisation.
 
-<!-- 
+<!--
 docker run --rm -it -p 3000-3030:3000-3030 -v $(pwd)/model_repository:/models -v ${PWD}:/workspace -v ${BENTOML_GIT_ROOT}:/opt/bentoml -e BENTOML_HOME=/opt/bentoml -v $BENTOML_HOME:/opt/bentoml nvcr.io/nvidia/tritonserver:22.12-py3 bash
 
 cd /opt/bentoml && pip install -r requirements/dev-requirements.txt && cd /workspace && pip install -r requirements/requirements.txt && python3 train.py && ./setup && bentoml serve-http

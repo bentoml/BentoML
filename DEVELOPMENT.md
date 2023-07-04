@@ -10,7 +10,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 <details><summary><h3>with the Command Line</h3></summary>
 
-1. Make sure to have [Git](https://git-scm.com/), [pip](https://pip.pypa.io/en/stable/installation/), and [Python3.7+](https://www.python.org/downloads/) installed.
+1. Make sure to have [Git](https://git-scm.com/), [pip](https://pip.pypa.io/en/stable/installation/), and [Python3.8+](https://www.python.org/downloads/) installed.
 
    Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using a UNIX-based system for a better developer experience.
    If you don't want to use `make` then please refer to the [Makefile](./Makefile) for specific commands on a given make target.
@@ -33,6 +33,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
    ```bash
    git switch main # ensure you're on the main branch
+   git fetch upstream --tags
    git branch --set-upstream-to=upstream/main
    ```
 
@@ -69,7 +70,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 1. Confirm that you have the following installed:
 
-   - [Python3.7+](https://www.python.org/downloads/)
+   - [Python3.8+](https://www.python.org/downloads/)
    - VS Code with the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) extensions
 
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
@@ -208,13 +209,13 @@ bentoml get IrisClassifier --verbose
 
 ## Style check, auto-formatting, type-checking
 
-formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyCQA/isort), [buf](https://github.com/bufbuild/buf)
+formatter: [black](https://github.com/psf/black), [buf](https://github.com/bufbuild/buf)
 
 linter: [ruff](https://github.com/charliermarsh/ruff), [buf](https://github.com/bufbuild/buf)
 
 type checker: [pyright](https://github.com/microsoft/pyright)
 
-We are using [buf](https://github.com/bufbuild/buf) for formatting and linting
+We are using [pre-commit](https://pre-commit.com/) to manage our hooks, and [buf](https://github.com/bufbuild/buf) for formatting and linting
 of our proto files. Configuration can be found [here](./bentoml/grpc/buf.yaml).
 Currently, we are running `buf` with docker, hence we kindly ask our developers
 to have docker available. Docker installation can be found [here](https://docs.docker.com/get-docker/).
@@ -222,9 +223,7 @@ to have docker available. Docker installation can be found [here](https://docs.d
 Run linter/format script:
 
 ```bash
-make format
-
-make lint
+pre-commit run --all-files
 ```
 
 Run type checker:

@@ -35,7 +35,11 @@ def parse_delete_targets_argument_callback(
 ) -> list[str]:
     if value is None:
         return value
-    delete_targets = value.split(",")
+    value = " ".join(value)
+    if "," in value:
+        delete_targets = value.split(",")
+    else:
+        delete_targets = value.split()
     delete_targets = list(map(str.strip, delete_targets))
     for delete_target in delete_targets:
         if not (
@@ -55,15 +59,15 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.utils import calc_dir_size
     from bentoml._internal.utils import human_readable_size
     from bentoml._internal.utils import resolve_user_filepath
-    from bentoml._internal.utils import display_path_under_home
     from bentoml._internal.bento.bento import Bento
     from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
     from bentoml._internal.configuration import get_quiet_mode
     from bentoml._internal.bento.build_config import BentoBuildConfig
     from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.utils.analytics.usage_stats import _usage_event_debugging
 
     bento_store = BentoMLContainer.bento_store.get()
-    yatai_client = BentoMLContainer.yatai_client.get()
+    cloud_client = BentoMLContainer.bentocloud_client.get()
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -114,7 +118,6 @@ def add_bento_management_commands(cli: Group):
         res = [
             {
                 "tag": str(bento.tag),
-                "path": display_path_under_home(bento.path),
                 "size": human_readable_size(calc_dir_size(bento.path)),
                 "creation_time": bento.info.creation_time.astimezone().strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -136,20 +139,18 @@ def add_bento_management_commands(cli: Group):
             table.add_column("Tag")
             table.add_column("Size")
             table.add_column("Creation Time")
-            table.add_column("Path")
             for bento in res:
                 table.add_row(
                     bento["tag"],
                     bento["size"],
                     bento["creation_time"],
-                    bento["path"],
                 )
             console.print(table)
 
     @cli.command()
     @click.argument(
         "delete_targets",
-        type=click.STRING,
+        nargs=-1,
         callback=parse_delete_targets_argument_callback,
         required=True,
     )
@@ -167,7 +168,8 @@ def add_bento_management_commands(cli: Group):
         Examples:
             * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
             * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
-            * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+            * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `bentoml delete Irisclassifier:v1,MyPredictService:v2`
+            * Bulk delete multiple bento bundles by name and version, separated by " ", e.g.: `bentoml delete Irisclassifier:v1 MyPredictService:v2`
             * Bulk delete without confirmation, e.g.: `bentoml delete IrisClassifier --yes`
         """
 
@@ -253,7 +255,7 @@ def add_bento_management_commands(cli: Group):
     )
     def pull(bento_tag: str, force: bool, context: str) -> None:  # type: ignore (not accessed)
         """Pull Bento from a yatai server."""
-        yatai_client.pull_bento(bento_tag, force=force, context=context)
+        cloud_client.pull_bento(bento_tag, force=force, context=context)
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -278,7 +280,7 @@ def add_bento_management_commands(cli: Group):
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
-        yatai_client.push_bento(
+        cloud_client.push_bento(
             bento_obj, force=force, threads=threads, context=context
         )
 
@@ -310,10 +312,18 @@ def add_bento_management_commands(cli: Group):
         build_ctx: str,
         bentofile: str,
         version: str,
-        output: t.Literal["tag", "default"],
+        output: t.Literal["tag", "default", "yaml"],
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    ) -> None:
+    ):
         """Build a new Bento from current directory."""
+        if output == "tag":
+            from bentoml._internal.configuration import set_quiet_mode
+
+            from bentoml._internal.log import configure_logging
+
+            set_quiet_mode(True)
+            configure_logging()
+
         try:
             bentofile = resolve_user_filepath(bentofile, build_ctx)
         except FileNotFoundError:
@@ -330,9 +340,18 @@ def add_bento_management_commands(cli: Group):
             build_ctx=build_ctx,
         ).save(_bento_store)
 
+        # NOTE: Don't remove the return statement here, since we will need this
+        # for usage stats collection if users are opt-in.
         if output == "tag":
-            click.echo(bento.tag)
-            return
+            if _usage_event_debugging():
+                # NOTE: Since we are logging all of the trackintg id to stdout
+                # We will prefix the tag with __tag__ and we can use regex to correctly
+                # get the tag from 'bentoml.bentos.build|build_bentofile'
+                click.echo(f"__tag__:{bento.tag}")
+            else:
+                # Current behaviour
+                click.echo(bento.tag)
+            return bento
 
         if not get_quiet_mode():
             click.echo(BENTOML_FIGLET)
@@ -346,3 +365,4 @@ def add_bento_management_commands(cli: Group):
                 f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
                 fg="blue",
             )
+        return bento

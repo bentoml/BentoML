@@ -122,7 +122,7 @@ BENTOML_CONFIG=deployment.yaml bentoml serve service.py:svc
 ### Containerized Serving with monitoring
 
 Bento is the distribution format in BentoML which captures all the source code, model files, config
-files and dependency specifications required for running the service for production deployment. Think 
+files and dependency specifications required for running the service for production deployment. Think
 of it as Docker/Container designed for machine learning models.
 
 To begin with building Bento, create a `bentofile.yaml` under your project directory:
@@ -161,7 +161,7 @@ Next, run `bentoml build` from current directory to start the Bento build:
 05/05/2022 19:19:17 INFO     [cli] Successfully built Bento(tag="iris_classifier:5wtigdwm4kwzduqj") at "/Users/bentoml/bentoml/bentos/iris_classifier/5wtigdwm4kwzduqj/"
 ```
 
-A new Bento is now built and saved to local Bento store. You can view and manage it via 
+A new Bento is now built and saved to local Bento store. You can view and manage it via
 `bentoml list`,`bentoml get` and `bentoml delete` CLI command.
 
 Then we will convert a Bento into a Docker image containing the HTTP model server.
@@ -182,9 +182,8 @@ docker run -p 3000:3000 iris_classifier:invwzzsw7li6zckb2ie5eubhd --mount type=b
 ## What's Next?
 
 - 👉 [Pop into our Slack community!](https://l.bentoml.com/join-slack) We're happy to help with any issue you face or even just to meet you and hear what you're working on.
-- Dive deeper into the [Core Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) in BentoML
-- Learn how to use BentoML with other ML Frameworks at [Frameworks Guide](https://docs.bentoml.org/en/latest/frameworks/index.html) or check out other [gallery projects](https://github.com/bentoml/BentoML/tree/main/examples)
+- Dive deeper into the [Core Concepts](https://docs.bentoml.com/en/latest/concepts/index.html) in BentoML
+- Learn how to use BentoML with other ML Frameworks at [Frameworks Guide](https://docs.bentoml.com/en/latest/frameworks/index.html) or check out other [gallery projects](https://github.com/bentoml/BentoML/tree/main/examples)
 - Learn more about model deployment options for Bento:
   - [🦄️ Yatai](https://github.com/bentoml/Yatai): Model Deployment at scale on Kubernetes
   - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
-

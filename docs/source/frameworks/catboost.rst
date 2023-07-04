@@ -153,7 +153,7 @@ access:
          resources:
              nvidia.com/gpu: 0
 
-Adaptive batching 
+Adaptive batching
 ~~~~~~~~~~~~~~~~~
 
 .. seealso::

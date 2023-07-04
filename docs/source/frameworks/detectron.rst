@@ -2,8 +2,8 @@
 Detectron2
 ==========
 
-`Detectron2 <https://github.com/facebookresearch/detectron2>`_ is Facebook AI Research's (FAIR) next generation library 
-that provides state-of-the-art detection and segmentation algorithms. It is the successor of Detectron and maskrcnn-benchmark. 
+`Detectron2 <https://github.com/facebookresearch/detectron2>`_ is Facebook AI Research's (FAIR) next generation library
+that provides state-of-the-art detection and segmentation algorithms. It is the successor of Detectron and maskrcnn-benchmark.
 It supports a number of computer vision research projects and production applications in Facebook.
 
 This guide will provide an overview of how to save and load Detectron2 models with BentoML.
@@ -75,8 +75,8 @@ BentoML also supports saving this predictor with ``bentoml.detectron.save_model`
 
 .. note::
 
-    :bdg-info:`Remarks:` External python classes or utility functions required by the Detectron models/custom models 
-    must be referenced in ``<module>.<class>`` format, and such modules should be passed to ``bentoml.detectron.save_model`` via ``external_modules``. 
+    :bdg-info:`Remarks:` External python classes or utility functions required by the Detectron models/custom models
+    must be referenced in ``<module>.<class>`` format, and such modules should be passed to ``bentoml.detectron.save_model`` via ``external_modules``.
 
     For example:
 
@@ -90,7 +90,7 @@ BentoML also supports saving this predictor with ``bentoml.detectron.save_model`
 
     This is due to a limitation from PyTorch model serialisation, where PyTorch requires the model's source code to restore it.
 
-The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML’s `Adaptive Batching <guides/batching:Adaptive Batching>`_ is disabled when using :obj:`~bentoml.pytorch.save_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow: 
+The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML’s `Adaptive Batching <guides/batching:Adaptive Batching>`_ is disabled when using :obj:`~bentoml.pytorch.save_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow:
 
 .. code-block:: python
 
@@ -138,8 +138,8 @@ Create a BentoML service with the previously saved ``coco-masked-rcnn-predictor`
 Adaptive Batching
 -----------------
 
-Most Detectron models can accept batched data as input. If batched interence is supported, it is recommended to enable batching to take advantage of 
-the adaptive batching capability to improve the throughput and efficiency of the model. Enable adaptive batching by overriding the :code:`signatures` 
+Most Detectron models can accept batched data as input. If batched interence is supported, it is recommended to enable batching to take advantage of
+the adaptive batching capability to improve the throughput and efficiency of the model. Enable adaptive batching by overriding the :code:`signatures`
 argument with the method name and providing :code:`batchable` and :code:`batch_dim` configurations when saving the model to the model store.
 
 .. seealso::

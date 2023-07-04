@@ -15,4 +15,3 @@ Detectron
 .. autofunction:: bentoml.detectron.load_model
 
 .. autofunction:: bentoml.detectron.get
-

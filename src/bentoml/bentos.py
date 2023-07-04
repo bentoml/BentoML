@@ -5,6 +5,7 @@ User facing python APIs for managing local bentos and build new bentos.
 from __future__ import annotations
 
 import os
+import re
 import typing as t
 import logging
 import tempfile
@@ -21,11 +22,16 @@ from ._internal.bento import Bento
 from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.utils.analytics.usage_stats import _usage_event_debugging
 
 if t.TYPE_CHECKING:
     from .server import Server
     from ._internal.bento import BentoStore
-    from ._internal.yatai_client import YataiClient
+    from ._internal.cloud import BentoCloudClient
+    from ._internal.bento.build_config import CondaOptions
+    from ._internal.bento.build_config import DockerOptions
+    from ._internal.bento.build_config import PythonOptions
+    from ._internal.bento.build_config import ModelSpec
 
 
 logger = logging.getLogger(__name__)
@@ -45,27 +51,27 @@ __all__ = [
 
 
 @inject
-def list(  # pylint: disable=redefined-builtin
-    tag: t.Optional[t.Union[Tag, str]] = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> "t.List[Bento]":
+def list(
+    tag: Tag | str | None = None,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+) -> t.List[Bento]:
     return _bento_store.list(tag)
 
 
 @inject
 def get(
-    tag: t.Union[Tag, str],
+    tag: Tag | str,
     *,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     return _bento_store.get(tag)
 
 
 @inject
 def delete(
-    tag: t.Union[Tag, str],
+    tag: Tag | str,
     *,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ):
     _bento_store.delete(tag)
 
@@ -73,13 +79,13 @@ def delete(
 @inject
 def import_bento(
     path: str,
-    input_format: t.Optional[str] = None,
+    input_format: str | None = None,
     *,
-    protocol: t.Optional[str] = None,
-    user: t.Optional[str] = None,
-    passwd: t.Optional[str] = None,
+    protocol: str | None = None,
+    user: str | None = None,
+    passwd: str | None = None,
     params: t.Optional[t.Dict[str, str]] = None,
-    subpath: t.Optional[str] = None,
+    subpath: str | None = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     """
@@ -153,16 +159,16 @@ def import_bento(
 
 @inject
 def export_bento(
-    tag: t.Union[Tag, str],
+    tag: Tag | str,
     path: str,
-    output_format: t.Optional[str] = None,
+    output_format: str | None = None,
     *,
-    protocol: t.Optional[str] = None,
-    user: t.Optional[str] = None,
-    passwd: t.Optional[str] = None,
-    params: t.Optional[t.Dict[str, str]] = None,
-    subpath: t.Optional[str] = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    protocol: str | None = None,
+    user: str | None = None,
+    passwd: str | None = None,
+    params: dict[str, str] | None = None,
+    subpath: str | None = None,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> str:
     """
     Export a bento.
@@ -237,28 +243,28 @@ def export_bento(
 
 @inject
 def push(
-    tag: t.Union[Tag, str],
+    tag: Tag | str,
     *,
     force: bool = False,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     """Push Bento to a yatai server."""
     bento = _bento_store.get(tag)
     if not bento:
         raise BentoMLException(f"Bento {tag} not found in local store")
-    _yatai_client.push_bento(bento, force=force)
+    _cloud_client.push_bento(bento, force=force)
 
 
 @inject
 def pull(
-    tag: t.Union[Tag, str],
+    tag: Tag | str,
     *,
     force: bool = False,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
-    _yatai_client.pull_bento(tag, force=force, bento_store=_bento_store)
+    _cloud_client.pull_bento(tag, force=force, bento_store=_bento_store)
 
 
 @inject
@@ -268,11 +274,12 @@ def build(
     name: str | None = None,
     labels: dict[str, str] | None = None,
     description: str | None = None,
-    include: list[str] | None = None,
-    exclude: list[str] | None = None,
-    docker: dict[str, t.Any] | None = None,
-    python: dict[str, t.Any] | None = None,
-    conda: dict[str, t.Any] | None = None,
+    include: t.List[str] | None = None,
+    exclude: t.List[str] | None = None,
+    docker: DockerOptions | dict[str, t.Any] | None = None,
+    python: PythonOptions | dict[str, t.Any] | None = None,
+    conda: CondaOptions | dict[str, t.Any] | None = None,
+    models: t.List[ModelSpec | str | dict[str, t.Any]] | None = None,
     version: str | None = None,
     build_ctx: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
@@ -350,6 +357,7 @@ def build(
         docker=docker,
         python=python,
         conda=conda,
+        models=models or [],
     )
 
     build_args = ["bentoml", "build"]
@@ -374,7 +382,16 @@ def build(
             logger.error("Failed to build BentoService bundle: %s", e)
             raise
 
-    return get(output.decode("utf-8").strip().split("\n")[-1])
+    if _usage_event_debugging():
+        # NOTE: This usually only concern BentoML devs.
+        pattern = r"^__tag__:[^:\n]+:[^:\n]+"
+        matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
+        assert matched is not None, f"Failed to find tag from output: {output}"
+        _, _, tag = matched.group(0).partition(":")
+    else:
+        # This branch is the current behaviour that doesn't concern BentoML users.
+        tag = output.decode("utf-8").strip().split("\n")[-1]
+    return get(tag, _bento_store=_bento_store)
 
 
 @inject
@@ -416,7 +433,16 @@ def build_bentofile(
         logger.error("Failed to build BentoService bundle: %s", e)
         raise
 
-    return get(output.decode("utf-8").strip().split("\n")[-1])
+    if _usage_event_debugging():
+        # NOTE: This usually only concern BentoML devs.
+        pattern = r"^__tag__:[^:\n]+:[^:\n]+"
+        matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
+        assert matched is not None, f"Failed to find tag from output: {output}"
+        _, _, tag = matched.group(0).partition(":")
+    else:
+        # This branch is the current behaviour that doesn't concern BentoML users.
+        tag = output.decode("utf-8").strip().split("\n")[-1]
+    return get(tag, _bento_store=_bento_store)
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:

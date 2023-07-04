@@ -68,7 +68,7 @@ to save the model instance to BentoML model store.
    bentoml.keras.save_model("keras_resnet50", model)
 
 
-Keras model can be loaded with :obj:`~bentoml.keras.load_model` to 
+Keras model can be loaded with :obj:`~bentoml.keras.load_model` to
 verify that the saved model can be loaded properly.
 
 .. code-block:: python
@@ -83,11 +83,11 @@ Building a Service using Keras
 
 .. seealso::
 
-   See :ref:`Building a Service <concepts/service:Service and APIs>` for more 
+   See :ref:`Building a Service <concepts/service:Service and APIs>` for more
    information on creating a prediction service with BentoML.
 
-The following service example creates a ``predict`` API endpoint that accepts an image as input 
-and return JSON data as output. Within the API function, Keras model runner created from the 
+The following service example creates a ``predict`` API endpoint that accepts an image as input
+and return JSON data as output. Within the API function, Keras model runner created from the
 previously saved ResNet50 model is used for inference.
 
 .. code-block:: python

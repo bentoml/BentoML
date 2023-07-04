@@ -88,3 +88,52 @@ Error handling
 If adaptive batching cannot keep up with rate of the incoming requests while satisfying the max
 latency configuration, HTTP 503 Service Unavailable is returned. To workaround this error, consider
 relaxing the max latency requirement and further scaling the underlying hardware resources.
+
+Custom Batching
+---------------
+
+Currently, adaptive batching is only effective for certain types of parameters including(non-exhaustive) ``numpy.ndarray``, ``pandas.Series`` and framework-specific types such as ``torch.Tensor``.
+Batch parameters of other types are simply collected into a list and passed to the inference function. If your model accepts parameters that are not batchable by default,
+you can achieve adaptive batching by wrapping the inference function with a :ref:`Runner <concepts/runner:Custom Runner>`.
+
+We will demonstrate this with a PyTorch example which accepts a dictionary of ``torch.Tensor`` as input.
+
+.. code-block:: python
+    :caption: `service.py`
+
+    import bentoml
+    import torch
+
+    class MyRunnable(bentoml.Runnable):
+        def __init__(self):
+            super().__init__()
+            # if torch.cuda.device_count():
+            if torch.cuda.is_available():
+                self.device_id = "cuda"
+                # by default, torch.FloatTensor will be used on CPU.
+                torch.set_default_tensor_type("torch.cuda.FloatTensor")
+            else:
+                self.device_id = "cpu"
+            self.model = bentoml.pytorch.load_model("my_pytorch_model", device_id=self.device_id)
+            # We want to turn off dropout and batchnorm when running inference.
+            self.model.train(False)
+
+        @bentoml.Runnable.method(batchable=True)
+        def __call__(self, **batch):
+            # Our model accepts a dictionary of Tensor as input, but we use ``**``
+            # to deconstruct it to keyword arguments, so they can be batched rightly.
+            # It works only if every parameter is "batchable" such as torch.Tensor/np.ndarray.
+            # Move the tensors to the target device and pass it to the model as a dict.
+            batch = {k: tensor.to(self.device_id) for k, tensor in batch.items()}
+            with torch.inference_mode():
+                return self.model(batch)
+
+    # Build the runner from the runnable manually, instead of calling model.to_runner() method
+    runner = bentoml.Runner(MyRunnable)
+    svc = bentoml.Service(name="my_ml_service", runners=[runner])
+
+    # Define an API endpoint for the inference
+    @svc.api(input=bentoml.io.JSON(), output=bentoml.io.JSON())
+    async def predict(api_input):
+        # Deconstruct the input dictionary to keyword arguments for batching
+        return await runner.async_run(**api_input)

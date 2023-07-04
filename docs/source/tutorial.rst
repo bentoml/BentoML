@@ -29,9 +29,8 @@ There are three ways to complete this tutorial:
    side by side with this guide. As you go through this guide, you can simply run the
    sample code from the Colab Notebook.
 
-   You will be able to try out most of the content in the tutorial on Colab besides
-   the docker container part towards the end. This is because Google Colab currently
-   does not support docker.
+   You will be able to try out most of the tutorial content on Colab. Note that deploying
+   as Docker containers on Google Colab is not supported due to Colab's lack thereof.
 
 #. Run the tutorial notebook from Docker
 
@@ -51,7 +50,7 @@ There are three ways to complete this tutorial:
       » git clone --depth=1 git@github.com:bentoml/BentoML.git
       » cd bentoml/examples/quickstart/
 
-   BentoML supports Linux, Windows and MacOS. You will need Python 3.7 or above to run
+   BentoML supports Linux, Windows and MacOS. You will need Python 3.8 or above to run
    this tutorial. We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_
    to create an isolated local environment. However this is not required.
 
@@ -415,6 +414,8 @@ To build a Bento, first create a ``bentofile.yaml`` file in your project directo
              packages:  # Additional pip packages required by the service
              - scikit-learn
              - pandas
+          models: # The model to be used for building the bento.
+            - iris_clf:latest
 
     .. tab-item:: gRPC
        :sync: grpc
@@ -432,6 +433,8 @@ To build a Bento, first create a ``bentofile.yaml`` file in your project directo
              - bentoml[grpc]
              - scikit-learn
              - pandas
+          models: # The model to be used for building the bento.
+            - iris_clf:latest
 
 .. tip::
 
@@ -449,7 +452,7 @@ Next, run the ``bentoml build`` CLI command from the same directory:
     Building BentoML service "iris_classifier:6otbsmxzq6lwbgxi" from build context "/home/user/gallery/quickstart"
     Packing model "iris_clf:zy3dfgxzqkjrlgxi"
     Locking PyPI package versions..
- 
+
     ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
     ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
     ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░

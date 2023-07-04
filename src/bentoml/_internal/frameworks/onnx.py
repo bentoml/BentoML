@@ -20,7 +20,6 @@ from ..utils.pkg import get_pkg_version
 from ..utils.pkg import PackageNotFoundError
 
 if TYPE_CHECKING:
-
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
@@ -95,7 +94,6 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 
 
 def _load_raw_model(bento_model: str | Tag | bentoml.Model) -> onnx.ModelProto:
-
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
 
@@ -159,7 +157,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: onnx.ModelProto,
     *,
     signatures: dict[str, ModelSignatureDict] | dict[str, ModelSignature] | None = None,
@@ -329,7 +327,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     # backward compatibility for v1, load raw model to infer
     # input_specs/output_specs for onnx model
     if bento_model.info.api_version == "v1":
-
         raw_model: onnx.ModelProto | None = None
         options = t.cast(ONNXOptions, bento_model.info.options)
 
@@ -406,7 +403,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         input_specs: list[dict[str, t.Any]],
         output_specs: list[dict[str, t.Any]],
     ):
-
         casting_funcs = [gen_input_casting_func(spec) for spec in input_specs]
 
         if len(output_specs) > 1:

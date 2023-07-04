@@ -7,7 +7,7 @@ pip install -r ./dev-requirements.txt
 
 2. Download dataset from Kaggle
 
-Before downloading, set up Kaggle API Credentials https://github.com/Kaggle/kaggle-api#api-credentials 
+Before downloading, set up Kaggle API Credentials https://github.com/Kaggle/kaggle-api#api-credentials
 and accept dataset rules: https://www.kaggle.com/competitions/ieee-fraud-detection/data
 
 ```bash

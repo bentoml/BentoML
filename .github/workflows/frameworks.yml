@@ -66,6 +66,7 @@ jobs:
               - src/bentoml/diffusers.py
               - src/bentoml/_internal/frameworks/diffusers.py
               - tests/integration/frameworks/models/diffusers.py
+              - tests/integration/frameworks/test_diffusers_unit.py
             detectron:
               - *related
               - src/bentoml/detectron.py
@@ -224,7 +225,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           OPTS=(--cov-config pyproject.toml --cov src/bentoml --cov-append --framework diffusers)
-          coverage run -m pytest tests/integration/frameworks/test_frameworks.py "${OPTS[@]}"
+          coverage run -m pytest tests/integration/frameworks/test_frameworks.py tests/integration/frameworks/test_diffusers_unit.py "${OPTS[@]}"
   detectron_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.detectron == 'true') || github.event_name == 'push' }}
@@ -284,7 +285,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install .
-          pip install easyocr torch requests Pillow
+          pip install easyocr torch requests
           pip install -r requirements/tests-requirements.txt
       - name: Run tests and generate coverage report
         run: |

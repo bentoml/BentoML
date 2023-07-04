@@ -10,6 +10,7 @@ from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.pickle import pep574_dumps
 from ..utils.pickle import pep574_loads
+from ..utils.pickle import fixed_torch_loads
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
@@ -277,10 +278,8 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         batch: ext.NpNDArray,
         batch_dim: int,
     ) -> Payload:
-
         # skip 0-dimensional array
         if batch.shape:
-
             if not (batch.flags["C_CONTIGUOUS"] or batch.flags["F_CONTIGUOUS"]):
                 # TODO: use fortan contiguous if it's faster
                 batch = np.ascontiguousarray(batch)
@@ -480,42 +479,18 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         if isinstance(batch, t.Generator):  # Generators can't be pickled
             batch = list(t.cast(t.Generator[t.Any, t.Any, t.Any], batch))
 
-        meta: dict[str, bool | int | float | str | list[int]] = {"format": "pickle5"}
-
-        bs: bytes
-        concat_buffer_bs: bytes
-        indices: list[int]
-        bs, concat_buffer_bs, indices = pep574_dumps(batch)
-
-        if indices:
-            meta["with_buffer"] = True
-            data = concat_buffer_bs
-            meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
-            meta["indices"] = indices
-        else:
-            meta["with_buffer"] = False
-            data = bs
+        data = pickle.dumps(batch)
 
         if isinstance(batch, list):
             batch_size = len(t.cast(t.List[t.Any], batch))
         else:
             batch_size = 1
 
-        return cls.create_payload(
-            data=data,
-            batch_size=batch_size,
-            meta=meta,
-        )
+        return cls.create_payload(data=data, batch_size=batch_size)
 
     @classmethod
     def from_payload(cls, payload: Payload) -> t.Any:
-        if payload.meta["with_buffer"]:
-            bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
-            bs = base64.b64decode(bs_str)
-            indices = t.cast(t.List[int], payload.meta["indices"])
-            return pep574_loads(bs, payload.data, indices)
-        else:
-            return pep574_loads(payload.data, b"", [])
+        return fixed_torch_loads(payload.data)
 
     @classmethod
     def batch_to_payloads(

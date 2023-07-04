@@ -26,6 +26,7 @@ from ..store import Store
 from ..store import StoreItem
 from ..types import PathType
 from ..utils import bentoml_cattr
+from ..utils import encode_path_for_uri
 from ..utils import copy_file_to_fs_folder
 from ..utils import normalize_labels_value
 from ..models import ModelStore, copy_model
@@ -197,7 +198,7 @@ class Bento(StoreItem):
         )
 
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{bento_name}")
-        ctx_fs = fs.open_fs(build_ctx)
+        ctx_fs = fs.open_fs(encode_path_for_uri(build_ctx))
 
         models: t.Set[Model] = set()
         resolved_aliases: t.Dict[Tag, str] = {}

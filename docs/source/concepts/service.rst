@@ -371,7 +371,7 @@ model and return. To learn more, see IO descrptor reference for
         output=JSON(),
     )
     def classify(input_series: IrisFeatures) -> Dict[str, Any]:
-        input_df = pd.DataFrame([input_data.dict()])
+        input_df = pd.DataFrame([input_series.dict()])
         results = iris_clf_runner.predict.run(input_df).to_list()
         return {"predictions": results}
 
@@ -411,29 +411,35 @@ logic:
 
 .. code-block:: python
 
-    import typing as t
+    from __future__ import annotations
+    from typing import Any
     import numpy as np
     from pydantic import BaseModel
 
     from bentoml.io import Multipart, NumpyNdarray, Json
 
-    class FooModel(BaseModel):
-        field1: int
-        field2: float
-        field3: str
+    class IrisFeatures(BaseModel):
+        sepal_length: float
+        sepal_width: float
+        petal_length: float
+        petal_width: float
 
-    my_np_input = NumpyNdarray.from_sample(np.ndarray(...))
+    output_descriptor_numpy = NumpyNdarray.from_sample(np.array([2]))
 
     @svc.api(
         input=Multipart(
-            arr=NumpyNdarray(schema=np.dtype(int, 4), validate=True),
-            json=Json(pydantic_model=FooModel),
-        )
-        output=NumpyNdarray(schema=np.dtype(int), validate=True),
+            arr=NumpyNdarray(
+                shape=(-1, 4),
+                dtype=np.float32,
+                enforce_dtype=True,
+                enforce_shape=True,
+            ),
+            json=JSON(pydantic_model=IrisFeatures),
+        ),
+        output=output_descriptor_numpy,
     )
-    def predict(arr: np.ndarray, json: t.Dict[str, t.Any]) -> np.ndarray:
+    def multi_part_predict(arr: np.ndarray, json: dict[str, Any]) -> np.ndarray:
         ...
-
 
 Sync vs Async APIs
 ------------------

@@ -183,37 +183,6 @@ def query_os_cpu_count() -> int:
     return 1
 
 
-# class MemResource(Resource, resource_id="mem"):
-#     @classmethod
-#     def from_spec(cls, spec: t.Any):
-#         assert isinstance(mem, (int, str)), "mem must be int or str"
-#
-#         if isinstance(mem, int):
-#             return mem
-#
-#         unit_match = re.match("([0-9]+)([A-Za-z]{1,2})", mem)
-#         mem_multipliers = {
-#             "k": 1000,
-#             "M": 1000**2,
-#             "G": 1000**3,
-#             "T": 1000**4,
-#             "P": 1000**5,
-#             "E": 1000**6,
-#             "Ki": 1024,
-#             "Mi": 1024**2,
-#             "Gi": 1024**3,
-#             "Ti": 1024**4,
-#             "Pi": 1024**5,
-#             "Ei": 1024**6,
-#         }
-#         if unit_match:
-#             base = int(unit_match[1])
-#             unit = unit_match[2]
-#             if unit in mem_multipliers:
-#                 return base * mem_multipliers[unit]
-#         raise ValueError(f"Invalid MEM resource limit '{mem}'")
-
-
 class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
     @classmethod
     def from_spec(cls, spec: int | str | list[int | str]) -> list[int]:
@@ -243,6 +212,13 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
         query nvidia gpu count, available on Windows and Linux
         """
         import pynvml  # type: ignore
+
+        cuda_visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        if cuda_visible_devices is not None:
+            if "," in cuda_visible_devices:
+                return [int(i) for i in cuda_visible_devices.split(",")]
+            else:
+                return [int(i) for i in cuda_visible_devices.split()]
 
         try:
             pynvml.nvmlInit()

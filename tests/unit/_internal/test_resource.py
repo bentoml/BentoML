@@ -63,6 +63,14 @@ def test_CpuResource():
         CpuResource.from_spec((1, 2, 3))
 
 
+@pytest.mark.parametrize("env", ["0, 1", "0,1", "0 1"])
+def test_nvidia_gpu_resource_from_env(monkeypatch: pytest.MonkeyPatch, env: str):
+    with monkeypatch.context() as mcls:
+        mcls.setenv("CUDA_VISIBLE_DEVICES", env)
+        resource = NvidiaGpuResource.from_system()
+        assert len(resource) == 2 and resource == [0, 1]
+
+
 def test_NvidiaGpuResource():
     assert len(NvidiaGpuResource.from_system()) >= 0  # TODO: real from_system tests
 

@@ -150,7 +150,12 @@ class DefaultStrategy(Strategy):
                 ]
                 dev = ",".join(map(str, assigned_gpu))
             else:
-                dev = str(nvidia_gpus[worker_index // workers_per_resource])
+                idx = worker_index // workers_per_resource
+                if len(nvidia_gpus) == idx:
+                    raise ValueError(
+                        f"Number of available GPU ({nvidia_gpus}) preceeds the given workers_per_resource {workers_per_resource}"
+                    )
+                dev = str(nvidia_gpus[idx])
             environ["CUDA_VISIBLE_DEVICES"] = dev
             logger.info(
                 "Environ for worker %s: set CUDA_VISIBLE_DEVICES to %s",

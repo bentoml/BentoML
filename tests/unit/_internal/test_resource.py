@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 
 import pytest
@@ -63,12 +65,19 @@ def test_CpuResource():
         CpuResource.from_spec((1, 2, 3))
 
 
-@pytest.mark.parametrize("env", ["0, 1", "0,1", "0 1"])
-def test_nvidia_gpu_resource_from_env(monkeypatch: pytest.MonkeyPatch, env: str):
+def test_nvidia_gpu_resource_from_env(monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as mcls:
-        mcls.setenv("CUDA_VISIBLE_DEVICES", env)
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "0,1")
         resource = NvidiaGpuResource.from_system()
         assert len(resource) == 2 and resource == [0, 1]
+    with monkeypatch.context() as mcls:
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "0,2,-1,1")
+        resource = NvidiaGpuResource.from_system()
+        assert len(resource) == 2 and resource == [0, 2]
+    with monkeypatch.context() as mcls:
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "-1")
+        resource = NvidiaGpuResource.from_system()
+        assert len(resource) == 0 and resource == []
 
 
 def test_NvidiaGpuResource():

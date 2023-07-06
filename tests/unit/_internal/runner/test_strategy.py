@@ -31,6 +31,54 @@ def unvalidated_get_resource(x: t.Dict[str, t.Any], y: str):
     return get_resource(x, y, validate=False)
 
 
+@pytest.mark.parametrize("env", ["", "-1"])
+def test_gpu_strategy_with_env_disable(monkeypatch: MonkeyPatch, env: str):
+    with monkeypatch.context() as mcls:
+        mcls.setattr(strategy, "get_resource", unvalidated_get_resource)
+        mcls.setenv("CUDA_VISIBLE_DEVICES", env)
+        assert pytest.raises(
+            AttributeError, DefaultStrategy.get_worker_count, GPURunnable, None, 1
+        )
+
+
+def test_gpu_strategy_from_env(monkeypatch: MonkeyPatch):
+    with monkeypatch.context() as mcls:
+        mcls.setattr(strategy, "get_resource", unvalidated_get_resource)
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "0,1,2")
+        assert DefaultStrategy.get_worker_count(GPURunnable, None, 1) == 3
+        assert DefaultStrategy.get_worker_count(GPURunnable, None, 0.5) == 2
+        assert DefaultStrategy.get_worker_count(GPURunnable, None, 0.33) == 1
+
+    with monkeypatch.context() as mcls:
+        mcls.setattr(strategy, "get_resource", unvalidated_get_resource)
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "0,1,-1, 2")
+        assert DefaultStrategy.get_worker_count(GPURunnable, None, 1) == 2
+        assert DefaultStrategy.get_worker_count(GPURunnable, None, 0.5) == 1
+
+
+def test_gpu_strategy_worker_env(monkeypatch: MonkeyPatch):
+    with monkeypatch.context() as mcls:
+        mcls.setattr(strategy, "get_resource", unvalidated_get_resource)
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "0,1,2")
+        envs = DefaultStrategy.get_worker_env(GPURunnable, None, 1, 0)
+        assert envs.get("CUDA_VISIBLE_DEVICES") == "0"
+        envs = DefaultStrategy.get_worker_env(GPURunnable, None, 1, 1)
+        assert envs.get("CUDA_VISIBLE_DEVICES") == "1"
+        envs = DefaultStrategy.get_worker_env(GPURunnable, None, 1, 2)
+        assert envs.get("CUDA_VISIBLE_DEVICES") == "2"
+
+
+def test_gpu_strategy_worker_env_respect_minus(monkeypatch: MonkeyPatch):
+    with monkeypatch.context() as mcls:
+        mcls.setattr(strategy, "get_resource", unvalidated_get_resource)
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "0,-1,1,2")
+        envs = DefaultStrategy.get_worker_env(GPURunnable, None, 1, 0)
+        assert envs.get("CUDA_VISIBLE_DEVICES") == "0"
+        assert pytest.raises(
+            ValueError, DefaultStrategy.get_worker_env, GPURunnable, None, 1, 1
+        )
+
+
 def test_default_gpu_strategy(monkeypatch: MonkeyPatch):
     monkeypatch.setattr(strategy, "get_resource", unvalidated_get_resource)
     assert DefaultStrategy.get_worker_count(GPURunnable, {"nvidia.com/gpu": 2}, 1) == 2

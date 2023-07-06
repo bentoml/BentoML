@@ -207,18 +207,22 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
 
     @classmethod
     @functools.lru_cache(maxsize=1)
-    def from_system(cls) -> list[int]:
+    def from_system(cls) -> list[int] | list[str]:
         """
         query nvidia gpu count, available on Windows and Linux
         """
         import pynvml  # type: ignore
 
         cuda_visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        if cuda_visible_devices in ("", "-1"):
+            return []
         if cuda_visible_devices is not None:
-            if "," in cuda_visible_devices:
-                return [int(i) for i in cuda_visible_devices.split(",")]
-            else:
-                return [int(i) for i in cuda_visible_devices.split()]
+            cuda_visible_devices = cuda_visible_devices.split(",")
+            if "-1" in cuda_visible_devices:
+                cuda_visible_devices = cuda_visible_devices[
+                    : cuda_visible_devices.index("-1")
+                ]
+            return cuda_visible_devices
 
         try:
             pynvml.nvmlInit()
@@ -234,10 +238,10 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
                 pass
 
     @classmethod
-    def validate(cls, val: t.List[int]):
-        if any([gpu_index < 0 for gpu_index in val]):
+    def validate(cls, val: list[int] | list[str]):
+        if any([int(gpu_index) < 0 for gpu_index in val]):
             raise BentoMLConfigException(f"Negative GPU device in {val}.")
-        if any([gpu_index >= len(cls.from_system()) for gpu_index in val]):
+        if any([int(gpu_index) >= len(cls.from_system()) for gpu_index in val]):
             raise BentoMLConfigException(
                 f"GPU device index in {val} is greater than the system available: {cls.from_system()}"
             )

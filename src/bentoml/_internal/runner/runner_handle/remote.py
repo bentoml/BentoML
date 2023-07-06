@@ -311,7 +311,7 @@ class RemoteRunnerClient(RunnerHandle):
             ) as resp:
                 return resp.status == 200
         except asyncio.TimeoutError:
-            logger.error("Caught timeout expection while getting readyz")
+            logger.warn("Timed out waiting for runner to be ready")
             return False
 
     def __del__(self) -> None:

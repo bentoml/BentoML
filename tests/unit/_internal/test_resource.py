@@ -69,11 +69,11 @@ def test_nvidia_gpu_resource_from_env(monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as mcls:
         mcls.setenv("CUDA_VISIBLE_DEVICES", "0,1")
         resource = NvidiaGpuResource.from_system()
-        assert len(resource) == 2 and resource == [0, 1]
+        assert len(resource) == 2 and resource == ["0", "1"]
     with monkeypatch.context() as mcls:
         mcls.setenv("CUDA_VISIBLE_DEVICES", "0,2,-1,1")
         resource = NvidiaGpuResource.from_system()
-        assert len(resource) == 2 and resource == [0, 2]
+        assert len(resource) == 2 and resource == ["0", "2"]
     with monkeypatch.context() as mcls:
         mcls.setenv("CUDA_VISIBLE_DEVICES", "-1")
         resource = NvidiaGpuResource.from_system()
@@ -97,13 +97,13 @@ def test_NvidiaGpuResource():
     NvidiaGpuResource.validate([])
     # NvidiaGpuResource.validate(1)  # TODO: work out how to skip this on systems with no GPU
 
-    assert NvidiaGpuResource.from_spec(1) == [0]
-    assert NvidiaGpuResource.from_spec("5") == [0, 1, 2, 3, 4]
-    assert NvidiaGpuResource.from_spec(1) == [0]
-    assert NvidiaGpuResource.from_spec(2) == [0, 1]
-    assert NvidiaGpuResource.from_spec("3") == [0, 1, 2]
-    assert NvidiaGpuResource.from_spec([1, 3]) == [1, 3]
-    assert NvidiaGpuResource.from_spec(["1", "3"]) == [1, 3]
+    assert NvidiaGpuResource.from_spec(1) == ["0"]
+    assert NvidiaGpuResource.from_spec("5") == ["0", "1", "2", "3", "4"]
+    assert NvidiaGpuResource.from_spec(1) == ["0"]
+    assert NvidiaGpuResource.from_spec(2) == ["0", "1"]
+    assert NvidiaGpuResource.from_spec("3") == ["0", "1", "2"]
+    assert NvidiaGpuResource.from_spec([1, 3]) == ["1", "3"]
+    assert NvidiaGpuResource.from_spec(["1", "3"]) == ["1", "3"]
     assert NvidiaGpuResource.from_spec(-1) == []
     assert NvidiaGpuResource.from_spec("-1") == []
 

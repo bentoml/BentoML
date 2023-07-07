@@ -18,7 +18,7 @@ You can import a pretrained diffusion model from huggingface hub or local direct
 	"sd2.1",  # model tag in BentoML model store
 	"stabilityai/stable-diffusion-2-1",  # huggingface model name
     )
-	      
+
 
 If you plan to use the model with a custom pipeline that has method other than :code:`__call__` (e.g. a :code:`StableDiffusionMegaPipeline`), you need to explicitly list them like this:
 

@@ -12,7 +12,6 @@ from abc import abstractmethod
 import psutil
 
 from ..exceptions import BentoMLConfigException
-from .types import LazyType
 
 logger = logging.getLogger(__name__)
 
@@ -192,17 +191,30 @@ def query_os_cpu_count() -> int:
 class NvidiaGpuResource(Resource[t.List[str]], resource_id="nvidia.com/gpu"):
     @classmethod
     def from_spec(cls, spec: int | str | list[int | str]) -> list[str]:
-        if isinstance(spec, int):
-            if spec == -1:
-                return []
-            return [str(i) for i in range(spec)]
-        elif isinstance(spec, str):
-            return [spec]
-        elif LazyType(ListStr).isinstance(spec):
-            return [str(x) for x in spec]
-        else:
+        if not isinstance(spec, (int, str, list)):
             raise TypeError(
                 "NVidia GPU device IDs must be int, str or a list specifing the exact GPUs to use."
+            )
+
+        try:
+            if isinstance(spec, int):
+                if spec == -1:
+                    return []
+                if spec < -1:
+                    raise ValueError
+                return [str(i) for i in range(spec)]
+            elif isinstance(spec, str):
+                try:
+                    return cls.from_spec(int(spec))
+                except ValueError:
+                    if spec.startswith("GPU"):
+                        return [spec]
+                    raise ValueError
+            else:
+                return [str(x) for x in spec]
+        except ValueError:
+            raise BentoMLConfigException(
+                f"Invalid NVidia GPU resource limit '{spec}'. "
             )
 
     @classmethod

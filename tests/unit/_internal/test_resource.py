@@ -78,6 +78,10 @@ def test_nvidia_gpu_resource_from_env(monkeypatch: pytest.MonkeyPatch):
         mcls.setenv("CUDA_VISIBLE_DEVICES", "-1")
         resource = NvidiaGpuResource.from_system()
         assert len(resource) == 0 and resource == []
+    with monkeypatch.context() as mcls:
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "GPU-5ebe9f43-ac33420d4628")
+        resource = NvidiaGpuResource.from_system()
+        assert len(resource) == 1 and resource == ["GPU-5ebe9f43-ac33420d4628"]
 
 
 def test_NvidiaGpuResource():

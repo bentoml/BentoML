@@ -45,8 +45,10 @@ from ._internal.bento import Bento
 from ._internal.models import Model
 from ._internal.runner import Runner
 from ._internal.runner import Runnable
+from ._internal.runner import Strategy
 from ._internal.context import ServiceContext as Context
 from ._internal.service import Service
+from ._internal.resource import Resource
 from ._internal.monitoring import monitor
 from ._internal.utils.http import Cookie
 from ._internal.cloud import YataiClient
@@ -168,6 +170,8 @@ __all__ = [
     "Model",
     "Runner",
     "Runnable",
+    "Strategy",
+    "Resource",
     "monitoring",
     "YataiClient",  # Yatai REST API Client
     # bento APIs

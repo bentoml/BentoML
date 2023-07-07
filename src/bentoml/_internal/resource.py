@@ -12,12 +12,18 @@ from abc import abstractmethod
 import psutil
 
 from ..exceptions import BentoMLConfigException
+from .types import LazyType
 
 logger = logging.getLogger(__name__)
 
 _RESOURCE_REGISTRY: dict[str, t.Type[Resource[t.Any]]] = {}
 
 T = t.TypeVar("T")
+
+if t.TYPE_CHECKING:
+    ListStr = list[str]
+else:
+    ListStr = list
 
 
 def get_resource(
@@ -183,37 +189,30 @@ def query_os_cpu_count() -> int:
     return 1
 
 
-class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
+class NvidiaGpuResource(Resource[t.List[str]], resource_id="nvidia.com/gpu"):
     @classmethod
-    def from_spec(cls, spec: int | str | list[int | str]) -> list[int]:
-        if not isinstance(spec, (int, str, list)):
+    def from_spec(cls, spec: int | str | list[int | str]) -> list[str]:
+        if isinstance(spec, int):
+            if spec == -1:
+                return []
+            return [str(i) for i in range(spec)]
+        elif isinstance(spec, str):
+            return [spec]
+        elif LazyType(ListStr).isinstance(spec):
+            return [str(x) for x in spec]
+        else:
             raise TypeError(
                 "NVidia GPU device IDs must be int, str or a list specifing the exact GPUs to use."
             )
 
-        try:
-            if isinstance(spec, int):
-                if spec < -1:
-                    raise ValueError
-                return list(range(spec))
-            elif isinstance(spec, str):
-                return cls.from_spec(int(spec))
-            else:
-                return [int(x) for x in spec]
-        except ValueError:
-            raise BentoMLConfigException(
-                f"Invalid NVidia GPU resource limit '{spec}'. "
-            )
-
     @classmethod
-    @functools.lru_cache(maxsize=1)
-    def from_system(cls) -> list[int] | list[str]:
+    def from_system(cls) -> list[str]:
         """
         query nvidia gpu count, available on Windows and Linux
         """
-        import pynvml  # type: ignore
+        import pynvml
 
-        cuda_visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        cuda_visible_devices = os.getenv("CUDA_VISIBLE_DEVICES")
         if cuda_visible_devices in ("", "-1"):
             return []
         if cuda_visible_devices is not None:
@@ -227,56 +226,40 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
         try:
             pynvml.nvmlInit()
             device_count = pynvml.nvmlDeviceGetCount()
-            return list(range(device_count))
+            return [str(i) for i in range(device_count)]
         except (pynvml.nvml.NVMLError, OSError):
-            logger.debug("GPU not detected. Unable to initialize pynvml lib.")
+            logger.debug("Failed to  initialize 'pynvml'. GPU will not be used.")
             return []
         finally:
             try:
                 pynvml.nvmlShutdown()
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 pass
 
     @classmethod
     def validate(cls, val: list[int] | list[str]):
-        if any([int(gpu_index) < 0 for gpu_index in val]):
-            raise BentoMLConfigException(f"Negative GPU device in {val}.")
-        if any([int(gpu_index) >= len(cls.from_system()) for gpu_index in val]):
-            raise BentoMLConfigException(
-                f"GPU device index in {val} is greater than the system available: {cls.from_system()}"
-            )
+        import pynvml
+        import pynvml.nvml
 
-
-def get_gpu_memory(dev: int) -> t.Tuple[float, float]:
-    """
-    Return Total Memory and Free Memory in given GPU device. in MiB
-    """
-    import pynvml.nvml  # type: ignore
-    from pynvml.smi import nvidia_smi  # type: ignore
-
-    unit_multiplier = {
-        "PiB": 1024.0 * 1024 * 1024,
-        "TiB": 1024.0 * 1024,
-        "GiB": 1024.0,
-        "MiB": 1.0,
-        "KiB": 1.0 / 1024,
-        "B": 1.0 / 1024 / 1024,
-    }
-
-    try:
-        inst = nvidia_smi.getInstance()
-        query: t.Dict[str, int] = inst.DeviceQuery(dev)  # type: ignore
-    except (pynvml.nvml.NVMLError, OSError):
-        return 0.0, 0.0
-
-    try:
-        gpus: t.List[t.Dict[str, t.Any]] = query.get("gpu", [])  # type: ignore
-        gpu = gpus[dev]
-        unit = gpu["fb_memory_usage"]["unit"]
-        total = gpu["fb_memory_usage"]["total"] * unit_multiplier[unit]
-        free = gpu["fb_memory_usage"]["free"] * unit_multiplier[unit]
-        return total, free
-    except IndexError:
-        raise ValueError(f"Invalid GPU device index {dev}")
-    except KeyError:
-        raise RuntimeError(f"unexpected nvml query result: {query}")
+        for gpu_index_or_literal in val:
+            try:
+                idx = int(gpu_index_or_literal)
+            except ValueError:
+                # in this case, the value must be string literal, and casting to int would fail.
+                pynvml.nvmlInit()
+                handle = pynvml.nvmlDeviceGetHandleByUUID(gpu_index_or_literal)
+                idx = pynvml.nvmlDeviceGetIndex(handle)
+            except (pynvml.nvml.NVMLError, OSError):
+                raise ValueError(
+                    f"Failed to initialise 'pynvml' to validate '{gpu_index_or_literal}'"
+                )
+            if int(idx) < 0:
+                raise BentoMLConfigException(f"Negative GPU device in {val}.")
+            if int(idx) >= len(cls.from_system()):
+                raise BentoMLConfigException(
+                    f"GPU device index in {val} is greater than the system available: {cls.from_system()}"
+                )
+        try:
+            pynvml.nvmlShutdown()
+        except Exception:
+            pass

@@ -49,22 +49,40 @@ def test_gpu_strategy_from_env(monkeypatch: MonkeyPatch):
         assert DefaultStrategy.get_worker_count(GPURunnable, None, 0.5) == 2
         assert DefaultStrategy.get_worker_count(GPURunnable, None, 0.33) == 1
 
+
+def test_gpu_strategy_respect_minus_spec(monkeypatch: MonkeyPatch):
     with monkeypatch.context() as mcls:
         mcls.setattr(strategy, "get_resource", unvalidated_get_resource)
-        mcls.setenv("CUDA_VISIBLE_DEVICES", "0,1,-1, 2")
-        assert DefaultStrategy.get_worker_count(GPURunnable, None, 1) == 2
-        assert DefaultStrategy.get_worker_count(GPURunnable, None, 0.5) == 1
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "0,1,-1,2")
+        assert (
+            DefaultStrategy.get_worker_count(
+                GPURunnable, {"nvidia.com/gpu": "system"}, 1
+            )
+            == 2
+        )
+        assert (
+            DefaultStrategy.get_worker_count(
+                GPURunnable, {"nvidia.com/gpu": "system"}, 0.5
+            )
+            == 1
+        )
 
 
 def test_gpu_strategy_worker_env(monkeypatch: MonkeyPatch):
     with monkeypatch.context() as mcls:
         mcls.setattr(strategy, "get_resource", unvalidated_get_resource)
         mcls.setenv("CUDA_VISIBLE_DEVICES", "0,1,2")
-        envs = DefaultStrategy.get_worker_env(GPURunnable, None, 1, 0)
+        envs = DefaultStrategy.get_worker_env(
+            GPURunnable, {"nvidia.com/gpu": "system"}, 1, 0
+        )
         assert envs.get("CUDA_VISIBLE_DEVICES") == "0"
-        envs = DefaultStrategy.get_worker_env(GPURunnable, None, 1, 1)
+        envs = DefaultStrategy.get_worker_env(
+            GPURunnable, {"nvidia.com/gpu": "system"}, 1, 1
+        )
         assert envs.get("CUDA_VISIBLE_DEVICES") == "1"
-        envs = DefaultStrategy.get_worker_env(GPURunnable, None, 1, 2)
+        envs = DefaultStrategy.get_worker_env(
+            GPURunnable, {"nvidia.com/gpu": "system"}, 1, 2
+        )
         assert envs.get("CUDA_VISIBLE_DEVICES") == "2"
 
 
@@ -72,10 +90,35 @@ def test_gpu_strategy_worker_env_respect_minus(monkeypatch: MonkeyPatch):
     with monkeypatch.context() as mcls:
         mcls.setattr(strategy, "get_resource", unvalidated_get_resource)
         mcls.setenv("CUDA_VISIBLE_DEVICES", "0,-1,1,2")
-        envs = DefaultStrategy.get_worker_env(GPURunnable, None, 1, 0)
+        envs = DefaultStrategy.get_worker_env(
+            GPURunnable, {"nvidia.com/gpu": "system"}, 1, 0
+        )
         assert envs.get("CUDA_VISIBLE_DEVICES") == "0"
         assert pytest.raises(
-            ValueError, DefaultStrategy.get_worker_env, GPURunnable, None, 1, 1
+            ValueError,
+            DefaultStrategy.get_worker_env,
+            GPURunnable,
+            {"nvidia.com/gpu": "system"},
+            1,
+            1,
+        )
+
+
+def test_gpu_strategy_worker_env_respect_literal(monkeypatch: MonkeyPatch):
+    with monkeypatch.context() as mcls:
+        mcls.setattr(strategy, "get_resource", unvalidated_get_resource)
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "GPU-5ebe9f43-ac33420d4628")
+        envs = DefaultStrategy.get_worker_env(
+            GPURunnable, {"nvidia.com/gpu": "system"}, 1, 0
+        )
+        assert envs.get("CUDA_VISIBLE_DEVICES") == "GPU-5ebe9f43-ac33420d4628"
+        assert pytest.raises(
+            ValueError,
+            DefaultStrategy.get_worker_env,
+            GPURunnable,
+            {"nvidia.com/gpu": "system"},
+            1,
+            1,
         )
 
 

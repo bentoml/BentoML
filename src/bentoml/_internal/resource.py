@@ -207,8 +207,10 @@ class NvidiaGpuResource(Resource[t.List[str]], resource_id="nvidia.com/gpu"):
 
     @classmethod
     def from_system(cls) -> list[str]:
-        """
-        query nvidia gpu count, available on Windows and Linux
+        """Query available GPU via pynvml.
+
+        It also respects CUDA_VISIBLE_DEVICES spec. See
+        https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cuda-environment-variables
         """
         import pynvml
 

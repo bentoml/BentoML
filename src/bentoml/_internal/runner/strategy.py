@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import abc
 import logging
 import math
@@ -171,7 +172,7 @@ class DefaultStrategy(Strategy):
             if runnable_class.SUPPORTS_CPU_MULTI_THREADING:
                 thread_count = math.ceil(cpus)
                 for thread_env in THREAD_ENVS:
-                    environ[thread_env] = str(thread_count)
+                    environ[thread_env] = os.getenv(thread_env, str(thread_count))
                 logger.info(
                     "Environ for worker %d: set CPU thread count to %d",
                     worker_index,
@@ -180,7 +181,7 @@ class DefaultStrategy(Strategy):
                 return environ
             else:
                 for thread_env in THREAD_ENVS:
-                    environ[thread_env] = "1"
+                    environ[thread_env] = os.getenv(thread_env, "1")
                 return environ
 
         return environ

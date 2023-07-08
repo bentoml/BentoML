@@ -62,7 +62,7 @@ packaging, and production deployment.</p>
 
 # Documentation
 
-- Installation: `pip install bentoml`
+- Installation: `pip install bentoml` (Requires Python 3.8+)
 - Full Documentation: [docs.bentoml.com](https://docs.bentoml.com/en/latest/)
 - Tutorial: [Intro to BentoML](https://docs.bentoml.com/en/latest/tutorial.html)
 
@@ -92,7 +92,7 @@ packaging, and production deployment.</p>
 
 # Getting Started
 
-Save or import models in BentoML local model store:
+Save or import models in BentoML local model via `import_model.py`:
 
 ```python
 import bentoml
@@ -107,6 +107,12 @@ bentoml.transformers.save_model(
     "__call__": {"batchable": True}  # Enable dynamic batching for model
   }
 )
+```
+
+Save the model locally:
+
+```bash
+python import_model.py
 ```
 
 View all models saved locally:
@@ -177,7 +183,7 @@ Successfully built Bento container for "text-classification-svc" with tag(s) "te
 ```
 
 ```bash
-$ docker run -p 3000:3000 text-classification-svc:mc322vaubkuapuqj
+docker run -p 3000:3000 text-classification-svc:mc322vaubkuapuqj
 ```
 
 For a more detailed user guide, check out the

@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+import pytorch_lightning as pl
 import torch
 import torch.nn
-import pytorch_lightning as pl
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
-from .torchscript import test_y
+from . import FrameworkTestModelInput as Input
 from .torchscript import test_x_list
+from .torchscript import test_y
 
 framework = bentoml.pytorch_lightning
 

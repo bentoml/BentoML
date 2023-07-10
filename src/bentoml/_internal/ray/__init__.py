@@ -10,9 +10,9 @@ import bentoml
 from bentoml import Tag
 
 from ...exceptions import MissingDependencyException
+from ..runner.container import AutoContainer
 from ..runner.utils import Params
 from .runner_handle import RayRunnerHandle
-from ..runner.container import AutoContainer
 
 try:
     from ray import serve

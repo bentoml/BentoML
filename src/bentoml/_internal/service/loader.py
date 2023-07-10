@@ -1,29 +1,29 @@
 from __future__ import annotations
 
+import importlib
+import logging
 import os
 import sys
 import typing as t
-import logging
-import importlib
 from typing import TYPE_CHECKING
 
 import fs
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from ..tag import Tag
-from ..bento import Bento
-from ..models import ModelStore
-from .service import on_load_bento
-from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ...exceptions import ImportServiceError
-from ..bento.bento import BENTO_YAML_FILENAME
+from ...exceptions import NotFound
+from ..bento import Bento
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
+from ..bento.bento import BENTO_YAML_FILENAME
 from ..bento.bento import DEFAULT_BENTO_BUILD_FILE
-from ..configuration import BENTOML_VERSION
 from ..bento.build_config import BentoBuildConfig
+from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..models import ModelStore
+from ..tag import Tag
+from .service import on_load_bento
 
 if TYPE_CHECKING:
     from ..bento import BentoStore

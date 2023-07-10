@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import typing as t
-import logging
 
 import click
 
@@ -47,10 +47,10 @@ def deprecated_option(*param_decls: str, **attrs: t.Any):
 
 
 def add_serve_command(cli: click.Group) -> None:
-    from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
-    from bentoml._internal.log import configure_server_logging
-    from bentoml_cli.env_manager import env_manager
     from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.log import configure_server_logging
+    from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
+    from bentoml_cli.env_manager import env_manager
 
     @cli.command(aliases=["serve-http"])
     @click.argument("bento", type=click.STRING, default=".")

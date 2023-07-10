@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 
 import attr
 import yaml
-from ..utils import bentoml_cattr
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from .client import RestApiClient
 from ...exceptions import CloudRESTApiClientError
 from ..configuration.containers import BentoMLContainer
+from ..utils import bentoml_cattr
+from .client import RestApiClient
 
 logger = logging.getLogger(__name__)
 

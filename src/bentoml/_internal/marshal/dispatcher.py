@@ -1,25 +1,25 @@
 from __future__ import annotations
 
-import time
-import typing as t
 import asyncio
-import logging
-import functools
-import traceback
 import collections
+import functools
+import logging
+import time
+import traceback
+import typing as t
+from functools import cached_property
 
 import attr
 import numpy as np
 
-from functools import cached_property
 from ..utils.alg import TokenBucket
 
 logger = logging.getLogger(__name__)
 
 
 if t.TYPE_CHECKING:
-    from ..runner.utils import Params
     from ..runner.container import Payload
+    from ..runner.utils import Params
 
 
 class NonBlockSema:

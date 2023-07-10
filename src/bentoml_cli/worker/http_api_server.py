@@ -114,9 +114,9 @@ def main(
     import psutil
 
     import bentoml
-    from bentoml._internal.log import configure_server_logging
-    from bentoml._internal.context import component_context
     from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.context import component_context
+    from bentoml._internal.log import configure_server_logging
 
     component_context.component_type = "api_server"
     component_context.component_index = worker_id

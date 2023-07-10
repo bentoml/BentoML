@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import abc
 import base64
+import itertools
 import pickle
 import typing as t
-import itertools
 
 from ..types import LazyType
 from ..utils import LazyLoader
+from ..utils.pickle import fixed_torch_loads
 from ..utils.pickle import pep574_dumps
 from ..utils.pickle import pep574_loads
-from ..utils.pickle import fixed_torch_loads
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")

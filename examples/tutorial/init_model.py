@@ -1,5 +1,6 @@
-import bentoml
 import transformers
+
+import bentoml
 
 pipe = transformers.pipeline("text-classification")
 

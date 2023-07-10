@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+import inspect
 import re
 import typing as t
-import inspect
 from typing import Optional
 
 import yaml
 
-from ..types import is_compatible_type
-from ..context import ServiceContext as Context
 from ...exceptions import InvalidArgument
+from ..context import ServiceContext as Context
 from ..io_descriptors import IODescriptor
+from ..types import is_compatible_type
 
 RESERVED_API_NAMES = [
     "index",

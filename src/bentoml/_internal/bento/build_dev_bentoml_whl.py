@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import os
 import logging
+import os
 from pathlib import Path
 
-from ..utils.pkg import source_locations
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..configuration import is_pypi_installed_bentoml
+from ..utils.pkg import source_locations
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +35,8 @@ def build_bentoml_editable_wheel(
         # different from build. However, isort sometimes
         # incorrectly re-order the imports order.
         # isort: off
-        from build.env import IsolatedEnvBuilder
-
         from build import ProjectBuilder
+        from build.env import IsolatedEnvBuilder
 
         # isort: on
     except ModuleNotFoundError as e:

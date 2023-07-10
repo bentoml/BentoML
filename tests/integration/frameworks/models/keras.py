@@ -4,16 +4,16 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import keras
-import numpy as np
-import tensorflow as tf
 import keras.layers
 import keras.optimizers
+import numpy as np
+import tensorflow as tf
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 if TYPE_CHECKING:
     from bentoml._internal import external_typing as ext

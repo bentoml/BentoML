@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 import typing as t
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
-from datetime import datetime
+
 import attr
 import cattr
 from dateutil.parser import parse

@@ -4,9 +4,9 @@ import io
 import json
 from typing import TYPE_CHECKING
 
+import aiohttp
 import numpy as np
 import pytest
-import aiohttp
 
 from bentoml.testing.utils import async_request
 from bentoml.testing.utils import parse_multipart_form

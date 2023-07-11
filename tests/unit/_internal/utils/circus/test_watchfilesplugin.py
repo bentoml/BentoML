@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+import logging
 import os
 import typing as t
-import logging
-from typing import TYPE_CHECKING
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest import skipUnless
 from unittest.mock import patch
 
 import pytest
 from circus.tests.support import TestCircus
 
-from bentoml._internal.utils.pkg import source_locations
 from bentoml._internal.utils.circus.watchfilesplugin import ServiceReloaderPlugin
+from bentoml._internal.utils.pkg import source_locations
 
 if TYPE_CHECKING:
     from unittest import TestCase

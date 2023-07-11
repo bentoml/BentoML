@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import typing as t
-import logging
 import itertools
+import logging
+import typing as t
 from typing import TYPE_CHECKING
 
 from bentoml.exceptions import InvalidArgument

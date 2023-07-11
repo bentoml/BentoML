@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from locust import task
-from locust import constant
 from locust import HttpUser
+from locust import constant
+from locust import task
 
 
 class TritonOnnxYolov5User(HttpUser):

@@ -3,19 +3,19 @@ from __future__ import annotations
 import json
 import typing as t
 
-import yaml
 import click
-from simple_di import inject
-from simple_di import Provide
-from rich.table import Table
+import yaml
 from rich.syntax import Syntax
+from rich.table import Table
+from simple_di import Provide
+from simple_di import inject
 
-from bentoml_cli.utils import is_valid_bento_tag
 from bentoml_cli.utils import is_valid_bento_name
+from bentoml_cli.utils import is_valid_bento_tag
 
 if t.TYPE_CHECKING:
-    from click import Group
     from click import Context
+    from click import Group
     from click import Parameter
 
     from bentoml._internal.bento import BentoStore
@@ -54,17 +54,17 @@ def parse_delete_targets_argument_callback(
 def add_bento_management_commands(cli: Group):
     import bentoml
     from bentoml import Tag
-    from bentoml.bentos import import_bento
-    from bentoml._internal.utils import rich_console as console
+    from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
+    from bentoml._internal.bento.bento import Bento
+    from bentoml._internal.bento.build_config import BentoBuildConfig
+    from bentoml._internal.configuration import get_quiet_mode
+    from bentoml._internal.configuration.containers import BentoMLContainer
     from bentoml._internal.utils import calc_dir_size
     from bentoml._internal.utils import human_readable_size
     from bentoml._internal.utils import resolve_user_filepath
-    from bentoml._internal.bento.bento import Bento
-    from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-    from bentoml._internal.configuration import get_quiet_mode
-    from bentoml._internal.bento.build_config import BentoBuildConfig
-    from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.utils import rich_console as console
     from bentoml._internal.utils.analytics.usage_stats import _usage_event_debugging
+    from bentoml.bentos import import_bento
 
     bento_store = BentoMLContainer.bento_store.get()
     cloud_client = BentoMLContainer.bentocloud_client.get()
@@ -318,7 +318,6 @@ def add_bento_management_commands(cli: Group):
         """Build a new Bento from current directory."""
         if output == "tag":
             from bentoml._internal.configuration import set_quiet_mode
-
             from bentoml._internal.log import configure_logging
 
             set_quiet_mode(True)

@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml.io import Text
+from bentoml._internal.utils import LazyLoader
 from bentoml.exceptions import BentoMLException
 from bentoml.grpc.utils import import_generated_stubs
-from bentoml._internal.utils import LazyLoader
+from bentoml.io import Text
 
 if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2

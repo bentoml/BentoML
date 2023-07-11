@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import torch
 import pytest
+import torch
 
-from bentoml._internal.runner.container import AutoContainer
 from bentoml._internal.frameworks.pytorch import PyTorchTensorContainer
+from bentoml._internal.runner.container import AutoContainer
 
 
 @pytest.mark.parametrize("batch_axis", [0, 1])

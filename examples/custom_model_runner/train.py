@@ -4,12 +4,12 @@ import argparse
 
 import net
 import torch
-import torch.optim as optim
 import torch.nn.functional as F
+import torch.optim as optim
+from torch.optim.lr_scheduler import StepLR
+from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision import transforms
-from torch.utils.data import DataLoader
-from torch.optim.lr_scheduler import StepLR
 
 
 def train(args, model, device, train_loader, optimizer, epoch):

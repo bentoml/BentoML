@@ -1,28 +1,28 @@
 from __future__ import annotations
 
+import logging
 import re
 import typing as t
-import logging
 from typing import TYPE_CHECKING
 from unittest.mock import Mock
-from unittest.mock import patch
 from unittest.mock import PropertyMock
+from unittest.mock import patch
 
-import torch
 import pytest
-import torch.nn as nn
+import torch
 import torch.functional as F
-from fastai.data.core import TfmdDL
-from fastai.data.core import Datasets
+import torch.nn as nn
 from fastai.data.core import DataLoaders
+from fastai.data.core import Datasets
+from fastai.data.core import TfmdDL
+from fastai.data.transforms import Transform
 from fastai.test_utils import synth_learner
 from fastai.torch_core import Module
 from fastcore.foundation import L
-from fastai.data.transforms import Transform
 
 import bentoml
-from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import InvalidArgument
 from tests.integration.frameworks.models.fastai import custom_model
 
 if TYPE_CHECKING:

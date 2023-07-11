@@ -1,40 +1,40 @@
 from __future__ import annotations
 
-import os
-import json
-import time
-import pickle
-import typing as t
 import asyncio
-import logging
 import functools
+import json
+import logging
+import os
+import pickle
+import time
 import traceback
+import typing as t
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
-from . import RunnerHandle
-from ..utils import Params
-from ..utils import PAYLOAD_META_HEADER
-from ...utils import LazyLoader
-from ...context import component_context
-from ..container import Payload
-from ...utils.uri import uri_to_path
 from ....exceptions import RemoteException
 from ....exceptions import ServiceUnavailable
 from ...configuration.containers import BentoMLContainer
+from ...context import component_context
+from ...utils import LazyLoader
+from ...utils.uri import uri_to_path
+from ..container import Payload
+from ..utils import PAYLOAD_META_HEADER
+from ..utils import Params
+from . import RunnerHandle
 
 TRITON_EXC_MSG = "tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[all]>=2.29.0\"'."
 
 if t.TYPE_CHECKING:
-    import yarl
     import tritonclient.grpc.aio as tritongrpcclient
     import tritonclient.http.aio as tritonhttpclient
+    import yarl
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
 
+    from ....triton import Runner as TritonRunner
     from ..runner import Runner
     from ..runner import RunnerMethod
-    from ....triton import Runner as TritonRunner
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")

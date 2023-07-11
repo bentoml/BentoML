@@ -1,26 +1,27 @@
 from __future__ import annotations
+
 import os
 import re
-import uuid
 import typing as t
+import uuid
 from abc import ABC
 from datetime import datetime
 from datetime import timezone
+from functools import lru_cache
 from platform import platform
 from platform import python_version
-from functools import lru_cache
 
 import attr
-import yaml
-import psutil
 import attr.converters
-from simple_di import inject
+import psutil
+import yaml
 from simple_di import Provide
+from simple_di import inject
 
-from ...utils import bentoml_cattr
 from ...cloud.config import CloudClientConfig
 from ...configuration import BENTOML_VERSION
 from ...configuration.containers import BentoMLContainer
+from ...utils import bentoml_cattr
 
 if t.TYPE_CHECKING:
     from pathlib import Path

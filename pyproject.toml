@@ -240,6 +240,7 @@ testpaths = ["tests"]
 line-length = 88
 # We ignore E501 (line too long) here because we keep user-visible strings on one line.
 ignore = ["E501"]
+extend-select = ["I"]
 exclude = [
     "bazel-*/",
     "venv",

@@ -5,20 +5,20 @@ import typing as t
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .base import IODescriptor
-from ..utils.http import set_cookies
 from ...exceptions import BentoMLException
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..utils.lazy_loader import LazyLoader
-from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import Schema
+from ..utils.http import set_cookies
+from ..utils.lazy_loader import LazyLoader
+from .base import IODescriptor
 
 if t.TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
     from typing_extensions import Self
 
-    from .base import OpenAPIResponse
     from ..context import ServiceContext as Context
+    from .base import OpenAPIResponse
 else:
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
 

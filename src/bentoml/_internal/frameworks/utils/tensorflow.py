@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import typing as t
-import logging
+import importlib.metadata
 import importlib.util
+import logging
+import typing as t
 from typing import TYPE_CHECKING
 
 from bentoml.exceptions import BentoMLException
 
 from ...types import LazyType
 from ...utils.lazy_loader import LazyLoader
-
-import importlib.metadata
 
 if TYPE_CHECKING:
     import tensorflow as tf

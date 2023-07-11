@@ -4,34 +4,34 @@ User facing python APIs for managing local bentos and build new bentos.
 
 from __future__ import annotations
 
+import logging
 import os
 import re
-import typing as t
-import logging
-import tempfile
 import subprocess
+import tempfile
+import typing as t
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from .exceptions import BadInput
-from .exceptions import InvalidArgument
-from .exceptions import BentoMLException
-from ._internal.tag import Tag
 from ._internal.bento import Bento
-from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.tag import Tag
+from ._internal.utils import resolve_user_filepath
 from ._internal.utils.analytics.usage_stats import _usage_event_debugging
+from .exceptions import BadInput
+from .exceptions import BentoMLException
+from .exceptions import InvalidArgument
 
 if t.TYPE_CHECKING:
-    from .server import Server
     from ._internal.bento import BentoStore
-    from ._internal.cloud import BentoCloudClient
     from ._internal.bento.build_config import CondaOptions
     from ._internal.bento.build_config import DockerOptions
-    from ._internal.bento.build_config import PythonOptions
     from ._internal.bento.build_config import ModelSpec
+    from ._internal.bento.build_config import PythonOptions
+    from ._internal.cloud import BentoCloudClient
+    from .server import Server
 
 
 logger = logging.getLogger(__name__)

@@ -9,8 +9,8 @@ import tensorflow as tf
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 if t.TYPE_CHECKING:
     from bentoml._internal.external_typing import tensorflow as tf_ext

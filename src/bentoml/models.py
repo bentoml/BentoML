@@ -1,27 +1,27 @@
 from __future__ import annotations
 
 import typing as t
+from contextlib import contextmanager
 from types import ModuleType
 from typing import TYPE_CHECKING
-from contextlib import contextmanager
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from .exceptions import BentoMLException
-from ._internal.tag import Tag
-from ._internal.utils import calc_dir_size
+from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import Model
 from ._internal.models import ModelContext
 from ._internal.models import ModelOptions
-from ._internal.utils.analytics import track
+from ._internal.tag import Tag
+from ._internal.utils import calc_dir_size
 from ._internal.utils.analytics import ModelSaveEvent
-from ._internal.configuration.containers import BentoMLContainer
+from ._internal.utils.analytics import track
+from .exceptions import BentoMLException
 
 if TYPE_CHECKING:
+    from ._internal.cloud import BentoCloudClient
     from ._internal.models import ModelStore
     from ._internal.models.model import ModelSignaturesType
-    from ._internal.cloud import BentoCloudClient
 
 
 @inject

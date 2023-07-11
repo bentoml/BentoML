@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import numpy as np
 import diffusers
+import numpy as np
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 framework = bentoml.diffusers
 

@@ -4,13 +4,16 @@ from __future__ import annotations
 import logging
 import typing as t
 from typing import TYPE_CHECKING
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
-from prometheus_client.parser import (
-    text_string_to_metric_families,
-)  # type: ignore (no prometheus types)
-from schema import And, Or, Schema
+from prometheus_client.parser import text_string_to_metric_families
+
+# type: ignore (no prometheus types)
+from schema import And
+from schema import Or
+from schema import Schema
 
 import bentoml
 from bentoml._internal.utils import analytics

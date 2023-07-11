@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import re
+import logging
 import os
+import re
 import shutil
 import typing as t
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -12,10 +12,10 @@ import attr
 
 import bentoml
 from bentoml import Tag
-from bentoml.models import ModelContext
-from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml.exceptions import NotFound
+from bentoml.models import ModelContext
 
 from ..models.model import PartialKwargsModelOptions
 
@@ -27,11 +27,11 @@ if TYPE_CHECKING:
 
 
 try:
-    import torch
     import diffusers
+    import torch
+    from diffusers.utils.import_utils import is_accelerate_available
     from diffusers.utils.import_utils import is_torch_version
     from diffusers.utils.import_utils import is_xformers_available
-    from diffusers.utils.import_utils import is_accelerate_available
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'diffusers' and 'transformers' is required in order to use module 'bentoml.diffusers', install diffusers and its dependencies with 'pip install --upgrade diffusers transformers accelerate'. For more information, refer to https://github.com/huggingface/diffusers",

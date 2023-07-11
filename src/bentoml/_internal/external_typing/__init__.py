@@ -34,6 +34,8 @@ if TYPE_CHECKING:
     from .starlette import ASGIReceive
     from .starlette import AsgiMiddleware
 
+    from PIL.Image import Image as PILImage
+
     WSGIApp = t.Callable[[F, t.Mapping[str, t.Any]], t.Iterable[bytes]]
 
     __all__ = [
@@ -41,6 +43,7 @@ if TYPE_CHECKING:
         "PdDataFrame",
         "PdDType",
         "PdDTypeArg",
+        "PILImage",
         "DataFrameOrient",
         "SeriesOrient",
         "ObjectID",

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import base64
+import io
 import itertools
 import pickle
 import typing as t
@@ -148,9 +149,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     @classmethod
     @abc.abstractmethod
     def from_batch_payloads(
-        cls,
-        payloads: t.Sequence[Payload],
-        batch_dim: int,
+        cls, payloads: t.Sequence[Payload], batch_dim: int
     ) -> tuple[BatchType, list[int]]:
         ...
 
@@ -450,6 +449,51 @@ class PandasDataFrameContainer(
         return cls.batches_to_batch(batches, batch_dim)
 
 
+class PILImageContainer(DataContainer["ext.PILImage", "ext.PILImage"]):
+    _error = (
+        "PIL.Image doesn't support batch inference, "
+        "you can convert it to numpy.ndarray first to enable that."
+    )
+
+    @classmethod
+    def to_payload(cls, batch: ext.PILImage, batch_dim: int) -> Payload:
+        buffer = io.BytesIO()
+        batch.save(buffer, format=batch.format)
+        return cls.create_payload(buffer.getvalue(), batch_size=1)
+
+    @classmethod
+    def from_payload(cls, payload: Payload) -> ext.PILImage:
+        from ..io_descriptors.image import PIL
+
+        PIL.Image.Image.size
+
+        return PIL.Image.open(io.BytesIO(payload.data))
+
+    @classmethod
+    def batch_to_payloads(
+        cls, batch: ext.PILImage, indices: t.Sequence[int], batch_dim: int
+    ) -> list[Payload]:
+        raise NotImplementedError(cls._error)
+
+    @classmethod
+    def batches_to_batch(
+        cls, batches: t.Sequence[ext.PILImage], batch_dim: int
+    ) -> tuple[ext.PILImage, list[int]]:
+        raise NotImplementedError(cls._error)
+
+    @classmethod
+    def batch_to_batches(
+        cls, batch: ext.PILImage, indices: t.Sequence[int], batch_dim: int
+    ) -> list[ext.PILImage]:
+        raise NotImplementedError(cls._error)
+
+    @classmethod
+    def from_batch_payloads(
+        cls, payloads: t.Sequence[Payload], batch_dim: int = 0
+    ) -> tuple[ext.PILImage, list[int]]:
+        raise NotImplementedError(cls._error)
+
+
 class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     @classmethod
     def batches_to_batch(
@@ -540,20 +584,24 @@ class DataContainerRegistry:
         cls, type_: t.Type[SingleType] | LazyType[SingleType]
     ) -> t.Type[DataContainer[SingleType, t.Any]]:
         typeref = LazyType.from_type(type_)
-        return cls.CONTAINER_SINGLE_TYPE_MAP.get(
-            typeref,
-            DefaultContainer,
-        )
+        if typeref in cls.CONTAINER_SINGLE_TYPE_MAP:
+            return cls.CONTAINER_SINGLE_TYPE_MAP[typeref]
+        for klass in cls.CONTAINER_SINGLE_TYPE_MAP:
+            if klass.issubclass(type_):
+                return cls.CONTAINER_SINGLE_TYPE_MAP[klass]
+        return DefaultContainer
 
     @classmethod
     def find_by_batch_type(
         cls, type_: t.Type[BatchType] | LazyType[BatchType]
     ) -> t.Type[DataContainer[t.Any, BatchType]]:
         typeref = LazyType.from_type(type_)
-        return cls.CONTAINER_BATCH_TYPE_MAP.get(
-            typeref,
-            DefaultContainer,
-        )
+        if typeref in cls.CONTAINER_BATCH_TYPE_MAP:
+            return cls.CONTAINER_BATCH_TYPE_MAP[typeref]
+        for klass in cls.CONTAINER_BATCH_TYPE_MAP:
+            if klass.issubclass(type_):
+                return cls.CONTAINER_BATCH_TYPE_MAP[klass]
+        return DefaultContainer
 
     @classmethod
     def find_by_name(cls, name: str) -> t.Type[DataContainer[t.Any, t.Any]]:
@@ -599,6 +647,11 @@ def register_builtin_containers():
         LazyType("tritonclient.http.aio", "InferInput"),
         LazyType("tritonclient.http.aio", "InferInput"),
         TritonInferInputDataContainer,
+    )
+    DataContainerRegistry.register_container(
+        LazyType("PIL.Image", "Image"),
+        LazyType("PIL.Image", "Image"),
+        PILImageContainer,
     )
 
 

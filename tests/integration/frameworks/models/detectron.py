@@ -2,21 +2,21 @@ from __future__ import annotations
 
 import typing as t
 
-import numpy as np
-import torch
-import requests
 import detectron2.config as Cf
 import detectron2.engine as E
-import detectron2.modeling as M
 import detectron2.model_zoo as Mz
-from PIL import Image
+import detectron2.modeling as M
+import numpy as np
+import requests
+import torch
 from detectron2.data import transforms as T
+from PIL import Image
 
 import bentoml
 
 from . import FrameworkTestModel as Model
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 if t.TYPE_CHECKING:
     import torch.nn as nn

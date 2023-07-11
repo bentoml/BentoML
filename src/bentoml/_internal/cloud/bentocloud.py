@@ -1,55 +1,55 @@
 from __future__ import annotations
 
 import io
-import typing as t
 import tarfile
 import tempfile
-import warnings
 import threading
+import typing as t
+import warnings
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from concurrent.futures import ThreadPoolExecutor
 
 import fs
 import requests
 from rich.live import Live
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from ..tag import Tag
+from ...exceptions import BentoMLException
+from ...exceptions import NotFound
 from ..bento import Bento
 from ..bento import BentoStore
-from ..utils import calc_dir_size
-from .config import get_rest_api_client
+from ..configuration.containers import BentoMLContainer
 from ..models import Model
-from ..models import copy_model
 from ..models import ModelStore
-from .schemas import BentoApiSchema
-from .schemas import LabelItemSchema
-from .schemas import BentoRunnerSchema
-from .schemas import BentoUploadStatus
-from .schemas import CreateBentoSchema
-from .schemas import CreateModelSchema
-from .schemas import ModelUploadStatus
-from .schemas import UpdateBentoSchema
-from .schemas import CompletePartSchema
-from .schemas import BentoManifestSchema
-from .schemas import ModelManifestSchema
-from .schemas import TransmissionStrategy
-from .schemas import FinishUploadBentoSchema
-from .schemas import FinishUploadModelSchema
-from .schemas import BentoRunnerResourceSchema
-from .schemas import CreateBentoRepositorySchema
-from .schemas import CreateModelRepositorySchema
-from .schemas import CompleteMultipartUploadSchema
-from .schemas import PreSignMultipartUploadUrlSchema
-from .base import CloudClient
+from ..models import copy_model
+from ..tag import Tag
+from ..utils import calc_dir_size
 from .base import FILE_CHUNK_SIZE
 from .base import CallbackIOWrapper
+from .base import CloudClient
+from .config import get_rest_api_client
 from .deployment import Deployment
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ..configuration.containers import BentoMLContainer
+from .schemas import BentoApiSchema
+from .schemas import BentoManifestSchema
+from .schemas import BentoRunnerResourceSchema
+from .schemas import BentoRunnerSchema
+from .schemas import BentoUploadStatus
+from .schemas import CompleteMultipartUploadSchema
+from .schemas import CompletePartSchema
+from .schemas import CreateBentoRepositorySchema
+from .schemas import CreateBentoSchema
+from .schemas import CreateModelRepositorySchema
+from .schemas import CreateModelSchema
+from .schemas import FinishUploadBentoSchema
+from .schemas import FinishUploadModelSchema
+from .schemas import LabelItemSchema
+from .schemas import ModelManifestSchema
+from .schemas import ModelUploadStatus
+from .schemas import PreSignMultipartUploadUrlSchema
+from .schemas import TransmissionStrategy
+from .schemas import UpdateBentoSchema
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future

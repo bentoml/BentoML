@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-import json
-import time
-import socket
-import typing as t
 import asyncio
+import json
 import logging
+import socket
+import time
+import typing as t
 import urllib.error
 import urllib.request
 from http.client import HTTPConnection
 from urllib.parse import urlparse
 
 import aiohttp
-import starlette.requests
 import starlette.datastructures
+import starlette.requests
 
-from . import Client
-from .. import io_descriptors as io
-from ..service import Service
-from ...exceptions import RemoteException
 from ...exceptions import BentoMLException
+from ...exceptions import RemoteException
+from .. import io_descriptors as io
 from ..configuration import get_debug_mode
+from ..service import Service
 from ..service.inference_api import InferenceAPI
+from . import Client
 
 logger = logging.getLogger(__name__)
 

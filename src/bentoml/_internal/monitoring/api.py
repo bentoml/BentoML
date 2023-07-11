@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import typing as t
-import logging
 import contextlib
+import logging
 import logging.config
+import typing as t
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
+from ..configuration.containers import BentoMLContainer
+from ..types import LazyType
 from .base import MT
 from .base import MonitorBase
 from .base import NoOpMonitor
-from ..types import LazyType
 from .default import DefaultMonitor
-from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 

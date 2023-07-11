@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import logging
+import importlib.metadata
 import importlib.util
+import logging
 
 from packaging import version
-
-import importlib.metadata
 
 logger = logging.getLogger(__name__)
 

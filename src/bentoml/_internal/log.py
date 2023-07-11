@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import typing as t
 import logging
 import logging.config
+import typing as t
 from functools import lru_cache
 
-from .context import trace_context
-from .context import component_context
 from .configuration import get_debug_mode
 from .configuration import get_quiet_mode
+from .context import component_context
+from .context import trace_context
 
 default_factory = logging.getLogRecordFactory()
 

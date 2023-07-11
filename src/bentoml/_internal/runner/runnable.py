@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import typing as t
 import logging
-from typing import overload
+import typing as t
 from typing import TYPE_CHECKING
+from typing import overload
 
 import attr
 
-from ..types import LazyType
 from ...exceptions import BentoMLException
+from ..types import LazyType
 
 if TYPE_CHECKING:
     from ..types import AnyType

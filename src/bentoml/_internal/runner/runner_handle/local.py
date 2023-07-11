@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import typing as t
 import functools
+import typing as t
 from typing import TYPE_CHECKING
 
 import anyio
 
-from . import RunnerHandle
-from ..utils import Params
-from ..container import Payload
 from ..container import AutoContainer
+from ..container import Payload
+from ..utils import Params
+from . import RunnerHandle
 
 if TYPE_CHECKING:
     from ..runner import Runner

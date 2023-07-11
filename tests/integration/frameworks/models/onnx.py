@@ -1,30 +1,30 @@
 from __future__ import annotations
 
 import os
-import typing as t
 import tempfile
+import typing as t
 from typing import TYPE_CHECKING
 
-import onnx
 import numpy as np
-import torch
-import sklearn
-import torch.nn as nn
+import onnx
 import onnxruntime as ort
+import sklearn
+import torch
+import torch.nn as nn
 from skl2onnx import convert_sklearn
-from sklearn.datasets import load_iris
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx.common.data_types import Int64TensorType
 from skl2onnx.common.data_types import StringTensorType
+from sklearn.datasets import load_iris
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 if TYPE_CHECKING:
     import bentoml._internal.external_typing as ext

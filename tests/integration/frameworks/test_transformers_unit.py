@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+import logging
 import os
 import typing as t
-import logging
 
 import pytest
 import transformers
-from transformers.pipelines import pipeline  # type: ignore
-from transformers.pipelines import check_task  # type: ignore
-from transformers.trainer_utils import set_seed
-from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.modeling_auto import AutoModelForAudioClassification
+from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.modeling_auto import AutoModelForSequenceClassification
+from transformers.pipelines import check_task  # type: ignore
+from transformers.pipelines import pipeline  # type: ignore
 from transformers.pipelines.audio_classification import AudioClassificationPipeline
+from transformers.trainer_utils import set_seed
 
 import bentoml
 from bentoml.exceptions import BentoMLException

@@ -4,18 +4,18 @@ import json
 import typing as t
 from typing import TYPE_CHECKING
 
-import yaml
 import click
-from rich.table import Table
+import yaml
 from rich.syntax import Syntax
+from rich.table import Table
 
-from bentoml_cli.utils import is_valid_bento_tag
 from bentoml_cli.utils import BentoMLCommandGroup
 from bentoml_cli.utils import is_valid_bento_name
+from bentoml_cli.utils import is_valid_bento_tag
 
 if TYPE_CHECKING:
-    from click import Group
     from click import Context
+    from click import Group
     from click import Parameter
 
 
@@ -42,15 +42,15 @@ def parse_delete_targets_argument_callback(
 
 def add_model_management_commands(cli: Group) -> None:
     from bentoml import Tag
-    from bentoml.models import import_model
-    from bentoml.exceptions import InvalidArgument
-    from bentoml._internal.utils import rich_console as console
-    from bentoml._internal.utils import calc_dir_size
-    from bentoml._internal.utils import human_readable_size
-    from bentoml._internal.utils import resolve_user_filepath
     from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
     from bentoml._internal.bento.build_config import BentoBuildConfig
     from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.utils import calc_dir_size
+    from bentoml._internal.utils import human_readable_size
+    from bentoml._internal.utils import resolve_user_filepath
+    from bentoml._internal.utils import rich_console as console
+    from bentoml.exceptions import InvalidArgument
+    from bentoml.models import import_model
 
     model_store = BentoMLContainer.model_store.get()
     cloud_client = BentoMLContainer.bentocloud_client.get()

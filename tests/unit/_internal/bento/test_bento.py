@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import os
-from sys import version_info
-from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
+from sys import version_info
+from typing import TYPE_CHECKING
 
 import fs
 import pytest
@@ -13,13 +13,13 @@ import pytest
 from bentoml import Tag
 from bentoml import bentos
 from bentoml._internal.bento import Bento
-from bentoml._internal.models import ModelStore
-from bentoml._internal.bento.bento import BentoInfo
 from bentoml._internal.bento.bento import BentoApiInfo
+from bentoml._internal.bento.bento import BentoInfo
 from bentoml._internal.bento.bento import BentoModelInfo
 from bentoml._internal.bento.bento import BentoRunnerInfo
-from bentoml._internal.configuration import BENTOML_VERSION
 from bentoml._internal.bento.build_config import BentoBuildConfig
+from bentoml._internal.configuration import BENTOML_VERSION
+from bentoml._internal.models import ModelStore
 
 if TYPE_CHECKING:
     from pathlib import Path

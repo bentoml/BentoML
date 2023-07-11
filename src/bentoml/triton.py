@@ -1,27 +1,25 @@
 from __future__ import annotations
 
-import typing as t
 import logging
-
-import attr
-
+import typing as t
 from functools import cached_property
 
-from simple_di import inject as _inject
+import attr
 from simple_di import Provide as _Provide
+from simple_di import inject as _inject
 
-from ._internal.utils import LazyLoader as _LazyLoader
 from ._internal.configuration import get_debug_mode as _get_debug_mode
-from ._internal.runner.runner import RunnerMethod as _RunnerMethod
-from ._internal.runner.runner import AbstractRunner as _AbstractRunner
-from ._internal.runner.runner import object_setattr as _object_setattr
-from ._internal.runner.runnable import RunnableMethodConfig as _RunnableMethodConfig
-from ._internal.runner.runner_handle import DummyRunnerHandle as _DummyRunnerHandle
 from ._internal.configuration.containers import BentoMLContainer as _BentoMLContainer
+from ._internal.runner.runnable import RunnableMethodConfig as _RunnableMethodConfig
+from ._internal.runner.runner import AbstractRunner as _AbstractRunner
+from ._internal.runner.runner import RunnerMethod as _RunnerMethod
+from ._internal.runner.runner import object_setattr as _object_setattr
+from ._internal.runner.runner_handle import DummyRunnerHandle as _DummyRunnerHandle
 from ._internal.runner.runner_handle.remote import TRITON_EXC_MSG as _TRITON_EXC_MSG
 from ._internal.runner.runner_handle.remote import (
     handle_triton_exception as _handle_triton_exception,
 )
+from ._internal.utils import LazyLoader as _LazyLoader
 
 if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as _tritongrpcclient

@@ -3,25 +3,25 @@ from __future__ import annotations
 import typing as t
 from abc import ABC
 from abc import abstractmethod
-from functools import wraps
 from contextlib import contextmanager
+from functools import wraps
 
-from rich.panel import Panel
 from rich.console import Group
-from rich.progress import Progress
+from rich.panel import Panel
 from rich.progress import BarColumn
-from rich.progress import TextColumn
-from rich.progress import SpinnerColumn
 from rich.progress import DownloadColumn
+from rich.progress import Progress
+from rich.progress import SpinnerColumn
+from rich.progress import TextColumn
 from rich.progress import TimeElapsedColumn
 from rich.progress import TimeRemainingColumn
 from rich.progress import TransferSpeedColumn
 
-from ..tag import Tag
 from ..bento import Bento
 from ..bento import BentoStore
 from ..models import Model
 from ..models import ModelStore
+from ..tag import Tag
 
 FILE_CHUNK_SIZE = 100 * 1024 * 1024  # 100Mb
 

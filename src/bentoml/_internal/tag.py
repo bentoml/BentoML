@@ -1,14 +1,14 @@
-import re
-import uuid
 import base64
-import typing as t
 import logging
+import re
+import typing as t
+import uuid
 
-import fs
 import attr
+import fs
 
-from .utils import bentoml_cattr
 from ..exceptions import BentoMLException
+from .utils import bentoml_cattr
 
 logger = logging.getLogger(__name__)
 

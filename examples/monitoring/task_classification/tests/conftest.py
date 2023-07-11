@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import os
+import subprocess
 import sys
 import typing as t
-import contextlib
-import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -14,11 +14,11 @@ import bentoml
 from bentoml._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
+    from _pytest.config import Config
+    from _pytest.fixtures import FixtureRequest
     from _pytest.main import Session
     from _pytest.nodes import Item
-    from _pytest.config import Config
     from _pytest.tmpdir import TempPathFactory
-    from _pytest.fixtures import FixtureRequest
 
 PROJECT_DIR = Path(__file__).parent.parent
 

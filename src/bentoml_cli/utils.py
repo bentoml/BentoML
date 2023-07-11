@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import difflib
+import functools
+import logging
 import os
 import re
 import time
 import typing as t
-import difflib
-import logging
-import functools
 from typing import TYPE_CHECKING
 
 import click
@@ -14,12 +14,12 @@ from click import ClickException
 from click.exceptions import UsageError
 
 if TYPE_CHECKING:
-    from click import Option
     from click import Command
-    from click import Group
     from click import Context
-    from click import Parameter
+    from click import Group
     from click import HelpFormatter
+    from click import Option
+    from click import Parameter
 
     P = t.ParamSpec("P")
 
@@ -217,11 +217,11 @@ class BentoMLCommandGroup(click.Group):
     @staticmethod
     def bentoml_common_params(func: F[P]) -> WrappedCLI[bool, bool]:
         # NOTE: update NUMBER_OF_COMMON_PARAMS when adding option.
-        from bentoml._internal.log import configure_logging
         from bentoml._internal.configuration import DEBUG_ENV_VAR
         from bentoml._internal.configuration import QUIET_ENV_VAR
         from bentoml._internal.configuration import set_debug_mode
         from bentoml._internal.configuration import set_quiet_mode
+        from bentoml._internal.log import configure_logging
         from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
 
         @click.option(
@@ -273,10 +273,10 @@ class BentoMLCommandGroup(click.Group):
         cmd_group: click.Group,
         **kwargs: t.Any,
     ) -> WrappedCLI[bool]:
-        from bentoml._internal.utils.analytics import track
+        from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
         from bentoml._internal.utils.analytics import CliEvent
         from bentoml._internal.utils.analytics import cli_events_map
-        from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
+        from bentoml._internal.utils.analytics import track
 
         command_name = kwargs.get("name", func.__name__)
 
@@ -327,8 +327,8 @@ class BentoMLCommandGroup(click.Group):
     def raise_click_exception(
         func: F[P] | WrappedCLI[bool], cmd_group: click.Group, **kwargs: t.Any
     ) -> ClickFunctionWrapper[t.Any]:
-        from bentoml.exceptions import BentoMLException
         from bentoml._internal.configuration import get_debug_mode
+        from bentoml.exceptions import BentoMLException
 
         command_name = kwargs.get("name", func.__name__)
 

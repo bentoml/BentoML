@@ -1,29 +1,29 @@
 from __future__ import annotations
 
 import json
-import typing as t
 import logging
+import typing as t
 
 import attr
+from deepmerge.merger import Merger
 
+from ...exceptions import BentoMLException
 from ..tag import Tag
 from ..utils import bentoml_cattr
+from ..utils import first_not_none
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
+from .schemas import CreateDeploymentSchema
+from .schemas import DeploymentListSchema
 from .schemas import DeploymentMode
 from .schemas import DeploymentSchema
-from .schemas import DeploymentListSchema
+from .schemas import DeploymentTargetCanaryRule
+from .schemas import DeploymentTargetConfig
+from .schemas import DeploymentTargetHPAConf
+from .schemas import DeploymentTargetRunnerConfig
 from .schemas import DeploymentTargetType
 from .schemas import FullDeploymentSchema
-from .schemas import CreateDeploymentSchema
-from .schemas import DeploymentTargetConfig
 from .schemas import UpdateDeploymentSchema
-from .schemas import DeploymentTargetHPAConf
-from .schemas import DeploymentTargetCanaryRule
-from .schemas import DeploymentTargetRunnerConfig
-from deepmerge.merger import Merger
-from ..utils import first_not_none
-from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 

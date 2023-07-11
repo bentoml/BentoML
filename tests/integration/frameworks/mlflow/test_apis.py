@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import os
 import typing as t
-from typing import TYPE_CHECKING
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import numpy as np
 import mlflow
-import pytest
 import mlflow.models
 import mlflow.sklearn
 import mlflow.tracking
+import numpy as np
+import pytest
 from sklearn.datasets import load_iris
 from sklearn.neighbors import KNeighborsClassifier
 
 import bentoml
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
 from bentoml._internal.models.model import ModelContext
+from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import NotFound
 
 if TYPE_CHECKING:
     from sklearn.utils import Bunch

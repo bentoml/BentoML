@@ -205,10 +205,13 @@ class NvidiaGpuResource(Resource[t.List[str]], resource_id="nvidia.com/gpu"):
                 return [str(i) for i in range(spec)]
             elif isinstance(spec, str):
                 try:
-                    return cls.from_spec(int(spec))
+                    resolved = int(spec)
+                    return cls.from_spec(resolved)
                 except ValueError:
                     if spec.startswith("GPU"):
                         return [spec]
+                    if "," in spec:
+                        return [i.strip() for i in spec.split(",")]
                     raise ValueError
             else:
                 return [str(x) for x in spec]

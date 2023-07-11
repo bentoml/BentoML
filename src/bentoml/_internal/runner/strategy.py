@@ -152,7 +152,7 @@ class DefaultStrategy(Strategy):
                 dev = ",".join(map(str, assigned_gpu))
             else:
                 idx = worker_index // workers_per_resource
-                if len(nvidia_gpus) == idx:
+                if idx >= len(nvidia_gpus):
                     raise ValueError(
                         f"Number of available GPU ({nvidia_gpus}) preceeds the given workers_per_resource {workers_per_resource}"
                     )

@@ -451,8 +451,8 @@ class PandasDataFrameContainer(
 
 class PILImageContainer(DataContainer["ext.PILImage", "ext.PILImage"]):
     _error = (
-        "PIL.Image doesn't support batch inference, "
-        "you can convert it to numpy.ndarray first to enable that."
+        "PIL.Image doesn't support batch inference."
+        "You can convert it to numpy.ndarray before passing to the runner."
     )
 
     @classmethod

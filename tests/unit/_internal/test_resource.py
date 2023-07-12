@@ -84,15 +84,19 @@ def test_nvidia_gpu_resource_from_env(monkeypatch: pytest.MonkeyPatch):
         assert len(resource) == 1 and resource == ["GPU-5ebe9f43-ac33420d4628"]
 
 
-def test_NvidiaGpuResource():
-    assert len(NvidiaGpuResource.from_system()) >= 0  # TODO: real from_system tests
+def test_NvidiaGpuResource(monkeypatch: pytest.MonkeyPatch):
+    with monkeypatch.context() as mcls:
+        mcls.setenv(
+            "CUDA_VISIBLE_DEVICES", ""
+        )  # to make this tests works with system that has GPU
+        assert len(NvidiaGpuResource.from_system()) >= 0  # TODO: real from_system tests
 
-    with pytest.raises(BentoMLConfigException):
-        NvidiaGpuResource.validate(NvidiaGpuResource.from_system() + [1])
-    with pytest.raises(BentoMLConfigException):
-        NvidiaGpuResource.validate([-2])
-    with pytest.raises(BentoMLConfigException):
-        NvidiaGpuResource.validate([-1])
+        with pytest.raises(BentoMLConfigException):
+            NvidiaGpuResource.validate(NvidiaGpuResource.from_system() + [1])
+        with pytest.raises(BentoMLConfigException):
+            NvidiaGpuResource.validate([-2])
+        with pytest.raises(BentoMLConfigException):
+            NvidiaGpuResource.validate([-1])
 
     NvidiaGpuResource.validate([])
     # NvidiaGpuResource.validate(1)  # TODO: work out how to skip this on systems with no GPU

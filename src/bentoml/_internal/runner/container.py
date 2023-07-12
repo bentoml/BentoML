@@ -465,8 +465,6 @@ class PILImageContainer(DataContainer["ext.PILImage", "ext.PILImage"]):
     def from_payload(cls, payload: Payload) -> ext.PILImage:
         from ..io_descriptors.image import PIL
 
-        PIL.Image.Image.size
-
         return PIL.Image.open(io.BytesIO(payload.data))
 
     @classmethod

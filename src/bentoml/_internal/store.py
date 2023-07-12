@@ -182,6 +182,13 @@ class Store(ABC, t.Generic[Item]):
     def delete(self, tag: t.Union[str, Tag]) -> None:
         _tag = Tag.from_taglike(tag)
 
+        if _tag.version in (None, "latest"):
+            try:
+                _tag.version = self._fs.readtext(_tag.latest_path())
+            except fs.errors.ResourceNotFound:
+                # if latest path doesn't exist, we don't need to delete anything
+                return
+
         if not self._fs.exists(_tag.path()):
             raise NotFound(f"{self._item_type.get_typename()} '{tag}' not found")
 

@@ -182,7 +182,7 @@ class Store(ABC, t.Generic[Item]):
     def delete(self, tag: t.Union[str, Tag]) -> None:
         _tag = Tag.from_taglike(tag)
 
-        if _tag.version in (None, "latest"):
+        if _tag.version == "latest":
             try:
                 _tag.version = self._fs.readtext(_tag.latest_path())
             except fs.errors.ResourceNotFound:

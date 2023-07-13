@@ -20,7 +20,6 @@ from bentoml._internal.log import SERVER_LOGGING_CONFIG
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner.runner import Runner
-from ._internal.utils import experimental
 from ._internal.utils import is_async_callable
 from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
@@ -513,7 +512,6 @@ def serve_http_production(
                 shutil.rmtree(uds_path)
 
 
-@experimental
 @inject
 def serve_grpc_production(
     bento_identifier: str,

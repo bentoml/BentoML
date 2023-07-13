@@ -509,22 +509,22 @@ def serve(
             port = t.cast(int, BentoMLContainer.http.port.get())
 
         res = HTTPServer(
-            bento,
-            reload,
-            production,
-            env,
-            host,
-            port,
-            working_dir,
-            api_workers,
-            backlog,
-            ssl_certfile,
-            ssl_keyfile,
-            ssl_keyfile_password,
-            ssl_version,
-            ssl_cert_reqs,
-            ssl_ca_certs,
-            ssl_ciphers,
+            bento = bento,
+            reload = reload,
+            production = production,
+            env = env,
+            host = host,
+            port = port,
+            working_dir = working_dir,
+            api_workers = api_workers,
+            backlog = backlog,
+            ssl_certfile = ssl_certfile,
+            ssl_keyfile = ssl_keyfile,
+            ssl_keyfile_password = ssl_keyfile_password,
+            ssl_version = ssl_version,
+            ssl_cert_reqs = ssl_cert_reqs,
+            ssl_ca_certs = ssl_ca_certs,
+            ssl_ciphers = ssl_ciphers,
         )
     elif server_type == "grpc":
         from .server import GrpcServer
@@ -535,19 +535,19 @@ def serve(
             port = t.cast(int, BentoMLContainer.grpc.port.get())
 
         res = GrpcServer(
-            bento,
-            reload,
-            production,
-            env,
-            host,
-            port,
-            working_dir,
-            api_workers,
-            backlog,
-            enable_reflection,
-            enable_channelz,
-            max_concurrent_streams,
-            grpc_protocol_version,
+            bento = bento,
+            reload = reload,
+            production = production,
+            env = env,
+            host = host,
+            port = port,
+            working_dir = working_dir,
+            api_workers = api_workers,
+            backlog = backlog,
+            enable_reflection = enable_reflection,
+            enable_channelz = enable_channelz,
+            max_concurrent_streams = max_concurrent_streams,
+            grpc_protocol_version = grpc_protocol_version,
         )
     else:
         raise BadInput(f"Unknown server type: '{server_type}'")

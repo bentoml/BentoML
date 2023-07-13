@@ -8,7 +8,6 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
 from ..._internal.utils import LazyLoader
-from ..._internal.utils import add_experimental_docstring
 from ..._internal.utils import cached_contextmanager
 from ..._internal.utils import reserve_free_port
 from ...exceptions import BentoMLException
@@ -161,7 +160,6 @@ async def async_client_call(
 
 
 @asynccontextmanager
-@add_experimental_docstring
 async def create_channel(
     host_url: str,
     interceptors: t.Sequence[aio.ClientInterceptor] | None = None,
@@ -190,7 +188,6 @@ async def create_channel(
             await channel.close()
 
 
-@add_experimental_docstring
 @cached_contextmanager("{interceptors}")
 def make_standalone_server(
     interceptors: t.Sequence[aio.ServerInterceptor] | None = None,

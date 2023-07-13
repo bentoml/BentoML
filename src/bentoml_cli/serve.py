@@ -266,8 +266,6 @@ def add_serve_command(cli: click.Group) -> None:
                 development_mode=False,
             )
 
-    from bentoml._internal.utils import add_experimental_docstring
-
     @cli.command(name="serve-grpc")
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
@@ -385,7 +383,6 @@ def add_serve_command(cli: click.Group) -> None:
         default=LATEST_PROTOCOL_VERSION,
         show_default=True,
     )
-    @add_experimental_docstring
     @env_manager
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,

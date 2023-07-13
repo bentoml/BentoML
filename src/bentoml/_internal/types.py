@@ -255,6 +255,12 @@ class LazyType(t.Generic[T]):
         except ValueError:
             return False
 
+    def issubclass(self, klass: type) -> bool:
+        try:
+            return issubclass(klass, self.get_class(import_module=False))
+        except ValueError:
+            return False
+
 
 if TYPE_CHECKING:
     from types import UnionType

@@ -121,6 +121,15 @@ def test_gpu_strategy_worker_env_respect_literal(monkeypatch: MonkeyPatch):
             1,
         )
 
+    with monkeypatch.context() as mcls:
+        mcls.setattr(strategy, "get_resource", unvalidated_get_resource)
+        mcls.setenv("CUDA_VISIBLE_DEVICES", "MIG-GPU-5ebe9f43")
+        envs = DefaultStrategy.get_worker_env(
+            GPURunnable, {"nvidia.com/gpu": "system"}, 1, 0
+        )
+
+        assert envs.get("CUDA_VISIBLE_DEVICES") == "MIG-GPU-5ebe9f43"
+
 
 def test_default_gpu_strategy(monkeypatch: MonkeyPatch):
     monkeypatch.setattr(strategy, "get_resource", unvalidated_get_resource)

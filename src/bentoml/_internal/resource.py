@@ -208,16 +208,16 @@ class NvidiaGpuResource(Resource[t.List[str]], resource_id="nvidia.com/gpu"):
                     resolved = int(spec)
                     return cls.from_spec(resolved)
                 except ValueError:
-                    if spec.startswith("GPU"):
+                    if spec.startswith("GPU") or spec.startswith("MIG"):
                         return [spec]
                     if "," in spec:
                         return cls.from_spec([int(i.strip()) for i in spec.split(",")])
-                    raise ValueError
+                    raise
             else:
                 return [str(x) for x in spec]
         except ValueError:
             raise BentoMLConfigException(
-                f"Invalid NVidia GPU resource limit '{spec}'. "
+                f"Invalid NVIDIA GPU resource limit '{spec}'. "
             )
 
     @classmethod
@@ -233,6 +233,10 @@ class NvidiaGpuResource(Resource[t.List[str]], resource_id="nvidia.com/gpu"):
         if cuda_visible_devices in ("", "-1"):
             return []
         if cuda_visible_devices is not None:
+            if cuda_visible_devices.startswith(
+                "GPU"
+            ) or cuda_visible_devices.startswith("MIG"):
+                return [cuda_visible_devices]
             cuda_visible_devices = cuda_visible_devices.split(",")
             if "-1" in cuda_visible_devices:
                 cuda_visible_devices = cuda_visible_devices[

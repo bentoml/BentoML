@@ -118,18 +118,20 @@ def add_deployment_command(cli: click.Group) -> None:
         A deployment can be updated using a json file with needed configurations.
         The json file has the exact format as the one on BentoCloud Deployment UI.
         """
-        if file is None and name is None:
-            raise click.BadArgumentUsage(
-                "Either --file or --name is required for update command"
-            )
         if file is not None:
+            if name is not None:
+                click.echo("Reading from file, ignoring --name", err=True)
             res = client.deployment.update_from_file(
                 path_or_stream=file,
                 context=context,
             )
-        else:  # name is not None
+        elif name is not None:
             res = client.deployment.update(
-                t.cast(str, name), bento=bento, context=context, latest_bento=True
+                name, bento=bento, context=context, latest_bento=True
+            )
+        else:
+            raise click.BadArgumentUsage(
+                "Either --file or --name is required for update command"
             )
         if output == "default":
             console.print(res)

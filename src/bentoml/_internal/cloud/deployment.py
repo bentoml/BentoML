@@ -202,11 +202,10 @@ class Deployment:
             # from bentocloud to bentoml.Tag concept
             bento = deployment_target.bento.repository.name
         bento = Tag.from_taglike(bento)
-        if bento.version in (None, "latest"):
-            if latest_bento:
-                bento = get_bento(bento).tag
-            else:
-                bento.version = deployment_target.bento.name
+        if latest_bento and bento.version is None or bento.version == "latest":
+            bento = get_bento(bento).tag
+        elif bento.version is None:
+            bento.version = deployment_target.bento.name
 
         updated_config = bentoml_cattr.unstructure(deployment_target.config)
         if hpa_conf is not None:

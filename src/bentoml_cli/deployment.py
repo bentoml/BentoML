@@ -23,6 +23,7 @@ def add_deployment_command(cli: click.Group) -> None:
     from bentoml_cli.utils import BentoMLCommandGroup
 
     client = BentoMLContainer.bentocloud_client.get()
+    BentoMLContainer.bento_store.get()
     output_option = click.option(
         "-o",
         "--output",
@@ -99,12 +100,16 @@ def add_deployment_command(cli: click.Group) -> None:
         type=click.File(),
         help="JSON file path for the deployment configuration",
     )
+    @click.option("-n", "--name", type=click.STRING, help="Deployment name")
+    @click.option("--bento", type=click.STRING, help="Bento tag")
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
     )
     @output_option
     def update(  # type: ignore
-        file: str,
+        file: str | None,
+        name: str | None,
+        bento: str | None,
         context: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
@@ -114,10 +119,19 @@ def add_deployment_command(cli: click.Group) -> None:
         A deployment can be updated using a json file with needed configurations.
         The json file has the exact format as the one on BentoCloud Deployment UI.
         """
-        res = client.deployment.update_from_file(
-            path_or_stream=file,
-            context=context,
-        )
+        if file is None and name is None:
+            raise click.BadArgumentUsage(
+                "Either --file or --name is required for update command"
+            )
+        if file is not None:
+            res = client.deployment.update_from_file(
+                path_or_stream=file,
+                context=context,
+            )
+        else:  # name is not None
+            res = client.deployment.update(
+                t.cast(str, name), bento=bento, context=context, latest_bento=True
+            )
         if output == "default":
             console.print(res)
         elif output == "json":

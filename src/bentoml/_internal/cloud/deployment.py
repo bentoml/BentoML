@@ -175,7 +175,10 @@ class Deployment:
         context: str | None = None,
         labels: dict[str, str] | None = None,
         canary_rules: t.List[DeploymentTargetCanaryRule] | None = None,
+        latest_bento: bool = False,
     ) -> DeploymentSchema:
+        from bentoml import get as get_bento
+
         if mode is None:
             mode = DeploymentMode.Function
         if type is None:
@@ -197,8 +200,13 @@ class Deployment:
         if bento is None:
             # NOTE: bento.repository.name is the bento.name, and bento.name is the bento.version
             # from bentocloud to bentoml.Tag concept
-            bento = f"{deployment_target.bento.repository.name}:{deployment_target.bento.name}"
+            bento = deployment_target.bento.repository.name
         bento = Tag.from_taglike(bento)
+        if bento.version in (None, "latest"):
+            if latest_bento:
+                bento = get_bento(bento).tag
+            else:
+                bento.version = deployment_target.bento.name
 
         updated_config = bentoml_cattr.unstructure(deployment_target.config)
         if hpa_conf is not None:

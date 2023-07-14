@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 MODULE_NAME = "bentoml.asset"
-ASSET_PREFIX = "bentoml_reserverd_asset___"
+ASSET_PREFIX = "bentoml_reserved_assets___"
 API_VERSION = "v1"
 
 def convert_tag(tag: t.Union[Tag, str]) -> Tag:

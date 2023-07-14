@@ -1,6 +1,6 @@
 ci:
   autoupdate_schedule: monthly
-exclude: '.*\.(css|js|svg)$'
+exclude: '(.*\.(css|js|svg))|(.*_generated.*)$'
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: 'v0.0.277'
@@ -11,7 +11,7 @@ repos:
     rev: 23.3.0
     hooks:
       - id: black-jupyter
-        files: '/(src|tests|docs|examples|typings)/'
+        files: '(src|tests|docs|examples|typings)/'
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:

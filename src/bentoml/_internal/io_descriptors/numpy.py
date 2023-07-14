@@ -419,10 +419,10 @@ class NumpyNdarray(
              be accessed via cURL or any external web traffic.
         """
         obj = self.validate_array(obj)
-
+        
         if ctx is not None:
             res = Response(
-                json.dumps(obj.tolist()),
+                json.dumps(list(obj.sample)),
                 media_type=self._mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,

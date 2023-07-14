@@ -23,7 +23,6 @@ def add_deployment_command(cli: click.Group) -> None:
     from bentoml_cli.utils import BentoMLCommandGroup
 
     client = BentoMLContainer.bentocloud_client.get()
-    BentoMLContainer.bento_store.get()
     output_option = click.option(
         "-o",
         "--output",

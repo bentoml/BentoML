@@ -650,6 +650,43 @@ specific for ML, the BentoML team has also created Yatai and bentoctl:
 Learn more about different deployment options with BentoML from the
 :doc:`concepts/deploy` page.
 
+Use GitHub Action to Boost Your Workflow
+----------------------------------------
+
+BentoML provides a GitHub Action to help you automate the process of building bento and deploying to the cloud.
+Here an example of the workflow file:
+
+.. code-block:: yaml
+
+    name: Update Bento Deployment
+    on:
+    push:
+      tags:
+        - v*
+
+    jobs:
+      build_and_deploy:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v3
+
+          - uses: actions/setup-python@v4
+            with:
+            python-version: '3.10'
+            cache: 'pip'
+
+          - name: Build and Deploy
+            uses: bentoml/deploy-bento-action@main
+              with:
+                cloud_api_token: ${{ secrets.CLOUD_API_TOKEN }}
+                cloud_endpoint: ${{ secrets.CLOUD_ENDPOINT }}
+                deployment_name: test-iris
+
+You can get more details about this file in :ref:`Deploying Your Bento <bentocloud/how-tos/deploy-bentos:Deploying Your Bento>`.
+
+With this workflow, every time you push changes to the repository, a new Bento will be built and rolled out to the existing deployment.
+
+Read the usage and available input parameters of this action in the `Action README <https://github.com/bentoml/deploy-bento-action>`_.
 
 ----
 

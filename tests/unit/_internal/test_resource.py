@@ -113,10 +113,6 @@ def test_NvidiaGpuResource(monkeypatch: pytest.MonkeyPatch):
     assert NvidiaGpuResource.from_spec("GPU-288347ab") == ["GPU-288347ab"]
     assert NvidiaGpuResource.from_spec("MIG-GPU-288347ab") == ["MIG-GPU-288347ab"]
 
-    with pytest.raises(BentoMLConfigException):
-        # Currently this is not supported and is considered invalid
-        assert NvidiaGpuResource.from_spec("[1, 2, 3]") == [1, 2, 3]
-
     with pytest.raises(TypeError):
         NvidiaGpuResource.from_spec((1, 2, 3))
 

@@ -104,11 +104,11 @@ class InferenceAPI:
                 if (
                     isinstance(annotation, t.Type)
                     and annotation != inspect.Signature.empty
-                        and not is_compatible_type(input_type, annotation)
+                    and not is_compatible_type(input_type, annotation)
                 ):
-                        raise TypeError(
-                            f"Expected type of argument '{first_arg}' to be '{input_type}', got '{sig.parameters[first_arg].annotation}'"
-                        )
+                    raise TypeError(
+                        f"Expected type of argument '{first_arg}' to be '{input_type}', got '{sig.parameters[first_arg].annotation}'"
+                    )
 
                 if len(sig.parameters) > 2:
                     raise ValueError(

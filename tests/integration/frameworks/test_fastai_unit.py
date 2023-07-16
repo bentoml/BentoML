@@ -6,8 +6,8 @@ import typing as t
 import numpy as np
 import pytest
 import torch
-import torch.functional as F
 import torch.nn as nn
+import torch.nn.functional as F
 from fastai.data.block import DataBlock
 from fastai.data.core import DataLoaders
 from fastai.data.core import Datasets
@@ -86,15 +86,6 @@ def custom_model() -> Learner:
     return learner
 
 
-learner = custom_model()
-
-
-mock_learner = synth_learner(n_trn=5)
-dl = TfmdDL(Datasets(torch.arange(50), tfms=[L(), [_Add1()]]))
-mock_learner.dls = DataLoaders(dl, dl)
-mock_learner.loss_func = _FakeLossFunc()
-
-
 def test_raise_exceptions():
     with pytest.raises(BentoMLException) as exc:
         bentoml.fastai.save_model("invalid_learner", LinearModel())  # type: ignore (testing exception)
@@ -113,6 +104,11 @@ def test_raise_exceptions():
 
 
 def test_batchable_exception():
+    mock_learner = synth_learner(n_trn=5)
+    dl = TfmdDL(Datasets(torch.arange(50), tfms=[L(), [_Add1()]]))
+    mock_learner.dls = DataLoaders(dl, dl)
+    mock_learner.loss_func = _FakeLossFunc()
+
     with pytest.raises(
         BentoMLException, match="Batchable signatures are not supported *"
     ):
@@ -122,6 +118,8 @@ def test_batchable_exception():
 
 
 def test_raise_attribute_runnable_error():
+    learner = custom_model()
+
     with pytest.raises(
         InvalidArgument, match="No method with name not_exist found for Learner of *"
     ):

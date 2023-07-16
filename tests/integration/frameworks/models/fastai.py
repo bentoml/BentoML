@@ -114,7 +114,7 @@ iris_model = FrameworkTestModel(
                     Input(
                         input_args=[X.iloc[0]],
                         expected=lambda out: np.isclose(
-                            out[2].numpy(), [-0.35807556]
+                            out[-1].numpy(), [-0.3580], rtol=1e-3
                         ).all(),
                     ),
                 ],

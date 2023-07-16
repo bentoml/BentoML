@@ -17,7 +17,8 @@ install: .pdm .pre-commit  ## Install the package, dependencies, and pre-commit 
 	pre-commit install --install-hooks
 .PHONY: refresh-lockfiles
 refresh-lockfiles: .pdm  ## Sync lockfiles with requirements files.
-	pdm update --update-reuse -d -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
+	# We need to set --no-isolation for detectron2 to work 😢
+	pdm update --update-reuse -d -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws --no-isolation
 .PHONY: format format-proto lint lint-proto type style clean
 format: ## Running code formatter: black and isort
 	@echo "(black) Formatting codebase..."

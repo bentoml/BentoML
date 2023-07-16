@@ -181,11 +181,12 @@ frameworks = [
     "fastai",
     "xgboost",
     "scikit-learn",
+    "easyocr",
+    "datasets",
     # ONNX dependencies
     "onnx",
     "onnxruntime",
     # tensorflow dependencies
-    "keras",
     "tensorflow>=2.3.0",
     # torch-related dependencies
     "torch",
@@ -215,6 +216,10 @@ testing = [
     "build[virtualenv]==0.10.0",
     "Pillow<10",
 ]
+dev = [
+    "-e git+https://github.com/facebookresearch/detectron2.git#egg=detectron2",
+    "fastapi",
+]
 [tool.pdm.resolution.overrides]
 # resolve for python restriction in tensorflow-io-gcs-filesystem
 # otherwise locking will fail
@@ -223,7 +228,7 @@ tensorflow-io-gcs-filesystem = ">=0.29.0"
 _run_test = "pytest --cov=bentoml --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = { composite = ["_run_test {args:tests}"] }
 unit = { composite = ["tests tests/unit -n 3"] }
-integration = { composite = ["tests tests/integration"] }
+integration = { composite = ["tests tests/integration -n auto"] }
 monitoring = { composite = ["tests examples/monitoring/task_classification"] }
 e2e = { composite = [
     "tests tests/e2e/bento_server_http",

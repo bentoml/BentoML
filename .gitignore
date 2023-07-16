@@ -162,3 +162,6 @@ yolov5*
 
 # MLflow runs
 mlruns/
+
+# pdm
+.pdm-python

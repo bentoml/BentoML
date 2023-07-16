@@ -1,0 +1,59 @@
+name: code-quality
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 1/2'
+env:
+  LINES: 200
+  COLUMNS: 200
+  BENTOML_DO_NOT_TRACK: True
+concurrency:
+  group: cqa-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaultsrun
+defaults:
+  run:
+    shell: bash --noprofile --norc -exo pipefail {0}
+jobs:
+  style:
+    if: '!github.event.repository.fork' # Don't run on fork repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v2
+        with:
+          cache: true
+          python-version: '3.11'
+      - name: Setup bufbuild/buf
+        uses: bufbuild/buf-setup-action@v1.15.1
+        with:
+          github_token: ${{ github.token }}
+      - name: Install dependencies
+        run: pdm install -G tooling
+      - name: Format and lint check
+        run: pdm run -v pre-commit run --all-files
+      - name: Proto lint
+        run: buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs src
+      - name: Type check
+        run: pdm run -v pre-commit run typecheck --all-files
+  spelling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v2
+        with:
+          cache: true
+          python-version: '3.11'
+      - name: Install libenchant
+        run: |
+          sudo apt-get update && sudo apt-get install -y libenchant-2-dev
+      - name: Install dependencies
+        run: pdm install -G docs
+      - name: Run spellcheck script
+        run: |
+          pdm run -v sphinx-build -b spelling ./docs/source ./docs/build || (echo "Failed to run spellcheck. Refer to logs for more details"; exit 1)

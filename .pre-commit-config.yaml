@@ -1,5 +1,8 @@
 ci:
   autoupdate_schedule: monthly
+  skip: [typecheck]
+  autofix_commit_msg: "ci: auto fixes from pre-commit.ci\n\nFor more information, see https://pre-commit.ci"
+  autoupdate_commit_msg: 'ci: pre-commit autoupdate [skip ci]'
 exclude: '(.*\.(css|js|svg))|(.*_generated.*)$'
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -17,3 +20,17 @@ repos:
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
+  - repo: https://github.com/pdm-project/pdm
+    rev: 2.8.0
+    hooks:
+      - id: pdm-lock-check
+  - repo: local
+    hooks:
+      - id: typecheck
+        name: type-check
+        entry: ./tools/typings
+        types: [python]
+        language: node
+        pass_filenames: false
+        additional_dependencies: ['pyright@1.1.317']
+        verbose: true

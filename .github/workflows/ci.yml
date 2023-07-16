@@ -15,170 +15,55 @@ defaults:
   run:
     shell: bash --noprofile --norc -exo pipefail {0}
 jobs:
-  diff:
-    runs-on: ubuntu-latest
-    outputs:
-      related: ${{ steps.filter.outputs.related }}
-      bentoml: ${{ steps.filter.outputs.bentoml }}
-      docs: ${{ steps.filter.outputs.docs }}
-      protos: ${{ steps.filter.outputs.protos }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          base: 'main'
-          filters: |
-            related: &related
-              - .github/workflows/ci.yml
-              - codecov.yml
-              - pyproject.toml
-              - requirements/tests-requirements.txt
-            protos: &protos
-              - "src/bentoml/grpc/**/*.proto"
-            bentoml:
-              - *protos
-              - *related
-              - "src/bentoml/**"
-              - "src/bentoml_cli/**"
-              - "tests/**"
-              - "examples/**"
-            docs:
-              - *related
-              - requirements/docs-requirements.txt
-              - "docs/**"
-  codestyle_check:
-    runs-on: ubuntu-latest
-    needs:
-      - diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10.6'
-          architecture: x64
-      - name: Get pip cache dir
-        id: cache-dir
-        run: |
-          echo ::set-output name=dir::$(pip cache dir)
-      - name: Fetch origin
-        run: git fetch origin "$GITHUB_BASE_REF"
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '17'
-      - name: Install pyright
-        run: |
-          npm install -g npm@^7 pyright
-      - name: Setup bufbuild/buf
-        uses: bufbuild/buf-setup-action@v1.24.0
-        with:
-          github_token: ${{ github.token }}
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        id: cache-pip
-        with:
-          path: ${{ steps.cache-dir.outputs.dir }}
-          key: codestyle-${{ hashFiles('requirements/dev-requirements.txt') }}
-      - name: Install dependencies
-        run: |
-          pip install .
-          pip install pre-commit
-      - name: Format and lint check
-        run: pre-commit run --all-files
-      - name: Type check
-        if: ${{ github.event_name == 'pull_request' }}
-        run: git diff --name-only --diff-filter=AM "origin/$GITHUB_BASE_REF" -z -- '*.py{,i}' | xargs -0 --no-run-if-empty pyright
-      - name: Proto check
-        if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.protos == 'true') || github.event_name == 'push' }}
-        run: |
-          buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs src
-  documentation_spelling_check:
-    runs-on: ubuntu-latest
-    needs:
-      - diff
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.docs == 'true') || github.event_name == 'push' }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-      - name: Get pip cache dir
-        id: cache-dir
-        run: |
-          echo ::set-output name=dir::$(pip cache dir)
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        id: cache-pip
-        with:
-          path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-docs-${{ hashFiles('requirements/docs-requirements.txt') }}
-      - name: Install dependencies
-        run: |
-          pip install .
-          pip install -r requirements/docs-requirements.txt
-      - name: Install libenchant
-        run: |
-          sudo apt-get update && sudo apt-get install -y libenchant-2-dev
-      - name: Run spellcheck script
-        run: make spellcheck-docs
-  unit_tests:
-    needs:
-      - diff
+  unit:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10', '3.11']
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v4
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v2
         with:
+          cache: true
           python-version: ${{ matrix.python-version }}
-          architecture: x64
-      - name: Get pip cache dir
-        id: cache-dir
-        run: |
-          echo ::set-output name=dir::$(pip cache dir)
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        id: cache-pip
-        with:
-          path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
       - name: Install dependencies
         run: |
-          pip install ".[grpc]"
-          pip install -r requirements/tests-requirements.txt
-      - name: Run unit tests
-        run: |
-          OPTS=(--cov-config pyproject.toml --cov=src/bentoml --cov-append)
-          if [ "${{ matrix.os }}" != 'windows-latest' ]; then
-            # we will use pytest-xdist to improve tests run-time.
-            OPTS=(${OPTS[@]} --dist loadfile -n auto --run-grpc-tests)
-          fi
-          # Now run the unit tests
-          coverage run -m pytest tests/unit "${OPTS[@]}"
-  monitoring_e2e_tests:
-    needs:
-      - diff
+          pdm use -f ${{ matrix.python-version }}
+          pdm install -G grpc -G io -G testing
+      - name: Unit tests
+        run: pdm run -v tests tests/unit
+  integrations:
+    if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' }}
+    name: Running framework integrations tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v2
+        with:
+          cache: true
+          python-version: '3.8'
+      - name: Install dependencies
+        run: pdm install -G testing -G frameworks
+      - name: Run framework integration tests
+        run: pdm run -v tests tests/integration
+  e2e-monitoring:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10', '3.11']
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_monitoring_e2e_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -189,11 +74,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: x64
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -201,27 +81,21 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         id: buildx
         uses: docker/setup-buildx-action@v2
-      - name: Get pip cache dir
-        id: cache-dir
-        run: |
-          echo ::set-output name=dir::$(pip cache dir)
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        id: cache-pip
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v2
         with:
-          path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          cache: true
+          python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          pip install -e '.[monitor-otlp]' -r requirements/tests-requirements.txt
+          pdm use -f ${{ matrix.python-version }}
+          pdm install -G io -G testing -G monitor-otlp
       - name: Run the monitoring tests
         working-directory: examples/monitoring/task_classification
         run: |
           pip install -r requirements.txt
-          mkdir -p monitoring && pytest . -vvv --capture=tee-sys
-  bento_server_e2e_tests:
-    needs:
-      - diff
+          mkdir -p monitoring && pdm run -v pytest . -vvv --capture=tee-sys
+  e2e-bento-server:
     strategy:
       fail-fast: false
       matrix:
@@ -237,7 +111,7 @@ jobs:
           - python-version: '3.11'
             # NOTE: Remove tests on 3.11 for gRPC for now, as it needs more investigation
             server_type: 'grpc'
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_${{ matrix.server_type }}_e2e_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -248,11 +122,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: x64
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -260,31 +129,20 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         id: buildx
         uses: docker/setup-buildx-action@v2
-      - name: Get pip cache dir
-        id: cache-dir
-        run: |
-          echo ::set-output name=dir::$(pip cache dir)
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        id: cache-pip
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v2
         with:
-          path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          cache: true
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          pdm use -f ${{ matrix.python-version }}
+          pdm install -G grpc -G io -G testing
       - name: Install dependencies for ${{ matrix.server_type }}-based tests.
-        run: |
-          pip install -r requirements/tests-requirements.txt
-          if [ "${{ matrix.server_type }}" == 'grpc' ]; then
-            pip install -e ".[grpc]"
-          else
-            pip install -e .
-          fi
-          if [ -f "tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt" ]; then
-            pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
-          fi
+        working-directory: tests/e2e/bento_server_${{ matrix.server_type }}
+        run: pip install -r requirements.txt
       - name: Run ${{ matrix.server_type }} tests and generate coverage report
-        run: |
-          OPTS=(--cov-config pyproject.toml --cov=src/bentoml --cov-append)
-          coverage run -m pytest tests/e2e/bento_server_${{ matrix.server_type }} "${OPTS[@]}"
+        run: pdm run -v tests tests/e2e/bento_server_${{ matrix.server_type }}
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

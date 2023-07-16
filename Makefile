@@ -2,13 +2,25 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
-USE_VERBOSE ?=false
-USE_GPU ?= false
-USE_GRPC ?= false
 
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
-
+.PHONY: .pdm
+.pdm:  ## Check that PDM is installed
+	@pdm -V || echo 'Please install PDM: https://pdm.fming.dev/latest/\#installation'
+.PHONY: .pre-commit
+.pre-commit:  ## Check that pre-commit is installed
+	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
+.PHONY: install
+install: .pdm .pre-commit  ## Install the package, dependencies, and pre-commit for local development
+	pdm install -G docs -G tooling -G testing -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
+	pre-commit install --install-hooks
+.PHONY: refresh-lockfiles
+refresh-lockfiles: .pdm  ## Sync lockfiles with requirements files.
+	pdm update --update-reuse -G docs -G tooling -G testing -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
+.PHONY: rebuild-lockfiles
+rebuild-lockfiles: .pdm  ## Rebuild lockfiles from scratch, updating all dependencies
+	pdm update --update-eager -G docs -G tooling -G testing -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
 .PHONY: format format-proto lint lint-proto type style clean
 format: ## Running code formatter: black and isort
 	@echo "(black) Formatting codebase..."

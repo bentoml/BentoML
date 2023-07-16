@@ -227,7 +227,7 @@ e2e = { composite = [
     "tests tests/e2e/bento_server_http",
     "tests tests/e2e/bento_server_grpc",
 ] }
-pre_all = "pdm install"
+pre_all = "pdm sync -d -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws"
 all = { composite = ["unit", "integration", "monitoring", "e2e"] }
 
 [tool.coverage.paths]

@@ -65,7 +65,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
-      SETUPTOOLS_USE_DISTUTILS: stdlib
       BENTOML_BUNDLE_LOCAL_BUILD: True
     steps:
       - uses: actions/checkout@v3
@@ -106,7 +105,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
-      SETUPTOOLS_USE_DISTUTILS: stdlib
       BENTOML_BUNDLE_LOCAL_BUILD: True
     steps:
       - uses: actions/checkout@v3
@@ -128,9 +126,6 @@ jobs:
         run: |
           pdm use -f ${{ matrix.python-version }}
           pdm sync -d -G grpc -G io -G testing
-      - name: Install dependencies for ${{ matrix.server_type }}-based tests.
-        working-directory: tests/e2e/bento_server_${{ matrix.server_type }}
-        run: pip install -r requirements.txt
       - name: Run ${{ matrix.server_type }} tests and generate coverage report
         run: pdm run -v tests tests/e2e/bento_server_${{ matrix.server_type }}
 concurrency:

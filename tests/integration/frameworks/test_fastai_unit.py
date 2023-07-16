@@ -1,20 +1,10 @@
-# noqa: E401, E402, E501
 from __future__ import annotations
-
-import os
-
-import pytest
-
-if os.getenv("GITHUB_ACTIONS") is not None:
-    pytest.skip(
-        "Skipping on GitHub Actions, seems like importing torch eagerly will fail the tests.",
-        allow_module_level=True,
-    )
 
 import re
 import typing as t
 
 import numpy as np
+import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

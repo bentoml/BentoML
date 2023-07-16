@@ -65,7 +65,6 @@ dependencies = [
     "watchfiles>=0.15.0",
 ]
 dynamic = ["version"]
-
 [project.urls]
 Homepage = "https://bentoml.com"
 Documentation = "https://docs.bentoml.com"
@@ -74,10 +73,8 @@ Twitter = "https://twitter.com/bentomlai"
 Tracker = "https://github.com/bentoml/BentoML/issues"
 Slack = "https://l.bentoml.com/join-slack"
 Blog = "https://modelserving.com"
-
 [project.scripts]
 bentoml = "bentoml_cli.cli:cli"
-
 [project.optional-dependencies]
 all = [
     "bentoml[aws]",
@@ -129,10 +126,8 @@ build-backend = 'hatchling.build'
 [tool.hatch.version]
 source = "vcs"
 fallback-version = "0.0.0"
-
 [tool.hatch.build.hooks.vcs]
 version-file = "src/bentoml/_version.py"
-
 [tool.hatch.version.raw-options]
 git_describe_command = [
     "git",
@@ -144,16 +139,23 @@ git_describe_command = [
 ]
 version_scheme = "post-release"
 fallback_version = "0.0.0"
-
 [tool.hatch.metadata]
 allow-direct-references = true
-
 [tool.hatch.build.targets.sdist]
 only-include = ["src/bentoml", "src/bentoml_cli"]
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/bentoml", "src/bentoml_cli"]
 
+[[tool.pdm.source]]
+url = "https://download.pytorch.org/whl/cpu"
+name = "torch"
+[tool.pdm.resolution]
+respect-source-order = true
+[tool.pdm.resolution.overrides]
+# resolve for python restriction in tensorflow-io-gcs-filesystem
+# otherwise locking will fail
+tensorflow-io-gcs-filesystem = ">=0.29.0"
+fastapi = "==0.93.0"
 [tool.pdm.dev-dependencies]
 docs = [
     "sphinx>=5",
@@ -220,11 +222,6 @@ dev = [
     "-e git+https://github.com/facebookresearch/detectron2.git#egg=detectron2",
     "fastapi",
 ]
-[tool.pdm.resolution.overrides]
-# resolve for python restriction in tensorflow-io-gcs-filesystem
-# otherwise locking will fail
-tensorflow-io-gcs-filesystem = ">=0.29.0"
-fastapi = "==0.93.0"
 [tool.pdm.scripts]
 _run_test = "pytest --cov=bentoml --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = { composite = ["_run_test {args:tests}"] }
@@ -245,7 +242,6 @@ coverage-write-report = "python tools/write_report.py"
 
 [tool.coverage.paths]
 bentoml = ["src/bentoml", "*/bentoml/src/bentoml"]
-
 [tool.coverage.run]
 branch = true
 omit = [
@@ -260,7 +256,6 @@ omit = [
     "src/bentoml/grpc/v1/*",
     "src/bentoml/_internal/external_typing/*",
 ]
-
 [tool.coverage.report]
 show_missing = true
 precision = 2

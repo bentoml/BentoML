@@ -216,7 +216,7 @@ testing = [
 
 [tool.pdm.scripts]
 _run_test = "pytest --cov --cov-report=term-missing --cov-config=pyproject.toml -vv"
-tests = "_run_test {args:tests}"
+tests = { composite = ["_run_test {args:tests}"] }
 
 [tool.coverage.paths]
 source = ["src"]

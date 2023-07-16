@@ -37,7 +37,7 @@ jobs:
           pdm use -f ${{ matrix.python-version }}
           pdm install -G grpc -G io -G testing
       - name: Unit tests
-        run: pdm run -v tests tests/unit
+        run: pdm run -v tests tests/unit -n 3
   integrations:
     name: Running framework integrations tests
     runs-on: ubuntu-latest

@@ -29,9 +29,8 @@ There are three ways to complete this tutorial:
    side by side with this guide. As you go through this guide, you can simply run the
    sample code from the Colab Notebook.
 
-   You will be able to try out most of the content in the tutorial on Colab besides
-   the docker container part towards the end. This is because Google Colab currently
-   does not support docker.
+   You will be able to try out most of the tutorial content on Colab. Note that deploying
+   as Docker containers on Google Colab is not supported due to Colab's lack thereof.
 
 #. Run the tutorial notebook from Docker
 
@@ -44,14 +43,14 @@ There are three ways to complete this tutorial:
 
 #. Local Development Environment
 
-   Download the source code of this tutorial from `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/examples>`_:
+   Download the source code of this tutorial from :examples:`examples/quickstart <quickstart>`:
 
    .. code-block:: bash
 
       » git clone --depth=1 git@github.com:bentoml/BentoML.git
       » cd bentoml/examples/quickstart/
 
-   BentoML supports Linux, Windows and MacOS. You will need Python 3.7 or above to run
+   BentoML supports Linux, Windows and MacOS. You will need Python 3.8 or above to run
    this tutorial. We recommend using `virtual environment <https://docs.python.org/3/library/venv.html>`_
    to create an isolated local environment. However this is not required.
 
@@ -165,7 +164,7 @@ We can now run the BentoML server for our new service in development mode:
 
        .. code-block:: bash
 
-          » bentoml serve service:svc --reload
+          » bentoml serve service:svc --development --reload
           2022-09-18T21:11:22-0700 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service.py:svc" can be accessed at http://localhost:3000/metrics.
           2022-09-18T21:11:22-0700 [INFO] [cli] Starting development HTTP BentoServer from "service.py:svc" listening on 0.0.0.0:3000 (Press CTRL+C to quit)
           2022-09-18 21:11:23 circus[80177] [INFO] Loading the plugin...
@@ -178,7 +177,7 @@ We can now run the BentoML server for our new service in development mode:
 
        .. code-block:: bash
 
-          » bentoml serve-grpc service:svc --reload --enable-reflection
+          » bentoml serve-grpc service:svc --development --reload --enable-reflection
           2022-09-18T21:12:18-0700 [INFO] [cli] Prometheus metrics for gRPC BentoServer from "service.py:svc" can be accessed at http://localhost:3001.
           2022-09-18T21:12:18-0700 [INFO] [cli] Starting development gRPC BentoServer from "service.py:svc" listening on 0.0.0.0:3000 (Press CTRL+C to quit)
           2022-09-18 21:12:19 circus[81102] [INFO] Loading the plugin...
@@ -341,7 +340,8 @@ You can test out the Runner interface this way:
 
 .. note::
 
-   For custom Runners and advanced runner options, see :doc:`concepts/runner` and :doc:`guides/batching`.
+   For custom Runners (to define our own Runner classes) and advanced runner options,
+   see :doc:`concepts/runner` and :doc:`guides/batching`.
 
 
 Service API and IO Descriptor
@@ -414,6 +414,8 @@ To build a Bento, first create a ``bentofile.yaml`` file in your project directo
              packages:  # Additional pip packages required by the service
              - scikit-learn
              - pandas
+          models: # The model to be used for building the bento.
+            - iris_clf:latest
 
     .. tab-item:: gRPC
        :sync: grpc
@@ -431,6 +433,8 @@ To build a Bento, first create a ``bentofile.yaml`` file in your project directo
              - bentoml[grpc]
              - scikit-learn
              - pandas
+          models: # The model to be used for building the bento.
+            - iris_clf:latest
 
 .. tip::
 
@@ -448,7 +452,7 @@ Next, run the ``bentoml build`` CLI command from the same directory:
     Building BentoML service "iris_classifier:6otbsmxzq6lwbgxi" from build context "/home/user/gallery/quickstart"
     Packing model "iris_clf:zy3dfgxzqkjrlgxi"
     Locking PyPI package versions..
- 
+
     ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
     ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
     ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
@@ -468,7 +472,7 @@ For starters, you can now serve it with the ``bentoml serve`` CLI command:
 
        .. code-block:: bash
 
-          » bentoml serve iris_classifier:latest --production
+          » bentoml serve iris_classifier:latest
 
           2022-09-18T21:22:17-0700 [INFO] [cli] Environ for worker 0: set CPU thread count to 10
           2022-09-18T21:22:17-0700 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "iris_classifier:latest" can be accessed at http://0.0.0.0:3000/metrics.
@@ -479,7 +483,7 @@ For starters, you can now serve it with the ``bentoml serve`` CLI command:
 
        .. code-block:: bash
 
-          » bentoml serve-grpc iris_classifier:latest --production
+          » bentoml serve-grpc iris_classifier:latest
 
           2022-09-18T21:23:11-0700 [INFO] [cli] Environ for worker 0: set CPU thread count to 10
           2022-09-18T21:23:11-0700 [INFO] [cli] Prometheus metrics for gRPC BentoServer from "iris_classifier:latest" can be accessed at http://0.0.0.0:3001.
@@ -513,7 +517,7 @@ via the ``bentoml containerize`` CLI command:
 
           Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
           Successfully built docker image for "iris_classifier:6otbsmxzq6lwbgxi" with tags "iris_classifier:6otbsmxzq6lwbgxi"
-          To run your newly built Bento container, pass "iris_classifier:6otbsmxzq6lwbgxi" to "docker run". For example: "docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve --production".
+          To run your newly built Bento container, pass "iris_classifier:6otbsmxzq6lwbgxi" to "docker run". For example: "docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve".
 
     .. tab-item:: gRPC
        :sync: grpc
@@ -524,8 +528,8 @@ via the ``bentoml containerize`` CLI command:
 
           Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
           Successfully built docker image for "iris_classifier:6otbsmxzq6lwbgxi" with tags "iris_classifier:6otbsmxzq6lwbgxi"
-          To run your newly built Bento container, pass "iris_classifier:6otbsmxzq6lwbgxi" to "docker run". For example: "docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve --production".
-          Additionally, to run your Bento container as a gRPC server, do: "docker run -it --rm -p 3000:3000 -p 3001:3001 iris_classifier:6otbsmxzq6lwbgxi serve-grpc --production"
+          To run your newly built Bento container, pass "iris_classifier:6otbsmxzq6lwbgxi" to "docker run". For example: "docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve".
+          Additionally, to run your Bento container as a gRPC server, do: "docker run -it --rm -p 3000:3000 -p 3001:3001 iris_classifier:6otbsmxzq6lwbgxi serve-grpc"
 
 .. note::
 
@@ -562,7 +566,7 @@ Run the docker image to start the BentoServer:
 
        .. code-block:: bash
 
-          » docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve --production
+          » docker run -it --rm -p 3000:3000 iris_classifier:6otbsmxzq6lwbgxi serve
 
           2022-09-19T05:27:31+0000 [INFO] [cli] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
           2022-09-19T05:27:31+0000 [WARNING] [cli] GPU not detected. Unable to initialize pynvml lib.
@@ -580,7 +584,7 @@ Run the docker image to start the BentoServer:
 
        .. code-block:: bash
 
-          » docker run -it --rm -p 3000:3000 -p 3001:3001 iris_classifier:6otbsmxzq6lwbgxi serve-grpc --production
+          » docker run -it --rm -p 3000:3000 -p 3001:3001 iris_classifier:6otbsmxzq6lwbgxi serve-grpc
 
           2022-09-19T05:28:29+0000 [INFO] [cli] Service loaded from Bento directory: bentoml.Service(tag="iris_classifier:6otbsmxzq6lwbgxi", path="/home/bentoml/bento/")
           2022-09-19T05:28:29+0000 [WARNING] [cli] GPU not detected. Unable to initialize pynvml lib.

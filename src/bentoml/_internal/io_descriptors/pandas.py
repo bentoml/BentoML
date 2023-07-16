@@ -1,29 +1,29 @@
 from __future__ import annotations
 
+import functools
 import io
+import logging
 import os
 import typing as t
-import logging
-import functools
-from enum import Enum
 from concurrent.futures import ThreadPoolExecutor
+from enum import Enum
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .base import IODescriptor
-from ..types import LazyType
-from ..utils.pkg import find_spec
-from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
-from ...exceptions import UnprocessableEntity
 from ...exceptions import MissingDependencyException
+from ...exceptions import UnprocessableEntity
 from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..utils.lazy_loader import LazyLoader
-from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import Schema
+from ..types import LazyType
+from ..utils.http import set_cookies
+from ..utils.lazy_loader import LazyLoader
+from ..utils.pkg import find_spec
+from .base import IODescriptor
 
 EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install with 'pip install bentoml[io-pandas]'"
 
@@ -38,8 +38,8 @@ if t.TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
+    from ..context import ServiceContext as Context
     from .base import OpenAPIResponse
-    from ..context import InferenceApiContext as Context
 
 else:
     pb, _ = import_generated_stubs("v1")
@@ -442,6 +442,8 @@ class PandasDataFrame(
             return str(value.dtype)
         elif isinstance(value, bool):
             return str(value)
+        elif isinstance(value, str):
+            return value
         elif isinstance(value, dict):
             return {str(k): self._convert_dtype(v) for k, v in value.items()}
         elif value is None:
@@ -749,9 +751,9 @@ class PandasDataFrame(
         return pyarrow.RecordBatch.from_pandas(df)
 
     def spark_schema(self) -> pyspark.sql.types.StructType:
-        from pyspark.sql.types import StructType
-        from pyspark.sql.types import StructField
         from pyspark.pandas.typedef import as_spark_type
+        from pyspark.sql.types import StructField
+        from pyspark.sql.types import StructType
 
         if self._dtype is None or self._dtype:
             raise InvalidArgument(
@@ -950,6 +952,10 @@ class PandasSeries(
         # TODO: support extension dtypes
         if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(value):
             return str(value.dtype)
+        elif isinstance(value, np.dtype):
+            return str(value)
+        elif isinstance(value, str):
+            return value
         elif isinstance(value, bool):
             return str(value)
         elif isinstance(value, dict):
@@ -1180,7 +1186,7 @@ class PandasSeries(
             ) from None
         try:
             fieldpb = npdtype_to_fieldpb_map()[obj.dtype]
-            return pb.Series(**{fieldpb: obj.ravel().tolist()})
+            return pb.Series(**{fieldpb: obj.tolist()})
         except KeyError:
             raise InvalidArgument(
                 f"Unsupported dtype '{obj.dtype}' for response message."
@@ -1205,9 +1211,9 @@ class PandasSeries(
         return pyarrow.RecordBatch.from_pandas(df)
 
     def spark_schema(self) -> pyspark.sql.types.StructType:
-        from pyspark.sql.types import StructType
-        from pyspark.sql.types import StructField
         from pyspark.pandas.typedef import as_spark_type
+        from pyspark.sql.types import StructField
+        from pyspark.sql.types import StructType
 
         if self._dtype is None or self._dtype is True:
             raise InvalidArgument(

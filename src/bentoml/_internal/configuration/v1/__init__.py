@@ -5,17 +5,17 @@ import typing as t
 
 import schema as s
 
-from ..helpers import depth
-from ..helpers import ensure_range
-from ..helpers import rename_fields
-from ..helpers import ensure_larger_than
-from ..helpers import is_valid_ip_address
-from ..helpers import ensure_iterable_type
-from ..helpers import validate_tracing_type
-from ..helpers import validate_otlp_protocol
-from ..helpers import ensure_larger_than_zero
 from ...utils.metrics import DEFAULT_BUCKET
 from ...utils.unflatten import unflatten
+from ..helpers import depth
+from ..helpers import ensure_iterable_type
+from ..helpers import ensure_larger_than
+from ..helpers import ensure_larger_than_zero
+from ..helpers import ensure_range
+from ..helpers import is_valid_ip_address
+from ..helpers import rename_fields
+from ..helpers import validate_otlp_protocol
+from ..helpers import validate_tracing_type
 
 __all__ = ["SCHEMA", "migration"]
 
@@ -64,7 +64,10 @@ TRACING_CFG = {
 }
 _API_SERVER_CONFIG = {
     "workers": s.Or(s.And(int, ensure_larger_than_zero), None),
-    "timeout": s.And(int, ensure_larger_than_zero),
+    s.Optional("traffic"): {
+        "timeout": s.And(int, ensure_larger_than_zero),
+        "max_concurrency": s.Or(s.And(int, ensure_larger_than_zero), None),
+    },
     "backlog": s.And(int, ensure_larger_than(64)),
     "max_runner_connections": s.And(int, ensure_larger_than_zero),
     "metrics": {
@@ -107,6 +110,7 @@ _API_SERVER_CONFIG = {
             "access_control_max_age": s.Or(int, None),
             "access_control_expose_headers": s.Or([str], str, None),
         },
+        "response": {"trace_id": bool},
     },
     "grpc": {
         "host": s.And(str, is_valid_ip_address),
@@ -146,6 +150,9 @@ _RUNNER_CONFIG = {
     # NOTE: there is a distinction between being unset and None here; if set to 'None'
     # in configuration for a specific runner, it will override the global configuration.
     s.Optional("resources"): s.Or({s.Optional(str): object}, lambda s: s == "system", None),  # type: ignore (incomplete schema typing)
+    s.Optional("workers_per_resource"): s.And(
+        s.Or(int, float), ensure_larger_than_zero
+    ),
     s.Optional("logging"): {
         s.Optional("access"): {
             s.Optional("enabled"): bool,
@@ -159,7 +166,10 @@ _RUNNER_CONFIG = {
         "enabled": bool,
         "namespace": str,
     },
-    s.Optional("timeout"): s.And(int, ensure_larger_than_zero),
+    s.Optional("traffic"): {
+        "timeout": s.And(int, ensure_larger_than_zero),
+        "max_concurrency": s.Or(s.And(int, ensure_larger_than_zero), None),
+    },
 }
 SCHEMA = s.Schema(
     {
@@ -277,4 +287,21 @@ def migration(*, override_config: dict[str, t.Any]):
             current=f"logging.formatting.{f}_format",
             replace_with=f"api_server.logging.access.format.{f}",
         )
+    # 7. move timeout to traffic.timeout
+    for namespace in ("api_server", "runners"):
+        rename_fields(
+            override_config,
+            current=f"{namespace}.timeout",
+            replace_with=f"{namespace}.traffic.timeout",
+        )
+    for key in list(override_config):
+        if key.startswith("runners."):
+            runner_name = key.split(".")[1]
+            if any(key.schema == runner_name for key in _RUNNER_CONFIG):
+                continue
+            rename_fields(
+                override_config,
+                current=f"runners.{runner_name}.timeout",
+                replace_with=f"runners.{runner_name}.traffic.timeout",
+            )
     return unflatten(override_config)

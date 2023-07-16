@@ -49,7 +49,7 @@ with a ``bentofile.yaml`` build file. Here's an example from the
     Building BentoML service "iris_classifier:dpijemevl6nlhlg6" from build context "/home/user/gallery/quickstart"
     Packing model "iris_clf:zy3dfgxzqkjrlgxi"
     Locking PyPI package versions..
- 
+
     ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
     ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
     ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
@@ -199,6 +199,10 @@ Bentos between teams or moving between different deployment stages. For example:
         pip install fs-s3fs  # Additional dependency required for working with s3
         bentoml import s3://bentoml.com/quickstart/iris_classifier.bento
         bentoml export iris_classifier:latest s3://my_bucket/my_prefix/
+
+    To see a list of plugins usable for upload, see
+    `the list <https://www.pyfilesystem.org/page/index-of-filesystems/>`_ provided by the
+    pyfilesystem library.
 
 
 Push and Pull
@@ -360,7 +364,7 @@ Service
 ^^^^^^^
 
 ``service`` is a **required** field which specifies where the
-``bentoml.Service`` object is defined. 
+``bentoml.Service`` object is defined.
 
 In the :doc:`tutorial </tutorial>`, we defined ``service: "service:svc"``, which can be
 interpreted as:
@@ -456,7 +460,7 @@ which also allow users to add or modify labels at any time.
 Files to include
 ^^^^^^^^^^^^^^^^
 
-In the example :ref:`above </concepts/bento:The Build Command>`, the :code:`*.py` includes every Python files under ``build_ctx``.
+In the example :ref:`above <concepts/bento:The Build Command>`, the :code:`*.py` includes every Python files under ``build_ctx``.
 You can also include other wildcard and directory pattern matching.
 
 .. code-block:: yaml
@@ -534,7 +538,7 @@ desired version, install from a custom PyPI source, or install from a GitHub rep
 
 .. note::
     There's no need to specify :code:`bentoml` as a dependency here since BentoML will
-    addd the current version of BentoML to the Bento's dependency list by default. User
+    add the current version of BentoML to the Bento's dependency list by default. User
     can override this by specifying a different BentoML version.
 
 
@@ -724,6 +728,26 @@ Python Options Table
 | wheels            | List of paths to wheels to include in the bento                                    |
 +-------------------+------------------------------------------------------------------------------------+
 
+Models
+^^^^^^
+
+You can specify the model to be used for building a bento using a string model tag or a dictionary, which will be written to the ``bento.yaml`` file in the bento package.
+When you start from an existing project, you can download models from Yatai to your local model store with these configurations by running ``bentoml models pull``.
+Note that you need to log in to Yatai first by running ``bentoml yatai login``.
+
+See the following example for details. If you don't define ``models`` in ``bentofile.yaml``, the model specified in the service is used to build the bento.
+
+.. code-block:: yaml
+
+    models:
+      - "iris_clf:latest" # A string model tag
+      - tag: "iris_clf:version1" # A dictionary
+        filter: "label:staging"
+        alias: "iris_clf_v1"
+
+- ``tag``: The name and version of the model, separated by a colon.
+- ``filter``: This field uses the same filter syntax in Yatai. You use a filter to list specific models, such as the models with the same label. You can add multiple comma-separated filters to a model.
+- ``alias``: An alias for the model. If this is specified, you can use it directly in code like ``bentoml.models.get(alias)``.
 
 Conda Options
 ^^^^^^^^^^^^^
@@ -809,8 +833,8 @@ Here's a basic Docker options configuration:
           - liblapack-dev
           - gfortran
         env:
-          - FOO=value1
-          - BAR=value2
+          FOO: value1
+          BAR: value2
 
 .. note::
 
@@ -1009,6 +1033,8 @@ enable additional features for the generated Bento container image.
 | ``--enable-features=tracing-otlp``    | enable :ref:`OTLP Exporter <guides/tracing:Tracing>`   for distributed tracing                                          |
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 | ``--enable-features=tracing-zipkin``  | enable :ref:`Zipkin Exporter <guides/tracing:Tracing>`  for distributed tracing                                         |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| ``--enable-features=monitor-otlp``    | enable :ref:`Monitoring feature <guides/monitoring:Inference Data Collection & Model Monitoring>`                       |
 +---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 
 Advanced Options

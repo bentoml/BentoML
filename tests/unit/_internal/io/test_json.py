@@ -1,33 +1,31 @@
 from __future__ import annotations
 
-import json
-import typing as t
 import asyncio
+import json
 import logging
-from typing import TYPE_CHECKING
-from functools import partial
+import typing as t
 from dataclasses import dataclass
+from functools import partial
+from typing import TYPE_CHECKING
 
 import attr
 import numpy as np
 import pandas as pd
-import pytest
 import pydantic
+import pytest
 
-from bentoml.io import JSON
-from bentoml.exceptions import BadInput
-from bentoml.exceptions import UnprocessableEntity
-from bentoml.grpc.utils import import_generated_stubs
-from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils.pkg import pkg_version_info
 from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
+from bentoml._internal.utils import LazyLoader
+from bentoml.exceptions import BadInput
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml.io import JSON
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture
     from google.protobuf import struct_pb2
 
-    from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml._internal.service.openapi.specification import Schema
+    from bentoml.grpc.v1 import service_pb2 as pb
 else:
     pb, _ = import_generated_stubs()
     struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")
@@ -78,16 +76,6 @@ dumps = partial(
     indent=None,
     separators=(",", ":"),
 )
-
-
-@pytest.mark.skipif(
-    pkg_version_info("pydantic")[0] < 2 and pkg_version_info("bentoml")[:2] <= (1, 1),
-    reason="Pydantic 2.x is not yet supported until official releases of Pydantic.",
-)
-def test_not_yet_supported_pydantic():
-    with pytest.raises(UnprocessableEntity) as exc_info:
-        JSON(pydantic_model=Nested)
-    assert "pydantic 2.x is not yet supported" in str(exc_info.value)
 
 
 def test_invalid_init():

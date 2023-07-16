@@ -1,18 +1,33 @@
 from __future__ import annotations
+
 import typing as t
-from tritonclient.grpc import model_config_pb2  # type: ignore
-from tritonclient.grpc import service_pb2
-from tritonclient.grpc import service_pb2_grpc  # type: ignore
-from tritonclient.utils import *
-import grpc
 from types import TracebackType
+
 from numpy.typing import NDArray
+
+from . import service_pb2
+from . import model_config_pb2 as model_config_pb2
+from . import service_pb2_grpc as service_pb2_grpc
+from ..utils import raise_error as raise_error
+from ..utils import np_to_triton_dtype as np_to_triton_dtype
+from ..utils import triton_to_np_dtype as triton_to_np_dtype
+from ..utils import serialized_byte_size as serialized_byte_size
+from ..utils import serialize_bf16_tensor as serialize_bf16_tensor
+from ..utils import serialize_byte_tensor as serialize_byte_tensor
+from ..utils import deserialize_bf16_tensor as deserialize_bf16_tensor
+from ..utils import deserialize_bytes_tensor as deserialize_bytes_tensor
+from ..utils import InferenceServerException
 
 INT32_MAX: int = ...
 MAX_GRPC_MESSAGE_SIZE = INT32_MAX
 
-def get_error_grpc(rpc_error: grpc.RpcError) -> InferenceServerException: ...
-def raise_error_grpc(rpc_error: grpc.RpcError) -> t.NoReturn: ...
+ChannelCredentials = t.Any
+
+class RpcError(Exception):
+    """Exception raised by gRPC"""
+
+def get_error_grpc(rpc_error: RpcError) -> InferenceServerException: ...
+def raise_error_grpc(rpc_error: RpcError) -> t.NoReturn: ...
 
 class KeepAliveOptions:
     """A KeepAliveOptions object is used to encapsulate GRPC KeepAlive
@@ -120,7 +135,7 @@ class InferenceServerClient:
         root_certificates: str = ...,
         private_key: str = ...,
         certificate_chain: str = ...,
-        creds: grpc.ChannelCredentials = ...,
+        creds: ChannelCredentials = ...,
         keepalive_options: KeepAliveOptions = ...,
         channel_args: list[tuple[str, t.Any]] = ...,
     ) -> None: ...
@@ -1364,45 +1379,3 @@ class InferResult:
         protobuf message or dict
             The underlying ModelInferResponse as a protobuf message or dict.
         """
-
-class _InferStream:
-    """Supports sending inference requests and receiving corresponding
-    requests on a gRPC bi-directional stream.
-
-    Parameters
-    ----------
-    callback : function
-        Python function that is invoked upon receiving response from
-        the underlying stream. The function must reserve the last two
-        arguments (result, error) to hold InferResult and
-        InferenceServerException objects respectively which will be
-        provided to the function when executing the callback. The
-        ownership of these objects will be given to the user. The
-        'error' would be None for a successful inference.
-    """
-
-    def __init__(
-        self,
-        callback: t.Callable[[InferResult, InferenceServerException], None],
-        verbose: bool,
-    ) -> None: ...
-    def __del__(self) -> None: ...
-    def close(self) -> None:
-        """Gracefully close underlying gRPC streams. Note that this call
-        blocks till response of all currently enqueued requests are not
-        received.
-        """
-
-class _RequestIterator:
-    """An iterator class to provide data to gRPC request stream.
-
-    Parameters
-    ----------
-    stream : InferStream
-        The InferStream that holds the context to an active stream.
-
-    """
-
-    def __init__(self, stream: _InferStream) -> None: ...
-    def __iter__(self) -> t.Any: ...
-    def __next__(self) -> t.Any: ...

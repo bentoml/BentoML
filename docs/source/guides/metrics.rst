@@ -2,10 +2,12 @@
 Metrics
 =======
 
+*time expected: 6 minutes*
+
 Metrics are measurements of statistics about your service, which can provide information about the usage and performance of your bentos in production.
 
-BentoML allows users to define custom metrics with `Prometheus <https://prometheus.io/docs/introduction/overview/>`_ to easily enable monitoring for their Bentos.
- 
+BentoML allows users to define custom metrics with |prometheus|_ to easily enable monitoring for their Bentos.
+
 This article will dive into the default metrics and how to add custom metrics for
 either a :ref:`concepts/runner:Custom Runner` or :ref:`Service <concepts/service:Service and APIs>`.
 
@@ -181,7 +183,7 @@ invocation for ``analysis`` by polarity scores.
 
        .. code-block:: bash
 
-          » bentoml serve-http --production
+          » bentoml serve-http
 
        Use the following ``prometheus.yml`` config:
 
@@ -209,7 +211,7 @@ invocation for ``analysis`` by polarity scores.
 
        .. code-block:: bash
 
-          » bentoml serve-grpc --production --enable-reflection
+          » bentoml serve-grpc --enable-reflection
 
        Use the following ``prometheus.yml`` config:
 
@@ -255,8 +257,6 @@ Visit `http://localhost:9090/graph <http://localhost:9090/graph>`_ and use the f
     to get started.
 
 
-----
+.. _prometheus: https://prometheus.io/
 
-.. rubric:: Notes
-
-.. [#prometheus] `Prometheus <https://prometheus.io/>`_
+.. |prometheus| replace:: Prometheus

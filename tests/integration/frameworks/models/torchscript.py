@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import numpy as np
-import torch
 import pandas as pd
+import torch
 import torch.nn
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 framework = bentoml.torchscript
 

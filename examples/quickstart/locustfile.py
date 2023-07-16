@@ -2,10 +2,10 @@ import time
 
 import grpc
 import numpy as np
-from locust import task
+from locust import HttpUser
 from locust import User
 from locust import between
-from locust import HttpUser
+from locust import task
 from sklearn import datasets
 
 from bentoml.grpc.v1 import service_pb2 as pb
@@ -21,7 +21,7 @@ class IrisHttpUser(HttpUser):
     Usage:
         Run the iris_classifier service in production mode:
 
-            bentoml serve-http iris_classifier:latest --production
+            bentoml serve-http iris_classifier:latest
 
         Start locust load testing client with:
 
@@ -63,7 +63,7 @@ class IrisGrpcUser(GrpcUser):
     Usage:
         Run the iris_classifier service in production mode:
 
-            bentoml serve-grpc iris_classifier:latest --production
+            bentoml serve-grpc iris_classifier:latest
 
         Start locust load testing client with:
 

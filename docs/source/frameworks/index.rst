@@ -15,6 +15,10 @@ projects in the `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/
         :link: /frameworks/catboost
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/frameworks/diffusers`
+        :link: /frameworks/diffusers
+        :link-type: doc
+
     .. grid-item-card:: :doc:`/frameworks/fastai`
         :link: /frameworks/fastai
         :link-type: doc
@@ -59,6 +63,14 @@ projects in the `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/
         :link: /frameworks/xgboost
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/frameworks/detectron`
+        :link: /frameworks/detectron
+        :link-type: doc
+
+    .. grid-item-card:: :doc:`/frameworks/easyocr`
+        :link: /frameworks/easyocr
+        :link-type: doc
+
 
 Custom Models
 -------------
@@ -82,8 +94,6 @@ Roadmap
 
 The following frameworks are supported in pre-1.0 BentoML versions and are being migrated to the new 1.0 API. In the meantime, users may use :ref:`Custom Models <frameworks/index:Custom Models>` as a workaround.
 
-- Detectron
-- EasyOCR
 - EvalML
 - FastText
 - Flax
@@ -114,6 +124,7 @@ The following frameworks are supported in pre-1.0 BentoML versions and are being
     :hidden:
 
     catboost
+    diffusers
     fastai
     keras
     lightgbm
@@ -122,6 +133,8 @@ The following frameworks are supported in pre-1.0 BentoML versions and are being
     pytorch
     pytorch_lightning
     sklearn
+    easyocr
     tensorflow
     transformers
     xgboost
+    detectron

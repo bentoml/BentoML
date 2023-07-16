@@ -96,7 +96,8 @@ Bundle ASGI app (e.g. FastAPI)
 BentoML's web serving layer is ASGI native, existing ASGI apps can be mounted directly
 to and serving side-by-side with your BentoML Service.
 
-Here’s an example of mounting BentoML Service with an ASGI app built with FastAPI:
+Here’s an example (excerpted from :examples:`our example project <custom_web_serving/flask_example>`)
+of mounting BentoML Service with an ASGI app built with FastAPI:
 
 .. code-block:: python
 
@@ -154,7 +155,8 @@ For WSGI web apps, such as a Flask app, BentoML provides a different API ``mount
 which will internally convert the provided WSGI app into an ASGI app and serve side-by-side
 with your BentoML Service.
 
-Here’s an example of mounting BentoML Service with an WSGI app built with Flask:
+Here’s an example (excerpted from :examples:`our example project <custom_web_serving/fastapi_example>`)
+of mounting BentoML Service with an WSGI app built with Flask:
 
 .. code-block:: python
 

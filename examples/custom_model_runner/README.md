@@ -38,7 +38,7 @@ wget -qO- https://github.com/myleott/mnist_png/raw/master/mnist_png.tar.gz | tar
 <td>
 
 ```bash
-bentoml serve-http service.py:svc
+bentoml serve-http service.py:svc --development
 ```
 
 </td>
@@ -48,7 +48,7 @@ bentoml serve-http service.py:svc
 <td>
 
 ```bash
-bentoml serve-grpc service.py:svc
+bentoml serve-grpc service.py:svc --development
 ```
 
 </td>
@@ -92,7 +92,7 @@ EOM
 Start production server:
 
 ```bash
-bentoml serve --production
+bentoml serve
 ```
 
 From another terminal:
@@ -102,4 +102,4 @@ pip install locust
 locust -H http://0.0.0.0:3000
 ```
 
-[#custom-runner]: https://docs.bentoml.org/en/latest/concepts/runner.html#custom-runner
+[#custom-runner]: https://docs.bentoml.com/en/latest/concepts/runner.html#custom-runner

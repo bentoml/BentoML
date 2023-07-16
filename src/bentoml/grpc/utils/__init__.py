@@ -1,31 +1,31 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
+from dataclasses import dataclass
+from functools import lru_cache
 from http import HTTPStatus
 from typing import TYPE_CHECKING
-from functools import lru_cache
-from dataclasses import dataclass
 
+from ..._internal.utils import resolve_user_filepath
 from ...exceptions import InvalidArgument
-from ._import_hook import import_grpc
-from ._import_hook import import_generated_stubs
 from ._import_hook import LATEST_PROTOCOL_VERSION
+from ._import_hook import import_generated_stubs
+from ._import_hook import import_grpc
 
 if TYPE_CHECKING:
     from enum import Enum
 
     import grpc
 
-    from ..v1 import service_pb2 as pb
+    from ..._internal.io_descriptors import IODescriptor
+    from ...exceptions import BentoMLException
+    from ..types import BentoServicerContext
     from ..types import ProtoField
     from ..types import RpcMethodHandler
-    from ..types import BentoServicerContext
-    from ...exceptions import BentoMLException
-    from ..._internal.io_descriptors import IODescriptor
+    from ..v1 import service_pb2 as pb
 
 else:
-
     pb, _ = import_generated_stubs()
     grpc, _ = import_grpc()
 
@@ -38,12 +38,19 @@ __all__ = [
     "import_grpc",
     "validate_proto_fields",
     "LATEST_PROTOCOL_VERSION",
+    "load_from_file",
 ]
 
 logger = logging.getLogger(__name__)
 
 # content-type is always application/grpc
 GRPC_CONTENT_TYPE = "application/grpc"
+
+
+def load_from_file(p: str) -> bytes:
+    rp = resolve_user_filepath(p, ctx=None)
+    with open(rp, "rb") as f:
+        return f.read()
 
 
 def validate_proto_fields(

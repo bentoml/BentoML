@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import os
-import sys
 import json
 import logging
+import os
+import sys
 from urllib.parse import urlparse
 
 import click
@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 def add_start_command(cli: click.Group) -> None:
-    from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
-    from bentoml._internal.utils import add_experimental_docstring
     from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.utils import add_experimental_docstring
+    from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
 
     @cli.command(hidden=True)
     @click.argument("bento", type=click.STRING, default=".")
@@ -126,7 +126,7 @@ def add_start_command(cli: click.Group) -> None:
         port: int,
         host: str,
         backlog: int,
-        working_dir: str,
+        working_dir: str | None,
         api_workers: int | None,
         ssl_certfile: str | None,
         ssl_keyfile: str | None,

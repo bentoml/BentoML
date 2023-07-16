@@ -28,4 +28,6 @@ if __name__ == "__main__":
             print("Make sure to have Docker running.")
             raise
     finally:
-        bentoml.container.build(tag, backend=backend, features=["all"])
+        bentoml.container.build(
+            tag, backend=backend, features=["all"], platform="linux/amd64"
+        )

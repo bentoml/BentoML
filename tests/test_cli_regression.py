@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import time
 import shlex
+import time
 
 from click.testing import CliRunner
 

@@ -6,18 +6,79 @@ Deploying Bento
 Deployment Overview
 -------------------
 
-The three most common deployment options with BentoML are:
+BentoML is designed to provide a unified packaging format, for deploying AI applications
+via a wide range of serving patterns, including real-time inference API, offline batch inference,
+streaming inference, and custom integrations.
 
-- 🐳 Generate container images from Bento for custom docker deployment
-- `🦄️ Yatai <https://github.com/bentoml/Yatai>`_: Model Deployment at scale on Kubernetes
-- `🚀 bentoctl <https://github.com/bentoml/bentoctl>`_: Fast model deployment on any cloud platform
+For online API use cases, here are the three most common cloud deployment solutions:
+
+* `☁️ Deploy to BentoCloud <https://www.bentoml.com/>`_
+  - Serverless cloud for AI, the best place to deploy and operate BentoML for AI teams. `Sign up here <https://www.bentoml.com/bento-cloud/>`_ for early access.
+* `🦄️ Deploy on Kubernetes with Yatai <https://github.com/bentoml/Yatai>`_
+  - Cloud-native AI deployment on Kubernetes, comes with advanced auto-scaling
+  and CI/CD workflows. Requires professional DevOps team to maintain and operate.
+* `🚀 Fast Cloud Deployment with BentoCTL <https://github.com/bentoml/bentoctl>`_
+  - Great for proof-of-concept deployments directly running on public cloud services (EC2, ECS, SageMaker, Lambda, GCP, etc).
+  Requires working knowledge of Cloud Services and their limitations for AI-specific workloads.
 
 
-Containerize Bentos
--------------------
+Feature comparison across deployment options:
 
-Containerizing bentos as Docker images allows users to easily distribute and deploy
-bentos. Once services are built as bentos and saved to the bento store, we can
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - `🍱 BentoCloud <https://www.bentoml.com/>`_
+     - `Yatai on Kubernetes <https://github.com/bentoml/Yatai>`_
+     - Cloud Deployment with `BentoCTL <https://github.com/bentoml/bentoctl>`_
+   * - Auto-scaling
+     - ✅ Fast auto-scaling optimized for AI
+     - ✅ Kubernetes-native with custom metrics
+     - Only available on some Cloud Services, e.g. ECS, requires manual configurations
+   * - Scaling-to-zero
+     - ✅ Scaling at individual Model/Runner level
+     - Not supported
+     - Supported on AWS Lambda, GCP Functions with limitations on model size and access to GPU
+   * - GPU Support
+     - ✅
+     - ✅
+     - Supported on EC2, AWS SageMaker, requires manual configurations
+   * - Observability
+     - ✅ Auto-generated dashboards for key metrics
+     - Requires manual configurations
+     - Requires manual configurations with cloud provider
+   * - Endpoint Security
+     - ✅ Access token management and authentication
+     - Requires manual setup
+     - Requires manual setup
+   * - UI and API
+     - ✅ Web UI dashboards, REST API, CLI command, and Python API
+     - ✅ CLI(kubectl) + k8s CRD resource definition
+     - ✅ CLI(bentoctl, terraform)
+   * - CI/CD
+     - ✅ Rich integrated API for programmatic access in CI/CD, support common GitOps and MLOps workflows
+     - ✅ Cloud-native design supporting Kubernetes CRD and GitOps workflow
+     - ✅ Native Terraform integration, easily customizable
+   * - Access control
+     - ✅ Flexible API token management and Role-based access control
+     - Inherits Kubernetes' account and RBAC mechanism, no model/bento/endpoint level access control
+     - No access control besides basic cloud platform permissions such as creating/deleting resources
+
+
+All three deployment solutions above rely on BentoML's Docker containerization feature
+underneath. In order to ensure a smooth path to production with BentoML, it is important
+to understand the Bento specification, how to run inference with it, and how to build
+docker images from a Bento. This is not only useful for testing a Bento's environment
+and lifecycle configurations, but also for building custom integrations with the BentoML
+eco-system.
+
+
+
+Docker Containers
+-----------------
+
+Containerizing bentos as Docker images allows users to easily test out Bento's environment and
+dependency configurations locally. Once Bentos are built and saved to the bento store, we can
 containerize saved bentos with the CLI command :ref:`bentoml containerize <reference/cli:containerize>`.
 
 Start the Docker engine. Verify using ``docker info``.
@@ -73,28 +134,25 @@ Run the generated docker image:
 
 .. code-block:: bash
 
-    $ docker run -p 3000:3000 iris_classifier:ejwnswg5kw6qnuqj serve --production
+    $ docker run -p 3000:3000 iris_classifier:ejwnswg5kw6qnuqj
+
 
 .. seealso::
 
    :ref:`guides/containerization:Containerization with different container engines.`
    goes into more details on our containerization process and how to use different container runtime.
 
-.. todo::
 
-    - Add sample code for working with GPU and --gpu flag
-
-
-Deploy with Yatai
------------------
+Deploy with Yatai on Kubernetes
+-------------------------------
 
 Yatai helps ML teams to deploy large scale model serving workloads on Kubernetes. It
-standardizes BentoML deployment on Kubernetes, provides UI and APis for managing all
+standardizes BentoML deployment on Kubernetes, provides UI and APIs for managing all
 your ML models and deployments in one place, and enables advanced GitOps and CI/CD
 workflows.
 
-Yatai is Kubernetes native, integrates well with other cloud native tools in the K8s
-eco-system.
+Yatai is Kubernetes native, providing native CRD for managing BentoML deployments, and
+integrates well with other tools in the K8s eco-system.
 
 To get started, get an API token from Yatai Web UI and login from your :code:`bentoml`
 CLI command:
@@ -109,62 +167,8 @@ Push your local Bentos to yatai:
 
     bentoml push iris_classifier:latest
 
-.. tip::
-    Yatai will automatically start building container images for a new Bento pushed.
 
-
-Deploy via Web UI
-^^^^^^^^^^^^^^^^^
-
-Although not always recommended for production workloads, Yatai offers an easy-to-use
-web UI for quickly creating deployments. This is convenient for data scientists to test
-out Bento deployments end-to-end from a development or testing environment:
-
-.. image:: /_static/img/yatai-deployment-creation.png
-    :alt: Yatai Deployment creation UI
-
-The web UI is also very helpful for viewing system status, monitoring services, and
-debugging issues.
-
-.. image:: /_static/img/yatai-deployment-details.png
-    :alt: Yatai Deployment Details UI
-
-Commonly we recommend using APIs or Kubernetes CRD objects to automate the deployment
-pipeline for production workloads.
-
-Deploy via API
-^^^^^^^^^^^^^^
-
-Yatai's REST API specification can be found under the :code:`/swagger` endpoint. If you
-have Yatai deployed locally with minikube, visit:
-http://yatai.127.0.0.1.sslip.io/swagger/. The Swagger API spec covers all core Yatai
-functionalities ranging from model/bento management, cluster management to deployment
-automation.
-
-.. note::
-
-    Python APIs for creating deployment on Yatai is on our roadmap. See :issue:`2405`.
-    Current proposal looks like this:
-
-    .. code-block:: python
-
-        yatai_client = bentoml.YataiClient.from_env()
-
-        bento = yatai_client.get_bento('my_svc:v1')
-        assert bento and bento.status.is_ready()
-
-        yatai_client.create_deployment('my_deployment', bento.tag, ...)
-
-        # For updating a deployment:
-        yatai_client.update_deployment('my_deployment', bento.tag)
-
-        # check deployment_info.status
-        deployment_info = yatai_client.get_deployment('my_deployment')
-
-
-Deploy via kubectl and CRD
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+Yatai is designed to be a cloud-native tool, providing
 For DevOps managing production model serving workloads along with other kubernetes
 resources, the best option is to use :code:`kubectl` and directly create
 :code:`BentoDeployment` objects in the cluster, which will be handled by the Yatai
@@ -191,8 +195,8 @@ deployment CRD controller.
 
 
 
-Deploy with bentoctl
---------------------
+Deploy with BentoControl
+------------------------
 
 :code:`bentoctl` is a CLI tool for deploying Bentos to run on any cloud platform. It
 supports all major cloud providers, including AWS, Azure, Google Cloud, and many more.
@@ -206,10 +210,8 @@ customizable, users can fine-tune all configurations provided by the cloud platf
 is also extensible, for users to define additional terraform templates to be attached
 to a deployment.
 
-Quick Tour
-^^^^^^^^^^
-
-Install aws-lambda plugin for :code:`bentoctl` as an example:
+Here's an example of using :code:`bentoctl` for deploying to AWS Lambda. First, install
+the `aws-lambda` operator plugin:
 
 .. code-block:: bash
 
@@ -281,8 +283,12 @@ Testing the endpoint deployed:
         $URL
 
 
-Supported Cloud Platforms
+Learn More about BentoCTL
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Check out BentoCTL docs `here <https://github.com/bentoml/bentoctl/blob/main/docs/README.md>`_.
+
+Supported cloud platforms:
 
 - AWS Lambda: https://github.com/bentoml/aws-lambda-deploy
 - AWS SageMaker: https://github.com/bentoml/aws-sagemaker-deploy
@@ -293,20 +299,9 @@ Supported Cloud Platforms
 - Azure Container Instances: https://github.com/bentoml/azure-container-instances-deploy
 - Heroku: https://github.com/bentoml/heroku-deploy
 
-.. TODO::
-    Explain limitations of each platform, e.g. GPU support
-    Explain how to customize the terraform workflow
 
+Deploy to BentoCloud
+--------------------
 
-About Horizontal Auto-scaling
------------------------------
-
-Auto-scaling is one of the most sought-after features when it comes to deploying models. Autoscaling helps optimize resource usage and cost by automatically provisioning up and scaling down depending on incoming traffic.
-
-Among deployment options introduced in this guide, Yatai on Kubernetes is the
-recommended approach if auto-scaling and resource efficiency are required for your team’s workflow.
-Yatai enables users to fine-tune resource requirements and
-auto-scaling policy at the Runner level, which inherently improves interoperability between auto-scaling and data aggregated at Runner's adaptive batching layer in real-time.
-
-Many of bentoctl’s deployment targets also come with a certain level of auto-scaling
-capabilities, including AWS EC2 and AWS Lambda.
+`BentoCloud <https://www.bentoml.com>`_ is currently under private beta. Please contact
+us by scheduling a demo request `here <https://www.bentoml.com/bento-cloud/>`_.

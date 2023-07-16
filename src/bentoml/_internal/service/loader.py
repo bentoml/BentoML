@@ -1,30 +1,29 @@
 from __future__ import annotations
 
+import importlib
+import logging
 import os
 import sys
 import typing as t
-import logging
-import importlib
 from typing import TYPE_CHECKING
 
 import fs
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from ..tag import Tag
-from ..bento import Bento
-from ..models import ModelStore
-from .service import on_import_svc
-from .service import on_load_bento
-from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ...exceptions import ImportServiceError
-from ..bento.bento import BENTO_YAML_FILENAME
+from ...exceptions import NotFound
+from ..bento import Bento
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
+from ..bento.bento import BENTO_YAML_FILENAME
 from ..bento.bento import DEFAULT_BENTO_BUILD_FILE
-from ..configuration import BENTOML_VERSION
 from ..bento.build_config import BentoBuildConfig
+from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..models import ModelStore
+from ..tag import Tag
+from .service import on_load_bento
 
 if TYPE_CHECKING:
     from ..bento import BentoStore
@@ -102,7 +101,7 @@ def import_service(
                 '"<module>:<attribute>" or "<module>'
             )
 
-        if os.path.exists(import_path):
+        if os.path.isfile(import_path):
             import_path = os.path.realpath(import_path)
             # Importing from a module file path:
             if not import_path.startswith(working_dir):
@@ -169,11 +168,8 @@ def import_service(
             instance, Service
         ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
 
-        on_import_svc(
-            svc=instance,
-            working_dir=working_dir,
-            import_str=f"{module_name}:{attrs_str}",
-        )
+        # set import_str for retrieving the service import origin
+        object.__setattr__(instance, "_import_str", f"{module_name}:{attrs_str}")
         return instance
     except ImportServiceError:
         if sys_path_modified and working_dir:
@@ -244,8 +240,16 @@ def _load_bento(bento: Bento, standalone_load: bool) -> "Service":
     # Use Bento's user project path as working directory when importing the service
     working_dir = bento._fs.getsyspath(BENTO_PROJECT_DIR_NAME)
 
-    # Use Bento's local "{base_dir}/models/" directory as its model store
-    model_store = ModelStore(bento._fs.getsyspath("models"))
+    model_store = BentoMLContainer.model_store.get()
+    # read from bento's local model store if it exists and is not empty
+    # This is the case when running in a container
+    local_model_store = bento._model_store
+    if local_model_store is not None and len(local_model_store.list()) > 0:
+        model_store = local_model_store
+
+    # Read the model aliases
+    resolved_model_aliases = {m.alias: str(m.tag) for m in bento.info.models if m.alias}
+    BentoMLContainer.model_aliases.set(resolved_model_aliases)
 
     svc = import_service(
         bento.info.service,
@@ -349,9 +353,10 @@ def load(
                 assert (
                     build_config.service
                 ), '"service" field in "bentofile.yaml" is required for loading the service, e.g. "service: my_service.py:svc"'
+                BentoMLContainer.model_aliases.set(build_config.model_aliases)
                 svc = import_service(
                     build_config.service,
-                    working_dir=working_dir,
+                    working_dir=bento_path,
                     standalone_load=standalone_load,
                 )
             except ImportServiceError as e:

@@ -1,10 +1,10 @@
 # pylint: disable=unused-argument
 from __future__ import annotations
 
-import os
-import typing as t
-import tempfile
 import contextlib
+import os
+import tempfile
+import typing as t
 from typing import TYPE_CHECKING
 
 import psutil
@@ -12,21 +12,21 @@ import pytest
 from pytest import MonkeyPatch
 
 import bentoml
-from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils import validate_or_create_dir
-from bentoml._internal.models import ModelContext
 from bentoml._internal.configuration import CLEAN_BENTOML_VERSION
 from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.models import ModelContext
+from bentoml._internal.utils import LazyLoader
+from bentoml._internal.utils import validate_or_create_dir
 
 if TYPE_CHECKING:
     import numpy as np
-    from _pytest.main import Session
-    from _pytest.nodes import Item
     from _pytest.config import Config
     from _pytest.config import ExitCode
-    from _pytest.python import Metafunc
-    from _pytest.fixtures import FixtureRequest
     from _pytest.config.argparsing import Parser
+    from _pytest.fixtures import FixtureRequest
+    from _pytest.main import Session
+    from _pytest.nodes import Item
+    from _pytest.python import Metafunc
 
     from bentoml._internal.server.metrics.prometheus import PrometheusClient
 
@@ -304,6 +304,10 @@ def fixture_metrics_client() -> PrometheusClient:
 @pytest.fixture(scope="function", name="change_test_dir")
 def fixture_change_dir(request: FixtureRequest) -> t.Generator[None, None, None]:
     """A fixture to change given test directory to the directory of the current running test."""
-    os.chdir(request.fspath.dirname)  # type: ignore (bad pytest stubs)
+    os.chdir(
+        request.fspath.dirname,  # type: ignore (bad pytest stubs)
+    )
     yield
-    os.chdir(request.config.invocation_dir)  # type: ignore (bad pytest stubs)
+    os.chdir(
+        request.config.invocation_dir,  # type: ignore (bad pytest stubs)
+    )

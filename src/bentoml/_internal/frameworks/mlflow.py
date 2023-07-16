@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+import logging
 import os
 import shutil
-import typing as t
-import logging
 import tempfile
+import typing as t
 from typing import TYPE_CHECKING
 
 import bentoml
 from bentoml import Tag
-from bentoml.models import ModelContext
-from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml.exceptions import NotFound
+from bentoml.models import ModelContext
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -96,7 +96,7 @@ def load_model(
 
 
 def import_model(
-    name: str,
+    name: Tag | str,
     model_uri: str,
     *,
     signatures: dict[str, ModelSignature] | dict[str, ModelSignatureDict] | None = None,
@@ -183,8 +183,8 @@ def import_model(
         context=context,
     ) as bento_model:
         from mlflow.models import Model as MLflowModel
-        from mlflow.pyfunc import FLAVOR_NAME as PYFUNC_FLAVOR_NAME
         from mlflow.models.model import MLMODEL_FILE_NAME
+        from mlflow.pyfunc import FLAVOR_NAME as PYFUNC_FLAVOR_NAME
 
         # Explicitly provide a destination dir to mlflow so that we don't
         # accidentially download into the root of the bento model temp dir

@@ -112,11 +112,11 @@ Deploy the service and collect monitoring data
 
 With BentoML, once we have the bento, it's easy to :ref:`deploy <concepts/deploy:Deploying Bento>` the ML application to any target.
 
-Use ``serve --production`` to start the bento in production mode as a standalone server:
+Use ``serve`` to start the bento in production mode as a standalone server:
 
 .. code-block:: bash
 
-    $ bentoml serve iris_classifier --production
+    $ bentoml serve iris_classifier
 
 Then we can send a request to the server to get the prediction. BentoML will log the request features and predictions to the configured place.
 
@@ -201,6 +201,7 @@ Through a OTLP endpoint
 For some deployment platforms, it's not easy to collect log files. For example, AWS Lambda doesn't support log files. In this case, BentoML can export monitoring data to an OTLP endpoint.
 Some log collectors like fluentbit also supports OTLP input.
 
+.. _monitoring-data-collectors-plugins:
 
 Plugins and Third-party Monitoring Data Collectors
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -240,3 +241,5 @@ And the `bentoml-plugins-arize` makes it easy to work with BentoML.
 
 
 You could also join the BentoML community and develop your own monitoring data collector by implementing the `bentoml.monitoring.MonitorBase` interface.
+
+The full project described in this page can be found at :examples:`Examples: monitoring example for classification tasks <monitoring/task_classification>`.

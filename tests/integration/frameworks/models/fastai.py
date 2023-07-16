@@ -5,20 +5,20 @@ import typing as t
 import numpy as np
 import pandas as pd
 import torch.nn as nn
+from fastai.data.block import DataBlock
 from fastai.learner import Learner
 from fastai.metrics import accuracy
-from sklearn.datasets import load_iris
-from fastai.data.block import DataBlock
+from fastai.tabular.all import TabularDataLoaders
+from fastai.tabular.all import tabular_learner
 from fastai.torch_core import Module
 from fastai.torch_core import set_seed
-from fastai.tabular.all import tabular_learner
-from fastai.tabular.all import TabularDataLoaders
+from sklearn.datasets import load_iris
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 if t.TYPE_CHECKING:
     from sklearn.utils import Bunch

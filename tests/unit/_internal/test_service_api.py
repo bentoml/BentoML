@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 import bentoml
-from bentoml.io import Text
 from bentoml.exceptions import BentoMLException
+from bentoml.io import Text
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture

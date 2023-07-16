@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 import typing as t
-import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
@@ -12,10 +12,10 @@ import pytest
 if TYPE_CHECKING:
     from contextlib import ExitStack
 
-    from _pytest.main import Session
-    from _pytest.nodes import Item
     from _pytest.config import Config
     from _pytest.fixtures import FixtureRequest as _PytestFixtureRequest
+    from _pytest.main import Session
+    from _pytest.nodes import Item
 
     class FixtureRequest(_PytestFixtureRequest):
         param: str
@@ -28,7 +28,14 @@ def pytest_collection_modifyitems(
     session: Session, config: Config, items: list[Item]
 ) -> None:
     subprocess.check_call(
-        ["pip", "install", "-r", f"{os.path.join(PROJECT_DIR, 'requirements.txt')}"]
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            f"{os.path.join(PROJECT_DIR, 'requirements.txt')}",
+        ]
     )
     subprocess.check_call([sys.executable, f"{os.path.join(PROJECT_DIR, 'train.py')}"])
 
@@ -42,7 +49,16 @@ def fixture_server_config_file(request: FixtureRequest) -> str:
     return os.path.join(PROJECT_DIR, "configs", request.param)
 
 
-@pytest.mark.usefixtures("change_test_dir")
+@pytest.fixture(autouse=True, scope="package")
+def bento_directory(request: FixtureRequest):
+    bento_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    os.chdir(bento_path)
+    sys.path.insert(0, bento_path)
+    yield
+    os.chdir(request.config.invocation_dir)
+    sys.path.pop(0)
+
+
 @pytest.fixture(scope="session")
 def host(
     bentoml_home: str,

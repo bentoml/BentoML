@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import difflib
+import functools
+import logging
 import os
 import re
 import time
 import typing as t
-import difflib
-import logging
-import functools
 from typing import TYPE_CHECKING
 
 import click
@@ -14,11 +14,12 @@ from click import ClickException
 from click.exceptions import UsageError
 
 if TYPE_CHECKING:
-    from click import Option
     from click import Command
     from click import Context
-    from click import Parameter
+    from click import Group
     from click import HelpFormatter
+    from click import Option
+    from click import Parameter
 
     P = t.ParamSpec("P")
 
@@ -195,13 +196,16 @@ class BentoMLCommandGroup(click.Group):
     Click command class customized for BentoML CLI, allow specifying a default
     command for each group defined.
 
-    This command groups will also introduce support for aliases for commands.
+    This command groups will also introduce support for aliases for commands and groups.
 
     Example:
 
     .. code-block:: python
 
         @click.group(cls=BentoMLCommandGroup)
+        def cli(): ...
+
+        @click.group(name="cloud", aliases=["cloud"], cls=BentoMLCommandGroup)
         def cli(): ...
 
         @cli.command(aliases=["serve-http"])
@@ -213,11 +217,11 @@ class BentoMLCommandGroup(click.Group):
     @staticmethod
     def bentoml_common_params(func: F[P]) -> WrappedCLI[bool, bool]:
         # NOTE: update NUMBER_OF_COMMON_PARAMS when adding option.
-        from bentoml._internal.log import configure_logging
         from bentoml._internal.configuration import DEBUG_ENV_VAR
         from bentoml._internal.configuration import QUIET_ENV_VAR
         from bentoml._internal.configuration import set_debug_mode
         from bentoml._internal.configuration import set_quiet_mode
+        from bentoml._internal.log import configure_logging
         from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
 
         @click.option(
@@ -269,10 +273,10 @@ class BentoMLCommandGroup(click.Group):
         cmd_group: click.Group,
         **kwargs: t.Any,
     ) -> WrappedCLI[bool]:
-        from bentoml._internal.utils.analytics import track
+        from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
         from bentoml._internal.utils.analytics import CliEvent
         from bentoml._internal.utils.analytics import cli_events_map
-        from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
+        from bentoml._internal.utils.analytics import track
 
         command_name = kwargs.get("name", func.__name__)
 
@@ -323,8 +327,8 @@ class BentoMLCommandGroup(click.Group):
     def raise_click_exception(
         func: F[P] | WrappedCLI[bool], cmd_group: click.Group, **kwargs: t.Any
     ) -> ClickFunctionWrapper[t.Any]:
-        from bentoml.exceptions import BentoMLException
         from bentoml._internal.configuration import get_debug_mode
+        from bentoml.exceptions import BentoMLException
 
         command_name = kwargs.get("name", func.__name__)
 
@@ -377,6 +381,22 @@ class BentoMLCommandGroup(click.Group):
 
         return wrapper
 
+    def group(self, *args: t.Any, **kwargs: t.Any) -> t.Callable[[F[P]], Group]:
+        aliases = kwargs.pop("aliases", None)
+
+        def decorator(f: F[P]):
+            # create the main group
+            grp = super(BentoMLCommandGroup, self).group(*args, **kwargs)(f)
+
+            if aliases is not None:
+                assert grp.name
+                self._commands[grp.name] = aliases
+                self._aliases.update({k: grp.name for k in aliases})
+
+            return grp
+
+        return decorator
+
     def resolve_alias(self, cmd_name: str):
         return self._aliases[cmd_name] if cmd_name in self._aliases else cmd_name
 
@@ -399,7 +419,7 @@ class BentoMLCommandGroup(click.Group):
             if hasattr(cmd, "hidden") and cmd.hidden:
                 continue
             if sub_command in self._commands:
-                aliases = ",".join(sorted(self._commands[sub_command]))
+                aliases = ", ".join(sorted(self._commands[sub_command]))
                 sub_command = "%s (%s)" % (sub_command, aliases)
             # this cmd_help is available since click>=7
             # BentoML requires click>=7.

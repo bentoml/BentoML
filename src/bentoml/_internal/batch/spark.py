@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-import typing as t
 import logging
 import os.path
 import tempfile
+import typing as t
 from typing import TYPE_CHECKING
 
 from bentoml._internal.utils import reserve_free_port
 
-from ..tag import Tag
-from ..bento import Bento
-from ...bentos import serve
 from ...bentos import import_bento
+from ...bentos import serve
 from ...client import Client
 from ...client import HTTPClient
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
+from ..bento import Bento
 from ..service.loader import load_bento
+from ..tag import Tag
 
 try:
     from pyspark.files import SparkFiles
@@ -27,8 +27,8 @@ except ImportError:  # pragma: no cover (trivial error)
     )
 
 if TYPE_CHECKING:
-    import pyspark.sql.session
     import pyspark.sql.dataframe
+    import pyspark.sql.session
 
     RecordBatch: t.TypeAlias = t.Any  # pyarrow doesn't have type annotations
 
@@ -79,7 +79,7 @@ def _get_process(
             pass
 
         server = serve(bento_tag, port=port)
-        Client.wait_until_server_is_ready("localhost", server.port, 30)
+        Client.wait_until_server_ready("localhost", server.port, 30)
         client = HTTPClient(svc, f"http://localhost:{server.port}")
 
         for batch in iterator:

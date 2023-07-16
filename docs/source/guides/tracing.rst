@@ -8,7 +8,6 @@ This guide dives into the :wiki:`tracing <Tracing_(software)>` capabilities that
 
 BentoML allows user to export trace with `Zipkin <https://zipkin.io/>`_,
 `Jaeger <https://www.jaegertracing.io/>`_ and `OTLP <https://opentelemetry.io/>`_.
-
 This guide will also provide a simple example of how to use BentoML tracing with `Jaeger <https://www.jaegertracing.io/>`_
 
 Why do you need this?
@@ -113,7 +112,7 @@ Provide this configuration via environment variable ``BENTOML_CONFIG`` to ``bent
 
 .. code-block:: bash
 
-   » BENTOML_CONFIG=bentoml_configuration.yaml bentoml serve iris_classifier:latest --production
+   » BENTOML_CONFIG=bentoml_configuration.yaml bentoml serve iris_classifier:latest
 
 Send any request to the BentoService, and then you can visit the `Jaeger UI <http://localhost:16686>`_ to see the traces.
 
@@ -145,13 +144,12 @@ Exporter Configuration
 
    .. code-block:: yaml
 
-      api_server:
-        tracing:
+      tracing:
           exporter_type: jaeger
           sample_rate: 1.0
           jaeger:
-            protocol: thrift
-            thrift:
+          protocol: thrift
+          thrift:
               agent_host_name: localhost
 
    Then environment variable ``OTEL_EXPORTER_JAEGER_AGENT_HOST`` will take precedence over the
@@ -163,13 +161,12 @@ By default, no traces will be collected. Set ``sample_rate`` to your desired fra
 
 .. code-block:: yaml
 
-    api_server:
-      tracing:
-        exporter_type: zipkin
-        sample_rate: 1.0
+   tracing:
+     exporter_type: zipkin
+     sample_rate: 1.0
 
 If you would like to exclude some routes from tracing, you can specify them using
-the :code:`excluded_urls` parameter. This parameter can be either a comma-separated 
+the :code:`excluded_urls` parameter. This parameter can be either a comma-separated
 string of routes, or a list of strings.
 
 .. code-block:: yaml
@@ -229,7 +226,7 @@ Configuration fields are passed through the OpenTelemetry Zipkin exporter
 Jaeger
 ^^^^^^
 
-The Jaeger exporter supports sending trace over both the Thrift and gRPC protocol. By default, BentoML 
+The Jaeger exporter supports sending trace over both the Thrift and gRPC protocol. By default, BentoML
 will use the Thrift protocol.
 
 .. note::
@@ -238,7 +235,7 @@ will use the Thrift protocol.
    application code is running as Lambda function, a collector can be configured to send spans
    using Thrift over HTTP. If both agent and collector are configured, the exporter sends traces
    only to the collector to eliminate the duplicate entries. [#otlp_jaeger_exporter_docs]_.
- 
+
 To setup the collector endpoint that will be used to receive either Thrift or Protobuf
 over HTTP/gRPC, use the ``collector_endpoint`` parameter:
 
@@ -328,12 +325,11 @@ To change the protocol, use the ``protocol`` parameter:
 
 .. code-block:: yaml
 
-   api_server:
-     tracing:
-       exporter_type: otlp
-       sample_rate: 1.0
-       otlp:
-         protocol: http
+   tracing:
+     exporter_type: otlp
+     sample_rate: 1.0
+     otlp:
+       protocol: http
 
 Configuration fields are passed through the OpenTelemetry Zipkin exporter
 [#otlp_source]_.
@@ -384,7 +380,7 @@ Configuration fields are passed through the OpenTelemetry Zipkin exporter
 
 .. [#otlp_jaeger_exporter_docs]  `OpenTelemetry Jaeger Exporter API docs <https://opentelemetry-python.readthedocs.io/en/latest/exporter/jaeger/jaeger.html#module-opentelemetry.exporter.jaeger>`_
 
-.. [#jaeger_source]  Jaeger exporter source code for :github:`Thrift <open-telemetry/opentelemetry-python/blob/main/exporter/opentelemetry-exporter-jaeger-thrift/src/opentelemetry/exporter/jaeger/thrift/__init__.py>` and 
+.. [#jaeger_source]  Jaeger exporter source code for :github:`Thrift <open-telemetry/opentelemetry-python/blob/main/exporter/opentelemetry-exporter-jaeger-thrift/src/opentelemetry/exporter/jaeger/thrift/__init__.py>` and
    :github:`gRPC <open-telemetry/opentelemetry-python/blob/main/exporter/opentelemetry-exporter-jaeger-proto-grpc/src/opentelemetry/exporter/jaeger/proto/grpc/__init__.py>`.
 
 .. [#default_timeout] The default timeout is 10 seconds. For most use cases, you don't need to change this value.

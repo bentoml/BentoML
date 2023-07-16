@@ -17,10 +17,10 @@ if t.TYPE_CHECKING:
 
     from bentoml.grpc.types import ProtoField
 
-    from ..types import LazyType
-    from ..context import InferenceApiContext as Context
-    from ..service.openapi.specification import Schema
+    from ..context import ServiceContext as Context
     from ..service.openapi.specification import Reference
+    from ..service.openapi.specification import Schema
+    from ..types import LazyType
 
     InputType = (
         UnionType

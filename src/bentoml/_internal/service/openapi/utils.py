@@ -1,19 +1,23 @@
 from __future__ import annotations
 
 import typing as t
-from typing import TYPE_CHECKING
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import InternalServerError
+from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import NotFound
 
 from ...utils import LazyLoader
+from ...utils.pkg import pkg_version_info
 from .specification import Schema
 
 if TYPE_CHECKING:
     import pydantic
     import pydantic.schema as schema
+
+    if pkg_version_info("pydantic")[0] >= 2:
+        import pydantic.json_schema as jschema
 
     from bentoml.exceptions import BentoMLException
 
@@ -23,11 +27,33 @@ else:
     )
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=_exc_msg)
     schema = LazyLoader("schema", globals(), "pydantic.schema", exc_msg=_exc_msg)
+    jschema = LazyLoader(
+        "jschema", globals(), "pydantic.json_schema", exc_msg="Pydantic v2 is required."
+    )
 
 REF_PREFIX = "#/components/schemas/"
 
 
-def pydantic_components_schema(pydantic_model: t.Type[pydantic.BaseModel]):
+def pydantic_components_schema(pydantic_model: type[pydantic.BaseModel]):
+    if pkg_version_info("pydantic")[0] >= 2:
+        return pydantic_v2_components_schema(pydantic_model)
+    else:
+        return pydantic_v1_components_schema(pydantic_model)
+
+
+def pydantic_v2_components_schema(pydantic_model: type[pydantic.BaseModel]):
+    json_schema = jschema.model_json_schema(
+        pydantic_model, ref_template=REF_PREFIX + "{model}"
+    )
+    defs = json_schema.pop("$defs", None)
+    components: dict[str, Schema] = {pydantic_model.__name__: Schema(**json_schema)}
+    if defs is not None:
+        # NOTE: This is a nested models, hence we will update the definitions
+        components.update({k: Schema(**v) for k, v in defs.items()})
+    return components
+
+
+def pydantic_v1_components_schema(pydantic_model: type[pydantic.BaseModel]):
     flat_models = schema.get_flat_models_from_model(pydantic_model)
     model_name_map = schema.get_model_name_map(flat_models)
 

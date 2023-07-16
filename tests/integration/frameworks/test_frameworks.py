@@ -1,20 +1,20 @@
 from __future__ import annotations
 
+import logging
 import os
 import types
 import typing as t
-import logging
 from typing import TYPE_CHECKING
 
 import pytest
 
 import bentoml
-from bentoml.exceptions import NotFound
 from bentoml._internal.models.model import ModelContext
 from bentoml._internal.models.model import ModelSignature
 from bentoml._internal.runner.runner import Runner
-from bentoml._internal.runner.strategy import DefaultStrategy
 from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
+from bentoml._internal.runner.strategy import DefaultStrategy
+from bentoml.exceptions import NotFound
 
 from .models import FrameworkTestModel
 
@@ -205,6 +205,15 @@ def test_load(
     for configuration in test_model.configurations:
         model = framework.load_model(saved_model)
         configuration.check_model(model, {})
+        if test_model.model_method_caller:
+            for meth, inp in [
+                (m, _i) for m, i in configuration.test_inputs.items() for _i in i
+            ]:
+                inp.check_output(
+                    test_model.model_method_caller(
+                        test_model, meth, tuple(inp.input_args), inp.input_kwargs
+                    )
+                )
 
 
 def test_runnable(
@@ -224,9 +233,9 @@ def test_runner_batching(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
+    from bentoml._internal.runner.container import AutoContainer
     from bentoml._internal.runner.utils import Params
     from bentoml._internal.runner.utils import payload_paramss_to_batch_params
-    from bentoml._internal.runner.container import AutoContainer
 
     ran_tests = False
 
@@ -289,7 +298,7 @@ def test_runner_cpu_multi_threading(
         for meth, inputs in config.test_inputs.items():
             strategy = DefaultStrategy()
 
-            os.environ.update(strategy.get_worker_env(runnable, resource_cfg, 0))
+            os.environ.update(strategy.get_worker_env(runnable, resource_cfg, 1, 0))
 
             runner.init_local()
 
@@ -335,7 +344,7 @@ def test_runner_cpu(
         for meth, inputs in config.test_inputs.items():
             strategy = DefaultStrategy()
 
-            os.environ.update(strategy.get_worker_env(runnable, resource_cfg, 0))
+            os.environ.update(strategy.get_worker_env(runnable, resource_cfg, 1, 0))
 
             runner.init_local()
 
@@ -383,7 +392,7 @@ def test_runner_nvidia_gpu(
         for meth, inputs in config.test_inputs.items():
             strategy = DefaultStrategy()
 
-            os.environ.update(strategy.get_worker_env(runnable, resource_cfg, 0))
+            os.environ.update(strategy.get_worker_env(runnable, resource_cfg, 1, 0))
 
             runner.init_local()
 

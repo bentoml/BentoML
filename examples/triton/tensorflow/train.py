@@ -27,6 +27,7 @@ if __name__ == "__main__":
             raise bentoml.exceptions.NotFound(
                 "'override=True', overriding previously saved weights/conversions."
             )
+        print(f"{bento_model_name} already exists. Skipping...")
     except bentoml.exceptions.NotFound:
         _, metadata = load_traced_script()
         model = tf.saved_model.load(

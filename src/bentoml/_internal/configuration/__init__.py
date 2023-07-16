@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import logging
 import os
 import re
 import typing as t
-import logging
-from typing import TYPE_CHECKING
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from ...exceptions import BentoMLException
 from ...exceptions import BentoMLConfigException
+from ...exceptions import BentoMLException
 
 try:
     from ..._version import __version__
@@ -137,8 +137,8 @@ def get_quiet_mode() -> bool:
 def load_config(bentoml_config_file: str | None = None):
     """Load global configuration of BentoML"""
 
-    from .containers import BentoMLContainer
     from .containers import BentoMLConfiguration
+    from .containers import BentoMLContainer
 
     if not bentoml_config_file:
         bentoml_config_file = get_bentoml_config_file_from_env()

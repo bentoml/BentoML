@@ -41,20 +41,20 @@ Thats it! You can now serve your Bento with gRPC via :ref:`bentoml serve-grpc <r
 
 .. code-block:: bash
 
-   » bentoml serve-grpc iris_classifier:latest --production
+   » bentoml serve-grpc iris_classifier:latest
 
 Using your gRPC BentoService
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are two ways to interact with your gRPC BentoService:
 
-1. Use tools such as :github:`fullstorydev/grpcurl`, :github:`fullstorydev/grpcui`: 
+1. Use tools such as :github:`fullstorydev/grpcurl`, :github:`fullstorydev/grpcui`:
    The server requires :github:`reflection <grpc/grpc/blob/master/doc/server-reflection.md>` to be enabled for those tools to work.
    Pass in ``--enable-reflection`` to enable reflection:
 
    .. code-block:: bash
 
-      » bentoml serve-grpc iris_classifier:latest --production --enable-reflection
+      » bentoml serve-grpc iris_classifier:latest --enable-reflection
 
    .. include:: ./snippets/grpc/grpc_tools.rst
 
@@ -748,7 +748,7 @@ After containerization, your Bento container can now be used with gRPC:
 
    » docker run -it --rm \
                 -p 3000:3000 -p 3001:3001 \
-                iris_classifier:6otbsmxzq6lwbgxi serve-grpc --production
+                iris_classifier:6otbsmxzq6lwbgxi serve-grpc
 
 Congratulations! You have successfully served, containerized and tested your BentoService with gRPC.
 
@@ -789,7 +789,7 @@ As you can see, BentoService defines a `simple rpc` ``Call`` that sends a ``Requ
 
 A ``Request`` message takes in:
 
-* `api_name`: the name of the API function defined inside your BentoService. 
+* `api_name`: the name of the API function defined inside your BentoService.
 * `oneof <https://developers.google.com/protocol-buffers/docs/proto3#oneof>`_ `content`: the field can be one of the following types:
 
 +------------------------------------------------------------------+-------------------------------------------------------------------------------------------+
@@ -1279,7 +1279,7 @@ because BentoML gRPC server is an async implementation of gRPC server.
    If you are using ``grpc.ServerInterceptor``, you will need to migrate it over
    to use the new ``grpc.aio.ServerInterceptor`` in order to use this feature.
 
-   Feel free to reach out to us at `#support on Slack <https://l.linklyhq.com/l/ktOX>`_
+   Feel free to reach out to us at `#support on Slack <https://l.bentoml.com/join-slack>`_
 
 .. dropdown:: A toy implementation ``AppendMetadataInterceptor``
 
@@ -1493,7 +1493,7 @@ on a connection at one time.
    application will higher load and long running streams could see a performance degradation caused by queuing because of the limit.
 
    Setting a limit cap on the number of concurrent streams will prevent this from happening, but it also means that
-   you need to tune the limit cap to the right number. 
+   you need to tune the limit cap to the right number.
 
    * If the limit cap is too low, you will sooner or later running into the issue mentioned above.
 
@@ -1542,4 +1542,3 @@ message.
 
 
 We recommend you to also check out `gRPC performance best practice <https://grpc.io/docs/guides/performance/>`_ to learn about best practice for gRPC.
-

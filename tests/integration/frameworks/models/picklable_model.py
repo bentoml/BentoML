@@ -5,8 +5,8 @@ import numpy as np
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 framework = bentoml.picklable_model
 

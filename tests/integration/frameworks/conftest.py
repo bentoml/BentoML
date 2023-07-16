@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import os
-import typing as t
 import logging
+import os
 import pkgutil
+import typing as t
+from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING
-from importlib import import_module
 
 import pytest
 
 if TYPE_CHECKING:
-    from _pytest.nodes import Item
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
+    from _pytest.nodes import Item
 
     from .models import FrameworkTestModel
 

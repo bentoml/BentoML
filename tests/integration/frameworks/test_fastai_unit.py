@@ -4,23 +4,23 @@ import re
 import typing as t
 
 import numpy as np
-import torch
 import pytest
-import torch.nn as nn
+import torch
 import torch.functional as F
-from fastai.learner import Learner
+import torch.nn as nn
+from fastai.data.block import DataBlock
+from fastai.data.core import DataLoaders
+from fastai.data.core import Datasets
 from fastai.data.core import Module
 from fastai.data.core import TfmdDL
-from fastai.data.core import Datasets
-from fastai.data.core import DataLoaders
-from fastai.data.block import DataBlock
+from fastai.data.transforms import Transform
+from fastai.learner import Learner
 from fastai.test_utils import synth_learner
 from fastcore.foundation import L
-from fastai.data.transforms import Transform
 
 import bentoml
-from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import InvalidArgument
 
 if t.TYPE_CHECKING:
     import bentoml._internal.external_typing as ext

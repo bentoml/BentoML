@@ -356,7 +356,7 @@ From the example above, the :code:`iris_clf_runner.predict.run` call will pass t
 the function input to the model's :code:`predict` method, running from a remote runner
 process.
 
-For many :doc:`other ML frameworks <frameworks/index>`, the model object's inference
+For many :doc:`other ML frameworks </frameworks/index>`, the model object's inference
 method may not be called :code:`predict`. Users can customize it by specifying the model
 signature during :code:`save_model`:
 

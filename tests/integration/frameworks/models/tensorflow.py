@@ -9,8 +9,8 @@ import tensorflow as tf
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 if t.TYPE_CHECKING:
     from bentoml._internal.external_typing import tensorflow as tf_ext
@@ -266,15 +266,15 @@ keras_models = [
                 test_inputs={
                     "__call__": [
                         Input(
-                            input_args=[input_tensor],
+                            input_args=[inp],
                             expected=lambda out: np.isclose(out, [[15.0]]).all(),
                         ),
                         Input(
-                            input_args=[input_array],
+                            input_args=[inp],
                             expected=lambda out: np.isclose(out, [[15.0]]).all(),
                         ),
                         Input(
-                            input_args=[input_data],
+                            input_args=[inp],
                             expected=lambda out: np.isclose(out, [[15.0]]).all(),
                         ),
                     ],
@@ -285,6 +285,11 @@ keras_models = [
     for model in [
         make_keras_functional_model(),
         make_keras_sequential_model(),
+    ]
+    for inp in [
+        input_tensor,
+        input_array,
+        input_data,
     ]
 ]
 

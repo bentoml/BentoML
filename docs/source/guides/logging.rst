@@ -13,7 +13,7 @@ webservices are logged along with requests to each of the model runner services.
 The request log format is as follows:
 
 .. parsed-literal::
- 
+
     time [LEVEL] [component] ClientIP:ClientPort (scheme,method,path,type,length) (status,type,length) Latency (trace,span,sampled)
 
 For example, a log message might look like:
@@ -51,7 +51,7 @@ Logging Configuration
 
 Access logs can be configured by setting the appropriate flags in the bento configuration file for
 both web requests and model serving requests. Read more about how to use a bento configuration file
-here in the - :ref:`Configuration Guide <guides/configuration>`
+here in the - :doc:`Configuration Guide </guides/configuration>`
 
 To configure other logs, please use the `default Python logging configuration <https://docs.python.org/3/howto/logging.html>`_. All BentoML logs are logged under the ``bentoml`` namespace.
 
@@ -132,6 +132,9 @@ When using BentoML as a library, BentoML does not configure any logs. By default
     bentoml_logger.addHandler(ch)
     bentoml_logger.setLevel(logging.DEBUG)
 
+.. note::
+
+    :bdg-info:`Important:` ``bentoml serve`` will fork the given `service.py` into the child process. This means any type of rotation FileHandler are not supported within the service definition. See `notes from Python logging module <https://docs.python.org/3/howto/logging-cookbook.html#logging-to-a-single-file-from-multiple-processes>`_ for more information.
 ----
 
 .. rubric:: Notes
@@ -141,4 +144,3 @@ When using BentoML as a library, BentoML does not configure any logs. By default
 .. [#span_documentation] `OpenTelemetry Span Documentation <https://opentelemetry.lightstep.com/spans/>`_
 
 .. [#sampling_documentation] `OpenTelemetry SDK Documentation <https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md>`_
-

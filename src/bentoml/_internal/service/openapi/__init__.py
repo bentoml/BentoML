@@ -1,34 +1,33 @@
 from __future__ import annotations
 
 import typing as t
+from functools import lru_cache
 from http import HTTPStatus
 from typing import TYPE_CHECKING
-from functools import lru_cache
 
 from deepmerge.merger import Merger
 
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import InternalServerError
+from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import NotFound
 
-from .utils import REF_PREFIX
-from .utils import exception_schema
-from .utils import exception_components_schema
 from ...types import LazyType
 from ...utils import bentoml_cattr
-from .specification import Tag
-from .specification import Info
-from .specification import Contact
-from .specification import PathItem
-from .specification import Response
-from .specification import MediaType
-from .specification import Operation
-from .specification import Reference
 from .specification import Components
+from .specification import Contact
+from .specification import Info
+from .specification import MediaType
 from .specification import OpenAPISpecification
+from .specification import Operation
+from .specification import PathItem
+from .specification import Reference
+from .specification import Response
+from .specification import Tag
+from .utils import REF_PREFIX
+from .utils import exception_components_schema
+from .utils import exception_schema
 
 if TYPE_CHECKING:
-
     from .. import Service
     from ..inference_api import InferenceAPI
 

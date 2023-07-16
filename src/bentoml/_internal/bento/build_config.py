@@ -1,40 +1,38 @@
 from __future__ import annotations
 
+import logging
 import os
 import re
+import subprocess
 import sys
 import typing as t
-import logging
-import subprocess
-from sys import version_info
 from shlex import quote
-from typing import TYPE_CHECKING
+from sys import version_info
 
-import fs
 import attr
-import yaml
-import psutil
+import fs
 import fs.copy
+import psutil
+import yaml
 from pathspec import PathSpec
 
-from ..utils import bentoml_cattr
-from ..utils import resolve_user_filepath
-from ..utils import copy_file_to_fs_folder
-from ..container import generate_containerfile
-from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
-from ..utils.dotenv import parse_dotenv
+from ...exceptions import InvalidArgument
 from ..configuration import CLEAN_BENTOML_VERSION
-from ..container.generate import BENTO_PATH
-from .build_dev_bentoml_whl import build_bentoml_editable_wheel
+from ..container import generate_containerfile
+from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
+from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
+from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
 from ..container.frontend.dockerfile import DistroSpec
 from ..container.frontend.dockerfile import get_supported_spec
-from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
-from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
-from ..container.frontend.dockerfile import SUPPORTED_PYTHON_VERSIONS
-from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
+from ..container.generate import BENTO_PATH
+from ..utils import bentoml_cattr
+from ..utils import copy_file_to_fs_folder
+from ..utils import resolve_user_filepath
+from ..utils.dotenv import parse_dotenv
+from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from attr import Attribute
     from fs.base import FS
 
@@ -59,13 +57,13 @@ def _convert_python_version(py_version: str | None) -> str | None:
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '
-            f"version must follow standard python semver format, e.g. 3.7.10 ",
+            "version must follow standard python semver format, e.g. 3.8.15",
         )
     major, minor = match.groups()
     target_python_version = f"{major}.{minor}"
     if target_python_version != py_version:
         logger.warning(
-            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced",
+            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.com/en/latest/concepts/bento.html#custom-base-image-advanced",
             target_python_version,
             py_version,
         )
@@ -154,11 +152,7 @@ class DockerOptions:
         ),
     )
     python_version: t.Optional[str] = attr.field(
-        converter=_convert_python_version,
-        default=None,
-        validator=attr.validators.optional(
-            attr.validators.in_(SUPPORTED_PYTHON_VERSIONS)
-        ),
+        converter=_convert_python_version, default=None
     )
     cuda_version: t.Optional[str] = attr.field(
         default=None,
@@ -278,7 +272,7 @@ class DockerOptions:
         return bentoml_cattr.unstructure(self)
 
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     CondaPipType = dict[t.Literal["pip"], list[str]]
     DependencyType = list[str | CondaPipType]
 else:
@@ -312,7 +306,7 @@ def conda_dependencies_validator(
                 )
 
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     ListStr: t.TypeAlias = list[str]
     CondaYamlDict = dict[str, DependencyType | list[str]]
 else:
@@ -689,14 +683,14 @@ def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> Python
 bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
-if TYPE_CHECKING:
-    OptionsCls = DockerOptions | CondaOptions | PythonOptions
+if t.TYPE_CHECKING:
+    OptionsCls = t.TypeVar("OptionsCls", DockerOptions, CondaOptions, PythonOptions)
 
 
 def dict_options_converter(
     options_type: t.Type[OptionsCls],
-) -> t.Callable[[OptionsCls | dict[str, t.Any]], t.Any]:
-    def _converter(value: OptionsCls | dict[str, t.Any]) -> options_type:
+) -> t.Callable[[OptionsCls | dict[str, t.Any] | None], OptionsCls]:
+    def _converter(value: OptionsCls | dict[str, t.Any] | None) -> OptionsCls:
         if value is None:
             return options_type()
         if isinstance(value, dict):
@@ -704,6 +698,38 @@ def dict_options_converter(
         return value
 
     return _converter
+
+
+@attr.frozen
+class ModelSpec:
+    tag: str
+    filter: t.Optional[str] = None
+    alias: t.Optional[str] = None
+
+    @classmethod
+    def from_item(cls, item: str | dict[str, t.Any] | ModelSpec) -> ModelSpec:
+        if isinstance(item, str):
+            return cls(tag=item)
+        if isinstance(item, ModelSpec):
+            return item
+        return cls(**item)
+
+
+def convert_models_config(
+    models_config: list[str | dict[str, t.Any] | ModelSpec] | None,
+) -> list[ModelSpec]:
+    if not models_config:
+        return []
+    return [ModelSpec.from_item(item) for item in models_config]
+
+
+def _model_spec_structure_hook(
+    d: str | dict[str, t.Any], cls: t.Type[ModelSpec]
+) -> ModelSpec:
+    return cls.from_item(d)
+
+
+bentoml_cattr.register_structure_hook(ModelSpec, _model_spec_structure_hook)
 
 
 @attr.frozen
@@ -739,8 +765,11 @@ class BentoBuildConfig:
         default=None,
         converter=dict_options_converter(CondaOptions),
     )
+    models: t.List[ModelSpec] = attr.field(
+        factory=list, converter=convert_models_config
+    )
 
-    if TYPE_CHECKING:
+    if t.TYPE_CHECKING:
         # NOTE: This is to ensure that BentoBuildConfig __init__
         # satisfies type checker. docker, python, and conda accepts
         # dict[str, t.Any] since our converter will handle the conversion.
@@ -757,6 +786,7 @@ class BentoBuildConfig:
             docker: DockerOptions | dict[str, t.Any] | None = ...,
             python: PythonOptions | dict[str, t.Any] | None = ...,
             conda: CondaOptions | dict[str, t.Any] | None = ...,
+            models: list[ModelSpec | str | dict[str, t.Any]] | None = ...,
         ) -> None:
             ...
 
@@ -766,7 +796,7 @@ class BentoBuildConfig:
 
         if use_cuda and use_conda:
             logger.warning(
-                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced"
+                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.com/en/latest/concepts/bento.html#custom-base-image-advanced"
             )
 
         if self.docker.distro is not None:
@@ -814,7 +844,12 @@ class BentoBuildConfig:
             self.docker.with_defaults(),
             self.python.with_defaults(),
             self.conda.with_defaults(),
+            self.models,
         )
+
+    @property
+    def model_aliases(self) -> t.Dict[str, str]:
+        return {model.alias: model.tag for model in self.models if model.alias}
 
     @classmethod
     def from_yaml(cls, stream: t.TextIO) -> BentoBuildConfig:
@@ -835,9 +870,12 @@ class BentoBuildConfig:
                 raise InvalidArgument(str(e)) from e
 
     def to_yaml(self, stream: t.TextIO) -> None:
-        # TODO: Save BentoBuildOptions to a yaml file
-        # This is reserved for building interactive build file creation CLI
-        raise NotImplementedError
+        try:
+            yaml.dump(bentoml_cattr.unstructure(self), stream)
+        except yaml.YAMLError as e:
+            logger.error("Error while deserializing BentoBuildConfig to yaml:")
+            logger.error(e)
+            raise
 
 
 @attr.define(frozen=True)
@@ -894,3 +932,4 @@ class FilledBentoBuildConfig(BentoBuildConfig):
     docker: DockerOptions
     python: PythonOptions
     conda: CondaOptions
+    models: t.List[ModelSpec]

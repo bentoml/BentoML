@@ -1,27 +1,27 @@
 from __future__ import annotations
 
 import typing as t
+from contextlib import contextmanager
 from types import ModuleType
 from typing import TYPE_CHECKING
-from contextlib import contextmanager
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from .exceptions import BentoMLException
-from ._internal.tag import Tag
-from ._internal.utils import calc_dir_size
+from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import Model
 from ._internal.models import ModelContext
 from ._internal.models import ModelOptions
-from ._internal.utils.analytics import track
+from ._internal.tag import Tag
+from ._internal.utils import calc_dir_size
 from ._internal.utils.analytics import ModelSaveEvent
-from ._internal.configuration.containers import BentoMLContainer
+from ._internal.utils.analytics import track
+from .exceptions import BentoMLException
 
 if TYPE_CHECKING:
+    from ._internal.cloud import BentoCloudClient
     from ._internal.models import ModelStore
     from ._internal.models.model import ModelSignaturesType
-    from ._internal.yatai_client import YataiClient
 
 
 @inject
@@ -38,7 +38,10 @@ def get(
     tag: t.Union[Tag, str],
     *,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    model_aliases: t.Dict[str, str] = Provide[BentoMLContainer.model_aliases],
 ) -> "Model":
+    if isinstance(tag, str) and tag in model_aliases:
+        tag = model_aliases[tag]
     return _model_store.get(tag)
 
 
@@ -206,12 +209,12 @@ def push(
     *,
     force: bool = False,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     model_obj = _model_store.get(tag)
     if not model_obj:
         raise BentoMLException(f"Model {tag} not found in local store")
-    _yatai_client.push_model(model_obj, force=force)
+    _cloud_client.push_model(model_obj, force=force)
 
 
 @inject
@@ -219,15 +222,15 @@ def pull(
     tag: t.Union[Tag, str],
     *,
     force: bool = False,
-    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Model:
-    return _yatai_client.pull_model(tag, force=force)
+    return _cloud_client.pull_model(tag, force=force)
 
 
 @inject
 @contextmanager
 def create(
-    name: str,
+    name: Tag | str,
     *,
     module: str = "",
     api_version: str | None = None,

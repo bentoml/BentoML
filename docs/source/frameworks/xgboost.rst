@@ -95,6 +95,7 @@ information, as well as the fact that it depends on XGBoost. This can be done us
 ``python`` (if using pip), or ``conda``:
 
 .. tab-set::
+
    .. tab-item:: pip
 
       .. code-block:: yaml
@@ -102,8 +103,8 @@ information, as well as the fact that it depends on XGBoost. This can be done us
          service: "service:svc"
          description: "My XGBoost service"
          python:
-	   packages:
-	     - xgboost
+           packages:
+           - xgboost
 
    .. tab-item:: conda
 
@@ -178,3 +179,10 @@ default, but can be enabled using the appropriate signature when saving your boo
 .. code-block:: python
 
    bento_model = bentoml.xgboost.save_model("booster_tree", booster, signatures={"predict": {"batchable": True}})
+
+.. note::
+
+   You can find more examples for **XGBoost** in our :examples:`bentoml/examples/xgboost
+   <xgboost>` directory.
+
+.. currentmodule:: bentoml.xgboost

@@ -45,7 +45,7 @@ below:
 
 .. code-block:: bash
 
-   » BENTOML_CONFIG=~/bentoml_configuration.yaml bentoml serve iris_classifier:latest --production
+   » BENTOML_CONFIG=~/bentoml_configuration.yaml bentoml serve iris_classifier:latest
 
 .. note::
 
@@ -69,7 +69,7 @@ an oneline value of a "flat" JSON via ``BENTOML_CONFIG_OPTIONS``:
 .. code-block:: yaml
 
    $ BENTOML_CONFIG_OPTIONS='runners.pytorch_mnist.resources."nvidia.com/gpu"[0]=0 runners.pytorch_mnist.resources."nvidia.com/gpu"[1]=2' \
-            bentoml serve pytorch_mnist_demo:latest --production
+            bentoml serve pytorch_mnist_demo:latest
 
 Which the override configuration will be intepreted as:
 
@@ -100,7 +100,7 @@ To mount a configuration file to a containerized BentoService, user can use the
 
    $ docker run --rm -v /path/to/configuration.yml:/home/bentoml/configuration.yml \
                 -e BENTOML_CONFIG=/home/bentoml/configuration.yml \
-                iris_classifier:6otbsmxzq6lwbgxi serve --production
+                iris_classifier:6otbsmxzq6lwbgxi serve
 
 Voila! You have successfully mounted a configuration file to your containerized BentoService.
 
@@ -152,7 +152,7 @@ The following options are available for the ``api_server`` section:
 +=============+=============================================================+=================================================+
 | ``workers`` | Number of API workers for to spawn                          | null [#default_workers]_                        |
 +-------------+-------------------------------------------------------------+-------------------------------------------------+
-| ``timeout`` | Timeout for API server in seconds                           | 60                                              |
+| ``traffic`` | Traffic control for API server                              | See :ref:`guides/configuration:\`\`traffic\`\`` |
 +-------------+-------------------------------------------------------------+-------------------------------------------------+
 | ``backlog`` | Maximum number of connections to hold in backlog            | 2048                                            |
 +-------------+-------------------------------------------------------------+-------------------------------------------------+
@@ -168,6 +168,27 @@ The following options are available for the ``api_server`` section:
 +-------------+-------------------------------------------------------------+-------------------------------------------------+
 | ``tracing`` | Key and values to configure tracing exporter for API server | See :doc:`/guides/tracing`                      |
 +-------------+-------------------------------------------------------------+-------------------------------------------------+
+
+``traffic``
+"""""""""""
+
+You can control the traffic of the API server by setting the ``traffic`` field.
+
+To set the maximum number of seconds to wait before a response is received, set ``api_server.traffic.timeout``, the default value is ``60``s:
+
+.. code-block:: yaml
+
+   api_server:
+     traffic:
+       timeout: 120
+
+To set the maximum number of requests in the process queue across all runners, set ``api_server.traffic.max_concurrency``, the default value is infinite:
+
+.. code-block:: yaml
+
+   api_server:
+     traffic:
+       max_concurrency: 50
 
 ``metrics``
 """""""""""

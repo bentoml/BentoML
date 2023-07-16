@@ -1,16 +1,27 @@
 from __future__ import annotations
-from types import TracebackType
-from .. import *
-from .. import service_pb2
-from .. import KeepAliveOptions
-from .. import (
-    InferInput as InferInput,
-    InferResult as InferResult,
-    InferRequestedOutput as InferRequestedOutput,
-)
-import grpc
+
 import typing as t
+from types import TracebackType
+
 import typing_extensions
+
+from .. import InferInput as InferInput
+from .. import InferResult as InferResult
+from .. import raise_error as raise_error
+from .. import service_pb2
+from .. import get_error_grpc as get_error_grpc
+from .. import KeepAliveOptions
+from .. import raise_error_grpc as raise_error_grpc
+from .. import ChannelCredentials
+from .. import np_to_triton_dtype as np_to_triton_dtype
+from .. import triton_to_np_dtype as triton_to_np_dtype
+from .. import InferRequestedOutput as InferRequestedOutput
+from .. import serialized_byte_size as serialized_byte_size
+from .. import serialize_bf16_tensor as serialize_bf16_tensor
+from .. import serialize_byte_tensor as serialize_byte_tensor
+from .. import deserialize_bf16_tensor as deserialize_bf16_tensor
+from .. import deserialize_bytes_tensor as deserialize_bytes_tensor
+from .. import InferenceServerException
 
 P = typing_extensions.ParamSpec("P")
 
@@ -32,7 +43,7 @@ class InferenceServerClient:
         root_certificates: str = ...,
         private_key: str = ...,
         certificate_chain: str = ...,
-        creds: grpc.ChannelCredentials = ...,
+        creds: ChannelCredentials = ...,
         keepalive_options: KeepAliveOptions = ...,
         channel_args: list[tuple[str, t.Any]] = ...,
     ) -> None: ...

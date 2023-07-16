@@ -33,4 +33,4 @@ Below is a simple example of using scikit-learn with BentoML:
 
 .. note::
 
-   You can find more examples for **scikit-learn** in our `bentoml/examples https://github.com/bentoml/BentoML/tree/main/examples`_ directory.
+   You can find more examples for **scikit-learn** in our :examples:`bentoml/examples <>` directory.

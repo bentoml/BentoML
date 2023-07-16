@@ -61,7 +61,7 @@ To use the IO descriptor, install bentoml with extra ``io-pandas`` dependency:
 .. note::
 
    The :code:`pandas` package is required to use the :obj:`bentoml.io.PandasDataFrame`
-   or :obj:`bentoml.io.PandasSeries`. 
+   or :obj:`bentoml.io.PandasSeries`.
 
    Install it with ``pip install pandas`` and add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
@@ -125,7 +125,8 @@ Structured Data with JSON
 
    Then proceed to add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
-   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`. We also provide
+   :examples:`an example project <pydantic_validation>` using Pydantic for request validation.
 
    .. tab-set::
 

@@ -38,7 +38,7 @@ jobs:
           pdm use -f ${{ matrix.python-version }}
           pdm install -d -G grpc -G io -G testing
       - name: Unit tests
-        run: pdm run -v tests tests/unit -n 3
+        run: pdm run -v unit
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.unit.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data
@@ -62,7 +62,7 @@ jobs:
       - name: Install dependencies
         run: pdm install -d -G testing -G frameworks
       - name: Run framework integration tests
-        run: pdm run -v tests tests/integration
+        run: pdm run -v integration
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.integrations.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data

@@ -102,9 +102,7 @@ jobs:
           pdm sync -d -G io -G testing -G monitor-otlp
       - name: Run the monitoring tests
         working-directory: examples/monitoring/task_classification
-        run: |
-          pip install -r requirements.txt
-          mkdir -p monitoring && pdm run -v pytest . -vvv --capture=tee-sys
+        run: mkdir -p monitoring && pdm run -v monitoring
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.monitoring.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data

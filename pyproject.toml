@@ -220,7 +220,7 @@ testing = [
 # otherwise locking will fail
 tensorflow-io-gcs-filesystem = ">=0.29.0"
 [tool.pdm.scripts]
-_run_test = "pytest --cov --cov-report=term-missing --cov-config=pyproject.toml -vv"
+_run_test = "pytest --cov=bentoml --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = { composite = ["_run_test {args:tests}"] }
 unit = { composite = ["tests tests/unit -n 3"] }
 integration = { composite = ["tests tests/integration"] }
@@ -243,6 +243,7 @@ bentoml = ["src/bentoml", "*/bentoml/src/bentoml"]
 [tool.coverage.run]
 branch = true
 omit = [
+    "__pypackages__/*",
     "src/bentoml/__main__.py",
     "src/bentoml/io.py",
     "src/bentoml/serve.py",
@@ -258,6 +259,7 @@ omit = [
 show_missing = true
 precision = 2
 omit = [
+    "__pypackages__/*",
     'src/bentoml/__main__.py',
     "src/bentoml/io.py",
     "src/bentoml/serve.py",

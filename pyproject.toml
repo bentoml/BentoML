@@ -227,8 +227,11 @@ dev = [
 _run_test = "pytest --cov=bentoml --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = { composite = ["_run_test {args:tests}"] }
 unit = { composite = ["tests tests/unit -n 3"] }
-pre_integration = "pip install --force-reinstall torch --index-url https://download.pytorch.org/whl/cpu"
-integration = { composite = ["tests tests/integration -n auto"] }
+pre_integration = "pip install torch --index-url https://download.pytorch.org/whl/cpu"
+integration = { composite = [
+    "pip install -U tensorflow",
+    "tests tests/integration -n auto",
+] }
 monitoring = { composite = ["tests examples/monitoring/task_classification"] }
 e2e = { composite = [
     "tests tests/e2e/bento_server_http",

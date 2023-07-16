@@ -57,10 +57,13 @@ jobs:
       - name: Set up PDM
         uses: pdm-project/setup-pdm@v3
         with:
+          cache: true
           python-version: '3.8'
           enable-pep582: false
       - name: Install dependencies
-        run: pdm install -d -G testing -G frameworks
+        run: |
+          pdm use -f "3.8"
+          pdm install -d -G testing -G frameworks
       - name: Run framework integration tests
         run: pdm run -v integration
       - name: Disambiguate coverage filename

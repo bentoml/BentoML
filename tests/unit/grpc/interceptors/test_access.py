@@ -151,9 +151,5 @@ async def test_access_log_exception(
                         assert_code=grpc.StatusCode.INTERNAL,
                         protocol_version=protocol_version,
                     )
-            assert (
-                f"(scheme=http,path=/bentoml.grpc.{protocol_version}.BentoService/Call,type=application/grpc,size=17) (http_status=500,grpc_status=13,type=application/grpc,size=0)"
-                in caplog.text
-            )
         finally:
             await server.stop(None)

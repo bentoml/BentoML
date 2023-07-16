@@ -224,6 +224,7 @@ dev = [
 # resolve for python restriction in tensorflow-io-gcs-filesystem
 # otherwise locking will fail
 tensorflow-io-gcs-filesystem = ">=0.29.0"
+fastapi = "==0.93.0"
 [tool.pdm.scripts]
 _run_test = "pytest --cov=bentoml --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = { composite = ["_run_test {args:tests}"] }

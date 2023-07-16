@@ -156,6 +156,7 @@ respect-source-order = true
 # otherwise locking will fail
 tensorflow-io-gcs-filesystem = ">=0.29.0"
 fastapi = "==0.93.0"
+tensorflow = ">=2.3.0"
 [tool.pdm.dev-dependencies]
 docs = [
     "sphinx>=5",
@@ -189,7 +190,7 @@ frameworks = [
     "onnx",
     "onnxruntime",
     # tensorflow dependencies
-    "tensorflow>=2.3.0",
+    "tensorflow",
     # torch-related dependencies
     "torch",
     "lightning",
@@ -226,7 +227,7 @@ dev = [
 _run_test = "pytest --cov=bentoml --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = { composite = ["_run_test {args:tests}"] }
 unit = { composite = ["tests tests/unit -n 3"] }
-pre_integration = "pip install --force-reinstall torch --index-url https://download.pytorch.org/whl/cpu && pip install -U tensorflow"
+pre_integration = "pip install --force-reinstall torch --index-url https://download.pytorch.org/whl/cpu"
 integration = { composite = ["tests tests/integration -n auto"] }
 monitoring = { composite = ["tests examples/monitoring/task_classification"] }
 e2e = { composite = [

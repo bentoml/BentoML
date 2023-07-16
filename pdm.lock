@@ -6,7 +6,7 @@ groups = ["default", "aws", "docs", "frameworks", "grpc", "grpc-channelz", "grpc
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:029dfe12e1fe8b543ddb8ef992f88e95c2a43066a01b60cd8d3f71066630306b"
+content_hash = "sha256:1677f3bbc5a8d926484eb2979286a610e82160e151806b420aa82d5d7cbf63cf"
 
 [[package]]
 name = "absl-py"

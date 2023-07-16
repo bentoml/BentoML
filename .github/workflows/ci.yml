@@ -146,7 +146,9 @@ jobs:
           pdm use -f ${{ matrix.python-version }}
           pdm sync -d -G grpc -G io -G testing
       - name: Run ${{ matrix.server_type }} tests and generate coverage report
-        run: pdm run -v tests tests/e2e/bento_server_${{ matrix.server_type }}
+        run: |
+          pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
+          pdm run -v tests tests/e2e/bento_server_${{ matrix.server_type }}
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.e2e.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data

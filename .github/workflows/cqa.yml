@@ -34,12 +34,11 @@ jobs:
           github_token: ${{ github.token }}
       - name: Install dependencies
         run: pdm install -G tooling
-      - name: Format and lint check
-        run: pdm run -v pre-commit run --all-files
+      - uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --all-files --verbose
       - name: Proto lint
         run: buf lint --config "src/bentoml/grpc/buf.yaml" --error-format msvs src
-      - name: Type check
-        run: pdm run -v pre-commit run typecheck --all-files
   spelling:
     runs-on: ubuntu-latest
     steps:

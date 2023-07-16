@@ -4,6 +4,7 @@ import json
 import os
 import typing as t
 
+import subprocess
 import click
 import click_option_group as cog
 import yaml
@@ -384,18 +385,22 @@ def add_bento_management_commands(cli: Group):
                     fg="blue",
                 )
         if push:
-            click.echo(f"Pushing {bento} to BentoCloud...")
+            click.secho(f"\nPushing {bento} to BentoCloud...", fg="magenta")
             _cloud_client.push_bento(bento)
         elif containerize:
             backend: DefaultBuilder = t.cast(
                 "DefaultBuilder", os.getenv("BENTOML_CONTAINERIZE_BACKEND", "docker")
             )
             click.secho(
-                f"Building {bento} into a LLMContainer using backend '{backend}'",
+                f"\nBuilding {bento} into a LLMContainer using backend '{backend}'",
                 fg="magenta",
             )
-            if not bentoml.container.health(backend):
-                ctx.fail(f"Backend {backend} is not healthy")
+            try:
+                bentoml.container.health(backend)
+            except subprocess.CalledProcessError:
+                raise bentoml.exceptions.BentoMLException(
+                    f"Backend {backend} is not healthy"
+                )
 
             # TODO: allow users to customise features with --containerize
             bentoml.container.build(bento.tag, backend=backend, features=("grpc", "io"))

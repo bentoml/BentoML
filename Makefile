@@ -36,7 +36,7 @@ lint-proto: ## Running proto lint checker: buf
 	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf lint --config "/workspace/bentoml/grpc/buf.yaml" --error-format msvs bentoml/grpc
 type: ## Running type checker: pyright
 	@echo "(pyright) Typechecking codebase..."
-	@pyright -p src -w
+	@pre-commit run typecheck --all-files
 style: format lint format-proto lint-proto ## Running formatter and linter
 clean: ## Clean all generated files
 	@echo "Cleaning all generated files..."

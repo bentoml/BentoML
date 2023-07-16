@@ -149,13 +149,21 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.sdist]
 # limit which files are included in the sdist (.tar.gz) asset,
-include = [
-    '/README.md',
-    '/WORKSPACE',
-    '/Makefile',
-    '/src',
-    '/tests',
-    '/requirements',
+exclude = [
+    '/.devcontainer',
+    '/.github',
+    '/docs',
+    '/.gitattributes',
+    '/.gitignore',
+    '/.pre-commit-config.yaml',
+    '/.readthedocs.yaml',
+    '/.yamllint.yml',
+    "/CITATION.cff",
+    "/CODE_OF_CONDUCT.md",
+    "/CONTRIBUTING.md",
+    "/DEVELOPMENT.md",
+    "/GOVERNANCE.md",
+    "/codecov.yml",
 ]
 [tool.hatch.build.targets.wheel]
 packages = ["src/bentoml", "src/bentoml_cli"]
@@ -205,7 +213,14 @@ frameworks = [
     "jaxlib",
     "chex",
 ]
-tooling = ["pre-commit"]
+tooling = [
+    "pre-commit",
+    "twine",
+    "wheel",
+    "setuptools-scm",
+    "pandas-stubs",
+    "hatch",
+]
 testing = [
     "pandas",
     "pydantic<2",
@@ -223,7 +238,7 @@ testing = [
 [tool.pdm.scripts]
 _run_test = "pytest --cov --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = "_run_test {args:tests}"
-
+package = "hatch build"
 
 [tool.coverage.paths]
 source = ["src"]

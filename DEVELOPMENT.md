@@ -1,19 +1,33 @@
 # Developer Guide
 
-Before getting started, check out the `#bentoml-contributors` channel in the [BentoML community slack](https://l.bentoml.com/join-slack).
+Before getting started, check out the `#bentoml-contributors` channel in the
+[BentoML community slack](https://l.bentoml.com/join-slack).
 
-If you are interested in contributing to existing issues and feature requets, check out the [good-first-issue](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Agood-first-issue) and [help-wanted](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Ahelp-wanted) issues list.
+If you are interested in contributing to existing issues and feature requets,
+check out the
+[good-first-issue](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Agood-first-issue)
+and
+[help-wanted](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Ahelp-wanted)
+issues list.
 
-If you are interested in proposing a new feature, make sure to create a new feature request ticket [here](https://github.com/bentoml/BentoML/issues/new/choose) and share your proposal in the `#bentoml-contributors` slack channel for feedback.
+If you are interested in proposing a new feature, make sure to create a new
+feature request ticket
+[here](https://github.com/bentoml/BentoML/issues/new/choose) and share your
+proposal in the `#bentoml-contributors` slack channel for feedback.
 
 ## Start Developing
 
 <details><summary><h3>with the Command Line</h3></summary>
 
-1. Make sure to have [Git](https://git-scm.com/), [pip](https://pip.pypa.io/en/stable/installation/), and [Python3.8+](https://www.python.org/downloads/) installed.
+1. Make sure to have [Git](https://git-scm.com/),
+   [pip](https://pip.pypa.io/en/stable/installation/),
+   [Python3.8+](https://www.python.org/downloads/), and
+   [PDM](https://pdm.fming.dev/latest/) installed.
 
-   Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using a UNIX-based system for a better developer experience.
-   If you don't want to use `make` then please refer to the [Makefile](./Makefile) for specific commands on a given make target.
+   Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/)
+   available on your system if you aren't using a UNIX-based system for a better
+   developer experience. If you don't want to use `make` then please refer to
+   the [Makefile](./Makefile) for specific commands on a given make target.
 
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
 
@@ -37,21 +51,16 @@ If you are interested in proposing a new feature, make sure to create a new feat
    git branch --set-upstream-to=upstream/main
    ```
 
-6. Install BentoML with pip in editable mode:
+6. Install BentoML in editable and all development dependencies:
 
    ```bash
-   pip install -e .
+   make install
    ```
 
-   This installs BentoML in an editable state. The changes you make will automatically be reflected without reinstalling BentoML.
+   This installs BentoML in an editable state. The changes you make will
+   automatically be reflected without reinstalling BentoML.
 
-7. Install the BentoML development requirements:
-
-   ```bash
-   pip install -r ./requirements/dev-requirements.txt
-   ```
-
-8. Test the BentoML installation either with `bash`:
+7. Test the BentoML installation either with `bash`:
 
    ```bash
    bentoml --version
@@ -71,7 +80,11 @@ If you are interested in proposing a new feature, make sure to create a new feat
 1. Confirm that you have the following installed:
 
    - [Python3.8+](https://www.python.org/downloads/)
-   - VS Code with the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) extensions
+   - VS Code with the
+     [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
+     and
+     [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance)
+     extensions
 
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
 
@@ -86,7 +99,8 @@ If you are interested in proposing a new feature, make sure to create a new feat
    1. Open the command palette and enter 'add remote'.
    2. Select 'Git: Add Remote'.
    3. Press enter to select 'Add remote' from GitHub.
-   4. Enter https://github.com/bentoml/BentoML.git to select the BentoML repository.
+   4. Enter https://github.com/bentoml/BentoML.git to select the BentoML
+      repository.
    5. Name your remote 'upstream'.
 
 5. Pull from the BentoML upstream remote to your main branch:
@@ -98,20 +112,26 @@ If you are interested in proposing a new feature, make sure to create a new feat
    5. Click on 'Git: Pull from...'
    6. Select 'upstream'.
 
-6. Open a new terminal by clicking the Terminal dropdown at the top of the window, followed by the 'New Terminal' option. Next, add a virtual environment with this command:
+6. Open a new terminal by clicking the Terminal dropdown at the top of the
+   window, followed by the 'New Terminal' option. Next, add a virtual
+   environment with this command:
    ```bash
    python -m venv .venv
    ```
-7. Click yes if a popup suggests switching to the virtual environment. Otherwise, go through these steps:
+7. Click yes if a popup suggests switching to the virtual environment.
+   Otherwise, go through these steps:
 
    1. Open any python file in the directory.
-   2. Select the interpreter selector on the blue status bar at the bottom of the editor.
+   2. Select the interpreter selector on the blue status bar at the bottom of
+      the editor.
       ![vscode-status-bar](https://user-images.githubusercontent.com/489344/166984038-75f1f4bd-c896-43ee-a7ee-1b57fda359a3.png)
 
    3. Switch to the path that includes .venv from the dropdown at the top.
       ![vscode-select-venv](https://user-images.githubusercontent.com/489344/166984060-170d25f5-a91f-41d3-96f4-4db3c21df7c8.png)
 
-8. Update your PowerShell execution policies. Win+x followed by the 'a' key opens the admin Windows PowerShell. Enter the following command to allow the virtual environment activation script to run:
+8. Update your PowerShell execution policies. Win+x followed by the 'a' key
+   opens the admin Windows PowerShell. Enter the following command to allow the
+   virtual environment activation script to run:
    ```
    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
    ```
@@ -127,7 +147,8 @@ If you are interested in proposing a new feature, make sure to create a new feat
    git switch main
    ```
 
-2. Use the git pull command to retrieve content from the BentoML Github repository.
+2. Use the git pull command to retrieve content from the BentoML Github
+   repository.
 
    ```bash
    git pull
@@ -195,7 +216,8 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 ## Run BentoML with verbose/debug logging
 
-To view internal debug loggings for development, set the `BENTOML_DEBUG` environment variable to `TRUE`:
+To view internal debug loggings for development, set the `BENTOML_DEBUG`
+environment variable to `TRUE`:
 
 ```bash
 export BENTOML_DEBUG=TRUE
@@ -209,16 +231,12 @@ bentoml get IrisClassifier --verbose
 
 ## Style check, auto-formatting, type-checking
 
-formatter: [black](https://github.com/psf/black), [buf](https://github.com/bufbuild/buf)
-
-linter: [ruff](https://github.com/charliermarsh/ruff), [buf](https://github.com/bufbuild/buf)
-
-type checker: [pyright](https://github.com/microsoft/pyright)
-
-We are using [pre-commit](https://pre-commit.com/) to manage our hooks, and [buf](https://github.com/bufbuild/buf) for formatting and linting
-of our proto files. Configuration can be found [here](./bentoml/grpc/buf.yaml).
-Currently, we are running `buf` with docker, hence we kindly ask our developers
-to have docker available. Docker installation can be found [here](https://docs.docker.com/get-docker/).
+We are using [pre-commit](https://pre-commit.com/) to manage our hooks, and
+[buf](https://github.com/bufbuild/buf) for formatting and linting of our proto
+files. Configuration can be found [here](./bentoml/grpc/buf.yaml). Currently, we
+are running `buf` with docker, hence we kindly ask our developers to have docker
+available. Docker installation can be found
+[here](https://docs.docker.com/get-docker/).
 
 Run linter/format script:
 
@@ -229,39 +247,43 @@ pre-commit run --all-files
 Run type checker:
 
 ```bash
-make type
+pre-commit run typecheck
 ```
 
 ## Editing proto files
 
-The proto files for the BentoML gRPC service are located under [`bentoml/grpc`](./bentoml/grpc/).
-The generated python files are not checked in the git repository, and are instead generated via this [`script`](./scripts/generate_grpc_stubs.sh).
-If you edit the proto files, make sure to run `./scripts/generate_grpc_stubs.sh` to
-regenerate the proto stubs.
+The proto files for the BentoML gRPC service are located under
+[`bentoml/grpc`](./bentoml/grpc/). The generated python files are not checked in
+the git repository, and are instead generated via this
+[`script`](./scripts/generate_grpc_stubs.sh). If you edit the proto files, make
+sure to run `./scripts/generate_grpc_stubs.sh` to regenerate the proto stubs.
 
 ## Deploy with your changes
 
-Test test out your changes in an actual BentoML model deployment, you can create a new Bento with your custom BentoML source repo:
+Test test out your changes in an actual BentoML model deployment, you can create
+a new Bento with your custom BentoML source repo:
 
 1. Install custom BentoML in editable mode. e.g.:
    - git clone your bentoml fork
    - `pip install -e PATH_TO_THE_FORK`
-2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True` and `export SETUPTOOLS_USE_DISTUTILS=stdlib`
-   - make sure you have the latest setuptools installed: `pip install -U setuptools`
+2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True`
 3. Build a new Bento with `bentoml build` in your project directory
 4. The new Bento will include a wheel file built from the BentoML source, and
-   `bentoml containerize` will install it to override the default BentoML installation in base image
+   `bentoml containerize` will install it to override the default BentoML
+   installation in base image
 
 ### Distribute a custom BentoML release for your team
 
-If you want other team members to easily use your custom BentoML distribution, you may publish your
-branch to your fork of BentoML, and have your users install it this way:
+If you want other team members to easily use your custom BentoML distribution,
+you may publish your branch to your fork of BentoML, and have your users install
+it this way:
 
 ```bash
 pip install git+https://github.com/{YOUR_GITHUB_USERNAME}/bentoml@{YOUR_REVISION}
 ```
 
-And in your BentoML projects' `bentofile.yaml`, force the Bento to install this distribution, e.g.:
+And in your BentoML projects' `bentofile.yaml`, force the Bento to install this
+distribution, e.g.:
 
 ```yaml
 service: "service:svc"
@@ -282,7 +304,7 @@ docker:
 Make sure to install all test dependencies:
 
 ```bash
-pip install -r requirements/tests-requirements.txt
+pip install -G testing -G grpc -G io
 ```
 
 BentoML tests come with a Pytest plugin. Export `PYTEST_PLUGINS`:
@@ -299,49 +321,53 @@ Run all unit tests directly with pytest:
 
 ```bash
 # GIT_ROOT=$(git rev-parse --show-toplevel)
-pytest tests/unit
+pdm run -v tests tests/unit
 ```
 
 ### Integration tests
 
-Write a general framework tests under `./tests/integration/frameworks/models`, and the
-run the following command
+Write a general framework tests under `./tests/integration/frameworks/models`,
+and the run the following command
 
 ```bash
-pytest tests/integration/frameworks/test_frameworks.py --framework pytorch
+pip install -G frameworks
+pdm run -v tests tests/integration
 ```
 
 ### E2E tests
 
 ```bash
 # example: run e2e tests to check for http general features
-pytest tests/e2e/bento_server_grpc
+pdm run -v tests tests/e2e/bento_server_http
 ```
 
 ### Adding new test suite
 
-If you are adding new ML framework support, it is recommended that you also add a separate test suite in our CI. Currently we are using GitHub Actions to manage our CI/CD workflow.
+If you are adding new ML framework support, it is recommended that you also add
+a separate test suite in our CI. Currently we are using GitHub Actions to manage
+our CI/CD workflow.
 
-We recommend using [`nektos/act`](https://github.com/nektos/act) to run and test Actions locally.
-
-Add a new job for your new framework under [framework.yml](./.github/workflows/frameworks.yml)
+We recommend using [`nektos/act`](https://github.com/nektos/act) to run and test
+Actions locally.
 
 ## Python tools ecosystem
 
-Currently, BentoML is [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible. We define package configuration via [`pyproject.toml`][https://github.com/bentoml/bentoml/blob/main/pyproject.toml].
+Currently, BentoML is [PEP518](https://www.python.org/dev/peps/pep-0518/)
+compatible. We define package configuration via
+[`pyproject.toml`][https://github.com/bentoml/bentoml/blob/main/pyproject.toml].
 
 ## Benchmark
 
-BentoML has moved its benchmark to [`bentoml/benchmark`](https://github.com/bentoml/benchmark).
+BentoML has moved its benchmark to
+[`bentoml/benchmark`](https://github.com/bentoml/benchmark).
 
 ## Creating Pull Requests on GitHub
 
-Push changes to your fork and follow [this
-article](https://help.github.com/en/articles/creating-a-pull-request)
-on how to create a pull request on github. Name your pull request
-with one of the following prefixes, e.g. "feat: add support for
-PyTorch". This is based on the [Conventional Commits
-specification](https://www.conventionalcommits.org/en/v1.0.0/#summary)
+Push changes to your fork and follow
+[this article](https://help.github.com/en/articles/creating-a-pull-request) on
+how to create a pull request on github. Name your pull request with one of the
+following prefixes, e.g. "feat: add support for PyTorch". This is based on the
+[Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/#summary)
 
 - feat: (new feature for the user, not a new feature for build script)
 - fix: (bug fix for the user, not a fix to a build script)
@@ -357,10 +383,10 @@ specification](https://www.conventionalcommits.org/en/v1.0.0/#summary)
 
 Once your pull request is created, an automated test run will be triggered on
 your branch and the BentoML authors will be notified to review your code
-changes. Once tests are passed and a reviewer has signed off, we will merge
-your pull request.
+changes. Once tests are passed and a reviewer has signed off, we will merge your
+pull request.
 
 ## Documentations
 
-Refer to [BentoML Documentation Guide](./docs/README.md) for how to build and write
-docs.
+Refer to [BentoML Documentation Guide](./docs/README.md) for how to build and
+write docs.

@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
           pdm use -f ${{ matrix.python-version }}
-          pdm sync -d -G grpc -G io -G testing
+          pdm install -d -G grpc -G io -G testing
       - name: Unit tests
         run: pdm run -v tests tests/unit -n 3
       - name: Disambiguate coverage filename
@@ -56,10 +56,9 @@ jobs:
       - name: Set up PDM
         uses: pdm-project/setup-pdm@v3
         with:
-          cache: true
           python-version: '3.8'
       - name: Install dependencies
-        run: pdm sync -d -G testing -G frameworks
+        run: pdm install -d -G testing -G frameworks
       - name: Run framework integration tests
         run: pdm run -v tests tests/integration
       - name: Disambiguate coverage filename
@@ -99,7 +98,7 @@ jobs:
       - name: Install dependencies
         run: |
           pdm use -f ${{ matrix.python-version }}
-          pdm sync -d -G io -G testing -G monitor-otlp
+          pdm install -d -G io -G testing -G monitor-otlp
       - name: Run the monitoring tests
         working-directory: examples/monitoring/task_classification
         run: mkdir -p monitoring && pdm run -v monitoring
@@ -144,7 +143,7 @@ jobs:
       - name: Install dependencies
         run: |
           pdm use -f ${{ matrix.python-version }}
-          pdm sync -d -G grpc -G io -G testing
+          pdm install -d -G grpc -G io -G testing
       - name: Run ${{ matrix.server_type }} tests and generate coverage report
         run: |
           pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt

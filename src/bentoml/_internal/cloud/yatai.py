@@ -873,19 +873,21 @@ class YataiClient(CloudClient):
         context: str | None = None,
         query: str | None = None,
     ) -> Model:
-        try:
-            model = model_store.get(tag)
-            if not force:
-                self.log_progress.add_task(
-                    f'[bold blue]Model "{tag}" already exists locally, skipping'
-                )
-                return model
-            else:
-                model_store.delete(tag)
-        except NotFound:
-            pass
-        yatai_rest_client = get_rest_api_client(context)
         _tag = Tag.from_taglike(tag)
+        try:
+            model = model_store.get(_tag)
+        except NotFound:
+            model = None
+        else:
+            if _tag.version not in (None, "latest"):
+                if not force:
+                    self.log_progress.add_task(
+                        f'[bold blue]Model "{tag}" already exists locally, skipping'
+                    )
+                    return model
+                else:
+                    model_store.delete(tag)
+        yatai_rest_client = get_rest_api_client(context)
         name = _tag.name
         version = _tag.version
         if version in (None, "latest"):
@@ -894,6 +896,20 @@ class YataiClient(CloudClient):
                 raise BentoMLException(
                     f'Model "{_tag}" not found on Yatai, you may need to specify a version'
                 )
+            if model is not None:
+                if not force and latest_model.build_at < model.creation_time:
+                    self.log_progress.add_task(
+                        f'[bold blue]Newer version of model "{name}" exists locally, skipping'
+                    )
+                    return model
+                if model.tag.version == latest_model.version:
+                    if not force:
+                        self.log_progress.add_task(
+                            f'[bold blue]Model "{model.tag}" already exists locally, skipping'
+                        )
+                        return model
+                    else:
+                        model_store.delete(model.tag)
             version = latest_model.version
         elif query:
             warnings.warn(

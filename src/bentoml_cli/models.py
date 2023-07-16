@@ -254,7 +254,7 @@ def add_model_management_commands(cli: Group) -> None:
         "--context", type=click.STRING, default=None, help="Yatai context name."
     )
     @click.option(
-        "-f",
+        "-F",
         "--bentofile",
         type=click.STRING,
         default=DEFAULT_BENTO_BUILD_FILE,

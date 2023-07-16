@@ -54,11 +54,16 @@ proposal in the `#bentoml-contributors` slack channel for feedback.
 6. Install BentoML in editable and all development dependencies:
 
    ```bash
-   make install
+   pdm install -G docs -G tooling -G testing -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
+   pre-commit install
    ```
 
-   This installs BentoML in an editable state. The changes you make will
-   automatically be reflected without reinstalling BentoML.
+   This installs BentoML with editable mode via `pdm` and development
+   dependencies in a isolated environment. If you wish not to setup within an
+   isolated environment, pass `--no-isolation` to pdm
+
+   > **Note**: Make sure to prepend `pdm run` to all commands within this guide
+   > if you are using isolated environment via `pdm`.
 
 7. Test the BentoML installation either with `bash`:
 

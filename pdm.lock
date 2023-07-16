@@ -6,7 +6,7 @@ groups = ["default", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", 
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:bd1e6cf5f35809df5059996355d72fa883adfafe6104b5c3077fe7f1e5753451"
+content_hash = "sha256:60519935f860372166945439c85ed569a1cd216dd0cf34ad54b5c767598b9f2a"
 
 [[package]]
 name = "aiohttp"
@@ -257,20 +257,6 @@ dependencies = [
 files = [
     {file = "beautifulsoup4-4.12.2-py3-none-any.whl", hash = "sha256:bd2520ca0d9d7d12694a53d44ac482d181b4ec1888909b035a3dbf40d0f57d4a"},
     {file = "beautifulsoup4-4.12.2.tar.gz", hash = "sha256:492bbc69dca35d12daac71c4db1bfff0c876c00ef4a2ffacce226d4638eb72da"},
-]
-
-[[package]]
-name = "bleach"
-version = "6.0.0"
-requires_python = ">=3.7"
-summary = "An easy safelist-based HTML-sanitizing tool."
-dependencies = [
-    "six>=1.9.0",
-    "webencodings",
-]
-files = [
-    {file = "bleach-6.0.0-py3-none-any.whl", hash = "sha256:33c16e3353dbd13028ab4799a0f89a83f113405c766e9c122df8a06f5b85b3f4"},
-    {file = "bleach-6.0.0.tar.gz", hash = "sha256:1a1a85c1595e07d8db14c5f09f09e6433502c51c595970edc090551f0db99414"},
 ]
 
 [[package]]
@@ -897,40 +883,6 @@ files = [
 ]
 
 [[package]]
-name = "cryptography"
-version = "41.0.2"
-requires_python = ">=3.7"
-summary = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
-dependencies = [
-    "cffi>=1.12",
-]
-files = [
-    {file = "cryptography-41.0.2-cp37-abi3-macosx_10_12_universal2.whl", hash = "sha256:01f1d9e537f9a15b037d5d9ee442b8c22e3ae11ce65ea1f3316a41c78756b711"},
-    {file = "cryptography-41.0.2-cp37-abi3-macosx_10_12_x86_64.whl", hash = "sha256:079347de771f9282fbfe0e0236c716686950c19dee1b76240ab09ce1624d76d7"},
-    {file = "cryptography-41.0.2-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:439c3cc4c0d42fa999b83ded80a9a1fb54d53c58d6e59234cfe97f241e6c781d"},
-    {file = "cryptography-41.0.2-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f14ad275364c8b4e525d018f6716537ae7b6d369c094805cae45300847e0894f"},
-    {file = "cryptography-41.0.2-cp37-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:84609ade00a6ec59a89729e87a503c6e36af98ddcd566d5f3be52e29ba993182"},
-    {file = "cryptography-41.0.2-cp37-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:49c3222bb8f8e800aead2e376cbef687bc9e3cb9b58b29a261210456a7783d83"},
-    {file = "cryptography-41.0.2-cp37-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:d73f419a56d74fef257955f51b18d046f3506270a5fd2ac5febbfa259d6c0fa5"},
-    {file = "cryptography-41.0.2-cp37-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:2a034bf7d9ca894720f2ec1d8b7b5832d7e363571828037f9e0c4f18c1b58a58"},
-    {file = "cryptography-41.0.2-cp37-abi3-win32.whl", hash = "sha256:d124682c7a23c9764e54ca9ab5b308b14b18eba02722b8659fb238546de83a76"},
-    {file = "cryptography-41.0.2-cp37-abi3-win_amd64.whl", hash = "sha256:9c3fe6534d59d071ee82081ca3d71eed3210f76ebd0361798c74abc2bcf347d4"},
-    {file = "cryptography-41.0.2-pp310-pypy310_pp73-macosx_10_12_x86_64.whl", hash = "sha256:a719399b99377b218dac6cf547b6ec54e6ef20207b6165126a280b0ce97e0d2a"},
-    {file = "cryptography-41.0.2-pp310-pypy310_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:182be4171f9332b6741ee818ec27daff9fb00349f706629f5cbf417bd50e66fd"},
-    {file = "cryptography-41.0.2-pp310-pypy310_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:7a9a3bced53b7f09da251685224d6a260c3cb291768f54954e28f03ef14e3766"},
-    {file = "cryptography-41.0.2-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:f0dc40e6f7aa37af01aba07277d3d64d5a03dc66d682097541ec4da03cc140ee"},
-    {file = "cryptography-41.0.2-pp38-pypy38_pp73-macosx_10_12_x86_64.whl", hash = "sha256:674b669d5daa64206c38e507808aae49904c988fa0a71c935e7006a3e1e83831"},
-    {file = "cryptography-41.0.2-pp38-pypy38_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:7af244b012711a26196450d34f483357e42aeddb04128885d95a69bd8b14b69b"},
-    {file = "cryptography-41.0.2-pp38-pypy38_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:9b6d717393dbae53d4e52684ef4f022444fc1cce3c48c38cb74fca29e1f08eaa"},
-    {file = "cryptography-41.0.2-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:192255f539d7a89f2102d07d7375b1e0a81f7478925b3bc2e0549ebf739dae0e"},
-    {file = "cryptography-41.0.2-pp39-pypy39_pp73-macosx_10_12_x86_64.whl", hash = "sha256:f772610fe364372de33d76edcd313636a25684edb94cee53fd790195f5989d14"},
-    {file = "cryptography-41.0.2-pp39-pypy39_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:b332cba64d99a70c1e0836902720887fb4529ea49ea7f5462cf6640e095e11d2"},
-    {file = "cryptography-41.0.2-pp39-pypy39_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:9a6673c1828db6270b76b22cc696f40cde9043eb90373da5c2f8f2158957f42f"},
-    {file = "cryptography-41.0.2-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:342f3767e25876751e14f8459ad85e77e660537ca0a066e10e75df9c9e9099f0"},
-    {file = "cryptography-41.0.2.tar.gz", hash = "sha256:7d230bf856164de164ecb615ccc14c7fc6de6906ddd5b491f3af90d3514c925c"},
-]
-
-[[package]]
 name = "cycler"
 version = "0.11.0"
 requires_python = ">=3.6"
@@ -979,16 +931,6 @@ summary = "Docutils -- Python Documentation Utilities"
 files = [
     {file = "docutils-0.19-py3-none-any.whl", hash = "sha256:5e1de4d849fee02c63b040a4a3fd567f4ab104defd8a5511fbbc24a8a017efbc"},
     {file = "docutils-0.19.tar.gz", hash = "sha256:33995a6753c30b7f577febfc2c50411fec6aac7f7ffeb7c4cfe5991072dcf9e6"},
-]
-
-[[package]]
-name = "editables"
-version = "0.4"
-requires_python = ">=3.7"
-summary = "Editable installations"
-files = [
-    {file = "editables-0.4-py3-none-any.whl", hash = "sha256:dd430dcf41c78d1d68ebbb893e498b0a306b554be9e7cede73b1c876c6ddbc8d"},
-    {file = "editables-0.4.tar.gz", hash = "sha256:dc322c42e7ccaf19600874035a4573898d88aadd07e177c239298135b75da772"},
 ]
 
 [[package]]
@@ -1573,96 +1515,6 @@ files = [
 ]
 
 [[package]]
-name = "hatch"
-version = "1.7.0"
-requires_python = ">=3.7"
-summary = "Modern, extensible Python project management"
-dependencies = [
-    "click>=8.0.3",
-    "hatchling>=1.14.0",
-    "httpx>=0.22.0",
-    "hyperlink>=21.0.0",
-    "keyring>=23.5.0",
-    "packaging>=21.3",
-    "pexpect~=4.8",
-    "platformdirs>=2.5.0",
-    "pyperclip>=1.8.2",
-    "rich>=11.2.0",
-    "shellingham>=1.4.0",
-    "tomli-w>=1.0",
-    "tomlkit>=0.11.1",
-    "userpath~=1.7",
-    "virtualenv>=20.16.2",
-]
-files = [
-    {file = "hatch-1.7.0-py3-none-any.whl", hash = "sha256:efc84112fd02ca85b7bab54f5e2ef71393a98dc849eac9aca390504031f8a1a8"},
-    {file = "hatch-1.7.0.tar.gz", hash = "sha256:7afc701fd5b33684a6650e1ecab8957e19685f824240ba7458dcacd66f90fb46"},
-]
-
-[[package]]
-name = "hatchling"
-version = "1.18.0"
-requires_python = ">=3.8"
-summary = "Modern, extensible Python build backend"
-dependencies = [
-    "editables>=0.3",
-    "packaging>=21.3",
-    "pathspec>=0.10.1",
-    "pluggy>=1.0.0",
-    "tomli>=1.2.2; python_version < \"3.11\"",
-    "trove-classifiers",
-]
-files = [
-    {file = "hatchling-1.18.0-py3-none-any.whl", hash = "sha256:b66dc254931ec42aa68b5febd1d342c58142cc5267b7ff3b12ba3fa5b4900c93"},
-    {file = "hatchling-1.18.0.tar.gz", hash = "sha256:50e99c3110ce0afc3f7bdbadff1c71c17758e476731c27607940cfa6686489ca"},
-]
-
-[[package]]
-name = "httpcore"
-version = "0.17.3"
-requires_python = ">=3.7"
-summary = "A minimal low-level HTTP client."
-dependencies = [
-    "anyio<5.0,>=3.0",
-    "certifi",
-    "h11<0.15,>=0.13",
-    "sniffio==1.*",
-]
-files = [
-    {file = "httpcore-0.17.3-py3-none-any.whl", hash = "sha256:c2789b767ddddfa2a5782e3199b2b7f6894540b17b16ec26b2c4d8e103510b87"},
-    {file = "httpcore-0.17.3.tar.gz", hash = "sha256:a6f30213335e34c1ade7be6ec7c47f19f50c56db36abef1a9dfa3815b1cb3888"},
-]
-
-[[package]]
-name = "httpx"
-version = "0.24.1"
-requires_python = ">=3.7"
-summary = "The next generation HTTP client."
-dependencies = [
-    "certifi",
-    "httpcore<0.18.0,>=0.15.0",
-    "idna",
-    "sniffio",
-]
-files = [
-    {file = "httpx-0.24.1-py3-none-any.whl", hash = "sha256:06781eb9ac53cde990577af654bd990a4949de37a28bdb4a230d434f3a30b9bd"},
-    {file = "httpx-0.24.1.tar.gz", hash = "sha256:5853a43053df830c20f8110c5e69fe44d035d850b2dfe795e196f00fdb774bdd"},
-]
-
-[[package]]
-name = "hyperlink"
-version = "21.0.0"
-requires_python = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-summary = "A featureful, immutable, and correct URL for Python."
-dependencies = [
-    "idna>=2.5",
-]
-files = [
-    {file = "hyperlink-21.0.0-py2.py3-none-any.whl", hash = "sha256:e6b14c37ecb73e89c77d78cdb4c2cc8f3fb59a885c5b3f819ff4ed80f25af1b4"},
-    {file = "hyperlink-21.0.0.tar.gz", hash = "sha256:427af957daa58bc909471c6c40f74c5450fa123dd093fc53efd2e91d2705a56b"},
-]
-
-[[package]]
 name = "identify"
 version = "2.5.24"
 requires_python = ">=3.7"
@@ -1726,29 +1578,6 @@ summary = "brain-dead simple config-ini parsing"
 files = [
     {file = "iniconfig-2.0.0-py3-none-any.whl", hash = "sha256:b6a85871a79d2e3b22d2d1b94ac2824226a63c6b741c88f7ae975f18b6778374"},
     {file = "iniconfig-2.0.0.tar.gz", hash = "sha256:2d91e135bf72d31a410b17c16da610a82cb55f6b0477d1a902134b24a455b8b3"},
-]
-
-[[package]]
-name = "jaraco-classes"
-version = "3.3.0"
-requires_python = ">=3.8"
-summary = "Utility functions for Python class constructs"
-dependencies = [
-    "more-itertools",
-]
-files = [
-    {file = "jaraco.classes-3.3.0-py3-none-any.whl", hash = "sha256:10afa92b6743f25c0cf5f37c6bb6e18e2c5bb84a16527ccfc0040ea377e7aaeb"},
-    {file = "jaraco.classes-3.3.0.tar.gz", hash = "sha256:c063dd08e89217cee02c8d5e5ec560f2c8ce6cdc2fcdc2e68f7b2e5547ed3621"},
-]
-
-[[package]]
-name = "jeepney"
-version = "0.8.0"
-requires_python = ">=3.7"
-summary = "Low-level, pure Python DBus protocol wrapper."
-files = [
-    {file = "jeepney-0.8.0-py3-none-any.whl", hash = "sha256:c0a454ad016ca575060802ee4d590dd912e35c122fa04e70306de3d076cce755"},
-    {file = "jeepney-0.8.0.tar.gz", hash = "sha256:5efe48d255973902f6badc3ce55e2aa6c5c3b3bc642059ef3a91247bcfcc5806"},
 ]
 
 [[package]]
@@ -1826,24 +1655,6 @@ dependencies = [
 files = [
     {file = "jsonschema_specifications-2023.6.1-py3-none-any.whl", hash = "sha256:3d2b82663aff01815f744bb5c7887e2121a63399b49b104a3c96145474d091d7"},
     {file = "jsonschema_specifications-2023.6.1.tar.gz", hash = "sha256:ca1c4dd059a9e7b34101cf5b3ab7ff1d18b139f35950d598d629837ef66e8f28"},
-]
-
-[[package]]
-name = "keyring"
-version = "24.2.0"
-requires_python = ">=3.8"
-summary = "Store and access your passwords safely."
-dependencies = [
-    "SecretStorage>=3.2; sys_platform == \"linux\"",
-    "importlib-metadata>=4.11.4; python_version < \"3.12\"",
-    "importlib-resources; python_version < \"3.9\"",
-    "jaraco-classes",
-    "jeepney>=0.4.2; sys_platform == \"linux\"",
-    "pywin32-ctypes>=0.2.0; sys_platform == \"win32\"",
-]
-files = [
-    {file = "keyring-24.2.0-py3-none-any.whl", hash = "sha256:4901caaf597bfd3bbd78c9a0c7c4c29fcd8310dab2cffefe749e916b6527acd6"},
-    {file = "keyring-24.2.0.tar.gz", hash = "sha256:ca0746a19ec421219f4d713f848fa297a661a8a8c1504867e55bfb5e09091509"},
 ]
 
 [[package]]
@@ -2088,16 +1899,6 @@ summary = "Markdown URL utilities"
 files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
     {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
-]
-
-[[package]]
-name = "more-itertools"
-version = "9.1.0"
-requires_python = ">=3.7"
-summary = "More routines for operating on iterables, beyond itertools"
-files = [
-    {file = "more-itertools-9.1.0.tar.gz", hash = "sha256:cabaa341ad0389ea83c17a94566a53ae4c9d07349861ecb14dc6d0345cf9ac5d"},
-    {file = "more_itertools-9.1.0-py3-none-any.whl", hash = "sha256:d2bc7f02446e86a68911e58ded76d6561eea00cddfb2a91e7019bbb586c799f3"},
 ]
 
 [[package]]
@@ -2697,18 +2498,6 @@ files = [
 ]
 
 [[package]]
-name = "pexpect"
-version = "4.8.0"
-summary = "Pexpect allows easy control of interactive console applications."
-dependencies = [
-    "ptyprocess>=0.5",
-]
-files = [
-    {file = "pexpect-4.8.0-py2.py3-none-any.whl", hash = "sha256:0b48a55dcb3c05f3329815901ea4fc1537514d6ba867a152b581d69ae3710937"},
-    {file = "pexpect-4.8.0.tar.gz", hash = "sha256:fc65a43959d153d0114afe13997d439c22823a27cefceb5ff35c2178c6784c0c"},
-]
-
-[[package]]
 name = "pillow"
 version = "9.5.0"
 requires_python = ">=3.7"
@@ -2825,16 +2614,6 @@ files = [
 ]
 
 [[package]]
-name = "pkginfo"
-version = "1.9.6"
-requires_python = ">=3.6"
-summary = "Query metadata from sdists / bdists / installed packages."
-files = [
-    {file = "pkginfo-1.9.6-py3-none-any.whl", hash = "sha256:4b7a555a6d5a22169fcc9cf7bfd78d296b0361adad412a346c1226849af5e546"},
-    {file = "pkginfo-1.9.6.tar.gz", hash = "sha256:8fd5896e8718a4372f0ea9cc9d96f6417c9b986e23a4d116dda26b62cc29d046"},
-]
-
-[[package]]
 name = "pkgutil-resolve-name"
 version = "1.3.10"
 requires_python = ">=3.6"
@@ -2941,15 +2720,6 @@ files = [
     {file = "psutil-5.9.5-cp36-abi3-win_amd64.whl", hash = "sha256:b258c0c1c9d145a1d5ceffab1134441c4c5113b2417fafff7315a917a026c3c9"},
     {file = "psutil-5.9.5-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:c607bb3b57dc779d55e1554846352b4e358c10fff3abf3514a7a6601beebdb30"},
     {file = "psutil-5.9.5.tar.gz", hash = "sha256:5410638e4df39c54d957fc51ce03048acd8e6d60abc0f5107af51e5fb566eb3c"},
-]
-
-[[package]]
-name = "ptyprocess"
-version = "0.7.0"
-summary = "Run a subprocess in a pseudo terminal"
-files = [
-    {file = "ptyprocess-0.7.0-py2.py3-none-any.whl", hash = "sha256:4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35"},
-    {file = "ptyprocess-0.7.0.tar.gz", hash = "sha256:5c5d0a3b48ceee0b48485e0c26037c0acd7d29765ca3fbb5cb3831d347423220"},
 ]
 
 [[package]]
@@ -3131,14 +2901,6 @@ summary = "pyparsing module - Classes and methods to define and execute parsing 
 files = [
     {file = "pyparsing-3.0.9-py3-none-any.whl", hash = "sha256:5026bae9a10eeaefb61dab2f09052b9f4307d44aee4eda64b309723d8d206bbc"},
     {file = "pyparsing-3.0.9.tar.gz", hash = "sha256:2b020ecf7d21b687f219b71ecad3631f644a47f01403fa1d1036b0c6416d70fb"},
-]
-
-[[package]]
-name = "pyperclip"
-version = "1.8.2"
-summary = "A cross-platform clipboard module for Python. (Only handles plain text for now.)"
-files = [
-    {file = "pyperclip-1.8.2.tar.gz", hash = "sha256:105254a8b04934f0bc84e9c24eb360a591aaf6535c9def5f29d92af107a9bf57"},
 ]
 
 [[package]]
@@ -3344,16 +3106,6 @@ summary = "World timezone definitions, modern and historical"
 files = [
     {file = "pytz-2023.3-py2.py3-none-any.whl", hash = "sha256:a151b3abb88eda1d4e34a9814df37de2a80e301e68ba0fd856fb9b46bfbbbffb"},
     {file = "pytz-2023.3.tar.gz", hash = "sha256:1d8ce29db189191fb55338ee6d0387d82ab59f3d00eac103412d64e0ebd0c588"},
-]
-
-[[package]]
-name = "pywin32-ctypes"
-version = "0.2.2"
-requires_python = ">=3.6"
-summary = "A (partial) reimplementation of pywin32 using ctypes/cffi"
-files = [
-    {file = "pywin32-ctypes-0.2.2.tar.gz", hash = "sha256:3426e063bdd5fd4df74a14fa3cf80a0b42845a87e1d1e81f6549f9daec593a60"},
-    {file = "pywin32_ctypes-0.2.2-py3-none-any.whl", hash = "sha256:bf490a1a709baf35d688fe0ecf980ed4de11d2b3e37b51e5442587a75d9957e7"},
 ]
 
 [[package]]
@@ -3581,21 +3333,6 @@ files = [
 ]
 
 [[package]]
-name = "readme-renderer"
-version = "40.0"
-requires_python = ">=3.8"
-summary = "readme_renderer is a library for rendering \"readme\" descriptions for Warehouse"
-dependencies = [
-    "Pygments>=2.5.1",
-    "bleach>=2.1.0",
-    "docutils>=0.13.1",
-]
-files = [
-    {file = "readme_renderer-40.0-py3-none-any.whl", hash = "sha256:e18feb2a1e7706f2865b81ebb460056d93fb29d69daa10b223c00faa7bd9a00a"},
-    {file = "readme_renderer-40.0.tar.gz", hash = "sha256:9f77b519d96d03d7d7dce44977ba543090a14397c4f60de5b6eb5b8048110aa4"},
-]
-
-[[package]]
 name = "referencing"
 version = "0.29.1"
 requires_python = ">=3.8"
@@ -3623,29 +3360,6 @@ dependencies = [
 files = [
     {file = "requests-2.31.0-py3-none-any.whl", hash = "sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"},
     {file = "requests-2.31.0.tar.gz", hash = "sha256:942c5a758f98d790eaed1a29cb6eefc7ffb0d1cf7af05c3d2791656dbd6ad1e1"},
-]
-
-[[package]]
-name = "requests-toolbelt"
-version = "1.0.0"
-requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-summary = "A utility belt for advanced users of python-requests"
-dependencies = [
-    "requests<3.0.0,>=2.0.1",
-]
-files = [
-    {file = "requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6"},
-    {file = "requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06"},
-]
-
-[[package]]
-name = "rfc3986"
-version = "2.0.0"
-requires_python = ">=3.7"
-summary = "Validating URI References per RFC 3986"
-files = [
-    {file = "rfc3986-2.0.0-py2.py3-none-any.whl", hash = "sha256:50b1502b60e289cb37883f3dfd34532b8873c7de9f49bb546641ce9cbd256ebd"},
-    {file = "rfc3986-2.0.0.tar.gz", hash = "sha256:97aacf9dbd4bfd829baad6e6309fa6573aaf1be3f6fa735c8ab05e46cecb261c"},
 ]
 
 [[package]]
@@ -3874,20 +3588,6 @@ files = [
 ]
 
 [[package]]
-name = "secretstorage"
-version = "3.3.3"
-requires_python = ">=3.6"
-summary = "Python bindings to FreeDesktop.org Secret Service API"
-dependencies = [
-    "cryptography>=2.0",
-    "jeepney>=0.6",
-]
-files = [
-    {file = "SecretStorage-3.3.3-py3-none-any.whl", hash = "sha256:f356e6628222568e3af06f2eba8df495efa13b3b63081dafd4f7d9a7b7bc9f99"},
-    {file = "SecretStorage-3.3.3.tar.gz", hash = "sha256:2403533ef369eca6d2ba81718576c5e0f564d5cca1b58f73a8b23e7d4eeebd77"},
-]
-
-[[package]]
 name = "setuptools"
 version = "68.0.0"
 requires_python = ">=3.7"
@@ -3911,16 +3611,6 @@ dependencies = [
 files = [
     {file = "setuptools_scm-7.1.0-py3-none-any.whl", hash = "sha256:73988b6d848709e2af142aa48c986ea29592bbcfca5375678064708205253d8e"},
     {file = "setuptools_scm-7.1.0.tar.gz", hash = "sha256:6c508345a771aad7d56ebff0e70628bf2b0ec7573762be9960214730de278f27"},
-]
-
-[[package]]
-name = "shellingham"
-version = "1.5.0.post1"
-requires_python = ">=3.7"
-summary = "Tool to Detect Surrounding Shell"
-files = [
-    {file = "shellingham-1.5.0.post1-py2.py3-none-any.whl", hash = "sha256:368bf8c00754fd4f55afb7bbb86e272df77e4dc76ac29dbcbb81a59e9fc15744"},
-    {file = "shellingham-1.5.0.post1.tar.gz", hash = "sha256:823bc5fb5c34d60f285b624e7264f4dda254bc803a3774a147bf99c0e3004a28"},
 ]
 
 [[package]]
@@ -4274,26 +3964,6 @@ files = [
 ]
 
 [[package]]
-name = "tomli-w"
-version = "1.0.0"
-requires_python = ">=3.7"
-summary = "A lil' TOML writer"
-files = [
-    {file = "tomli_w-1.0.0-py3-none-any.whl", hash = "sha256:9f2a07e8be30a0729e533ec968016807069991ae2fd921a78d42f429ae5f4463"},
-    {file = "tomli_w-1.0.0.tar.gz", hash = "sha256:f463434305e0336248cac9c2dc8076b707d8a12d019dd349f5c1e382dd1ae1b9"},
-]
-
-[[package]]
-name = "tomlkit"
-version = "0.11.8"
-requires_python = ">=3.7"
-summary = "Style preserving TOML library"
-files = [
-    {file = "tomlkit-0.11.8-py3-none-any.whl", hash = "sha256:8c726c4c202bdb148667835f68d68780b9a003a9ec34167b6c673b38eff2a171"},
-    {file = "tomlkit-0.11.8.tar.gz", hash = "sha256:9330fc7faa1db67b541b28e62018c17d20be733177d290a13b24c62d1614e0c3"},
-]
-
-[[package]]
 name = "tornado"
 version = "6.3.2"
 requires_python = ">= 3.8"
@@ -4348,36 +4018,6 @@ files = [
 ]
 
 [[package]]
-name = "trove-classifiers"
-version = "2023.7.6"
-summary = "Canonical source for classifiers on PyPI (pypi.org)."
-files = [
-    {file = "trove-classifiers-2023.7.6.tar.gz", hash = "sha256:8a8e168b51d20fed607043831d37632bb50919d1c80a64e0f1393744691a8b22"},
-    {file = "trove_classifiers-2023.7.6-py3-none-any.whl", hash = "sha256:b420d5aa048ee7c456233a49203f7d58d1736af4a6cde637657d78c13ab7969b"},
-]
-
-[[package]]
-name = "twine"
-version = "4.0.2"
-requires_python = ">=3.7"
-summary = "Collection of utilities for publishing packages on PyPI"
-dependencies = [
-    "importlib-metadata>=3.6",
-    "keyring>=15.1",
-    "pkginfo>=1.8.1",
-    "readme-renderer>=35.0",
-    "requests-toolbelt!=0.9.0,>=0.8.0",
-    "requests>=2.20",
-    "rfc3986>=1.4.0",
-    "rich>=12.0.0",
-    "urllib3>=1.26.0",
-]
-files = [
-    {file = "twine-4.0.2-py3-none-any.whl", hash = "sha256:929bc3c280033347a00f847236564d1c52a3e61b1ac2516c97c48f3ceab756d8"},
-    {file = "twine-4.0.2.tar.gz", hash = "sha256:9e102ef5fdd5a20661eb88fad46338806c3bd32cf1db729603fe3697b1bc83c8"},
-]
-
-[[package]]
 name = "types-pytz"
 version = "2023.3.0.0"
 summary = "Typing stubs for pytz"
@@ -4414,19 +4054,6 @@ summary = "HTTP library with thread-safe connection pooling, file post, and more
 files = [
     {file = "urllib3-1.26.16-py2.py3-none-any.whl", hash = "sha256:8d36afa7616d8ab714608411b4a3b13e58f463aee519024578e062e141dce20f"},
     {file = "urllib3-1.26.16.tar.gz", hash = "sha256:8f135f6502756bde6b2a9b28989df5fbe87c9970cecaa69041edcce7f0589b14"},
-]
-
-[[package]]
-name = "userpath"
-version = "1.8.0"
-requires_python = ">=3.7"
-summary = "Cross-platform tool for adding locations to the user PATH"
-dependencies = [
-    "click",
-]
-files = [
-    {file = "userpath-1.8.0-py3-none-any.whl", hash = "sha256:f133b534a8c0b73511fc6fa40be68f070d9474de1b5aada9cded58cdf23fb557"},
-    {file = "userpath-1.8.0.tar.gz", hash = "sha256:04233d2fcfe5cff911c1e4fb7189755640e1524ff87a4b82ab9d6b875fee5787"},
 ]
 
 [[package]]
@@ -4498,15 +4125,6 @@ summary = "Measures the displayed width of unicode strings in a terminal"
 files = [
     {file = "wcwidth-0.2.6-py2.py3-none-any.whl", hash = "sha256:795b138f6875577cd91bba52baf9e445cd5118fd32723b460e30a0af30ea230e"},
     {file = "wcwidth-0.2.6.tar.gz", hash = "sha256:a5220780a404dbe3353789870978e472cfe477761f06ee55077256e509b156d0"},
-]
-
-[[package]]
-name = "webencodings"
-version = "0.5.1"
-summary = "Character encoding aliases for legacy web content"
-files = [
-    {file = "webencodings-0.5.1-py2.py3-none-any.whl", hash = "sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78"},
-    {file = "webencodings-0.5.1.tar.gz", hash = "sha256:b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923"},
 ]
 
 [[package]]

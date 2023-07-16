@@ -128,6 +128,7 @@ build-backend = 'hatchling.build'
 
 [tool.hatch.version]
 source = "vcs"
+fallback-version = "0.0.0"
 
 [tool.hatch.build.hooks.vcs]
 version-file = "src/bentoml/_version.py"
@@ -148,23 +149,8 @@ fallback_version = "0.0.0"
 allow-direct-references = true
 
 [tool.hatch.build.targets.sdist]
-# limit which files are included in the sdist (.tar.gz) asset,
-exclude = [
-    '/.devcontainer',
-    '/.github',
-    '/docs',
-    '/.gitattributes',
-    '/.gitignore',
-    '/.pre-commit-config.yaml',
-    '/.readthedocs.yaml',
-    '/.yamllint.yml',
-    "/CITATION.cff",
-    "/CODE_OF_CONDUCT.md",
-    "/CONTRIBUTING.md",
-    "/DEVELOPMENT.md",
-    "/GOVERNANCE.md",
-    "/codecov.yml",
-]
+only-include = ["src/bentoml", "src/bentoml_cli"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/bentoml", "src/bentoml_cli"]
 
@@ -213,14 +199,7 @@ frameworks = [
     "jaxlib",
     "chex",
 ]
-tooling = [
-    "pre-commit",
-    "twine",
-    "wheel",
-    "setuptools-scm",
-    "pandas-stubs",
-    "hatch",
-]
+tooling = ["pre-commit", "setuptools-scm", "pandas-stubs"]
 testing = [
     "pandas",
     "pydantic<2",
@@ -238,7 +217,6 @@ testing = [
 [tool.pdm.scripts]
 _run_test = "pytest --cov --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = "_run_test {args:tests}"
-package = "hatch build"
 
 [tool.coverage.paths]
 source = ["src"]

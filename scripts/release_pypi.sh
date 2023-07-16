@@ -45,6 +45,7 @@ fi
 tag_name="v$VERSION_STR"
 
 echo "Installing dev dependencies..."
+[[ -x "$(command -v pdm)" ]] || pip install pdm
 pdm install -G grpc -G io -G tooling
 
 if git rev-parse "$tag_name" > /dev/null 2>&1; then
@@ -65,13 +66,12 @@ cd "$GIT_ROOT" || exit 1
 ./tools/generate-grpc-stubs v1alpha1
 ./tools/generate-grpc-stubs v1
 
-python3 -m build -s -w
+pdm build -v
 
 # Use testpypi by default, run script with: "REPO=pypi release.sh" for
 # releasing to Pypi.org
 REPO=${REPO:=testpypi}
 
-echo "Uploading PyPI package to $REPO..."
-twine upload --repository $REPO dist/* --verbose
+pdm publish --no-build --repository "$REPO" -vv
 
 echo "Done releasing BentoML version:$VERSION_STR"

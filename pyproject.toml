@@ -206,6 +206,8 @@ testing = [
     "scikit-learn",
     "yamllint==1.32.0",
     "coverage[toml]==7.2.6",
+    "lxml",
+    "orjson",
     "pytest-cov==4.1.0",
     "pytest==7.4.0",
     "pytest-xdist[psutil]==3.3.1",
@@ -229,14 +231,17 @@ e2e = { composite = [
 ] }
 pre_all = "pdm sync -d -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws"
 all = { composite = ["unit", "integration", "monitoring", "e2e"] }
+coverage-combine = "coverage combine {args}"
+coverage-generate-summary = "python tools/generate_coverage.py"
+coverage-report-html = "coverage html --skip-covered --skip-empty"
+coverage-report-xml = "coverage xml"
+coverage-write-report = "python tools/write_report.py"
 
 [tool.coverage.paths]
-source = ["src"]
+bentoml = ["src/bentoml", "*/bentoml/src/bentoml"]
 
 [tool.coverage.run]
 branch = true
-parallel = true
-source = ["src/bentoml/"]
 omit = [
     "src/bentoml/__main__.py",
     "src/bentoml/io.py",

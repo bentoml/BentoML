@@ -19,6 +19,7 @@ from pathspec import PathSpec
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
 from ..configuration import CLEAN_BENTOML_VERSION
+from ..configuration import get_quiet_mode
 from ..container import generate_containerfile
 from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
 from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
@@ -653,12 +654,15 @@ fi
             cmd = [sys.executable, "-m", "piptools", "compile"]
             cmd.extend(pip_compile_args)
             try:
-                subprocess.check_call(cmd)
-            except subprocess.CalledProcessError as e:
-                logger.error("Failed to lock PyPI packages: %s", e, exc_info=e)
-                logger.error(
-                    "Falling back to using the user-provided package requirement specifiers, which is equivalent to 'lock_packages=false'."
+                subprocess.check_call(
+                    cmd, text=True, stderr=subprocess.PIPE if get_quiet_mode() else None
                 )
+            except subprocess.CalledProcessError as e:
+                if not get_quiet_mode():
+                    logger.error("Failed to lock PyPI packages: %s", e, exc_info=e)
+                    logger.error(
+                        "Falling back to using the user-provided package requirement specifiers, which is equivalent to 'lock_packages=false'."
+                    )
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values

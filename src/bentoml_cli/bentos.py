@@ -391,10 +391,6 @@ def add_bento_management_commands(cli: Group):
             backend: DefaultBuilder = t.cast(
                 "DefaultBuilder", os.getenv("BENTOML_CONTAINERIZE_BACKEND", "docker")
             )
-            click.secho(
-                f"\nBuilding {bento} into a LLMContainer using backend '{backend}'",
-                fg="magenta",
-            )
             try:
                 bentoml.container.health(backend)
             except subprocess.CalledProcessError:
@@ -403,6 +399,6 @@ def add_bento_management_commands(cli: Group):
                 )
 
             # TODO: allow users to customise features with --containerize
-            bentoml.container.build(bento.tag, backend=backend, features=("grpc", "io"))
+            bentoml.container.build(bento.tag, backend=backend)
 
         return bento

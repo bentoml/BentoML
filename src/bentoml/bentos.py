@@ -19,7 +19,6 @@ from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.tag import Tag
 from ._internal.utils import resolve_user_filepath
-from ._internal.utils.analytics.usage_stats import _usage_event_debugging
 from .exceptions import BadInput
 from .exceptions import BentoMLException
 from .exceptions import InvalidArgument
@@ -360,7 +359,7 @@ def build(
         models=models or [],
     )
 
-    build_args = ["bentoml", "build"]
+    build_args = ["bentoml", "build", "--machine"]
 
     if build_ctx is None:
         build_ctx = "."
@@ -368,7 +367,7 @@ def build(
 
     if version is not None:
         build_args.extend(["--version", version])
-    build_args.extend(["--output", "tag"])
+    build_args.extend(["--machine"])
 
     with tempfile.NamedTemporaryFile(
         "w", encoding="utf-8", prefix="bentoml-build-", suffix=".yaml"
@@ -382,15 +381,10 @@ def build(
             logger.error("Failed to build BentoService bundle: %s", e)
             raise
 
-    if _usage_event_debugging():
-        # NOTE: This usually only concern BentoML devs.
-        pattern = r"^__tag__:[^:\n]+:[^:\n]+"
-        matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
-        assert matched is not None, f"Failed to find tag from output: {output}"
-        _, _, tag = matched.group(0).partition(":")
-    else:
-        # This branch is the current behaviour that doesn't concern BentoML users.
-        tag = output.decode("utf-8").strip().split("\n")[-1]
+    pattern = r"^__tag__:[^:\n]+:[^:\n]+"
+    matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
+    assert matched is not None, f"Failed to find tag from output: {output}"
+    _, _, tag = matched.group(0).partition(":")
     return get(tag, _bento_store=_bento_store)
 
 
@@ -425,7 +419,7 @@ def build_bentofile(
     build_args.append(build_ctx)
     if version is not None:
         build_args.extend(["--version", version])
-    build_args.extend(["--bentofile", bentofile, "--output", "tag"])
+    build_args.extend(["--bentofile", bentofile, "--machine"])
 
     try:
         output = subprocess.check_output(build_args)
@@ -433,15 +427,10 @@ def build_bentofile(
         logger.error("Failed to build BentoService bundle: %s", e)
         raise
 
-    if _usage_event_debugging():
-        # NOTE: This usually only concern BentoML devs.
-        pattern = r"^__tag__:[^:\n]+:[^:\n]+"
-        matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
-        assert matched is not None, f"Failed to find tag from output: {output}"
-        _, _, tag = matched.group(0).partition(":")
-    else:
-        # This branch is the current behaviour that doesn't concern BentoML users.
-        tag = output.decode("utf-8").strip().split("\n")[-1]
+    pattern = r"^__tag__:[^:\n]+:[^:\n]+"
+    matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
+    assert matched is not None, f"Failed to find tag from output: {output}"
+    _, _, tag = matched.group(0).partition(":")
     return get(tag, _bento_store=_bento_store)
 
 

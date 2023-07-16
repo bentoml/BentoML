@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 import typing as t
 
 import click
+import click_option_group as cog
 import yaml
 from rich.syntax import Syntax
 from rich.table import Table
@@ -19,6 +21,8 @@ if t.TYPE_CHECKING:
     from click import Parameter
 
     from bentoml._internal.bento import BentoStore
+    from bentoml._internal.cloud import BentoCloudClient
+    from bentoml._internal.container import DefaultBuilder
 
 BENTOML_FIGLET = """
 ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
@@ -63,7 +67,6 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.utils import human_readable_size
     from bentoml._internal.utils import resolve_user_filepath
     from bentoml._internal.utils import rich_console as console
-    from bentoml._internal.utils.analytics.usage_stats import _usage_event_debugging
     from bentoml.bentos import import_bento
 
     bento_store = BentoMLContainer.bento_store.get()
@@ -307,13 +310,35 @@ def add_bento_management_commands(cli: Group):
         show_default=True,
         help="Output log format. '-o tag' to display only bento tag.",
     )
+    @click.option("--machine", hidden=True, default=False, is_flag=True)
+    @cog.optgroup.group(cls=cog.MutuallyExclusiveOptionGroup, name="Utilities options")
+    @cog.optgroup.option(
+        "--containerize",
+        default=False,
+        is_flag=True,
+        type=click.BOOL,
+        help="Whether to containerize the Bento after building. '--containerize' is the shortcut of 'openllm build && bentoml containerize'.",
+    )
+    @cog.optgroup.option(
+        "--push",
+        default=False,
+        is_flag=True,
+        type=click.BOOL,
+        help="Whether to push the result bento to BentoCloud. Make sure to login with 'bentoml cloud login' first.",
+    )
+    @click.pass_context
     @inject
     def build(  # type: ignore (not accessed)
+        ctx: click.Context,
         build_ctx: str,
         bentofile: str,
         version: str,
         output: t.Literal["tag", "default", "yaml"],
+        machine: bool,
+        push: bool,
+        containerize: bool,
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ):
         """Build a new Bento from current directory."""
         if output == "tag":
@@ -341,27 +366,38 @@ def add_bento_management_commands(cli: Group):
 
         # NOTE: Don't remove the return statement here, since we will need this
         # for usage stats collection if users are opt-in.
-        if output == "tag":
-            if _usage_event_debugging():
-                # NOTE: Since we are logging all of the trackintg id to stdout
-                # We will prefix the tag with __tag__ and we can use regex to correctly
-                # get the tag from 'bentoml.bentos.build|build_bentofile'
-                click.echo(f"__tag__:{bento.tag}")
-            else:
-                # Current behaviour
-                click.echo(bento.tag)
-            return bento
+        if machine:
+            click.echo(f"__tag__:{bento.tag}")
+        elif output == "tag":
+            click.echo(bento.tag)
+        else:
+            if not get_quiet_mode():
+                click.echo(BENTOML_FIGLET)
+                click.secho(f"Successfully built {bento}.", fg="green")
 
-        if not get_quiet_mode():
-            click.echo(BENTOML_FIGLET)
-            click.secho(f"Successfully built {bento}.", fg="green")
-
-            click.secho(
-                f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
-                fg="blue",
+                click.secho(
+                    f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
+                    fg="blue",
+                )
+                click.secho(
+                    f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
+                    fg="blue",
+                )
+        if push:
+            click.echo(f"Pushing {bento} to BentoCloud...")
+            _cloud_client.push_bento(bento)
+        elif containerize:
+            backend: DefaultBuilder = t.cast(
+                "DefaultBuilder", os.getenv("BENTOML_CONTAINERIZE_BACKEND", "docker")
             )
             click.secho(
-                f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
-                fg="blue",
+                f"Building {bento} into a LLMContainer using backend '{backend}'",
+                fg="magenta",
             )
+            if not bentoml.container.health(backend):
+                ctx.fail(f"Backend {backend} is not healthy")
+
+            # TODO: allow users to customise features with --containerize
+            bentoml.container.build(bento.tag, backend=backend, features=("grpc", "io"))
+
         return bento

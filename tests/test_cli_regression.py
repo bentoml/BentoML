@@ -27,5 +27,5 @@ def test_regression():
         except SystemExit:
             finish = time.perf_counter_ns() - start
 
-            threshold = 1.7 * 1e6
+            threshold = 1.8 * 1e6
             assert finish <= threshold

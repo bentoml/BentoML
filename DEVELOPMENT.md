@@ -310,7 +310,7 @@ docker:
 Make sure to install all test dependencies:
 
 ```bash
-pip install -G testing -G grpc -G io
+pdm install -G testing -G grpc -G io
 ```
 
 BentoML tests come with a Pytest plugin. Export `PYTEST_PLUGINS`:
@@ -319,32 +319,10 @@ BentoML tests come with a Pytest plugin. Export `PYTEST_PLUGINS`:
 export PYTEST_PLUGINS=bentoml.testing.pytest.plugin
 ```
 
-### Unit tests
-
-You can run unit tests in two ways:
-
-Run all unit tests directly with pytest:
+To run all tests with PDM, do the following:
 
 ```bash
-# GIT_ROOT=$(git rev-parse --show-toplevel)
-pdm run -v tests tests/unit
-```
-
-### Integration tests
-
-Write a general framework tests under `./tests/integration/frameworks/models`,
-and the run the following command
-
-```bash
-pip install -G frameworks
-pdm run -v tests tests/integration
-```
-
-### E2E tests
-
-```bash
-# example: run e2e tests to check for http general features
-pdm run -v tests tests/e2e/bento_server_http
+pdm run all
 ```
 
 ### Adding new test suite

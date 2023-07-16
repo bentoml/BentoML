@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
           pdm use -f ${{ matrix.python-version }}
-          pdm install -G grpc -G io -G testing
+          pdm sync -d -G grpc -G io -G testing
       - name: Unit tests
         run: pdm run -v tests tests/unit -n 3
   integrations:
@@ -52,7 +52,7 @@ jobs:
           cache: true
           python-version: '3.8'
       - name: Install dependencies
-        run: pdm install -G testing -G frameworks
+        run: pdm sync -d -G testing -G frameworks
       - name: Run framework integration tests
         run: pdm run -v tests tests/integration
   e2e-monitoring:
@@ -86,7 +86,7 @@ jobs:
       - name: Install dependencies
         run: |
           pdm use -f ${{ matrix.python-version }}
-          pdm install -G io -G testing -G monitor-otlp
+          pdm sync -d -G io -G testing -G monitor-otlp
       - name: Run the monitoring tests
         working-directory: examples/monitoring/task_classification
         run: |
@@ -127,7 +127,7 @@ jobs:
       - name: Install dependencies
         run: |
           pdm use -f ${{ matrix.python-version }}
-          pdm install -G grpc -G io -G testing
+          pdm sync -d -G grpc -G io -G testing
       - name: Install dependencies for ${{ matrix.server_type }}-based tests.
         working-directory: tests/e2e/bento_server_${{ matrix.server_type }}
         run: pip install -r requirements.txt

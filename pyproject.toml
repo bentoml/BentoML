@@ -213,10 +213,22 @@ testing = [
     "build[virtualenv]==0.10.0",
     "Pillow<10",
 ]
-
+[tool.pdm.resolution.overrides]
+# resolve for python restriction in tensorflow-io-gcs-filesystem
+# otherwise locking will fail
+tensorflow-io-gcs-filesystem = ">=0.29.0"
 [tool.pdm.scripts]
 _run_test = "pytest --cov --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = { composite = ["_run_test {args:tests}"] }
+unit = { composite = ["tests tests/unit -n 3"] }
+integration = { composite = ["tests tests/integration"] }
+monitoring = { composite = ["tests examples/monitoring/task_classification"] }
+e2e = { composite = [
+    "tests tests/e2e/bento_server_http",
+    "tests tests/e2e/bento_server_grpc",
+] }
+pre_all = "pdm install"
+all = { composite = ["unit", "integration", "monitoring", "e2e"] }
 
 [tool.coverage.paths]
 source = ["src"]

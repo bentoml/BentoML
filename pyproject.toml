@@ -220,10 +220,6 @@ testing = [
     "build[virtualenv]==0.10.0",
     "Pillow<10",
 ]
-dev = [
-    "-e git+https://github.com/facebookresearch/detectron2.git#egg=detectron2",
-    "fastapi",
-]
 [tool.pdm.scripts]
 _run_test = "pytest --cov=bentoml --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = { composite = ["_run_test {args:tests}"] }
@@ -231,7 +227,6 @@ unit = { composite = ["tests tests/unit -n 3"] }
 pre_integration = "pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu"
 integration = { composite = [
     "pip install -U tensorflow onnx onnxruntime",
-    "pip install git+https://github.com/facebookresearch/detectron2.git#egg=detectron2",
     "tests tests/integration/frameworks/test_frameworks.py --framework {args}",
 ] }
 monitoring = { composite = ["tests examples/monitoring/task_classification"] }
@@ -244,7 +239,6 @@ pre_all = "pdm sync -d -G io -G grpc -G triton -G tracing -G monitor-otlp -G grp
 all = { composite = [
     "unit",
     "integration catboost",
-    "integration detectron",
     "integration diffusers",
     "integration easyocr",
     "integration fastai",
@@ -259,6 +253,7 @@ all = { composite = [
     "integration tensorflow",
     "integration torchscript",
     "integration xgboost",
+    "integration detectron",
     "integration transformers",
     "monitoring",
     "e2e",

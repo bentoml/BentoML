@@ -192,6 +192,8 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: coverage-unit-data
+      - name: Install dependencies
+        run: pdm sync -d -G testing
       - name: Combine coverage data
         run: pdm run -v coverage-combine
       - name: Export coverage reports

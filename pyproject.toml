@@ -241,7 +241,28 @@ e2e = { composite = [
     "tests tests/e2e/bento_server_grpc",
 ] }
 pre_all = "pdm sync -d -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws"
-all = { composite = ["unit", "integration", "monitoring", "e2e"] }
+all = { composite = [
+    "unit",
+    "integration catboost",
+    "integration detectron",
+    "integration diffusers",
+    "integration easyocr",
+    "integration fastai",
+    "integration flax",
+    "integration keras",
+    "integration lightgbm",
+    "integration onnx",
+    "integration picklable_model",
+    "integration pytorch",
+    "integration pytorch_lightning",
+    "integration sklearn",
+    "integration tensorflow",
+    "integration torchscript",
+    "integration xgboost",
+    "integration transformers",
+    "monitoring",
+    "e2e",
+] }
 coverage-combine = "coverage combine {args}"
 coverage-generate-summary = "python tools/generate_coverage.py"
 coverage-report-html = "coverage html --skip-covered --skip-empty"

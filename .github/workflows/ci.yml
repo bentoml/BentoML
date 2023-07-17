@@ -50,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [catboost, detectron, diffusers, easyocr, fastai, flax, keras, lightgbm, onnx, picklable_model, pytorch, pytorch_lightning, sklearn, tensorflow, torchscript, transformers, xgboost]
+        framework: [catboost, detectron, diffusers, easyocr, fastai, flax, keras, lightgbm, onnx, picklable_model, pytorch, pytorch_lightning, sklearn, tensorflow, torchscript, xgboost]
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v3

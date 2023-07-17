@@ -42,7 +42,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
       - name: Install dependencies
-        run: pdm sync -d -G grpc -G io -G testing -G frameworks
+        run: |
+          pdm venv create --with-pip --force
+          pdm sync -d -G grpc -G io -G testing -G frameworks
+          pdm run pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
       - name: Unit tests
         run: pdm run -v unit
       - name: Disambiguate coverage filename
@@ -178,7 +181,7 @@ jobs:
           enable-pep582: false
       - name: Install dependencies
         run: |
-          pdm venv create --with-pip
+          pdm venv create --with-pip --force
           pdm run pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
           pdm sync -d -G grpc -G io -G testing
       - name: Run ${{ matrix.server_type }} tests

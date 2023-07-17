@@ -157,7 +157,7 @@ def make_rf_onnx_model() -> (
     iris: sklearn.utils.Bunch = load_iris()
     X: ext.NpNDArray = iris.data
     y: ext.NpNDArray = iris.target
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    X_train, X_test, y_train, _ = train_test_split(X, y)
     clr = RandomForestClassifier()
     clr.fit(X_train, y_train)
 
@@ -200,7 +200,6 @@ rf_input, rf_expected_output = _expected_data
 onnx_rf_model = FrameworkTestModel(
     name="onnx_rf_model",
     model=onnx_rf_raw_model,
-    model_method_caller=method_caller,
     model_signatures={"run": {"batchable": True}},
     configurations=[
         Config(

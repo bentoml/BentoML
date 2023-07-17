@@ -13,11 +13,11 @@ help: ## Show a;ll Makefile targets
 	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
 .PHONY: install
 install: .pdm .pre-commit  ## Install the package, dependencies, and pre-commit for local development
-	pdm install -d -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
+	pdm install -dG io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
 	pre-commit install --install-hooks
 .PHONY: refresh-lockfiles
 refresh-lockfiles: .pdm  ## Sync lockfiles with requirements files.
-	pdm update --update-reuse -d -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
+	pdm update --update-reuse -dG io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
 .PHONY: format format-proto lint lint-proto type style clean
 format: ## Running code formatter: black and isort
 	@echo "(black) Formatting codebase..."

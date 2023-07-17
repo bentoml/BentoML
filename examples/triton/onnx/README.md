@@ -138,13 +138,18 @@ Inside the container shell, there are two options to install BentoML:
 - Install from editable
 
 ```bash
-cd /opt/bentoml && pip install -r requirements/dev-requirements.txt
+curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | pdm run -v python -
+export VIRTUAL_ENV=$(dirname $(dirname $(which python)))
+pushd /opt/bentoml 2>/dev/null
+~/.local/bin/pdm venv create --with-pip
+~/.local/bin/pdm install -dG testing -G tooling -G tracing -G grpc -G io -G aws
+popd 2>/dev/null
 ```
 
 Run the [`setup` script](./setup):
 
 ```bash
-cd /workspace/ && pip install -r requirements/requirements.txt
+pushd /workspace/ && ~/.local/bin/pdm run pip install -r requirements/requirements.txt
 
 bash ./setup
 ```
@@ -153,7 +158,7 @@ bash ./setup
    [`serve_bento.py`](./serve_bento.py) (this requires to have `tritonserver` binary available locally on your system. To use the container, go to step 5)
 
 ```bash
-python3 serve_bento.py
+pdm run -v python serve_bento.py
 
 # bentoml serve-http | serve-grpc triton-integration-onnx
 ```
@@ -165,9 +170,3 @@ python3 serve_bento.py
 > Feel free to build your own tritonserver. See
 > [here](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/build.md)
 > for more details on building customisation.
-
-<!--
-docker run --rm -it -p 3000-3030:3000-3030 -v $(pwd)/model_repository:/models -v ${PWD}:/workspace -v ${BENTOML_GIT_ROOT}:/opt/bentoml -e BENTOML_HOME=/opt/bentoml -v $BENTOML_HOME:/opt/bentoml nvcr.io/nvidia/tritonserver:22.12-py3 bash
-
-cd /opt/bentoml && pip install -r requirements/dev-requirements.txt && cd /workspace && pip install -r requirements/requirements.txt && python3 train.py && ./setup && bentoml serve-http
--->

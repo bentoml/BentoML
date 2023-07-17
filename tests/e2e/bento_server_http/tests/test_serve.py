@@ -71,10 +71,6 @@ def test_http_server_ctx(bentoml_home: str):
         assert server.process.poll() <= 0
 
 
-@pytest.mark.skipif(
-    os.getenv("GITHUB_ACTIONS") is not None,
-    reason="For some reason it keeps failing for missing fastapi on CI, but this test passes locally.",
-)
 def test_serve_from_svc():
     from service import svc
 
@@ -138,7 +134,7 @@ async def test_serve_with_api_max_concurrency(bentoml_home: str):
 
 
 @pytest.mark.skipif(
-    sys.platform == "win32",
+    os.getenv("GITHUB_ACTIONS") is not None and sys.platform == "win32",
     reason="Windows runner doesn't have enough cores to run this test",
 )
 @pytest.mark.asyncio

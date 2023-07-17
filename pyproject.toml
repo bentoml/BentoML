@@ -19,7 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries",
 ]
@@ -223,15 +222,15 @@ testing = [
 [tool.pdm.scripts]
 _run_test = "pytest --cov=bentoml --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = { composite = ["_run_test {args:tests}"] }
-unit = { composite = ["tests tests/unit -n 3"] }
-pre_integration = "pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu"
+unit = { composite = [
+    "_run_test tests -n auto --ignore tests/e2e --ignore tests/integration/frameworks/models --ignore tests/integration/frameworks/test_frameworks.py",
+] }
+# NOTE: We are running install CPU Torch for CI only
 integration = { composite = [
-    "pip install -U tensorflow onnx onnxruntime",
     "tests tests/integration/frameworks/test_frameworks.py --framework {args}",
 ] }
 monitoring = { composite = ["tests examples/monitoring/task_classification"] }
 e2e = { composite = [
-    "pip install -U fastapi",
     "tests tests/e2e/bento_server_http",
     "tests tests/e2e/bento_server_grpc",
 ] }

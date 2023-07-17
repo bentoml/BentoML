@@ -347,6 +347,7 @@ async def test_pandas(host: str):
         )
 
 
+# XXX: @aarnphm investigate why this is failing on CI
 @pytest.mark.asyncio
 @pytest.mark.xfail(
     os.getenv("GITHUB_ACTIONS") is not None and sys.version_info[:2] == (3, 11),

@@ -24,6 +24,13 @@ repos:
     rev: 2.8.0
     hooks:
       - id: pdm-lock-check
+  - repo: https://github.com/bufbuild/buf
+    rev: v1.24.0
+    hooks:
+      - id: buf-format
+        args: [--config=src/bentoml/grpc/buf.yaml, src/bentoml/grpc]
+      - id: buf-lint
+        args: [--config=src/bentoml/grpc/buf.yaml, --error-format=msvs, src/bentoml/grpc]
   - repo: local
     hooks:
       - id: typecheck

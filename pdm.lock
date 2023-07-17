@@ -3030,7 +3030,7 @@ files = [
 
 [[package]]
 name = "mlflow"
-version = "2.4.2"
+version = "2.5.0"
 requires_python = ">=3.8"
 summary = "MLflow: A Platform for ML Development and Productionization"
 dependencies = [
@@ -3064,8 +3064,8 @@ dependencies = [
     "waitress<3; platform_system == \"Windows\"",
 ]
 files = [
-    {file = "mlflow-2.4.2-py3-none-any.whl", hash = "sha256:0d7618d497e5b54aea5a9303268f771a64c14e695f002997b05defdbf10b036e"},
-    {file = "mlflow-2.4.2.tar.gz", hash = "sha256:0b1a71b0ff4679dce8ff2ae9733e996ec0b6c106db93412e0df8606f791867c8"},
+    {file = "mlflow-2.5.0-py3-none-any.whl", hash = "sha256:981fcb3480ca7383b47e22b5e4c726d21e2c87fb4035e5a1b57574736c665576"},
+    {file = "mlflow-2.5.0.tar.gz", hash = "sha256:f992ae8ea9c73502344baf48c4ec447aa9efbfa8965bc090868e6163234f4eb0"},
 ]
 
 [[package]]

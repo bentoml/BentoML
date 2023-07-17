@@ -228,7 +228,7 @@ dev = [
 _run_test = "pytest --cov=bentoml --cov-report=term-missing --cov-config=pyproject.toml -vv"
 tests = { composite = ["_run_test {args:tests}"] }
 unit = { composite = ["tests tests/unit -n 3"] }
-pre_integration = "pip install torch --index-url https://download.pytorch.org/whl/cpu"
+pre_integration = "pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu"
 integration = { composite = [
     "pip install -U tensorflow onnx onnxruntime",
     "pip install git+https://github.com/facebookresearch/detectron2.git#egg=detectron2",

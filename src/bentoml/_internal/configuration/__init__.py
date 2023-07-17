@@ -6,19 +6,14 @@ import os
 import re
 import typing as t
 from functools import lru_cache
-from typing import TYPE_CHECKING
 
 from ...exceptions import BentoMLConfigException
 from ...exceptions import BentoMLException
 
-try:
-    from ..._version import __version__
-    from ..._version import __version_tuple__
-except ImportError:
-    __version__ = importlib.metadata.version("bentoml")
-    __version_tuple__ = (0, 0, 0, "dirty")
+# Find BentoML version managed by setuptools_scm
+BENTOML_VERSION = importlib.metadata.version("bentoml")
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from .containers import SerializationStrategy
 
 # Note this file is loaded prior to logging being configured, thus logger is only
@@ -53,12 +48,6 @@ def clean_bentoml_version(bentoml_version: str) -> str:
     return match.group()
 
 
-# Find BentoML version managed by setuptools_scm
-BENTOML_VERSION = __version__
-# Get clean BentoML version indicating latest PyPI release. E.g. 1.0.0.post => 1.0.0
-CLEAN_BENTOML_VERSION: str = clean_bentoml_version(BENTOML_VERSION)
-
-
 @lru_cache(maxsize=1)
 def is_pypi_installed_bentoml() -> bool:
     """Returns true if BentoML is installed via PyPI official release or installed from
@@ -83,6 +72,11 @@ def is_pypi_installed_bentoml() -> bool:
     base on a recent official release.
     """
     # In a git repo with no tag, setuptools_scm generated version starts with "0.1."
+    try:
+        from ..._version import __version_tuple__
+    except ImportError:
+        __version_tuple__ = (0, 0, 0, "dirty")
+
     is_tagged = not BENTOML_VERSION.startswith("0.1.")
     is_clean = not str(__version_tuple__[-1]).split(".")[-1].startswith("d")
     not_been_modified = BENTOML_VERSION == BENTOML_VERSION.split("+")[0]

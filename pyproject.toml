@@ -219,15 +219,26 @@ testing = [
     "Pillow<10",
 ]
 [tool.pdm.scripts]
-_run_test = "pytest --cov=bentoml --cov-report=term-missing --cov-config=pyproject.toml -vv"
+_.env = { TOKENIZERS_PARALLELISM = "false" }
+_run_test = { cmd = [
+    "python",
+    "-m",
+    "pytest",
+    "--cov=bentoml",
+    "--cov-report=term-missing",
+    "--cov-config=pyproject.toml",
+    "-vv",
+] }
 tests = { composite = ["_run_test {args:tests}"] }
 unit = { composite = [
-    "_run_test tests -n auto --ignore tests/e2e --ignore tests/integration/frameworks/models --ignore tests/integration/frameworks/test_frameworks.py",
+    "_run_test {args:tests} -n auto --ignore tests/e2e --ignore tests/integration/frameworks/models --ignore tests/integration/frameworks/test_frameworks.py",
 ] }
 integration = { composite = [
     "tests tests/integration/frameworks/test_frameworks.py --framework {args}",
 ] }
-monitoring = { composite = ["tests examples/monitoring/task_classification"] }
+monitoring = { composite = [
+    "tests {args:examples/monitoring/task_classification}",
+] }
 e2e = { composite = [
     "tests tests/e2e/bento_server_http",
     "tests tests/e2e/bento_server_grpc",
@@ -255,10 +266,21 @@ all = { composite = [
     "monitoring",
     "e2e",
 ] }
+all-coverage = { composite = [
+    "all",
+    "coverage-combine",
+    "coverage-generate-reports",
+    "coverage-write-report",
+] }
 coverage-combine = "python -m coverage combine {args}"
 coverage-generate-summary = "python tools/generate_coverage.py"
 coverage-report-html = "python -m coverage html --skip-covered --skip-empty"
 coverage-report-xml = "python -m coverage xml"
+coverage-generate-reports = { composite = [
+    "coverage-report-xml",
+    "coverage-report-html",
+    "coverage-generate-summary",
+] }
 coverage-write-report = "python tools/write_report.py"
 
 [tool.coverage.paths]

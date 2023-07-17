@@ -233,17 +233,13 @@ jobs:
         run: pdm sync -d -G testing
       - name: Combine coverage data
         run: pdm run -v coverage-combine
-      - name: Export coverage reports
-        run: |
-          pdm run coverage-report-xml
-          pdm run coverage-report-html
+      - name: Export coverage reports and generate summary
+        run: pdm run -v coverage-generate-reports
       - name: Upload uncovered HTML report
         uses: actions/upload-artifact@v3
         with:
           name: uncovered-html-report
           path: htmlcov
-      - name: Generate coverage summary
-        run: pdm run -v coverage-generate-summary
       - name: Write coverage summary report
         if: github.event_name == 'pull_request'
         run: pdm run -v coverage-write-report

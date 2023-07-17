@@ -151,9 +151,8 @@ name = "torch"
 [tool.pdm.resolution]
 respect-source-order = true
 [tool.pdm.resolution.overrides]
-# resolve for python restriction in tensorflow-io-gcs-filesystem
-# otherwise locking will fail
-tensorflow-io-gcs-filesystem = ">=0.29.0"
+# resolve for python restriction in tensorflow-io-gcs-filesystem otherwise locking will fail
+tensorflow-io-gcs-filesystem = ">=0.29.0; platform_system!='Windows'"
 fastapi = "==0.93.0"
 tensorflow = ">=2.3.0"
 [tool.pdm.dev-dependencies]
@@ -198,10 +197,10 @@ frameworks = [
     "transformers",
     "tokenizer",
     "diffusers",
-    "flax",
-    "jax",
-    "jaxlib",
-    "chex",
+    "flax; platform_system!='Windows'",
+    "jax; platform_system!='Windows'",
+    "jaxlib; platform_system!='Windows'",
+    "chex; platform_system!='Windows'",
 ]
 tooling = ["pre-commit", "setuptools-scm", "pandas-stubs"]
 testing = [
@@ -225,7 +224,6 @@ tests = { composite = ["_run_test {args:tests}"] }
 unit = { composite = [
     "_run_test tests -n auto --ignore tests/e2e --ignore tests/integration/frameworks/models --ignore tests/integration/frameworks/test_frameworks.py",
 ] }
-# NOTE: We are running install CPU Torch for CI only
 integration = { composite = [
     "tests tests/integration/frameworks/test_frameworks.py --framework {args}",
 ] }

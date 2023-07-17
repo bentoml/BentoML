@@ -174,6 +174,12 @@ spelling_word_list_filename = ["bentoml_wordlist.txt"]
 autodoc_mock_imports = [
     "torch",
     "torchvision",
+    "diffusers",
+    "detectron2",
+    "easyocr",
+    "flax",
+    "jax",
+    "jaxlib",
     "torchtext",
     "fastai",
     "fastai.learner.Learner",

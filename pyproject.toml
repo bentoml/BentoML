@@ -189,6 +189,7 @@ frameworks = [
     # ONNX dependencies
     "onnx",
     "onnxruntime",
+    "skl2onnx",
     # tensorflow dependencies
     "tensorflow",
     # torch-related dependencies
@@ -229,11 +230,13 @@ tests = { composite = ["_run_test {args:tests}"] }
 unit = { composite = ["tests tests/unit -n 3"] }
 pre_integration = "pip install torch --index-url https://download.pytorch.org/whl/cpu"
 integration = { composite = [
-    "pip install -U tensorflow",
-    "tests tests/integration {args}",
+    "pip install -U tensorflow onnx onnxruntime",
+    "pip install git+https://github.com/facebookresearch/detectron2.git#egg=detectron2",
+    "tests tests/integration/frameworks/test_frameworks.py --framework {args}",
 ] }
 monitoring = { composite = ["tests examples/monitoring/task_classification"] }
 e2e = { composite = [
+    "pip install -U fastapi",
     "tests tests/e2e/bento_server_http",
     "tests tests/e2e/bento_server_grpc",
 ] }

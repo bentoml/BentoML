@@ -34,9 +34,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
       - name: Install dependencies
-        run: |
-          pdm use -f ${{ matrix.python-version }}
-          pdm install -d -G grpc -G io -G testing
+        run: pdm install -d -G grpc -G io -G testing
       - name: Unit tests
         run: pdm run -v unit
       - name: Disambiguate coverage filename
@@ -61,9 +59,7 @@ jobs:
           python-version: '3.8'
           enable-pep582: false
       - name: Install dependencies
-        run: |
-          pdm use -f "3.8"
-          pdm install -d -G testing -G frameworks
+        run: pdm install -d -G testing -G frameworks
       - name: Run framework integration tests
         run: pdm run -v integration
       - name: Disambiguate coverage filename
@@ -102,9 +98,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
       - name: Install dependencies
-        run: |
-          pdm use -f ${{ matrix.python-version }}
-          pdm install -d -G io -G testing -G monitor-otlp
+        run: pdm install -d -G io -G testing -G monitor-otlp
       - name: Run the monitoring tests
         working-directory: examples/monitoring/task_classification
         run: mkdir -p monitoring && pdm run -v monitoring
@@ -148,9 +142,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
       - name: Install dependencies
-        run: |
-          pdm use -f ${{ matrix.python-version }}
-          pdm install -d -G grpc -G io -G testing
+        run: pdm install -d -G grpc -G io -G testing
       - name: Run ${{ matrix.server_type }} tests and generate coverage report
         run: |
           pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt

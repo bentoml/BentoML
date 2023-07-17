@@ -258,10 +258,10 @@ all = { composite = [
     "monitoring",
     "e2e",
 ] }
-coverage-combine = "coverage combine {args}"
+coverage-combine = "python -m coverage combine {args}"
 coverage-generate-summary = "python tools/generate_coverage.py"
-coverage-report-html = "coverage html --skip-covered --skip-empty"
-coverage-report-xml = "coverage xml"
+coverage-report-html = "python -m coverage html --skip-covered --skip-empty"
+coverage-report-xml = "python -m coverage xml"
 coverage-write-report = "python tools/write_report.py"
 
 [tool.coverage.paths]

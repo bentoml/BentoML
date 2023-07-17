@@ -47,6 +47,10 @@ jobs:
   integrations:
     name: Running framework integrations tests
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [catboost, detectron, diffusers, easyocr, fastai, flax, keras, lightgbm, onnx, picklable_model, pytorch, pytorch_lightning, sklearn, tensorflow, torchscript, transformers, xgboost]
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v3
@@ -60,9 +64,9 @@ jobs:
       - name: Install dependencies
         run: pdm sync -d -G testing -G frameworks
       - name: Run framework integration tests
-        run: pdm run -v integration
+        run: pdm run -v tests tests/integration -k "${{ matrix.framework }}"
       - name: Disambiguate coverage filename
-        run: mv .coverage ".coverage.integrations.ubuntu-latest.3.8"
+        run: mv .coverage ".coverage.integrations.ubuntu-latest.3.8.${{ matrix.framework }}"
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
         with:

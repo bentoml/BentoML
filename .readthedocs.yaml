@@ -14,6 +14,4 @@ build:
       - 'curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -'
       - 'VIRTUAL_ENV=$(dirname $(dirname $(which python))) ~/.local/bin/pdm sync -dG docs'
 sphinx:
-  builder: dirhtml
-  fail_on_warning: true
   configuration: docs/source/conf.py

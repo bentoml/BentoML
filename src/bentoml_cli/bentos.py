@@ -318,7 +318,7 @@ def add_bento_management_commands(cli: Group):
         default=False,
         is_flag=True,
         type=click.BOOL,
-        help="Whether to containerize the Bento after building. '--containerize' is the shortcut of 'openllm build && bentoml containerize'.",
+        help="Whether to containerize the Bento after building. '--containerize' is the shortcut of 'bentoml build && bentoml containerize'.",
     )
     @cog.optgroup.option(
         "--push",

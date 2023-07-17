@@ -61,7 +61,7 @@ jobs:
       - name: Install dependencies
         run: pdm install -d -G testing -G frameworks
       - name: Run framework integration tests
-        run: pdm run -v integration -n0
+        run: pdm run -v integration
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.integrations.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data

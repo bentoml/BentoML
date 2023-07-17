@@ -64,7 +64,7 @@ jobs:
       - name: Install dependencies
         run: pdm sync -d -G testing -G frameworks
       - name: Run framework integration tests
-        run: pdm run -v tests tests/integration -k "${{ matrix.framework }}"
+        run: pdm run -v integration -k "${{ matrix.framework }}"
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.integrations.ubuntu-latest.3.8.${{ matrix.framework }}"
       - name: Upload coverage data

@@ -306,7 +306,7 @@ def add_bento_management_commands(cli: Group):
     @click.option(
         "-o",
         "--output",
-        type=click.Choice(["tag", "default", "json"]),
+        type=click.Choice(["tag", "default"]),
         default="default",
         show_default=True,
         help="Output log format. '-o tag' to display only bento tag.",
@@ -334,7 +334,7 @@ def add_bento_management_commands(cli: Group):
         build_ctx: str,
         bentofile: str,
         version: str,
-        output: t.Literal["tag", "default", "json"],
+        output: t.Literal["tag", "default"],
         machine: bool,
         push: bool,
         containerize: bool,
@@ -345,7 +345,7 @@ def add_bento_management_commands(cli: Group):
         from bentoml._internal.configuration import set_quiet_mode
         from bentoml._internal.log import configure_logging
 
-        if output == "tag" or machine or output == "json":
+        if output == "tag" or machine:
             set_quiet_mode(True)
             configure_logging()
 
@@ -372,16 +372,6 @@ def add_bento_management_commands(cli: Group):
             click.echo(f"__tag__:{bento.tag}")
         elif output == "tag":
             click.echo(bento.tag)
-        elif output == "json":
-            click.echo(
-                {
-                    "bento": str(bento.tag),
-                    "cmd": {
-                        "containerize": "python -m " + containerize_cmd,
-                        "push": "python -m " + push_cmd,
-                    },
-                }
-            )
         else:
             if not get_quiet_mode():
                 click.echo(BENTOML_FIGLET)
@@ -415,8 +405,6 @@ def add_bento_management_commands(cli: Group):
                 raise bentoml.exceptions.BentoMLException(
                     f"Backend {backend} is not healthy"
                 )
-
-            # TODO: allow users to customise features with --containerize
             bentoml.container.build(bento.tag, backend=backend)
 
         return bento

@@ -152,7 +152,7 @@ name = "torch"
 respect-source-order = true
 [tool.pdm.resolution.overrides]
 # resolve for python restriction in tensorflow-io-gcs-filesystem otherwise locking will fail
-tensorflow-io-gcs-filesystem = ">=0.29.0"
+tensorflow-io-gcs-filesystem = ">=0.32.0"
 fastapi = "==0.93.0"
 tensorflow = ">=2.3.0"
 [tool.pdm.dev-dependencies]

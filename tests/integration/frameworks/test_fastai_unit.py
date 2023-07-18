@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import typing as t
 
@@ -57,7 +58,8 @@ class _Add1(Transform):
         return x - 1
 
 
-def custom_model() -> Learner:
+@pytest.fixture
+def learner() -> Learner:
     class Loss(Module):
         reduction = "none"
 
@@ -117,9 +119,8 @@ def test_batchable_exception():
         )
 
 
-def test_raise_attribute_runnable_error():
-    learner = custom_model()
-
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") is not None, reason="Only run locally")
+def test_raise_attribute_runnable_error(learner: Learner):
     with pytest.raises(
         InvalidArgument, match="No method with name not_exist found for Learner of *"
     ):

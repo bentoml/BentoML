@@ -272,11 +272,10 @@ jobs:
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
       - name: Install dependencies for ${{ matrix.server_type }}-based tests.
         run: |
-          pip install -r requirements/tests-requirements.txt
           if [ "${{ matrix.server_type }}" == 'grpc' ]; then
-            pip install -e ".[grpc]"
+            pip install -e ".[grpc]" -r requirements/tests-requirements.txt
           else
-            pip install -e .
+            pip install -e . -r requirements/tests-requirements.txt
           fi
           if [ -f "tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt" ]; then
             pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt

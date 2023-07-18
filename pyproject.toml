@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "bentoml"
 description = "BentoML: The Unified Model Serving Framework"
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = ["MLOps", "AI", "BentoML", "Model Serving", "Model Deployment"]
 license = { text = "Apache-2.0" }
 authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]

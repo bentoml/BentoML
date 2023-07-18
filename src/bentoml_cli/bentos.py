@@ -326,6 +326,17 @@ def add_bento_management_commands(cli: Group):
         type=click.BOOL,
         help="Whether to push the result bento to BentoCloud. Make sure to login with 'bentoml cloud login' first.",
     )
+    @click.option(
+        "--context",
+        "context",
+        type=click.STRING,
+        default=None,
+        help="Yatai context name.",
+    )
+    @click.option(
+        "--force", is_flag=True, default=False, help="Forced push to BentoCloud"
+    )
+    @click.option("--threads", default=10, help="Number of threads to use for upload")
     @click.pass_context
     @inject
     def build(  # type: ignore (not accessed)
@@ -335,6 +346,9 @@ def add_bento_management_commands(cli: Group):
         version: str,
         output: t.Literal["tag", "default"],
         push: bool,
+        force: bool,
+        threads: int,
+        context: str | None,
         containerize: bool,
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
@@ -390,7 +404,9 @@ def add_bento_management_commands(cli: Group):
         if push:
             if not get_quiet_mode():
                 click.secho(f"\nPushing {bento} to BentoCloud...", fg="magenta")
-            _cloud_client.push_bento(bento)
+            _cloud_client.push_bento(
+                bento, force=force, threads=threads, context=context
+            )
         elif containerize:
             backend: DefaultBuilder = t.cast(
                 "DefaultBuilder", os.getenv("BENTOML_CONTAINERIZE_BACKEND", "docker")

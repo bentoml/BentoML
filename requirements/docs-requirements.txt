@@ -1,4 +1,5 @@
 # Docs dependencies
+-e .[grpc]
 -r tests-requirements.txt
 sphinx>=5
 setuptools>=63  # readthedocs doesn't support -r

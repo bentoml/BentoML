@@ -8,9 +8,8 @@ import sys
 import tempfile
 import typing as t
 from functools import partial
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from click import Command
     from click import Context
     from click import Group
@@ -421,6 +420,7 @@ def add_containerize_command(cli: Group) -> None:
     @buildx_options_group
     @kwargs_transformers(transformer=normalize_none_type)
     def containerize(  # type: ignore
+        ctx: click.Context,
         bento_tag: str,
         image_tag: tuple[str] | None,
         backend: DefaultBuilder,
@@ -488,8 +488,10 @@ def add_containerize_command(cli: Group) -> None:
 
         # Run healthcheck before containerizing
         # build will also run healthcheck, but we want to fail early.
-        if not container.health(backend):
-            raise BentoMLException("Failed to use backend %s." % backend)
+        try:
+            container.health(backend)
+        except subprocess.CalledProcessError:
+            raise BentoMLException(f"Backend {backend} is not healthy")
 
         # --progress is not available without BuildKit.
         if not enable_buildkit(backend=backend) and "progress" in _memoized:

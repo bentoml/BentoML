@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import typing as t
 
-import subprocess
 import click
 import click_option_group as cog
 import yaml
@@ -311,7 +311,6 @@ def add_bento_management_commands(cli: Group):
         show_default=True,
         help="Output log format. '-o tag' to display only bento tag.",
     )
-    @click.option("--machine", hidden=True, default=False, is_flag=True)
     @cog.optgroup.group(cls=cog.MutuallyExclusiveOptionGroup, name="Utilities options")
     @cog.optgroup.option(
         "--containerize",
@@ -335,7 +334,6 @@ def add_bento_management_commands(cli: Group):
         bentofile: str,
         version: str,
         output: t.Literal["tag", "default"],
-        machine: bool,
         push: bool,
         containerize: bool,
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
@@ -345,7 +343,7 @@ def add_bento_management_commands(cli: Group):
         from bentoml._internal.configuration import set_quiet_mode
         from bentoml._internal.log import configure_logging
 
-        if output == "tag" or machine:
+        if output == "tag":
             set_quiet_mode(True)
             configure_logging()
 
@@ -368,10 +366,8 @@ def add_bento_management_commands(cli: Group):
 
         # NOTE: Don't remove the return statement here, since we will need this
         # for usage stats collection if users are opt-in.
-        if machine:
+        if output == "tag":
             click.echo(f"__tag__:{bento.tag}")
-        elif output == "tag":
-            click.echo(bento.tag)
         else:
             if not get_quiet_mode():
                 click.echo(BENTOML_FIGLET)

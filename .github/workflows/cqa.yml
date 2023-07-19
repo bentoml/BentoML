@@ -31,14 +31,6 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v3
-      - name: Set up PDM
-        uses: pdm-project/setup-pdm@v3
-        with:
-          cache: true
-          python-version: '3.11'
-          enable-pep582: false
-      - name: Install dependencies
-        run: pdm sync -dG tooling
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --all-files --verbose

@@ -12,7 +12,7 @@ build:
       - git update-index --assume-unchanged docs/source/conf.py
     post_install:
       - 'curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -'
-      - '~/.local/bin/pdm use -f "$READTHEDOCS_VIRTUALENV_PATH"
+      - '~/.local/bin/pdm use -f "$READTHEDOCS_VIRTUALENV_PATH"'
       - '~/.local/bin/pdm sync -dG docs'
 sphinx:
   configuration: docs/source/conf.py

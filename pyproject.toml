@@ -176,7 +176,7 @@ frameworks = [
     "skl2onnx",
     # tensorflow dependencies
     "tensorflow",
-    "tensorflow-io-gcs-filesystem; python_version < '3.12' and platform_system != 'Windows'",
+    "tensorflow-io-gcs-filesystem!=0.32.0; python_version < '3.12'",
     # torch-related dependencies
     "torch",
     "lightning",

@@ -30,6 +30,7 @@ def start_runner_server(
     runner_name: str,
     port: int | None = None,
     host: str | None = None,
+    timeout: int | None = None,
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
 ) -> None:
     """
@@ -48,6 +49,7 @@ def start_runner_server(
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+    timeout_args = ["--timeout", str(timeout)] if timeout else []
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -91,6 +93,7 @@ def start_runner_server(
                                 "$(circus.wid)",
                                 "--prometheus-dir",
                                 prometheus_dir,
+                                *timeout_args,
                             ],
                             working_dir=working_dir,
                             numprocesses=runner.scheduled_worker_count,
@@ -144,6 +147,7 @@ def start_http_server(
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: int = Provide[BentoMLContainer.api_server_workers],
+    timeout: int | None = None,
     ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
     ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
     ssl_keyfile_password: str | None = Provide[BentoMLContainer.ssl.keyfile_password],
@@ -169,6 +173,7 @@ def start_http_server(
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+    timeout_args = ["--timeout", str(timeout)] if timeout else []
     runner_requirements = {runner.name for runner in svc.runners}
     if not runner_requirements.issubset(set(runner_map)):
         raise ValueError(
@@ -213,6 +218,7 @@ def start_http_server(
                 "--prometheus-dir",
                 prometheus_dir,
                 *ssl_args,
+                *timeout_args,
             ],
             working_dir=working_dir,
             numprocesses=api_workers,

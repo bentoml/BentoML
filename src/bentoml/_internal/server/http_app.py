@@ -106,7 +106,6 @@ class HTTPAppFactory(BaseAppFactory):
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
-        timeout: int = Provide[BentoMLContainer.api_server_config.traffic.timeout],
         max_concurrency: int
         | None = Provide[BentoMLContainer.api_server_config.traffic.max_concurrency],
     ):
@@ -114,6 +113,7 @@ class HTTPAppFactory(BaseAppFactory):
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
         self.enable_metrics = enable_metrics
+        timeout = BentoMLContainer.api_server_config.traffic.timeout.get()
         super().__init__(timeout=timeout, max_concurrency=max_concurrency)
 
     @property

@@ -19,7 +19,6 @@ from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.tag import Tag
 from ._internal.utils import resolve_user_filepath
-from ._internal.utils.analytics.usage_stats import _usage_event_debugging
 from .exceptions import BadInput
 from .exceptions import BentoMLException
 from .exceptions import InvalidArgument
@@ -382,15 +381,10 @@ def build(
             logger.error("Failed to build BentoService bundle: %s", e)
             raise
 
-    if _usage_event_debugging():
-        # NOTE: This usually only concern BentoML devs.
-        pattern = r"^__tag__:[^:\n]+:[^:\n]+"
-        matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
-        assert matched is not None, f"Failed to find tag from output: {output}"
-        _, _, tag = matched.group(0).partition(":")
-    else:
-        # This branch is the current behaviour that doesn't concern BentoML users.
-        tag = output.decode("utf-8").strip().split("\n")[-1]
+    pattern = r"^__tag__:[^:\n]+:[^:\n]+"
+    matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
+    assert matched is not None, f"Failed to find tag from output: {output}"
+    _, _, tag = matched.group(0).partition(":")
     return get(tag, _bento_store=_bento_store)
 
 
@@ -433,15 +427,10 @@ def build_bentofile(
         logger.error("Failed to build BentoService bundle: %s", e)
         raise
 
-    if _usage_event_debugging():
-        # NOTE: This usually only concern BentoML devs.
-        pattern = r"^__tag__:[^:\n]+:[^:\n]+"
-        matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
-        assert matched is not None, f"Failed to find tag from output: {output}"
-        _, _, tag = matched.group(0).partition(":")
-    else:
-        # This branch is the current behaviour that doesn't concern BentoML users.
-        tag = output.decode("utf-8").strip().split("\n")[-1]
+    pattern = r"^__tag__:[^:\n]+:[^:\n]+"
+    matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
+    assert matched is not None, f"Failed to find tag from output: {output}"
+    _, _, tag = matched.group(0).partition(":")
     return get(tag, _bento_store=_bento_store)
 
 

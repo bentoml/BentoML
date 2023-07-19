@@ -154,7 +154,8 @@ class Service:
         if self.bento:
             if serialization_strategy == "EXPORT_BENTO":
                 temp_fs = fs.open_fs("temp:///")
-                bento_path = self.bento.export(temp_fs.getsyspath("/"))
+                tmp_path = temp_fs.getsyspath("/")
+                bento_path = self.bento.export(tmp_path, output_format="tar")
                 content = open(bento_path, "rb").read()
 
                 def load_exported_bento(bento_tag: Tag, content: bytes):

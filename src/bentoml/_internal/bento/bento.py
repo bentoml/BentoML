@@ -194,7 +194,7 @@ class Bento(StoreItem):
         if version is None:
             tag = tag.make_new_version()
 
-        logger.info(
+        logger.debug(
             'Building BentoML service "%s" from build context "%s".', tag, build_ctx
         )
 

@@ -6,7 +6,7 @@ groups = ["default", "aws", "docs", "frameworks", "grpc", "grpc-channelz", "grpc
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:33c82c680535484a720a434037278837f749a333947e6fe08509ed7a132c4d21"
+content_hash = "sha256:649c55388a71fe4a568edcedcc4093441a46a1fcacd7d09303814c855be6b3ae"
 
 [[package]]
 name = "absl-py"
@@ -3485,7 +3485,7 @@ summary = "ONNX Runtime is a runtime accelerator for Machine Learning models"
 dependencies = [
     "coloredlogs",
     "flatbuffers",
-    "numpy>=1.24.2",
+    "numpy>=1.21.6",
     "packaging",
     "protobuf",
     "sympy",

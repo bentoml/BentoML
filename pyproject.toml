@@ -76,22 +76,12 @@ Blog = "https://modelserving.com"
 bentoml = "bentoml_cli.cli:cli"
 [project.optional-dependencies]
 all = [
-    "bentoml[aws]",
-    "bentoml[io]",
-    "bentoml[grpc]",
-    "bentoml[grpc-reflection]",
-    "bentoml[grpc-channelz]",
-    "bentoml[tracing]",
-    "bentoml[triton]",
-    "bentoml[monitor-otlp]",
+    "bentoml[aws,io,grpc,grpc-reflection,grpc-channelz,tracing,monitor-otlp]",
 ]
 aws = ["fs-s3fs"]
 io = [
-    "bentoml[io-json]",
-    "bentoml[io-image]",
-    "bentoml[io-pandas]",
-    "bentoml[io-file]",
-] # syntatic sugar for bentoml[io-json,io-image,io-pandas,io-file]
+    "bentoml[io-json,io-image,io-pandas,io-file]",
+]
 io-file = ["filetype"] # Currently use for from_sample
 io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["bentoml[io-file]", "Pillow"]
@@ -109,9 +99,7 @@ grpc-channelz = ["bentoml[grpc]", "grpcio-channelz"]
 # versions of BentoML. It is discouraged to use this, instead use any
 # of the above tracing.* extras.
 tracing = [
-    "bentoml[tracing-jaeger]",
-    "bentoml[tracing-otlp]",
-    "bentoml[tracing-zipkin]",
+    "bentoml[tracing-jaeger,tracing-zipkin,tracing-otlp]",
 ]
 tracing-jaeger = ["opentelemetry-exporter-jaeger==1.18.0"]
 tracing-zipkin = ["opentelemetry-exporter-zipkin==1.18.0"]
@@ -188,7 +176,7 @@ frameworks = [
     "skl2onnx",
     # tensorflow dependencies
     "tensorflow",
-    "tensorflow-io-gcs-filesystem; python_version < '3.12'",
+    "tensorflow-io-gcs-filesystem; python_version < '3.12' and platform_system != 'Windows'",
     # torch-related dependencies
     "torch",
     "lightning",

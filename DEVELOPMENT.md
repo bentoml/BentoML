@@ -56,7 +56,6 @@ proposal in the `#bentoml-contributors` slack channel for feedback.
    ```bash
    pdm install -G docs -G tooling -G testing -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
    pre-commit install
-   pip install -e .
    ```
 
    This installs BentoML with editable mode via `pdm` and development

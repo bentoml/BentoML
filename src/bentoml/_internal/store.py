@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import datetime
 import os
 import typing as t
-import datetime
 from abc import ABC
 from abc import abstractmethod
 from contextlib import contextmanager
@@ -11,11 +11,11 @@ import fs
 import fs.errors
 from fs.base import FS
 
+from ..exceptions import BentoMLException
+from ..exceptions import NotFound
+from .exportable import Exportable
 from .tag import Tag
 from .types import PathType
-from .exportable import Exportable
-from ..exceptions import NotFound
-from ..exceptions import BentoMLException
 
 T = t.TypeVar("T")
 
@@ -144,7 +144,8 @@ class Store(ABC, t.Generic[Item]):
         counts = matches.count().directories
         if counts == 0:
             raise NotFound(
-                f"{self._item_type.get_typename()} '{tag}' is not found in BentoML store {self._fs}"
+                f"{self._item_type.get_typename()} '{tag}' is not found in BentoML store {self._fs}, "
+                "you may need to run `bentoml models pull` first"
             )
         elif counts == 1:
             match = next(iter(matches))
@@ -180,6 +181,13 @@ class Store(ABC, t.Generic[Item]):
 
     def delete(self, tag: t.Union[str, Tag]) -> None:
         _tag = Tag.from_taglike(tag)
+
+        if _tag.version == "latest":
+            try:
+                _tag.version = self._fs.readtext(_tag.latest_path())
+            except fs.errors.ResourceNotFound:
+                # if latest path doesn't exist, we don't need to delete anything
+                return
 
         if not self._fs.exists(_tag.path()):
             raise NotFound(f"{self._item_type.get_typename()} '{tag}' not found")

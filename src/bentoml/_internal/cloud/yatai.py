@@ -1,53 +1,54 @@
 from __future__ import annotations
 
 import io
-import typing as t
 import tarfile
 import tempfile
 import threading
+import typing as t
+import warnings
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from concurrent.futures import ThreadPoolExecutor
 
 import fs
 import requests
 from rich.live import Live
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from ..tag import Tag
+from ...exceptions import BentoMLException
+from ...exceptions import NotFound
 from ..bento import Bento
 from ..bento import BentoStore
-from ..utils import calc_dir_size
-from .config import get_rest_api_client
+from ..configuration.containers import BentoMLContainer
 from ..models import Model
-from ..models import copy_model
 from ..models import ModelStore
-from .schemas import BentoApiSchema
-from .schemas import LabelItemSchema
-from .schemas import BentoRunnerSchema
-from .schemas import BentoUploadStatus
-from .schemas import CreateBentoSchema
-from .schemas import CreateModelSchema
-from .schemas import ModelUploadStatus
-from .schemas import UpdateBentoSchema
-from .schemas import CompletePartSchema
-from .schemas import BentoManifestSchema
-from .schemas import ModelManifestSchema
-from .schemas import TransmissionStrategy
-from .schemas import FinishUploadBentoSchema
-from .schemas import FinishUploadModelSchema
-from .schemas import BentoRunnerResourceSchema
-from .schemas import CreateBentoRepositorySchema
-from .schemas import CreateModelRepositorySchema
-from .schemas import CompleteMultipartUploadSchema
-from .schemas import PreSignMultipartUploadUrlSchema
-from .base import CloudClient
+from ..models import copy_model
+from ..tag import Tag
+from ..utils import calc_dir_size
 from .base import FILE_CHUNK_SIZE
 from .base import CallbackIOWrapper
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ..configuration.containers import BentoMLContainer
+from .base import CloudClient
+from .config import get_rest_api_client
+from .schemas import BentoApiSchema
+from .schemas import BentoManifestSchema
+from .schemas import BentoRunnerResourceSchema
+from .schemas import BentoRunnerSchema
+from .schemas import BentoUploadStatus
+from .schemas import CompleteMultipartUploadSchema
+from .schemas import CompletePartSchema
+from .schemas import CreateBentoRepositorySchema
+from .schemas import CreateBentoSchema
+from .schemas import CreateModelRepositorySchema
+from .schemas import CreateModelSchema
+from .schemas import FinishUploadBentoSchema
+from .schemas import FinishUploadModelSchema
+from .schemas import LabelItemSchema
+from .schemas import ModelManifestSchema
+from .schemas import ModelUploadStatus
+from .schemas import PreSignMultipartUploadUrlSchema
+from .schemas import TransmissionStrategy
+from .schemas import UpdateBentoSchema
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
@@ -80,6 +81,7 @@ class YataiClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ):
         yatai_rest_client = get_rest_api_client(context)
         name = bento.tag.name
@@ -88,7 +90,9 @@ class YataiClient(CloudClient):
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
         model_tags = [m.tag for m in info.models]
-        model_store = bento._model_store  # type: ignore
+        local_model_store = bento._model_store
+        if local_model_store is not None and len(bento._model_store.list()) > 0:
+            model_store = local_model_store
         models = (model_store.get(name) for name in model_tags)
         with ThreadPoolExecutor(max_workers=max(len(model_tags), 1)) as executor:
 
@@ -397,8 +401,8 @@ class YataiClient(CloudClient):
         tag: str | Tag,
         *,
         force: bool = False,
-        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         context: str | None = None,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> Bento:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
@@ -421,6 +425,7 @@ class YataiClient(CloudClient):
         force: bool = False,
         bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         context: str | None = None,
+        global_model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Bento:
         try:
             bento = bento_store.get(tag)
@@ -539,12 +544,12 @@ class YataiClient(CloudClient):
                         bento = Bento.from_fs(temp_fs)
                         for model_tag in remote_bento.manifest.models:
                             with self.spin(
-                                text=f'Copying model "{model_tag}" to bento'
+                                text=f'Copying model "{model_tag}" to model store'
                             ):
                                 copy_model(
                                     model_tag,
                                     src_model_store=model_store,
-                                    target_model_store=bento._model_store,  # type: ignore
+                                    target_model_store=global_model_store,
                                 )
                         bento = bento.save(bento_store)
                         self.log_progress.add_task(
@@ -842,6 +847,7 @@ class YataiClient(CloudClient):
         force: bool = False,
         context: str | None = None,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
+        query: str | None = None,
     ) -> Model:
         with Live(self.progress_group):
             download_task_id = self.transmission_progress.add_task(
@@ -853,6 +859,7 @@ class YataiClient(CloudClient):
                 force=force,
                 model_store=model_store,
                 context=context,
+                query=query,
             )
 
     @inject
@@ -864,24 +871,51 @@ class YataiClient(CloudClient):
         force: bool = False,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
         context: str | None = None,
+        query: str | None = None,
     ) -> Model:
-        try:
-            model = model_store.get(tag)
-            if not force:
-                self.log_progress.add_task(
-                    f'[bold blue]Model "{tag}" already exists locally, skipping'
-                )
-                return model
-            else:
-                model_store.delete(tag)
-        except NotFound:
-            pass
-        yatai_rest_client = get_rest_api_client(context)
         _tag = Tag.from_taglike(tag)
+        try:
+            model = model_store.get(_tag)
+        except NotFound:
+            model = None
+        else:
+            if _tag.version not in (None, "latest"):
+                if not force:
+                    self.log_progress.add_task(
+                        f'[bold blue]Model "{tag}" already exists locally, skipping'
+                    )
+                    return model
+                else:
+                    model_store.delete(tag)
+        yatai_rest_client = get_rest_api_client(context)
         name = _tag.name
         version = _tag.version
-        if version is None:
-            raise BentoMLException(f'Model "{_tag}" version cannot be None')
+        if version in (None, "latest"):
+            latest_model = yatai_rest_client.get_latest_model(name, query=query)
+            if latest_model is None:
+                raise BentoMLException(
+                    f'Model "{_tag}" not found on Yatai, you may need to specify a version'
+                )
+            if model is not None:
+                if not force and latest_model.build_at < model.creation_time:
+                    self.log_progress.add_task(
+                        f'[bold blue]Newer version of model "{name}" exists locally, skipping'
+                    )
+                    return model
+                if model.tag.version == latest_model.version:
+                    if not force:
+                        self.log_progress.add_task(
+                            f'[bold blue]Model "{model.tag}" already exists locally, skipping'
+                        )
+                        return model
+                    else:
+                        model_store.delete(model.tag)
+            version = latest_model.version
+        elif query:
+            warnings.warn(
+                "`query` is ignored when model version is specified", UserWarning
+            )
+
         with self.spin(text=f'Getting a presigned download url for model "{_tag}"..'):
             remote_model = yatai_rest_client.presign_model_download_url(name, version)
 

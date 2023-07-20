@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from bentoml import __version__
+import importlib.metadata
 
 # -- Project information -----------------------------------------------------
 
@@ -8,7 +8,7 @@ project = "BentoML"
 copyright = f"2022-{datetime.now().year}, bentoml.com"
 author = "bentoml.com"
 
-version = __version__
+version = importlib.metadata.version("bentoml")
 
 # -- General configuration ---------------------------------------------------
 
@@ -88,8 +88,8 @@ autodoc_typehints_description_target = "documented"
 autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth = 10
 
-ogp_site_url = "http://docs.bentoml.org"
-ogp_image = "https://docs.bentoml.org/en/latest/_static/img/bentoml-banner.png"
+ogp_site_url = "http://docs.bentoml.com"
+ogp_image = "https://docs.bentoml.com/en/latest/_static/img/bentoml-banner.jpg"
 ogp_site_name = "BentoML Documentation"
 ogp_use_first_image = True
 
@@ -159,7 +159,10 @@ html_theme_options = {
 
 html_title = "BentoML"
 html_static_path = ["_static"]
-html_css_files = ["css/custom.css", "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"]
+html_css_files = [
+    "css/custom.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css",
+]
 html_js_files = ["js/custom.js"]
 html_show_sphinx = False
 html_favicon = "_static/img/favicon-32x32.png"
@@ -171,6 +174,12 @@ spelling_word_list_filename = ["bentoml_wordlist.txt"]
 autodoc_mock_imports = [
     "torch",
     "torchvision",
+    "diffusers",
+    "detectron2",
+    "easyocr",
+    "flax",
+    "jax",
+    "jaxlib",
     "torchtext",
     "fastai",
     "fastai.learner.Learner",

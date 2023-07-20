@@ -6,13 +6,13 @@ import typing as t
 from unittest.mock import ANY
 from unittest.mock import MagicMock
 
-import pytest
 import cloudpickle
+import pytest
 
 import bentoml
-from bentoml.exceptions import NotFound
-from bentoml._internal.tag import Tag
 from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.tag import Tag
+from bentoml.exceptions import NotFound
 
 from .test_bento import build_test_bento
 
@@ -74,7 +74,7 @@ def test_local_bento_strategy(build_bento: bentoml.Bento):
 @pytest.mark.usefixtures(
     "change_test_dir", "reset_serialization_strategy", "reload_service_instance"
 )
-def test_remote_bento_strategy_with_local_store_hit(build_bento:bentoml.Bento):
+def test_remote_bento_strategy_with_local_store_hit(build_bento: bentoml.Bento):
     bentoml.set_serialization_strategy("REMOTE_BENTO")
     svc = bentoml.load(build_bento.tag)
     del sys.modules["simplebento"]

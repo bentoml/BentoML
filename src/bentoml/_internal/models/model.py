@@ -1,49 +1,49 @@
 from __future__ import annotations
 
+import importlib
 import io
+import logging
 import os
 import typing as t
-import logging
-import importlib
-from sys import version_info as pyver
-from types import ModuleType
-from typing import overload
-from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
+from sys import version_info as pyver
+from types import ModuleType
+from typing import TYPE_CHECKING
+from typing import overload
 
-import fs
 import attr
-import yaml
+import cloudpickle  # type: ignore (no cloudpickle types)
+import fs
 import fs.errors
 import fs.mirror
-import cloudpickle  # type: ignore (no cloudpickle types)
-from fs.base import FS
-from cattr.gen import override
+import yaml
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
-from simple_di import inject
+from cattr.gen import override
+from fs.base import FS
 from simple_di import Provide
+from simple_di import inject
 
-from ..tag import Tag
+from ...exceptions import BentoMLException
+from ...exceptions import NotFound
+from ..configuration import BENTOML_VERSION
+from ..configuration.containers import BentoMLContainer
 from ..store import Store
 from ..store import StoreItem
+from ..tag import Tag
 from ..types import MetadataDict
+from ..types import ModelSignatureDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
 from ..utils import normalize_labels_value
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ..configuration import BENTOML_VERSION
-from ..configuration.containers import BentoMLContainer
-from ..types import ModelSignatureDict
 
 if t.TYPE_CHECKING:
-    from ..types import PathType
-    from ..runner import Runner
     from ..runner import Runnable
+    from ..runner import Runner
     from ..runner.strategy import Strategy
+    from ..types import PathType
 
 
 T = t.TypeVar("T")

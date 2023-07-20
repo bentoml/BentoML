@@ -1,39 +1,39 @@
 from __future__ import annotations
 
-import typing as t
-import logging
 import functools
-from types import ModuleType
+import logging
+import typing as t
 from pickle import UnpicklingError
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 import msgpack.exceptions
 
 import bentoml
 
-from ..types import LazyType
-from ..utils import LazyLoader
-from ..utils.pkg import get_pkg_version
-from .common.jax import jax
-from .common.jax import jnp
-from .common.jax import JaxArrayContainer
-from ...exceptions import NotFound
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
+from ...exceptions import NotFound
 from ..models.model import ModelContext
 from ..models.model import PartialKwargsModelOptions as ModelOptions
 from ..runner.utils import Params
+from ..types import LazyType
+from ..utils import LazyLoader
+from ..utils.pkg import get_pkg_version
+from .common.jax import JaxArrayContainer
+from .common.jax import jax
+from .common.jax import jnp
 
 if TYPE_CHECKING:
     from flax import struct
-    from jax.lib import xla_bridge
     from flax.core import FrozenDict
     from jax._src.lib.xla_bridge import XlaBackend
+    from jax.lib import xla_bridge
 
-    from .. import external_typing as ext
-    from ..tag import Tag
     from ...types import ModelSignature
+    from .. import external_typing as ext
     from ..models.model import ModelSignaturesType
+    from ..tag import Tag
 else:
     xla_bridge = LazyLoader("xla_bridge", globals(), "jax.lib.xla_bridge")
 

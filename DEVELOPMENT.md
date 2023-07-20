@@ -10,10 +10,15 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 <details><summary><h3>with the Command Line</h3></summary>
 
-1. Make sure to have [Git](https://git-scm.com/), [pip](https://pip.pypa.io/en/stable/installation/), and [Python3.7+](https://www.python.org/downloads/) installed.
+1. Make sure to have [Git](https://git-scm.com/),
+   [pip](https://pip.pypa.io/en/stable/installation/),
+   [Python3.8+](https://www.python.org/downloads/), and
+   [PDM](https://pdm.fming.dev/latest/) installed.
 
-   Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using a UNIX-based system for a better developer experience.
-   If you don't want to use `make` then please refer to the [Makefile](./Makefile) for specific commands on a given make target.
+   Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/)
+   available on your system if you aren't using a UNIX-based system for a better
+   developer experience. If you don't want to use `make` then please refer to
+   the [Makefile](./Makefile) for specific commands on a given make target.
 
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
 
@@ -37,21 +42,21 @@ If you are interested in proposing a new feature, make sure to create a new feat
    git branch --set-upstream-to=upstream/main
    ```
 
-6. Install BentoML with pip in editable mode:
+6. Install BentoML in editable and all development dependencies:
 
    ```bash
-   pip install -e .
+   pdm install -dG io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
+   pre-commit install
    ```
 
-   This installs BentoML in an editable state. The changes you make will automatically be reflected without reinstalling BentoML.
+   This installs BentoML with editable mode via `pdm` and development
+   dependencies in a isolated environment. If you wish not to setup within an
+   isolated environment, pass `--no-isolation` to pdm
 
-7. Install the BentoML development requirements:
+   > **Note**: Make sure to prepend `pdm run` to all commands within this guide
+   > if you are using isolated environment via `pdm`.
 
-   ```bash
-   pip install -r ./requirements/dev-requirements.txt
-   ```
-
-8. Test the BentoML installation either with `bash`:
+7. Test the BentoML installation either with `bash`:
 
    ```bash
    bentoml --version
@@ -70,7 +75,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 1. Confirm that you have the following installed:
 
-   - [Python3.7+](https://www.python.org/downloads/)
+   - [Python3.8+](https://www.python.org/downloads/)
    - VS Code with the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) extensions
 
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
@@ -209,16 +214,12 @@ bentoml get IrisClassifier --verbose
 
 ## Style check, auto-formatting, type-checking
 
-formatter: [black](https://github.com/psf/black), [buf](https://github.com/bufbuild/buf)
-
-linter: [ruff](https://github.com/charliermarsh/ruff), [buf](https://github.com/bufbuild/buf)
-
-type checker: [pyright](https://github.com/microsoft/pyright)
-
-We are using [pre-commit](https://pre-commit.com/) to manage our hooks, and [buf](https://github.com/bufbuild/buf) for formatting and linting
-of our proto files. Configuration can be found [here](./bentoml/grpc/buf.yaml).
-Currently, we are running `buf` with docker, hence we kindly ask our developers
-to have docker available. Docker installation can be found [here](https://docs.docker.com/get-docker/).
+We are using [pre-commit](https://pre-commit.com/) to manage our hooks, and
+[buf](https://github.com/bufbuild/buf) for formatting and linting of our proto
+files. Configuration can be found [here](./bentoml/grpc/buf.yaml). Currently, we
+are running `buf` with docker, hence we kindly ask our developers to have docker
+available. Docker installation can be found
+[here](https://docs.docker.com/get-docker/).
 
 Run linter/format script:
 
@@ -241,13 +242,12 @@ regenerate the proto stubs.
 
 ## Deploy with your changes
 
-Test test out your changes in an actual BentoML model deployment, you can create a new Bento with your custom BentoML source repo:
+Test out your changes in an actual BentoML model deployment, you can create a new Bento with your custom BentoML source repo:
 
 1. Install custom BentoML in editable mode. e.g.:
    - git clone your bentoml fork
    - `pip install -e PATH_TO_THE_FORK`
-2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True` and `export SETUPTOOLS_USE_DISTUTILS=stdlib`
-   - make sure you have the latest setuptools installed: `pip install -U setuptools`
+2. Set env var `export BENTOML_BUNDLE_LOCAL_BUILD=True`
 3. Build a new Bento with `bentoml build` in your project directory
 4. The new Bento will include a wheel file built from the BentoML source, and
    `bentoml containerize` will install it to override the default BentoML installation in base image
@@ -282,7 +282,7 @@ docker:
 Make sure to install all test dependencies:
 
 ```bash
-pip install -r requirements/tests-requirements.txt
+pdm install -G testing -G grpc -G io
 ```
 
 BentoML tests come with a Pytest plugin. Export `PYTEST_PLUGINS`:
@@ -291,31 +291,10 @@ BentoML tests come with a Pytest plugin. Export `PYTEST_PLUGINS`:
 export PYTEST_PLUGINS=bentoml.testing.pytest.plugin
 ```
 
-### Unit tests
-
-You can run unit tests in two ways:
-
-Run all unit tests directly with pytest:
+To run all tests with PDM, do the following:
 
 ```bash
-# GIT_ROOT=$(git rev-parse --show-toplevel)
-pytest tests/unit
-```
-
-### Integration tests
-
-Write a general framework tests under `./tests/integration/frameworks/models`, and the
-run the following command
-
-```bash
-pytest tests/integration/frameworks/test_frameworks.py --framework pytorch
-```
-
-### E2E tests
-
-```bash
-# example: run e2e tests to check for http general features
-pytest tests/e2e/bento_server_grpc
+pdm run all
 ```
 
 ### Adding new test suite

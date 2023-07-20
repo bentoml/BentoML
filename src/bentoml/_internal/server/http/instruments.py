@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import logging
 import contextvars
+import logging
 from timeit import default_timer
 from typing import TYPE_CHECKING
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from ...context import component_context
 from ...configuration.containers import BentoMLContainer
+from ...context import component_context
 
 if TYPE_CHECKING:
     from ... import external_typing as ext

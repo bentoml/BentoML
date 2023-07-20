@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import typing as t
 import asyncio
-import logging
 import functools
+import logging
+import typing as t
 from abc import ABC
 from abc import abstractmethod
 from http.client import BadStatusLine
@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 if t.TYPE_CHECKING:
     from types import TracebackType
 
+    from ..service import Service
     from .grpc import GrpcClient
     from .http import HTTPClient
-    from ..service import Service
 
 
 class Client(ABC):

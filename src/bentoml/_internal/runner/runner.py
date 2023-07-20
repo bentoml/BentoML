@@ -1,24 +1,24 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from abc import ABC
 from abc import abstractmethod
 
 import attr
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
+from ...exceptions import StateException
+from ..configuration.containers import BentoMLContainer
+from ..models.model import Model
 from ..tag import validate_tag_str
 from ..utils import first_not_none
 from .runnable import Runnable
-from .strategy import Strategy
-from .strategy import DefaultStrategy
-from ...exceptions import StateException
-from ..models.model import Model
-from .runner_handle import RunnerHandle
 from .runner_handle import DummyRunnerHandle
-from ..configuration.containers import BentoMLContainer
+from .runner_handle import RunnerHandle
+from .strategy import DefaultStrategy
+from .strategy import Strategy
 
 if t.TYPE_CHECKING:
     from ...triton import Runner as TritonRunner
@@ -171,7 +171,7 @@ class Runner(AbstractRunner):
         """
 
         Runner represents a unit of computation that can be executed on a remote Python worker and scales independently
-        See https://docs.bentoml.org/en/latest/concepts/runner.html for more details.
+        See https://docs.bentoml.com/en/latest/concepts/runner.html for more details.
 
         Args:
             runnable_class: Runnable class that can be executed on a remote Python worker.

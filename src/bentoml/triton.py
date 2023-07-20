@@ -1,25 +1,25 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
+from functools import cached_property
 
 import attr
-from simple_di import inject as _inject
 from simple_di import Provide as _Provide
+from simple_di import inject as _inject
 
-from ._internal.utils import LazyLoader as _LazyLoader
-from ._internal.utils import cached_property as _cached_property
 from ._internal.configuration import get_debug_mode as _get_debug_mode
-from ._internal.runner.runner import RunnerMethod as _RunnerMethod
-from ._internal.runner.runner import AbstractRunner as _AbstractRunner
-from ._internal.runner.runner import object_setattr as _object_setattr
-from ._internal.runner.runnable import RunnableMethodConfig as _RunnableMethodConfig
-from ._internal.runner.runner_handle import DummyRunnerHandle as _DummyRunnerHandle
 from ._internal.configuration.containers import BentoMLContainer as _BentoMLContainer
+from ._internal.runner.runnable import RunnableMethodConfig as _RunnableMethodConfig
+from ._internal.runner.runner import AbstractRunner as _AbstractRunner
+from ._internal.runner.runner import RunnerMethod as _RunnerMethod
+from ._internal.runner.runner import object_setattr as _object_setattr
+from ._internal.runner.runner_handle import DummyRunnerHandle as _DummyRunnerHandle
 from ._internal.runner.runner_handle.remote import TRITON_EXC_MSG as _TRITON_EXC_MSG
 from ._internal.runner.runner_handle.remote import (
     handle_triton_exception as _handle_triton_exception,
 )
+from ._internal.utils import LazyLoader as _LazyLoader
 
 if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as _tritongrpcclient
@@ -148,7 +148,7 @@ class _TritonRunner(_AbstractRunner):
             embedded=False,  # NOTE: TritonRunner shouldn't be used as embedded.
         )
 
-    @_cached_property
+    @cached_property
     def protocol_address(self):
         from ._internal.utils import reserve_free_port
 

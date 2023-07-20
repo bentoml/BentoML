@@ -8,3 +8,5 @@ python:
   packages:
     - scikit-learn
     - pandas
+models:
+  - iris_clf:latest

@@ -92,10 +92,10 @@ def add_cloud_command(cli: click.Group) -> click.Group:
         )
 
     @cloud.command()
-    @click.argument("context", type=click.STRING)
-    def update_current_context(context: str) -> None:  # type: ignore (not accessed)
+    @click.argument("context_name", type=click.STRING)
+    def update_current_context(context_name: str) -> None:  # type: ignore (not accessed)
         """Update current context"""
-        ctx = CloudClientConfig.get_config().set_current_context(context)
+        ctx = CloudClientConfig.get_config().set_current_context(context_name)
         click.echo(f"Successfully switched to context: {ctx.name}")
 
     return cli

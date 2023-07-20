@@ -10,7 +10,6 @@ from . import FrameworkTestModel
 from . import FrameworkTestModelConfiguration as Config
 from . import FrameworkTestModelInput as Input
 from .torchscript import test_x_list
-from .torchscript import test_y
 
 framework = bentoml.pytorch_lightning
 
@@ -24,7 +23,7 @@ def generate_models():
             self.linear = torch.nn.Linear(5, 1, bias=False)
             torch.nn.init.ones_(self.linear.weight)
 
-        def forward(self, x: torch.Tensor):  # noqa
+        def forward(self, x: torch.Tensor):
             return self.linear(x)
 
     yield LightningLinearModel()
@@ -40,7 +39,7 @@ models = [
                     "__call__": [
                         Input(
                             input_args=[x],
-                            expected=lambda out: out == test_y,
+                            expected=lambda out: out == 5,
                         )
                     ],
                 },

@@ -35,7 +35,7 @@ def build_bentoml_editable_wheel(
         from build.env import IsolatedEnvBuilder
     except ModuleNotFoundError as e:
         raise MissingDependencyException(
-            f"Environment variable '{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package ({e}). Install development dependencies with 'pip install -r requirements/dev-requirements.txt' and try again."
+            f"Environment variable '{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package ({e}). Install it with 'pip install -U build' and try again."
         ) from None
 
     # Find bentoml module path

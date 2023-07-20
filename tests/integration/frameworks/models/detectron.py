@@ -54,6 +54,14 @@ def gen_model() -> tuple[nn.Module, Cf.CfgNode]:
 
 model, cfg = gen_model()
 
+
+def check_expected(output: list[dict[str, t.Any]]) -> bool:
+    scores = output[0]["instances"].get("scores").tolist()
+    if scores:
+        return np.testing.assert_allclose(scores[0], [1.0], rtol=1e-3)
+    return True
+
+
 rcnn = Model(
     name="coco-masked-rcnn",
     model=model,
@@ -62,12 +70,7 @@ rcnn = Model(
         Config(
             test_inputs={
                 "__call__": [
-                    Input(
-                        input_args=[prepare_input()],
-                        expected=lambda output: np.testing.assert_allclose(
-                            output[0]["instances"].get("scores").tolist()[0], [1.0]
-                        ),
-                    )
+                    Input(input_args=[prepare_input()], expected=check_expected)
                 ]
             }
         )

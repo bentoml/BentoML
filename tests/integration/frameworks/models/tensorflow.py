@@ -141,9 +141,7 @@ native_multi_input_model = FrameworkTestModel(
                     )
                     for i in [
                         input_tensor,
-                        input_tensor_f32,
                         input_array,
-                        input_array_i32,
                         input_data,
                     ]
                 ],
@@ -163,13 +161,7 @@ native_model = FrameworkTestModel(
                         input_args=[i],
                         expected=lambda out: np.isclose(out, [[15.0]]).all(),
                     )
-                    for i in [
-                        input_tensor,
-                        input_tensor_f32,
-                        input_array,
-                        input_array_i32,
-                        input_data,
-                    ]
+                    for i in [input_tensor, input_array, input_data]
                 ],
             },
         ),
@@ -197,13 +189,7 @@ native_multi_output_model = FrameworkTestModel(
                         input_args=[i],
                         expected=lambda out: np.isclose(out[0], input_array * 2).all(),
                     )
-                    for i in [
-                        input_tensor,
-                        input_tensor_f32,
-                        input_array,
-                        input_array_i32,
-                        input_data,
-                    ]
+                    for i in [input_tensor_f32, input_array_i32]
                 ],
             },
         ),

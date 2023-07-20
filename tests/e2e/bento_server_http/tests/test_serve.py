@@ -134,7 +134,7 @@ async def test_serve_with_api_max_concurrency(bentoml_home: str):
 
 
 @pytest.mark.skipif(
-    sys.platform == "win32",
+    os.getenv("GITHUB_ACTIONS") is not None and sys.platform == "win32",
     reason="Windows runner doesn't have enough cores to run this test",
 )
 @pytest.mark.asyncio

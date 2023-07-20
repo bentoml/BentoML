@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.metadata
 import os
 import platform
 import shlex
@@ -105,7 +106,6 @@ def pretty_format(
 
 
 def add_env_command(cli: click.Group) -> None:
-    from bentoml import __version__ as BENTOML_VERSION
     from bentoml._internal.utils.pkg import PackageNotFoundError
     from bentoml._internal.utils.pkg import get_pkg_version
     from bentoml.exceptions import CLIException
@@ -127,7 +127,7 @@ def add_env_command(cli: click.Group) -> None:
         is_windows = sys.platform == "win32"
 
         info_dict: dict[str, str | list[str]] = {
-            "bentoml": BENTOML_VERSION,
+            "bentoml": importlib.metadata.version("bentoml"),
             "python": platform.python_version(),
             "platform": platform.platform(),
         }

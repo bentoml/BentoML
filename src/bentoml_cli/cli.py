@@ -15,7 +15,6 @@ from bentoml_cli.utils import BentoMLCommandGroup
 
 
 def create_bentoml_cli() -> click.Group:
-    from bentoml import __version__ as BENTOML_VERSION
     from bentoml._internal.context import component_context
 
     component_context.component_type = "cli"
@@ -23,7 +22,7 @@ def create_bentoml_cli() -> click.Group:
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
 
     @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)
-    @click.version_option(BENTOML_VERSION, "-v", "--version")
+    @click.version_option("-v", "--version")
     def bentoml_cli():
         """
         \b

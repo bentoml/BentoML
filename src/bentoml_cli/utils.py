@@ -194,7 +194,10 @@ def opt_callback(ctx: Context, param: Parameter, value: ClickParamType):
 
 @attr.define
 class Cli:
-    context: str | None
+    context: str | None = attr.field(default=None)
+
+    def with_options(self, **attrs: t.Any) -> t.Any:
+        return attr.evolve(self, **attrs)
 
 
 class BentoMLCommandGroup(click.Group):

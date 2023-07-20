@@ -339,7 +339,6 @@ def add_bento_management_commands(cli: Group):
         push: bool,
         force: bool,
         threads: int,
-        context: str | None,
         containerize: bool,
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],

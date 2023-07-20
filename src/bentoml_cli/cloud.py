@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+import typing as t
 
 import click
 import click_option_group as cog
+
+if t.TYPE_CHECKING:
+    from .utils import Cli
 
 
 def add_cloud_command(cli: click.Group) -> click.Group:
@@ -12,7 +16,6 @@ def add_cloud_command(cli: click.Group) -> click.Group:
     from bentoml._internal.cloud.config import CloudClientContext
     from bentoml._internal.cloud.config import add_context
     from bentoml._internal.cloud.config import default_context_name
-    from bentoml._internal.configuration import get_quiet_mode
     from bentoml._internal.utils import bentoml_cattr
     from bentoml.exceptions import CLIException
     from bentoml_cli.utils import BentoMLCommandGroup
@@ -40,13 +43,8 @@ def add_cloud_command(cli: click.Group) -> click.Group:
         type=click.STRING,
         help="BentoCloud or Yatai user API token",
     )
-    @click.option(
-        "--context",
-        type=click.STRING,
-        help="BentoCloud or Yatai context name for the endpoint and API token",
-        default=default_context_name,
-    )
-    def login(endpoint: str, api_token: str, context: str) -> None:  # type: ignore (not accessed)
+    @click.pass_obj
+    def login(obj: Cli, endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
         """Login to BentoCloud or Yatai server."""
         cloud_rest_client = RestApiClient(endpoint, api_token)
         user = cloud_rest_client.get_current_user()
@@ -60,7 +58,7 @@ def add_cloud_command(cli: click.Group) -> click.Group:
             raise CLIException("current organization is not found")
 
         ctx = CloudClientContext(
-            name=context,
+            name=obj.context if obj.context is not None else default_context_name,
             endpoint=endpoint,
             api_token=api_token,
             email=user.email,
@@ -74,9 +72,24 @@ def add_cloud_command(cli: click.Group) -> click.Group:
     @cloud.command(aliases=["current-context"])
     def get_current_context() -> None:  # type: ignore (not accessed)
         """Get current cloud context."""
-        cur = CloudClientConfig.get_config().get_current_context()
-        if not get_quiet_mode():
-            click.echo(json.dumps(bentoml_cattr.unstructure(cur), indent=2))
+        click.echo(
+            json.dumps(
+                bentoml_cattr.unstructure(
+                    CloudClientConfig.get_config().get_current_context()
+                ),
+                indent=2,
+            )
+        )
+
+    @cloud.command()
+    def list_context() -> None:  # type: ignore (not accessed)
+        """List all available context."""
+        config = CloudClientConfig.get_config()
+        click.echo(
+            json.dumps(
+                bentoml_cattr.unstructure([i.name for i in config.contexts]), indent=2
+            )
+        )
 
     @cloud.command()
     @click.argument("context", type=click.STRING)

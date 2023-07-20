@@ -194,6 +194,8 @@ def opt_callback(ctx: Context, param: Parameter, value: ClickParamType):
 
 @attr.define
 class Cli:
+    """This is the click.Context object that will be used in BentoML CLI."""
+
     context: str | None = attr.field(default=None)
 
     def with_options(self, **attrs: t.Any) -> t.Any:

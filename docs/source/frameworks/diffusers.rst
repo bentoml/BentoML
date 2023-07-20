@@ -78,8 +78,7 @@ Create a BentoML service with the previously saved :code:`sd2.1` model using the
 
     @svc.api(input=JSON(), output=Image())
     async def txt2img(input_data):
-	kwargs = input_data.dict()
-	res = await sd21_runner.async_run(**kwargs)
+	res = await sd21_runner.async_run(**input_data)
 	images = res[0]
 	return images[0]
 

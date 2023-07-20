@@ -30,8 +30,10 @@ from ._internal.cloud import YataiClient
 from ._internal.context import ServiceContext as Context
 from ._internal.models import Model
 from ._internal.monitoring import monitor
+from ._internal.resource import Resource
 from ._internal.runner import Runnable
 from ._internal.runner import Runner
+from ._internal.runner.strategy import Strategy
 from ._internal.service import Service
 from ._internal.service.loader import load
 from ._internal.tag import Tag
@@ -219,4 +221,6 @@ __all__ = [
     "load_config",
     "save_config",
     "set_serialization_strategy",
+    "Strategy",
+    "Resource",
 ]

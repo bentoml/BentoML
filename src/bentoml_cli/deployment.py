@@ -8,6 +8,8 @@ if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
     from bentoml._internal.cloud.schemas import DeploymentListSchema
     from bentoml._internal.cloud.schemas import DeploymentSchema
+
+    from .utils import SharedOptions
 else:
     TupleStrAny = tuple
 
@@ -39,9 +41,6 @@ def add_deployment_command(cli: click.Group) -> None:
                 required=True,
             ),
             click.option(
-                "--context", type=click.STRING, default=None, help="Yatai context name."
-            ),
-            click.option(
                 "--cluster-name",
                 type=click.STRING,
                 default=None,
@@ -70,13 +69,11 @@ def add_deployment_command(cli: click.Group) -> None:
         type=click.File(),
         help="JSON file path for the deployment configuration",
     )
-    @click.option(
-        "--context", type=click.STRING, default=None, help="Yatai context name."
-    )
     @output_option
+    @click.pass_obj
     def create(  # type: ignore
+        shared_options: SharedOptions,
         file: str,
-        context: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Create a deployment on BentoCloud.
@@ -85,7 +82,9 @@ def add_deployment_command(cli: click.Group) -> None:
         A deployment can be created using a json file with configurations.
         The json file has the exact format as the one on BentoCloud Deployment UI.
         """
-        res = client.deployment.create_from_file(path_or_stream=file, context=context)
+        res = client.deployment.create_from_file(
+            path_or_stream=file, context=shared_options.cloud_context
+        )
         if output == "default":
             console.print(res)
         elif output == "json":
@@ -101,15 +100,13 @@ def add_deployment_command(cli: click.Group) -> None:
     )
     @click.option("-n", "--name", type=click.STRING, help="Deployment name")
     @click.option("--bento", type=click.STRING, help="Bento tag")
-    @click.option(
-        "--context", type=click.STRING, default=None, help="Yatai context name."
-    )
     @output_option
+    @click.pass_obj
     def update(  # type: ignore
+        shared_options: SharedOptions,
         file: str | None,
         name: str | None,
         bento: str | None,
-        context: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Update a deployment on BentoCloud.
@@ -122,12 +119,14 @@ def add_deployment_command(cli: click.Group) -> None:
             if name is not None:
                 click.echo("Reading from file, ignoring --name", err=True)
             res = client.deployment.update_from_file(
-                path_or_stream=file,
-                context=context,
+                path_or_stream=file, context=shared_options.cloud_context
             )
         elif name is not None:
             res = client.deployment.update(
-                name, bento=bento, context=context, latest_bento=True
+                name,
+                bento=bento,
+                context=shared_options.cloud_context,
+                latest_bento=True,
             )
         else:
             raise click.BadArgumentUsage(
@@ -142,9 +141,10 @@ def add_deployment_command(cli: click.Group) -> None:
 
     @deployment_cli.command()
     @shared_decorator
+    @click.pass_obj
     def get(  # type: ignore
+        shared_options: SharedOptions,
         deployment_name: str,
-        context: str,
         cluster_name: str,
         kube_namespace: str,
         output: t.Literal["json", "default"],
@@ -152,7 +152,7 @@ def add_deployment_command(cli: click.Group) -> None:
         """Get a deployment on BentoCloud."""
         res = client.deployment.get(
             deployment_name=deployment_name,
-            context=context,
+            context=shared_options.cloud_context,
             cluster_name=cluster_name,
             kube_namespace=kube_namespace,
         )
@@ -165,9 +165,10 @@ def add_deployment_command(cli: click.Group) -> None:
 
     @deployment_cli.command()
     @shared_decorator
+    @click.pass_obj
     def terminate(  # type: ignore
+        shared_options: SharedOptions,
         deployment_name: str,
-        context: str,
         cluster_name: str,
         kube_namespace: str,
         output: t.Literal["json", "default"],
@@ -175,7 +176,7 @@ def add_deployment_command(cli: click.Group) -> None:
         """Terminate a deployment on BentoCloud."""
         res = client.deployment.terminate(
             deployment_name=deployment_name,
-            context=context,
+            context=shared_options.cloud_context,
             cluster_name=cluster_name,
             kube_namespace=kube_namespace,
         )
@@ -188,9 +189,10 @@ def add_deployment_command(cli: click.Group) -> None:
 
     @deployment_cli.command()
     @shared_decorator
+    @click.pass_obj
     def delete(  # type: ignore
+        shared_options: SharedOptions,
         deployment_name: str,
-        context: str,
         cluster_name: str,
         kube_namespace: str,
         output: t.Literal["json", "default"],
@@ -198,7 +200,7 @@ def add_deployment_command(cli: click.Group) -> None:
         """Delete a deployment on BentoCloud."""
         res = client.deployment.delete(
             deployment_name=deployment_name,
-            context=context,
+            context=shared_options.cloud_context,
             cluster_name=cluster_name,
             kube_namespace=kube_namespace,
         )
@@ -210,9 +212,6 @@ def add_deployment_command(cli: click.Group) -> None:
         return res
 
     @deployment_cli.command()
-    @click.option(
-        "--context", type=click.STRING, default=None, help="Yatai context name."
-    )
     @click.option(
         "--cluster-name", type=click.STRING, default=None, help="Name of the cluster."
     )
@@ -235,8 +234,9 @@ def add_deployment_command(cli: click.Group) -> None:
         type=click.Choice(["json", "default", "table"]),
         default="table",
     )
+    @click.pass_obj
     def list(  # type: ignore
-        context: str,
+        shared_options: SharedOptions,
         cluster_name: str,
         query: str,
         search: str,
@@ -246,7 +246,7 @@ def add_deployment_command(cli: click.Group) -> None:
     ) -> DeploymentListSchema:
         """List existing deployments on BentoCloud."""
         res = client.deployment.list(
-            context=context,
+            context=shared_options.cloud_context,
             cluster_name=cluster_name,
             query=query,
             search=search,

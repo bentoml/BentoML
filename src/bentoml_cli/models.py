@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import typing as t
-from typing import TYPE_CHECKING
 
 import click
 import yaml
@@ -13,10 +12,12 @@ from bentoml_cli.utils import BentoMLCommandGroup
 from bentoml_cli.utils import is_valid_bento_name
 from bentoml_cli.utils import is_valid_bento_tag
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from click import Context
     from click import Group
     from click import Parameter
+
+    from .utils import SharedOptions
 
 
 def parse_delete_targets_argument_callback(
@@ -251,9 +252,6 @@ def add_model_management_commands(cli: Group) -> None:
         help="Force pull from yatai to local and overwrite even if it already exists in local",
     )
     @click.option(
-        "--context", type=click.STRING, default=None, help="Yatai context name."
-    )
-    @click.option(
         "-F",
         "--bentofile",
         type=click.STRING,
@@ -261,7 +259,7 @@ def add_model_management_commands(cli: Group) -> None:
         help="Path to bentofile. Default to 'bentofile.yaml'",
     )
     @click.pass_context
-    def pull(ctx: click.Context, model_tag: str | None, force: bool, context: str, bentofile: str):  # type: ignore (not accessed)
+    def pull(ctx: click.Context, model_tag: str | None, force: bool, bentofile: str):  # type: ignore (not accessed)
         """Pull Model from a yatai server. If model_tag is not provided,
         it will pull models defined in bentofile.yaml.
         """
@@ -270,7 +268,7 @@ def add_model_management_commands(cli: Group) -> None:
         if model_tag is not None:
             if ctx.get_parameter_source("bentofile") != ParameterSource.DEFAULT:
                 click.echo("-f bentofile is ignored when model_tag is provided")
-            cloud_client.pull_model(model_tag, force=force, context=context)
+            cloud_client.pull_model(model_tag, force=force, context=ctx.obj.context)
             return
 
         try:
@@ -287,7 +285,10 @@ def add_model_management_commands(cli: Group) -> None:
             )
         for model_spec in build_config.models:
             cloud_client.pull_model(
-                model_spec.tag, force=force, context=context, query=model_spec.filter
+                model_spec.tag,
+                force=force,
+                context=t.cast("SharedOptions", ctx.obj).cloud_context,
+                query=model_spec.filter,
             )
 
     @model_cli.command()
@@ -305,14 +306,15 @@ def add_model_management_commands(cli: Group) -> None:
         default=10,
         help="Number of threads to use for upload",
     )
-    @click.option(
-        "--context", type=click.STRING, default=None, help="Yatai context name."
-    )
-    def push(model_tag: str, force: bool, threads: int, context: str):  # type: ignore (not accessed)
+    @click.pass_obj
+    def push(shared_options: SharedOptions, model_tag: str, force: bool, threads: int):  # type: ignore (not accessed)
         """Push Model to a yatai server."""
         model_obj = model_store.get(model_tag)
         if not model_obj:
             raise click.ClickException(f"Model {model_tag} not found in local store")
         cloud_client.push_model(
-            model_obj, force=force, threads=threads, context=context
+            model_obj,
+            force=force,
+            threads=threads,
+            context=shared_options.cloud_context,
         )

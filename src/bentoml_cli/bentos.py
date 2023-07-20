@@ -25,6 +25,8 @@ if t.TYPE_CHECKING:
     from bentoml._internal.cloud import BentoCloudClient
     from bentoml._internal.container import DefaultBuilder
 
+    from .utils import SharedOptions
+
 BENTOML_FIGLET = """
 ██████╗ ███████╗███╗   ██╗████████╗ ██████╗ ███╗   ███╗██╗
 ██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗████╗ ████║██║
@@ -254,12 +256,12 @@ def add_bento_management_commands(cli: Group):
         default=False,
         help="Force pull from yatai to local and overwrite even if it already exists in local",
     )
-    @click.option(
-        "--context", type=click.STRING, default=None, help="Yatai context name."
-    )
-    def pull(bento_tag: str, force: bool, context: str) -> None:  # type: ignore (not accessed)
+    @click.pass_obj
+    def pull(shared_options: SharedOptions, bento_tag: str, force: bool) -> None:  # type: ignore (not accessed)
         """Pull Bento from a yatai server."""
-        cloud_client.pull_bento(bento_tag, force=force, context=context)
+        cloud_client.pull_bento(
+            bento_tag, force=force, context=shared_options.cloud_context
+        )
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -276,16 +278,17 @@ def add_bento_management_commands(cli: Group):
         default=10,
         help="Number of threads to use for upload",
     )
-    @click.option(
-        "--context", type=click.STRING, default=None, help="Yatai context name."
-    )
-    def push(bento_tag: str, force: bool, threads: int, context: str) -> None:  # type: ignore (not accessed)
+    @click.pass_obj
+    def push(shared_options: SharedOptions, bento_tag: str, force: bool, threads: int) -> None:  # type: ignore (not accessed)
         """Push Bento to a yatai server."""
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
         cloud_client.push_bento(
-            bento_obj, force=force, threads=threads, context=context
+            bento_obj,
+            force=force,
+            threads=threads,
+            context=shared_options.cloud_context,
         )
 
     @cli.command()
@@ -326,6 +329,10 @@ def add_bento_management_commands(cli: Group):
         type=click.BOOL,
         help="Whether to push the result bento to BentoCloud. Make sure to login with 'bentoml cloud login' first.",
     )
+    @click.option(
+        "--force", is_flag=True, default=False, help="Forced push to BentoCloud"
+    )
+    @click.option("--threads", default=10, help="Number of threads to use for upload")
     @click.pass_context
     @inject
     def build(  # type: ignore (not accessed)
@@ -335,6 +342,8 @@ def add_bento_management_commands(cli: Group):
         version: str,
         output: t.Literal["tag", "default"],
         push: bool,
+        force: bool,
+        threads: int,
         containerize: bool,
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
@@ -390,7 +399,12 @@ def add_bento_management_commands(cli: Group):
         if push:
             if not get_quiet_mode():
                 click.secho(f"\nPushing {bento} to BentoCloud...", fg="magenta")
-            _cloud_client.push_bento(bento)
+            _cloud_client.push_bento(
+                bento,
+                force=force,
+                threads=threads,
+                context=t.cast("SharedOptions", ctx.obj).cloud_context,
+            )
         elif containerize:
             backend: DefaultBuilder = t.cast(
                 "DefaultBuilder", os.getenv("BENTOML_CONTAINERIZE_BACKEND", "docker")

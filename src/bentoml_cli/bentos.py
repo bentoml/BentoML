@@ -1,32 +1,37 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import typing as t
 
-import yaml
 import click
-from simple_di import inject
-from simple_di import Provide
-from rich.table import Table
+import click_option_group as cog
+import yaml
 from rich.syntax import Syntax
+from rich.table import Table
+from simple_di import Provide
+from simple_di import inject
 
-from bentoml_cli.utils import is_valid_bento_tag
 from bentoml_cli.utils import is_valid_bento_name
+from bentoml_cli.utils import is_valid_bento_tag
 
 if t.TYPE_CHECKING:
-    from click import Group
     from click import Context
+    from click import Group
     from click import Parameter
 
     from bentoml._internal.bento import BentoStore
+    from bentoml._internal.cloud import BentoCloudClient
+    from bentoml._internal.container import DefaultBuilder
 
 BENTOML_FIGLET = """
-██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+██████╗ ███████╗███╗   ██╗████████╗ ██████╗ ███╗   ███╗██╗
+██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗████╗ ████║██║
+██████╔╝█████╗  ██╔██╗ ██║   ██║   ██║   ██║██╔████╔██║██║
+██╔══██╗██╔══╝  ██║╚██╗██║   ██║   ██║   ██║██║╚██╔╝██║██║
+██████╔╝███████╗██║ ╚████║   ██║   ╚██████╔╝██║ ╚═╝ ██║███████╗
+╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚══════╝
 """
 
 
@@ -54,17 +59,16 @@ def parse_delete_targets_argument_callback(
 def add_bento_management_commands(cli: Group):
     import bentoml
     from bentoml import Tag
-    from bentoml.bentos import import_bento
-    from bentoml._internal.utils import rich_console as console
+    from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
+    from bentoml._internal.bento.bento import Bento
+    from bentoml._internal.bento.build_config import BentoBuildConfig
+    from bentoml._internal.configuration import get_quiet_mode
+    from bentoml._internal.configuration.containers import BentoMLContainer
     from bentoml._internal.utils import calc_dir_size
     from bentoml._internal.utils import human_readable_size
     from bentoml._internal.utils import resolve_user_filepath
-    from bentoml._internal.bento.bento import Bento
-    from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-    from bentoml._internal.configuration import get_quiet_mode
-    from bentoml._internal.bento.build_config import BentoBuildConfig
-    from bentoml._internal.configuration.containers import BentoMLContainer
-    from bentoml._internal.utils.analytics.usage_stats import _usage_event_debugging
+    from bentoml._internal.utils import rich_console as console
+    from bentoml.bentos import import_bento
 
     bento_store = BentoMLContainer.bento_store.get()
     cloud_client = BentoMLContainer.bentocloud_client.get()
@@ -307,29 +311,46 @@ def add_bento_management_commands(cli: Group):
         show_default=True,
         help="Output log format. '-o tag' to display only bento tag.",
     )
+    @cog.optgroup.group(cls=cog.MutuallyExclusiveOptionGroup, name="Utilities options")
+    @cog.optgroup.option(
+        "--containerize",
+        default=False,
+        is_flag=True,
+        type=click.BOOL,
+        help="Whether to containerize the Bento after building. '--containerize' is the shortcut of 'bentoml build && bentoml containerize'.",
+    )
+    @cog.optgroup.option(
+        "--push",
+        default=False,
+        is_flag=True,
+        type=click.BOOL,
+        help="Whether to push the result bento to BentoCloud. Make sure to login with 'bentoml cloud login' first.",
+    )
+    @click.pass_context
     @inject
     def build(  # type: ignore (not accessed)
+        ctx: click.Context,
         build_ctx: str,
         bentofile: str,
         version: str,
-        output: t.Literal["tag", "default", "yaml"],
+        output: t.Literal["tag", "default"],
+        push: bool,
+        containerize: bool,
         _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ):
         """Build a new Bento from current directory."""
+        from bentoml._internal.configuration import set_quiet_mode
+        from bentoml._internal.log import configure_logging
+
         if output == "tag":
-            from bentoml._internal.configuration import set_quiet_mode
-
-            from bentoml._internal.log import configure_logging
-
             set_quiet_mode(True)
             configure_logging()
 
         try:
             bentofile = resolve_user_filepath(bentofile, build_ctx)
         except FileNotFoundError:
-            raise bentoml.exceptions.InvalidArgument(
-                f'bentofile "{bentofile}" not found'
-            )
+            raise click.ClickException(f'bentofile "{bentofile}" not found')
 
         with open(bentofile, "r", encoding="utf-8") as f:
             build_config = BentoBuildConfig.from_yaml(f)
@@ -340,29 +361,46 @@ def add_bento_management_commands(cli: Group):
             build_ctx=build_ctx,
         ).save(_bento_store)
 
+        containerize_cmd = f"bentoml containerize {bento.tag}"
+        push_cmd = f"bentoml push {bento.tag}"
+
         # NOTE: Don't remove the return statement here, since we will need this
         # for usage stats collection if users are opt-in.
         if output == "tag":
-            if _usage_event_debugging():
-                # NOTE: Since we are logging all of the trackintg id to stdout
-                # We will prefix the tag with __tag__ and we can use regex to correctly
-                # get the tag from 'bentoml.bentos.build|build_bentofile'
-                click.echo(f"__tag__:{bento.tag}")
-            else:
-                # Current behaviour
-                click.echo(bento.tag)
-            return bento
+            click.echo(f"__tag__:{bento.tag}")
+        else:
+            if not get_quiet_mode():
+                click.echo(BENTOML_FIGLET)
+                click.secho(f"Successfully built {bento}.", fg="green")
 
-        if not get_quiet_mode():
-            click.echo(BENTOML_FIGLET)
-            click.secho(f"Successfully built {bento}.", fg="green")
+                click.secho(
+                    f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ {containerize_cmd}"
+                    + "  [or bentoml build --containerize]"
+                    if not containerize
+                    else "",
+                    fg="blue",
+                )
+                click.secho(
+                    f"\n * Push to BentoCloud with `bentoml push`:\n    $ {push_cmd}"
+                    + " [or bentoml build --push]"
+                    if not push
+                    else "",
+                    fg="blue",
+                )
+        if push:
+            if not get_quiet_mode():
+                click.secho(f"\nPushing {bento} to BentoCloud...", fg="magenta")
+            _cloud_client.push_bento(bento)
+        elif containerize:
+            backend: DefaultBuilder = t.cast(
+                "DefaultBuilder", os.getenv("BENTOML_CONTAINERIZE_BACKEND", "docker")
+            )
+            try:
+                bentoml.container.health(backend)
+            except subprocess.CalledProcessError:
+                raise bentoml.exceptions.BentoMLException(
+                    f"Backend {backend} is not healthy"
+                )
+            bentoml.container.build(bento.tag, backend=backend)
 
-            click.secho(
-                f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ bentoml containerize {bento.tag}",
-                fg="blue",
-            )
-            click.secho(
-                f"\n * Push to BentoCloud with `bentoml push`:\n    $ bentoml push {bento.tag}",
-                fg="blue",
-            )
         return bento

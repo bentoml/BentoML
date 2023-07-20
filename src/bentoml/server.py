@@ -1,25 +1,25 @@
 from __future__ import annotations
 
-import os
-import sys
-import signal
-import typing as t
 import logging
-import textwrap
+import os
+import signal
 import subprocess
+import sys
+import textwrap
+import typing as t
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from .exceptions import BentoMLException
-from ._internal.tag import Tag
 from ._internal.bento import Bento
-from ._internal.service import Service
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.service import Service
+from ._internal.tag import Tag
 from ._internal.utils.analytics.usage_stats import BENTOML_SERVE_FROM_SERVER_API
+from .exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from types import TracebackType

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING
 from ....exceptions import StateException
 
 if TYPE_CHECKING:
+    from ..runner import AbstractRunner
     from ..runner import Runner
     from ..runner import RunnerMethod
-    from ..runner import AbstractRunner
 
     R = t.TypeVar("R")
     P = t.ParamSpec("P")

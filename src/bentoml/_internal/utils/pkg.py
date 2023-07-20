@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import importlib.metadata
+import importlib.util
+from importlib.metadata import PackageNotFoundError
 from types import ModuleType
 from typing import cast
-
-import importlib.metadata
-from importlib.metadata import PackageNotFoundError
-import importlib.util
 
 from packaging.version import Version
 

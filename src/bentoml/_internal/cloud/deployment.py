@@ -1,29 +1,29 @@
 from __future__ import annotations
 
 import json
-import typing as t
 import logging
+import typing as t
 
 import attr
+from deepmerge.merger import Merger
 
+from ...exceptions import BentoMLException
 from ..tag import Tag
 from ..utils import bentoml_cattr
+from ..utils import first_not_none
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
+from .schemas import CreateDeploymentSchema
+from .schemas import DeploymentListSchema
 from .schemas import DeploymentMode
 from .schemas import DeploymentSchema
-from .schemas import DeploymentListSchema
+from .schemas import DeploymentTargetCanaryRule
+from .schemas import DeploymentTargetConfig
+from .schemas import DeploymentTargetHPAConf
+from .schemas import DeploymentTargetRunnerConfig
 from .schemas import DeploymentTargetType
 from .schemas import FullDeploymentSchema
-from .schemas import CreateDeploymentSchema
-from .schemas import DeploymentTargetConfig
 from .schemas import UpdateDeploymentSchema
-from .schemas import DeploymentTargetHPAConf
-from .schemas import DeploymentTargetCanaryRule
-from .schemas import DeploymentTargetRunnerConfig
-from deepmerge.merger import Merger
-from ..utils import first_not_none
-from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +175,10 @@ class Deployment:
         context: str | None = None,
         labels: dict[str, str] | None = None,
         canary_rules: t.List[DeploymentTargetCanaryRule] | None = None,
+        latest_bento: bool = False,
     ) -> DeploymentSchema:
+        from bentoml import get as get_bento
+
         if mode is None:
             mode = DeploymentMode.Function
         if type is None:
@@ -197,8 +200,12 @@ class Deployment:
         if bento is None:
             # NOTE: bento.repository.name is the bento.name, and bento.name is the bento.version
             # from bentocloud to bentoml.Tag concept
-            bento = f"{deployment_target.bento.repository.name}:{deployment_target.bento.name}"
+            bento = deployment_target.bento.repository.name
         bento = Tag.from_taglike(bento)
+        if latest_bento and bento.version is None or bento.version == "latest":
+            bento = get_bento(bento).tag
+        elif bento.version is None:
+            bento.version = deployment_target.bento.name
 
         updated_config = bentoml_cattr.unstructure(deployment_target.config)
         if hpa_conf is not None:

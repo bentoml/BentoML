@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import io
-import typing as t
-
 import pickle
-
+import typing as t
 
 # Pickle protocol 5 with out-of-band data. ref: https://peps.python.org/pep-0574/
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import json
 import os
 import sys
-import json
 import typing as t
 
 import click
@@ -40,6 +40,11 @@ import click
     help="The environment variables to pass to the worker process. The format is a JSON string, e.g. '{0: {\"CUDA_VISIBLE_DEVICES\": 0}}'.",
 )
 @click.option(
+    "--timeout",
+    type=click.INT,
+    help="Specify the timeout (seconds) for runner",
+)
+@click.option(
     "--prometheus-dir",
     type=click.Path(exists=True),
     help="Required by prometheus to pass the metrics in multi-process mode",
@@ -51,6 +56,7 @@ def main(
     working_dir: t.Optional[str],
     no_access_log: bool,
     worker_id: int,
+    timeout: int | None,
     worker_env_map: str | None,
     prometheus_dir: str | None,
 ) -> None:
@@ -123,7 +129,10 @@ def main(
     else:
         raise ValueError(f"Runner {runner_name} not found")
 
-    app = RunnerAppFactory(runner, worker_index=worker_id)()
+    factory = RunnerAppFactory(runner, worker_index=worker_id)
+    if timeout is not None:
+        factory.timeout = timeout
+    app = factory()
 
     uvicorn_options: dict[str, int | None | str] = {
         "log_config": None,

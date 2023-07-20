@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+import inspect
 import re
 import typing as t
-import inspect
 from typing import Optional
 
 import yaml
 
-from ..types import is_compatible_type
-from ..context import ServiceContext as Context
 from ...exceptions import InvalidArgument
+from ..context import ServiceContext as Context
 from ..io_descriptors import IODescriptor
+from ..types import is_compatible_type
 
 RESERVED_API_NAMES = [
     "index",
@@ -104,11 +104,11 @@ class InferenceAPI:
                 if (
                     isinstance(annotation, t.Type)
                     and annotation != inspect.Signature.empty
+                    and not is_compatible_type(input_type, annotation)
                 ):
-                    if not is_compatible_type(input_type, annotation):
-                        raise TypeError(
-                            f"Expected type of argument '{first_arg}' to be '{input_type}', got '{sig.parameters[first_arg].annotation}'"
-                        )
+                    raise TypeError(
+                        f"Expected type of argument '{first_arg}' to be '{input_type}', got '{sig.parameters[first_arg].annotation}'"
+                    )
 
                 if len(sig.parameters) > 2:
                     raise ValueError(
@@ -122,11 +122,11 @@ class InferenceAPI:
                     if (
                         isinstance(annotation, t.Type)
                         and annotation != inspect.Signature.empty
+                        and not annotation == Context
                     ):
-                        if not annotation == Context:
-                            raise TypeError(
-                                f"Expected type of argument '{second_arg}' to be '{input_type}', got '{sig.parameters[second_arg].annotation}'"
-                            )
+                        raise TypeError(
+                            f"Expected type of argument '{second_arg}' to be 'bentoml.Context', got '{annotation}'"
+                        )
 
         if user_defined_callback is not None:
             self.func = user_defined_callback

@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import typing as t
-import logging
 import contextlib
+import logging
+import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
 
-from ..utils.pkg import get_pkg_version
-from ...exceptions import NotFound
-from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ...exceptions import InvalidArgument
 from ...exceptions import MissingDependencyException
+from ...exceptions import NotFound
 from ..models.model import ModelContext
+from ..utils.pkg import get_pkg_version
 
 # register PyTorchTensorContainer as import side effect.
 from .common.pytorch import PyTorchTensorContainer
@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from .. import external_typing as ext
-    from ..tag import Tag
     from ...types import ModelSignature
+    from .. import external_typing as ext
     from ..models.model import ModelSignaturesType
+    from ..tag import Tag
 
 try:
     import torch

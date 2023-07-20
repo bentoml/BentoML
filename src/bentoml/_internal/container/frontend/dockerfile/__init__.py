@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
 import attr
 
-from .....exceptions import InvalidArgument
 from .....exceptions import BentoMLException
+from .....exceptions import InvalidArgument
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
@@ -28,6 +28,7 @@ SUPPORTED_CUDA_VERSIONS = [
     "12.0.1",
     "12.1.0",
     "12.1.1",
+    "11.8.0",
     "11.7.1",
     "11.6.2",
     "11.4.3",
@@ -42,7 +43,9 @@ ALLOWED_CUDA_VERSION_ARGS = {
     "12.0": "12.0.1",
     "12.0.1": "12.0.1",
     "12.0.0": "12.0.0",
-    "11": "11.7.1",
+    "11": "11.8.0",
+    "11.8": "11.8.0",
+    "11.8.0": "11.8.0",
     "11.7": "11.7.1",
     "11.7.0": "11.7.1",
     "11.6": "11.6.2",

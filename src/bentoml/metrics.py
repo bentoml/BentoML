@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
 from ._internal.configuration.containers import BentoMLContainer
 

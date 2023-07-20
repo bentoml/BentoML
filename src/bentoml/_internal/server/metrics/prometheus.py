@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import typing as t
-import logging
-from typing import TYPE_CHECKING
 from functools import partial
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ... import external_typing as ext
@@ -60,11 +60,11 @@ class PrometheusClient:
 
         # step 2:
         import prometheus_client
-        import prometheus_client.parser
-        import prometheus_client.metrics
         import prometheus_client.exposition
+        import prometheus_client.metrics
         import prometheus_client.metrics_core
         import prometheus_client.multiprocess
+        import prometheus_client.parser
 
         self._imported = True
         return prometheus_client

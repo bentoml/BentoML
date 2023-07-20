@@ -1,4 +1,3 @@
-# pylint: skip-file
 """
 BentoML
 =======
@@ -17,71 +16,73 @@ And join us in the BentoML slack community: https://l.bentoml.com/join-slack
 
 from typing import TYPE_CHECKING
 
+from ._internal.configuration import BENTOML_VERSION as __version__
 from ._internal.configuration import load_config
 from ._internal.configuration import save_config
-from ._internal.configuration import BENTOML_VERSION as __version__
 from ._internal.configuration import set_serialization_strategy
 
 # Inject dependencies and configurations
 load_config()
 
+# BentoML built-in types
+from ._internal.bento import Bento
+from ._internal.cloud import YataiClient
+from ._internal.context import ServiceContext as Context
+from ._internal.models import Model
+from ._internal.monitoring import monitor
+from ._internal.resource import Resource
+from ._internal.runner import Runnable
+from ._internal.runner import Runner
+from ._internal.runner.strategy import Strategy
+from ._internal.service import Service
+from ._internal.service.loader import load
+from ._internal.tag import Tag
+from ._internal.utils.http import Cookie
+
 # Bento management APIs
+from .bentos import delete
+from .bentos import export_bento
 from .bentos import get
+from .bentos import import_bento
 from .bentos import list  # pylint: disable=W0622
 from .bentos import pull
 from .bentos import push
 from .bentos import serve
-from .bentos import delete
-from .bentos import export_bento
-from .bentos import import_bento
 
 # server API
 from .server import GrpcServer
 from .server import HTTPServer
 
-# BentoML built-in types
-from ._internal.tag import Tag
-from ._internal.bento import Bento
-from ._internal.models import Model
-from ._internal.runner import Runner
-from ._internal.runner import Runnable
-from ._internal.context import ServiceContext as Context
-from ._internal.service import Service
-from ._internal.monitoring import monitor
-from ._internal.utils.http import Cookie
-from ._internal.cloud import YataiClient
-from ._internal.service.loader import load
-
 # Framework specific modules, model management and IO APIs are lazily loaded upon import.
 if TYPE_CHECKING:
-    from . import h2o
-    from . import ray
-    from . import flax
-    from . import onnx
-    from . import gluon
-    from . import keras
-    from . import spacy
-    from . import fastai
-    from . import mlflow
-    from . import paddle
-    from . import triton
-    from . import easyocr
-    from . import pycaret
-    from . import pytorch
-    from . import sklearn
-    from . import xgboost
     from . import catboost
-    from . import lightgbm
-    from . import onnxmlir
     from . import detectron
     from . import diffusers
-    from . import tensorflow
+    from . import easyocr
+    from . import fastai
+    from . import flax
+    from . import gluon
+    from . import h2o
+    from . import keras
+    from . import lightgbm
+    from . import mlflow
+    from . import onnx
+    from . import onnxmlir
+    from . import paddle
+    from . import picklable_model
+    from . import pycaret
+    from . import pytorch
+    from . import pytorch_lightning
+    from . import ray
+    from . import sklearn
+    from . import spacy
     from . import statsmodels
+    from . import tensorflow
+    from . import tensorflow_v1
     from . import torchscript
     from . import transformers
-    from . import tensorflow_v1
-    from . import picklable_model
-    from . import pytorch_lightning
+    from . import triton
+    from . import xgboost
 
     # isort: off
     from . import io
@@ -220,4 +221,6 @@ __all__ = [
     "load_config",
     "save_config",
     "set_serialization_strategy",
+    "Strategy",
+    "Resource",
 ]

@@ -1,22 +1,26 @@
 from __future__ import annotations
 
-import click
 import typing as t
+
+import click
 
 if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
-    from bentoml._internal.cloud.schemas import DeploymentSchema
     from bentoml._internal.cloud.schemas import DeploymentListSchema
+    from bentoml._internal.cloud.schemas import DeploymentSchema
 else:
     TupleStrAny = tuple
 
 
 def add_deployment_command(cli: click.Group) -> None:
     import json
-    from bentoml_cli.utils import BentoMLCommandGroup
-    from bentoml._internal.configuration.containers import BentoMLContainer
-    from bentoml._internal.utils import rich_console as console, bentoml_cattr
+
     from rich.table import Table
+
+    from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.utils import bentoml_cattr
+    from bentoml._internal.utils import rich_console as console
+    from bentoml_cli.utils import BentoMLCommandGroup
 
     client = BentoMLContainer.bentocloud_client.get()
     output_option = click.option(
@@ -95,12 +99,16 @@ def add_deployment_command(cli: click.Group) -> None:
         type=click.File(),
         help="JSON file path for the deployment configuration",
     )
+    @click.option("-n", "--name", type=click.STRING, help="Deployment name")
+    @click.option("--bento", type=click.STRING, help="Bento tag")
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
     )
     @output_option
     def update(  # type: ignore
-        file: str,
+        file: str | None,
+        name: str | None,
+        bento: str | None,
         context: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
@@ -110,10 +118,21 @@ def add_deployment_command(cli: click.Group) -> None:
         A deployment can be updated using a json file with needed configurations.
         The json file has the exact format as the one on BentoCloud Deployment UI.
         """
-        res = client.deployment.update_from_file(
-            path_or_stream=file,
-            context=context,
-        )
+        if file is not None:
+            if name is not None:
+                click.echo("Reading from file, ignoring --name", err=True)
+            res = client.deployment.update_from_file(
+                path_or_stream=file,
+                context=context,
+            )
+        elif name is not None:
+            res = client.deployment.update(
+                name, bento=bento, context=context, latest_bento=True
+            )
+        else:
+            raise click.BadArgumentUsage(
+                "Either --file or --name is required for update command"
+            )
         if output == "default":
             console.print(res)
         elif output == "json":

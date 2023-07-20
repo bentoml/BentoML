@@ -1,45 +1,46 @@
 from __future__ import annotations
 
+import logging
 import os
 import typing as t
-import logging
-from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
+from typing import TYPE_CHECKING
 
-import fs
 import attr
-import yaml
-import fs.osfs
+import fs
 import fs.errors
 import fs.mirror
+import fs.osfs
 import fs.walk
-from fs.copy import copy_file
-from cattr.gen import override
+import yaml
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
-from simple_di import inject
+from cattr.gen import override
+from fs.copy import copy_file
 from simple_di import Provide
+from simple_di import inject
 
-from ..tag import Tag
-from ..store import Store
-from ..store import StoreItem
-from ..types import PathType
-from ..utils import bentoml_cattr
-from ..utils import encode_path_for_uri
-from ..utils import copy_file_to_fs_folder
-from ..utils import normalize_labels_value
-from ..models import ModelStore, copy_model
-from ..runner import Runner
-from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
-from .build_config import CondaOptions
-from .build_config import BentoPathSpec
-from .build_config import DockerOptions
-from .build_config import PythonOptions
-from .build_config import BentoBuildConfig
+from ...exceptions import InvalidArgument
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..models import ModelStore
+from ..models import copy_model
+from ..runner import Runner
+from ..store import Store
+from ..store import StoreItem
+from ..tag import Tag
+from ..types import PathType
+from ..utils import bentoml_cattr
+from ..utils import copy_file_to_fs_folder
+from ..utils import encode_path_for_uri
+from ..utils import normalize_labels_value
+from .build_config import BentoBuildConfig
+from .build_config import BentoPathSpec
+from .build_config import CondaOptions
+from .build_config import DockerOptions
+from .build_config import PythonOptions
 
 if TYPE_CHECKING:
     from fs.base import FS
@@ -193,7 +194,7 @@ class Bento(StoreItem):
         if version is None:
             tag = tag.make_new_version()
 
-        logger.info(
+        logger.debug(
             'Building BentoML service "%s" from build context "%s".', tag, build_ctx
         )
 

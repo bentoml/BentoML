@@ -99,12 +99,16 @@ def add_deployment_command(cli: click.Group) -> None:
         type=click.File(),
         help="JSON file path for the deployment configuration",
     )
+    @click.option("-n", "--name", type=click.STRING, help="Deployment name")
+    @click.option("--bento", type=click.STRING, help="Bento tag")
     @click.option(
         "--context", type=click.STRING, default=None, help="Yatai context name."
     )
     @output_option
     def update(  # type: ignore
-        file: str,
+        file: str | None,
+        name: str | None,
+        bento: str | None,
         context: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
@@ -114,10 +118,21 @@ def add_deployment_command(cli: click.Group) -> None:
         A deployment can be updated using a json file with needed configurations.
         The json file has the exact format as the one on BentoCloud Deployment UI.
         """
-        res = client.deployment.update_from_file(
-            path_or_stream=file,
-            context=context,
-        )
+        if file is not None:
+            if name is not None:
+                click.echo("Reading from file, ignoring --name", err=True)
+            res = client.deployment.update_from_file(
+                path_or_stream=file,
+                context=context,
+            )
+        elif name is not None:
+            res = client.deployment.update(
+                name, bento=bento, context=context, latest_bento=True
+            )
+        else:
+            raise click.BadArgumentUsage(
+                "Either --file or --name is required for update command"
+            )
         if output == "default":
             console.print(res)
         elif output == "json":

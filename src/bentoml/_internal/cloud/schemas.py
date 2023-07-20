@@ -557,6 +557,7 @@ class DeploymentTargetConfig:
     runners: t.Optional[t.Dict[str, DeploymentTargetRunnerConfig]] = attr.field(
         default=None
     )
+    access_control: t.Optional[str] = attr.field(default=None)
     enable_ingress: t.Optional[bool] = attr.field(default=None)  # false for enables
     enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(default=None)
     enable_debug_mode: t.Optional[bool] = attr.field(default=None)

@@ -111,7 +111,7 @@ def add_context(context: CloudClientContext, *, ignore_warning: bool = False) ->
     for idx, ctx in enumerate(config.contexts):
         if ctx.name == context.name:
             if not ignore_warning:
-                logger.warning("Overriding existing Yatai context config: %s", ctx.name)
+                logger.warning("Overriding existing cloud context config: %s", ctx.name)
             config.contexts[idx] = context
             break
     else:

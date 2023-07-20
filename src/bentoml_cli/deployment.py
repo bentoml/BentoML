@@ -9,7 +9,7 @@ if t.TYPE_CHECKING:
     from bentoml._internal.cloud.schemas import DeploymentListSchema
     from bentoml._internal.cloud.schemas import DeploymentSchema
 
-    from .utils import Cli
+    from .utils import SharedOptions
 else:
     TupleStrAny = tuple
 
@@ -72,7 +72,7 @@ def add_deployment_command(cli: click.Group) -> None:
     @output_option
     @click.pass_obj
     def create(  # type: ignore
-        obj: Cli,
+        shared_options: SharedOptions,
         file: str,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
@@ -83,7 +83,7 @@ def add_deployment_command(cli: click.Group) -> None:
         The json file has the exact format as the one on BentoCloud Deployment UI.
         """
         res = client.deployment.create_from_file(
-            path_or_stream=file, context=obj.context
+            path_or_stream=file, context=shared_options.cloud_context
         )
         if output == "default":
             console.print(res)
@@ -103,7 +103,7 @@ def add_deployment_command(cli: click.Group) -> None:
     @output_option
     @click.pass_obj
     def update(  # type: ignore
-        obj: Cli,
+        shared_options: SharedOptions,
         file: str | None,
         name: str | None,
         bento: str | None,
@@ -119,11 +119,14 @@ def add_deployment_command(cli: click.Group) -> None:
             if name is not None:
                 click.echo("Reading from file, ignoring --name", err=True)
             res = client.deployment.update_from_file(
-                path_or_stream=file, context=obj.context
+                path_or_stream=file, context=shared_options.cloud_context
             )
         elif name is not None:
             res = client.deployment.update(
-                name, bento=bento, context=obj.context, latest_bento=True
+                name,
+                bento=bento,
+                context=shared_options.cloud_context,
+                latest_bento=True,
             )
         else:
             raise click.BadArgumentUsage(
@@ -140,7 +143,7 @@ def add_deployment_command(cli: click.Group) -> None:
     @shared_decorator
     @click.pass_obj
     def get(  # type: ignore
-        obj: Cli,
+        shared_options: SharedOptions,
         deployment_name: str,
         cluster_name: str,
         kube_namespace: str,
@@ -149,7 +152,7 @@ def add_deployment_command(cli: click.Group) -> None:
         """Get a deployment on BentoCloud."""
         res = client.deployment.get(
             deployment_name=deployment_name,
-            context=obj.context,
+            context=shared_options.cloud_context,
             cluster_name=cluster_name,
             kube_namespace=kube_namespace,
         )
@@ -164,7 +167,7 @@ def add_deployment_command(cli: click.Group) -> None:
     @shared_decorator
     @click.pass_obj
     def terminate(  # type: ignore
-        obj: Cli,
+        shared_options: SharedOptions,
         deployment_name: str,
         cluster_name: str,
         kube_namespace: str,
@@ -173,7 +176,7 @@ def add_deployment_command(cli: click.Group) -> None:
         """Terminate a deployment on BentoCloud."""
         res = client.deployment.terminate(
             deployment_name=deployment_name,
-            context=obj.context,
+            context=shared_options.cloud_context,
             cluster_name=cluster_name,
             kube_namespace=kube_namespace,
         )
@@ -188,7 +191,7 @@ def add_deployment_command(cli: click.Group) -> None:
     @shared_decorator
     @click.pass_obj
     def delete(  # type: ignore
-        obj: Cli,
+        shared_options: SharedOptions,
         deployment_name: str,
         cluster_name: str,
         kube_namespace: str,
@@ -197,7 +200,7 @@ def add_deployment_command(cli: click.Group) -> None:
         """Delete a deployment on BentoCloud."""
         res = client.deployment.delete(
             deployment_name=deployment_name,
-            context=obj.context,
+            context=shared_options.cloud_context,
             cluster_name=cluster_name,
             kube_namespace=kube_namespace,
         )
@@ -233,7 +236,7 @@ def add_deployment_command(cli: click.Group) -> None:
     )
     @click.pass_obj
     def list(  # type: ignore
-        obj: Cli,
+        shared_options: SharedOptions,
         cluster_name: str,
         query: str,
         search: str,
@@ -243,7 +246,7 @@ def add_deployment_command(cli: click.Group) -> None:
     ) -> DeploymentListSchema:
         """List existing deployments on BentoCloud."""
         res = client.deployment.list(
-            context=obj.context,
+            context=shared_options.cloud_context,
             cluster_name=cluster_name,
             query=query,
             search=search,

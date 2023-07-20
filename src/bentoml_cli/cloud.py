@@ -7,7 +7,7 @@ import click
 import click_option_group as cog
 
 if t.TYPE_CHECKING:
-    from .utils import Cli
+    from .utils import SharedOptions
 
 
 def add_cloud_command(cli: click.Group) -> click.Group:
@@ -44,7 +44,7 @@ def add_cloud_command(cli: click.Group) -> click.Group:
         help="BentoCloud or Yatai user API token",
     )
     @click.pass_obj
-    def login(obj: Cli, endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
+    def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
         """Login to BentoCloud or Yatai server."""
         cloud_rest_client = RestApiClient(endpoint, api_token)
         user = cloud_rest_client.get_current_user()
@@ -58,7 +58,9 @@ def add_cloud_command(cli: click.Group) -> click.Group:
             raise CLIException("current organization is not found")
 
         ctx = CloudClientContext(
-            name=obj.context if obj.context is not None else default_context_name,
+            name=shared_options.context
+            if shared_options.context is not None
+            else default_context_name,
             endpoint=endpoint,
             api_token=api_token,
             email=user.email,

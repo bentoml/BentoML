@@ -193,10 +193,10 @@ def opt_callback(ctx: Context, param: Parameter, value: ClickParamType):
 
 
 @attr.define
-class Cli:
+class SharedOptions:
     """This is the click.Context object that will be used in BentoML CLI."""
 
-    context: str | None = attr.field(default=None)
+    cloud_context: str | None = attr.field(default=None)
 
     def with_options(self, **attrs: t.Any) -> t.Any:
         return attr.evolve(self, **attrs)
@@ -262,6 +262,7 @@ class BentoMLCommandGroup(click.Group):
         )
         @cog.optgroup.option(
             "--context",
+            "cloud_context",
             type=click.STRING,
             default=None,
             help="BentoCloud context name.",
@@ -272,11 +273,11 @@ class BentoMLCommandGroup(click.Group):
             ctx: click.Context,
             quiet: bool,
             verbose: bool,
-            context: str | None,
+            cloud_context: str | None,
             *args: P.args,
             **kwargs: P.kwargs,
         ) -> t.Any:
-            ctx.obj = Cli(context=context)
+            ctx.obj = SharedOptions(cloud_context=cloud_context)
             if quiet:
                 set_quiet_mode(True)
                 if verbose:

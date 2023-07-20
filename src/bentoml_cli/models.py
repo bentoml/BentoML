@@ -17,7 +17,7 @@ if t.TYPE_CHECKING:
     from click import Group
     from click import Parameter
 
-    from .utils import Cli
+    from .utils import SharedOptions
 
 
 def parse_delete_targets_argument_callback(
@@ -287,7 +287,7 @@ def add_model_management_commands(cli: Group) -> None:
             cloud_client.pull_model(
                 model_spec.tag,
                 force=force,
-                context=ctx.obj.context,
+                context=t.cast("SharedOptions", ctx.obj).cloud_context,
                 query=model_spec.filter,
             )
 
@@ -307,11 +307,14 @@ def add_model_management_commands(cli: Group) -> None:
         help="Number of threads to use for upload",
     )
     @click.pass_obj
-    def push(obj: Cli, model_tag: str, force: bool, threads: int):  # type: ignore (not accessed)
+    def push(shared_options: SharedOptions, model_tag: str, force: bool, threads: int):  # type: ignore (not accessed)
         """Push Model to a yatai server."""
         model_obj = model_store.get(model_tag)
         if not model_obj:
             raise click.ClickException(f"Model {model_tag} not found in local store")
         cloud_client.push_model(
-            model_obj, force=force, threads=threads, context=obj.context
+            model_obj,
+            force=force,
+            threads=threads,
+            context=shared_options.cloud_context,
         )

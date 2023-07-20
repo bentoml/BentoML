@@ -420,7 +420,6 @@ def add_containerize_command(cli: Group) -> None:
     @buildx_options_group
     @kwargs_transformers(transformer=normalize_none_type)
     def containerize(  # type: ignore
-        ctx: click.Context,
         bento_tag: str,
         image_tag: tuple[str] | None,
         backend: DefaultBuilder,

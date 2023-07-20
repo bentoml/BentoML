@@ -97,6 +97,12 @@ def add_serve_command(cli: click.Group) -> None:
         show_default=True,
     )
     @click.option(
+        "--timeout",
+        type=click.INT,
+        help="Specify the timeout (seconds) for API server and runners",
+        envvar="BENTOML_TIMEOUT",
+    )
+    @click.option(
         "--backlog",
         type=click.INT,
         default=BentoMLContainer.api_server_config.backlog.get(),
@@ -174,6 +180,7 @@ def add_serve_command(cli: click.Group) -> None:
         port: int,
         host: str,
         api_workers: int | None,
+        timeout: int | None,
         backlog: int,
         reload: bool,
         working_dir: str | None,
@@ -238,6 +245,7 @@ def add_serve_command(cli: click.Group) -> None:
                 host=DEFAULT_DEV_SERVER_HOST if not host else host,
                 backlog=backlog,
                 api_workers=1,
+                timeout=timeout,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
                 ssl_keyfile_password=ssl_keyfile_password,
@@ -255,6 +263,7 @@ def add_serve_command(cli: click.Group) -> None:
                 port=port,
                 host=host,
                 api_workers=api_workers,
+                timeout=timeout,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
                 ssl_keyfile_password=ssl_keyfile_password,

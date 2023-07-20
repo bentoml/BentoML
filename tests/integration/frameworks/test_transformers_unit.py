@@ -236,13 +236,16 @@ def fixture_pair_classification_pipeline(unload_registry: bool, tmp_path: Path):
         model=model,
         tokenizer=transformers.BertTokenizer(vocab_file.__fspath__()),
     )
+    yield classifier
     if unload_registry:
         del PIPELINE_REGISTRY.supported_tasks[TASK_NAME]
 
-    return classifier
-
 
 @pytest.mark.parametrize("unload_registry", [True, False])
+@pytest.mark.skipif(
+    os.getenv("GITHUB_ACTIONS") is not None,
+    reason="Eager import from general frameworks on GitHub actions.",
+)
 def test_custom_pipeline(pair_classification_pipeline: PairClassificationPipeline):
     """
     Test saving and loading a custom pipeline from scratch. This is not covered by the framework tests

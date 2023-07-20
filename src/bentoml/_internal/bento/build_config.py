@@ -18,7 +18,8 @@ from pathspec import PathSpec
 
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
-from ..configuration import CLEAN_BENTOML_VERSION
+from ..configuration import BENTOML_VERSION
+from ..configuration import clean_bentoml_version
 from ..configuration import get_quiet_mode
 from ..container import generate_containerfile
 from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
@@ -566,7 +567,7 @@ REQUIREMENTS_TXT="$BASEDIR/requirements.txt"
 REQUIREMENTS_LOCK="$BASEDIR/requirements.lock.txt"
 WHEELS_DIR="$BASEDIR/wheels"
 BENTOML_VERSION=${BENTOML_VERSION:-"""
-                + CLEAN_BENTOML_VERSION
+                + clean_bentoml_version(BENTOML_VERSION)
                 + """}
 # Install python packages, prefer installing the requirements.lock.txt file if it exist
 if [ -f "$REQUIREMENTS_LOCK" ]; then

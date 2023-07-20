@@ -69,6 +69,12 @@ def add_start_command(cli: click.Group) -> None:
         envvar="BENTOML_API_WORKERS",
     )
     @click.option(
+        "--timeout",
+        type=click.INT,
+        help="Specify the timeout (seconds) for API server",
+        envvar="BENTOML_TIMEOUT",
+    )
+    @click.option(
         "--working-dir",
         type=click.Path(),
         help="When loading from source code, specify the directory to find the Service instance",
@@ -128,6 +134,7 @@ def add_start_command(cli: click.Group) -> None:
         backlog: int,
         working_dir: str | None,
         api_workers: int | None,
+        timeout: int | None,
         ssl_certfile: str | None,
         ssl_keyfile: str | None,
         ssl_keyfile_password: str | None,
@@ -173,6 +180,7 @@ def add_start_command(cli: click.Group) -> None:
             host=host,
             backlog=backlog,
             api_workers=api_workers,
+            timeout=timeout,
             ssl_keyfile=ssl_keyfile,
             ssl_certfile=ssl_certfile,
             ssl_keyfile_password=ssl_keyfile_password,
@@ -227,6 +235,12 @@ def add_start_command(cli: click.Group) -> None:
         default=None,
         show_default=True,
     )
+    @click.option(
+        "--timeout",
+        type=click.INT,
+        help="Specify the timeout (seconds) for runners",
+        envvar="BENTOML_TIMEOUT",
+    )
     @add_experimental_docstring
     def start_runner_server(  # type: ignore (unused warning)
         bento: str,
@@ -236,6 +250,7 @@ def add_start_command(cli: click.Group) -> None:
         host: str,
         backlog: int,
         working_dir: str,
+        timeout: int | None,
     ) -> None:
         """
         Start Runner server standalone. This will be used inside Yatai.
@@ -260,6 +275,7 @@ def add_start_command(cli: click.Group) -> None:
             bento,
             runner_name=runner_name,
             working_dir=working_dir,
+            timeout=timeout,
             port=port,
             host=host,
             backlog=backlog,

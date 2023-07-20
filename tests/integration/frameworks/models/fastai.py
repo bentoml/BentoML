@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing as t
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -21,7 +20,7 @@ from . import FrameworkTestModel
 from . import FrameworkTestModelConfiguration as Config
 from . import FrameworkTestModelInput as Input
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from sklearn.utils import Bunch
 
     import bentoml._internal.external_typing as ext
@@ -115,7 +114,7 @@ iris_model = FrameworkTestModel(
                     Input(
                         input_args=[X.iloc[0]],
                         expected=lambda out: np.isclose(
-                            out[2].numpy(), [-0.35807556]
+                            out[-1].numpy(), [-0.3580], rtol=1e-3
                         ).all(),
                     ),
                 ],

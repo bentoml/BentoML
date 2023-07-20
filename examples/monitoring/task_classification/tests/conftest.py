@@ -24,6 +24,16 @@ PROJECT_DIR = Path(__file__).parent.parent
 
 
 def pytest_collection_modifyitems(session: Session, config: Config, items: list[Item]):
+    subprocess.check_call(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            f"{os.path.join(PROJECT_DIR, 'requirements.txt')}",
+        ]
+    )
     try:
         print(f"Found {bentoml.models.get('iris_clf')}, skipping model saving.")
     except bentoml.exceptions.NotFound:

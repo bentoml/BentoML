@@ -27,10 +27,12 @@ If you haven't already, clone the BentoML Github repo to a local directory:
 git clone https://github.com/bentoml/BentoML.git && cd BentoML
 ```
 
+> **Note**: Make sure to have [PDM](https://pdm.fming.dev/latest/) installed.
+
 Install all dependencies required for building docs (mainly `sphinx` and its extension):
 
 ```bash
-pip install -r requirements/docs-requirements.txt
+pdm install -dG docs
 ```
 
 Build the sphinx docs:

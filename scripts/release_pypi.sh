@@ -72,6 +72,6 @@ pdm build -v
 # releasing to Pypi.org
 REPO=${REPO:=testpypi}
 
-pdm publish --no-build --repository "$REPO" -vv
+pdm publish --no-build --repository "$REPO" -vv -c "See release tag at https://github.com/bentoml/BentoML/releases/tag/v${VERSION_STR}"
 
 echo "Done releasing BentoML version:$VERSION_STR"

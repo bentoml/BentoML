@@ -50,7 +50,7 @@ pdm install -G grpc -G io -G tooling
 
 echo "Generating test PyPI source distribution..."
 
-pdm build -v
+pdm build -v || (echo "Failed to build release wheel, Exiting..."; exit 1;)
 
 if git rev-parse "$tag_name" > /dev/null 2>&1; then
     echo "git tag '$tag_name' exist, using existing tag."

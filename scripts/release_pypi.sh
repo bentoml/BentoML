@@ -11,9 +11,14 @@ fi
 SEMVER_REGEX="^[vV]?(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(\\-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
 
 if [[ "$VERSION_STR" =~ $SEMVER_REGEX ]]; then
-    echo "Releasing bentoml version v$VERSION_STR:"
+    echo "Releasing bentoml version v$VERSION_STR"
 else
     echo "Warning: version $VERSION_STR must follow semantic versioning schema, ignore this for preview releases"
+fi
+
+if ! $(git remote | grep -q "upstream"); then
+    echo "The remote upstream does not exists. Make sure to add a upstream remote to BentoML before proceeding."
+    exit 1
 fi
 
 GIT_ROOT=$(git rev-parse --show-toplevel)

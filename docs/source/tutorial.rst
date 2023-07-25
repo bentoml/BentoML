@@ -651,36 +651,13 @@ Learn more about different deployment options with BentoML from the
 :doc:`concepts/deploy` page.
 
 Using GitHub Actions to Boost Your Workflow
-----------------------------------------
+-------------------------------------------
 
 BentoML provides a GitHub Action to help you automate the process of building Bentos and deploying them to the cloud.
 To create a GitHub Actions workflow, you need to first define a workflow file as below:
 
-.. code-block:: yaml
-
-    name: Update Bento Deployment
-    on:
-    push:
-      tags:
-        - v*
-
-    jobs:
-      build_and_deploy:
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v3
-
-          - uses: actions/setup-python@v4
-            with:
-            python-version: '3.10'
-            cache: 'pip'
-
-          - name: Build and Deploy
-            uses: bentoml/deploy-bento-action@main
-              with:
-                cloud_api_token: ${{ secrets.CLOUD_API_TOKEN }}
-                cloud_endpoint: ${{ secrets.CLOUD_ENDPOINT }}
-                deployment_name: test-iris
+.. literalinclude:: ./data/workflow.yaml
+   :language: yaml
 
 You can get more details about this file in :ref:`Deploying Your Bento <bentocloud/how-tos/deploy-bentos:Deploying Your Bento>` and `the GitHub Actions documentation <https://docs.github.com/en/actions/quickstart>`_.
 

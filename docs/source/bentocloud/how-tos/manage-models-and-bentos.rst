@@ -14,7 +14,7 @@ account. If you're not yet logged in, use the following command:
 
 .. code-block:: bash
 
-   bentoml yatai login --api-token <your-api-token> --endpoint <your-bentocloud-endpoint>
+   bentoml cloud login --api-token <your-api-token> --endpoint <your-bentocloud-endpoint>
 
 .. note::
 

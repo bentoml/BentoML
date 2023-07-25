@@ -18,11 +18,11 @@ Having crafted a Bento as illustrated in the preceding section, :doc:`/bentoclou
 .. note::
     BentoML offers various deployment alternatives, for more details visit :doc:`/concepts/deploy`.
 
--------------------
-Acquiring API Token
--------------------
+----------------------
+Acquiring an API Token
+----------------------
 
-To transfer your model from the local store to BentoCloud, you'll first need to secure an API Token. Navigate to `<https://cloud.bentoml.com/api_tokens>`_ and click on `Create`.
+To transfer your model from the local store to BentoCloud, you first need to secure an API Token. Navigate to the `API Tokens <http://cloud.bentoml.com/api_tokens>`_ page and click **Create**. 
 
 .. image:: ../../_static/img/bentocloud/ship-get-api-token.png
 
@@ -30,7 +30,7 @@ Next, log in via the BentoML CLI in your terminal using the following command:
 
 .. code-block:: bash
 
-    bentoml yatai login --api-token <your-api-token> --endpoint <https://cloud.bentoml.com>
+    bentoml cloud login --api-token <your-api-token> --endpoint <https://cloud.bentoml.com>
 
 If the login is successful, you should see the following output:
 
@@ -40,6 +40,8 @@ If the login is successful, you should see the following output:
 
 .. note::
     BentoCloud organizations function as collaborative workspaces where your team can effectively manage models and bentos. Additionally, these organizations facilitate the management and monitoring of active deployments, enabling you to track the creations of your team efficiently.
+
+For more information, see :doc:`/bentocloud/how-tos/manage-access-token`.
 
 ------------------
 Pushing Your Bento

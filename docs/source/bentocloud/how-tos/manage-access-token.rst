@@ -1,77 +1,77 @@
-======================
+====================
 Manage Access Tokens
-======================
+====================
 
-In BentoCloud, API tokens serve as the means of authorization for two distinct scopes: **BentoCloud resources** and **Bento deployment** authorization. The scope of BentoCloud resources includes authorization for APIs that facilitate the pushing and pulling of models and bentos, along with actions related to creating, updating, and terminating deployments. On the other hand, the deployment scope encapsulates the authorization required for invoking deployed Bento applications.
+In BentoCloud, API tokens serve as a key method of authorization for two distinct scopes - **BentoCloud resources** and **Bento Deployments**.
+They correspond to two different types of tokens - **User tokens** and **Developer tokens**.
 
+User tokens are granted permissions to access deployed Bento applications. You can control access to Bento Deployments with the following three endpoint access types.
 
-Access Tokens for BentoCloud Resources
-======================================
+- **Private**: The Deployment’s external URL is not exposed and it is only accessible within the cluster.
+- **Protected**: The Deployment is accessible to anyone on the internet, provided that they have a valid token.
+- **Public**: The Deployment is accessible to anyone on the internet.
 
-These tokens allow you to:
+.. note::
+
+   You can specify the endpoint access type when creating and updating a Deployment.
+
+Developer tokens are granted permissions to manage BentoCloud resources. For example, you can perform the following tasks with a Developer token:
 
 - Manage BentoCloud cluster configurations.
-- Handle Identity and Access Management (IAM).
-- Manage models, Bentos, and deployments.
+- Handle identity and access management (IAM) policies.
+- Manage models, Bentos, and Deployments.
 
+This tutorial explains how to create and use API tokens in BentoCloud.
 
-Creating API Tokens
--------------------
+Creating an API Token
+=====================
 
-Visit the `API Tokens <http://cloud.bentoml.com/api_tokens>`_ page to view and manage your API tokens.
-To create a new token:
+To create an API token, perform the following steps:
 
-1. Click the `Create` button in the top-right corner of the page.
+1. Navigate to the `API Tokens <http://cloud.bentoml.com/api_tokens>`_ page in the BentoCloud Console.
+2. Click **Create**.
+3. In the dialog that appears, specify the following fields. Note that you must select at least one of the token types.
 
-.. image:: ../../_static/img/bentocloud/ship-get-api-token.png
+   - **Name**: The name of the API token.
+   - **Description**: A description of the token, detailing its usage.
+   - **User (Deployment Endpoint Access)**: Grants permissions to access Bento Deployments with Protected endpoints. If you select this token type, you need to choose the Deployment that you want the token to access. 
+   - **Developer (API access)**: Grants permissions to manage BentoCloud resources.
 
+4. Record the token. This is the only opportunity to record it.
+5. All available tokens appear on the **API Tokens** page. Click **Delete** if you no longer needs a token.
 
-1. In the dialog box that appears, select the desired scope for the token
-   and set an expiration date if needed. It's a best practice to always
-   set an expiration date for access tokens.
-
-
-Using the API Token
--------------------
+Using the Developer Token
+=========================
 
 Interact with BentoCloud programmatically via the BentoML Command Line
-Interface (CLI). Log in using the following command:
+Interface (CLI). Log in using the following command. 
 
 .. code-block:: bash
 
-   bentoml yatai login --api-token <your-api-token> --endpoint <your-bentocloud-endpoint>
+   bentoml cloud login --api-token <your-api-token> --endpoint <your-bentocloud-endpoint>
 
-If the login is successful, you'll see this output:
+.. note::
+
+   You should see the above command after you create a token.
+
+Expected output:
 
 .. code-block:: bash
 
    Successfully logged in as user "user" in organization "mybentocloud".
 
-For additional information on the CLI, see :doc:`Reference - CLI </reference/cli>`.
+To retrieve the current endpoint and API token locally, make sure you have installed ``jq``, and then run:
 
-Access Tokens for Deployed API Servers
-======================================
+.. code-block:: bash
 
-Each deployment in BentoCloud allows you to control access to your resources.
-You can make resources:
+   bentoml cloud current-context | jq '("endpoint:" + .endpoint + ", api_token:" + .api_token)'
 
-- **Public** - accessible to anyone on the Internet.
-- **Protected** - accessible to anyone on the Internet, provided they have a valid token.
+After you log in, you should be able to manage BentoCloud resources. For more information on the CLI, see :doc:`Reference - CLI </reference/cli>`.
 
-Creating API Tokens
--------------------
+Using the User Token
+====================
 
-You can find the API Tokens tab on each deployment page.
-Here, you can view the metadata associated with each API token. To create a new token:
-
-1. Click the `Create` button in the top-right corner.
-2. Select the scopes and expiration.
-3. Click submit.
-
-Using the API Token
--------------------
-
-These tokens are used as part of the Basic Authentication Scheme.
+You can use User tokens to access Protected Bento Deployments.
 
 For HTTP-based servers, include the token in the header of your HTTP request like this:
 
@@ -79,7 +79,7 @@ For HTTP-based servers, include the token in the header of your HTTP request lik
 
    curl "http://app-name.organization.cloud-apps.bentoml.com" \
      -H "Content-Type: application/json" \
-     -H "Authorization: Basic $YOUR_TOKEN" \
+     -H "Authorization: Bearer $YOUR_TOKEN" \
      --data '{"prompt": "What state is Los Angeles in?", "max_length": 100}'
 
 For gRPC servers, include it in the metadata of your gRPC call:
@@ -92,5 +92,3 @@ For gRPC servers, include it in the metadata of your gRPC call:
    auth_creds = grpc.access_token_call_credentials('<your-api-token>')
    channel = grpc.secure_channel('<your-deployed-api-endpoint>', creds)
    stub = <YourGRPCServiceStub>(channel)
-
-Always ensure your tokens are managed wisely to secure your resources.

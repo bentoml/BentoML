@@ -44,11 +44,11 @@ Using the Developer Token
 =========================
 
 Interact with BentoCloud programmatically via the BentoML Command Line
-Interface (CLI). Log in using the following command:
+Interface (CLI). Log in using the following command. 
 
 .. code-block:: bash
 
-   bentoml yatai login --api-token <your-api-token> --endpoint <your-bentocloud-endpoint>
+   bentoml cloud login --api-token <your-api-token> --endpoint <your-bentocloud-endpoint>
 
 .. note::
 
@@ -59,6 +59,12 @@ Expected output:
 .. code-block:: bash
 
    Successfully logged in as user "user" in organization "mybentocloud".
+
+To retrieve the current endpoint and API token locally, make sure you have installed ``jq``, and then run:
+
+.. code-block:: bash
+
+   bentoml cloud current-context | jq '("endpoint:" + .endpoint + ", api_token:" + .api_token)'
 
 After you log in, you should be able to manage BentoCloud resources. For more information on the CLI, see :doc:`Reference - CLI </reference/cli>`.
 

@@ -1,5 +1,9 @@
 [<img src="https://raw.githubusercontent.com/bentoml/BentoML/0.13-LTS/docs/source/_static/img/bentoml-readme-header.jpeg" width="600px" margin-left="-5px">](https://github.com/bentoml/BentoML)
 
+## Deprecation Notes
+
+The `0.13-LTS` branch is now deprecated and no longer maintained. We strongly advise transitioning to the `main` branch with the latest `v1.*` releases for the most updated and supported version of the software. Please consult the documentation [1.0 migration guide](https://docs.bentoml.org/en/latest/guides/migration.html) for instructions on switching branches.
+
 ## Model Serving Made Easy  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20Machine%20Learning%20Model%20Serving%20Made%20Easy%20&url=https://github.com/bentoml/BentoML&via=bentomlai&hashtags=mlops,modelserving,ML,AI,machinelearning,bentoml)
 
 BentoML is a flexible, high-performance framework for serving, managing, and deploying machine learning models. 

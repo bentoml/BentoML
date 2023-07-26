@@ -55,6 +55,6 @@ def create_standalone_arbiter(watchers: list[Watcher], **kwargs: t.Any) -> Arbit
                 pubsub_endpoint=f"tcp://127.0.0.1:{pubsub_port}",
                 # XXX: Currently ,the default check_delay will always raise ConflictError. This probably has to do with 
                 # the runners server is not ready in time when the controller run healthcheck.
-                check_delay=kwargs.get("check_delay", 10),
+                check_delay=kwargs.pop("check_delay", 10),
                 **kwargs,
             )

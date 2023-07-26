@@ -53,5 +53,6 @@ def create_standalone_arbiter(watchers: list[Watcher], **kwargs: t.Any) -> Arbit
                 watchers,
                 endpoint=f"tcp://127.0.0.1:{endpoint_port}",
                 pubsub_endpoint=f"tcp://127.0.0.1:{pubsub_port}",
+                check_delay=kwargs.get("check_delay", 10),
                 **kwargs,
             )

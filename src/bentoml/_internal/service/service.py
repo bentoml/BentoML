@@ -7,7 +7,6 @@ import os
 import sys
 import typing as t
 from functools import partial
-from typing import TYPE_CHECKING
 
 import attr
 
@@ -24,8 +23,9 @@ from ..runner.runner import AbstractRunner
 from ..runner.runner import Runner
 from ..tag import Tag
 from .inference_api import InferenceAPI
+from ..utils import first_not_none
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import grpc
 
     from bentoml.grpc.types import AddServicerFn
@@ -45,32 +45,7 @@ else:
 
 logger = logging.getLogger(__name__)
 
-
-def add_inference_api(
-    svc: Service,
-    func: t.Callable[..., t.Any],
-    input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
-    output: IODescriptor[t.Any],
-    name: t.Optional[str],
-    doc: t.Optional[str],
-    route: t.Optional[str],
-) -> None:
-    api = InferenceAPI(
-        name=name if name is not None else func.__name__,
-        user_defined_callback=func,
-        input_descriptor=input,
-        output_descriptor=output,
-        doc=doc,
-        route=route,
-    )
-
-    if api.name in svc.apis:
-        raise BentoMLException(
-            f"API {api.name} is already defined in Service {svc.name}"
-        )
-
-    svc.apis[api.name] = api
-
+F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 def get_valid_service_name(user_provided_svc_name: str) -> str:
     lower_name = user_provided_svc_name.lower()
@@ -295,21 +270,32 @@ class Service:
 
     def api(
         self,
-        input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
+        func: F | None = None,
+        *,
+        input: IODescriptor[t.Any],
         output: IODescriptor[t.Any],
-        name: t.Optional[str] = None,
-        doc: t.Optional[str] = None,
-        route: t.Optional[str] = None,
-    ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
+        name: str | None = None,
+        doc: str | None = None,
+        route: str | None = None,
+    ) -> t.Callable[[F], F]:
         """Decorator for adding InferenceAPI to this service"""
+        def decorator(fn: F) -> F:
+            _api = InferenceAPI(
+                name=first_not_none(name, default=fn.__name__),
+                user_defined_callback=func,
+                input_descriptor=input,
+                output_descriptor=output,
+                doc=doc,
+                route=route,
+            )
+            if _api.name in self.apis:
+                raise BentoMLException(f"API {_api.name} is already defined in Service {self.name}")
+            self.apis[_api.name] = _api
+            return fn
 
-        D = t.TypeVar("D", bound=t.Callable[..., t.Any])
-
-        def decorator(func: D) -> D:
-            add_inference_api(self, func, input, output, name, doc, route)
-            return func
-
-        return decorator
+        if func is None: 
+            return decorator
+        return decorator(func)
 
     def __str__(self):
         if self.bento:

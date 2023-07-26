@@ -136,11 +136,14 @@ packages = ["src/bentoml", "src/bentoml_cli"]
 [[tool.pdm.source]]
 url = "https://download.pytorch.org/whl/cpu"
 name = "torch"
+
 [tool.pdm.resolution]
 respect-source-order = true
 [tool.pdm.resolution.overrides]
 fastapi = "==0.93.0"
 tensorflow = ">=2.3.0"
+tensorflow-io-gcs-filesystem = "==0.31.0"
+
 [tool.pdm.dev-dependencies]
 docs = [
     "sphinx>=5",
@@ -176,7 +179,6 @@ frameworks = [
     "skl2onnx",
     # tensorflow dependencies
     "tensorflow",
-    "tensorflow-io-gcs-filesystem!=0.32.0; python_version < '3.12'",
     # torch-related dependencies
     "torch",
     "lightning",

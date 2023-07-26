@@ -309,7 +309,7 @@ class HTTPAppFactory(BaseAppFactory):
 
     def _create_api_endpoint(
         self,
-        api: InferenceAPI,
+        api: InferenceAPI[t.Any],
     ) -> t.Callable[[Request], t.Coroutine[t.Any, t.Any, Response]]:
         """
         Create api function for starlette route, it wraps around user defined API

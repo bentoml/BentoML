@@ -449,7 +449,7 @@ class BentoApiInfo:
     output_type: str
 
     @classmethod
-    def from_inference_api(cls, api: InferenceAPI) -> BentoApiInfo:
+    def from_inference_api(cls, api: InferenceAPI[t.Any]) -> BentoApiInfo:
         return cls(
             name=api.name,
             input_type=api.input.__class__.__name__,

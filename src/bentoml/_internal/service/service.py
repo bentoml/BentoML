@@ -22,8 +22,8 @@ from ..models import Model
 from ..runner.runner import AbstractRunner
 from ..runner.runner import Runner
 from ..tag import Tag
-from .inference_api import InferenceAPI
 from ..utils import first_not_none
+from .inference_api import InferenceAPI
 
 if t.TYPE_CHECKING:
     import grpc
@@ -46,6 +46,7 @@ else:
 logger = logging.getLogger(__name__)
 
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
+
 
 def get_valid_service_name(user_provided_svc_name: str) -> str:
     lower_name = user_provided_svc_name.lower()
@@ -279,6 +280,7 @@ class Service:
         route: str | None = None,
     ) -> t.Callable[[F], F]:
         """Decorator for adding InferenceAPI to this service"""
+
         def decorator(fn: F) -> F:
             _api = InferenceAPI(
                 name=first_not_none(name, default=fn.__name__),
@@ -289,11 +291,13 @@ class Service:
                 route=route,
             )
             if _api.name in self.apis:
-                raise BentoMLException(f"API {_api.name} is already defined in Service {self.name}")
+                raise BentoMLException(
+                    f"API {_api.name} is already defined in Service {self.name}"
+                )
             self.apis[_api.name] = _api
             return fn
 
-        if func is None: 
+        if func is None:
             return decorator
         return decorator(func)
 

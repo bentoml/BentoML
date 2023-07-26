@@ -60,7 +60,7 @@ merger = Merger(
 )
 
 
-def make_api_path(api: InferenceAPI) -> str:
+def make_api_path(api: InferenceAPI[t.Any]) -> str:
     return api.route if api.route.startswith("/") else f"/{api.route}"
 
 

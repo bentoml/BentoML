@@ -18,6 +18,7 @@ from ...grpc.utils import import_grpc
 from ..bento.bento import get_default_svc_readme
 from ..context import ServiceContext as Context
 from ..io_descriptors import IODescriptor
+from ..io_descriptors.base import IOType
 from ..models import Model
 from ..runner.runner import AbstractRunner
 from ..runner.runner import Runner
@@ -28,6 +29,7 @@ from .inference_api import InferenceAPI
 if t.TYPE_CHECKING:
     import grpc
 
+    import bentoml
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
 
@@ -40,12 +42,25 @@ if t.TYPE_CHECKING:
     ContextFunc = t.Callable[[Context], None | t.Coroutine[t.Any, t.Any, None]]
     HookF = t.TypeVar("HookF", bound=LifecycleHook)
     HookF_ctx = t.TypeVar("HookF_ctx", bound=ContextFunc)
+
+    class _inference_api_wrapper(t.Generic[IOType]):
+        __name__: str
+
+        # fmt: off
+        @t.overload
+        def __call__(self, func: t.Callable[[IOType], IOType]) -> t.Callable[[IOType], IOType]: ...  # type: ignore (this is considered as stub)
+        @t.overload
+        def __call__(self, func: t.Callable[[IOType], t.Coroutine[IOType, t.Any, t.Any]]) -> t.Callable[[IOType], t.Coroutine[IOType, t.Any, t.Any]]: ...
+        @t.overload
+        def __call__(self, func: t.Callable[[IOType, bentoml.Context], IOType]) -> t.Callable[[IOType, bentoml.Context], IOType]: ...
+        @t.overload
+        def __call__(self, func: t.Callable[[IOType, bentoml.Context], t.Coroutine[IOType, t.Any, t.Any]]) -> t.Callable[[IOType, bentoml.Context], t.Coroutine[IOType, t.Any, t.Any]]: ...
+        # fmt: on
+
 else:
     grpc, _ = import_grpc()
 
 logger = logging.getLogger(__name__)
-
-F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
 def get_valid_service_name(user_provided_svc_name: str) -> str:
@@ -61,7 +76,7 @@ def get_valid_service_name(user_provided_svc_name: str) -> str:
     return lower_name
 
 
-@attr.define(frozen=True)
+@attr.define(frozen=False, init=False)
 class Service:
     """The service definition is the manifestation of the Service Oriented Architecture
     and the core building block in BentoML where users define the service runtime
@@ -95,7 +110,7 @@ class Service:
     grpc_handlers: list[grpc.GenericRpcHandler] = attr.field(init=False, factory=list)
 
     # list of APIs from @svc.api
-    apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
+    apis: t.Dict[str, InferenceAPI[t.Any]] = attr.field(init=False, factory=dict)
 
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)
@@ -185,12 +200,12 @@ class Service:
         runners: list[AbstractRunner] | None = None,
         models: list[Model] | None = None,
     ):
-        """
+        """Service definition itself. Runners and models can be optionally pass into a ``bentoml.Service``.
 
         Args:
-            name:
-            runners:
-            models:
+            name: name of the service
+            runners: Optional list of runners to be used with this service.
+            models: Optional list of ``bentoml.Model`` to be used with this service.
         """
         name = get_valid_service_name(name)
 
@@ -226,8 +241,8 @@ class Service:
         # get_service_import_origin below will use the _caller_module for retriving the
         # correct import_str for this service
         caller_module = inspect.currentframe().f_back.f_globals["__name__"]
-        object.__setattr__(self, "_caller_module", caller_module)
-        object.__setattr__(self, "_working_dir", os.getcwd())
+        self._caller_module = caller_module
+        self._working_dir = os.getcwd()
 
     def get_service_import_origin(self) -> tuple[str, str]:
         """
@@ -269,22 +284,31 @@ class Service:
 
         return True
 
+    # fmt: off
+    # case 1: function is not defined, but input and output are
+    @t.overload
+    def api(self, input: IODescriptor[IOType], output: IODescriptor[IOType]) ->  _inference_api_wrapper[IOType]: ...
+    # case 2: the decorator itself with custom routes
+    @t.overload
+    def api(self, input: IODescriptor[IOType], output: IODescriptor[IOType], *, route: str = ...) ->  _inference_api_wrapper[IOType]: ...
+    # fmt: on
     def api(
         self,
-        func: F | None = None,
+        input: IODescriptor[IOType],
+        output: IODescriptor[IOType],
         *,
-        input: IODescriptor[t.Any],
-        output: IODescriptor[t.Any],
         name: str | None = None,
         doc: str | None = None,
         route: str | None = None,
-    ) -> t.Callable[[F], F]:
+    ) -> _inference_api_wrapper[IOType]:
         """Decorator for adding InferenceAPI to this service"""
 
-        def decorator(fn: F) -> F:
-            _api = InferenceAPI(
+        def decorator(
+            fn: _inference_api_wrapper[IOType],
+        ) -> _inference_api_wrapper[IOType]:
+            _api = InferenceAPI[IOType](
                 name=first_not_none(name, default=fn.__name__),
-                user_defined_callback=func,
+                user_defined_callback=fn,
                 input_descriptor=input,
                 output_descriptor=output,
                 doc=doc,
@@ -297,9 +321,7 @@ class Service:
             self.apis[_api.name] = _api
             return fn
 
-        if func is None:
-            return decorator
-        return decorator(func)
+        return t.cast("_inference_api_wrapper[IOType]", decorator)
 
     def __str__(self):
         if self.bento:

@@ -128,13 +128,13 @@ class Client(ABC):
             )
 
     def _sync_call(
-        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI[t.Any], **kwargs: t.Any
     ):
         return asyncio.run(self._call(inp, _bentoml_api=_bentoml_api, **kwargs))
 
     @abstractmethod
     async def _call(
-        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI[t.Any], **kwargs: t.Any
     ) -> t.Any:
         raise NotImplementedError
 

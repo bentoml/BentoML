@@ -136,6 +136,12 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     def sample(self, value: IOType) -> None:
         self._sample = value
 
+    if t.TYPE_CHECKING:
+
+        @classmethod
+        def from_sample(cls, sample: t.Any, **attrs: t.Any) -> t.Self:
+            ...
+
     @abstractmethod
     def _from_sample(self, sample: t.Any) -> IOType:
         """

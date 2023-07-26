@@ -261,7 +261,7 @@ class GrpcClient(Client):
         self,
         inp: t.Any = None,
         *,
-        _bentoml_api: InferenceAPI,
+        _bentoml_api: InferenceAPI[t.Any],
         **attrs: t.Any,
     ) -> t.Any:
         state = self.channel.get_state(try_to_connect=True)
@@ -362,7 +362,7 @@ if __name__ == '__main__':
 
         for api in metadata.apis:
             try:
-                dummy_service.apis[api.name] = InferenceAPI(
+                dummy_service.apis[api.name] = InferenceAPI[t.Any](
                     None,
                     io_descriptors.from_spec(
                         {

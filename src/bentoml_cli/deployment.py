@@ -100,6 +100,7 @@ def add_deployment_command(cli: click.Group) -> None:
     )
     @click.option("-n", "--name", type=click.STRING, help="Deployment name")
     @click.option("--bento", type=click.STRING, help="Bento tag")
+    @click.option("--kube-namespace", type=click.STRING, help="Kubernetes namespace.")
     @output_option
     @click.pass_obj
     def update(  # type: ignore
@@ -107,6 +108,7 @@ def add_deployment_command(cli: click.Group) -> None:
         file: str | None,
         name: str | None,
         bento: str | None,
+        kube_namespace: str | None,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Update a deployment on BentoCloud.
@@ -127,6 +129,7 @@ def add_deployment_command(cli: click.Group) -> None:
                 bento=bento,
                 context=shared_options.cloud_context,
                 latest_bento=True,
+                kube_namespace=kube_namespace,
             )
         else:
             raise click.BadArgumentUsage(

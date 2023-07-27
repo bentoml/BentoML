@@ -65,6 +65,10 @@ class BadInput(InvalidArgument):
     error_code = HTTPStatus.BAD_REQUEST
 
 
+class ItemAlreadyExists(BentoMLException):
+    """Raised when specified resource already exists"""
+
+
 class NotFound(BentoMLException):
     """
     Raised when specified resource or name not found

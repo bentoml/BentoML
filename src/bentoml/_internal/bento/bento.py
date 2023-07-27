@@ -119,42 +119,36 @@ This is a Machine Learning Service created with BentoML."""
     return doc
 
 
-@attr.define(repr=False, auto_attribs=False)
+@attr.define(repr=False, init=False)
 class Bento(StoreItem):
-    _tag: Tag = attr.field()
-    __fs: FS = attr.field()
-
+    _tag: Tag
+    _fs: FS
     _info: BentoInfo
+    _doc: str | None = attr.field(default=None)
+    _model_store: ModelStore | None = attr.field(default=None)
 
-    _model_store: ModelStore | None = None
-    _doc: str | None = None
+    if t.TYPE_CHECKING:
+
+        def __attrs_init__(
+            self, tag: Tag, bento_fs: FS, info: BentoInfo, doc: str | None
+        ) -> None:
+            ...
+
+    def __init__(self, tag: Tag, bento_fs: FS, info: BentoInfo, doc: str | None = None):
+        self.__attrs_init__(tag, bento_fs, info, doc)
+        # old behaviour
+        try:
+            self._model_store = ModelStore(bento_fs.opendir("models"))
+        except fs.errors.ResourceNotFound:
+            pass
 
     @staticmethod
     def _export_ext() -> str:
         return "bento"
 
-    @__fs.validator  # type:ignore # attrs validators not supported by pyright
-    def check_fs(self, _attr: t.Any, new_fs: FS):
-        try:
-            models = new_fs.opendir("models")
-        except fs.errors.ResourceNotFound:
-            return
-        else:
-            self._model_store = ModelStore(models)
-
-    def __init__(self, tag: Tag, bento_fs: "FS", info: "BentoInfo"):
-        self._tag = tag
-        self.__fs = bento_fs
-        self.check_fs(None, bento_fs)
-        self._info = info
-
     @property
     def tag(self) -> Tag:
         return self._tag
-
-    @property
-    def _fs(self) -> FS:
-        return self.__fs
 
     @property
     def info(self) -> BentoInfo:
@@ -330,7 +324,7 @@ class Bento(StoreItem):
         subpath: t.Optional[str] = None,
     ) -> str:
         # copy the models to fs
-        models_dir = self._fs.makedir("models", recreate=True)
+        models_dir = self.fs.makedir("models", recreate=True)
         model_store = ModelStore(models_dir)
         global_model_store = BentoMLContainer.model_store.get()
         for model in self.info.models:
@@ -350,27 +344,28 @@ class Bento(StoreItem):
                 subpath=subpath,
             )
         finally:
-            self._fs.removetree("models")
+            self.fs.removetree("models")
 
     @property
     def path(self) -> str:
         return self.path_of("/")
 
     def path_of(self, item: str) -> str:
-        return self._fs.getsyspath(item)
+        return self.fs.getsyspath(item)
 
     def flush_info(self):
-        with self._fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
+        with self.fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
             self.info.dump(bento_yaml)
 
     @property
     def doc(self) -> str:
-        if self._doc is not None:
-            return self._doc
-
-        with self._fs.open(BENTO_README_FILENAME, "r") as readme_md:
-            self._doc = str(readme_md.read())
-            return self._doc
+        if self._doc is None:
+            if self.fs.exists(BENTO_README_FILENAME):
+                with self.fs.open(BENTO_README_FILENAME, "r") as readme_md:
+                    self._doc = str(readme_md.read())
+            else:
+                return f"Generated BentoML service for {self.info.name}"
+        return self._doc
 
     @property
     def creation_time(self) -> datetime:
@@ -379,9 +374,9 @@ class Bento(StoreItem):
     @inject
     def save(
         self,
-        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ) -> "Bento":
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    ) -> Bento:
         try:
             self.validate()
         except BentoMLException as e:
@@ -398,18 +393,18 @@ class Bento(StoreItem):
                         target_model_store=model_store,
                     )
                 self._model_store = None
-            fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
+            fs.mirror.mirror(self.fs, out_fs, copy_if_newer=False)
             try:
                 out_fs.removetree("models")
             except fs.errors.ResourceNotFound:
                 pass
-            self._fs.close()
-            self.__fs = out_fs
+            self.fs.close()
+            self.fs = out_fs
 
         return self
 
     def validate(self):
-        if not self._fs.isfile(BENTO_YAML_FILENAME):
+        if not self.fs.isfile(BENTO_YAML_FILENAME):
             raise BentoMLException(
                 f"{self!s} does not contain a {BENTO_YAML_FILENAME}."
             )
@@ -500,7 +495,7 @@ class BentoInfo:
     bentoml_version: str = attr.field(factory=lambda: BENTOML_VERSION)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
-    labels: t.Dict[str, t.Any] = attr.field(
+    labels: t.Dict[str, str] = attr.field(
         factory=dict, converter=normalize_labels_value
     )
     models: t.List[BentoModelInfo] = attr.field(factory=list)
@@ -575,7 +570,7 @@ class BentoInfo:
 
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, BentoInfo),
+    lambda cls: attr.has(cls) and issubclass(cls, BentoInfo),
     make_dict_structure_fn(
         BentoInfo,
         bentoml_cattr,

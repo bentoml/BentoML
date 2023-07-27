@@ -25,6 +25,8 @@ uriSchemeRe = re.compile(r".*[^\\](?=://)")
 
 
 class Exportable(ABC):
+    _fs: FS
+
     @staticmethod
     @abstractmethod
     def _export_ext() -> str:
@@ -33,11 +35,6 @@ class Exportable(ABC):
     @property
     @abstractmethod
     def _export_name(self) -> str:
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def _fs(self) -> FS:
         raise NotImplementedError
 
     @classmethod

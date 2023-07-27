@@ -227,6 +227,50 @@ def pull(
     return _cloud_client.pull_model(tag, force=force)
 
 
+if t.TYPE_CHECKING:
+
+    class CreateKwargs(t.TypedDict):
+        module: str
+        api_version: str | None
+        signatures: t.Required[ModelSignaturesType]
+        labels: dict[str, t.Any] | None
+        options: ModelOptions | None
+        custom_objects: dict[str, t.Any] | None
+        external_modules: t.List[ModuleType] | None
+        metadata: dict[str, t.Any] | None
+        context: t.Required[ModelContext]
+        use_tempfs: t.NotRequired[bool]
+        _model_store: t.NotRequired[ModelStore]
+
+
+@t.overload
+@contextmanager
+def create(
+    name: Tag | str, /, **attrs: t.Unpack[CreateKwargs]
+) -> t.Generator[Model, None, None]:
+    ...
+
+
+@t.overload
+@contextmanager
+def create(
+    name: Tag | str,
+    *,
+    module: str = ...,
+    api_version: str | None = ...,
+    signatures: ModelSignaturesType,
+    labels: dict[str, t.Any] | None = ...,
+    options: ModelOptions | None = ...,
+    custom_objects: dict[str, t.Any] | None = ...,
+    external_modules: t.List[ModuleType] | None = ...,
+    metadata: dict[str, t.Any] | None = ...,
+    context: ModelContext,
+    use_tempfs: bool = ...,
+    _model_store: ModelStore = ...,
+) -> t.Generator[Model, None, None]:
+    ...
+
+
 @inject
 @contextmanager
 def create(
@@ -241,6 +285,7 @@ def create(
     external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
     context: ModelContext,
+    use_tempfs: bool = True,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> t.Generator[Model, None, None]:
     options = ModelOptions() if options is None else options
@@ -255,16 +300,23 @@ def create(
         custom_objects=custom_objects,
         metadata=metadata,
         context=context,
+        use_tempfs=use_tempfs,
+        _model_store=_model_store,
     )
     external_modules = [] if external_modules is None else external_modules
-    imported_modules = []
+    imported_modules: t.List[ModuleType] = []
     try:
+        res.flush()
         res.enter_cloudpickle_context(external_modules, imported_modules)
         yield res
     except Exception as e:
         raise e
+    except KeyboardInterrupt:
+        # During save, if user hit Ctrl+C, we will remove the item path cleanly
+        # so that validate() will work correctly.
+        res.fs.removetree(res.path_of(res.tag.path()))
+        raise
     else:
-        res.flush()
         res.save(_model_store)
         track(
             ModelSaveEvent(

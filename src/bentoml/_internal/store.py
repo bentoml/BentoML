@@ -7,11 +7,13 @@ from abc import ABC
 from abc import abstractmethod
 from contextlib import contextmanager
 
+import attr
 import fs
 import fs.errors
 from fs.base import FS
 
 from ..exceptions import BentoMLException
+from ..exceptions import ItemAlreadyExists
 from ..exceptions import NotFound
 from .exportable import Exportable
 from .tag import Tag
@@ -20,6 +22,7 @@ from .types import PathType
 T = t.TypeVar("T")
 
 
+@attr.define
 class StoreItem(Exportable):
     @property
     @abstractmethod
@@ -27,8 +30,16 @@ class StoreItem(Exportable):
         raise NotImplementedError
 
     @property
-    def _fs(self) -> FS:
-        raise NotImplementedError
+    def fs(self) -> FS:
+        if not hasattr(self, "_fs"):
+            raise AttributeError(
+                f"{self.__class__.__name__} missing required '_fs' attribute."
+            )
+        return self._fs
+
+    @fs.setter
+    def fs(self, value: FS) -> None:
+        self._fs = value
 
     @classmethod
     def get_typename(cls) -> str:
@@ -159,25 +170,37 @@ class Store(ABC, t.Generic[Item]):
             )
 
     @contextmanager
-    def register(self, tag: t.Union[str, Tag]):
+    def register(self, tag: t.Union[str, Tag]) -> t.Generator[str, None, None]:
         _tag = Tag.from_taglike(tag)
 
         item_path = _tag.path()
-        if self._fs.exists(item_path):
-            raise BentoMLException(
+        if self.exists(_tag):
+            raise ItemAlreadyExists(
                 f"Item '{_tag}' already exists in the store {self._fs}"
             )
         self._fs.makedirs(item_path)
         try:
-            yield self._fs.getsyspath(item_path)
-        finally:
+            yield self.path_of(item_path)
+        except Exception:
+            raise
+        else:
             # item generation is most likely successful, link latest path
-            if (
-                not self._fs.exists(_tag.latest_path())
-                or self.get(_tag).creation_time >= self.get(_tag.name).creation_time
-            ):
-                with self._fs.open(_tag.latest_path(), "w") as latest_file:
-                    latest_file.write(_tag.version)
+            self.update_latest(_tag)
+
+    def exists(self, tag: t.Union[str, Tag]) -> bool:
+        return self._fs.exists(Tag.from_taglike(tag).path())
+
+    def path_of(self, path: str) -> str:
+        return self._fs.getsyspath(path)
+
+    def update_latest(self, tag: t.Union[str, Tag]) -> None:
+        _tag = Tag.from_taglike(tag)
+        if (
+            not self._fs.exists(_tag.latest_path())
+            or self.get(_tag).creation_time >= self.get(_tag.name).creation_time
+        ):
+            with self._fs.open(_tag.latest_path(), "w") as latest_file:
+                latest_file.write(_tag.version)
 
     def delete(self, tag: t.Union[str, Tag]) -> None:
         _tag = Tag.from_taglike(tag)

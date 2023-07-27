@@ -138,6 +138,10 @@ def normalize_labels_value(label: dict[str, t.Any] | None) -> dict[str, str] | N
         logger.warning(
             "'labels' should be a dict[str, str] and enforced by BentoML. Converting all values to string."
         )
+        logger.debug(
+            "The following keys are not type string: %s",
+            [k for k, v in label.items() if not isinstance(v, str)],
+        )
     return {k: str(v) for k, v in label.items()}
 
 

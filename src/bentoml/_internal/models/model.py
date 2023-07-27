@@ -26,6 +26,7 @@ from simple_di import Provide
 from simple_di import inject
 
 from ...exceptions import BentoMLException
+from ...exceptions import ItemAlreadyExists
 from ...exceptions import NotFound
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
@@ -72,14 +73,26 @@ class PartialKwargsModelOptions(ModelOptions):
 @attr.define(repr=False, eq=False, init=False)
 class Model(StoreItem):
     _tag: Tag
-    __fs: FS
-
+    _fs: FS
     _info: ModelInfo
+    _is_tempfs: bool
     _custom_objects: dict[str, t.Any] | None = None
 
     _runnable: t.Type[Runnable] | None = attr.field(init=False, default=None)
 
     _model: t.Any = None
+
+    if t.TYPE_CHECKING:
+
+        def __attrs_init__(
+            self,
+            tag: Tag,
+            model_fs: FS,
+            info: ModelInfo,
+            _is_tempfs: bool,
+            custom_objects: dict[str, t.Any] | None = None,
+        ) -> None:
+            ...
 
     def __init__(
         self,
@@ -87,15 +100,16 @@ class Model(StoreItem):
         model_fs: FS,
         info: ModelInfo,
         custom_objects: dict[str, t.Any] | None = None,
+        _is_tempfs: bool = True,
         *,
         _internal: bool = False,
     ):
         if not _internal:
             raise BentoMLException(
-                "Model cannot be instantiated directly directly; use bentoml.<framework>.save or bentoml.models.get instead"
+                "Model cannot be instantiated directly; use bentoml.<framework>.save or bentoml.models.get instead"
             )
 
-        self.__attrs_init__(tag, model_fs, info, custom_objects)  # type: ignore (no types for attrs init)
+        self.__attrs_init__(tag, model_fs, info, _is_tempfs, custom_objects)
 
     @staticmethod
     def _export_ext() -> str:
@@ -104,10 +118,6 @@ class Model(StoreItem):
     @property
     def tag(self) -> Tag:
         return self._tag
-
-    @property
-    def _fs(self) -> FS:
-        return self.__fs
 
     @property
     def info(self) -> ModelInfo:
@@ -135,6 +145,7 @@ class Model(StoreItem):
         return hash(self._tag)
 
     @classmethod
+    @inject
     def create(
         cls,
         name: Tag | str,
@@ -142,11 +153,13 @@ class Model(StoreItem):
         module: str,
         api_version: str,
         signatures: ModelSignaturesType,
+        context: ModelContext,
         labels: dict[str, str] | None = None,
         options: ModelOptions | None = None,
         custom_objects: dict[str, t.Any] | None = None,
         metadata: dict[str, t.Any] | None = None,
-        context: ModelContext,
+        use_tempfs: bool = True,
+        _model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Model:
         """Create a new Model instance in temporary filesystem used for serializing
         model artifacts and save to model store
@@ -167,6 +180,9 @@ class Model(StoreItem):
                 training parameters, model scores
             context: Environment context managed by BentoML for loading model,
                 e.g. {"framework:" "tensorflow", "framework_version": _tf_version}
+            use_tempfs: Whether to save directly to the model store or use a temporary
+                        filesystem for saving model artifacts (Current behaviour includes saving to a temporary filesystem)
+                        Set this to False if you want to save directly to the model store.
 
         Returns:
             object: Model instance created in temporary filesystem
@@ -178,7 +194,16 @@ class Model(StoreItem):
         metadata = {} if metadata is None else metadata
         options = ModelOptions() if options is None else options
 
-        model_fs = fs.open_fs(f"temp://bentoml_model_{tag.name}")
+        if use_tempfs:
+            model_fs = fs.open_fs(f"temp://bentoml_model_{tag.name}")
+        else:
+            if _model_store.exists(tag):
+                raise ItemAlreadyExists(
+                    f"Item '{tag}' already exists in the store {_model_store}"
+                )
+            model_fs = fs.open_fs(
+                _model_store.path_of(tag.path()), create=True, writeable=True
+            )
 
         return cls(
             tag,
@@ -193,26 +218,28 @@ class Model(StoreItem):
                 metadata=metadata,
                 context=context,
             ),
+            _is_tempfs=use_tempfs,
             custom_objects=custom_objects,
             _internal=True,
         )
 
     @inject
     def save(
-        self,
-        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+        self, model_store: ModelStore = Provide[BentoMLContainer.model_store]
     ) -> Model:
         try:
             self.validate()
         except BentoMLException as e:
             raise BentoMLException(f"Failed to save {self!s}: {e}") from None
 
+        if not self._is_tempfs:
+            model_store.update_latest(self.tag)
+            return self
         with model_store.register(self.tag) as model_path:
             out_fs = fs.open_fs(model_path, create=True, writeable=True)
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
-            self.__fs = out_fs
-
+            self.fs = out_fs
         return self
 
     @classmethod
@@ -285,18 +312,11 @@ class Model(StoreItem):
             cloudpickle.unregister_pickle_by_value(mod)
 
     def flush(self):
-        self._write_info()
-        self._write_custom_objects()
-
-    def _write_info(self):
         with self._fs.open(MODEL_YAML_FILENAME, "w", encoding="utf-8") as model_yaml:
             self.info.dump(t.cast(io.StringIO, model_yaml))
-
-    def _write_custom_objects(self):
-        # pickle custom_objects if it is not None and not empty
         if self.custom_objects:
             with self._fs.open(CUSTOM_OBJECTS_FILENAME, "wb") as cofile:
-                cloudpickle.dump(self.custom_objects, cofile)  # type: ignore (incomplete cloudpickle types)
+                cloudpickle.dump(self.custom_objects, cofile)
 
     @property
     def creation_time(self) -> datetime:

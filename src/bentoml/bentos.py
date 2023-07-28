@@ -369,6 +369,10 @@ def build(
         build_args.extend(["--version", version])
     build_args.extend(["--output", "tag"])
 
+    copied = os.environ.copy()
+    if "BENTOML_HOME" not in copied:
+        copied["BENTOML_HOME"] = BentoMLContainer.bentoml_home.get()
+
     with tempfile.NamedTemporaryFile(
         "w", encoding="utf-8", prefix="bentoml-build-", suffix=".yaml"
     ) as f:
@@ -376,16 +380,27 @@ def build(
         bentofile_path = os.path.join(os.path.dirname(f.name), f.name)
         build_args.extend(["--bentofile", bentofile_path])
         try:
-            output = subprocess.check_output(build_args)
+            return get(
+                _parse_tag_from_outputs(
+                    subprocess.check_output(build_args, env=copied)
+                ),
+                _bento_store=_bento_store,
+            )
         except subprocess.CalledProcessError as e:
-            logger.error("Failed to build BentoService bundle: %s", e)
-            raise
+            raise BentoMLException(
+                f"Failed to build BentoService bundle (Lookup for traceback):\n{e}"
+            ) from e
 
-    pattern = r"^__tag__:[^:\n]+:[^:\n]+"
-    matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
-    assert matched is not None, f"Failed to find tag from output: {output}"
-    _, _, tag = matched.group(0).partition(":")
-    return get(tag, _bento_store=_bento_store)
+
+def _parse_tag_from_outputs(output: bytes) -> str:
+    matched = re.search(
+        r"^__tag__:[^:\n]+:[^:\n]+", output.decode("utf-8").strip(), re.MULTILINE
+    )
+    if matched is None:
+        raise BentoMLException(
+            f"Failed to find tag from output: {output}\nNote: Output from 'bentoml build' might not be correct. Please open a tickets on GitHub."
+        )
+    return matched.group(0).partition(":")[-1]
 
 
 @inject
@@ -421,17 +436,18 @@ def build_bentofile(
         build_args.extend(["--version", version])
     build_args.extend(["--bentofile", bentofile, "--output", "tag"])
 
+    copied = os.environ.copy()
+    if "BENTOML_HOME" not in copied:
+        copied["BENTOML_HOME"] = BentoMLContainer.bentoml_home.get()
     try:
-        output = subprocess.check_output(build_args)
+        return get(
+            _parse_tag_from_outputs(subprocess.check_output(build_args, env=copied)),
+            _bento_store=_bento_store,
+        )
     except subprocess.CalledProcessError as e:
-        logger.error("Failed to build BentoService bundle: %s", e)
-        raise
-
-    pattern = r"^__tag__:[^:\n]+:[^:\n]+"
-    matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
-    assert matched is not None, f"Failed to find tag from output: {output}"
-    _, _, tag = matched.group(0).partition(":")
-    return get(tag, _bento_store=_bento_store)
+        raise BentoMLException(
+            f"Failed to build BentoService bundle (Lookup for traceback):\n{e}"
+        ) from e
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:

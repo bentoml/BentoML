@@ -297,6 +297,7 @@ class Service:
         input: IODescriptor[IOType],
         output: IODescriptor[IOType],
         *,
+        stream: bool = False,
         name: str | None = None,
         doc: str | None = None,
         route: str | None = None,

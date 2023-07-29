@@ -78,6 +78,7 @@ class Runnable:
     def method(
         meth: t.Callable[t.Concatenate[T, P], R],
         *,
+        stream: bool = False,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
@@ -90,6 +91,7 @@ class Runnable:
     def method(
         meth: None = None,
         *,
+        stream: bool = False,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
@@ -101,6 +103,7 @@ class Runnable:
     def method(
         meth: t.Callable[t.Concatenate[T, P], R] | None = None,
         *,
+        stream: bool = False,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
@@ -115,6 +118,7 @@ class Runnable:
             return RunnableMethod(
                 meth,
                 RunnableMethodConfig(
+                    is_stream=stream,
                     batchable=batchable,
                     batch_dim=(batch_dim, batch_dim)
                     if isinstance(batch_dim, int)
@@ -153,3 +157,4 @@ class RunnableMethodConfig:
     batch_dim: tuple[int, int]
     input_spec: AnyType | tuple[AnyType, ...] | None = None
     output_spec: AnyType | None = None
+    is_stream: bool = False

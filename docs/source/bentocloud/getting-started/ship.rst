@@ -22,7 +22,7 @@ Having crafted a Bento as illustrated in the preceding section, :doc:`/bentoclou
 Acquiring an API Token
 ----------------------
 
-To transfer your model from the local store to BentoCloud, you first need to secure an API Token. Navigate to the `API Tokens <http://cloud.bentoml.com/api_tokens>`_ page and click **Create**. 
+To transfer your model from the local store to BentoCloud, you first need to secure an API Token. Navigate to the `API Tokens <http://cloud.bentoml.com/api_tokens>`_ page and click **Create**.
 
 .. image:: ../../_static/img/bentocloud/ship-get-api-token.png
 

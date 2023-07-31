@@ -122,7 +122,7 @@ class HTTPClient(Client):
                             f"Malformed BentoML spec received from BentoML server {server_url}"
                         )
                     try:
-                        api = InferenceAPI(
+                        api = InferenceAPI[t.Any](
                             None,
                             io.from_spec(
                                 meth_spec["requestBody"]["x-bentoml-io-descriptor"]
@@ -145,7 +145,7 @@ class HTTPClient(Client):
         return cls(dummy_service, server_url)
 
     async def _call(
-        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI[t.Any], **kwargs: t.Any
     ) -> t.Any:
         # All gRPC kwargs should be poped out.
         kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_grpc_")}

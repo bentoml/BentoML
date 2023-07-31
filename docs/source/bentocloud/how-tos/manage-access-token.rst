@@ -34,7 +34,7 @@ To create an API token, perform the following steps:
 
    - **Name**: The name of the API token.
    - **Description**: A description of the token, detailing its usage.
-   - **User (Deployment Endpoint Access)**: Grants permissions to access Bento Deployments with Protected endpoints. If you select this token type, you need to choose the Deployment that you want the token to access. 
+   - **User (Deployment Endpoint Access)**: Grants permissions to access Bento Deployments with Protected endpoints. If you select this token type, you need to choose the Deployment that you want the token to access.
    - **Developer (API access)**: Grants permissions to manage BentoCloud resources.
 
 4. Record the token. This is the only opportunity to record it.
@@ -44,7 +44,7 @@ Using the Developer Token
 =========================
 
 Interact with BentoCloud programmatically via the BentoML Command Line
-Interface (CLI). Log in using the following command. 
+Interface (CLI). Log in using the following command.
 
 .. code-block:: bash
 

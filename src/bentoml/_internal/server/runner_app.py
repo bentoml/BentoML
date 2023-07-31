@@ -17,6 +17,7 @@ from ..configuration.containers import BentoMLContainer
 from ..context import component_context
 from ..context import trace_context
 from ..marshal.dispatcher import CorkDispatcher
+from ..marshal.dispatcher import NoOpDispatcher
 from ..runner.container import AutoContainer
 from ..runner.container import Payload
 from ..runner.utils import PAYLOAD_META_HEADER
@@ -53,7 +54,7 @@ class RunnerAppFactory(BaseAppFactory):
         self.worker_index = worker_index
         self.enable_metrics = enable_metrics
 
-        self.dispatchers: dict[str, CorkDispatcher] = {}
+        self.dispatchers: dict[str, CorkDispatcher | NoOpDispatcher] = {}
 
         runners_config = BentoMLContainer.runners_config.get()
         traffic = runners_config.get("traffic", {}).copy()
@@ -68,11 +69,14 @@ class RunnerAppFactory(BaseAppFactory):
 
         for method in runner.runner_methods:
             max_batch_size = method.max_batch_size if method.config.batchable else -1
-            self.dispatchers[method.name] = CorkDispatcher(
-                max_latency_in_ms=method.max_latency_ms,
-                max_batch_size=max_batch_size,
-                fallback=fallback,
-            )
+            if method.config.is_stream:
+                self.dispatchers[method.name] = NoOpDispatcher()
+            else:
+                self.dispatchers[method.name] = CorkDispatcher(
+                    max_latency_in_ms=method.max_latency_ms,
+                    max_batch_size=max_batch_size,
+                    fallback=fallback,
+                )
 
     @property
     def name(self) -> str:
@@ -244,18 +248,37 @@ class RunnerAppFactory(BaseAppFactory):
 
             infer = self.dispatchers[runner_method.name](infer_batch)
         else:
+            if runner_method.config.is_stream:
 
-            async def infer_single(paramss: t.Sequence[Params[t.Any]]):
-                assert len(paramss) == 1
+                async def infer_stream(
+                    paramss: t.Sequence[Params[t.Any]],
+                ) -> t.AsyncGenerator[Payload, None]:
+                    assert len(paramss) == 1
 
-                params = paramss[0].map(AutoContainer.from_payload)
+                    params = paramss[0].map(AutoContainer.from_payload)
 
-                ret = await runner_method.async_run(*params.args, **params.kwargs)
+                    ret = await runner_method.async_run(*params.args, **params.kwargs)
 
-                payload = AutoContainer.to_payload(ret, 0)
-                return (payload,)
+                    if runner_method.config.is_stream:
+                        async for data in ret:
+                            payload = AutoContainer.to_payload(data, 0)
+                            yield payload
 
-            infer = self.dispatchers[runner_method.name](infer_single)
+                infer = self.dispatchers[runner_method.name](infer_stream)
+
+            else:
+
+                async def infer_single(paramss: t.Sequence[Params[t.Any]]):
+                    assert len(paramss) == 1
+
+                    params = paramss[0].map(AutoContainer.from_payload)
+
+                    ret = await runner_method.async_run(*params.args, **params.kwargs)
+
+                    payload = AutoContainer.to_payload(ret, 0)
+                    return (payload,)
+
+                infer = self.dispatchers[runner_method.name](infer_single)
 
         async def _request_handler(request: Request) -> Response:
             assert self._is_ready
@@ -282,6 +305,7 @@ class RunnerAppFactory(BaseAppFactory):
                         "Server": server_str,
                     },
                 )
+
             if isinstance(payload, ServiceUnavailable):
                 return Response(
                     "Service Busy",
@@ -311,6 +335,24 @@ class RunnerAppFactory(BaseAppFactory):
                         "Server": server_str,
                     },
                 )
+            from starlette.responses import StreamingResponse
+
+            if runner_method.config.is_stream:
+
+                async def streamer():
+                    async for p in payload:
+                        yield p.data
+
+                return StreamingResponse(
+                    streamer(),
+                    media_type="text/event-stream",
+                    headers={
+                        PAYLOAD_META_HEADER: "{}",
+                        "Content-Type": "application/vnd.bentoml.DefaultContainer",
+                        "Server": server_str,
+                    },
+                )
+
             raise BentoMLException(
                 f"Unexpected payload type: {type(payload)}, {payload}"
             )

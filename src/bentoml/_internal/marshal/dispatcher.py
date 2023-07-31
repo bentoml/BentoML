@@ -401,3 +401,46 @@ class CorkDispatcher:
                     if not fut.done():
                         fut.cancel()
             self._sema.release()
+
+
+class NoOpDispatcher:
+    """
+    NoOpDispatcher is a dispatcher that dispatches requests to the user defined
+    callback function as soon as the request arrives. It does not do any batching
+    or optimization.
+    """
+
+    def __init__(self):
+        pass
+
+    def shutdown(self):
+        pass
+
+    async def inbound_call(self, data: t.Any):
+        return self.callback((data,))
+
+    async def outbound_call(self):
+        pass
+
+    async def controller(self):
+        pass
+
+    def __call__(
+        self,
+        callback: t.Callable[
+            [t.Sequence[T_IN]], t.Coroutine[None, None, t.Sequence[T_OUT]]
+        ],
+    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT]]:
+        self.callback = callback
+
+        @functools.wraps(callback)
+        async def _func(data: t.Any) -> t.Any:
+            try:
+                r = await self.inbound_call(data)
+            except asyncio.CancelledError:
+                return None
+            if isinstance(r, Exception):
+                raise r
+            return r
+
+        return _func

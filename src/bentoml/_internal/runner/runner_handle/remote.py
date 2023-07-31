@@ -274,6 +274,76 @@ class RemoteRunnerClient(RunnerHandle):
 
         return AutoContainer.from_payload(payload)
 
+    def async_stream_method(
+        self,
+        __bentoml_method: RunnerMethod[t.Any, P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> t.AsyncGenerator[R, None]:
+        import aiohttp
+
+        from ...runner.container import AutoContainer
+
+        inp_batch_dim = __bentoml_method.config.batch_dim[0]
+
+        headers = {
+            "Bento-Name": component_context.bento_name,
+            "Bento-Version": component_context.bento_version,
+            "Runner-Name": self._runner.name,
+            "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
+            "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+        }
+        total_args_num = len(args) + len(kwargs)
+        headers["Args-Number"] = str(total_args_num)
+
+        if total_args_num == 1:
+            # FIXME: also considering kwargs
+            if len(kwargs) == 1:
+                kwarg_name = list(kwargs.keys())[0]
+                headers["Kwarg-Name"] = kwarg_name
+                payload = AutoContainer.to_payload(
+                    kwargs[kwarg_name], batch_dim=inp_batch_dim
+                )
+            else:
+                payload = AutoContainer.to_payload(args[0], batch_dim=inp_batch_dim)
+            data = payload.data
+
+            headers["Payload-Meta"] = json.dumps(payload.meta)
+            headers["Payload-Container"] = payload.container
+            headers["Batch-Size"] = str(payload.batch_size)
+
+        else:
+            payload_params = Params[Payload](*args, **kwargs).map(
+                functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
+            )
+            data = pickle.dumps(payload_params)  # FIXME: pickle inside pickle
+
+        path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
+
+        async def stream_response() -> t.AsyncGenerator[R, None]:
+            """
+            Async generator that yields results from the remote runner.
+            """
+            try:
+                async with self._client.post(
+                    f"{self._addr}/{path}",
+                    data=data,
+                    headers=headers,
+                ) as resp:
+                    meta_header = resp.headers[PAYLOAD_META_HEADER]
+                    content_type = resp.headers["Content-Type"]
+                    container = content_type.strip("application/vnd.bentoml.")
+                    async for line in resp.content.iter_any():
+                        payload = Payload(
+                            data=line, meta=json.loads(meta_header), container=container
+                        )
+                        yield AutoContainer.from_payload(payload)
+
+            except aiohttp.ClientOSError as e:
+                raise RemoteException("Failed to connect to runner server.") from e
+
+        return stream_response()
+
     def run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],

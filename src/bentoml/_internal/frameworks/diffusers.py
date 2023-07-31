@@ -29,6 +29,8 @@ if TYPE_CHECKING:
 try:
     import diffusers
     import torch
+    from diffusers.loaders import LoraLoaderMixin
+    from diffusers.loaders import TextualInversionLoaderMixin
     from diffusers.utils.import_utils import is_accelerate_available
     from diffusers.utils.import_utils import is_torch_version
     from diffusers.utils.import_utils import is_xformers_available
@@ -45,12 +47,15 @@ API_VERSION = "v1"
 
 logger = logging.getLogger(__name__)
 
+LoraOptionType = str | dict[str, str]
+TextualInversionOptionType = str | dict[str, str]
+
 
 @attr.define
 class DiffusersOptions(PartialKwargsModelOptions):
     """Options for the diffusers model."""
 
-    pipeline_class: str | type[diffusers.pipelines.DiffusionPipeline] | None = None
+    pipeline_class: str | type[diffusers.DiffusionPipeline] | None = None
     scheduler_class: str | type[diffusers.SchedulerMixin] | None = None
     torch_dtype: str | torch.dtype | None = None
     device_map: str | dict[str, int | str | torch.device] | None = None
@@ -62,14 +67,66 @@ class DiffusersOptions(PartialKwargsModelOptions):
     low_cpu_mem_usage: bool | None = None
     variant: str | None = None
     load_pretrained_extra_kwargs: dict[str, t.Any] | None = None
+    lora_weights: LoraOptionType | list[LoraOptionType] | None = None
+    textual_inversions: TextualInversionOptionType | list[
+        TextualInversionOptionType
+    ] | None = None
+
+
+def _prepare_lora_args(raw_arg: LoraOptionType) -> tuple[str, dict[str, str]]:
+    if isinstance(raw_arg, str):
+        # if user only provide a string, we consider that a path to
+        # the weight file
+        model_name = "."
+        kwargs = {"weight_name": raw_arg}
+        return (model_name, kwargs)
+
+    model_name = raw_arg.pop("model_name")
+    return (model_name, raw_arg)
+
+
+def _load_lora_weights_to_pipeline(
+    pipeline: diffusers.DiffusionPipeline,
+    lora_weights: LoraOptionType | list[LoraOptionType],
+):
+    if not isinstance(lora_weights, list):
+        lora_weights = [lora_weights]
+
+    if len(lora_weights) > 1:
+        logger.warning(
+            "Currently diffusers only support single lora weight loading. The first lora weight will be loaded and the rest will be discarded"
+        )
+
+    lora_weight = lora_weights[0]
+    model_name, kwargs = _prepare_lora_args(lora_weight)
+    pipeline.load_lora_weights(model_name, **kwargs)
+
+
+def _prepare_textual_inversion_args(
+    raw_arg: TextualInversionOptionType,
+) -> tuple[str, dict[str, str]]:
+    if isinstance(raw_arg, str):
+        # if user only provide a string, we consider that a path to
+        # the weight file
+        model_name = "."
+        kwargs = {"weight_name": raw_arg}
+        return (model_name, kwargs)
+
+    model_name = raw_arg.pop("model_name")
+    return (model_name, raw_arg)
 
 
 def _str2cls(
     full_cls_str: str,
-) -> type[diffusers.pipelines.DiffusionPipeline | diffusers.SchedulerMixin]:
+) -> type[diffusers.DiffusionPipeline | diffusers.SchedulerMixin]:
     import importlib
 
     module_name, _, class_name = full_cls_str.rpartition(".")
+
+    # if user only provide something like "StableDiffusionpipeline"
+    # with out the module name, we will try the sane default
+    if not module_name:
+        module_name = "diffusers"
 
     module = importlib.import_module(module_name)
     cls = getattr(module, class_name)
@@ -132,9 +189,8 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 def load_model(
     bento_model: str | Tag | bentoml.Model,
     device_id: str | torch.device | None = None,
-    pipeline_class: type[
-        diffusers.pipelines.DiffusionPipeline
-    ] = diffusers.StableDiffusionPipeline,
+    pipeline_class: str
+    | type[diffusers.pipelines.DiffusionPipeline] = diffusers.DiffusionPipeline,
     device_map: str | dict[str, int | str | torch.device] | None = None,
     custom_pipeline: str | None = None,
     scheduler_class: type[diffusers.SchedulerMixin] | None = None,
@@ -145,6 +201,10 @@ def load_model(
     enable_model_cpu_offload: bool | None = None,
     enable_sequential_cpu_offload: bool | None = None,
     variant: str | None = None,
+    lora_weights: LoraOptionType | list[LoraOptionType] | None = None,
+    textual_inversions: TextualInversionOptionType
+    | list[TextualInversionOptionType]
+    | None = None,
     load_pretrained_extra_kwargs: dict[str, t.Any] | None = None,
 ) -> diffusers.DiffusionPipeline:
     """
@@ -159,7 +219,7 @@ def load_model(
             Optional devices to put the given model on. Refer to `device attributes <https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device>`_.
         pipeline_class (:code:`type[diffusers.DiffusionPipeline]`, `optional`):
             DiffusionPipeline Class use to load the saved diffusion model, default to
-            ``diffusers.StableDiffusionPipeline``. For more pipeline types, refer to
+            ``diffusers.DiffusionPipeline``. For more pipeline types, refer to
             `Pipeline Overview <https://huggingface.co/docs/diffusers/api/pipelines/overview>`_
         device_map (:code:`None | str | Dict[str, Union[int, str, torch.device]]`, `optional`):
             A map that specifies where each submodule should go. For more information, refer to
@@ -177,8 +237,22 @@ def load_model(
         enable_xformers (:code:`bool`, `optional`):
             Use xformers optimization if it's available. For more info, refer to
             https://github.com/facebookresearch/xformers
-        variant (`str`, *optional*):
+        variant (:code:`str`, *optional*):
             If specified load weights from `variant` filename, *e.g.* pytorch_model.<variant>.bin.
+        lora_weights (:code:`LoraOptionType | list[LoraOptionType]` *optional*):
+            lora weights to be loaded. :code:`LoraOptionType` can be either a string or a dictionary.
+            When it's a string, it represents a path to the weight file. When it's a dictionary, it
+            contains a key :code`"model_name"` pointing to a huggingface repository or a local directory,
+            a key :code:`weight_name` pointing the weight file and other keys that will be passed to
+            pipeline's :code:`load_lora_weights` method.
+        textual_inversions (:code:`TextualInversionOptionType | list[TextualInversionOptionType]` *optional*):
+            Textual inversions to be loaded. :code:`TextualInversionOptionType` can be either a string or a dictionary.
+            When it's a string, it represents a path to the weight file. When it's a dictionary, it
+            contains a key :code`"model_name"` pointing to a huggingface repository or a local directory,
+            a key :code:`weight_name` pointing the weight file and other keys that will be passed to
+            pipeline's :code:`load_lora_weights` method.
+        load_pretrained_extra_kwargs: (:code:`dict[str, t.Any]`, *optional*):
+            Extra kwargs passed to Pipeline class's :code:`from_pretrained` method
 
     Returns:
         The Diffusion model loaded as diffusers pipeline from the BentoML model store.
@@ -199,8 +273,22 @@ def load_model(
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
-    if pipeline_class is None:
-        pipeline_class = diffusers.StableDiffusionPipeline
+    if isinstance(pipeline_class, str):
+        pipeline_class = t.cast(
+            type[diffusers.DiffusionPipeline], _str2cls(pipeline_class)
+        )
+
+    if lora_weights:
+        if not issubclass(pipeline_class, LoraLoaderMixin):
+            raise NotImplementedError(
+                f"Class {pipeline_class} is not a subclass of LoraLoaderMixin, cannot load textual inversions"
+            )
+
+    if textual_inversions:
+        if not issubclass(pipeline_class, TextualInversionLoaderMixin):
+            raise NotImplementedError(
+                f"Class {pipeline_class} is not a subclass of TextualInversionLoaderMixin, cannot load lora weights"
+            )
 
     diffusion_model_dir = bento_model.path_of(DIFFUSION_MODEL_FOLDER)
 
@@ -256,6 +344,17 @@ def load_model(
     if enable_attention_slicing is not None:
         pipeline.enable_attention_slicing(enable_attention_slicing)
 
+    if lora_weights:
+        _load_lora_weights_to_pipeline(pipeline, lora_weights)
+
+    if textual_inversions:
+        if not isinstance(textual_inversions, list):
+            textual_inversions = [textual_inversions]
+
+        for textual_inversion in textual_inversions:
+            model_name, kwargs = _prepare_textual_inversion_args(textual_inversion)
+            pipeline.load_textual_inversion(model_name, **kwargs)
+
     return pipeline
 
 
@@ -266,7 +365,7 @@ def import_model(
     proxies: dict[str, str] | None = None,
     revision: str = "main",
     variant: str | None = None,
-    pipeline_class: diffusers.pipelines.DiffusionPipeline | None = None,
+    pipeline_class: str | type[diffusers.DiffusionPipeline] | None = None,
     sync_with_hub_version: bool = False,
     signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
@@ -359,6 +458,11 @@ def import_model(
             'Using the default model signature for diffusers (%s) for model "%s".',
             signatures,
             name,
+        )
+
+    if pipeline_class and isinstance(pipeline_class, str):
+        pipeline_class = t.cast(
+            type[diffusers.DiffusionPipeline], _str2cls(pipeline_class)
         )
 
     options_dict: dict[str, str] = {}
@@ -523,14 +627,21 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     bento_options = t.cast(DiffusersOptions, bento_model.info.options)
     partial_kwargs: dict[str, t.Any] = bento_options.partial_kwargs  # type: ignore
     pipeline_class: str | type[diffusers.DiffusionPipeline] = (
-        bento_options.pipeline_class or diffusers.StableDiffusionPipeline
+        bento_options.pipeline_class or diffusers.DiffusionPipeline
     )
     if isinstance(pipeline_class, str):
-        pipeline_class = _str2cls(pipeline_class)
+        pipeline_class = t.cast(
+            type[diffusers.DiffusionPipeline], _str2cls(pipeline_class)
+        )
 
-    scheduler_class: type[
+    scheduler_class: str | type[
         diffusers.SchedulerMixin
     ] | None = bento_options.scheduler_class
+
+    if scheduler_class and isinstance(scheduler_class, str):
+        scheduler_class = t.cast(
+            type[diffusers.SchedulerMixin], _str2cls(scheduler_class)
+        )
 
     custom_pipeline: str | None = bento_options.custom_pipeline
     _enable_xformers: bool | None = bento_options.enable_xformers
@@ -546,6 +657,26 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         str, int | str | torch.device
     ] | None = bento_options.device_map
     load_pretrained_extra_kwargs = bento_options.load_pretrained_extra_kwargs
+
+    support_lora = True if issubclass(pipeline_class, LoraLoaderMixin) else False
+    support_textual_inversion = (
+        True if issubclass(pipeline_class, TextualInversionLoaderMixin) else False
+    )
+
+    lora_weights = bento_options.lora_weights
+    textual_inversions = bento_options.textual_inversions
+
+    if not support_lora and lora_weights:
+        raise NotImplementedError(
+            f"Class {pipeline_class} is not a subclass of LoraLoaderMixin, cannot load lora weights. "
+            "Try using `bento_model.with_options(pipeline_class=diffusers.StableDiffusionPipeline) to specify the pipeline's class"
+        )
+
+    if not support_textual_inversion and textual_inversions:
+        raise NotImplementedError(
+            f"Class {pipeline_class} is not a subclass of TextualInversionLoaderMixin, cannot load textual inversions"
+            "Try using `bento_model.with_options(pipeline_class=diffusers.StableDiffusionPipeline) to specify the pipeline's class"
+        )
 
     class DiffusersRunnable(bentoml.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
@@ -582,6 +713,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 enable_model_cpu_offload=enable_model_cpu_offload,
                 low_cpu_mem_usage=low_cpu_mem_usage,
                 variant=variant,
+                lora_weights=lora_weights,
+                textual_inversions=textual_inversions,
                 load_pretrained_extra_kwargs=load_pretrained_extra_kwargs,
             )
 
@@ -609,25 +742,92 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                     error_message="cannot import scheduler class",
                 )
 
+    if support_lora:
+
+        def _load_lora_weights(
+            self: DiffusersRunnable,
+            lora_weights: LoraOptionType | list[LoraOptionType],
+        ):
+            _load_lora_weights_to_pipeline(self.pipeline, lora_weights)
+
+        def _unload_lora_weights(
+            self: DiffusersRunnable,
+        ):
+            self.pipeline.unload_lora_weights()
+
+            # clear cached lora weights from GPU memory
+            torch.cuda.empty_cache()
+
+    else:
+
+        def _load_lora_weights(
+            self: DiffusersRunnable,
+            lora_args: LoraOptionType | list[LoraOptionType],
+        ):
+            raise NotImplementedError(
+                f"Class {pipeline_class} is not a subclass of LoraLoaderMixin, cannot load lora weights"
+            )
+
+        def _unload_lora_weights(
+            self: DiffusersRunnable,
+        ):
+            raise NotImplementedError(
+                f"Class {pipeline_class} is not a subclass of LoraLoaderMixin, cannot unload lora weights"
+            )
+
+    setattr(DiffusersRunnable, "_load_lora_weights", _load_lora_weights)
+    setattr(DiffusersRunnable, "_unload_lora_weights", _unload_lora_weights)
+
     def make_run_method(
         method_name: str, partial_kwargs: dict[str, t.Any] | None
     ) -> t.Callable[..., t.Any]:
-        def _run_method(
-            runnable_self: DiffusersRunnable,
-            *args: t.Any,
-            **kwargs: t.Any,
-        ) -> t.Any:
-            if method_partial_kwargs is not None:
-                kwargs = dict(method_partial_kwargs, **kwargs)
+        if support_lora:
 
-            raw_method = getattr(runnable_self.pipeline, method_name)
-            res = raw_method(*args, **kwargs)
+            def _run_method(
+                runnable_self: DiffusersRunnable,
+                *args: t.Any,
+                **kwargs: t.Any,
+            ) -> t.Any:
+                if method_partial_kwargs is not None:
+                    kwargs = dict(method_partial_kwargs, **kwargs)
 
-            # handle BaseOutput cannot be serialized yet
-            if isinstance(res, diffusers.utils.BaseOutput):
-                res = res.to_tuple()
+                lora_weights: str | None = kwargs.pop("lora_weights", None)
 
-            return res
+                try:
+                    if lora_weights is not None:
+                        runnable_self._load_lora_weights(lora_weights)
+
+                    raw_method = getattr(runnable_self.pipeline, method_name)
+                    res = raw_method(*args, **kwargs)
+
+                finally:
+                    if lora_weights is not None:
+                        runnable_self._unload_lora_weights()
+
+                # handle BaseOutput cannot be serialized yet
+                if isinstance(res, diffusers.utils.BaseOutput):
+                    res = res.to_tuple()
+
+                return res
+
+        else:
+
+            def _run_method(
+                runnable_self: DiffusersRunnable,
+                *args: t.Any,
+                **kwargs: t.Any,
+            ) -> t.Any:
+                if method_partial_kwargs is not None:
+                    kwargs = dict(method_partial_kwargs, **kwargs)
+
+                raw_method = getattr(runnable_self.pipeline, method_name)
+                res = raw_method(*args, **kwargs)
+
+                # handle BaseOutput cannot be serialized yet
+                if isinstance(res, diffusers.utils.BaseOutput):
+                    res = res.to_tuple()
+
+                return res
 
         return _run_method
 

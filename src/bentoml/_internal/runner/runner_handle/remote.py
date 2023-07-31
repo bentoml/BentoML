@@ -330,13 +330,8 @@ class RemoteRunnerClient(RunnerHandle):
                     data=data,
                     headers=headers,
                 ) as resp:
-                    meta_header = resp.headers[PAYLOAD_META_HEADER]
-                    content_type = resp.headers["Content-Type"]
-                    container = content_type.strip("application/vnd.bentoml.")
                     async for line in resp.content.iter_any():
-                        payload = Payload(
-                            data=line, meta=json.loads(meta_header), container=container
-                        )
+                        payload = pickle.loads(line)
                         yield AutoContainer.from_payload(payload)
 
             except aiohttp.ClientOSError as e:

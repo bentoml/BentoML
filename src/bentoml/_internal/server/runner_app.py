@@ -339,16 +339,19 @@ class RunnerAppFactory(BaseAppFactory):
 
             if runner_method.config.is_stream:
 
-                async def streamer():
+                async def streamer() -> t.AsyncGenerator[bytes, None]:
+                    """
+                    Extract Data from a AsyncGenerator[Payload, None]
+                    """
                     async for p in payload:
-                        yield p.data
+                        yield pickle.dumps(p)
 
                 return StreamingResponse(
                     streamer(),
                     media_type="text/event-stream",
                     headers={
-                        PAYLOAD_META_HEADER: "{}",
-                        "Content-Type": "application/vnd.bentoml.DefaultContainer",
+                        PAYLOAD_META_HEADER: json.dumps({}),
+                        "Content-Type": "application/vnd.bentoml.stream_outputs",
                         "Server": server_str,
                     },
                 )

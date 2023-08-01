@@ -16,8 +16,8 @@ Prerequisites
 -------------
 
 - Make sure you have Python 3.8+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
-- You have `BentoML installed </quickstarts/install-bentoml.html>`_.
-- You have a basic understanding of key concepts in BentoML, such as Services and Bentos. We recommend you read Deploy a Transformer model with BentoML first.
+- You have :doc:`BentoML installed </quickstarts/install-bentoml>`.
+- You have a basic understanding of key concepts in BentoML, such as Services and Bentos. We recommend you read :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml` first.
 - (Optional) Install `Docker <https://docs.docker.com/get-docker/>`_ if you want to containerize the Bento.
 - (Optional) We recommend you create a virtual environment for dependency isolation for this quickstart. For more information about virtual environments in Python, see `Creation of virtual environments <https://docs.python.org/3/library/venv.html>`_.
 
@@ -26,7 +26,7 @@ Install OpenLLM
 
 Run the following command to install OpenLLM.
 
-.. code-block::
+.. code-block:: bash
 
    pip install openllm
 
@@ -36,6 +36,7 @@ Create a BentoML Service
 Create a ``service.py`` file to define a BentoML `Service <../../concepts/service.html>`_ and a model `Runner <../../concepts/runner.html>`_. As the Service starts, the model defined in it will be downloaded automatically if it does not exist locally.
 
 .. code-block:: python
+   :caption: `service.py`
 
    from __future__ import annotations
 
@@ -69,7 +70,7 @@ Here is a breakdown of the ``service.py`` file.
 
 Use ``bentoml serve`` to start the Service.
 
-.. code-block::
+.. code-block:: bash
 
    $ bentoml serve service:svc
 
@@ -102,7 +103,7 @@ Output:
 
 The model should be downloaded automatically to the Model Store.
 
-.. code-block::
+.. code-block:: bash
 
    $ bentoml models list
 
@@ -115,7 +116,8 @@ Build a Bento
 After the Service is ready, you can package it into a `Bento <../../concepts/bento.html>`_ by specifying a configuration YAML file (``bentofile.yaml``) that defines the build options. See `Bento build options <../../concepts/bento.html#bento-build-options>`_ to learn more.
 
 .. code-block:: yaml
-
+   :caption: `bentofile.yaml`
+   
    service: "service:svc"
    include:
    - "*.py"
@@ -125,7 +127,7 @@ After the Service is ready, you can package it into a `Bento <../../concepts/ben
 
 Run ``bentoml build`` in your project directory to build the Bento.
 
-.. code-block::
+.. code-block:: bash
 
    $ bentoml build
 
@@ -155,7 +157,7 @@ Deploy a Bento
 
 To containerize the Bento with Docker, run:
 
-.. code-block::
+.. code-block:: bash
 
    bentoml containerize llm-dolly-service:oatecjraxktp6nry
 
@@ -165,4 +167,5 @@ For more information, see :doc:`/concepts/deploy`.
 See also
 --------
 
-- :doc:`Install BentoML </quickstarts/install-bentoml>`
+- :doc:`/quickstarts/install-bentoml`
+- :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`

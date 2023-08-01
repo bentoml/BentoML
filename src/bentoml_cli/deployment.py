@@ -17,6 +17,7 @@ else:
 def add_deployment_command(cli: click.Group) -> None:
     import json
 
+    import click_option_group as cog
     from rich.table import Table
 
     from bentoml._internal.configuration.containers import BentoMLContainer
@@ -33,30 +34,43 @@ def add_deployment_command(cli: click.Group) -> None:
         help="Display the output of this command.",
     )
 
-    def shared_decorator(f: t.Callable[..., t.Any]):
-        options = [
-            click.argument(
-                "deployment-name",
-                type=click.STRING,
-                required=True,
-            ),
-            click.option(
-                "--cluster-name",
-                type=click.STRING,
-                default=None,
-                help="Name of the cluster.",
-            ),
-            click.option(
-                "--kube-namespace",
-                type=click.STRING,
-                default=None,
-                help="Kubernetes namespace.",
-            ),
-            output_option,
-        ]
-        for opt in reversed(options):
-            f = opt(f)
-        return f
+    def shared_decorator(
+        f: t.Callable[..., t.Any] | None = None,
+        *,
+        required_deployment_name: bool = True,
+    ) -> t.Callable[..., t.Any]:
+        def decorate(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+            options = [
+                click.argument(
+                    "deployment-name",
+                    type=click.STRING,
+                    required=required_deployment_name,
+                ),
+                cog.optgroup.group(
+                    cls=cog.AllOptionGroup, name="cluster and kube namespace options"
+                ),
+                cog.optgroup.option(
+                    "--cluster-name",
+                    type=click.STRING,
+                    default=None,
+                    help="Name of the cluster.",
+                ),
+                cog.optgroup.option(
+                    "--kube-namespace",
+                    type=click.STRING,
+                    default=None,
+                    help="Kubernetes namespace.",
+                ),
+                output_option,
+            ]
+            for opt in reversed(options):
+                f = opt(f)
+            return f
+
+        if f:
+            return decorate(f)
+        else:
+            return decorate
 
     @cli.group(name="deployment", cls=BentoMLCommandGroup)
     def deployment_cli():
@@ -92,21 +106,26 @@ def add_deployment_command(cli: click.Group) -> None:
         return res
 
     @deployment_cli.command()
+    @shared_decorator(required_deployment_name=False)
     @click.option(
         "-f",
         "--file",
         type=click.File(),
         help="JSON file path for the deployment configuration",
     )
-    @click.option("-n", "--name", type=click.STRING, help="Deployment name")
+    @click.option(
+        "-n", "--name", type=click.STRING, help="Deployment name (deprecated)"
+    )
     @click.option("--bento", type=click.STRING, help="Bento tag")
-    @output_option
     @click.pass_obj
     def update(  # type: ignore
         shared_options: SharedOptions,
+        deployment_name: str | None,
         file: str | None,
         name: str | None,
         bento: str | None,
+        cluster_name: str | None,
+        kube_namespace: str | None,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Update a deployment on BentoCloud.
@@ -115,9 +134,17 @@ def add_deployment_command(cli: click.Group) -> None:
         A deployment can be updated using a json file with needed configurations.
         The json file has the exact format as the one on BentoCloud Deployment UI.
         """
+        if name is not None:
+            click.echo(
+                "--name is deprecated, pass DEPLOYMENT_NAME as an argument instead, e.g., bentoml update deploy-name"
+            )
         if file is not None:
             if name is not None:
                 click.echo("Reading from file, ignoring --name", err=True)
+            elif deployment_name is not None:
+                click.echo(
+                    "Reading from file, ignoring argument DEPLOYMENT_NAME", err=True
+                )
             res = client.deployment.update_from_file(
                 path_or_stream=file, context=shared_options.cloud_context
             )
@@ -127,10 +154,21 @@ def add_deployment_command(cli: click.Group) -> None:
                 bento=bento,
                 context=shared_options.cloud_context,
                 latest_bento=True,
+                cluster_name=cluster_name,
+                kube_namespace=kube_namespace,
+            )
+        elif deployment_name is not None:
+            res = client.deployment.update(
+                deployment_name,
+                bento=bento,
+                context=shared_options.cloud_context,
+                latest_bento=True,
+                cluster_name=cluster_name,
+                kube_namespace=kube_namespace,
             )
         else:
             raise click.BadArgumentUsage(
-                "Either --file or --name is required for update command"
+                "Either --file or argument DEPLOYMENT_NAME is required for update command"
             )
         if output == "default":
             console.print(res)
@@ -145,8 +183,8 @@ def add_deployment_command(cli: click.Group) -> None:
     def get(  # type: ignore
         shared_options: SharedOptions,
         deployment_name: str,
-        cluster_name: str,
-        kube_namespace: str,
+        cluster_name: str | None,
+        kube_namespace: str | None,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Get a deployment on BentoCloud."""
@@ -169,8 +207,8 @@ def add_deployment_command(cli: click.Group) -> None:
     def terminate(  # type: ignore
         shared_options: SharedOptions,
         deployment_name: str,
-        cluster_name: str,
-        kube_namespace: str,
+        cluster_name: str | None,
+        kube_namespace: str | None,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Terminate a deployment on BentoCloud."""
@@ -193,8 +231,8 @@ def add_deployment_command(cli: click.Group) -> None:
     def delete(  # type: ignore
         shared_options: SharedOptions,
         deployment_name: str,
-        cluster_name: str,
-        kube_namespace: str,
+        cluster_name: str | None,
+        kube_namespace: str | None,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Delete a deployment on BentoCloud."""
@@ -237,11 +275,11 @@ def add_deployment_command(cli: click.Group) -> None:
     @click.pass_obj
     def list(  # type: ignore
         shared_options: SharedOptions,
-        cluster_name: str,
-        query: str,
-        search: str,
-        count: int,
-        start: int,
+        cluster_name: str | None,
+        query: str | None,
+        search: str | None,
+        count: int | None,
+        start: int | None,
         output: t.Literal["json", "default", "table"],
     ) -> DeploymentListSchema:
         """List existing deployments on BentoCloud."""

@@ -95,4 +95,4 @@ GitHub account <https://github.com/bentoml>`_.
 See also
 --------
 
--  :doc:`What is BentoML? </overview/what-is-bentoml>`
+- :doc:`What is BentoML? </overview/what-is-bentoml>`

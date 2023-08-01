@@ -255,6 +255,10 @@ With the Docker image, you can run the model on Kubernetes and create a Kubernet
 If you prefer a serverless platform to build and operate AI applications, you can deploy Bentos to BentoCloud. It gives AI application developers a collaborative environment
 and a user-friendly toolkit to ship and iterate AI products. For more information, see :doc:`/bentocloud/how-tos/deploy-bentos`.
 
+.. note::
+
+   BentoML provides a GitHub Action to help you automate the process of building Bentos and deploying them to the cloud. For more information, see :doc:`/guides/github-actions`.
+
 See also
 --------
 

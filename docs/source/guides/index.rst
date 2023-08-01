@@ -40,6 +40,10 @@ into this part of the documentation.
         :link: /guides/scheduling
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/guides/github-actions`
+        :link: /guides/github-actions
+        :link-type: doc
+
     .. grid-item-card:: :doc:`/guides/graph`
         :link: /guides/graph
         :link-type: doc
@@ -90,6 +94,7 @@ into this part of the documentation.
     configuration
     scheduling
     envmanager
+    github-actions
     graph
     monitoring
     logging

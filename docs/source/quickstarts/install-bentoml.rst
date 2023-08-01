@@ -79,7 +79,6 @@ folder can be tested immediately.
 
    See setuptools' `development mode guide <https://setuptools.pypa.io/en/latest/userguide/development_mode.html>`_ for more information.
 
-
 .. warning::
 
    To keep using the library, you must not remove the ``bentoml`` folder after installing it in editable mode.

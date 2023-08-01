@@ -1,6 +1,6 @@
-============
-Installation
-============
+===============
+Install BentoML
+===============
 
 🍱 BentoML is distributed as a Python Package available `on PyPI <https://pypi.org/project/bentoml/>`_.
 Install BentoML alongside with whichever deep learning library you are working with, and you are ready to go!

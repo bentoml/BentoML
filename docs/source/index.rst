@@ -81,15 +81,12 @@ To receive release notification, star & watch the `BentoML project on GitHub <ht
 For release notes and detailed changelog, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.
 
 
-
-
-
 .. toctree::
    :caption: BentoML
    :hidden:
 
-   installation
-   tutorial
+   overview/index
+   quickstarts/index
    concepts/index
    frameworks/index
    guides/index

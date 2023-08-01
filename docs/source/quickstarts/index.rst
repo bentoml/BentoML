@@ -19,7 +19,7 @@ This section contains several quickstarts that allow you to quickly get started 
         :link: /quickstarts/deploy-a-transformer-model-with-bentoml
         :link-type: doc
 
-        Learn how to deploy a Transformer model with BentoML.
+        Get familiar with key concepts in BentoML and the workflow by deploying a Transformer model.
 
     .. grid-item-card:: :doc:`/quickstarts/deploy-a-large-language-model-with-openllm-and-bentoml`
         :link: /quickstarts/deploy-a-large-language-model-with-openllm-and-bentoml

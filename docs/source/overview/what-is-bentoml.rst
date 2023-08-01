@@ -23,7 +23,7 @@ Streamline distribution with a unified format
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ML projects often involve different roles and complex collaboration. BentoML simplifies this process through a unified distribution format - a file
-archive known as a `Bento <../../concepts/bento.html>`_. With BentoML’s open standard and SDK for AI applications,
+archive known as a :doc:`Bento </concepts/bento>`. With BentoML’s open standard and SDK for AI applications,
 you can package all the necessary components into a Bento.
 
 You can manage all the Bentos in the local Bento Store and keep iterating them as your application evolves. BentoML auto-generates API servers
@@ -35,15 +35,15 @@ Build applications with any AI models
 
 BentoML provides the flexibility and ease to build any AI applications with any tools your team prefers. Whether you want to import models from any
 model hub or bring your own models built with frameworks such as PyTorch, TensorFlow, Keras, Scikit-Learn, XGBoost,
-and `many more <../../frameworks/index.html>`_, you can use BentoML’s local Model Store to manage them and build
+and :doc:`many more </frameworks/index>`, you can use BentoML’s local Model Store to manage them and build
 applications on top of them.
 
 BentoML offers native support for `Large Language Model (LLM) inference <https://github.com/bentoml/openllm/#bentoml>`_,
 `Generative AI <https://github.com/bentoml/stable-diffusion-bentoml>`_, `embedding creation <https://github.com/bentoml/CLIP-API-service>`_,
 and `multi-modal AI applications <https://github.com/bentoml/Distributed-Visual-ChatGPT>`_. Additionally, it integrates smoothly with popular tools
-like `MLFlow <../../integrations/mlflow.html>`_, `LangChain <https://github.com/ssheng/BentoChain>`_,
-`Kubeflow <https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/>`_, `Triton <../../integrations/triton.html>`_,
-`Spark <../../integrations/spark.html>`_, `Ray <../../integrations/ray.html>`_, and many more to complete your production AI stack.
+like :doc:`MLFlow </integrations/mlflow>`, `LangChain <https://github.com/ssheng/BentoChain>`_,
+`Kubeflow <https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/>`_, :doc:`Triton </integrations/triton>`,
+:doc:`Spark </integrations/spark>`, :doc:`Ray </integrations/ray>`, and many more to complete your production AI stack.
 
 Boost AI application performance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -57,8 +57,8 @@ Simplify modern AI application architectures
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 BentoML is designed with a Python-first approach, ensuring the effortless scalability of complex AI workloads. It simplifies the architecture of
-modern AI applications by allowing you to `compose multiple models <../../guides/graph.html>`_ to run either
-concurrently or sequentially, across `multiple GPUs <../../guides/scheduling.html>`_ or on a Kubernetes cluster.
+modern AI applications by allowing you to :doc:`compose multiple models </guides/graph>` to run either
+concurrently or sequentially, across :doc:`multiple GPUs </guides/scheduling>` or on a Kubernetes cluster.
 This flexibility extends to running and debugging your BentoML applications locally, whether you are using Mac, Windows, or Linux.
 
 Deploy your models anywhere
@@ -121,4 +121,6 @@ To deploy a Bento to production, you can choose either of the following ways:
 See also
 --------
 
-- :doc:`Ecosystem </overview/ecosystem>`
+- :doc:`/overview/ecosystem`
+- :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`
+- :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`

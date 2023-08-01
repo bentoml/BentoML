@@ -96,3 +96,9 @@ with the following command:
 
     cd bentoml
     git pull
+
+See also
+--------
+
+- :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`
+- :doc:`/quickstarts/deploy-a-large-language-model-with-openllm-and-bentoml`

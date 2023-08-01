@@ -13,7 +13,7 @@ Specifically, you will do the following in this tutorial:
 - Create a BentoML Service
 - Build a Bento
 - Serve the Bento
-- Containerize the Bento with Docker
+- (Optional) Containerize the Bento with Docker
 
 Prerequisites
 -------------

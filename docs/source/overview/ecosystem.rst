@@ -82,12 +82,12 @@ GitHub account <https://github.com/bentoml>`_.
    The BentoML ecosystem extends beyond its core tools. It
    features seamless integrations with other popular technologies such
    as
-   `MLFlow <../../integrations/mlflow.html>`_,
+   :doc:`MLFlow </integrations/mlflow>`,
    `LangChain <https://github.com/ssheng/BentoChain>`_,
    `Kubeflow <https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/>`_,
-   `Triton <../../integrations/triton.html>`_,
-   `Spark <../../integrations/spark.html>`_, and
-   `Ray <../../integrations/ray.html>`_.
+   :doc:`Triton </integrations/triton>`,
+   :doc:`Spark </integrations/spark>`, and
+   :doc:`Ray </integrations/ray>`.
    This interoperability widens the reach of BentoML, fostering
    collaboration across various ecosystems and expanding opportunities
    for users of these tools.
@@ -95,4 +95,5 @@ GitHub account <https://github.com/bentoml>`_.
 See also
 --------
 
-- :doc:`What is BentoML? </overview/what-is-bentoml>`
+- :doc:`/overview/what-is-bentoml`
+- :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`

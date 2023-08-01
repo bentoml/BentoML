@@ -19,7 +19,8 @@ Prerequisites
 - You have :doc:`BentoML installed </quickstarts/install-bentoml>`.
 - You have a basic understanding of key concepts in BentoML, such as Services and Bentos. We recommend you read :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml` first.
 - (Optional) Install `Docker <https://docs.docker.com/get-docker/>`_ if you want to containerize the Bento.
-- (Optional) We recommend you create a virtual environment for dependency isolation for this quickstart. For more information about virtual environments in Python, see `Creation of virtual environments <https://docs.python.org/3/library/venv.html>`_.
+- (Optional) We recommend you create a virtual environment for dependency isolation for this quickstart.
+  For more information about virtual environments in Python, see `Creation of virtual environments <https://docs.python.org/3/library/venv.html>`_.
 
 Install OpenLLM
 ---------------
@@ -60,10 +61,10 @@ Create a ``service.py`` file to define a BentoML `Service <../../concepts/servic
        answer = await llm_runner.generate.async_run(input_text)
        return answer[0]["generated_text"]
 
-Here is a breakdown of the ``service.py`` file.
+Here is a breakdown of this ``service.py`` file.
 
 - ``model``: The ``model`` variable is assigned the name of the model to be used (``dolly-v2`` in this example). Run ``openllm models`` to view all supported models and their corresponding model IDs. Note that certain models may only support running on GPUs.
-- ``openllm.Runner()``: Creates a `bentoml.Runner <../../concepts/runner.html>`_ instance for the model specified.
+- ``openllm.Runner()``: Creates a :doc:`bentoml.Runner </concepts/runner>` instance for the model specified.
 - ``bentoml.Service()``: Creates a BentoML Service named ``llm-dolly-service`` and wraps the previously created Runner into the Service.
 - ``@svc.on_startup``: Different from the Transformer model quickstart, this tutorial creates an action to be performed when the Service starts using the ``on_startup`` hook in the ``service.py`` file. It calls the ``download_model()`` function to ensure the necessary model and weights are downloaded if they do not exist locally. This makes sure the Service is ready to serve requests when it starts.
 - ``@svc.api()``: Defines an API endpoint for the BentoML Service that takes a text input and outputs a text. The endpoint’s functionality is defined in the ``prompt()`` function: it takes in a string of text, runs it through the model to generate an answer, and returns the generated text.
@@ -113,7 +114,7 @@ The model should be downloaded automatically to the Model Store.
 Build a Bento
 -------------
 
-After the Service is ready, you can package it into a `Bento <../../concepts/bento.html>`_ by specifying a configuration YAML file (``bentofile.yaml``) that defines the build options. See `Bento build options <../../concepts/bento.html#bento-build-options>`_ to learn more.
+After the Service is ready, you can package it into a :doc:`Bento </concepts/bento>` by specifying a configuration YAML file (``bentofile.yaml``) that defines the build options. See `Bento build options <../../concepts/bento.html#bento-build-options>`_ to learn more.
 
 .. code-block:: yaml
    :caption: `bentofile.yaml`

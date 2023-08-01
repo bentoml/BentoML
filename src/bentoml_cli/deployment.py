@@ -155,8 +155,8 @@ def add_deployment_command(cli: click.Group) -> None:
     def get(  # type: ignore
         shared_options: SharedOptions,
         deployment_name: str,
-        cluster_name: str,
-        kube_namespace: str,
+        cluster_name: str | None,
+        kube_namespace: str | None,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Get a deployment on BentoCloud."""
@@ -179,8 +179,8 @@ def add_deployment_command(cli: click.Group) -> None:
     def terminate(  # type: ignore
         shared_options: SharedOptions,
         deployment_name: str,
-        cluster_name: str,
-        kube_namespace: str,
+        cluster_name: str | None,
+        kube_namespace: str | None,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Terminate a deployment on BentoCloud."""
@@ -203,8 +203,8 @@ def add_deployment_command(cli: click.Group) -> None:
     def delete(  # type: ignore
         shared_options: SharedOptions,
         deployment_name: str,
-        cluster_name: str,
-        kube_namespace: str,
+        cluster_name: str | None,
+        kube_namespace: str | None,
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Delete a deployment on BentoCloud."""
@@ -247,11 +247,11 @@ def add_deployment_command(cli: click.Group) -> None:
     @click.pass_obj
     def list(  # type: ignore
         shared_options: SharedOptions,
-        cluster_name: str,
-        query: str,
-        search: str,
-        count: int,
-        start: int,
+        cluster_name: str | None,
+        query: str | None,
+        search: str | None,
+        count: int | None,
+        start: int | None,
         output: t.Literal["json", "default", "table"],
     ) -> DeploymentListSchema:
         """List existing deployments on BentoCloud."""

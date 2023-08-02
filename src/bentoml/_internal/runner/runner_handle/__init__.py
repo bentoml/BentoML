@@ -5,7 +5,6 @@ import typing as t
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
-from typing import AsyncGenerator
 
 from ....exceptions import StateException
 
@@ -54,7 +53,7 @@ class RunnerHandle(ABC):
         __bentoml_method: RunnerMethod[t.Any, P, R],
         *args: P.args,
         **kwargs: P.kwargs,
-    ) -> AsyncGenerator[R, None]:
+    ) -> t.AsyncGenerator[R, None]:
         ...
 
 
@@ -92,7 +91,7 @@ class DummyRunnerHandle(RunnerHandle):
         __bentoml_method: RunnerMethod[t.Any, t.Any, t.Any],
         *args: t.Any,
         **kwargs: t.Any,
-    ) -> AsyncGenerator[t.Any, None]:
+    ) -> t.AsyncGenerator[t.Any, None]:
         raise StateException(
             f"Runner is not initialized. Make sure to include '{self!r}' to your service definition."
         )

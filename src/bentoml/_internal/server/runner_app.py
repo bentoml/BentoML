@@ -259,10 +259,9 @@ class RunnerAppFactory(BaseAppFactory):
 
                     ret = await runner_method.async_run(*params.args, **params.kwargs)
 
-                    if runner_method.config.is_stream:
-                        async for data in ret:
-                            payload = AutoContainer.to_payload(data, 0)
-                            yield payload
+                    async for data in ret:
+                        payload = AutoContainer.to_payload(data, 0)
+                        yield payload
 
                 infer = self.dispatchers[runner_method.name](infer_stream)
 

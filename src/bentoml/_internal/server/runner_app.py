@@ -203,11 +203,9 @@ class RunnerAppFactory(BaseAppFactory):
         if runner_method.config.is_stream:
             # Streaming does not have batching implemented yet
             async def infer_stream(
-                paramss: t.Sequence[Params[t.Any]],
+                params: Params[t.Any],
             ) -> t.AsyncGenerator[Payload, None]:
-                assert len(paramss) == 1
-
-                params = paramss[0].map(AutoContainer.from_payload)
+                params = params.map(AutoContainer.from_payload)
 
                 ret = await runner_method.async_run(*params.args, **params.kwargs)
 

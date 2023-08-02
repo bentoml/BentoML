@@ -417,7 +417,7 @@ class NoOpDispatcher:
         pass
 
     async def inbound_call(self, data: t.Any):
-        return self.callback((data,))
+        return self.callback(data)
 
     async def outbound_call(self):
         pass

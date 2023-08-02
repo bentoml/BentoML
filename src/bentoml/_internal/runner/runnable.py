@@ -78,7 +78,6 @@ class Runnable:
     def method(
         meth: t.Callable[t.Concatenate[T, P], R],
         *,
-        stream: bool = False,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
@@ -91,7 +90,6 @@ class Runnable:
     def method(
         meth: None = None,
         *,
-        stream: bool = False,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
@@ -103,7 +101,6 @@ class Runnable:
     def method(
         meth: t.Callable[t.Concatenate[T, P], R] | None = None,
         *,
-        stream: bool = False,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
@@ -115,10 +112,12 @@ class Runnable:
         def method_decorator(
             meth: t.Callable[t.Concatenate[T, P], R]
         ) -> RunnableMethod[T, P, R]:
+            import inspect
+
             return RunnableMethod(
                 meth,
                 RunnableMethodConfig(
-                    is_stream=stream,
+                    is_stream=inspect.isasyncgenfunction(meth),
                     batchable=batchable,
                     batch_dim=(batch_dim, batch_dim)
                     if isinstance(batch_dim, int)

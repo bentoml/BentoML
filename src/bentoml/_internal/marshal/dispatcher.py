@@ -438,7 +438,9 @@ class NoOpDispatcher:
             try:
                 return await self.inbound_call(data)
             except Exception as err:
-            	logger.error("Exception caught while sending request:\n%s", err, exc_info=err)
-            	raise err from None
+                logger.error(
+                    "Exception caught while sending request:\n%s", err, exc_info=err
+                )
+                raise err from None
 
         return _func

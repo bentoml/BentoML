@@ -116,8 +116,8 @@ class TextStream(
             sample = sample.decode("utf-8")
         return sample
 
-    def input_type(self) -> t.Type[str]:
-        raise NotImplementedError("TextStream does not support input type for now")
+    def input_type(self) -> t.Type[t.AsyncGenerator[str, None]]:
+        return t.AsyncGenerator[str, None]
 
     def to_spec(self) -> dict[str, t.Any]:
         return {"id": self.descriptor_id}

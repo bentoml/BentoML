@@ -288,9 +288,6 @@ class Service:
     # case 1: function is not defined, but input and output are
     @t.overload
     def api(self, input: IODescriptor[IOType], output: IODescriptor[IOType]) ->  _inference_api_wrapper[IOType]: ...
-    # case 2: streaming is enabled
-    @t.overload
-    def api(self, input: IODescriptor[IOType], output: IODescriptor[IOType], *, stream: bool) ->  _inference_api_wrapper[IOType]: ...
     # case 3: the decorator itself with custom routes
     @t.overload
     def api(self, input: IODescriptor[IOType], output: IODescriptor[IOType], *, route: str = ...) ->  _inference_api_wrapper[IOType]: ...
@@ -300,7 +297,6 @@ class Service:
         input: IODescriptor[IOType],
         output: IODescriptor[IOType],
         *,
-        stream: bool = False,
         name: str | None = None,
         doc: str | None = None,
         route: str | None = None,

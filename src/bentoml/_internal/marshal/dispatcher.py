@@ -436,11 +436,9 @@ class NoOpDispatcher:
         @functools.wraps(callback)
         async def _func(data: t.Any) -> t.Any:
             try:
-                r = await self.inbound_call(data)
-            except asyncio.CancelledError:
-                return None
-            if isinstance(r, Exception):
-                raise r
-            return r
+                return await self.inbound_call(data)
+            except Exception as err:
+            	logger.error("Exception caught while sending request:\n%s", err, exc_info=err)
+            	raise err from None
 
         return _func

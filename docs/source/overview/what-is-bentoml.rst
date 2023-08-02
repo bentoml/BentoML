@@ -45,8 +45,8 @@ like :doc:`MLFlow </integrations/mlflow>`, `LangChain <https://github.com/ssheng
 `Kubeflow <https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/>`_, :doc:`Triton </integrations/triton>`,
 :doc:`Spark </integrations/spark>`, :doc:`Ray </integrations/ray>`, and many more to complete your production AI stack.
 
-Boost AI application performance
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Inference optimization for AI applications
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 BentoML’s proven open-source architecture ensures high performance for your AI applications through efficient resource utilization and latency
 reduction techniques. It supports model inference parallelization and adaptive batching. With built-in optimization for specific model
@@ -61,7 +61,7 @@ modern AI applications by allowing you to :doc:`compose multiple models </guides
 concurrently or sequentially, across :doc:`multiple GPUs </guides/scheduling>` or on a Kubernetes cluster.
 This flexibility extends to running and debugging your BentoML applications locally, whether you are using Mac, Windows, or Linux.
 
-Deploy your models anywhere
+Build once. Deploy anywhere
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 BentoML standardizes the saved model format, Service API definition and the Bento build process, which opens up many different deployment options
@@ -123,4 +123,4 @@ See also
 
 - :doc:`/overview/ecosystem`
 - :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`
-- :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`
+- :doc:`/quickstarts/deploy-a-large-language-model-with-openllm-and-bentoml`

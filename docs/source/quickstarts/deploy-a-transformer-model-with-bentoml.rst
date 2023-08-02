@@ -1,4 +1,4 @@
-
+=======================================
 Deploy a Transformer model with BentoML
 =======================================
 
@@ -113,25 +113,51 @@ enabling the construction of more complex machine learning applications. The dia
 The ``summarize()`` function, decorated with ``@svc.api()``, specifies the API endpoint for the Service and the logic to process the inputs and outputs.
 For more information, see :doc:`/reference/api_io_descriptors`.
 
-Run ``bentoml serve`` in your project directory to start the BentoML server in development mode.
+Run ``bentoml serve`` in your project directory to start the BentoML server.
 
 .. code-block:: bash
 
-   $ bentoml serve service:svc --development --reload
+   $ bentoml serve service:svc
 
    2023-07-10T12:13:33+0800 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service:svc" can be accessed at http://localhost:3000/metrics.
    2023-07-10T12:13:34+0800 [INFO] [cli] Starting production HTTP BentoServer from "service:svc" listening on http://0.0.0.0:3000 (Press CTRL+C to quit)
-   2023-07-10 12:13:34 circus[5290] [INFO] Loading the plugin...
-   2023-07-10 12:13:34 circus[5290] [INFO] Endpoint: 'tcp://127.0.0.1:61187'
-   2023-07-10 12:13:34 circus[5290] [INFO] Pub/sub: 'tcp://127.0.0.1:61188'
-   2023-07-10T12:13:34+0800 [INFO] [observer] Watching directories: ['/Users/demo/Documents/bentoml-demo', '/Users/demo/bentoml/models']
 
-The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_, which provides a web user interface that you can use. Visit the website,
-scroll down to **Service APIs**, and click **Try it out**.
+The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_. You can interact with it in different ways.
 
-.. image:: ../../_static/img/quickstarts/deploy-a-transformer-model-with-bentoml/service-ui.png
+.. tab-set::
 
-Enter your text in the **Request body** box and click **Execute**.
+    .. tab-item:: CURL
+
+        .. code-block:: bash
+
+         curl -X 'POST' \
+            'http://0.0.0.0:3000/summarize' \
+            -H 'accept: text/plain' \
+            -H 'Content-Type: text/plain' \
+            -d '$PROMPT' # Replace $PROMPT here with your prompt.
+
+    .. tab-item:: Python
+
+        .. code-block:: bash
+
+         import requests
+
+         response = requests.post(
+            "http://0.0.0.0:3000/summarize",
+            headers={
+               "accept": "text/plain",
+               "Content-Type": "text/plain",
+            },
+            data="$PROMPT", # Replace $PROMPT here with your prompt.
+         )
+
+         print(response.text)
+
+    .. tab-item:: Browser
+
+        Visit `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_, scroll down to **Service APIs**, and click **Try it out**. In the **Request body** box, enter your prompt and click **Execute**.
+
+        .. image:: ../../_static/img/quickstarts/deploy-a-transformer-model-with-bentoml/service-ui.png
 
 See the following example that summarizes the concept of large language models.
 
@@ -154,8 +180,8 @@ Once the model is functioning properly, you can package it into the standard dis
 It is a self-contained archive that contains all the source code, model files, and dependencies required to run the Service.
 
 To build a Bento, you need a configuration YAML file (by convention, it’s ``bentofile.yaml``). This file defines the build options, such as dependencies,
-Docker image settings, and models. The example file below only lists the basic information required to build a Bento, like the Service, Python files
-to be included, and dependencies. See `Bento build options <../../concepts/bento.html#bento-build-options>`_ to learn more.
+Docker image settings, and models. The example file below only lists the basic information required to build a Bento,
+including the Service, Python files, dependencies, and model. See `Bento build options <../../concepts/bento.html#bento-build-options>`_ to learn more.
 
 .. code-block:: yaml
    :caption: `bentofile.yaml`
@@ -167,8 +193,10 @@ to be included, and dependencies. See `Bento build options <../../concepts/bento
      packages:
        - torch
        - transformers
+   models:
+     - summarization:latest
 
-Run ``bentoml build`` in the project directory to build the Bento. You can find all created Bentos in ``/home/user/bentoml/bentos/``.
+Run ``bentoml build`` in your project directory (which should contain ``download_model.py``, ``service.py``, and ``bentofile.yaml`` now) to build the Bento. You can find all created Bentos in ``/home/user/bentoml/bentos/``.
 
 .. code-block:: bash
 

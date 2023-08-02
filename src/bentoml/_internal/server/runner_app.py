@@ -200,71 +200,70 @@ class RunnerAppFactory(BaseAppFactory):
 
         server_str = f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}"
 
-        if batching:
+        if runner_method.config.is_stream:
+            # Streaming does not have batching implemented yet
+            async def infer_stream(
+                paramss: t.Sequence[Params[t.Any]],
+            ) -> t.AsyncGenerator[Payload, None]:
+                assert len(paramss) == 1
 
-            async def infer_batch(
-                params_list: t.Sequence[Params[t.Any]],
-            ) -> list[Payload] | list[tuple[Payload, ...]]:
-                self.adaptive_batch_size_hist.labels(  # type: ignore
-                    runner_name=self.runner.name,
-                    worker_index=self.worker_index,
-                    method_name=runner_method.name,
-                    service_version=component_context.bento_version,
-                    service_name=component_context.bento_name,
-                ).observe(len(params_list))
+                params = paramss[0].map(AutoContainer.from_payload)
 
-                if not params_list:
-                    return []
+                ret = await runner_method.async_run(*params.args, **params.kwargs)
 
-                input_batch_dim, output_batch_dim = runner_method.config.batch_dim
+                async for data in ret:
+                    payload = AutoContainer.to_payload(data, 0)
+                    yield payload
 
-                batched_params, indices = payload_paramss_to_batch_params(
-                    params_list, input_batch_dim
-                )
-
-                batch_ret = await runner_method.async_run(
-                    *batched_params.args, **batched_params.kwargs
-                )
-
-                # multiple output branch
-                if LazyType["tuple[t.Any, ...]"](tuple).isinstance(batch_ret):
-                    output_num = len(batch_ret)
-                    payloadss = tuple(
-                        AutoContainer.batch_to_payloads(
-                            batch_ret[idx], indices, batch_dim=output_batch_dim
-                        )
-                        for idx in range(output_num)
-                    )
-                    ret = list(zip(*payloadss))
-                    return ret
-
-                # single output branch
-                payloads = AutoContainer.batch_to_payloads(
-                    batch_ret,
-                    indices,
-                    batch_dim=output_batch_dim,
-                )
-                return payloads
-
-            infer = self.dispatchers[runner_method.name](infer_batch)
+            infer = self.dispatchers[runner_method.name](infer_stream)
         else:
-            if runner_method.config.is_stream:
+            if batching:
 
-                async def infer_stream(
-                    paramss: t.Sequence[Params[t.Any]],
-                ) -> t.AsyncGenerator[Payload, None]:
-                    assert len(paramss) == 1
+                async def infer_batch(
+                    params_list: t.Sequence[Params[t.Any]],
+                ) -> list[Payload] | list[tuple[Payload, ...]]:
+                    self.adaptive_batch_size_hist.labels(  # type: ignore
+                        runner_name=self.runner.name,
+                        worker_index=self.worker_index,
+                        method_name=runner_method.name,
+                        service_version=component_context.bento_version,
+                        service_name=component_context.bento_name,
+                    ).observe(len(params_list))
 
-                    params = paramss[0].map(AutoContainer.from_payload)
+                    if not params_list:
+                        return []
 
-                    ret = await runner_method.async_run(*params.args, **params.kwargs)
+                    input_batch_dim, output_batch_dim = runner_method.config.batch_dim
 
-                    async for data in ret:
-                        payload = AutoContainer.to_payload(data, 0)
-                        yield payload
+                    batched_params, indices = payload_paramss_to_batch_params(
+                        params_list, input_batch_dim
+                    )
 
-                infer = self.dispatchers[runner_method.name](infer_stream)
+                    batch_ret = await runner_method.async_run(
+                        *batched_params.args, **batched_params.kwargs
+                    )
 
+                    # multiple output branch
+                    if LazyType["tuple[t.Any, ...]"](tuple).isinstance(batch_ret):
+                        output_num = len(batch_ret)
+                        payloadss = tuple(
+                            AutoContainer.batch_to_payloads(
+                                batch_ret[idx], indices, batch_dim=output_batch_dim
+                            )
+                            for idx in range(output_num)
+                        )
+                        ret = list(zip(*payloadss))
+                        return ret
+
+                    # single output branch
+                    payloads = AutoContainer.batch_to_payloads(
+                        batch_ret,
+                        indices,
+                        batch_dim=output_batch_dim,
+                    )
+                    return payloads
+
+                infer = self.dispatchers[runner_method.name](infer_batch)
             else:
 
                 async def infer_single(paramss: t.Sequence[Params[t.Any]]):

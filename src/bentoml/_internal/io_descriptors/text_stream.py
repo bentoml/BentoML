@@ -95,7 +95,26 @@ class TextStream(
             ) from None
 
     def _from_sample(self, sample: str | bytes):
-        raise NotImplementedError("TextStream does not support input type for now")
+        """
+        Create a :class:`~bentoml._internal.io_descriptors.text.TextStream` IO Descriptor from given inputs.
+
+        Args:
+            sample: Given sample text.
+
+        Returns:
+            :class:`TextStream`: IODescriptor from given users inputs/outputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           @svc.api(input=bentoml.io.Text, output=bentoml.io.TextStream.from_sample('Hello World 1\n Hello World 2\n'))
+           async def predict(inputs: str) -> AsyncGenerator[str, None]: ...
+        """
+        if isinstance(sample, bytes):
+            sample = sample.decode("utf-8")
+        return sample
 
     def input_type(self) -> t.Type[str]:
         raise NotImplementedError("TextStream does not support input type for now")

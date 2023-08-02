@@ -1,15 +1,15 @@
-# pylint: disable=unused-argument
 from __future__ import annotations
 
 import os
+import typing as t
 from datetime import datetime
 from datetime import timezone
 from sys import version_info
-from typing import TYPE_CHECKING
 
 import fs
 import pytest
 
+import bentoml
 from bentoml import Tag
 from bentoml import bentos
 from bentoml._internal.bento import Bento
@@ -21,7 +21,7 @@ from bentoml._internal.bento.build_config import BentoBuildConfig
 from bentoml._internal.configuration import BENTOML_VERSION
 from bentoml._internal.models import ModelStore
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from pathlib import Path
 
 
@@ -147,102 +147,34 @@ conda:
 
 
 def build_test_bento() -> Bento:
-    bento_cfg = BentoBuildConfig(
-        "simplebento.py:svc",
-        include=["*.py", "config.json", "somefile", "*dir*", ".bentoignore"],
-        exclude=["*.storage", "/somefile", "/subdir2"],
-        conda={
-            "environment_yml": "./environment.yaml",
-        },
-        docker={
-            "setup_script": "./setup_docker_container.sh",
-        },
-        labels={
-            "team": "foo",
-            "dataset_version": "abc",
-            "framework": "pytorch",
-        },
-        models=["testmodel"],
-    )
-
-    return Bento.create(bento_cfg, version="1.0", build_ctx="./simplebento")
-
-
-def fs_identical(fs1: fs.base.FS, fs2: fs.base.FS):
-    for path in fs1.walk.dirs():
-        assert fs2.isdir(path)
-
-    for path in fs1.walk.files():
-        assert fs2.isfile(path)
-        assert fs1.readbytes(path) == fs2.readbytes(path)
+    try:
+        return bentos.get("test.simplebento:1.0")
+    except bentoml.exceptions.NotFound:
+        return bentos.build(
+            "simplebento.py:svc",
+            include=["*.py", "config.json", "somefile", "*dir*", ".bentoignore"],
+            exclude=["*.storage", "/somefile", "/subdir2"],
+            conda={"environment_yml": "environment.yaml"},
+            docker={"setup_script": "setup_docker_container.sh"},
+            labels={
+                "team": "foo",
+                "dataset_version": "abc",
+                "framework": "pytorch",
+            },
+            models=["testmodel"],
+            version="1.0",
+            build_ctx="simplebento",
+        )
 
 
 @pytest.mark.usefixtures("change_test_dir")
-def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
-    working_dir = os.getcwd()
-
-    testbento = build_test_bento()
-    # Bento build will change working dir to the build_context, this will reset it
-    os.chdir(working_dir)
-
-    cfg = BentoBuildConfig("bentoa.py:svc")
-    bentoa = Bento.create(cfg, build_ctx="./bentoa")
-    # Bento build will change working dir to the build_context, this will reset it
-    os.chdir(working_dir)
-
-    bentoa1 = Bento.create(cfg, build_ctx="./bentoa1")
-    # Bento build will change working dir to the build_context, this will reset it
-    os.chdir(working_dir)
-
-    cfg = BentoBuildConfig("bentob.py:svc")
-    bentob = Bento.create(cfg, build_ctx="./bentob")
-
-    bento = testbento
+def test_bento_export_atomic(tmpdir: Path):
+    bento = build_test_bento()
     path = os.path.join(tmpdir, "testbento")
     export_path = bento.export(path)
     assert export_path == path + ".bento"
     assert os.path.isfile(export_path)
     imported_bento = Bento.import_from(export_path)
-    assert imported_bento.tag == bento.tag
-    assert imported_bento.info == bento.info
-    del imported_bento
-
-    bento = bentoa
-    path = os.path.join(tmpdir, "bentoa")
-    export_path = bento.export(path)
-    assert export_path == path + ".bento"
-    assert os.path.isfile(export_path)
-    imported_bento = Bento.import_from(export_path)
-    assert imported_bento.tag == bento.tag
-    assert imported_bento.info == bento.info
-    del imported_bento
-
-    bento = bentoa1
-    path = os.path.join(tmpdir, "bentoa1")
-    export_path = bento.export(path)
-    assert export_path == path + ".bento"
-    assert os.path.isfile(export_path)
-    imported_bento = Bento.import_from(export_path)
-    assert imported_bento.tag == bento.tag
-    assert imported_bento.info == bento.info
-    del imported_bento
-
-    bento = bentob
-    path = os.path.join(tmpdir, "bentob")
-    export_path = bento.export(path)
-    assert export_path == path + ".bento"
-    assert os.path.isfile(export_path)
-    imported_bento = Bento.import_from(export_path)
-    assert imported_bento.tag == bento.tag
-    assert imported_bento.info == bento.info
-    del imported_bento
-
-    bento = testbento
-    path = os.path.join(tmpdir, "testbento.bento")
-    export_path = bento.export(path)
-    assert export_path == path
-    assert os.path.isfile(export_path)
-    imported_bento = Bento.import_from(path)
     assert imported_bento.tag == bento.tag
     assert imported_bento.info == bento.info
     del imported_bento
@@ -314,21 +246,45 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     del imported_bento
 
     path = os.path.join(tmpdir, "testbento-gz-1/")
-    with pytest.raises(ValueError):
-        bento.export(path, output_format="gz")
+    assert pytest.raises(ValueError, bento.export, path, output_format="gz")
+
+
+@pytest.mark.usefixtures("change_test_dir")
+@pytest.mark.parametrize(
+    "service, ctx",
+    [
+        ("bentoa.py:svc", "./bentoa"),
+        ("bentoa.py:svc", "./bentoa1"),
+        ("bentob.py:svc", "./bentob"),
+    ],
+)
+def test_bento_export(tmpdir: Path, service: str, ctx: str):
+    working_dir = os.getcwd()
+    bento = Bento.create(BentoBuildConfig(service), build_ctx=ctx)
+    # Bento build will change working dir to the build_context, this will reset it
+    os.chdir(working_dir)
+    path = os.path.join(tmpdir, ctx[2:])
+    export_path = bento.export(path)
+    assert export_path == path + ".bento"
+    assert os.path.isfile(export_path)
+    imported_bento = Bento.import_from(export_path)
+    assert imported_bento.tag == bento.tag
+    assert imported_bento.info == bento.info
+    del imported_bento
 
 
 @pytest.mark.usefixtures("change_test_dir")
 def test_export_bento_with_models(model_store: ModelStore, tmp_path: "Path"):
     working_dir = os.getcwd()
-    bento = build_test_bento()
     os.chdir(working_dir)
+    bento = build_test_bento()
 
     assert bento._model_store is None
     model_tag = bento.info.models[0].tag
     path = os.path.join(tmp_path, "testbento.bento")
     exported_path = bento.export(path)
-    # clear models
+    # clear models and bentos for testing import
+    bentos.delete(bento.tag)
     model_store.delete(model_tag)
     imported_bento = Bento.import_from(exported_path).save()
     assert imported_bento._model_store is None

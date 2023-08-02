@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 import typing as t
 from unittest.mock import ANY
@@ -18,15 +17,15 @@ from .test_bento import build_test_bento
 
 
 @pytest.fixture
-def build_bento():
+def build_bento() -> t.Generator[bentoml.Bento, None, None]:
     bento_store = BentoMLContainer.bento_store.get()
+    model_store = BentoMLContainer.model_store.get()
     tmp_store = BentoMLContainer.tmp_bento_store.get()
-    working_dir = os.getcwd()
     bento = build_test_bento()
-    os.chdir(working_dir)
-    bento.save(bento_store)
-    if "simplebento" in sys.modules:
-        del sys.modules["simplebento"]
+    try:
+        bento_store.get(bento.tag)
+    except NotFound:
+        bento.save(bento_store, model_store)
     yield bento
     try:
         bento_store.delete(bento.tag)
@@ -109,10 +108,9 @@ def test_remote_bento_strategy_pull_yatai(build_bento: bentoml.Bento):
     mock_bentocloud_client = MagicMock()
 
     def pull_bento(*args: t.Any, **kwargs: t.Any):
-        working_dir = os.getcwd()
         bento = build_test_bento()
-        os.chdir(working_dir)
-        bento.save()
+        if str(bento.tag) not in [str(b.tag) for b in bentoml.bentos.list()]:
+            bento.save()
         if "simplebento" in sys.modules:
             del sys.modules["simplebento"]
 

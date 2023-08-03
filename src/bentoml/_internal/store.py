@@ -170,8 +170,6 @@ class Store(ABC, t.Generic[Item]):
         self._fs.makedirs(item_path)
         try:
             yield self._fs.getsyspath(item_path)
-        except Exception:
-            raise
         else:
             # item generation is most likely successful, link latest path
             self.update_latest(_tag)

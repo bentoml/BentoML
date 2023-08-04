@@ -239,7 +239,6 @@ if t.TYPE_CHECKING:
         external_modules: t.List[ModuleType] | None
         metadata: dict[str, t.Any] | None
         context: t.Required[ModelContext]
-        use_tempfs: t.NotRequired[bool]
         _model_store: t.NotRequired[ModelStore]
 
 
@@ -265,7 +264,6 @@ def create(
     external_modules: t.List[ModuleType] | None = ...,
     metadata: dict[str, t.Any] | None = ...,
     context: ModelContext,
-    use_tempfs: bool = ...,
     _model_store: ModelStore = ...,
 ) -> t.Generator[Model, None, None]:
     ...
@@ -307,12 +305,7 @@ def create(
         res.enter_cloudpickle_context(external_modules, imported_modules)
         yield res
     except Exception as e:
-        raise e
-    except KeyboardInterrupt:
-        # During save, if user hit Ctrl+C, we will remove the item path cleanly
-        # so that validate() will work correctly.
-        res._fs.removetree(res.path_of(res.tag.path()))
-        raise
+        raise e from None
     else:
         res.save(_model_store)
         track(

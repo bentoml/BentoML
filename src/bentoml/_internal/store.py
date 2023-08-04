@@ -170,24 +170,17 @@ class Store(ABC, t.Generic[Item]):
         self._fs.makedirs(item_path)
         try:
             yield self._fs.getsyspath(item_path)
+        except Exception:
+            self._fs.removetree(item_path)
+            raise
         else:
             # item generation is most likely successful, link latest path
-            self.update_latest(_tag)
-
-    def exists(self, tag: str | Tag) -> bool:
-        return self._fs.exists(Tag.from_taglike(tag).path())
-
-    def path_of(self, path: str) -> str:
-        return self._fs.getsyspath(path)
-
-    def update_latest(self, tag: str | Tag) -> None:
-        _tag = Tag.from_taglike(tag)
-        if (
-            not self._fs.exists(_tag.latest_path())
-            or self.get(_tag).creation_time >= self.get(_tag.name).creation_time
-        ):
-            with self._fs.open(_tag.latest_path(), "w") as latest_file:
-                latest_file.write(_tag.version)
+            if (
+                not self._fs.exists(_tag.latest_path())
+                or self.get(_tag).creation_time >= self.get(_tag.name).creation_time
+            ):
+                with self._fs.open(_tag.latest_path(), "w") as latest_file:
+                    latest_file.write(_tag.version)
 
     def delete(self, tag: t.Union[str, Tag]) -> None:
         _tag = Tag.from_taglike(tag)

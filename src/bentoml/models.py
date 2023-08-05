@@ -301,12 +301,12 @@ def create(
     external_modules = [] if external_modules is None else external_modules
     imported_modules: t.List[ModuleType] = []
     try:
-        res.flush()
         res.enter_cloudpickle_context(external_modules, imported_modules)
         yield res
-    except Exception as e:
-        raise e from None
+    except Exception:
+        raise
     else:
+        res.flush()
         res.save(_model_store)
         track(
             ModelSaveEvent(

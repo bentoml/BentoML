@@ -68,6 +68,7 @@ def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-a
         if m.type == "counter"
     ]
     assert "test_metrics" in counters
+    return "ok"
 
 
 @svc.api(input=JSON(), output=JSON())

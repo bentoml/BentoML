@@ -173,14 +173,13 @@ class Store(ABC, t.Generic[Item]):
         except Exception:
             self._fs.removetree(item_path)
             raise
-        finally:
-            # item generation is most likely successful, link latest path
-            if (
-                not self._fs.exists(_tag.latest_path())
-                or self.get(_tag).creation_time >= self.get(_tag.name).creation_time
-            ):
-                with self._fs.open(_tag.latest_path(), "w") as latest_file:
-                    latest_file.write(_tag.version)
+        # item generation is most likely successful, link latest path
+        if (
+            not self._fs.exists(_tag.latest_path())
+            or self.get(_tag).creation_time >= self.get(_tag.name).creation_time
+        ):
+            with self._fs.open(_tag.latest_path(), "w") as latest_file:
+                latest_file.write(_tag.version)
 
     def delete(self, tag: t.Union[str, Tag]) -> None:
         _tag = Tag.from_taglike(tag)

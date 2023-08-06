@@ -518,7 +518,7 @@ bentoml_cattr.register_unstructure_hook(
 )
 
 
-@attr.define(repr=False, eq=False, frozen=True)
+@attr.define(repr=False, eq=False, frozen=True, init=False)
 class ModelInfo:
     # for backward compatibility in case new fields are added to BentoInfo.
     __forbid_extra_keys__ = False

@@ -173,7 +173,7 @@ class Store(ABC, t.Generic[Item]):
         except Exception:
             self._fs.removetree(item_path)
             raise
-        else:
+        finally:
             # item generation is most likely successful, link latest path
             if (
                 not self._fs.exists(_tag.latest_path())

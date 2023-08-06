@@ -86,7 +86,7 @@ Stay informed
 
 The BentoML team uses the following channels to announce important updates like major product releases and share tutorials, case studies, as well as community news.
 
-- `BentoML Blog <http://bentoml.com/blog>`_ 
+- `BentoML Blog <http://bentoml.com/blog>`_
 - `BentoML Twitter account <http://twitter.com/bentomlai>`_
 - `BentoML LinkedIn account <https://www.linkedin.com/company/bentoml/>`_
 

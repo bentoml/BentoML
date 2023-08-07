@@ -17,7 +17,6 @@ from ..configuration.containers import BentoMLContainer
 from ..context import component_context
 from ..context import trace_context
 from ..marshal.dispatcher import CorkDispatcher
-from ..marshal.dispatcher import NoOpDispatcher
 from ..runner.container import AutoContainer
 from ..runner.container import Payload
 from ..runner.utils import PAYLOAD_META_HEADER
@@ -54,7 +53,7 @@ class RunnerAppFactory(BaseAppFactory):
         self.worker_index = worker_index
         self.enable_metrics = enable_metrics
 
-        self.dispatchers: dict[str, CorkDispatcher | NoOpDispatcher] = {}
+        self.dispatchers: dict[str, CorkDispatcher] = {}
 
         runners_config = BentoMLContainer.runners_config.get()
         traffic = runners_config.get("traffic", {}).copy()
@@ -69,14 +68,11 @@ class RunnerAppFactory(BaseAppFactory):
 
         for method in runner.runner_methods:
             max_batch_size = method.max_batch_size if method.config.batchable else -1
-            if method.config.is_stream:
-                self.dispatchers[method.name] = NoOpDispatcher()
-            else:
-                self.dispatchers[method.name] = CorkDispatcher(
-                    max_latency_in_ms=method.max_latency_ms,
-                    max_batch_size=max_batch_size,
-                    fallback=fallback,
-                )
+            self.dispatchers[method.name] = CorkDispatcher(
+                max_latency_in_ms=method.max_latency_ms,
+                max_batch_size=max_batch_size,
+                fallback=fallback,
+            )
 
     @property
     def name(self) -> str:
@@ -203,15 +199,18 @@ class RunnerAppFactory(BaseAppFactory):
         if runner_method.config.is_stream:
             # Streaming does not have batching implemented yet
             async def infer_stream(
-                params: Params[t.Any],
-            ) -> t.AsyncGenerator[Payload, None]:
-                params = params.map(AutoContainer.from_payload)
+                paramss: t.Sequence[Params[t.Any]],
+            ) -> t.Sequence[t.AsyncGenerator[Payload, None]]:
+                async def _():
+                    # This is a workaround to allow infer stream to return a iterable of
+                    # async generator, to align with how non stream inference works
+                    params = paramss[0].map(AutoContainer.from_payload)
+                    ret = runner_method.async_stream(*params.args, **params.kwargs)
+                    async for data in ret:
+                        payload = AutoContainer.to_payload(data, 0)
+                        yield payload
 
-                ret = await runner_method.async_run(*params.args, **params.kwargs)
-
-                async for data in ret:
-                    payload = AutoContainer.to_payload(data, 0)
-                    yield payload
+                return (_(),)
 
             infer = self.dispatchers[runner_method.name](infer_stream)
         else:

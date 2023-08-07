@@ -192,7 +192,7 @@ To containerize the Bento with Docker, run:
    bentoml containerize llm-dolly-service:oatecjraxktp6nry
 
 You can then deploy the Docker image in different environments like Kubernetes. Alternatively, push the Bento to `BentoCloud <https://bentoml.com/cloud>`_ for distributed deployments of your model.
-For more information, see :doc:`/concepts/deploy`.
+For more information, see :doc:`/bentocloud/how-tos/deploy-bentos`.
 
 See also
 --------

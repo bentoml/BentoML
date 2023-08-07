@@ -77,7 +77,7 @@ create a BentoML Service. Run ``bentoml models list`` to view all available mode
 .. note::
 
    All models downloaded to the Model Store are saved in the directory ``/home/user/bentoml/models/``. You can manage saved models via
-   the ``bentoml models`` CLI command or Python API. For more information, see `Managing Models <../../concepts/model.html#managing-models>`_.
+   the ``bentoml models`` CLI command or Python API. For more information, see :ref:`Managing Models <concepts/model:Managing models>`.
 
 Create a BentoML Service
 ------------------------
@@ -181,7 +181,7 @@ It is a self-contained archive that contains all the source code, model files, a
 
 To build a Bento, you need a configuration YAML file (by convention, it’s ``bentofile.yaml``). This file defines the build options, such as dependencies,
 Docker image settings, and models. The example file below only lists the basic information required to build a Bento,
-including the Service, Python files, dependencies, and model. See `Bento build options <../../concepts/bento.html#bento-build-options>`_ to learn more.
+including the Service, Python files, dependencies, and model. See :ref:`Bento build options <concepts/bento:Bento build options>` to learn more.
 
 .. code-block:: yaml
    :caption: `bentofile.yaml`
@@ -234,7 +234,7 @@ View all available Bentos:
 .. note::
 
    Bentos are the deployment unit in BentoML, one of the most important artifacts to keep track of in your model deployment workflow.
-   BentoML provides CLI commands and APIs for managing Bentos. See `Managing Bentos <../../concepts/bento.html#managing-bentos>`_ to learn more.
+   BentoML provides CLI commands and APIs for managing Bentos. See :ref:`Managing Bentos <concepts/bento:Managing Bentos>` to learn more.
 
 Serve and deploy the Bento
 --------------------------

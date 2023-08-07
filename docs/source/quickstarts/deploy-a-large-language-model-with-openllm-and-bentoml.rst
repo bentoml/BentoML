@@ -34,7 +34,7 @@ Run the following command to install OpenLLM.
 Create a BentoML Service
 ------------------------
 
-Create a ``service.py`` file to define a BentoML `Service <../../concepts/service.html>`_ and a model `Runner <../../concepts/runner.html>`_. As the Service starts, the model defined in it will be downloaded automatically if it does not exist locally.
+Create a ``service.py`` file to define a BentoML :doc:`Service </concepts/service>` and a model :doc:`Runner </concepts/runner>`. As the Service starts, the model defined in it will be downloaded automatically if it does not exist locally.
 
 .. code-block:: python
    :caption: `service.py`
@@ -141,7 +141,7 @@ The model should be downloaded automatically to the Model Store.
 Build a Bento
 -------------
 
-After the Service is ready, you can package it into a :doc:`Bento </concepts/bento>` by specifying a configuration YAML file (``bentofile.yaml``) that defines the build options. See `Bento build options <../../concepts/bento.html#bento-build-options>`_ to learn more.
+After the Service is ready, you can package it into a :doc:`Bento </concepts/bento>` by specifying a configuration YAML file (``bentofile.yaml``) that defines the build options. See :ref:`Bento build options <concepts/bento:Bento build options>` to learn more.
 
 .. code-block:: yaml
    :caption: `bentofile.yaml`

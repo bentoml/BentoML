@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import inspect
 import typing as t
 from typing import TYPE_CHECKING
 from typing import AsyncGenerator
@@ -63,10 +64,18 @@ class LocalRunnerRef(RunnerHandle):
             limiter=self._limiter,
         )
 
-    def async_stream_method(
+    async def async_stream_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> AsyncGenerator[R, None]:
-        return getattr(self._runnable, __bentoml_method.name)(*args, **kwargs)
+        generator = getattr(self._runnable, __bentoml_method.name)(*args, **kwargs)
+
+        # This allows user to define both sync and async generator
+        if inspect.isasyncgen(generator):
+            async for chunk in generator:
+                yield chunk
+        else:
+            for chunk in generator:
+                yield chunk

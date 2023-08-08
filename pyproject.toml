@@ -31,7 +31,7 @@ dependencies = [
     "circus>=0.17.0,!=0.17.2",
     "click>=7.0",
     "click-option-group",
-    "cloudpickle",
+    "cloudpickle>=2.0.0",
     "deepmerge",
     "fs",
     "numpy",

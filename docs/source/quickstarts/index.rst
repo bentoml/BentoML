@@ -33,6 +33,12 @@ This section contains several quickstarts that allow you to quickly get started 
 
         Learn how to deploy an Iris classification model with BentoML.
 
+    .. grid-item-card:: :doc:`/quickstarts/deploy-a-yolo-model-with-bentoml`
+        :link: /quickstarts/deploy-a-yolo-model-with-bentoml
+        :link-type: doc
+
+        Learn how to deploy a YOlO model by creating custom BentoML Runners.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
@@ -42,3 +48,4 @@ This section contains several quickstarts that allow you to quickly get started 
     deploy-a-transformer-model-with-bentoml
     deploy-a-large-language-model-with-openllm-and-bentoml
     deploy-an-iris-classification-model-with-bentoml
+    deploy-a-yolo-model-with-bentoml

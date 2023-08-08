@@ -27,6 +27,12 @@ This section contains several quickstarts that allow you to quickly get started 
 
         Learn how to deploy a large language model with OpenLLM and BentoML.
 
+    .. grid-item-card:: :doc:`/quickstarts/deploy-an-iris-classification-model-with-bentoml`
+        :link: /quickstarts/deploy-an-iris-classification-model-with-bentoml
+        :link-type: doc
+
+        Learn how to deploy an Iris classification model with BentoML.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
@@ -35,3 +41,4 @@ This section contains several quickstarts that allow you to quickly get started 
     install-bentoml
     deploy-a-transformer-model-with-bentoml
     deploy-a-large-language-model-with-openllm-and-bentoml
+    deploy-an-iris-classification-model-with-bentoml

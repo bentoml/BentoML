@@ -370,8 +370,7 @@ def build(
     build_args.extend(["--output", "tag"])
 
     copied = os.environ.copy()
-    if "BENTOML_HOME" not in copied:
-        copied["BENTOML_HOME"] = BentoMLContainer.bentoml_home.get()
+    copied.setdefault("BENTOML_HOME", BentoMLContainer.bentoml_home.get())
 
     with tempfile.NamedTemporaryFile(
         "w", encoding="utf-8", prefix="bentoml-build-", suffix=".yaml"
@@ -437,8 +436,7 @@ def build_bentofile(
     build_args.extend(["--bentofile", bentofile, "--output", "tag"])
 
     copied = os.environ.copy()
-    if "BENTOML_HOME" not in copied:
-        copied["BENTOML_HOME"] = BentoMLContainer.bentoml_home.get()
+    copied.setdefault("BENTOML_HOME", BentoMLContainer.bentoml_home.get())
     try:
         return get(
             _parse_tag_from_outputs(subprocess.check_output(build_args, env=copied)),

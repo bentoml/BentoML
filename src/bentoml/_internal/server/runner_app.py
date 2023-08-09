@@ -210,7 +210,7 @@ class RunnerAppFactory(BaseAppFactory):
                         payload = AutoContainer.to_payload(data, 0)
                         yield payload
 
-                return (_(),)
+                return (inner(),)
 
             infer = self.dispatchers[runner_method.name](infer_stream)
         else:

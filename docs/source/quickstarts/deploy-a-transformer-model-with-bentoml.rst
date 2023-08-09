@@ -82,7 +82,7 @@ create a BentoML Service. Run ``bentoml models list`` to view all available mode
 Create a BentoML Service
 ------------------------
 
-With a ready-to-use model, you define a BentoML Service by creating a ``service.py file`` as below. This is where the serving logic is defined.
+With a ready-to-use model, you define a BentoML Service by creating a ``service.py`` file as below. This is where the serving logic is defined.
 
 .. code-block:: python
    :caption: `service.py`

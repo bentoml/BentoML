@@ -114,7 +114,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    bentocloud/getting-started/index
    bentocloud/how-tos/index
    bentocloud/topics/index
-   bentocloud/references/index
+   bentocloud/reference/index
 
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square

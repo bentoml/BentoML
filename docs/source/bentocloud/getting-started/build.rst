@@ -1,54 +1,76 @@
-====================
-Build with Rapid Iterations
-====================
+==================
+Build with BentoML
+==================
 
-----------------
-Start with BentoML
-----------------
+BentoCloud represents an important component in the BentoML ecosystem. To build your application and deploy it on BentoCloud,
+the first step is to convert your model into a standardized distribution format using BentoML.
 
-BentoML is a unified open source framework for building AI applications incorporating traditional ML, pre-trained AI models, Generative and Large Language Models.
+Understand BentoML
+------------------
 
-Its strength lies in its extensive **integration** with a wide range of AI frameworks, thus guaranteeing support for your AI models regardless of their complexity. To learn about the various frameworks that integrate with BentoML, see the :doc:`Framework Guide </frameworks/index>`.
+BentoML is a unified open-source framework for building reliable, scalable, and cost-efficient AI applications. It encompasses everything from model
+serving to application packaging and production deployment.
 
-As BentoML is built with **Python**, it offers an intuitive coding experience for ML practitioners, seamlessly integrating with popular libraries within the Python ecosystem. This makes your coding experience both familiar and efficient.
+AI application developers are the main audience for BentoML. As BentoML is built with **Python**, it offers an intuitive coding experience for machine learning (ML) practitioners,
+integrating seamlessly with popular libraries within the Python ecosystem. Whether you are building or integrating AI applications through various frameworks like PyTorch,
+TensorFlow, and Keras, BentoML caters to a wide range of development needs.
 
-BentoML embraces **open standards** for AI applications and promotes **best practices** to enhance the quality of your work. It offers a versatile framework capable of unifying **online**, **offline**, and **streaming** workloads.
+With BentoML, developers can get native support for traditional ML models, pre-trained AI models, generative AI models, and large language models (LLMs).
+It integrates smoothly with popular tools like MLFlow, Kubeflow, and Triton. This extensive **integration** with popular frameworks and tools helps complete the production
+AI stack, facilitating a smooth development process. For more information, see the :doc:`Framework Guide </frameworks/index>`.
 
-In essence, BentoML aims to simplifies the process of building ML models, ensuring your team can focus on what truly matters: creating AI applications that solve real-world problem.
+BentoML embraces **open standards** for AI applications and promotes **best practices** to enhance the quality of your work. Its versatile framework is capable of unifying **online**,
+**offline**, and **streaming** workloads, offering a multifaceted approach to AI application development and deployment.
 
----------------------
-Building Applications
----------------------
+In essence, BentoML aims to simplify the process of building ML models, allowing your team to focus on what truly matters: creating AI applications that solve real-world problems.
+By providing an integrated and user-friendly framework, BentoML stands as an essential tool for anyone looking to develop state-of-the-art AI solutions.
 
-Let's delve into how to **BUILD** an NLP application that categorizes and summarizes text with HuggingFace’s Transformers. We will be demonstrating with `Transformers NLP Service <https://github.com/bentoml/transformers-nlp-service>`_ project.
+For more information, see :doc:`What is BentoML </overview/what-is-bentoml>`.
 
-Start by cloning the repository:
+Build an AI application
+-----------------------
 
-.. code-block:: bash
+Perform the following steps to build a simple text summarization application with a Transformer model from the Hugging Face Model Hub.
+All the project files are stored on the `quickstart <https://github.com/bentoml/quickstart>`_ GitHub repository.
 
-   git clone https://github.com/bentoml/transformers-nlp-service.git
+1. Clone the repository and go to the project directory.
 
-Then, install the required dependencies:
+   .. code-block:: bash
 
-.. code-block:: bash
+      git clone https://github.com/bentoml/quickstart.git
+      cd quickstart
 
-   pip install -r requirements.txt
+2. Install the required dependencies:
 
-To serve your model as an HTTP server, utilize the ``bentoml serve`` CLI command. This starts a local server at `localhost:3000`, making your model accessible as a web service.
+   .. code-block:: bash
 
-Next, build your Bento:
+      pip install -r requirements.txt
 
-.. code-block:: bash
+3. Download the Transformer model.
 
-   bentoml build
+   .. code-block:: bash
 
-Your Bento is now ready! A Bento, in BentoML, is the application artifact. It packages your program's source code, models, configs, and dependencies. This Bento can be distributed and deployed across a variety of platforms.
+      python download_model.py
 
-To learn how to deploy your Bento with BentoCloud, read :doc:`Getting Started -- Ship To Production <ship>`
+4. Serve your model as an HTTP server. This starts a local server at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_, making your model accessible as a web service.
+   
+   .. code-block:: bash
+
+      bentoml serve service:svc
+
+5. Build your Bento. In the BentoML framework, a Bento is a deployable artifact that contains your application's source code, models, configurations, and dependencies.
+
+   .. code-block:: bash
+
+      bentoml build
+
+After your Bento is ready, you can push your Bento to BentoCloud or containerize it with Docker and deploy it on a variety of platforms.
+For more information, see this :doc:`quickstart in the BentoML documentation </quickstarts/deploy-a-transformer-model-with-bentoml>`.
+
+To learn how to deploy your Bento with BentoCloud, read :doc:`ship`.
 
 .. _bento-gallery:
 
--------------
 Bento Gallery
 -------------
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import time
 import typing as t
 from typing import TYPE_CHECKING
@@ -54,3 +55,8 @@ class PickleModel:
         output = df[["col1"]] * 2  # type: ignore
         assert isinstance(output, pd.DataFrame)
         return output
+
+    async def count_text_stream(self, input_text: str) -> t.AsyncGenerator[str, None]:
+        for i in range(10):
+            await asyncio.sleep(0.1)
+            yield f"{input_text} {i}"

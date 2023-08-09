@@ -193,6 +193,14 @@ async def use_context(inp: str, ctx: bentoml.Context):
     return inp
 
 
+@svc.api(
+    input=Text(),
+    output=Text(),
+)
+async def predict_text_stream(inp: str) -> t.AsyncGenerator[str, None]:
+    return py_model.count_text_stream.async_stream(inp)
+
+
 # customise the service
 class AllowPingMiddleware:
     def __init__(

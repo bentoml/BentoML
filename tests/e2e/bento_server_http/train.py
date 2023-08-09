@@ -15,6 +15,7 @@ if __name__ == "__main__":
             "predict_ndarray": {"batchable": True},
             "predict_multi_ndarray": {"batchable": True},
             "predict_dataframe": {"batchable": True},
+            "count_text_stream": {"batchable": False},
         },
         external_modules=[pickle_model],
     )

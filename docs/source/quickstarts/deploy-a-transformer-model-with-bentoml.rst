@@ -71,7 +71,7 @@ create a BentoML Service. Run ``bentoml models list`` to view all available mode
 
    $ bentoml models list
 
-   Tag                                    Module                Size       Creation Time       
+   Tag                                    Module                Size       Creation Time
    summarization:5kiyqyq62w6pqnry         bentoml.transformers  1.14 GiB   2023-07-10 11:57:40
 
 .. note::

@@ -33,11 +33,12 @@ Build an AI application
 Perform the following steps to build a simple text summarization application with a Transformer model from the Hugging Face Model Hub.
 All the project files are stored on the `quickstart <https://github.com/bentoml/quickstart>`_ GitHub repository.
 
-1. Clone the repository:
+1. Clone the repository and go to the project directory.
 
    .. code-block:: bash
 
       git clone https://github.com/bentoml/quickstart.git
+      cd quickstart
 
 2. Install the required dependencies:
 

@@ -145,7 +145,7 @@ After the Service is ready, you can package it into a :doc:`Bento </concepts/ben
 
 .. code-block:: yaml
    :caption: `bentofile.yaml`
-   
+
    service: "service:svc"
    include:
    - "*.py"

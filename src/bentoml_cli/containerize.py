@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-import sys
-import shutil
-import typing as t
-import logging
-import tempfile
 import itertools
+import logging
+import shutil
 import subprocess
-from typing import TYPE_CHECKING
+import sys
+import tempfile
+import typing as t
 from functools import partial
 
-if TYPE_CHECKING:
-    from click import Group
+if t.TYPE_CHECKING:
     from click import Command
     from click import Context
+    from click import Group
     from click import Parameter
 
     from bentoml._internal.container import DefaultBuilder
@@ -355,16 +354,16 @@ def add_containerize_command(cli: Group) -> None:
     from click_option_group import optgroup
 
     from bentoml import container
-    from bentoml_cli.utils import opt_callback
-    from bentoml_cli.utils import kwargs_transformers
-    from bentoml_cli.utils import normalize_none_type
-    from bentoml_cli.utils import validate_container_tag
-    from bentoml.exceptions import BentoMLException
+    from bentoml._internal.configuration import get_debug_mode
     from bentoml._internal.container import FEATURES
-    from bentoml._internal.container import enable_buildkit
     from bentoml._internal.container import REGISTERED_BACKENDS
     from bentoml._internal.container import determine_container_tag
-    from bentoml._internal.configuration import get_debug_mode
+    from bentoml._internal.container import enable_buildkit
+    from bentoml.exceptions import BentoMLException
+    from bentoml_cli.utils import kwargs_transformers
+    from bentoml_cli.utils import normalize_none_type
+    from bentoml_cli.utils import opt_callback
+    from bentoml_cli.utils import validate_container_tag
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING, metavar="BENTO:TAG")
@@ -488,8 +487,10 @@ def add_containerize_command(cli: Group) -> None:
 
         # Run healthcheck before containerizing
         # build will also run healthcheck, but we want to fail early.
-        if not container.health(backend):
-            raise BentoMLException("Failed to use backend %s." % backend)
+        try:
+            container.health(backend)
+        except subprocess.CalledProcessError:
+            raise BentoMLException(f"Backend {backend} is not healthy")
 
         # --progress is not available without BuildKit.
         if not enable_buildkit(backend=backend) and "progress" in _memoized:
@@ -583,7 +584,7 @@ def add_containerize_command(cli: Group) -> None:
             )
             instructions = (
                 "To run your newly built Bento container, run:\n"
-                + f"    {container_runtime} run -it --rm -p 3000:3000 {tags[0]} serve --production\n"
+                + f"    {container_runtime} run --rm -p 3000:3000 {tags[0]}\n"
             )
 
             if features is not None and any(
@@ -592,7 +593,7 @@ def add_containerize_command(cli: Group) -> None:
             ):
                 instructions += (
                     "To serve with gRPC instead, run:\n"
-                    + f"    {container_runtime} run -it -p 3000:3000 -p 3001:3001 {tags[0]} serve-grpc --production\n"
+                    + f"    {container_runtime} run --rm -p 3000:3000 -p 3001:3001 {tags[0]} serve-grpc\n"
                 )
             click.echo(instructions, nl=False)
             raise SystemExit(0)

@@ -22,6 +22,16 @@ triton_runner = bentoml.triton.Runner(
 )
 ```
 
+CLI arguments can be passed through the `cli_args` argument of `bentoml.triton.Runner`:
+
+```python
+triton_runner = bentoml.triton.Runner(
+    "triton-runners",
+    model_repository="s3://path/to/model_repository",
+    cli_args=["--load-model=torchscrip_yolov5s", "--model-control-mode=explicit"],
+)
+```
+
 An example of inference API:
 
 ```python
@@ -57,34 +67,8 @@ docker:
   base_image: nvcr.io/nvidia/tritonserver:22.12-py3
 ```
 
-> tritonserver are currently only supported with `--production` tag. Make sure
-> to have `tritonserver` binary available in PATH if running locally.
-
-To pass triton arguments to `serve` do it via
-`--triton-options ARG=VALUE[, VALUE]`
-
-```bash
-bentoml serve --production --triton-options log-verbose=True
-```
-
-or via `bentoml.serve`:
-
-```python
-import bentoml
-
-server = bentoml.serve(
-    bento,
-    server_type='grpc',
-    production=True,
-    triton_args=[
-        "model-control-mode=explicit",
-        "load-model=tensorflow_yolov5s",
-    ],
-)
-```
-
 To find out more about BentoML Runner architecture, see
-[our latest documentation](https://docs.bentoml.org/en/latest/concepts/runner.html#)
+[our latest documentation](https://docs.bentoml.com/en/latest/concepts/runner.html#)
 
 For more information about Triton Inference Server, see
 [here](https://github.com/triton-inference-server/server)
@@ -120,7 +104,7 @@ python3 containerize_bento.py
 4. To run the container with Triton, use `docker run`:
 
 ```bash
-docker run --rm -it -p 3000:3000 triton-integration-tensorflow serve-http --production
+docker run --rm -it -p 3000:3000 triton-integration-tensorflow serve-http
 ```
 
 #### Develop locally:
@@ -135,7 +119,7 @@ docker run --rm -it -p 3000-4000:3000-4000 \
            nvcr.io/nvidia/tritonserver:22.12-py3 bash
 ```
 
-If you have NVIDIA GPU available, make sure to install 
+If you have NVIDIA GPU available, make sure to install
 [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) on your system.
 Afterward, passing in `--gpus all` to `docker`:
 
@@ -169,7 +153,7 @@ bash ./setup
 ```bash
 python3 serve_bento.py
 
-# bentoml serve-http | serve-grpc triton-integration-tensorflow --production
+# bentoml serve-http | serve-grpc triton-integration-tensorflow
 ```
 
 > NOTE: to serve previously custom tag bento, you can also pass in `--tag` to
@@ -180,8 +164,8 @@ python3 serve_bento.py
 > [here](https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/build.md)
 > for more details on building customisation.
 
-<!-- 
+<!--
 docker run --rm -it -p 3000-3030:3000-3030 -v $(pwd)/model_repository:/models -v ${PWD}:/workspace -v ${BENTOML_GIT_ROOT}:/opt/bentoml -e BENTOML_HOME=/opt/bentoml -v $BENTOML_HOME:/opt/bentoml nvcr.io/nvidia/tritonserver:22.12-py3 bash
 
-cd /opt/bentoml && pip install -r requirements/dev-requirements.txt && cd /workspace && pip install -r requirements/requirements.txt && python3 train.py && ./setup && bentoml serve-http --production 
+cd /opt/bentoml && pip install -r requirements/dev-requirements.txt && cd /workspace && pip install -r requirements/requirements.txt && python3 train.py && ./setup && bentoml serve-http
 -->

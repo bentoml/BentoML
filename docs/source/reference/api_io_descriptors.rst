@@ -61,7 +61,7 @@ To use the IO descriptor, install bentoml with extra ``io-pandas`` dependency:
 .. note::
 
    The :code:`pandas` package is required to use the :obj:`bentoml.io.PandasDataFrame`
-   or :obj:`bentoml.io.PandasSeries`. 
+   or :obj:`bentoml.io.PandasSeries`.
 
    Install it with ``pip install pandas`` and add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
@@ -125,7 +125,8 @@ Structured Data with JSON
 
    Then proceed to add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
-   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`. We also provide
+   :examples:`an example project <pydantic_validation>` using Pydantic for request validation.
 
    .. tab-set::
 
@@ -189,6 +190,7 @@ Texts
 :code:`bentoml.io.Text` is commonly used for NLP Applications:
 
 .. autoclass:: bentoml.io.Text
+.. automethod:: bentoml.io.Text.from_sample
 .. automethod:: bentoml.io.Text.from_proto
 .. automethod:: bentoml.io.Text.from_http_request
 .. automethod:: bentoml.io.Text.to_proto
@@ -237,6 +239,7 @@ To use the IO descriptor, install bentoml with extra ``io-image`` dependency:
                 - Pillow
 
 .. autoclass:: bentoml.io.Image
+.. automethod:: bentoml.io.Image.from_sample
 .. automethod:: bentoml.io.Image.from_proto
 .. automethod:: bentoml.io.Image.from_http_request
 .. automethod:: bentoml.io.Image.to_proto
@@ -246,6 +249,7 @@ Files
 -----
 
 .. autoclass:: bentoml.io.File
+.. automethod:: bentoml.io.File.from_sample
 .. automethod:: bentoml.io.File.from_proto
 .. automethod:: bentoml.io.File.from_http_request
 .. automethod:: bentoml.io.File.to_proto
@@ -255,7 +259,7 @@ Multipart Payloads
 ------------------
 
 .. note::
-    :code:`io.Multipart` makes it possible to compose a multipart payload from multiple
+    :code:`Multipart` makes it possible to compose a multipart payload from multiple
     other IO Descriptor instances. For example, you may create a Multipart input that
     contains a image file and additional metadata in JSON.
 

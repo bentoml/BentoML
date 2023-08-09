@@ -32,7 +32,7 @@ Make sure to have at least BentoML 1.0.16:
 
 .. note::
 
-   Triton Inference Server is currently only available in production mode (``--production`` flag) and will not work during development mode.
+   Triton Inference Server is currently only available in production mode (the default mode) and will not work during development mode (``--development`` flag).
 
 Additonally, you will need to have Triton Inference Server installed in your system. Refer to Triton's `building documentation <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/customization_guide/build.html>`_
 to setup your environment. The recommended way to run Triton is through container (Docker/Podman). To pull the latest Triton container for testing, run:
@@ -56,7 +56,7 @@ Get started with Triton Inference Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Triton Inference Server architecture evolves around the model repository and a inference server. The `model repository <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_repository.html>`_
-is a filesystem based persistent volume that contains the models file and its respective `configuration <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html>`_ 
+is a filesystem based persistent volume that contains the models file and its respective `configuration <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/model_configuration.html>`_
 that defines how the model should be loaded and served. The inference server is implemented in either HTTP/REST or gRPC protocol to serve said models with various batching strategies.
 
 BentoML provides a simple integration with Triton via :ref:`Runner <concepts/runner:Using Runners>`:
@@ -89,7 +89,7 @@ supports S3 path:
    The ``cli_args`` argument is a list of arguments that will be passed to the ``tritonserver`` command. For example, the ``--load-model`` argument is used to load a specific model from the model repository.
    See ``tritonserver --help`` for all available arguments.
 
-From a developer perspective, remote invocation of Triton runners is similar to invoking any other BentoML runners. 
+From a developer perspective, remote invocation of Triton runners is similar to invoking any other BentoML runners.
 
 .. note::
 
@@ -217,10 +217,10 @@ There are a few things to note here:
 
    - ``as_numpy(name: str) -> NDArray[T]``: returns the result as a numpy array. The argument is the name of the output defined in ``config.pbtxt``.
 
-   - ``get_output(name: str) -> InferOutputTensor | dict[str, T]``: Returns the results as a |infer_output_tensor|_ (gRPC) or 
+   - ``get_output(name: str) -> InferOutputTensor | dict[str, T]``: Returns the results as a |infer_output_tensor|_ (gRPC) or
      a dictionary (HTTP). The argument is the name of the output defined in ``config.pbtxt``.
 
-   - ``get_response(self) -> ModelInferResponse | dict[str, T]``: Returns the entire response as a |model_infer_response|_ (gRPC) or 
+   - ``get_response(self) -> ModelInferResponse | dict[str, T]``: Returns the entire response as a |model_infer_response|_ (gRPC) or
      a dictionary (HTTP).
 
    Using the above ``config.pbtxt`` as example, the model consists of two outputs, ``OUTPUT__0`` and ``OUTPUT__1``.
@@ -336,7 +336,7 @@ or use :ref:`reference/core:bentoml.bentos.build`:
          :caption: `build_bento.py`
 
 Notice that we are using ``nvcr.io/nvidia/tritonserver:22.12-py3`` as our base image. This can be substituted with any other
-custom base image that has ``tritonserver`` binary available. See Triton's documentation `here <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/customization_guide/build.html>`_ 
+custom base image that has ``tritonserver`` binary available. See Triton's documentation `here <https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/customization_guide/build.html>`_
 to learn more about building/composing custom Triton image.
 
 .. epigraph::
@@ -407,6 +407,17 @@ HTTP/REST APIs is disabled by default, though it can be enabled when creating th
     If you are interested in supporting the metrics server, please open an issue on :github:`GitHub <bentoml/BentoML/issues/new/choose>`
 
 Additionally, BentoML will allocate a random port for the gRPC/HTTP server, hence ``grpc-port`` or ``http-port`` options that is passed to Runner ``cli_args`` will be omitted.
+
+Adaptive Batching
+^^^^^^^^^^^^^^^^^
+
+:ref:`Adaptive batching <guides/batching:Adaptive Batching>` is a feature supported by BentoML runners that allows for efficient batch size selection during inference. However, it's important to note that this feature is not compatible with ``TritonRunner``.
+
+``TritonRunner`` is designed as a standalone Triton server, which means that the adaptive batching logic in BentoML runners is not invoked when using ``TritonRunner``.
+
+Fortunately, Triton supports its own solution for efficient batching called `dynamic batching <https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#scheduling-and-batching>`_.
+Similar to adaptive batching, dynamic batching also allows for the selection of the optimal batch size during inference. To use dynamic batching in Triton, relevant settings can be specified in the
+`model configuration <https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration>`_ file.
 
 .. admonition:: 🚧 Help us improve the integration!
 

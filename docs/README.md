@@ -3,17 +3,17 @@
 ## A guide for docs contributors
 
 The `docs` directory contains the sphinx source text for BentoML docs, visit
-http://docs.bentoml.org/ to read the full documentation.
+http://docs.bentoml.com/ to read the full documentation.
 
 This guide is made for anyone who's interested in running BentoML documentation locally,
 making changes to it and make contributions. BentoML is made by the thriving community
-behind it, and you're always welcome to make contributions to the project and the 
-documentation. 
+behind it, and you're always welcome to make contributions to the project and the
+documentation.
 
-Before starting to make a contribution to the docs, make sure to check the 
-[issues page](https://github.com/bentoml/BentoML/issues) and the `#bentoml-contributors` 
-channel in the [community slack](https://l.linklyhq.com/l/ktOX), to make sure no one 
-else is working on the same thing and to get feedback from the community for larger 
+Before starting to make a contribution to the docs, make sure to check the
+[issues page](https://github.com/bentoml/BentoML/issues) and the `#bentoml-contributors`
+channel in the [community slack](https://l.bentoml.com/join-slack), to make sure no one
+else is working on the same thing and to get feedback from the community for larger
 proposals.
 
 
@@ -27,10 +27,12 @@ If you haven't already, clone the BentoML Github repo to a local directory:
 git clone https://github.com/bentoml/BentoML.git && cd BentoML
 ```
 
+> **Note**: Make sure to have [PDM](https://pdm.fming.dev/latest/) installed.
+
 Install all dependencies required for building docs (mainly `sphinx` and its extension):
 
 ```bash
-pip install -r requirements/docs-requirements.txt
+pdm install -dG docs
 ```
 
 Build the sphinx docs:
@@ -49,7 +51,7 @@ python -m http.server 8000 -d docs/build/html
 And open your browser at http://0.0.0.0:8000/ to view the generated docs.
 
 
-#### Spellcheck 
+#### Spellcheck
 
 Install spellchecker dependencies:
 ```bash
@@ -63,12 +65,12 @@ make spellcheck-doc
 
 ##### Watch Docs
 
-We recommend using sphinx-autobuild during development, which provides a live-reloading 
-server, that rebuilds the documentation and refreshes any open pages automatically when 
-changes are saved. This enables a much shorter feedback loop which can help boost 
+We recommend using sphinx-autobuild during development, which provides a live-reloading
+server, that rebuilds the documentation and refreshes any open pages automatically when
+changes are saved. This enables a much shorter feedback loop which can help boost
 productivity when writing documentation.
 
-Simply run the following command from BentoML project's root directory: 
+Simply run the following command from BentoML project's root directory:
 
 ```bash
 sphinx-autobuild docs/source docs/build/html
@@ -90,7 +92,7 @@ BentoML docs is built with Sphinx, which natively supports [ReStructuredText](ht
 
 #### Document titles and section headers
 
-In reStructuredText, there are no heading levels assigned to certain characters as the 
+In reStructuredText, there are no heading levels assigned to certain characters as the
 structure is determined from the succession of headings. However in BentoML docs, we
 follow the following convention:
 
@@ -116,7 +118,7 @@ Top Level Headings
 
 When writing documentation, it is common to mention or link to other parts of the docs.
 
-If you need to refer to a specific documentation page, use `:doc:` plus path to the 
+If you need to refer to a specific documentation page, use `:doc:` plus path to the
 target documentation file under the `docs/source/`. e.g.:
 
 ```rst
@@ -153,7 +155,7 @@ A `note` section can be created with the following syntax:
    If you really want, you can even have lists, or code, or tables.
 ```
 
-There are other admonition types such as `caution`, `danger`, `hint`, `important`, 
+There are other admonition types such as `caution`, `danger`, `hint`, `important`,
 `seealso`, and `tip`. Learn more about it [here](https://pradyunsg.me/furo/reference/admonitions/).
 
 #### Code Blocks
@@ -204,10 +206,10 @@ https://sphinx-design.readthedocs.io/en/furo-theme/tabs.html
 BentoML docs relies heavily on the Python docstrings defined together with the source
 code. We ask our contributors to document every public facing APIs and CLIs, including
 their signatures, options, and example usage. Sphinx can then use these inline docs to
-generate API References pages. 
+generate API References pages.
 
 BentoML uses the [sphinx.ext.autodoc](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html)
-extension to include documentation from docstring. For example, a `.rst` document can 
+extension to include documentation from docstring. For example, a `.rst` document can
 create a section made from a Python Class's docstring, using the following syntax:
 
 ```rst

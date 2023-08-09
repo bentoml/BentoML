@@ -1,25 +1,24 @@
 from __future__ import annotations
 
-import typing as t
 import asyncio
-from typing import TYPE_CHECKING
+import typing as t
 
-from starlette.requests import Request
 from multipart.multipart import parse_options_header
+from starlette.requests import Request
 from starlette.responses import Response
 
-from . import from_spec as io_descriptor_from_spec
-from .base import IODescriptor
-from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ...exceptions import InvalidArgument
 from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..utils.formparser import populate_multipart_requests
-from ..utils.formparser import concat_to_multipart_response
-from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import Schema
+from ..utils.formparser import concat_to_multipart_response
+from ..utils.formparser import populate_multipart_requests
+from . import from_spec as io_descriptor_from_spec
+from .base import IODescriptor
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from types import UnionType
 
     from google.protobuf import message as _message
@@ -27,15 +26,19 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
-    from .base import OpenAPIResponse
+    from ..context import ServiceContext as Context
     from ..types import LazyType
-    from ..context import InferenceApiContext as Context
+    from .base import OpenAPIResponse
 else:
     pb, _ = import_generated_stubs("v1")
     pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
 
 
-class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Multipart"):
+class Multipart(
+    IODescriptor[t.Dict[str, t.Any]],
+    descriptor_id="bentoml.io.Multipart",
+    proto_fields=("multipart",),
+):
     """
     :obj:`Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
     of a Service can receive/send a **multipart** request/responses as specified in your API function signature.
@@ -163,7 +166,6 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
         :obj:`Multipart`: IO Descriptor that represents a Multipart request/response.
     """
 
-    _proto_fields = ("multipart",)
     _mime_type = "multipart/form-data"
 
     def __init__(self, **inputs: IODescriptor[t.Any]):
@@ -352,7 +354,7 @@ class Multipart(IODescriptor[t.Dict[str, t.Any]], descriptor_id="bentoml.io.Mult
                     obj,
                     [
                         # TODO: support multiple proto_fields
-                        pb.Part(**{io_._proto_fields[0]: resp})
+                        pb.Part(**{io_.proto_fields[0]: resp})
                         for io_, resp in zip(self._inputs.values(), resps)
                     ],
                 )

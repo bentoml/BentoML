@@ -1,37 +1,37 @@
 # pylint: disable=redefined-outer-name,not-context-manager
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import itertools
+import multiprocessing
 import os
+import socket
+import subprocess
 import sys
 import time
-import socket
 import typing as t
 import urllib
-import asyncio
-import itertools
-import contextlib
-import subprocess
 import urllib.error
 import urllib.request
-import multiprocessing
-from typing import TYPE_CHECKING
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 import psutil
 
-from bentoml.grpc.utils import import_grpc
 from bentoml._internal.tag import Tag
 from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils import reserve_free_port
 from bentoml._internal.utils import cached_contextmanager
+from bentoml._internal.utils import reserve_free_port
+from bentoml.grpc.utils import import_grpc
 
 from ..grpc.utils import LATEST_PROTOCOL_VERSION
 
 if TYPE_CHECKING:
     from grpc import aio
     from grpc_health.v1 import health_pb2 as pb_health
-    from starlette.datastructures import Headers
     from starlette.datastructures import FormData
+    from starlette.datastructures import Headers
 
     from bentoml._internal.bento.bento import Bento
 
@@ -225,7 +225,7 @@ def run_bento_server_container(
         )
     cmd.append(image_tag)
     serve_cmd = "serve-grpc" if use_grpc else "serve-http"
-    cmd.extend([serve_cmd, "--production"])
+    cmd.extend([serve_cmd])
     print(f"Running API server in container: '{' '.join(cmd)}'")
     with subprocess.Popen(
         cmd,
@@ -275,7 +275,6 @@ def run_bento_server_standalone(
             "-m",
             "bentoml",
             "serve-grpc" if use_grpc else "serve",
-            "--production",
             "--port",
             f"{server_port}",
         ]

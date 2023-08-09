@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import time
 import typing as t
-from typing import TYPE_CHECKING
 from statistics import mean
+from typing import TYPE_CHECKING
 
 import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer

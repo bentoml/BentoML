@@ -1,56 +1,49 @@
 from __future__ import annotations
 
-import io
-import typing as t
-import logging
 import importlib
-from sys import version_info as pyver
-from types import ModuleType
-from typing import overload
-from typing import TYPE_CHECKING
+import io
+import logging
+import os
+import typing as t
 from datetime import datetime
 from datetime import timezone
+from sys import version_info as pyver
+from types import ModuleType
+from typing import TYPE_CHECKING
+from typing import overload
 
-import fs
 import attr
-import yaml
+import cloudpickle  # type: ignore (no cloudpickle types)
+import fs
 import fs.errors
 import fs.mirror
-import cloudpickle  # type: ignore (no cloudpickle types)
-from fs.base import FS
-from cattr.gen import override
+import yaml
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
-from simple_di import inject
+from cattr.gen import override
+from fs.base import FS
 from simple_di import Provide
+from simple_di import inject
 
-from ..tag import Tag
+from ...exceptions import BentoMLException
+from ...exceptions import NotFound
+from ..configuration import BENTOML_VERSION
+from ..configuration.containers import BentoMLContainer
 from ..store import Store
 from ..store import StoreItem
+from ..tag import Tag
 from ..types import MetadataDict
+from ..types import ModelSignatureDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
 from ..utils import normalize_labels_value
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ..configuration import BENTOML_VERSION
-from ..configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
-    from ..types import AnyType
-    from ..types import PathType
-    from ..runner import Runner
+if t.TYPE_CHECKING:
     from ..runner import Runnable
-
-    class ModelSignatureDict(t.TypedDict, total=False):
-        batchable: bool
-        batch_dim: tuple[int, int] | int | None
-        input_spec: tuple[AnyType] | AnyType | None
-        output_spec: AnyType | None
-
-else:
-    ModelSignaturesDict = dict
+    from ..runner import Runner
+    from ..runner.strategy import Strategy
+    from ..types import PathType
 
 
 T = t.TypeVar("T")
@@ -144,7 +137,7 @@ class Model(StoreItem):
     @classmethod
     def create(
         cls,
-        name: str,
+        name: Tag | str,
         *,
         module: str,
         api_version: str,
@@ -178,7 +171,7 @@ class Model(StoreItem):
         Returns:
             object: Model instance created in temporary filesystem
         """
-        tag = Tag.from_str(name)
+        tag = Tag.from_taglike(name)
         if tag.version is None:
             tag = tag.make_new_version()
         labels = {} if labels is None else labels
@@ -327,6 +320,8 @@ class Model(StoreItem):
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
+        embedded: bool = False,
+        scheduling_strategy: type[Strategy] | None = None,
     ) -> Runner:
         """
         TODO(chaoyu): add docstring
@@ -341,6 +336,18 @@ class Model(StoreItem):
 
         """
         from ..runner import Runner
+        from ..runner.strategy import DefaultStrategy
+
+        if scheduling_strategy is None:
+            scheduling_strategy = DefaultStrategy
+
+        # TODO: @larme @yetone run this branch only yatai version is incompatible with embedded runner
+        yatai_version = os.environ.get("YATAI_T_VERSION")
+        if embedded and yatai_version:
+            logger.warning(
+                f"Yatai of version {yatai_version} is incompatible with embedded runner, set `embedded=False` for runner {name}"
+            )
+            embedded = False
 
         return Runner(
             self.to_runnable(),
@@ -349,12 +356,28 @@ class Model(StoreItem):
             max_batch_size=max_batch_size,
             max_latency_ms=max_latency_ms,
             method_configs=method_configs,
+            embedded=embedded,
+            scheduling_strategy=scheduling_strategy,
         )
 
     def to_runnable(self) -> t.Type[Runnable]:
         if self._runnable is None:
             self._runnable = self.info.imported_module.get_runnable(self)
         return self._runnable
+
+    def load_model(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        """
+        Load the model into memory from the model store directory.
+        This is a shortcut to the ``load_model`` function defined in the framework module
+        used for saving the target model.
+
+        For example, if the ``BentoModel`` is saved with
+        ``bentoml.tensorflow.save_model``, this method will pass it to the
+        ``bentoml.tensorflow.load_model`` method, along with any additional arguments.
+        """
+        if self._model is None:
+            self._model = self.info.imported_module.load_model(self, *args, **kwargs)
+        return self._model
 
     def with_options(self, **kwargs: t.Any) -> Model:
         res = Model(
@@ -495,7 +518,7 @@ bentoml_cattr.register_unstructure_hook(
 )
 
 
-@attr.define(repr=False, eq=False, frozen=True)
+@attr.define(repr=False, eq=False, frozen=True, init=False)
 class ModelInfo:
     # for backward compatibility in case new fields are added to BentoInfo.
     __forbid_extra_keys__ = False

@@ -1,13 +1,12 @@
-from locust import task
-from locust import between
 from locust import HttpUser
+from locust import between
+from locust import task
 
 with open("samples/1.png", "rb") as f:
     test_image_bytes = f.read()
 
 
 class PyTorchMNISTLoadTestUser(HttpUser):
-
     wait_time = between(0.01, 2)
 
     @task

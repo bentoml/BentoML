@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import importlib.metadata
 import os
-import sys
+import platform
 import shlex
 import shutil
-import typing as t
-import platform
 import subprocess
+import sys
+import typing as t
 from gettext import gettext
 
 import click
@@ -105,10 +106,9 @@ def pretty_format(
 
 
 def add_env_command(cli: click.Group) -> None:
-    from bentoml import __version__ as BENTOML_VERSION
-    from bentoml.exceptions import CLIException
-    from bentoml._internal.utils.pkg import get_pkg_version
     from bentoml._internal.utils.pkg import PackageNotFoundError
+    from bentoml._internal.utils.pkg import get_pkg_version
+    from bentoml.exceptions import CLIException
 
     @cli.command(help=gettext("Print environment info and exit"))
     @click.option(
@@ -127,7 +127,7 @@ def add_env_command(cli: click.Group) -> None:
         is_windows = sys.platform == "win32"
 
         info_dict: dict[str, str | list[str]] = {
-            "bentoml": BENTOML_VERSION,
+            "bentoml": importlib.metadata.version("bentoml"),
             "python": platform.python_version(),
             "platform": platform.platform(),
         }
@@ -165,7 +165,7 @@ def add_env_command(cli: click.Group) -> None:
             info_dict["conda_packages"] = conda_packages
 
         # process info from `pip freeze`
-        pip_packages = run_cmd(["pip", "freeze"])
+        pip_packages = run_cmd([sys.executable, "-m", "pip", "freeze"])
         info_dict["pip_packages"] = pip_packages
         click.echo(pretty_format(info_dict, output=output))
         ctx.exit(0)

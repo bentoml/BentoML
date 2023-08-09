@@ -6,13 +6,14 @@ if TYPE_CHECKING:
 
     F = t.Callable[..., t.Any]
 
-    from pandas import Series as PdSeries
+    from pandas import Series as _PdSeries
     from pandas import DataFrame as PdDataFrame
     from pandas._typing import Dtype as PdDType
     from pandas._typing import DtypeArg as PdDTypeArg
     from pyarrow.plasma import ObjectID
     from pyarrow.plasma import PlasmaClient
 
+    PdSeries = _PdSeries[t.Any]
     DataFrameOrient = Literal["split", "records", "index", "columns", "values", "table"]
     SeriesOrient = Literal["split", "records", "index", "table"]
 
@@ -33,6 +34,8 @@ if TYPE_CHECKING:
     from .starlette import ASGIReceive
     from .starlette import AsgiMiddleware
 
+    from PIL.Image import Image as PILImage
+
     WSGIApp = t.Callable[[F, t.Mapping[str, t.Any]], t.Iterable[bytes]]
 
     __all__ = [
@@ -40,6 +43,7 @@ if TYPE_CHECKING:
         "PdDataFrame",
         "PdDType",
         "PdDTypeArg",
+        "PILImage",
         "DataFrameOrient",
         "SeriesOrient",
         "ObjectID",

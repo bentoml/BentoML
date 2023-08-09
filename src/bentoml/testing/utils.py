@@ -7,12 +7,12 @@ import aiohttp
 import multidict
 
 if TYPE_CHECKING:
-    from starlette.types import Send
-    from starlette.types import Scope
-    from starlette.types import Receive
     from aiohttp.typedefs import LooseHeaders
-    from starlette.datastructures import Headers
     from starlette.datastructures import FormData
+    from starlette.datastructures import Headers
+    from starlette.types import Receive
+    from starlette.types import Scope
+    from starlette.types import Send
 
 
 async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":

@@ -33,6 +33,10 @@ Below is a list of integration guides with various tools within the MLOps ecosys
         :link: /integrations/triton
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/integrations/ray`
+        :link: /integrations/ray
+        :link-type: doc
+
 .. admonition:: Help us improve the project!
 
     Found an issue or a TODO item? You're always welcome to make contributions to the
@@ -45,8 +49,10 @@ Below is a list of integration guides with various tools within the MLOps ecosys
     :hidden:
 
     airflow
-    flink
     arize
+    flink
+    kubeflow
     mlflow
     spark
     triton
+    ray

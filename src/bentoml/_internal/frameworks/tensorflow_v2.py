@@ -1,36 +1,36 @@
 from __future__ import annotations
 
+import contextlib
+import itertools
+import logging
 import pickle
 import typing as t
-import logging
-import itertools
-import contextlib
 from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
-from bentoml import Tag
 from bentoml import Runnable
-from bentoml.models import ModelContext
-from bentoml.exceptions import NotFound
+from bentoml import Tag
 from bentoml.exceptions import MissingDependencyException
+from bentoml.exceptions import NotFound
+from bentoml.models import ModelContext
 
-from ..types import LazyType
 from ..models.model import ModelSignature
 from ..models.model import PartialKwargsModelOptions as ModelOptions
-from .utils.tensorflow import get_tf_version
+from ..runner.container import DataContainer
+from ..runner.container import DataContainerRegistry
+from ..runner.container import Payload
+from ..types import LazyType
+from .utils.tensorflow import cast_py_args_to_tf_function_args
 from .utils.tensorflow import get_input_signatures_v2
 from .utils.tensorflow import get_output_signatures_v2
 from .utils.tensorflow import get_restorable_functions
-from .utils.tensorflow import cast_py_args_to_tf_function_args
-from ..runner.container import Payload
-from ..runner.container import DataContainer
-from ..runner.container import DataContainerRegistry
+from .utils.tensorflow import get_tf_version
 
 if TYPE_CHECKING:
     from .. import external_typing as ext
-    from ..models.model import ModelSignatureDict
     from ..external_typing import tensorflow as tf_ext
+    from ..models.model import ModelSignatureDict
 
     TFArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
     TFModelOutputType = tf_ext.EagerTensor | tuple[tf_ext.EagerTensor]
@@ -109,7 +109,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: tf_ext.KerasModel | tf_ext.Module,
     *,
     tf_signatures: tf_ext.ConcreteFunction | None = None,
@@ -283,7 +283,7 @@ def get_runnable(
             # depends on the real output value each time
 
             def _postprocess(res: TFModelOutputType) -> TFRunnableOutputType:
-                if isinstance(res, tuple):
+                if isinstance(res, (tuple, list)):
                     return tuple(t.cast("ext.NpNDArray", r.numpy()) for r in res)
                 else:
                     return t.cast("ext.NpNDArray", res.numpy())

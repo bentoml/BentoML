@@ -27,7 +27,7 @@ be installed in the Spark cluster. Most likely, the service you are hosting Spar
 mechanisms for doing this. If you are using a standalone cluster, you should install those
 dependencies on every node you expect to use.
 
-Finally, we use the quickstart bento from the :ref:`aforementioned tutorial <tutorial>`. If you have
+Finally, we use the quickstart bento from the :doc:`aforementioned tutorial </tutorial>`. If you have
 already followed that tutorial, you should already have that bento. If you have note, simply run the
 following:
 
@@ -78,7 +78,7 @@ DataFrame containing the data from the file.
     from pyspark.sql.types import StructType, StructField, FloatType, StringType
     import urllib.request
 
-    urllib.request.urlretrieve("https://docs.bentoml.org/en/latest/_static/examples/batch/input.csv", "input.csv")
+    urllib.request.urlretrieve("https://docs.bentoml.com/en/latest/_static/examples/batch/input.csv", "input.csv")
 
     schema = StructType([
         StructField("sepal_length", FloatType(), False),

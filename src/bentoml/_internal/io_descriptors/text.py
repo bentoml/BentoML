@@ -1,33 +1,31 @@
 from __future__ import annotations
 
 import typing as t
-from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from bentoml.exceptions import BentoMLException
-
-from .base import IODescriptor
-from ..utils.http import set_cookies
+from ...exceptions import BentoMLException
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..utils.lazy_loader import LazyLoader
-from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import Schema
+from ..utils.http import set_cookies
+from ..utils.lazy_loader import LazyLoader
+from .base import IODescriptor
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
     from typing_extensions import Self
 
+    from ..context import ServiceContext as Context
     from .base import OpenAPIResponse
-    from ..context import InferenceApiContext as Context
 else:
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
 
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
+class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("text",)):
     """
     :obj:`Text` defines API specification for the inputs/outputs of a Service. :obj:`Text`
     represents strings for all incoming requests/outcoming responses as specified in
@@ -90,7 +88,6 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
-    _proto_fields = ("text",)
     _mime_type = MIME_TYPE
 
     def __init__(self, *args: t.Any, **kwargs: t.Any):
@@ -100,6 +97,23 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text"):
             ) from None
 
     def _from_sample(self, sample: str | bytes) -> str:
+        """
+        Create a :class:`~bentoml._internal.io_descriptors.text.Text` IO Descriptor from given inputs.
+
+        Args:
+            sample: Given sample text.
+
+        Returns:
+            :class:`Text`: IODescriptor from given users inputs.
+
+        Example:
+
+        .. code-block:: python
+           :caption: `service.py`
+
+           @svc.api(input=bentoml.io.Text.from_sample('Bento box is'), output=bentoml.io.Text())
+           def predict(inputs: str) -> str: ...
+        """
         if isinstance(sample, bytes):
             sample = sample.decode("utf-8")
         return sample

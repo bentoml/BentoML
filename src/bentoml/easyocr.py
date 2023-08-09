@@ -1,7 +1,6 @@
-raise NotImplementedError(
-    f"""\
-Support for "{__name__}" is temporarily unavailable as BentoML transition to the new \
-design in version 1.0.0 release. Before this module is officially implemented in \
-BentoML, users may use Custom Runner as a workaround. Learn more at http://docs.bentoml.org
-"""
-)
+from ._internal.frameworks.easyocr import get
+from ._internal.frameworks.easyocr import get_runnable
+from ._internal.frameworks.easyocr import load_model
+from ._internal.frameworks.easyocr import save_model
+
+__all__ = ["load_model", "save_model", "get", "get_runnable"]

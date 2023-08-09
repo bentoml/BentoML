@@ -1,7 +1,7 @@
 import numpy as np
-from locust import task
-from locust import between
 from locust import HttpUser
+from locust import between
+from locust import task
 from sklearn import datasets
 
 test_data = datasets.load_iris().data
@@ -13,7 +13,7 @@ class IrisHttpUser(HttpUser):
     Usage:
         Run the iris_classifier service in production mode:
 
-            bentoml serve-http iris_classifier:latest --production
+            bentoml serve-http iris_classifier:latest
 
         Start locust load testing client with:
 

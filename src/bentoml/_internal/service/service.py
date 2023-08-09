@@ -1,66 +1,66 @@
 from __future__ import annotations
 
-import typing as t
-import logging
 import importlib
-from typing import TYPE_CHECKING
+import inspect
+import logging
+import os
+import sys
+import typing as t
 from functools import partial
 
 import attr
 
 from bentoml.exceptions import BentoMLException
 
-from ..tag import Tag
-from ..models import Model
-from ...grpc.utils import import_grpc
+from ...exceptions import NotFound
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ...grpc.utils import import_grpc
 from ..bento.bento import get_default_svc_readme
-from .inference_api import InferenceAPI
-from ..runner.runner import Runner
-from ..runner.runner import AbstractRunner
+from ..context import ServiceContext as Context
 from ..io_descriptors import IODescriptor
+from ..io_descriptors.base import IOType
+from ..models import Model
+from ..runner.runner import AbstractRunner
+from ..runner.runner import Runner
+from ..tag import Tag
+from ..utils import first_not_none
+from .inference_api import InferenceAPI
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import grpc
 
+    import bentoml
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
 
+    from ...grpc.v1 import service_pb2_grpc as services
     from .. import external_typing as ext
     from ..bento import Bento
-    from ...grpc.v1 import service_pb2_grpc as services
+    from ..types import LifecycleHook
     from .openapi.specification import OpenAPISpecification
+
+    ContextFunc = t.Callable[[Context], None | t.Coroutine[t.Any, t.Any, None]]
+    HookF = t.TypeVar("HookF", bound=LifecycleHook)
+    HookF_ctx = t.TypeVar("HookF_ctx", bound=ContextFunc)
+
+    class _inference_api_wrapper(t.Generic[IOType]):
+        __name__: str
+
+        # fmt: off
+        @t.overload
+        def __call__(self, func: t.Callable[[IOType], IOType]) -> t.Callable[[IOType], IOType]: ...  # type: ignore (this is considered as stub)
+        @t.overload
+        def __call__(self, func: t.Callable[[IOType], t.Coroutine[IOType, t.Any, t.Any]]) -> t.Callable[[IOType], t.Coroutine[IOType, t.Any, t.Any]]: ...
+        @t.overload
+        def __call__(self, func: t.Callable[[IOType, bentoml.Context], IOType]) -> t.Callable[[IOType, bentoml.Context], IOType]: ...
+        @t.overload
+        def __call__(self, func: t.Callable[[IOType, bentoml.Context], t.Coroutine[IOType, t.Any, t.Any]]) -> t.Callable[[IOType, bentoml.Context], t.Coroutine[IOType, t.Any, t.Any]]: ...
+        # fmt: on
 
 else:
     grpc, _ = import_grpc()
 
 logger = logging.getLogger(__name__)
-
-
-def add_inference_api(
-    svc: Service,
-    func: t.Callable[..., t.Any],
-    input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
-    output: IODescriptor[t.Any],
-    name: t.Optional[str],
-    doc: t.Optional[str],
-    route: t.Optional[str],
-) -> None:
-    api = InferenceAPI(
-        name=name if name is not None else func.__name__,
-        user_defined_callback=func,
-        input_descriptor=input,
-        output_descriptor=output,
-        doc=doc,
-        route=route,
-    )
-
-    if api.name in svc.apis:
-        raise BentoMLException(
-            f"API {api.name} is already defined in Service {svc.name}"
-        )
-
-    svc.apis[api.name] = api
 
 
 def get_valid_service_name(user_provided_svc_name: str) -> str:
@@ -76,7 +76,7 @@ def get_valid_service_name(user_provided_svc_name: str) -> str:
     return lower_name
 
 
-@attr.define(frozen=True)
+@attr.define(frozen=False, init=False)
 class Service:
     """The service definition is the manifestation of the Service Oriented Architecture
     and the core building block in BentoML where users define the service runtime
@@ -110,7 +110,7 @@ class Service:
     grpc_handlers: list[grpc.GenericRpcHandler] = attr.field(init=False, factory=list)
 
     # list of APIs from @svc.api
-    apis: t.Dict[str, InferenceAPI] = attr.field(init=False, factory=dict)
+    apis: t.Dict[str, InferenceAPI[t.Any]] = attr.field(init=False, factory=dict)
 
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)
@@ -119,6 +119,79 @@ class Service:
     # Working dir and Import path of the service, set when the service was imported
     _working_dir: str | None = attr.field(init=False, default=None)
     _import_str: str | None = attr.field(init=False, default=None)
+    _caller_module: str | None = attr.field(init=False, default=None)
+
+    # service context
+    context: Context = attr.field(init=False, factory=Context)
+
+    # hooks
+    startup_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
+    shutdown_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
+    deployment_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
+
+    def __reduce__(self):
+        """
+        Make bentoml.Service pickle serializable
+        """
+        import fs
+
+        from bentoml._internal.bento.bento import Bento
+        from bentoml._internal.configuration.containers import BentoMLContainer
+        from bentoml._internal.service.loader import load
+        from bentoml._internal.service.loader import load_bento_dir
+
+        serialization_strategy = BentoMLContainer.serialization_strategy.get()
+
+        if self.bento:
+            if serialization_strategy == "EXPORT_BENTO":
+                temp_fs = fs.open_fs("temp:///")
+                tmp_path = temp_fs.getsyspath("/")
+                bento_path = self.bento.export(tmp_path, output_format="tar")
+                content = open(bento_path, "rb").read()
+
+                def load_exported_bento(bento_tag: Tag, content: bytes):
+                    tmp_bento_store = BentoMLContainer.tmp_bento_store.get()
+                    try:
+                        bento = tmp_bento_store.get(bento_tag)
+                        return load_bento_dir(bento.path)
+                    except NotFound:
+                        temp_fs = fs.open_fs("temp:///")
+                        temp_fs.writebytes("/import.bento", content)
+                        bento = Bento.import_from(
+                            temp_fs.getsyspath("/import.bento")
+                        ).save(tmp_bento_store)
+                        return load_bento_dir(bento.path)
+
+                return (
+                    load_exported_bento,
+                    (
+                        self.bento.tag,
+                        content,
+                    ),
+                )
+            elif serialization_strategy == "LOCAL_BENTO":
+                return (load, (self.bento.tag,))
+            else:
+                # serialization_strategy == REMOTE_BENTO
+                def get_or_pull(bento_tag: Tag) -> Service:
+                    try:
+                        return load(bento_tag)
+                    except NotFound:
+                        pass
+                    tmp_bento_store = BentoMLContainer.tmp_bento_store.get()
+                    try:
+                        bento = tmp_bento_store.get(bento_tag)
+                        return load_bento_dir(bento.path)
+                    except NotFound:
+                        cloud_client = BentoMLContainer.bentocloud_client.get()
+                        cloud_client.pull_bento(bento_tag, bento_store=tmp_bento_store)
+                        return get_or_pull(bento_tag)
+
+                return (get_or_pull, (self.bento.tag,))
+        else:
+            from bentoml._internal.service.loader import import_service
+
+            return (import_service, self.get_service_import_origin())
 
     def __init__(
         self,
@@ -127,12 +200,12 @@ class Service:
         runners: list[AbstractRunner] | None = None,
         models: list[Model] | None = None,
     ):
-        """
+        """Service definition itself. Runners and models can be optionally pass into a ``bentoml.Service``.
 
         Args:
-            name:
-            runners:
-            models:
+            name: name of the service
+            runners: Optional list of runners to be used with this service.
+            models: Optional list of ``bentoml.Model`` to be used with this service.
         """
         name = get_valid_service_name(name)
 
@@ -163,34 +236,105 @@ class Service:
             models=[] if models is None else models,
         )
 
+        # Set import origin info - import_str can not be determined at this stage yet as
+        # the variable name is only available in module vars after __init__ is returned
+        # get_service_import_origin below will use the _caller_module for retriving the
+        # correct import_str for this service
+        caller_module = inspect.currentframe().f_back.f_globals["__name__"]
+        self._caller_module = caller_module
+        self._working_dir = os.getcwd()
+
+    def get_service_import_origin(self) -> tuple[str, str]:
+        """
+        Returns the module name and working directory of the service
+        """
+        if not self._import_str:
+            import_module = self._caller_module
+            if import_module == "__main__":
+                if hasattr(sys.modules["__main__"], "__file__"):
+                    import_module = sys.modules["__main__"].__file__
+                else:
+                    raise BentoMLException(
+                        "Failed to get service import origin, bentoml.Service object defined interactively in console or notebook is not supported"
+                    )
+
+            if self._caller_module not in sys.modules:
+                raise BentoMLException(
+                    "Failed to get service import origin, bentoml.Service object must be defined in a module"
+                )
+
+            for name, value in vars(sys.modules[self._caller_module]).items():
+                if value is self:
+                    object.__setattr__(self, "_import_str", f"{import_module}:{name}")
+                    break
+
+            if not self._import_str:
+                raise BentoMLException(
+                    "Failed to get service import origin, bentoml.Service object must be assigned to a variable at module level"
+                )
+
+        assert self._working_dir is not None
+
+        return self._import_str, self._working_dir
+
+    def is_service_importable(self) -> bool:
+        if self._caller_module == "__main__":
+            if not hasattr(sys.modules["__main__"], "__file__"):
+                return False
+
+        return True
+
+    # fmt: off
+    # case 1: function is not defined, but input and output are
+    @t.overload
+    def api(self, input: IODescriptor[IOType], output: IODescriptor[IOType]) ->  _inference_api_wrapper[IOType]: ...
+    # case 2: the decorator itself with custom routes
+    @t.overload
+    def api(self, input: IODescriptor[IOType], output: IODescriptor[IOType], *, route: str = ...) ->  _inference_api_wrapper[IOType]: ...
+    # fmt: on
     def api(
         self,
-        input: IODescriptor[t.Any],  # pylint: disable=redefined-builtin
-        output: IODescriptor[t.Any],
-        name: t.Optional[str] = None,
-        doc: t.Optional[str] = None,
-        route: t.Optional[str] = None,
-    ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
+        input: IODescriptor[IOType],
+        output: IODescriptor[IOType],
+        *,
+        name: str | None = None,
+        doc: str | None = None,
+        route: str | None = None,
+    ) -> _inference_api_wrapper[IOType]:
         """Decorator for adding InferenceAPI to this service"""
 
-        D = t.TypeVar("D", bound=t.Callable[..., t.Any])
+        def decorator(
+            fn: _inference_api_wrapper[IOType],
+        ) -> _inference_api_wrapper[IOType]:
+            _api = InferenceAPI[IOType](
+                name=first_not_none(name, default=fn.__name__),
+                user_defined_callback=fn,
+                input_descriptor=input,
+                output_descriptor=output,
+                doc=doc,
+                route=route,
+            )
+            if _api.name in self.apis:
+                raise BentoMLException(
+                    f"API {_api.name} is already defined in Service {self.name}"
+                )
+            self.apis[_api.name] = _api
+            return fn
 
-        def decorator(func: D) -> D:
-            add_inference_api(self, func, input, output, name, doc, route)
-            return func
-
-        return decorator
+        return t.cast("_inference_api_wrapper[IOType]", decorator)
 
     def __str__(self):
         if self.bento:
             return f'bentoml.Service(tag="{self.tag}", ' f'path="{self.bento.path}")'
-        elif self._import_str and self._working_dir:
+
+        try:
+            import_str, working_dir = self.get_service_import_origin()
             return (
                 f'bentoml.Service(name="{self.name}", '
-                f'import_str="{self._import_str}", '
-                f'working_dir="{self._working_dir}")'
+                f'import_str="{import_str}", '
+                f'working_dir="{working_dir}")'
             )
-        else:
+        except BentoMLException:
             return (
                 f'bentoml.Service(name="{self.name}", '
                 f'runners=[{",".join([r.name for r in self.runners])}])'
@@ -198,6 +342,19 @@ class Service:
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other: Service):
+        if self is other:
+            return True
+
+        if self.bento and other.bento:
+            return self.bento.tag == other.bento.tag
+
+        try:
+            if self.get_service_import_origin() == other.get_service_import_origin():
+                return True
+        except BentoMLException:
+            return False
 
     @property
     def doc(self) -> str:
@@ -211,6 +368,18 @@ class Service:
         from .openapi import generate_spec
 
         return generate_spec(self)
+
+    def on_startup(self, func: HookF_ctx) -> HookF_ctx:
+        self.startup_hooks.append(partial(func, self.context))
+        return func
+
+    def on_shutdown(self, func: HookF_ctx) -> HookF_ctx:
+        self.shutdown_hooks.append(partial(func, self.context))
+        return func
+
+    def on_deployment(self, func: HookF) -> HookF:
+        self.deployment_hooks.append(func)
+        return func
 
     def on_asgi_app_startup(self) -> None:
         pass
@@ -309,8 +478,3 @@ class Service:
 def on_load_bento(svc: Service, bento: Bento):
     object.__setattr__(svc, "bento", bento)
     object.__setattr__(svc, "tag", bento.info.tag)
-
-
-def on_import_svc(svc: Service, working_dir: str, import_str: str):
-    object.__setattr__(svc, "_working_dir", working_dir)
-    object.__setattr__(svc, "_import_str", import_str)

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import io
-import sys
 import json
 from typing import TYPE_CHECKING
 
+import aiohttp
 import numpy as np
 import pytest
-import aiohttp
 
 from bentoml.testing.utils import async_request
 from bentoml.testing.utils import parse_multipart_form
@@ -125,16 +124,14 @@ async def test_pandas(host: str):
         assert_data=b'[{"col1":202}]',
     )
 
-    # pyarrow only support python 3.7+
-    if sys.version_info >= (3, 7):
-        await async_request(
-            "POST",
-            f"http://{host}/predict_dataframe",
-            headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
-            data=df.to_parquet(),
-            assert_status=200,
-            assert_data=b'[{"col1":202}]',
-        )
+    await async_request(
+        "POST",
+        f"http://{host}/predict_dataframe",
+        headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
+        data=df.to_parquet(),
+        assert_status=200,
+        assert_data=b'[{"col1":202}]',
+    )
 
     await async_request(
         "POST",
@@ -171,13 +168,12 @@ async def test_file(host: str, bin_file: str):
         assert_data=b"\x810\x899",
     )
 
-    # Test Exception
     await async_request(
         "POST",
         f"http://{host}/predict_file",
         data=b,
         headers={"Content-Type": "application/pdf"},
-        assert_status=500,
+        assert_data=b"\x810\x899",
     )
 
 

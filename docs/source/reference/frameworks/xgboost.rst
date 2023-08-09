@@ -5,8 +5,14 @@ XGBoost
 .. admonition:: About this page
 
    This is an API reference for XGBoost in BentoML. Please refer to the
-   :ref:`XGBoost guide <frameworks/xgboost:XGBoost>` for more information about how to use XGBoost
+   :doc:`XGBoost guide </frameworks/xgboost>` for more information about how to use XGBoost
    in BentoML.
+
+
+.. note::
+
+   You can find more examples for **XGBoost** in our
+   :examples:`examples/xgboost <xgboost>` directory.
 
 
 .. currentmodule:: bentoml.xgboost

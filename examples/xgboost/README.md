@@ -30,7 +30,7 @@ Verify that the model can be loaded as runner from Python shell:
 ```python
 import bentoml
 
-runner = bentoml.xgboost.load_runner("agaricus:latest")
+runner = bentoml.xgboost.get("agaricus:latest").to_runner()
 
 runner.run([0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
             0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0,
@@ -55,7 +55,7 @@ from bentoml.io import NumpyNdarray, File
 if typing.TYPE_CHECKING:
     import numpy as np
 
-agaricus_runner = bentoml.xgboost.load_runner("agaricus:latest")
+agaricus_runner = bentoml.xgboost.get("agaricus:latest").to_runner()
 
 svc = bentoml.Service("agaricus", runners=[agaricus_runner])
 
@@ -68,7 +68,7 @@ def classify(input_data: "np.ndarray") -> "np.ndarray":
 Start an API server locally to test the service code above:
 
 ```bash
-bentoml serve agaricus:svc --reload
+bentoml serve agaricus:svc --development --reload
 ```
 
 With the `--reload` flag, the API server will automatically restart when the source
@@ -125,7 +125,7 @@ all dependency versions:
 This Bento can now be served:
 
 ```bash
-bentoml serve agaricus:latest --production
+bentoml serve agaricus:latest
 ```
 
 The Bento directory contains all code, files, models and configuration required to run this service.

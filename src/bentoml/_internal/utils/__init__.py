@@ -1,45 +1,41 @@
 from __future__ import annotations
 
-import os
-import re
-import sys
-import random
-import socket
-import typing as t
+import asyncio
+import contextlib
+import functools
 import inspect
 import logging
-import functools
-import contextlib
-from typing import overload
-from typing import TYPE_CHECKING
+import os
+import random
+import re
+import socket
+import typing as t
+from datetime import date
+from datetime import datetime
+from datetime import time
+from datetime import timedelta
 from pathlib import Path
 from reprlib import recursive_repr as _recursive_repr
-from datetime import date
-from datetime import time
-from datetime import datetime
-from datetime import timedelta
+from typing import TYPE_CHECKING
+from typing import overload
 
-import fs
 import attr
+import fs
 import fs.copy
 from rich.console import Console
 
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-else:
-    from backports.cached_property import cached_property
-
-from .cattr import bentoml_cattr
 from ..types import LazyType
+from .cattr import bentoml_cattr
 from .lazy_loader import LazyLoader
+from .uri import encode_path_for_uri
 
 if TYPE_CHECKING:
     from fs.base import FS
     from typing_extensions import Self
 
-    from ..types import PathType
     from ..types import MetadataDict
     from ..types import MetadataType
+    from ..types import PathType
 
     P = t.ParamSpec("P")
     F = t.Callable[P, t.Any]
@@ -53,12 +49,10 @@ rich_console = Console(theme=None)
 
 __all__ = [
     "bentoml_cattr",
-    "cached_property",
     "cached_contextmanager",
     "reserve_free_port",
     "LazyLoader",
     "validate_or_create_dir",
-    "display_path_under_home",
     "rich_console",
     "experimental",
     "compose",
@@ -160,16 +154,6 @@ def validate_or_create_dir(*path: PathType) -> None:
 
 def calc_dir_size(path: PathType) -> int:
     return sum(f.stat().st_size for f in Path(path).glob("**/*") if f.is_file())
-
-
-def display_path_under_home(path: str) -> str:
-    # Shorten path under home directory with leading `~`
-    # e.g. from `/Users/foo/bar` to just `~/bar`
-    try:
-        return str("~" / Path(path).relative_to(Path.home()))
-    except ValueError:
-        # when path is not under home directory, return original full path
-        return path
 
 
 def human_readable_size(size: t.Union[int, float], decimal_places: int = 2) -> str:
@@ -282,7 +266,7 @@ def copy_file_to_fs_folder(
     """
     src_path = os.path.realpath(os.path.expanduser(src_path))
     dir_name, file_name = os.path.split(src_path)
-    src_fs = fs.open_fs(dir_name)
+    src_fs = fs.open_fs(encode_path_for_uri(dir_name))
     dst_filename = file_name if dst_filename is None else dst_filename
     dst_path = fs.path.join(dst_folder_path, dst_filename)
     dst_fs.makedir(dst_folder_path, recreate=True)
@@ -496,3 +480,13 @@ class compose:
     def functions(self):
         """Read-only tuple of the composed callables, in order of execution."""
         return (self.__wrapped__,) + tuple(self._wrappers)
+
+
+def is_async_callable(obj: t.Any) -> t.TypeGuard[t.Callable[..., t.Awaitable[t.Any]]]:
+    # Borrowed from starlette._utils
+    while isinstance(obj, functools.partial):
+        obj = obj.func
+
+    return asyncio.iscoroutinefunction(obj) or (
+        callable(obj) and asyncio.iscoroutinefunction(obj.__call__)
+    )

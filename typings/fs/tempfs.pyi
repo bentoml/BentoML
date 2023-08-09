@@ -1,11 +1,8 @@
-import typing
-from typing import Optional, Text
-import six
+from typing import Text
+from typing import Optional
+
 from .osfs import OSFS
 
-if typing.TYPE_CHECKING: ...
-
-@six.python_2_unicode_compatible
 class TempFS(OSFS):
     def __init__(
         self,

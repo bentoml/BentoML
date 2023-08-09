@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from helpers import tf
+import tensorflow as tf
 from helpers import MODEL_FILE
 from helpers import load_traced_script
 
@@ -27,6 +27,7 @@ if __name__ == "__main__":
             raise bentoml.exceptions.NotFound(
                 "'override=True', overriding previously saved weights/conversions."
             )
+        print(f"{bento_model_name} already exists. Skipping...")
     except bentoml.exceptions.NotFound:
         _, metadata = load_traced_script()
         model = tf.saved_model.load(

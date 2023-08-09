@@ -31,7 +31,7 @@ export CPATH="/opt/homebrew/include/"
 export HDF5_DIR=/opt/homebrew/
 ```
 
-Then try running the "pip install tensorflow-macos" again 
+Then try running the "pip install tensorflow-macos" again
 
 
 ### Model Training
@@ -119,7 +119,7 @@ We defined two api endpoints `/predict_ndarray` and `/predict_image` with single
 Start an API server locally to test the service code above:
 
 ```bash
-bentoml serve service:svc --reload
+bentoml serve service:svc --development --reload
 ```
 
 With the `--reload` flag, the API server will automatically restart when the source
@@ -168,27 +168,27 @@ This may take a while when running for the first time for BentoML to resolve all
 ```
 > bentoml build
 
-[01:14:04 AM] INFO     Building BentoML service "tensorflow_mnist_demo:bmygukdtzpy6zlc5vcqvsoywq" from build context      
-                       "/home/chef/workspace/gallery/tensorflow2"                                                         
-              INFO     Packing model "tensorflow_mnist_demo:xm6jsddtu3y6zluuvcqvsoywq" from                               
-                       "/home/chef/bentoml/models/tensorflow_mnist_demo/xm6jsddtu3y6zluuvcqvsoywq"                       
-              INFO     Locking PyPI package versions..                                                                 
-[01:14:05 AM] INFO                                                                                                     
-                       ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░                                   
-                       ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░                                   
-                       ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░                                   
-                       ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░                                   
-                       ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗                                   
-                       ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝                                   
-                                                                                                                       
-              INFO     Successfully built Bento(tag="tensorflow_mnist_demo:bmygukdtzpy6zlc5vcqvsoywq") at                 
-                       "/home/chef/bentoml/bentos/tensorflow_mnist_demo/bmygukdtzpy6zlc5vcqvsoywq/"                      
+[01:14:04 AM] INFO     Building BentoML service "tensorflow_mnist_demo:bmygukdtzpy6zlc5vcqvsoywq" from build context
+                       "/home/chef/workspace/gallery/tensorflow2"
+              INFO     Packing model "tensorflow_mnist_demo:xm6jsddtu3y6zluuvcqvsoywq" from
+                       "/home/chef/bentoml/models/tensorflow_mnist_demo/xm6jsddtu3y6zluuvcqvsoywq"
+              INFO     Locking PyPI package versions..
+[01:14:05 AM] INFO
+                       ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
+                       ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
+                       ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
+                       ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
+                       ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
+                       ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+
+              INFO     Successfully built Bento(tag="tensorflow_mnist_demo:bmygukdtzpy6zlc5vcqvsoywq") at
+                       "/home/chef/bentoml/bentos/tensorflow_mnist_demo/bmygukdtzpy6zlc5vcqvsoywq/"
 ```
 
 This Bento can now be loaded for serving:
 
 ```bash
-bentoml serve tensorflow_mnist_demo:latest --production
+bentoml serve tensorflow_mnist_demo:latest
 ```
 
 The Bento directory contains all code, files, models and configs required for running this service.

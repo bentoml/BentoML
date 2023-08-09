@@ -55,17 +55,19 @@ ENV BENTOML_HOME={{ bento__home }}
 RUN mkdir $BENTO_PATH && chown {{ bento__user }}:{{ bento__user }} $BENTO_PATH -R
 WORKDIR $BENTO_PATH
 
-COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 {% endblock %}
 
 # Block SETUP_BENTO_COMPONENTS
 {% block SETUP_BENTO_COMPONENTS %}
+COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/pip") %}
 # install python packages with install.sh
 {% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} bash -euxo pipefail {{ __install_python_scripts__ }}
+COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 {% if __options__setup_script is not none %}
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}
+ADD ./env/docker/setup_script {{ __setup_script__ }}
 RUN chmod +x {{ __setup_script__ }}
 RUN {{ __setup_script__ }}
 {% endif %}

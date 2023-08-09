@@ -26,7 +26,7 @@ def metadata():
     return {"name": bento_model.tag.name, "version": bento_model.tag.version}
 
 
-# For demo purpose, here's an identical inference endpoint implemented via FastAPI
+# For demo purpose, here's an identical inference endpoint implemented via Flask
 @flask_app.route("/predict_flask", methods=["POST"])
 def predict():
     content_type = request.headers.get("Content-Type")

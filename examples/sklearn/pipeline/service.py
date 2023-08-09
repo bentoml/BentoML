@@ -2,7 +2,7 @@ import bentoml
 from bentoml.io import JSON
 from bentoml.io import Text
 
-bento_model = bentoml.sklearn.get("20_news_group:latest")
+bento_model = bentoml.sklearn.get("twenty_news_group:latest")
 
 target_names = bento_model.custom_objects["target_names"]
 model_runner = bento_model.to_runner()
@@ -18,5 +18,5 @@ async def predict(input_doc: str):
 
 @svc.api(input=Text(), output=JSON())
 async def predict_proba(input_doc: str):
-    predictions = await model_runner.predict_proba.run([input_doc])
+    predictions = await model_runner.predict_proba.async_run([input_doc])
     return predictions[0]

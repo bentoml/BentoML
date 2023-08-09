@@ -159,3 +159,10 @@ vendor
 *.plan
 *.bin
 yolov5*
+
+# MLflow runs
+mlruns/
+
+# pdm
+.pdm-python
+.pdm-build/

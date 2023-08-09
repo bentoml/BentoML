@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-import typing as t
 import logging
-from typing import TYPE_CHECKING
+import typing as t
 
+from ._internal.frameworks.transformers import TransformersOptions as ModelOptions
 from ._internal.frameworks.transformers import get
+from ._internal.frameworks.transformers import get_runnable
 from ._internal.frameworks.transformers import load_model
 from ._internal.frameworks.transformers import save_model
-from ._internal.frameworks.transformers import get_runnable
-from ._internal.frameworks.transformers import TransformersOptions as ModelOptions  # type: ignore # noqa
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from ._internal.tag import Tag
+
 
 logger = logging.getLogger(__name__)
 
@@ -52,4 +52,4 @@ def load_runner(tag: Tag | str, *args: t.Any, **kwargs: t.Any):
     return get(tag).to_runner()
 
 
-__all__ = ["load_model", "save_model", "get", "get_runnable"]
+__all__ = ["load_model", "save_model", "get", "get_runnable", "ModelOptions"]

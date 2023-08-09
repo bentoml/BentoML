@@ -8,11 +8,14 @@ import pytest
 from bentoml.io import IODescriptor
 
 if TYPE_CHECKING:
+    from bentoml._internal.context import ServiceContext as Context
 
-    from bentoml._internal.context import InferenceApiContext as Context
 
-
-class DummyDescriptor(IODescriptor[t.Any], descriptor_id="bentoml.io.Dummy"):
+class DummyDescriptor(
+    IODescriptor[t.Any],
+    descriptor_id="bentoml.io.Dummy",
+    proto_fields=("serialized_bytes",),
+):
     _mime_type = "application/vnd.bentoml.dummy"
 
     def __init__(self, **kwargs: t.Any):
@@ -55,7 +58,7 @@ class DummyDescriptor(IODescriptor[t.Any], descriptor_id="bentoml.io.Dummy"):
     async def to_proto(self, obj: t.Any) -> t.Any:
         return obj
 
-    def _from_sample(cls, sample: t.Any, **kwargs: t.Any):
+    def _from_sample(self, sample: t.Any):
         return sample
 
 

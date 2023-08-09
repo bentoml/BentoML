@@ -83,6 +83,19 @@ import click
     default=None,
     help="Ciphers to use (see stdlib 'ssl' module)",
 )
+@click.option(
+    "--development-mode",
+    type=click.BOOL,
+    help="Run the API server in development mode",
+    is_flag=True,
+    default=False,
+    show_default=True,
+)
+@click.option(
+    "--timeout",
+    type=click.INT,
+    help="Specify the timeout for API server",
+)
 def main(
     bento_identifier: str,
     fd: int,
@@ -98,6 +111,8 @@ def main(
     ssl_cert_reqs: int | None,
     ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
+    development_mode: bool,
+    timeout: int | None,
 ):
     """
     Start a HTTP api server worker.
@@ -105,9 +120,9 @@ def main(
     import psutil
 
     import bentoml
-    from bentoml._internal.log import configure_server_logging
-    from bentoml._internal.context import component_context
     from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.context import component_context
+    from bentoml._internal.log import configure_server_logging
 
     component_context.component_type = "api_server"
     component_context.component_index = worker_id
@@ -118,12 +133,14 @@ def main(
         # and should not be concerned with the status of its runners
         BentoMLContainer.config.runner_probe.enabled.set(False)
 
-    BentoMLContainer.development_mode.set(False)
+    BentoMLContainer.development_mode.set(development_mode)
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
 
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
+    if timeout is not None:
+        BentoMLContainer.api_server_config.traffic.timeout.set(timeout)
     svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context

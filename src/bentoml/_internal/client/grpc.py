@@ -1,24 +1,24 @@
 from __future__ import annotations
 
+import functools
+import logging
 import time
 import typing as t
-import logging
-import functools
+from functools import cached_property
 from typing import TYPE_CHECKING
 
 from packaging.version import parse
 
-from . import Client
-from .. import io_descriptors
-from ..utils import LazyLoader
-from ..utils import cached_property
-from ..service import Service
 from ...exceptions import BentoMLException
-from ...grpc.utils import import_grpc
-from ...grpc.utils import import_generated_stubs
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ..server.grpc_app import load_from_file
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import import_grpc
+from ...grpc.utils import load_from_file
+from .. import io_descriptors
+from ..service import Service
 from ..service.inference_api import InferenceAPI
+from ..utils import LazyLoader
+from . import Client
 
 logger = logging.getLogger(__name__)
 
@@ -26,16 +26,15 @@ PROTOBUF_EXC_MESSAGE = "'protobuf' is required to use gRPC Client. Install with 
 REFLECTION_EXC_MESSAGE = "'grpcio-reflection' is required to use gRPC Client. Install with 'pip install bentoml[grpc-reflection]'."
 
 if TYPE_CHECKING:
-
     import grpc
+    from google.protobuf import json_format as _json_format
     from grpc import aio
     from grpc._channel import Channel as GrpcSyncChannel
     from grpc_health.v1 import health_pb2 as pb_health
-    from google.protobuf import json_format as _json_format
 
-    from ..types import PathType
     from ...grpc.v1.service_pb2 import Response
     from ...grpc.v1.service_pb2 import ServiceMetadataResponse
+    from ..types import PathType
 
     class ClientCredentials(t.TypedDict):
         root_certificates: t.NotRequired[PathType | bytes]
@@ -51,6 +50,7 @@ else:
         "google.protobuf.json_format",
         exc_msg=PROTOBUF_EXC_MESSAGE,
     )
+
 
 # TODO: xDS support
 class GrpcClient(Client):
@@ -137,7 +137,7 @@ class GrpcClient(Client):
     def wait_until_server_ready(
         host: str,
         port: int,
-        timeout: int = 30,
+        timeout: float = 30,
         check_interval: int = 1,
         # set kwargs here to omit gRPC kwargs
         **kwargs: t.Any,
@@ -261,7 +261,7 @@ class GrpcClient(Client):
         self,
         inp: t.Any = None,
         *,
-        _bentoml_api: InferenceAPI,
+        _bentoml_api: InferenceAPI[t.Any],
         **attrs: t.Any,
     ) -> t.Any:
         state = self.channel.get_state(try_to_connect=True)
@@ -298,7 +298,7 @@ class GrpcClient(Client):
         return await fn(
             **{
                 "api_name": api_fn[_bentoml_api],
-                _bentoml_api.input._proto_fields[0]: serialized_req,
+                _bentoml_api.input.proto_fields[0]: serialized_req,
             },
         )
 
@@ -362,7 +362,7 @@ if __name__ == '__main__':
 
         for api in metadata.apis:
             try:
-                dummy_service.apis[api.name] = InferenceAPI(
+                dummy_service.apis[api.name] = InferenceAPI[t.Any](
                     None,
                     io_descriptors.from_spec(
                         {

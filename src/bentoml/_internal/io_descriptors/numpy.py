@@ -1,29 +1,27 @@
 from __future__ import annotations
 
 import json
-import typing as t
 import logging
-from typing import TYPE_CHECKING
+import typing as t
 from functools import lru_cache
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .base import IODescriptor
+from ...exceptions import BadInput
+from ...exceptions import InvalidArgument
+from ...exceptions import UnprocessableEntity
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ...grpc.utils import import_generated_stubs
+from ..service.openapi import SUCCESS_DESCRIPTION
+from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import Schema
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
-from ...exceptions import BadInput
-from ...exceptions import InvalidArgument
-from ...exceptions import BentoMLException
-from ...exceptions import UnprocessableEntity
-from ...grpc.utils import import_generated_stubs
-from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import Schema
-from ..service.openapi.specification import MediaType
+from .base import IODescriptor
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import numpy as np
     import pyarrow
     import pyspark.sql.types
@@ -33,8 +31,8 @@ if TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
+    from ..context import ServiceContext as Context
     from .base import OpenAPIResponse
-    from ..context import InferenceApiContext as Context
 else:
     pb, _ = import_generated_stubs("v1")
     pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
@@ -170,7 +168,9 @@ def _is_matched_shape(left: tuple[int, ...], right: tuple[int, ...]) -> bool:
 
 # TODO: when updating docs, add examples with gRPCurl
 class NumpyNdarray(
-    IODescriptor["ext.NpNDArray"], descriptor_id="bentoml.io.NumpyNdarray"
+    IODescriptor["ext.NpNDArray"],
+    descriptor_id="bentoml.io.NumpyNdarray",
+    proto_fields=("ndarray",),
 ):
     """
     :obj:`NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
@@ -260,7 +260,6 @@ class NumpyNdarray(
         :obj:`~bentoml._internal.io_descriptors.IODescriptor`: IO Descriptor that represents a :code:`np.ndarray`.
     """
 
-    _proto_fields = ("ndarray",)
     _mime_type = "application/json"
 
     def __init__(
@@ -435,10 +434,11 @@ class NumpyNdarray(
 
     def _from_sample(self, sample: ext.NpNDArray | t.Sequence[t.Any]) -> ext.NpNDArray:
         """
-        Create a :obj:`NumpyNdarray` IO Descriptor from given inputs.
+        Create a :class:`~bentoml._internal.io_descriptors.numpy.NumpyNdarray` IO Descriptor from given inputs.
 
         Args:
-            sample: Given sample ``np.ndarray`` data
+            sample: Given sample ``np.ndarray`` data. It also accepts a sequence-like data type that
+                    can be converted to ``np.ndarray``.
             enforce_dtype: Enforce a certain data type. :code:`dtype` must be specified at function
                            signature. If you don't want to enforce a specific dtype then change
                            :code:`enforce_dtype=False`.
@@ -447,7 +447,7 @@ class NumpyNdarray(
                            :code:`enforce_shape=False`.
 
         Returns:
-            :obj:`NumpyNdarray`: :code:`NumpyNdarray` IODescriptor from given users inputs.
+            :class:`~bentoml._internal.io_descriptors.numpy.NumpyNdarray`: IODescriptor from given users inputs.
 
         Example:
 
@@ -471,18 +471,21 @@ class NumpyNdarray(
            @svc.api(input=input_spec, output=NumpyNdarray())
            async def predict(input: NDArray[np.int16]) -> NDArray[Any]:
                return await runner.async_run(input)
+
+        Raises:
+            :class:`BadInput`: If given sample is a type ``numpy.generic``. This exception
+                                       will also be raised if we failed to create a ``np.ndarray``
+                                       from given sample.
         """
         if isinstance(sample, np.generic):
-            raise BentoMLException(
+            raise BadInput(
                 "'NumpyNdarray.from_sample()' expects a 'numpy.array', not 'numpy.generic'."
             ) from None
         try:
             if not isinstance(sample, np.ndarray):
                 sample = np.array(sample)
         except ValueError:
-            raise BentoMLException(
-                f"Failed to create a 'numpy.ndarray' from given sample {sample}"
-            ) from None
+            raise BadInput(f"Given sample ({sample}) is not a numpy ND-array") from None
         if self._dtype is None:
             self._dtype = sample.dtype
         if self._shape is None:
@@ -643,9 +646,9 @@ class NumpyNdarray(
         return pyarrow.RecordBatch.from_arrays([pyarrow.array(arr)], names=["output"])
 
     def spark_schema(self) -> pyspark.sql.types.StructType:
-        from pyspark.sql.types import StructType
-        from pyspark.sql.types import StructField
         from pyspark.pandas.typedef import as_spark_type
+        from pyspark.sql.types import StructField
+        from pyspark.sql.types import StructType
 
         if self._dtype is None:
             raise InvalidArgument(

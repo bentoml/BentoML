@@ -35,18 +35,20 @@ Verify that the model can be loaded as runner from Python shell:
 ```python
 import numpy as np
 import PIL.Image
+import torch
 
 import bentoml
 
-runner = bentoml.pytorch.load_runner("pytorch_mnist:latest")
+runner = bentoml.pytorch.get("pytorch_mnist:latest").to_runner()
+runner.init_local()
 
 img = PIL.Image.open("samples/0.png")
-arr = np.array(img) / 255.0
-arr = arr.astype("float32")
+np_img = np.array(img)
+tensor_img = torch.from_numpy(np_img).float()
+tensor_img = tensor_img.unsqueeze(0).unsqueeze(0)
+tensor_img = torch.nn.functional.interpolate(tensor_img, size=28, mode='bicubic', align_corners=False)
 
-# add color channel dimension for greyscale image
-arr = np.expand_dims(arr, 0)
-runner.run(arr)  # => tensor(0)
+result = runner.predict.run(tensor_img)  # => tensor(0)
 ```
 
 ### Create ML Service
@@ -66,11 +68,11 @@ from bentoml.io import Image
 from bentoml.io import NumpyNdarray
 
 
-mnist_runner = bentoml.pytorch.load_runner(
+mnist_runner = bentoml.pytorch.get(
     "pytorch_mnist",
     name="mnist_runner",
     predict_fn_name="predict",
-)
+).to_runner()
 
 svc = bentoml.Service(
     name="pytorch_mnist_demo",
@@ -113,7 +115,7 @@ We defined two api endpoints `/predict_ndarray` and `/predict_image` with single
 Start an API server locally to test the service code above:
 
 ```bash
-bentoml serve service:svc --reload
+bentoml serve service:svc --development --reload
 ```
 
 With the `--reload` flag, the API server will automatically restart when the source
@@ -182,7 +184,7 @@ time for BentoML to resolve all dependency versions:
 This Bento can now be loaded for serving:
 
 ```bash
-bentoml serve pytorch_mnist_demo:latest --production
+bentoml serve pytorch_mnist_demo:latest
 ```
 
 The Bento directory contains all code, files, models and configs required for running this service.

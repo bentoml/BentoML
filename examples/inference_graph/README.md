@@ -1,6 +1,6 @@
 # BentoML Inference Graph Tutorial
 
-This is a sample project demonstrating model inference graph of [BentoML](https://github.com/bentoml) 
+This is a sample project demonstrating model inference graph of [BentoML](https://github.com/bentoml)
 with Huggingface Transformers.
 
 In this project, we will download and save three pretrained text generation models and a pretrained text classification model
@@ -76,9 +76,9 @@ pipeline = bentoml.transformers.load_model("gpt2-generation:latest")
 pipeline("I have an idea!")
 ```
 
-In BentoML, the recommended way of running ML model inference in serving is via Runners, which 
-gives BentoML more flexibility in scheduling the inference computation, batching inference requests, 
-and taking advantage of hardware resoureces available. Saved models can be loaded as Runner instance as 
+In BentoML, the recommended way of running ML model inference in serving is via Runners, which
+gives BentoML more flexibility in scheduling the inference computation, batching inference requests,
+and taking advantage of hardware resoureces available. Saved models can be loaded as Runner instance as
 shown below:
 
 ```python
@@ -100,7 +100,7 @@ bert_runner.run("I have an idea!")
 The service definition below achieves the inference graph logic described above.
 
 First, the we create three text generation runners and one text classification runners with the `to_runner` function
-from the models we previously saved. Second, we create a `bentoml.Service` named "inference_graph" with pass in 
+from the models we previously saved. Second, we create a `bentoml.Service` named "inference_graph" with pass in
 the four runners instances. Lastly, we create an async `@svc.api` that accepts a `Text` input and `JSON` output. The API
 passes the input simultaneously to all three text generation models through `asyncio.gather` and iteratively passes
 the generated paragraphs to the text classification model. The API returns all three generated paragraphs and their
@@ -197,7 +197,7 @@ curl -X 'POST' \
 ### Build Bento for deployment
 
 Bento is the distribution format in BentoML which captures all the source code, model files, config
-files and dependency specifications required for running the service for production deployment. Think 
+files and dependency specifications required for running the service for production deployment. Think
 of it as Docker/Container designed for machine learning models.
 
 To begin with building Bento, create a `bentofile.yaml` under your project directory:
@@ -240,14 +240,14 @@ Locking PyPI package versions..
 Successfully built Bento(tag="inference_graph:owljo4hna25nblg6")
 ```
 
-A new Bento is now built and saved to local Bento store. You can view and manage it via 
+A new Bento is now built and saved to local Bento store. You can view and manage it via
 `bentoml list`,`bentoml get` and `bentoml delete` CLI command.
 
 
 ### Containerize and Deployment
 
 Bento is designed to be deployed to run efficiently in a variety of different environments.
-And there are lots of deployment options and tools as part of the BentoML eco-system, such as 
+And there are lots of deployment options and tools as part of the BentoML eco-system, such as
 [Yatai](https://github.com/bentoml/Yatai) and [bentoctl](https://github.com/bentoml/bentoctl) for
 direct deployment to cloud platforms.
 
@@ -264,15 +264,14 @@ This will build a new docker image with all source code, model files and depende
 and ready for production deployment. To start a container with this docker image locally, run:
 
 ```bash
-docker run -p 3000:3000 inference_graph:invwzzsw7li6zckb2ie5eubhd 
+docker run -p 3000:3000 inference_graph:invwzzsw7li6zckb2ie5eubhd
 ```
 
 ## What's Next?
 
-- 👉 [Pop into our Slack community!](https://l.linklyhq.com/l/ktO8) We're happy to help with any issue you face or even just to meet you and hear what you're working on.
-- Dive deeper into the [Core Concepts](https://docs.bentoml.org/en/latest/concepts/index.html) in BentoML
-- Learn how to use BentoML with other ML Frameworks at [Frameworks Guide](https://docs.bentoml.org/en/latest/frameworks/index.html) or check out other [gallery projects](https://github.com/bentoml/BentoML/tree/main/examples)
+- 👉 [Pop into our Slack community!](https://l.bentoml.com/join-slack) We're happy to help with any issue you face or even just to meet you and hear what you're working on.
+- Dive deeper into the [Core Concepts](https://docs.bentoml.com/en/latest/concepts/index.html) in BentoML
+- Learn how to use BentoML with other ML Frameworks at [Frameworks Guide](https://docs.bentoml.com/en/latest/frameworks/index.html) or check out other [gallery projects](https://github.com/bentoml/BentoML/tree/main/examples)
 - Learn more about model deployment options for Bento:
   - [🦄️ Yatai](https://github.com/bentoml/Yatai): Model Deployment at scale on Kubernetes
   - [🚀 bentoctl](https://github.com/bentoml/bentoctl): Fast model deployment on any cloud platform
-

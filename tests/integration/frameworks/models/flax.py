@@ -4,15 +4,15 @@ import typing as t
 
 import chex
 import jax.numpy as jnp
-from jax import random
 from flax import linen as nn
+from jax import random
 from jax.nn import initializers
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 framework = bentoml.flax
 

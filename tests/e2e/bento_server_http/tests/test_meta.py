@@ -2,14 +2,25 @@
 
 from __future__ import annotations
 
-import time
 import asyncio
+import time
 from pathlib import Path
 
 import pytest
 
 import bentoml
 from bentoml.testing.utils import async_request
+
+
+@pytest.mark.asyncio
+async def test_api_server_load(host: str):
+    for _ in range(20):
+        status, _, _ = await async_request(
+            "POST",
+            f"http://{host}/echo_json",
+            headers={"Content-Type": "application/json"},
+            data='"hi"',
+        )
 
 
 @pytest.mark.asyncio
@@ -32,6 +43,15 @@ async def test_api_server_meta(host: str) -> None:
     assert body
     status, _, body = await async_request("POST", f"http://{host}//api/v1/with_prefix")
     assert status == 404
+
+
+@pytest.mark.asyncio
+async def test_context(host: str):
+    status, _, body = await async_request(
+        "POST", f"http://{host}/use_context?error=yes"
+    )
+    assert status == 400
+    assert body == b"yes"
 
 
 @pytest.mark.asyncio

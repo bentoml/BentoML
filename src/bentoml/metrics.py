@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from ._internal.utils import warn_experimental
-from ._internal.utils import add_experimental_docstring
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -370,7 +368,7 @@ def __dir__() -> list[str]:
 def __getattr__(item: t.Any):
     if item in _NOT_SUPPORTED:
         raise NotImplementedError(
-            f"{item} is not supported when using '{__name__}'. See https://docs.bentoml.org/en/latest/reference/metrics.html."
+            f"{item} is not supported when using '{__name__}'. See https://docs.bentoml.com/en/latest/reference/metrics.html."
         )
     # This is the entrypoint for all bentoml.metrics.*
     return _LazyMetric(item, docstring=_docstring.get(item))
@@ -387,7 +385,6 @@ class _LazyMetric:
         self._args: tuple[t.Any, ...] = ()
         self._kwargs: dict[str, t.Any] = {}
 
-    @add_experimental_docstring
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """
         Lazily initialize the metrics object.
@@ -398,9 +395,8 @@ class _LazyMetric:
         """
         if "registry" in kwargs:
             raise ValueError(
-                f"'registry' should not be passed when using '{__name__}.{self._attr}'. See https://docs.bentoml.org/en/latest/reference/metrics.html."
+                f"'registry' should not be passed when using '{__name__}.{self._attr}'. See https://docs.bentoml.com/en/latest/reference/metrics.html."
             )
-        warn_experimental("%s.%s" % (__name__, self._attr))
         self._args = args
         self._kwargs = kwargs
         if self._attr in _INTERNAL_FN_IMPL:

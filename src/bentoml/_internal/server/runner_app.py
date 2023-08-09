@@ -201,7 +201,7 @@ class RunnerAppFactory(BaseAppFactory):
             async def infer_stream(
                 paramss: t.Sequence[Params[t.Any]],
             ) -> t.Sequence[t.AsyncGenerator[Payload, None]]:
-                async def _():
+                async def inner():
                     # This is a workaround to allow infer stream to return a iterable of
                     # async generator, to align with how non stream inference works
                     params = paramss[0].map(AutoContainer.from_payload)

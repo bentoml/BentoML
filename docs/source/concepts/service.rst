@@ -357,6 +357,7 @@ model and return. To learn more, see IO descrptor reference for
 
     from typing import Dict, Any
     from pydantic import BaseModel
+    from bentoml.io import JSON
 
     svc = bentoml.Service("iris_classifier")
 
@@ -390,7 +391,7 @@ with support of type validation and OpenAPI specification generation. For exampl
 +-----------------+---------------------+---------------------+-------------------------+
 | PandasDataFrame | pandas.DataFrame    | validate, schema    | pandas.DataFrame.dtypes |
 +-----------------+---------------------+---------------------+-------------------------+
-| Json            | Python native types | validate, schema    | Pydantic.BaseModel      |
+| JSON            | Python native types | validate, schema    | Pydantic.BaseModel      |
 +-----------------+---------------------+---------------------+-------------------------+
 | Image           | PIL.Image.Image     | pilmodel, mime_type |                         |
 +-----------------+---------------------+---------------------+-------------------------+

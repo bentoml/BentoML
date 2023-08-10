@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import functools
+import asyncio
 import logging
 import time
 import typing as t
@@ -8,6 +8,8 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 from packaging.version import parse
+
+from bentoml._internal.service.inference_api import InferenceAPI
 
 from ...exceptions import BentoMLException
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
@@ -88,8 +90,8 @@ class GrpcClient(Client):
         self._call_rpc = f"/bentoml.grpc.{protocol_version}.BentoService/Call"
         super().__init__(svc, server_url)
 
-    @property
-    def channel(self):
+    @cached_property
+    def channel(self) -> aio.Channel:
         if self._credentials is not None:
             return aio.secure_channel(
                 self.server_url,
@@ -98,13 +100,27 @@ class GrpcClient(Client):
                 compression=self._compression,
                 interceptors=self._interceptors,
             )
-        else:
-            return aio.insecure_channel(
+        return aio.insecure_channel(
                 self.server_url,
                 options=self._options,
                 compression=self._compression,
                 interceptors=self._interceptors,
             )
+
+    @cached_property
+    def sync_channel(self) -> GrpcSyncChannel:
+        if self._credentials is not None:
+            return grpc.secure_channel(
+                self.server_url,
+                credentials=self._credentials,
+                options=self._options,
+                compression=self._compression,
+            )
+        return grpc.insecure_channel(
+            self.server_url,
+            options=self._options,
+            compression=self._compression,
+        )
 
     @staticmethod
     def _create_sync_channel(
@@ -221,41 +237,97 @@ class GrpcClient(Client):
             )
         }
 
-    async def health(self, service_name: str, *, timeout: int = 30) -> t.Any:
-        return await self._invoke(
-            method_name="/grpc.health.v1.Health/Check",
-            service=service_name,
-            _grpc_channel_timeout=timeout,
-        )
-
-    async def _invoke(self, method_name: str, **attrs: t.Any):
-        # channel kwargs include timeout, metadata, credentials, wait_for_ready and compression
-        # to pass it in kwargs add prefix _grpc_channel_<args>
-        channel_kwargs = {
-            k: attrs.pop(f"_grpc_channel_{k}", None)
-            for k in {
-                "timeout",
-                "metadata",
-                "credentials",
-                "wait_for_ready",
-                "compression",
-            }
-        }
-        if method_name not in self._rpc_metadata:
-            raise ValueError(
-                f"'{method_name}' is a yet supported rpc. Current supported are: {self._rpc_metadata}"
+    @cached_property
+    def _rpc_sync_methods(self) -> dict[str, t.Callable[..., "Response"]]:
+        def make_sync_fn(
+            method_name: str,
+            input_type: t.Any,
+            output_type: t.Any,
+        ) -> t.Callable[..., "Response"]:
+            rpc = self.sync_channel.unary_unary(
+                method_name,
+                request_serializer=input_type.SerializeToString,
+                response_deserializer=output_type.FromString,
             )
-        metadata = self._rpc_metadata[method_name]
-        rpc = self.channel.unary_unary(
-            method_name,
-            request_serializer=metadata["input_type"].SerializeToString,
-            response_deserializer=metadata["output_type"].FromString,
+
+            def fn(
+                channel_kwargs: t.Dict[str, t.Any],
+                method_kwargs: t.Dict[str, t.Any],
+            ) -> Response:
+                return t.cast(
+                    "Response",
+                    rpc(input_type(**method_kwargs), **channel_kwargs),
+                )
+
+            return fn
+
+        return {
+            method_name: make_sync_fn(
+                method_name,
+                input_type=metadata["input_type"],
+                output_type=metadata["output_type"],
+            ) for method_name, metadata in self._rpc_metadata.items()
+        }
+
+    @cached_property
+    def _rpc_async_methods(
+        self,
+    ) -> dict[str, t.Callable[..., t.Awaitable["Response"]]]:
+        def make_async_fn(
+            method_name: str,
+            input_type: t.Any,
+            output_type: t.Any,
+        ) -> t.Callable[..., t.Awaitable["Response"]]:
+            rpc = self.channel.unary_unary(
+                method_name,
+                request_serializer=input_type.SerializeToString,
+                response_deserializer=output_type.FromString,
+            )
+
+            def fn(
+                channel_kwargs: t.Dict[str, t.Any],
+                method_kwargs: t.Dict[str, t.Any],
+            ) -> t.Awaitable["Response"]:
+                return t.cast(
+                    t.Awaitable["Response"],
+                    rpc(input_type(**method_kwargs), **channel_kwargs),
+                )
+
+            return fn
+
+        return {
+            method_name: make_async_fn(
+                method_name,
+                input_type=metadata["input_type"],
+                output_type=metadata["output_type"],
+            ) for method_name, metadata in self._rpc_metadata.items()
+        }
+
+    async def health(self, service_name: str, *, timeout: int = 30) -> t.Any:
+        return await self._rpc_async_methods["/grpc.health.v1.Health/Check"](
+            method_kwargs={"service": service_name},
+            channel_kwargs={"timeout": timeout},
         )
 
-        return await t.cast(
-            "t.Awaitable[Response]",
-            rpc(metadata["input_type"](**attrs), **channel_kwargs),
+    @staticmethod
+    def _split_channel_args(
+        **kwargs: t.Any,
+    ) -> tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        channel_kwarg_names = (
+            "timeout",
+            "metadata",
+            "credentials",
+            "wait_for_ready",
+            "compression",
         )
+        channel_kwargs: t.Dict[str, t.Any] = {}
+        other_kwargs: t.Dict[str, t.Any] = {}
+        for k, v in kwargs.items():
+            if k in channel_kwarg_names:
+                channel_kwargs[k] = v
+            else:
+                other_kwargs[k] = v
+        return other_kwargs, channel_kwargs
 
     async def _call(
         self,
@@ -269,21 +341,6 @@ class GrpcClient(Client):
             # create a blocking call to wait til channel is ready.
             await self.channel.channel_ready()
 
-        fn = functools.partial(
-            self._invoke,
-            method_name=f"/bentoml.grpc.{self._protocol_version}.BentoService/Call",
-            **{
-                f"_grpc_channel_{k}": attrs.pop(f"_grpc_channel_{k}", None)
-                for k in {
-                    "timeout",
-                    "metadata",
-                    "credentials",
-                    "wait_for_ready",
-                    "compression",
-                }
-            },
-        )
-
         if _bentoml_api.multi_input:
             if inp is not None:
                 raise BentoMLException(
@@ -295,11 +352,58 @@ class GrpcClient(Client):
 
         # A call includes api_name and given proto_fields
         api_fn = {v: k for k, v in self._svc.apis.items()}
-        return await fn(
-            **{
+        method_name = f"/bentoml.grpc.{self._protocol_version}.BentoService/Call"
+        kwargs, channel_kwargs = self._split_channel_args(**attrs)
+        kwargs.update(
+            {
                 "api_name": api_fn[_bentoml_api],
                 _bentoml_api.input.proto_fields[0]: serialized_req,
             },
+        )
+
+        if method_name not in self._rpc_async_methods:
+            raise ValueError(
+                f"'{method_name}' is a yet supported rpc. Current supported are: {self._rpc_metadata}"
+            )
+        return await self._rpc_async_methods[method_name](
+            channel_kwargs=channel_kwargs,
+            method_kwargs=kwargs,
+        )
+
+    def _sync_call(
+        self,
+        inp: t.Any = None,
+        *,
+        _bentoml_api: InferenceAPI[t.Any],
+        **attrs: t.Any,
+    ):
+        if _bentoml_api.multi_input:
+            if inp is not None:
+                raise BentoMLException(
+                    f"'{_bentoml_api.name}' takes multiple inputs; all inputs must be passed as keyword arguments."
+                )
+            serialized_req = asyncio.run(_bentoml_api.input.to_proto(attrs))
+        else:
+            serialized_req = asyncio.run(_bentoml_api.input.to_proto(inp))
+
+        # A call includes api_name and given proto_fields
+        api_fn = {v: k for k, v in self._svc.apis.items()}
+        method_name = f"/bentoml.grpc.{self._protocol_version}.BentoService/Call"
+        kwargs, channel_kwargs = self._split_channel_args(**attrs)
+        kwargs.update(
+            {
+                "api_name": api_fn[_bentoml_api],
+                _bentoml_api.input.proto_fields[0]: serialized_req,
+            },
+        )
+
+        if method_name not in self._rpc_sync_methods:
+            raise ValueError(
+                f"'{method_name}' is a yet supported rpc. Current supported are: {self._rpc_metadata}"
+            )
+        return self._rpc_sync_methods[method_name](
+            channel_kwargs=channel_kwargs,
+            method_kwargs=kwargs,
         )
 
     @classmethod

@@ -15,6 +15,10 @@ Specifically, you will do the following in this tutorial:
 - Serve the Bento
 - (Optional) Containerize the Bento with Docker
 
+.. note::
+
+   All the project files are stored on the `quickstart <https://github.com/bentoml/quickstart>`_ GitHub repository.
+
 Prerequisites
 -------------
 

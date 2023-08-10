@@ -416,7 +416,7 @@ logic:
     import numpy as np
     from pydantic import BaseModel
 
-    from bentoml.io import Multipart, NumpyNdarray, Json
+    from bentoml.io import Multipart, NumpyNdarray, JSON
 
     class IrisFeatures(BaseModel):
         sepal_length: float

@@ -254,11 +254,11 @@ def add_bento_management_commands(cli: Group):
         "--force",
         is_flag=True,
         default=False,
-        help="Force pull from yatai to local and overwrite even if it already exists in local",
+        help="Force pull from Yatai or BentoCloud to local and overwrite even if it already exists in local",
     )
     @click.pass_obj
     def pull(shared_options: SharedOptions, bento_tag: str, force: bool) -> None:  # type: ignore (not accessed)
-        """Pull Bento from a yatai server."""
+        """Pull Bento from a Yatai or BentoCloud server."""
         cloud_client.pull_bento(
             bento_tag, force=force, context=shared_options.cloud_context
         )
@@ -270,7 +270,7 @@ def add_bento_management_commands(cli: Group):
         "--force",
         is_flag=True,
         default=False,
-        help="Forced push to yatai even if it exists in yatai",
+        help="Forced push to Yatai or BentoCloud even if it exists in there",
     )
     @click.option(
         "-t",
@@ -280,7 +280,7 @@ def add_bento_management_commands(cli: Group):
     )
     @click.pass_obj
     def push(shared_options: SharedOptions, bento_tag: str, force: bool, threads: int) -> None:  # type: ignore (not accessed)
-        """Push Bento to a yatai server."""
+        """Push Bento to a Yatai or BentoCloud server."""
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")

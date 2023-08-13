@@ -1,6 +1,5 @@
 ci:
   autoupdate_schedule: monthly
-  skip: [typecheck]
   autofix_commit_msg: "ci: auto fixes from pre-commit.ci\n\nFor more information, see https://pre-commit.ci"
   autoupdate_commit_msg: 'ci: pre-commit autoupdate [skip ci]'
 exclude: '(.*\.(css|js|svg))|(.*_generated.*)$'

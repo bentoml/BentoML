@@ -11,6 +11,7 @@ import anyio
 from ..container import AutoContainer
 from ..container import Payload
 from ..utils import Params
+from ..utils import iterate_in_threadpool
 from . import RunnerHandle
 
 if TYPE_CHECKING:
@@ -64,18 +65,15 @@ class LocalRunnerRef(RunnerHandle):
             limiter=self._limiter,
         )
 
-    async def async_stream_method(
+    def async_stream_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> AsyncGenerator[R, None]:
         generator = getattr(self._runnable, __bentoml_method.name)(*args, **kwargs)
-
         # This allows user to define both sync and async generator
         if inspect.isasyncgen(generator):
-            async for chunk in generator:
-                yield chunk
+            return generator
         else:
-            for chunk in generator:
-                yield chunk
+            return iterate_in_threadpool(generator)

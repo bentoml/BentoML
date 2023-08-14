@@ -330,9 +330,18 @@ class RemoteRunnerClient(RunnerHandle):
                     data=data,
                     headers=headers,
                 ) as resp:
-                    async for line in resp.content.iter_any():
-                        payload = pickle.loads(line)
-                        yield AutoContainer.from_payload(payload)
+                    buffer = bytearray()
+                    async for b, end_of_http_chunk in resp.content.iter_chunks():
+                        buffer.extend(b)
+
+                        # This is to handle large payload that is split into multiple chunks
+                        if end_of_http_chunk and len(buffer) > 0:
+                            # TODO: To remove pickling so that we can stream data as it is
+                            payload = pickle.loads(buffer)
+                            yield AutoContainer.from_payload(payload)
+
+                            # Clearing the buffer for the next data
+                            buffer = bytearray()
 
             except aiohttp.ClientOSError as e:
                 raise RemoteException("Failed to connect to runner server.") from e

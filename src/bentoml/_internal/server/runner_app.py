@@ -343,7 +343,7 @@ class RunnerAppFactory(BaseAppFactory):
 
                 return StreamingResponse(
                     streamer(),
-                    media_type="text/event-stream",
+                    media_type="text/plain",
                     headers={
                         PAYLOAD_META_HEADER: json.dumps({}),
                         "Content-Type": "application/vnd.bentoml.stream_outputs",

@@ -288,7 +288,7 @@ class Service:
     # case 1: function is not defined, but input and output are
     @t.overload
     def api(self, input: IODescriptor[IOType], output: IODescriptor[IOType]) ->  _inference_api_wrapper[IOType]: ...
-    # case 3: the decorator itself with custom routes
+    # case 2: the decorator itself with custom routes
     @t.overload
     def api(self, input: IODescriptor[IOType], output: IODescriptor[IOType], *, route: str = ...) ->  _inference_api_wrapper[IOType]: ...
     # fmt: on

@@ -676,10 +676,7 @@ class PandasDataFrame(
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = executor.map(process_columns_contents, field.columns)
                 data.extend([i for i in list(futures)])
-            dataframe = pd.DataFrame(
-                dict(zip(field.column_names, data)),
-                columns=t.cast(t.List[str], field.column_names),
-            )
+            dataframe = pd.DataFrame(dict(zip(field.column_names, data)))
         return self.validate_dataframe(dataframe)
 
     @t.overload

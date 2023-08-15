@@ -53,7 +53,7 @@ All the project files are stored on the `quickstart <https://github.com/bentoml/
       python download_model.py
 
 4. Serve your model as an HTTP server. This starts a local server at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_, making your model accessible as a web service.
-   
+
    .. code-block:: bash
 
       bentoml serve service:svc

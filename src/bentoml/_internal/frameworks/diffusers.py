@@ -64,6 +64,7 @@ class DiffusersOptions(PartialKwargsModelOptions):
     enable_attention_slicing: int | str | None = None
     enable_model_cpu_offload: bool | None = None
     enable_sequential_cpu_offload: bool | None = None
+    enable_torch_compile: bool | None = None
     low_cpu_mem_usage: bool | None = None
     variant: str | None = None
     load_pretrained_extra_kwargs: dict[str, t.Any] | None = None
@@ -75,10 +76,18 @@ class DiffusersOptions(PartialKwargsModelOptions):
 
 def _prepare_lora_args(raw_arg: LoraOptionType) -> tuple[str, dict[str, str]]:
     if isinstance(raw_arg, str):
-        # if user only provide a string, we consider that a path to
+        # if user only provide a string, we try to use the string as a path to
         # the weight file
-        model_name = "."
-        kwargs = {"weight_name": raw_arg}
+        if os.path.exists(raw_arg):
+            model_name = "."
+            kwargs = {"weight_name": raw_arg}
+        else:
+            l = raw_arg.split("/")
+            if not len(l) > 2:
+                raise ValueError(f"{raw_arg} is not a valid huggingface LoRA path")
+            model_name = "/".join(l[:2])
+            weight_name = "/".join(l[2:])
+            kwargs = {"weight_name": weight_name}
         return (model_name, kwargs)
 
     model_name = raw_arg.pop("model_name")
@@ -200,6 +209,7 @@ def load_model(
     enable_attention_slicing: int | str | None = None,
     enable_model_cpu_offload: bool | None = None,
     enable_sequential_cpu_offload: bool | None = None,
+    enable_torch_compile: bool | None = None,
     variant: str | None = None,
     lora_weights: LoraOptionType | list[LoraOptionType] | None = None,
     textual_inversions: TextualInversionOptionType
@@ -343,6 +353,10 @@ def load_model(
 
     if enable_attention_slicing is not None:
         pipeline.enable_attention_slicing(enable_attention_slicing)
+
+    if enable_torch_compile:
+        logger.info("Run torch compile on unet")
+        pipeline.unet = torch.compile(pipeline.unet, mode="reduce-overhead", fullgraph=True)
 
     if lora_weights:
         _load_lora_weights_to_pipeline(pipeline, lora_weights)
@@ -650,6 +664,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         bento_options.enable_sequential_cpu_offload
     )
     enable_model_cpu_offload: bool | None = bento_options.enable_model_cpu_offload
+    enable_torch_compile: bool | None = bento_options.enable_torch_compile
     low_cpu_mem_usage: bool | None = bento_options.low_cpu_mem_usage
     variant: str | None = bento_options.variant
     _torch_dtype: str | torch.dtype | None = bento_options.torch_dtype
@@ -711,6 +726,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 enable_attention_slicing=enable_attention_slicing,
                 enable_sequential_cpu_offload=enable_sequential_cpu_offload,
                 enable_model_cpu_offload=enable_model_cpu_offload,
+                enable_torch_compile=enable_torch_compile,
                 low_cpu_mem_usage=low_cpu_mem_usage,
                 variant=variant,
                 lora_weights=lora_weights,
@@ -801,6 +817,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                     res = raw_method(*args, **kwargs)
 
                 finally:
+                    torch.cuda.empty_cache()
                     if lora_weights is not None:
                         runnable_self._unload_lora_weights()
 

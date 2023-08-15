@@ -117,7 +117,8 @@ class Runnable:
             return RunnableMethod(
                 meth,
                 RunnableMethodConfig(
-                    is_stream=inspect.isasyncgenfunction(meth) or inspect.isgeneratorfunction(meth),
+                    is_stream=inspect.isasyncgenfunction(meth)
+                    or inspect.isgeneratorfunction(meth),
                     batchable=batchable,
                     batch_dim=(batch_dim, batch_dim)
                     if isinstance(batch_dim, int)

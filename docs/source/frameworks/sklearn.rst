@@ -29,7 +29,7 @@ Below is a simple example of using scikit-learn with BentoML:
     # Run a given model under `Runner` abstraction with `to_runner`
     runner = bentoml.sklearn.get(bento_model.tag).to_runner()
     runner.init_local()
-    runner.run([[1,2,3,4,5]])
+    runner.run([[1,2,3,4]])
 
 .. note::
 

@@ -47,8 +47,8 @@ API_VERSION = "v1"
 
 logger = logging.getLogger(__name__)
 
-LoraOptionType = str | dict[str, str]
-TextualInversionOptionType = str | dict[str, str]
+LoraOptionType = t.Union[str, t.Dict[str, str]]
+TextualInversionOptionType = t.Union[str, t.Dict[str, str]]
 
 
 @attr.define

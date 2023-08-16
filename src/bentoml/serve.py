@@ -5,6 +5,7 @@ import contextlib
 import json
 import logging
 import os
+import shlex
 import shutil
 import sys
 import tempfile
@@ -104,7 +105,7 @@ def create_watcher(
 
     return Watcher(
         name=name,
-        cmd=cmd,
+        cmd=shlex.quote(cmd),
         args=args,
         copy_env=True,
         stop_children=True,

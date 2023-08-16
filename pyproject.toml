@@ -341,6 +341,7 @@ exclude = '''
     | grpc-client/bentoml
   )/
   | src/bentoml/_version.py
+  | src/bentoml/llm.py
 )
 '''
 
@@ -357,6 +358,7 @@ ignore = ["E501"]
 extend-select = ["I"]
 exclude = [
     "bazel-*/",
+    ".venv",
     "venv",
     "typings",
     "docs/source",
@@ -371,7 +373,7 @@ target-version = "py310"
 # ignore imports violations in __init__.py
 "src/bentoml/__init__.py" = ["E402"]
 # ignore generated code
-"src/bentoml/llm.py" = ["I001", "E701"]
+"src/bentoml/llm.py" = ["I001", "E701", "E401"]
 "tools/update_llm_imports.py" = ["E701"]
 
 [tool.ruff.pydocstyle]

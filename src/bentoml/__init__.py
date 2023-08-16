@@ -65,6 +65,7 @@ if TYPE_CHECKING:
     from . import h2o
     from . import keras
     from . import lightgbm
+    from . import llm
     from . import mlflow
     from . import onnx
     from . import onnxmlir
@@ -130,6 +131,7 @@ else:
     tensorflow_v1 = _LazyLoader(
         "bentoml.tensorflow_v1", globals(), "bentoml.tensorflow_v1"
     )
+    llm = _LazyLoader("bentoml.llm", globals(), "bentoml.llm")
     torchscript = _LazyLoader("bentoml.torchscript", globals(), "bentoml.torchscript")
     transformers = _LazyLoader(
         "bentoml.transformers", globals(), "bentoml.transformers"
@@ -195,6 +197,7 @@ __all__ = [
     "fastai",
     "gluon",
     "h2o",
+    "llm",
     "lightgbm",
     "mlflow",
     "onnx",

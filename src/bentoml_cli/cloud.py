@@ -67,9 +67,7 @@ def add_cloud_command(cli: click.Group) -> click.Group:
         )
 
         add_context(ctx)
-        click.echo(
-            f"Successfully logged in to BentoCloud for {user.name} in {org.name}"
-        )
+        click.echo(f"Successfully logged in to Cloud for {user.name} in {org.name}")
 
     @cloud.command()
     def current_context() -> None:  # type: ignore (not accessed)

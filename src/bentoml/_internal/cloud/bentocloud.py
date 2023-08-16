@@ -127,7 +127,9 @@ class BentoCloudClient(CloudClient):
                 bento_repository = yatai_rest_client.create_bento_repository(
                     req=CreateBentoRepositorySchema(name=name, description="")
                 )
-        with self.spin(text=f'Try fetching Bento "{bento.tag}" from BentoCloud..'):
+        with self.spin(
+            text=f'Try fetching Bento "{bento.tag}" from remote Bento store..'
+        ):
             remote_bento = yatai_rest_client.get_bento(
                 bento_repository_name=name, version=version
             )
@@ -137,7 +139,7 @@ class BentoCloudClient(CloudClient):
             and remote_bento.upload_status == BentoUploadStatus.SUCCESS
         ):
             self.log_progress.add_task(
-                f'[bold blue]Push failed: Bento "{bento.tag}" already exists in BentoCloud'
+                f'[bold blue]Push failed: Bento "{bento.tag}" already exists in remote Bento store'
             )
             return
         labels: list[LabelItemSchema] = [
@@ -169,7 +171,9 @@ class BentoCloudClient(CloudClient):
             size_bytes=calc_dir_size(bento.path),
         )
         if not remote_bento:
-            with self.spin(text=f'Registering Bento "{bento.tag}" with BentoCloud..'):
+            with self.spin(
+                text=f'Registering Bento "{bento.tag}" with remote Bento store..'
+            ):
                 remote_bento = yatai_rest_client.create_bento(
                     bento_repository_name=bento_repository.name,
                     req=CreateBentoSchema(
@@ -388,7 +392,7 @@ class BentoCloudClient(CloudClient):
                 self.log_progress.add_task(
                     f'[bold red]Failed to upload Bento "{bento.tag}"'
                 )
-            with self.spin(text="Submitting upload status to BentoCloud"):
+            with self.spin(text="Submitting upload status to remote Bento store"):
                 yatai_rest_client.finish_upload_bento(
                     bento_repository_name=bento_repository.name,
                     version=version,
@@ -458,7 +462,7 @@ class BentoCloudClient(CloudClient):
                 bento_repository_name=name, version=version
             )
         if not remote_bento:
-            raise BentoMLException(f'Bento "{_tag}" not found on BentoCloud')
+            raise BentoMLException(f'Bento "{_tag}" not found on remote Bento store')
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Download models to a temporary directory
@@ -482,7 +486,7 @@ class BentoCloudClient(CloudClient):
                 futures = executor.map(pull_model, remote_bento.manifest.models)
                 list(futures)
 
-            # Download bento files from BentoCloud
+            # Download bento files from remote Bento store
             transmission_strategy: TransmissionStrategy = "proxy"
             presigned_download_url: str | None = None
 
@@ -605,7 +609,9 @@ class BentoCloudClient(CloudClient):
                 model_repository = yatai_rest_client.create_model_repository(
                     req=CreateModelRepositorySchema(name=name, description="")
                 )
-        with self.spin(text=f'Try fetching model "{model.tag}" from BentoCloud..'):
+        with self.spin(
+            text=f'Try fetching model "{model.tag}" from remote Model store..'
+        ):
             remote_model = yatai_rest_client.get_model(
                 model_repository_name=name, version=version
             )
@@ -615,7 +621,7 @@ class BentoCloudClient(CloudClient):
             and remote_model.upload_status == ModelUploadStatus.SUCCESS
         ):
             self.log_progress.add_task(
-                f'[bold blue]Model "{model.tag}" already exists in BentoCloud, skipping'
+                f'[bold blue]Model "{model.tag}" already exists in remote Model store, skipping'
             )
             return
         if not remote_model:
@@ -623,7 +629,9 @@ class BentoCloudClient(CloudClient):
                 LabelItemSchema(key=key, value=value)
                 for key, value in info.labels.items()
             ]
-            with self.spin(text=f'Registering model "{model.tag}" with BentoCloud..'):
+            with self.spin(
+                text=f'Registering model "{model.tag}" with remote Model store..'
+            ):
                 remote_model = yatai_rest_client.create_model(
                     model_repository_name=model_repository.name,
                     req=CreateModelSchema(
@@ -832,7 +840,7 @@ class BentoCloudClient(CloudClient):
                 self.log_progress.add_task(
                     f'[bold red]Failed to upload model "{model.tag}"'
                 )
-            with self.spin(text="Submitting upload status to BentoCloud"):
+            with self.spin(text="Submitting upload status to remote Model store"):
                 yatai_rest_client.finish_upload_model(
                     model_repository_name=model_repository.name,
                     version=version,
@@ -902,7 +910,7 @@ class BentoCloudClient(CloudClient):
             latest_model = yatai_rest_client.get_latest_model(name, query=query)
             if latest_model is None:
                 raise BentoMLException(
-                    f'Model "{_tag}" not found on BentoCloud, you may need to specify a version'
+                    f'Model "{_tag}" not found on remote Model store, you may need to specify a version'
                 )
             if model is not None:
                 if not force and latest_model.build_at < model.creation_time:
@@ -928,9 +936,9 @@ class BentoCloudClient(CloudClient):
             remote_model = yatai_rest_client.presign_model_download_url(name, version)
 
         if not remote_model:
-            raise BentoMLException(f'Model "{_tag}" not found on BentoCloud')
+            raise BentoMLException(f'Model "{_tag}" not found on remote Model store')
 
-        # Download model files from BentoCloud
+        # Download model files from remote Model store
         transmission_strategy: TransmissionStrategy = "proxy"
         presigned_download_url: str | None = None
 

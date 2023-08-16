@@ -85,7 +85,7 @@ io = [
 io-file = ["filetype"] # Currently use for from_sample
 io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["bentoml[io-file]", "Pillow"]
-io-pandas = ["pandas", "pyarrow"]
+io-pandas = ["pandas>=1", "pyarrow"]
 triton = ["tritonclient[all]>=2.29.0"]
 grpc = [
     "protobuf",
@@ -193,7 +193,7 @@ frameworks = [
 ]
 tooling = ["pre-commit", "setuptools-scm", "pandas-stubs"]
 testing = [
-    "pandas",
+    "pandas>=1",
     "pydantic<2",
     "scikit-learn",
     "yamllint==1.32.0",

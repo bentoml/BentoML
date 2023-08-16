@@ -6,11 +6,18 @@ Unified AI Application Framework
 
 ----
 
-What is BentoML?
-----------------
-
 `BentoML <https://github.com/bentoml/BentoML>`_ is a framework for building **reliable, scalable and cost-efficient AI applications**. It comes with everything you need for model serving, application packaging, and production deployment.
 
+Start your BentoML journey
+--------------------------
+
+The BentoML documentation provides detailed guidance on the project with hands-on tutorials and examples. If you are a first-time user of BentoML, we recommend that you read the following documents in order:
+
+1. :doc:`/overview/what-is-bentoml`
+2. :doc:`/overview/ecosystem`
+3. :doc:`/quickstarts/install-bentoml`
+4. :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`
+5. :doc:`/quickstarts/deploy-a-large-language-model-with-openllm-and-bentoml`
 
 Learn BentoML
 -------------
@@ -20,17 +27,23 @@ Learn BentoML
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`💻 Getting Started <tutorial>`
-        :link: tutorial
+    .. grid-item-card:: :doc:`💻 Overview <overview/index>`
+        :link: overview/index
         :link-type: doc
 
-        A simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
+        Gain a basic understanding of the BentoML open-source framework, its workflow, and the BentoML ecosystem.
+
+    .. grid-item-card:: :doc:`🚀 Quickstarts <quickstarts/index>`
+        :link: quickstarts/index
+        :link-type: doc
+
+        Hands-on tutorials that help you quickly get started with BentoML by deploying AI applications with common machine learning (ML) models.
 
     .. grid-item-card:: :doc:`📖 Main Concepts <concepts/index>`
         :link: concepts/index
         :link-type: doc
 
-        A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
+        A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what **Bentos** and **Runners** stand for.
 
     .. grid-item-card:: :doc:`🧮 ML Framework Guides <frameworks/index>`
         :link: frameworks/index
@@ -68,28 +81,25 @@ Learn BentoML
 
         Join us in our Slack community where thousands of AI application developers are contributing to the project and helping each other.
 
+Stay informed
+-------------
 
-Staying Informed
-----------------
+The BentoML team uses the following channels to announce important updates like major product releases and share tutorials, case studies, as well as community news.
 
-The `BentoML Blog <http://bentoml.com/blog>`_ and `@bentomlai <http://twitt
-er.com/bentomlai>`_ on Twitter are the official source for
-updates from the BentoML team. Anything important, including major releases and announcements, will be posted there. We also frequently
-share tutorials, case studies, and community updates there.
+- `BentoML Blog <http://bentoml.com/blog>`_
+- `BentoML Twitter account <http://twitter.com/bentomlai>`_
+- `BentoML LinkedIn account <https://www.linkedin.com/company/bentoml/>`_
 
-To receive release notification, star & watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_.
-For release notes and detailed changelog, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.
-
-
-
+To receive release notifications, star and watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_.
+For release notes and detailed changelogs, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.
 
 
 .. toctree::
    :caption: BentoML
    :hidden:
 
-   installation
-   tutorial
+   overview/index
+   quickstarts/index
    concepts/index
    frameworks/index
    guides/index
@@ -104,7 +114,7 @@ For release notes and detailed changelog, see the `Releases <https://github.com/
    bentocloud/getting-started/index
    bentocloud/how-tos/index
    bentocloud/topics/index
-   bentocloud/references/index
+   bentocloud/reference/index
 
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square

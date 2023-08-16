@@ -45,7 +45,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 6. Install BentoML in editable and all development dependencies:
 
    ```bash
-   pdm install -dG io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
+   pdm install -G all
    pre-commit install
    ```
 

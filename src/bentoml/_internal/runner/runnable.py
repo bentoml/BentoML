@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import logging
 import typing as t
 from typing import TYPE_CHECKING
@@ -112,8 +113,6 @@ class Runnable:
         def method_decorator(
             meth: t.Callable[t.Concatenate[T, P], R]
         ) -> RunnableMethod[T, P, R]:
-            import inspect
-
             return RunnableMethod(
                 meth,
                 RunnableMethodConfig(

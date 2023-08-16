@@ -249,7 +249,7 @@ def add_model_management_commands(cli: Group) -> None:
         "--force",
         is_flag=True,
         default=False,
-        help="Force pull from remote Model store to local and overwrite even if it already exists in local",
+        help="Force pull from remote model store to local and overwrite even if it already exists in local",
     )
     @click.option(
         "-F",
@@ -260,7 +260,7 @@ def add_model_management_commands(cli: Group) -> None:
     )
     @click.pass_context
     def pull(ctx: click.Context, model_tag: str | None, force: bool, bentofile: str):  # type: ignore (not accessed)
-        """Pull Model from a remote Model store. If model_tag is not provided,
+        """Pull Model from a remote model store. If model_tag is not provided,
         it will pull models defined in bentofile.yaml.
         """
         from click.core import ParameterSource
@@ -308,7 +308,7 @@ def add_model_management_commands(cli: Group) -> None:
     )
     @click.pass_obj
     def push(shared_options: SharedOptions, model_tag: str, force: bool, threads: int):  # type: ignore (not accessed)
-        """Push Model to a remote Model store."""
+        """Push Model to a remote model store."""
         model_obj = model_store.get(model_tag)
         if not model_obj:
             raise click.ClickException(f"Model {model_tag} not found in local store")

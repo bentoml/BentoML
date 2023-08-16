@@ -41,7 +41,7 @@ Deployment properties
      - An introduction to your Deployment, providing additional information on it.
    * - Endpoint Access Type
      - You can manage the endpoint access to your Deployment, choosing between different access levels depending on your needs. This flexibility allows you to control who can access your Deployment, enhancing both security and ease-of-use.
-      
+
        - **Private**: The Deployment’s external URL is not exposed and it can only be accessed within the cluster. This is an ideal option if you are working on a project that is not ready for external exposure, or when you want to limit access strictly to internal users. It can also be helpful when you want to ensure that the Deployment is protected from unwanted external interactions.
        - **Protected**: The Deployment is accessible to anyone on the internet with a valid User token. This method adds a layer of security by ensuring only those with the token can access the Deployment. It’s suitable when you want your Deployment to be globally accessible but maintain some form of authentication and access control.
        - **Public**: The Deployment is accessible to anyone on the internet without requiring any tokens or credentials. This maximizes access and is suitable when you’re deploying Bentos intended for public use or testing with no sensitive data or operations. Use this option with caution as it does not provide any access control.
@@ -53,20 +53,20 @@ Deployment properties
    * - Autoscaling
      - The autoscaling feature dynamically adjusts the number of API Server and Runner Pods within the specified minimum and maximum limits. Min and Max values define the boundaries for scaling, allowing the autoscaler to reduce or increase the number of Pods as needed. This feature supports scaling to zero Pods.
        For Advanced configurations, you can define specific metric thresholds that the autoscaler will use to determine when to adjust the number of Pods. The available metrics for these purposes include:
-       
+
        - **CPU**: The CPU utilization percentage.
-       - **Memory**: The memory utilization. 
+       - **Memory**: The memory utilization.
        - **GPU**: The GPU utilization percentage.
        - **QPS**: The queries per second.
-     
+
        By setting values for these fields, you are instructing the autoscaler to ensure that the average for each metric does not exceed the specified thresholds. For example, if you set the CPU value to 80, the autoscaler will target an average CPU utilization of 80%.
-       
+
        Allowed scaling-up behaviors:
 
        - **Fast (default)**: There is no stabilization window, so the autoscaler can increase the number of Pods immediately if necessary. It can increase the number of Pods by 100% or by 4 Pods, whichever is higher, every 15 seconds.
-       - **Stable**: The autoscaler can increase the number of Pods, but it will stabilize the number of Pods for 300 seconds (5 minutes) before deciding to scale up further. It can increase the number of Pods by 100% every 15 seconds. 
+       - **Stable**: The autoscaler can increase the number of Pods, but it will stabilize the number of Pods for 300 seconds (5 minutes) before deciding to scale up further. It can increase the number of Pods by 100% every 15 seconds.
        - **Disabled**: Scaling-up is turned off.
-  
+
        Allowed scaling-down behaviors:
 
        - **Fast**: There is no stabilization window, so the autoscaler can reduce the number of Pods immediately if necessary. It can decrease the number of Pods by 100% or by 4 Pods, whichever is higher, every 15 seconds.
@@ -81,7 +81,7 @@ Deployment properties
 
    * - Traffic control*
      - You can control the traffic of BentoML API Servers and Runners using the following two ways.
-  
+
        - **Timeout**: Specify the maximum duration to wait before a response is received. The timeout can be configured in seconds, minutes, and hours. This property is especially useful in managing server load and maintaining responsiveness in high-traffic scenarios. It defaults to 60 seconds.
        - **Request queue**: Set a limit on the maximum number of requests that can be waiting in the processing queue across all API Servers or Runners. By default, there’s no limit, but by setting a specific limit, you can prevent a large backlog of requests from overwhelming your application. If the queue is full, new incoming requests may be rejected until there’s room in the queue. This attribute is useful for managing server loads, especially during periods of high traffic or when dealing with resource-intensive requests.
 

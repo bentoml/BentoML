@@ -68,26 +68,52 @@ class DiffusersOptions(PartialKwargsModelOptions):
     low_cpu_mem_usage: bool | None = None
     variant: str | None = None
     load_pretrained_extra_kwargs: dict[str, t.Any] | None = None
+    lora_dir: str | None = None
     lora_weights: LoraOptionType | list[LoraOptionType] | None = None
     textual_inversions: TextualInversionOptionType | list[
         TextualInversionOptionType
     ] | None = None
 
 
-def _prepare_lora_args(raw_arg: LoraOptionType) -> tuple[str, dict[str, str]]:
+def _prepare_lora_args(
+        raw_arg: LoraOptionType, lora_dir: str | None = None
+) -> tuple[str, dict[str, str]]:
+
+    if lora_dir is None:
+        lora_dir = os.getcwd()
+
+    lora_dir = os.path.expanduser(lora_dir)
+
+    # if user only provide a string, we try to use the string as a
+    # path (either absolute or relative) to the weight file. If no
+    # file detected, treat the string as huggingface repository
+    # identifier
     if isinstance(raw_arg, str):
-        # if user only provide a string, we try to use the string as a path to
-        # the weight file
-        if os.path.exists(raw_arg):
-            model_name = "."
-            kwargs = {"weight_name": raw_arg}
-        else:
-            l = raw_arg.split("/")
-            if not len(l) > 2:
-                raise ValueError(f"{raw_arg} is not a valid huggingface LoRA path")
-            model_name = "/".join(l[:2])
-            weight_name = "/".join(l[2:])
+        arg_path = os.path.expanduser(raw_arg)
+        weight_path = None
+
+        # absolute path case
+        if os.path.isabs(arg_path) and os.path.exists(arg_path):
+            weight_path = arg_path
+
+        # relative path case
+        tmp_path = os.path.join(lora_dir, arg_path)
+        if os.path.exists(tmp_path):
+            weight_path = tmp_path
+
+        if weight_path:
+            model_name = os.path.dirname(weight_path)
+            weight_name = os.path.basename(weight_path)
             kwargs = {"weight_name": weight_name}
+            return (model_name, kwargs)
+
+        # repo id case
+        l = raw_arg.split("/")
+        if not len(l) > 2:
+            raise ValueError(f"{raw_arg} is not a valid huggingface LoRA path")
+        model_name = "/".join(l[:2])
+        weight_name = "/".join(l[2:])
+        kwargs = {"weight_name": weight_name}
         return (model_name, kwargs)
 
     model_name = raw_arg.pop("model_name")
@@ -97,6 +123,7 @@ def _prepare_lora_args(raw_arg: LoraOptionType) -> tuple[str, dict[str, str]]:
 def _load_lora_weights_to_pipeline(
     pipeline: diffusers.DiffusionPipeline,
     lora_weights: LoraOptionType | list[LoraOptionType],
+    lora_dir: str | None = None,
 ):
     if not isinstance(lora_weights, list):
         lora_weights = [lora_weights]
@@ -107,7 +134,7 @@ def _load_lora_weights_to_pipeline(
         )
 
     lora_weight = lora_weights[0]
-    model_name, kwargs = _prepare_lora_args(lora_weight)
+    model_name, kwargs = _prepare_lora_args(lora_weight, lora_dir=lora_dir)
     pipeline.load_lora_weights(model_name, **kwargs)
 
 
@@ -678,6 +705,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         True if issubclass(pipeline_class, TextualInversionLoaderMixin) else False
     )
 
+    lora_dir = bento_options.lora_dir
     lora_weights = bento_options.lora_weights
     textual_inversions = bento_options.textual_inversions
 
@@ -713,6 +741,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             device_id: str | None = None
             if torch.cuda.is_available():
                 device_id = "cuda"
+
+            self.lora_dir = lora_dir
 
             self.pipeline: diffusers.DiffusionPipeline = load_model(
                 bento_model,
@@ -764,7 +794,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             self: DiffusersRunnable,
             lora_weights: LoraOptionType | list[LoraOptionType],
         ):
-            _load_lora_weights_to_pipeline(self.pipeline, lora_weights)
+            _load_lora_weights_to_pipeline(self.pipeline, lora_weights, self.lora_dir)
 
         def _unload_lora_weights(
             self: DiffusersRunnable,

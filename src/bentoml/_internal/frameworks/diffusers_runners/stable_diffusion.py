@@ -43,6 +43,7 @@ def create_runner(
         low_cpu_mem_usage: bool | None = None,
         variant: str | None = None,
         load_pretrained_extra_kwargs: dict[str, t.Any] | None = None,
+        lora_dir: str | None = None,
         lora_weights: LoraOptionType | list[LoraOptionType] | None = None,
         textual_inversions: TextualInversionOptionType | list[
             TextualInversionOptionType
@@ -68,6 +69,7 @@ def create_runner(
         low_cpu_mem_usage=low_cpu_mem_usage,
         variant=variant,
         load_pretrained_extra_kwargs=load_pretrained_extra_kwargs,
+        lora_dir=lora_dir,
         lora_weights=lora_weights,
         textual_inversions=textual_inversions,
     )

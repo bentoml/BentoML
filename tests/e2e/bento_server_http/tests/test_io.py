@@ -253,3 +253,15 @@ async def test_multipart_different_args(host: str, img_form_data: aiohttp.FormDa
         data=img_form_data,
         assert_status=200,
     )
+
+
+@pytest.mark.asyncio
+async def test_text_stream(host: str):
+    await async_request(
+        "POST",
+        f"http://{host}/predict_text_stream",
+        headers={"Content-Type": "text/plain"},
+        data="yo",
+        assert_status=200,
+        assert_data=b"yo 0yo 1yo 2yo 3yo 4yo 5yo 6yo 7yo 8yo 9",
+    )

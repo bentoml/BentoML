@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import typing as t
 from typing import TYPE_CHECKING
@@ -39,7 +40,22 @@ py_model = (
 )
 
 
-svc = bentoml.Service(name="general_http_service.case-1.e2e", runners=[py_model])
+class StreamRunnable(bentoml.Runnable):
+    SUPPORTED_RESOURCES = ("cpu",)
+    SUPPORTS_CPU_MULTI_THREADING = True
+
+    @bentoml.Runnable.method()
+    async def count_text_stream(self, input_text: str) -> t.AsyncGenerator[str, None]:
+        for i in range(10):
+            await asyncio.sleep(0.1)
+            yield f"{input_text} {i}"
+
+
+stream_runner = bentoml.Runner(StreamRunnable)
+
+svc = bentoml.Service(
+    name="general_http_service.case-1.e2e", runners=[py_model, stream_runner]
+)
 TEST_DIR = os.getenv("BENTOML_TEST_DATA")
 
 
@@ -68,6 +84,7 @@ def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-a
         if m.type == "counter"
     ]
     assert "test_metrics" in counters
+    return "ok"
 
 
 @svc.api(input=JSON(), output=JSON())
@@ -190,6 +207,14 @@ async def use_context(inp: str, ctx: bentoml.Context):
     elif "state" in ctx.request.query_params:
         return ctx.state[ctx.request.query_params["state"]]
     return inp
+
+
+@svc.api(
+    input=Text(),
+    output=Text(),
+)
+async def predict_text_stream(inp: str) -> t.AsyncGenerator[str, None]:
+    return stream_runner.count_text_stream.async_stream(inp)
 
 
 # customise the service

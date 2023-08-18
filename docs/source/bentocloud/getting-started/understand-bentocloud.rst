@@ -38,11 +38,6 @@ Streamlined team collaboration
 
 Facilitate centralized storage and management of AI models. Different team members can share, download, and iterate models and Bentos with smooth rollback and rollforward options for version control.
 
-Custom resource allocation
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Allocate custom resources and set resource requests and limits for Bento workloads without worrying about dependency management.
-
 Plans
 -----
 

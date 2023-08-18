@@ -5,6 +5,8 @@ import subprocess
 import typing as t
 from typing import TYPE_CHECKING
 
+from packaging.version import parse
+
 from .base import Arguments
 from .docker import ENV
 from .docker import find_binary
@@ -37,6 +39,15 @@ def health() -> bool:
     return True
 
 
+def supports_attestation() -> bool:
+    return parse(
+        subprocess.check_output([find_binary(), "buildx", "version"])
+        .decode("utf-8")
+        .strip()
+        .split()[1]
+    ) > parse("0.10.0")
+
+
 def parse_dict_opt(d: dict[str, str]) -> str:
     return ",".join([f"{key}={value}" for key, value in d.items()])
 
@@ -45,6 +56,7 @@ def construct_build_args(
     *,
     context_path: PathType = ".",
     add_host: dict[str, str] | ArgType = None,
+    attest: str | dict[str, str] | ArgType = None,
     build_arg: dict[str, str] | ArgType = None,
     build_context: dict[str, str] | ArgType = None,
     cache_from: str | dict[str, str] | ArgType = None,
@@ -54,6 +66,9 @@ def construct_build_args(
     no_cache_filter: str | dict[str, str] | ArgType = None,
     output: str | dict[str, str] | ArgType = None,
     platform: str | ArgType = None,
+    pull: t.Literal[True, False] = ...,
+    provenance: str | dict[str, str] | ArgType = ...,
+    sbom: str | dict[str, str] | ArgType = ...,
     push: bool = False,
     secret: str | dict[str, str] | ArgType = None,
     ulimit: str | dict[str, tuple[int, int]] | ArgType = None,
@@ -74,6 +89,7 @@ def construct_build_args(
         load, push = False, False
     cmds.construct_args(output, opt="output")
     cmds.construct_args(push, opt="push")
+    cmds.construct_args(pull, opt="pull")
     cmds.construct_args(load, opt="load")
     cmds.construct_args(platform, opt="platform")
 
@@ -105,6 +121,17 @@ def construct_build_args(
         # {"cpu": (1023, 1024), "fsize": (8192, 8192)}
         ulimit = tuple(f"{key}={value[0]}:{value[1]}" for key, value in ulimit.items())
     cmds.construct_args(ulimit, opt="ulimit")
+
+    if supports_attestation():
+        if isinstance(attest, dict):
+            attest = parse_dict_opt(attest)
+        cmds.construct_args(attest, opt="attest")
+        if isinstance(provenance, dict):
+            provenance = parse_dict_opt(provenance)
+        cmds.construct_args(provenance, opt="provenance")
+        if isinstance(sbom, dict):
+            sbom = parse_dict_opt(sbom)
+        cmds.construct_args(sbom, opt="sbom")
 
     for k, v in kwargs.items():
         cmds.construct_args(v, opt=k.replace("_", "-"))

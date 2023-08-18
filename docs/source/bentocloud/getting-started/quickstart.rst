@@ -150,7 +150,7 @@ Once your Bento application is up and running, you can interact with it via its 
 
    .. image:: ../../_static/img/bentocloud/get-started/quickstart/service-ui.png
 
-4. Alternatively, send a request from your terminal using ``curl``. Replace ``$PROMPT`` in the following command with your own prompt.
+4. Alternatively, send a request from your terminal using ``curl``. Replace ``$INPUT_TEXT`` in the following command with your own prompt.
 
    .. code-block:: bash
 

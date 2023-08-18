@@ -158,4 +158,4 @@ Once your Bento application is up and running, you can interact with it via its 
          'http://<your-deployment-url>/summarize' \
          -H 'accept: text/plain' \
          -H 'Content-Type: text/plain' \
-         -d '$PROMPT'
+         -d '$INPUT_TEXT'

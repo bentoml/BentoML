@@ -1,7 +1,7 @@
-#[path = "bentoml.grpc.v1alpha1.rs"]
-pub mod api;
+mod pb;
 
-use api::bento_service_client::BentoServiceClient;
+use crate::pb::bentoml::grpc::v1::bento_service_client::BentoServiceClient;
+use crate::pb::bentoml::grpc::v1::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -10,9 +10,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     let mut client = BentoServiceClient::new(channel);
 
-    let request = tonic::Request::new(api::Request {
+    let request = tonic::Request::new(Request {
         api_name: String::from("classify"),
-        content: Some(api::request::Content::Ndarray(api::NdArray {
+        content: Some(request::Content::Ndarray(NdArray {
             float_values: vec![5.9, 3.0, 5.1, 1.8],
             string_values: vec![],
             double_values: vec![],

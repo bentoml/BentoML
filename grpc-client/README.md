@@ -24,18 +24,19 @@ To build all rules for better caching:
 bazel build ...
 ```
 
-The following table contains command to run clients:
+The following table contains commands to run clients:
 
-| Language           | Command                                 |
-| ------------------ | --------------------------------------- |
-| [Python](./python) | `python client.py`                      |
-| [C++](./cpp)       | `bazel run //grpc-client/cpp:client`    |
-| [Go](./go)         | `bazel run //grpc-client/go:client`     |
-| [Java](./java)     | `bazel run //grpc-client/java:client`   |
-| [Kotlin](./kotlin) | `bazel run //grpc-client/kotlin:client` |
-| [Swift](./swift)   | `./swift/client`                        |
-| [Node.js](./node)  | `pushd node && yarn client && popd`     |
-| [PHP](./php)       | See [PHP instruction](./php/README.md)  |
+| Language           | Command                                  |
+| ------------------ | ---------------------------------------- |
+| [Python](./python) | `python client.py`                       |
+| [C++](./cpp)       | `bazel run //grpc-client/cpp:client`     |
+| [Go](./go)         | `bazel run //grpc-client/go:client`      |
+| [Java](./java)     | `bazel run //grpc-client/java:client`    |
+| [Kotlin](./kotlin) | `bazel run //grpc-client/kotlin:client`  |
+| [Swift](./swift)   | `./swift/client`                         |
+| [Node.js](./node)  | `pushd node && yarn client && popd`      |
+| [PHP](./php)       | See [PHP instruction](./php/README.md)   |
+| [Rust](./rust)     | See [Rust instruction](./rust/README.md) |
 
 > For Swift client, make sure to compile gRPC Swift `protoc` beforehand to generate the client stubs.
 

@@ -17,10 +17,10 @@ if t.TYPE_CHECKING:
 
     from bentoml.grpc.types import ProtoField
 
-    from ..types import LazyType
-    from ..context import InferenceApiContext as Context
-    from ..service.openapi.specification import Schema
+    from ..context import ServiceContext as Context
     from ..service.openapi.specification import Reference
+    from ..service.openapi.specification import Schema
+    from ..types import LazyType
 
     InputType = (
         UnionType
@@ -135,6 +135,12 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     @sample.setter
     def sample(self, value: IOType) -> None:
         self._sample = value
+
+    if t.TYPE_CHECKING:
+
+        @classmethod
+        def from_sample(cls, sample: t.Any, **attrs: t.Any) -> t.Self:
+            ...
 
     @abstractmethod
     def _from_sample(self, sample: t.Any) -> IOType:

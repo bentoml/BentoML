@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import io
+import logging
 import os
 import sys
 import typing as t
-import logging
+from dataclasses import dataclass
+from datetime import date
+from datetime import datetime
+from datetime import time
+from datetime import timedelta
 from types import TracebackType
 from typing import TYPE_CHECKING
-from datetime import date
-from datetime import time
-from datetime import datetime
-from datetime import timedelta
-from dataclasses import dataclass
 
 if sys.version_info < (3, 8):
     import collections
@@ -113,12 +113,21 @@ if TYPE_CHECKING:
         | list["JSONSerializable"]
         | dict[str, "JSONSerializable"]
     )
+
+    class ModelSignatureDict(t.TypedDict, total=False):
+        batchable: bool
+        batch_dim: tuple[int, int] | int | None
+        input_spec: tuple[AnyType] | AnyType | None
+        output_spec: AnyType | None
+
 else:
     # NOTE: remove this when registering hook for MetadataType
     MetadataDict = dict
+    ModelSignatureDict = dict
 
     JSONSerializable = t.NewType("JSONSerializable", object)
 
+LifecycleHook = t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]
 
 T = t.TypeVar("T")
 
@@ -243,6 +252,12 @@ class LazyType(t.Generic[T]):
     def isinstance(self, obj: t.Any) -> t.TypeGuard[T]:
         try:
             return isinstance(obj, self.get_class(import_module=False))
+        except ValueError:
+            return False
+
+    def issubclass(self, klass: type) -> bool:
+        try:
+            return issubclass(klass, self.get_class(import_module=False))
         except ValueError:
             return False
 

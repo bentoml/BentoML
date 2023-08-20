@@ -1,12 +1,12 @@
 # gRPC client
 
-Contains examples for gRPC clients using for [Serving with gRPC](https://docs.bentoml.org/en/latest/guides/grpc.html)
+Contains examples for gRPC clients using for [Serving with gRPC](https://docs.bentoml.com/en/latest/guides/grpc.html)
 
 We will use [`bazel`](bazel.build) to build and run these examples.
 
 # Instruction
 
-All clients are built to run with [quickstart image](https://docs.bentoml.org/en/latest/tutorial.html#setup-for-the-tutorial):
+All clients are built to run with [quickstart image](https://docs.bentoml.com/en/latest/tutorial.html#setup-for-the-tutorial):
 
 ```bash
 docker run -it --rm -p 8888:8888 -p 3000:3000 -p 3001:3001 bentoml/quickstart:latest serve-grpc --production --enable-reflection

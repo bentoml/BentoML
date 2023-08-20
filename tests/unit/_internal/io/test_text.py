@@ -4,10 +4,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml.io import Text
-from bentoml.exceptions import BentoMLException
-from bentoml.grpc.utils import import_generated_stubs
 from bentoml._internal.utils import LazyLoader
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml.io import Text
 
 if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
@@ -22,9 +21,9 @@ def test_text_openapi_schema():
     assert Text().openapi_schema().type == "string"
 
 
-def test_invalid_init():
-    with pytest.raises(BentoMLException):
-        _ = Text(mime_type="asdf")
+def test_init():
+    assert Text().mime_type == "text/plain"
+    assert Text(content_type="text/event-stream").mime_type == "text/event-stream"
 
 
 def test_text_openapi_request_responses():

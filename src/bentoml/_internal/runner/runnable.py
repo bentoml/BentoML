@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import typing as t
+import inspect
 import logging
-from typing import overload
+import typing as t
 from typing import TYPE_CHECKING
+from typing import overload
 
 import attr
 
-from ..types import LazyType
 from ...exceptions import BentoMLException
+from ..types import LazyType
 
 if TYPE_CHECKING:
     from ..types import AnyType
@@ -105,15 +106,18 @@ class Runnable:
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
-    ) -> t.Callable[
-        [t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]
-    ] | RunnableMethod[T, P, R]:
+    ) -> (
+        t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]
+        | RunnableMethod[T, P, R]
+    ):
         def method_decorator(
             meth: t.Callable[t.Concatenate[T, P], R]
         ) -> RunnableMethod[T, P, R]:
             return RunnableMethod(
                 meth,
                 RunnableMethodConfig(
+                    is_stream=inspect.isasyncgenfunction(meth)
+                    or inspect.isgeneratorfunction(meth),
                     batchable=batchable,
                     batch_dim=(batch_dim, batch_dim)
                     if isinstance(batch_dim, int)
@@ -152,3 +156,4 @@ class RunnableMethodConfig:
     batch_dim: tuple[int, int]
     input_spec: AnyType | tuple[AnyType, ...] | None = None
     output_spec: AnyType | None = None
+    is_stream: bool = False

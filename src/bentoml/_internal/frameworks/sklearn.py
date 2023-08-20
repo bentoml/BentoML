@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
 from bentoml import Tag
+from bentoml.exceptions import MissingDependencyException
+from bentoml.exceptions import NotFound
 from bentoml.models import Model
 from bentoml.models import ModelContext
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..utils.pkg import get_pkg_version
@@ -86,7 +86,7 @@ def load_model(bento_model: str | Tag | Model) -> SklearnModel:
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: SklearnModel,
     *,
     signatures: ModelSignaturesType | None = None,

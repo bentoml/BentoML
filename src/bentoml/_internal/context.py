@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import os
 import typing as t
-import contextvars
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
@@ -72,21 +73,38 @@ class Metadata(t.Mapping[str, str], ABC):
         """
 
 
-@attr.define
-class InferenceApiContext:
-    request: "RequestContext"
-    response: "ResponseContext"
+class ServiceContext:
+    def __init__(self) -> None:
+        self._request_var: contextvars.ContextVar[
+            ServiceContext.RequestContext
+        ] = contextvars.ContextVar("request")
+        self._response_var: contextvars.ContextVar[
+            ServiceContext.ResponseContext
+        ] = contextvars.ContextVar("response")
+        # A dictionary for storing global state shared by the process
+        self.state: dict[str, t.Any] = {}
 
-    def __init__(self, request: "RequestContext", response: "ResponseContext"):
-        self.request = request
-        self.response = response
+    @contextlib.contextmanager
+    def in_request(
+        self, request: starlette.requests.Request
+    ) -> t.Generator[ServiceContext, None, None]:
+        request_token = self._request_var.set(
+            ServiceContext.RequestContext.from_http(request)
+        )
+        response_token = self._response_var.set(ServiceContext.ResponseContext())
+        try:
+            yield self
+        finally:
+            self._request_var.reset(request_token)
+            self._response_var.reset(response_token)
 
-    @staticmethod
-    def from_http(request: "starlette.requests.Request") -> "InferenceApiContext":
-        request_ctx = InferenceApiContext.RequestContext.from_http(request)
-        response_ctx = InferenceApiContext.ResponseContext()
+    @property
+    def request(self) -> RequestContext:
+        return self._request_var.get()
 
-        return InferenceApiContext(request_ctx, response_ctx)
+    @property
+    def response(self) -> ResponseContext:
+        return self._response_var.get()
 
     @attr.define
     class RequestContext:
@@ -99,11 +117,11 @@ class InferenceApiContext:
             self.headers = metadata
             self.query_params = query_params
 
-        @staticmethod
+        @classmethod
         def from_http(
-            request: "starlette.requests.Request",
-        ) -> "InferenceApiContext.RequestContext":
-            return InferenceApiContext.RequestContext(
+            cls, request: starlette.requests.Request
+        ) -> ServiceContext.RequestContext:
+            return cls(
                 request.headers,  # type: ignore # coercing Starlette types to Metadata
                 request.query_params,  # type: ignore
             )

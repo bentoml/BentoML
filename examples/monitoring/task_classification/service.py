@@ -1,13 +1,19 @@
+from __future__ import annotations
+
+import os
+
 import numpy as np
 
 import bentoml
-from bentoml.io import Text
 from bentoml.io import NumpyNdarray
+from bentoml.io import Text
 
 CLASS_NAMES = ["setosa", "versicolor", "virginica"]
 
 iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
+
+LOG_PATH = os.environ.get("MONITORING_LOG_PATH", "/tmp/iris_monitoring")
 
 
 @svc.api(
@@ -15,7 +21,9 @@ svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
     output=Text(),
 )
 async def classify(features: np.ndarray) -> str:
-    with bentoml.monitor("iris_classifier_prediction") as mon:
+    with bentoml.monitor(
+        "iris_classifier_prediction", monitor_options={"log_path": LOG_PATH}
+    ) as mon:
         mon.log(features[0], name="sepal length", role="feature", data_type="numerical")
         mon.log(features[1], name="sepal width", role="feature", data_type="numerical")
         mon.log(features[2], name="petal length", role="feature", data_type="numerical")

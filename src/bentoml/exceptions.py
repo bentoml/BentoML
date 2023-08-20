@@ -109,8 +109,8 @@ class CLIException(BentoMLException):
     """Raised when CLI encounters an issue"""
 
 
-class YataiRESTApiClientError(BentoMLException):
-    """Raised when communicating with BentoCloud server."""
+class CloudRESTApiClientError(BentoMLException):
+    """Raised when communicating with Yatai or BentoCloud server."""
 
     pass
 

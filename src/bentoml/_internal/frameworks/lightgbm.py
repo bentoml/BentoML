@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING
 
@@ -9,12 +9,12 @@ import numpy as np
 
 import bentoml
 from bentoml import Tag
-from bentoml.exceptions import NotFound
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
+from bentoml.exceptions import NotFound
 
-from ..utils.pkg import get_pkg_version
 from ..models.model import ModelContext
+from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
     from bentoml.types import ModelSignature
@@ -94,7 +94,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:  # 
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: lgb.basic.Booster,  # type: ignore (incomplete ligthgbm type stubs)
     *,
     signatures: dict[str, ModelSignatureDict] | None = None,

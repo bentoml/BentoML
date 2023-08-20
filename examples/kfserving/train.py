@@ -1,14 +1,13 @@
 import logging
 
-from sklearn import svm
 from sklearn import datasets
+from sklearn import svm
 
 import bentoml
 
 logging.basicConfig(level=logging.WARN)
 
 if __name__ == "__main__":
-
     # Load training data
     iris = datasets.load_iris()
     X, y = iris.data, iris.target

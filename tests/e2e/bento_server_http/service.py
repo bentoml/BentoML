@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import typing as t
 import asyncio
+import os
+import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -13,20 +14,20 @@ from PIL.Image import fromarray
 from starlette.requests import Request
 
 import bentoml
-from bentoml.io import File
 from bentoml.io import JSON
-from bentoml.io import Text
+from bentoml.io import File
 from bentoml.io import Image
 from bentoml.io import Multipart
 from bentoml.io import NumpyNdarray
 from bentoml.io import PandasDataFrame
+from bentoml.io import Text
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
-    from starlette.types import Send
-    from starlette.types import Scope
     from starlette.types import ASGIApp
     from starlette.types import Receive
+    from starlette.types import Scope
+    from starlette.types import Send
 
     from bentoml._internal.types import FileLike
     from bentoml._internal.types import JSONSerializable
@@ -39,7 +40,23 @@ py_model = (
 )
 
 
-svc = bentoml.Service(name="general_http_service.case-1.e2e", runners=[py_model])
+class StreamRunnable(bentoml.Runnable):
+    SUPPORTED_RESOURCES = ("cpu",)
+    SUPPORTS_CPU_MULTI_THREADING = True
+
+    @bentoml.Runnable.method()
+    async def count_text_stream(self, input_text: str) -> t.AsyncGenerator[str, None]:
+        for i in range(10):
+            await asyncio.sleep(0.1)
+            yield f"{input_text} {i}"
+
+
+stream_runner = bentoml.Runner(StreamRunnable)
+
+svc = bentoml.Service(
+    name="general_http_service.case-1.e2e", runners=[py_model, stream_runner]
+)
+TEST_DIR = os.getenv("BENTOML_TEST_DATA")
 
 
 metric_test = bentoml.metrics.Counter(
@@ -53,10 +70,10 @@ def echo_data_metric(data: str) -> str:
     return data
 
 
-@svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
-async def echo_delay(data: str) -> str:
-    await asyncio.sleep(5)
-    return data
+@svc.api(input=JSON(), output=JSON())
+async def echo_delay(data: dict[str, t.Any]) -> JSONSerializable:
+    ret = await py_model.echo_delay.async_run(data)
+    return ret
 
 
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
@@ -67,6 +84,7 @@ def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-a
         if m.type == "counter"
     ]
     assert "test_metrics" in counters
+    return "ok"
 
 
 @svc.api(input=JSON(), output=JSON())
@@ -186,7 +204,17 @@ async def use_context(inp: str, ctx: bentoml.Context):
     if "error" in ctx.request.query_params:
         ctx.response.status_code = 400
         return ctx.request.query_params["error"]
+    elif "state" in ctx.request.query_params:
+        return ctx.state[ctx.request.query_params["state"]]
     return inp
+
+
+@svc.api(
+    input=Text(),
+    output=Text(),
+)
+async def predict_text_stream(inp: str) -> t.AsyncGenerator[str, None]:
+    return stream_runner.count_text_stream.async_stream(inp)
 
 
 # customise the service
@@ -219,3 +247,38 @@ def hello():
 
 
 svc.mount_asgi_app(fastapi_app)
+
+
+def get_uid():
+    import uuid
+
+    return str(uuid.uuid4())
+
+
+@svc.on_deployment
+def on_deployment():
+    if not TEST_DIR or not os.path.exists(TEST_DIR):
+        return
+    deployment_file = os.path.join(TEST_DIR, f"deployment-{get_uid()}.txt")
+    with open(deployment_file, "w"):
+        pass
+
+
+@svc.on_startup
+def on_startup(ctx: bentoml.Context):
+    ctx.state["data"] = "hello"
+    if not TEST_DIR or not os.path.exists(TEST_DIR):
+        return
+    text_file = os.path.join(TEST_DIR, f"data-{get_uid()}.txt")
+    with open(text_file, "w"):
+        pass
+    ctx.state["text_file"] = text_file
+
+
+@svc.on_shutdown
+def on_shutdown(ctx: bentoml.Context):
+    if "text_file" not in ctx.state:
+        return
+
+    with open(ctx.state["text_file"], "a") as f:
+        f.write("closed\n")

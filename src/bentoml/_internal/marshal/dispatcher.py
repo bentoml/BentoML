@@ -213,7 +213,7 @@ class CorkDispatcher:
                     b = self.optimizer.o_b
                     wait = min(
                         self.max_latency * 0.95,
-                        (batch_size * 2 + 1) * (self.a + self.optimizer.o_b),
+                        (batch_size * 2 + 1) * (a + b),
                     )
 
                     if n < batch_size and (batch_size * a + b) + w0 <= wait:

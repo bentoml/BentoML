@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import logging
-import os
-import typing as t
-from typing import TYPE_CHECKING
+from bentoml.exceptions import MissingDependencyException
 
 try:
-    import diffusers
-    import torch
+    import diffusers  # noqa
+    import torch  # noqa
     from diffusers.loaders import LoraLoaderMixin as LoraLoaderMixin
-    from diffusers.loaders import TextualInversionLoaderMixin as TextualInversionLoaderMixin
+    from diffusers.loaders import (
+        TextualInversionLoaderMixin as TextualInversionLoaderMixin,
+    )
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'diffusers' and 'transformers' is required in order to use module 'bentoml.diffusers_runners', install diffusers and its dependencies with 'pip install --upgrade diffusers transformers accelerate'. For more information, refer to https://github.com/huggingface/diffusers",

@@ -105,7 +105,9 @@ else:
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
     detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")
     diffusers = _LazyLoader("bentoml.diffusers", globals(), "bentoml.diffusers")
-    diffusers_simple = _LazyLoader("bentoml.diffusers_simple", globals(), "bentoml.diffusers_simple")
+    diffusers_simple = _LazyLoader(
+        "bentoml.diffusers_simple", globals(), "bentoml.diffusers_simple"
+    )
     easyocr = _LazyLoader("bentoml.easyocr", globals(), "bentoml.easyocr")
     flax = _LazyLoader("bentoml.flax", globals(), "bentoml.flax")
     fastai = _LazyLoader("bentoml.fastai", globals(), "bentoml.fastai")

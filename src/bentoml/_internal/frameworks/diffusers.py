@@ -76,9 +76,8 @@ class DiffusersOptions(PartialKwargsModelOptions):
 
 
 def _prepare_lora_args(
-        raw_arg: LoraOptionType, lora_dir: str | None = None
+    raw_arg: LoraOptionType, lora_dir: str | None = None
 ) -> tuple[str, dict[str, str]]:
-
     if lora_dir is None:
         lora_dir = os.getcwd()
 
@@ -109,11 +108,11 @@ def _prepare_lora_args(
             return (model_name, kwargs)
 
         # repo id case
-        l = raw_arg.split("/")
-        if not len(l) > 2:
+        lst = raw_arg.split("/")
+        if not len(lst) > 2:
             raise ValueError(f"{raw_arg} is not a valid huggingface LoRA path")
-        model_name = "/".join(l[:2])
-        weight_name = "/".join(l[2:])
+        model_name = "/".join(lst[:2])
+        weight_name = "/".join(lst[2:])
         kwargs = {"weight_name": weight_name}
         return (model_name, kwargs)
 
@@ -384,7 +383,9 @@ def load_model(
 
     if enable_torch_compile:
         logger.info("Run torch compile on unet")
-        pipeline.unet = torch.compile(pipeline.unet, mode="reduce-overhead", fullgraph=True)
+        pipeline.unet = torch.compile(
+            pipeline.unet, mode="reduce-overhead", fullgraph=True
+        )
 
     if lora_weights:
         _load_lora_weights_to_pipeline(pipeline, lora_weights)

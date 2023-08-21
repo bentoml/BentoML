@@ -1,26 +1,22 @@
 from __future__ import annotations
 
 import logging
-from importlib import import_module
 
-
-import inflection
 import diffusers
+import inflection
 from huggingface_hub import model_info
 
 import bentoml
 from bentoml import Tag
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
-from bentoml._internal.frameworks.diffusers import import_model
 from bentoml._internal.frameworks.diffusers import _str2cls
-
+from bentoml._internal.frameworks.diffusers import import_model
+from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import NotFound
 
 logger = logging.getLogger(__name__)
 
-def construct_bentoml_model_name(
-        model_name: str, model_id: str, backend : str = "pt"
-):
+
+def construct_bentoml_model_name(model_name: str, model_id: str, backend: str = "pt"):
     name = "-".join([backend, model_name, model_id])
     name = name.replace("/", "--")
     name = inflection.dasherize(name)
@@ -28,16 +24,13 @@ def construct_bentoml_model_name(
 
 
 def get_model_or_download(
-        model_name: str,
-        model_id: str,
-        use_available: bool = False,
-        pipeline_class: type[diffusers.DiffusionPipeline] = diffusers.DiffusionPipeline,
-        pipeline_mapping: dict[str, type[diffusers.DiffusionPipeline]] | None = None,
+    model_name: str,
+    model_id: str,
+    use_available: bool = False,
+    pipeline_class: type[diffusers.DiffusionPipeline] = diffusers.DiffusionPipeline,
+    pipeline_mapping: dict[str, type[diffusers.DiffusionPipeline]] | None = None,
 ) -> bentoml.Model:
-
-    bentoml_model_name = construct_bentoml_model_name(
-        model_name, model_id
-    )
+    bentoml_model_name = construct_bentoml_model_name(model_name, model_id)
 
     available_tag: Tag | None = None
 
@@ -72,10 +65,9 @@ def get_model_or_download(
 
 
 def resolve_pipeline_class(
-        pipeline_str: str,
-        pipeline_mapping: dict[str, type[diffusers.DiffusionPipeline]] | None = None,
+    pipeline_str: str,
+    pipeline_mapping: dict[str, type[diffusers.DiffusionPipeline]] | None = None,
 ) -> type[diffusers.DiffusionPipeline]:
-
     try:
         pipeline_class = _str2cls(pipeline_str)
     except AttributeError:

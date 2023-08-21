@@ -179,6 +179,8 @@ class _TritonRunner(_AbstractRunner):
         if handle_class is None:
             handle_class = TritonRunnerHandle
 
+        _object_setattr(self, "_runner_handle", handle_class(self))
+
         super().init_client(handle_class=handle_class, *args, **kwargs)
 
     def destroy(self):

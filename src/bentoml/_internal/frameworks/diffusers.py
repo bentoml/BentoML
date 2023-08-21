@@ -89,6 +89,7 @@ def _prepare_lora_args(
     # file detected, treat the string as huggingface repository
     # identifier
     if isinstance(raw_arg, str):
+        raw_arg = raw_arg.strip()
         arg_path = os.path.expanduser(raw_arg)
         weight_path = None
 

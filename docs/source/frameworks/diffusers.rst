@@ -119,4 +119,91 @@ When creating the runner, you can provide a pipeline class (instead of the defau
 	return images[0]
 
 
+Inference with Fine-tuned Models
+--------------------------------
+
+LoRA (Low-Rank Adaptation) and textual inversion are 2 methods of fine-tuning a diffusion model. :code:`bentoml.diffusers` currently support them in inference.
+
+
+Using LoRA
+==========
+
+You can load a LoRA layer saved on local disk when creating the runner:
+
+.. code-block:: python
+    :caption: `service.py`
+
+    import bentoml
+    from bentoml.io import Image, JSON
+
+    bento_model = bentoml.diffusers.get("sd2.1:latest")
+    sd21_runner = bento_model.to_runner(name="sd21-runner")
+
+    stable_diffusion_runner = bento_model.with_options(
+	pipeline_class=diffusers.StableDiffusionPipeline,
+	lora_weights="light_and_shadow.safetensors",
+    ).to_runner()
+
+    ...
+
+
+A runner will only allow loading LoRA weights if it's pipeline's class is a subclass of :code:`diffusers.LoraLoaderMixin`. That's why we specify :code:`pipeline_class=diffusers.StableDiffusionPipeline` in codes above. For more complex LoRA weight loading, you can pass a dictionary instead of a string. For example, if you want to use the LoRA weight stored in file :code:`light_and_shadow.safetensors` hosted at https://huggingface.co/sayakpaul/civitai-light-shadow-lora, you can provide the :code:`lora_weights` option like the following:
+
+.. code-block:: python
+
+    sd21_runner = bento_model.with_options(
+	pipeline_class=diffusers.StableDiffusionPipeline,
+	textual_inversions="easynegative.safetensors",
+	lora_weights=dict(model_name="sayakpaul/civitai-light-shadow-lora", weight_name="light_and_shadow.safetensors"),
+    ).to_runner()
+
+For a runner of which the pipeline's class is a subclass of :code:`diffusers.LoraLoaderMixin`, you can also dynamically applying a LoRA weight by calling the runner with an extra parameter :code:`lora_weights`. The codes below will randomly choose a LoRA weight file to be applied to the current generation process. After the image is generated, the LoRA weight will be unloaded from the pipeline
+
+.. code-block:: python
+    :caption: `service.py`
+
+    import random
+    import bentoml
+    from bentoml.io import Image, JSON
+
+    bento_model = bentoml.diffusers.get("sd2.1:latest")
+    sd21_runner = bento_model.with_options(
+	pipeline_class=diffusers.StableDiffusionPipeline,
+    ).to_runner()
+
+    svc = bentoml.Service("stable-diffusion-21", runners=[sd21_runner])
+
+    @svc.api(input=JSON(), output=Image())
+    async def txt2img(input_data):
+        weights = ["lora1.safetensors", "lora2.safetensors"]
+	weight_name = random.choice(weights)
+	input_data["lora_weights"] = weight_name
+	res = await sd21_runner.async_run(**input_data)
+	images = res[0]
+	return images[0]
+
+
+Using Textual Inversion
+=======================
+
+Using textual inversion is very similar to using LoRA. You can load a textual inversion saved on local disk when creating the runner:
+
+.. code-block:: python
+    :caption: `service.py`
+
+    import bentoml
+    from bentoml.io import Image, JSON
+
+    bento_model = bentoml.diffusers.get("sd2.1:latest")
+    sd21_runner = bento_model.to_runner(name="sd21-runner")
+
+    stable_diffusion_runner = bento_model.with_options(
+	pipeline_class=diffusers.StableDiffusionPipeline,
+	textual_inversions="easynegative.safetensors",
+    ).to_runner()
+
+    ...
+
+However, you cannot load textual inversion dynamically like LoRA currently.
+
 .. currentmodule:: bentoml.diffusers

@@ -113,7 +113,7 @@ class AbstractRunner(ABC):
         """
 
 
-@attr.define(slots=False, frozen=True, eq=False)
+@attr.define(slots=False, frozen=True, eq=False, init=False)
 class Runner(AbstractRunner):
     if t.TYPE_CHECKING:
         # This will be set by __init__. This is for type checking only.

@@ -105,7 +105,7 @@ def create_watcher(
 
     return Watcher(
         name=name,
-        cmd=shlex.quote(cmd),
+        cmd=shlex.quote(cmd) if not psutil.WINDOWS else cmd,
         args=args,
         copy_env=True,
         stop_children=True,

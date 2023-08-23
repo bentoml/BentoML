@@ -159,7 +159,12 @@ class HTTPClient(Client):
             fake_resp = await api.input.to_http_response(kwargs, None)
         else:
             fake_resp = await api.input.to_http_response(inp, None)
-        req_body = fake_resp.body
+
+        # TODO: Temporary workaround before moving everything to StreamingResponse
+        if isinstance(fake_resp, starlette.responses.StreamingResponse):
+            req_body = "".join([s async for s in fake_resp.body_iterator])
+        else:
+            req_body = fake_resp.body
 
         async with aiohttp.ClientSession(self.server_url) as sess:
             async with sess.post(

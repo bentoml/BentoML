@@ -217,6 +217,14 @@ async def predict_text_stream(inp: str) -> t.AsyncGenerator[str, None]:
     return stream_runner.count_text_stream.async_stream(inp)
 
 
+@svc.api(
+    input=Text(),
+    output=Text(),
+)
+def yo(inp: str) -> str:
+    return f"yo {inp}"
+
+
 # customise the service
 class AllowPingMiddleware:
     def __init__(

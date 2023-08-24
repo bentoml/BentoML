@@ -87,6 +87,7 @@ def configure_logging():
         CLI_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.ERROR
         CLI_LOGGING_CONFIG["root"]["level"] = logging.ERROR
     elif get_debug_mode():
+        CLI_LOGGING_CONFIG["handlers"]["defaulthandler"]["level"] = logging.DEBUG
         CLI_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.DEBUG
         CLI_LOGGING_CONFIG["root"]["level"] = logging.DEBUG
     else:

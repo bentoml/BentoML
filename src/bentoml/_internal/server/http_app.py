@@ -15,6 +15,7 @@ from starlette.responses import PlainTextResponse
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
 from ..context import trace_context
+from ..io_descriptors import TaskResponse
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
 
@@ -339,11 +340,16 @@ class HTTPAppFactory(BaseAppFactory):
                             args = (input_data, ctx)
                         if is_async_callable(api.func):
                             output = await api.func(*args)
+
                         else:
                             output = await run_in_threadpool(api.func, *args)
-
+                    background = None
+                    if isinstance(output, TaskResponse):
+                        output, background = output
                     response = await api.output.to_http_response(
-                        output, ctx if api.needs_ctx else None
+                        output,
+                        ctx if api.needs_ctx else None,
+                        background,
                     )
 
                     if trace_context.request_id is not None:

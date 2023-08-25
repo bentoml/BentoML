@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ._internal.io_descriptors import from_spec
 from ._internal.io_descriptors.base import IODescriptor
+from ._internal.io_descriptors.base import TaskResponse
 from ._internal.io_descriptors.file import File
 from ._internal.io_descriptors.image import Image
 from ._internal.io_descriptors.json import JSON
@@ -21,5 +22,6 @@ __all__ = [
     "PandasDataFrame",
     "PandasSeries",
     "Text",
+    "TaskResponse",
     "from_spec",
 ]

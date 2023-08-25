@@ -5,6 +5,9 @@ from abc import ABC
 from abc import abstractmethod
 from functools import update_wrapper
 
+from starlette.background import BackgroundTask
+from starlette.background import BackgroundTasks
+
 from ...exceptions import InvalidArgument
 
 if t.TYPE_CHECKING:
@@ -178,7 +181,10 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
 
     @abstractmethod
     async def to_http_response(
-        self, obj: IOType, ctx: Context | None = None
+        self,
+        obj: IOType,
+        ctx: Context | None = None,
+        background: t.Union[BackgroundTask, BackgroundTasks] = None,
     ) -> Response | StreamingResponse:
         raise NotImplementedError
 
@@ -204,3 +210,67 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
         raise NotImplementedError(
             "This IO descriptor does not currently support batch inference."
         )
+
+
+R = t.TypeVar("R")
+T = t.TypeVar("T")
+
+
+class TaskResponse(t.NamedTuple, t.Generic[R, T]):
+    """
+    import httpx
+    import numpy as np
+    from starlette.background import BackgroundTask, BackgroundTasks
+
+    import bentoml
+    from bentoml.io import NumpyNdarray, JSON, TaskResponse
+
+    iris_clf_runner = bentoml.sklearn.get("iris_clf_with_feature_names:latest").to_runner()
+
+    svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
+
+
+    async def send_inference_result_task(result: np.ndarray, url: str):
+        async with httpx.AsyncClient() as client:
+            await client.post(url, json={"result": result.tolist()})
+
+
+    @svc.api(
+        input=NumpyNdarray.from_sample(
+            np.array([[4.9, 3.0, 1.4, 0.2]], dtype=np.double), enforce_shape=False
+        ),
+        output=JSON.from_sample({"message": "success or fail"}),
+    )
+    async def classify_with_single_task(input_series: np.ndarray) -> TaskResponse[dict[str, str], BackgroundTask]:
+        result: np.ndarray = await iris_clf_runner.predict.async_run(input_series)
+        task = BackgroundTask(send_inference_result_task, result=result, url="http://another-server1:8000/callback")
+
+        # return {"message":"success"}
+        return TaskResponse(
+            res={"message": "success"},
+            background=task,  # tasks are executed in the background
+        )
+
+
+    @svc.api(
+        input=NumpyNdarray.from_sample(
+            np.array([[4.9, 3.0, 1.4, 0.2]], dtype=np.double), enforce_shape=False
+        ),
+        output=JSON.from_sample({"message": "success or fail"}),
+    )
+    async def classify_with_multi_tasks(input_series: np.ndarray) -> TaskResponse[dict[str, str], BackgroundTasks]:
+        result: np.ndarray = await iris_clf_runner.predict.async_run(input_series)
+
+        tasks = BackgroundTasks()
+        tasks.add_task(BackgroundTask(send_inference_result_task, result=result, url="http://another-server1:8000/callback"))
+        tasks.add_task(BackgroundTask(send_inference_result_task, result=result, url="http://another-server2:8000/callback"))
+
+        # return {"message":"success"}
+        return TaskResponse(
+            res={"message": "success"},
+            background=tasks, # tasks are executed in the background
+        )
+    """
+
+    res: t.Any
+    background: t.Union[BackgroundTask, BackgroundTasks]

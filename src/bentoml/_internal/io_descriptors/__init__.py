@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .base import IO_DESCRIPTOR_REGISTRY
 from .base import IODescriptor
+from .base import TaskResponse
 from .base import from_spec
 from .file import File
 from .image import Image
@@ -24,4 +25,5 @@ __all__ = [
     "PandasSeries",
     "Text",
     "from_spec",
+    "TaskResponse",
 ]

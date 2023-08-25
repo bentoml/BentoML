@@ -22,7 +22,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build Bento
-        run: bentoml build 
+        run: bentoml build
       - name: Build and push
         uses: bentoml/containerize-push-action@v1
         with:

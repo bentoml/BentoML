@@ -4,6 +4,8 @@ import asyncio
 import typing as t
 
 from multipart.multipart import parse_options_header
+from starlette.background import BackgroundTask
+from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -284,7 +286,10 @@ class Multipart(
         return res
 
     async def to_http_response(
-        self, obj: dict[str, t.Any], ctx: Context | None = None
+        self,
+        obj: dict[str, t.Any],
+        ctx: Context | None = None,
+        background: t.Union[BackgroundTask, BackgroundTasks] = None,
     ) -> Response:
         resps = await asyncio.gather(
             *tuple(

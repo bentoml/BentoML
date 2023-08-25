@@ -6,6 +6,8 @@ import typing as t
 from urllib.parse import quote
 
 from multipart.multipart import parse_options_header
+from starlette.background import BackgroundTask
+from starlette.background import BackgroundTasks
 from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
@@ -379,7 +381,10 @@ class Image(
             raise BadInput(f"Failed to parse uploaded image file: {err}") from None
 
     async def to_http_response(
-        self, obj: ImageType, ctx: Context | None = None
+        self,
+        obj: ImageType,
+        ctx: Context | None = None,
+        background: t.Union[BackgroundTask, BackgroundTasks] = None,
     ) -> Response:
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(obj):
             image = PIL.Image.fromarray(obj, mode=self._pilmode)

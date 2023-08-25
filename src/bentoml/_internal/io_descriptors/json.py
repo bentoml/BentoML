@@ -6,6 +6,8 @@ import logging
 import typing as t
 
 import attr
+from starlette.background import BackgroundTask
+from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -397,7 +399,10 @@ class JSON(
             return json_obj
 
     async def to_http_response(
-        self, obj: JSONType | pydantic.BaseModel, ctx: Context | None = None
+        self,
+        obj: JSONType | pydantic.BaseModel,
+        ctx: Context | None = None,
+        background: t.Union[BackgroundTask, BackgroundTasks] = None,
     ):
         # This is to prevent cases where custom JSON encoder is used.
         if LazyType["pydantic.BaseModel"]("pydantic.BaseModel").isinstance(obj):
@@ -429,7 +434,7 @@ class JSON(
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return Response(json_str, media_type=self._mime_type)
+            return Response(json_str, media_type=self._mime_type, background=background)
 
     async def from_proto(self, field: struct_pb2.Value | bytes) -> JSONType:
         from google.protobuf.json_format import MessageToDict

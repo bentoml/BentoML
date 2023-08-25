@@ -8,6 +8,8 @@ import typing as t
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 
+from starlette.background import BackgroundTask
+from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -548,7 +550,10 @@ class PandasDataFrame(
         return self.validate_dataframe(res)
 
     async def to_http_response(
-        self, obj: ext.PdDataFrame, ctx: Context | None = None
+        self,
+        obj: ext.PdDataFrame,
+        ctx: Context | None = None,
+        background: t.Union[BackgroundTask, BackgroundTasks] = None,
     ) -> Response:
         """
         Process given objects and convert it to HTTP response.

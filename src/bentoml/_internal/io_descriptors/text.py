@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import typing as t
 
+from starlette.background import BackgroundTask
+from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import StreamingResponse
 
@@ -160,7 +162,10 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
         return str(obj.decode("utf-8"))
 
     async def to_http_response(
-        self, obj: str | t.AsyncGenerator[str, None], ctx: Context | None = None
+        self,
+        obj: str | t.AsyncGenerator[str, None],
+        ctx: Context | None = None,
+        background: t.Union[BackgroundTask, BackgroundTasks] = None,
     ) -> StreamingResponse:
         content_stream = iter([obj]) if isinstance(obj, str) else obj
 

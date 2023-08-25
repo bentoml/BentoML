@@ -7,6 +7,8 @@ import typing as t
 from functools import lru_cache
 
 from multipart.multipart import parse_options_header
+from starlette.background import BackgroundTask
+from starlette.background import BackgroundTasks
 from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
@@ -214,7 +216,12 @@ class File(
             "x-bentoml-io-descriptor": self.to_spec(),
         }
 
-    async def to_http_response(self, obj: FileType, ctx: Context | None = None):
+    async def to_http_response(
+        self,
+        obj: FileType,
+        ctx: Context | None = None,
+        background: t.Union[BackgroundTask, BackgroundTasks] = None,
+    ):
         if isinstance(obj, bytes):
             body = obj
         else:

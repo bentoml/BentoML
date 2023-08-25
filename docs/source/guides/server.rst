@@ -80,6 +80,102 @@ For example, you can add do:
     svc.add_asgi_middleware(HTTPSRedirectMiddleware)
 
 
+Background Task
+--------------------------
+
+If you don't want the client to wait for all of the server's operations,
+you can send all or part of the operations to Background. you can send
+tasks to background with TaskResponse.
+
+- Starlette Background Tasks https://www.starlette.io/background/
+
+.. code-block:: python
+
+    from starlette.background import BackgroundTask
+    from bentoml.io import NumpyNdarray, TaskResponse
+
+    ...
+
+    @svc.api(
+        ...
+        output=NumpyNdarray.from_sample(np.array([0.0], dtype=np.double)),
+    )
+    async def classify(input_series: np.ndarray) -> TaskResponse[np.array, BackgroundTask]:
+        ...
+        task = BackgroundTask(function, *args, **kwargs)
+        # return TaskResponse with api's output & backgroundTask
+        return TaskResponse(
+            res=np.array([0.0]), # output
+            background=task,  # task is executed in the background
+        )
+
+
+Here's an example how to use starlette BackgroundTask In BentoML.
+
+.. code-block:: python
+
+    import httpx
+    import numpy as np
+    from starlette.background import BackgroundTask, BackgroundTasks
+
+    import bentoml
+    from bentoml.io import NumpyNdarray, JSON, TaskResponse
+
+    iris_clf_runner = bentoml.sklearn.get("iris_clf_with_feature_names:latest").to_runner()
+
+    svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
+
+
+    async def send_inference_result_task(result: np.ndarray, url: str):
+        async with httpx.AsyncClient() as client:
+            await client.post(url, json={"result": result.tolist()})
+
+
+    @svc.api(
+        input=NumpyNdarray.from_sample(
+            np.array([[4.9, 3.0, 1.4, 0.2]], dtype=np.double), enforce_shape=False
+        ),
+        output=JSON.from_sample({"message": "success or fail"}),
+    )
+    async def classify_with_single_task(input_series: np.ndarray) -> TaskResponse[dict[str, str], BackgroundTask]:
+        result: np.ndarray = await iris_clf_runner.predict.async_run(input_series)
+        task = BackgroundTask(send_inference_result_task, result=result, url="http://another-server1:8000/callback")
+
+        # return {"message":"success"}
+        return TaskResponse(
+            res={"message": "success"},
+            background=task,  # tasks are executed in the background
+        )
+
+
+    @svc.api(
+        input=NumpyNdarray.from_sample(
+            np.array([[4.9, 3.0, 1.4, 0.2]], dtype=np.double), enforce_shape=False
+        ),
+        output=JSON.from_sample({"message": "success or fail"}),
+    )
+    async def classify_with_multi_tasks(input_series: np.ndarray) -> TaskResponse[dict[str, str], BackgroundTasks]:
+        result: np.ndarray = await iris_clf_runner.predict.async_run(input_series)
+
+        tasks = BackgroundTasks()
+        tasks.add_task(BackgroundTask(send_inference_result_task, result=result, url="http://another-server1:8000/callback"))
+        tasks.add_task(BackgroundTask(send_inference_result_task, result=result, url="http://another-server2:8000/callback"))
+
+        # return {"message":"success"}
+        return TaskResponse(
+            res={"message": "success"},
+            background=tasks, # tasks are executed in the background
+        )
+
+
+.. note::
+
+    :bdg-warning:`Warning:` when you send task more than one with BackgroundTasks
+    like a :code:`classify_with_multi_tasks()` API. the Tasks are executed in order.
+    but one of the tasks raises an exceptions, the following tasks wil not
+    get the opportunity to be executed
+
+
 Fully Customized Endpoints
 --------------------------
 
@@ -147,6 +243,7 @@ of mounting BentoML Service with an ASGI app built with FastAPI:
 
 
 In addition to FastAPI, application mounting is supported for any ASGI web applications built with any frameworks adhering to the ASGI standards.
+
 
 Bundle WSGI app (e.g. Flask)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

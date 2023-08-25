@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import atexit
 import logging
 import os
 import signal
@@ -20,8 +21,6 @@ from ._internal.service import Service
 from ._internal.tag import Tag
 from ._internal.utils.analytics.usage_stats import BENTOML_SERVE_FROM_SERVER_API
 from .exceptions import BentoMLException
-import atexit
-
 
 if TYPE_CHECKING:
     from types import TracebackType

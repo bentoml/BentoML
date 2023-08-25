@@ -20,6 +20,8 @@ from ._internal.service import Service
 from ._internal.tag import Tag
 from ._internal.utils.analytics.usage_stats import BENTOML_SERVE_FROM_SERVER_API
 from .exceptions import BentoMLException
+import atexit
+
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -171,6 +173,7 @@ class Server(ABC):
                     # TODO: Make this default to True in 2.x
                     text=text if text is not None else False,
                 )
+                atexit.register(self.stop)
 
                 if blocking:
                     try:

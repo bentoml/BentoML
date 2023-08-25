@@ -21,11 +21,11 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build Bento
-        run: bentoml build
-      - name: Build and push
+      - uses: bentoml/build-bento-action@v1
+        id: bento
+      - name: Build and push BentoContainer
         uses: bentoml/containerize-push-action@v1
         with:
-          bento-tag: my-bento:latest
+          bento-tag: ${{ steps.bento.outputs.bento-tag }}
           push: true
           tags: user/app:latest

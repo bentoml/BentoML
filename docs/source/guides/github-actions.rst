@@ -16,7 +16,7 @@ To use it, define a workflow file as below:
    :language: yaml
 
 Once triggered, this workflow sets up BentoML in an Ubuntu environment, ensuring that it's using Python 3.10 and the ``main`` branch version of BentoML.
-It also uses ``pip`` caching for efficiency. For more information, see the `setup-bentoml-action repository <https://github.com/bentoml/setup-bentoml-action>`_.
+For more information, see the `setup-bentoml-action repository <https://github.com/bentoml/setup-bentoml-action>`_.
 
 Deploy Bentos to the cloud
 --------------------------
@@ -80,21 +80,22 @@ To specify a different ``bentofile.yaml`` file, use the ``bentofile`` field:
 
 For more information, see the `build-bento-action repository <https://github.com/bentoml/build-bento-action>`_.
 
-Create and push Bento images to Docker Hub
-------------------------------------------
+Create and push Bento images to a container registry
+----------------------------------------------------
 
-You can create a GitHub Actions workflow to create and push Bento images to Docker Hub. This workflow uses `Docker Buildx <https://github.com/docker/buildx>`_,
-which offers extended capabilities for building containers, and is enhanced by the `Moby BuildKit builder toolkit <https://github.com/moby/buildkit>`_.
+You can create a GitHub Actions workflow to create and push Bento images to any container registry (Docker Hub, GHCR, ECR, GCR, etc.). This workflow uses `Docker Buildx <https://github.com/docker/buildx>`_,
+which offers extended capabilities for building containers and is enhanced by the `Moby BuildKit builder toolkit <https://github.com/moby/buildkit>`_.
 
 To use it, define a workflow file as below:
 
 .. literalinclude:: ./../data/containerize-and-push.yaml
    :language: yaml
 
-This workflow first uses the `BentoML setup workflow <https://github.com/bentoml/setup-bentoml-action>`_ to prepare the necessary environment. It then
+In this example, the workflow first uses the `BentoML setup workflow <https://github.com/bentoml/setup-bentoml-action>`_ to prepare the necessary environment. It then
 sets up Docker QEMU and Docker Buildx, and configures Docker Hub authentication. Lastly, it builds a Bento, creates a Docker image, and pushes it to Docker Hub.
 
 .. note::
 
-   This workflow is essentially an adaptation of Docker's `build-push-action <https://github.com/docker/build-push-action>`_,
-   specifically tailored for implementing Bento containerization.
+   The workflow is essentially an adaptation of Docker's `build-push-action <https://github.com/docker/build-push-action>`_,
+   specifically tailored for implementing Bento containerization. You can also use ``docker/login-action@v2`` to log in to other container registries
+   supported by that action. Refer to `the login action <https://github.com/docker/login-action?tab=readme-ov-file#usage>`_ for more information.

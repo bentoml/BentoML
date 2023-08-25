@@ -11,4 +11,3 @@ jobs:
         with:
           python-version: '3.10'
           bentoml-version: 'main'
-          cache: 'pip'

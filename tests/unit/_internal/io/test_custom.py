@@ -3,6 +3,8 @@ from __future__ import annotations
 import typing as t
 from typing import TYPE_CHECKING
 
+from starlette.background import BackgroundTask
+from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -19,6 +21,7 @@ if TYPE_CHECKING:
 
     from bentoml._internal.context import ServiceContext as Context
     from bentoml._internal.io_descriptors.base import OpenAPIResponse
+    from bentoml._internal.io_descriptors.base import TaskResponse
 
 
 # testing the minimal required IO descriptor to ensure we don't break
@@ -75,13 +78,19 @@ class CustomDescriptor(IODescriptor[str]):
         body = await request.body()
         return body.decode("cp1252")
 
-    async def to_http_response(self, obj: str, ctx: Context | None = None) -> Response:
+    async def to_http_response(
+        self,
+        obj: str,
+        ctx: Context | None = None,
+        background: t.Union[BackgroundTask, BackgroundTasks] = None,
+    ) -> Response:
         if ctx is not None:
             res = Response(
                 obj,
                 media_type=self._mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
+                background=background,
             )
             set_cookies(res, ctx.response.cookies)
             return res
@@ -105,5 +114,19 @@ def test_custom_io_descriptor():
     @svc.api(input=CustomDescriptor(), output=CustomDescriptor())
     def descriptor_test_api(inp):
         return inp
+
+    svc.asgi_app
+
+
+def test_custom_io_descriptor_with_background_task():
+    svc = bentoml.Service("test")
+
+    def task1():
+        ...
+
+    @svc.api(input=CustomDescriptor(), output=CustomDescriptor())
+    def descriptor_test_api(inp):
+        bg_task = BackgroundTask(task1)
+        return TaskResponse("", background=bg_task)
 
     svc.asgi_app

@@ -8,6 +8,9 @@ import pytest
 from bentoml.io import IODescriptor
 
 if TYPE_CHECKING:
+    from starlette.background import BackgroundTask
+    from starlette.background import BackgroundTasks
+
     from bentoml._internal.context import ServiceContext as Context
 
 
@@ -49,7 +52,12 @@ class DummyDescriptor(
     async def from_http_request(self, request: t.Any) -> t.Any:
         return request
 
-    async def to_http_response(self, obj: t.Any, ctx: Context | None = None) -> t.Any:
+    async def to_http_response(
+        self,
+        obj: t.Any,
+        ctx: Context | None = None,
+        background: t.Union[BackgroundTask, BackgroundTasks] = None,
+    ) -> t.Any:
         return obj, ctx
 
     async def from_proto(self, field: t.Any) -> t.Any:

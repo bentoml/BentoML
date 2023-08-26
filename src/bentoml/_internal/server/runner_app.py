@@ -4,6 +4,7 @@ import functools
 import json
 import logging
 import pickle
+import traceback
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -205,7 +206,11 @@ class RunnerAppFactory(BaseAppFactory):
                     # This is a workaround to allow infer stream to return a iterable of
                     # async generator, to align with how non stream inference works
                     params = paramss[0].map(AutoContainer.from_payload)
-                    ret = runner_method.async_stream(*params.args, **params.kwargs)
+                    try:
+                        ret = runner_method.async_stream(*params.args, **params.kwargs)
+                    except Exception:
+                        traceback.print_exc()
+                        raise
                     async for data in ret:
                         payload = AutoContainer.to_payload(data, 0)
                         yield payload

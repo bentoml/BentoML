@@ -92,7 +92,7 @@ class Server(ABC):
             bento_str = servable
 
         args: list[str] = [
-            sys.executable,
+            "python",
             "-m",
             "bentoml",
             serve_cmd,

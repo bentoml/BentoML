@@ -10,7 +10,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "bentoml"
-version = "1.0.21-dev"
+version = "1.1.4-dev"
 dependencies = [
  "pyo3",
 ]

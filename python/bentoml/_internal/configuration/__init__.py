@@ -1,18 +1,15 @@
 from __future__ import annotations
 
+import importlib.metadata
 import logging
 import os
 import typing as t
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
-from importlib_metadata import version
 from packaging.version import parse
 
 from ...exceptions import BentoMLConfigException
-
-# Find BentoML version managed by setuptools_scm
-BENTOML_VERSION = importlib.metadata.version("bentoml")
 
 if TYPE_CHECKING:
     from .containers import SerializationStrategy
@@ -41,7 +38,7 @@ def expand_env_var(env_var: str) -> str:
             env_var = interpolated
 
 
-BENTOML_VERSION = version("bentoml")
+BENTOML_VERSION = importlib.metadata.version("bentoml")
 BENTOML_VERSION_PARSED = parse(BENTOML_VERSION)
 # Get clean BentoML version indicating latest PyPI release. E.g. 1.0.0.post => 1.0.0
 CLEAN_BENTOML_VERSION: str = BENTOML_VERSION_PARSED.base_version

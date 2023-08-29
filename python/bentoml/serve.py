@@ -97,7 +97,7 @@ def create_watcher(
     name: str,
     args: list[str],
     *,
-    cmd: str = sys.executable,
+    cmd: str = "python",
     use_sockets: bool = True,
     **kwargs: t.Any,
 ) -> Watcher:

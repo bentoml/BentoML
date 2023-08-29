@@ -73,8 +73,6 @@ Twitter = "https://twitter.com/bentomlai"
 Tracker = "https://github.com/bentoml/BentoML/issues"
 Slack = "https://l.bentoml.com/join-slack"
 Blog = "https://modelserving.com"
-[project.scripts]
-bentoml = "bentoml_cli.cli:cli"
 [project.optional-dependencies]
 all = [
     "bentoml[aws,io,grpc,grpc-reflection,grpc-channelz,tracing,monitor-otlp]",
@@ -110,6 +108,9 @@ monitor-otlp = ["opentelemetry-exporter-otlp-proto-http==1.18.0"]
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
+
+[tool.maturin]
+python-source = 'python'
 
 [[tool.pdm.source]]
 url = "https://download.pytorch.org/whl/cpu"

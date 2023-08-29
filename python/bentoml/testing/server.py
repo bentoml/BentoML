@@ -7,7 +7,6 @@ import itertools
 import os
 import socket
 import subprocess
-import sys
 import time
 import typing as t
 import urllib
@@ -270,7 +269,7 @@ def run_bento_server_standalone(
         copied["BENTOML_CONFIG"] = os.path.abspath(config_file)
     with reserve_free_port(host=host, enable_so_reuseport=use_grpc) as server_port:
         cmd = [
-            sys.executable,
+            "python",
             "-m",
             "bentoml",
             "serve-grpc" if use_grpc else "serve",
@@ -339,7 +338,7 @@ def run_bento_server_distributed(
         with reserve_free_port(enable_so_reuseport=use_grpc) as port:
             runner_map[runner["name"]] = f"tcp://127.0.0.1:{port}"
             cmd = [
-                sys.executable,
+                "python",
                 "-m",
                 "bentoml",
                 "start-runner-server",
@@ -367,7 +366,7 @@ def run_bento_server_distributed(
         for runner in bentofile["runners"]
     ]
     cmd = [
-        sys.executable,
+        "python",
         "-m",
         "bentoml",
         "start-http-server" if not use_grpc else "start-grpc-server",

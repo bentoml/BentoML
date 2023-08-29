@@ -27,6 +27,6 @@ repos:
     rev: v1.24.0
     hooks:
       - id: buf-format
-        args: [--config=src/bentoml/grpc/buf.yaml, src/bentoml/grpc]
+        args: [--config=python/bentoml/grpc/buf.yaml, python/bentoml/grpc]
       - id: buf-lint
-        args: [--config=src/bentoml/grpc/buf.yaml, --error-format=msvs, src/bentoml/grpc]
+        args: [--config=python/bentoml/grpc/buf.yaml, --error-format=msvs, python/bentoml/grpc]

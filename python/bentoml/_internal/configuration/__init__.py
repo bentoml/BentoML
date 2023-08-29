@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import os
-import re
-import typing as t
 import logging
-from typing import TYPE_CHECKING
+import os
+import typing as t
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from packaging.version import parse
 from importlib_metadata import version
+from packaging.version import parse
 
-from ...exceptions import BentoMLException
 from ...exceptions import BentoMLConfigException
 
 # Find BentoML version managed by setuptools_scm

@@ -40,12 +40,19 @@ def health() -> bool:
 
 
 def supports_attestation() -> bool:
-    return parse(
-        subprocess.check_output([find_binary(), "buildx", "version"])
-        .decode("utf-8")
-        .strip()
-        .split()[1]
-    ) > parse("0.10.0")
+    try:
+        client = find_binary()
+        if client is None:
+            return False
+        outputs: str = (
+            subprocess.check_output([client, "buildx", "version"])
+            .decode("utf-8")
+            .strip()
+            .split()[1]
+        )
+        return parse(outputs.split("-")[0]) > parse("0.10.0")
+    except subprocess.CalledProcessError:
+        return False
 
 
 def parse_dict_opt(d: dict[str, str]) -> str:

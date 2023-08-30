@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import io
 import logging
+import typing as t
 from urllib.parse import urljoin
-
 import requests
 
 from ...exceptions import CloudRESTApiClientError
@@ -216,7 +215,7 @@ class RestApiClient:
         return schema_from_json(resp.text, BentoSchema)
 
     def upload_bento(
-        self, bento_repository_name: str, version: str, data: io.BytesIO
+        self, bento_repository_name: str, version: str, data: t.BinaryIO
     ) -> None:
         url = urljoin(
             self.endpoint,
@@ -368,7 +367,7 @@ class RestApiClient:
         return schema_from_json(resp.text, ModelSchema)
 
     def upload_model(
-        self, model_repository_name: str, version: str, data: io.BytesIO
+        self, model_repository_name: str, version: str, data: t.BinaryIO
     ) -> None:
         url = urljoin(
             self.endpoint,
@@ -520,7 +519,7 @@ class RestApiClient:
             self.endpoint,
             f"/api/v1/model_repositories/{model_repository_name}/models",
         )
-        params = {"start": 0, "count": 10}
+        params = {"start": "0", "count": "10"}
         if query:
             params["q"] = query
         resp = self.session.get(url, params=params)

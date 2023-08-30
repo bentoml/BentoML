@@ -48,7 +48,7 @@ class ObjectWrapper(object):
         self.wrapper_setattr("_wrapped", wrapped)
 
 
-class CallbackIOWrapper(ObjectWrapper):
+class CallbackIOWrapper(ObjectWrapper, t.BinaryIO):
     def __init__(
         self,
         callback: t.Callable[[int], None],

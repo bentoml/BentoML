@@ -649,6 +649,7 @@ fi
                     "--no-header",
                     f"--output-file={pip_compile_out}",
                     "--resolver=backtracking",
+                    "--no-annotate",
                 ]
             )
             logger.info("Locking PyPI package versions.")

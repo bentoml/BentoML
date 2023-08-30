@@ -54,6 +54,11 @@ class RunnerMethod(t.Generic[T, P, R]):
     async def async_run(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return await self.runner._runner_handle.async_run_method(self, *args, **kwargs)
 
+    def async_stream(
+        self, *args: P.args, **kwargs: P.kwargs
+    ) -> t.AsyncGenerator[R, None]:
+        return self.runner._runner_handle.async_stream_method(self, *args, **kwargs)
+
 
 def _to_lower_name(name: str) -> str:
     lname = name.lower()
@@ -108,7 +113,7 @@ class AbstractRunner(ABC):
         """
 
 
-@attr.define(slots=False, frozen=True, eq=False)
+@attr.define(slots=False, frozen=True, eq=False, init=False)
 class Runner(AbstractRunner):
     if t.TYPE_CHECKING:
         # This will be set by __init__. This is for type checking only.

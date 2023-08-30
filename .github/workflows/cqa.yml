@@ -25,15 +25,6 @@ defaults:
   run:
     shell: bash --noprofile --norc -exo pipefail {0}
 jobs:
-  style:
-    if: '!github.event.repository.fork' # Don't run on fork repository
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v3
-      - uses: pre-commit/action@v3.0.0
-        with:
-          extra_args: --all-files --verbose
   spelling:
     runs-on: ubuntu-latest
     steps:

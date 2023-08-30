@@ -47,6 +47,20 @@ BentoML users can easily integrate OpenLLM models as BentoML Runners in
 their Services. For more information, see the `OpenLLM GitHub
 repository <https://github.com/bentoml/OpenLLM>`_.
 
+OneDiffusion
+------------
+
+OneDiffusion is an open-source, all-in-one platform specially designed
+to streamline the deployment of diffusion models. It supports both pretrained
+and fine-tuned diffusion models with LoRA adapters, allowing you to run a variety of
+image generation tasks with ease and flexibility. As it is integrated seamlessly
+with the BentoML framework, you can use OneDiffusion to deploy any diffusion model to
+the cloud or on-premises, and build powerful and scalable AI applications.
+
+OneDiffusion currently supports Stable Diffusion and Stable Diffusion XL models.
+More models (for example, ControlNet and DeepFloyd IF) will be supported in the future.
+For more information, see the `OneDiffusion GitHub repository <https://github.com/bentoml/OneDiffusion>`_.
+
 Yatai
 -----
 

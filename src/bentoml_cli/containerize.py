@@ -271,6 +271,13 @@ def buildx_options_group(f: F[t.Any]):
             help="Allow extra privileged entitlement (e.g., ``network.host``, ``security.insecure``).",
         ),
         optgroup_option(
+            "--attest",
+            equivalent=("opt", "attest=type=sbom,generator=image"),
+            multiple=True,
+            metavar="[NAME|type=TYPE[,KEY=VALUE]]",
+            help="Attestation parameter (e.g., ``type=local,ref=path/to/dir``).",
+        ),
+        optgroup_option(
             "--build-context",
             equivalent=("opt", "build-context=project=path/to/project/source"),
             multiple=True,
@@ -305,6 +312,12 @@ def buildx_options_group(f: F[t.Any]):
             help="Shorthand for ``--output=type=registry``. Note that ``--push`` and ``--load`` are mutually exclusive.",
         ),
         optgroup_option(
+            "--provenance",
+            equivalent=("opt", "provenance=generator=image"),
+            type=click.STRING,
+            help="Shorthand for ``--attest=type=provenance``.",
+        ),
+        optgroup_option(
             "--quiet",
             is_flag=True,
             equivalent=("opt", "quiet"),
@@ -337,6 +350,12 @@ def buildx_options_group(f: F[t.Any]):
             type=click.STRING,
             equivalent=("opt", "metadata-file=/path/to/file"),
             help="Write build result metadata to the file.",
+        ),
+        optgroup_option(
+            "--sbom",
+            equivalent=("opt", "sbom=generator=image"),
+            type=click.STRING,
+            help="Shorthand for ``--attest=type=sbom``.",
         ),
         optgroup_option(
             "--shm-size",

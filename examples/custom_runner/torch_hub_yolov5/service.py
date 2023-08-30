@@ -1,5 +1,3 @@
-import torch
-
 import bentoml
 from bentoml.io import Image
 from bentoml.io import PandasDataFrame
@@ -10,6 +8,8 @@ class Yolov5Runnable(bentoml.Runnable):
     SUPPORTS_CPU_MULTI_THREADING = True
 
     def __init__(self):
+        import torch
+
         self.model = torch.hub.load("ultralytics/yolov5:v6.2", "yolov5s")
 
         if torch.cuda.is_available():

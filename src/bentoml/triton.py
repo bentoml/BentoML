@@ -20,6 +20,7 @@ from ._internal.runner.runner_handle.remote import (
     handle_triton_exception as _handle_triton_exception,
 )
 from ._internal.utils import LazyLoader as _LazyLoader
+from .exceptions import StateException as _StateException
 
 if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as _tritongrpcclient
@@ -168,18 +169,27 @@ class _TritonRunner(_AbstractRunner):
             "TritonRunner '%s' will not be available for development mode.", self.name
         )
 
+    def _set_handle(
+        self, handle_class: type[RunnerHandle], *args: t.Any, **kwargs: t.Any
+    ) -> None:
+        if not isinstance(self._runner_handle, _DummyRunnerHandle):
+            raise _StateException("Runner already initialized")
+
+        runner_handle = handle_class(self, *args, **kwargs)
+        _object_setattr(self, "_runner_handle", runner_handle)
+
     def init_client(
         self,
         handle_class: type[RunnerHandle] | None = None,
         *args: t.Any,
         **kwargs: t.Any,
     ):
-        from ._internal.runner.runner_handle.remote import TritonRunnerHandle
-
         if handle_class is None:
-            handle_class = TritonRunnerHandle
+            from ._internal.runner.runner_handle.remote import TritonRunnerHandle
 
-        super().init_client(handle_class=handle_class, *args, **kwargs)
+            self._set_handle(TritonRunnerHandle)
+        else:
+            self._set_handle(handle_class, *args, **kwargs)
 
     def destroy(self):
         _object_setattr(self, "_runner_handle", _DummyRunnerHandle())

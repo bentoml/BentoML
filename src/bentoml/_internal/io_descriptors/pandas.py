@@ -66,15 +66,15 @@ def get_parquet_engine() -> str:
         )
 
 
-def _openapi_types(item: str) -> str:  # pragma: no cover
+def _openapi_types(item: t.Any) -> str:  # pragma: no cover
     # convert pandas types to OpenAPI types
-    if item.startswith("int"):
+    if pd.api.types.is_integer_dtype(item):
         return "integer"
-    elif item.startswith("float") or item.startswith("double"):
+    elif pd.api.types.is_float_dtype(item):
         return "number"
-    elif item.startswith("str") or item.startswith("date"):
+    elif pd.api.types.is_string_dtype(item) or pd.api.types.is_datetime64_dtype(item):
         return "string"
-    elif item.startswith("bool"):
+    elif pd.api.types.is_bool_dtype(item):
         return "boolean"
     else:
         return "object"
@@ -676,10 +676,7 @@ class PandasDataFrame(
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = executor.map(process_columns_contents, field.columns)
                 data.extend([i for i in list(futures)])
-            dataframe = pd.DataFrame(
-                dict(zip(field.column_names, data)),
-                columns=t.cast(t.List[str], field.column_names),
-            )
+            dataframe = pd.DataFrame(dict(zip(field.column_names, data)))
         return self.validate_dataframe(dataframe)
 
     @t.overload

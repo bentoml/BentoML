@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import typing as t
 from urllib.parse import urljoin
+
 import requests
 
 from ...exceptions import CloudRESTApiClientError

@@ -116,7 +116,7 @@ if TYPE_CHECKING:
 
     class ModelSignatureDict(t.TypedDict, total=False):
         batchable: bool
-        batch_dim: tuple[int, int] | int | None
+        batch_dim: tuple[int, int] | int
         input_spec: tuple[AnyType] | AnyType | None
         output_spec: AnyType | None
 

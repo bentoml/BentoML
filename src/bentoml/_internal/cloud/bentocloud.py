@@ -97,8 +97,8 @@ class BentoCloudClient(CloudClient):
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
         model_tags = [m.tag for m in info.models]
-        local_model_store = bento._model_store
-        if local_model_store is not None and len(bento._model_store.list()) > 0:
+        local_model_store = bento._model_store  # type: ignore  # using internal BentoML API
+        if local_model_store is not None and len(local_model_store.list()) > 0:
             model_store = local_model_store
         models = (model_store.get(name) for name in model_tags)
         with ThreadPoolExecutor(max_workers=max(len(model_tags), 1)) as executor:
@@ -561,6 +561,7 @@ class BentoCloudClient(CloudClient):
                             f'[bold green]Successfully pulled bento "{_tag}"'
                         )
                         return bento
+        raise BentoMLException(f'Failed to pull bento "{_tag}"')
 
     def push_model(
         self,

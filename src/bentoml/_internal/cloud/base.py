@@ -50,7 +50,7 @@ class CallbackIOWrapper(io.BytesIO):
             self.read_cb(len(res))
         return res
 
-    def write(self, data: bytes):  # type: ignore  # python buffer types are too new and seem to not support something like Buffer+Sized as of now
+    def write(self, data: bytes) -> t.Any:  # type: ignore  # python buffer types are too new and seem to not support something like Buffer+Sized as of now
         res = super().write(data)
         if self.write_cb is not None:
             if hasattr(data, "__len__"):

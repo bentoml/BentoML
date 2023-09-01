@@ -4,6 +4,7 @@ import functools
 import json
 import logging
 import pickle
+import traceback
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -205,7 +206,11 @@ class RunnerAppFactory(BaseAppFactory):
                     # This is a workaround to allow infer stream to return a iterable of
                     # async generator, to align with how non stream inference works
                     params = paramss[0].map(AutoContainer.from_payload)
-                    ret = runner_method.async_stream(*params.args, **params.kwargs)
+                    try:
+                        ret = runner_method.async_stream(*params.args, **params.kwargs)
+                    except Exception:
+                        traceback.print_exc()
+                        raise
                     async for data in ret:
                         payload = AutoContainer.to_payload(data, 0)
                         yield payload
@@ -236,9 +241,13 @@ class RunnerAppFactory(BaseAppFactory):
                         params_list, input_batch_dim
                     )
 
-                    batch_ret = await runner_method.async_run(
-                        *batched_params.args, **batched_params.kwargs
-                    )
+                    try:
+                        batch_ret = await runner_method.async_run(
+                            *batched_params.args, **batched_params.kwargs
+                        )
+                    except Exception:
+                        traceback.print_exc()
+                        raise
 
                     # multiple output branch
                     if LazyType["tuple[t.Any, ...]"](tuple).isinstance(batch_ret):
@@ -268,7 +277,13 @@ class RunnerAppFactory(BaseAppFactory):
 
                     params = paramss[0].map(AutoContainer.from_payload)
 
-                    ret = await runner_method.async_run(*params.args, **params.kwargs)
+                    try:
+                        ret = await runner_method.async_run(
+                            *params.args, **params.kwargs
+                        )
+                    except Exception:
+                        traceback.print_exc()
+                        raise
 
                     payload = AutoContainer.to_payload(ret, 0)
                     return (payload,)

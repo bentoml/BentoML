@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import tarfile
 import tempfile
 import threading
@@ -211,7 +210,11 @@ class BentoCloudClient(CloudClient):
                     transmission_strategy = "presigned_url"
                     presigned_upload_url = remote_bento.presigned_upload_url
 
-        with io.BytesIO() as tar_io:
+        def io_cb(x: int):
+            with io_mutex:
+                self.transmission_progress.update(upload_task_id, advance=x)
+
+        with CallbackIOWrapper(read_cb=io_cb) as tar_io:
             with self.spin(text=f'Creating tar archive for bento "{bento.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:") as tar:
 
@@ -241,18 +244,12 @@ class BentoCloudClient(CloudClient):
 
             io_mutex = threading.Lock()
 
-            def io_cb(x: int):
-                with io_mutex:
-                    self.transmission_progress.update(upload_task_id, advance=x)
-
-            wrapped_file = CallbackIOWrapper(io_cb, tar_io, "read")
-
             if transmission_strategy == "proxy":
                 try:
                     yatai_rest_client.upload_bento(
                         bento_repository_name=bento_repository.name,
                         version=version,
-                        data=wrapped_file,
+                        data=tar_io,
                     )
                 except Exception as e:  # pylint: disable=broad-except
                     self.log_progress.add_task(
@@ -269,7 +266,7 @@ class BentoCloudClient(CloudClient):
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = requests.put(presigned_upload_url, data=wrapped_file)
+                    resp = requests.put(presigned_upload_url, data=tar_io)
                     if resp.status_code != 200:
                         finish_req = FinishUploadBentoSchema(
                             status=BentoUploadStatus.FAILED,
@@ -323,13 +320,9 @@ class BentoCloudClient(CloudClient):
                                 ]
                             )
 
-                            with io.BytesIO(chunk) as chunk_io:
-                                wrapped_file = CallbackIOWrapper(
-                                    io_cb, chunk_io, "read"
-                                )
-
+                            with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
                                 resp = requests.put(
-                                    remote_bento.presigned_upload_url, data=wrapped_file
+                                    remote_bento.presigned_upload_url, data=chunk_io
                                 )
                                 if resp.status_code != 200:
                                     return FinishUploadBentoSchema(
@@ -668,7 +661,13 @@ class BentoCloudClient(CloudClient):
                     transmission_strategy = "presigned_url"
                     presigned_upload_url = remote_model.presigned_upload_url
 
-        with io.BytesIO() as tar_io:
+        io_mutex = threading.Lock()
+
+        def io_cb(x: int):
+            with io_mutex:
+                self.transmission_progress.update(upload_task_id, advance=x)
+
+        with CallbackIOWrapper(read_cb=io_cb) as tar_io:
             with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:") as tar:
                     tar.add(model.path, arcname="./")
@@ -686,19 +685,12 @@ class BentoCloudClient(CloudClient):
             )
             self.transmission_progress.start_task(upload_task_id)
 
-            io_mutex = threading.Lock()
-
-            def io_cb(x: int):
-                with io_mutex:
-                    self.transmission_progress.update(upload_task_id, advance=x)
-
-            wrapped_file = CallbackIOWrapper(io_cb, tar_io, "read")
             if transmission_strategy == "proxy":
                 try:
                     yatai_rest_client.upload_model(
                         model_repository_name=model_repository.name,
                         version=version,
-                        data=wrapped_file,
+                        data=tar_io,
                     )
                 except Exception as e:  # pylint: disable=broad-except
                     self.log_progress.add_task(
@@ -715,7 +707,7 @@ class BentoCloudClient(CloudClient):
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = requests.put(presigned_upload_url, data=wrapped_file)
+                    resp = requests.put(presigned_upload_url, data=tar_io)
                     if resp.status_code != 200:
                         finish_req = FinishUploadModelSchema(
                             status=ModelUploadStatus.FAILED,
@@ -770,15 +762,9 @@ class BentoCloudClient(CloudClient):
                                 ]
                             )
 
-                            with io.BytesIO(chunk) as chunk_io:
-                                wrapped_file = CallbackIOWrapper(
-                                    io_cb,
-                                    chunk_io,
-                                    "read",
-                                )
-
+                            with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
                                 resp = requests.put(
-                                    remote_model.presigned_upload_url, data=wrapped_file
+                                    remote_model.presigned_upload_url, data=chunk_io
                                 )
                                 if resp.status_code != 200:
                                     return FinishUploadModelSchema(

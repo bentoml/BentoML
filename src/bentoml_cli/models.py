@@ -268,7 +268,9 @@ def add_model_management_commands(cli: Group) -> None:
         if model_tag is not None:
             if ctx.get_parameter_source("bentofile") != ParameterSource.DEFAULT:
                 click.echo("-f bentofile is ignored when model_tag is provided")
-            cloud_client.pull_model(model_tag, force=force, context=ctx.obj.context)
+            cloud_client.pull_model(
+                model_tag, force=force, context=ctx.obj.cloud_context
+            )
             return
 
         try:

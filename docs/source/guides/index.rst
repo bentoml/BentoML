@@ -72,6 +72,10 @@ into this part of the documentation.
         :link: /guides/security
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/guides/streaming`
+        :link: /guides/streaming
+        :link-type: doc
+
     .. grid-item-card:: :doc:`/guides/tracing`
         :link: /guides/tracing
         :link-type: doc
@@ -103,6 +107,7 @@ into this part of the documentation.
     grpc
     gpu
     security
+    streaming
     tracing
     migration
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import functools
 import logging
 import typing as t
@@ -10,6 +9,7 @@ from http.client import BadStatusLine
 
 from ...exceptions import BentoMLException
 from ..service.inference_api import InferenceAPI
+from ..utils import sync_run
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +130,7 @@ class Client(ABC):
     def _sync_call(
         self, inp: t.Any = None, *, _bentoml_api: InferenceAPI[t.Any], **kwargs: t.Any
     ):
-        return asyncio.run(self._call(inp, _bentoml_api=_bentoml_api, **kwargs))
+        return sync_run(self._call(inp, _bentoml_api=_bentoml_api, **kwargs))
 
     @abstractmethod
     async def _call(

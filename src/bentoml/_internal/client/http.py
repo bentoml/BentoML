@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import socket
@@ -21,6 +20,7 @@ from .. import io_descriptors as io
 from ..configuration import get_debug_mode
 from ..service import Service
 from ..service.inference_api import InferenceAPI
+from ..utils import sync_run
 from . import Client
 
 logger = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ class HTTPClient(Client):
                 return resp
 
     def health(self) -> t.Any:
-        return asyncio.run(self.async_health())
+        return sync_run(self.async_health())
 
     @classmethod
     def from_url(cls, server_url: str, **kwargs: t.Any) -> HTTPClient:

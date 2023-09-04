@@ -22,6 +22,7 @@ from bentoml._internal.tag import Tag
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import cached_contextmanager
 from bentoml._internal.utils import reserve_free_port
+from bentoml._internal.utils import sync_run
 from bentoml.grpc.utils import import_grpc
 
 from ..grpc.utils import LATEST_PROTOCOL_VERSION
@@ -233,7 +234,7 @@ def run_bento_server_container(
     ) as proc:
         try:
             host_url = f"{host}:{port}"
-            if asyncio.run(
+            if sync_run(
                 server_warmup(
                     host_url,
                     timeout=timeout,
@@ -289,7 +290,7 @@ def run_bento_server_standalone(
     )
     try:
         host_url = f"{host}:{server_port}"
-        assert asyncio.run(
+        assert sync_run(
             server_warmup(
                 host_url,
                 timeout=timeout,
@@ -391,7 +392,7 @@ def run_bento_server_distributed(
     )
     try:
         host_url = f"{host}:{server_port}"
-        asyncio.run(
+        sync_run(
             server_warmup(
                 host_url,
                 timeout=timeout,

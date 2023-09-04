@@ -490,3 +490,13 @@ def is_async_callable(obj: t.Any) -> t.TypeGuard[t.Callable[..., t.Awaitable[t.A
     return asyncio.iscoroutinefunction(obj) or (
         callable(obj) and asyncio.iscoroutinefunction(obj.__call__)
     )
+
+
+def sync_run(coro: t.Coroutine[t.Any, t.Any, T]) -> T:
+    """Run a coroutine in a synchronous context"""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    else:
+        return loop.run_until_complete(coro)

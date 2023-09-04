@@ -5,6 +5,8 @@ import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING
 
+import cloudpickle
+
 import bentoml
 from bentoml import Tag
 from bentoml.exceptions import MissingDependencyException
@@ -163,7 +165,8 @@ def save_model(
         context=context,
         signatures=signatures,
     ) as bento_model:
-        joblib.dump(model, bento_model.path_of(MODEL_FILENAME))
+        with open(bento_model.path_of(MODEL_FILENAME), "wb") as f:
+            cloudpickle.dump(model, f)
 
         return bento_model
 

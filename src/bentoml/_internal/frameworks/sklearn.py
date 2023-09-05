@@ -30,11 +30,9 @@ if TYPE_CHECKING:
 
 
 try:
-    import joblib
     from joblib import parallel_backend
 except ImportError:  # pragma: no cover
     try:
-        from sklearn.utils._joblib import joblib
         from sklearn.utils._joblib import parallel_backend
     except ImportError:
         raise MissingDependencyException(
@@ -84,7 +82,10 @@ def load_model(bento_model: str | Tag | Model) -> SklearnModel:
         )
     model_file = bento_model.path_of(MODEL_FILENAME)
 
-    return joblib.load(model_file)
+    with open(model_file, "rb") as f:
+        # The protocol version used is detected automatically, so we do not
+        # have to specify it.
+        return cloudpickle.load(f)
 
 
 def save_model(

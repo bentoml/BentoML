@@ -94,7 +94,15 @@ class HTTPClient(Client):
         # TODO: SSL support
         conn = HTTPConnection(url_parts.netloc)
         conn.set_debuglevel(logging.DEBUG if get_debug_mode() else 0)
-        conn.request("GET", url_parts.path + "/docs.json")
+
+        # we want to preserve as much of the user path as possible, so we don't really want to use
+        # a path join here.
+        if url_parts.path.endswith("/"):
+            path = url_parts.path + "docs.json"
+        else:
+            path = url_parts.path + "/docs.json"
+
+        conn.request("GET", path)
         resp = conn.getresponse()
         if resp.status != 200:
             raise RemoteException(

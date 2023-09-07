@@ -37,7 +37,7 @@ This section contains several quickstarts that allow you to quickly get started 
         :link: /quickstarts/deploy-a-yolo-model-with-bentoml
         :link-type: doc
 
-        Learn how to deploy a YOlO model by creating custom BentoML Runners.
+        Learn how to deploy a YOLO model by creating custom BentoML Runners.
 
 .. toctree::
     :maxdepth: 1

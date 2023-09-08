@@ -39,6 +39,12 @@ This section contains several quickstarts that allow you to quickly get started 
 
         Learn how to deploy a YOLO model by creating custom BentoML Runners.
 
+    .. grid-item-card:: :doc:`/quickstarts/deploy-stable-diffusion-xl-with-dynamic-lora-adapters`
+        :link: /quickstarts/deploy-stable-diffusion-xl-with-dynamic-lora-adapters
+        :link-type: doc
+
+        Learn how to deploy an image generation application with dynamic LoRA adapters using OneDiffusion.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
@@ -49,3 +55,4 @@ This section contains several quickstarts that allow you to quickly get started 
     deploy-a-large-language-model-with-openllm-and-bentoml
     deploy-an-iris-classification-model-with-bentoml
     deploy-a-yolo-model-with-bentoml
+    deploy-stable-diffusion-xl-with-dynamic-lora-adapters

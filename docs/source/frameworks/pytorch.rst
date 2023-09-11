@@ -94,7 +94,7 @@ For common PyTorch models with single input:
             # print statistics
             print('Epoch: %d, Step: %d, Loss: %.4f' % (epoch, i, loss.item()))
 
-    bentoml.pytorch.save(
+    bentoml.pytorch.save_model(
         "my_torch_model",
         model,
         signatures={"__call__": {"batchable": True, "batch_dim": 0}},

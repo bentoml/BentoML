@@ -85,7 +85,7 @@ io = [
     "bentoml[io-json,io-image,io-pandas,io-file]",
 ]
 io-file = ["filetype"] # Currently use for from_sample
-io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
+io-json = ["pydantic"]
 io-image = ["bentoml[io-file]", "Pillow"]
 io-pandas = ["pandas>=1", "pyarrow"]
 triton = ["tritonclient[all]>=2.29.0"]
@@ -131,9 +131,9 @@ fallback_version = "0.0.0"
 [tool.hatch.metadata]
 allow-direct-references = true
 [tool.hatch.build.targets.sdist]
-only-include = ["src/bentoml", "src/bentoml_cli"]
+only-include = ["src/bentoml", "src/bentoml_cli", "src/__bentoml_pydantic.py", "src/__bentoml_pydantic.pth"]
 [tool.hatch.build.targets.wheel]
-packages = ["src/bentoml", "src/bentoml_cli"]
+packages = ["src/bentoml", "src/bentoml_cli", "src/__bentoml_pydantic.py", "src/__bentoml_pydantic.pth"]
 
 [[tool.pdm.source]]
 url = "https://download.pytorch.org/whl/cpu"

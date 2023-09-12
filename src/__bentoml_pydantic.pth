@@ -1,0 +1,1 @@
+import __bentoml_pydantic;__bentoml_pydantic.add_custom_preparers()

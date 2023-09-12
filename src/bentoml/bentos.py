@@ -392,7 +392,11 @@ def build(
 
 
 def _parse_tag_from_outputs(output: bytes) -> str:
-    matched = re.match(r"__tag__:([^:\n]+:[^:\n]+)$", output.decode("utf-8").strip())
+    matched = re.search(
+        r"^__tag__:([^:\n]+:[^:\n]+)$",
+        output.decode("utf-8").strip(),
+        flags=re.MULTILINE,
+    )
     if matched is None:
         raise BentoMLException(
             f"Failed to find tag from output: {output}\nNote: Output from 'bentoml build' might not be correct. Please open an issue on GitHub."

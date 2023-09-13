@@ -10,6 +10,7 @@ import typing as t
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from warnings import warn
 
 from simple_di import Provide
 from simple_di import inject
@@ -19,7 +20,9 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import Service
 from ._internal.tag import Tag
 from ._internal.utils.analytics.usage_stats import BENTOML_SERVE_FROM_SERVER_API
-from .exceptions import BentoMLException
+from .exceptions import InvalidArgument
+from .exceptions import ServerStateException
+from .exceptions import UnservableException
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -63,15 +66,16 @@ class Server(ABC):
         timeout: float = 10,
     ):
         if bento is not None:
-            if not servable:
-                logger.warning(
-                    "'bento' is deprecated, either remove it as a kwargs or pass '%s' as the first positional argument",
-                    bento,
+            if servable is None:  # type: ignore  # dealing with backwards compatibility, where a user has set bento argument manually.
+                warn(
+                    f"serving using the 'bento' argument is deprecated, either remove it as a kwarg or pass '{bento}' as the first positional argument",
+                    DeprecationWarning,
+                    stacklevel=2,
                 )
                 servable = bento
             else:
-                raise BentoMLException(
-                    "Cannot use both 'bento' and 'servable' as kwargs as 'bento' is deprecated."
+                raise InvalidArgument(
+                    "Cannot use both 'bento' and 'servable' arguments; as 'bento' is deprecated, set 'servable' instead."
                 )
 
         self.servable = servable
@@ -84,7 +88,7 @@ class Server(ABC):
             bento_str = str(servable)
         elif isinstance(servable, Service):
             if not servable.is_service_importable():
-                raise BentoMLException(
+                raise UnservableException(
                     "Cannot use 'bentoml.Service' as a server if it is defined in interactive session or Jupyter Notebooks."
                 )
             bento_str, working_dir = servable.get_service_import_origin()
@@ -158,9 +162,9 @@ class Server(ABC):
                 logger.debug(f"Starting server with arguments: {self.args}")
                 default_io_descriptor = None if blocking else subprocess.PIPE
                 if text is None:
-                    logger.warning(
-                        "Setting text to True will be the default behaviour for bentoml 2.x. Please set it explicitly to avoid breaking changes.\n"
-                        + '    Example: "server.start(text=False, ...)"',
+                    warn(
+                        "Setting text to True will be the default behavior for bentoml 2.x. Set it explicitly to avoid breaking changes.\n"
+                        + "For Example: 'server.start(text=False, ...)'"
                     )
                 self.process = subprocess.Popen(
                     self.args,
@@ -183,31 +187,29 @@ class Server(ABC):
 
             def __exit__(
                 __inner_self,
-                exc_type: type[BaseException] | None,
-                exc_value: BaseException | None,
-                traceback: TracebackType | None,
+                _exc_type: type[BaseException] | None,
+                _exc_value: BaseException | None,
+                _traceback: TracebackType | None,
             ):
                 self.stop()
 
         return _Manager()
 
-    def get_client(self) -> Client | None:
+    def get_client(self) -> Client:
         if self.process is None:
             # NOTE: if the process is None, we reset this envvar
             del os.environ[BENTOML_SERVE_FROM_SERVER_API]
-            logger.warning(
+            raise ServerStateException(
                 "Attempted to get a client for a BentoML server that was not running! Try running 'bentoml.*Server.start()' first."
             )
-            return
         assert self.process is not None
         out_code = self.process.poll()
         if out_code == 0:
             # NOTE: if the process is None, we reset this envvar
             del os.environ[BENTOML_SERVE_FROM_SERVER_API]
-            logger.warning(
+            raise ServerStateException(
                 "Attempted to get a client from a BentoML server that has already exited! You can run '.start()' again to restart it."
             )
-            return
         elif out_code is not None:
             # NOTE: if the process is None, we reset this envvar
             del os.environ[BENTOML_SERVE_FROM_SERVER_API]
@@ -215,20 +217,19 @@ class Server(ABC):
             if self.process.stdout is not None and not self.process.stdout.closed:
                 s = self.process.stdout.read()
                 logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
+                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4  # type: ignore  # may be string
                 )
             if self.process.stderr is not None and not self.process.stderr.closed:
                 logs += "\nServer Error:\n"
                 s = self.process.stderr.read()
                 logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
+                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4  # type: ignore  # may be string
                 )
-            logger.warning(logs)
-            return
+            raise ServerStateException(logs)
         return self._get_client()
 
     @abstractmethod
-    def _get_client(self) -> Client | None:
+    def _get_client(self) -> Client:
         pass
 
     def stop(self) -> None:
@@ -244,20 +245,22 @@ class Server(ABC):
             logger.warning(
                 "Attempted to stop a BentoML server that has already exited!"
             )
+            return
         elif out_code is not None:
             logs = "Attempted to stop a BentoML server that has already exited with an error!\nServer Output:\n"
             if self.process.stdout is not None and not self.process.stdout.closed:
                 s = self.process.stdout.read()
                 logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
+                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4  # type: ignore  # may be string
                 )
             if self.process.stderr is not None and not self.process.stderr.closed:
                 logs += "\nServer Error:\n"
                 s = self.process.stderr.read()
                 logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4
+                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4  # type: ignore  # may be string
                 )
             logger.warning(logs)
+            return
 
         if sys.platform == "win32":
             os.kill(self.process.pid, signal.CTRL_C_EVENT)
@@ -273,8 +276,10 @@ class Server(ABC):
             self.process.wait()
 
     def __enter__(self):
-        logger.warning(
-            "Using bentoml.Server as a context manager is deprecated, use bentoml.Server.start instead."
+        warn(
+            "Using bentoml.Server as a context manager is deprecated, use bentoml.Server.start instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
 
         return self
@@ -348,12 +353,14 @@ class HTTPServer(Server):
         self.args.extend(construct_ssl_args(**ssl_args))
 
     def client(self) -> HTTPClient | None:
-        logger.warning(
-            "'Server.client()' is deprecated, use 'Server.get_client()' instead."
+        warn(
+            "'Server.client()' is deprecated, use 'Server.get_client()' instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
-        return t.cast("HTTPClient | None", self.get_client())
+        return self._get_client()
 
-    def _get_client(self) -> HTTPClient | None:
+    def _get_client(self) -> HTTPClient:
         if self._client is None:
             from .client import HTTPClient
 
@@ -423,7 +430,7 @@ class GrpcServer(Server):
         if grpc_protocol_version is not None:
             self.args.extend(["--protocol-version", str(grpc_protocol_version)])
 
-    def _get_client(self) -> GrpcClient | None:
+    def _get_client(self) -> GrpcClient:
         if self._client is None:
             from .client import GrpcClient
 

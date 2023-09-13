@@ -1,8 +1,8 @@
-name: Update Bento Deployment
+name: Deploy Bento
 on:
-push:
-  tags:
-    - v*
+  push:
+    tags:
+      - v*
 
 jobs:
   build_and_deploy:
@@ -12,12 +12,12 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-        python-version: '3.10'
-        cache: 'pip'
+          python-version: '3.10'
+          cache: 'pip'
 
       - name: Build and Deploy
         uses: bentoml/deploy-bento-action@main
         with:
+          deployment_name: test-iris
           cloud_api_token: ${{ secrets.CLOUD_API_TOKEN }}
           cloud_endpoint: ${{ secrets.CLOUD_ENDPOINT }}
-          deployment_name: test-iris

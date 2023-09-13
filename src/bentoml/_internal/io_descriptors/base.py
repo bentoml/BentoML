@@ -14,6 +14,7 @@ if t.TYPE_CHECKING:
     import pyspark.sql.types
     from starlette.requests import Request
     from starlette.responses import Response
+    from starlette.responses import StreamingResponse
 
     from bentoml.grpc.types import ProtoField
 
@@ -178,7 +179,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     @abstractmethod
     async def to_http_response(
         self, obj: IOType, ctx: Context | None = None
-    ) -> Response:
+    ) -> Response | StreamingResponse:
         raise NotImplementedError
 
     @abstractmethod

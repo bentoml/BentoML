@@ -410,7 +410,7 @@ class PandasDataFrameContainer(
 
         return cls.create_payload(
             data,
-            batch.size,
+            batch.shape[0],
             meta=meta,
         )
 

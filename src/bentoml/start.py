@@ -91,6 +91,8 @@ def start_runner_server(
                                 "--no-access-log",
                                 "--worker-id",
                                 "$(circus.wid)",
+                                "--worker-env-map",
+                                json.dumps(runner.scheduled_worker_env_map),
                                 "--prometheus-dir",
                                 prometheus_dir,
                                 *timeout_args,

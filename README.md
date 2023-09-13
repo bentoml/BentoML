@@ -83,10 +83,12 @@ packaging, and production deployment.</p>
   Online model serving with custom XGBoost model.
 - [OCR as a Service](https://github.com/bentoml/OCR-as-a-Service) - Turn any OCR
   models into online inference API endpoints.
-- [Replace Anything](https://github.com/yuqwu/Replace-Anything) - Combining the
+- [Replace Anything](https://github.com/yuqwu/Replace-Anything) - Combine the
   power of Segment Anything and Stable Diffusion.
 - [DeepFloyd IF Multi-GPU serving](https://github.com/bentoml/IF-multi-GPUs-demo) -
-  Serve IF models easily across multiple GPUs
+  Serve IF models easily across multiple GPUs.
+- [Sentence Embedding as a Service](https://github.com/bentoml/sentence-embedding-bento) -
+  Start a high-performance REST API server for generating text embeddings with one command.
 - Check out more examples
   [here](https://github.com/bentoml/BentoML/tree/main/examples).
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import itertools
-import multiprocessing
 import os
 import socket
 import subprocess
@@ -306,15 +305,6 @@ def run_bento_server_standalone(
         p.communicate()
 
 
-def start_mitm_proxy(port: int) -> None:
-    import uvicorn
-
-    from .utils import http_proxy_app
-
-    print(f"Proxy server listen on {port}")
-    uvicorn.run(http_proxy_app, port=port)  # type: ignore (not using ASGI3Application)
-
-
 @contextmanager
 def run_bento_server_distributed(
     bento_tag: str | Tag,
@@ -331,22 +321,11 @@ def run_bento_server_distributed(
 
     import bentoml
 
-    with reserve_free_port(enable_so_reuseport=use_grpc) as proxy_port:
-        pass
-    print(f"Starting proxy on port {proxy_port}")
-    proxy_process = multiprocessing.Process(
-        target=start_mitm_proxy,
-        args=(proxy_port,),
-    )
-    proxy_process.start()
     copied = os.environ.copy()
     # to ensure yatai specified headers BP100
     copied["YATAI_BENTO_DEPLOYMENT_NAME"] = "test-deployment"
     copied["YATAI_BENTO_DEPLOYMENT_NAMESPACE"] = "yatai"
-    if use_grpc:
-        copied["GPRC_PROXY"] = f"localhost:{proxy_port}"
-    else:
-        copied["HTTP_PROXY"] = f"http://127.0.0.1:{proxy_port}"
+
     if config_file is not None:
         copied["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
@@ -426,9 +405,6 @@ def run_bento_server_distributed(
             kill_subprocess_tree(p)
         for p in processes:
             p.communicate()
-        if proxy_process is not None:
-            proxy_process.terminate()
-            proxy_process.join()
 
 
 @cached_contextmanager(

@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     from . import catboost
     from . import detectron
     from . import diffusers
+    from . import diffusers_simple
     from . import easyocr
     from . import fastai
     from . import flax
@@ -104,6 +105,9 @@ else:
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
     detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")
     diffusers = _LazyLoader("bentoml.diffusers", globals(), "bentoml.diffusers")
+    diffusers_simple = _LazyLoader(
+        "bentoml.diffusers_simple", globals(), "bentoml.diffusers_simple"
+    )
     easyocr = _LazyLoader("bentoml.easyocr", globals(), "bentoml.easyocr")
     flax = _LazyLoader("bentoml.flax", globals(), "bentoml.flax")
     fastai = _LazyLoader("bentoml.fastai", globals(), "bentoml.fastai")

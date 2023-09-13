@@ -12,6 +12,8 @@ from dateutil.parser import parse
 
 time_format = "%Y-%m-%d %H:%M:%S.%f"
 
+T = t.TypeVar("T")
+
 
 def datetime_encoder(time_obj: t.Optional[datetime]) -> t.Optional[str]:
     if not time_obj:
@@ -26,9 +28,9 @@ def datetime_decoder(datetime_str: t.Optional[str], _: t.Any) -> t.Optional[date
 
 
 def dict_options_converter(
-    options_type: type[t.Any],
-) -> t.Callable[[type[t.Any] | dict[str, t.Any]], t.Any]:
-    def _converter(value: type[t.Any] | dict[str, t.Any] | None) -> options_type:
+    options_type: type[T],
+) -> t.Callable[[T | dict[str, T]], T]:
+    def _converter(value: T | dict[str, T] | None) -> T:
         if value is None:
             return options_type()
         if isinstance(value, dict):
@@ -42,9 +44,6 @@ cloud_converter = cattr.Converter()
 
 cloud_converter.register_unstructure_hook(datetime, datetime_encoder)
 cloud_converter.register_structure_hook(datetime, datetime_decoder)
-
-
-T = t.TypeVar("T")
 
 
 def schema_from_json(json_content: str, cls: t.Type[T]) -> T:

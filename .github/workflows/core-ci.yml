@@ -40,7 +40,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
-          name: core/wheels
+          name: core-wheels
           path: core/dist
 
   windows:
@@ -64,7 +64,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
-          name: core/wheels
+          name: core-wheels
           path: core/dist
 
   macos:
@@ -87,7 +87,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
-          name: core/wheels
+          name: core-wheels
           path: core/dist
 
   sdist:
@@ -103,7 +103,7 @@ jobs:
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
-          name: core/wheels
+          name: core-wheels
           path: core/dist
 
   release:
@@ -114,7 +114,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: core/wheels
+          name: core-wheels
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
         env:

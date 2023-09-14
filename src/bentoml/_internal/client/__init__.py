@@ -82,9 +82,7 @@ class Client(ABC):
 
     @t.overload
     @staticmethod
-    def from_url(
-        server_url: str, *, kind: None | t.Literal["auto"] = ...
-    ) -> Client:
+    def from_url(server_url: str, *, kind: None | t.Literal["auto"] = ...) -> Client:
         ...
 
     @t.overload

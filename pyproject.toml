@@ -1,0 +1,9 @@
+[project]
+dependencies = []
+requires-python = ">=3.8"
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "-e bentoml-core @ file:///${PROJECT_ROOT}/core",
+    "-e bentoml @ file:///${PROJECT_ROOT}/bentoml",
+]

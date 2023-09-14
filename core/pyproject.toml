@@ -1,0 +1,38 @@
+[build-system]
+requires = ["maturin>=0.15,<0.16"]
+build-backend = "maturin"
+
+[project]
+name = "bentoml-core"
+description = "The rust core of BentoML: The Unified Model Serving Framework"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.7"
+keywords = ["MLOps", "AI", "BentoML", "Model Serving", "Model Deployment"]
+license = { text = "Apache-2.0" }
+authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+]
+version = "1.1.1"
+
+[project.urls]
+"Documentation" = "https://docs.bentoml.org/en/latest/"
+"Bug Reports" = "https://github.com/bentoml/BentoML/issues"
+"BentoML Community Slack" = "https://bit.ly/2N5IpbB"
+"BentoML Official Blog" = "https://modelserving.com"
+"BentoML Twitter" = "https://twitter.com/bentomlai"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]

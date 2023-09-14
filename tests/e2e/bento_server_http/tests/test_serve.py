@@ -142,7 +142,9 @@ async def test_serve_with_api_max_concurrency():
             asyncio.create_task(client.async_call("echo_delay", {"delay": 0.5})),
         ]
         await asyncio.sleep(0.1)
-        tasks.append(asyncio.create_task(client.async_call("echo_delay", {"delay": 0.5})))
+        tasks.append(
+            asyncio.create_task(client.async_call("echo_delay", {"delay": 0.5}))
+        )
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
     for i in range(2):

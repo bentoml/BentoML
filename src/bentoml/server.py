@@ -16,6 +16,9 @@ from simple_di import Provide
 from simple_di import inject
 
 from ._internal.bento import Bento
+from ._internal.client import Client
+from ._internal.client import GrpcClient
+from ._internal.client import HTTPClient
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import Service
 from ._internal.tag import Tag
@@ -23,9 +26,6 @@ from ._internal.utils.analytics.usage_stats import BENTOML_SERVE_FROM_SERVER_API
 from .exceptions import InvalidArgument
 from .exceptions import ServerStateException
 from .exceptions import UnservableException
-from ._internal.client import Client
-from ._internal.client import GrpcClient
-from ._internal.client import HTTPClient
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -40,6 +40,7 @@ __all__ = ["Server", "GrpcServer", "HTTPServer"]
 
 
 ClientType = t.TypeVar("ClientType", bound=Client)
+
 
 class Server(ABC, t.Generic[ClientType]):
     servable: str | Bento | Tag | Service

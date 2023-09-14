@@ -70,7 +70,7 @@ runners:
   resources: ~
   workers_per_resource: 1
   traffic:
-    timeout: 300
+    timeout: 900
     max_concurrency: ~
   batching:
     enabled: true

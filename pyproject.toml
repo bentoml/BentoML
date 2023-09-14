@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-    "bentoml-core",
+    "bentoml-core>=0.1.0",
     "Jinja2>=3.0.1",
     "PyYAML>=5.0",
     "aiohttp",
@@ -148,8 +148,8 @@ tensorflow = ">=2.3.0"
 tensorflow-io-gcs-filesystem = "==0.31.0"
 
 [tool.pdm.dev-dependencies]
-core = [
-  "-e core @ file:///${PROJECT_ROOT}/core"
+dev = [
+  "-e bentoml-core @ file:///${PROJECT_ROOT}/core",
 ]
 docs = [
     "sphinx>=5",

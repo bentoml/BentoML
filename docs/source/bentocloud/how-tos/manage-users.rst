@@ -10,7 +10,7 @@ Invite a new user
 1. Click your user name in the top-right corner of any BentoCloud page, then select **Members**.
 2. On the **Members** page, click **Invite new member**.
 3. In the dialog that appears, enter the user's name and valid email address. The email address is used to receive an invitation link to activate the account.
-   
+
    .. image:: ../../_static/img/bentocloud/how-to/manage-users/invite-new-member.png
 
 4. Click **Submit**.

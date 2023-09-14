@@ -17,24 +17,30 @@ Why BentoCloud?
 
 BentoCloud provides the following major benefits:
 
-First-class support for BentoML
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BentoML integration
+^^^^^^^^^^^^^^^^^^^
 
 Allow easy integration with popular ML frameworks and MLOps tools as BentoCloud is built on the BentoML open-source standard and ecosystem.
 This ensures a unified approach to AI application development.
 
-Fully-managed platform
-^^^^^^^^^^^^^^^^^^^^^^
+Fully-managed
+^^^^^^^^^^^^^
 
 Offer a serverless environment that manages infrastructure complexity, enabling developers to concentrate solely on building and shipping AI applications.
 
-Great scalability
-^^^^^^^^^^^^^^^^^
+Scalability
+^^^^^^^^^^^
 
 Provide serverless autoscaling to handle varying traffic and minimize resource wastage. Scale-to-zero support offers additional resource optimization.
 
-Streamlined team collaboration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Observability
+^^^^^^^^^^^^^
+
+Implement observability with insights into the health and performance of your Bento Deployments. Use built-in dashboards to monitor resource consumption
+and service statuses. Furthermore, query logs for critical cluster events, enabling troubleshooting and in-depth analysis with filtering and breakdowns.
+
+Team collaboration
+^^^^^^^^^^^^^^^^^^
 
 Facilitate centralized storage and management of AI models. Different team members can share, download, and iterate models and Bentos with smooth rollback and rollforward options for version control.
 

@@ -136,7 +136,7 @@ async def test_serve_with_api_max_concurrency():
     env = os.environ.copy()
     env.update(BENTOML_CONFIG=config_file)
 
-    with server.start(env=env) as client:
+    with server.start(stdin=None, stdout=None, env=env) as client:
         tasks = [
             asyncio.create_task(client.async_call("echo_delay", {"delay": 0.5})),
             asyncio.create_task(client.async_call("echo_delay", {"delay": 0.5})),

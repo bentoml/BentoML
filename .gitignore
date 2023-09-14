@@ -55,7 +55,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 .test_bundle/
-*.xml
 
 # Sphinx documentation
 docs/build/
@@ -108,7 +107,6 @@ tests/integration/data
 *~
 
 # setuptools_scm generated version file
-typings
 **/*/_version.py
 
 # test files

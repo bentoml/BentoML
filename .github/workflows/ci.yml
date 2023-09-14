@@ -3,14 +3,14 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - 'docs/**'
-      - 'bazel/**'
-      - 'typings/**'
+      - 'bentoml/docs/**'
+      - 'bentoml/bazel/**'
+      - 'bentoml/typings/**'
   pull_request:
     paths-ignore:
-      - 'docs/**'
-      - 'bazel/**'
-      - 'typings/**'
+      - 'bentoml/docs/**'
+      - 'bentoml/bazel/**'
+      - 'bentoml/typings/**'
   schedule:
     - cron: '0 0 * * 1/2'
 env:
@@ -44,18 +44,19 @@ jobs:
       - name: Install dependencies
         run: |
           pdm venv create --with-pip --force
-          pdm sync -d -G grpc -G io -G testing -G frameworks
+          pdm sync -d -G bentoml-grpc -G bentoml-io -G bentoml-testing -G bentoml-frameworks
           pdm run pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
           pdm run pip install -U tensorflow
       - name: Unit tests
-        run: pdm run -v unit
+        run: pdm run -p bentoml -v unit
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.unit.${{ matrix.os }}.${{ matrix.python-version }}"
+        working-dir: bentoml
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
         with:
           name: coverage-unit-data
-          path: .coverage.*
+          path: bentoml/.coverage.*
   integrations:
     name: framework-integration-tests
     runs-on: ubuntu-latest
@@ -96,18 +97,19 @@ jobs:
       - name: Install dependencies
         run: |
           pdm venv create --with-pip
-          pdm sync -d -G testing -G frameworks
+          pdm sync -d -G bentoml-testing -G bentoml-frameworks
           pdm run pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
           pdm run pip install -U tensorflow onnx onnxruntime "jax[cpu]"
       - name: Run framework integration tests
-        run: pdm run -v integration "${{ matrix.framework }}"
+        run: pdm run -p bentoml -v integration "${{ matrix.framework }}"
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.integrations.ubuntu-latest.3.8.${{ matrix.framework }}"
+        working-dir: bentoml
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
         with:
           name: coverage-integrations-data
-          path: .coverage.*
+          path: bentoml/.coverage.*
   e2e-monitoring:
     strategy:
       fail-fast: false
@@ -137,17 +139,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
       - name: Install dependencies
-        run: pdm sync -d -G io -G testing -G monitor-otlp
+        run: pdm sync -d -G bentoml-io -G bentoml-testing -G bentoml-monitor-otlp
       - name: Run the monitoring tests
         working-directory: examples/monitoring/task_classification
-        run: mkdir -p monitoring && pdm run -v monitoring
+        run: mkdir -p bentoml/monitoring && pdm run -p bentoml -v monitoring
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.monitoring.${{ matrix.os }}.${{ matrix.python-version }}"
+        working-dir: bentoml
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
         with:
           name: coverage-monitoring-data
-          path: .coverage.*
+          path: bentoml/.coverage.*
   e2e-bento-server:
     strategy:
       fail-fast: false
@@ -184,16 +187,17 @@ jobs:
         run: |
           pdm venv create --with-pip --force
           pdm run pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
-          pdm sync -d -G grpc -G io -G testing
+          pdm sync -d -G bentoml-grpc -G bentoml-io -G bentoml-testing
       - name: Run ${{ matrix.server_type }} tests
-        run: pdm run -v tests tests/e2e/bento_server_${{ matrix.server_type }}
+        run: pdm run -p bentoml -v tests tests/e2e/bento_server_${{ matrix.server_type }}
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.e2e.${{ matrix.os }}.${{ matrix.python-version }}"
+        working-dir: bentoml
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
         with:
           name: coverage-e2e-data
-          path: .coverage.*
+          path: bentoml/.coverage.*
   coverage:
     name: report-coverage
     runs-on: ubuntu-latest
@@ -230,24 +234,24 @@ jobs:
         with:
           name: coverage-unit-data
       - name: Install dependencies
-        run: pdm sync -d -G testing
+        run: pdm sync -d -G bentoml-testing
       - name: Combine coverage data
-        run: pdm run -v coverage-combine
+        run: pdm run -p bentoml -v coverage-combine
       - name: Export coverage reports and generate summary
-        run: pdm run -v coverage-generate-reports
+        run: pdm run -p bentoml -v coverage-generate-reports
       - name: Upload uncovered HTML report
         uses: actions/upload-artifact@v3
         with:
           name: uncovered-html-report
-          path: htmlcov
+          path: bentoml/htmlcov
       - name: Write coverage summary report
         if: github.event_name == 'pull_request'
-        run: pdm run -v coverage-write-report
+        run: pdm run -p bentoml -v coverage-write-report
       - name: Update coverage pull request comment
         if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          path: coverage-report.md
+          path: bentoml/coverage-report.md
   evergreen: # https://github.com/marketplace/actions/alls-green#why
     if: github.event_name == 'pull_request'
     needs:

@@ -23,6 +23,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
+    "bentoml-core",
     "Jinja2>=3.0.1",
     "PyYAML>=5.0",
     "aiohttp",

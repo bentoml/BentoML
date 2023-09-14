@@ -38,7 +38,7 @@ jobs:
       - name: Install libenchant
         run: sudo apt-get update && sudo apt-get install -y libenchant-2-dev
       - name: Install dependencies
-        run: pdm sync -dG bentoml-docs
+        run: pdm sync -p bentoml -dG docs
       - name: Run spellcheck script
         run: |
           pdm run -p bentoml -v sphinx-build -b spelling ./docs/source ./docs/build || (echo "Failed to run spellcheck. Refer to logs for more details"; exit 1)

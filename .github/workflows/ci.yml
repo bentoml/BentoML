@@ -47,6 +47,7 @@ jobs:
           pdm sync -d -G bentoml-grpc -G bentoml-io -G bentoml-testing -G bentoml-frameworks
           pdm run pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
           pdm run pip install -U tensorflow
+        working-dir: bentoml
       - name: Unit tests
         run: pdm run -p bentoml -v unit
       - name: Disambiguate coverage filename
@@ -100,6 +101,7 @@ jobs:
           pdm sync -d -G bentoml-testing -G bentoml-frameworks
           pdm run pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
           pdm run pip install -U tensorflow onnx onnxruntime "jax[cpu]"
+        working-dir: bentoml
       - name: Run framework integration tests
         run: pdm run -p bentoml -v integration "${{ matrix.framework }}"
       - name: Disambiguate coverage filename
@@ -139,7 +141,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
       - name: Install dependencies
-        run: pdm sync -d -G bentoml-io -G bentoml-testing -G bentoml-monitor-otlp
+        run: pdm -p bentoml sync -d -G bentoml-io -G bentoml-testing -G bentoml-monitor-otlp
       - name: Run the monitoring tests
         working-directory: examples/monitoring/task_classification
         run: mkdir -p bentoml/monitoring && pdm run -p bentoml -v monitoring
@@ -188,6 +190,7 @@ jobs:
           pdm venv create --with-pip --force
           pdm run pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
           pdm sync -d -G bentoml-grpc -G bentoml-io -G bentoml-testing
+        working-dir: bentoml
       - name: Run ${{ matrix.server_type }} tests
         run: pdm run -p bentoml -v tests tests/e2e/bento_server_${{ matrix.server_type }}
       - name: Disambiguate coverage filename
@@ -234,7 +237,7 @@ jobs:
         with:
           name: coverage-unit-data
       - name: Install dependencies
-        run: pdm sync -d -G bentoml-testing
+        run: pdm sync -p bentoml -d -G bentoml-testing
       - name: Combine coverage data
         run: pdm run -p bentoml -v coverage-combine
       - name: Export coverage reports and generate summary

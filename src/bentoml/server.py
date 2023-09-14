@@ -17,8 +17,8 @@ from simple_di import inject
 
 from ._internal.bento import Bento
 from ._internal.client import Client
-from ._internal.client import GrpcClient
-from ._internal.client import HTTPClient
+from ._internal.client.grpc import GrpcClient
+from ._internal.client.http import HTTPClient
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import Service
 from ._internal.tag import Tag

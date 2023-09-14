@@ -84,7 +84,7 @@ class Client(ABC):
     @staticmethod
     def from_url(
         server_url: str, *, kind: None | t.Literal["auto"] = ...
-    ) -> GrpcClient | HTTPClient:
+    ) -> Client:
         ...
 
     @t.overload

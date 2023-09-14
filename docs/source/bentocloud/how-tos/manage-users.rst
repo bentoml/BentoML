@@ -1,37 +1,25 @@
-================
+============
 Manage Users
-================
+============
 
-BentoCloud provides flexible user management options that help you control and customize access to your resources.
-This guide walks you through how to manage users, understand their roles, and permissions within BentoCloud.
+You can add and delete BentoCloud users to control and customize access to your resources.
 
-Managing Users
-==============
+Invite a new user
+-----------------
 
-BentoCloud provides a straightforward interface for managing users. Here's how you can add, modify, or remove users from your organization.
+1. Click your user name in the top-right corner of any BentoCloud page, then select **Members**.
+2. On the **Members** page, click **Invite new member**.
+3. In the dialog that appears, enter the user's name and valid email address. The email address is used to receive an invitation link to activate the account.
+   
+   .. image:: ../../_static/img/bentocloud/how-to/manage-users/invite-new-member.png
 
-Via UI
-------
+4. Click **Submit**.
 
-.. image:: ../../_static/img/bentocloud/manage-user-page.png
-    :alt: Manage Users Page
+Both the inviter and the new user receive the invitation email. Clicking the link in the email directs the new user to the login page, where they can choose to log in using either their Google or GitHub account.
 
-1. **Creating a User:** Navigate to the  `Members <http://cloud.bentoml.com/members>`_ page within the BentoCloud dashboard. Click 'Create new user' and fill in the necessary details, including email, role, and any other required fields.
-2. **Modifying a User:** From the `Members <http://cloud.bentoml.com/members>`_ page, click `Edit user role` on the row of the user you want to modify. Update the user's details or permissions and click 'Submit.'
-3. **Removing a User:** From the `Members <http://cloud.bentoml.com/members>`_ page, click on the user you want to remove. Select 'Delete User' to remove the user from your organization.
+Delete a user
+-------------
 
-Via CLI
--------
-*(Coming Soon)*
-
-Alternatively, you can manage users programmatically using BentoCloud CLI.
-This is especially useful when you need to automate user management as part of your CI/CD pipeline or when you're dealing with a large number of users.
-
-
-Best Practices
-==============
-Admins are advised to practice good security habits when managing users. Here are some best practices to follow:
-
-* Regularly review user roles and permissions
-* Enforce strong password policies
-* Promptly remove access for users who no longer need it.
+1. Click your user name in the top-right corner of any BentoCloud page, then select **Members**.
+2. On the **Members** page, click **Delete Member** for the user you want to delete.
+3. Click **Delete** in the dialog that appears.

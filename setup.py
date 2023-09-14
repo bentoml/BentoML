@@ -48,7 +48,7 @@ install_requires = [
     "ruamel.yaml>=0.15.0",
     "schema",
     "sqlalchemy-utils<0.36.8",
-    "sqlalchemy>=1.3.0,<1.4.0",
+    "sqlalchemy>=1.3.0,<3",
     "tabulate",
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',

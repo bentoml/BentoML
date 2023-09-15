@@ -183,11 +183,14 @@ def get_runnable(bento_model: Model):
 
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(
-            self: SklearnRunnable, input_data: ext.NpNDArray | ext.PdDataFrame
+            self: SklearnRunnable,
+            input_data: ext.NpNDArray | ext.PdDataFrame,
+            *args: t.Any,
+            **kwargs: t.Any,
         ) -> ext.NpNDArray:
             # TODO: set inner_max_num_threads and n_jobs param here base on strategy env vars
             with parallel_backend(backend="loky"):
-                return getattr(self.model, method_name)(input_data)
+                return getattr(self.model, method_name)(input_data, *args, **kwargs)
 
         SklearnRunnable.add_method(
             _run,

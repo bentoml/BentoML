@@ -340,7 +340,7 @@ the Bento archive directory.
 * ``apis`` directory contains all API definitions. This directory contains API specs
   that are generated from the ``bentoml.Service`` object's API definitions.
 
-* ``env`` directory contains all environment-related files which will help boostrap the Bento 🍱. This directory contains files that are generated
+* ``env`` directory contains all environment-related files which will help bootstrap the Bento 🍱. This directory contains files that are generated
   from :ref:`concepts/bento:Bento Build Options` that is specified under ``bentofile.yaml``.
 
 .. note::

@@ -265,7 +265,7 @@ Use model Runners
 You use Runners to run model inference in BentoML Services. The Runner abstraction gives the BentoServer
 more flexibility in scheduling inference computations, dynamically batching inference calls, and utilizing available hardware resources.
 
-To create a model Runner from a saved model, uese the ``to_runner`` API:
+To create a model Runner from a saved model, use the ``to_runner`` API:
 
 .. code:: python
 
@@ -353,7 +353,7 @@ Batching
 --------
 
 For model inference calls that supports handling a batched input, it is recommended to
-enable batching for the target model signature. By doing this, ``runner#run`` calls
+enable batching for the target model signature. By doing this, ``runner.run`` calls
 made from multiple Service workers can be dynamically merged to a larger batch and run
 as one inference call in the Runner worker. Here's an example:
 

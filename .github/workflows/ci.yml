@@ -41,6 +41,8 @@ jobs:
           cache: true
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
       - name: Install dependencies
         run: |
           pdm venv create --with-pip --force
@@ -93,6 +95,8 @@ jobs:
         with:
           python-version: '3.8'
           enable-pep582: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
       - name: Install dependencies
         run: |
           pdm venv create --with-pip
@@ -136,6 +140,8 @@ jobs:
           cache: true
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
       - name: Install dependencies
         run: pdm sync -d -G io -G testing -G monitor-otlp
       - name: Run the monitoring tests
@@ -180,6 +186,8 @@ jobs:
           cache: true
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
       - name: Install dependencies
         run: |
           pdm venv create --with-pip --force
@@ -213,6 +221,8 @@ jobs:
           cache: true
           python-version: '3.11'
           enable-pep582: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
       - name: Download e2e coverage
         uses: actions/download-artifact@v3
         with:

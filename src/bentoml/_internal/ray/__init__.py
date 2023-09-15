@@ -4,7 +4,14 @@ import typing as t
 from functools import partial
 
 import requests
-from ray.serve._private.http_util import BufferedASGISender
+
+from bentoml._internal.utils import pkg
+
+if pkg.pkg_version_info("ray")[1] >= 5:
+    from ray.serve._private.http_util import BufferedASGISender as ASGIHTTPSender
+else:
+    from ray.serve._private.http_util import ASGIHTTPSender
+# from ray.serve._private.http_util import BufferedASGISender
 
 import bentoml
 from bentoml import Tag
@@ -43,17 +50,13 @@ def _get_runner_deployment(
                     inp_batch_dim = method.config.batch_dim[0]
                     out_batch_dim = method.config.batch_dim[1]
                     ray_batch_args = (
-                        batching_config[method.name]
-                        if method.name in batching_config
-                        else {}
+                        batching_config[method.name] if method.name in batching_config else {}
                     )
 
                     @serve.batch(**ray_batch_args)
                     async def _func(self, *args, **kwargs):
                         params = Params(*args, **kwargs).map(
-                            partial(
-                                AutoContainer.batches_to_batch, batch_dim=inp_batch_dim
-                            )
+                            partial(AutoContainer.batches_to_batch, batch_dim=inp_batch_dim)
                         )
                         run_params = params.map(lambda arg: arg[0])
                         indices = next(iter(params.items()))[1][1]
@@ -68,9 +71,7 @@ def _get_runner_deployment(
                 else:
 
                     async def _func(self, *args, **kwargs):
-                        return await getattr(_runner, method.name).async_run(
-                            *args, **kwargs
-                        )
+                        return await getattr(_runner, method.name).async_run(*args, **kwargs)
 
                     setattr(RunnerDeployment, method.name, _func)
 
@@ -94,7 +95,7 @@ def _get_service_deployment(svc: bentoml.Service, **kwargs) -> Deployment:
                 runner._set_handle(RayRunnerHandle, runner_deployments[runner.name])
 
         async def __call__(self, request: requests.Request):
-            sender = BufferedASGISender()
+            sender = ASGIHTTPSender()
             await self.app(request.scope, receive=request.receive, send=sender)
             return sender.build_asgi_response()
 
@@ -206,6 +207,4 @@ def deployment(
         svc, runners_deployment_config_map, enable_batching, batching_config
     )
 
-    return _get_service_deployment(svc, **service_deployment_config).bind(
-        **runner_deployments
-    )
+    return _get_service_deployment(svc, **service_deployment_config).bind(**runner_deployments)

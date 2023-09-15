@@ -4,7 +4,7 @@ import typing as t
 from functools import partial
 
 import requests
-from ray.serve._private.http_util import ASGIHTTPSender
+from ray.serve._private.http_util import BufferedASGISender
 
 import bentoml
 from bentoml import Tag
@@ -94,7 +94,7 @@ def _get_service_deployment(svc: bentoml.Service, **kwargs) -> Deployment:
                 runner._set_handle(RayRunnerHandle, runner_deployments[runner.name])
 
         async def __call__(self, request: requests.Request):
-            sender = ASGIHTTPSender()
+            sender = BufferedASGISender()
             await self.app(request.scope, receive=request.receive, send=sender)
             return sender.build_asgi_response()
 

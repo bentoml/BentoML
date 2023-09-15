@@ -11,7 +11,6 @@ if pkg.pkg_version_info("ray")[:2] >= (2, 5):
     from ray.serve._private.http_util import BufferedASGISender as ASGIHTTPSender
 else:
     from ray.serve._private.http_util import ASGIHTTPSender
-# from ray.serve._private.http_util import BufferedASGISender
 
 import bentoml
 from bentoml import Tag

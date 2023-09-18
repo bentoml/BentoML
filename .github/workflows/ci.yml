@@ -124,7 +124,7 @@ jobs:
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         if: ${{ matrix.os == 'ubuntu-latest' }}
       - name: Set up Docker Buildx
         if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -168,7 +168,7 @@ jobs:
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         if: ${{ matrix.os == 'ubuntu-latest' }}
       - name: Set up Docker Buildx
         if: ${{ matrix.os == 'ubuntu-latest' }}

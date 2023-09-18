@@ -129,7 +129,7 @@ jobs:
       - name: Set up Docker Buildx
         if: ${{ matrix.os == 'ubuntu-latest' }}
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Set up PDM
         uses: pdm-project/setup-pdm@v3
         with:
@@ -173,7 +173,7 @@ jobs:
       - name: Set up Docker Buildx
         if: ${{ matrix.os == 'ubuntu-latest' }}
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Set up PDM
         uses: pdm-project/setup-pdm@v3
         with:

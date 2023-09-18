@@ -133,8 +133,6 @@ class ClusterSchema(ResourceSchema):
 @attr.define
 class ClusterConfigSchema:
     default_deployment_kube_namespace: str
-    ingress_ip: str
-    aws: str
 
 
 @attr.define

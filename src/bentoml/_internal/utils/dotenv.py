@@ -25,10 +25,10 @@ for original implementation
 """
 from __future__ import annotations
 
-import logging
 import os
 import re
 import typing as t
+import logging
 
 logger = logging.getLogger(__name__)
 

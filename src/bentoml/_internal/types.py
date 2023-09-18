@@ -11,8 +11,56 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 from types import TracebackType
-from typing import get_args
-from typing import get_origin
+from typing import TYPE_CHECKING
+
+if sys.version_info < (3, 8):
+    import collections
+
+    GenericClass = type(t.List)
+
+    BUILTINS_MAPPING = {
+        t.List: list,
+        t.Set: set,
+        t.Dict: dict,
+        t.Tuple: tuple,
+        t.ByteString: bytes,  # https://docs.python.org/3/library/typing.html#typing.ByteString
+        t.Callable: collections.abc.Callable,
+        t.Sequence: collections.abc.Sequence,
+        type(None): None,
+    }
+
+    def _normalize_aliases(type_: t.Type) -> t.Type:
+        if isinstance(type_, t.TypeVar):
+            return type_
+
+        if type_ in BUILTINS_MAPPING:
+            return BUILTINS_MAPPING[type_]
+        return type_
+
+    def get_args(type_: t.Type) -> tuple[t.Type]:
+        if isinstance(type_, GenericClass) and not type_._special:
+            res = type_.__args__
+            if get_origin(type_) is collections.abc.Callable and res[0] is not Ellipsis:
+                res = (list(res[:-1]), res[-1])
+        else:
+            res = ()
+
+        return res
+
+    def get_origin(type_: t.Type) -> t.Type:
+        if isinstance(type_, GenericClass) and not type_._special:
+            ori = type_.__origin__
+        elif hasattr(type_, "_special") and type_._special:
+            ori = type_
+        elif type_ is t.Generic:
+            ori = t.Generic
+        else:
+            ori = None
+        return ori
+
+else:
+    from typing import get_args
+    from typing import get_origin
 
 __all__ = [
     "MetadataType",
@@ -33,6 +81,11 @@ HEADER_CHARSET = "latin1"
 
 JSON_CHARSET = "utf-8"
 
+if TYPE_CHECKING:
+    PathType: t.TypeAlias = str | os.PathLike[str]
+else:
+    PathType = t.Union[str, os.PathLike]
+
 MetadataType: t.TypeAlias = t.Union[
     str,
     bytes,
@@ -49,16 +102,8 @@ MetadataType: t.TypeAlias = t.Union[
     t.Dict[str, "MetadataType"],
 ]
 
-
-class ModelSignatureDict(t.TypedDict, total=False):
-    batchable: bool
-    batch_dim: t.Union[t.Tuple[int, int], int]
-    input_spec: t.Optional[t.Union[t.Tuple[AnyType], AnyType]]
-    output_spec: t.Optional[AnyType]
-
-
-if t.TYPE_CHECKING:
-    PathType: t.TypeAlias = str | os.PathLike[str]
+if TYPE_CHECKING:
+    MetadataDict = t.Dict[str, MetadataType]
     JSONSerializable: t.TypeAlias = (
         str
         | int
@@ -68,12 +113,19 @@ if t.TYPE_CHECKING:
         | list["JSONSerializable"]
         | dict[str, "JSONSerializable"]
     )
-    MetadataDict = t.Dict[str, MetadataType]
+
+    class ModelSignatureDict(t.TypedDict, total=False):
+        batchable: bool
+        batch_dim: tuple[int, int] | int | None
+        input_spec: tuple[AnyType] | AnyType | None
+        output_spec: AnyType | None
+
 else:
-    PathType = t.Union[str, os.PathLike]
-    JSONSerializable = t.NewType("JSONSerializable", object)
     # NOTE: remove this when registering hook for MetadataType
     MetadataDict = dict
+    ModelSignatureDict = dict
+
+    JSONSerializable = t.NewType("JSONSerializable", object)
 
 LifecycleHook = t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]
 
@@ -203,14 +255,8 @@ class LazyType(t.Generic[T]):
         except ValueError:
             return False
 
-    def issubclass(self, klass: type) -> bool:
-        try:
-            return issubclass(klass, self.get_class(import_module=False))
-        except ValueError:
-            return False
 
-
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from types import UnionType
 
     AnyType: t.TypeAlias = t.Type[t.Any] | UnionType | LazyType[t.Any]

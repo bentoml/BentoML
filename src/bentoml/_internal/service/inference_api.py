@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import inspect
 import re
 import typing as t
+import inspect
+from typing import Optional
 
 import yaml
 
-from ...exceptions import InvalidArgument
-from ..context import ServiceContext as Context
-from ..io_descriptors import IODescriptor
-from ..io_descriptors.base import IOType
 from ..types import is_compatible_type
+from ..context import ServiceContext as Context
+from ...exceptions import InvalidArgument
+from ..io_descriptors import IODescriptor
 
 RESERVED_API_NAMES = [
     "index",
@@ -23,15 +23,15 @@ RESERVED_API_NAMES = [
 ]
 
 
-class InferenceAPI(t.Generic[IOType]):
+class InferenceAPI:
     def __init__(
         self,
         user_defined_callback: t.Callable[..., t.Any] | None,
-        input_descriptor: IODescriptor[IOType],
-        output_descriptor: IODescriptor[IOType],
-        name: str | None,
-        doc: str | None = None,
-        route: str | None = None,
+        input_descriptor: IODescriptor[t.Any],
+        output_descriptor: IODescriptor[t.Any],
+        name: Optional[str],
+        doc: Optional[str] = None,
+        route: Optional[str] = None,
     ):
         if user_defined_callback is not None:
             # Use user_defined_callback function variable if name not specified
@@ -104,11 +104,11 @@ class InferenceAPI(t.Generic[IOType]):
                 if (
                     isinstance(annotation, t.Type)
                     and annotation != inspect.Signature.empty
-                    and not is_compatible_type(input_type, annotation)
                 ):
-                    raise TypeError(
-                        f"Expected type of argument '{first_arg}' to be '{input_type}', got '{sig.parameters[first_arg].annotation}'"
-                    )
+                    if not is_compatible_type(input_type, annotation):
+                        raise TypeError(
+                            f"Expected type of argument '{first_arg}' to be '{input_type}', got '{sig.parameters[first_arg].annotation}'"
+                        )
 
                 if len(sig.parameters) > 2:
                     raise ValueError(
@@ -122,11 +122,11 @@ class InferenceAPI(t.Generic[IOType]):
                     if (
                         isinstance(annotation, t.Type)
                         and annotation != inspect.Signature.empty
-                        and not annotation == Context
                     ):
-                        raise TypeError(
-                            f"Expected type of argument '{second_arg}' to be 'bentoml.Context', got '{annotation}'"
-                        )
+                        if not annotation == Context:
+                            raise TypeError(
+                                f"Expected type of argument '{second_arg}' to be '{input_type}', got '{sig.parameters[second_arg].annotation}'"
+                            )
 
         if user_defined_callback is not None:
             self.func = user_defined_callback
@@ -177,7 +177,7 @@ class InferenceAPI(t.Generic[IOType]):
             )
 
 
-def _InferenceAPI_dumper(dumper: yaml.Dumper, api: InferenceAPI[t.Any]) -> yaml.Node:
+def _InferenceAPI_dumper(dumper: yaml.Dumper, api: InferenceAPI) -> yaml.Node:
     return dumper.represent_dict(
         {
             "route": api.route,

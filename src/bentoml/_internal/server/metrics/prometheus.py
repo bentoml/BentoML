@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import logging
 import os
 import sys
 import typing as t
-from functools import partial
+import logging
 from typing import TYPE_CHECKING
+from functools import partial
 
 if TYPE_CHECKING:
     from ... import external_typing as ext
@@ -32,7 +32,7 @@ class PrometheusClient:
            is called. This has to do with ``prometheus_client`` relies on ``PROMEHEUS_MULTIPROC_DIR``, which
            will be set by this client.
 
-        For API documentation, refer to https://docs.bentoml.com/en/latest/reference/metrics.html.
+        For API documentation, refer to https://docs.bentoml.org/en/latest/reference/metrics.html.
         """
         if multiproc:
             assert multiproc_dir is not None, "multiproc_dir must be provided"
@@ -60,11 +60,11 @@ class PrometheusClient:
 
         # step 2:
         import prometheus_client
-        import prometheus_client.exposition
+        import prometheus_client.parser
         import prometheus_client.metrics
+        import prometheus_client.exposition
         import prometheus_client.metrics_core
         import prometheus_client.multiprocess
-        import prometheus_client.parser
 
         self._imported = True
         return prometheus_client

@@ -70,12 +70,12 @@ runners:
   resources: ~
   workers_per_resource: 1
   traffic:
-    timeout: 900
+    timeout: 300
     max_concurrency: ~
   batching:
     enabled: true
     max_batch_size: 100
-    max_latency_ms: 60000
+    max_latency_ms: 10000
   logging:
     access:
       enabled: true

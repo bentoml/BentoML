@@ -4,16 +4,16 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import keras
-import keras.layers
-import keras.optimizers
 import numpy as np
 import tensorflow as tf
+import keras.layers
+import keras.optimizers
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelConfiguration as Config
 from . import FrameworkTestModelInput as Input
+from . import FrameworkTestModelConfiguration as Config
 
 if TYPE_CHECKING:
     from bentoml._internal import external_typing as ext
@@ -56,7 +56,7 @@ def KerasSequentialModel() -> keras.models.Model:
             ),
         )
     )
-    opt = keras.optimizers.Adam(0.002, 0.5)
+    opt = keras.optimizers.adam_v2.Adam(0.002, 0.5)
     net.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
     return net
 

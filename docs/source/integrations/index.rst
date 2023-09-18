@@ -55,4 +55,3 @@ Below is a list of integration guides with various tools within the MLOps ecosys
     mlflow
     spark
     triton
-    ray

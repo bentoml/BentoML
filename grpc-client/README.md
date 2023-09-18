@@ -1,12 +1,12 @@
 # gRPC client
 
-Contains examples for gRPC clients using for [Serving with gRPC](https://docs.bentoml.com/en/latest/guides/grpc.html)
+Contains examples for gRPC clients using for [Serving with gRPC](https://docs.bentoml.org/en/latest/guides/grpc.html)
 
 We will use [`bazel`](bazel.build) to build and run these examples.
 
 # Instruction
 
-All clients are built to run with [quickstart image](https://docs.bentoml.com/en/latest/tutorial.html#setup-for-the-tutorial):
+All clients are built to run with [quickstart image](https://docs.bentoml.org/en/latest/tutorial.html#setup-for-the-tutorial):
 
 ```bash
 docker run -it --rm -p 8888:8888 -p 3000:3000 -p 3001:3001 bentoml/quickstart:latest serve-grpc --production --enable-reflection
@@ -24,19 +24,18 @@ To build all rules for better caching:
 bazel build ...
 ```
 
-The following table contains commands to run clients:
+The following table contains command to run clients:
 
-| Language           | Command                                  |
-| ------------------ | ---------------------------------------- |
-| [Python](./python) | `python client.py`                       |
-| [C++](./cpp)       | `bazel run //grpc-client/cpp:client`     |
-| [Go](./go)         | `bazel run //grpc-client/go:client`      |
-| [Java](./java)     | `bazel run //grpc-client/java:client`    |
-| [Kotlin](./kotlin) | `bazel run //grpc-client/kotlin:client`  |
-| [Swift](./swift)   | `./swift/client`                         |
-| [Node.js](./node)  | `pushd node && yarn client && popd`      |
-| [PHP](./php)       | See [PHP instruction](./php/README.md)   |
-| [Rust](./rust)     | See [Rust instruction](./rust/README.md) |
+| Language           | Command                                 |
+| ------------------ | --------------------------------------- |
+| [Python](./python) | `python client.py`                      |
+| [C++](./cpp)       | `bazel run //grpc-client/cpp:client`    |
+| [Go](./go)         | `bazel run //grpc-client/go:client`     |
+| [Java](./java)     | `bazel run //grpc-client/java:client`   |
+| [Kotlin](./kotlin) | `bazel run //grpc-client/kotlin:client` |
+| [Swift](./swift)   | `./swift/client`                        |
+| [Node.js](./node)  | `pushd node && yarn client && popd`     |
+| [PHP](./php)       | See [PHP instruction](./php/README.md)  |
 
 > For Swift client, make sure to compile gRPC Swift `protoc` beforehand to generate the client stubs.
 

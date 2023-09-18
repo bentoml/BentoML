@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from types import ModuleType
 from typing import TYPE_CHECKING
 
@@ -9,12 +9,12 @@ import numpy as np
 
 import bentoml
 from bentoml import Tag
+from bentoml.exceptions import NotFound
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
-from bentoml.exceptions import NotFound
 
-from ..models.model import ModelContext
 from ..utils.pkg import get_pkg_version
+from ..models.model import ModelContext
 
 if TYPE_CHECKING:
     from bentoml.types import ModelSignature

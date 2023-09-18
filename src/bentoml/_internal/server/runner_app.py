@@ -4,7 +4,6 @@ import functools
 import json
 import logging
 import pickle
-import traceback
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -26,6 +25,7 @@ from ..runner.utils import payload_paramss_to_batch_params
 from ..server.base_app import BaseAppFactory
 from ..types import LazyType
 from ..utils.metrics import exponential_buckets
+from ..utils.metrics import metric_name
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class RunnerAppFactory(BaseAppFactory):
             return ServiceUnavailable("process is overloaded")
 
         for method in runner.runner_methods:
-            max_batch_size = method.max_batch_size if method.config.batchable else -1
+            max_batch_size = method.max_batch_size if method.config.batchable else 1
             self.dispatchers[method.name] = CorkDispatcher(
                 max_latency_in_ms=method.max_latency_ms,
                 max_batch_size=max_batch_size,
@@ -81,6 +81,21 @@ class RunnerAppFactory(BaseAppFactory):
 
     def _init_metrics_wrappers(self):
         metrics_client = BentoMLContainer.metrics_client.get()
+
+        self.legacy_adaptive_batch_size_hist_map = {
+            method.name: metrics_client.Histogram(
+                name=metric_name(
+                    self.runner.name,
+                    self.worker_index,
+                    method.name,
+                    "adaptive_batch_size",
+                ),
+                documentation="Legacy runner adaptive batch size",
+                labelnames=[],
+                buckets=exponential_buckets(1, 2, method.max_batch_size),
+            )
+            for method in self.runner.runner_methods
+        }
 
         max_max_batch_size = max(
             method.max_batch_size for method in self.runner.runner_methods
@@ -134,13 +149,22 @@ class RunnerAppFactory(BaseAppFactory):
         routes = super().routes
         for method in self.runner.runner_methods:
             path = "/" if method.name == "__call__" else "/" + method.name
-            routes.append(
-                Route(
-                    path=path,
-                    endpoint=self._mk_request_handler(method, method.config.batchable),
-                    methods=["POST"],
+            if method.config.batchable:
+                routes.append(
+                    Route(
+                        path=path,
+                        endpoint=self._mk_request_handler(runner_method=method),
+                        methods=["POST"],
+                    )
                 )
-            )
+            else:
+                routes.append(
+                    Route(
+                        path=path,
+                        endpoint=self.async_run(runner_method=method),
+                        methods=["POST"],
+                    )
+                )
         return routes
 
     @property
@@ -191,104 +215,59 @@ class RunnerAppFactory(BaseAppFactory):
     def _mk_request_handler(
         self,
         runner_method: RunnerMethod[t.Any, t.Any, t.Any],
-        batching: bool = True,
     ) -> t.Callable[[Request], t.Coroutine[None, None, Response]]:
         from starlette.responses import Response
 
         server_str = f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}"
 
-        if runner_method.config.is_stream:
-            # Streaming does not have batching implemented yet
-            async def infer_stream(
-                paramss: t.Sequence[Params[t.Any]],
-            ) -> t.Sequence[t.AsyncGenerator[Payload, None]]:
-                async def inner():
-                    # This is a workaround to allow infer stream to return a iterable of
-                    # async generator, to align with how non stream inference works
-                    params = paramss[0].map(AutoContainer.from_payload)
-                    try:
-                        ret = runner_method.async_stream(*params.args, **params.kwargs)
-                    except Exception:
-                        traceback.print_exc()
-                        raise
-                    async for data in ret:
-                        payload = AutoContainer.to_payload(data, 0)
-                        yield payload
+        async def infer_batch(
+            params_list: t.Sequence[Params[t.Any]],
+        ) -> list[Payload] | list[tuple[Payload, ...]]:
+            self.legacy_adaptive_batch_size_hist_map[runner_method.name].observe(  # type: ignore
+                len(params_list)
+            )
+            self.adaptive_batch_size_hist.labels(  # type: ignore
+                runner_name=self.runner.name,
+                worker_index=self.worker_index,
+                method_name=runner_method.name,
+                service_version=component_context.bento_version,
+                service_name=component_context.bento_name,
+            ).observe(len(params_list))
 
-                return (inner(),)
+            if not params_list:
+                return []
 
-            infer = self.dispatchers[runner_method.name](infer_stream)
-        else:
-            if batching:
+            input_batch_dim, output_batch_dim = runner_method.config.batch_dim
 
-                async def infer_batch(
-                    params_list: t.Sequence[Params[t.Any]],
-                ) -> list[Payload] | list[tuple[Payload, ...]]:
-                    self.adaptive_batch_size_hist.labels(  # type: ignore
-                        runner_name=self.runner.name,
-                        worker_index=self.worker_index,
-                        method_name=runner_method.name,
-                        service_version=component_context.bento_version,
-                        service_name=component_context.bento_name,
-                    ).observe(len(params_list))
+            batched_params, indices = payload_paramss_to_batch_params(
+                params_list, input_batch_dim
+            )
 
-                    if not params_list:
-                        return []
+            batch_ret = await runner_method.async_run(
+                *batched_params.args, **batched_params.kwargs
+            )
 
-                    input_batch_dim, output_batch_dim = runner_method.config.batch_dim
-
-                    batched_params, indices = payload_paramss_to_batch_params(
-                        params_list, input_batch_dim
+            # multiple output branch
+            if LazyType["tuple[t.Any, ...]"](tuple).isinstance(batch_ret):
+                output_num = len(batch_ret)
+                payloadss = tuple(
+                    AutoContainer.batch_to_payloads(
+                        batch_ret[idx], indices, batch_dim=output_batch_dim
                     )
+                    for idx in range(output_num)
+                )
+                ret = list(zip(*payloadss))
+                return ret
 
-                    try:
-                        batch_ret = await runner_method.async_run(
-                            *batched_params.args, **batched_params.kwargs
-                        )
-                    except Exception:
-                        traceback.print_exc()
-                        raise
+            # single output branch
+            payloads = AutoContainer.batch_to_payloads(
+                batch_ret,
+                indices,
+                batch_dim=output_batch_dim,
+            )
+            return payloads
 
-                    # multiple output branch
-                    if LazyType["tuple[t.Any, ...]"](tuple).isinstance(batch_ret):
-                        output_num = len(batch_ret)
-                        payloadss = tuple(
-                            AutoContainer.batch_to_payloads(
-                                batch_ret[idx], indices, batch_dim=output_batch_dim
-                            )
-                            for idx in range(output_num)
-                        )
-                        ret = list(zip(*payloadss))
-                        return ret
-
-                    # single output branch
-                    payloads = AutoContainer.batch_to_payloads(
-                        batch_ret,
-                        indices,
-                        batch_dim=output_batch_dim,
-                    )
-                    return payloads
-
-                infer = self.dispatchers[runner_method.name](infer_batch)
-            else:
-
-                async def infer_single(paramss: t.Sequence[Params[t.Any]]):
-                    assert len(paramss) == 1
-
-                    params = paramss[0].map(AutoContainer.from_payload)
-
-                    try:
-                        ret = await runner_method.async_run(
-                            *params.args, **params.kwargs
-                        )
-                    except Exception:
-                        traceback.print_exc()
-                        raise
-
-                    payload = AutoContainer.to_payload(ret, 0)
-                    return (payload,)
-
-                infer = self.dispatchers[runner_method.name](infer_single)
+        infer = self.dispatchers[runner_method.name](infer_batch)
 
         async def _request_handler(request: Request) -> Response:
             assert self._is_ready
@@ -315,7 +294,6 @@ class RunnerAppFactory(BaseAppFactory):
                         "Server": server_str,
                     },
                 )
-
             if isinstance(payload, ServiceUnavailable):
                 return Response(
                     "Service Busy",
@@ -345,32 +323,59 @@ class RunnerAppFactory(BaseAppFactory):
                         "Server": server_str,
                     },
                 )
-            from starlette.responses import StreamingResponse
-
-            if runner_method.config.is_stream:
-
-                async def streamer() -> t.AsyncGenerator[bytes, None]:
-                    """
-                    Extract Data from a AsyncGenerator[Payload, None]
-                    """
-                    async for p in payload:
-                        yield pickle.dumps(p)
-
-                return StreamingResponse(
-                    streamer(),
-                    media_type="text/plain",
-                    headers={
-                        PAYLOAD_META_HEADER: json.dumps({}),
-                        "Content-Type": "application/vnd.bentoml.stream_outputs",
-                        "Server": server_str,
-                    },
-                )
-
             raise BentoMLException(
                 f"Unexpected payload type: {type(payload)}, {payload}"
             )
 
         return _request_handler
+
+    def async_run(
+        self,
+        runner_method: RunnerMethod[t.Any, t.Any, t.Any],
+    ) -> t.Callable[[Request], t.Coroutine[None, None, Response]]:
+        from starlette.responses import Response
+
+        async def _run(request: Request) -> Response:
+            assert self._is_ready
+
+            arg_num = int(request.headers["args-number"])
+            r_: bytes = await request.body()
+
+            if arg_num == 1:
+                params: Params[t.Any] = _deserialize_single_param(request, r_)
+            else:
+                params: Params[t.Any] = pickle.loads(r_)
+
+            params = params.map(AutoContainer.from_payload)
+
+            try:
+                ret = await runner_method.async_run(*params.args, **params.kwargs)
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.error(
+                    "Exception on runner '%s' method '%s'",
+                    runner_method.runner.name,
+                    runner_method.name,
+                    exc_info=exc,
+                )
+                return Response(
+                    status_code=500,
+                    headers={
+                        "Content-Type": "text/plain",
+                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
+                    },
+                )
+            else:
+                payload = AutoContainer.to_payload(ret, 0)
+                return Response(
+                    payload.data,
+                    headers={
+                        PAYLOAD_META_HEADER: json.dumps(payload.meta),
+                        "Content-Type": f"application/vnd.bentoml.{payload.container}",
+                        "Server": f"BentoML-Runner/{self.runner.name}/{runner_method.name}/{self.worker_index}",
+                    },
+                )
+
+        return _run
 
 
 def _deserialize_single_param(request: Request, bs: bytes) -> Params[t.Any]:

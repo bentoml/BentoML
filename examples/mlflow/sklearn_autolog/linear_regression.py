@@ -1,9 +1,9 @@
 from pprint import pprint
 
-import mlflow
 import numpy as np
-from sklearn.linear_model import LinearRegression
+import mlflow
 from utils import fetch_logged_data
+from sklearn.linear_model import LinearRegression
 
 import bentoml
 

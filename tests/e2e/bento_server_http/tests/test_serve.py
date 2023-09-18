@@ -133,10 +133,6 @@ async def test_serve_with_api_max_concurrency(bentoml_home: str):
     assert "Too many requests" in str(results[-1]), "unexpected error message"
 
 
-@pytest.mark.skipif(
-    os.getenv("GITHUB_ACTIONS") is not None and sys.platform == "win32",
-    reason="Windows runner doesn't have enough cores to run this test",
-)
 @pytest.mark.asyncio
 async def test_serve_with_lifecycle_hooks(bentoml_home: str, tmp_path: Path):
     server = bentoml.HTTPServer("service.py:svc", port=12351, api_workers=4)

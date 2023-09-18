@@ -1,6 +1,6 @@
 # Developing BentoML Applications on Kubeflow
 
-Starting with the release of Kubeflow 1.7, BentoML provides a native integration with Kubeflow. This integration allows you to package models trained in Kubeflow Notebooks or Pipelines as [Bentos](https://docs.bentoml.com/en/latest/concepts/bento.html), and deploy them as microservices in the Kubernetes cluster through BentoML's cloud native components and custom resource definitions (CRDs). This documentation provides a comprehensive guide on how to use BentoML and Kubeflow together to streamline the process of deploying models at scale.
+Starting with the release of Kubeflow 1.7, BentoML provides a native integration with Kubeflow. This integration allows you to package models trained in Kubeflow Notebooks or Pipelines as [Bentos](https://docs.bentoml.org/en/latest/concepts/bento.html), and deploy them as microservices in the Kubernetes cluster through BentoML's cloud native components and custom resource definitions (CRDs). This documentation provides a comprehensive guide on how to use BentoML and Kubeflow together to streamline the process of deploying models at scale.
 
 In this example, we will train three fraud detection models using the Kubeflow notebook and the [Kaggle IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/c/ieee-fraud-detection). We will then create a BentoML service that can simultaneously invoke all three models and return a decision on whether a transaction is fraudulent and build it into a Bento. We will showcase two deployment workflows using BentoML's Kubernetes operators: deploying directly from the Bento, and deploying from an OCI image built from the Bento.
 
@@ -151,7 +151,7 @@ np.argmax(result, axis=1)
 
 After the models are built and scored, let's create the service definition. You can find the service definition in the `service.py` module in this example. Let's breakdown the `service.py` module and explain what each section does.
 
-First, we will create a list of preprocessors and runners from the three models we saved earlier. Runners are abstractions of the model inferences that can be scaled independently. See [Using Runners](https://docs.bentoml.com/en/latest/concepts/runner.html) for more details.
+First, we will create a list of preprocessors and runners from the three models we saved earlier. Runners are abstractions of the model inferences that can be scaled independently. See [Using Runners](https://docs.bentoml.org/en/latest/concepts/runner.html) for more details.
 
 ```python
 fraud_detection_preprocessors = []
@@ -194,11 +194,11 @@ async def is_fraud(input_df: pd.DataFrame):
     return any(results)
 ```
 
-For more about service definitions, please see [Service and APIs](https://docs.bentoml.com/en/latest/concepts/service.html).
+For more about service definitions, please see [Service and APIs](https://docs.bentoml.org/en/latest/concepts/service.html).
 
 ## Build Service
 
-Building the service and models into a bento allows it to be distributed among collaborators, containerized into a OCI image, and deployed in the Kubernetes cluster. To build a service into a bento, we first need to define the `bentofile.yaml` file. See [Building Bentos](https://docs.bentoml.com/en/latest/concepts/bento.html) for more options.
+Building the service and models into a bento allows it to be distributed among collaborators, containerized into a OCI image, and deployed in the Kubernetes cluster. To build a service into a bento, we first need to define the `bentofile.yaml` file. See [Building Bentos](https://docs.bentoml.org/en/latest/concepts/bento.html) for more options.
 
 ```yaml
 service: "service:svc"
@@ -227,9 +227,9 @@ bentoml serve-http
 
 BentoML offers three custom resource definitions (CRDs) in the Kubernetes cluster.
 
-- [BentoRequest](https://docs.bentoml.com/projects/yatai/en/latest/concepts/bentorequest_crd.html) - Describes the metadata needed for building the container image of the Bento, such as the download URL. Created by the user.
-- [Bento](https://docs.bentoml.com/projects/yatai/en/latest/concepts/bento_crd.html) - Describes the metadata for the Bento such as the address of the image and the runners. Created by users or by the `yatai-image-builder` operator for reconsiliating `BentoRequest` resources.
-- [BentoDeployment](https://docs.bentoml.com/projects/yatai/en/latest/concepts/bentodeployment_crd.html) - Describes the metadata of the deployment such as resources and autoscaling behaviors. Reconciled by the `yatai-deployment` operator to create Kubernetes deployments of API Servers and Runners.
+- [BentoRequest](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bentorequest_crd.html) - Describes the metadata needed for building the container image of the Bento, such as the download URL. Created by the user.
+- [Bento](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bento_crd.html) - Describes the metadata for the Bento such as the address of the image and the runners. Created by users or by the `yatai-image-builder` operator for reconsiliating `BentoRequest` resources.
+- [BentoDeployment](https://docs.bentoml.org/projects/yatai/en/latest/concepts/bentodeployment_crd.html) - Describes the metadata of the deployment such as resources and autoscaling behaviors. Reconciled by the `yatai-deployment` operator to create Kubernetes deployments of API Servers and Runners.
 
 ![image](https://raw.githubusercontent.com/bentoml/BentoML/main/docs/source/_static/img/kubeflow-crds.png)
 

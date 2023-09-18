@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import logging
 import os
 import typing as t
+import logging
 from types import ModuleType
 from typing import TYPE_CHECKING
 
@@ -10,21 +10,21 @@ import attr
 
 import bentoml
 from bentoml import Tag
-from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import MissingDependencyException
-from bentoml.exceptions import NotFound
 from bentoml.models import ModelContext
 from bentoml.models import ModelOptions
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import MissingDependencyException
 
-from ..utils.pkg import PackageNotFoundError
 from ..utils.pkg import get_pkg_version
+from ..utils.pkg import PackageNotFoundError
 
 if TYPE_CHECKING:
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
-    from .utils.onnx import ONNXArgCastedType
     from .utils.onnx import ONNXArgType
+    from .utils.onnx import ONNXArgCastedType
 
     ProvidersType = list[str | tuple[str, dict[str, t.Any]]]
 

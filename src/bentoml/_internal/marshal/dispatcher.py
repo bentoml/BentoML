@@ -1,25 +1,25 @@
 from __future__ import annotations
 
-import asyncio
-import collections
-import functools
-import logging
 import time
-import traceback
 import typing as t
-from functools import cached_property
+import asyncio
+import logging
+import functools
+import traceback
+import collections
 
 import attr
 import numpy as np
 
+from ..utils import cached_property
 from ..utils.alg import TokenBucket
 
 logger = logging.getLogger(__name__)
 
 
 if t.TYPE_CHECKING:
-    from ..runner.container import Payload
     from ..runner.utils import Params
+    from ..runner.container import Payload
 
 
 class NonBlockSema:
@@ -225,29 +225,7 @@ class CorkDispatcher:
                     await asyncio.sleep(self.tick_interval)
                     continue
 
-                if self.max_batch_size == -1:  # batching is disabled
-                    n_call_out = 1
-                    batch_size = self._queue[0].data.sample.batch_size
-                else:
-                    n_call_out = 0
-                    batch_size = 0
-                    try:
-                        for input_info in self._queue:
-                            if (
-                                batch_size + input_info.data.sample.batch_size
-                                < self.max_batch_size
-                            ):
-                                n_call_out += 1
-                                batch_size += input_info.data.sample.batch_size
-                            else:
-                                break
-                    except Exception as e:
-                        n_call_out = min(n, self.max_batch_size)
-                        logger.error(
-                            "error in batch-size aware batching, falling back to regular batching method",
-                            exc_info=e,
-                        )
-
+                n_call_out = min(n, batch_size)
                 req_count += 1
                 # call
                 self._sema.acquire()
@@ -256,6 +234,8 @@ class CorkDispatcher:
                     # fake wait as 0 for training requests
                     info.enqueue_time = now
                 self._loop.create_task(self.outbound_call(inputs_info))
+        except asyncio.CancelledError:
+            raise
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 
@@ -289,6 +269,8 @@ class CorkDispatcher:
                     "BentoML has detected that a service has a max latency that is likely too low for serving. If many 503 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
                 )
             logger.debug("Dispatcher optimizer training complete.")
+        except asyncio.CancelledError:
+            raise
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 
@@ -325,37 +307,18 @@ class CorkDispatcher:
                     await asyncio.sleep(self.tick_interval)
                     continue
 
-                if self.max_batch_size == -1:  # batching is disabled
-                    n_call_out = 1
-                    batch_size = self._queue[0].data.sample.batch_size
-                else:
-                    n_call_out = 0
-                    batch_size = 0
-                    try:
-                        for input_info in self._queue:
-                            if (
-                                batch_size + input_info.data.sample.batch_size
-                                < self.max_batch_size
-                            ):
-                                n_call_out += 1
-                                batch_size += input_info.data.sample.batch_size
-                            else:
-                                break
-                    except Exception as e:
-                        n_call_out = min(n, self.max_batch_size)
-                        logger.error(
-                            "error in batch-size aware batching, falling back to regular batching method",
-                            exc_info=e,
-                        )
+                n_call_out = min(self.max_batch_size, n)
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
                 self._loop.create_task(self.outbound_call(inputs_info))
+            except asyncio.CancelledError:
+                raise
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)
 
     async def inbound_call(self, data: Params[Payload]):
-        if self.max_batch_size > 0 and data.sample.batch_size > self.max_batch_size:
+        if data.sample.batch_size > self.max_batch_size:
             raise RuntimeError(
                 f"batch of size {data.sample.batch_size} exceeds configured max batch size of {self.max_batch_size}."
             )
@@ -388,6 +351,8 @@ class CorkDispatcher:
                 wait=_time_start - inputs_info[-1].enqueue_time,
                 duration=time.time() - _time_start,
             )
+        except asyncio.CancelledError:
+            pass
         except Exception as e:  # pylint: disable=broad-except
             for input_info in inputs_info:
                 fut = input_info.future

@@ -1,30 +1,30 @@
 from __future__ import annotations
 
-import contextlib
-import logging
 import os
+import typing as t
+import logging
 import secrets
 import threading
-import typing as t
+import contextlib
+from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
-from functools import lru_cache
 from functools import wraps
-from typing import TYPE_CHECKING
+from functools import lru_cache
 
 import attr
 import requests
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
-from ...configuration import get_debug_mode
-from ...configuration.containers import BentoMLContainer
 from ...utils import compose
-from .schemas import CommonProperties
 from .schemas import EventMeta
 from .schemas import ServeInitEvent
-from .schemas import ServeUpdateEvent
 from .schemas import TrackingPayload
+from .schemas import CommonProperties
+from .schemas import ServeUpdateEvent
+from ...configuration import get_debug_mode
+from ...configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")

@@ -1,8 +1,8 @@
 # pylint: disable=no-name-in-module,redefined-outer-name,abstract-method
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Flatten
 
 import bentoml

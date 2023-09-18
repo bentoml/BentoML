@@ -2,17 +2,17 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-from opentelemetry.sdk.trace.sampling import ALWAYS_ON
-from opentelemetry.sdk.trace.sampling import Decision
-from opentelemetry.sdk.trace.sampling import ParentBased
-from opentelemetry.sdk.trace.sampling import SamplingResult
-from opentelemetry.sdk.trace.sampling import StaticSampler
-from opentelemetry.sdk.trace.sampling import TraceIdRatioBased
 from opentelemetry.trace import get_current_span
+from opentelemetry.sdk.trace.sampling import Decision
+from opentelemetry.sdk.trace.sampling import ALWAYS_ON
+from opentelemetry.sdk.trace.sampling import ParentBased
+from opentelemetry.sdk.trace.sampling import StaticSampler
+from opentelemetry.sdk.trace.sampling import SamplingResult
+from opentelemetry.sdk.trace.sampling import TraceIdRatioBased
 
 if TYPE_CHECKING:
-    from opentelemetry.trace import Context
     from opentelemetry.trace import Link
+    from opentelemetry.trace import Context
     from opentelemetry.trace import SpanKind
     from opentelemetry.trace import TraceState
     from opentelemetry.util.types import Attributes

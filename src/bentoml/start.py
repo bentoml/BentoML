@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import contextlib
+import os
 import json
 import logging
-import os
+import contextlib
 
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.runner.runner import Runner
 from .grpc.utils import LATEST_PROTOCOL_VERSION
+from ._internal.runner.runner import Runner
+from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,6 @@ def start_runner_server(
     runner_name: str,
     port: int | None = None,
     host: str | None = None,
-    timeout: int | None = None,
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
 ) -> None:
     """
@@ -41,15 +40,14 @@ def start_runner_server(
     prometheus_dir = ensure_prometheus_dir()
 
     from . import load
-    from ._internal.utils import reserve_free_port
-    from ._internal.utils.analytics import track_serve
-    from ._internal.utils.circus import create_standalone_arbiter
     from .serve import create_watcher
     from .serve import find_triton_binary
+    from ._internal.utils import reserve_free_port
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
-    timeout_args = ["--timeout", str(timeout)] if timeout else []
 
     from circus.sockets import CircusSocket  # type: ignore
     from circus.watcher import Watcher  # type: ignore
@@ -91,11 +89,8 @@ def start_runner_server(
                                 "--no-access-log",
                                 "--worker-id",
                                 "$(circus.wid)",
-                                "--worker-env-map",
-                                json.dumps(runner.scheduled_worker_env_map),
                                 "--prometheus-dir",
                                 prometheus_dir,
-                                *timeout_args,
                             ],
                             working_dir=working_dir,
                             numprocesses=runner.scheduled_worker_count,
@@ -149,7 +144,6 @@ def start_http_server(
     host: str = Provide[BentoMLContainer.api_server_config.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: int = Provide[BentoMLContainer.api_server_workers],
-    timeout: int | None = None,
     ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
     ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
     ssl_keyfile_password: str | None = Provide[BentoMLContainer.ssl.keyfile_password],
@@ -166,16 +160,15 @@ def start_http_server(
     from circus.watcher import Watcher
 
     from . import load
-    from ._internal.utils.analytics import track_serve
-    from ._internal.utils.circus import create_standalone_arbiter
-    from .serve import API_SERVER_NAME
-    from .serve import PROMETHEUS_MESSAGE
-    from .serve import construct_ssl_args
     from .serve import create_watcher
+    from .serve import API_SERVER_NAME
+    from .serve import construct_ssl_args
+    from .serve import PROMETHEUS_MESSAGE
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
-    timeout_args = ["--timeout", str(timeout)] if timeout else []
     runner_requirements = {runner.name for runner in svc.runners}
     if not runner_requirements.issubset(set(runner_map)):
         raise ValueError(
@@ -220,7 +213,6 @@ def start_http_server(
                 "--prometheus-dir",
                 prometheus_dir,
                 *ssl_args,
-                *timeout_args,
             ],
             working_dir=working_dir,
             numprocesses=api_workers,
@@ -278,13 +270,13 @@ def start_grpc_server(
 
     from bentoml import load
 
-    from ._internal.utils import reserve_free_port
-    from ._internal.utils.analytics import track_serve
-    from ._internal.utils.circus import create_standalone_arbiter
+    from .serve import create_watcher
+    from .serve import construct_ssl_args
     from .serve import PROMETHEUS_MESSAGE
     from .serve import PROMETHEUS_SERVER_NAME
-    from .serve import construct_ssl_args
-    from .serve import create_watcher
+    from ._internal.utils import reserve_free_port
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.analytics import track_serve
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)

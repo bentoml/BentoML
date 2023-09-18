@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import logging
 import shutil
-import subprocess
 import typing as t
+import logging
+import subprocess
 from typing import TYPE_CHECKING
 
 import psutil
@@ -12,8 +12,8 @@ from .base import Arguments
 from .buildah import ENV
 
 if TYPE_CHECKING:
-    from ..types import PathType
     from .base import ArgType
+    from ..types import PathType
 
 logger = logging.getLogger(__name__)
 

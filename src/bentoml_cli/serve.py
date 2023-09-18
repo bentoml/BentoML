@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import logging
 import os
 import sys
 import typing as t
+import logging
 
 import click
 
@@ -47,10 +47,10 @@ def deprecated_option(*param_decls: str, **attrs: t.Any):
 
 
 def add_serve_command(cli: click.Group) -> None:
-    from bentoml._internal.configuration.containers import BentoMLContainer
-    from bentoml._internal.log import configure_server_logging
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
+    from bentoml._internal.log import configure_server_logging
     from bentoml_cli.env_manager import env_manager
+    from bentoml._internal.configuration.containers import BentoMLContainer
 
     @cli.command(aliases=["serve-http"])
     @click.argument("bento", type=click.STRING, default=".")
@@ -95,12 +95,6 @@ def add_serve_command(cli: click.Group) -> None:
         help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
         envvar="BENTOML_API_WORKERS",
         show_default=True,
-    )
-    @click.option(
-        "--timeout",
-        type=click.INT,
-        help="Specify the timeout (seconds) for API server and runners",
-        envvar="BENTOML_TIMEOUT",
     )
     @click.option(
         "--backlog",
@@ -180,7 +174,6 @@ def add_serve_command(cli: click.Group) -> None:
         port: int,
         host: str,
         api_workers: int | None,
-        timeout: int | None,
         backlog: int,
         reload: bool,
         working_dir: str | None,
@@ -245,7 +238,6 @@ def add_serve_command(cli: click.Group) -> None:
                 host=DEFAULT_DEV_SERVER_HOST if not host else host,
                 backlog=backlog,
                 api_workers=1,
-                timeout=timeout,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
                 ssl_keyfile_password=ssl_keyfile_password,
@@ -263,7 +255,6 @@ def add_serve_command(cli: click.Group) -> None:
                 port=port,
                 host=host,
                 api_workers=api_workers,
-                timeout=timeout,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
                 ssl_keyfile_password=ssl_keyfile_password,
@@ -274,6 +265,8 @@ def add_serve_command(cli: click.Group) -> None:
                 reload=reload,
                 development_mode=False,
             )
+
+    from bentoml._internal.utils import add_experimental_docstring
 
     @cli.command(name="serve-grpc")
     @click.argument("bento", type=click.STRING, default=".")
@@ -392,6 +385,7 @@ def add_serve_command(cli: click.Group) -> None:
         default=LATEST_PROTOCOL_VERSION,
         show_default=True,
     )
+    @add_experimental_docstring
     @env_manager
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,

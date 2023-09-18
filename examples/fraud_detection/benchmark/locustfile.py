@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from locust import HttpUser
-from locust import between
 from locust import task
+from locust import between
+from locust import HttpUser
 
 NUM_OF_ROWS = 500
 test_transactions = pd.read_csv("../data/test_transaction.csv")[0:NUM_OF_ROWS]

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import logging
 import os
 import re
 import typing as t
+import logging
 import urllib.parse
 from abc import ABC
 from abc import abstractmethod
@@ -13,8 +13,8 @@ import fs.copy
 import fs.errors
 import fs.mirror
 import fs.opener
-import fs.opener.errors
 import fs.tempfs
+import fs.opener.errors
 from fs import open_fs
 from fs.base import FS
 

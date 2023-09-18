@@ -3,34 +3,14 @@
 isort:skip_file
 """
 import abc
-import collections.abc
 import grpc
-import grpc.aio
 import tests.proto.service_test_pb2
-import typing
-
-_T = typing.TypeVar('_T')
-
-class _MaybeAsyncIterator(collections.abc.AsyncIterator[_T], collections.abc.Iterator[_T], metaclass=abc.ABCMeta):
-    ...
-
-class _ServicerContext(grpc.ServicerContext, grpc.aio.ServicerContext):  # type: ignore
-    ...
 
 class TestServiceStub:
     """Use for testing interceptors per RPC call."""
 
-    def __init__(self, channel: typing.Union[grpc.Channel, grpc.aio.Channel]) -> None: ...
+    def __init__(self, channel: grpc.Channel) -> None: ...
     Execute: grpc.UnaryUnaryMultiCallable[
-        tests.proto.service_test_pb2.ExecuteRequest,
-        tests.proto.service_test_pb2.ExecuteResponse,
-    ]
-    """Unary API"""
-
-class TestServiceAsyncStub:
-    """Use for testing interceptors per RPC call."""
-
-    Execute: grpc.aio.UnaryUnaryMultiCallable[
         tests.proto.service_test_pb2.ExecuteRequest,
         tests.proto.service_test_pb2.ExecuteResponse,
     ]
@@ -43,8 +23,8 @@ class TestServiceServicer(metaclass=abc.ABCMeta):
     def Execute(
         self,
         request: tests.proto.service_test_pb2.ExecuteRequest,
-        context: _ServicerContext,
-    ) -> typing.Union[tests.proto.service_test_pb2.ExecuteResponse, collections.abc.Awaitable[tests.proto.service_test_pb2.ExecuteResponse]]:
+        context: grpc.ServicerContext,
+    ) -> tests.proto.service_test_pb2.ExecuteResponse:
         """Unary API"""
 
-def add_TestServiceServicer_to_server(servicer: TestServiceServicer, server: typing.Union[grpc.Server, grpc.aio.Server]) -> None: ...
+def add_TestServiceServicer_to_server(servicer: TestServiceServicer, server: grpc.Server) -> None: ...

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING
 from ....exceptions import StateException
 
 if TYPE_CHECKING:
-    from ..runner import AbstractRunner
     from ..runner import Runner
     from ..runner import RunnerMethod
+    from ..runner import AbstractRunner
 
     R = t.TypeVar("R")
     P = t.ParamSpec("P")
@@ -47,15 +47,6 @@ class RunnerHandle(ABC):
     ) -> R:
         ...
 
-    @abstractmethod
-    def async_stream_method(
-        self,
-        __bentoml_method: RunnerMethod[t.Any, P, R],
-        *args: P.args,
-        **kwargs: P.kwargs,
-    ) -> t.AsyncGenerator[R, None]:
-        ...
-
 
 class DummyRunnerHandle(RunnerHandle):
     def __init__(  # pylint: disable=super-init-not-called
@@ -82,16 +73,6 @@ class DummyRunnerHandle(RunnerHandle):
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
-        raise StateException(
-            f"Runner is not initialized. Make sure to include '{self!r}' to your service definition."
-        )
-
-    def async_stream_method(
-        self,
-        __bentoml_method: RunnerMethod[t.Any, t.Any, t.Any],
-        *args: t.Any,
-        **kwargs: t.Any,
-    ) -> t.AsyncGenerator[t.Any, None]:
         raise StateException(
             f"Runner is not initialized. Make sure to include '{self!r}' to your service definition."
         )

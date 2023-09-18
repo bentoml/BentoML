@@ -1,7 +1,7 @@
 import pytest
 
-from bentoml._internal.service.loader import import_service
 from bentoml.exceptions import ImportServiceError
+from bentoml._internal.service.loader import import_service
 
 
 @pytest.mark.usefixtures("change_test_dir")

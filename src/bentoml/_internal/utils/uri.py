@@ -1,6 +1,5 @@
 import os
 import pathlib
-from urllib.parse import quote
 from urllib.parse import unquote
 from urllib.parse import urlparse
 from urllib.request import url2pathname
@@ -41,8 +40,3 @@ def uri_to_path(uri: str) -> str:
         raise ValueError("Unsupported URI scheme")
     host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
     return os.path.normpath(os.path.join(host, url2pathname(unquote(parsed.path))))
-
-
-def encode_path_for_uri(path: str) -> str:
-    """Percent-encode non-URL characters in a path."""
-    return quote(path.replace(os.sep, "/"))

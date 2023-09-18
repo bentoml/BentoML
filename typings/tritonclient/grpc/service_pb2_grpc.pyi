@@ -505,6 +505,4 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@
         """
 
-def add_GRPCInferenceServiceServicer_to_server(
-    servicer: GRPCInferenceServiceServicer, server: grpc.Server
-) -> None: ...
+def add_GRPCInferenceServiceServicer_to_server(servicer: GRPCInferenceServiceServicer, server: grpc.Server) -> None: ...

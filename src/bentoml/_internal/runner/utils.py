@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import itertools
-import logging
 import typing as t
+import logging
+import itertools
 from typing import TYPE_CHECKING
-
-import anyio
 
 from bentoml.exceptions import InvalidArgument
 
@@ -154,28 +152,3 @@ def payload_paramss_to_batch_params(
             f"argument lengths for parameters do not matchs: {tuple(indice_params.items())}"
         )
     return batched_params, indice_params.sample
-
-
-# This is a reference to starlette.concurrency
-class _StopIteration(Exception):
-    pass
-
-
-def _next(iterator: t.Iterator[T]) -> T:
-    # We can't raise `StopIteration` from within the threadpool iterator
-    # and catch it outside that context, so we coerce them into a different
-    # exception type.
-    try:
-        return next(iterator)
-    except StopIteration:
-        raise _StopIteration
-
-
-async def iterate_in_threadpool(
-    iterator: t.Iterator[T],
-) -> t.AsyncIterator[T]:
-    while True:
-        try:
-            yield await anyio.to_thread.run_sync(_next, iterator)
-        except _StopIteration:
-            break

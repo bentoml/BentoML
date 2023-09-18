@@ -2,7 +2,7 @@
 Bento Client.
 =============
 
-See https://docs.bentoml.com/en/latest/guides/client.html for more information.
+See https://docs.bentoml.org/en/latest/guides/client.html for more information.
 
 .. code-block:: python
 

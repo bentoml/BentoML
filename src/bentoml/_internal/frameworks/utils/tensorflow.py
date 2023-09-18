@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-import importlib.metadata
-import importlib.util
-import logging
 import typing as t
+import logging
+import importlib.util
 from typing import TYPE_CHECKING
 
 from bentoml.exceptions import BentoMLException
 
 from ...types import LazyType
 from ...utils.lazy_loader import LazyLoader
+
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
 
 if TYPE_CHECKING:
     import tensorflow as tf
@@ -95,9 +99,9 @@ def get_tf_version() -> str:
         # For the metadata, we have to look for both tensorflow and tensorflow-cpu
         for pkg in candidates:
             try:
-                _tf_version = importlib.metadata.version(pkg)
+                _tf_version = importlib_metadata.version(pkg)
                 break
-            except importlib.metadata.PackageNotFoundError:
+            except importlib_metadata.PackageNotFoundError:
                 pass
     return _tf_version
 

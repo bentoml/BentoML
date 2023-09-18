@@ -1,24 +1,24 @@
 from __future__ import annotations
 
-import logging
 import typing as t
-from pathlib import Path
+import logging
 from types import ModuleType
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import cloudpickle
 
 import bentoml
 from bentoml import Tag
 
-from ...exceptions import NotFound
+from ..types import LazyType
 from ..models import Model
+from ..utils.pkg import get_pkg_version
+from ...exceptions import NotFound
 from ..models.model import ModelContext
 from ..models.model import PartialKwargsModelOptions as ModelOptions
-from ..types import LazyType
-from ..utils.pkg import get_pkg_version
-from .common.pytorch import PyTorchTensorContainer
 from .common.pytorch import torch
+from .common.pytorch import PyTorchTensorContainer
 
 __all__ = ["load_model", "save_model", "get_runnable", "get", "PyTorchTensorContainer"]
 
@@ -191,9 +191,9 @@ def get_runnable(bento_model: Model):
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
+    from .common.pytorch import partial_class
     from .common.pytorch import PytorchModelRunnable
     from .common.pytorch import make_pytorch_runnable_method
-    from .common.pytorch import partial_class
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 

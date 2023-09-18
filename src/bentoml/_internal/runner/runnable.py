@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import inspect
-import logging
 import typing as t
-from typing import TYPE_CHECKING
+import logging
 from typing import overload
+from typing import TYPE_CHECKING
 
 import attr
 
-from ...exceptions import BentoMLException
 from ..types import LazyType
+from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     from ..types import AnyType
@@ -116,8 +115,6 @@ class Runnable:
             return RunnableMethod(
                 meth,
                 RunnableMethodConfig(
-                    is_stream=inspect.isasyncgenfunction(meth)
-                    or inspect.isgeneratorfunction(meth),
                     batchable=batchable,
                     batch_dim=(batch_dim, batch_dim)
                     if isinstance(batch_dim, int)
@@ -156,4 +153,3 @@ class RunnableMethodConfig:
     batch_dim: tuple[int, int]
     input_spec: AnyType | tuple[AnyType, ...] | None = None
     output_spec: AnyType | None = None
-    is_stream: bool = False

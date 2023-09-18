@@ -2,10 +2,10 @@ from pprint import pprint
 
 import mlflow
 import pandas as pd
-from sklearn import datasets
-from sklearn import svm
-from sklearn.model_selection import GridSearchCV
 from utils import fetch_logged_data
+from sklearn import svm
+from sklearn import datasets
+from sklearn.model_selection import GridSearchCV
 
 import bentoml
 

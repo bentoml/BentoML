@@ -78,7 +78,7 @@ DataFrame containing the data from the file.
     from pyspark.sql.types import StructType, StructField, FloatType, StringType
     import urllib.request
 
-    urllib.request.urlretrieve("https://docs.bentoml.com/en/latest/_static/examples/batch/input.csv", "input.csv")
+    urllib.request.urlretrieve("https://docs.bentoml.org/en/latest/_static/examples/batch/input.csv", "input.csv")
 
     schema = StructType([
         StructField("sepal_length", FloatType(), False),

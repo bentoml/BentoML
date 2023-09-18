@@ -1,30 +1,30 @@
 from __future__ import annotations
 
-import contextlib
-import importlib
-import logging
 import os
 import sys
 import types
 import typing as t
+import logging
+import importlib
+import contextlib
 from typing import TYPE_CHECKING
 
 import fs
 import fs.mirror
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
+from .base import OCIBuilder
+from ..utils import bentoml_cattr
+from .generate import generate_containerfile
 from ...exceptions import InvalidArgument
 from ..configuration.containers import BentoMLContainer
-from ..utils import bentoml_cattr
-from .base import OCIBuilder
-from .generate import generate_containerfile
 
 if TYPE_CHECKING:
-    from ..bento import Bento
-    from ..bento import BentoStore
     from ..tag import Tag
     from .base import Arguments
+    from ..bento import Bento
+    from ..bento import BentoStore
 
     P = t.ParamSpec("P")
 
@@ -146,8 +146,6 @@ def construct_containerfile(
 ) -> t.Generator[tuple[str, str], None, None]:
     from ..bento.bento import BentoInfo
     from ..bento.build_config import DockerOptions
-    from ..models import ModelStore
-    from ..models import copy_model
 
     dockerfile_path = "env/docker/Dockerfile"
     instruction: list[str] = []
@@ -159,16 +157,6 @@ def construct_containerfile(
         options = BentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
         fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
-
-        # copy models from model store
-        model_store = BentoMLContainer.model_store.get()
-        bento_model_store = ModelStore(temp_fs.makedir("models", recreate=True))
-        for model in options.models:
-            copy_model(
-                model.tag,
-                src_model_store=model_store,
-                target_model_store=bento_model_store,
-            )
 
         # NOTE: dockerfile_template is already included in the
         # Dockerfile inside bento, and it is not relevant to

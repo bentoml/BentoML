@@ -6,16 +6,16 @@ api_server:
       enabled: true
     max_concurrent_streams: 100
     maximum_concurrent_rpcs: 1
+  tracing:
+    sample_rate: 0.7
+    exporter_type: jaeger
+    jaeger:
+      thrift:
+        agent_host_name: jaeger
+        agent_port: 6831
 runners:
   logging:
     access:
       enabled: false
   iris_clf:
     resources: system
-tracing:
-  sample_rate: 0.7
-  exporter_type: jaeger
-  jaeger:
-    thrift:
-      agent_host_name: jaeger
-      agent_port: 6831

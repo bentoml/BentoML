@@ -1,30 +1,30 @@
 from __future__ import annotations
 
-import collections
-import datetime
-import logging
-import logging.config
 import os
 import random
 import typing as t
+import logging
+import datetime
+import collections
+import logging.config
 
 # NOTE: AFAIK, they move this function from opentelemetry.sdk.logs to opentelemetry._logs
 from opentelemetry._logs import set_logger_provider
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs import LoggingHandler
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_HEADERS
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_TIMEOUT
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_INSECURE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_CERTIFICATE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_COMPRESSION
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_HEADERS
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_INSECURE
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_TIMEOUT
-from opentelemetry.sdk.resources import Resource
 
-from ...exceptions import MissingDependencyException
-from ..context import component_context
-from ..context import trace_context
 from .base import MonitorBase
+from ..context import trace_context
+from ..context import component_context
+from ...exceptions import MissingDependencyException
 
 try:
     from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
@@ -135,8 +135,8 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         self._will_export_schema = False
 
     def _init_logger(self) -> None:
-        from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
         from opentelemetry.sdk.resources import SERVICE_NAME
+        from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
         from opentelemetry.sdk.resources import OTELResourceDetector
 
         # User can optionally configure the resource with the following environment variables. Only

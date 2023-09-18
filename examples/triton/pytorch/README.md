@@ -68,7 +68,7 @@ docker:
 ```
 
 To find out more about BentoML Runner architecture, see
-[our latest documentation](https://docs.bentoml.com/en/latest/concepts/runner.html#)
+[our latest documentation](https://docs.bentoml.org/en/latest/concepts/runner.html#)
 
 For more information about Triton Inference Server, see
 [here](https://github.com/triton-inference-server/server)

@@ -1,6 +1,0 @@
-service: service.py:svc
-include: ["*.py"]
-models:
-  - testmodel
-  - tag: anothermodel
-    alias: another

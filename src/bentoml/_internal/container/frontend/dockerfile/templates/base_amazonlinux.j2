@@ -9,8 +9,12 @@ USER root
 {% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/yum") }} {% endcall -%} set -eux && \
     yum upgrade -y && \
     yum install -y amazon-linux-extras curl ca-certificates gcc gcc-c++ make bash shadow-utils && \
+    {% if __options__python_version == "3.7" %}
+    yum install -y python3 python3-devel && \
+    {% else %}
     amazon-linux-extras enable python{{ __options__python_version }} && \
     yum install -y python{{ __options__python_version.split(".") | join('') }} python{{ __options__python_version.split(".") | join('') }}-devel && \
+    {% endif %}
     yum groupinstall -y "Development Tools"
 
 RUN curl -O https://bootstrap.pypa.io/get-pip.py && \

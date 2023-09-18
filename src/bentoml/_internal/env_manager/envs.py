@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import logging
 import os
-import subprocess
 import typing as t
+import logging
+import subprocess
 from abc import ABC
 from abc import abstractmethod
 from shutil import which

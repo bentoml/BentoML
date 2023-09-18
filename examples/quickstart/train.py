@@ -1,7 +1,7 @@
 import logging
 
-from sklearn import datasets
 from sklearn import svm
+from sklearn import datasets
 
 import bentoml
 

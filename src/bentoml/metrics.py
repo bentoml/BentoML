@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
 from ._internal.configuration.containers import BentoMLContainer
 
@@ -368,7 +368,7 @@ def __dir__() -> list[str]:
 def __getattr__(item: t.Any):
     if item in _NOT_SUPPORTED:
         raise NotImplementedError(
-            f"{item} is not supported when using '{__name__}'. See https://docs.bentoml.com/en/latest/reference/metrics.html."
+            f"{item} is not supported when using '{__name__}'. See https://docs.bentoml.org/en/latest/reference/metrics.html."
         )
     # This is the entrypoint for all bentoml.metrics.*
     return _LazyMetric(item, docstring=_docstring.get(item))
@@ -395,7 +395,7 @@ class _LazyMetric:
         """
         if "registry" in kwargs:
             raise ValueError(
-                f"'registry' should not be passed when using '{__name__}.{self._attr}'. See https://docs.bentoml.com/en/latest/reference/metrics.html."
+                f"'registry' should not be passed when using '{__name__}.{self._attr}'. See https://docs.bentoml.org/en/latest/reference/metrics.html."
             )
         self._args = args
         self._kwargs = kwargs

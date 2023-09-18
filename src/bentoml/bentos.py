@@ -4,33 +4,33 @@ User facing python APIs for managing local bentos and build new bentos.
 
 from __future__ import annotations
 
-import logging
 import os
 import re
-import subprocess
-import tempfile
 import typing as t
+import logging
+import tempfile
+import subprocess
 
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
+from .exceptions import BadInput
+from .exceptions import InvalidArgument
+from .exceptions import BentoMLException
+from ._internal.tag import Tag
 from ._internal.bento import Bento
+from ._internal.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.tag import Tag
-from ._internal.utils import resolve_user_filepath
-from .exceptions import BadInput
-from .exceptions import BentoMLException
-from .exceptions import InvalidArgument
+from ._internal.utils.analytics.usage_stats import _usage_event_debugging
 
 if t.TYPE_CHECKING:
+    from .server import Server
     from ._internal.bento import BentoStore
+    from ._internal.yatai_client import YataiClient
     from ._internal.bento.build_config import CondaOptions
     from ._internal.bento.build_config import DockerOptions
-    from ._internal.bento.build_config import ModelSpec
     from ._internal.bento.build_config import PythonOptions
-    from ._internal.cloud import BentoCloudClient
-    from .server import Server
 
 
 logger = logging.getLogger(__name__)
@@ -246,13 +246,13 @@ def push(
     *,
     force: bool = False,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
 ):
     """Push Bento to a yatai server."""
     bento = _bento_store.get(tag)
     if not bento:
         raise BentoMLException(f"Bento {tag} not found in local store")
-    _cloud_client.push_bento(bento, force=force)
+    _yatai_client.push_bento(bento, force=force)
 
 
 @inject
@@ -261,9 +261,9 @@ def pull(
     *,
     force: bool = False,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
 ):
-    _cloud_client.pull_bento(tag, force=force, bento_store=_bento_store)
+    _yatai_client.pull_bento(tag, force=force, bento_store=_bento_store)
 
 
 @inject
@@ -278,7 +278,6 @@ def build(
     docker: DockerOptions | dict[str, t.Any] | None = None,
     python: PythonOptions | dict[str, t.Any] | None = None,
     conda: CondaOptions | dict[str, t.Any] | None = None,
-    models: t.List[ModelSpec | str | dict[str, t.Any]] | None = None,
     version: str | None = None,
     build_ctx: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
@@ -356,7 +355,6 @@ def build(
         docker=docker,
         python=python,
         conda=conda,
-        models=models or [],
     )
 
     build_args = ["bentoml", "build"]
@@ -369,9 +367,6 @@ def build(
         build_args.extend(["--version", version])
     build_args.extend(["--output", "tag"])
 
-    copied = os.environ.copy()
-    copied.setdefault("BENTOML_HOME", BentoMLContainer.bentoml_home.get())
-
     with tempfile.NamedTemporaryFile(
         "w", encoding="utf-8", prefix="bentoml-build-", suffix=".yaml"
     ) as f:
@@ -379,29 +374,21 @@ def build(
         bentofile_path = os.path.join(os.path.dirname(f.name), f.name)
         build_args.extend(["--bentofile", bentofile_path])
         try:
-            return get(
-                _parse_tag_from_outputs(
-                    subprocess.check_output(build_args, env=copied)
-                ),
-                _bento_store=_bento_store,
-            )
+            output = subprocess.check_output(build_args)
         except subprocess.CalledProcessError as e:
-            raise BentoMLException(
-                f"Failed to build BentoService bundle (Lookup for traceback):\n{e}"
-            ) from e
+            logger.error("Failed to build BentoService bundle: %s", e)
+            raise
 
-
-def _parse_tag_from_outputs(output: bytes) -> str:
-    matched = re.search(
-        r"^__tag__:([^:\n]+:[^:\n]+)$",
-        output.decode("utf-8").strip(),
-        flags=re.MULTILINE,
-    )
-    if matched is None:
-        raise BentoMLException(
-            f"Failed to find tag from output: {output}\nNote: Output from 'bentoml build' might not be correct. Please open an issue on GitHub."
-        )
-    return matched.group(1)
+    if _usage_event_debugging():
+        # NOTE: This usually only concern BentoML devs.
+        pattern = r"^__tag__:[^:\n]+:[^:\n]+"
+        matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
+        assert matched is not None, f"Failed to find tag from output: {output}"
+        _, _, tag = matched.group(0).partition(":")
+    else:
+        # This branch is the current behaviour that doesn't concern BentoML users.
+        tag = output.decode("utf-8").strip().split("\n")[-1]
+    return get(tag, _bento_store=_bento_store)
 
 
 @inject
@@ -437,17 +424,22 @@ def build_bentofile(
         build_args.extend(["--version", version])
     build_args.extend(["--bentofile", bentofile, "--output", "tag"])
 
-    copied = os.environ.copy()
-    copied.setdefault("BENTOML_HOME", BentoMLContainer.bentoml_home.get())
     try:
-        return get(
-            _parse_tag_from_outputs(subprocess.check_output(build_args, env=copied)),
-            _bento_store=_bento_store,
-        )
+        output = subprocess.check_output(build_args)
     except subprocess.CalledProcessError as e:
-        raise BentoMLException(
-            f"Failed to build BentoService bundle (Lookup for traceback):\n{e}"
-        ) from e
+        logger.error("Failed to build BentoService bundle: %s", e)
+        raise
+
+    if _usage_event_debugging():
+        # NOTE: This usually only concern BentoML devs.
+        pattern = r"^__tag__:[^:\n]+:[^:\n]+"
+        matched = re.search(pattern, output.decode("utf-8").strip(), re.MULTILINE)
+        assert matched is not None, f"Failed to find tag from output: {output}"
+        _, _, tag = matched.group(0).partition(":")
+    else:
+        # This branch is the current behaviour that doesn't concern BentoML users.
+        tag = output.decode("utf-8").strip().split("\n")[-1]
+    return get(tag, _bento_store=_bento_store)
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:
@@ -514,22 +506,22 @@ def serve(
             port = t.cast(int, BentoMLContainer.http.port.get())
 
         res = HTTPServer(
-            bento=bento,
-            reload=reload,
-            production=production,
-            env=env,
-            host=host,
-            port=port,
-            working_dir=working_dir,
-            api_workers=api_workers,
-            backlog=backlog,
-            ssl_certfile=ssl_certfile,
-            ssl_keyfile=ssl_keyfile,
-            ssl_keyfile_password=ssl_keyfile_password,
-            ssl_version=ssl_version,
-            ssl_cert_reqs=ssl_cert_reqs,
-            ssl_ca_certs=ssl_ca_certs,
-            ssl_ciphers=ssl_ciphers,
+            bento,
+            reload,
+            production,
+            env,
+            host,
+            port,
+            working_dir,
+            api_workers,
+            backlog,
+            ssl_certfile,
+            ssl_keyfile,
+            ssl_keyfile_password,
+            ssl_version,
+            ssl_cert_reqs,
+            ssl_ca_certs,
+            ssl_ciphers,
         )
     elif server_type == "grpc":
         from .server import GrpcServer
@@ -540,19 +532,19 @@ def serve(
             port = t.cast(int, BentoMLContainer.grpc.port.get())
 
         res = GrpcServer(
-            bento=bento,
-            reload=reload,
-            production=production,
-            env=env,
-            host=host,
-            port=port,
-            working_dir=working_dir,
-            api_workers=api_workers,
-            backlog=backlog,
-            enable_reflection=enable_reflection,
-            enable_channelz=enable_channelz,
-            max_concurrent_streams=max_concurrent_streams,
-            grpc_protocol_version=grpc_protocol_version,
+            bento,
+            reload,
+            production,
+            env,
+            host,
+            port,
+            working_dir,
+            api_workers,
+            backlog,
+            enable_reflection,
+            enable_channelz,
+            max_concurrent_streams,
+            grpc_protocol_version,
         )
     else:
         raise BadInput(f"Unknown server type: '{server_type}'")

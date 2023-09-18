@@ -1,38 +1,37 @@
 from __future__ import annotations
 
-import logging
 import os
 import re
-import subprocess
 import sys
 import typing as t
-from shlex import quote
+import logging
+import subprocess
 from sys import version_info
+from shlex import quote
 
-import attr
 import fs
-import fs.copy
-import psutil
+import attr
 import yaml
+import psutil
+import fs.copy
 from pathspec import PathSpec
 
-from ...exceptions import BentoMLException
-from ...exceptions import InvalidArgument
-from ..configuration import BENTOML_VERSION
-from ..configuration import clean_bentoml_version
-from ..configuration import get_quiet_mode
+from ..utils import bentoml_cattr
+from ..utils import resolve_user_filepath
+from ..utils import copy_file_to_fs_folder
 from ..container import generate_containerfile
-from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
-from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
-from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
+from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
+from ..utils.dotenv import parse_dotenv
+from ..configuration import CLEAN_BENTOML_VERSION
+from ..container.generate import BENTO_PATH
+from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 from ..container.frontend.dockerfile import DistroSpec
 from ..container.frontend.dockerfile import get_supported_spec
-from ..container.generate import BENTO_PATH
-from ..utils import bentoml_cattr
-from ..utils import copy_file_to_fs_folder
-from ..utils import resolve_user_filepath
-from ..utils.dotenv import parse_dotenv
-from .build_dev_bentoml_whl import build_bentoml_editable_wheel
+from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
+from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
+from ..container.frontend.dockerfile import SUPPORTED_PYTHON_VERSIONS
+from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
 
 if t.TYPE_CHECKING:
     from attr import Attribute
@@ -59,13 +58,13 @@ def _convert_python_version(py_version: str | None) -> str | None:
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '
-            "version must follow standard python semver format, e.g. 3.8.15",
+            f"version must follow standard python semver format, e.g. 3.7.10 ",
         )
     major, minor = match.groups()
     target_python_version = f"{major}.{minor}"
     if target_python_version != py_version:
         logger.warning(
-            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.com/en/latest/concepts/bento.html#custom-base-image-advanced",
+            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced",
             target_python_version,
             py_version,
         )
@@ -154,7 +153,11 @@ class DockerOptions:
         ),
     )
     python_version: t.Optional[str] = attr.field(
-        converter=_convert_python_version, default=None
+        converter=_convert_python_version,
+        default=None,
+        validator=attr.validators.optional(
+            attr.validators.in_(SUPPORTED_PYTHON_VERSIONS)
+        ),
     )
     cuda_version: t.Optional[str] = attr.field(
         default=None,
@@ -567,7 +570,7 @@ REQUIREMENTS_TXT="$BASEDIR/requirements.txt"
 REQUIREMENTS_LOCK="$BASEDIR/requirements.lock.txt"
 WHEELS_DIR="$BASEDIR/wheels"
 BENTOML_VERSION=${BENTOML_VERSION:-"""
-                + clean_bentoml_version(BENTOML_VERSION)
+                + CLEAN_BENTOML_VERSION
                 + """}
 # Install python packages, prefer installing the requirements.lock.txt file if it exist
 if [ -f "$REQUIREMENTS_LOCK" ]; then
@@ -649,22 +652,18 @@ fi
                     "--no-header",
                     f"--output-file={pip_compile_out}",
                     "--resolver=backtracking",
-                    "--no-annotate",
                 ]
             )
             logger.info("Locking PyPI package versions.")
             cmd = [sys.executable, "-m", "piptools", "compile"]
             cmd.extend(pip_compile_args)
             try:
-                subprocess.check_call(
-                    cmd, text=True, stderr=subprocess.PIPE if get_quiet_mode() else None
-                )
+                subprocess.check_call(cmd)
             except subprocess.CalledProcessError as e:
-                if not get_quiet_mode():
-                    logger.error("Failed to lock PyPI packages: %s", e, exc_info=e)
-                    logger.error(
-                        "Falling back to using the user-provided package requirement specifiers, which is equivalent to 'lock_packages=false'."
-                    )
+                logger.error("Failed to lock PyPI packages: %s", e, exc_info=e)
+                logger.error(
+                    "Falling back to using the user-provided package requirement specifiers, which is equivalent to 'lock_packages=false'."
+                )
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
@@ -690,13 +689,13 @@ bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_h
 
 
 if t.TYPE_CHECKING:
-    OptionsCls = t.TypeVar("OptionsCls", DockerOptions, CondaOptions, PythonOptions)
+    OptionsCls = DockerOptions | CondaOptions | PythonOptions
 
 
 def dict_options_converter(
     options_type: t.Type[OptionsCls],
-) -> t.Callable[[OptionsCls | dict[str, t.Any] | None], OptionsCls]:
-    def _converter(value: OptionsCls | dict[str, t.Any] | None) -> OptionsCls:
+) -> t.Callable[[OptionsCls | dict[str, t.Any]], t.Any]:
+    def _converter(value: OptionsCls | dict[str, t.Any]) -> options_type:
         if value is None:
             return options_type()
         if isinstance(value, dict):
@@ -704,38 +703,6 @@ def dict_options_converter(
         return value
 
     return _converter
-
-
-@attr.frozen
-class ModelSpec:
-    tag: str
-    filter: t.Optional[str] = None
-    alias: t.Optional[str] = None
-
-    @classmethod
-    def from_item(cls, item: str | dict[str, t.Any] | ModelSpec) -> ModelSpec:
-        if isinstance(item, str):
-            return cls(tag=item)
-        if isinstance(item, ModelSpec):
-            return item
-        return cls(**item)
-
-
-def convert_models_config(
-    models_config: list[str | dict[str, t.Any] | ModelSpec] | None,
-) -> list[ModelSpec]:
-    if not models_config:
-        return []
-    return [ModelSpec.from_item(item) for item in models_config]
-
-
-def _model_spec_structure_hook(
-    d: str | dict[str, t.Any], cls: t.Type[ModelSpec]
-) -> ModelSpec:
-    return cls.from_item(d)
-
-
-bentoml_cattr.register_structure_hook(ModelSpec, _model_spec_structure_hook)
 
 
 @attr.frozen
@@ -771,9 +738,6 @@ class BentoBuildConfig:
         default=None,
         converter=dict_options_converter(CondaOptions),
     )
-    models: t.List[ModelSpec] = attr.field(
-        factory=list, converter=convert_models_config
-    )
 
     if t.TYPE_CHECKING:
         # NOTE: This is to ensure that BentoBuildConfig __init__
@@ -792,7 +756,6 @@ class BentoBuildConfig:
             docker: DockerOptions | dict[str, t.Any] | None = ...,
             python: PythonOptions | dict[str, t.Any] | None = ...,
             conda: CondaOptions | dict[str, t.Any] | None = ...,
-            models: list[ModelSpec | str | dict[str, t.Any]] | None = ...,
         ) -> None:
             ...
 
@@ -802,7 +765,7 @@ class BentoBuildConfig:
 
         if use_cuda and use_conda:
             logger.warning(
-                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.com/en/latest/concepts/bento.html#custom-base-image-advanced"
+                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced"
             )
 
         if self.docker.distro is not None:
@@ -850,12 +813,7 @@ class BentoBuildConfig:
             self.docker.with_defaults(),
             self.python.with_defaults(),
             self.conda.with_defaults(),
-            self.models,
         )
-
-    @property
-    def model_aliases(self) -> t.Dict[str, str]:
-        return {model.alias: model.tag for model in self.models if model.alias}
 
     @classmethod
     def from_yaml(cls, stream: t.TextIO) -> BentoBuildConfig:
@@ -938,4 +896,3 @@ class FilledBentoBuildConfig(BentoBuildConfig):
     docker: DockerOptions
     python: PythonOptions
     conda: CondaOptions
-    models: t.List[ModelSpec]

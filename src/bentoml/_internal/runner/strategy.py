@@ -5,8 +5,7 @@ import logging
 import math
 import typing as t
 
-from ..resource import get_resource
-from ..resource import system_resources
+from ..resource import get_resource, system_resources
 from .runnable import Runnable
 
 logger = logging.getLogger(__name__)

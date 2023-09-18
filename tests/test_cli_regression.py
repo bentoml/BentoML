@@ -1,22 +1,14 @@
 from __future__ import annotations
 
-import os
-import shlex
 import time
+import shlex
 
-import pytest
 from click.testing import CliRunner
 
-
-@pytest.fixture
-def runner() -> CliRunner:
-    return CliRunner()
+runner = CliRunner()
 
 
-@pytest.mark.xfail(
-    os.getenv("GITHUB_ACTIONS") is not None, reason="Skip on distributed tests for now."
-)
-def test_regression(runner: CliRunner):
+def test_regression():
     """
     This test will determine if our CLI are running in an efficient manner.
     CLI runtime are ~ 340ms via loading entrypoint.
@@ -28,9 +20,12 @@ def test_regression(runner: CliRunner):
 
     # note that this should only be run in a single process.
     with runner.isolation():
+        prog_name = runner.get_default_prog_name(cli)
         start = time.perf_counter_ns()
-        ret = cli.main(
-            args=shlex.split("--help"), prog_name="bentoml", standalone_mode=False
-        )
-        finish = time.perf_counter_ns() - start
-    assert not ret and finish <= 1.7 * 1e6
+        try:
+            _ = cli.main(args=shlex.split("--help"), prog_name=prog_name)
+        except SystemExit:
+            finish = time.perf_counter_ns() - start
+
+            threshold = 1.7 * 1e6
+            assert finish <= threshold

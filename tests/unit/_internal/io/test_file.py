@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from bentoml.io import File
 from bentoml.exceptions import BadInput
 from bentoml.grpc.utils import import_generated_stubs
-from bentoml.io import File
 
 if TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb

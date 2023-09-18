@@ -482,7 +482,7 @@ class NDArray(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _DTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[NDArray._DType.ValueType], builtins.type):
+    class _DTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[NDArray._DType.ValueType], builtins.type):  # noqa: F821
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         DTYPE_UNSPECIFIED: NDArray._DType.ValueType  # 0
         """Represents a None type."""
@@ -588,7 +588,7 @@ class BentoService(google.protobuf.service.Service, metaclass=abc.ABCMeta):
     DESCRIPTOR: google.protobuf.descriptor.ServiceDescriptor
     @abc.abstractmethod
     def Call(
-        inst: BentoService,  # pyright: ignore[reportSelfClsParameterName]
+        inst: BentoService,
         rpc_controller: google.protobuf.service.RpcController,
         request: global___Request,
         callback: collections.abc.Callable[[global___Response], None] | None,
@@ -596,7 +596,7 @@ class BentoService(google.protobuf.service.Service, metaclass=abc.ABCMeta):
         """Call handles methodcaller of given API entrypoint."""
     @abc.abstractmethod
     def ServiceMetadata(
-        inst: BentoService,  # pyright: ignore[reportSelfClsParameterName]
+        inst: BentoService,
         rpc_controller: google.protobuf.service.RpcController,
         request: global___ServiceMetadataRequest,
         callback: collections.abc.Callable[[global___ServiceMetadataResponse], None] | None,
@@ -609,14 +609,14 @@ class BentoService_Stub(BentoService):
     def __init__(self, rpc_channel: google.protobuf.service.RpcChannel) -> None: ...
     DESCRIPTOR: google.protobuf.descriptor.ServiceDescriptor
     def Call(
-        inst: BentoService_Stub,  # pyright: ignore[reportSelfClsParameterName]
+        inst: BentoService_Stub,
         rpc_controller: google.protobuf.service.RpcController,
         request: global___Request,
         callback: collections.abc.Callable[[global___Response], None] | None = ...,
     ) -> concurrent.futures.Future[global___Response]:
         """Call handles methodcaller of given API entrypoint."""
     def ServiceMetadata(
-        inst: BentoService_Stub,  # pyright: ignore[reportSelfClsParameterName]
+        inst: BentoService_Stub,
         rpc_controller: google.protobuf.service.RpcController,
         request: global___ServiceMetadataRequest,
         callback: collections.abc.Callable[[global___ServiceMetadataResponse], None] | None = ...,

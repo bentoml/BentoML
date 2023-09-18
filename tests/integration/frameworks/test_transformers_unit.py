@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-import logging
 import os
 import typing as t
+import logging
 
 import pytest
 import transformers
-from transformers.models.auto.modeling_auto import AutoModelForAudioClassification
-from transformers.models.auto.modeling_auto import AutoModelForCausalLM
-from transformers.models.auto.modeling_auto import AutoModelForSequenceClassification
-from transformers.pipelines import check_task  # type: ignore
 from transformers.pipelines import pipeline  # type: ignore
-from transformers.pipelines.audio_classification import AudioClassificationPipeline
+from transformers.pipelines import check_task  # type: ignore
 from transformers.trainer_utils import set_seed
+from transformers.models.auto.modeling_auto import AutoModelForCausalLM
+from transformers.models.auto.modeling_auto import AutoModelForAudioClassification
+from transformers.models.auto.modeling_auto import AutoModelForSequenceClassification
+from transformers.pipelines.audio_classification import AudioClassificationPipeline
 
 import bentoml
 from bentoml.exceptions import BentoMLException
@@ -236,16 +236,13 @@ def fixture_pair_classification_pipeline(unload_registry: bool, tmp_path: Path):
         model=model,
         tokenizer=transformers.BertTokenizer(vocab_file.__fspath__()),
     )
-    yield classifier
     if unload_registry:
         del PIPELINE_REGISTRY.supported_tasks[TASK_NAME]
 
+    return classifier
+
 
 @pytest.mark.parametrize("unload_registry", [True, False])
-@pytest.mark.skipif(
-    os.getenv("GITHUB_ACTIONS") is not None,
-    reason="Eager import from general frameworks on GitHub actions.",
-)
 def test_custom_pipeline(pair_classification_pipeline: PairClassificationPipeline):
     """
     Test saving and loading a custom pipeline from scratch. This is not covered by the framework tests

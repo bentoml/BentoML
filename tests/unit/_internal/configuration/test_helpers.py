@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml._internal.configuration.helpers import flatten_dict
-from bentoml._internal.configuration.helpers import is_valid_ip_address
-from bentoml._internal.configuration.helpers import load_config_file
-from bentoml._internal.configuration.helpers import rename_fields
 from bentoml.exceptions import BentoMLConfigException
+from bentoml._internal.configuration.helpers import flatten_dict
+from bentoml._internal.configuration.helpers import rename_fields
+from bentoml._internal.configuration.helpers import load_config_file
+from bentoml._internal.configuration.helpers import is_valid_ip_address
 
 if TYPE_CHECKING:
     from pathlib import Path

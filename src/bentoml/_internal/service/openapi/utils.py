@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import typing as t
-from functools import lru_cache
 from typing import TYPE_CHECKING
+from functools import lru_cache
 
-from bentoml.exceptions import InternalServerError
-from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound
+from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import InternalServerError
 
 from ...utils import LazyLoader
 from ...utils.pkg import pkg_version_info

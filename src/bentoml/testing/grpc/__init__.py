@@ -1,30 +1,31 @@
 from __future__ import annotations
 
+import typing as t
 import importlib
 import traceback
-import typing as t
+from typing import TYPE_CHECKING
 from contextlib import ExitStack
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING
 
-from ..._internal.utils import LazyLoader
-from ..._internal.utils import cached_contextmanager
-from ..._internal.utils import reserve_free_port
 from ...exceptions import BentoMLException
-from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ...grpc.utils import import_generated_stubs
 from ...grpc.utils import import_grpc
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ..._internal.utils import LazyLoader
+from ..._internal.utils import reserve_free_port
+from ..._internal.utils import cached_contextmanager
+from ..._internal.utils import add_experimental_docstring
 
 if TYPE_CHECKING:
     import grpc
     import numpy as np
-    from google.protobuf.message import Message
     from grpc import aio
-    from grpc.aio._channel import Channel
     from numpy.typing import NDArray
+    from grpc.aio._channel import Channel
+    from google.protobuf.message import Message
 
-    from ..._internal.service import Service
     from ...grpc.v1 import service_pb2 as pb
+    from ..._internal.service import Service
 else:
     grpc, aio = import_grpc()  # pylint: disable=E1111
     np = LazyLoader("np", globals(), "numpy")
@@ -160,6 +161,7 @@ async def async_client_call(
 
 
 @asynccontextmanager
+@add_experimental_docstring
 async def create_channel(
     host_url: str,
     interceptors: t.Sequence[aio.ClientInterceptor] | None = None,
@@ -188,6 +190,7 @@ async def create_channel(
             await channel.close()
 
 
+@add_experimental_docstring
 @cached_contextmanager("{interceptors}")
 def make_standalone_server(
     interceptors: t.Sequence[aio.ServerInterceptor] | None = None,

@@ -1,8 +1,8 @@
 # pylint: disable=redefined-outer-name
 
+import typing as t
 import pathlib
 import subprocess
-import typing as t
 
 import pytest
 

@@ -6,19 +6,19 @@ export BUILDX_NO_DEFAULT_LOAD=true
 
 progress=""
 if [ "$DEBUG" = "true" ]; then
-    progress="--progress=plain"
+	progress="--progress=plain"
 fi
 
 buildxCmd() {
-    if docker buildx version > /dev/null 2>&1; then
-        set -x
-        docker buildx "$@" $progress
-    elif buildx version > /dev/null 2>&1; then
-        buildx "$@" $progress
-    else
-        echo "Make sure to have Docker Buildx installed."
-        exit 1
-    fi
+	if docker buildx version >/dev/null 2>&1; then
+		set -x
+		docker buildx "$@" $progress
+	elif buildx version >/dev/null 2>&1; then
+		buildx "$@" $progress
+	else
+		echo "Make sure to have Docker Buildx installed."
+		exit 1
+	fi
 }
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
@@ -26,30 +26,30 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit 1
 
 main() {
-    VERSION="${1:-v1}"
-    echo "Generating gRPC stubs for $VERSION..."
+	VERSION="${1:-v1}"
+	echo "Generating gRPC stubs for $VERSION..."
 
-    GENERATED_PB3_DIR="src/bentoml/grpc/${VERSION}/_generated_pb3"
-    \rm -rf "$GIT_ROOT/$GENERATED_PB3_DIR" "$GIT_ROOT/tests/proto/_generated_pb3"
-    buildxCmd build --build-arg PROTOCOL_VERSION="$VERSION" \
-        --build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
-        --build-arg GENERATED_PB3_DIR="${GENERATED_PB3_DIR}" \
-        --target "protobuf-3-output" --output "type=local,dest=${GENERATED_PB3_DIR}" --file "tools/dev.Dockerfile" .
-    buildxCmd build --build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
-        --target "generate-tests-proto-3-output" --output "type=local,dest=tests" --file "tools/dev.Dockerfile" .
+	GENERATED_PB3_DIR="src/bentoml/grpc/${VERSION}/_generated_pb3"
+	\rm -rf "$GIT_ROOT/$GENERATED_PB3_DIR" "$GIT_ROOT/tests/proto/_generated_pb3"
+	buildxCmd build --build-arg PROTOCOL_VERSION="$VERSION" \
+		--build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
+		--build-arg GENERATED_PB3_DIR="${GENERATED_PB3_DIR}" \
+		--target "protobuf-3-output" --output "type=local,dest=${GENERATED_PB3_DIR}" --file "tools/dev.Dockerfile" .
+	buildxCmd build --build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
+		--target "generate-tests-proto-3-output" --output "type=local,dest=tests" --file "tools/dev.Dockerfile" .
 
-    GENERATED_PB4_DIR="src/bentoml/grpc/${VERSION}/_generated_pb4"
-    \rm -rf "$GIT_ROOT/$GENERATED_PB4_DIR" "$GIT_ROOT/tests/proto/_generated_pb4"
-    buildxCmd build --build-arg PROTOCOL_VERSION="$VERSION" \
-        --build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
-        --build-arg GENERATED_PB4_DIR="${GENERATED_PB4_DIR}" \
-        --target "protobuf-4-output" --output "type=local,dest=${GENERATED_PB4_DIR}" --file "tools/dev.Dockerfile" .
-    buildxCmd build --build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
-        --target "generate-tests-proto-4-output" --output "type=local,dest=tests" --file "tools/dev.Dockerfile" .
+	GENERATED_PB4_DIR="src/bentoml/grpc/${VERSION}/_generated_pb4"
+	\rm -rf "$GIT_ROOT/$GENERATED_PB4_DIR" "$GIT_ROOT/tests/proto/_generated_pb4"
+	buildxCmd build --build-arg PROTOCOL_VERSION="$VERSION" \
+		--build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
+		--build-arg GENERATED_PB4_DIR="${GENERATED_PB4_DIR}" \
+		--target "protobuf-4-output" --output "type=local,dest=${GENERATED_PB4_DIR}" --file "tools/dev.Dockerfile" .
+	buildxCmd build --build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
+		--target "generate-tests-proto-4-output" --output "type=local,dest=tests" --file "tools/dev.Dockerfile" .
 }
 
 if [ "${#}" -gt 1 ]; then
-    echo "$0 takes one optional argument. Usage: $0 [v1]"
-    exit 1
+	echo "$0 takes one optional argument. Usage: $0 [v1]"
+	exit 1
 fi
 main "$@"

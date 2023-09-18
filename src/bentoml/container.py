@@ -4,32 +4,31 @@ User facing python APIs for building a OCI-complicant image.
 
 from __future__ import annotations
 
-import logging
 import os
-import shutil
 import sys
+import shutil
 import typing as t
+import logging
+from typing import TYPE_CHECKING
 
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
+from .exceptions import BentoMLException
 from ._internal.container import build as _internal_build
+from ._internal.container import health
+from ._internal.container import get_backend
+from ._internal.container import register_backend
 from ._internal.container import (
     construct_containerfile as _internal_construct_containerfile,
 )
-from ._internal.container import get_backend
-from ._internal.container import health
-from ._internal.container import register_backend
-from .exceptions import BentoMLException
+from ._internal.configuration.containers import BentoMLContainer
 
-if t.TYPE_CHECKING:
-    from ._internal.bento import BentoStore
-    from ._internal.container import DefaultBuilder
-    from ._internal.container.base import ArgType
+if TYPE_CHECKING:
     from ._internal.tag import Tag
+    from ._internal.bento import BentoStore
     from ._internal.types import PathType
-
+    from ._internal.container.base import ArgType
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +59,7 @@ def build(
     secret: str | dict[str, str] | ArgType = ...,
     ssh: str | ArgType = ...,
     target: str | ArgType = ...,
-    **kwargs: t.Any,
-) -> t.Any:
+):
     ...
 
 
@@ -87,8 +85,7 @@ def build(
     ssh: str | ArgType = ...,
     metadata_file: PathType | None = ...,
     opt: tuple[str, ...] | dict[str, str | tuple[str, ...]] | None = ...,
-    **kwargs: t.Any,
-) -> t.Any:
+):
     ...
 
 
@@ -103,7 +100,6 @@ def build(
     tag: tuple[str] | None = ...,
     context_path: PathType = ...,
     add_host: dict[str, str] | ArgType = ...,
-    attest: str | dict[str, str] | ArgType = ...,
     allow: str | ArgType = ...,
     build_arg: dict[str, str] | ArgType = ...,
     build_context: dict[str, str] | ArgType = ...,
@@ -121,18 +117,15 @@ def build(
     output: str | dict[str, str] | ArgType = ...,
     platform: str | ArgType = ...,
     progress: t.Literal["auto", "tty", "plain"] = "auto",
-    provenance: str | dict[str, str] | ArgType = ...,
     pull: t.Literal[True, False] = ...,
     push: t.Literal[True, False] = ...,
     quiet: t.Literal[True, False] = ...,
-    sbom: str | dict[str, str] | ArgType = ...,
     secret: str | dict[str, str] | ArgType = ...,
     shm_size: int | None = ...,
     ssh: str | ArgType = ...,
     target: str | None = ...,
     ulimit: str | dict[str, tuple[int, int]] | ArgType = ...,
-    **kwargs: t.Any,
-) -> t.Any:
+):
     ...
 
 
@@ -176,8 +169,7 @@ def build(
     namespace: str | None = ...,
     snapshotter: str | None = ...,
     storage_driver: str | None = ...,
-    **kwargs: t.Any,
-) -> t.Any:
+):
     ...
 
 
@@ -276,8 +268,7 @@ def build(
     uts: str | None = ...,
     variant: str | None = ...,
     volume: str | tuple[str, str, str] | None = ...,
-    **kwargs: t.Any,
-) -> t.Any:
+):
     ...
 
 
@@ -359,20 +350,19 @@ def build(
     uts: str | None = ...,
     variant: str | None = ...,
     volume: str | tuple[str, str, str] | None = ...,
-    **kwargs: t.Any,
-) -> t.Any:
+):
     ...
 
 
 @inject
 def build(
     bento_tag: Tag | str,
-    backend: DefaultBuilder = "docker",
+    backend: str = "docker",
     image_tag: tuple[str] | None = None,
     features: t.Sequence[str] | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     **kwargs: t.Any,
-) -> t.Any:
+):
     """
     Build any given BentoML into a OCI-compliant image.
 
@@ -402,7 +392,7 @@ def build(
 
     # Run healthcheck
     if not health(backend):
-        raise BentoMLException("Backend %s is not healthy." % backend)
+        raise BentoMLException("Failed to use backend %s." % backend)
 
     if "tag" not in kwargs:
         kwargs["tag"] = determine_container_tag(bento_tag, image_tag=image_tag)

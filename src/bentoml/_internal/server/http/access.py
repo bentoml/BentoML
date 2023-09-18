@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import logging
-from contextvars import ContextVar
 from timeit import default_timer
 from typing import TYPE_CHECKING
+from contextvars import ContextVar
 
 if TYPE_CHECKING:
     from ... import external_typing as ext

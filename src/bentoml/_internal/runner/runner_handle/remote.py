@@ -1,40 +1,40 @@
 from __future__ import annotations
 
-import asyncio
-import functools
-import json
-import logging
 import os
-import pickle
+import json
 import time
-import traceback
+import pickle
 import typing as t
+import asyncio
+import logging
+import functools
+import traceback
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
+from . import RunnerHandle
+from ..utils import Params
+from ..utils import PAYLOAD_META_HEADER
+from ...utils import LazyLoader
+from ...context import component_context
+from ..container import Payload
+from ...utils.uri import uri_to_path
 from ....exceptions import RemoteException
 from ....exceptions import ServiceUnavailable
 from ...configuration.containers import BentoMLContainer
-from ...context import component_context
-from ...utils import LazyLoader
-from ...utils.uri import uri_to_path
-from ..container import Payload
-from ..utils import PAYLOAD_META_HEADER
-from ..utils import Params
-from . import RunnerHandle
 
 TRITON_EXC_MSG = "tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[all]>=2.29.0\"'."
 
 if t.TYPE_CHECKING:
+    import yarl
     import tritonclient.grpc.aio as tritongrpcclient
     import tritonclient.http.aio as tritonhttpclient
-    import yarl
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
 
-    from ....triton import Runner as TritonRunner
     from ..runner import Runner
     from ..runner import RunnerMethod
+    from ....triton import Runner as TritonRunner
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
@@ -171,6 +171,10 @@ class RemoteRunnerClient(RunnerHandle):
 
         inp_batch_dim = __bentoml_method.config.batch_dim[0]
 
+        payload_params = Params[Payload](*args, **kwargs).map(
+            functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
+        )
+
         headers = {
             "Bento-Name": component_context.bento_name,
             "Bento-Version": component_context.bento_version,
@@ -274,74 +278,6 @@ class RemoteRunnerClient(RunnerHandle):
 
         return AutoContainer.from_payload(payload)
 
-    async def async_stream_method(
-        self,
-        __bentoml_method: RunnerMethod[t.Any, P, R],
-        *args: P.args,
-        **kwargs: P.kwargs,
-    ) -> t.AsyncGenerator[R, None]:
-        import aiohttp
-
-        from ...runner.container import AutoContainer
-
-        inp_batch_dim = __bentoml_method.config.batch_dim[0]
-
-        headers = {
-            "Bento-Name": component_context.bento_name,
-            "Bento-Version": component_context.bento_version,
-            "Runner-Name": self._runner.name,
-            "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-            "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
-        }
-        total_args_num = len(args) + len(kwargs)
-        headers["Args-Number"] = str(total_args_num)
-
-        if total_args_num == 1:
-            # FIXME: also considering kwargs
-            if len(kwargs) == 1:
-                kwarg_name = list(kwargs.keys())[0]
-                headers["Kwarg-Name"] = kwarg_name
-                payload = AutoContainer.to_payload(
-                    kwargs[kwarg_name], batch_dim=inp_batch_dim
-                )
-            else:
-                payload = AutoContainer.to_payload(args[0], batch_dim=inp_batch_dim)
-            data = payload.data
-
-            headers["Payload-Meta"] = json.dumps(payload.meta)
-            headers["Payload-Container"] = payload.container
-            headers["Batch-Size"] = str(payload.batch_size)
-
-        else:
-            payload_params = Params[Payload](*args, **kwargs).map(
-                functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
-            )
-            data = pickle.dumps(payload_params)  # FIXME: pickle inside pickle
-
-        path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
-
-        try:
-            async with self._client.post(
-                f"{self._addr}/{path}",
-                data=data,
-                headers=headers,
-            ) as resp:
-                buffer = bytearray()
-                async for b, end_of_http_chunk in resp.content.iter_chunks():
-                    buffer.extend(b)
-
-                    # This is to handle large payload that is split into multiple chunks
-                    if end_of_http_chunk and len(buffer) > 0:
-                        # TODO: To remove pickling so that we can stream data as it is
-                        payload = pickle.loads(buffer)
-                        yield AutoContainer.from_payload(payload)
-
-                        # Clearing the buffer for the next data
-                        buffer = bytearray()
-
-        except aiohttp.ClientOSError as e:
-            raise RemoteException("Failed to connect to runner server.") from e
-
     def run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],
@@ -365,22 +301,18 @@ class RemoteRunnerClient(RunnerHandle):
         # default kubernetes probe timeout is also 1s; see
         # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
         aio_timeout = aiohttp.ClientTimeout(total=timeout)
-        try:
-            async with self._client.get(
-                f"{self._addr}/readyz",
-                headers={
-                    "Bento-Name": component_context.bento_name,
-                    "Bento-Version": component_context.bento_version,
-                    "Runner-Name": self._runner.name,
-                    "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-                    "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
-                },
-                timeout=aio_timeout,
-            ) as resp:
-                return resp.status == 200
-        except asyncio.TimeoutError:
-            logger.warn("Timed out waiting for runner to be ready")
-            return False
+        async with self._client.get(
+            f"{self._addr}/readyz",
+            headers={
+                "Bento-Name": component_context.bento_name,
+                "Bento-Version": component_context.bento_version,
+                "Runner-Name": self._runner.name,
+                "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
+                "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+            },
+            timeout=aio_timeout,
+        ) as resp:
+            return resp.status == 200
 
     def __del__(self) -> None:
         self._close_conn()

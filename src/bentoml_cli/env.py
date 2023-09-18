@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import importlib.metadata
 import os
-import platform
+import sys
 import shlex
 import shutil
-import subprocess
-import sys
 import typing as t
+import platform
+import subprocess
 from gettext import gettext
 
 import click
@@ -106,9 +105,10 @@ def pretty_format(
 
 
 def add_env_command(cli: click.Group) -> None:
-    from bentoml._internal.utils.pkg import PackageNotFoundError
-    from bentoml._internal.utils.pkg import get_pkg_version
+    from bentoml import __version__ as BENTOML_VERSION
     from bentoml.exceptions import CLIException
+    from bentoml._internal.utils.pkg import get_pkg_version
+    from bentoml._internal.utils.pkg import PackageNotFoundError
 
     @cli.command(help=gettext("Print environment info and exit"))
     @click.option(
@@ -127,7 +127,7 @@ def add_env_command(cli: click.Group) -> None:
         is_windows = sys.platform == "win32"
 
         info_dict: dict[str, str | list[str]] = {
-            "bentoml": importlib.metadata.version("bentoml"),
+            "bentoml": BENTOML_VERSION,
             "python": platform.python_version(),
             "platform": platform.platform(),
         }

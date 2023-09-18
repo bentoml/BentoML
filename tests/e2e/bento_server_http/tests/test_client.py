@@ -16,10 +16,3 @@ def test_health(host: str) -> None:
     resp = http_client.health()
 
     assert resp.status == 200
-
-
-def test_text_endpoint(host: str) -> None:
-    http_client = HTTPClient.from_url(f"http://{host}")
-    resp = http_client.yo("Bob")
-
-    assert resp == "yo Bob"

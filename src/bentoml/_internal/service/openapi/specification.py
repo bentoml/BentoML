@@ -10,14 +10,14 @@ webhooks, securities, etc. are yet to be implemented/exposed to user.
 """
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 
 import attr
-import cattr.errors
 import yaml
-from cattr.gen import make_dict_unstructure_fn
+import cattr.errors
 from cattr.gen import override
+from cattr.gen import make_dict_unstructure_fn
 
 from ...utils import bentoml_cattr
 

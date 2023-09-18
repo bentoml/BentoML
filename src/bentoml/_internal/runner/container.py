@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import abc
 import base64
-import io
-import itertools
 import pickle
 import typing as t
+import itertools
 
 from ..types import LazyType
 from ..utils import LazyLoader
-from ..utils.pickle import fixed_torch_loads
 from ..utils.pickle import pep574_dumps
 from ..utils.pickle import pep574_loads
 
@@ -149,7 +147,9 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     @classmethod
     @abc.abstractmethod
     def from_batch_payloads(
-        cls, payloads: t.Sequence[Payload], batch_dim: int
+        cls,
+        payloads: t.Sequence[Payload],
+        batch_dim: int,
     ) -> tuple[BatchType, list[int]]:
         ...
 
@@ -410,7 +410,7 @@ class PandasDataFrameContainer(
 
         return cls.create_payload(
             data,
-            batch.shape[0],
+            batch.size,
             meta=meta,
         )
 
@@ -449,49 +449,6 @@ class PandasDataFrameContainer(
         return cls.batches_to_batch(batches, batch_dim)
 
 
-class PILImageContainer(DataContainer["ext.PILImage", "ext.PILImage"]):
-    _error = (
-        "PIL.Image doesn't support batch inference."
-        "You can convert it to numpy.ndarray before passing to the runner."
-    )
-
-    @classmethod
-    def to_payload(cls, batch: ext.PILImage, batch_dim: int) -> Payload:
-        buffer = io.BytesIO()
-        batch.save(buffer, format=batch.format)
-        return cls.create_payload(buffer.getvalue(), batch_size=1)
-
-    @classmethod
-    def from_payload(cls, payload: Payload) -> ext.PILImage:
-        from ..io_descriptors.image import PIL
-
-        return PIL.Image.open(io.BytesIO(payload.data))
-
-    @classmethod
-    def batch_to_payloads(
-        cls, batch: ext.PILImage, indices: t.Sequence[int], batch_dim: int
-    ) -> list[Payload]:
-        raise NotImplementedError(cls._error)
-
-    @classmethod
-    def batches_to_batch(
-        cls, batches: t.Sequence[ext.PILImage], batch_dim: int
-    ) -> tuple[ext.PILImage, list[int]]:
-        raise NotImplementedError(cls._error)
-
-    @classmethod
-    def batch_to_batches(
-        cls, batch: ext.PILImage, indices: t.Sequence[int], batch_dim: int
-    ) -> list[ext.PILImage]:
-        raise NotImplementedError(cls._error)
-
-    @classmethod
-    def from_batch_payloads(
-        cls, payloads: t.Sequence[Payload], batch_dim: int = 0
-    ) -> tuple[ext.PILImage, list[int]]:
-        raise NotImplementedError(cls._error)
-
-
 class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     @classmethod
     def batches_to_batch(
@@ -521,18 +478,42 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         if isinstance(batch, t.Generator):  # Generators can't be pickled
             batch = list(t.cast(t.Generator[t.Any, t.Any, t.Any], batch))
 
-        data = pickle.dumps(batch)
+        meta: dict[str, bool | int | float | str | list[int]] = {"format": "pickle5"}
+
+        bs: bytes
+        concat_buffer_bs: bytes
+        indices: list[int]
+        bs, concat_buffer_bs, indices = pep574_dumps(batch)
+
+        if indices:
+            meta["with_buffer"] = True
+            data = concat_buffer_bs
+            meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
+            meta["indices"] = indices
+        else:
+            meta["with_buffer"] = False
+            data = bs
 
         if isinstance(batch, list):
             batch_size = len(t.cast(t.List[t.Any], batch))
         else:
             batch_size = 1
 
-        return cls.create_payload(data=data, batch_size=batch_size)
+        return cls.create_payload(
+            data=data,
+            batch_size=batch_size,
+            meta=meta,
+        )
 
     @classmethod
     def from_payload(cls, payload: Payload) -> t.Any:
-        return fixed_torch_loads(payload.data)
+        if payload.meta["with_buffer"]:
+            bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
+            bs = base64.b64decode(bs_str)
+            indices = t.cast(t.List[int], payload.meta["indices"])
+            return pep574_loads(bs, payload.data, indices)
+        else:
+            return pep574_loads(payload.data, b"", [])
 
     @classmethod
     def batch_to_payloads(
@@ -582,24 +563,20 @@ class DataContainerRegistry:
         cls, type_: t.Type[SingleType] | LazyType[SingleType]
     ) -> t.Type[DataContainer[SingleType, t.Any]]:
         typeref = LazyType.from_type(type_)
-        if typeref in cls.CONTAINER_SINGLE_TYPE_MAP:
-            return cls.CONTAINER_SINGLE_TYPE_MAP[typeref]
-        for klass in cls.CONTAINER_SINGLE_TYPE_MAP:
-            if klass.issubclass(type_):
-                return cls.CONTAINER_SINGLE_TYPE_MAP[klass]
-        return DefaultContainer
+        return cls.CONTAINER_SINGLE_TYPE_MAP.get(
+            typeref,
+            DefaultContainer,
+        )
 
     @classmethod
     def find_by_batch_type(
         cls, type_: t.Type[BatchType] | LazyType[BatchType]
     ) -> t.Type[DataContainer[t.Any, BatchType]]:
         typeref = LazyType.from_type(type_)
-        if typeref in cls.CONTAINER_BATCH_TYPE_MAP:
-            return cls.CONTAINER_BATCH_TYPE_MAP[typeref]
-        for klass in cls.CONTAINER_BATCH_TYPE_MAP:
-            if klass.issubclass(type_):
-                return cls.CONTAINER_BATCH_TYPE_MAP[klass]
-        return DefaultContainer
+        return cls.CONTAINER_BATCH_TYPE_MAP.get(
+            typeref,
+            DefaultContainer,
+        )
 
     @classmethod
     def find_by_name(cls, name: str) -> t.Type[DataContainer[t.Any, t.Any]]:
@@ -645,11 +622,6 @@ def register_builtin_containers():
         LazyType("tritonclient.http.aio", "InferInput"),
         LazyType("tritonclient.http.aio", "InferInput"),
         TritonInferInputDataContainer,
-    )
-    DataContainerRegistry.register_container(
-        LazyType("PIL.Image", "Image"),
-        LazyType("PIL.Image", "Image"),
-        PILImageContainer,
     )
 
 

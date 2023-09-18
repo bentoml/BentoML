@@ -4,21 +4,15 @@ import typing as t
 from functools import partial
 
 import requests
-
-from ._internal.utils import pkg
-
-if pkg.pkg_version_info("ray")[:2] >= (2, 5):
-    from ray.serve._private.http_util import BufferedASGISender as ASGIHTTPSender
-else:
-    from ray.serve._private.http_util import ASGIHTTPSender
+from ray.serve._private.http_util import ASGIHTTPSender
 
 import bentoml
 from bentoml import Tag
 
 from ...exceptions import MissingDependencyException
-from ..runner.container import AutoContainer
 from ..runner.utils import Params
 from .runner_handle import RayRunnerHandle
+from ..runner.container import AutoContainer
 
 try:
     from ray import serve

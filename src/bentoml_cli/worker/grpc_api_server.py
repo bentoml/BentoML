@@ -109,9 +109,9 @@ def main(
     """
 
     import bentoml
-    from bentoml._internal.configuration.containers import BentoMLContainer
-    from bentoml._internal.context import component_context
     from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.context import component_context
+    from bentoml._internal.configuration.containers import BentoMLContainer
 
     component_context.component_type = "grpc_api_server"
     component_context.component_index = worker_id

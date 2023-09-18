@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from types import ModuleType
 
 import cloudpickle
 
 import bentoml
 
-from ...exceptions import MissingDependencyException
+from ..tag import Tag
+from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
+from ...exceptions import MissingDependencyException
 from ..models.model import Model
 from ..models.model import ModelContext
 from ..models.model import ModelOptions
 from ..models.model import ModelSignature
-from ..tag import Tag
-from ..utils.pkg import get_pkg_version
 from .common.pytorch import PyTorchTensorContainer  # noqa # type: ignore
 
 try:

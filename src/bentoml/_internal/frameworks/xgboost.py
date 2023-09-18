@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import logging
 import os
 import typing as t
+import logging
 from types import ModuleType
 from typing import TYPE_CHECKING
 
@@ -11,14 +11,14 @@ import numpy as np
 
 import bentoml
 from bentoml import Tag
-from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import InvalidArgument
-from bentoml.exceptions import MissingDependencyException
-from bentoml.exceptions import NotFound
 from bentoml.models import ModelOptions
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import MissingDependencyException
 
-from ..models.model import ModelContext
 from ..utils.pkg import get_pkg_version
+from ..models.model import ModelContext
 
 if TYPE_CHECKING:
     from bentoml.types import ModelSignature
@@ -286,15 +286,13 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             self: XGBoostRunnable,
             input_data: ext.NpNDArray
             | ext.PdDataFrame,  # TODO: add support for DMatrix
-            *args: t.Any,
-            **kwargs: t.Any,
         ) -> ext.NpNDArray:
             if isinstance(self.model, xgb.Booster):
                 inp = xgb.DMatrix(input_data)
             else:
                 inp = input_data
 
-            res = self.predict_fns[method_name](inp, *args, **kwargs)
+            res = self.predict_fns[method_name](inp)
             return np.asarray(res)  # type: ignore (incomplete np types)
 
         XGBoostRunnable.add_method(

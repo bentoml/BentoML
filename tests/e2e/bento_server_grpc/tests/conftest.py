@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import os
-import subprocess
 import sys
 import typing as t
+import subprocess
 from typing import TYPE_CHECKING
 
 import psutil
@@ -13,9 +13,9 @@ import pytest
 if TYPE_CHECKING:
     from contextlib import ExitStack
 
-    from _pytest.config import Config
     from _pytest.main import Session
     from _pytest.nodes import Item
+    from _pytest.config import Config
 
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-import logging
 import os
 import types
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 import pytest
 
 import bentoml
+from bentoml.exceptions import NotFound
 from bentoml._internal.models.model import ModelContext
 from bentoml._internal.models.model import ModelSignature
 from bentoml._internal.runner.runner import Runner
-from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 from bentoml._internal.runner.strategy import DefaultStrategy
-from bentoml.exceptions import NotFound
+from bentoml._internal.runner.runner_handle.local import LocalRunnerRef
 
 from .models import FrameworkTestModel
 
@@ -233,9 +233,9 @@ def test_runner_batching(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
-    from bentoml._internal.runner.container import AutoContainer
     from bentoml._internal.runner.utils import Params
     from bentoml._internal.runner.utils import payload_paramss_to_batch_params
+    from bentoml._internal.runner.container import AutoContainer
 
     ran_tests = False
 

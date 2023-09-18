@@ -31,7 +31,7 @@ rules_proto_grpc_repos()
 
 http_archive(
     name = "com_github_grpc_grpc",
-    strip_prefix = "grpc-1.48.1",
+    strip_prefix = "grpc-v1.48.1",
     urls = [
         "https://github.com/grpc/grpc/archive/v1.48.1.tar.gz",
     ],

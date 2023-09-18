@@ -3,21 +3,22 @@ from __future__ import annotations
 import typing as t
 
 from starlette.requests import Request
-from starlette.responses import StreamingResponse
+from starlette.responses import Response
 
-from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Schema
-from ..utils.http import set_cookies
-from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
+from ..utils.http import set_cookies
+from ...exceptions import BentoMLException
+from ..service.openapi import SUCCESS_DESCRIPTION
+from ..utils.lazy_loader import LazyLoader
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import MediaType
 
 if t.TYPE_CHECKING:
     from google.protobuf import wrappers_pb2
     from typing_extensions import Self
 
-    from ..context import ServiceContext as Context
     from .base import OpenAPIResponse
+    from ..context import ServiceContext as Context
 else:
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
 
@@ -87,10 +88,13 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
         :obj:`Text`: IO Descriptor that represents strings type.
     """
 
-    def __init__(
-        self, content_type: t.Literal["text/plain", "text/event-stream"] = "text/plain"
-    ):
-        self._mime_type = content_type
+    _mime_type = MIME_TYPE
+
+    def __init__(self, *args: t.Any, **kwargs: t.Any):
+        if args or kwargs:
+            raise BentoMLException(
+                f"'{self.__class__.__name__}' is not designed to take any args or kwargs during initialization."
+            ) from None
 
     def _from_sample(self, sample: str | bytes) -> str:
         """
@@ -159,14 +163,10 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
         obj = await request.body()
         return str(obj.decode("utf-8"))
 
-    async def to_http_response(
-        self, obj: str | t.AsyncGenerator[str, None], ctx: Context | None = None
-    ) -> StreamingResponse:
-        content_stream = iter([obj]) if isinstance(obj, str) else obj
-
+    async def to_http_response(self, obj: str, ctx: Context | None = None) -> Response:
         if ctx is not None:
-            res = StreamingResponse(
-                content_stream,
+            res = Response(
+                obj,
                 media_type=self._mime_type,
                 headers=ctx.response.metadata,  # type: ignore (bad starlette types)
                 status_code=ctx.response.status_code,
@@ -174,7 +174,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            return StreamingResponse(content_stream, media_type=self._mime_type)
+            return Response(obj, media_type=self._mime_type)
 
     async def from_proto(self, field: wrappers_pb2.StringValue | bytes) -> str:
         if isinstance(field, bytes):

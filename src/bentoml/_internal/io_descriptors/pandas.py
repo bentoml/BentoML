@@ -1,29 +1,29 @@
 from __future__ import annotations
 
-import functools
 import io
-import logging
 import os
 import typing as t
-from concurrent.futures import ThreadPoolExecutor
+import logging
+import functools
 from enum import Enum
+from concurrent.futures import ThreadPoolExecutor
 
 from starlette.requests import Request
 from starlette.responses import Response
 
+from .base import IODescriptor
+from ..types import LazyType
+from ..utils.pkg import find_spec
+from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
-from ...exceptions import MissingDependencyException
 from ...exceptions import UnprocessableEntity
+from ...exceptions import MissingDependencyException
 from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Schema
-from ..types import LazyType
-from ..utils.http import set_cookies
 from ..utils.lazy_loader import LazyLoader
-from ..utils.pkg import find_spec
-from .base import IODescriptor
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import MediaType
 
 EXC_MSG = "pandas' is required to use PandasDataFrame or PandasSeries. Install with 'pip install bentoml[io-pandas]'"
 
@@ -38,8 +38,8 @@ if t.TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
-    from ..context import ServiceContext as Context
     from .base import OpenAPIResponse
+    from ..context import ServiceContext as Context
 
 else:
     pb, _ = import_generated_stubs("v1")
@@ -66,15 +66,15 @@ def get_parquet_engine() -> str:
         )
 
 
-def _openapi_types(item: t.Any) -> str:  # pragma: no cover
+def _openapi_types(item: str) -> str:  # pragma: no cover
     # convert pandas types to OpenAPI types
-    if pd.api.types.is_integer_dtype(item):
+    if item.startswith("int"):
         return "integer"
-    elif pd.api.types.is_float_dtype(item):
+    elif item.startswith("float") or item.startswith("double"):
         return "number"
-    elif pd.api.types.is_string_dtype(item) or pd.api.types.is_datetime64_dtype(item):
+    elif item.startswith("str") or item.startswith("date"):
         return "string"
-    elif pd.api.types.is_bool_dtype(item):
+    elif item.startswith("bool"):
         return "boolean"
     else:
         return "object"
@@ -676,7 +676,10 @@ class PandasDataFrame(
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = executor.map(process_columns_contents, field.columns)
                 data.extend([i for i in list(futures)])
-            dataframe = pd.DataFrame(dict(zip(field.column_names, data)))
+            dataframe = pd.DataFrame(
+                dict(zip(field.column_names, data)),
+                columns=t.cast(t.List[str], field.column_names),
+            )
         return self.validate_dataframe(dataframe)
 
     @t.overload
@@ -748,9 +751,9 @@ class PandasDataFrame(
         return pyarrow.RecordBatch.from_pandas(df)
 
     def spark_schema(self) -> pyspark.sql.types.StructType:
-        from pyspark.pandas.typedef import as_spark_type
-        from pyspark.sql.types import StructField
         from pyspark.sql.types import StructType
+        from pyspark.sql.types import StructField
+        from pyspark.pandas.typedef import as_spark_type
 
         if self._dtype is None or self._dtype:
             raise InvalidArgument(
@@ -1208,9 +1211,9 @@ class PandasSeries(
         return pyarrow.RecordBatch.from_pandas(df)
 
     def spark_schema(self) -> pyspark.sql.types.StructType:
-        from pyspark.pandas.typedef import as_spark_type
-        from pyspark.sql.types import StructField
         from pyspark.sql.types import StructType
+        from pyspark.sql.types import StructField
+        from pyspark.pandas.typedef import as_spark_type
 
         if self._dtype is None or self._dtype is True:
             raise InvalidArgument(

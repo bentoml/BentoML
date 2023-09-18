@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-import itertools
-import logging
-import shutil
-import subprocess
 import sys
-import tempfile
+import shutil
 import typing as t
+import logging
+import tempfile
+import itertools
+import subprocess
+from typing import TYPE_CHECKING
 from functools import partial
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
+    from click import Group
     from click import Command
     from click import Context
-    from click import Group
     from click import Parameter
 
     from bentoml._internal.container import DefaultBuilder
@@ -271,13 +272,6 @@ def buildx_options_group(f: F[t.Any]):
             help="Allow extra privileged entitlement (e.g., ``network.host``, ``security.insecure``).",
         ),
         optgroup_option(
-            "--attest",
-            equivalent=("opt", "attest=type=sbom,generator=image"),
-            multiple=True,
-            metavar="[NAME|type=TYPE[,KEY=VALUE]]",
-            help="Attestation parameter (e.g., ``type=local,ref=path/to/dir``).",
-        ),
-        optgroup_option(
             "--build-context",
             equivalent=("opt", "build-context=project=path/to/project/source"),
             multiple=True,
@@ -310,12 +304,6 @@ def buildx_options_group(f: F[t.Any]):
             equivalent=("opt", "push"),
             default=False,
             help="Shorthand for ``--output=type=registry``. Note that ``--push`` and ``--load`` are mutually exclusive.",
-        ),
-        optgroup_option(
-            "--provenance",
-            equivalent=("opt", "provenance=generator=image"),
-            type=click.STRING,
-            help="Shorthand for ``--attest=type=provenance``.",
         ),
         optgroup_option(
             "--quiet",
@@ -352,12 +340,6 @@ def buildx_options_group(f: F[t.Any]):
             help="Write build result metadata to the file.",
         ),
         optgroup_option(
-            "--sbom",
-            equivalent=("opt", "sbom=generator=image"),
-            type=click.STRING,
-            help="Shorthand for ``--attest=type=sbom``.",
-        ),
-        optgroup_option(
             "--shm-size",
             equivalent=("opt", "shm-size=8192Mb"),
             help="Size of ``/dev/shm``.",
@@ -373,16 +355,16 @@ def add_containerize_command(cli: Group) -> None:
     from click_option_group import optgroup
 
     from bentoml import container
-    from bentoml._internal.configuration import get_debug_mode
-    from bentoml._internal.container import FEATURES
-    from bentoml._internal.container import REGISTERED_BACKENDS
-    from bentoml._internal.container import determine_container_tag
-    from bentoml._internal.container import enable_buildkit
-    from bentoml.exceptions import BentoMLException
+    from bentoml_cli.utils import opt_callback
     from bentoml_cli.utils import kwargs_transformers
     from bentoml_cli.utils import normalize_none_type
-    from bentoml_cli.utils import opt_callback
     from bentoml_cli.utils import validate_container_tag
+    from bentoml.exceptions import BentoMLException
+    from bentoml._internal.container import FEATURES
+    from bentoml._internal.container import enable_buildkit
+    from bentoml._internal.container import REGISTERED_BACKENDS
+    from bentoml._internal.container import determine_container_tag
+    from bentoml._internal.configuration import get_debug_mode
 
     @cli.command()
     @click.argument("bento_tag", type=click.STRING, metavar="BENTO:TAG")
@@ -506,10 +488,8 @@ def add_containerize_command(cli: Group) -> None:
 
         # Run healthcheck before containerizing
         # build will also run healthcheck, but we want to fail early.
-        try:
-            container.health(backend)
-        except subprocess.CalledProcessError:
-            raise BentoMLException(f"Backend {backend} is not healthy")
+        if not container.health(backend):
+            raise BentoMLException("Failed to use backend %s." % backend)
 
         # --progress is not available without BuildKit.
         if not enable_buildkit(backend=backend) and "progress" in _memoized:
@@ -603,7 +583,7 @@ def add_containerize_command(cli: Group) -> None:
             )
             instructions = (
                 "To run your newly built Bento container, run:\n"
-                + f"    {container_runtime} run --rm -p 3000:3000 {tags[0]}\n"
+                + f"    {container_runtime} run -it --rm -p 3000:3000 {tags[0]} serve\n"
             )
 
             if features is not None and any(
@@ -612,7 +592,7 @@ def add_containerize_command(cli: Group) -> None:
             ):
                 instructions += (
                     "To serve with gRPC instead, run:\n"
-                    + f"    {container_runtime} run --rm -p 3000:3000 -p 3001:3001 {tags[0]} serve-grpc\n"
+                    + f"    {container_runtime} run -it -p 3000:3000 -p 3001:3001 {tags[0]} serve-grpc\n"
                 )
             click.echo(instructions, nl=False)
             raise SystemExit(0)

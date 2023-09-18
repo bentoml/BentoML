@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.datasets import load_breast_cancer
 from sklearn.datasets import load_iris
+from sklearn.datasets import load_breast_cancer
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelConfiguration as Config
 from . import FrameworkTestModelInput as Input
+from . import FrameworkTestModelConfiguration as Config
 
 if TYPE_CHECKING:
     from sklearn.utils import Bunch

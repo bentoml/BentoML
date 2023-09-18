@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
 from bentoml import Tag
-from bentoml.exceptions import MissingDependencyException
-from bentoml.exceptions import NotFound
 from bentoml.models import Model
 from bentoml.models import ModelContext
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import MissingDependencyException
 
 from ..types import LazyType
 from ..utils.pkg import get_pkg_version
@@ -183,14 +183,11 @@ def get_runnable(bento_model: Model):
 
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(
-            self: SklearnRunnable,
-            input_data: ext.NpNDArray | ext.PdDataFrame,
-            *args: t.Any,
-            **kwargs: t.Any,
+            self: SklearnRunnable, input_data: ext.NpNDArray | ext.PdDataFrame
         ) -> ext.NpNDArray:
             # TODO: set inner_max_num_threads and n_jobs param here base on strategy env vars
             with parallel_backend(backend="loky"):
-                return getattr(self.model, method_name)(input_data, *args, **kwargs)
+                return getattr(self.model, method_name)(input_data)
 
         SklearnRunnable.add_method(
             _run,

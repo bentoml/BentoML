@@ -1,6 +1,6 @@
-import asyncio
 import math
 import time
+import asyncio
 from collections import defaultdict
 
 from tabulate import tabulate

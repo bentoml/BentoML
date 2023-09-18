@@ -3,12 +3,12 @@ from __future__ import annotations
 import typing as t
 
 import pytest
-from google.protobuf import wrappers_pb2
 from grpc import aio
 from grpc_health.v1 import health_pb2 as pb_health
+from google.protobuf import wrappers_pb2
 
-from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import create_channel
+from bentoml.testing.grpc import async_client_call
 
 
 @pytest.mark.asyncio

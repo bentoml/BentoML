@@ -1,0 +1,20 @@
+# Docs dependencies
+-r tests-requirements.txt
+sphinx>=5
+setuptools>=63  # readthedocs doesn't support -r
+myst-parser
+sphinx-click>=3.0.2
+furo
+sphinx-inline-tabs
+sphinxext-opengraph
+sphinxcontrib-fulltoc
+sphinxcontrib-spelling
+sphinx-copybutton
+sphinx-issues
+sphinx-design
+pyenchant
+Jinja2>=3.1
+sphinx-autobuild
+sphinx-hoverxref
+pyspark
+tritonclient[all]

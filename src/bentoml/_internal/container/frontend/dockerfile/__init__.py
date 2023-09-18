@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 import attr
 
-from .....exceptions import BentoMLException
 from .....exceptions import InvalidArgument
+from .....exceptions import BentoMLException
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
@@ -21,15 +21,14 @@ logger = logging.getLogger(__name__)
 
 
 # Python supported versions
-SUPPORTED_PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
+SUPPORTED_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 # CUDA supported versions
 SUPPORTED_CUDA_VERSIONS = [
     "12.0.0",
     "12.0.1",
     "12.1.0",
     "12.1.1",
-    "11.8.0",
-    "11.7.1",
+    "11.7.0",
     "11.6.2",
     "11.4.3",
     "11.2.2",
@@ -43,11 +42,9 @@ ALLOWED_CUDA_VERSION_ARGS = {
     "12.0": "12.0.1",
     "12.0.1": "12.0.1",
     "12.0.0": "12.0.0",
-    "11": "11.8.0",
-    "11.8": "11.8.0",
-    "11.8.0": "11.8.0",
-    "11.7": "11.7.1",
-    "11.7.1": "11.7.1",
+    "11": "11.7.0",
+    "11.7": "11.7.0",
+    "11.7.0": "11.7.0",
     "11.6": "11.6.2",
     "11.6.2": "11.6.2",
     "11.4": "11.4.3",
@@ -66,7 +63,7 @@ SUPPORTED_RELEASE_TYPES = ["python", "miniconda", "cuda"]
 # versions and list of supported CUDA versions.
 CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
     "amazonlinux": {
-        "supported_python_versions": ["3.8"],
+        "supported_python_versions": ["3.7", "3.8"],
         "supported_cuda_versions": None,
         "python": {
             "image": "amazonlinux:2",

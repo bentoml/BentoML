@@ -72,7 +72,6 @@ curl -X POST -H "content-type: application/text" --data "BentoML is great" http:
 <tr>
 <td> <code>gRPC</code> </td>
 <td>
-</table>
 
 ```bash
 grpcurl -d @ -plaintext 0.0.0.0:3000 bentoml.grpc.v1.BentoService/Call <<EOM
@@ -95,4 +94,4 @@ bentoml build
 bentoml containerize sentiment_analyzer:latest
 ```
 
-[#custom-runner]: https://docs.bentoml.com/en/latest/concepts/runner.html#custom-runner
+[#custom-runner]: https://docs.bentoml.org/en/latest/concepts/runner.html#custom-runner

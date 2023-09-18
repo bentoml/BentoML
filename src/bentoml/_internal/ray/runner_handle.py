@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import functools
 import typing as t
+import functools
 
-from ...exceptions import MissingDependencyException
 from ..runner import Runner
+from ...exceptions import MissingDependencyException
 from ..runner.runner import RunnerMethod
 from ..runner.runner_handle import RunnerHandle
 

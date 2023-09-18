@@ -1,23 +1,27 @@
-import importlib.metadata
 import os
+import time
 import random
 import string
-import time
 from sys import version_info as pyver
 from typing import TYPE_CHECKING
+
+try:
+    import importlib.metadata as importlib_metadata
+except ModuleNotFoundError:
+    import importlib_metadata
 
 import pytest
 
 import bentoml
-from bentoml._internal.models import ModelContext
-from bentoml._internal.models import ModelStore
 from bentoml.exceptions import NotFound
+from bentoml._internal.models import ModelStore
+from bentoml._internal.models import ModelContext
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 PYTHON_VERSION: str = f"{pyver.major}.{pyver.minor}.{pyver.micro}"
-BENTOML_VERSION: str = importlib.metadata.version("bentoml")
+BENTOML_VERSION: str = importlib_metadata.version("bentoml")
 
 
 def createfile(filepath: str) -> str:

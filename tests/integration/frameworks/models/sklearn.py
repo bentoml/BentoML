@@ -10,8 +10,8 @@ from sklearn.ensemble import RandomForestClassifier
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelConfiguration as Config
 from . import FrameworkTestModelInput as Input
+from . import FrameworkTestModelConfiguration as Config
 
 if TYPE_CHECKING:
     from sklearn.utils import Bunch

@@ -1,13 +1,13 @@
 # pylint: disable=abstract-method,redefined-outer-name
 import argparse
 
-import mlflow.pytorch
 import numpy as np
 import torch
 import torch.nn as nn
+import mlflow.pytorch
 import torch.nn.functional as F
-from sklearn.datasets import load_iris
 from sklearn.metrics import accuracy_score
+from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
 import bentoml

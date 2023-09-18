@@ -1,8 +1,8 @@
 import logging
 
 import pandas as pd
-from sklearn import datasets
 from sklearn import svm
+from sklearn import datasets
 
 import bentoml
 

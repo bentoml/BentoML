@@ -1,28 +1,28 @@
 from __future__ import annotations
 
 import io
-import logging
 import os
 import typing as t
+import logging
 from functools import lru_cache
 
-from multipart.multipart import parse_options_header
-from starlette.datastructures import UploadFile
 from starlette.requests import Request
+from multipart.multipart import parse_options_header
 from starlette.responses import Response
+from starlette.datastructures import UploadFile
 
-from ...exceptions import BadInput
-from ...exceptions import BentoMLException
-from ...exceptions import InvalidArgument
-from ...exceptions import MissingDependencyException
-from ...grpc.utils import import_generated_stubs
-from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Schema
+from .base import IODescriptor
 from ..types import FileLike
 from ..utils import resolve_user_filepath
 from ..utils.http import set_cookies
-from .base import IODescriptor
+from ...exceptions import BadInput
+from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
+from ...grpc.utils import import_generated_stubs
+from ..service.openapi import SUCCESS_DESCRIPTION
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import MediaType
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +30,8 @@ if t.TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
-    from ..context import ServiceContext as Context
     from .base import OpenAPIResponse
+    from ..context import ServiceContext as Context
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
 else:

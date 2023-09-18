@@ -1,6 +1,6 @@
-from locust import HttpUser
-from locust import between
 from locust import task
+from locust import between
+from locust import HttpUser
 
 
 class MnistTestUser(HttpUser):

@@ -1,31 +1,31 @@
 from __future__ import annotations
 
-import asyncio
 import json
-import logging
 import typing as t
-from dataclasses import dataclass
-from functools import partial
+import asyncio
+import logging
 from typing import TYPE_CHECKING
+from functools import partial
+from dataclasses import dataclass
 
 import attr
 import numpy as np
 import pandas as pd
-import pydantic
 import pytest
+import pydantic
 
-from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
-from bentoml._internal.utils import LazyLoader
+from bentoml.io import JSON
 from bentoml.exceptions import BadInput
 from bentoml.grpc.utils import import_generated_stubs
-from bentoml.io import JSON
+from bentoml._internal.utils import LazyLoader
+from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture
     from google.protobuf import struct_pb2
 
-    from bentoml._internal.service.openapi.specification import Schema
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml._internal.service.openapi.specification import Schema
 else:
     pb, _ = import_generated_stubs()
     struct_pb2 = LazyLoader("struct_pb2", globals(), "google.protobuf.struct_pb2")

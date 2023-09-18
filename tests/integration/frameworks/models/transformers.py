@@ -1,39 +1,39 @@
 from __future__ import annotations
 
-import importlib
 import typing as t
+import importlib
 
 import numpy as np
 import requests
 import tensorflow as tf
 import transformers
-from datasets import load_dataset
 from PIL import Image
+from datasets import load_dataset
 from transformers import Pipeline
-from transformers.pipelines import get_supported_tasks
-from transformers.pipelines import get_task
-from transformers.testing_utils import nested_simplify
-from transformers.trainer_utils import set_seed
 from transformers.utils import is_tf_available
 from transformers.utils import is_torch_available
+from transformers.pipelines import get_task
+from transformers.pipelines import get_supported_tasks
+from transformers.testing_utils import nested_simplify
+from transformers.trainer_utils import set_seed
 
 import bentoml
-from bentoml._internal.frameworks.transformers import SimpleDefaultMapping
 from bentoml._internal.frameworks.transformers import TaskDefinition
-from bentoml._internal.frameworks.transformers import convert_to_autoclass
 from bentoml._internal.frameworks.transformers import delete_pipeline
 from bentoml._internal.frameworks.transformers import register_pipeline
+from bentoml._internal.frameworks.transformers import convert_to_autoclass
+from bentoml._internal.frameworks.transformers import SimpleDefaultMapping
 
 from . import FrameworkTestModel as Model
-from . import FrameworkTestModelConfiguration as Config
 from . import FrameworkTestModelInput as Input
+from . import FrameworkTestModelConfiguration as Config
 
 if t.TYPE_CHECKING:
     import torch
     from numpy.typing import NDArray
+    from transformers.utils.generic import ModelOutput
     from transformers.pipelines.base import GenericTensor
     from transformers.tokenization_utils_base import BatchEncoding
-    from transformers.utils.generic import ModelOutput
 
     from bentoml._internal.external_typing import transformers as transformers_ext
 

@@ -4,20 +4,20 @@ import time
 import typing as t
 from typing import TYPE_CHECKING
 
-from context_server_interceptor import AsyncContextInterceptor
 from pydantic import BaseModel
+from context_server_interceptor import AsyncContextInterceptor
 
 import bentoml
-from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils.metrics import exponential_buckets
-from bentoml.io import JSON
 from bentoml.io import File
+from bentoml.io import JSON
+from bentoml.io import Text
 from bentoml.io import Image
 from bentoml.io import Multipart
 from bentoml.io import NumpyNdarray
-from bentoml.io import PandasDataFrame
 from bentoml.io import PandasSeries
-from bentoml.io import Text
+from bentoml.io import PandasDataFrame
+from bentoml._internal.utils import LazyLoader
+from bentoml._internal.utils.metrics import exponential_buckets
 
 if TYPE_CHECKING:
     import numpy as np
@@ -25,10 +25,10 @@ if TYPE_CHECKING:
     import PIL.Image
     from numpy.typing import NDArray
 
-    from bentoml._internal.runner.runner import RunnerMethod
     from bentoml._internal.types import FileLike
     from bentoml._internal.types import JSONSerializable
     from bentoml.picklable_model import get_runnable
+    from bentoml._internal.runner.runner import RunnerMethod
 
     RunnableImpl = get_runnable(bentoml.picklable_model.get("py_model.case-1.grpc.e2e"))
 

@@ -7,12 +7,12 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 import bentoml
-from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
-from bentoml._internal.service.openapi.specification import MediaType
-from bentoml._internal.service.openapi.specification import Schema
-from bentoml._internal.utils.http import set_cookies
-from bentoml.exceptions import BentoMLException
 from bentoml.io import IODescriptor
+from bentoml.exceptions import BentoMLException
+from bentoml._internal.utils.http import set_cookies
+from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
+from bentoml._internal.service.openapi.specification import Schema
+from bentoml._internal.service.openapi.specification import MediaType
 
 if TYPE_CHECKING:
     from google.protobuf import wrappers_pb2

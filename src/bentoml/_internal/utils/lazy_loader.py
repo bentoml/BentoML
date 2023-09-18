@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import importlib
-import logging
 import sys
 import types
 import typing as t
+import logging
+import importlib
 
 from ...exceptions import MissingDependencyException
 

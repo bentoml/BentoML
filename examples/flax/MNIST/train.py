@@ -1,17 +1,17 @@
 # modified from https://github.com/google/flax/blob/main/examples/mnist/README.md
 from __future__ import annotations
 
-import argparse
 import os
 import typing as t
+import argparse
 from typing import TYPE_CHECKING
 
-import attrs
-import cattrs
 import jax
-import jax.numpy as jnp
+import attrs
 import numpy as np
 import optax
+import cattrs
+import jax.numpy as jnp
 import tensorflow_datasets as tfds
 from flax import linen as nn
 from flax import serialization

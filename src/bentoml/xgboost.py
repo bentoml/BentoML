@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
-from ._internal.frameworks.xgboost import XGBoostOptions as ModelOptions
 from ._internal.frameworks.xgboost import get
-from ._internal.frameworks.xgboost import get_runnable
 from ._internal.frameworks.xgboost import load_model
 from ._internal.frameworks.xgboost import save_model
+from ._internal.frameworks.xgboost import get_runnable
+from ._internal.frameworks.xgboost import XGBoostOptions as ModelOptions
 
 if TYPE_CHECKING:
     from ._internal.tag import Tag

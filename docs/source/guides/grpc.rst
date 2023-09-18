@@ -243,11 +243,6 @@ gRPC server:
          :language: cpp
          :caption: `client.cpp`
 
-   .. tab-item:: Rust
-      :sync: rust
-
-      See :github:`Rust gRPC client implementation <tree/main/grpc-client/rust/README.md>`.
-
    .. tab-item:: Java
       :sync: java
 
@@ -621,11 +616,6 @@ Then you can proceed to run the client scripts:
 
          See the :github:`instructions on GitHub <bentoml/BentoML/tree/main/grpc-client/README.md>` for working C++ client.
 
-   .. tab-item:: Rust
-      :sync: rust
-
-      See :github:`Rust gRPC client implementation <tree/main/grpc-client/rust/README.md>`.
-
    .. tab-item:: Java
       :sync: java
 
@@ -720,6 +710,11 @@ Then you can proceed to run the client scripts:
          :sync: dart
 
          :bdg-primary:`Note:` Please check out the :github:`gRPC Dart <grpc/grpc-dart/tree/master/examples>` examples folder for :github:`grpc/grpc-dart` client implementation.
+
+      .. tab-item:: Rust
+         :sync: rust
+
+         :bdg-primary:`Note:` Currently there are no official gRPC Rust client implementation. Please check out the :github:`tikv/grpc-rs` as one of the unofficial implementation.
 
 
 After successfully running the client, proceed to build the bento as usual:

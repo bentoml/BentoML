@@ -12,10 +12,6 @@ Framework APIs
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`/reference/frameworks/diffusers`
-        :link: /reference/frameworks/diffusers
-        :link-type: doc
-
     .. grid-item-card:: :doc:`/reference/frameworks/onnx`
         :link: /reference/frameworks/onnx
         :link-type: doc
@@ -84,7 +80,6 @@ Framework APIs
 .. toctree::
     :hidden:
 
-    diffusers
     onnx
     sklearn
     transformers

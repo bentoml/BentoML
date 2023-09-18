@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import typing as t
+import logging
 import collections
 import contextvars
-import logging
-import typing as t
 
 MON_COLUMN_VAR: contextvars.ContextVar[
     "dict[str, dict[str, str]] | None"

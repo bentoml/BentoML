@@ -102,4 +102,4 @@ pip install locust
 locust -H http://0.0.0.0:3000
 ```
 
-[#custom-runner]: https://docs.bentoml.com/en/latest/concepts/runner.html#custom-runner
+[#custom-runner]: https://docs.bentoml.org/en/latest/concepts/runner.html#custom-runner

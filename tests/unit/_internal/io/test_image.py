@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml._internal.utils import LazyLoader
+from bentoml.io import Image
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import InvalidArgument
 from bentoml.grpc.utils import import_generated_stubs
-from bentoml.io import Image
+from bentoml._internal.utils import LazyLoader
 
 if TYPE_CHECKING:
     import numpy as np

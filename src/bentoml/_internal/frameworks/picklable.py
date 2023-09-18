@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from types import ModuleType
 from typing import TYPE_CHECKING
 
@@ -9,9 +9,9 @@ import cloudpickle
 
 import bentoml
 from bentoml import Tag
-from bentoml.exceptions import NotFound
 from bentoml.models import Model
 from bentoml.models import ModelContext
+from bentoml.exceptions import NotFound
 
 from ..models import PKL_EXT
 from ..models import SAVE_NAMESPACE

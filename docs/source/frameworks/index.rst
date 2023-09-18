@@ -15,10 +15,6 @@ projects in the `bentoml/examples <https://github.com/bentoml/BentoML/tree/main/
         :link: /frameworks/catboost
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/frameworks/diffusers`
-        :link: /frameworks/diffusers
-        :link-type: doc
-
     .. grid-item-card:: :doc:`/frameworks/fastai`
         :link: /frameworks/fastai
         :link-type: doc
@@ -124,7 +120,6 @@ The following frameworks are supported in pre-1.0 BentoML versions and are being
     :hidden:
 
     catboost
-    diffusers
     fastai
     keras
     lightgbm

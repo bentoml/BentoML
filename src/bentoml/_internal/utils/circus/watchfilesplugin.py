@@ -1,23 +1,23 @@
 from __future__ import annotations
 
-import logging
 import os
 import typing as t
+import logging
+from typing import TYPE_CHECKING
 from pathlib import Path
 from threading import Event
 from threading import Thread
-from typing import TYPE_CHECKING
 
 import fs
-from circus.plugins import CircusPlugin
 from watchfiles import watch
+from circus.plugins import CircusPlugin
 
-from ...bento.build_config import BentoBuildConfig
-from ...bento.build_config import BentoPathSpec
-from ...configuration import is_pypi_installed_bentoml
-from ...context import component_context
 from ...log import configure_server_logging
+from ...context import component_context
 from ...utils.pkg import source_locations
+from ...configuration import is_pypi_installed_bentoml
+from ...bento.build_config import BentoPathSpec
+from ...bento.build_config import BentoBuildConfig
 
 if TYPE_CHECKING:
     from watchfiles.main import FileChange

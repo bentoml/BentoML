@@ -11,15 +11,15 @@
 #
 # BentoML example is based on https://github.com/mlflow/mlflow/blob/master/examples/pytorch/mnist_tensorboard_artifact.py
 #
-import argparse
 import os
+import argparse
 
-import mlflow
-import mlflow.pytorch
 import torch
+import mlflow
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
+import mlflow.pytorch
+import torch.nn.functional as F
 from torchvision import datasets
 from torchvision import transforms
 

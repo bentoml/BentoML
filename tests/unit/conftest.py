@@ -1,13 +1,13 @@
 # pylint: disable=unused-argument
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
-import cloudpickle
-import pytest
 import yaml
+import pytest
+import cloudpickle
 
 import bentoml
 from bentoml.testing.pytest import TEST_MODEL_CONTEXT
@@ -42,8 +42,8 @@ def reload_directory(
     ├── service.py
     └── train.py
     """
-    from bentoml._internal.bento.build_config import BentoBuildConfig
     from bentoml._internal.utils import bentoml_cattr
+    from bentoml._internal.bento.build_config import BentoBuildConfig
 
     root = tmp_path_factory.mktemp("reload_directory")
     # create a models directory

@@ -1,15 +1,15 @@
 # pylint: disable=redefined-outer-name
-import argparse
 import os
 import random
+import argparse
 
 import model as models
 import numpy as np
 import torch
-from sklearn.model_selection import KFold
 from torch import nn
 from torchvision import transforms
 from torchvision.datasets import MNIST
+from sklearn.model_selection import KFold
 
 import bentoml
 

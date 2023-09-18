@@ -8,13 +8,13 @@ import grpc
 import pytest
 
 from bentoml.exceptions import BadInput
-from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import BentoMLException
 from bentoml.grpc.utils import MethodName
-from bentoml.grpc.utils import grpc_status_code
-from bentoml.grpc.utils import parse_method_name
 from bentoml.grpc.utils import to_http_status
+from bentoml.grpc.utils import grpc_status_code
 from bentoml.grpc.utils import wrap_rpc_handler
+from bentoml.grpc.utils import parse_method_name
 
 
 @pytest.mark.parametrize(

@@ -5,7 +5,6 @@ import contextlib
 import json
 import logging
 import os
-import shlex
 import shutil
 import sys
 import tempfile
@@ -21,6 +20,7 @@ from bentoml._internal.log import SERVER_LOGGING_CONFIG
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner.runner import Runner
+from ._internal.utils import experimental
 from ._internal.utils import is_async_callable
 from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
@@ -105,7 +105,7 @@ def create_watcher(
 
     return Watcher(
         name=name,
-        cmd=shlex.quote(cmd) if psutil.POSIX else cmd,
+        cmd=cmd,
         args=args,
         copy_env=True,
         stop_children=True,
@@ -251,7 +251,6 @@ def serve_http_production(
     host: str = Provide[BentoMLContainer.http.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: int = Provide[BentoMLContainer.api_server_workers],
-    timeout: int | None = None,
     ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
     ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
     ssl_keyfile_password: str | None = Provide[BentoMLContainer.ssl.keyfile_password],
@@ -281,7 +280,6 @@ def serve_http_production(
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
     uds_path = None
-    timeout_args = ["--timeout", str(timeout)] if timeout else []
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
@@ -320,7 +318,6 @@ def serve_http_production(
                             json.dumps(runner.scheduled_worker_env_map),
                             "--prometheus-dir",
                             prometheus_dir,
-                            *timeout_args,
                         ],
                         working_dir=working_dir,
                         numprocesses=runner.scheduled_worker_count,
@@ -381,7 +378,6 @@ def serve_http_production(
                                 "$(CIRCUS.WID)",
                                 "--worker-env-map",
                                 json.dumps(runner.scheduled_worker_env_map),
-                                *timeout_args,
                             ],
                             working_dir=working_dir,
                             numprocesses=runner.scheduled_worker_count,
@@ -447,7 +443,6 @@ def serve_http_production(
         "--prometheus-dir",
         prometheus_dir,
         *ssl_args,
-        *timeout_args,
     ]
 
     if development_mode:
@@ -518,6 +513,7 @@ def serve_http_production(
                 shutil.rmtree(uds_path)
 
 
+@experimental
 @inject
 def serve_grpc_production(
     bento_identifier: str,

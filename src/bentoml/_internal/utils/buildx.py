@@ -8,8 +8,8 @@ from __future__ import annotations
 import typing as t
 import warnings
 
-from ..container import get_backend
 from ..container import health as _internal_container_health
+from ..container import get_backend
 
 __all__ = ["build", "health"]
 

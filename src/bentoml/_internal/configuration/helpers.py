@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-import logging
 import os
 import socket
 import typing as t
-from functools import singledispatch
+import logging
 from typing import TYPE_CHECKING
+from functools import singledispatch
 
-import schema as s
 import yaml
+import schema as s
 
-from ...exceptions import BentoMLConfigException
 from ..utils import LazyLoader
+from ...exceptions import BentoMLConfigException
 
 if TYPE_CHECKING:
     from types import ModuleType

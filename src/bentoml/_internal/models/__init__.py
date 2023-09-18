@@ -1,8 +1,8 @@
 from .model import Model
+from .model import copy_model
+from .model import ModelStore
 from .model import ModelContext
 from .model import ModelOptions
-from .model import ModelStore
-from .model import copy_model
 
 # Deprecated. Use framework module local constants and name the saved files with API
 # Version in mind. E.g.:

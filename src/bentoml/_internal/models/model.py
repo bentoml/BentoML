@@ -1,49 +1,49 @@
 from __future__ import annotations
 
-import importlib
 import io
-import logging
 import os
 import typing as t
-from datetime import datetime
-from datetime import timezone
+import logging
+import importlib
 from sys import version_info as pyver
 from types import ModuleType
-from typing import TYPE_CHECKING
 from typing import overload
+from typing import TYPE_CHECKING
+from datetime import datetime
+from datetime import timezone
 
-import attr
-import cloudpickle  # type: ignore (no cloudpickle types)
 import fs
+import attr
+import yaml
 import fs.errors
 import fs.mirror
-import yaml
+import cloudpickle  # type: ignore (no cloudpickle types)
+from fs.base import FS
+from cattr.gen import override
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
-from cattr.gen import override
-from fs.base import FS
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
-from ...exceptions import BentoMLException
-from ...exceptions import NotFound
-from ..configuration import BENTOML_VERSION
-from ..configuration.containers import BentoMLContainer
+from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..tag import Tag
 from ..types import MetadataDict
-from ..types import ModelSignatureDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
 from ..utils import normalize_labels_value
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
+from ..configuration import BENTOML_VERSION
+from ..configuration.containers import BentoMLContainer
+from ..types import ModelSignatureDict
 
 if t.TYPE_CHECKING:
-    from ..runner import Runnable
-    from ..runner import Runner
-    from ..runner.strategy import Strategy
     from ..types import PathType
+    from ..runner import Runner
+    from ..runner import Runnable
+    from ..runner.strategy import Strategy
 
 
 T = t.TypeVar("T")
@@ -518,7 +518,7 @@ bentoml_cattr.register_unstructure_hook(
 )
 
 
-@attr.define(repr=False, eq=False, frozen=True, init=False)
+@attr.define(repr=False, eq=False, frozen=True)
 class ModelInfo:
     # for backward compatibility in case new fields are added to BentoInfo.
     __forbid_extra_keys__ = False

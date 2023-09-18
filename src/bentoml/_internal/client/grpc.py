@@ -1,24 +1,24 @@
 from __future__ import annotations
 
-import functools
-import logging
 import time
 import typing as t
-from functools import cached_property
+import logging
+import functools
 from typing import TYPE_CHECKING
 
 from packaging.version import parse
 
+from . import Client
+from .. import io_descriptors
+from ..utils import LazyLoader
+from ..utils import cached_property
+from ..service import Service
 from ...exceptions import BentoMLException
-from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ...grpc.utils import import_generated_stubs
 from ...grpc.utils import import_grpc
 from ...grpc.utils import load_from_file
-from .. import io_descriptors
-from ..service import Service
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..service.inference_api import InferenceAPI
-from ..utils import LazyLoader
-from . import Client
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +27,14 @@ REFLECTION_EXC_MESSAGE = "'grpcio-reflection' is required to use gRPC Client. In
 
 if TYPE_CHECKING:
     import grpc
-    from google.protobuf import json_format as _json_format
     from grpc import aio
     from grpc._channel import Channel as GrpcSyncChannel
     from grpc_health.v1 import health_pb2 as pb_health
+    from google.protobuf import json_format as _json_format
 
+    from ..types import PathType
     from ...grpc.v1.service_pb2 import Response
     from ...grpc.v1.service_pb2 import ServiceMetadataResponse
-    from ..types import PathType
 
     class ClientCredentials(t.TypedDict):
         root_certificates: t.NotRequired[PathType | bytes]
@@ -261,7 +261,7 @@ class GrpcClient(Client):
         self,
         inp: t.Any = None,
         *,
-        _bentoml_api: InferenceAPI[t.Any],
+        _bentoml_api: InferenceAPI,
         **attrs: t.Any,
     ) -> t.Any:
         state = self.channel.get_state(try_to_connect=True)
@@ -362,7 +362,7 @@ if __name__ == '__main__':
 
         for api in metadata.apis:
             try:
-                dummy_service.apis[api.name] = InferenceAPI[t.Any](
+                dummy_service.apis[api.name] = InferenceAPI(
                     None,
                     io_descriptors.from_spec(
                         {

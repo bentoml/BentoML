@@ -91,11 +91,6 @@ import click
     default=False,
     show_default=True,
 )
-@click.option(
-    "--timeout",
-    type=click.INT,
-    help="Specify the timeout for API server",
-)
 def main(
     bento_identifier: str,
     fd: int,
@@ -112,7 +107,6 @@ def main(
     ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
     development_mode: bool,
-    timeout: int | None,
 ):
     """
     Start a HTTP api server worker.
@@ -120,9 +114,9 @@ def main(
     import psutil
 
     import bentoml
-    from bentoml._internal.configuration.containers import BentoMLContainer
-    from bentoml._internal.context import component_context
     from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.context import component_context
+    from bentoml._internal.configuration.containers import BentoMLContainer
 
     component_context.component_type = "api_server"
     component_context.component_index = worker_id
@@ -139,8 +133,6 @@ def main(
 
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
-    if timeout is not None:
-        BentoMLContainer.api_server_config.traffic.timeout.set(timeout)
     svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context

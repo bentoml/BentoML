@@ -1,25 +1,25 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
-from datetime import timezone
 from sys import version_info as pyver
 from typing import TYPE_CHECKING
+from datetime import datetime
+from datetime import timezone
 
-import attr
 import fs
-import fs.errors
+import attr
 import numpy as np
 import pytest
+import fs.errors
 
 from bentoml import Tag
-from bentoml._internal.configuration import BENTOML_VERSION
+from bentoml.exceptions import BentoMLException
+from bentoml.testing.pytest import TEST_MODEL_CONTEXT
 from bentoml._internal.models import ModelOptions as InternalModelOptions
 from bentoml._internal.models.model import Model
 from bentoml._internal.models.model import ModelInfo
 from bentoml._internal.models.model import ModelStore
-from bentoml.exceptions import BentoMLException
-from bentoml.testing.pytest import TEST_MODEL_CONTEXT
+from bentoml._internal.configuration import BENTOML_VERSION
 
 if TYPE_CHECKING:
     from pathlib import Path

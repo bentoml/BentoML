@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import logging
 import shutil
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 from .base import Arguments
 
 if TYPE_CHECKING:
-    from ..types import PathType
     from .base import ArgType
+    from ..types import PathType
 
 logger = logging.getLogger(__name__)
 

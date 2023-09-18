@@ -1,0 +1,24 @@
+catboost
+lightgbm;platform_machine!="arm64"
+mlflow
+fastai
+xgboost
+scikit-learn
+# ONNX dependencies
+onnx
+onnxruntime
+# tensorflow dependencies
+keras
+tensorflow>=2.3.0;platform_system!="Darwin"
+tensorflow-macos>=2.3.0;platform_system=="Darwin"
+# torch-related dependencies
+torch
+pytorch-lightning
+# huggingface dependencies
+transformers
+tokenizer
+diffusers
+flax
+jax
+jaxlib
+chex

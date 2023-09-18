@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import io
+import sys
 import json
 from typing import TYPE_CHECKING
 
-import aiohttp
 import numpy as np
 import pytest
+import aiohttp
 
 from bentoml.testing.utils import async_request
 from bentoml.testing.utils import parse_multipart_form
@@ -124,14 +125,16 @@ async def test_pandas(host: str):
         assert_data=b'[{"col1":202}]',
     )
 
-    await async_request(
-        "POST",
-        f"http://{host}/predict_dataframe",
-        headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
-        data=df.to_parquet(),
-        assert_status=200,
-        assert_data=b'[{"col1":202}]',
-    )
+    # pyarrow only support python 3.7+
+    if sys.version_info >= (3, 7):
+        await async_request(
+            "POST",
+            f"http://{host}/predict_dataframe",
+            headers=(("Content-Type", "application/octet-stream"), ("Origin", ORIGIN)),
+            data=df.to_parquet(),
+            assert_status=200,
+            assert_data=b'[{"col1":202}]',
+        )
 
     await async_request(
         "POST",
@@ -252,16 +255,4 @@ async def test_multipart_different_args(host: str, img_form_data: aiohttp.FormDa
         f"http://{host}/predict_different_args",
         data=img_form_data,
         assert_status=200,
-    )
-
-
-@pytest.mark.asyncio
-async def test_text_stream(host: str):
-    await async_request(
-        "POST",
-        f"http://{host}/predict_text_stream",
-        headers={"Content-Type": "text/plain"},
-        data="yo",
-        assert_status=200,
-        assert_data=b"yo 0yo 1yo 2yo 3yo 4yo 5yo 6yo 7yo 8yo 9",
     )

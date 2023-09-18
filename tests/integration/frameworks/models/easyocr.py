@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import typing as t
 
-import easyocr
 import numpy as np
+import easyocr
 import requests
 from PIL import Image
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelConfiguration as Config
 from . import FrameworkTestModelInput as Input
+from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.easyocr
 backward_compatible = False

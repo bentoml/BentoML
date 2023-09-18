@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import dataclasses
-import functools
 import typing as t
+import functools
+import dataclasses
 from typing import TYPE_CHECKING
 
 from grpc import aio
 
 if TYPE_CHECKING:
-    from bentoml.grpc.types import AsyncHandlerMethod
-    from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import Request
     from bentoml.grpc.types import Response
     from bentoml.grpc.types import RpcMethodHandler
+    from bentoml.grpc.types import AsyncHandlerMethod
+    from bentoml.grpc.types import HandlerCallDetails
+    from bentoml.grpc.types import BentoServicerContext
 
 
 @dataclasses.dataclass

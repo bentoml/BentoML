@@ -5,17 +5,17 @@ import typing as t
 
 import schema as s
 
+from ..helpers import depth
+from ..helpers import ensure_range
+from ..helpers import rename_fields
+from ..helpers import ensure_larger_than
+from ..helpers import is_valid_ip_address
+from ..helpers import ensure_iterable_type
+from ..helpers import validate_tracing_type
+from ..helpers import validate_otlp_protocol
+from ..helpers import ensure_larger_than_zero
 from ...utils.metrics import DEFAULT_BUCKET
 from ...utils.unflatten import unflatten
-from ..helpers import depth
-from ..helpers import ensure_iterable_type
-from ..helpers import ensure_larger_than
-from ..helpers import ensure_larger_than_zero
-from ..helpers import ensure_range
-from ..helpers import is_valid_ip_address
-from ..helpers import rename_fields
-from ..helpers import validate_otlp_protocol
-from ..helpers import validate_tracing_type
 
 __all__ = ["SCHEMA", "migration"]
 

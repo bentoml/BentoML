@@ -1,32 +1,32 @@
 from __future__ import annotations
 
-import functools
-import logging
 import typing as t
+import logging
+import functools
 from types import ModuleType
 from typing import TYPE_CHECKING
 
 import attr
 
 import bentoml
-from bentoml import Runnable
 from bentoml import Tag
-from bentoml.exceptions import MissingDependencyException
-from bentoml.exceptions import NotFound
+from bentoml import Runnable
 from bentoml.models import ModelContext
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import MissingDependencyException
 
+from ..types import LazyType
 from ..models.model import ModelSignature
 from ..models.model import PartialKwargsModelOptions
 from ..runner.utils import Params
-from ..types import LazyType
 from .utils.tensorflow import get_tf_version
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:  # pragma: no cover
     from .. import external_typing as ext
-    from ..external_typing import tensorflow as tf_ext
     from ..models.model import ModelSignatureDict
+    from ..external_typing import tensorflow as tf_ext
 
     KerasArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
 

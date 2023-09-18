@@ -1,7 +1,7 @@
 import numpy as np
-from locust import HttpUser
-from locust import between
 from locust import task
+from locust import between
+from locust import HttpUser
 from sklearn.datasets import load_svmlight_file
 
 test_data = load_svmlight_file("data/agaricus.txt.train")

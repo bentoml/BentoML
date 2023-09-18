@@ -1,20 +1,26 @@
 from __future__ import annotations
 
-import logging
 import os
-import subprocess
+import sys
 import typing as t
+import logging
+import subprocess
 from abc import abstractmethod
-from functools import singledispatchmethod
-from itertools import chain
 from queue import Queue
-from threading import Thread
 from typing import TYPE_CHECKING
+from itertools import chain
+from threading import Thread
 
 import attr
 
-from ...exceptions import BentoMLException
 from ..utils import resolve_user_filepath
+from ...exceptions import BentoMLException
+
+if sys.version_info >= (3, 8):
+    from functools import singledispatchmethod
+else:
+    from singledispatchmethod import singledispatchmethod
+
 
 if TYPE_CHECKING:
     from typing_extensions import Self

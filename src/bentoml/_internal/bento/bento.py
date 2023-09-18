@@ -1,46 +1,43 @@
 from __future__ import annotations
 
-import logging
 import os
 import typing as t
+import logging
+from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
-from typing import TYPE_CHECKING
 
-import attr
 import fs
+import attr
+import yaml
+import fs.osfs
 import fs.errors
 import fs.mirror
-import fs.osfs
-import fs.walk
-import yaml
+from fs.copy import copy_file
+from cattr.gen import override
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
-from cattr.gen import override
-from fs.copy import copy_file
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
-from ...exceptions import BentoMLException
-from ...exceptions import InvalidArgument
-from ..configuration import BENTOML_VERSION
-from ..configuration.containers import BentoMLContainer
-from ..models import ModelStore
-from ..models import copy_model
-from ..runner import Runner
+from ..tag import Tag
 from ..store import Store
 from ..store import StoreItem
-from ..tag import Tag
 from ..types import PathType
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
-from ..utils import encode_path_for_uri
 from ..utils import normalize_labels_value
-from .build_config import BentoBuildConfig
-from .build_config import BentoPathSpec
+from ..models import ModelStore
+from ..runner import Runner
+from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
 from .build_config import CondaOptions
+from .build_config import BentoPathSpec
 from .build_config import DockerOptions
 from .build_config import PythonOptions
+from .build_config import BentoBuildConfig
+from ..configuration import BENTOML_VERSION
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from fs.base import FS
@@ -96,7 +93,7 @@ def get_default_svc_readme(svc: Service, svc_version: str | None = None) -> str:
 # {svc.name}:{svc_version}
 
 [![pypi_status](https://img.shields.io/badge/BentoML-{bentoml_version}-informational)](https://pypi.org/project/BentoML)
-[![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.com/)
+[![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.org/)
 [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://l.bentoml.com/join-slack-swagger)
 [![BentoML GitHub Repo](https://img.shields.io/github/stars/bentoml/bentoml?style=social)](https://github.com/bentoml/BentoML)
 [![Twitter Follow](https://img.shields.io/twitter/follow/bentomlai?label=Follow%20BentoML&style=social)](https://twitter.com/bentomlai)
@@ -110,10 +107,10 @@ This is a Machine Learning Service created with BentoML."""
 
 ## Help
 
-* [📖 Documentation](https://docs.bentoml.com/en/latest/): Learn how to use BentoML.
+* [📖 Documentation](https://docs.bentoml.org/en/latest/): Learn how to use BentoML.
 * [💬 Community](https://l.bentoml.com/join-slack-swagger): Join the BentoML Slack community.
 * [🐛 GitHub Issues](https://github.com/bentoml/BentoML/issues): Report bugs and feature requests.
-* Tip: you can also [customize this README](https://docs.bentoml.com/en/latest/concepts/bento.html#description).
+* Tip: you can also [customize this README](https://docs.bentoml.org/en/latest/concepts/bento.html#description).
 """
     # TODO: add links to documentation that may help with API client development
     return doc
@@ -126,8 +123,8 @@ class Bento(StoreItem):
 
     _info: BentoInfo
 
-    _model_store: ModelStore | None = None
-    _doc: str | None = None
+    _model_store: ModelStore
+    _doc: t.Optional[str] = None
 
     @staticmethod
     def _export_ext() -> str:
@@ -136,11 +133,12 @@ class Bento(StoreItem):
     @__fs.validator  # type:ignore # attrs validators not supported by pyright
     def check_fs(self, _attr: t.Any, new_fs: FS):
         try:
-            models = new_fs.opendir("models")
-        except fs.errors.ResourceNotFound:
-            return
-        else:
-            self._model_store = ModelStore(models)
+            new_fs.makedir("models", recreate=True)
+        except fs.errors.ResourceReadOnly:
+            # when we import a tarfile, it will be read-only, so just skip the step where we create
+            # the models folder.
+            pass
+        self._model_store = ModelStore(new_fs.opendir("models"))
 
     def __init__(self, tag: Tag, bento_fs: "FS", info: "BentoInfo"):
         self._tag = tag
@@ -167,7 +165,6 @@ class Bento(StoreItem):
         build_config: BentoBuildConfig,
         version: t.Optional[str] = None,
         build_ctx: t.Optional[str] = None,
-        model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Bento:
         from ..service.loader import import_service
 
@@ -181,7 +178,6 @@ class Bento(StoreItem):
                 f"Bento build context {build_ctx} does not exist or is not a directory."
             )
 
-        BentoMLContainer.model_aliases.set(build_config.model_aliases)
         # This also verifies that svc can be imported correctly
         svc = import_service(
             build_config.service, working_dir=build_ctx, standalone_load=True
@@ -194,30 +190,27 @@ class Bento(StoreItem):
         if version is None:
             tag = tag.make_new_version()
 
-        logger.debug(
+        logger.info(
             'Building BentoML service "%s" from build context "%s".', tag, build_ctx
         )
 
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{bento_name}")
-        ctx_fs = fs.open_fs(encode_path_for_uri(build_ctx))
+        ctx_fs = fs.open_fs(build_ctx)
 
         models: t.Set[Model] = set()
-        resolved_aliases: t.Dict[Tag, str] = {}
-        if build_config.models:
-            for model_spec in build_config.models:
-                model = model_store.get(model_spec.tag)
+        # Add all models required by the service
+        for model in svc.models:
+            models.add(model)
+        # Add all models required by service runners
+        for runner in svc.runners:
+            for model in runner.models:
                 models.add(model)
-                if model_spec.alias:
-                    resolved_aliases[model.tag] = model_spec.alias
-        else:
-            # XXX: legacy way to get models from service
-            # Add all models required by the service
-            for model in svc.models:
-                models.add(model)
-            # Add all models required by service runners
-            for runner in svc.runners:
-                for model in runner.models:
-                    models.add(model)
+
+        bento_fs.makedir("models", recreate=True)
+        bento_model_store = ModelStore(bento_fs.opendir("models"))
+        for model in models:
+            logger.info('Packing model "%s"', model.tag)
+            model.save(bento_model_store)
 
         # create ignore specs
         specs = BentoPathSpec(build_config.include, build_config.exclude)
@@ -276,12 +269,7 @@ class Bento(StoreItem):
                 tag=tag,
                 service=svc,  # type: ignore # attrs converters do not typecheck
                 labels=build_config.labels,
-                models=[
-                    BentoModelInfo.from_bento_model(
-                        m, alias=resolved_aliases.get(m.tag)
-                    )
-                    for m in models
-                ],
+                models=[BentoModelInfo.from_bento_model(m) for m in models],
                 runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners],
                 apis=[
                     BentoApiInfo.from_inference_api(api) for api in svc.apis.values()
@@ -318,40 +306,6 @@ class Bento(StoreItem):
 
         return res
 
-    def export(
-        self,
-        path: str,
-        output_format: t.Optional[str] = None,
-        *,
-        protocol: t.Optional[str] = None,
-        user: t.Optional[str] = None,
-        passwd: t.Optional[str] = None,
-        params: t.Optional[t.Dict[str, str]] = None,
-        subpath: t.Optional[str] = None,
-    ) -> str:
-        # copy the models to fs
-        models_dir = self._fs.makedir("models", recreate=True)
-        model_store = ModelStore(models_dir)
-        global_model_store = BentoMLContainer.model_store.get()
-        for model in self.info.models:
-            copy_model(
-                model.tag,
-                src_model_store=global_model_store,
-                target_model_store=model_store,
-            )
-        try:
-            return super().export(
-                path,
-                output_format,
-                protocol=protocol,
-                user=user,
-                passwd=passwd,
-                params=params,
-                subpath=subpath,
-            )
-        finally:
-            self._fs.removetree("models")
-
     @property
     def path(self) -> str:
         return self.path_of("/")
@@ -380,7 +334,6 @@ class Bento(StoreItem):
     def save(
         self,
         bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
         try:
             self.validate()
@@ -389,20 +342,7 @@ class Bento(StoreItem):
 
         with bento_store.register(self.tag) as bento_path:
             out_fs = fs.open_fs(bento_path, create=True, writeable=True)
-            if self._model_store is not None:
-                # Move models to the global model store, if any
-                for model in self._model_store.list():
-                    copy_model(
-                        model.tag,
-                        src_model_store=self._model_store,
-                        target_model_store=model_store,
-                    )
-                self._model_store = None
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
-            try:
-                out_fs.removetree("models")
-            except fs.errors.ResourceNotFound:
-                pass
             self._fs.close()
             self.__fs = out_fs
 
@@ -449,7 +389,7 @@ class BentoApiInfo:
     output_type: str
 
     @classmethod
-    def from_inference_api(cls, api: InferenceAPI[t.Any]) -> BentoApiInfo:
+    def from_inference_api(cls, api: InferenceAPI) -> BentoApiInfo:
         return cls(
             name=api.name,
             input_type=api.input.__class__.__name__,
@@ -462,17 +402,13 @@ class BentoModelInfo:
     tag: Tag = attr.field(converter=Tag.from_taglike)
     module: str
     creation_time: datetime
-    alias: t.Optional[str] = None
 
     @classmethod
-    def from_bento_model(
-        cls, bento_model: Model, alias: str | None = None
-    ) -> BentoModelInfo:
+    def from_bento_model(cls, bento_model: Model) -> BentoModelInfo:
         return cls(
             tag=bento_model.tag,
             module=bento_model.info.module,
             creation_time=bento_model.info.creation_time,
-            alias=alias,
         )
 
 
@@ -581,12 +517,6 @@ bentoml_cattr.register_structure_hook_func(
         bentoml_cattr,
         name=override(omit=True),
         version=override(omit=True),
-    ),
-)
-bentoml_cattr.register_unstructure_hook(
-    BentoModelInfo,
-    make_dict_unstructure_fn(
-        BentoModelInfo, bentoml_cattr, alias=override(omit_if_default=True)
     ),
 )
 bentoml_cattr.register_unstructure_hook(

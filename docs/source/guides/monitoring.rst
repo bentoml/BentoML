@@ -201,7 +201,6 @@ Through a OTLP endpoint
 For some deployment platforms, it's not easy to collect log files. For example, AWS Lambda doesn't support log files. In this case, BentoML can export monitoring data to an OTLP endpoint.
 Some log collectors like fluentbit also supports OTLP input.
 
-.. _monitoring-data-collectors-plugins:
 
 Plugins and Third-party Monitoring Data Collectors
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

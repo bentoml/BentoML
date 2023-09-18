@@ -1,25 +1,25 @@
 from __future__ import annotations
 
 import json
-import logging
 import typing as t
+import logging
 from functools import lru_cache
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BadInput
-from ...exceptions import InvalidArgument
-from ...exceptions import UnprocessableEntity
-from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ...grpc.utils import import_generated_stubs
-from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Schema
+from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.http import set_cookies
-from .base import IODescriptor
+from ...exceptions import BadInput
+from ...exceptions import InvalidArgument
+from ...exceptions import UnprocessableEntity
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ..service.openapi import SUCCESS_DESCRIPTION
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import MediaType
 
 if t.TYPE_CHECKING:
     import numpy as np
@@ -31,8 +31,8 @@ if t.TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
-    from ..context import ServiceContext as Context
     from .base import OpenAPIResponse
+    from ..context import ServiceContext as Context
 else:
     pb, _ = import_generated_stubs("v1")
     pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
@@ -646,9 +646,9 @@ class NumpyNdarray(
         return pyarrow.RecordBatch.from_arrays([pyarrow.array(arr)], names=["output"])
 
     def spark_schema(self) -> pyspark.sql.types.StructType:
-        from pyspark.pandas.typedef import as_spark_type
-        from pyspark.sql.types import StructField
         from pyspark.sql.types import StructType
+        from pyspark.sql.types import StructField
+        from pyspark.pandas.typedef import as_spark_type
 
         if self._dtype is None:
             raise InvalidArgument(

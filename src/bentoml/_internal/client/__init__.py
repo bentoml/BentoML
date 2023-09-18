@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import asyncio
-import functools
-import logging
 import typing as t
+import asyncio
+import logging
+import functools
 from abc import ABC
 from abc import abstractmethod
 from http.client import BadStatusLine
@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 if t.TYPE_CHECKING:
     from types import TracebackType
 
-    from ..service import Service
     from .grpc import GrpcClient
     from .http import HTTPClient
+    from ..service import Service
 
 
 class Client(ABC):
@@ -128,13 +128,13 @@ class Client(ABC):
             )
 
     def _sync_call(
-        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI[t.Any], **kwargs: t.Any
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
     ):
         return asyncio.run(self._call(inp, _bentoml_api=_bentoml_api, **kwargs))
 
     @abstractmethod
     async def _call(
-        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI[t.Any], **kwargs: t.Any
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
     ) -> t.Any:
         raise NotImplementedError
 

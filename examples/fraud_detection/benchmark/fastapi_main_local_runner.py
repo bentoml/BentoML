@@ -2,9 +2,9 @@ import io
 
 import numpy as np
 import pandas as pd
+from sample import sample_input
 from fastapi import FastAPI
 from fastapi import Request
-from sample import sample_input
 
 import bentoml
 

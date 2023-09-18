@@ -1,8 +1,8 @@
 # pylint: disable=redefined-outer-name
 # type: ignore[no-untyped-def]
 
-import asyncio
 import json
+import asyncio
 
 import numpy as np
 import pytest

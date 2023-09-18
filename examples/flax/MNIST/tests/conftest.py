@@ -1,26 +1,26 @@
 from __future__ import annotations
 
-import contextlib
 import os
-import subprocess
 import sys
 import typing as t
+import contextlib
+import subprocess
 from typing import TYPE_CHECKING
 
 import psutil
 import pytest
 
 import bentoml
-from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml.testing.server import host_bento
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from contextlib import ExitStack
 
-    from _pytest.config import Config
-    from _pytest.fixtures import FixtureRequest as _PytestFixtureRequest
     from _pytest.main import Session
     from _pytest.nodes import Item
+    from _pytest.config import Config
+    from _pytest.fixtures import FixtureRequest as _PytestFixtureRequest
 
     class FixtureRequest(_PytestFixtureRequest):
         param: str

@@ -1,31 +1,31 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from types import ModuleType
 
 import bentoml
 
-from ...exceptions import MissingDependencyException
+from ..tag import Tag
+from ..types import LazyType
+from ..utils import LazyLoader
+from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
+from ...exceptions import MissingDependencyException
 from ..models.model import Model
 from ..models.model import ModelContext
 from ..models.model import ModelSignature
 from ..models.model import PartialKwargsModelOptions as ModelOptions
 from ..runner.utils import Params
-from ..tag import Tag
-from ..types import LazyType
-from ..utils import LazyLoader
-from ..utils.pkg import get_pkg_version
-from .common.pytorch import PyTorchTensorContainer  # noqa # type: ignore
-from .common.pytorch import inference_mode_ctx
 from .common.pytorch import torch
+from .common.pytorch import inference_mode_ctx
+from .common.pytorch import PyTorchTensorContainer  # noqa # type: ignore
 
 try:
-    import detectron2.checkpoint as Checkpoint
     import detectron2.config as Config
     import detectron2.engine as Engine
     import detectron2.modeling as Modeling
+    import detectron2.checkpoint as Checkpoint
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'detectron2' is required in order to use module 'bentoml.detectron'. Install detectron2 with 'pip install 'git+https://github.com/facebookresearch/detectron2.git''."

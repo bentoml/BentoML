@@ -1,26 +1,26 @@
 from __future__ import annotations
 
 import sys
-import tempfile
 import typing as t
-from asyncio import Future
+import tempfile
 from typing import TYPE_CHECKING
+from asyncio import Future
 from unittest.mock import MagicMock
 
 import pytest
 
-from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.utils import LazyLoader
-from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
-from bentoml.grpc.utils import import_generated_stubs
-from bentoml.grpc.utils import import_grpc
-from bentoml.testing.grpc import async_client_call
-from bentoml.testing.grpc import create_channel
-from bentoml.testing.grpc import create_test_bento_servicer
-from bentoml.testing.grpc import make_standalone_server
 from tests.proto import service_test_pb2 as pb_test
 from tests.proto import service_test_pb2_grpc as services_test
+from bentoml.grpc.utils import import_grpc
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml.testing.grpc import create_channel
+from bentoml.testing.grpc import async_client_call
+from bentoml.testing.grpc import make_standalone_server
+from bentoml.testing.grpc import create_test_bento_servicer
+from bentoml._internal.utils import LazyLoader
 from tests.unit.grpc.conftest import TestServiceServicer
+from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import grpc

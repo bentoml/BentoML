@@ -7,9 +7,9 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
+from bentoml._internal.types import LazyType
 from bentoml._internal.runner.container import AutoContainer
 from bentoml._internal.runner.container import DataContainerRegistry
-from bentoml._internal.types import LazyType
 
 if TYPE_CHECKING:
     from bentoml._internal.external_typing import tensorflow as ext

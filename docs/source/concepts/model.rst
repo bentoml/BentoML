@@ -1,60 +1,72 @@
-======
-Models
-======
+================
+Preparing Models
+================
 
-A model refers to a machine learning artifact that encapsulates both the algorithms and learned parameters. Once trained, a model can be used to make predictions on new, unseen data.
-BentoML provides a local Model Store to save and manage models, which is a local file directory maintained by BentoML.
-
-This document explains key operations about models in BentoML.
-
-Save a trained model
+Save A Trained Model
 --------------------
 
-To serve a model using BentoML, you need to first save the model instance to the Model Store with the BentoML API. In most cases,
-you can use the ``save_model`` method for this purpose. For example, you use the following call to save the trained model
-in the :doc:`Iris quickstart </quickstarts/deploy-an-iris-classification-model-with-bentoml>`.
+A trained ML model instance needs to be saved with BentoML API, in order to serve it
+with BentoML. For most cases, it will be just one line added to your model training
+pipeline, invoking a :code:`save_model` call, as demonstrated in the
+:doc:`tutorial </tutorial>`:
 
 .. code:: python
 
     saved_model = bentoml.sklearn.save_model("iris_clf", clf)
+    print(f"Model saved: {saved_model}")
 
-.. note::
+    # Model saved: Model(tag="iris_clf:2uo5fkgxj27exuqj")
 
-   It is also possible to use pre-trained models directly with BentoML, without
-   saving it to the Model Store first. See :ref:`Custom Runner <concepts/runner:Custom Runner>` to learn more.
+.. seealso::
 
-For any existing model saved on disk, load the model into a Python session and then import it into the BentoML Model Store. The specific method to use depends on the :doc:`framework </frameworks/index>` of your model.
-As a management best practice, always register your model into the Model Store once you finish training and validation. This makes sure all your finalized models can be managed in one place.
+   It is also possible to **use pre-trained models** directly with BentoML, without
+   saving it to the model store first. Check out the
+   :ref:`Custom Runner <concepts/runner:Custom Runner>` example to learn more.
 
-When using the ``save_model`` method, you can optionally attach custom labels, metadata, or custom objects to be saved alongside your model in the Model Store:
+.. tip::
+
+   If you have an existing model saved to file on disk, you will need to load the model
+   in a python session first and then use BentoML's framework specific
+   :code:`save_model` method to put it into the BentoML model store.
+
+   We recommend **always save the model with BentoML as soon as it finished training and
+   validation**. By putting the :code:`save_model` call to the end of your training
+   pipeline, all your finalized models can be managed in one place and ready for
+   inference.
+
+
+Optionally, you may attach custom labels, metadata, or :code:`custom_objects` to be
+saved alongside your model in the model store, e.g.:
 
 .. code:: python
 
     bentoml.pytorch.save_model(
-        "demo_mnist",   # Model name in the local Model Store
-        trained_model,  # Model instance being saved
-        labels={    # User-defined labels for managing models in BentoCloud or Yatai
+        "demo_mnist",   # model name in the local model store
+        trained_model,  # model instance being saved
+        labels={    # user-defined labels for managing models in Yatai
             "owner": "nlp_team",
             "stage": "dev",
         },
-        metadata={  # User-defined additional metadata
+        metadata={  # user-defined additional metadata
             "acc": acc,
             "cv_stats": cv_stats,
             "dataset_version": "20210820",
         },
-        custom_objects={    # Save additional user-defined Python objects
+        custom_objects={    # save additional user-defined python objects
             "tokenizer": tokenizer_object,
         }
     )
 
-- ``labels``: Custom key-value pairs for managing models and providing identifying attributes, such as ``owner=nlp_team`` and ``stage=dev``.
-- ``metadata``: Additional context or evaluation metrics for the model, such as dataset version, training parameters, and model scores.
-- ``custom_objects``: Additional Python objects such as a tokenizer instance and a preprocessor function. These objects are serialized with `cloudpickle <https://github.com/cloudpipe/cloudpickle>`_.
+- **labels**: user-defined labels for managing models, e.g. team=nlp, stage=dev.
+- **metadata**: user-defined metadata for storing model training context information or model evaluation metrics, e.g. dataset version, training parameters, model scores.
+- **custom_objects**: user-defined additional python objects, e.g. a tokenizer instance, preprocessor function, model configuration json, serialized with cloudpickle. Custom objects will be serialized with `cloudpickle <https://github.com/cloudpipe/cloudpickle>`_.
+
 
 Retrieve a saved model
 ----------------------
 
-To load the model instance back into memory, use the framework-specific ``load_model`` method. For example:
+To load the model instance back into memory, use the framework-specific
+:code:`load_model` method. For example:
 
 .. code:: python
 
@@ -65,11 +77,11 @@ To load the model instance back into memory, use the framework-specific ``load_m
 
 .. note::
 
-    The ``load_model`` method is used here only for testing and advanced customizations.
-    For general model serving use cases, use Runners for running model inference. See the
-    :ref:`concepts/model:Use model Runners` section below to learn more.
+    The :code:`load_model` method is only here for testing and advanced customizations.
+    For general model serving use cases, use Runner for running model inference. See the
+    :ref:`concepts/model:Using Model Runner` section below to learn more.
 
-For retrieving model information and accessing the ``to_runner`` API, use the ``get`` method:
+For retrieving the model metadata or custom objects, use the :code:`get` method:
 
 .. code:: python
 
@@ -84,18 +96,25 @@ For retrieving model information and accessing the ``to_runner`` API, use the ``
 
     my_runner: bentoml.Runner = bento_model.to_runner()
 
-``bentoml.models.get`` returns a :ref:`bentoml.Model <reference/core:Model>` instance, linking to a saved model entry in the BentoML Model Store. You can then use the instance to get model information like
-tag, labels, and custom objects and create a Runner from the model.
+:code:`bentoml.models.get` returns a :ref:`bentoml.Model <reference/core:Model>`
+instance, which is a reference to a saved model entry in the BentoML model store. The
+:code:`bentoml.Model` instance then provides access to the model info and the
+:code:`to_runner` API for creating a Runner instance from the model.
 
 .. note::
 
-    BentoML provides framework-specific ``get`` methods, such as ``benotml.pytorch.get``. They function the same as ``bentoml.models.get`` but verify that
-    the model found matches the specified framework.
+    BentoML also provides a framework-specific :code:`get` method under each framework
+    module, e.g.: :code:`benotml.pytorch.get`. It behaves exactly the same as
+    :code:`bentoml.models.get`, besides that it verifies if the model found was saved
+    with the same framework.
 
-Manage models
--------------
 
-Saved models are stored in BentoML's Model Store. You can view and manage all saved models via the ``bentoml models`` command:
+Managing Models
+---------------
+
+Saved models are stored in BentoML's model store, which is a local file directory
+maintained by BentoML. Users can view and manage all saved models via the
+:code:`bentoml models` CLI command:
 
 .. tab-set::
 
@@ -103,17 +122,18 @@ Saved models are stored in BentoML's Model Store. You can view and manage all sa
 
         .. code:: bash
 
-            $ bentoml models list
+            > bentoml models list
 
-            Tag                        Module           Size        Creation Time
-            iris_clf:2uo5fkgxj27exuqj  bentoml.sklearn  5.81 KiB    2022-05-19 08:36:52
-            iris_clf:nb5vrfgwfgtjruqj  bentoml.sklearn  5.80 KiB    2022-05-17 21:36:27
+            Tag                        Module           Size        Creation Time        Path
+            iris_clf:2uo5fkgxj27exuqj  bentoml.sklearn  5.81 KiB    2022-05-19 08:36:52  ~/bentoml/models/iris_clf/2uo5fkgxj27exuqj
+            iris_clf:nb5vrfgwfgtjruqj  bentoml.sklearn  5.80 KiB    2022-05-17 21:36:27  ~/bentoml/models/iris_clf/nb5vrfgwfgtjruqj
+
 
     .. tab-item:: Get
 
         .. code:: bash
 
-            $ bentoml models get iris_clf:latest
+            > bentoml models get iris_clf:latest
 
             name: iris_clf
             version: 2uo5fkgxj27exuqj
@@ -137,65 +157,79 @@ Saved models are stored in BentoML's Model Store. You can view and manage all sa
 
         .. code:: bash
 
-            $ bentoml models delete iris_clf:latest -y
+            > bentoml models delete iris_clf:latest -y
 
             INFO [cli] Model(tag="iris_clf:2uo5fkgxj27exuqj") deleted
 
-Import and export models
-^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can export a model in the BentoML Model Store as a standalone archive file and share it between teams or move it between different build
+
+Model Import and Export
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Models saved with BentoML can be exported to a standalone archive file outside of the
+model store, for sharing models between teams or moving models between different build
 stages. For example:
 
 .. code:: bash
 
-    $ bentoml models export iris_clf:latest .
+    > bentoml models export iris_clf:latest .
 
     Model(tag="iris_clf:2uo5fkgxj27exuqj") exported to ./iris_clf-2uo5fkgxj27exuqj.bentomodel
 
 .. code:: bash
 
-    $ bentoml models import ./iris_clf-2uo5fkgxj27exuqj.bentomodel
+    > bentoml models import ./iris_clf-2uo5fkgxj27exuqj.bentomodel
 
     Model(tag="iris_clf:2uo5fkgxj27exuqj") imported
 
-You can export models to and import models from external storage devices, such as AWS S3, GCS, FTP and Dropbox. For example:
+.. note::
+
+    Model can be exported to or import from AWS S3, GCS, FTP, Dropbox, etc. For
+    example:
+
+    .. code:: bash
+
+        pip install fs-s3fs  # Additional dependency required for working with s3
+        bentoml models export iris_clf:latest s3://my_bucket/my_prefix/
+
+
+Push and Pull with Yatai
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+`Yatai <https://github.com/bentoml/Yatai>`_ provides a centralized Model repository
+that comes with flexible APIs and Web UI for managing all models (and
+:doc:`Bentos </concepts/bento>`) created by your team. It can be configured to store
+model files on cloud blob storage such as AWS S3, MinIO or GCS.
+
+Once your team have Yatai setup, you can use the :code:`bentoml models push` and
+:code:`bentoml models pull` command to get models to and from Yatai:
 
 .. code:: bash
 
-    pip install fs-s3fs  # Additional dependency required for working with s3
-    bentoml models export iris_clf:latest s3://my_bucket/my_prefix/
+    > bentoml models push iris_clf:latest
 
-Push and pull models
-^^^^^^^^^^^^^^^^^^^^
-
-`BentoCloud <https://cloud.bentoml.com>`_ provides a centralized model repository with flexible APIs
-and a Web UI for managing all models (and :doc:`Bentos </concepts/bento>`) created by your team. After
-you :doc:`log in to BentoCloud </bentocloud/how-tos/manage-access-token>`, use ``bentoml models push`` and ``bentoml models pull`` to upload your models to
-and download them from BentoCloud:
+    Successfully pushed model "iris_clf:2uo5fkgxj27exuqj"                                                                                                                                                                                           │
 
 .. code:: bash
 
-    $ bentoml models push iris_clf:latest
+    > bentoml models pull iris_clf:latest
 
-    Successfully pushed model "iris_clf:xuvqdjblrc7xynry"                                                                                                                                                                                           │
+    Successfully pulled model "iris_clf:2uo5fkgxj27exuqj"
 
-.. code:: bash
+.. image:: /_static/img/yatai-model-detail.png
+    :alt: Yatai Model Details UI
 
-    $ bentoml models pull iris_clf:latest
-
-    Successfully pulled model "iris_clf:xuvqdjblrc7xynry"
-
-.. image:: /_static/img/concepts/models/bentocloud-model-detail.png
 
 .. tip::
 
     Learn more about CLI usage from :code:`bentoml models --help`.
 
-Model management APIs
-^^^^^^^^^^^^^^^^^^^^^
 
-In addition to the CLI commands, BentoML also provides equivalent :doc:`Python APIs </reference/stores>` for managing models:
+Model Management API
+^^^^^^^^^^^^^^^^^^^^
+
+Besides the CLI commands, BentoML also provides equivalent
+:doc:`Python APIs </reference/stores>` for managing models:
 
 .. tab-set::
 
@@ -210,9 +244,10 @@ In addition to the CLI commands, BentoML also provides equivalent :doc:`Python A
             print(bento_model.info.metadata)
             print(bento_model.info.labels)
 
+
     .. tab-item:: List
 
-        ``bentoml.models.list`` returns a list of :ref:`bentoml.Model <reference/core:Model>` instances:
+        :code:`bentoml.models.list` returns a list of :ref:`bentoml.Model <reference/core:Model>`:
 
         .. code:: python
 
@@ -232,16 +267,20 @@ In addition to the CLI commands, BentoML also provides equivalent :doc:`Python A
 
         .. note::
 
-            You can export models to and import models from external storage devices, such as AWS S3, GCS, FTP and Dropbox. For example:
+            Model can be exported to or import from AWS S3, GCS, FTP, Dropbox, etc. For
+            example:
 
             .. code:: python
 
                 bentoml.models.import_model('s3://my_bucket/folder/my_model.bentomodel')
 
+
     .. tab-item:: Push / Pull
 
-        If you :doc:`have access to BentoCloud </bentocloud/how-tos/manage-access-token>`, you can also push local models to
-        or pull models from it.
+        If your team has `Yatai <https://github.com/bentoml/Yatai>`_ setup, you can also
+        push local Models to Yatai, it provides APIs and Web UI for managing all Models
+        created by your team and stores model files on cloud blob storage such as AWS S3,
+        MinIO or GCS.
 
         .. code:: python
 
@@ -252,6 +291,7 @@ In addition to the CLI commands, BentoML also provides equivalent :doc:`Python A
 
             bentoml.models.pull("iris_clf:latest")
 
+
     .. tab-item:: Delete
 
         .. code:: python
@@ -259,19 +299,24 @@ In addition to the CLI commands, BentoML also provides equivalent :doc:`Python A
             import bentoml
             bentoml.models.delete("iris_clf:latest")
 
-Use model Runners
------------------
 
-You use Runners to run model inference in BentoML Services. The Runner abstraction gives the BentoServer
-more flexibility in scheduling inference computations, dynamically batching inference calls, and utilizing available hardware resources.
+Using Model Runner
+------------------
 
-To create a model Runner from a saved model, use the ``to_runner`` API:
+The way to run model inference in the context of a :code:`bentoml.Service`, is via a
+Runner. The Runner abstraction gives BentoServer more flexibility in terms of how to
+schedule the inference computation, how to dynamically batch inference calls and better
+take advantage of all hardware resource available.
+
+As demonstrated in the :doc:`tutorial </tutorial>`, a model runner can be created
+from a saved model via the :code:`to_runner` API:
 
 .. code:: python
 
     iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
-The Runner instance can then be used for creating a ``bentoml.Service``:
+
+The runner instance can then be used for creating a :code:`bentoml.Service`:
 
 .. code:: python
 
@@ -282,42 +327,46 @@ The Runner instance can then be used for creating a ``bentoml.Service``:
         result = iris_clf_runner.predict.run(input_series)
         return result
 
-To test out the Runner interface before defining the Service API callback function,
-you can create a local Runner instance outside of a Service:
+
+To test out the runner interface before writing the Service API callback function,
+you can create a local runner instance outside of a Service:
 
 .. code:: python
 
     # Create a Runner instance:
     iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
-    # Initialize the Runner in the current process (for development and testing only):
+    # Initializes the runner in current process, this is meant for development and testing only:
     iris_clf_runner.init_local()
 
     # This should yield the same result as the loaded model:
-    iris_clf_runner.predict.run([[5.9, 3, 5.1, 1.8]])
+    iris_clf_runner.predict.run([[5.9, 3., 5.1, 1.8]])
+
 
 To learn more about Runner usage and its architecture, see :doc:`/concepts/runner`.
 
-Model signatures
+
+Model Signatures
 ----------------
 
 A model signature represents a method on a model object that can be called. This
-information is used when creating BentoML Runners for this model.
+information is used when creating BentoML runners for this model.
 
-For example, the ``iris_clf_runner.predict.run`` call in the previous section passes through
-the function input to the model's ``predict`` method, running from a remote Runner process.
+From the example above, the :code:`iris_clf_runner.predict.run` call will pass through
+the function input to the model's :code:`predict` method, running from a remote runner
+process.
 
 For many :doc:`other ML frameworks </frameworks/index>`, the model object's inference
-method may not be called :code:`predict`. You can customize it by specifying the model
-signature when using ``save_model``:
+method may not be called :code:`predict`. Users can customize it by specifying the model
+signature during :code:`save_model`:
 
 .. code-block:: python
    :emphasize-lines: 4-8,13
 
     bentoml.pytorch.save_model(
-        "demo_mnist",  # Model name in the local Model Store
-        trained_model,  # Model instance being saved
-        signatures={   # Model signatures for Runner inference
+        "demo_mnist",  # model name in the local model store
+        trained_model,  # model instance being saved
+        signatures={   # model signatures for runner inference
             "classify": {
                 "batchable": False,
             }
@@ -328,17 +377,18 @@ signature when using ``save_model``:
     runner.init_local()
     runner.classify.run( MODEL_INPUT )
 
-A special case here is Python's magic method ``__call__``. Similar to the
-Python language convention, the call to ``runner.run`` will be applied to
-the model's ``__call__`` method:
+
+A special case here is Python's magic method :code:`__call__`. Similar to the
+Python language convention, the call to :code:`runner.run` will be applied to
+the model's :code:`__call__` method:
 
 .. code-block:: python
    :emphasize-lines: 4-8,13
 
     bentoml.pytorch.save_model(
-        "demo_mnist",  # Model name in the local Model Store
-        trained_model,  # Model instance being saved
-        signatures={   # Model signatures for Runner inference
+        "demo_mnist",  # model name in the local model store
+        trained_model,  # model instance being saved
+        signatures={   # model signatures for runner inference
             "__call__": {
                 "batchable": False,
             },
@@ -352,18 +402,18 @@ the model's ``__call__`` method:
 Batching
 --------
 
-For model inference calls that supports handling a batched input, it is recommended to
-enable batching for the target model signature. By doing this, ``runner.run`` calls
+For model inference calls that supports taking a batch input, it is recommended to
+enable batching for the target model signature. In which case, :code:`runner#run` calls
 made from multiple Service workers can be dynamically merged to a larger batch and run
-as one inference call in the Runner worker. Here's an example:
+as one inference call in the runner worker. Here's an example:
 
 .. code-block:: python
    :emphasize-lines: 4-9,14
 
     bentoml.pytorch.save_model(
-        "demo_mnist",  # Model name in the local Model Store
-        trained_model,  # Model instance being saved
-        signatures={   # Model signatures for Runner inference
+        "demo_mnist",  # model name in the local model store
+        trained_model,  # model instance being saved
+        signatures={   # model signatures for runner inference
             "__call__": {
                 "batchable": True,
                 "batch_dim": 0,
@@ -375,17 +425,20 @@ as one inference call in the Runner worker. Here's an example:
     runner.init_local()
     runner.run( MODEL_INPUT )
 
-.. note::
+.. tip::
 
-    The Runner interface remains consistent irrespective of the ``batchable`` parameter being set to ``True`` or ``False``.
+    The runner interface is exactly the same, regardless :code:`batchable` was set to
+    True or False.
 
-The ``batch_dim`` parameter determines the dimension(s) that contain multiple data
-when passing to this ``run`` method. If it remains undefined, the default ``batch_dim`` value is ``0``.
+The :code:`batch_dim` parameter determines the dimension(s) that contain multiple data
+when passing to this run method. The default :code:`batch_dim`, when left unspecified,
+is :code:`0`.
 
-For example, when running prediction on two dataset inputs, ``[1, 2]`` and
-``[3, 4]``, if the array passed to the ``predict`` method were ``[[1, 2], [3, 4]]``,
-then the batch dimension would be ``0``. If you were to send ``[[1, 3], [2, 4]]``, then the batch dimension would be ``1``. The following code
-snippet lists more examples.
+For example, if you have two inputs you want to run prediction on, :code:`[1, 2]` and
+:code:`[3, 4]`, if the array you would pass to the predict method would be
+:code:`[[1, 2], [3, 4]]`, then the batch dimension would be :code:`0`. If the array you
+would pass to the predict method would be :code:`[[1, 3], [2, 4]]`, then the batch
+dimension would be :code:`1`. For example:
 
 .. code:: python
 
@@ -398,30 +451,37 @@ snippet lists more examples.
         "predict": {"batchable": True, "batch_dim": 1}}
     )
 
-    # If the following calls are batched, the input to the actual predict method on the
+    # if the following calls are batched, the input to the actual predict method on the
     # model.predict method would be [[1, 2], [3, 4], [5, 6]]
     runner0 = bentoml.pytorch.get("demo0:latest").to_runner()
     runner0.init_local()
     runner0.predict.run(np.array([[1, 2], [3, 4]]))
     runner0.predict.run(np.array([[5, 6]]))
 
-    # If the following calls are batched, the input to the actual predict method on the
+    # if the following calls are batched, the input to the actual predict method on the
     # model.predict would be [[1, 2, 5], [3, 4, 6]]
     runner1 = bentoml.pytorch.get("demo1:latest").to_runner()
     runner1.init_local()
     runner1.predict.run(np.array([[1, 2], [3, 4]]))
     runner1.predict.run(np.array([[5], [6]]))
 
+
 .. admonition:: Expert API
 
-    If there are multiple arguments to the ``run`` method and there is only one batch
+    If there are multiple arguments to the run method and there is only one batch
     dimension supplied, all arguments will use that batch dimension.
 
     The batch dimension can also be a tuple of (input batch dimension, output batch
-    dimension). For example, if the ``predict`` method has its input batched along
-    the first axis and its output batched along the zeroth axis, ``batch_dim`` can
-    be set to ``(1, 0)``.
+    dimension). For example, if the predict method should have its input batched along
+    the first axis and its output batched along the zeroth axis, :code:`batch_dim`` can
+    be set to :code:`(1, 0)`.
+
 
 For online serving workloads, adaptive batching is a critical component that contributes
 to the overall performance. If throughput and latency are important to you, learn more
-about other Runner options and batching configurations in :doc:`/concepts/runner` and :doc:`/guides/batching`.
+about other Runner options and batching configurations in the :doc:`/concepts/runner`
+and :doc:`/guides/batching` doc.
+
+
+.. TODO::
+    Add example for using ModelOptions for setting runtime options

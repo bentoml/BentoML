@@ -1,25 +1,25 @@
 from __future__ import annotations
 
-import functools
-import itertools
-import logging
 import pickle
 import typing as t
+import logging
+import functools
+import itertools
 from typing import TYPE_CHECKING
 
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
 import bentoml
 
+from ...types import LazyType
 from ....exceptions import MissingDependencyException
-from ...configuration.containers import BentoMLContainer
 from ...models.model import Model
+from ...runner.utils import Params
+from ...runner.container import Payload
 from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
-from ...runner.container import Payload
-from ...runner.utils import Params
-from ...types import LazyType
+from ...configuration.containers import BentoMLContainer
 
 try:
     import torch

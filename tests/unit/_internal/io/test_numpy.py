@@ -2,17 +2,17 @@
 from __future__ import annotations
 
 import logging
-from functools import partial
 from typing import TYPE_CHECKING
+from functools import partial
 
 import numpy as np
 import pytest
 
-from bentoml._internal.service.openapi.specification import Schema
+from bentoml.io import NumpyNdarray
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import BentoMLException
 from bentoml.grpc.utils import import_generated_stubs
-from bentoml.io import NumpyNdarray
+from bentoml._internal.service.openapi.specification import Schema
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture

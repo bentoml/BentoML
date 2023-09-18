@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import contextlib
-import logging
 import typing as t
+import logging
+import contextlib
 from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
 
-from ...exceptions import BentoMLException
-from ...exceptions import InvalidArgument
-from ...exceptions import MissingDependencyException
-from ...exceptions import NotFound
-from ..models.model import ModelContext
 from ..utils.pkg import get_pkg_version
+from ...exceptions import NotFound
+from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
+from ..models.model import ModelContext
 
 # register PyTorchTensorContainer as import side effect.
 from .common.pytorch import PyTorchTensorContainer
@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from ...types import ModelSignature
     from .. import external_typing as ext
-    from ..models.model import ModelSignaturesType
     from ..tag import Tag
+    from ...types import ModelSignature
+    from ..models.model import ModelSignaturesType
 
 try:
     import torch
@@ -206,7 +206,7 @@ def save_model(
         )
     batchable_enabled_signatures = [v for v in signatures if signatures[v]["batchable"]]
     if len(batchable_enabled_signatures) > 0:
-        message = f"Batchable signatures are not supported for fastai models. The following signatures have batchable sets to 'True': {batchable_enabled_signatures}. Consider using PyTorch layer from the learner model. To learn more, visit https://docs.bentoml.com/en/latest/frameworks/fastai.html."
+        message = f"Batchable signatures are not supported for fastai models. The following signatures have batchable sets to 'True': {batchable_enabled_signatures}. Consider using PyTorch layer from the learner model. To learn more, visit https://docs.bentoml.org/en/latest/frameworks/fastai.html."
         raise BentoMLException(message)
 
     with bentoml.models.create(

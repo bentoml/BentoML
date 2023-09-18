@@ -239,8 +239,6 @@ However, users can not access the inference context from the ``on_deployment`` h
 You can register multiple functions for each hook, and they will be executed in the order they are registered.
 All hooks support both synchronous and asynchronous functions.
 
-.. _io-descriptors:
-
 IO Descriptors
 --------------
 
@@ -357,7 +355,6 @@ model and return. To learn more, see IO descrptor reference for
 
     from typing import Dict, Any
     from pydantic import BaseModel
-    from bentoml.io import JSON
 
     svc = bentoml.Service("iris_classifier")
 
@@ -372,7 +369,7 @@ model and return. To learn more, see IO descrptor reference for
         output=JSON(),
     )
     def classify(input_series: IrisFeatures) -> Dict[str, Any]:
-        input_df = pd.DataFrame([input_series.dict()])
+        input_df = pd.DataFrame([input_data.dict()])
         results = iris_clf_runner.predict.run(input_df).to_list()
         return {"predictions": results}
 
@@ -391,7 +388,7 @@ with support of type validation and OpenAPI specification generation. For exampl
 +-----------------+---------------------+---------------------+-------------------------+
 | PandasDataFrame | pandas.DataFrame    | validate, schema    | pandas.DataFrame.dtypes |
 +-----------------+---------------------+---------------------+-------------------------+
-| JSON            | Python native types | validate, schema    | Pydantic.BaseModel      |
+| Json            | Python native types | validate, schema    | Pydantic.BaseModel      |
 +-----------------+---------------------+---------------------+-------------------------+
 | Image           | PIL.Image.Image     | pilmodel, mime_type |                         |
 +-----------------+---------------------+---------------------+-------------------------+
@@ -412,35 +409,29 @@ logic:
 
 .. code-block:: python
 
-    from __future__ import annotations
-    from typing import Any
+    import typing as t
     import numpy as np
     from pydantic import BaseModel
 
-    from bentoml.io import Multipart, NumpyNdarray, JSON
+    from bentoml.io import NumpyNdarray, Json
 
-    class IrisFeatures(BaseModel):
-        sepal_length: float
-        sepal_width: float
-        petal_length: float
-        petal_width: float
+    class FooModel(BaseModel):
+        field1: int
+        field2: float
+        field3: str
 
-    output_descriptor_numpy = NumpyNdarray.from_sample(np.array([2]))
+    my_np_input = NumpyNdarray.from_sample(np.ndarray(...))
 
     @svc.api(
         input=Multipart(
-            arr=NumpyNdarray(
-                shape=(-1, 4),
-                dtype=np.float32,
-                enforce_dtype=True,
-                enforce_shape=True,
-            ),
-            json=JSON(pydantic_model=IrisFeatures),
-        ),
-        output=output_descriptor_numpy,
+            arr=NumpyNdarray(schema=np.dtype(int, 4), validate=True),
+            json=Json(pydantic_model=FooModel),
+        )
+        output=NumpyNdarray(schema=np.dtype(int), validate=True),
     )
-    def multi_part_predict(arr: np.ndarray, json: dict[str, Any]) -> np.ndarray:
+    def predict(arr: np.ndarray, json: t.Dict[str, t.Any]) -> np.ndarray:
         ...
+
 
 Sync vs Async APIs
 ------------------

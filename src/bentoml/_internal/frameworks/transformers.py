@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import logging
 import os
-import platform
 import typing as t
+import logging
+import platform
 import warnings
 from types import ModuleType
 
@@ -11,23 +11,23 @@ import attr
 
 import bentoml
 
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
-from ...exceptions import NotFound
-from ..models.model import Model
-from ..models.model import ModelContext
-from ..models.model import ModelOptions
-from ..models.model import ModelSignature
 from ..tag import Tag
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
+from ...exceptions import NotFound
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
+from ..models.model import Model
+from ..models.model import ModelContext
+from ..models.model import ModelOptions
+from ..models.model import ModelSignature
 
 if t.TYPE_CHECKING:
-    import cloudpickle
-    import tensorflow as tf
     import torch
+    import tensorflow as tf
+    import cloudpickle
     from transformers.models.auto.auto_factory import (
         _BaseAutoModelClass as BaseAutoModelClass,
     )
@@ -696,12 +696,12 @@ def save_model(
 
     # The below API are introduced since 4.18
     if pkg_version_info("transformers")[:2] >= (4, 18):
-        from transformers.utils import is_flax_available
         from transformers.utils import is_tf_available
+        from transformers.utils import is_flax_available
         from transformers.utils import is_torch_available
     else:
-        from .utils.transformers import is_flax_available
         from .utils.transformers import is_tf_available
+        from .utils.transformers import is_flax_available
         from .utils.transformers import is_torch_available
 
     framework_versions = {"transformers": get_pkg_version("transformers")}

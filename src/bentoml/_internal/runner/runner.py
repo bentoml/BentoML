@@ -1,24 +1,24 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from abc import ABC
 from abc import abstractmethod
 
 import attr
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
-from ...exceptions import StateException
-from ..configuration.containers import BentoMLContainer
-from ..models.model import Model
 from ..tag import validate_tag_str
 from ..utils import first_not_none
 from .runnable import Runnable
-from .runner_handle import DummyRunnerHandle
-from .runner_handle import RunnerHandle
-from .strategy import DefaultStrategy
 from .strategy import Strategy
+from .strategy import DefaultStrategy
+from ...exceptions import StateException
+from ..models.model import Model
+from .runner_handle import RunnerHandle
+from .runner_handle import DummyRunnerHandle
+from ..configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     from ...triton import Runner as TritonRunner
@@ -53,11 +53,6 @@ class RunnerMethod(t.Generic[T, P, R]):
 
     async def async_run(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return await self.runner._runner_handle.async_run_method(self, *args, **kwargs)
-
-    def async_stream(
-        self, *args: P.args, **kwargs: P.kwargs
-    ) -> t.AsyncGenerator[R, None]:
-        return self.runner._runner_handle.async_stream_method(self, *args, **kwargs)
 
 
 def _to_lower_name(name: str) -> str:
@@ -113,7 +108,7 @@ class AbstractRunner(ABC):
         """
 
 
-@attr.define(slots=False, frozen=True, eq=False, init=False)
+@attr.define(slots=False, frozen=True, eq=False)
 class Runner(AbstractRunner):
     if t.TYPE_CHECKING:
         # This will be set by __init__. This is for type checking only.
@@ -176,7 +171,7 @@ class Runner(AbstractRunner):
         """
 
         Runner represents a unit of computation that can be executed on a remote Python worker and scales independently
-        See https://docs.bentoml.com/en/latest/concepts/runner.html for more details.
+        See https://docs.bentoml.org/en/latest/concepts/runner.html for more details.
 
         Args:
             runnable_class: Runnable class that can be executed on a remote Python worker.

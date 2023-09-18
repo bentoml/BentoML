@@ -1,0 +1,27 @@
+scanner:
+    diff_only: True
+    linter: flake8
+
+flake8:
+    max-line-length: 88
+    ignore:
+      - E203
+      - E266
+      - W503
+      - E501
+    exclude:
+      - src/bentoml/_version.py
+      - src/bentoml/metrics.pyi
+      - examples
+
+
+only_mention_files_with_errors: True
+
+message:
+    opened:
+        header: "Hello @{name}! Thanks for opening this PR."
+        footer: "Do see the [Hitchhiker's guide to code style](https://goo.gl/hqbW4r)"
+    updated:
+        header: "Hello @{name}, Thanks for updating this PR."
+        footer: ""
+    no_errors: "There are currently no PEP 8 issues detected in this PR. Cheers! :beers:"

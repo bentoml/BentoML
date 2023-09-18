@@ -1,26 +1,26 @@
 from __future__ import annotations
 
-import dataclasses
 import json
-import logging
 import typing as t
+import logging
+import dataclasses
 
 import attr
 from starlette.requests import Request
 from starlette.responses import Response
 
+from .base import IODescriptor
+from ..types import LazyType
+from ..utils import LazyLoader
+from ..utils import bentoml_cattr
+from ..utils.pkg import pkg_version_info
+from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ..service.openapi import REF_PREFIX
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import Schema
-from ..types import LazyType
-from ..utils import LazyLoader
-from ..utils import bentoml_cattr
-from ..utils.http import set_cookies
-from ..utils.pkg import pkg_version_info
-from .base import IODescriptor
+from ..service.openapi.specification import MediaType
 
 EXC_MSG = "'pydantic' must be installed to use 'pydantic_model'. Install with 'pip install bentoml[io-json]'."
 
@@ -37,8 +37,8 @@ if t.TYPE_CHECKING:
     from google.protobuf import struct_pb2
     from typing_extensions import Self
 
-    from ..context import ServiceContext as Context
     from .base import OpenAPIResponse
+    from ..context import ServiceContext as Context
 
 else:
     pydantic = LazyLoader("pydantic", globals(), "pydantic", exc_msg=EXC_MSG)
@@ -280,7 +280,9 @@ class JSON(
             "id": self.descriptor_id,
             "args": {
                 "has_pydantic_model": self._pydantic_model is not None,
-                "has_json_encoder": self._json_encoder is not DefaultJsonEncoder,
+                "has_json_encoder": not isinstance(
+                    self._json_encoder, DefaultJsonEncoder
+                ),
             },
         }
 

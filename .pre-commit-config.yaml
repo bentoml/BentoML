@@ -1,32 +1,25 @@
 ci:
   autoupdate_schedule: monthly
-  autofix_commit_msg: "ci: auto fixes from pre-commit.ci\n\nFor more information, see https://pre-commit.ci"
-  autoupdate_commit_msg: 'ci: pre-commit autoupdate [skip ci]'
-exclude: '(.*\.(css|js|svg))|(.*_generated.*)$'
+
+exclude: '.*\.(css|js|svg)$'
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.0.287'
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.0.263'
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --show-fixes]
+
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.3.0
     hooks:
-      - id: black-jupyter
-        files: '(src|tests|docs|examples|typings)/'
+      - id: black
+        additional_dependencies:  # black[jupyter] dependencies
+          - ipython>=7.8.0
+          - tokenize-rt>=3.2.0
+        files: '/(src|tests|docs|examples|typings)/'
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
-  - repo: https://github.com/pdm-project/pdm
-    rev: 2.9.1
-    hooks:
-      - id: pdm-lock-check
-  - repo: https://github.com/bufbuild/buf
-    rev: v1.26.1
-    hooks:
-      - id: buf-format
-        args: [--config=src/bentoml/grpc/buf.yaml, src/bentoml/grpc]
-      - id: buf-lint
-        args: [--config=src/bentoml/grpc/buf.yaml, --error-format=msvs, src/bentoml/grpc]

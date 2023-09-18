@@ -1,23 +1,21 @@
-================================
-Unified AI Application Framework
-================================
+===============================
+Unified Model Serving Framework
+===============================
 
-|github_stars| |pypi_status| |actions_status| |documentation_status| |join_slack|
+|github_stars| |pypi_status| |downloads| |actions_status| |documentation_status| |join_slack|
 
 ----
 
-`BentoML <https://github.com/bentoml/BentoML>`_ is a framework for building **reliable, scalable and cost-efficient AI applications**. It comes with everything you need for model serving, application packaging, and production deployment.
+What is BentoML?
+----------------
 
-Start your BentoML journey
---------------------------
+`BentoML <https://github.com/bentoml/BentoML>`_ makes it easy to create ML-powered prediction services that are ready to deploy and scale.
 
-The BentoML documentation provides detailed guidance on the project with hands-on tutorials and examples. If you are a first-time user of BentoML, we recommend that you read the following documents in order:
+Data Scientists and ML Engineers use BentoML to:
 
-1. :doc:`/overview/what-is-bentoml`
-2. :doc:`/overview/ecosystem`
-3. :doc:`/quickstarts/install-bentoml`
-4. :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`
-5. :doc:`/quickstarts/deploy-a-large-language-model-with-openllm-and-bentoml`
+* Accelerate and standardize the process of taking ML models to production
+* Build scalable and high performance prediction services
+* Continuously deploy, monitor, and operate prediction services in production
 
 Learn BentoML
 -------------
@@ -27,31 +25,25 @@ Learn BentoML
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`💻 Overview <overview/index>`
-        :link: overview/index
+    .. grid-item-card:: :doc:`💻 Tutorial: Intro to BentoML <tutorial>`
+        :link: tutorial
         :link-type: doc
 
-        Gain a basic understanding of the BentoML open-source framework, its workflow, and the BentoML ecosystem.
-
-    .. grid-item-card:: :doc:`🚀 Quickstarts <quickstarts/index>`
-        :link: quickstarts/index
-        :link-type: doc
-
-        Hands-on tutorials that help you quickly get started with BentoML by deploying AI applications with common machine learning (ML) models.
+        A simple example of using BentoML in action. In under 10 minutes, you'll be able to serve your ML model over an HTTP API endpoint, and build a docker image that is ready to be deployed in production.
 
     .. grid-item-card:: :doc:`📖 Main Concepts <concepts/index>`
         :link: concepts/index
         :link-type: doc
 
-        A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what **Bentos** and **Runners** stand for.
+        A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what `bento` and `runner` stands for.
 
     .. grid-item-card:: :doc:`🧮 ML Framework Guides <frameworks/index>`
         :link: frameworks/index
         :link-type: doc
 
-        Best practices and example usages by the ML framework used for building your model.
+        Best practices and example usages by the ML framework used for model training.
 
-    .. grid-item-card:: `🎨 Examples <https://bentoml.com/gallery>`_
+    .. grid-item-card:: `🎨 Examples <https://github.com/bentoml/BentoML/tree/main/examples>`_
         :link: https://github.com/bentoml/BentoML/tree/main/examples
         :link-type: url
 
@@ -67,63 +59,97 @@ Learn BentoML
         :link: integrations/index
         :link-type: doc
 
-        Learn how BentoML works together with other tools and products in the Data/ML ecosystem.
-
-    .. grid-item-card:: :doc:`☁️ BentoCloud <bentocloud/getting-started/index>`
-        :link: bentocloud/getting-started/index
-        :link-type: doc
-
-        Fully managed platform for deploying and scaling BentoML in the cloud.
+        Learn how BentoML works together with other tools and products in the Data/ML ecosystem
 
     .. grid-item-card:: `💬 BentoML Community <https://l.bentoml.com/join-slack>`_
         :link: https://l.bentoml.com/join-slack
         :link-type: url
 
-        Join us in our Slack community where thousands of AI application developers are contributing to the project and helping each other.
+        Join us in our Slack community where hundreds of ML practitioners are contributing to the project, helping other users, and discuss all things MLOps.
 
-Stay informed
--------------
 
-The BentoML team uses the following channels to announce important updates like major product releases and share tutorials, case studies, as well as community news.
+Staying Informed
+----------------
 
-- `BentoML Blog <http://bentoml.com/blog>`_
-- `BentoML Twitter account <http://twitter.com/bentomlai>`_
-- `BentoML LinkedIn account <https://www.linkedin.com/company/bentoml/>`_
+The `BentoML Blog <http://modelserving.com>`_ and `@bentomlai <http://twitt
+er.com/bentomlai>`_ on Twitter are the official source for
+updates from the BentoML team. Anything important, including major releases and announcements, will be posted there. We also frequently
+share tutorials, case studies, and community updates there.
 
-To receive release notifications, star and watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_.
-For release notes and detailed changelogs, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.
+To receive release notification, star & watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_. For release
+notes and detailed changelog, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.
+
+----
+
+Why are we building BentoML?
+----------------------------
+
+Model deployment is one of the last and most important stages in the machine learning
+life cycle: only by putting a machine learning model into a production environment and
+making predictions for end applications, the full potential of ML can be realized.
+
+Sitting at the intersection of data science and engineering, **model deployment
+introduces new operational challenges between these teams**. Data scientists, who are
+typically responsible for building and training the model, often don’t have the
+expertise to bring it into production. At the same time, engineers, who aren’t used to
+working with models that require continuous iteration and improvement, find it
+challenging to leverage their know-how and common practices (like CI/CD) to deploy them.
+As the two teams try to meet halfway to get the model over the finish line,
+time-consuming and error-prone workflows can often be the result, slowing down the pace
+of progress.
+
+We at BentoML want to **get your ML models shipped in a fast, repeatable, and scalable
+way**. BentoML is designed to streamline the handoff to production deployment, making it
+easy for developers and data scientists alike to test, deploy, and integrate their
+models with other systems.
+
+With BentoML, data scientists can focus primarily on creating and improving their
+models, while giving deployment engineers peace of mind that nothing in the deployment
+logic is changing and that production service is stable.
+
+----
+
+Getting Involved
+----------------
+
+BentoML has a thriving open source community where hundreds of ML practitioners are
+contributing to the project, helping other users and discuss all things MLOps.
+`👉 Join us on slack today! <https://l.bentoml.com/join-slack>`_
 
 
 .. toctree::
-   :caption: BentoML
    :hidden:
 
-   overview/index
-   quickstarts/index
+   installation
+   tutorial
    concepts/index
    frameworks/index
    guides/index
    integrations/index
    reference/index
    Examples <https://github.com/bentoml/BentoML/tree/main/examples>
+   Community <https://l.bentoml.com/join-slack>
+   GitHub <https://github.com/bentoml/BentoML>
+   Blog <https://modelserving.com>
 
 .. toctree::
-   :caption: BentoCloud
+   :caption: Ecosystem
    :hidden:
 
-   bentocloud/getting-started/index
-   bentocloud/how-tos/index
-   bentocloud/topics/index
-   bentocloud/reference/index
+   ☁️ BentoCloud <https://www.bentoml.com/bento-cloud/>
+   🦄️ Yatai <https://github.com/bentoml/Yatai>
+   🚀 bentoctl <https://github.com/bentoml/bentoctl>
 
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML
+.. |downloads| image:: https://pepy.tech/badge/bentoml?style=flat-square
+   :target: https://pepy.tech/project/bentoml
 .. |actions_status| image:: https://github.com/bentoml/bentoml/workflows/CI/badge.svg
    :target: https://github.com/bentoml/bentoml/actions
 .. |documentation_status| image:: https://readthedocs.org/projects/bentoml/badge/?version=latest&style=flat-square
-   :target: https://docs.bentoml.com/
-.. |join_slack| image:: https://badgen.net/badge/Join/Community%20Slack/cyan?icon=slack&style=flat-square
+   :target: https://docs.bentoml.org/
+.. |join_slack| image:: https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack&style=flat-square
    :target: https://l.bentoml.com/join-slack
 .. |github_stars| image:: https://img.shields.io/github/stars/bentoml/BentoML?color=%23c9378a&label=github&logo=github&style=flat-square
    :target: https://github.com/bentoml/bentoml

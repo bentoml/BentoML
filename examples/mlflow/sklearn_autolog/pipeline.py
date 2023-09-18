@@ -1,11 +1,11 @@
 from pprint import pprint
 
-import mlflow
 import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+import mlflow
 from utils import fetch_logged_data
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
 
 import bentoml
 

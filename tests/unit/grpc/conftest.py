@@ -26,8 +26,8 @@ def fixture_mock_handler() -> MagicMock:
 
 
 if TYPE_CHECKING:
-    from ...proto import service_test_pb2 as pb
-    from ...proto import service_test_pb2_grpc as services
+    from tests.proto import service_test_pb2 as pb
+    from tests.proto import service_test_pb2_grpc as services
 else:
     pb = LazyLoader("pb", globals(), "tests.proto.service_test_pb2")
     services = LazyLoader("services", globals(), "tests.proto.service_test_pb2_grpc")
@@ -37,6 +37,6 @@ class TestServiceServicer(services.TestServiceServicer):
     async def Execute(  # type: ignore (no async types) # pylint: disable=invalid-overridden-method
         self,
         request: pb.ExecuteRequest,
-        _: aio.ServicerContext[pb.ExecuteRequest, pb.ExecuteResponse],
+        context: aio.ServicerContext[pb.ExecuteRequest, pb.ExecuteResponse],
     ) -> pb.ExecuteResponse:
         return pb.ExecuteResponse(output="Hello, {}!".format(request.input))

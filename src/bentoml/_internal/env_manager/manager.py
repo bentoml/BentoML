@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 
 import fs
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
+from .envs import Conda
 from ..bento.bento import Bento
 from ..bento.bento import BentoInfo
 from ..configuration.containers import BentoMLContainer
-from .envs import Conda
 
 if t.TYPE_CHECKING:
     from fs.base import FS

@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import logging
 import os
-import pkgutil
 import typing as t
-from importlib import import_module
+import logging
+import pkgutil
 from types import ModuleType
 from typing import TYPE_CHECKING
+from importlib import import_module
 
 import pytest
 
 if TYPE_CHECKING:
+    from _pytest.nodes import Item
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
-    from _pytest.nodes import Item
 
     from .models import FrameworkTestModel
 
@@ -31,7 +31,7 @@ def pytest_addoption(parser: Parser):
     )
 
 
-def pytest_configure(config: Config) -> None:
+def pytest_configure(config: "Config") -> None:
     # We will inject marker documentation here.
     config.addinivalue_line(
         "markers",
@@ -39,7 +39,7 @@ def pytest_configure(config: Config) -> None:
     )
 
 
-def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
+def pytest_collection_modifyitems(config: "Config", items: t.List["Item"]) -> None:
     if config.getoption("--disable-tf-eager-execution"):
         try:
             from tensorflow.python.framework.ops import disable_eager_execution
@@ -58,18 +58,14 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     framework_name = t.cast(str, metafunc.config.getoption("framework"))
 
     if "framework" in metafunc.fixturenames and "test_model" in metafunc.fixturenames:
-        metafunc.parametrize(
-            "framework,test_model", generate_test_inputs(framework_name)
-        )
+        metafunc.parametrize("framework,test_model", test_inputs(framework_name))
     elif "framework" in metafunc.fixturenames:
         metafunc.parametrize(
-            "framework", [inp[0] for inp in generate_test_inputs(framework_name)]
+            "framework", [inp[0] for inp in test_inputs(framework_name)]
         )
 
 
-def generate_test_inputs(
-    framework: str | None,
-) -> list[tuple[ModuleType, FrameworkTestModel]]:
+def test_inputs(framework: str | None) -> list[tuple[ModuleType, FrameworkTestModel]]:
     if framework is None:
         frameworks = [
             name
@@ -94,13 +90,10 @@ def generate_test_inputs(
                     module.backward_compatible,
                 )
             input_modules.append(module)
-        except ModuleNotFoundError:
-            import traceback
-
+        except ModuleNotFoundError as e:
             logger.warning(
-                f"Failed to import test module for framework {framework_name} (tests.integration.frameworks.models.{framework_name}). See traceback by passing '--capture=tee-sys' to pytest:"
+                f"Failed to find test module for framework {framework_name} (tests.integration.frameworks.models.{framework_name}): {e}"
             )
-            traceback.print_exc()
 
     return [
         (module.framework, _model)

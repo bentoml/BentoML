@@ -50,27 +50,3 @@ body[data-theme="dark"] .bottom-of-page .left-details a {
   text-align: center;
 }
 
-.custom-button {
-  display: inline-block;
-  font-weight: 500;
-  text-align: center;
-  vertical-align: middle;
-  cursor: pointer;
-  padding: .375rem .75rem;
-  font-size: 1rem;
-  line-height: 1.5;
-  border-radius: .25rem;
-  border: 1px solid black;
-  text-decoration: none;
-  transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-}
-
-.demo, .demo:hover {
-  background-color: #ceffb2;
-  color: #004751;
-}
-
-.trial, .trial:hover {
-  background: #004751;
-  color: #ceffb2;
-}

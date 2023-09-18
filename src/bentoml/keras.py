@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
-from ._internal.frameworks.keras import KerasOptions as ModelOptions
 from ._internal.frameworks.keras import get
-from ._internal.frameworks.keras import get_runnable
 from ._internal.frameworks.keras import load_model
 from ._internal.frameworks.keras import save_model
+from ._internal.frameworks.keras import get_runnable
+from ._internal.frameworks.keras import KerasOptions as ModelOptions
 
 if TYPE_CHECKING:
     from ._internal.tag import Tag

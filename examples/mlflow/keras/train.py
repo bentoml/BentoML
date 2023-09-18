@@ -2,16 +2,17 @@
 on the Reuters newswire topic classification task.
 """
 # pylint: disable=no-name-in-module
+import numpy as np
+
 # The following import and function call are the only additions to code required
 # to automatically log metrics and parameters to MLflow.
 import mlflow.keras
-import numpy as np
 from tensorflow import keras
-from tensorflow.keras.datasets import reuters
-from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Activation
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.datasets import reuters
 from tensorflow.keras.preprocessing.text import Tokenizer
 
 import bentoml

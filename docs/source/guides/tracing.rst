@@ -144,12 +144,13 @@ Exporter Configuration
 
    .. code-block:: yaml
 
-      tracing:
+      api_server:
+        tracing:
           exporter_type: jaeger
           sample_rate: 1.0
           jaeger:
-          protocol: thrift
-          thrift:
+            protocol: thrift
+            thrift:
               agent_host_name: localhost
 
    Then environment variable ``OTEL_EXPORTER_JAEGER_AGENT_HOST`` will take precedence over the
@@ -161,9 +162,10 @@ By default, no traces will be collected. Set ``sample_rate`` to your desired fra
 
 .. code-block:: yaml
 
-   tracing:
-     exporter_type: zipkin
-     sample_rate: 1.0
+    api_server:
+      tracing:
+        exporter_type: zipkin
+        sample_rate: 1.0
 
 If you would like to exclude some routes from tracing, you can specify them using
 the :code:`excluded_urls` parameter. This parameter can be either a comma-separated
@@ -325,11 +327,12 @@ To change the protocol, use the ``protocol`` parameter:
 
 .. code-block:: yaml
 
-   tracing:
-     exporter_type: otlp
-     sample_rate: 1.0
-     otlp:
-       protocol: http
+   api_server:
+     tracing:
+       exporter_type: otlp
+       sample_rate: 1.0
+       otlp:
+         protocol: http
 
 Configuration fields are passed through the OpenTelemetry Zipkin exporter
 [#otlp_source]_.

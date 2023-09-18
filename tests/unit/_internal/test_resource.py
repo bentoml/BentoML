@@ -4,12 +4,12 @@ import pytest
 
 import bentoml
 import bentoml.exceptions
-from bentoml._internal.resource import CpuResource
-from bentoml._internal.resource import NvidiaGpuResource
+from bentoml.exceptions import BentoMLConfigException
 from bentoml._internal.resource import Resource
+from bentoml._internal.resource import CpuResource
 from bentoml._internal.resource import get_resource
 from bentoml._internal.resource import system_resources
-from bentoml.exceptions import BentoMLConfigException
+from bentoml._internal.resource import NvidiaGpuResource
 
 
 class DummyResource(Resource[str], resource_id="dummy"):

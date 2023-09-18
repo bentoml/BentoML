@@ -51,14 +51,14 @@ def main(fd: int, backlog: int, prometheus_dir: str | None):
 
     import psutil
     import uvicorn
-    from starlette.applications import Starlette
     from starlette.middleware import Middleware
+    from starlette.applications import Starlette
     from starlette.middleware.wsgi import WSGIMiddleware  # TODO: a2wsgi
 
+    from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.context import component_context
     from bentoml._internal.configuration import get_debug_mode
     from bentoml._internal.configuration.containers import BentoMLContainer
-    from bentoml._internal.context import component_context
-    from bentoml._internal.log import configure_server_logging
 
     component_context.component_type = "prom_server"
 

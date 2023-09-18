@@ -58,7 +58,7 @@ class TestService(google.protobuf.service.Service, metaclass=abc.ABCMeta):
     DESCRIPTOR: google.protobuf.descriptor.ServiceDescriptor
     @abc.abstractmethod
     def Execute(
-        inst: TestService,  # pyright: ignore[reportSelfClsParameterName]
+        inst: TestService,
         rpc_controller: google.protobuf.service.RpcController,
         request: global___ExecuteRequest,
         callback: collections.abc.Callable[[global___ExecuteResponse], None] | None,
@@ -71,7 +71,7 @@ class TestService_Stub(TestService):
     def __init__(self, rpc_channel: google.protobuf.service.RpcChannel) -> None: ...
     DESCRIPTOR: google.protobuf.descriptor.ServiceDescriptor
     def Execute(
-        inst: TestService_Stub,  # pyright: ignore[reportSelfClsParameterName]
+        inst: TestService_Stub,
         rpc_controller: google.protobuf.service.RpcController,
         request: global___ExecuteRequest,
         callback: collections.abc.Callable[[global___ExecuteResponse], None] | None = ...,

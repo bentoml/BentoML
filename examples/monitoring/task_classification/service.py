@@ -5,8 +5,8 @@ import os
 import numpy as np
 
 import bentoml
-from bentoml.io import NumpyNdarray
 from bentoml.io import Text
+from bentoml.io import NumpyNdarray
 
 CLASS_NAMES = ["setosa", "versicolor", "virginica"]
 

@@ -1,7 +1,7 @@
 import numpy as np
-from locust import HttpUser
-from locust import between
 from locust import task
+from locust import between
+from locust import HttpUser
 from sklearn import datasets
 
 test_data = datasets.load_iris().data

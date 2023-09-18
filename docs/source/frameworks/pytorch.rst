@@ -94,9 +94,9 @@ For common PyTorch models with single input:
             # print statistics
             print('Epoch: %d, Step: %d, Loss: %.4f' % (epoch, i, loss.item()))
 
-    bentoml.pytorch.save_model(
-        "my_torch_model",
+    bentoml.pytorch.save(
         model,
+        "my_torch_model",
         signatures={"__call__": {"batchable": True, "batch_dim": 0}},
     )
 
@@ -123,15 +123,15 @@ For common PyTorch models with single input:
     model = Net()
     ... # training
 
-    bentoml.pytorch.save_model(
-        "my_torch_model",
+    bentoml.pytorch.save(
         model,
+        "my_torch_model",
         signatures={"__call__": {"batchable": True, "batch_dim": 0}},
     )
 
 .. note::
 
-    :bdg-info:`Remarks:` External python classes or utility functions required by the model must be referenced in ``<module>.<class>`` format, and such modules should be passed to ``bentoml.pytorch.save_model`` via ``external_modules``. For example:
+    :bdg-info:`Remarks:` External python classes or utility functions required by the model must be referenced in ``<module>.<class>`` format, and such modules should be passed to ``bentoml.pytorch.save`` via ``external_modules``. For example:
 
     .. code-block:: python
        :caption: `train.py`
@@ -140,9 +140,9 @@ For common PyTorch models with single input:
        import my_models
 
        model = my_models.MyModel()
-       bentoml.pytorch.save_model(
-           "my_torch_model",
+       bentoml.pytorch.save(
            model,
+           "my_torch_model",
            signatures={"__call__": {"batchable": True, "batch_dim": 0}},
            external_modules=[my_models],
        )
@@ -162,7 +162,7 @@ The signatures used for creating a Runner is ``{"__call__": {"batchable": False}
 
 .. code-block:: python
 
-    bentoml.pytorch.save_model("my_model", model, signatures={"__call__": {"batch_dim": 0, "batchable": True}})
+    bentoml.pytorch.save(model, "my_model", signatures={"__call__": {"batch_dim": 0, "batchable": True}})
 
 
 Building a Service

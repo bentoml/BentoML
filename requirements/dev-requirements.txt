@@ -1,0 +1,9 @@
+# Dev dependencies
+-e .[all]
+-r tests-requirements.txt
+-r docs-requirements.txt
+twine
+wheel
+setuptools-scm
+# stubs
+pandas-stubs

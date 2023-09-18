@@ -1,40 +1,40 @@
 # pylint: disable=unused-argument
 from __future__ import annotations
 
-import functools
-import logging
 import typing as t
+import logging
+import functools
 from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml._internal.utils import LazyLoader
-from bentoml.grpc.interceptors.access import AccessLogServerInterceptor
-from bentoml.grpc.interceptors.opentelemetry import AsyncOpenTelemetryServerInterceptor
-from bentoml.grpc.utils import import_generated_stubs
-from bentoml.grpc.utils import import_grpc
-from bentoml.grpc.utils import wrap_rpc_handler
-from bentoml.testing.grpc import async_client_call
-from bentoml.testing.grpc import create_channel
-from bentoml.testing.grpc import create_test_bento_servicer
-from bentoml.testing.grpc import make_standalone_server
 from tests.proto import service_test_pb2 as pb_test
 from tests.proto import service_test_pb2_grpc as services_test
+from bentoml.grpc.utils import import_grpc
+from bentoml.grpc.utils import wrap_rpc_handler
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml.testing.grpc import create_channel
+from bentoml.testing.grpc import async_client_call
+from bentoml.testing.grpc import make_standalone_server
+from bentoml.testing.grpc import create_test_bento_servicer
+from bentoml._internal.utils import LazyLoader
 from tests.unit.grpc.conftest import TestServiceServicer
+from bentoml.grpc.interceptors.access import AccessLogServerInterceptor
+from bentoml.grpc.interceptors.opentelemetry import AsyncOpenTelemetryServerInterceptor
 
 if TYPE_CHECKING:
     import grpc
+    from grpc import aio
     from _pytest.logging import LogCaptureFixture
     from google.protobuf import wrappers_pb2
-    from grpc import aio
 
     from bentoml import Service
-    from bentoml.grpc.types import AsyncHandlerMethod
-    from bentoml.grpc.types import BentoServicerContext
-    from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import Request
     from bentoml.grpc.types import Response
     from bentoml.grpc.types import RpcMethodHandler
+    from bentoml.grpc.types import AsyncHandlerMethod
+    from bentoml.grpc.types import HandlerCallDetails
+    from bentoml.grpc.types import BentoServicerContext
 else:
     grpc, aio = import_grpc()
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
@@ -151,5 +151,9 @@ async def test_access_log_exception(
                         assert_code=grpc.StatusCode.INTERNAL,
                         protocol_version=protocol_version,
                     )
+            assert (
+                f"(scheme=http,path=/bentoml.grpc.{protocol_version}.BentoService/Call,type=application/grpc,size=17) (http_status=500,grpc_status=13,type=application/grpc,size=0)"
+                in caplog.text
+            )
         finally:
             await server.stop(None)

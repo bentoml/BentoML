@@ -48,8 +48,8 @@ DEFAULT_INDEX_HTML = """\
     <!-- End Google Tag Manager -->
     <link rel="stylesheet" type="text/css" href="./static_content/swagger-ui.css" />
     <link rel="stylesheet" type="text/css" href="./static_content/index.css" />
-    <link rel="icon" type="image/png" href="./static_content/favicon-light-32x32.png" sizes="32x32" media="(prefers-color-scheme: light)" />
-    <link rel="icon" type="image/png" href="./static_content/favicon-dark-32x32.png" sizes="32x32" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/png" href="./static_content/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./static_content/favicon-96x96.png" sizes="96x96" />
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
@@ -106,6 +106,7 @@ class HTTPAppFactory(BaseAppFactory):
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
+        timeout: int = Provide[BentoMLContainer.api_server_config.traffic.timeout],
         max_concurrency: int
         | None = Provide[BentoMLContainer.api_server_config.traffic.max_concurrency],
     ):
@@ -113,7 +114,6 @@ class HTTPAppFactory(BaseAppFactory):
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
         self.enable_metrics = enable_metrics
-        timeout = BentoMLContainer.api_server_config.traffic.timeout.get()
         super().__init__(timeout=timeout, max_concurrency=max_concurrency)
 
     @property
@@ -309,10 +309,10 @@ class HTTPAppFactory(BaseAppFactory):
 
     def _create_api_endpoint(
         self,
-        api: InferenceAPI[t.Any],
+        api: InferenceAPI,
     ) -> t.Callable[[Request], t.Coroutine[t.Any, t.Any, Response]]:
         """
-        Create api function for starlette route, it wraps around user defined API
+        Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
         from starlette.concurrency import run_in_threadpool  # type: ignore
@@ -387,6 +387,9 @@ class HTTPAppFactory(BaseAppFactory):
                         )
                     else:
                         response = JSONResponse("", status_code=status)
+                except asyncio.CancelledError:
+                    # Special handling for Python 3.7 compatibility
+                    raise
                 except Exception:  # pylint: disable=broad-except
                     # For all unexpected error, return 500 by default. For example,
                     # if users' model raises an error of division by zero.

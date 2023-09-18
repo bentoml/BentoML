@@ -1,28 +1,28 @@
 from __future__ import annotations
 
-import functools
 import io
 import typing as t
+import functools
 from urllib.parse import quote
 
-from multipart.multipart import parse_options_header
-from starlette.datastructures import UploadFile
 from starlette.requests import Request
+from multipart.multipart import parse_options_header
 from starlette.responses import Response
+from starlette.datastructures import UploadFile
 
-from ...exceptions import BadInput
-from ...exceptions import InternalServerError
-from ...exceptions import InvalidArgument
-from ...exceptions import MissingDependencyException
-from ...grpc.utils import import_generated_stubs
-from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import MediaType
-from ..service.openapi.specification import Schema
+from .base import IODescriptor
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils import resolve_user_filepath
 from ..utils.http import set_cookies
-from .base import IODescriptor
+from ...exceptions import BadInput
+from ...exceptions import InvalidArgument
+from ...exceptions import InternalServerError
+from ...exceptions import MissingDependencyException
+from ...grpc.utils import import_generated_stubs
+from ..service.openapi import SUCCESS_DESCRIPTION
+from ..service.openapi.specification import Schema
+from ..service.openapi.specification import MediaType
 
 PIL_EXC_MSG = "'Pillow' is required to use the Image IO descriptor. Install with 'pip install bentoml[io-image]'."
 
@@ -32,11 +32,11 @@ if t.TYPE_CHECKING:
     import PIL
     import PIL.Image
 
+    from .. import external_typing as ext
+    from .base import OpenAPIResponse
+    from ..context import ServiceContext as Context
     from ...grpc.v1 import service_pb2 as pb
     from ...grpc.v1alpha1 import service_pb2 as pb_v1alpha1
-    from .. import external_typing as ext
-    from ..context import ServiceContext as Context
-    from .base import OpenAPIResponse
 
     _Mode = t.Literal[
         "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"

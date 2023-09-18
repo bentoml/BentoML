@@ -9,6 +9,7 @@ import bentoml
 
 
 async def async_run(client: bentoml.client.Client):
+
     res = await client.async_classify(np.array([[5.9, 3, 5.1, 1.8]]))
     logger.info("Result from 'client.async_classify':\n%s", res)
     res = await client.async_call("classify", np.array([[5.9, 3, 5.1, 1.8]]))

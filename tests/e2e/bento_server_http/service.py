@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import os
 import typing as t
 from typing import TYPE_CHECKING
@@ -40,22 +39,7 @@ py_model = (
 )
 
 
-class StreamRunnable(bentoml.Runnable):
-    SUPPORTED_RESOURCES = ("cpu",)
-    SUPPORTS_CPU_MULTI_THREADING = True
-
-    @bentoml.Runnable.method()
-    async def count_text_stream(self, input_text: str) -> t.AsyncGenerator[str, None]:
-        for i in range(10):
-            await asyncio.sleep(0.1)
-            yield f"{input_text} {i}"
-
-
-stream_runner = bentoml.Runner(StreamRunnable)
-
-svc = bentoml.Service(
-    name="general_http_service.case-1.e2e", runners=[py_model, stream_runner]
-)
+svc = bentoml.Service(name="general_http_service.case-1.e2e", runners=[py_model])
 TEST_DIR = os.getenv("BENTOML_TEST_DATA")
 
 
@@ -84,7 +68,6 @@ def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-a
         if m.type == "counter"
     ]
     assert "test_metrics" in counters
-    return "ok"
 
 
 @svc.api(input=JSON(), output=JSON())
@@ -209,22 +192,6 @@ async def use_context(inp: str, ctx: bentoml.Context):
     return inp
 
 
-@svc.api(
-    input=Text(),
-    output=Text(),
-)
-async def predict_text_stream(inp: str) -> t.AsyncGenerator[str, None]:
-    return stream_runner.count_text_stream.async_stream(inp)
-
-
-@svc.api(
-    input=Text(),
-    output=Text(),
-)
-def yo(inp: str) -> str:
-    return f"yo {inp}"
-
-
 # customise the service
 class AllowPingMiddleware:
     def __init__(
@@ -257,17 +224,11 @@ def hello():
 svc.mount_asgi_app(fastapi_app)
 
 
-def get_uid():
-    import uuid
-
-    return str(uuid.uuid4())
-
-
 @svc.on_deployment
 def on_deployment():
     if not TEST_DIR or not os.path.exists(TEST_DIR):
         return
-    deployment_file = os.path.join(TEST_DIR, f"deployment-{get_uid()}.txt")
+    deployment_file = os.path.join(TEST_DIR, f"deployment-{os.getpid()}.txt")
     with open(deployment_file, "w"):
         pass
 
@@ -277,7 +238,7 @@ def on_startup(ctx: bentoml.Context):
     ctx.state["data"] = "hello"
     if not TEST_DIR or not os.path.exists(TEST_DIR):
         return
-    text_file = os.path.join(TEST_DIR, f"data-{get_uid()}.txt")
+    text_file = os.path.join(TEST_DIR, f"data-{os.getpid()}.txt")
     with open(text_file, "w"):
         pass
     ctx.state["text_file"] = text_file

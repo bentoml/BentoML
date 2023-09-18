@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
-from ._internal.frameworks.onnx import (
-    ONNXOptions as ModelOptions,  # type: ignore # noqa
-)
 from ._internal.frameworks.onnx import get
-from ._internal.frameworks.onnx import get_runnable
 from ._internal.frameworks.onnx import load_model
 from ._internal.frameworks.onnx import save_model
+from ._internal.frameworks.onnx import ONNXOptions as ModelOptions  # type: ignore # noqa
+from ._internal.frameworks.onnx import get_runnable
 
 if TYPE_CHECKING:
     from ._internal.tag import Tag

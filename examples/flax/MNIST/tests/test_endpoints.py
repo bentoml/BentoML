@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 
 import bentoml
-from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import create_channel
+from bentoml.testing.grpc import async_client_call
 
 if t.TYPE_CHECKING:
     import jax.numpy as jnp

@@ -2,10 +2,10 @@ import time
 
 import grpc
 import numpy as np
-from locust import HttpUser
+from locust import task
 from locust import User
 from locust import between
-from locust import task
+from locust import HttpUser
 from sklearn import datasets
 
 from bentoml.grpc.v1 import service_pb2 as pb

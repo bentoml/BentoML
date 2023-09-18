@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import json
 import os
+import json
 import time
 import typing as t
 from pathlib import Path
 
-import attr
 import cv2
+import attr
 import numpy as np
 import torch
 import torchvision

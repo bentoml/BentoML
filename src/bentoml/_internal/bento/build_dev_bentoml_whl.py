@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import logging
 import os
+import logging
 from pathlib import Path
 
+from ..utils.pkg import source_locations
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..configuration import is_pypi_installed_bentoml
-from ..utils.pkg import source_locations
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +31,18 @@ def build_bentoml_editable_wheel(
         return
 
     try:
-        from build import ProjectBuilder
+        # NOTE: build.env is a standalone library,
+        # different from build. However, isort sometimes
+        # incorrectly re-order the imports order.
+        # isort: off
         from build.env import IsolatedEnvBuilder
+
+        from build import ProjectBuilder
+
+        # isort: on
     except ModuleNotFoundError as e:
         raise MissingDependencyException(
-            f"Environment variable '{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package ({e}). Install it with 'pip install -U build' and try again."
+            f"Environment variable '{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package ({e}). Install development dependencies with 'pip install -r requirements/dev-requirements.txt' and try again."
         ) from None
 
     # Find bentoml module path
@@ -59,7 +66,7 @@ def build_bentoml_editable_wheel(
     # branches of BentoML library, it is True only when BentoML module is installed
     # in development mode via "pip install --editable ."
     if os.path.isfile(pyproject):
-        logger.debug(
+        logger.info(
             "BentoML is installed in `editable` mode; building BentoML distribution with the local BentoML code base. The built wheel file will be included in the target bento."
         )
         with IsolatedEnvBuilder() as env:
@@ -71,6 +78,6 @@ def build_bentoml_editable_wheel(
                 "wheel", target_path, config_settings={"--global-option": "--quiet"}
             )
     else:
-        logger.warning(
+        logger.info(
             "Custom BentoML build is detected. For a Bento to use the same build at serving time, add your custom BentoML build to the pip packages list, e.g. `packages=['git+https://github.com/bentoml/bentoml.git@13dfb36']`"
         )

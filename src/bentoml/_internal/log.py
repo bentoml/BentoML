@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import typing as t
 import logging
 import logging.config
-import typing as t
 from functools import lru_cache
 
+from .context import trace_context
+from .context import component_context
 from .configuration import get_debug_mode
 from .configuration import get_quiet_mode
-from .context import component_context
-from .context import trace_context
 
 default_factory = logging.getLogRecordFactory()
 
@@ -87,7 +87,6 @@ def configure_logging():
         CLI_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.ERROR
         CLI_LOGGING_CONFIG["root"]["level"] = logging.ERROR
     elif get_debug_mode():
-        CLI_LOGGING_CONFIG["handlers"]["defaulthandler"]["level"] = logging.DEBUG
         CLI_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.DEBUG
         CLI_LOGGING_CONFIG["root"]["level"] = logging.DEBUG
     else:

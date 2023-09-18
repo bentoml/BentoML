@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-import argparse
 import os
 import typing as t
+import argparse
 
 import attr
 import torch
 
 import bentoml
 from bentoml import Bento
+from bentoml._internal.utils import resolve_user_filepath
 from bentoml._internal.bento.build_config import BentoBuildConfig
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.utils import resolve_user_filepath
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

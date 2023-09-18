@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING
 import bentoml
 from bentoml import Tag
 
-from ...exceptions import MissingDependencyException
+from .torchscript import save_model as script_save_model
+from .torchscript import MODEL_FILENAME
 from ...exceptions import NotFound
+from ...exceptions import MissingDependencyException
 from ..models.model import Model
 from .common.pytorch import torch
-from .torchscript import MODEL_FILENAME
-from .torchscript import save_model as script_save_model
 
 if TYPE_CHECKING:
     from ..models.model import ModelSignaturesType
@@ -184,9 +184,9 @@ def get_runnable(bento_model: Model):
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
+    from .common.pytorch import partial_class
     from .common.pytorch import PytorchModelRunnable
     from .common.pytorch import make_pytorch_runnable_method
-    from .common.pytorch import partial_class
 
     for method_name, options in bento_model.info.signatures.items():
         PytorchModelRunnable.add_method(

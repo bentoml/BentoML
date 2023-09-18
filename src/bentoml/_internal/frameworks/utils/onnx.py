@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
-from ....exceptions import BentoMLException
 from ...types import LazyType
+from ....exceptions import BentoMLException
 from ...utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:

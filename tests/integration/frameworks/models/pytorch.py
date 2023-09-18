@@ -9,8 +9,8 @@ import torch.nn as nn
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelConfiguration as Config
 from . import FrameworkTestModelInput as Input
+from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.pytorch
 

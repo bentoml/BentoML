@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import lightgbm as lgb
 import numpy as np
 import pandas as pd
+import lightgbm as lgb
 from sklearn.datasets import load_breast_cancer
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelConfiguration as Config
 from . import FrameworkTestModelInput as Input
+from . import FrameworkTestModelConfiguration as Config
 
 framework = bentoml.lightgbm
 

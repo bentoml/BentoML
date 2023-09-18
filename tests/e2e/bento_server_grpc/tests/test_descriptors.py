@@ -1,24 +1,22 @@
 from __future__ import annotations
 
 import io
-import os
 import random
-import sys
 import traceback
-import typing as t
+from typing import TYPE_CHECKING
 from functools import partial
 
 import pytest
 
+from bentoml.grpc.utils import import_grpc
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml.testing.grpc import create_channel
+from bentoml.testing.grpc import async_client_call
+from bentoml.testing.grpc import randomize_pb_ndarray
 from bentoml._internal.types import LazyType
 from bentoml._internal.utils import LazyLoader
-from bentoml.grpc.utils import import_generated_stubs
-from bentoml.grpc.utils import import_grpc
-from bentoml.testing.grpc import async_client_call
-from bentoml.testing.grpc import create_channel
-from bentoml.testing.grpc import randomize_pb_ndarray
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     import grpc
     import numpy as np
     import pandas as pd
@@ -26,8 +24,8 @@ if t.TYPE_CHECKING:
     from google.protobuf import struct_pb2
     from google.protobuf import wrappers_pb2
 
-    from bentoml._internal import external_typing as ext
     from bentoml.grpc.v1 import service_pb2 as pb
+    from bentoml._internal import external_typing as ext
 else:
     pb, _ = import_generated_stubs()
     grpc, _ = import_grpc()
@@ -347,12 +345,7 @@ async def test_pandas(host: str):
         )
 
 
-# XXX: @aarnphm investigate why this is failing on CI
 @pytest.mark.asyncio
-@pytest.mark.xfail(
-    os.getenv("GITHUB_ACTIONS") is not None and sys.version_info[:2] == (3, 11),
-    reason="Currently, 3.11 tests for series is failing on CI",
-)
 async def test_pandas_series(host: str):
     async with create_channel(host) as channel:
         await async_client_call(

@@ -2,18 +2,18 @@ import os
 import sys
 import time
 import typing as t
-from datetime import datetime
 from typing import TYPE_CHECKING
+from datetime import datetime
 
-import attr
 import fs
+import attr
 import pytest
 
 from bentoml import Tag
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import BentoMLException
 from bentoml._internal.store import Store
 from bentoml._internal.store import StoreItem
-from bentoml.exceptions import BentoMLException
-from bentoml.exceptions import NotFound
 
 if sys.version_info < (3, 7):
     from backports.datetime_fromisoformat import MonkeyPatch

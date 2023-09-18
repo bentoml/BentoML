@@ -4,11 +4,15 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import aiohttp
+import multidict
 
 if TYPE_CHECKING:
+    from starlette.types import Send
+    from starlette.types import Scope
+    from starlette.types import Receive
     from aiohttp.typedefs import LooseHeaders
-    from starlette.datastructures import FormData
     from starlette.datastructures import Headers
+    from starlette.datastructures import FormData
 
 
 async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":
@@ -87,3 +91,60 @@ async def async_request(
             f"Headers assertion failed: {resp.headers!r}",
         )
     return resp.status, Headers(resp.headers), body
+
+
+def assert_distributed_header(headers: multidict.CIMultiDict[str]) -> None:
+    assert (
+        headers.get("Yatai-Bento-Deployment-Name") == "test-deployment"
+        and headers.get("Yatai-Bento-Deployment-Namespace") == "yatai"
+    )
+
+
+async def http_proxy_app(scope: Scope, receive: Receive, send: Send):
+    """
+    A simple HTTP proxy app that simulate the behavior of Yatai.
+    """
+    if scope["type"] == "lifespan":
+        return
+
+    if scope["type"] == "http":
+        async with aiohttp.ClientSession() as session:
+            headers = multidict.CIMultiDict(
+                tuple((k.decode(), v.decode()) for k, v in scope["headers"])
+            )
+
+            assert_distributed_header(headers)
+            bodies: list[bytes] = []
+            while True:
+                request_message = await receive()
+                assert request_message["type"] == "http.request"
+                request_body = request_message.get("body")
+                assert isinstance(request_body, bytes)
+                bodies.append(request_body)
+                if not request_message["more_body"]:
+                    break
+
+            async with session.request(
+                method=scope["method"],
+                url=scope["path"],
+                headers=headers,
+                data=b"".join(bodies),
+            ) as response:
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": response.status,
+                        "headers": list(response.raw_headers),
+                    }
+                )
+                response_body: bytes = await response.read()
+                await send(
+                    {
+                        "type": "http.response.body",
+                        "body": response_body,
+                        "more_body": False,
+                    }
+                )
+        return
+
+    raise NotImplementedError(f"Scope {scope} is not understood.") from None

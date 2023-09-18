@@ -1,27 +1,27 @@
 from __future__ import annotations
 
 import typing as t
-from contextlib import contextmanager
 from types import ModuleType
 from typing import TYPE_CHECKING
+from contextlib import contextmanager
 
-from simple_di import Provide
 from simple_di import inject
+from simple_di import Provide
 
-from ._internal.configuration.containers import BentoMLContainer
+from .exceptions import BentoMLException
+from ._internal.tag import Tag
+from ._internal.utils import calc_dir_size
 from ._internal.models import Model
 from ._internal.models import ModelContext
 from ._internal.models import ModelOptions
-from ._internal.tag import Tag
-from ._internal.utils import calc_dir_size
-from ._internal.utils.analytics import ModelSaveEvent
 from ._internal.utils.analytics import track
-from .exceptions import BentoMLException
+from ._internal.utils.analytics import ModelSaveEvent
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ._internal.cloud import BentoCloudClient
     from ._internal.models import ModelStore
     from ._internal.models.model import ModelSignaturesType
+    from ._internal.yatai_client import YataiClient
 
 
 @inject
@@ -38,10 +38,7 @@ def get(
     tag: t.Union[Tag, str],
     *,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    model_aliases: t.Dict[str, str] = Provide[BentoMLContainer.model_aliases],
 ) -> "Model":
-    if isinstance(tag, str) and tag in model_aliases:
-        tag = model_aliases[tag]
     return _model_store.get(tag)
 
 
@@ -209,12 +206,12 @@ def push(
     *,
     force: bool = False,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
 ):
     model_obj = _model_store.get(tag)
     if not model_obj:
         raise BentoMLException(f"Model {tag} not found in local store")
-    _cloud_client.push_model(model_obj, force=force)
+    _yatai_client.push_model(model_obj, force=force)
 
 
 @inject
@@ -222,51 +219,9 @@ def pull(
     tag: t.Union[Tag, str],
     *,
     force: bool = False,
-    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
 ) -> Model:
-    return _cloud_client.pull_model(tag, force=force)
-
-
-if t.TYPE_CHECKING:
-
-    class CreateKwargs(t.TypedDict):
-        module: str
-        api_version: str | None
-        signatures: t.Required[ModelSignaturesType]
-        labels: dict[str, t.Any] | None
-        options: ModelOptions | None
-        custom_objects: dict[str, t.Any] | None
-        external_modules: t.List[ModuleType] | None
-        metadata: dict[str, t.Any] | None
-        context: t.Required[ModelContext]
-        _model_store: t.NotRequired[ModelStore]
-
-
-@t.overload
-@contextmanager
-def create(
-    name: Tag | str, /, **attrs: t.Unpack[CreateKwargs]
-) -> t.Generator[Model, None, None]:
-    ...
-
-
-@t.overload
-@contextmanager
-def create(
-    name: Tag | str,
-    *,
-    module: str = ...,
-    api_version: str | None = ...,
-    signatures: ModelSignaturesType,
-    labels: dict[str, t.Any] | None = ...,
-    options: ModelOptions | None = ...,
-    custom_objects: dict[str, t.Any] | None = ...,
-    external_modules: t.List[ModuleType] | None = ...,
-    metadata: dict[str, t.Any] | None = ...,
-    context: ModelContext,
-    _model_store: ModelStore = ...,
-) -> t.Generator[Model, None, None]:
-    ...
+    return _yatai_client.pull_model(tag, force=force)
 
 
 @inject
@@ -299,12 +254,12 @@ def create(
         context=context,
     )
     external_modules = [] if external_modules is None else external_modules
-    imported_modules: t.List[ModuleType] = []
+    imported_modules = []
     try:
         res.enter_cloudpickle_context(external_modules, imported_modules)
         yield res
-    except Exception:
-        raise
+    except Exception as e:
+        raise e
     else:
         res.flush()
         res.save(_model_store)

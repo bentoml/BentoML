@@ -9,6 +9,7 @@ import os
 import random
 import re
 import socket
+import sys
 import typing as t
 from datetime import date
 from datetime import datetime
@@ -24,10 +25,14 @@ import fs
 import fs.copy
 from rich.console import Console
 
+if sys.version_info >= (3, 8):
+    from functools import cached_property
+else:
+    from backports.cached_property import cached_property
+
 from ..types import LazyType
 from .cattr import bentoml_cattr
 from .lazy_loader import LazyLoader
-from .uri import encode_path_for_uri
 
 if TYPE_CHECKING:
     from fs.base import FS
@@ -49,6 +54,7 @@ rich_console = Console(theme=None)
 
 __all__ = [
     "bentoml_cattr",
+    "cached_property",
     "cached_contextmanager",
     "reserve_free_port",
     "LazyLoader",
@@ -266,7 +272,7 @@ def copy_file_to_fs_folder(
     """
     src_path = os.path.realpath(os.path.expanduser(src_path))
     dir_name, file_name = os.path.split(src_path)
-    src_fs = fs.open_fs(encode_path_for_uri(dir_name))
+    src_fs = fs.open_fs(dir_name)
     dst_filename = file_name if dst_filename is None else dst_filename
     dst_path = fs.path.join(dst_folder_path, dst_filename)
     dst_fs.makedir(dst_folder_path, recreate=True)

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import importlib
-import logging
 import typing as t
+import logging
+import importlib
 
-from ...exceptions import MissingDependencyException
 from .api import monitor
 from .base import MonitorBase
 from .base import NoOpMonitor
 from .default import DefaultMonitor
+from ...exceptions import MissingDependencyException
 
 logger = logging.getLogger(__name__)
 

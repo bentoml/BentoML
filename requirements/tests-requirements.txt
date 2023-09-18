@@ -1,0 +1,20 @@
+# Tests dependencies
+pandas
+pydantic
+scikit-learn
+pre-commit
+yamllint==1.32.0
+coverage[toml]==7.2.6
+setuptools>=63
+pytest-cov==4.1.0
+pytest==7.3.2
+pytest-xdist[psutil]==3.3.1
+pytest-asyncio==0.21.0
+pyarrow==12.0.0
+tritonclient[all]==2.34.0
+build[virtualenv]==0.10.0
+protobuf<4.0dev
+grpcio
+grpcio-health-checking
+opentelemetry-instrumentation-grpc==0.38b0
+Pillow

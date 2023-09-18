@@ -1,0 +1,3 @@
+bentoml
+torch>=2.0
+transformers

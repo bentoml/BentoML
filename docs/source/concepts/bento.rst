@@ -221,7 +221,7 @@ You can easily serve a Bento using the BentoML CLI. Replace ``BENTO_TAG`` with y
     bentoml serve BENTO_TAG
 
 Use the bentoml.Server API
-""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""
 
 For those working within scripting environments or running Python-based tests where using the CLI might be
 difficult, the ``bentoml.Server`` API offers a more programmatic way to serve and interact with your Bento.

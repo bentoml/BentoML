@@ -204,6 +204,66 @@ Bentos between teams or moving between different deployment stages. For example:
     `the list <https://www.pyfilesystem.org/page/index-of-filesystems/>`_ provided by the
     pyfilesystem library.
 
+Test Bentos
+^^^^^^^^^^^
+
+After you build a Bento, it's essential to test it locally before containerizing it or pushing it to BentoCloud
+for production deployment. Local testing ensures that the Bento behaves as expected and helps identify any potential
+issues. Here are two methods to test a Bento locally.
+
+Use the BentoML CLI
+"""""""""""""""""""
+
+You can easily serve a Bento using the BentoML CLI. Replace ``BENTO_TAG`` with your specific Bento tag (for example, ``iris_classifier:latest``) in the following command.
+
+.. code:: bash
+
+    bentoml serve BENTO_TAG
+
+Use the bentoml.Server API
+""""""""""""""""""""""""""""""""
+
+For those working within scripting environments or running Python-based tests where using the CLI might be
+difficult, the ``bentoml.Server`` API offers a more programmatic way to serve and interact with your Bento.
+It gives you detailed control over the server lifecycle, especially useful for debugging and iterative testing.
+
+The following example uses the Bento ``iris_classifier:latest`` created in the quickstart :doc:`/quickstarts/deploy-an-iris-classification-model-with-bentoml`
+to create an HTTP server. Note that ``GrpcServer`` is also available.
+
+.. code:: python
+
+    from bentoml import HTTPServer
+    import numpy as np
+
+    # Initialize the server with the Bento
+    server = HTTPServer("iris_classifier:latest", production=True, port=3000, host='0.0.0.0')
+
+    # Start the server (non-blocking by default)
+    server.start(blocking=False)
+
+    # Get a client to make requests to the server
+    client = server.get_client()
+
+    # Send a request using the client
+    result = client.classify(np.array([[4.9, 3.0, 1.4, 0.2]]))
+    print(result)
+
+.. tip::
+
+    When you are done with the server after making client requests, remember to stop the server to free up resources (for example, use ``server.stop()``).
+
+Alternatively, you can manage the server's lifecycle using a context manager. This ensures that the server is automatically stopped once you exit the ``with`` block.
+
+.. code:: python
+
+    from bentoml import HTTPServer
+    import numpy as np
+
+    server = HTTPServer("iris_classifier:latest", production=True, port=3000, host='0.0.0.0')
+
+    with server.start() as client:
+        result = client.classify(np.array([[4.9, 3.0, 1.4, 0.2]]))
+        print(result)
 
 Push and Pull
 ^^^^^^^^^^^^^

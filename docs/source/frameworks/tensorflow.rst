@@ -2,13 +2,13 @@
 TensorFlow
 ==========
 
-TensorFlow is an open source machine learning library focusing on deep neural networks. BentoML provides native support for 
+TensorFlow is an open source machine learning library focusing on deep neural networks. BentoML provides native support for
 serving and deploying models trained from TensorFlow.
 
 Preface
 -------
 
-Even though ``bentoml.tensorflow`` supports Keras model, we recommend our users to use :doc:`bentoml.keras </frameworks/keras>` for better development experience. 
+Even though ``bentoml.tensorflow`` supports Keras model, we recommend our users to use :doc:`bentoml.keras </frameworks/keras>` for better development experience.
 
 If you must use TensorFlow for your Keras model, make sure that your Keras model inference callback (such as ``predict``) is decorated with :obj:`~tf.function`.
 
@@ -148,7 +148,7 @@ Saving a Trained Model
         model.fit(train_x, train_y, epochs=10)
 
         bentoml.tensorflow.save_model(
-            "my_keras_model", 
+            "my_keras_model",
             model,
             signatures={"__call__": {"batchable": True, "batch_dim": 0}}
         )
@@ -195,7 +195,7 @@ Saving a Trained Model
 
 This means BentoML’s :ref:`Adaptive Batching <guides/batching:Adaptive Batching>` is disabled when using :obj:`~bentoml.tensorflow.save_model()`.
 
-If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow: 
+If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow:
 
 
 .. code-block:: python

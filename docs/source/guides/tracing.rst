@@ -168,7 +168,7 @@ By default, no traces will be collected. Set ``sample_rate`` to your desired fra
         sample_rate: 1.0
 
 If you would like to exclude some routes from tracing, you can specify them using
-the :code:`excluded_urls` parameter. This parameter can be either a comma-separated 
+the :code:`excluded_urls` parameter. This parameter can be either a comma-separated
 string of routes, or a list of strings.
 
 .. code-block:: yaml
@@ -228,7 +228,7 @@ Configuration fields are passed through the OpenTelemetry Zipkin exporter
 Jaeger
 ^^^^^^
 
-The Jaeger exporter supports sending trace over both the Thrift and gRPC protocol. By default, BentoML 
+The Jaeger exporter supports sending trace over both the Thrift and gRPC protocol. By default, BentoML
 will use the Thrift protocol.
 
 .. note::
@@ -237,7 +237,7 @@ will use the Thrift protocol.
    application code is running as Lambda function, a collector can be configured to send spans
    using Thrift over HTTP. If both agent and collector are configured, the exporter sends traces
    only to the collector to eliminate the duplicate entries. [#otlp_jaeger_exporter_docs]_.
- 
+
 To setup the collector endpoint that will be used to receive either Thrift or Protobuf
 over HTTP/gRPC, use the ``collector_endpoint`` parameter:
 
@@ -383,7 +383,7 @@ Configuration fields are passed through the OpenTelemetry Zipkin exporter
 
 .. [#otlp_jaeger_exporter_docs]  `OpenTelemetry Jaeger Exporter API docs <https://opentelemetry-python.readthedocs.io/en/latest/exporter/jaeger/jaeger.html#module-opentelemetry.exporter.jaeger>`_
 
-.. [#jaeger_source]  Jaeger exporter source code for :github:`Thrift <open-telemetry/opentelemetry-python/blob/main/exporter/opentelemetry-exporter-jaeger-thrift/src/opentelemetry/exporter/jaeger/thrift/__init__.py>` and 
+.. [#jaeger_source]  Jaeger exporter source code for :github:`Thrift <open-telemetry/opentelemetry-python/blob/main/exporter/opentelemetry-exporter-jaeger-thrift/src/opentelemetry/exporter/jaeger/thrift/__init__.py>` and
    :github:`gRPC <open-telemetry/opentelemetry-python/blob/main/exporter/opentelemetry-exporter-jaeger-proto-grpc/src/opentelemetry/exporter/jaeger/proto/grpc/__init__.py>`.
 
 .. [#default_timeout] The default timeout is 10 seconds. For most use cases, you don't need to change this value.

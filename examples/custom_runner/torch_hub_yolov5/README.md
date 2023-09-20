@@ -1,4 +1,4 @@
-# Serving YOLOv5 model with BentoML 
+# Serving YOLOv5 model with BentoML
 
 This project demonstrate how to use pretrained YOLOv5 model from Torch hub, and use
 it to build a prediction service in BentoML.
@@ -74,7 +74,7 @@ Sample result:
 
 ## Build Bento
 
-The `bentofile.yaml` have configured all required system packages and python dependencies. 
+The `bentofile.yaml` have configured all required system packages and python dependencies.
 
 ```bash
 bentoml build

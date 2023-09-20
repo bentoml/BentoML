@@ -156,7 +156,7 @@ For common PyTorch models with single input:
     :code:`bentoml.pytorch.save_model` has parameter ``signatures``.
     The ``signatures`` argument of type :ref:`Model Signatures <concepts/model:Model Signatures>` in :obj:`bentoml.pytorch.save_model` is used to determine which methods will be used for inference and exposed in the Runner. The signatures dictionary will then be used during the creation process of a Runner instance.
 
-The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML’s `Adaptive Batching <guides/batching:Adaptive Batching>`_ is disabled when using :obj:`~bentoml.pytorch.save_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow: 
+The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML’s `Adaptive Batching <guides/batching:Adaptive Batching>`_ is disabled when using :obj:`~bentoml.pytorch.save_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow:
 
 
 
@@ -193,8 +193,8 @@ Create a BentoML service with the previously saved `my_torch_model` pipeline usi
 Adaptive Batching
 -----------------
 
-Most PyTorch models can accept batched data as input. If batched interence is supported, it is recommended to enable batching to take advantage of 
-the adaptive batching capability to improve the throughput and efficiency of the model. Enable adaptive batching by overriding the :code:`signatures` 
+Most PyTorch models can accept batched data as input. If batched interence is supported, it is recommended to enable batching to take advantage of
+the adaptive batching capability to improve the throughput and efficiency of the model. Enable adaptive batching by overriding the :code:`signatures`
 argument with the method name and providing :code:`batchable` and :code:`batch_dim` configurations when saving the model to the model store.
 
 .. seealso::

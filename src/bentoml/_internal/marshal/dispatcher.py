@@ -98,8 +98,9 @@ class LinearOptimizer(Optimizer, optimizer_id="linear"):
     """
     Analyze historical data to predict execution time using a simple linear regression on batch size.
     """
-    o_a: float = 2.
-    o_b: float = 1.
+
+    o_a: float = 2.0
+    o_b: float = 1.0
 
     n_kept_sample = 50  # amount of outbound info kept for inferring params
     n_skipped_sample = 2  # amount of outbound info skipped after init
@@ -112,9 +113,9 @@ class LinearOptimizer(Optimizer, optimizer_id="linear"):
         """
         for key in options:
             if key == "initial_slope_ms":
-                self.o_a = options[key] / 1000.
+                self.o_a = options[key] / 1000.0
             elif key == "initial_intercept_ms":
-                self.o_b = options[key] / 1000.
+                self.o_b = options[key] / 1000.0
             elif key == "n_kept_sample":
                 self.n_kept_sample = options[key]
             elif key == "n_skipped_sample":
@@ -122,7 +123,9 @@ class LinearOptimizer(Optimizer, optimizer_id="linear"):
             elif key == "param_refresh_interval":
                 self.param_refresh_interval = options[key]
             else:
-                logger.warning(f"Optimizer 'linear' ignoring unknown configuration key '{key}'.")
+                logger.warning(
+                    f"Optimizer 'linear' ignoring unknown configuration key '{key}'."
+                )
 
         self.o_stat: collections.deque[tuple[int, float]] = collections.deque(
             maxlen=self.n_kept_sample
@@ -178,7 +181,15 @@ class BatchingStrategy(ABC):
         pass
 
     @abstractmethod
-    async def batch(self, optimizer: Optimizer, queue: t.Deque[Job], max_latency: float, max_batch_size: int, tick_interval: float, dispatch: t.Callable[[t.Sequence[Job], int], None]):
+    async def batch(
+        self,
+        optimizer: Optimizer,
+        queue: t.Deque[Job],
+        max_latency: float,
+        max_batch_size: int,
+        tick_interval: float,
+        dispatch: t.Callable[[t.Sequence[Job], int], None],
+    ):
         pass
 
     def __init_subclass__(cls, strategy_id: str):
@@ -187,17 +198,26 @@ class BatchingStrategy(ABC):
 
 
 class TargetLatencyStrategy(BatchingStrategy, strategy_id="target_latency"):
-    latency: float = 1.
+    latency: float = 1.0
 
     def __init__(self, options: dict[t.Any, t.Any]):
         for key in options:
             if key == "latency":
                 self.latency = options[key] / 1000.0
             else:
-                logger.warning(f"Strategy 'target_latency' ignoring unknown configuration key '{key}'.")
+                logger.warning(
+                    f"Strategy 'target_latency' ignoring unknown configuration key '{key}'."
+                )
 
-
-    async def batch(self, optimizer: Optimizer, queue: t.Deque[Job], max_latency: float, max_batch_size: int, tick_interval: float, dispatch: t.Callable[[t.Sequence[Job], int], None]):
+    async def batch(
+        self,
+        optimizer: Optimizer,
+        queue: t.Deque[Job],
+        max_latency: float,
+        max_batch_size: int,
+        tick_interval: float,
+        dispatch: t.Callable[[t.Sequence[Job], int], None],
+    ):
         n = len(queue)
         now = time.time()
         w0 = now - queue[0].enqueue_time
@@ -236,11 +256,21 @@ class AdaptiveStrategy(BatchingStrategy, strategy_id="adaptive"):
             elif key == "n_kept_samples":
                 self.n_kept_samples = options[key]
             else:
-                logger.warning(f"Strategy 'adaptive' ignoring unknown configuration value")
+                logger.warning(
+                    "Strategy 'adaptive' ignoring unknown configuration value"
+                )
 
         self.avg_wait_times = collections.deque(maxlen=self.n_kept_samples)
 
-    async def batch(self, optimizer: Optimizer, queue: t.Deque[Job], max_latency: float, max_batch_size: int, tick_interval: float, dispatch: t.Callable[[t.Sequence[Job], int], None]):
+    async def batch(
+        self,
+        optimizer: Optimizer,
+        queue: t.Deque[Job],
+        max_latency: float,
+        max_batch_size: int,
+        tick_interval: float,
+        dispatch: t.Callable[[t.Sequence[Job], int], None],
+    ):
         n = len(queue)
         now = time.time()
         w0 = now - queue[0].enqueue_time
@@ -252,7 +282,8 @@ class AdaptiveStrategy(BatchingStrategy, strategy_id="adaptive"):
             # we are not about to cancel the first request,
             and latency_0 + tick_interval <= max_latency * 0.95
             # and waiting will cause average latency to decrese
-            and n * (wn + tick_interval + optimizer.predict_diff(n, n+1)) <= self.avg_req_wait * self.decay
+            and n * (wn + tick_interval + optimizer.predict_diff(n, n + 1))
+            <= self.avg_req_wait * self.decay
         ):
             n = len(queue)
             now = time.time()
@@ -314,7 +345,9 @@ class Dispatcher:
         self.tick_interval = 0.001
 
         self._controller = None
-        self._queue: collections.deque[Job] = collections.deque()  # TODO(bojiang): maxlen
+        self._queue: collections.deque[
+            Job
+        ] = collections.deque()  # TODO(bojiang): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
     def shutdown(self):
@@ -325,7 +358,7 @@ class Dispatcher:
         try:
             while True:
                 for job in self._queue:
-                job.future.cancel()
+                    job.future.cancel()
         except IndexError:
             pass
 
@@ -391,7 +424,10 @@ class Dispatcher:
                     self._queue.popleft().future.cancel()
                     continue
                 if batch_size > 1:  # only wait if batch_size
-                    if n < batch_size and self.optimizer.predict(batch_size) + w0 <= wait:
+                    if (
+                        n < batch_size
+                        and self.optimizer.predict(batch_size) + w0 <= wait
+                    ):
                         await asyncio.sleep(self.tick_interval)
                         continue
                 if self._sema.is_locked():
@@ -470,7 +506,14 @@ class Dispatcher:
                     continue
 
                 # we are now free to dispatch whenever we like
-                await self.strategy.batch(self.optimizer, self._queue, self.max_latency, self.max_batch_size, self.tick_interval, self._dispatch)
+                await self.strategy.batch(
+                    self.optimizer,
+                    self._queue,
+                    self.max_latency,
+                    self.max_batch_size,
+                    self.tick_interval,
+                    self._dispatch,
+                )
             except asyncio.CancelledError:
                 raise
             except Exception as e:  # pylint: disable=broad-except
@@ -494,7 +537,11 @@ class Dispatcher:
     async def outbound_call(self, inputs_info: t.Sequence[Job], batch_size: int):
         _time_start = time.time()
         _done = False
-        logger.debug("Dynamic batching cork released, batch size: %d (%d requests)", batch_size, len(inputs_info))
+        logger.debug(
+            "Dynamic batching cork released, batch size: %d (%d requests)",
+            batch_size,
+            len(inputs_info),
+        )
         try:
             outputs = await self.callback(
                 tuple(t.cast(t.Any, input_info.data) for input_info in inputs_info)

@@ -57,8 +57,6 @@ class RunnerAppFactory(BaseAppFactory):
         for method in runner.runner_methods:
             max_batch_size = method.max_batch_size if method.config.batchable else 1
 
-            strategy = method.config
-
             self.dispatchers[method.name] = Dispatcher(
                 max_latency_in_ms=method.max_latency_ms,
                 max_batch_size=max_batch_size,

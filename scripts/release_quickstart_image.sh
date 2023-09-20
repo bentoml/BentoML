@@ -12,7 +12,7 @@ export DOCKER_BUILDKIT=1
 docker buildx build --platform=linux/arm64,linux/amd64 -t bentoml/quickstart:$BENTOML_VERSION -t bentoml/quickstart:latest --pull -o type=image,push=True -f- . <<EOF
 FROM jupyter/minimal-notebook:python-3.9.13
 
-# ./start.sh requires root permission to set up notebook user and ensure access to home directory 
+# ./start.sh requires root permission to set up notebook user and ensure access to home directory
 USER root
 WORKDIR /home/bentoml
 
@@ -29,10 +29,10 @@ EXPOSE 3001
 ENV NB_USER=bentoml \
     NB_UID=1101 \
     NB_GID=1101 \
-    CHOWN_HOME=yes \ 
+    CHOWN_HOME=yes \
     CHOWN_HOME_OPTS="-R" \
     GRANT_SUDO=yes \
-    DOCKER_STACKS_JUPYTER_CMD=notebook \ 
+    DOCKER_STACKS_JUPYTER_CMD=notebook \
     NOTEBOOK_ARGS="./iris_classifier.ipynb" \
     BENTOML_HOST=0.0.0.0
 EOF

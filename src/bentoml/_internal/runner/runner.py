@@ -239,9 +239,7 @@ class Runner(AbstractRunner):
                 method_max_latency_ms = method_configs[method_name].get(
                     "max_latency_ms"
                 )
-                method_optimizer = method_configs[method_name].get(
-                    "optimizer"
-                )
+                method_optimizer = method_configs[method_name].get("optimizer")
                 method_batching_strategy = method_configs[method_name].get(
                     "batching_strategy"
                 )
@@ -257,9 +255,9 @@ class Runner(AbstractRunner):
                 )
 
             try:
-                default_optimizer = OPTIMIZER_REGISTRY[
-                    config["optimizer"]["name"]
-                ](config["optimizer"]["options"])
+                default_optimizer = OPTIMIZER_REGISTRY[config["optimizer"]["name"]](
+                    config["optimizer"]["options"]
+                )
             except Exception as e:
                 raise BentoMLConfigException(
                     f"Initializing strategy '{config['optimizer']['name']}' with configured options ({pprint(config['optimizer']['options'])}) failed."

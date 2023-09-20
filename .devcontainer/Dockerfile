@@ -44,8 +44,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-warn-script-location -r /tmp/pip-tmp/dev-requirements.txt -r /tmp/pip-tmp/docs-requirements.txt \
     && rm -rf /tmp/pip-tmp
 
-# Setting the ENTRYPOINT to docker-init.sh will configure non-root access to 
-# the Docker socket if "overrideCommand": false is set in devcontainer.json. 
+# Setting the ENTRYPOINT to docker-init.sh will configure non-root access to
+# the Docker socket if "overrideCommand": false is set in devcontainer.json.
 # The script will also execute CMD if you need to alter startup behaviors.
 ENTRYPOINT [ "/usr/local/share/docker-init.sh" ]
 CMD [ "sleep", "infinity" ]

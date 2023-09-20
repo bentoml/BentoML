@@ -365,9 +365,10 @@ To explicitly disable or control adaptive batching behaviors at runtime, configu
               enabled: true
               max_batch_size: 100
               max_latency_ms: 500
-              strategy: intelligent_wait
-              strategy_options:
-                decay: 0.95
+              strategy:
+                name: intelligent_wait
+                options:
+                  decay: 0.95
 
     .. tab-item:: Individual Runner
         :sync: individual_runner
@@ -381,9 +382,10 @@ To explicitly disable or control adaptive batching behaviors at runtime, configu
                  enabled: true
                  max_batch_size: 100
                  max_latency_ms: 500
-                 strategy: intelligent_wait
-                 strategy_options:
-                   decay: 0.95
+                 strategy:
+                   name: intelligent_wait
+                   options:
+                     decay: 0.95
 
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^

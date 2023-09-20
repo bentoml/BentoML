@@ -15,7 +15,6 @@ import attr
 import numpy as np
 
 from ...exceptions import BadInput
-from ..utils import cached_property
 from ..utils.alg import TokenBucket
 
 logger = logging.getLogger(__name__)
@@ -58,6 +57,7 @@ class Optimizer(ABC):
     optimizer_id: str
     n_skipped_sample: int = 0
 
+    @abstractmethod
     def __init__(self, options: dict[str, t.Any]):
         pass
 
@@ -92,6 +92,9 @@ class FixedOptimizer(Optimizer, optimizer_id="fixed"):
         self.time = options["time_ms"]
 
     def predict(self, batch_size: int):
+        # explicitly unused parameters
+        del batch_size
+
         return self.time
 
 
@@ -171,13 +174,164 @@ T_IN = t.TypeVar("T_IN")
 T_OUT = t.TypeVar("T_OUT")
 
 
-class CorkDispatcher:
+BATCHING_STRATEGY_REGISTRY = {}
+
+
+class BatchingStrategy(ABC):
+    strategy_id: str
+
+    @abstractmethod
+    def __init__(self, optimizer: Optimizer, options: dict[t.Any, t.Any]):
+        pass
+
+    @abstractmethod
+    async def batch(
+        self,
+        optimizer: Optimizer,
+        queue: t.Deque[Job],
+        max_latency: float,
+        max_batch_size: int,
+        tick_interval: float,
+        dispatch: t.Callable[[t.Sequence[Job], int], None],
+    ):
+        pass
+
+    def __init_subclass__(cls, strategy_id: str):
+        BATCHING_STRATEGY_REGISTRY[strategy_id] = cls
+        cls.strategy_id = strategy_id
+
+
+class TargetLatencyStrategy(BatchingStrategy, strategy_id="target_latency"):
+    latency: float = 1.0
+
+    def __init__(self, options: dict[t.Any, t.Any]):
+        for key in options:
+            if key == "latency":
+                self.latency = options[key] / 1000.0
+            else:
+                logger.warning(
+                    f"Strategy 'target_latency' ignoring unknown configuration key '{key}'."
+                )
+
+    async def batch(
+        self,
+        optimizer: Optimizer,
+        queue: t.Deque[Job],
+        max_latency: float,
+        max_batch_size: int,
+        tick_interval: float,
+        dispatch: t.Callable[[t.Sequence[Job], int], None],
+    ):
+        # explicitly unused parameters
+        del max_latency
+
+        n = len(queue)
+        now = time.time()
+        w0 = now - queue[0].enqueue_time
+        latency_0 = w0 + optimizer.predict(n)
+
+        while latency_0 < self.latency and n < max_batch_size:
+            n = len(queue)
+            now = time.time()
+            w0 = now - queue[0].enqueue_time
+            latency_0 = w0 + optimizer.predict(n)
+
+            await asyncio.sleep(tick_interval)
+
+        # call
+        n_call_out = 0
+        batch_size = 0
+        for job in queue:
+            if batch_size + job.data.sample.batch_size <= max_batch_size:
+                n_call_out += 1
+                batch_size += job.data.sample.batch_size
+        inputs_info = tuple(queue.pop() for _ in range(n_call_out))
+        dispatch(inputs_info, batch_size)
+
+
+class AdaptiveStrategy(BatchingStrategy, strategy_id="adaptive"):
+    decay: float = 0.95
+
+    n_kept_samples = 50
+    avg_wait_times: collections.deque[float]
+    avg_req_wait: float = 0
+
+    def __init__(self, options: dict[t.Any, t.Any]):
+        for key in options:
+            if key == "decay":
+                self.decay = options[key]
+            elif key == "n_kept_samples":
+                self.n_kept_samples = options[key]
+            else:
+                logger.warning(
+                    "Strategy 'adaptive' ignoring unknown configuration value"
+                )
+
+        self.avg_wait_times = collections.deque(maxlen=self.n_kept_samples)
+
+    async def batch(
+        self,
+        optimizer: Optimizer,
+        queue: t.Deque[Job],
+        max_latency: float,
+        max_batch_size: int,
+        tick_interval: float,
+        dispatch: t.Callable[[t.Sequence[Job], int], None],
+    ):
+        n = len(queue)
+        now = time.time()
+        w0 = now - queue[0].enqueue_time
+        wn = now - queue[-1].enqueue_time
+        latency_0 = w0 + optimizer.predict(n)
+        while (
+            # if we don't already have enough requests,
+            n < max_batch_size
+            # we are not about to cancel the first request,
+            and latency_0 + tick_interval <= max_latency * 0.95
+            # and waiting will cause average latency to decrese
+            and n * (wn + tick_interval + optimizer.predict_diff(n, n + 1))
+            <= self.avg_req_wait * self.decay
+        ):
+            n = len(queue)
+            now = time.time()
+            w0 = now - queue[0].enqueue_time
+            latency_0 = w0 + optimizer.predict(n)
+
+            # wait for additional requests to arrive
+            await asyncio.sleep(tick_interval)
+
+        # dispatch the batch
+        inputs_info: list[Job] = []
+        n_call_out = 0
+        batch_size = 0
+        for job in queue:
+            if batch_size + job.data.sample.batch_size <= max_batch_size:
+                n_call_out += 1
+
+        for _ in range(n_call_out):
+            job = queue.pop()
+            batch_size += job.data.sample.batch_size
+            new_wait = (now - job.enqueue_time) / self.n_kept_samples
+            if len(self.avg_wait_times) == self.n_kept_samples:
+                oldest_wait = self.avg_wait_times.popleft()
+                self.avg_req_wait = self.avg_req_wait - oldest_wait + new_wait
+            else:
+                # avg deliberately undercounts until we hit n_kept_sample for simplicity
+                self.avg_req_wait += new_wait
+            inputs_info.append(job)
+
+        dispatch(inputs_info, batch_size)
+
+
+class Dispatcher:
     """
     A decorator that:
         * wrap batch function
         * implement CORK algorithm to cork & release calling of wrapped function
     The wrapped function should be an async function.
     """
+
+    background_tasks: set[asyncio.Task[None]] = set()
 
     def __init__(
         self,
@@ -296,15 +450,18 @@ class CorkDispatcher:
                 else:
                     n_call_out = 0
                     batch_size = 0
-                    for job in queue:
-                        if batch_size + job.data.sample.batch_size <= max_batch_size:
+                    for job in self._queue:
+                        if (
+                            batch_size + job.data.sample.batch_size
+                            <= self.max_batch_size
+                        ):
                             n_call_out += 1
                             batch_size += job.data.sample.batch_size
 
                 req_count += 1
                 # call
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
-                dispatch(inputs_info, batch_size)
+                self._dispatch(inputs_info, batch_size)
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 

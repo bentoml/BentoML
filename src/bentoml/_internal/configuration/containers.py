@@ -150,7 +150,6 @@ class BentoMLConfiguration:
             "metrics",
             "traffic",
             "strategy",
-            "strategy_options",
             "workers_per_resource",
         ]
         global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}

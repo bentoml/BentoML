@@ -40,6 +40,8 @@ from ..utils import metadata_validator
 from ..utils import normalize_labels_value
 
 if t.TYPE_CHECKING:
+    from ..marshal.dispatcher import BatchingStrategy
+    from ..marshal.dispatcher import Optimizer
     from ..runner import Runnable
     from ..runner import Runner
     from ..runner.strategy import Strategy
@@ -319,6 +321,7 @@ class Model(StoreItem):
         name: str = "",
         max_batch_size: int | None = None,
         max_latency_ms: int | None = None,
+        optimizer: Optimizer | None = None,
         batching_strategy: BatchingStrategy | None = None,
         method_configs: dict[str, dict[str, int]] | None = None,
         embedded: bool = False,
@@ -356,6 +359,7 @@ class Model(StoreItem):
             models=[self],
             max_batch_size=max_batch_size,
             max_latency_ms=max_latency_ms,
+            optimizer=optimizer,
             batching_strategy=batching_strategy,
             method_configs=method_configs,
             embedded=embedded,

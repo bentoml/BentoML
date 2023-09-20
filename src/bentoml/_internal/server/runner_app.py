@@ -4,6 +4,7 @@ import functools
 import json
 import logging
 import pickle
+import traceback
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,7 @@ from bentoml.exceptions import ServiceUnavailable
 from ..configuration.containers import BentoMLContainer
 from ..context import component_context
 from ..context import trace_context
+from ..marshal.dispatcher import Dispatcher
 from ..runner.container import AutoContainer
 from ..runner.container import Payload
 from ..runner.utils import PAYLOAD_META_HEADER

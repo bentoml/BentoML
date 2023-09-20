@@ -10,6 +10,7 @@ import attr
 from simple_di import Provide
 from simple_di import inject
 
+from ...exceptions import BentoMLConfigException
 from ...exceptions import StateException
 from ..configuration.containers import BentoMLContainer
 from ..marshal.dispatcher import BATCHING_STRATEGY_REGISTRY
@@ -253,32 +254,50 @@ class Runner(AbstractRunner):
                     "batching_strategy"
                 )
 
+            optimizer_conf = config["optimizer"]
+            if isinstance(optimizer_conf, str):
+                optimizer_name = optimizer_conf
+                optimizer_opts = {}
+            else:
+                optimizer_name = optimizer_conf["name"]
+                optimizer_opts = optimizer_conf["options"]
+
+            if optimizer_name not in OPTIMIZER_REGISTRY:
+                raise BentoMLConfigException(
+                    f"Unknown optimizer '{optimizer_name}'. Available optimizers are: {','.join(OPTIMIZER_REGISTRY.keys())}."
+                )
+
+            try:
+                default_optimizer = OPTIMIZER_REGISTRY[optimizer_name](optimizer_opts)
+            except Exception as e:
+                raise BentoMLConfigException(
+                    f"Initializing strategy '{optimizer_name}' with configured options ({pprint(optimizer_opts)}) failed."
+                ) from e
+
+            strategy_conf = config["batching"]["strategy"]
+            if isinstance(strategy_conf, str):
+                pass
+            else:
+                strategy_conf["name"]
+                strategy_conf["options"]
+
             if config["batching"]["strategy"] not in BATCHING_STRATEGY_REGISTRY:
                 raise BentoMLConfigException(
                     f"Unknown batching strategy '{config['batching']['strategy']}'. Available strategies are: {','.join(BATCHING_STRATEGY_REGISTRY.keys())}.",
                 )
 
-            if config["optimizer"]["name"] not in OPTIMIZER_REGISTRY:
-                raise BentoMLConfigException(
-                    f"Unknown optimizer '{config['optimizer']['name']}'. Available optimizers are: {','.join(OPTIMIZER_REGISTRY.keys())}."
-                )
-
             try:
-                default_optimizer = OPTIMIZER_REGISTRY[config["optimizer"]["name"]](
-                    config["optimizer"]["options"]
-                )
+                if isinstance(strategy_conf, str):
+                    default_batching_strategy = BATCHING_STRATEGY_REGISTRY[
+                        strategy_conf
+                    ]({})
+                else:
+                    default_batching_strategy = BATCHING_STRATEGY_REGISTRY[
+                        strategy_conf["name"]
+                    ](strategy_conf["options"])
             except Exception as e:
                 raise BentoMLConfigException(
-                    f"Initializing strategy '{config['optimizer']['name']}' with configured options ({pprint(config['optimizer']['options'])}) failed."
-                ) from e
-
-            try:
-                default_batching_strategy = BATCHING_STRATEGY_REGISTRY[
-                    config["batching"]["strategy"]
-                ](config["batching"]["strategy_options"])
-            except Exception as e:
-                raise BentoMLConfigException(
-                    f"Initializing strategy '{config['batching']['strategy']}' with configured options ({pprint(config['batching']['strategy_options'])}) failed."
+                    f"Initializing strategy '{pprint(config['batching'])}' failed."
                 ) from e
 
             runner_method_map[method_name] = RunnerMethod(

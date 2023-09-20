@@ -125,9 +125,10 @@ them into a batch before dispatching it to begin execution. There are three opti
                 enabled: true
                 max_batch_size: 100
                 max_latency_ms: 500
-                strategy: target_latency
-                strategy_options:
-                  latency_ms: 200
+                strategy:
+                  name: target_latency
+                  options:
+                    latency_ms: 200
 
 Monitoring
 ----------

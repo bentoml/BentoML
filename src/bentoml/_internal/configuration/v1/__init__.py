@@ -142,16 +142,24 @@ _API_SERVER_CONFIG = {
     },
 }
 _RUNNER_CONFIG = {
-    s.Optional("optimizer"): {
-        s.Optional("name"): str,
-        s.Optional("options"): dict,
-    },
+    s.Optional("optimizer"): s.Or(
+        str,
+        {
+            s.Optional("name"): str,
+            s.Optional("options"): dict,
+        },
+    ),
     s.Optional("batching"): {
         s.Optional("enabled"): bool,
         s.Optional("max_batch_size"): s.And(int, ensure_larger_than_zero),
         s.Optional("max_latency_ms"): s.And(int, ensure_larger_than_zero),
-        s.Optional("strategy"): str,
-        s.Optional("strategy_options"): dict,
+        s.Optional("strategy"): s.Or(
+            str,
+            {
+                s.Optional("name"): str,
+                s.Optional("options"): dict,
+            },
+        ),
     },
     # NOTE: there is a distinction between being unset and None here; if set to 'None'
     # in configuration for a specific runner, it will override the global configuration.

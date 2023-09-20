@@ -6,7 +6,7 @@ This document contains a list of best practices for optimizing costs on BentoClo
 a reference when trying to reduce or rightsize your overall cloud spending. This helps you maximize the value of your cloud resources.
 
 .. note::
-    
+
     If you're new to BentoCloud, this document may not be the best place to start. We recommend you begin with this :doc:`/bentocloud/getting-started/quickstart`
     to understand the basics of BentoCloud.
 
@@ -21,9 +21,9 @@ For those with a basic understanding of BentoML and BentoCloud, consider the fol
   * After you package your model and all the necessary files into a Bento, run ``bentoml serve BENTO_TAG`` to test the Bento.
     Alternatively, use the ``bentoml.Server`` API if you are working with scripting environments or running Python-based tests.
   * Containerize the Bento and test the resulting Docker image using ``docker runs``.
-    
+
   These practices help avoid deploying under-optimized models or services to the cloud, which may incur unnecessary costs from iterative fixing and redeploying.
-    
+
 * **Scale-to-zero**. Some services don't require constant availability and running them continuously is a cost drain. For those services,
   you can enable scale-to-zero by setting the minimum number of replicas allowed for scaling to 0. This way, you only pay for what you use, cutting costs during idle time.
   Note that for latency-insensitive services (for example, on-demand long-running inference jobs), we recommend you always enable scale-to-zero.
@@ -44,7 +44,7 @@ For seasoned users familiar with advanced use cases of BentoML, consider the fol
   * Allocate different models or stages of a pipeline to separate Runners for better resource management.
 
 * **Adaptive scaling**. Take into account of a wide range of factors when setting your scaling strategies. Specifically, think about:
- 
+
   * **Traffic**. Configure your scaling strategy based on observed and predicted traffic patterns. Dynamically adjusting resources based on demand
     prevents both over-provisioning (which costs more) and under-provisioning (which can degrade performance), thus ensuring resources are aligned with the actual demand.
   * **Resource and latency requirements**. Consider how much resources will be used over what time frame, and then set metric-based policies. For example, you have a GPU-bound application

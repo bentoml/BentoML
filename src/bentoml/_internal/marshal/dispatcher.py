@@ -7,16 +7,16 @@ import logging
 import time
 import traceback
 import typing as t
-from functools import cached_property
 from abc import ABC
 from abc import abstractmethod
+from functools import cached_property
 
 import attr
 import numpy as np
 
+from ...exceptions import BadInput
 from ..utils import cached_property
 from ..utils.alg import TokenBucket
-from ...exceptions import BadInput
 
 logger = logging.getLogger(__name__)
 
@@ -365,8 +365,7 @@ class CorkDispatcher:
 
                 # we are now free to dispatch whenever we like
                 if self.max_batch_size == -1:  # batching is disabled
-                    n_call_out = 1
-                    batch_size = self._queue[0].data.sample.batch_size
+                    self._queue[0].data.sample.batch_size
                 else:
                     await self.strategy.batch(
                         self.optimizer,

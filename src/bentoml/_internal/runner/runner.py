@@ -7,27 +7,27 @@ from abc import abstractmethod
 from pprint import pprint
 
 import attr
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
+from ...exceptions import StateException
+from ..configuration.containers import BentoMLContainer
+from ..marshal.dispatcher import BATCHING_STRATEGY_REGISTRY
+from ..marshal.dispatcher import OPTIMIZER_REGISTRY
+from ..models.model import Model
 from ..tag import validate_tag_str
 from ..utils import first_not_none
 from .runnable import Runnable
-from .strategy import Strategy
-from .strategy import DefaultStrategy
-from ...exceptions import StateException
-from ..models.model import Model
-from .runner_handle import RunnerHandle
 from .runner_handle import DummyRunnerHandle
-from ..configuration.containers import BentoMLContainer
-from ..marshal.dispatcher import OPTIMIZER_REGISTRY
-from ..marshal.dispatcher import BATCHING_STRATEGY_REGISTRY
+from .runner_handle import RunnerHandle
+from .strategy import DefaultStrategy
+from .strategy import Strategy
 
 if t.TYPE_CHECKING:
     from ...triton import Runner as TritonRunner
-    from .runnable import RunnableMethodConfig
-    from ..marshal.dispatcher import Optimizer
     from ..marshal.dispatcher import BatchingStrategy
+    from ..marshal.dispatcher import Optimizer
+    from .runnable import RunnableMethodConfig
 
     # only use ParamSpec in type checking, as it's only in 3.10
     P = t.ParamSpec("P")

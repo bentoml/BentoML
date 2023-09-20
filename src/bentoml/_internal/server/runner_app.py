@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import functools
 import json
+import logging
 import pickle
 import typing as t
-import logging
-import functools
 from typing import TYPE_CHECKING
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
@@ -16,21 +16,14 @@ from bentoml.exceptions import ServiceUnavailable
 from ..configuration.containers import BentoMLContainer
 from ..context import component_context
 from ..context import trace_context
-from ..marshal.dispatcher import CorkDispatcher
 from ..runner.container import AutoContainer
 from ..runner.container import Payload
 from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import Params
-from ..runner.utils import PAYLOAD_META_HEADER
 from ..runner.utils import payload_paramss_to_batch_params
 from ..server.base_app import BaseAppFactory
 from ..types import LazyType
 from ..utils.metrics import exponential_buckets
-from ..server.base_app import BaseAppFactory
-from ..runner.container import Payload
-from ..runner.container import AutoContainer
-from ..marshal.dispatcher import CorkDispatcher
-from ..configuration.containers import BentoMLContainer
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)

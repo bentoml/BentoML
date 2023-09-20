@@ -204,15 +204,15 @@ Bentos between teams or moving between different deployment stages. For example:
     `the list <https://www.pyfilesystem.org/page/index-of-filesystems/>`_ provided by the
     pyfilesystem library.
 
-Test Bentos
-^^^^^^^^^^^
+Testing
+^^^^^^^
 
 After you build a Bento, it's essential to test it locally before containerizing it or pushing it to BentoCloud
 for production deployment. Local testing ensures that the Bento behaves as expected and helps identify any potential
 issues. Here are two methods to test a Bento locally.
 
-Use the BentoML CLI
-"""""""""""""""""""
+Via BentoML CLI
+"""""""""""""""
 
 You can easily serve a Bento using the BentoML CLI. Replace ``BENTO_TAG`` with your specific Bento tag (for example, ``iris_classifier:latest``) in the following command.
 
@@ -220,8 +220,8 @@ You can easily serve a Bento using the BentoML CLI. Replace ``BENTO_TAG`` with y
 
     bentoml serve BENTO_TAG
 
-Use the bentoml.Server API
-""""""""""""""""""""""""""
+Via bentoml.Server API
+""""""""""""""""""""""
 
 For those working within scripting environments or running Python-based tests where using the CLI might be
 difficult, the ``bentoml.Server`` API offers a more programmatic way to serve and interact with your Bento.
@@ -248,9 +248,8 @@ to create an HTTP server. Note that ``GrpcServer`` is also available.
     result = client.classify(np.array([[4.9, 3.0, 1.4, 0.2]]))
     print(result)
 
-.. tip::
-
-    When you are done with the server after making client requests, remember to stop the server to free up resources (for example, use ``server.stop()``).
+    # Stop the server to free up resources
+    server.stop()
 
 Alternatively, you can manage the server's lifecycle using a context manager. This ensures that the server is automatically stopped once you exit the ``with`` block.
 

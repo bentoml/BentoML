@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 if __name__ == "__main__":
-    import time
     import argparse
+    import time
 
     import bentoml
 

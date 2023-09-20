@@ -109,13 +109,25 @@ class CLIException(BentoMLException):
     """Raised when CLI encounters an issue"""
 
 
-class YataiRESTApiClientError(BentoMLException):
-    """Raised when communicating with BentoCloud server."""
+class CloudRESTApiClientError(BentoMLException):
+    """Raised when communicating with Yatai or BentoCloud server."""
 
     pass
 
 
 class ImportServiceError(BentoMLException):
     """Raised when BentoML failed to import the user's service file."""
+
+    pass
+
+
+class UnservableException(StateException):
+    """Raised when a service is not servable."""
+
+    pass
+
+
+class ServerStateException(StateException):
+    """Raised when a server API requiring the BentoML server to be running is executed when the server is not running."""
 
     pass

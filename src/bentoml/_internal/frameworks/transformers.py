@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import os
-import typing as t
 import logging
+import os
 import platform
+import typing as t
 import warnings
 from types import ModuleType
 
@@ -11,23 +11,23 @@ import attr
 
 import bentoml
 
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
+from ...exceptions import NotFound
+from ..models.model import Model
+from ..models.model import ModelContext
+from ..models.model import ModelOptions
+from ..models.model import ModelSignature
 from ..tag import Tag
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
-from ..models.model import Model
-from ..models.model import ModelContext
-from ..models.model import ModelOptions
-from ..models.model import ModelSignature
 
 if t.TYPE_CHECKING:
-    import torch
-    import tensorflow as tf
     import cloudpickle
+    import tensorflow as tf
+    import torch
     from transformers.models.auto.auto_factory import (
         _BaseAutoModelClass as BaseAutoModelClass,
     )
@@ -60,7 +60,7 @@ if t.TYPE_CHECKING:
 
         @classmethod
         def from_pretrained(
-            cls, pretrained_model_name_or_path: str, **kwargs: t.Any
+            cls, pretrained_model_name_or_path: str, *args: t.Any, **kwargs: t.Any
         ) -> PreTrainedProtocol:
             ...
 
@@ -356,11 +356,13 @@ def load_model(
 
 
 @t.overload
-def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> PreTrainedProtocol:
+def load_model(
+    bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any
+) -> TransformersPreTrained:
     ...
 
 
-def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
+def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) -> t.Any:
     """
     Load the Transformers model from BentoML local modelstore with given name.
 
@@ -368,6 +370,8 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
         bento_model: Either the tag of the model to get from the store,
                      or a BentoML :class:`~bentoml.Model` instance to load the
                      model from.
+        args: Additional model args to be passed into the model if the object is a Transformers PreTrained protocol.
+              This shouldn't be used when the bento_model is a pipeline.
         kwargs: Additional keyword arguments to pass into the pipeline.
 
     Returns:
@@ -463,8 +467,11 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
         if "_pretrained_class" in bento_model.info.metadata:
             with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "rb") as f:
                 protocol: PreTrainedProtocol = cloudpickle.load(f)
-            return protocol.from_pretrained(bento_model.path, **kwargs)
+            return protocol.from_pretrained(bento_model.path, *args, **kwargs)
         else:
+            assert (
+                len(args) == 0
+            ), "Positional args are not supported for pipeline. Make sure to only use kwargs instead."
             with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
                 pipeline_class: type[transformers.Pipeline] = cloudpickle.load(f)
 
@@ -689,12 +696,12 @@ def save_model(
 
     # The below API are introduced since 4.18
     if pkg_version_info("transformers")[:2] >= (4, 18):
-        from transformers.utils import is_tf_available
         from transformers.utils import is_flax_available
+        from transformers.utils import is_tf_available
         from transformers.utils import is_torch_available
     else:
-        from .utils.transformers import is_tf_available
         from .utils.transformers import is_flax_available
+        from .utils.transformers import is_tf_available
         from .utils.transformers import is_torch_available
 
     framework_versions = {"transformers": get_pkg_version("transformers")}
@@ -813,9 +820,18 @@ def save_model(
         metadata.update(
             {
                 "_pretrained_class": pretrained.__class__.__name__,
-                "_framework": pretrained.framework,
             }
         )
+        if hasattr(pretrained, "framework") and isinstance(
+            pretrained,
+            (
+                transformers.PreTrainedModel,
+                transformers.TFPreTrainedModel,
+                transformers.FlaxPreTrainedModel,
+            ),
+        ):
+            # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
+            metadata["_framework"] = pretrained.framework
 
         with bentoml.models.create(
             name,

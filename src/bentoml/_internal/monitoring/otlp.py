@@ -1,32 +1,39 @@
 from __future__ import annotations
 
+import collections
+import datetime
+import logging
+import logging.config
 import os
 import random
 import typing as t
-import logging
-import datetime
-import collections
-import logging.config
-from typing import TYPE_CHECKING
 
+# NOTE: AFAIK, they move this function from opentelemetry.sdk.logs to opentelemetry._logs
+from opentelemetry._logs import set_logger_provider
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs import LoggingHandler
-from opentelemetry.sdk._logs import set_logger_provider
-from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_HEADERS
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_TIMEOUT
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_INSECURE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_CERTIFICATE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_COMPRESSION
-from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_HEADERS
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_INSECURE
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_TIMEOUT
+from opentelemetry.sdk.resources import Resource
 
-from .api import MonitorBase
-from ..context import trace_context
+from ...exceptions import MissingDependencyException
 from ..context import component_context
+from ..context import trace_context
+from .base import MonitorBase
 
-if TYPE_CHECKING:
+try:
+    from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+except ImportError:
+    raise MissingDependencyException(
+        "'opentelemetry-exporter-otlp' is required to use OTLP exporter. Make sure to install it with 'pip install \"bentoml[monitor-otlp]\""
+    )
+
+if t.TYPE_CHECKING:
     from ..types import JSONSerializable
 
 
@@ -128,13 +135,23 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         self._will_export_schema = False
 
     def _init_logger(self) -> None:
+        from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
+        from opentelemetry.sdk.resources import SERVICE_NAME
+        from opentelemetry.sdk.resources import OTELResourceDetector
+
+        # User can optionally configure the resource with the following environment variables. Only
+        # configure resource if user has not explicitly configured it.
+        system_otel_resources: Resource = OTELResourceDetector().detect()
+        _resource = {}
+        if component_context.bento_name:
+            _resource[SERVICE_NAME] = f"{component_context.bento_name}:{self.name}"
+        if component_context.bento_version:
+            _resource[SERVICE_INSTANCE_ID] = component_context.bento_version
+
+        bentoml_resource = Resource.create(_resource)
+
         self.logger_provider = LoggerProvider(
-            resource=Resource.create(
-                {
-                    "service.name": f"{component_context.bento_name}:{self.name}",
-                    "service.instance.id": "{component_context.bento_version}",
-                }
-            ),
+            resource=bentoml_resource.merge(system_otel_resources)
         )
         set_logger_provider(self.logger_provider)
 

@@ -1,13 +1,13 @@
 import logging
-from time import time
 from pprint import pprint
+from time import time
 
 from sklearn.datasets import fetch_20newsgroups
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import SGDClassifier
-from sklearn.model_selection import GridSearchCV
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.linear_model import SGDClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
 
 import bentoml
 
@@ -76,7 +76,7 @@ best_parameters = {
 print(f"Best parameters set: {best_parameters}")
 
 bento_model = bentoml.sklearn.save_model(
-    "20_news_group",
+    "twenty_news_group",
     grid_search.best_estimator_,
     signatures={
         "predict": {"batchable": True, "batch_dim": 0},
@@ -90,7 +90,7 @@ bento_model = bentoml.sklearn.save_model(
 print(f"Model saved: {bento_model}")
 
 # Test running inference with BentoML runner
-test_runner = bentoml.sklearn.get("20_news_group:latest").to_runner()
+test_runner = bentoml.sklearn.get("twenty_news_group:latest").to_runner()
 test_runner.init_local()
 assert test_runner.predict.run(["hello"]) == grid_search.best_estimator_.predict(
     ["hello"]

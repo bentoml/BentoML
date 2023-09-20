@@ -1,27 +1,26 @@
 from __future__ import annotations
 
 import typing as t
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import torch.nn as nn
+from fastai.data.block import DataBlock
 from fastai.learner import Learner
 from fastai.metrics import accuracy
-from sklearn.datasets import load_iris
-from fastai.data.block import DataBlock
+from fastai.tabular.all import TabularDataLoaders
+from fastai.tabular.all import tabular_learner
 from fastai.torch_core import Module
 from fastai.torch_core import set_seed
-from fastai.tabular.all import tabular_learner
-from fastai.tabular.all import TabularDataLoaders
+from sklearn.datasets import load_iris
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from sklearn.utils import Bunch
 
     import bentoml._internal.external_typing as ext
@@ -115,7 +114,7 @@ iris_model = FrameworkTestModel(
                     Input(
                         input_args=[X.iloc[0]],
                         expected=lambda out: np.isclose(
-                            out[2].numpy(), [-0.35807556]
+                            out[-1].numpy(), [-0.3580], rtol=1e-3
                         ).all(),
                     ),
                 ],

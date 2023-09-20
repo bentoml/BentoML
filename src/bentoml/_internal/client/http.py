@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-import json
-import time
-import socket
-import typing as t
 import asyncio
+import json
 import logging
+import socket
+import time
+import typing as t
 import urllib.error
 import urllib.request
 from http.client import HTTPConnection
 from urllib.parse import urlparse
 
 import aiohttp
-import starlette.requests
 import starlette.datastructures
+import starlette.requests
 
-from . import Client
-from .. import io_descriptors as io
-from ..service import Service
-from ...exceptions import RemoteException
 from ...exceptions import BentoMLException
+from ...exceptions import RemoteException
+from .. import io_descriptors as io
 from ..configuration import get_debug_mode
+from ..service import Service
 from ..service.inference_api import InferenceAPI
+from . import Client
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,15 @@ class HTTPClient(Client):
         # TODO: SSL support
         conn = HTTPConnection(url_parts.netloc)
         conn.set_debuglevel(logging.DEBUG if get_debug_mode() else 0)
-        conn.request("GET", url_parts.path + "/docs.json")
+
+        # we want to preserve as much of the user path as possible, so we don't really want to use
+        # a path join here.
+        if url_parts.path.endswith("/"):
+            path = url_parts.path + "docs.json"
+        else:
+            path = url_parts.path + "/docs.json"
+
+        conn.request("GET", path)
         resp = conn.getresponse()
         if resp.status != 200:
             raise RemoteException(
@@ -122,7 +130,7 @@ class HTTPClient(Client):
                             f"Malformed BentoML spec received from BentoML server {server_url}"
                         )
                     try:
-                        api = InferenceAPI(
+                        api = InferenceAPI[t.Any](
                             None,
                             io.from_spec(
                                 meth_spec["requestBody"]["x-bentoml-io-descriptor"]
@@ -145,7 +153,7 @@ class HTTPClient(Client):
         return cls(dummy_service, server_url)
 
     async def _call(
-        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI, **kwargs: t.Any
+        self, inp: t.Any = None, *, _bentoml_api: InferenceAPI[t.Any], **kwargs: t.Any
     ) -> t.Any:
         # All gRPC kwargs should be poped out.
         kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_grpc_")}
@@ -159,7 +167,12 @@ class HTTPClient(Client):
             fake_resp = await api.input.to_http_response(kwargs, None)
         else:
             fake_resp = await api.input.to_http_response(inp, None)
-        req_body = fake_resp.body
+
+        # TODO: Temporary workaround before moving everything to StreamingResponse
+        if isinstance(fake_resp, starlette.responses.StreamingResponse):
+            req_body = "".join([s async for s in fake_resp.body_iterator])
+        else:
+            req_body = fake_resp.body
 
         async with aiohttp.ClientSession(self.server_url) as sess:
             async with sess.post(

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from abc import ABC
 from abc import abstractmethod
 from pprint import pprint
@@ -15,7 +15,6 @@ from ..utils import first_not_none
 from .runnable import Runnable
 from .strategy import Strategy
 from .strategy import DefaultStrategy
-from ...exceptions import BentoMLConfigException
 from ...exceptions import StateException
 from ..models.model import Model
 from .runner_handle import RunnerHandle
@@ -62,6 +61,11 @@ class RunnerMethod(t.Generic[T, P, R]):
     async def async_run(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return await self.runner._runner_handle.async_run_method(self, *args, **kwargs)
 
+    def async_stream(
+        self, *args: P.args, **kwargs: P.kwargs
+    ) -> t.AsyncGenerator[R, None]:
+        return self.runner._runner_handle.async_stream_method(self, *args, **kwargs)
+
 
 def _to_lower_name(name: str) -> str:
     lname = name.lower()
@@ -105,13 +109,18 @@ class AbstractRunner(ABC):
         """
 
     @abstractmethod
-    def init_client(self):
+    def init_client(
+        self,
+        handle_class: type[RunnerHandle] | None = None,
+        *args: t.Any,
+        **kwargs: t.Any,
+    ):
         """
         Initialize client for a remote runner instance. To be used within API server instance.
         """
 
 
-@attr.define(slots=False, frozen=True, eq=False)
+@attr.define(slots=False, frozen=True, eq=False, init=False)
 class Runner(AbstractRunner):
     if t.TYPE_CHECKING:
         # This will be set by __init__. This is for type checking only.
@@ -133,14 +142,14 @@ class Runner(AbstractRunner):
 
     runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: type[Strategy]
-    workers_per_resource: int = 1
+    workers_per_resource: float = 1
     runnable_init_params: dict[str, t.Any] = attr.field(
         default=None, converter=attr.converters.default_if_none(factory=dict)
     )
     _runner_handle: RunnerHandle = attr.field(init=False, factory=DummyRunnerHandle)
 
     def _set_handle(
-        self, handle_class: type[RunnerHandle], *args: P.args, **kwargs: P.kwargs
+        self, handle_class: type[RunnerHandle], *args: t.Any, **kwargs: t.Any
     ) -> None:
         if not isinstance(self._runner_handle, DummyRunnerHandle):
             raise StateException("Runner already initialized")
@@ -176,7 +185,7 @@ class Runner(AbstractRunner):
         """
 
         Runner represents a unit of computation that can be executed on a remote Python worker and scales independently
-        See https://docs.bentoml.org/en/latest/concepts/runner.html for more details.
+        See https://docs.bentoml.com/en/latest/concepts/runner.html for more details.
 
         Args:
             runnable_class: Runnable class that can be executed on a remote Python worker.
@@ -366,8 +375,8 @@ class Runner(AbstractRunner):
     def init_client(
         self,
         handle_class: type[RunnerHandle] | None = None,
-        *args: P.args,
-        **kwargs: P.kwargs,
+        *args: t.Any,
+        **kwargs: t.Any,
     ):
         if handle_class is None:
             from .runner_handle.remote import RemoteRunnerClient

@@ -3,7 +3,7 @@
 ## A guide for docs contributors
 
 The `docs` directory contains the sphinx source text for BentoML docs, visit
-http://docs.bentoml.org/ to read the full documentation.
+http://docs.bentoml.com/ to read the full documentation.
 
 This guide is made for anyone who's interested in running BentoML documentation locally,
 making changes to it and make contributions. BentoML is made by the thriving community
@@ -27,10 +27,12 @@ If you haven't already, clone the BentoML Github repo to a local directory:
 git clone https://github.com/bentoml/BentoML.git && cd BentoML
 ```
 
+> **Note**: Make sure to have [PDM](https://pdm.fming.dev/latest/) installed.
+
 Install all dependencies required for building docs (mainly `sphinx` and its extension):
 
 ```bash
-pip install -r requirements/docs-requirements.txt
+pdm install -dG docs
 ```
 
 Build the sphinx docs:

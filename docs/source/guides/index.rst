@@ -40,6 +40,10 @@ into this part of the documentation.
         :link: /guides/scheduling
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/guides/github-actions`
+        :link: /guides/github-actions
+        :link-type: doc
+
     .. grid-item-card:: :doc:`/guides/graph`
         :link: /guides/graph
         :link-type: doc
@@ -68,6 +72,10 @@ into this part of the documentation.
         :link: /guides/security
         :link-type: doc
 
+    .. grid-item-card:: :doc:`/guides/streaming`
+        :link: /guides/streaming
+        :link-type: doc
+
     .. grid-item-card:: :doc:`/guides/tracing`
         :link: /guides/tracing
         :link-type: doc
@@ -90,6 +98,7 @@ into this part of the documentation.
     configuration
     scheduling
     envmanager
+    github-actions
     graph
     monitoring
     logging
@@ -98,6 +107,7 @@ into this part of the documentation.
     grpc
     gpu
     security
+    streaming
     tracing
     migration
 

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
 from ._internal.frameworks.sklearn import get
+from ._internal.frameworks.sklearn import get_runnable
 from ._internal.frameworks.sklearn import load_model
 from ._internal.frameworks.sklearn import save_model
-from ._internal.frameworks.sklearn import get_runnable
 
 if TYPE_CHECKING:
     from ._internal.tag import Tag

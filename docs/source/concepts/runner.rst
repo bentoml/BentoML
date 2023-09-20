@@ -286,6 +286,24 @@ Another example generating text using three different language models concurrent
 then classify each generated paragraph with an classification model can be found at:
 :examples:`examples/inference_graph <inference_graph>`.
 
+Embedded Runners
+----------------
+
+BentoML allows you to run Runners in Embedded mode, which means the Runner is embedded in the same process as the API Server.
+
+By default, the API Server and the Runner are independent Python processes that communicate across the wire via either HTTP or gRPC,
+depending on the configuration. This allows for independent scaling and allocation of resources like GPU instances for both the API Server and the Runner.
+
+.. image:: /_static/img/concepts/runners/default.png
+
+In Embedded mode, the Runner is embedded within the same process as the API Server. This disables the dispatching layer, which means batching
+is not available in this mode. To create an embedded Runner, use ``.to_runner(embedded=True)``.
+
+.. image:: /_static/img/concepts/runners/embedded-runner.png
+
+Embedded Runners are designed for use cases with simple and small models where it is better to keep the models in memory.
+They help simplify your production setups and may offer benefits in certain scenarios. If you have large, CPU-intensive models,
+running API Servers and Runners in separate processes is a preferable choice since you can scale them independently.
 
 Runner Definition
 -----------------
@@ -426,10 +444,12 @@ can be specified for the ``nvidia.com/gpu`` key. For example, the following conf
 
 For the detailed information on the meaning of each resource allocation configuration, see :doc:`/guides/scheduling`.
 
-Timeout
-^^^^^^^
+Traffic Control
+^^^^^^^^^^^^^^^
 
-Runner timeout defines the amount of time in seconds to wait before calls a runner is timed out on the API server.
+Same as API server, you can also configure the traffic settings for both all runners and individual runner.
+Specifcally, ``traffic.timeout`` defines the amount of time in seconds that the runner will wait for a response from the model before timing out.
+``traffic.max_concurrency`` defines the maximum number of concurrent requests the runner will accept before returning an error.
 
 .. tab-set::
 
@@ -440,7 +460,9 @@ Runner timeout defines the amount of time in seconds to wait before calls a runn
           :caption: ⚙️ `configuration.yml`
 
           runners:
-            timeout: 60
+            traffic:
+              timeout: 60
+              max_concurrency: 10
 
     .. tab-item:: Individual Runner
        :sync: individual_runner
@@ -450,7 +472,9 @@ Runner timeout defines the amount of time in seconds to wait before calls a runn
 
           runners:
             iris_clf:
-              timeout: 60
+              traffic:
+                timeout: 60
+                max_concurrency: 10
 
 Access Logging
 ^^^^^^^^^^^^^^

@@ -1,41 +1,43 @@
 from __future__ import annotations
 
-import os
-import math
-import uuid
-import typing as t
 import logging
+import math
+import os
+import typing as t
+import uuid
 from copy import deepcopy
-from typing import TYPE_CHECKING
 from dataclasses import dataclass
+from pathlib import Path
+from typing import TYPE_CHECKING
 
-import yaml
 import schema as s
+import yaml
+from deepmerge.merger import Merger
 from simple_di import Provide
 from simple_di import providers
-from deepmerge.merger import Merger
 
-from . import expand_env_var
-from ..utils import split_with_quotes
-from ..utils import validate_or_create_dir
-from .helpers import flatten_dict
-from .helpers import load_config_file
-from .helpers import get_default_config
-from .helpers import import_configuration_spec
-from ..context import trace_context
+from ...exceptions import BentoMLConfigException
 from ..context import component_context
+from ..context import trace_context
 from ..resource import CpuResource
 from ..resource import system_resources
-from ...exceptions import BentoMLConfigException
+from ..utils import split_with_quotes
+from ..utils import validate_or_create_dir
 from ..utils.unflatten import unflatten
+from . import expand_env_var
+from .helpers import flatten_dict
+from .helpers import get_default_config
+from .helpers import import_configuration_spec
+from .helpers import load_config_file
 
 if TYPE_CHECKING:
     from fs.base import FS
 
     from .. import external_typing as ext
+    from ..bento import BentoStore
     from ..models import ModelStore
-    from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
+    from ..utils.analytics import ServeInfo
 
     SerializationStrategy = t.Literal["EXPORT_BENTO", "LOCAL_BENTO", "REMOTE_BENTO"]
 
@@ -146,7 +148,7 @@ class BentoMLConfiguration:
             "resources",
             "logging",
             "metrics",
-            "timeout",
+            "traffic",
             "strategy",
             "strategy_options",
             "workers_per_resource",
@@ -175,6 +177,7 @@ class BentoMLConfiguration:
 @dataclass
 class _BentoMLContainerClass:
     config = providers.Configuration()
+    model_aliases = providers.Static({})
 
     @providers.SingletonFactory
     @staticmethod
@@ -223,7 +226,7 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def bento_store(base_dir: str = Provide[bento_store_dir]):
+    def bento_store(base_dir: str = Provide[bento_store_dir]) -> BentoStore:
         from ..bento import BentoStore
 
         return BentoStore(base_dir)
@@ -247,6 +250,11 @@ class _BentoMLContainerClass:
     def session_id() -> str:
         return uuid.uuid1().hex
 
+    @providers.SingletonFactory
+    @staticmethod
+    def cloud_config(bentoml_home: str = Provide[bentoml_home]) -> Path:
+        return Path(bentoml_home) / ".yatai.yaml"
+
     api_server_config = config.api_server
     runners_config = config.runners
 
@@ -260,9 +268,16 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def yatai_client():
-        from ..yatai_client import YataiClient
+        from ..cloud.yatai import YataiClient
 
         return YataiClient()
+
+    @providers.SingletonFactory
+    @staticmethod
+    def bentocloud_client():
+        from ..cloud.bentocloud import BentoCloudClient
+
+        return BentoCloudClient()
 
     @providers.SingletonFactory
     @staticmethod
@@ -346,13 +361,13 @@ class _BentoMLContainerClass:
         jaeger: dict[str, t.Any] = Provide[tracing.jaeger],
         otlp: dict[str, t.Any] = Provide[tracing.otlp],
     ):
-        from opentelemetry.sdk.trace import TracerProvider
-        from opentelemetry.sdk.resources import Resource
-        from opentelemetry.sdk.resources import SERVICE_NAME
-        from opentelemetry.sdk.resources import SERVICE_VERSION
-        from opentelemetry.sdk.resources import SERVICE_NAMESPACE
         from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
+        from opentelemetry.sdk.resources import SERVICE_NAME
+        from opentelemetry.sdk.resources import SERVICE_NAMESPACE
+        from opentelemetry.sdk.resources import SERVICE_VERSION
         from opentelemetry.sdk.resources import OTELResourceDetector
+        from opentelemetry.sdk.resources import Resource
+        from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
         from ...exceptions import InvalidArgument
@@ -362,7 +377,7 @@ class _BentoMLContainerClass:
             sample_rate = 0.0
         if sample_rate == 0.0:
             logger.debug(
-                "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
+                "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.com/en/latest/guides/tracing.html for more details."
             )
 
         # User can optionally configure the resource with the following environment variables. Only

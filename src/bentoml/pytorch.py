@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
+from ._internal.frameworks.pytorch import ModelOptions
 from ._internal.frameworks.pytorch import get
+from ._internal.frameworks.pytorch import get_runnable
 from ._internal.frameworks.pytorch import load_model
 from ._internal.frameworks.pytorch import save_model
-from ._internal.frameworks.pytorch import get_runnable
-from ._internal.frameworks.pytorch import ModelOptions
 
 if TYPE_CHECKING:
     from ._internal.tag import Tag

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import time
-import typing as t
 import asyncio
-import logging
-import functools
-import traceback
 import collections
+import functools
+import logging
+import time
+import traceback
+import typing as t
+from functools import cached_property
 from abc import ABC
 from abc import abstractmethod
 
@@ -21,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 if t.TYPE_CHECKING:
-    from ..runner.utils import Params
     from ..runner.container import Payload
+    from ..runner.utils import Params
 
 
 class NonBlockSema:
@@ -170,154 +171,13 @@ T_IN = t.TypeVar("T_IN")
 T_OUT = t.TypeVar("T_OUT")
 
 
-BATCHING_STRATEGY_REGISTRY = {}
-
-
-class BatchingStrategy(ABC):
-    strategy_id: str
-
-    @abstractmethod
-    def __init__(self, optimizer: Optimizer, options: dict[t.Any, t.Any]):
-        pass
-
-    @abstractmethod
-    async def batch(
-        self,
-        optimizer: Optimizer,
-        queue: t.Deque[Job],
-        max_latency: float,
-        max_batch_size: int,
-        tick_interval: float,
-        dispatch: t.Callable[[t.Sequence[Job], int], None],
-    ):
-        pass
-
-    def __init_subclass__(cls, strategy_id: str):
-        BATCHING_STRATEGY_REGISTRY[strategy_id] = cls
-        cls.strategy_id = strategy_id
-
-
-class TargetLatencyStrategy(BatchingStrategy, strategy_id="target_latency"):
-    latency: float = 1.0
-
-    def __init__(self, options: dict[t.Any, t.Any]):
-        for key in options:
-            if key == "latency":
-                self.latency = options[key] / 1000.0
-            else:
-                logger.warning(
-                    f"Strategy 'target_latency' ignoring unknown configuration key '{key}'."
-                )
-
-    async def batch(
-        self,
-        optimizer: Optimizer,
-        queue: t.Deque[Job],
-        max_latency: float,
-        max_batch_size: int,
-        tick_interval: float,
-        dispatch: t.Callable[[t.Sequence[Job], int], None],
-    ):
-        n = len(queue)
-        now = time.time()
-        w0 = now - queue[0].enqueue_time
-        latency_0 = w0 + optimizer.predict(n)
-
-        while latency_0 < self.latency and n < max_batch_size:
-            n = len(queue)
-            now = time.time()
-            w0 = now - queue[0].enqueue_time
-            latency_0 = w0 + optimizer.predict(n)
-
-            await asyncio.sleep(tick_interval)
-
-        # call
-        n_call_out = 0
-        batch_size = 0
-        for job in queue:
-            if batch_size + job.data.sample.batch_size <= max_batch_size:
-                n_call_out += 1
-                batch_size += job.data.sample.batch_size
-        inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
-        dispatch(inputs_info, batch_size)
-
-
-class AdaptiveStrategy(BatchingStrategy, strategy_id="adaptive"):
-    decay: float = 0.95
-
-    n_kept_samples = 50
-    avg_wait_times: collections.deque[float]
-    avg_req_wait: float = 0
-
-    def __init__(self, options: dict[t.Any, t.Any]):
-        for key in options:
-            if key == "decay":
-                self.decay = options[key]
-            elif key == "n_kept_samples":
-                self.n_kept_samples = options[key]
-            else:
-                logger.warning(
-                    "Strategy 'adaptive' ignoring unknown configuration value"
-                )
-
-        self.avg_wait_times = collections.deque(maxlen=self.n_kept_samples)
-
-    async def batch(
-        self,
-        optimizer: Optimizer,
-        queue: t.Deque[Job],
-        max_latency: float,
-        max_batch_size: int,
-        tick_interval: float,
-        dispatch: t.Callable[[t.Sequence[Job], int], None],
-    ):
-        n = len(queue)
-        now = time.time()
-        w0 = now - queue[0].enqueue_time
-        wn = now - queue[-1].enqueue_time
-        latency_0 = w0 + optimizer.predict(n)
-        while (
-            # if we don't already have enough requests,
-            n < max_batch_size
-            # we are not about to cancel the first request,
-            and latency_0 + tick_interval <= max_latency * 0.95
-            # and waiting will cause average latency to decrese
-            and n * (wn + tick_interval + optimizer.predict_diff(n, n + 1))
-            <= self.avg_req_wait * self.decay
-        ):
-            n = len(queue)
-            now = time.time()
-            w0 = now - queue[0].enqueue_time
-            latency_0 = w0 + optimizer.predict(n)
-
-            # wait for additional requests to arrive
-            await asyncio.sleep(tick_interval)
-
-        # dispatch the batch
-        inputs_info: list[Job] = []
-        n_call_out = 0
-        batch_size = 0
-        for job in queue:
-            if batch_size + job.data.sample.batch_size <= max_batch_size:
-                n_call_out += 1
-
-        for _ in range(n_call_out):
-            job = queue.pop()
-            batch_size += job.data.sample.batch_size
-            new_wait = (now - job.enqueue_time) / self.n_kept_samples
-            if len(self.avg_wait_times) == self.n_kept_samples:
-                oldest_wait = self.avg_wait_times.popleft()
-                self.avg_req_wait = self.avg_req_wait - oldest_wait + new_wait
-            else:
-                # avg deliberately undercounts until we hit n_kept_sample for simplicity
-                self.avg_req_wait += new_wait
-            inputs_info.append(job)
-
-        dispatch(inputs_info, batch_size)
-
-
-class Dispatcher:
-    background_tasks: set[asyncio.Task[None]] = set()
+class CorkDispatcher:
+    """
+    A decorator that:
+        * wrap batch function
+        * implement CORK algorithm to cork & release calling of wrapped function
+    The wrapped function should be an async function.
+    """
 
     def __init__(
         self,
@@ -337,7 +197,7 @@ class Dispatcher:
         raises:
             * all possible exceptions the decorated function has
         """
-        self.max_latency_in_ms = max_latency_in_ms / 1000.0
+        self.max_latency = max_latency_in_ms / 1000.0
         self.fallback = fallback
         self.optimizer = optimizer
         self.strategy = strategy
@@ -355,12 +215,8 @@ class Dispatcher:
             self._controller.cancel()
         for task in self.background_tasks:
             task.cancel()
-        try:
-            while True:
-                for job in self._queue:
-                    job.future.cancel()
-        except IndexError:
-            pass
+        for job in self._queue:
+            job.future.cancel()
 
     @cached_property
     def _loop(self):
@@ -434,17 +290,21 @@ class Dispatcher:
                     await asyncio.sleep(self.tick_interval)
                     continue
 
+                if self.max_batch_size == -1:  # batching is disabled
+                    n_call_out = 1
+                    batch_size = self._queue[0].data.sample.batch_size
+                else:
+                    n_call_out = 0
+                    batch_size = 0
+                    for job in queue:
+                        if batch_size + job.data.sample.batch_size <= max_batch_size:
+                            n_call_out += 1
+                            batch_size += job.data.sample.batch_size
+
+                req_count += 1
                 # call
-                n_call_out = 0
-                batch_size = 0
-                for job in queue:
-                    if batch_size + job.data.sample.batch_size <= max_batch_size:
-                        n_call_out += 1
-                        batch_size += job.data.sample.batch_size
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
                 dispatch(inputs_info, batch_size)
-        except asyncio.CancelledError:
-            raise
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 
@@ -478,8 +338,6 @@ class Dispatcher:
                     "BentoML has detected that a service has a max latency that is likely too low for serving. If many 503 errors are encountered, try raising the 'runner.max_latency' in your BentoML configuration YAML file."
                 )
             logger.debug("Dispatcher optimizer training complete.")
-        except asyncio.CancelledError:
-            raise
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 
@@ -506,16 +364,19 @@ class Dispatcher:
                     continue
 
                 # we are now free to dispatch whenever we like
-                await self.strategy.batch(
-                    self.optimizer,
-                    self._queue,
-                    self.max_latency,
-                    self.max_batch_size,
-                    self.tick_interval,
-                    self._dispatch,
-                )
-            except asyncio.CancelledError:
-                raise
+                if self.max_batch_size == -1:  # batching is disabled
+                    n_call_out = 1
+                    batch_size = self._queue[0].data.sample.batch_size
+                else:
+                    await self.strategy.batch(
+                        self.optimizer,
+                        self._queue,
+                        self.max_latency,
+                        self.max_batch_size,
+                        self.tick_interval,
+                        self._dispatch,
+                    )
+
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)
 
@@ -525,7 +386,11 @@ class Dispatcher:
         self.background_tasks.add(task)
         task.add_done_callback(self.background_tasks.discard)
 
-    async def inbound_call(self, data: t.Any):
+    async def inbound_call(self, data: Params[Payload]):
+        if self.max_batch_size > 0 and data.sample.batch_size > self.max_batch_size:
+            raise RuntimeError(
+                f"batch of size {data.sample.batch_size} exceeds configured max batch size of {self.max_batch_size}."
+            )
         now = time.time()
         future = self._loop.create_future()
         input_info = Job(now, data, future)
@@ -556,8 +421,6 @@ class Dispatcher:
                 batch_size=len(inputs_info),
                 duration=time.time() - _time_start,
             )
-        except asyncio.CancelledError:
-            pass
         except Exception as e:  # pylint: disable=broad-except
             for input_info in inputs_info:
                 fut = input_info.future

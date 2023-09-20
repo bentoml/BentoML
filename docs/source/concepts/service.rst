@@ -163,7 +163,9 @@ Inference Context
 The context of an inference call can be accessed through the additional ``bentoml.Context``
 argument added to the service API function. Both the request and response contexts can be
 accessed through the inference context for getting and setting the headers, cookies, and
-status codes.
+status codes. Additionaly, you can read and write to the global state dictionary via the
+``ctx.state`` attribute, which is a per-worker dictionary that can be read and written across
+API endpoints.
 
 .. code-block:: python
 
@@ -196,6 +198,48 @@ status codes.
 
         return result
 
+
+Lifecycle Hooks
+^^^^^^^^^^^^^^^
+
+BentoML service provides a set of lifecycle hooks that can be used to execute code before startup and after shutdown.
+In the hook function, you can access the inference context introduced in the previous section.
+
+.. code-block:: python
+
+    @svc.on_startup
+    async def connect_db_on_startup(context: bentoml.Context):
+        context.state["db"] = await get_db_connection()
+        # ctx.request  # this will raise an error because no request has been served yet.
+
+    @svc.on_shutdown
+    async def close_db_on_shutdown(context: bentoml.Context):
+        await context.state["db"].close()
+
+``on_startup`` and ``on_shutdown`` hooks will be evaluated on each API server process(worker).
+Users should avoid accessing file system for possible contest. More used for init a in process object like db connections.
+
+BentoML service also provides an ``on_deployment`` hook that will be evaluated only once when the service starts.
+This is a good place to download models files once shared by all API server processes(workers).
+
+.. code-block:: python
+
+    @svc.on_deployment
+    def download_model_on_serve():
+        download_model_files()
+
+
+This hook will be executed on ``bentoml serve`` and before any process(worker) starts.
+However, users can not access the inference context from the ``on_deployment`` hook.
+
+.. note::
+    The ``on_deployment`` hook can be executed every time the service is started, and we still recommend putting
+    one-time initialization work in the :ref:`Setup Script <concepts/bento:Setup Script>` to avoid repeated execution.
+
+You can register multiple functions for each hook, and they will be executed in the order they are registered.
+All hooks support both synchronous and asynchronous functions.
+
+.. _io-descriptors:
 
 IO Descriptors
 --------------
@@ -313,6 +357,7 @@ model and return. To learn more, see IO descrptor reference for
 
     from typing import Dict, Any
     from pydantic import BaseModel
+    from bentoml.io import JSON
 
     svc = bentoml.Service("iris_classifier")
 
@@ -327,7 +372,7 @@ model and return. To learn more, see IO descrptor reference for
         output=JSON(),
     )
     def classify(input_series: IrisFeatures) -> Dict[str, Any]:
-        input_df = pd.DataFrame([input_data.dict()])
+        input_df = pd.DataFrame([input_series.dict()])
         results = iris_clf_runner.predict.run(input_df).to_list()
         return {"predictions": results}
 
@@ -346,7 +391,7 @@ with support of type validation and OpenAPI specification generation. For exampl
 +-----------------+---------------------+---------------------+-------------------------+
 | PandasDataFrame | pandas.DataFrame    | validate, schema    | pandas.DataFrame.dtypes |
 +-----------------+---------------------+---------------------+-------------------------+
-| Json            | Python native types | validate, schema    | Pydantic.BaseModel      |
+| JSON            | Python native types | validate, schema    | Pydantic.BaseModel      |
 +-----------------+---------------------+---------------------+-------------------------+
 | Image           | PIL.Image.Image     | pilmodel, mime_type |                         |
 +-----------------+---------------------+---------------------+-------------------------+
@@ -367,29 +412,35 @@ logic:
 
 .. code-block:: python
 
-    import typing as t
+    from __future__ import annotations
+    from typing import Any
     import numpy as np
     from pydantic import BaseModel
 
-    from bentoml.io import NumpyNdarray, Json
+    from bentoml.io import Multipart, NumpyNdarray, JSON
 
-    class FooModel(BaseModel):
-        field1: int
-        field2: float
-        field3: str
+    class IrisFeatures(BaseModel):
+        sepal_length: float
+        sepal_width: float
+        petal_length: float
+        petal_width: float
 
-    my_np_input = NumpyNdarray.from_sample(np.ndarray(...))
+    output_descriptor_numpy = NumpyNdarray.from_sample(np.array([2]))
 
     @svc.api(
         input=Multipart(
-            arr=NumpyNdarray(schema=np.dtype(int, 4), validate=True),
-            json=Json(pydantic_model=FooModel),
-        )
-        output=NumpyNdarray(schema=np.dtype(int), validate=True),
+            arr=NumpyNdarray(
+                shape=(-1, 4),
+                dtype=np.float32,
+                enforce_dtype=True,
+                enforce_shape=True,
+            ),
+            json=JSON(pydantic_model=IrisFeatures),
+        ),
+        output=output_descriptor_numpy,
     )
-    def predict(arr: np.ndarray, json: t.Dict[str, t.Any]) -> np.ndarray:
+    def multi_part_predict(arr: np.ndarray, json: dict[str, Any]) -> np.ndarray:
         ...
-
 
 Sync vs Async APIs
 ------------------

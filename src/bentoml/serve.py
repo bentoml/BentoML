@@ -1,30 +1,34 @@
 from __future__ import annotations
 
-import os
-import sys
-import json
-import shutil
-import typing as t
-import logging
-import tempfile
+import asyncio
 import contextlib
-from pathlib import Path
+import json
+import logging
+import os
+import shlex
+import shutil
+import sys
+import tempfile
+import typing as t
 from functools import partial
+from pathlib import Path
 
 import psutil
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
 from bentoml._internal.log import SERVER_LOGGING_CONFIG
 
+from ._internal.configuration.containers import BentoMLContainer
+from ._internal.runner.runner import Runner
+from ._internal.utils import is_async_callable
 from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
-from ._internal.utils import experimental
-from ._internal.runner.runner import Runner
-from ._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
     from circus.watcher import Watcher
+
+    from ._internal.service import Service
 
 
 logger = logging.getLogger(__name__)
@@ -101,7 +105,7 @@ def create_watcher(
 
     return Watcher(
         name=name,
-        cmd=cmd,
+        cmd=shlex.quote(cmd) if psutil.POSIX else cmd,
         args=args,
         copy_env=True,
         stop_children=True,
@@ -187,6 +191,14 @@ def make_reload_plugin(working_dir: str, bentoml_home: str) -> dict[str, str]:
     }
 
 
+async def on_service_deployment(service: Service) -> None:
+    for on_deployment in service.deployment_hooks:
+        if is_async_callable(on_deployment):
+            await on_deployment()
+        else:
+            on_deployment()
+
+
 @inject
 def serve_http_development(
     bento_identifier: str,
@@ -239,6 +251,7 @@ def serve_http_production(
     host: str = Provide[BentoMLContainer.http.host],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
     api_workers: int = Provide[BentoMLContainer.api_server_workers],
+    timeout: int | None = None,
     ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
     ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
     ssl_keyfile_password: str | None = Provide[BentoMLContainer.ssl.keyfile_password],
@@ -255,11 +268,11 @@ def serve_http_production(
     from circus.sockets import CircusSocket
 
     from . import load
-    from ._internal.utils import reserve_free_port
-    from ._internal.utils.uri import path_to_uri
-    from ._internal.utils.circus import create_standalone_arbiter
-    from ._internal.utils.analytics import track_serve
     from ._internal.configuration.containers import BentoMLContainer
+    from ._internal.utils import reserve_free_port
+    from ._internal.utils.analytics import track_serve
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.uri import path_to_uri
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
@@ -268,6 +281,7 @@ def serve_http_production(
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
     uds_path = None
+    timeout_args = ["--timeout", str(timeout)] if timeout else []
 
     if psutil.POSIX:
         # use AF_UNIX sockets for Circus
@@ -306,6 +320,7 @@ def serve_http_production(
                             json.dumps(runner.scheduled_worker_env_map),
                             "--prometheus-dir",
                             prometheus_dir,
+                            *timeout_args,
                         ],
                         working_dir=working_dir,
                         numprocesses=runner.scheduled_worker_count,
@@ -366,6 +381,7 @@ def serve_http_production(
                                 "$(CIRCUS.WID)",
                                 "--worker-env-map",
                                 json.dumps(runner.scheduled_worker_env_map),
+                                *timeout_args,
                             ],
                             working_dir=working_dir,
                             numprocesses=runner.scheduled_worker_count,
@@ -431,12 +447,16 @@ def serve_http_production(
         "--prometheus-dir",
         prometheus_dir,
         *ssl_args,
+        *timeout_args,
     ]
 
     if development_mode:
         api_server_args.append("--development-mode")
 
     close_child_stdin = False if development_mode else True
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(on_service_deployment(svc))
 
     scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     watchers.append(
@@ -498,7 +518,6 @@ def serve_http_production(
                 shutil.rmtree(uds_path)
 
 
-@experimental
 @inject
 def serve_grpc_production(
     bento_identifier: str,
@@ -523,9 +542,9 @@ def serve_grpc_production(
 
     from . import load
     from ._internal.utils import reserve_free_port
-    from ._internal.utils.uri import path_to_uri
-    from ._internal.utils.circus import create_standalone_arbiter
     from ._internal.utils.analytics import track_serve
+    from ._internal.utils.circus import create_standalone_arbiter
+    from ._internal.utils.uri import path_to_uri
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
@@ -688,6 +707,9 @@ def serve_grpc_production(
     scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
 
     close_child_stdin: bool = False if development_mode else True
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(on_service_deployment(svc))
 
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(

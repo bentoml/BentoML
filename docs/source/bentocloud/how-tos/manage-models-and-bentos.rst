@@ -1,97 +1,54 @@
-===========================
+========================
 Manage Models and Bentos
-===========================
+========================
 
-In this guide, we'll walk through the process of managing your Models and Bentos
-effectively in BentoML. This includes pulling and pushing Models and Bentos,
-dealing with new versions, and viewing their status.
+BentoML provides both a local Model Store and a Bento Store to host your models and Bentos, respectively. Once you've pushed these entities to BentoCloud,
+they are stored in remote repositories. This setup helps teams manage them in a unified way, making it easier to share and collaborate with team members.
 
-Prerequisite
-============
+This document explains how to pull and push models and Bentos.
 
-Ensure you have BentoML installed and are properly logged into your BentoCloud
-account. If you're not yet logged in, use the following command:
+Prerequisites
+=============
 
-.. code-block:: bash
+- You have :doc:`installed BentoML </quickstarts/install-bentoml>`.
+- You have logged in to BentoCloud. See :doc:`Manage Access Tokens <manage-access-token>` to learn more.
 
-   bentoml cloud login --api-token <your-api-token> --endpoint <your-bentocloud-endpoint>
-
-.. note::
-
-   Refer to :doc:`Manage Access Tokens <manage-access-token>`
-   on how to obtain your access token.
-
-Local and Remote Repositories
-=============================
-
-Models and Bentos are initially created and stored locally.
-BentoCloud provides a remote repository feature, similar to Git,
-which enables you to push these local assets to a remote repository
-for efficient management and team collaboration.
-
-Pull and Push Models
+Pull and push models
 ====================
 
-New Model Versions
-------------------
+* **Pull a model**: To fetch a specific version of a model from BentoCloud, run:
 
-As your ML models evolve, you'll often need to create new versions.
-Here's how you can manage those versions:
+  .. code-block:: bash
 
-1. **Pull a Model:** To pull a model from the repository,
-   use the ``bentoml models pull`` CLI command followed by the model name and tag.
+     bentoml models pull <model_name>:<tag>
 
-.. code-block:: bash
+* **Push a model**: To upload a new version of an existing model to BentoCloud, run:
 
-   bentoml models pull <model_name>:<tag>
+  .. code-block:: bash
 
-1. **Push a Model:** Push a new model version to the repository
-   using the ``bentoml models push`` command followed by the model name and tag.
+     bentoml models push <model_name>:<tag>
 
-.. code-block:: bash
-
-   bentoml models push <model_name>:<tag>
-
-You can view your models in BentoCloud’s UI in `cloud.bentoml.com/models <http://cloud.bentoml.com/models>`_.
+The **Models** page displays all available models on BentoCloud.
 
 .. image:: ../../_static/img/bentocloud/manage-models.gif
    :alt: manage-models.gif
 
-Pull and Push Bento
-===================
+Pull and push Bentos
+====================
 
-New Bento Versions
-------------------
+* **Pull a Bento**: To fetch a specific version of a Bento from BentoCloud, run:
 
-Similarly, you can manage different versions of Bentos:
+  .. code-block:: bash
 
-1. **Pull a Bento:** To pull a specific Bento version from the repository,
-   use the ``bentoml pull`` CLI command followed by the Bento name and tag.
+     bentoml pull <bento_name>:<tag>
 
-.. code-block:: bash
+* **Push a Bento:** To upload a new version of an existing Bento to BentoCloud, run the following command. Note that you can push a Bento directly to BentoCloud without manually pushing the model packaged in the Bento. When you push a Bento to BentoCloud, the associated model is automatically uploaded.
 
-   bentoml pull <bento_name>:<tag>
+  .. code-block:: bash
 
-1. **Push a Bento:** Push a new Bento version to the repository
-   using the ``bentoml push`` command followed by the Bento name and tag.
+     bentoml push <bento_name>:<tag>
 
-.. code-block:: bash
-
-   bentoml push <bento_name>:<tag>
-
-You can view your models in BentoCloud’s UI in `cloud.bentoml.com/bento_repositories <http://cloud.bentoml.com/bento_repositories>`_.
+The **Bentos** page displays all available Bentos on BentoCloud.
 
 .. image:: ../../_static/img/bentocloud/manage-bentos.gif
    :alt: manage-bentos.gif
-
-Python SDK
-==========
-
-In addition to CLI operations, BentoCloud also provides a Pythonic API for managing models and bentos.
-
-.. TODO::
-    Link Python API reference.
-
-That's it! You've learned how to effectively manage your Models and Bentos in BentoML.
-By understanding these fundamental operations, you can improve your model development
-workflow and make your team's work more efficient.

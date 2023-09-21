@@ -12,6 +12,10 @@ which means you can easily switch between different LoRA adapters optimized for 
 
 This quickstart demonstrates how to use OneDiffusion to create an image generation application based on SDXL.
 
+.. note::
+
+   You can try a similar project to this quickstart on `Google Colab <https://colab.research.google.com/drive/1Kc5WQWmcTkQ7B-eVk3CT_G00wSPT2DzO?usp=sharing>`_.
+
 Prerequisites
 -------------
 

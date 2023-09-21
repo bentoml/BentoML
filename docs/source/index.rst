@@ -114,6 +114,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    bentocloud/getting-started/index
    bentocloud/how-tos/index
    bentocloud/topics/index
+   bentocloud/best-practices/index
    bentocloud/reference/index
 
 

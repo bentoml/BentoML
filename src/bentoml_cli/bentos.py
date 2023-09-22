@@ -117,7 +117,7 @@ def add_bento_management_commands(cli: Group):
         $ bentoml list
 
         \b
-        # show all verions of bento with the name FraudDetector
+        # show all versions of bento with the name FraudDetector
         $ bentoml list FraudDetector
         """
         bentos = bento_store.list(bento_name)

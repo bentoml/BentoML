@@ -28,6 +28,7 @@ from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
 
 if t.TYPE_CHECKING:
+    from circus.sockets import CircusSocket
     from circus.watcher import Watcher
 
     from ._internal.service import Service
@@ -246,6 +247,41 @@ def serve_http_development(
 MAX_AF_UNIX_PATH_LENGTH = 103
 
 
+def _get_runner_socket_posix(
+    runner: Runner, uds_path: str | None, port_stack: contextlib.ExitStack, backlog: int
+) -> tuple[str, CircusSocket]:
+    from circus.sockets import CircusSocket
+
+    from ._internal.utils.uri import path_to_uri
+
+    assert uds_path is not None
+    socket_path = os.path.join(uds_path, f"{id(runner)}.sock")
+    assert len(socket_path) < MAX_AF_UNIX_PATH_LENGTH
+    return path_to_uri(socket_path), CircusSocket(
+        name=runner.name,
+        path=socket_path,
+        backlog=backlog,
+    )
+
+
+def _get_runner_socket_windows(
+    runner: Runner, uds_path: str | None, port_stack: contextlib.ExitStack, backlog: int
+) -> tuple[str, CircusSocket]:
+    from circus.sockets import CircusSocket
+
+    from ._internal.utils import reserve_free_port
+
+    runner_port = port_stack.enter_context(reserve_free_port())
+    runner_host = "127.0.0.1"
+
+    return f"tcp://{runner_host}:{runner_port}", CircusSocket(
+        name=runner.name,
+        host=runner_host,
+        port=runner_port,
+        backlog=backlog,
+    )
+
+
 @inject
 def serve_http_production(
     bento_identifier: str,
@@ -279,7 +315,6 @@ def serve_http_production(
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from ._internal.utils.uri import path_to_uri
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
@@ -293,42 +328,64 @@ def serve_http_production(
     if psutil.POSIX and not IS_WSL:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
+        get_socket_func = _get_runner_socket_posix
+    elif psutil.WINDOWS or IS_WSL:
+        get_socket_func = _get_runner_socket_windows
+    else:
+        raise NotImplementedError(f"Unsupported platform: {sys.platform}")
+    with contextlib.ExitStack() as port_stack:
         for runner in svc.runners:
             if isinstance(runner, Runner):
+                if BentoMLContainer.new_io:
+                    runner_args = [
+                        "-m",
+                        SCRIPT_API_SERVER,
+                        bento_identifier,
+                        "--runner-name",
+                        runner.name,
+                        "--fd",
+                        f"$(circus.sockets.{runner.name})",
+                        "--working-dir",
+                        working_dir,
+                        "--worker-id",
+                        "$(CIRCUS.WID)",
+                        "--prometheus-dir",
+                        prometheus_dir,
+                        *timeout_args,
+                    ]
+                else:
+                    runner_args = [
+                        "-m",
+                        SCRIPT_RUNNER,
+                        bento_identifier,
+                        "--runner-name",
+                        runner.name,
+                        "--fd",
+                        f"$(circus.sockets.{runner.name})",
+                        "--working-dir",
+                        working_dir,
+                        "--worker-id",
+                        "$(CIRCUS.WID)",
+                        "--worker-env-map",
+                        json.dumps(runner.scheduled_worker_env_map),
+                        "--prometheus-dir",
+                        prometheus_dir,
+                        *timeout_args,
+                    ]
                 if runner.embedded or development_mode:
                     continue
 
-                sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
-                assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
-
-                runner_bind_map[runner.name] = path_to_uri(sockets_path)
-                circus_socket_map[runner.name] = CircusSocket(
-                    name=runner.name,
-                    path=sockets_path,
-                    backlog=backlog,
+                socket_uri, circus_socket = get_socket_func(
+                    runner, uds_path, port_stack, backlog
                 )
+
+                runner_bind_map[runner.name] = socket_uri
+                circus_socket_map[runner.name] = circus_socket
 
                 watchers.append(
                     create_watcher(
                         name=f"runner_{runner.name}",
-                        args=[
-                            "-m",
-                            SCRIPT_RUNNER,
-                            bento_identifier,
-                            "--runner-name",
-                            runner.name,
-                            "--fd",
-                            f"$(circus.sockets.{runner.name})",
-                            "--working-dir",
-                            working_dir,
-                            "--worker-id",
-                            "$(CIRCUS.WID)",
-                            "--worker-env-map",
-                            json.dumps(runner.scheduled_worker_env_map),
-                            "--prometheus-dir",
-                            prometheus_dir,
-                            *timeout_args,
-                        ],
+                        args=runner_args,
                         working_dir=working_dir,
                         numprocesses=runner.scheduled_worker_count,
                     )
@@ -351,72 +408,8 @@ def serve_http_production(
                         numprocesses=1,
                     )
                 )
-
-    elif psutil.WINDOWS or IS_WSL:
-        # Windows doesn't (fully) support AF_UNIX sockets
-        with contextlib.ExitStack() as port_stack:
-            for runner in svc.runners:
-                if isinstance(runner, Runner):
-                    if runner.embedded or development_mode:
-                        continue
-
-                    runner_port = port_stack.enter_context(reserve_free_port())
-                    runner_host = "127.0.0.1"
-
-                    runner_bind_map[runner.name] = f"tcp://{runner_host}:{runner_port}"
-                    circus_socket_map[runner.name] = CircusSocket(
-                        name=runner.name,
-                        host=runner_host,
-                        port=runner_port,
-                        backlog=backlog,
-                    )
-
-                    watchers.append(
-                        create_watcher(
-                            name=f"runner_{runner.name}",
-                            args=[
-                                "-m",
-                                SCRIPT_RUNNER,
-                                bento_identifier,
-                                "--runner-name",
-                                runner.name,
-                                "--fd",
-                                f"$(circus.sockets.{runner.name})",
-                                "--working-dir",
-                                working_dir,
-                                "--worker-id",
-                                "$(CIRCUS.WID)",
-                                "--worker-env-map",
-                                json.dumps(runner.scheduled_worker_env_map),
-                                *timeout_args,
-                            ],
-                            working_dir=working_dir,
-                            numprocesses=runner.scheduled_worker_count,
-                        )
-                    )
-                else:
-                    # Make sure that the tritonserver uses the correct protocol
-                    runner_bind_map[runner.name] = runner.protocol_address
-                    cli_args = runner.cli_args + [
-                        f"--http-port={runner.protocol_address.split(':')[-1]}"
-                        if runner.tritonserver_type == "http"
-                        else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
-                    ]
-                    watchers.append(
-                        create_watcher(
-                            name=f"tritonserver_{runner.name}",
-                            cmd=find_triton_binary(),
-                            args=cli_args,
-                            use_sockets=False,
-                            working_dir=working_dir,
-                            numprocesses=1,
-                        )
-                    )
-
-            # reserve one more to avoid conflicts
-            port_stack.enter_context(reserve_free_port())
-    else:
-        raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
+        # reserve one more to avoid conflicts
+        port_stack.enter_context(reserve_free_port())
 
     logger.debug("Runner map: %s", runner_bind_map)
 
@@ -485,7 +478,7 @@ def serve_http_production(
             name="api_server",
             args=api_server_args,
             working_dir=working_dir,
-            numprocesses=api_workers,
+            numprocesses=svc.required_workers_num or api_workers,
             close_child_stdin=close_child_stdin,
         )
     )
@@ -565,7 +558,6 @@ def serve_grpc_production(
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from ._internal.utils.uri import path_to_uri
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
@@ -595,20 +587,23 @@ def serve_grpc_production(
     if psutil.POSIX and not IS_WSL:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
+        get_socket_func = _get_runner_socket_posix
+    elif psutil.WINDOWS or IS_WSL:
+        get_socket_func = _get_runner_socket_windows
+    else:
+        raise NotImplementedError(f"Unsupported platform: {sys.platform}")
+    with contextlib.ExitStack() as port_stack:
         for runner in svc.runners:
             if isinstance(runner, Runner):
                 if runner.embedded or development_mode:
                     continue
 
-                sockets_path = os.path.join(uds_path, f"{id(runner)}.sock")
-                assert len(sockets_path) < MAX_AF_UNIX_PATH_LENGTH
-
-                runner_bind_map[runner.name] = path_to_uri(sockets_path)
-                circus_socket_map[runner.name] = CircusSocket(
-                    name=runner.name,
-                    path=sockets_path,
-                    backlog=backlog,
+                socket_uri, circus_socket = get_socket_func(
+                    runner, uds_path, port_stack, backlog
                 )
+
+                runner_bind_map[runner.name] = socket_uri
+                circus_socket_map[runner.name] = circus_socket
 
                 watchers.append(
                     create_watcher(
@@ -650,73 +645,8 @@ def serve_grpc_production(
                         numprocesses=1,
                     )
                 )
-
-    elif psutil.WINDOWS or IS_WSL:
-        # Windows doesn't (fully) support AF_UNIX sockets
-        with contextlib.ExitStack() as port_stack:
-            for runner in svc.runners:
-                if isinstance(runner, Runner):
-                    if runner.embedded or development_mode:
-                        continue
-
-                    runner_port = port_stack.enter_context(reserve_free_port())
-                    runner_host = "127.0.0.1"
-
-                    runner_bind_map[runner.name] = f"tcp://{runner_host}:{runner_port}"
-                    circus_socket_map[runner.name] = CircusSocket(
-                        name=runner.name,
-                        host=runner_host,
-                        port=runner_port,
-                        backlog=backlog,
-                    )
-
-                    watchers.append(
-                        create_watcher(
-                            name=f"runner_{runner.name}",
-                            args=[
-                                "-m",
-                                SCRIPT_RUNNER,
-                                bento_identifier,
-                                "--runner-name",
-                                runner.name,
-                                "--fd",
-                                f"$(circus.sockets.{runner.name})",
-                                "--working-dir",
-                                working_dir,
-                                "--no-access-log",
-                                "--worker-id",
-                                "$(circus.wid)",
-                                "--worker-env-map",
-                                json.dumps(runner.scheduled_worker_env_map),
-                                "--prometheus-dir",
-                                prometheus_dir,
-                            ],
-                            working_dir=working_dir,
-                            numprocesses=runner.scheduled_worker_count,
-                        )
-                    )
-                else:
-                    # Make sure that the tritonserver uses the correct protocol
-                    runner_bind_map[runner.name] = runner.protocol_address
-                    cli_args = runner.cli_args + [
-                        f"--http-port={runner.protocol_address.split(':')[-1]}"
-                        if runner.tritonserver_type == "http"
-                        else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
-                    ]
-                    watchers.append(
-                        create_watcher(
-                            name=f"tritonserver_{runner.name}",
-                            cmd=find_triton_binary(),
-                            args=cli_args,
-                            use_sockets=False,
-                            working_dir=working_dir,
-                            numprocesses=1,
-                        )
-                    )
-            # reserve one more to avoid conflicts
-            port_stack.enter_context(reserve_free_port())
-    else:
-        raise NotImplementedError("Unsupported platform: {}".format(sys.platform))
+        # reserve one more to avoid conflicts
+        port_stack.enter_context(reserve_free_port())
 
     logger.debug("Runner map: %s", runner_bind_map)
 

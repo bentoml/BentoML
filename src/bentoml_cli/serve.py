@@ -179,7 +179,7 @@ def add_serve_command(cli: click.Group) -> None:
         development: bool,
         port: int,
         host: str,
-        api_workers: int | None,
+        api_workers: int,
         timeout: int | None,
         backlog: int,
         reload: bool,

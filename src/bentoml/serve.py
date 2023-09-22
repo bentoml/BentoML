@@ -5,6 +5,7 @@ import contextlib
 import json
 import logging
 import os
+import platform
 import shlex
 import shutil
 import sys
@@ -43,6 +44,7 @@ SCRIPT_GRPC_PROMETHEUS_SERVER = "bentoml_cli.worker.grpc_prometheus_server"
 
 API_SERVER_NAME = "_bento_api_server"
 PROMETHEUS_SERVER_NAME = "_prometheus_server"
+IS_WSL = "microsoft-standard" in platform.release()
 
 
 @inject
@@ -283,7 +285,7 @@ def serve_http_production(
     uds_path = None
     timeout_args = ["--timeout", str(timeout)] if timeout else []
 
-    if psutil.POSIX:
+    if psutil.POSIX and not IS_WSL:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:

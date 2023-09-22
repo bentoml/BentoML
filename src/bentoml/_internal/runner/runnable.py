@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import inspect
 import logging
 import typing as t
@@ -9,10 +10,12 @@ from typing import overload
 import attr
 
 from ...exceptions import BentoMLException
-from ..types import LazyType
+from ..ionext.function import ensure_output_spec
+from ..ionext.function import get_input_spec
+from ..ionext.function import get_output_spec
 
 if TYPE_CHECKING:
-    from ..types import AnyType
+    from pydantic import BaseModel
 
     # only use ParamSpec in type checking, as it's only in 3.10
     P = t.ParamSpec("P")
@@ -31,9 +34,7 @@ class Runnable:
     SUPPORTED_RESOURCES: tuple[str, ...]
     SUPPORTS_CPU_MULTI_THREADING: bool
 
-    bentoml_runnable_methods__: dict[
-        str, RunnableMethod[t.Any, t.Any, t.Any]
-    ] | None = None
+    bentoml_runnable_methods__: dict[str, RunnableMethod[t.Any, t.Any, t.Any]] = {}
 
     def __setattr__(self, attr_name: str, value: t.Any):
         if attr_name in ("SUPPORTED_RESOURCES", "SUPPORTS_CPU_MULTI_THREADING"):
@@ -61,8 +62,8 @@ class Runnable:
         *,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
-        input_spec: LazyType[t.Any] | t.Tuple[LazyType[t.Any], ...] | None = None,
-        output_spec: LazyType[t.Any] | None = None,
+        input_spec: type[BaseModel] | None = None,
+        output_spec: type | None = None,
     ):
         meth = Runnable.method(
             method,
@@ -81,8 +82,8 @@ class Runnable:
         *,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
-        input_spec: AnyType | tuple[AnyType, ...] | None = None,
-        output_spec: AnyType | None = None,
+        input_spec: type[BaseModel] | None = None,
+        output_spec: type | None = None,
     ) -> RunnableMethod[T, P, R]:
         ...
 
@@ -93,8 +94,8 @@ class Runnable:
         *,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
-        input_spec: AnyType | tuple[AnyType, ...] | None = None,
-        output_spec: AnyType | None = None,
+        input_spec: type[BaseModel] | None = None,
+        output_spec: type | None = None,
     ) -> t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]:
         ...
 
@@ -104,8 +105,8 @@ class Runnable:
         *,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
-        input_spec: AnyType | tuple[AnyType, ...] | None = None,
-        output_spec: AnyType | None = None,
+        input_spec: type[BaseModel] | None = None,
+        output_spec: type | None = None,
     ) -> (
         t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]
         | RunnableMethod[T, P, R]
@@ -113,6 +114,13 @@ class Runnable:
         def method_decorator(
             meth: t.Callable[t.Concatenate[T, P], R]
         ) -> RunnableMethod[T, P, R]:
+            nonlocal input_spec, output_spec
+            if input_spec is None:
+                input_spec = get_input_spec(meth, skip_self=True)
+            if output_spec is None:
+                output_spec = get_output_spec(meth)
+            else:
+                output_spec = ensure_output_spec(output_spec)
             return RunnableMethod(
                 meth,
                 RunnableMethodConfig(
@@ -142,11 +150,15 @@ class RunnableMethod(t.Generic[T, P, R]):
         def method(*args: P.args, **kwargs: P.kwargs) -> R:
             return self.func(obj, *args, **kwargs)
 
+        signature = inspect.signature(self.func)
+        # skip self
+        self_arg, *new_params = signature.parameters.values()
+        method = functools.update_wrapper(method, self.func)
+        method.__signature__ = signature.replace(parameters=new_params)
+        method.__annotations__.pop(self_arg.name, None)
         return method
 
     def __set_name__(self, owner: t.Any, name: str):
-        if owner.bentoml_runnable_methods__ is None:
-            owner.bentoml_runnable_methods__ = {}
         owner.bentoml_runnable_methods__[name] = self
 
 
@@ -154,6 +166,6 @@ class RunnableMethod(t.Generic[T, P, R]):
 class RunnableMethodConfig:
     batchable: bool
     batch_dim: tuple[int, int]
-    input_spec: AnyType | tuple[AnyType, ...] | None = None
-    output_spec: AnyType | None = None
+    input_spec: type[BaseModel] | None
+    output_spec: type[BaseModel] | None
     is_stream: bool = False

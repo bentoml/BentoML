@@ -262,7 +262,9 @@ class _BentoMLContainerClass:
     ssl = api_server_config.ssl
 
     development_mode = providers.Static(True)
-    serialization_strategy: SerializationStrategy = providers.Static("EXPORT_BENTO")
+    serialization_strategy: providers.Static[SerializationStrategy] = providers.Static(
+        "EXPORT_BENTO"
+    )
 
     @providers.SingletonFactory
     @staticmethod
@@ -506,6 +508,15 @@ class _BentoMLContainerClass:
         cfg: dict[str, t.Any] = Provide[api_server_config.logging.access.format],
     ) -> dict[str, str]:
         return cfg
+
+    @providers.SingletonFactory
+    @staticmethod
+    def enabled_features() -> list[str]:
+        return os.getenv("BENTOML_ENABLE_FEATURES", "").split(",")
+
+    @property
+    def new_io(self) -> bool:
+        return "newio" in self.enabled_features.get()
 
 
 BentoMLContainer = _BentoMLContainerClass()

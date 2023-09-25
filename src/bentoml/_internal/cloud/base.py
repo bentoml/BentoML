@@ -5,6 +5,7 @@ import typing as t
 from abc import ABC
 from abc import abstractmethod
 from contextlib import contextmanager
+from tempfile import SpooledTemporaryFile
 
 from rich.console import Group
 from rich.panel import Panel
@@ -24,6 +25,60 @@ from ..models import ModelStore
 from ..tag import Tag
 
 FILE_CHUNK_SIZE = 100 * 1024 * 1024  # 100Mb
+SPOOLED_FILE_MAX_SIZE = 5 * 1024 * 1024 * 1024  # 5GB
+
+
+class CallbackSpooledTemporaryFileIO(SpooledTemporaryFile):
+    """
+    A SpooledTemporaryFile wrapper that calls
+    a callback when read/write is called
+    """
+
+    read_cb: t.Callable[[int], None] | None
+    write_cb: t.Callable[[int], None] | None
+
+    def __init__(
+        self,
+        max_size: int = 0,
+        *,
+        read_cb: t.Callable[[int], None] | None = None,
+        write_cb: t.Callable[[int], None] | None = None,
+    ):
+        self.read_cb = read_cb
+        self.write_cb = write_cb
+        super().__init__(max_size)
+
+    def read(self, *args):
+        res = super().read(*args)
+        if self.read_cb is not None:
+            self.read_cb(len(res))
+        return res
+
+    def write(self, s):
+        res = super().write(s)
+        if self.write_cb is not None:
+            if hasattr(s, "__len__"):
+                self.write_cb(len(s))
+        return res
+
+    def size(self) -> int:
+        """
+        get the size of the file
+        """
+        current_pos = self.tell()
+        self.seek(0, 2)
+        file_size = self.tell()
+        self.seek(current_pos)
+        return file_size
+
+    def chunk(self, start: int, end: int) -> bytes:
+        """
+        chunk the file slice of [start, end)
+        """
+        self.seek(start)
+        if end < 0 or start > end:
+            return self.read()
+        return self.read(end - start)
 
 
 class CallbackIOWrapper(io.BytesIO):

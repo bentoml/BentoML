@@ -26,7 +26,9 @@ from ..models import copy_model
 from ..tag import Tag
 from ..utils import calc_dir_size
 from .base import FILE_CHUNK_SIZE
+from .base import SPOOLED_FILE_MAX_SIZE
 from .base import CallbackIOWrapper
+from .base import CallbackSpooledTemporaryFileIO
 from .base import CloudClient
 from .config import get_rest_api_client
 from .deployment import Deployment
@@ -667,7 +669,9 @@ class BentoCloudClient(CloudClient):
             with io_mutex:
                 self.transmission_progress.update(upload_task_id, advance=x)
 
-        with CallbackIOWrapper(read_cb=io_cb) as tar_io:
+        with CallbackSpooledTemporaryFileIO(
+            SPOOLED_FILE_MAX_SIZE, read_cb=io_cb
+        ) as tar_io:
             with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:") as tar:
                     tar.add(model.path, arcname="./")
@@ -676,7 +680,7 @@ class BentoCloudClient(CloudClient):
                 yatai_rest_client.start_upload_model(
                     model_repository_name=model_repository.name, version=version
                 )
-            file_size = tar_io.getbuffer().nbytes
+            file_size = tar_io.size()
             self.transmission_progress.update(
                 upload_task_id,
                 description=f'Uploading model "{model.tag}"',
@@ -751,15 +755,14 @@ class BentoCloudClient(CloudClient):
                             text=f'({chunk_number}/{chunks_count}) Uploading chunk of model "{model.tag}"...'
                         ):
                             chunk = (
-                                tar_io.getbuffer()[
-                                    (chunk_number - 1)
-                                    * FILE_CHUNK_SIZE : chunk_number
-                                    * FILE_CHUNK_SIZE
-                                ]
+                                tar_io.chunk(
+                                    (chunk_number - 1) * FILE_CHUNK_SIZE,
+                                    chunk_number * FILE_CHUNK_SIZE,
+                                )
                                 if chunk_number < chunks_count
-                                else tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE :
-                                ]
+                                else tar_io.chunk(
+                                    (chunk_number - 1) * FILE_CHUNK_SIZE, -1
+                                )
                             )
 
                             with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:

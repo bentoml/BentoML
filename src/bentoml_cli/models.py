@@ -104,7 +104,7 @@ def add_model_management_commands(cli: Group) -> None:
         $ bentoml models list
 
         \b
-        # show all verions of bento with the name FraudDetector
+        # show all versions of bento with the name FraudDetector
         $ bentoml models list FraudDetector
         """
 

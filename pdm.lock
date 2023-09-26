@@ -4258,13 +4258,13 @@ files = [
 ]
 
 [[package]]
-name = "pynvml"
-version = "11.5.0"
+name = "nvidia-ml-py"
+version = "11.525.131"
 requires_python = ">=3.6"
 summary = "Python Bindings for the NVIDIA Management Library"
 files = [
-    {file = "pynvml-11.5.0-py3-none-any.whl", hash = "sha256:5cce014ac01b098d08f06178f86c37be409b80b2e903a5a03ce15eed60f55e25"},
-    {file = "pynvml-11.5.0.tar.gz", hash = "sha256:d027b21b95b1088b9fc278117f9f61b7c67f8e33a787e9f83f735f0f71ac32d0"},
+    {file = "nvidia_ml_py-11.525.131-py3-none-any.whl", hash = "sha256:ce50b1e87401960557bd31ec07f86310bd896b32824505f382e953db0f479cab"},
+    {file = "nvidia-ml-py-11.525.131.tar.gz", hash = "sha256:2b7f4dad25c4bf49ab9d0a9a3d6e25abd168b91b5de8e2b6dee4703756c1bae5"},
 ]
 
 [[package]]

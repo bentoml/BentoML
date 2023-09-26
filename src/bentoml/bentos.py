@@ -442,7 +442,7 @@ def build_bentofile(
     copied.setdefault("BENTOML_HOME", BentoMLContainer.bentoml_home.get())
     try:
         return get(
-            _parse_tag_from_outputs(subprocess.check_output(, env=copied)),
+            _parse_tag_from_outputs(subprocess.check_output(build_args, env=copied)),
             _bento_store=_bento_store,
         )
     except subprocess.CalledProcessError as e:

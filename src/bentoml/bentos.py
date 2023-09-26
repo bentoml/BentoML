@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import typing as t
 
@@ -359,7 +360,7 @@ def build(
         models=models or [],
     )
 
-    build_args = ["bentoml", "build"]
+    build_args = [sys.executable, "-m", "bentoml", "build"]
 
     if build_ctx is None:
         build_ctx = "."
@@ -429,7 +430,7 @@ def build_bentofile(
     except FileNotFoundError:
         raise InvalidArgument(f'bentofile "{bentofile}" not found')
 
-    build_args = ["bentoml", "build"]
+    build_args = [sys.executable, "-m", "bentoml", "build"]
     if build_ctx is None:
         build_ctx = "."
     build_args.append(build_ctx)

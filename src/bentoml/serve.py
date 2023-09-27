@@ -347,7 +347,7 @@ def serve_http_production(
                     )
                 )
 
-    elif psutil.WINDOWS:
+    elif psutil.WINDOWS or IS_WSL:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:

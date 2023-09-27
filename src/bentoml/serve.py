@@ -573,7 +573,7 @@ def serve_grpc_production(
     # NOTE: We need to find and set model-repository args
     # to all TritonRunner instances (required from tritonserver if spawning multiple instances.)
 
-    if psutil.POSIX:
+    if psutil.POSIX and not IS_WSL:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
@@ -632,7 +632,7 @@ def serve_grpc_production(
                     )
                 )
 
-    elif psutil.WINDOWS:
+    elif psutil.WINDOWS or IS_WSL:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:

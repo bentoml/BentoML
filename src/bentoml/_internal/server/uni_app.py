@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import logging
 import os
 import sys
@@ -24,7 +25,7 @@ if t.TYPE_CHECKING:
     from starlette.routing import BaseRoute
 
     from ..service import Service
-    from ..service.inference_api import APIEndpoint
+    from ..service.inference_api import ServiceEndpoint
     from ..types import LifecycleHook
 
 
@@ -130,7 +131,7 @@ class UnifiedAppFactory(BaseAppFactory):
         on_startup.extend(super().on_startup)
         return on_startup
 
-    async def schema_view(self) -> Response:
+    async def schema_view(self, request: Request) -> Response:
         from starlette.responses import JSONResponse
 
         schema = self.service.schema
@@ -141,7 +142,7 @@ class UnifiedAppFactory(BaseAppFactory):
         routes = super().routes
 
         for endpoint in self.service.endpoints.values():
-            api_endpoint = self._create_api_endpoint(endpoint)
+            api_endpoint = functools.partial(self.api_endpoint, endpoint)
             route_path = endpoint.route
             if not route_path.startswith("/"):
                 route_path = "/" + route_path
@@ -150,69 +151,67 @@ class UnifiedAppFactory(BaseAppFactory):
             )
         return routes
 
-    def _create_api_endpoint(
-        self, endpoint: APIEndpoint
-    ) -> t.Callable[[Request], t.Coroutine[t.Any, t.Any, Response]]:
+    async def api_endpoint(
+        self, endpoint: ServiceEndpoint, request: Request
+    ) -> Response:
         from starlette.concurrency import run_in_threadpool
         from starlette.responses import JSONResponse
 
+        from ..ionext.serde import ALL_SERDE
         from ..utils import is_async_callable
         from ..utils.http import set_cookies
 
-        async def api_func(request: Request) -> Response:
-            with self.service.context.in_request(request) as ctx:
-                input_data = await endpoint.from_http_request(request)
-                input_params = input_data.model_dump()
+        media_type = request.headers.get("Content-Type", "application/json")
+        serde = ALL_SERDE[media_type]()
+
+        with self.service.context.in_request(request) as ctx:
+            input_data = await endpoint.input_spec.from_http_request(request, serde)
+            input_params = {k: getattr(input_data, k) for k in input_data.model_fields}
+            if endpoint.ctx_param is not None:
+                input_params[endpoint.ctx_param] = ctx
+
+            try:
+                if is_async_callable(endpoint.func):
+                    output = await endpoint.func(**input_params)
+                else:
+                    output = await run_in_threadpool(endpoint.func, **input_params)
+
+                response = await endpoint.output_spec.to_http_response(output, serde)
+                response.headers.update(
+                    {"Server": f"{self.service.service_str}/{endpoint.name}"}
+                )
+
                 if endpoint.ctx_param is not None:
-                    input_params[endpoint.ctx_param] = ctx
-
-                try:
-                    if is_async_callable(endpoint.func):
-                        output = await endpoint.func(**input_params)
-                    else:
-                        output = await run_in_threadpool(endpoint.func, **input_params)
-
-                    response = await endpoint.to_http_response(output)
-                    response.headers.update(
-                        {"Server": f"{self.service.service_str}/{endpoint.name}"}
+                    response.status_code = ctx.response.status_code
+                    response.headers.update(ctx.response.metadata)
+                    set_cookies(response, ctx.response.cookies)
+                if trace_context.request_id is not None:
+                    response.headers["X-BentoML-Request-ID"] = str(
+                        trace_context.request_id
                     )
+                if (
+                    BentoMLContainer.http.response.trace_id.get()
+                    and trace_context.trace_id is not None
+                ):
+                    response.headers["X-BentoML-Trace-ID"] = str(trace_context.trace_id)
+            except BentoMLException as e:
+                log_exception(request, sys.exc_info())
 
-                    if endpoint.ctx_param is not None:
-                        response.status_code = ctx.response.status_code
-                        response.headers.update(ctx.response.metadata)
-                        set_cookies(response, ctx.response.cookies)
-                    if trace_context.request_id is not None:
-                        response.headers["X-BentoML-Request-ID"] = str(
-                            trace_context.request_id
-                        )
-                    if (
-                        BentoMLContainer.http.response.trace_id.get()
-                        and trace_context.trace_id is not None
-                    ):
-                        response.headers["X-BentoML-Trace-ID"] = str(
-                            trace_context.trace_id
-                        )
-                except BentoMLException as e:
-                    log_exception(request, sys.exc_info())
-
-                    status = e.error_code.value
-                    if 400 <= status < 500 and status not in (401, 403):
-                        response = JSONResponse(
-                            content="BentoService error handling API request: %s"
-                            % str(e),
-                            status_code=status,
-                        )
-                    else:
-                        response = JSONResponse("", status_code=status)
-                except Exception:  # pylint: disable=broad-except
-                    # For all unexpected error, return 500 by default. For example,
-                    # if users' model raises an error of division by zero.
-                    log_exception(request, sys.exc_info())
-
+                status = e.error_code.value
+                if 400 <= status < 500 and status not in (401, 403):
                     response = JSONResponse(
-                        "An error has occurred in BentoML user code when handling this request, find the error details in server logs",
-                        status_code=500,
+                        content="BentoService error handling API request: %s" % str(e),
+                        status_code=status,
                     )
-                return response
+                else:
+                    response = JSONResponse("", status_code=status)
+            except Exception:  # pylint: disable=broad-except
+                # For all unexpected error, return 500 by default. For example,
+                # if users' model raises an error of division by zero.
+                log_exception(request, sys.exc_info())
 
-        return api_func
+                response = JSONResponse(
+                    "An error has occurred in BentoML user code when handling this request, find the error details in server logs",
+                    status_code=500,
+                )
+            return response

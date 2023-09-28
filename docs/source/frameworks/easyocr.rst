@@ -64,8 +64,8 @@ BentoML service:
    svc = bentoml.Service("ocr", runners=[runner])
 
    # define a new endpoint on the BentoML service
-   @svc.api(input=bentoml.io.Image(), output=bentoml.io.Text())
-   async def transcript_text(input: PIL.Image.Image) -> str:
+   @svc.api(input=bentoml.io.Image(), output=bentoml.io.JSON())
+   async def transcript_text(input: PIL.Image.Image) -> list:
        # use 'runner.predict.run(input)' instead of 'booster.predict'
        return await runner.readtext.async_run(np.asarray(input))
 

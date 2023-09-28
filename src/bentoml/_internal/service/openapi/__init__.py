@@ -13,7 +13,6 @@ from bentoml.exceptions import NotFound
 
 from ...types import LazyType
 from ...utils import bentoml_cattr
-from .specification import Components
 from .specification import Contact
 from .specification import Info
 from .specification import MediaType
@@ -78,7 +77,7 @@ def make_infra_endpoints() -> dict[str, PathItem]:
     }
 
 
-def generate_service_components(svc: Service) -> Components:
+def generate_service_components(svc: Service) -> dict[str, t.Any]:
     components: dict[str, t.Any] = {}
     for api in svc.apis.values():
         api_components = {}
@@ -92,14 +91,13 @@ def generate_service_components(svc: Service) -> Components:
         merger.merge(components, api_components)
 
     # merge exception at last
-    merger.merge(components, {"schemas": exception_components_schema()})
-
-    return Components(**components)
+    return merger.merge(components, {"schemas": exception_components_schema()})
 
 
 def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
     """Generate a OpenAPI specification for a service."""
     mounted_app_paths = {}
+    schema_components = {}
 
     for app, _, _ in svc.mount_apps:
         if LazyType["fastapi.FastAPI"]("fastapi.FastAPI").isinstance(app):
@@ -118,10 +116,15 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
                 }
             )
 
+            if "components" in openapi:
+                merger.merge(schema_components, openapi["components"])
+
+    merger.merge(schema_components, generate_service_components(svc))
+
     return OpenAPISpecification(
         openapi=openapi_version,
         tags=[APP_TAG, INFRA_TAG],
-        components=generate_service_components(svc),
+        components=schema_components,
         info=Info(
             title=svc.name,
             description=svc.doc,

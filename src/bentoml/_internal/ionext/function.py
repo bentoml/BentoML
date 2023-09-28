@@ -9,10 +9,13 @@ from pydantic import RootModel
 from pydantic import create_model
 from typing_extensions import get_origin
 
+from .models import IODescriptor
+from .models import IOMixin
+
 
 def get_input_spec(
     func: t.Callable[..., t.Any], *, skip_self: bool = False
-) -> type[BaseModel] | None:
+) -> type[IODescriptor] | None:
     signature = inspect.signature(func)
 
     fields: dict[str, tuple[str, t.Any]] = {}
@@ -38,12 +41,17 @@ def get_input_spec(
         fields[name] = (annotation, default)
 
     try:
-        return create_model("Input", __module__=func.__module__, **fields)
+        return t.cast(
+            t.Type[IODescriptor],
+            create_model(
+                "Input", __module__=func.__module__, __base__=IODescriptor, **fields
+            ),
+        )
     except (ValueError, TypeError):
         return None
 
 
-def get_output_spec(func: t.Callable[..., t.Any]) -> type[BaseModel] | None:
+def get_output_spec(func: t.Callable[..., t.Any]) -> type[IODescriptor] | None:
     signature = inspect.signature(func)
     return_annotation = signature.return_annotation
     if return_annotation is inspect.Signature.empty:
@@ -52,14 +60,36 @@ def get_output_spec(func: t.Callable[..., t.Any]) -> type[BaseModel] | None:
     origin = get_origin(return_annotation)
     if origin in (t.Iterator, t.AsyncGenerator, t.Generator):
         return_annotation = return_annotation[0]
-    return ensure_output_spec(return_annotation)
-
-
-def ensure_output_spec(output_type: type) -> type[BaseModel] | None:
-    if issubclass(output_type, BaseModel):
-        return output_type
-
     try:
-        return create_model("Output", __base__=RootModel[output_type])
+        return ensure_io_descriptor(return_annotation)
     except (ValueError, TypeError):
         return None
+
+
+def ensure_io_descriptor(output_type: type) -> type[IODescriptor] | None:
+    if issubclass(output_type, BaseModel):
+        if not issubclass(output_type, IODescriptor):
+
+            class Output(output_type, IOMixin):
+                pass
+
+            return t.cast(t.Type[IODescriptor], Output)
+
+        return output_type
+    return t.cast(
+        t.Type[IODescriptor],
+        create_model("Output", __base__=(IOMixin, RootModel[output_type])),
+    )
+
+
+def get_underlying_for_root(model: type[RootModel[t.Any]]) -> type:
+    while RootModel not in model.__bases__:
+        if RootModel in model.__bases__:
+            break
+        try:
+            model = next(
+                base for base in model.__bases__ if issubclass(base, RootModel)
+            )
+        except StopIteration:
+            raise ValueError(f"Cannot find underlying model for {model}")
+    return model.__pydantic_generic_metadata__["args"][0]

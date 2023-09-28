@@ -98,6 +98,7 @@ class TensorSchema:
                 "dtype": self.dtype,
                 "shape": self.shape,
                 "dim": self.dim,
+                "media_type": "application/json",
             }
         )
 

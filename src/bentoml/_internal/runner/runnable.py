@@ -10,12 +10,14 @@ from typing import overload
 import attr
 
 from ...exceptions import BentoMLException
-from ..ionext.function import ensure_output_spec
+from ..ionext.function import ensure_io_descriptor
 from ..ionext.function import get_input_spec
 from ..ionext.function import get_output_spec
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+
+    from ..ionext.models import IODescriptor
 
     # only use ParamSpec in type checking, as it's only in 3.10
     P = t.ParamSpec("P")
@@ -117,10 +119,12 @@ class Runnable:
             nonlocal input_spec, output_spec
             if input_spec is None:
                 input_spec = get_input_spec(meth, skip_self=True)
+            else:
+                input_spec = ensure_io_descriptor(input_spec)
             if output_spec is None:
                 output_spec = get_output_spec(meth)
             else:
-                output_spec = ensure_output_spec(output_spec)
+                output_spec = ensure_io_descriptor(output_spec)
             return RunnableMethod(
                 meth,
                 RunnableMethodConfig(
@@ -166,6 +170,6 @@ class RunnableMethod(t.Generic[T, P, R]):
 class RunnableMethodConfig:
     batchable: bool
     batch_dim: tuple[int, int]
-    input_spec: type[BaseModel] | None
-    output_spec: type[BaseModel] | None
+    input_spec: type[IODescriptor] | None
+    output_spec: type[IODescriptor] | None
     is_stream: bool = False

@@ -9,6 +9,8 @@ from .fields import arrow_serialization
 
 SchemaDict: t.TypeAlias = t.Dict[str, t.Any]
 
+T = t.TypeVar("T", bound=BaseModel)
+
 
 def model_to_arrow_schema(model: type[BaseModel]) -> pa.Schema:
     schema = model.model_json_schema(mode="serialization")
@@ -95,7 +97,7 @@ def serialize_to_arrow(model: BaseModel, out_stream: t.BinaryIO) -> None:
         writer.write_table(table)
 
 
-def deserialize_from_arrow(model: type[BaseModel], in_stream: t.BinaryIO) -> BaseModel:
+def deserialize_from_arrow(model: type[T], in_stream: t.BinaryIO) -> T:
     with pa.ipc.open_stream(in_stream) as reader:
         df = reader.read_pandas()
         ins = df.to_dict(orient="records")[0]

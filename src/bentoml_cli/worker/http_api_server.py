@@ -162,16 +162,16 @@ def main(
     else:
         component_context.bento_name = svc.tag.name
         component_context.bento_version = svc.tag.version or "not available"
+    if runner_name is not None:
+        for runner in svc.runners:
+            if runner.name == runner_name:
+                assert isinstance(runner, bentoml.Runner)
+                svc = bentoml.Service.from_runner(runner)
+                break
+        else:
+            raise ValueError(f"Runner {runner_name} not found")
 
-    for runner in svc.runners:
-        if runner.name == runner_name:
-            assert isinstance(runner, bentoml.Runner)
-            svc = runner.to_service()
-            svc.service_str = svc.service_str.format(worker_index=worker_id)
-            break
-    else:
-        raise ValueError(f"Runner {runner_name} not found")
-
+    svc.service_str = svc.service_str.format(worker_index=worker_id)
     if svc.worker_env_map is not None:
         env_key = worker_id - 1  # worker_id is 1-based
         assert (

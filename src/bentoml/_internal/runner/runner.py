@@ -22,7 +22,6 @@ from .strategy import Strategy
 
 if t.TYPE_CHECKING:
     from ...triton import Runner as TritonRunner
-    from ..service import Service
     from .runnable import RunnableMethodConfig
 
     # only use ParamSpec in type checking, as it's only in 3.10
@@ -48,6 +47,7 @@ class RunnerMethod(t.Generic[T, P, R]):
     config: RunnableMethodConfig
     max_batch_size: int
     max_latency_ms: int
+    doc: str | None = None
 
     def run(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self.runner._runner_handle.run_method(self, *args, **kwargs)
@@ -240,6 +240,7 @@ class Runner(AbstractRunner):
                 runner=self,
                 name=method_name,
                 config=method.config,
+                doc=method.func.__doc__,
                 max_batch_size=first_not_none(
                     method_max_batch_size,
                     max_batch_size,
@@ -356,27 +357,3 @@ class Runner(AbstractRunner):
             )
             for worker_id in range(self.scheduled_worker_count)
         }
-
-    def to_service(self) -> Service:
-        from ..service import Service
-
-        runnable = self.runnable_class(**self.runnable_init_params)
-        svc = Service(name=self.name, models=self.models, caller_depth=2)
-        svc.service_str = f"BentoML-Runner/{self.name}/{{worker_index}}"
-
-        svc.worker_env_map = self.scheduled_worker_env_map
-        svc.required_workers_num = self.scheduled_worker_count
-        for name, method in self.runnable_class.bentoml_runnable_methods__.items():
-            if name == "__call__":
-                route = "/"
-            else:
-                route = f"/{name}"
-            svc.add_api(
-                getattr(runnable, name),
-                name=name,
-                route=route,
-                input_spec=method.config.input_spec,
-                output_spec=method.config.output_spec,
-                stream_output=method.config.is_stream,
-            )
-        return svc

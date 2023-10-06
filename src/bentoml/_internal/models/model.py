@@ -92,7 +92,7 @@ class Model(StoreItem):
     ):
         if not _internal:
             raise BentoMLException(
-                "Model cannot be instantiated directly directly; use bentoml.<framework>.save or bentoml.models.get instead"
+                "Model cannot be instantiated directly; use bentoml.<framework>.save or bentoml.models.get instead"
             )
 
         self.__attrs_init__(tag, model_fs, info, custom_objects)  # type: ignore (no types for attrs init)

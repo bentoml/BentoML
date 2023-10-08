@@ -42,7 +42,6 @@ Deployment properties
    * - Endpoint Access Type
      - You can manage the endpoint access to your Deployment, choosing between different access levels depending on your needs. This flexibility allows you to control who can access your Deployment, enhancing both security and ease-of-use.
 
-       - **Private**: The Deployment’s external URL is not exposed and it can only be accessed within the cluster. This is an ideal option if you are working on a project that is not ready for external exposure, or when you want to limit access strictly to internal users. It can also be helpful when you want to ensure that the Deployment is protected from unwanted external interactions.
        - **Protected**: The Deployment is accessible to anyone on the internet with a valid User token. This method adds a layer of security by ensuring only those with the token can access the Deployment. It’s suitable when you want your Deployment to be globally accessible but maintain some form of authentication and access control.
        - **Public**: The Deployment is accessible to anyone on the internet without requiring any tokens or credentials. This maximizes access and is suitable when you’re deploying Bentos intended for public use or testing with no sensitive data or operations. Use this option with caution as it does not provide any access control.
 

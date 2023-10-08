@@ -1,5 +1,5 @@
 ========================
-Manage Models and Bentos
+Manage models and Bentos
 ========================
 
 BentoML provides both a local Model Store and a Bento Store to host your models and Bentos, respectively. Once you've pushed these entities to BentoCloud,
@@ -8,13 +8,13 @@ they are stored in remote repositories. This setup helps teams manage them in a 
 This document explains how to pull and push models and Bentos.
 
 Prerequisites
-=============
+-------------
 
 - You have :doc:`installed BentoML </quickstarts/install-bentoml>`.
 - You have logged in to BentoCloud. See :doc:`Manage Access Tokens <manage-access-token>` to learn more.
 
 Pull and push models
-====================
+--------------------
 
 * **Pull a model**: To fetch a specific version of a model from BentoCloud, run:
 
@@ -34,7 +34,7 @@ The **Models** page displays all available models on BentoCloud.
    :alt: manage-models.gif
 
 Pull and push Bentos
-====================
+--------------------
 
 * **Pull a Bento**: To fetch a specific version of a Bento from BentoCloud, run:
 

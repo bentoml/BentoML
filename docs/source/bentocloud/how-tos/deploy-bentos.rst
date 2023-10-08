@@ -1,40 +1,37 @@
-================
+=============
 Deploy Bentos
-================
+=============
 
 Deploying a machine learning model can be quite a task. However, BentoCloud simplifies the process by enabling you to serve your model as an online service or on-demand function. This guide will walk you through how to deploy a Bento on BentoCloud.
 
-Deployment Mode
+Deployment mode
 ===============
 
 There are two Deployment modes on BentoCloud:
 
---------------
 Online Service
 --------------
 
 The Online Service Deployment offered by BentoCloud is ideal for low-latency serving scenarios. To ensure requests can be promptly addressed, instances in this mode are never scaled down to zero, maintaining a ready state for immediate processing. Furthermore, requests are directly routed to the serving instances of the API Server and Runners, bypassing any queuing mechanisms. This direct routing mechanism ensures minimum latency, providing an efficient and swift response to incoming requests.
 
-------------------
 On-Demand Function
 ------------------
 
 The On-Demand Function Deployment offered by BentoCloud is particularly suited for situations that prioritize cost-efficiency and reliability. In scenarios where requests are sporadic, this mode enables instances to scale down to zero, thereby conserving resources. This feature proves particularly beneficial for GPU-accelerated instances, which are generally more expensive to maintain. To ensure maximum reliability, especially during periods of cold-start or overload, requests are queued prior to processing. This mechanism enables the system to handle bursts of requests effectively, thus enhancing the robustness and dependability of your application under varying load conditions.
 
-Building Your Bento
-===================
+Build your Bento
+================
 
 1. To build your machine learning application into a Bento, check out this :doc:`/concepts/bento` in BentoML’s doc.
 2. To push your Bento to BentoCloud, do ``bentoml push <name>:<tag>``.  See :doc:`manage-models-and-bentos` for more details.
 
-Managing Deployments with the BentoCloud Console
-================================================
+Manage Deployments with the BentoCloud Console
+==============================================
 
 The BentoCloud Console enables you to perform basic management tasks with your Bentos using a browser.
 
---------------------
-Deploying Your Bento
---------------------
+Deploy your Bento
+-----------------
 
 1. Navigate to the **Deployments** section on BentoCloud and click the **Create** button in the upper-right corner.
 2. Choose the Deployment type (**Online Service** or **On-Demand Function**).
@@ -49,9 +46,8 @@ Deploying Your Bento
 
 Under the hood, the Bento is being built into an OCI Image to be deployed in BentoCloud. The deployment might take a few minutes, depending on your configuration.
 
------------------------
-Viewing Your Deployment
------------------------
+View your Deployment
+--------------------
 
 After your Bento is deployed, do the following to check the status of the Deployment:
 
@@ -62,9 +58,8 @@ After your Bento is deployed, do the following to check the status of the Deploy
 
 3. To update the Deployment, click **Update** in the upper-right corner, update your desired field, and click **Submit**.
 
----------------------------
-Terminating Your Deployment
----------------------------
+Terminate your Deployment
+-------------------------
 
 You can temporarily stop a Bento Deployment to make its endpoint inaccessible. The terminated Deployment can be restarted later and all the revision records are preserved.
 
@@ -76,9 +71,8 @@ To terminate a Deployment, do the following:
 
 You can restart the Deployment to make it available again by clicking **Restore**.
 
-------------------------
-Deleting Your Deployment
-------------------------
+Delete your Deployment
+----------------------
 
 After a Deployment is terminated, you can delete it. All the revision records will be deleted as well.
 
@@ -92,15 +86,15 @@ To delete a Deployment, do the following:
 
    You can't recover a Deployment after deleting it. This action is irreversible.
 
-Managing Deployments with the BentoML CLI
+Manage Deployments with the BentoML CLI
 =========================================
 
 The BentoML CLI is a set of tools that you can use to deploy any machine learning models as production-ready API endpoints on the cloud.
 To create and manage your Bento Deployments on BentoCloud, use ``bentoml deployment`` with the corresponding options.
 
---------------------
-Deploying Your Bento
---------------------
+Deploy your Bento
+-----------------
+
 Currently, the BentoML CLI only supports creating and updating a Bento Deployment by specifying a JSON file, which contains detailed configurations of the Deployment, such as ``name``, ``mode``, and ``targets``.
 The JSON file follows the same syntax as the **JSON** tab when you create or update a Deployment on the BentoCloud Console.
 
@@ -137,9 +131,8 @@ Run the following command to deploy a Bento.
           }
           EOF
 
------------------------
-Viewing Your Deployment
------------------------
+View your Deployment
+--------------------
 
 Run the following command to view all the existing Deployments on BentoCloud:
 
@@ -186,9 +179,8 @@ Run the following command to update a Deployment.
           }
           EOF
 
----------------------------
-Terminating Your Deployment
----------------------------
+Terminate your Deployment
+-------------------------
 
 You can temporarily stop a Bento Deployment to make its endpoint inaccessible. The terminated Deployment can be restarted later and all the revision records are preserved.
 
@@ -198,9 +190,8 @@ Run the following command to terminate a Deployment.
 
    bentoml deployment terminate <deployment_name>
 
-------------------------
-Deleting Your Deployment
-------------------------
+Delete your Deployment
+----------------------
 
 After a Deployment is terminated, you can delete it. All the revision records will be deleted as well.
 
@@ -216,8 +207,8 @@ Run the following command to delete a Deployment.
 
 For more information about ``bentoml deployment``, see :doc:`/reference/cli`.
 
-Interacting with Your Deployment
-================================
+Interact with your Deployment
+=============================
 
 Now that your model is deployed, you can send requests to it. Here's an example of how to send a request to your deployed model using ``curl``:
 

@@ -1,5 +1,5 @@
 ====================
-Manage Access Tokens
+Manage access tokens
 ====================
 
 In BentoCloud, API tokens serve as a key method of authorization for two distinct scopes - **BentoCloud resources** and **Bento Deployments**.
@@ -24,8 +24,8 @@ This tutorial explains how to create and use API tokens in BentoCloud.
 
 .. _creating-an-api-token:
 
-Creating an API Token
-=====================
+Create an API token
+===================
 
 To create an API token, perform the following steps:
 
@@ -42,8 +42,8 @@ To create an API token, perform the following steps:
 5. Record the token. This is the only opportunity to record it.
 6. All available tokens appear on the **API Tokens** page. Click **Delete** if you no longer needs a token.
 
-Using the Developer Token
-=========================
+Use the Developer token
+=======================
 
 Interact with BentoCloud programmatically via the BentoML Command Line
 Interface (CLI). Log in using the following command.
@@ -70,8 +70,8 @@ To retrieve the current endpoint and API token locally, make sure you have insta
 
 After you log in, you should be able to manage BentoCloud resources. For more information on the CLI, see :doc:`Reference - CLI </reference/cli>`.
 
-Using the User Token
-====================
+Use the User token
+==================
 
 You can use User tokens to access Protected Bento Deployments.
 

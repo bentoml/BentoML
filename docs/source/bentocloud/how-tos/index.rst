@@ -1,10 +1,10 @@
 =============
-How-to Guides
+How-to guides
 =============
 
 How-to guides take the reader through the steps required to solve a problem.
 
-They are recipes, directions to achieve a specific end result, and are wholly **goal-oriented**.
+They are recipes, directions to achieve a specific end result, and are wholly **goal-oriented**.
 
 * :doc:`deploy-bentos`
 * :doc:`manage-access-token`

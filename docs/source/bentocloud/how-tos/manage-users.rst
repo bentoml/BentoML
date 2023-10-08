@@ -1,5 +1,5 @@
 ============
-Manage Users
+Manage users
 ============
 
 You can add and delete BentoCloud users to control and customize access to your resources.

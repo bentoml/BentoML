@@ -1,5 +1,5 @@
 ===========
-Get Started
+Get started
 ===========
 
 Get started with your BentoCloud journey by understanding the platform and deploying a simple application on it.

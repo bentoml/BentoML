@@ -1,5 +1,5 @@
 =================
-Cost Optimization
+Cost optimization
 =================
 
 This document contains a list of best practices for optimizing costs on BentoCloud. You can use the information on this page as

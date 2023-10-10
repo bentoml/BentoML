@@ -34,6 +34,7 @@ dependencies = [
     "cloudpickle>=2.0.0",
     "deepmerge",
     "fs",
+    "httpx",
     "inflection",
     "numpy",
     # OpenTelemetry is the server dependencies, rather than SDK

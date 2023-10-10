@@ -13,7 +13,7 @@ from functools import wraps
 from typing import TYPE_CHECKING
 
 import attr
-import requests
+import httpx
 from simple_di import Provide
 from simple_di import inject
 
@@ -122,9 +122,7 @@ def track(event_properties: EventMeta):
         logger.info("Tracking Payload: %s", payload)
         return
 
-    requests.post(
-        USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS
-    )
+    httpx.post(USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS)
 
 
 @inject

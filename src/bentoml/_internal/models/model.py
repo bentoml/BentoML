@@ -233,13 +233,6 @@ class Model(StoreItem):
 
         return res
 
-    @property
-    def path(self) -> str:
-        return self.path_of("/")
-
-    def path_of(self, item: str) -> str:
-        return self._fs.getsyspath(item)
-
     @classmethod
     def enter_cloudpickle_context(
         cls,

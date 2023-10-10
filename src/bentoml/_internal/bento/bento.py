@@ -23,6 +23,7 @@ from simple_di import inject
 
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
+from ...exceptions import NotFound
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
@@ -352,12 +353,22 @@ class Bento(StoreItem):
         finally:
             self._fs.removetree("models")
 
-    @property
-    def path(self) -> str:
-        return self.path_of("/")
-
-    def path_of(self, item: str) -> str:
-        return self._fs.getsyspath(item)
+    @inject
+    def total_size(
+        self, model_store: ModelStore = Provide[BentoMLContainer.model_store]
+    ) -> int:
+        total_size = self.file_size
+        local_model_store = self._model_store
+        for model in self.info.models:
+            if local_model_store is not None:
+                try:
+                    local_model_store.get(model.tag)
+                    continue
+                except NotFound:
+                    pass
+            global_model = model_store.get(model.tag)
+            total_size += global_model.file_size
+        return total_size
 
     def flush_info(self):
         with self._fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:

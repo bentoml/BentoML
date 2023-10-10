@@ -107,31 +107,7 @@ class Client(ABC):
         kind: t.Literal["auto", "http", "grpc"] | None = None,
         **kwargs: t.Any,
     ) -> Client:
-        if kind is None or kind == "auto":
-            try:
-                from .http import HTTPClient
-
-                return HTTPClient.from_url(server_url, **kwargs)
-            except BadStatusLine:
-                from .grpc import GrpcClient
-
-                return GrpcClient.from_url(server_url, **kwargs)
-            except Exception as e:  # pylint: disable=broad-except
-                raise BentoMLException(
-                    f"Failed to create a BentoML client from given URL '{server_url}': {e} ({e.__class__.__name__})"
-                ) from e
-        elif kind == "http":
-            from .http import HTTPClient
-
-            return HTTPClient.from_url(server_url, **kwargs)
-        elif kind == "grpc":
-            from .grpc import GrpcClient
-
-            return GrpcClient.from_url(server_url, **kwargs)
-        else:
-            raise BentoMLException(
-                f"Invalid client kind '{kind}'. Must be one of 'http', 'grpc', or 'auto'."
-            )
+        return SyncClient.from_url(server_url, kind=kind, **kwargs)
 
     def __enter__(self):
         return self
@@ -169,7 +145,6 @@ class AsyncClient(ABC):
             raise BentoMLException("No APIs were found when constructing client.")
 
         self.endpoints = []
-        self.endpoints = []
         for name, api in self._svc.apis.items():
             self.endpoints.append(name)
 
@@ -177,7 +152,7 @@ class AsyncClient(ABC):
                 setattr(
                     self,
                     name,
-                    functools.partial(self.call, _bentoml_api=api),
+                    functools.partial(self._call, _bentoml_api=api),
                 )
 
     async def call(
@@ -282,7 +257,7 @@ class AsyncClient(ABC):
             )
 
 
-class SyncClient(ABC):
+class SyncClient(Client):
     server_url: str
     _svc: Service
     endpoints: list[str]
@@ -302,7 +277,7 @@ class SyncClient(ABC):
                 setattr(
                     self,
                     name,
-                    functools.partial(self.call, _bentoml_api=api),
+                    functools.partial(self._call, _bentoml_api=api),
                 )
 
     def call(self, bentoml_api_name: str, inp: t.Any = None, **kwargs: t.Any) -> t.Any:
@@ -370,7 +345,7 @@ class SyncClient(ABC):
 
     @classmethod
     def from_url(
-        cls, server_url: str, *, kind: str | None = None, **kwargs: t.Any
+        cls, server_url: str, *, kind: t.Literal["auto", "http", "grpc"] | None = None, **kwargs: t.Any
     ) -> SyncClient:
         if kind is None or kind == "auto":
             try:

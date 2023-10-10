@@ -3,13 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import socket
 import time
 import typing as t
-import urllib.error
-import urllib.request
 from functools import cached_property
-from urllib.parse import urlparse
 
 import httpx
 import starlette.datastructures
@@ -60,9 +56,9 @@ class AsyncHTTPClient(AsyncClient):
                     else:
                         await asyncio.sleep(check_interval)
             except (
-                ConnectionError,
-                urllib.error.URLError,
-                socket.timeout,
+                httpx.TimeoutException,
+                httpx.NetworkError,
+                httpx.HTTPStatusError,
             ):
                 logger.debug("Server is not ready. Retrying...")
                 await asyncio.sleep(check_interval)
@@ -76,10 +72,9 @@ class AsyncHTTPClient(AsyncClient):
                         f"Timed out waiting {timeout} seconds for server at '{host}:{port}' to be ready."
                     )
         except (
-            ConnectionError,
-            urllib.error.URLError,
-            socket.timeout,
-            TimeoutError,
+            httpx.TimeoutException,
+            httpx.NetworkError,
+            httpx.HTTPStatusError,
         ) as err:
             logger.error("Timed out while connecting to %s:%s:", host, port)
             logger.error(err)
@@ -91,16 +86,6 @@ class AsyncHTTPClient(AsyncClient):
     @classmethod
     async def from_url(cls, server_url: str, **kwargs: t.Any) -> AsyncHTTPClient:
         server_url = server_url if "://" in server_url else "http://" + server_url
-
-        conn = HTTPConnection(url_parts.netloc)
-        conn.set_debuglevel(logging.DEBUG if get_debug_mode() else 0)
-
-        # we want to preserve as much of the user path as possible, so we don't really want to use
-        # a path join here.
-        if url_parts.path.endswith("/"):
-            url_parts.path + "docs.json"
-        else:
-            url_parts.path + "/docs.json"
 
         async with httpx.AsyncClient(base_url=server_url) as session:
             resp = await session.get("/docs.json")
@@ -175,7 +160,7 @@ class AsyncHTTPClient(AsyncClient):
 
         resp = await self.client.post(
             "/" + api.route if not api.route.startswith("/") else api.route,
-            data=req_body,
+            content=req_body,
             headers={"content-type": fake_resp.headers["content-type"]},
         )
         if resp.status_code != 200:
@@ -200,9 +185,6 @@ class AsyncHTTPClient(AsyncClient):
 class SyncHTTPClient(SyncClient):
     @cached_property
     def client(self) -> httpx.Client:
-        server_url = urlparse(self.server_url)
-        if not server_url.netloc:
-            raise BentoMLException("Invalid API server URL: {self.server_url}. ")
         return httpx.Client(base_url=self.server_url)
 
     @staticmethod
@@ -225,9 +207,9 @@ class SyncHTTPClient(SyncClient):
                 else:
                     time.sleep(check_interval)
             except (
-                ConnectionError,
-                urllib.error.URLError,
-                socket.timeout,
+                httpx.TimeoutException,
+                httpx.NetworkError,
+                httpx.HTTPStatusError,
             ):
                 logger.debug("Server is not ready. Retrying...")
 
@@ -239,10 +221,9 @@ class SyncHTTPClient(SyncClient):
                     f"Timed out waiting {timeout} seconds for server at '{host}:{port}' to be ready."
                 )
         except (
-            ConnectionError,
-            urllib.error.URLError,
-            socket.timeout,
-            TimeoutError,
+            httpx.TimeoutException,
+            httpx.NetworkError,
+            httpx.HTTPStatusError,
         ) as err:
             logger.error("Timed out while connecting to %s:%s:", host, port)
             logger.error(err)
@@ -254,12 +235,14 @@ class SyncHTTPClient(SyncClient):
     @classmethod
     def from_url(cls, server_url: str, **kwargs: t.Any) -> SyncHTTPClient:
         server_url = server_url if "://" in server_url else "http://" + server_url
-        resp = httpx.get(f"{server_url}/docs.json")
-        if resp.status_code != 200:
-            raise RemoteException(
-                f"Failed to get OpenAPI schema from the server: {resp.status_code} {resp.reason_phrase}:\n{resp.content}"
-            )
-        openapi_spec = json.loads(resp.content)
+
+        with httpx.Client(base_url=server_url) as session:
+            resp = session.get("docs.json")
+            if resp.status_code != 200:
+                raise RemoteException(
+                    f"Failed to get OpenAPI schema from the server: {resp.status_code} {resp.reason_phrase}:\n{resp.content}"
+                )
+            openapi_spec = json.loads(resp.content)
 
         dummy_service = Service(openapi_spec["info"]["title"])
 
@@ -323,7 +306,7 @@ class SyncHTTPClient(SyncClient):
             self.server_url + "/" + api.route
             if not api.route.startswith("/")
             else api.route,
-            data=req_body,
+            content=req_body,
             headers={"content-type": fake_resp.headers["content-type"]},
         )
         if resp.status_code != 200:

@@ -168,8 +168,7 @@ executed on a remote Python worker and scales independently.
 API
 ~~~
 
-BentoML version 0.13.1 defines the inference API through the :code:`@api`
-`decorator <https://docs.bentoml.com/en/0.13-lts/concepts.html#api-function-and-adapters>`_.
+BentoML version 0.13.1 defines the inference API through the ``@api`` :ref:`decorator <concepts/service:Service APIs>`.
 Input and output types can be specified through the adapters. The service will convert the inference request from
 HTTP to the desired format specified by the input adaptor, in this case, a :code:`pandas.DataFrame` object.
 

@@ -90,7 +90,7 @@ BentoML also supports saving this predictor with ``bentoml.detectron.save_model`
 
     This is due to a limitation from PyTorch model serialisation, where PyTorch requires the model's source code to restore it.
 
-The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML’s `Adaptive Batching <guides/batching:Adaptive Batching>`_ is disabled when using :obj:`~bentoml.pytorch.save_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow:
+The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML's :doc:`/guides/batching` is disabled when using :obj:`~bentoml.pytorch.save_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow:
 
 .. code-block:: python
 

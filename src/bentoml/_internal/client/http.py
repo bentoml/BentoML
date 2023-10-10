@@ -151,11 +151,10 @@ class AsyncHTTPClient(AsyncClient):
             fake_resp = await api.input.to_http_response(kwargs, None)
         else:
             fake_resp = await api.input.to_http_response(inp, None)
-        req_body = fake_resp.body
 
         # TODO: Temporary workaround before moving everything to StreamingResponse
         if isinstance(fake_resp, starlette.responses.StreamingResponse):
-            req_body = "".join([s async for s in fake_resp.body_iterator])
+            req_body = fake_resp.body
         else:
             req_body = fake_resp.body
 
@@ -298,14 +297,16 @@ class SyncHTTPClient(SyncClient):
                 raise BentoMLException(
                     f"'{api.name}' takes multiple inputs; all inputs must be passed as keyword arguments."
                 )
+            # TODO: remove asyncio run after descriptor rework
             fake_resp = asyncio.run(api.input.to_http_response(kwargs, None))
         else:
             fake_resp = asyncio.run(api.input.to_http_response(inp, None))
-        req_body = fake_resp.body
 
         # TODO: Temporary workaround before moving everything to StreamingResponse
         if isinstance(fake_resp, starlette.responses.StreamingResponse):
-            req_body = "".join([s async for s in fake_resp.body_iterator])
+            async def get_body():
+                return "".join([s async for s in fake_resp.body_iterator])
+            req_body = asyncio.run(get_body)
         else:
             req_body = fake_resp.body
 

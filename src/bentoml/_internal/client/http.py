@@ -33,7 +33,7 @@ class HTTPClient(Client):
 class AsyncHTTPClient(AsyncClient):
     @cached_property
     def client(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient(base_url=self.server_url)
+        return httpx.AsyncClient(base_url=self.server_url, timeout=300)
 
     @staticmethod
     async def wait_until_server_ready(
@@ -185,7 +185,7 @@ class AsyncHTTPClient(AsyncClient):
 class SyncHTTPClient(SyncClient):
     @cached_property
     def client(self) -> httpx.Client:
-        return httpx.Client(base_url=self.server_url)
+        return httpx.Client(base_url=self.server_url, timeout=300)
 
     @staticmethod
     def wait_until_server_ready(

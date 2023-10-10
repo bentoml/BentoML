@@ -6,8 +6,8 @@ import detectron2.config as Cf
 import detectron2.engine as E
 import detectron2.model_zoo as Mz
 import detectron2.modeling as M
+import httpx
 import numpy as np
-import requests
 import torch
 from detectron2.data import transforms as T
 from PIL import Image
@@ -32,9 +32,8 @@ model_url = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
 
 def prepare_input() -> torch.Tensor:
     aug = T.ResizeShortestEdge([800, 800], 1333)
-    im: NDArray[np.float32] = np.asarray(
-        Image.open(requests.get(url, stream=True).raw).convert("RGB")
-    )
+    with httpx.stream("GET", url) as resp:
+        im: NDArray[np.float32] = np.asarray(Image.open(resp).convert("RGB"))
     arr: NDArray[np.float32] = aug.get_transform(im).apply_image(im)
     # NOTE: it is fine to copy here
     return torch.as_tensor(arr.transpose(2, 0, 1))
@@ -77,32 +76,29 @@ rcnn = Model(
     ],
 )
 
-predictor = Model(
-    name="predictor-masked-rcnn",
-    model=E.DefaultPredictor(cfg),
-    configurations=[
-        Config(
-            test_inputs={
-                "__call__": [
-                    Input(
-                        input_args=[
-                            np.asarray(
-                                Image.open(requests.get(url, stream=True).raw).convert(
-                                    "RGB"
+with httpx.stream("GET", url) as resp:
+    predictor = Model(
+        name="predictor-masked-rcnn",
+        model=E.DefaultPredictor(cfg),
+        configurations=[
+            Config(
+                test_inputs={
+                    "__call__": [
+                        Input(
+                            input_args=[
+                                np.asarray(Image.open(resp).convert("RGB")),
+                            ],
+                            expected=lambda output: all(
+                                map(
+                                    lambda o: o > 0.5,
+                                    output["instances"].get("scores").tolist(),
                                 )
-                            )
-                        ],
-                        expected=lambda output: all(
-                            map(
-                                lambda o: o > 0.5,
-                                output["instances"].get("scores").tolist(),
-                            )
-                        ),
-                    )
-                ]
-            }
-        )
-    ],
-)
+                            ),
+                        )
+                    ]
+                }
+            )
+        ],
+    )
 
 models = [rcnn, predictor]

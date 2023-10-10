@@ -3,8 +3,8 @@ from __future__ import annotations
 import importlib
 import typing as t
 
+import httpx
 import numpy as np
-import requests
 import tensorflow as tf
 import transformers
 from datasets import load_dataset
@@ -162,44 +162,43 @@ tiny_image_model = "hf-internal-testing/tiny-random-vit-gpt2"
 tiny_image_task = "image-to-text"
 test_url = "http://images.cocodataset.org/val2017/000000039769.jpg"
 
-image_classification: list[Model] = [
-    Model(
-        name="image-to-text-pipeline",
-        model=model,
-        configurations=[
-            Config(
-                load_kwargs={"task": tiny_image_task},
-                test_inputs={
-                    "__call__": [
-                        Input(
-                            input_args=[[test_url]],
-                            expected=[
-                                [
-                                    {
-                                        "generated_text": "growthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthGOGO"
-                                    },
-                                ]
-                            ],
-                        ),
-                        Input(
-                            input_args=[
-                                [Image.open(requests.get(test_url, stream=True).raw)]
-                            ],
-                            expected=[
-                                [
-                                    {
-                                        "generated_text": "growthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthGOGO"
-                                    },
-                                ]
-                            ],
-                        ),
-                    ],
-                },
-            ),
-        ],
-    )
-    for model in gen_task_pipeline(model=tiny_image_model, task=tiny_image_task)
-]
+with httpx.stream(test_url) as resp:
+    image_classification: list[Model] = [
+        Model(
+            name="image-to-text-pipeline",
+            model=model,
+            configurations=[
+                Config(
+                    load_kwargs={"task": tiny_image_task},
+                    test_inputs={
+                        "__call__": [
+                            Input(
+                                input_args=[[test_url]],
+                                expected=[
+                                    [
+                                        {
+                                            "generated_text": "growthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthGOGO"
+                                        },
+                                    ]
+                                ],
+                            ),
+                            Input(
+                                input_args=[[Image.open(resp)]],
+                                expected=[
+                                    [
+                                        {
+                                            "generated_text": "growthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthgrowthGOGO"
+                                        },
+                                    ]
+                                ],
+                            ),
+                        ],
+                    },
+                ),
+            ],
+        )
+        for model in gen_task_pipeline(model=tiny_image_model, task=tiny_image_task)
+    ]
 
 
 def gen_custom_pipeline_kwargs(

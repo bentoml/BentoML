@@ -4,7 +4,7 @@ import logging
 import typing as t
 from urllib.parse import urljoin
 
-import requests
+import httpx
 
 from ...exceptions import CloudRESTApiClientError
 from ..configuration import BENTOML_VERSION
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 class RestApiClient:
     def __init__(self, endpoint: str, api_token: str) -> None:
         self.endpoint = endpoint
-        self.session = requests.Session()
+        self.session = httpx.Client()
         self.session.headers.update(
             {
                 "X-YATAI-API-TOKEN": api_token,
@@ -50,7 +50,7 @@ class RestApiClient:
             }
         )
 
-    def _is_not_found(self, resp: requests.Response) -> bool:
+    def _is_not_found(self, resp: httpx.Response) -> bool:
         # We used to return 400 for record not found, handle both cases
         return (
             resp.status_code == 404
@@ -58,7 +58,7 @@ class RestApiClient:
             and "record not found" in resp.text
         )
 
-    def _check_resp(self, resp: requests.Response) -> None:
+    def _check_resp(self, resp: httpx.Response) -> None:
         if resp.status_code != 200:
             raise CloudRESTApiClientError(
                 f"request failed with status code {resp.status_code}: {resp.text}"
@@ -96,7 +96,7 @@ class RestApiClient:
         self, req: CreateBentoRepositorySchema
     ) -> BentoRepositorySchema:
         url = urljoin(self.endpoint, "/api/v1/bento_repositories")
-        resp = self.session.post(url, data=schema_to_json(req))
+        resp = self.session.post(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoRepositorySchema)
 
@@ -117,7 +117,7 @@ class RestApiClient:
         url = urljoin(
             self.endpoint, f"/api/v1/bento_repositories/{bento_repository_name}/bentos"
         )
-        resp = self.session.post(url, data=schema_to_json(req))
+        resp = self.session.post(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
 
@@ -128,7 +128,7 @@ class RestApiClient:
             self.endpoint,
             f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}",
         )
-        resp = self.session.patch(url, data=schema_to_json(req))
+        resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
 
@@ -175,7 +175,7 @@ class RestApiClient:
             self.endpoint,
             f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_multipart_upload_url",
         )
-        resp = self.session.patch(url, data=schema_to_json(req))
+        resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
 
@@ -189,7 +189,7 @@ class RestApiClient:
             self.endpoint,
             f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/complete_multipart_upload",
         )
-        resp = self.session.patch(url, data=schema_to_json(req))
+        resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
 
@@ -211,7 +211,7 @@ class RestApiClient:
             self.endpoint,
             f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/finish_upload",
         )
-        resp = self.session.patch(url, data=schema_to_json(req))
+        resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
 
@@ -224,7 +224,7 @@ class RestApiClient:
         )
         resp = self.session.put(
             url,
-            data=data,
+            content=data,
             headers=dict(
                 self.session.headers, **{"Content-Type": "application/octet-stream"}
             ),
@@ -234,14 +234,14 @@ class RestApiClient:
 
     def download_bento(
         self, bento_repository_name: str, version: str
-    ) -> requests.Response:
+    ) -> httpx.Response:
         url = urljoin(
             self.endpoint,
             f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/download",
         )
-        resp = self.session.get(url, stream=True)
-        self._check_resp(resp)
-        return resp
+        with self.session.stream("GET", url) as resp:
+            self._check_resp(resp)
+            return resp
 
     def get_model_repository(
         self, model_repository_name: str
@@ -259,7 +259,7 @@ class RestApiClient:
         self, req: CreateModelRepositorySchema
     ) -> ModelRepositorySchema:
         url = urljoin(self.endpoint, "/api/v1/model_repositories")
-        resp = self.session.post(url, data=schema_to_json(req))
+        resp = self.session.post(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelRepositorySchema)
 
@@ -280,7 +280,7 @@ class RestApiClient:
         url = urljoin(
             self.endpoint, f"/api/v1/model_repositories/{model_repository_name}/models"
         )
-        resp = self.session.post(url, data=schema_to_json(req))
+        resp = self.session.post(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
 
@@ -327,7 +327,7 @@ class RestApiClient:
             self.endpoint,
             f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_multipart_upload_url",
         )
-        resp = self.session.patch(url, data=schema_to_json(req))
+        resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
 
@@ -341,7 +341,7 @@ class RestApiClient:
             self.endpoint,
             f"/api/v1/model_repositories/{model_repository_name}/models/{version}/complete_multipart_upload",
         )
-        resp = self.session.patch(url, data=schema_to_json(req))
+        resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
 
@@ -363,7 +363,7 @@ class RestApiClient:
             self.endpoint,
             f"/api/v1/model_repositories/{model_repository_name}/models/{version}/finish_upload",
         )
-        resp = self.session.patch(url, data=schema_to_json(req))
+        resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
 
@@ -376,7 +376,7 @@ class RestApiClient:
         )
         resp = self.session.put(
             url,
-            data=data,
+            content=data,
             headers=dict(
                 self.session.headers, **{"Content-Type": "application/octet-stream"}
             ),
@@ -386,14 +386,14 @@ class RestApiClient:
 
     def download_model(
         self, model_repository_name: str, version: str
-    ) -> requests.Response:
+    ) -> httpx.Response:
         url = urljoin(
             self.endpoint,
             f"/api/v1/model_repositories/{model_repository_name}/models/{version}/download",
         )
-        resp = self.session.get(url, stream=True)
-        self._check_resp(resp)
-        return resp
+        with self.session.stream("GET", url) as resp:
+            self._check_resp(resp)
+            return resp
 
     def get_bento_repositories_list(
         self, bento_repository_name: str
@@ -435,7 +435,7 @@ class RestApiClient:
         self, cluster_name: str, create_schema: CreateDeploymentSchema
     ) -> DeploymentSchema | None:
         url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}/deployments")
-        resp = self.session.post(url, data=schema_to_json(create_schema))
+        resp = self.session.post(url, content=schema_to_json(create_schema))
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentSchema)
 
@@ -463,7 +463,7 @@ class RestApiClient:
             self.endpoint,
             f"/api/v1/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}",
         )
-        resp = self.session.patch(url, data=schema_to_json(update_schema))
+        resp = self.session.patch(url, content=schema_to_json(update_schema))
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)

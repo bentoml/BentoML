@@ -10,7 +10,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import fs
-import requests
+import httpx
 from rich.live import Live
 from simple_di import Provide
 from simple_di import inject
@@ -266,7 +266,7 @@ class BentoCloudClient(CloudClient):
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = requests.put(presigned_upload_url, data=tar_io)
+                    resp = httpx.put(presigned_upload_url, content=tar_io)
                     if resp.status_code != 200:
                         finish_req = FinishUploadBentoSchema(
                             status=BentoUploadStatus.FAILED,
@@ -321,8 +321,8 @@ class BentoCloudClient(CloudClient):
                             )
 
                             with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
-                                resp = requests.put(
-                                    remote_bento.presigned_upload_url, data=chunk_io
+                                resp = httpx.put(
+                                    remote_bento.presigned_upload_url, content=chunk_io
                                 )
                                 if resp.status_code != 200:
                                     return FinishUploadBentoSchema(
@@ -510,27 +510,28 @@ class BentoCloudClient(CloudClient):
                             name, version
                         )
                         presigned_download_url = remote_bento.presigned_download_url
-                response = requests.get(presigned_download_url, stream=True)
 
-            if response.status_code != 200:
-                raise BentoMLException(
-                    f'Failed to download bento "{_tag}": {response.text}'
-                )
-            total_size_in_bytes = int(response.headers.get("content-length", 0))
-            block_size = 1024  # 1 Kibibyte
             with NamedTemporaryFile() as tar_file:
-                self.transmission_progress.update(
-                    download_task_id,
-                    completed=0,
-                    total=total_size_in_bytes,
-                    visible=True,
-                )
-                self.transmission_progress.start_task(download_task_id)
-                for data in response.iter_content(block_size):
+                with httpx.stream("GET", presigned_download_url) as response:
+                    if response.status_code != 200:
+                        raise BentoMLException(
+                            f'Failed to download bento "{_tag}": {response.text}'
+                        )
+                    total_size_in_bytes = int(response.headers.get("content-length", 0))
+                    block_size = 1024  # 1 Kibibyte
                     self.transmission_progress.update(
-                        download_task_id, advance=len(data)
+                        download_task_id,
+                        completed=0,
+                        total=total_size_in_bytes,
+                        visible=True,
                     )
-                    tar_file.write(data)
+                    self.transmission_progress.start_task(download_task_id)
+                    for data in response.iter_bytes(block_size):
+                        self.transmission_progress.update(
+                            download_task_id, advance=len(data)
+                        )
+                        tar_file.write(data)
+
                 self.log_progress.add_task(
                     f'[bold green]Finished downloading all bento "{_tag}" files'
                 )
@@ -707,7 +708,7 @@ class BentoCloudClient(CloudClient):
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = requests.put(presigned_upload_url, data=tar_io)
+                    resp = httpx.put(presigned_upload_url, content=tar_io)
                     if resp.status_code != 200:
                         finish_req = FinishUploadModelSchema(
                             status=ModelUploadStatus.FAILED,
@@ -763,8 +764,8 @@ class BentoCloudClient(CloudClient):
                             )
 
                             with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
-                                resp = requests.put(
-                                    remote_model.presigned_upload_url, data=chunk_io
+                                resp = httpx.put(
+                                    remote_model.presigned_upload_url, content=chunk_io
                                 )
                                 if resp.status_code != 200:
                                     return FinishUploadModelSchema(
@@ -833,6 +834,7 @@ class BentoCloudClient(CloudClient):
                     version=version,
                     req=finish_req,
                 )
+
             if finish_req.status != ModelUploadStatus.SUCCESS:
                 self.log_progress.add_task(
                     f'[bold red]Failed pushing model "{model.tag}" : {finish_req.reason}'
@@ -954,25 +956,28 @@ class BentoCloudClient(CloudClient):
                     )
                     presigned_download_url = remote_model.presigned_download_url
 
-            response = requests.get(presigned_download_url, stream=True)
-            if response.status_code != 200:
-                raise BentoMLException(
-                    f'Failed to download model "{_tag}": {response.text}'
-                )
-
-        total_size_in_bytes = int(response.headers.get("content-length", 0))
-        block_size = 1024  # 1 Kibibyte
         with NamedTemporaryFile() as tar_file:
-            self.transmission_progress.update(
-                download_task_id,
-                description=f'Downloading model "{_tag}"',
-                total=total_size_in_bytes,
-                visible=True,
-            )
-            self.transmission_progress.start_task(download_task_id)
-            for data in response.iter_content(block_size):
-                self.transmission_progress.update(download_task_id, advance=len(data))
-                tar_file.write(data)
+            with httpx.stream("GET", presigned_download_url) as response:
+                if response.status_code != 200:
+                    raise BentoMLException(
+                        f'Failed to download model "{_tag}": {response.text}'
+                    )
+
+                total_size_in_bytes = int(response.headers.get("content-length", 0))
+                block_size = 1024  # 1 Kibibyte
+                self.transmission_progress.update(
+                    download_task_id,
+                    description=f'Downloading model "{_tag}"',
+                    total=total_size_in_bytes,
+                    visible=True,
+                )
+                self.transmission_progress.start_task(download_task_id)
+                for data in response.iter_bytes(block_size):
+                    self.transmission_progress.update(
+                        download_task_id, advance=len(data)
+                    )
+                    tar_file.write(data)
+
             self.log_progress.add_task(
                 f'[bold green]Finished downloading model "{_tag}" files'
             )

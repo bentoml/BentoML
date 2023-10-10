@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from ._internal.client import AsyncClient
 from ._internal.client import Client
+from ._internal.client import SyncClient
 from ._internal.client.grpc import AsyncGrpcClient
 from ._internal.client.grpc import GrpcClient
 from ._internal.client.grpc import SyncGrpcClient
@@ -25,6 +26,7 @@ from ._internal.client.http import SyncHTTPClient
 
 __all__ = [
     "AsyncClient",
+    "SyncClient",
     "Client",
     "AsyncHTTPClient",
     "SyncHTTPClient",

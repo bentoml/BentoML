@@ -151,6 +151,7 @@ class AsyncHTTPClient(AsyncClient):
             fake_resp = await api.input.to_http_response(kwargs, None)
         else:
             fake_resp = await api.input.to_http_response(inp, None)
+        req_body = fake_resp.body
 
         # TODO: Temporary workaround before moving everything to StreamingResponse
         if isinstance(fake_resp, starlette.responses.StreamingResponse):
@@ -159,7 +160,7 @@ class AsyncHTTPClient(AsyncClient):
             req_body = fake_resp.body
 
         resp = await self.client.post(
-            "/" + api.route if not api.route.startswith("/") else api.route,
+            api.route,
             content=req_body,
             headers={"content-type": fake_resp.headers["content-type"]},
         )
@@ -302,10 +303,14 @@ class SyncHTTPClient(SyncClient):
             fake_resp = asyncio.run(api.input.to_http_response(inp, None))
         req_body = fake_resp.body
 
+        # TODO: Temporary workaround before moving everything to StreamingResponse
+        if isinstance(fake_resp, starlette.responses.StreamingResponse):
+            req_body = "".join([s async for s in fake_resp.body_iterator])
+        else:
+            req_body = fake_resp.body
+
         resp = self.client.post(
-            self.server_url + "/" + api.route
-            if not api.route.startswith("/")
-            else api.route,
+            api.route,
             content=req_body,
             headers={"content-type": fake_resp.headers["content-type"]},
         )

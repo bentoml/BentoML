@@ -33,7 +33,9 @@ class Client(ABC):
     _async_client: AsyncClient
 
     def __init__(self, svc: Service, server_url: str):
-        logger.warning("Client is deprecated and will be removed in BentoML 2.0, please use AsyncClient or SyncClient instead.")
+        logger.warning(
+            "Client is deprecated and will be removed in BentoML 2.0, please use AsyncClient or SyncClient instead."
+        )
         self._svc = svc
         self.server_url = server_url
 
@@ -85,9 +87,7 @@ class Client(ABC):
 
     @t.overload
     @staticmethod
-    def from_url(
-        server_url: str, *, kind: None | t.Literal["auto"] = ...
-    ) -> Client:
+    def from_url(server_url: str, *, kind: None | t.Literal["auto"] = ...) -> Client:
         ...
 
     @t.overload
@@ -102,7 +102,10 @@ class Client(ABC):
 
     @staticmethod
     def from_url(
-        server_url: str, *, kind: t.Literal["auto", "http", "grpc"] | None = None, **kwargs: t.Any
+        server_url: str,
+        *,
+        kind: t.Literal["auto", "http", "grpc"] | None = None,
+        **kwargs: t.Any,
     ) -> Client:
         if kind is None or kind == "auto":
             try:
@@ -246,7 +249,11 @@ class AsyncClient(ABC):
 
     @classmethod
     async def from_url(
-        cls, server_url: str, *, kind: t.Literal["auto", "http", "grpc"] | None = None, **kwargs: t.Any
+        cls,
+        server_url: str,
+        *,
+        kind: t.Literal["auto", "http", "grpc"] | None = None,
+        **kwargs: t.Any,
     ) -> AsyncClient:
         if kind is None or kind == "auto":
             try:

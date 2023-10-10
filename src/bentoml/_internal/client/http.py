@@ -98,9 +98,9 @@ class AsyncHTTPClient(AsyncClient):
         # we want to preserve as much of the user path as possible, so we don't really want to use
         # a path join here.
         if url_parts.path.endswith("/"):
-            path = url_parts.path + "docs.json"
+            url_parts.path + "docs.json"
         else:
-            path = url_parts.path + "/docs.json"
+            url_parts.path + "/docs.json"
 
         async with httpx.AsyncClient(base_url=server_url) as session:
             resp = await session.get("/docs.json")

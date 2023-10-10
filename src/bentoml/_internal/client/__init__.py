@@ -345,7 +345,11 @@ class SyncClient(Client):
 
     @classmethod
     def from_url(
-        cls, server_url: str, *, kind: t.Literal["auto", "http", "grpc"] | None = None, **kwargs: t.Any
+        cls,
+        server_url: str,
+        *,
+        kind: t.Literal["auto", "http", "grpc"] | None = None,
+        **kwargs: t.Any,
     ) -> SyncClient:
         if kind is None or kind == "auto":
             try:

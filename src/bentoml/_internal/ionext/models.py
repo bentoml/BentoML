@@ -53,7 +53,10 @@ class IOMixin:
 
             return StreamingResponse(content_stream(), media_type="text/plain")
         else:
-            ins = cls(obj)
+            if not isinstance(obj, RootModel):
+                ins = cls(obj)
+            else:
+                ins = obj
             if isinstance(rendered := ins.model_dump(), (str, bytes)):
                 media_type = cls.model_json_schema().get("media_type", "text/plain")
                 return Response(content=rendered, media_type=media_type)

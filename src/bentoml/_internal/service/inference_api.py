@@ -258,7 +258,7 @@ class ServiceEndpoint:
             "route": self.route,
             "doc": self.doc,
             "input": self.input_spec.model_json_schema(),
-            "output": self.output_spec.model_json_schema(),
+            "output": output,
         }
 
 

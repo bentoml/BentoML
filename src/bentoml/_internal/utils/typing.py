@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc
 import io
 import types
 import typing as t
@@ -12,6 +13,19 @@ if hasattr(t, "Literal"):
 BINARY_FILE_TYPES: set[type] = {t.BinaryIO, t.IO[bytes], io.BytesIO}
 LIST_TYPES: set[type] = {list, t.List, t.Sequence, t.MutableSequence}
 TUPLE_TYPES: set[type] = {tuple, t.Tuple}
+SYNC_ITERATOR_TYPES: set[type] = {
+    t.Iterator,
+    t.Generator,
+    collections.abc.Iterator,
+    collections.abc.Generator,
+}
+
+ASYNC_ITERATOR_TYPES: set[type] = {
+    t.AsyncIterator,
+    t.AsyncGenerator,
+    collections.abc.AsyncIterator,
+    collections.abc.AsyncGenerator,
+}
 
 
 def get_origin(type_: t.Any) -> type:
@@ -37,3 +51,7 @@ def is_tuple_type(typ_: t.Any) -> bool:
 
 def is_union_type(typ_: t.Any) -> bool:
     return get_origin(typ_) in (t.Union, types.UnionType)
+
+
+def is_iterator_type(typ_: t.Any) -> bool:
+    return get_origin(typ_) in (SYNC_ITERATOR_TYPES | ASYNC_ITERATOR_TYPES)

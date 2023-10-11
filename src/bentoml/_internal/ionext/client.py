@@ -3,14 +3,15 @@ from __future__ import annotations
 import abc
 import asyncio
 import contextlib
-import dataclasses
 import inspect
+import logging
 import typing as t
 from http import HTTPStatus
 from urllib.parse import urljoin
 from urllib.parse import urlparse
 
 import anyio
+import attr
 
 from ...exceptions import BentoMLException
 from ..utils.uri import uri_to_path
@@ -25,30 +26,63 @@ if t.TYPE_CHECKING:
 
     T = t.TypeVar("T", bound="BaseClient")
 
+logger = logging.getLogger(__name__)
 
-@dataclasses.dataclass(frozen=True)
+
+@attr.define(slots=True)
 class ClientEndpoint:
     name: str
     route: str
     doc: str | None = None
-    input: dict[str, t.Any] = dataclasses.field(default_factory=dict)
-    output: dict[str, t.Any] = dataclasses.field(default_factory=dict)
+    input: dict[str, t.Any] = attr.field(factory=dict)
+    output: dict[str, t.Any] = attr.field(factory=dict)
     input_spec: type[IODescriptor] | None = None
     output_spec: type[IODescriptor] | None = None
     stream_output: bool = False
 
 
-@dataclasses.dataclass
+@attr.define
 class BaseClient(abc.ABC):
     url: str
-    endpoints: dict[str, ClientEndpoint] = dataclasses.field(default_factory=dict)
+    endpoints: dict[str, ClientEndpoint] = attr.field(factory=dict)
     media_type: str = "application/json"
     timeout: int | None = None
-    max_connections: int | None = None
-    _client: ClientSession | None = dataclasses.field(init=False, default=None)
-    _loop: asyncio.AbstractEventLoop | None = dataclasses.field(
-        init=False, default=None
-    )
+    limiter: t.AsyncContextManager[t.Any] = contextlib.nullcontext()
+    _client: ClientSession | None = attr.field(init=False, default=None)
+    _loop: asyncio.AbstractEventLoop | None = attr.field(init=False, default=None)
+
+    def __init__(self, url: str, *, media_type: str = "application/json") -> None:
+        """Create a client instance from a URL.
+
+        Args:
+            url: The URL of the BentoML service.
+            media_type: The media type to use for serialization. Defaults to
+                "application/json".
+
+        .. note::
+
+            The client created with this method can only return primitive types without a model.
+        """
+        import requests  # TODO: replace with httpx
+
+        schema_url = urljoin(url, "/schema.json")
+        resp = requests.get(schema_url)
+
+        if not resp.ok:
+            raise RuntimeError(f"Failed to fetch schema from {schema_url}")
+        routes: dict[str, ClientEndpoint] = {}
+        for route in resp.json()["routes"]:
+            routes[route["name"]] = ClientEndpoint(
+                name=route["name"],
+                route=route["route"],
+                input=route["input"],
+                output=route["output"],
+                doc=route.get("doc"),
+                stream_output=route["output"].get("is_stream", False),
+            )
+
+        self.__attrs_init__(url=url, endpoints=routes, media_type=media_type)
+        self.__post_init__()
 
     def __post_init__(self) -> None:
         from .serde import ALL_SERDE
@@ -57,18 +91,11 @@ class BaseClient(abc.ABC):
         for name in self.endpoints:
             setattr(self, name, self._make_method(name))
 
-        if self.max_connections is not None:
-            self._limiter: t.AsyncContextManager[t.Any] = asyncio.Semaphore(
-                self.max_connections
-            )
-        else:
-            self._limiter = contextlib.nullcontext()
-
     def _make_method(self, name: str) -> t.Callable[..., t.Any]:
         endpoint = self.endpoints[name]
 
-        def method(**kwargs: t.Any) -> t.Any:
-            return self.call(name, **kwargs)
+        def method(*args: t.Any, **kwargs: t.Any) -> t.Any:
+            return self.call(name, *args, **kwargs)
 
         method.__doc__ = endpoint.doc
         if endpoint.input_spec is not None:
@@ -117,7 +144,10 @@ class BaseClient(abc.ABC):
                     limit=800,  # TODO(jiang): make it configurable
                     keepalive_timeout=1800.0,
                 )
-                self._client = aiohttp.ClientSession(connector=conn, **client_kwargs)
+                # base_url doesn't matter with UDS
+                self._client = aiohttp.ClientSession(
+                    base_url="http://127.0.0.1:8000", connector=conn, **client_kwargs
+                )
             elif parsed.scheme == "tcp":
                 url = f"http://{parsed.netloc}"
                 self._client = aiohttp.ClientSession(url, **client_kwargs)
@@ -169,50 +199,23 @@ class BaseClient(abc.ABC):
         max_connections = (
             BentoMLContainer.api_server_config.max_runner_connections.get()
         )
-        return cls(
-            url,
-            routes,
+
+        self = object.__new__(cls)
+        self.__attrs_init__(
+            url=url,
+            endpoints=routes,
             media_type=media_type,
             timeout=timeout,
-            max_connections=max_connections,
+            limiter=asyncio.Semaphore(max_connections),
         )
-
-    @classmethod
-    def for_url(cls: type[T], url: str, *, media_type: str = "application/json") -> T:
-        """Create a client instance from a URL.
-
-        Args:
-            url: The URL of the BentoML service.
-            media_type: The media type to use for serialization. Defaults to
-                "application/json".
-
-        .. note::
-
-            The client created with this method can only return primitive types without a model.
-        """
-        import requests  # TODO: replace with httpx
-
-        schema_url = urljoin(url, "/schema.json")
-        resp = requests.get(schema_url)
-
-        if not resp.ok:
-            raise RuntimeError(f"Failed to fetch schema from {schema_url}")
-        routes: dict[str, ClientEndpoint] = {}
-        for route in resp.json()["routes"]:
-            routes[route["name"]] = ClientEndpoint(
-                name=route["name"],
-                route=route["route"],
-                input=route["input"],
-                output=route["output"],
-                doc=route.get("doc"),
-                stream_output=route["output"].get("is_stream", False),
-            )
-        return cls(url, routes, media_type=media_type)
+        self.__post_init__()
+        return self
 
     async def _call(
         self,
         name: str,
-        params: dict[str, t.Any],
+        args: t.Sequence[t.Any],
+        kwargs: dict[str, t.Any],
         *,
         headers: dict[str, str] | None = None,
     ) -> t.Any:
@@ -220,7 +223,7 @@ class BaseClient(abc.ABC):
             endpoint = self.endpoints[name]
         except KeyError:
             raise BentoMLException(f"Endpoint {name} not found") from None
-        data = await self._prepare_request(endpoint, params)
+        data = await self._prepare_request(endpoint, args, kwargs)
         resp = await self._request(endpoint.route, data, headers=headers)
         if endpoint.stream_output:
             return self._parse_response_stream(endpoint, resp)
@@ -234,7 +237,7 @@ class BaseClient(abc.ABC):
         if headers is not None:
             req_headers.update(headers)
         client = await self._get_client()
-        async with self._limiter:
+        async with self.limiter:
             resp = await client.post(url, data=data, headers=req_headers)
         if not resp.ok:
             raise BentoMLException(
@@ -243,7 +246,16 @@ class BaseClient(abc.ABC):
             )
         return resp
 
-    async def _prepare_request(self, endpoint: ClientEndpoint, kwargs: t.Any) -> bytes:
+    async def _prepare_request(
+        self,
+        endpoint: ClientEndpoint,
+        args: t.Sequence[t.Any],
+        kwargs: dict[str, t.Any],
+    ) -> bytes:
+        for name, value in zip(endpoint.input["properties"], args):
+            if name in kwargs:
+                raise TypeError(f"Duplicate argument {name}")
+            kwargs[name] = value
         if endpoint.input_spec is not None:
             model = endpoint.input_spec(**kwargs)
             return self.serde.serialize_model(model)
@@ -296,7 +308,7 @@ class BaseClient(abc.ABC):
             await self._client.close()
 
     @abc.abstractmethod
-    def call(self, name: str, **params: t.Any) -> t.Any:
+    def call(self, name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Call a service method by its name.
         It takes the same arguments as the service method.
         """
@@ -316,12 +328,12 @@ class SyncClient(BaseClient):
             assert resp == [0]
     """
 
-    def call(self, name: str, **params: t.Any) -> t.Any:
+    def call(self, name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
         from ..utils import async_gen_to_sync
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        res = loop.run_until_complete(self._call(name, params))
+        res = loop.run_until_complete(self._call(name, args, kwargs))
         if inspect.isasyncgen(res):
             return async_gen_to_sync(res, loop=loop)
         return res
@@ -331,6 +343,11 @@ class SyncClient(BaseClient):
 
     def __exit__(self, exc_type: t.Any, exc: t.Any, tb: t.Any) -> None:
         return anyio.run(self.close)
+
+    def is_ready(
+        self, timeout: int | None = None, headers: dict[str, str] | None = None
+    ) -> bool:
+        return anyio.run(AsyncClient.is_ready, self, timeout, headers)
 
 
 class AsyncClient(BaseClient):
@@ -356,8 +373,24 @@ class AsyncClient(BaseClient):
                 print(data)
     """
 
-    async def call(self, name: str, **params: t.Any) -> t.Any:
-        return await self._call(name, params)
+    async def is_ready(
+        self, timeout: int | None = None, headers: dict[str, str] | None = None
+    ) -> bool:
+        import aiohttp
+
+        client = await self._get_client()
+        request_params: dict[str, t.Any] = {"headers": headers}
+        if timeout is not None:
+            request_params["timeout"] = aiohttp.ClientTimeout(total=timeout)
+        try:
+            async with client.get("/readyz", **request_params) as resp:
+                return resp.status == 200
+        except asyncio.TimeoutError:
+            logger.warn("Timed out waiting for runner to be ready")
+            return False
+
+    async def call(self, name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return await self._call(name, args, kwargs)
 
     async def __aenter__(self) -> BaseClient:
         return self

@@ -10,6 +10,7 @@ from functools import partial
 
 import attr
 from pydantic import BaseModel
+from simple_di import Provide
 from simple_di import inject
 
 from ...exceptions import BentoMLException
@@ -17,6 +18,7 @@ from ...exceptions import NotFound
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ...grpc.utils import import_grpc
 from ..bento.bento import get_default_svc_readme
+from ..container import BentoMLContainer
 from ..context import ServiceContext as Context
 from ..io_descriptors import IODescriptor
 from ..io_descriptors.base import IOType
@@ -562,10 +564,17 @@ class Service:
         return cls.from_runner(Runner(runnable_class=runnable, name=name), name=name)
 
     @classmethod
-    def from_runner(cls, runner: Runner, name: str | None = None) -> Service:
+    @inject
+    def from_runner(
+        cls,
+        runner: Runner,
+        name: str | None = None,
+        *,
+        worker_index: int = Provide[BentoMLContainer.worker_index],
+    ) -> Service:
         runnable = runner.runnable_class(**runner.runnable_init_params)
         svc = Service(name=name or runner.name, models=runner.models, caller_depth=2)
-        svc.service_str = f"BentoML-Runner/{runner.name}/{{worker_index}}"
+        svc.service_str = f"BentoML-Runner/{runner.name}/{worker_index}"
 
         svc.worker_env_map = runner.scheduled_worker_env_map
         svc.required_workers_num = runner.scheduled_worker_count

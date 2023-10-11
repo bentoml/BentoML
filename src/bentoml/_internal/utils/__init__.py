@@ -492,12 +492,15 @@ def is_async_callable(obj: t.Any) -> t.TypeGuard[t.Callable[..., t.Awaitable[t.A
     )
 
 
-def async_gen_to_sync(gen: t.AsyncGenerator[T, None]) -> t.Generator[T, None, None]:
+def async_gen_to_sync(
+    gen: t.AsyncGenerator[T, None], *, loop: asyncio.AbstractEventLoop | None = None
+) -> t.Generator[T, None, None]:
     """
     Convert an async generator to a sync generator
     """
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    if loop is None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
     try:
         while True:
             yield loop.run_until_complete(gen.__anext__())

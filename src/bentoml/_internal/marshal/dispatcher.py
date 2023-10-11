@@ -11,9 +11,7 @@ from functools import cached_property
 
 import attr
 import numpy as np
-from starlette.concurrency import run_in_threadpool
 
-from ..utils import is_async_callable
 from ..utils.alg import TokenBucket
 
 logger = logging.getLogger(__name__)
@@ -103,6 +101,7 @@ class Optimizer:
 
 T_IN = t.TypeVar("T_IN")
 T_OUT = t.TypeVar("T_OUT")
+T_OUT_L = t.TypeVar("T_OUT_L")
 
 
 @attr.define
@@ -113,13 +112,35 @@ class Job(t.Generic[T_IN, T_OUT]):
     dispatch_time: float = 0
 
 
-class CorkDispatcher(t.Generic[T_IN, T_OUT]):
+class CorkDispatcher(t.Generic[T_IN, T_OUT, T_OUT_L]):
     """
     A decorator that:
         * wrap batch function
         * implement CORK algorithm to cork & release calling of wrapped function
     The wrapped function should be an async function.
     """
+
+    @t.overload
+    def __init__(
+        self: CorkDispatcher[T_IN, T_OUT, None],
+        max_latency_in_ms: int,
+        max_batch_size: int,
+        shared_sema: NonBlockSema | None = None,
+        fallback: None = None,
+        get_batch_size: t.Callable[[T_IN], int] = ...,
+    ) -> None:
+        ...
+
+    @t.overload
+    def __init__(
+        self: CorkDispatcher[T_IN, T_OUT, T_OUT],
+        max_latency_in_ms: int,
+        max_batch_size: int,
+        shared_sema: t.Optional[NonBlockSema] = None,
+        fallback: t.Callable[[], T_OUT] = ...,
+        get_batch_size: t.Callable[[T_IN], int] = ...,
+    ) -> None:
+        ...
 
     def __init__(
         self,
@@ -170,14 +191,11 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         callback: t.Callable[
             [t.Sequence[T_IN]], t.Coroutine[None, None, t.Sequence[T_OUT]]
         ],
-    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT | None]]:
-        if is_async_callable(callback):
-            self.callback = callback
-        else:
-            self.callback = functools.partial(run_in_threadpool, callback)
+    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT_L]]:
+        self.callback = callback
 
         @functools.wraps(callback)
-        async def _func(data: T_IN) -> T_OUT | None:
+        async def _func(data: T_IN) -> T_OUT_L:
             if self._controller is None:
                 self._controller = self._loop.create_task(self.controller())
             try:

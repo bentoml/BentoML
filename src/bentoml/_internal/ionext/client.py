@@ -4,7 +4,6 @@ import abc
 import asyncio
 import contextlib
 import dataclasses
-import functools
 import inspect
 import typing as t
 from http import HTTPStatus
@@ -69,7 +68,7 @@ class BaseClient(abc.ABC):
         endpoint = self.endpoints[name]
 
         def method(**kwargs: t.Any) -> t.Any:
-            return self.call(name, kwargs)
+            return self.call(name, **kwargs)
 
         method.__doc__ = endpoint.doc
         if endpoint.input_spec is not None:
@@ -77,7 +76,7 @@ class BaseClient(abc.ABC):
             method.__signature__ = endpoint.input_spec.__signature__
         return method
 
-    def _get_client(self) -> ClientSession:
+    async def _get_client(self) -> ClientSession:
         import aiohttp
         from opentelemetry.instrumentation.aiohttp_client import create_trace_config
 
@@ -90,6 +89,8 @@ class BaseClient(abc.ABC):
             or self._loop.is_closed()
         ):
             self._loop = asyncio.get_event_loop()
+            if self._client is not None:
+                await self._client.close()
 
             def strip_query_params(url: yarl.URL) -> str:
                 return str(url.with_query(None))
@@ -189,7 +190,7 @@ class BaseClient(abc.ABC):
 
             The client created with this method can only return primitive types without a model.
         """
-        import requests
+        import requests  # TODO: replace with httpx
 
         schema_url = urljoin(url, "/schema.json")
         resp = requests.get(schema_url)
@@ -232,8 +233,9 @@ class BaseClient(abc.ABC):
         req_headers = {"Content-Type": self.media_type}
         if headers is not None:
             req_headers.update(headers)
+        client = await self._get_client()
         async with self._limiter:
-            resp = await self._get_client().post(url, data=data, headers=req_headers)
+            resp = await client.post(url, data=data, headers=req_headers)
         if not resp.ok:
             raise BentoMLException(
                 f"Error making request: {resp.status}: {await resp.text(errors='ignore')}",
@@ -294,19 +296,19 @@ class BaseClient(abc.ABC):
             await self._client.close()
 
     @abc.abstractmethod
-    def call(self, name: str, params: dict[str, t.Any]) -> t.Any:
+    def call(self, name: str, **params: t.Any) -> t.Any:
         """Call a service method by its name.
         It takes the same arguments as the service method.
         """
         ...
 
 
-class Client(BaseClient):
+class SyncClient(BaseClient):
     """A synchronous client for BentoML service.
 
     Example:
 
-        with Client.for_url("http://localhost:3000") as client:
+        with SyncClient.for_url("http://localhost:3000") as client:
             resp = client.call("classify", input_series=[[1,2,3,4]])
             assert resp == [0]
             # Or using named method directly
@@ -314,18 +316,14 @@ class Client(BaseClient):
             assert resp == [0]
     """
 
-    def call(
-        self,
-        name: str,
-        params: dict[str, t.Any],
-        *,
-        headers: dict[str, str] | None = None,
-    ) -> t.Any:
+    def call(self, name: str, **params: t.Any) -> t.Any:
         from ..utils import async_gen_to_sync
 
-        res = anyio.run(functools.partial(self._call, headers=headers), name, params)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        res = loop.run_until_complete(self._call(name, params))
         if inspect.isasyncgen(res):
-            return async_gen_to_sync(res)
+            return async_gen_to_sync(res, loop=loop)
         return res
 
     def __enter__(self) -> BaseClient:
@@ -358,14 +356,8 @@ class AsyncClient(BaseClient):
                 print(data)
     """
 
-    async def call(
-        self,
-        name: str,
-        params: dict[str, t.Any],
-        *,
-        headers: dict[str, str] | None = None,
-    ) -> t.Any:
-        return await self._call(name, params, headers=headers)
+    async def call(self, name: str, **params: t.Any) -> t.Any:
+        return await self._call(name, params)
 
     async def __aenter__(self) -> BaseClient:
         return self

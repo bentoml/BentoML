@@ -19,6 +19,7 @@ BatchType = t.TypeVar("BatchType")
 TRITON_EXC_MSG = "tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[all]>=2.29.0\"'."
 
 if t.TYPE_CHECKING:
+    import numpy as np
     import tritonclient.grpc.aio as tritongrpcclient
     import tritonclient.http.aio as tritonhttpclient
 

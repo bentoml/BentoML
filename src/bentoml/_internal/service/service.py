@@ -301,7 +301,11 @@ class Service:
         return True
 
     def endpoint(
-        self, *, name: str | None, doc: str | None = None, route: str | None = None
+        self,
+        *,
+        name: str | None = None,
+        doc: str | None = None,
+        route: str | None = None,
     ) -> t.Callable[[CB], CB]:
         def decorator(fn: CB) -> CB:
             self.add_endpoint(fn, name=name, doc=doc, route=route)
@@ -313,7 +317,7 @@ class Service:
         self,
         fn: t.Callable[..., t.Any],
         *,
-        name: str | None,
+        name: str | None = None,
         doc: str | None = None,
         route: str | None = None,
         input_spec: type[BaseModel] | None = None,

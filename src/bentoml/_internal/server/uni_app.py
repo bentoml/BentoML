@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import inspect
 import logging
 import os
 import sys
@@ -124,10 +125,21 @@ class UnifiedAppFactory(BaseAppFactory):
 
     @property
     def on_startup(self) -> list[LifecycleHook]:
+        from ..ionext.runner_handle import RemoteRunnerHandle
+
         on_startup = [
             *self.service.startup_hooks,
             self.service.on_asgi_app_startup,
         ]
+        for runner in self.service.runners:
+            if runner.embedded:
+                on_startup.append(functools.partial(runner.init_local, quiet=True))
+            else:
+                on_startup.append(
+                    functools.partial(
+                        runner.init_client, handle_class=RemoteRunnerHandle
+                    )
+                )
         on_startup.extend(super().on_startup)
         return on_startup
 
@@ -173,6 +185,8 @@ class UnifiedAppFactory(BaseAppFactory):
             try:
                 if is_async_callable(endpoint.func):
                     output = await endpoint.func(**input_params)
+                elif inspect.isasyncgenfunction(endpoint.func):
+                    output = endpoint.func(**input_params)
                 else:
                     output = await run_in_threadpool(endpoint.func, **input_params)
 

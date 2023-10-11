@@ -54,7 +54,7 @@ class RunnerAppFactory(BaseAppFactory):
         self.worker_index = worker_index
         self.enable_metrics = enable_metrics
 
-        self.dispatchers: dict[str, CorkDispatcher] = {}
+        self.dispatchers: dict[str, CorkDispatcher[Params[Payload], t.Any]] = {}
 
         runners_config = BentoMLContainer.runners_config.get()
         traffic = runners_config.get("traffic", {}).copy()
@@ -272,7 +272,9 @@ class RunnerAppFactory(BaseAppFactory):
                 infer = self.dispatchers[runner_method.name](infer_batch)
             else:
 
-                async def infer_single(paramss: t.Sequence[Params[t.Any]]):
+                async def infer_single(
+                    paramss: t.Sequence[Params[t.Any]],
+                ) -> tuple[Payload]:
                     assert len(paramss) == 1
 
                     params = paramss[0].map(AutoContainer.from_payload)

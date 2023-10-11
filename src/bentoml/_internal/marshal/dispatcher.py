@@ -11,15 +11,16 @@ from functools import cached_property
 
 import attr
 import numpy as np
+from starlette.concurrency import run_in_threadpool
 
+from ..utils import is_async_callable
 from ..utils.alg import TokenBucket
 
 logger = logging.getLogger(__name__)
 
 
 if t.TYPE_CHECKING:
-    from ..runner.container import Payload
-    from ..runner.utils import Params
+    pass
 
 
 class NonBlockSema:
@@ -37,14 +38,6 @@ class NonBlockSema:
 
     def release(self):
         self.sema += 1
-
-
-@attr.define
-class Job:
-    enqueue_time: float
-    data: Params[Payload]
-    future: asyncio.Future[t.Any]
-    dispatch_time: float = 0
 
 
 class Optimizer:
@@ -112,7 +105,15 @@ T_IN = t.TypeVar("T_IN")
 T_OUT = t.TypeVar("T_OUT")
 
 
-class CorkDispatcher:
+@attr.define
+class Job(t.Generic[T_IN, T_OUT]):
+    enqueue_time: float
+    data: T_IN
+    future: asyncio.Future[T_OUT | Exception]
+    dispatch_time: float = 0
+
+
+class CorkDispatcher(t.Generic[T_IN, T_OUT]):
     """
     A decorator that:
         * wrap batch function
@@ -125,7 +126,8 @@ class CorkDispatcher:
         max_latency_in_ms: int,
         max_batch_size: int,
         shared_sema: t.Optional[NonBlockSema] = None,
-        fallback: t.Callable[[], t.Any] | type[t.Any] | None = None,
+        fallback: t.Callable[[], T_OUT] | None = None,
+        get_batch_size: t.Callable[[T_IN], int] = lambda x: x.sample.batch_size,
     ):
         """
         params:
@@ -144,22 +146,23 @@ class CorkDispatcher:
 
         self._controller = None
         self._queue: collections.deque[
-            Job
+            Job[T_IN, T_OUT]
         ] = collections.deque()  # TODO(bojiang): maxlen
+        self.get_batch_size = get_batch_size
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         if self._controller is not None:
             self._controller.cancel()
         for job in self._queue:
             job.future.cancel()
 
     @cached_property
-    def _loop(self):
+    def _loop(self) -> asyncio.AbstractEventLoop:
         return asyncio.get_event_loop()
 
     @cached_property
-    def _wake_event(self):
+    def _wake_event(self) -> asyncio.Condition:
         return asyncio.Condition()
 
     def __call__(
@@ -167,11 +170,14 @@ class CorkDispatcher:
         callback: t.Callable[
             [t.Sequence[T_IN]], t.Coroutine[None, None, t.Sequence[T_OUT]]
         ],
-    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT]]:
-        self.callback = callback
+    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT | None]]:
+        if is_async_callable(callback):
+            self.callback = callback
+        else:
+            self.callback = functools.partial(run_in_threadpool, callback)
 
         @functools.wraps(callback)
-        async def _func(data: t.Any) -> t.Any:
+        async def _func(data: T_IN) -> T_OUT | None:
             if self._controller is None:
                 self._controller = self._loop.create_task(self.controller())
             try:
@@ -232,18 +238,18 @@ class CorkDispatcher:
 
                 if self.max_batch_size == -1:  # batching is disabled
                     n_call_out = 1
-                    batch_size = self._queue[0].data.sample.batch_size
+                    batch_size = self.get_batch_size(self._queue[0].data)
                 else:
                     n_call_out = 0
                     batch_size = 0
                     try:
                         for input_info in self._queue:
                             if (
-                                batch_size + input_info.data.sample.batch_size
+                                batch_size + self.get_batch_size(input_info.data)
                                 < self.max_batch_size
                             ):
                                 n_call_out += 1
-                                batch_size += input_info.data.sample.batch_size
+                                batch_size += self.get_batch_size(input_info.data)
                             else:
                                 break
                     except Exception as e:
@@ -264,7 +270,7 @@ class CorkDispatcher:
         except Exception as e:  # pylint: disable=broad-except
             logger.error(traceback.format_exc(), exc_info=e)
 
-    async def controller(self):
+    async def controller(self) -> None:
         """
         A standalone coroutine to wait/dispatch calling.
         """
@@ -332,18 +338,18 @@ class CorkDispatcher:
 
                 if self.max_batch_size == -1:  # batching is disabled
                     n_call_out = 1
-                    batch_size = self._queue[0].data.sample.batch_size
+                    batch_size = self.get_batch_size(self._queue[0].data)
                 else:
                     n_call_out = 0
                     batch_size = 0
                     try:
                         for input_info in self._queue:
                             if (
-                                batch_size + input_info.data.sample.batch_size
+                                batch_size + self.get_batch_size(input_info.data)
                                 < self.max_batch_size
                             ):
                                 n_call_out += 1
-                                batch_size += input_info.data.sample.batch_size
+                                batch_size += self.get_batch_size(input_info.data)
                             else:
                                 break
                     except Exception as e:
@@ -359,21 +365,21 @@ class CorkDispatcher:
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)
 
-    async def inbound_call(self, data: Params[Payload]):
-        if self.max_batch_size > 0 and data.sample.batch_size > self.max_batch_size:
+    async def inbound_call(self, data: T_IN) -> T_OUT | Exception:
+        if self.max_batch_size > 0 and self.get_batch_size(data) > self.max_batch_size:
             raise RuntimeError(
-                f"batch of size {data.sample.batch_size} exceeds configured max batch size of {self.max_batch_size}."
+                f"batch of size {self.get_batch_size(data)} exceeds configured max batch size of {self.max_batch_size}."
             )
 
         now = time.time()
-        future = self._loop.create_future()
+        future: asyncio.Future[T_OUT | Exception] = self._loop.create_future()
         input_info = Job(now, data, future)
         self._queue.append(input_info)
         async with self._wake_event:
             self._wake_event.notify_all()
         return await future
 
-    async def outbound_call(self, inputs_info: tuple[Job, ...]):
+    async def outbound_call(self, inputs_info: tuple[Job[T_IN, T_OUT], ...]):
         _time_start = time.time()
         _done = False
         batch_size = len(inputs_info)

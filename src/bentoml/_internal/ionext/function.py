@@ -7,8 +7,9 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic import RootModel
 from pydantic import create_model
-from typing_extensions import get_origin
+from typing_extensions import get_args
 
+from ..utils.typing import is_iterator_type
 from .models import IODescriptor
 from .models import IOMixin
 
@@ -57,9 +58,8 @@ def get_output_spec(func: t.Callable[..., t.Any]) -> type[IODescriptor] | None:
     if return_annotation is inspect.Signature.empty:
         raise TypeError(f"Missing return type annotation for function {func}")
 
-    origin = get_origin(return_annotation)
-    if origin in (t.Iterator, t.AsyncGenerator, t.Generator):
-        return_annotation = return_annotation[0]
+    if is_iterator_type(return_annotation):
+        return_annotation = get_args(return_annotation)[0]
     try:
         return ensure_io_descriptor(return_annotation)
     except (ValueError, TypeError):

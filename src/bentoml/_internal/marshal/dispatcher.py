@@ -11,7 +11,9 @@ from functools import cached_property
 
 import attr
 import numpy as np
+from starlette.concurrency import run_in_threadpool
 
+from ..utils import is_async_callable
 from ..utils.alg import TokenBucket
 
 logger = logging.getLogger(__name__)
@@ -166,8 +168,11 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         callback: t.Callable[
             [t.Sequence[T_IN]], t.Coroutine[None, None, t.Sequence[T_OUT]]
         ],
-    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT]]:
-        self.callback = callback
+    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT | None]]:
+        if is_async_callable(callback):
+            self.callback = callback
+        else:
+            self.callback = functools.partial(run_in_threadpool, callback)
 
         @functools.wraps(callback)
         async def _func(data: T_IN) -> T_OUT:

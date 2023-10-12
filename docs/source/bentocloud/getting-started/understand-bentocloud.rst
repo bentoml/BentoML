@@ -57,7 +57,7 @@ The Starter plan is designed for small teams of developers who want to focus on 
 Enterprise
 ^^^^^^^^^^
 
-The Enterprise plan includes all the features offered in the Starter plan. It is tailored for teams that want to use BentoCloud in their own cloud or on-premises environment, ensuring data security and compliance.
+The Enterprise plan includes all the features offered in the Starter plan. It is tailored for teams that want to use BentoCloud in their :doc:`own cloud or on-premises environment (BYOC) <byoc>`, ensuring data security and compliance.
 If you prefer not to use your own cluster, we can provide a dedicated cloud environment for you. Either way, we take care of managing the infrastructure to ensure a scalable and secure model deployment experience.
 
 Get started

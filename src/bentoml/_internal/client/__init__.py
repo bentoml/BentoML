@@ -30,7 +30,7 @@ class Client(ABC):
         self._svc = svc
         self.server_url = server_url
 
-        if svc is not None and len(svc.apis) == 0:
+        if len(svc.apis) == 0:
             raise BentoMLException("No APIs were found when constructing client.")
 
         self.endpoints = []
@@ -82,9 +82,7 @@ class Client(ABC):
 
     @t.overload
     @staticmethod
-    def from_url(
-        server_url: str, *, kind: None | t.Literal["auto"] = ...
-    ) -> GrpcClient | HTTPClient:
+    def from_url(server_url: str, *, kind: None | t.Literal["auto"] = ...) -> Client:
         ...
 
     @t.overload

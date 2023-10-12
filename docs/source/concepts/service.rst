@@ -1,91 +1,83 @@
-================
-Service and APIs
-================
+========
+Services
+========
 
-The service definition is the manifestation of the
-`Service Oriented Architecture <https://en.wikipedia.org/wiki/Service-oriented_architecture>`_
-and the core building block in BentoML where users define the model serving logic. This
-guide will dissect and explain the key components in the service definition.
+BentoML Services follow the principles of `Service Oriented Architecture <https://en.wikipedia.org/wiki/Service-oriented_architecture>`_,
+serving as the core building blocks in BentoML. A Service allows you to define the serving logic of your model.
 
+This page explains the key components in a BentoML Service.
 
-Creating a Service
-------------------
+Structure
+---------
 
-A BentoML service is composed of Runners and APIs. Consider the following service
-definition from the :doc:`tutorial </tutorial>`:
+Key components of a BentoML Service include Runners and APIs, defined in a ``service.py`` file.
+See the following Service definition example from :doc:`/quickstarts/deploy-an-iris-classification-model-with-bentoml`:
+
+.. code-block:: python
+   :caption: `service.py`
+
+   import numpy as np
+   import bentoml
+   from bentoml.io import NumpyNdarray
+
+   iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
+
+   svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
+
+   @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
+   def classify(input_series: np.ndarray) -> np.ndarray:
+       result = iris_clf_runner.predict.run(input_series)
+       return result
+
+You initialize a Service through the ``bentoml.Service()`` function, specifying its name and a list of :doc:`Runners </concepts/runner>`.
+The Service name will become the name of the resulting Bento.
 
 .. code-block:: python
 
-    import numpy as np
-    import bentoml
-    from bentoml.io import NumpyNdarray
-
-    iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
-
+    # Create the iris_classifier_service with the ScikitLearn Runner
     svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
+
+The ``svc`` object created provides a decorator method ``svc.api`` for defining APIs in this Service.
+This is where the logic to process data input and output is defined.
+
+.. code-block:: python
 
     @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
     def classify(input_series: np.ndarray) -> np.ndarray:
         result = iris_clf_runner.predict.run(input_series)
         return result
 
-
-Services are initialized through ``bentoml.Service()`` call, with the service name and a
-list of :doc:`Runners </concepts/runner>` required in the service:
-
-.. code-block:: python
-
-    # Create the iris_classifier_service with the ScikitLearn runner
-    svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
-
-.. note::
-    The service name will become the name of the Bento.
-
-The ``svc`` object created provides a decorator method ``svc.api`` for defining`
-APIs in this service:
-
-.. code-block:: python
-
-    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-    def classify(input_series: np.ndarray) -> np.ndarray:
-        result = iris_clf_runner.predict.run(input_series)
-        return result
-
+Details of each component are listed in the sections below.
 
 Runners
 -------
 
-Runners represent a unit of serving logic that can be scaled horizontally to maximize
-throughput and resource utilization.
-
-BentoML provides a convenient way of creating Runner instance from a saved model:
+Runners are computation units that can be scaled horizontally to maximize throughput and optimize resource utilization.
+BentoML provides a convenient way of instantiating a Runner from a saved model via ``to_runner()``.
 
 .. code-block:: python
 
     runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
 
 .. tip::
-    Users can also create custom Runners via the :doc:`Runner and Runnable interface </concepts/runner>`.
 
+    You can also create custom Runners via the :doc:`Runner and Runnable interface </concepts/runner>`.
 
-Runner created from a model will automatically choose the most optimal Runner
+For the Runner created from a model, BentoML automatically chooses the optimal Runner
 configurations specific for the target ML framework.
 
 For example, if an ML framework releases the Python GIL and supports concurrent access
-natively, BentoML will create a single global instance of the runner worker and route
+natively, BentoML will create a single global instance of the Runner worker and route
 all API requests to the global instance; otherwise, BentoML will create multiple
-instances of runners based on the available system resources. We also let advanced users
-to customize the runtime configurations to fine tune the runner performance. To learn
-more, see the :doc:`introduction to Runners </concepts/runner>`.
+instances of Runners based on the available system resources. BentoML supports customizing
+the runtime configurations to fine tune the Runner performance. To learn more, see :doc:`/concepts/runner`.
 
 Debugging Runners
 ^^^^^^^^^^^^^^^^^
 
 Runners must be initialized in order to function. Normally, this is handled by BentoML internally
-when ``bentoml serve`` is called.
-
-If you want to import and run a service without using BentoML, this must be done manually. For
-example, to debug a service called ``svc`` in ``service.py``:
+when ``bentoml serve`` is called, but you can also manually initialize and run a Service. For
+example, to debug a Service called ``svc`` in ``service.py``, use the following code:
 
 .. code-block:: python
 
@@ -96,52 +88,45 @@ example, to debug a service called ``svc`` in ``service.py``:
 
     result = svc.apis["my_endpoint"].func(inp)
 
-
 Service APIs
 ------------
 
-Inference APIs define how the service functionality can be called remotely. A service can
-have one or more APIs. An API consists of its input/output specs and a callback function:
+Inference APIs define how the Service functionality can be called remotely. A Service can
+have one or multiple APIs. An API consists of its IO specifications and a callback function:
 
 .. code-block:: python
 
-    # Create new API and add it to "svc"
-    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())  # define IO spec
+    # Create a new API and add it to "svc"
+    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())  # Define IO spec
     def predict(input_array: np.ndarray) -> np.ndarray:
         # Define business logic
         # Define pre-processing logic
-        result = runner.run(input_array)  #  model inference call
+        result = runner.run(input_array)  #  Model inference call
         # Define post-processing logic
         return result
 
-By decorating a function with ``@svc.api``, we declare that the function shall be
-invoked when this API is called. The API function is a great place for defining your
-serving logic, such as feature fetching, pre and post processing, and model inferences
-via Runners.
+By using the ``@svc.api`` decorator on a function, you specify that this function will be triggered when the API is called.
+This API function serves as an ideal place to define your serving logic, encompassing tasks like feature fetching, pre-processing and post-processing,
+as well as model inference via Runners.
 
-When running ``bentoml serve`` with the example above, this API function is
-transformed into an HTTP endpoint, ``/predict``, that takes in a ``np.ndarray`` as
+When executed with ``bentoml serve`` using the example above, this API function is
+transformed into an HTTP endpoint, or ``/predict`` in this case, which takes in a ``np.ndarray`` as
 input, and returns a ``np.ndarray`` as output. The endpoint can be called with the following
 ``curl`` command:
 
 .. code-block:: bash
 
-    » curl -X POST \
+    $ curl -X POST \
         -H "content-type: application/json" \
         --data "[[5.9, 3, 5.1, 1.8]]" \
         http://127.0.0.1:3000/predict
 
     "[0]"
 
-.. tip::
-    BentoML also plan to support translating the same Service API definition into a gRPC
-    server endpoint, in addition to the default HTTP server. See :issue:`703`.
+Custom route paths
+^^^^^^^^^^^^^^^^^^
 
-Route
-^^^^^
-
-By default, the function name becomes the endpoint URL. Users can also customize
-this URL via the ``route`` option, e.g.:
+By default, the function name becomes the endpoint URL. You can customize this URL via the ``route`` option:
 
 .. code-block:: python
 
@@ -152,18 +137,13 @@ this URL via the ``route`` option, e.g.:
     def predict(input_array: np.ndarray) -> np.ndarray:
         return runner.run(input_array)
 
-
-.. note::
-    BentoML aims to parallelize API logic by starting multiple instances of the API
-    server based on available system resources.
-
-Inference Context
+Inference context
 ^^^^^^^^^^^^^^^^^
 
-The context of an inference call can be accessed through the additional ``bentoml.Context``
-argument added to the service API function. Both the request and response contexts can be
-accessed through the inference context for getting and setting the headers, cookies, and
-status codes. Additionaly, you can read and write to the global state dictionary via the
+You can retrieve the context of an inference call by adding ``bentoml.Context`` to the Service API function.
+This parameter allows you to access information about the incoming request (like client headers)
+and also modify the outgoing response (like setting response headers, cookies, or HTTP status codes).
+Additionaly, you can read and write to the global state dictionary via the
 ``ctx.state`` attribute, which is a per-worker dictionary that can be read and written across
 API endpoints.
 
@@ -174,12 +154,12 @@ API endpoints.
         output=NumpyNdarray(),
     )
     def predict(input_array: np.ndarray, ctx: bentoml.Context) -> np.ndarray:
-        # get request headers
+        # Get request headers
         request_headers = ctx.request.headers
 
         result = runner.run(input_array)
 
-        # set response headers, cookies, and status code
+        # Set response headers, cookies, and status code
         ctx.response.status_code = 202
         ctx.response.cookies = [
             bentoml.Cookie(
@@ -194,16 +174,17 @@ API endpoints.
                 samesite="None"
             )
         ]
+
+        # Add a custom header to the response
         ctx.response.headers.append("X-Custom-Header", "value")
 
         return result
 
-
-Lifecycle Hooks
+Lifecycle hooks
 ^^^^^^^^^^^^^^^
 
-BentoML service provides a set of lifecycle hooks that can be used to execute code before startup and after shutdown.
-In the hook function, you can access the inference context introduced in the previous section.
+BentoML provides a set of lifecycle hooks, allowing Services to run specific code sequences at key moments, such as Service startup and shutdown.
+Within these hooks, it's possible to access the inference context mentioned above. See the following example.
 
 .. code-block:: python
 
@@ -216,11 +197,11 @@ In the hook function, you can access the inference context introduced in the pre
     async def close_db_on_shutdown(context: bentoml.Context):
         await context.state["db"].close()
 
-``on_startup`` and ``on_shutdown`` hooks will be evaluated on each API server process(worker).
-Users should avoid accessing file system for possible contest. More used for init a in process object like db connections.
+The ``on_startup`` and ``on_shutdown`` hooks are triggered for each individual API server process (worker). We recommend you avoid
+directly accessing the file system within these hooks to prevent potential conflicts. Instead, they're commonly used for initializing in-process resources, like establishing database connections.
 
-BentoML service also provides an ``on_deployment`` hook that will be evaluated only once when the service starts.
-This is a good place to download models files once shared by all API server processes(workers).
+Additionally, BentoML provides an ``on_deployment`` hook, which is activated just once when the Service starts.
+This hook can be used for tasks such as downloading model files that should be accessible to all API server processes (workers).
 
 .. code-block:: python
 
@@ -228,30 +209,29 @@ This is a good place to download models files once shared by all API server proc
     def download_model_on_serve():
         download_model_files()
 
-
-This hook will be executed on ``bentoml serve`` and before any process(worker) starts.
-However, users can not access the inference context from the ``on_deployment`` hook.
+This particular hook is executed on ``bentoml serve``, and it precedes the initiation of any worker processes.
+You cannot access the inference context within the ``on_deployment`` hook.
 
 .. note::
-    The ``on_deployment`` hook can be executed every time the service is started, and we still recommend putting
-    one-time initialization work in the :ref:`Setup Script <concepts/bento:Setup Script>` to avoid repeated execution.
+
+    While the ``on_deployment`` hook can run each time the Service starts, we still recommend you place any
+    one-time initialization tasks in the :ref:`Setup Script <concepts/bento:Setup Script>` to avoid repeated execution.
 
 You can register multiple functions for each hook, and they will be executed in the order they are registered.
 All hooks support both synchronous and asynchronous functions.
 
 .. _io-descriptors:
 
-IO Descriptors
+IO descriptors
 --------------
 
-IO descriptors are used for defining an API's input and output specifications. It
-describes the expected data type, helps validate that the input and output conform to
-the expected format and schema and convert them from and to the native types. They are
-specified through the ``input`` and ``output`` arguments in the ``@svc.api``
-decorator method.
+IO descriptors are used for defining an API's input and output specifications. They
+describe the expected data type, help validate that the input and output conform to
+the expected format and schema, and convert them from and to the native types. To use IO descriptors,
+you need to import them from the ``bentoml.io`` package and specify them
+through ``input`` and ``output`` in the ``@svc.api`` decorator.
 
-Recall the API we created in the :doc:`tutorial </tutorial>`. The ``classify`` API both accepts
-arguments and returns results in the type of
+In the following example, the ``classify`` API both accepts arguments and returns results in the type of
 :ref:`bentoml.io.NumpyNdarray <reference/api_io_descriptors:NumPy \`\`ndarray\`\`>`:
 
 .. code-block:: python
@@ -263,30 +243,44 @@ arguments and returns results in the type of
     def classify(input_array: np.ndarray) -> np.ndarray:
         ...
 
+BentoML supports a variety of built-in IO descriptors within the :doc:`bentoml.io </reference/api_io_descriptors>` module, including ``NumpyNdarray``, ``PandasDataFrame``, ``JSON``, ``Image``, ``Text``, and ``File``.
+All these IO descriptors in BentoML support data validation and can generate OpenAPI specifications.
 
-Besides the ``NumpyNdarray`` IO descriptor, BentoML supports a variety of IO
-descriptors including ``PandasDataFrame``, ``JSON``, ``String``,
-``Image``, ``Text``, and ``File``. For detailed documentation on how to
-declare and invoke these descriptors please see the
-:doc:`IO Descriptors </reference/api_io_descriptors>` API reference page.
++-----------------+---------------------+---------------------+-------------------------+
+| IO Descriptor   | Type                | Arguments           | Schema Type             |
++=================+=====================+=====================+=========================+
+| NumpyNdarray    | numpy.ndarray       | validate, schema    | numpy.dtype             |
++-----------------+---------------------+---------------------+-------------------------+
+| PandasDataFrame | pandas.DataFrame    | validate, schema    | pandas.DataFrame.dtypes |
++-----------------+---------------------+---------------------+-------------------------+
+| JSON            | Python native types | validate, schema    | Pydantic.BaseModel      |
++-----------------+---------------------+---------------------+-------------------------+
+| Image           | PIL.Image.Image     | pilmodel, mime_type |                         |
++-----------------+---------------------+---------------------+-------------------------+
+| Text            | str                 |                     |                         |
++-----------------+---------------------+---------------------+-------------------------+
+| File            | BytesIOFile         | kind, mime_type     |                         |
++-----------------+---------------------+---------------------+-------------------------+
 
-
-Schema and Validation
+Schema and validation
 ^^^^^^^^^^^^^^^^^^^^^
 
-IO descriptors allow users to define the expected data types, shape, and schema, based
-on the type of the input and output descriptor specified. IO descriptors can also be defined
-through  examples with the ``from_sample`` API to simplify the development of service
+When you use IO descriptors, it is important to consider schema and data validation. This can prevent unexpected errors or issues due to data format mismatches.
+You can define IO descriptors through examples with the ``from_sample`` API to simplify the development of Service
 definitions.
 
-Numpy
+The following sections provide some common examples of using IO descriptors with data validation.
+
+NumPy
 ~~~~~
 
-The data type and shape of the ``NumpyNdarray`` can be specified with the ``dtype``
+The ``NumpyNdarray`` IO descriptor is used for handling NumPy arrays. You specify its data type and shape with the ``dtype``
 and ``shape`` arguments. By setting the ``enforce_shape`` and ``enforce_dtype``
-arguments to `True`, the IO descriptor will strictly validate the input and output data
-based the specified data type and shape. To learn more, see IO descrptor reference for
-:ref:`reference/api_io_descriptors:NumPy ``ndarray```.
+arguments to ``True``, the IO descriptor strictly validates the input and output data
+based on the specified data type and shape.
+
+In the following example, the Service expects a NumPy array input with a shape that has any number of rows and 4 columns, with data type ``float32``.
+For output, it uses a sample NumPy array (``[[1.0, 2.0, 3.0, 4.0]]``), which means the expected output should resemble a 1x4 matrix of floating-point numbers.
 
 .. code-block:: python
 
@@ -311,14 +305,17 @@ based the specified data type and shape. To learn more, see IO descrptor referen
     def classify(input_array: np.ndarray) -> np.ndarray:
         ...
 
+For more information, see :ref:`reference/api_io_descriptors:NumPy ``ndarray```.
+
 Pandas DataFrame
 ~~~~~~~~~~~~~~~~
 
-The data type and shape of the ``PandasDataFrame`` can be specified with the ``dtype``
-and ``shape`` arguments. By setting the ``enforce_shape`` and ``enforce_dtype``
-arguments to `True`, the IO descriptor will strictly validate the input and output data
-based the specified data type and shape. To learn more, see IO descrptor reference for
-:ref:`reference/api_io_descriptors:Tabular Data with Pandas`.
+The ``PandasDataFrame`` IO descriptor is designed to work with Pandas DataFrames, which are commonly used for tabular data.
+You specify its data type and shape with the ``dtype`` and ``shape`` arguments. By setting the ``enforce_shape`` and ``enforce_dtype``
+arguments to ``True``, the IO descriptor strictly validates the input and output data based on the specified data type and shape.
+
+In the following example, the Service expects a Pandas DataFrame as input, with data type ``float32``. The DataFrame should have any number of rows and 4 columns.
+The output descriptor is defined using a sample DataFrame (``[[5,4,3,2]]``), indicating that the expected output should resemble a DataFrame with rows of 4 integer values each.
 
 .. code-block:: python
 
@@ -344,14 +341,16 @@ based the specified data type and shape. To learn more, see IO descrptor referen
     def classify(input_series: pd.DataFrame) -> pd.DataFrame:
         ...
 
+For more information, see :ref:`reference/api_io_descriptors:Tabular Data with Pandas`.
+
 JSON
 ~~~~
 
-The data type of a JSON IO descriptor can be specified through a Pydantic model. By setting
-a pydantic model, the IO descriptor will validate the input based on the specified pydantic
-model and return. To learn more, see IO descrptor reference for
-:ref:`reference/api_io_descriptors:Structured Data with JSON`. We also provide
-:examples:`an example project <pydantic_validation>` using Pydantic for request validation.
+The ``JSON`` IO descriptor is used for handling structured data in JSON format. You can specify its data type through a Pydantic model, which validates the input.
+
+In the following example, the Service uses a Pydantic model that defines the expected structure of the input data. It represents the features of an iris flower,
+including sepal length, sepal width, petal length, and petal width, all of which are floating-point numbers. The output is also in JSON format,
+specifically a dictionary with a key ``predictions`` that contains the results from the model.
 
 .. code-block:: python
 
@@ -376,39 +375,16 @@ model and return. To learn more, see IO descrptor reference for
         results = iris_clf_runner.predict.run(input_df).to_list()
         return {"predictions": results}
 
+For more information, see :ref:`reference/api_io_descriptors:Structured Data with JSON` and :examples:`an example project <pydantic_validation>` using Pydantic for request validation.
 
-Built-in Types
-^^^^^^^^^^^^^^
+Composite IO descriptors
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-Beside ``NumpyNdarray``, BentoML supports a variety of other built-in IO descriptor
-types under the :doc:`bentoml.io </reference/api_io_descriptors>` module. Each type comes
-with support of type validation and OpenAPI specification generation. For example:
+BentoML provides a special IO descriptor called ``Multipart`` to handle cases where you want to accept or produce multiple types of data in a single API call.
+It can be used to group multiple IO descriptor instances and each IO descriptor can be customized with independent schema and validation logic.
 
-+-----------------+---------------------+---------------------+-------------------------+
-| IO Descriptor   | Type                | Arguments           | Schema Type             |
-+=================+=====================+=====================+=========================+
-| NumpyNdarray    | numpy.ndarray       | validate, schema    | numpy.dtype             |
-+-----------------+---------------------+---------------------+-------------------------+
-| PandasDataFrame | pandas.DataFrame    | validate, schema    | pandas.DataFrame.dtypes |
-+-----------------+---------------------+---------------------+-------------------------+
-| JSON            | Python native types | validate, schema    | Pydantic.BaseModel      |
-+-----------------+---------------------+---------------------+-------------------------+
-| Image           | PIL.Image.Image     | pilmodel, mime_type |                         |
-+-----------------+---------------------+---------------------+-------------------------+
-| Text            | str                 |                     |                         |
-+-----------------+---------------------+---------------------+-------------------------+
-| File            | BytesIOFile         | kind, mime_type     |                         |
-+-----------------+---------------------+---------------------+-------------------------+
-
-Learn more about other built-in IO Descriptors :doc:`here </reference/api_io_descriptors>`.
-
-Composite Types
-^^^^^^^^^^^^^^^
-
-The ``Multipart`` IO descriptors can be used to group multiple IO Descriptor
-instances, which allows the API function to accept multiple arguments or return multiple
-values. Each IO descriptor can be customized with independent schema and validation
-logic:
+In the following example, the Service API can accept both a NumPy array and a JSON input in a single call, process them, and then return a NumPy array as a result.
+The ``Multipart`` descriptor ensures that these multiple inputs are handled correctly.
 
 .. code-block:: python
 
@@ -442,14 +418,14 @@ logic:
     def multi_part_predict(arr: np.ndarray, json: dict[str, Any]) -> np.ndarray:
         ...
 
-Sync vs Async APIs
-------------------
+For more information, see :doc:`/reference/api_io_descriptors`.
 
-APIs can be defined as either synchronous function or asynchronous coroutines in Python.
-The API we created in the :doc:`tutorial </tutorial>` was a synchronous API. BentoML will
-intelligently create an optimally sized pool of workers to execute the synchronous
-logic. Synchronous APIs are simple and capable of getting the job done for most model
-serving scenarios.
+Synchronous and asynchronous APIs
+---------------------------------
+
+APIs in a BentoML Service can be defined as either synchronous functions or asynchronous coroutines in Python. For synchronous logic,
+BentoML creates a pool of workers of optimal size to handle the execution. Synchronous APIs are straightforward and suitable for most of the model serving scenarios.
+Here's an example of a synchronous API:
 
 .. code-block:: python
 
@@ -458,19 +434,17 @@ serving scenarios.
         result = runner.run(input_array)
         return result
 
-Synchronous APIs fall short when we want to maximize the performance and throughput of
-the service. Asynchronous APIs are preferred if the processing logic is IO-bound or
-invokes multiple runners simultaneously. The following async API example calls a remote
-feature store asynchronously, invokes two runners simultaneously, and returns a combined
-result.
+However, for scenarios where you want to maximize performance and throughput, synchronous APIs may not suffice.
+Asynchronous APIs are ideal when the processing logic is IO-bound or invokes multiple Runners simultaneously.
+The following asynchronous API example calls a remote feature store asynchronously, invokes two Runners simultaneously, and returns a combined result.
 
 .. code-block:: python
 
     import aiohttp
     import asyncio
 
-    # Load two runners for two different versions of the ScikitLearn
-    # Iris Classifier models we saved before
+    # Load two Runners for two different versions of the ScikitLearn
+    # Iris classifier models saved before
     runner1 = bentoml.sklearn.get("iris_clf:yftvuwkbbbi6zc").to_runner()
     runner2 = bentoml.sklearn.get("iris_clf:edq3adsfhzi6zg").to_runner()
 
@@ -481,7 +455,7 @@ result.
             async with session.get('https://features/get', params=input_array[0]) as resp:
                 features = get_features(await resp.text())
 
-        # Invoke both model runners simultaneously
+        # Invoke both model Runners simultaneously
         results = await asyncio.gather(
             runner1.predict.async_run(input_array, features),
             runner2.predict.async_run(input_array, features),
@@ -489,15 +463,15 @@ result.
         return combine_results(results)
 
 The asynchronous API implementation is more efficient because when an asynchronous
-method is invoked, the event loop is released to service other requests while this
-request awaits the results of the method. In addition, BentoML will automatically
-configure the ideal amount of parallelism based on the available number of CPU cores.
-Further tuning of event loop configuration is not needed under common use cases.
+method is invoked, the event loop becomes available to serve other requests as the current request awaits method results.
+In addition, BentoML automatically configures the ideal amount of parallelism based on the available number of CPU cores.
+This eliminates the need for further event loop configuration in common use cases.
 
 .. tip::
-    Blocking logic such as communicating with an API or database without the `await`
-    keyword will block the event loop and prevent it from completing other IO tasks.
-    If you must use a library that does not support asynchronous IO with `await`, you
+
+    Blocking logic such as communicating with an API or database without the ``await``
+    keyword will stall the event loop and prevent it from completing other IO tasks.
+    If you must use a library that does not support asynchronous IO with ``await``, you
     should use the synchronous API instead. If you are not sure, also use the synchronous
     API to prevent unexpected errors.
 

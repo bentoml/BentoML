@@ -16,6 +16,7 @@ from ..exceptions import NotFound
 from .exportable import Exportable
 from .tag import Tag
 from .types import PathType
+from .utils import calc_dir_size
 
 T = t.TypeVar("T")
 
@@ -42,6 +43,17 @@ class StoreItem(Exportable):
     @abstractmethod
     def creation_time(self) -> datetime.datetime:
         raise NotImplementedError
+
+    @property
+    def path(self) -> str:
+        return self.path_of("/")
+
+    def path_of(self, item: str) -> str:
+        return self._fs.getsyspath(item)
+
+    @property
+    def file_size(self) -> int:
+        return calc_dir_size(self.path)
 
     def __repr__(self):
         return f'{self.get_typename()}(tag="{self.tag}")'

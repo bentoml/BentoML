@@ -24,8 +24,7 @@ with the intricacies of the underlying infrastructure.
 
 To use BentoCloud, BentoML users can package their models into Bentos
 and push them to BentoCloud for better management and deployment. For
-more information, see `the BentoCloud
-documentation <../../bentocloud/getting-started/index.html>`_.
+more information, see :doc:`the BentoCloud documentation </bentocloud/getting-started/understand-bentocloud>`.
 
 OpenLLM
 -------

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import ipaddress
 import logging
 import os
-import socket
 import typing as t
 from functools import singledispatch
 from typing import TYPE_CHECKING
@@ -161,7 +161,7 @@ def ensure_iterable_type(typ_: type) -> t.Callable[[t.MutableSequence[t.Any]], b
 def is_valid_ip_address(addr: str) -> bool:
     """Check if given string is a valid IP address."""
     try:
-        _ = socket.inet_aton(addr)
+        _ = ipaddress.ip_address(addr)
         return True
-    except socket.error:
+    except ValueError:
         return False

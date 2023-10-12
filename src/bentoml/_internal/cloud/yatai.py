@@ -157,7 +157,7 @@ class YataiClient(CloudClient):
             apis=apis,
             models=models,
             runners=runners,
-            size_bytes=calc_dir_size(bento.path),
+            size_bytes=bento.total_size(),
         )
         if not remote_bento:
             with self.spin(text=f'Registering Bento "{bento.tag}" with Yatai..'):

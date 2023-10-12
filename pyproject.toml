@@ -40,13 +40,13 @@ dependencies = [
     # OpenTelemetry is the server dependencies, rather than SDK
     # Since there are discrepancies among API and instrumentation packages,
     # we should always pin the set version of Opentelemetry suite
-    "opentelemetry-api==1.18.0",
-    "opentelemetry-sdk==1.18.0",
-    "opentelemetry-instrumentation==0.39b0",
-    "opentelemetry-instrumentation-aiohttp-client==0.39b0",
-    "opentelemetry-instrumentation-asgi==0.39b0",
-    "opentelemetry-semantic-conventions==0.39b0",
-    "opentelemetry-util-http==0.39b0",
+    "opentelemetry-api==1.20.0",
+    "opentelemetry-sdk==1.20.0",
+    "opentelemetry-instrumentation==0.41b0",
+    "opentelemetry-instrumentation-aiohttp-client==0.41b0",
+    "opentelemetry-instrumentation-asgi==0.41b0",
+    "opentelemetry-semantic-conventions==0.41b0",
+    "opentelemetry-util-http==0.41b0",
     "packaging>=22.0",
     "pathspec",
     "pip-tools>=6.6.2",
@@ -93,7 +93,7 @@ grpc = [
     "protobuf",
     "grpcio",
     "grpcio-health-checking",
-    "opentelemetry-instrumentation-grpc==0.39b0",
+    "opentelemetry-instrumentation-grpc==0.41b0",
 ]
 grpc-reflection = ["bentoml[grpc]", "grpcio-reflection"]
 grpc-channelz = ["bentoml[grpc]", "grpcio-channelz"]
@@ -103,10 +103,10 @@ grpc-channelz = ["bentoml[grpc]", "grpcio-channelz"]
 tracing = [
     "bentoml[tracing-jaeger,tracing-zipkin,tracing-otlp]",
 ]
-tracing-jaeger = ["opentelemetry-exporter-jaeger==1.18.0"]
-tracing-zipkin = ["opentelemetry-exporter-zipkin==1.18.0"]
-tracing-otlp = ["opentelemetry-exporter-otlp==1.18.0"]
-monitor-otlp = ["opentelemetry-exporter-otlp-proto-http==1.18.0"]
+tracing-jaeger = ["opentelemetry-exporter-jaeger==1.20.0"]
+tracing-zipkin = ["opentelemetry-exporter-zipkin==1.20.0"]
+tracing-otlp = ["opentelemetry-exporter-otlp==1.20.0"]
+monitor-otlp = ["opentelemetry-exporter-otlp-proto-http==1.20.0"]
 
 [build-system]
 requires = ['hatchling', "hatch-vcs>=0.3.0"]

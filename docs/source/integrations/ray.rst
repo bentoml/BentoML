@@ -23,7 +23,7 @@ The Ray Serve Deployment can then be deployed locally or to a Ray cluster using 
 Scaling Resources and Autoscaling
 ---------------------------------
 
-The ``bentoml.ray.deployment`` API also supports configuring `scaling resources and autoscaling behaviors <https://docs.ray.io/en/latest/serve/scaling-and-resource-allocation.html>`_. In addition to the Bento tag, ``service_deployment_config`` and ``runner_deployment_config`` arguments can be passed in to configure the Deployments of API Server and Runners respectively.
+The ``bentoml.ray.deployment`` API also supports configuring `scaling resources and autoscaling behaviors <https://docs.ray.io/en/master/serve/autoscaling-guide.html>`_. In addition to the Bento tag, ``service_deployment_config`` and ``runner_deployment_config`` arguments can be passed in to configure the Deployments of API Server and Runners respectively.
 All parameters allowed in Ray Serve Deployment can be specified in the ``service_deployment_config`` and ``runner_deployment_config``. The Runner name should be specified as the key in the ``runner_deployment_config``.
 
 .. code-block:: python
@@ -52,7 +52,7 @@ All parameters allowed in Ray Serve Deployment can be specified in the ``service
 
 .. note::
 
-    Arguments in the ``service_deployment_config`` and ``runner_deployment_config`` dictionaries are passed through directly to Deployment. Please refer to `Ray Serve Scaling and Resource Allocation <https://docs.ray.io/en/latest/serve/scaling-and-resource-allocation.html>`_ for the full list of supported arguments.
+    Arguments in the ``service_deployment_config`` and ``runner_deployment_config`` dictionaries are passed through directly to Deployment. Please refer to `Resource Allocation <https://docs.ray.io/en/master/serve/resource-allocation.html>`_ and `Ray Serve Autoscaling <https://docs.ray.io/en/master/serve/autoscaling-guide.html>`_ for the full list of supported arguments.
 
 
 Batching

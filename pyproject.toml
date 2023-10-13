@@ -53,7 +53,6 @@ dependencies = [
     "pip-requirements-parser>=31.2.0",
     "prometheus-client>=0.10.0",
     "psutil",
-    "nvidia-ml-py<12",
     "python-dateutil",
     "python-multipart",
     "python-json-logger",
@@ -64,6 +63,7 @@ dependencies = [
     "starlette>=0.13.5",
     "uvicorn",
     "watchfiles>=0.15.0",
+    "nvidia-ml-py<12",
 ]
 dynamic = ["version"]
 [project.urls]

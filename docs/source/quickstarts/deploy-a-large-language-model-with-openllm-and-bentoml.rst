@@ -10,7 +10,8 @@ Flan-T5, ChatGLM, StarCoder, and more.
 With OpenLLM, you can deploy your models to the cloud or on-premises, and build powerful AI applications. It supports the integration of your LLMs
 with other models and services such as LangChain, BentoML, and Hugging Face, thereby allowing the creation of complex AI applications.
 
-This quickstart demonstrates how to integrate OpenLLM with BentoML to deploy a large language model.
+This quickstart demonstrates how to integrate OpenLLM with BentoML to deploy a large language model. To learn more about OpenLLM,
+you can also try the `OpenLLM tutorial in Google Colab: Serving Llama 2 with OpenLLM <https://colab.research.google.com/github/bentoml/OpenLLM/blob/main/examples/openllm-llama2-demo/openllm_llama2_demo.ipynb>`_.
 
 Prerequisites
 -------------
@@ -199,3 +200,4 @@ See also
 
 - :doc:`/quickstarts/install-bentoml`
 - :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`
+- `OpenLLM tutorial in Google Colab: Serving Llama 2 with OpenLLM <https://colab.research.google.com/github/bentoml/OpenLLM/blob/main/examples/openllm-llama2-demo/openllm_llama2_demo.ipynb>`_

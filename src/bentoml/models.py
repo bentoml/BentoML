@@ -125,9 +125,6 @@ def import_model(
     if (
         parsedURL.scheme == "http" or parsedURL.scheme == "https"
     ) and parsedURL.netloc == "huggingface.co":
-        from .diffusers import import_model
-        from .transformers import save_model
-
         model_id = parsedURL.path.strip("/")
         if model_id is None:
             raise BentoMLException(
@@ -139,16 +136,18 @@ def import_model(
             "stable-diffusion",
             "diffusers:StableDiffusionPipeline",
         ]
-        is_diffuser = False
-        for tag in diffuser_tags:
-            if tag in info.tags:
-                is_diffuser = True
-                break
+        is_diffuser = any(tag in info.tags for tag in diffuser_tags)
+        bento_name = inflection.dasherize(model_id.replace("/", "--"))
         if is_diffuser:
-            bento_name = inflection.dasherize(model_id.replace("/", "--"))
-            return import_model(bento_name, model_id)
+            from .diffusers import import_model as diffusers_import_model
+
+            return diffusers_import_model(bento_name, model_id)
         else:
-            return save_model(model_id, model_id, None, task_name=info.pipeline_tag)
+            from .transformers import save_model as transformers_import_model
+
+            return transformers_import_model(
+                bento_name, model_id, None, task_name=info.pipeline_tag
+            )
 
     return Model.import_from(
         path,

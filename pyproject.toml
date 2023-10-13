@@ -37,6 +37,7 @@ dependencies = [
     "httpx",
     "inflection",
     "numpy",
+    "nvidia-ml-py<12",
     # OpenTelemetry is the server dependencies, rather than SDK
     # Since there are discrepancies among API and instrumentation packages,
     # we should always pin the set version of Opentelemetry suite
@@ -63,7 +64,6 @@ dependencies = [
     "starlette>=0.13.5",
     "uvicorn",
     "watchfiles>=0.15.0",
-    "nvidia-ml-py<12",
 ]
 dynamic = ["version"]
 [project.urls]

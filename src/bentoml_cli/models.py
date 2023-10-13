@@ -234,10 +234,11 @@ def add_model_management_commands(cli: Group) -> None:
     @model_cli.command(name="import")
     @click.argument("model_path", type=click.STRING)
     def import_from(model_path: str) -> None:  # type: ignore (not accessed)
-        """Import a previously exported Model archive file
+        """Import a previously exported Model archive file or a model from remote model store
 
         bentoml models import ./my_model.bentomodel
         bentoml models import s3://mybucket/models/my_model.bentomodel
+        bentoml models import https://huggingface.co/microsoft/phi-1_5
         """
         bentomodel = import_model(model_path)
         click.echo(f"{bentomodel} imported.")

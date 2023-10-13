@@ -610,6 +610,7 @@ def save_model(
     pretrained_or_pipeline: TransformersPreTrained
     | transformers.Pipeline
     | PreTrainedProtocol
+    | str
     | None = None,
     pipeline: transformers.Pipeline | None = None,
     task_name: str | None = None,
@@ -689,7 +690,11 @@ def save_model(
             DeprecationWarning,
         )
         pretrained_or_pipeline = pipeline
-
+    # construct pipeline from task_name and model-id
+    if isinstance(pretrained_or_pipeline, str):
+        pretrained_or_pipeline = transformers.pipeline(
+            task=task_name, model=pretrained_or_pipeline
+        )
     assert (
         pretrained_or_pipeline is not None
     ), "Please provide a pipeline or a pretrained object as a second argument."

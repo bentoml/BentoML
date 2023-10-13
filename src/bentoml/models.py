@@ -4,11 +4,15 @@ import typing as t
 from contextlib import contextmanager
 from types import ModuleType
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
+from huggingface_hub import model_info
 from simple_di import Provide
 from simple_di import inject
 
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.frameworks.diffusers_runners.utils import get_model_or_download
+from ._internal.frameworks.transformers import save_model
 from ._internal.models import Model
 from ._internal.models import ModelContext
 from ._internal.models import ModelOptions
@@ -96,6 +100,9 @@ def import_model(
                                     user='<AWS access key>', passwd='<AWS secret key>',
                                     params={'acl': 'public-read', 'cache-control': 'max-age=2592000,public'})
 
+        # import model from huggingface.co
+        bentoml.models.import_model('https://huggingface.co/<model_id>')
+
     For a more comprehensive description of what each of the keyword arguments (:code:`protocol`,
     :code:`user`, :code:`passwd`, :code:`params`, and :code:`subpath`) mean, see the
     `FS URL documentation <https://docs.pyfilesystem.org/en/latest/openers.html>`_.
@@ -115,6 +122,33 @@ def import_model(
     Returns:
         Model: the imported model
     """
+    parsedURL = urlparse(path)
+    if (
+        parsedURL.scheme == "http" or parsedURL.scheme == "https"
+    ) and parsedURL.netloc == "huggingface.co":
+        model_id = parsedURL.path.strip("/")
+        if model_id is None:
+            raise BentoMLException(
+                "Invalid HuggingFace model URL, please check your URL"
+            )
+        org, _, repo = model_id.partition("/")
+        info = model_info(model_id)
+        diffuser_tags = [
+            "diffusers",
+            "stable-diffusion",
+            "diffusers:StableDiffusionPipeline",
+        ]
+        is_diffuser = False
+        for tag in diffuser_tags:
+            if tag in info.tags:
+                is_diffuser = True
+                break
+        if is_diffuser:
+            bentomodel = get_model_or_download(repo, model_id)
+            return bentomodel.save(_model_store)
+        else:
+            return save_model(model_id, model_id, None, task_name=info.pipeline_tag)
+
     return Model.import_from(
         path,
         input_format,

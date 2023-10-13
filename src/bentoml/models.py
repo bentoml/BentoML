@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import inflection
-from huggingface_hub import model_info
 from simple_di import Provide
 from simple_di import inject
 
@@ -20,6 +19,7 @@ from ._internal.utils import calc_dir_size
 from ._internal.utils.analytics import ModelSaveEvent
 from ._internal.utils.analytics import track
 from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:
     from ._internal.cloud import BentoCloudClient
@@ -130,6 +130,18 @@ def import_model(
             raise BentoMLException(
                 "Invalid HuggingFace model URL, please check your URL"
             )
+
+        def _try_import_huggingface_hub():
+            try:
+                import huggingface_hub  # noqa: F401
+            except ImportError:  # pragma: no cover
+                raise MissingDependencyException(
+                    "'huggingface_hub' is required in order to download pretrained diffusion models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
+                )
+
+        _try_import_huggingface_hub()
+        from huggingface_hub import model_info
+
         info = model_info(model_id)
         diffuser_tags = [
             "diffusers",

@@ -23,6 +23,7 @@ from bentoml._internal.log import SERVER_LOGGING_CONFIG
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner.runner import Runner
 from ._internal.utils import is_async_callable
+from .exceptions import BentoMLConfigException
 from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
 
@@ -267,6 +268,10 @@ def serve_http_production(
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
+    import ipaddress
+    from socket import AF_INET
+    from socket import AF_INET6
+
     from circus.sockets import CircusSocket
 
     from . import load
@@ -347,7 +352,7 @@ def serve_http_production(
                     )
                 )
 
-    elif psutil.WINDOWS:
+    elif psutil.WINDOWS or IS_WSL:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:
@@ -415,10 +420,24 @@ def serve_http_production(
 
     logger.debug("Runner map: %s", runner_bind_map)
 
+    try:
+        ipaddr = ipaddress.ip_address(host)
+        if ipaddr.version == 4:
+            family = AF_INET
+        elif ipaddr.version == 6:
+            family = AF_INET6
+        else:
+            raise BentoMLConfigException(
+                f"Unsupported host IP address version: {ipaddr.version}"
+            )
+    except ValueError as e:
+        raise BentoMLConfigException(f"Invalid host IP address: {host}") from e
+
     circus_socket_map[API_SERVER_NAME] = CircusSocket(
         name=API_SERVER_NAME,
         host=host,
         port=port,
+        family=family,
         backlog=backlog,
     )
 
@@ -472,7 +491,7 @@ def serve_http_production(
     )
 
     if BentoMLContainer.api_server_config.metrics.enabled.get():
-        log_host = "localhost" if host == "0.0.0.0" else host
+        log_host = "localhost" if host in ["0.0.0.0", "::"] else host
 
         logger.info(
             PROMETHEUS_MESSAGE,
@@ -573,7 +592,7 @@ def serve_grpc_production(
     # NOTE: We need to find and set model-repository args
     # to all TritonRunner instances (required from tritonserver if spawning multiple instances.)
 
-    if psutil.POSIX:
+    if psutil.POSIX and not IS_WSL:
         # use AF_UNIX sockets for Circus
         uds_path = tempfile.mkdtemp()
         for runner in svc.runners:
@@ -632,7 +651,7 @@ def serve_grpc_production(
                     )
                 )
 
-    elif psutil.WINDOWS:
+    elif psutil.WINDOWS or IS_WSL:
         # Windows doesn't (fully) support AF_UNIX sockets
         with contextlib.ExitStack() as port_stack:
             for runner in svc.runners:

@@ -719,7 +719,7 @@ Then you can proceed to run the client scripts:
       .. tab-item:: Dart
          :sync: dart
 
-         :bdg-primary:`Note:` Please check out the :github:`gRPC Dart <grpc/grpc-dart/tree/master/examples>` examples folder for :github:`grpc/grpc-dart` client implementation.
+         :bdg-primary:`Note:` Please check out the :github:`gRPC Dart <grpc/grpc-dart/tree/master/example>` examples folder for :github:`grpc/grpc-dart` client implementation.
 
 
 After successfully running the client, proceed to build the bento as usual:
@@ -1487,8 +1487,7 @@ A quick overview of the available configuration for gRPC:
 .. epigraph::
    :bdg-info:`Definition:` Maximum number of concurrent incoming streams to allow on a HTTP2 connection.
 
-By default we don't set a limit cap. HTTP/2 connections typically has limit of `maximum concurrent streams <httpwg.org/specs/rfc7540.html#rfc.section.5.1.2>`_
-on a connection at one time.
+By default we don't set a limit cap. HTTP/2 connections typically has limit of `maximum concurrent streams <https://httpwg.org/specs/rfc7540.html#rfc.section.5.1.2>`_ on a connection at one time.
 
 .. dropdown:: Some notes about fine-tuning ``max_concurrent_streams``
 

@@ -1,5 +1,5 @@
 ==============
-Best Practices
+Best practices
 ==============
 
 This section contains a list of best practices for BentoCloud usage.

@@ -6,13 +6,12 @@ from types import ModuleType
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+import inflection
 from huggingface_hub import model_info
 from simple_di import Provide
 from simple_di import inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.frameworks.diffusers_runners.utils import get_model_or_download
-from ._internal.frameworks.transformers import save_model
 from ._internal.models import Model
 from ._internal.models import ModelContext
 from ._internal.models import ModelOptions
@@ -126,12 +125,14 @@ def import_model(
     if (
         parsedURL.scheme == "http" or parsedURL.scheme == "https"
     ) and parsedURL.netloc == "huggingface.co":
+        from .diffusers import import_model
+        from .transformers import save_model
+
         model_id = parsedURL.path.strip("/")
         if model_id is None:
             raise BentoMLException(
                 "Invalid HuggingFace model URL, please check your URL"
             )
-        org, _, repo = model_id.partition("/")
         info = model_info(model_id)
         diffuser_tags = [
             "diffusers",
@@ -144,8 +145,8 @@ def import_model(
                 is_diffuser = True
                 break
         if is_diffuser:
-            bentomodel = get_model_or_download(repo, model_id)
-            return bentomodel.save(_model_store)
+            bento_name = inflection.dasherize(model_id.replace("/", "--"))
+            return import_model(bento_name, model_id)
         else:
             return save_model(model_id, model_id, None, task_name=info.pipeline_tag)
 

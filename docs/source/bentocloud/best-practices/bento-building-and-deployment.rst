@@ -53,7 +53,7 @@ Deploy to BentoCloud
 The `Deploy to BentoCloud <https://github.com/bentoml/bentocloud-cicd-example/blob/main/.github/workflows/deploy.yml>`_ workflow is designed to automate the deployment process on BentoCloud whenever there's a change to the ``deployment.json`` file in the repository.
 You can use it to update your Deployment's configuration (for example, the maximum and the minimum number of replicas allowed for scaling).
 
-.. note:: 
+.. note::
 
    Make sure the Bento Deployment specified in the ``deployment.json`` file is already created on BentoCloud when you use this workflow.
    It only updates the existing Deployment instead of creating a new one.
@@ -96,7 +96,7 @@ your application's requirements, and the overall project lifecycle. In terms of 
   is always up-to-date with the latest changes. This strategy is beneficial for projects that have rigorous testing in place and require frequent updates.
   It guarantees that once changes pass all checks and reviews, they're immediately deployed, ensuring your users always have access to the latest features and fixes.
 * **Semi-automatic deployment**. This option provides a balance between automation and manual oversight. They are triggered based on specific conditions, allowing teams to have more control over when and what gets deployed. Semi-automatic deployment triggers include:
-  
+
   * **Modifications to** ``deployment.json``: Deployments can be triggered based on the ``deployment.json`` file, ensuring that only updates to the configuration lead to a new deployment.
   * **New pushes to the** ``deployment`` **branch**: Instead of deploying from the ``main`` branch, consider a dedicated ``deployment`` branch. Changes are merged into this branch when they are ready for deployment, separating feature development from the deployment process.
   * **Release tags**: Deployments can be triggered based on release tags. This approach is especially useful for version-controlled applications. When a new version is ready, a tag is created, prompting the deployment process. This ensures that only stable, vetted versions of the application get deployed.

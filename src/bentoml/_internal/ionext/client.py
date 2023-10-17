@@ -82,9 +82,8 @@ class BaseClient(abc.ABC):
             )
 
         self.__attrs_init__(url=url, endpoints=routes, media_type=media_type)
-        self.__post_init__()
 
-    def __post_init__(self) -> None:
+    def __attrs_post_init__(self) -> None:
         from .serde import ALL_SERDE
 
         self.serde = ALL_SERDE[self.media_type]()
@@ -208,7 +207,6 @@ class BaseClient(abc.ABC):
             timeout=timeout,
             limiter=asyncio.Semaphore(max_connections),
         )
-        self.__post_init__()
         return self
 
     async def _call(

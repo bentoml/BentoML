@@ -1,0 +1,8 @@
+service: "service:svc"
+include:
+  - "*.py"
+python:
+  requirements_txt: "./requirements.txt"
+models:
+  - "blip-image-captioning-large:latest"
+  - "blip-image-captioning-large-processor:latest"

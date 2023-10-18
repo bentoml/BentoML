@@ -308,8 +308,14 @@ def add_model_management_commands(cli: Group) -> None:
         default=10,
         help="Number of threads to use for upload",
     )
+    @click.option(
+        "-m",
+        "--memory",
+        default=-1,
+        help="max memory usage in GB when pushing, -1 means no limit",
+    )
     @click.pass_obj
-    def push(shared_options: SharedOptions, model_tag: str, force: bool, threads: int):  # type: ignore (not accessed)
+    def push(shared_options: SharedOptions, model_tag: str, force: bool, threads: int, memory: int):  # type: ignore (not accessed)
         """Push Model to a remote model store."""
         model_obj = model_store.get(model_tag)
         if not model_obj:
@@ -319,4 +325,5 @@ def add_model_management_commands(cli: Group) -> None:
             force=force,
             threads=threads,
             context=shared_options.cloud_context,
+            memory=memory,
         )

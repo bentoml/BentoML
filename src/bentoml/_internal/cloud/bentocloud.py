@@ -26,7 +26,6 @@ from ..models import copy_model
 from ..tag import Tag
 from ..utils import calc_dir_size
 from .base import FILE_CHUNK_SIZE
-from .base import SPOOLED_FILE_MAX_SIZE
 from .base import CallbackIOWrapper
 from .base import CallbackSpooledTemporaryFileIO
 from .base import CloudClient
@@ -572,13 +571,19 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
+        memory: int = -1,
     ):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
                 f'Pushing model "{model.tag}"', start=False, visible=False
             )
             self._do_push_model(
-                model, upload_task_id, force=force, threads=threads, context=context
+                model,
+                upload_task_id,
+                force=force,
+                threads=threads,
+                context=context,
+                memory=memory,
             )
 
     def _do_push_model(
@@ -589,6 +594,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
+        memory: int = -1,
     ):
         yatai_rest_client = get_rest_api_client(context)
         name = model.tag.name
@@ -669,9 +675,15 @@ class BentoCloudClient(CloudClient):
             with io_mutex:
                 self.transmission_progress.update(upload_task_id, advance=x)
 
-        with CallbackSpooledTemporaryFileIO(
-            SPOOLED_FILE_MAX_SIZE, read_cb=io_cb
-        ) as tar_io:
+        def IOWrapper(memory: int):
+            if memory == -1:
+                return CallbackIOWrapper(read_cb=io_cb)
+            elif memory > 0:
+                return CallbackSpooledTemporaryFileIO(memory, read_cb=io_cb)
+            else:
+                raise BentoMLException(f"Option memory must be -1 or > 0, got {memory}")
+
+        with IOWrapper(memory) as tar_io:
             with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:") as tar:
                     tar.add(model.path, arcname="./")

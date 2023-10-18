@@ -112,6 +112,18 @@ class CallbackIOWrapper(io.BytesIO):
                 self.write_cb(len(data))
         return res
 
+    def size(self) -> int:
+        """
+        get the size of the buffer
+        """
+        return super().getbuffer().nbytes
+
+    def chunk(self, start: int, end: int) -> bytes:
+        """
+        chunk the buffer slice of [start, end)
+        """
+        return super().getbuffer()[start:end]
+
 
 class CloudClient(ABC):
     log_progress = Progress(TextColumn("{task.description}"))

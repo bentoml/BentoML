@@ -18,6 +18,7 @@ from rich.progress import TimeElapsedColumn
 from rich.progress import TimeRemainingColumn
 from rich.progress import TransferSpeedColumn
 
+from ...exceptions import BentoMLException
 from ..bento import Bento
 from ..bento import BentoStore
 from ..models import Model
@@ -25,7 +26,25 @@ from ..models import ModelStore
 from ..tag import Tag
 
 FILE_CHUNK_SIZE = 100 * 1024 * 1024  # 100Mb
-SPOOLED_FILE_MAX_SIZE = 5 * 1024 * 1024 * 1024  # 5GB
+
+
+def io_wrapper(
+    memory: int,
+    *,
+    read_cb: t.Callable[[int], None] | None = None,
+    write_cb: t.Callable[[int], None] | None = None,
+) -> CallbackIOWrapper | CallbackSpooledTemporaryFileIO:
+    """
+    io_wrapper is a wrapper for SpooledTemporaryFileIO and CallbackIOWrapper
+    """
+    if memory == -1:
+        return CallbackIOWrapper(read_cb=read_cb, write_cb=write_cb)
+    elif memory > 0:
+        return CallbackSpooledTemporaryFileIO(
+            memory * 1024**3, read_cb=read_cb, write_cb=write_cb
+        )
+    else:
+        raise BentoMLException(f"Option maxmemory must be -1 or > 0, got {memory}")
 
 
 class CallbackSpooledTemporaryFileIO(SpooledTemporaryFile):

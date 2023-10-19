@@ -336,42 +336,24 @@ def serve_http_production(
     with contextlib.ExitStack() as port_stack:
         for runner in svc.runners:
             if isinstance(runner, Runner):
-                if BentoMLContainer.new_io:
-                    runner_args = [
-                        "-m",
-                        SCRIPT_API_SERVER,
-                        bento_identifier,
-                        "--runner-name",
-                        runner.name,
-                        "--fd",
-                        f"$(circus.sockets.{runner.name})",
-                        "--working-dir",
-                        working_dir,
-                        "--worker-id",
-                        "$(CIRCUS.WID)",
-                        "--prometheus-dir",
-                        prometheus_dir,
-                        *timeout_args,
-                    ]
-                else:
-                    runner_args = [
-                        "-m",
-                        SCRIPT_RUNNER,
-                        bento_identifier,
-                        "--runner-name",
-                        runner.name,
-                        "--fd",
-                        f"$(circus.sockets.{runner.name})",
-                        "--working-dir",
-                        working_dir,
-                        "--worker-id",
-                        "$(CIRCUS.WID)",
-                        "--worker-env-map",
-                        json.dumps(runner.scheduled_worker_env_map),
-                        "--prometheus-dir",
-                        prometheus_dir,
-                        *timeout_args,
-                    ]
+                runner_args = [
+                    "-m",
+                    SCRIPT_RUNNER,
+                    bento_identifier,
+                    "--runner-name",
+                    runner.name,
+                    "--fd",
+                    f"$(circus.sockets.{runner.name})",
+                    "--working-dir",
+                    working_dir,
+                    "--worker-id",
+                    "$(CIRCUS.WID)",
+                    "--worker-env-map",
+                    json.dumps(runner.scheduled_worker_env_map),
+                    "--prometheus-dir",
+                    prometheus_dir,
+                    *timeout_args,
+                ]
                 if runner.embedded or development_mode:
                     continue
 

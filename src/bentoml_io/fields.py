@@ -20,7 +20,7 @@ if t.TYPE_CHECKING:
 
     TensorType = t.Union[np.ndarray[t.Any, t.Any], tf.Tensor, torch.Tensor]
 else:
-    from ..utils.lazy_loader import LazyLoader
+    from bentoml._internal.utils.lazy_loader import LazyLoader
 
     np = LazyLoader("np", globals(), "numpy")
     tf = LazyLoader("tf", globals(), "tensorflow")

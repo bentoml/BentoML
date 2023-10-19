@@ -7,30 +7,26 @@ import os
 import sys
 import typing as t
 
-from starlette.applications import Starlette
-from starlette.middleware import Middleware
-from starlette.routing import Route
 from starlette.staticfiles import StaticFiles
 
+from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
 
-from ...exceptions import BentoMLException
-from ..configuration.containers import BentoMLContainer
-from ..context import trace_context
-from .base_app import BaseAppFactory
+from ..servable import Servable
+from .service import Service
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
+    from starlette.applications import Starlette
+    from starlette.middleware import Middleware
     from starlette.requests import Request
     from starlette.responses import Response
     from starlette.routing import BaseRoute
 
-    from ..service import Service
-    from ..service.inference_api import ServiceEndpoint
-    from ..types import LifecycleHook
+    from bentoml._internal.types import LifecycleHook
 
 
-class UnifiedAppFactory(BaseAppFactory):
+class ServiceAppFactory(BaseAppFactory):
     def __init__(
         self,
         service: Service,
@@ -40,13 +36,20 @@ class UnifiedAppFactory(BaseAppFactory):
         enable_metrics: bool = False,
     ) -> None:
         self.service = service
+        self.__servable: Servable | None = None
         self.enable_metrics = enable_metrics
         super().__init__(timeout=timeout, max_concurrency=max_concurrency)
 
+    @property
+    def servable(self) -> Servable:
+        if self.__servable is None:
+            raise RuntimeError("Servable not initialized")
+        return self.__servable
+
     def __call__(self, is_main: bool = False) -> Starlette:
         app = super().__call__()
+        app.add_route("/schema.json", self.schema_view, name="schema")
         if is_main:
-            app.add_route("/schema.json", self.schema_view, name="schema")
             parent_dir_path = os.path.dirname(os.path.realpath(__file__))
             app.mount(
                 "/static_content",
@@ -67,13 +70,15 @@ class UnifiedAppFactory(BaseAppFactory):
     def middlewares(self) -> list[Middleware]:
         from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
+        from bentoml._internal.container import BentoMLContainer
+
         middlewares = super().middlewares
 
         for middleware_cls, options in self.service.middlewares:
             middlewares.append(Middleware(middleware_cls, **options))
 
         def client_request_hook(span: Span | None, _scope: dict[str, t.Any]) -> None:
-            from ..context import trace_context
+            from bentoml._internal.context import trace_context
 
             if span is not None:
                 trace_context.request_id = span.context.span_id
@@ -90,13 +95,15 @@ class UnifiedAppFactory(BaseAppFactory):
         )
 
         if self.enable_metrics:
-            from .http.instruments import RunnerTrafficMetricsMiddleware
+            from bentoml._internal.server.http.instruments import (
+                RunnerTrafficMetricsMiddleware,
+            )
 
             middlewares.append(Middleware(RunnerTrafficMetricsMiddleware))
 
         access_log_config = BentoMLContainer.runners_config.logging.access
         if access_log_config.enabled.get():
-            from .http.access import AccessLogMiddleware
+            from bentoml._internal.server.http.access import AccessLogMiddleware
 
             access_logger = logging.getLogger("bentoml.access")
             if access_logger.getEffectiveLevel() <= logging.INFO:
@@ -112,90 +119,88 @@ class UnifiedAppFactory(BaseAppFactory):
 
         return middlewares
 
-    @property
-    def on_shutdown(self) -> list[LifecycleHook]:
-        on_shutdown = [
-            *self.service.shutdown_hooks,
-            self.service.on_asgi_app_shutdown,
-        ]
-        for runner in self.service.runners:
-            on_shutdown.append(runner.destroy)
-        on_shutdown.extend(super().on_shutdown)
-        return on_shutdown
+    def init_servable(self) -> None:
+        if self.__servable is None:
+            self.__servable = self.service.get_servable()
+
+    def destroy_servable(self) -> None:
+        self.__servable = None
 
     @property
     def on_startup(self) -> list[LifecycleHook]:
-        from ..ionext.runner_handle import RemoteRunnerHandle
+        return [*super().on_startup, *self.service.startup_hooks, self.init_servable]
 
-        on_startup = [
-            *self.service.startup_hooks,
-            self.service.on_asgi_app_startup,
+    @property
+    def on_shutdown(self) -> list[LifecycleHook]:
+        return [
+            *super().on_shutdown,
+            *self.service.shutdown_hooks,
+            self.destroy_servable,
         ]
-        for runner in self.service.runners:
-            if runner.embedded:
-                on_startup.append(functools.partial(runner.init_local, quiet=True))
-            else:
-                on_startup.append(
-                    functools.partial(
-                        runner.init_client, handle_class=RemoteRunnerHandle
-                    )
-                )
-        on_startup.extend(super().on_startup)
-        return on_startup
 
     async def schema_view(self, request: Request) -> Response:
         from starlette.responses import JSONResponse
 
-        schema = self.service.schema
+        schema = self.servable.schema()
         return JSONResponse(schema)
 
     @property
     def routes(self) -> list[BaseRoute]:
+        from starlette.routing import Route
+
         routes = super().routes
 
-        for endpoint in self.service.endpoints.values():
-            api_endpoint = functools.partial(self.api_endpoint, endpoint)
-            route_path = endpoint.route
+        for (
+            name,
+            method,
+        ) in self.service.servable_cls.__servable_methods__.items():
+            api_endpoint = functools.partial(self.api_endpoint, name)
+            route_path = method.route
             if not route_path.startswith("/"):
                 route_path = "/" + route_path
-            routes.append(
-                Route(route_path, api_endpoint, methods=["POST"], name=endpoint.name)
-            )
+            routes.append(Route(route_path, api_endpoint, methods=["POST"], name=name))
         return routes
 
-    async def api_endpoint(
-        self, endpoint: ServiceEndpoint, request: Request
-    ) -> Response:
+    async def api_endpoint(self, name: str, request: Request) -> Response:
         from starlette.concurrency import run_in_threadpool
         from starlette.responses import JSONResponse
 
-        from ..ionext.serde import ALL_SERDE
-        from ..utils import is_async_callable
-        from ..utils.http import set_cookies
+        from bentoml._internal.container import BentoMLContainer
+        from bentoml._internal.context import trace_context
+        from bentoml._internal.utils import is_async_callable
+        from bentoml._internal.utils.http import set_cookies
+        from bentoml.exceptions import BentoMLException
+
+        from ..serde import ALL_SERDE
 
         media_type = request.headers.get("Content-Type", "application/json")
         serde = ALL_SERDE[media_type]()
+        try:
+            method = self.servable.__servable_methods__[name]
+        except RuntimeError as e:
+            return JSONResponse(str(e), status_code=500)
+        func = getattr(self.servable, name)
 
         with self.service.context.in_request(request) as ctx:
-            input_data = await endpoint.input_spec.from_http_request(request, serde)
+            input_data = await method.input_spec.from_http_request(request, serde)
             input_params = {k: getattr(input_data, k) for k in input_data.model_fields}
-            if endpoint.ctx_param is not None:
-                input_params[endpoint.ctx_param] = ctx
+            if method.ctx_param is not None:
+                input_params[method.ctx_param] = ctx
 
             try:
-                if is_async_callable(endpoint.func):
-                    output = await endpoint.func(**input_params)
-                elif inspect.isasyncgenfunction(endpoint.func):
-                    output = endpoint.func(**input_params)
+                if is_async_callable(func):
+                    output = await func(**input_params)
+                elif inspect.isasyncgenfunction(func):
+                    output = func(**input_params)
                 else:
-                    output = await run_in_threadpool(endpoint.func, **input_params)
+                    output = await run_in_threadpool(func, **input_params)
 
-                response = await endpoint.output_spec.to_http_response(output, serde)
+                response = await method.output_spec.to_http_response(output, serde)
                 response.headers.update(
-                    {"Server": f"{self.service.service_str}/{endpoint.name}"}
+                    {"Server": f"BentoML Service/{self.service.name}"}
                 )
 
-                if endpoint.ctx_param is not None:
+                if method.ctx_param is not None:
                     response.status_code = ctx.response.status_code
                     response.headers.update(ctx.response.metadata)
                     set_cookies(response, ctx.response.cookies)

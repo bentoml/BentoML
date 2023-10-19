@@ -3,8 +3,11 @@ from __future__ import annotations
 import logging
 import os
 import platform
+import re
+import shutil
 import typing as t
 import warnings
+from pathlib import Path
 from types import ModuleType
 
 import attr
@@ -101,7 +104,7 @@ if t.TYPE_CHECKING:
     )
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get"]
+__all__ = ["load_model", "import_model", "save_model", "get_runnable", "get"]
 
 _object_setattr = object.__setattr__
 
@@ -167,6 +170,165 @@ def _autoclass_converter(
     elif not isinstance(value, tuple):
         value = (value,)
     return tuple(it if isinstance(it, str) else it.__qualname__ for it in value)
+
+
+def _extract_commit_hash(
+    resolved_dir: str, regex_commit_hash: t.Pattern[str]
+) -> str | None:
+    """
+    Extracts the commit hash from a resolved filename toward a cache file.
+    modified from https://github.com/huggingface/transformers/blob/0b7b4429c78de68acaf72224eb6dae43616d820c/src/transformers/utils/hub.py#L219
+    """
+
+    resolved_dir = str(Path(resolved_dir).as_posix()) + "/"
+    search = re.search(r"snapshots/([^/]+)/", resolved_dir)
+
+    if search is None:
+        return None
+
+    commit_hash = search.groups()[0]
+    return commit_hash if regex_commit_hash.match(commit_hash) else None
+
+
+def _try_import_huggingface_hub():
+    try:
+        import huggingface_hub  # noqa: F401
+    except ImportError:  # pragma: no cover
+        raise MissingDependencyException(
+            "'huggingface_hub' is required in order to download pretrained diffusion models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
+        )
+
+
+def download_model_from_hf(pretrained_model_name_or_path, **kwargs):
+    # based off of transformers.AutoModel.from_pretrained method
+    # https://github.com/huggingface/transformers/blob/main/src/transformers/modeling_utils.py#L2905
+
+    from transformers.modeling_utils import _add_variant
+    from transformers.utils import cached_file
+    from transformers.utils.hub import has_file
+
+    WEIGHTS_NAME = "pytorch_model.bin"
+    WEIGHTS_INDEX_NAME = "pytorch_model.bin.index.json"
+
+    TF2_WEIGHTS_NAME = "tf_model.h5"
+    TF_WEIGHTS_NAME = "model.ckpt"
+    FLAX_WEIGHTS_NAME = "flax_model.msgpack"
+    SAFE_WEIGHTS_NAME = "model.safetensors"
+    SAFE_WEIGHTS_INDEX_NAME = "model.safetensors.index.json"
+
+    from_tf = kwargs.pop("from_tf", False)
+    from_flax = kwargs.pop("from_flax", False)
+    use_safetensors = kwargs.pop("use_safetensors", False)
+    proxies = kwargs.pop("proxies", None)
+    commit_hash = kwargs.pop("_commit_hash", None)
+    variant = kwargs.pop("variant", None)
+    revision = kwargs.pop("revision", None)
+
+    # set correct filename
+    if from_tf:
+        filename = TF2_WEIGHTS_NAME
+    elif from_flax:
+        filename = FLAX_WEIGHTS_NAME
+    elif use_safetensors is not False:
+        filename = _add_variant(SAFE_WEIGHTS_NAME, variant)
+    else:
+        filename = _add_variant(WEIGHTS_NAME, variant)
+
+    try:
+        # Load from URL or cache if already cached
+        cached_file_kwargs = {
+            "proxies": proxies,
+            "revision": revision,
+            "_commit_hash": commit_hash,
+        }
+        resolved_archive_file = cached_file(
+            pretrained_model_name_or_path, filename, **cached_file_kwargs
+        )
+
+        # Since we set _raise_exceptions_for_missing_entries=False, we don't get an exception but a None
+        # result when internet is up, the repo and revision exist, but the file does not.
+        if resolved_archive_file is None and filename == _add_variant(
+            SAFE_WEIGHTS_NAME, variant
+        ):
+            # Maybe the checkpoint is sharded, we try to grab the index name in this case.
+            resolved_archive_file = cached_file(
+                pretrained_model_name_or_path,
+                _add_variant(SAFE_WEIGHTS_INDEX_NAME, variant),
+                **cached_file_kwargs,
+            )
+            if resolved_archive_file is not None:
+                pass
+            elif use_safetensors:
+                raise EnvironmentError(
+                    f" {_add_variant(SAFE_WEIGHTS_NAME, variant)} or {_add_variant(SAFE_WEIGHTS_INDEX_NAME, variant)} and thus cannot be loaded with `safetensors`. Please make sure that the model has been saved with `safe_serialization=True` or do not set `use_safetensors=True`."
+                )
+            else:
+                # This repo has no safetensors file of any kind, we switch to PyTorch.
+                filename = _add_variant(WEIGHTS_NAME, variant)
+                resolved_archive_file = cached_file(
+                    pretrained_model_name_or_path, filename, **cached_file_kwargs
+                )
+        if resolved_archive_file is None and filename == _add_variant(
+            WEIGHTS_NAME, variant
+        ):
+            # Maybe the checkpoint is sharded, we try to grab the index name in this case.
+            resolved_archive_file = cached_file(
+                pretrained_model_name_or_path,
+                _add_variant(WEIGHTS_INDEX_NAME, variant),
+                **cached_file_kwargs,
+            )
+        if resolved_archive_file is None:
+            # Otherwise, maybe there is a TF or Flax model file.  We try those to give a helpful error
+            # message.
+            has_file_kwargs = {
+                "revision": revision,
+                "proxies": proxies,
+            }
+            if has_file(
+                pretrained_model_name_or_path, TF2_WEIGHTS_NAME, **has_file_kwargs
+            ):
+                raise EnvironmentError(
+                    f"{pretrained_model_name_or_path} does not appear to have a file named"
+                    f" {_add_variant(WEIGHTS_NAME, variant)} but there is a file for TensorFlow weights."
+                    " Use `from_tf=True` to load this model from those weights."
+                )
+            elif has_file(
+                pretrained_model_name_or_path, FLAX_WEIGHTS_NAME, **has_file_kwargs
+            ):
+                raise EnvironmentError(
+                    f"{pretrained_model_name_or_path} does not appear to have a file named"
+                    f" {_add_variant(WEIGHTS_NAME, variant)} but there is a file for Flax weights. Use"
+                    " `from_flax=True` to load this model from those weights."
+                )
+            elif variant is not None and has_file(
+                pretrained_model_name_or_path, WEIGHTS_NAME, **has_file_kwargs
+            ):
+                raise EnvironmentError(
+                    f"{pretrained_model_name_or_path} does not appear to have a file named"
+                    f" {_add_variant(WEIGHTS_NAME, variant)} but there is a file without the variant"
+                    f" {variant}. Use `variant=None` to load this model from those weights."
+                )
+            else:
+                raise EnvironmentError(
+                    f"{pretrained_model_name_or_path} does not appear to have a file named"
+                    f" {_add_variant(WEIGHTS_NAME, variant)}, {TF2_WEIGHTS_NAME}, {TF_WEIGHTS_NAME} or"
+                    f" {FLAX_WEIGHTS_NAME}."
+                )
+    except EnvironmentError:
+        # Raise any environment error raise by `cached_file`. It will have a helpful error message adapted
+        # to the original exception.
+        raise
+    except Exception:
+        # For any other exception, we throw a generic error.
+        raise EnvironmentError(
+            f"Can't load the model for '{pretrained_model_name_or_path}'. If you were trying to load it"
+            " from 'https://huggingface.co/models', make sure you don't have a local directory with the"
+            f" same name. Otherwise, make sure '{pretrained_model_name_or_path}' is the correct path to a"
+            f" directory containing a file named {_add_variant(WEIGHTS_NAME, variant)},"
+            f" {TF2_WEIGHTS_NAME}, {TF_WEIGHTS_NAME} or {FLAX_WEIGHTS_NAME}."
+        )
+
+    return resolved_archive_file
 
 
 @attr.define
@@ -397,7 +559,6 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
     api_version = bento_model.info.api_version
     task = options.task
     pipeline: transformers.Pipeline | None = None
-
     if api_version == "v1":
         # NOTE: backward compatibility
         from transformers.pipelines import get_supported_tasks
@@ -603,6 +764,339 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
         return {}
 
     return {k: default_config for k in infer_fn}
+
+
+def import_model(
+    name: Tag | str,
+    model_name_or_path: str | os.PathLike[str],
+    *,
+    task_name: str | None = None,
+    task_definition: dict[str, t.Any] | TaskDefinition | None = None,
+    proxies: dict[str, str] | None = None,
+    revision: str = "main",
+    variant: str | None = None,
+    sync_with_hub_version: bool = False,
+    signatures: ModelSignaturesType | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: t.List[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
+    # ...
+    **kwargs: dict[str, t.Any],
+) -> bentoml.Model:
+    """
+    Import Transformer model from a artifact URI to the BentoML model store.
+
+    Args:
+        name:
+            The name to give to the model in the BentoML store. This must be a valid
+            :obj:`~bentoml.Tag` name.
+        model_name_or_path:
+            Can be either:
+            - A string, the *repo id* of a model repo hosted on https://huggingface.co/
+              Valid repo ids have to be located under a user or organization name, like
+              `CompVis/ldm-text2im-large-256`.
+            - A path to a *directory* containing weights saved using
+              [`~transformers.AutoModel.save_pretrained`], e.g., `./my_pretrained_directory/`.
+        task_name (`str`, *optional*): Name of the pipeline task. Only needed when bentoml model is to be loaded as a pipeline.
+        task_definition (`Dict[str, AnyType]`, *optional*): Task definition for the Transformers custom pipeline. The definition is a dictionary
+                         consisting of the following keys:
+
+                        - ``impl`` (``type[transformers.Pipeline]``): The name of the pipeline implementation module. The name should be the same as the pipeline passed in the ``pipeline`` argument.
+                        - ``tf`` (:code:`tuple[AnyType]`): The name of the Tensorflow auto model class. One of ``tf`` and ``pt`` auto model class argument is required.
+                        - ``pt`` (:code:`tuple[AnyType]`): The name of the PyTorch auto model class. One of ``tf`` and ``pt`` auto model class argument is required.
+                        - ``default`` (:code:`Dict[str, AnyType]`): The names of the default models, tokenizers, feature extractors, etc.
+                        - ``type`` (:code:`str`): The type of the pipeline, e.g. ``text``, ``audio``, ``image``, ``multimodal``.
+
+                        Example:
+
+                        .. code-block:: python
+
+                            task_definition = {
+                                "impl": Text2TextGenerationPipeline,
+                                "tf": (TFAutoModelForSeq2SeqLM,) if is_tf_available() else (),
+                                "pt": (AutoModelForSeq2SeqLM,) if is_torch_available() else (),
+                                "default": {"model": {"pt": "t5-base", "tf": "t5-base"}},
+                                "type": "text",
+                            }
+        proxies (`Dict[str, str]`, *optional*):
+            A dictionary of proxy servers to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128',
+            'http://hostname': 'foo.bar:4012'}`. The proxies are used on each request.
+        revision (`str`, *optional*, defaults to `"main"`):
+            The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
+            git-based system for storing models and other artifacts on huggingface.co, so `revision` can be any
+            identifier allowed by git.
+        variant (`str`, *optional*):
+            Variant of the model to import.
+            This may save download bandwidth and local disk space.
+        sync_with_hub_version (`bool`, default to False):
+            If sync_with_hub_version is true, then the model imported by
+        signatures:
+            Signatures of predict methods to be used. If not provided, the signatures
+            default to {"__call__": {"batchable": False}}. See
+            :obj:`~bentoml.types.ModelSignature` for more details.
+        labels:
+            A default set of management labels to be associated with the model. For
+            example: ``{"training-set": "data-v1"}``.
+        custom_objects:
+            Custom objects to be saved with the model. An example is
+            ``{"my-normalizer": normalizer}``. Custom objects are serialized with
+            cloudpickle.
+        metadata:
+            Metadata to be associated with the model. An example is ``{"param_a": .2}``.
+
+            Metadata is intended for display in a model management UI and therefore all
+            values in metadata dictionary must be a primitive Python type, such as
+            ``str`` or ``int``.
+        kwargs:
+            Additional keyword arguments for download options.
+                Setting `from_tf=True` will download the following file `tf_model.h5`.
+                Setting `from_flax=True` will download the following file `flax_model.msgpack`.
+                Setting `use_safetensors=True` will download the following file `model.safetensors`.
+                Otherwise, the default targeted file is `pytorch_model.bin`
+
+    .. note::
+
+        Both arguments ``task_name`` and ``task_definition`` must be provided to set save a custom pipeline.
+
+    Returns:
+        A :obj:`~bentoml.Model` instance referencing a saved model in the local BentoML
+        model store.
+
+    Example:
+
+    .. code-block:: python
+
+        import bentoml
+
+        bentoml.transformers.import_model(
+            'my_t5_model',
+            "t5-base",
+            signatures={
+                "__call__": {"batchable": False},
+            }
+        )
+    """
+
+    tag = Tag.from_taglike(name)
+
+    if sync_with_hub_version:
+        if tag.version is not None:
+            logger.warn(
+                f"sync_with_hub_version is True, user provided version {tag.version} may be overridden by huggingface hub's commit hash"
+            )
+
+    # The below API are introduced since 4.18
+    if pkg_version_info("transformers")[:2] >= (4, 18):
+        from transformers.utils import is_flax_available
+        from transformers.utils import is_tf_available
+        from transformers.utils import is_torch_available
+    else:
+        from .utils.transformers import is_flax_available
+        from .utils.transformers import is_tf_available
+        from .utils.transformers import is_torch_available
+
+    framework_versions = {"transformers": get_pkg_version("transformers")}
+    if is_torch_available():
+        framework_versions["torch"] = get_pkg_version("torch")
+    if is_tf_available():
+        from .utils.tensorflow import get_tf_version
+
+        framework_versions[
+            "tensorflow-macos" if platform.system() == "Darwin" else "tensorflow"
+        ] = get_tf_version()
+    if is_flax_available():
+        framework_versions.update(
+            {
+                "flax": get_pkg_version("flax"),
+                "jax": get_pkg_version("jax"),
+                "jaxlib": get_pkg_version("jaxlib"),
+            }
+        )
+    context = ModelContext(
+        framework_name="transformers", framework_versions=framework_versions
+    )
+
+    if signatures is None:
+        signatures = {
+            "__call__": {"batchable": False},
+        }
+        logger.info(
+            'Using the default model signature for Transformers (%s) for model "%s".',
+            signatures,
+            name,
+        )
+
+    config = transformers.AutoConfig.from_pretrained(
+        model_name_or_path, proxies=proxies, revision=revision
+    )
+
+    downloaded_model_successfully = False
+    if os.path.isdir(model_name_or_path):
+        src_dir = model_name_or_path
+        if sync_with_hub_version:
+            raise BentoMLException(
+                "Cannot sync version with huggingface hub when importing a local model"
+            )
+    else:
+        try:
+            model_file_path = download_model_from_hf(
+                model_name_or_path,
+                proxies=proxies,
+                revision=revision,
+                variant=variant,
+                **kwargs,
+            )
+            downloaded_model_successfully = True
+        except Exception:
+            logger.info(
+                "Failed to download model file for (%s). Will attempt to clone repository instead.",
+                model_name_or_path,
+            )
+
+        if not downloaded_model_successfully:
+            # clone entire repository as fallback
+            _try_import_huggingface_hub()
+            from huggingface_hub import snapshot_download
+
+            src_dir = snapshot_download(
+                model_name_or_path,
+                proxies=proxies,
+                revision=revision,
+            )
+
+            if sync_with_hub_version:
+                from huggingface_hub.file_download import REGEX_COMMIT_HASH
+
+                version = _extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
+                if version is not None:
+                    tag.version = version
+
+    if task_name is not None:
+        # define a pipeline
+        if task_definition is not None:
+            from transformers.pipelines import get_supported_tasks
+
+            # NOTE: safe casting to annotate task_definition types
+            task_definition = t.cast(TaskDefinition, task_definition)
+
+            assert "impl" in task_definition, "'task_definition' requires 'impl' key."
+            options_args = (task_name, task_definition)
+
+            if task_name not in get_supported_tasks():
+                register_pipeline(task_name, **task_definition)
+                logger.info(
+                    "Task '%s' is a custom task and has been registered to the pipeline registry.",
+                    task_name,
+                )
+            assert (
+                task_name in get_supported_tasks()
+            ), f"Task '{task_name}' failed to register into pipeline registry."
+        else:
+            from transformers.pipelines import check_task
+            from transformers.pipelines import get_supported_tasks
+
+            try:
+                options_args = t.cast(
+                    "tuple[str, TaskDefinition]",
+                    check_task(task_name)[:2],
+                )
+                if task_name.startswith("translation"):
+                    options_args = (task_name, options_args[1])
+            except Exception:
+                raise BentoMLException(
+                    f"Task '{task_name}' is not a valid task for pipeline (available: {get_supported_tasks()}."
+                )
+
+        pipeline_class = options_args[1]["impl"]
+
+        with bentoml.models.create(
+            tag,
+            module=MODULE_NAME,
+            api_version=API_VERSION,
+            signatures=signatures,
+            labels=labels,
+            options=TransformersOptions.from_task(*options_args),
+            custom_objects=custom_objects,
+            external_modules=external_modules,
+            metadata=metadata,
+            context=context,
+        ) as bento_model:
+            if downloaded_model_successfully:
+                # using AutoTokenizer as it automatically selects the right files to download, tokenizer is needed for pipeline
+                tokenizer = transformers.AutoTokenizer.from_pretrained(
+                    model_name_or_path, proxies=proxies, revision=revision
+                )
+                tokenizer.save_pretrained(bento_model.path)
+                config.save_pretrained(bento_model.path)
+                shutil.copy(model_file_path, bento_model.path)
+            else:
+                ignore = shutil.ignore_patterns(".git")
+                shutil.copytree(
+                    src_dir,
+                    bento_model.path,
+                    symlinks=False,
+                    ignore=ignore,
+                    dirs_exist_ok=True,
+                )
+
+            with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "wb") as f:
+                cloudpickle.dump(pipeline_class, f)
+
+            return bento_model
+    else:
+        model = transformers.AutoModel.from_config(config=config)
+        pretrained = t.cast("PreTrainedProtocol", model)
+        assert all(
+            hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
+        ), f"'pretrained={pretrained}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+        if metadata is None:
+            metadata = {}
+
+        metadata.update(
+            {
+                "_pretrained_class": pretrained.__class__.__name__,
+            }
+        )
+        if hasattr(pretrained, "framework") and isinstance(
+            pretrained,
+            (
+                transformers.PreTrainedModel,
+                transformers.TFPreTrainedModel,
+                transformers.FlaxPreTrainedModel,
+            ),
+        ):
+            # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
+            metadata["_framework"] = pretrained.framework
+
+        with bentoml.models.create(
+            name,
+            module=MODULE_NAME,
+            api_version=API_VERSION,
+            labels=labels,
+            context=context,
+            options=TransformersOptions(),
+            signatures=signatures,
+            custom_objects=custom_objects,
+            external_modules=external_modules,
+            metadata=metadata,
+        ) as bento_model:
+            if downloaded_model_successfully:
+                config.save_pretrained(bento_model.path)
+                shutil.copy(model_file_path, bento_model.path)
+            else:
+                ignore = shutil.ignore_patterns(".git")
+                shutil.copytree(
+                    src_dir,
+                    bento_model.path,
+                    symlinks=False,
+                    ignore=ignore,
+                    dirs_exist_ok=True,
+                )
+
+            with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "wb") as f:
+                cloudpickle.dump(pretrained.__class__, f)
+            return bento_model
 
 
 def save_model(

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import socket
 import typing as t
 
@@ -21,11 +20,6 @@ import click
     type=click.STRING,
     envvar="BENTOML_RUNNER_MAP",
     help="JSON string of runners map, default sets to envars `BENTOML_RUNNER_MAP`",
-)
-@click.option(
-    "--runner-name",
-    type=click.STRING,
-    envvar="RUNNER_NAME",
 )
 @click.option(
     "--backlog", type=click.INT, default=2048, help="Backlog size for the socket"
@@ -106,7 +100,6 @@ def main(
     bento_identifier: str,
     fd: int,
     runner_map: str | None,
-    runner_name: str | None,
     backlog: int,
     working_dir: str | None,
     worker_id: int,
@@ -131,11 +124,7 @@ def main(
     from bentoml._internal.context import component_context
     from bentoml._internal.log import configure_server_logging
 
-    if runner_name is not None:
-        component_context.component_type = "runner"
-        component_context.component_name = runner_name
-    else:
-        component_context.component_type = "api_server"
+    component_context.component_type = "api_server"
     component_context.component_index = worker_id
     configure_server_logging()
 
@@ -164,27 +153,11 @@ def main(
     else:
         component_context.bento_name = svc.tag.name
         component_context.bento_version = svc.tag.version or "not available"
-    if runner_name is not None:
-        for runner in svc.runners:
-            if runner.name == runner_name:
-                assert isinstance(runner, bentoml.Runner)
-                svc = bentoml.Service.from_runner(runner)
-                break
-        else:
-            raise ValueError(f"Runner {runner_name} not found")
-
-    if svc.worker_env_map is not None:
-        env_key = worker_id - 1  # worker_id is 1-based
-        assert (
-            env_key in svc.worker_env_map
-        ), f"worker_id {env_key!r} not found in worker_env_map: {svc.worker_env_map}"
-        os.environ.update(svc.worker_env_map[env_key])
 
     uvicorn_options: dict[str, t.Any] = {
         "backlog": backlog,
         "log_config": None,
         "workers": 1,
-        "timeout_keep_alive": 1800,
     }
 
     if ssl_certfile:
@@ -218,11 +191,7 @@ def main(
 
     # skip the uvicorn internal supervisor
     sock = socket.socket(fileno=fd)
-    if BentoMLContainer.new_io:
-        asgi_app = svc.get_asgi_app(is_main=runner_name is None)
-    else:
-        asgi_app = svc.asgi_app
-    config = uvicorn.Config(asgi_app, **uvicorn_options)
+    config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
     uvicorn.Server(config).run(sockets=[sock])
 
 

@@ -33,7 +33,9 @@ This example uses some of the GitHub Actions workflows mentioned above and inclu
 * `service.py <https://github.com/bentoml/bentocloud-cicd-example/blob/main/service.py>`_: Specifies the BentoML Service to define the serving logic and expose the API endpoint.
 * `deployment.json <https://github.com/bentoml/bentocloud-cicd-example/blob/main/deployment.json>`_: The JSON configuration used to create or update the application's Bento Deployment on BentoCloud.
 
-Two automated workflows, **Build Bento** and **Deploy to BentoCloud**, are available to simplify the Bento building and deployment processes respectively.
+Two automated workflows, **Build Bento** and **Deploy to BentoCloud**, are available to simplify the Bento building and deployment processes respectively. The following diagram presents the general workflow from model training to cloud deployment.
+
+.. image:: ../../_static/img/bentocloud/best-practices/bento-building-and-deployment/bento-build-deployment-workflow.png
 
 Build Bento
 ^^^^^^^^^^^
@@ -65,7 +67,6 @@ Use orchestration tools
 -----------------------
 
 Machine learning models often need to evolve over time, especially when they're exposed to new or changing data. Regular retraining ensures your models remain accurate and relevant.
-To automate this process, you can leverage orchestration tools such as Airflow or Metaflow. These tools can be programmed to periodically train the model and subsequently push updates to BentoCloud.
 
 For a seamless integration, consider an orchestration job that updates the model tag within the ``bentofile.yaml`` file. Once this modification is committed to the code repository,
 it can trigger the pipeline described earlier, ensuring that your application always utilizes the most up-to-date model.

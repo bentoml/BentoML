@@ -6,8 +6,6 @@ import typing as t
 
 import attrs
 
-from .function import get_input_spec
-from .function import get_output_spec
 from .models import IODescriptor
 
 R = t.TypeVar("R")
@@ -26,11 +24,28 @@ class APIMethod(t.Generic[P, R]):
     input_spec: type[IODescriptor] = attrs.field()
     output_spec: type[IODescriptor] = attrs.field()
     batchable: bool = False
+    is_stream: bool = attrs.field(init=False)
     doc: str | None = attrs.field(init=False)
+    ctx_param: str | None = attrs.field(init=False)
 
     @doc.default
     def default_doc(self) -> str | None:
         return self.func.__doc__
+
+    @ctx_param.default
+    def default_ctx_param(self) -> str | None:
+        parameters = inspect.signature(self.func).parameters
+        if "ctx" in parameters:
+            return "ctx"
+        elif "context" in parameters:
+            return "context"
+        return None
+
+    @is_stream.default
+    def default_is_stream(self) -> bool:
+        return inspect.isasyncgenfunction(self.func) or inspect.isgeneratorfunction(
+            self.func
+        )
 
     @name.default
     def default_name(self) -> str:
@@ -44,23 +59,11 @@ class APIMethod(t.Generic[P, R]):
 
     @input_spec.default
     def default_input_spec(self) -> type[IODescriptor]:
-        spec = get_input_spec(self.func, skip_self=True)
-        if spec is None:
-            raise TypeError(
-                f"Unable to infer the input spec for function {self.func}, "
-                "please specify input_spec manually"
-            )
-        return spec
+        return IODescriptor.from_input(self.func, skip_self=True)
 
     @output_spec.default
     def default_output_spec(self) -> type[IODescriptor]:
-        spec = get_output_spec(self.func)
-        if spec is None:
-            raise TypeError(
-                f"Unable to infer the output spec for function {self.func}, "
-                "please specify output_spec manually"
-            )
-        return spec
+        return IODescriptor.from_output(self.func)
 
     @t.overload
     def __get__(self: T, instance: None, owner: type) -> T:
@@ -77,9 +80,7 @@ class APIMethod(t.Generic[P, R]):
 
     def schema(self) -> dict[str, t.Any]:
         output = self.output_spec.model_json_schema()
-        if inspect.isasyncgenfunction(self.func) or inspect.isgeneratorfunction(
-            self.func
-        ):
+        if self.is_stream:
             output["is_stream"] = True
         return {
             "name": self.name,

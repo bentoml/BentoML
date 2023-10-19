@@ -20,11 +20,9 @@ from ._internal.configuration import BENTOML_VERSION as __version__
 from ._internal.configuration import load_config
 from ._internal.configuration import save_config
 from ._internal.configuration import set_serialization_strategy
-from ._pydantic import add_custom_preparers
 
 # Inject dependencies and configurations
 load_config()
-add_custom_preparers()
 
 # BentoML built-in types
 from ._internal.bento import Bento

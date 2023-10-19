@@ -84,6 +84,7 @@ aws = ["fs-s3fs"]
 io = [
     "bentoml[io-json,io-image,io-pandas,io-file]",
 ]
+io-next = ["pydantic>=2"]
 io-file = ["filetype"] # Currently use for from_sample
 io-json = ["pydantic"]
 io-image = ["bentoml[io-file]", "Pillow"]
@@ -142,7 +143,6 @@ name = "torch"
 [tool.pdm.resolution]
 respect-source-order = true
 [tool.pdm.resolution.overrides]
-fastapi = "==0.93.0"
 tensorflow = ">=2.3.0"
 tensorflow-io-gcs-filesystem = "==0.31.0"
 
@@ -164,7 +164,6 @@ docs = [
     "sphinx-autobuild",
     "sphinx-hoverxref",
     "pyspark",
-    "ray[serve]",
 ]
 frameworks = [
     "catboost",
@@ -196,7 +195,6 @@ frameworks = [
 tooling = ["pre-commit", "setuptools-scm", "pandas-stubs"]
 testing = [
     "pandas>=1",
-    "pydantic<2",
     "scikit-learn",
     "yamllint==1.32.0",
     "coverage[toml]==7.2.6",

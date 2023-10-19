@@ -5,15 +5,11 @@ import re
 import typing as t
 
 import yaml
-from pydantic import BaseModel
 
 from ...exceptions import InvalidArgument
 from ..context import ServiceContext as Context
 from ..io_descriptors import IODescriptor
 from ..io_descriptors.base import IOType
-from ..ionext.function import ensure_io_descriptor
-from ..ionext.function import get_input_spec
-from ..ionext.function import get_output_spec
 from ..types import is_compatible_type
 
 RESERVED_API_NAMES = [
@@ -193,77 +189,3 @@ def _InferenceAPI_dumper(dumper: yaml.Dumper, api: InferenceAPI[t.Any]) -> yaml.
 
 
 yaml.add_representer(InferenceAPI, _InferenceAPI_dumper)
-
-
-class ServiceEndpoint:
-    def __init__(
-        self,
-        user_defined_callback: t.Callable[..., t.Any],
-        input_spec: type[BaseModel] | None = None,
-        output_spec: type[BaseModel] | None = None,
-        name: str | None = None,
-        doc: str | None = None,
-        route: str | None = None,
-        stream_output: bool | None = None,
-    ):
-        if name is None:
-            name = user_defined_callback.__name__
-        if doc is None:
-            doc = user_defined_callback.__doc__
-        if route is None:
-            route = f"/{name}"
-        InferenceAPI.validate_route(route)
-        if input_spec is None:
-            input_spec = get_input_spec(user_defined_callback)
-        else:
-            input_spec = ensure_io_descriptor(input_spec)
-        if input_spec is None:
-            raise ValueError(
-                "The type annotation is not complete or supported for API inference"
-            )
-        if output_spec is None:
-            output_spec = get_output_spec(user_defined_callback)
-        else:
-            output_spec = ensure_io_descriptor(output_spec)
-        if output_spec is None:
-            raise ValueError(
-                "The type annotation is not complete or supported for API inference"
-            )
-        if stream_output is None:
-            stream_output = inspect.isasyncgenfunction(
-                user_defined_callback
-            ) or inspect.isgeneratorfunction(user_defined_callback)
-
-        parameters = inspect.signature(user_defined_callback).parameters
-        self.ctx_param: str | None = None
-        if "ctx" in parameters:
-            self.ctx_param = "ctx"
-        elif "context" in parameters:
-            self.ctx_param = "context"
-
-        self.name = name
-        self.doc = doc
-        self.route = route
-        self.input_spec = input_spec
-        self.output_spec = output_spec
-        self.func = user_defined_callback
-        self.stream_output = stream_output
-
-    def asdict(self) -> dict[str, t.Any]:
-        output = self.output_spec.model_json_schema()
-        if self.stream_output:
-            output["is_stream"] = True
-        return {
-            "name": self.name,
-            "route": self.route,
-            "doc": self.doc,
-            "input": self.input_spec.model_json_schema(),
-            "output": output,
-        }
-
-
-def _APIEndpoint_dumper(dumper: yaml.Dumper, api: ServiceEndpoint) -> yaml.Node:
-    return dumper.represent_dict(api.asdict())
-
-
-yaml.add_representer(InferenceAPI, _APIEndpoint_dumper)

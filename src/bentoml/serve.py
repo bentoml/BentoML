@@ -460,7 +460,7 @@ def serve_http_production(
             name="api_server",
             args=api_server_args,
             working_dir=working_dir,
-            numprocesses=svc.required_workers_num or api_workers,
+            numprocesses=api_workers,
             close_child_stdin=close_child_stdin,
         )
     )

@@ -8,11 +8,6 @@ if t.TYPE_CHECKING:
     from .client.base import AbstractClient
 
 
-class DependencySpec(t.NamedTuple):
-    connect_string: str | None
-    servable_cls: type[Servable]
-
-
 class Servable:
     __servable_methods__: dict[str, APIMethod[..., t.Any]] = {}
     # User defined attributes

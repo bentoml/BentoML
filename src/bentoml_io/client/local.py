@@ -56,6 +56,6 @@ class AsyncLocalClient(LocalClient):
         meth = getattr(self.servable, name)
         if inspect.isgeneratorfunction(meth):
             return sync_gen_to_async(meth(*args, **kwargs))
-        elif not is_async_callable(meth):
+        elif not is_async_callable(meth) and not inspect.isasyncgenfunction(meth):
             return run_in_threadpool(meth, *args, **kwargs)
         return meth(*args, **kwargs)

@@ -15,7 +15,6 @@ import attr
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
 
-from ..servable import Servable
 from .base import AbstractClient
 
 if t.TYPE_CHECKING:
@@ -24,6 +23,7 @@ if t.TYPE_CHECKING:
     from aiohttp import ClientSession
 
     from ..models import IODescriptor
+    from ..servable import Servable
 
     T = t.TypeVar("T", bound="HTTPClient")
 
@@ -275,6 +275,9 @@ class HTTPClient(AbstractClient):
         if self._client is not None and not self._client.closed:
             await self._client.close()
 
+    async def __aexit__(self, *args: t.Any) -> None:
+        return await self.close()
+
 
 class SyncHTTPClient(HTTPClient):
     """A synchronous client for BentoML service.
@@ -367,9 +370,3 @@ class AsyncHTTPClient(HTTPClient):
         assert inspect.isasyncgen(resp)
         async for data in resp:
             yield data
-
-    async def __aenter__(self) -> HTTPClient:
-        return self
-
-    async def __aexit__(self, exc_type: t.Any, exc: t.Any, tb: t.Any) -> None:
-        await self.close()

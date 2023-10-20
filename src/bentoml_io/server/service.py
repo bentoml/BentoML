@@ -8,10 +8,14 @@ from functools import cached_property
 from functools import partial
 
 import attrs
+from simple_di import Provide
+from simple_di import inject
 
+from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
 from bentoml.exceptions import BentoMLException
 
+from ..client import ClientManager
 from ..servable import Servable
 
 if t.TYPE_CHECKING:
@@ -21,7 +25,6 @@ if t.TYPE_CHECKING:
     ContextFunc = t.Callable[[ServiceContext], None | t.Coroutine[t.Any, t.Any, None]]
     HookF = t.TypeVar("HookF", bound=LifecycleHook)
     HookF_ctx = t.TypeVar("HookF_ctx", bound=ContextFunc)
-    Dependency = t.Union["Service", str]
 
 
 @attrs.define
@@ -29,7 +32,7 @@ class Service:
     servable_cls: type[Servable]
     args: tuple[t.Any, ...] = attrs.field(default=(), repr=False)
     kwargs: dict[str, t.Any] = attrs.field(factory=dict, repr=False)
-    dependencies: list[Dependency] = attrs.field(factory=list)
+    dependencies: list[Service] = attrs.field(factory=list)
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
         factory=list, init=False, repr=False
     )
@@ -49,6 +52,17 @@ class Service:
     # import info
     _caller_module: str = attrs.field(init=False, repr=False)
     _working_dir: str = attrs.field(init=False, repr=False, factory=os.getcwd)
+    _servable: Servable | None = attrs.field(init=False, repr=False, default=None)
+    _client_manager: ClientManager = attrs.field(init=False, repr=False)
+
+    def __attrs_post_init__(self):
+        self.startup_hooks.append(self.init_servable)  # type: ignore
+
+        async def cleanup() -> None:
+            await self._client_manager.cleanup()
+            self.destroy_servable()
+
+        self.shutdown_hooks.append(cleanup)
 
     @_caller_module.default
     def get_caller_module(self) -> str:
@@ -62,6 +76,10 @@ class Service:
                 return this_name
             frame = frame.f_back
         return __name__
+
+    @_client_manager.default
+    def get_client_manager(self) -> ClientManager:
+        return ClientManager(self)
 
     @cached_property
     def import_string(self) -> str:
@@ -86,7 +104,7 @@ class Service:
             "Failed to get service import origin, bentoml.Service object must be assigned to a variable at module level"
         )
 
-    def add_dependencies(self, *services: Dependency) -> None:
+    def add_dependencies(self, *services: Service) -> None:
         self.dependencies.extend(services)
 
     def mount_asgi_app(
@@ -111,8 +129,20 @@ class Service:
     def name(self) -> str:
         return self.servable_cls.name
 
-    def get_servable(self) -> Servable:
-        return self.servable_cls(*self.args, **self.kwargs)
+    @property
+    def servable(self) -> Servable:
+        if self._servable is None:
+            raise BentoMLException("Service is not initialized")
+        return self._servable
+
+    def init_servable(self) -> Servable:
+        if self._servable is None:
+            self._servable = self.servable_cls(*self.args, **self.kwargs)
+            self._servable.get_client = self._client_manager.get_client
+        return self._servable
+
+    def destroy_servable(self) -> None:
+        self._servable = None
 
     def on_startup(self, func: HookF_ctx) -> HookF_ctx:
         self.startup_hooks.append(partial(func, self.context))
@@ -122,25 +152,48 @@ class Service:
         self.shutdown_hooks.append(partial(func, self.context))
         return func
 
-    def start(self) -> None:
-        raise NotImplementedError()  # TODO
+    @inject
+    def serve_http(
+        self,
+        *,
+        working_dir: str | None = None,
+        port: int = Provide[BentoMLContainer.http.port],
+        host: str = Provide[BentoMLContainer.http.host],
+        backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
+        api_workers: int = Provide[BentoMLContainer.api_server_workers],
+        timeout: int | None = None,
+        ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
+        ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
+        ssl_keyfile_password: str
+        | None = Provide[BentoMLContainer.ssl.keyfile_password],
+        ssl_version: int | None = Provide[BentoMLContainer.ssl.version],
+        ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
+        ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
+        ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+        bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
+        development_mode: bool = False,
+        reload: bool = False,
+    ) -> None:
+        from .serving import serve_http_production
 
-
-if __name__ == "__main__":
-    from .. import api
-
-    class Foo(Servable):
-        @api
-        def greet(self, name: str) -> str:
-            return f"Hello {name}"
-
-    class Bar(Servable):
-        @api
-        def greet(self, name: str) -> str:
-            return f"Hello {name}"
-
-    svc = Service(Foo, dependencies=[Service(Bar)])
-
-    @svc.on_startup
-    def startup(ctx):
-        pass
+        if working_dir is None:
+            working_dir = os.getcwd()
+        serve_http_production(
+            self,
+            working_dir=working_dir,
+            host=host,
+            port=port,
+            backlog=backlog,
+            api_workers=api_workers,
+            timeout=timeout,
+            ssl_certfile=ssl_certfile,
+            ssl_keyfile=ssl_keyfile,
+            ssl_keyfile_password=ssl_keyfile_password,
+            ssl_version=ssl_version,
+            ssl_cert_reqs=ssl_cert_reqs,
+            ssl_ca_certs=ssl_ca_certs,
+            ssl_ciphers=ssl_ciphers,
+            bentoml_home=bentoml_home,
+            development_mode=development_mode,
+            reload=reload,
+        )

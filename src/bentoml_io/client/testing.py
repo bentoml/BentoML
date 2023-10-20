@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import typing as t
 
-from ..server.service import Service
-from .base import AbstractClient
+from bentoml_io.client.local import LocalClient
+
+if t.TYPE_CHECKING:
+    from ..server.service import Service
+
+T = t.TypeVar("T")
 
 
-class TestingClient(AbstractClient):
+class TestingClient(LocalClient):
     def __init__(self, service: Service):
-        self.servable = service.get_servable()
+        super().__init__(service)
         for name in self.servable.__servable_methods__:
             setattr(self, name, getattr(self.servable, name))
 

@@ -8,9 +8,13 @@ if t.TYPE_CHECKING:
     from .client.base import AbstractClient
 
 
+class DependencySpec(t.NamedTuple):
+    connect_string: str | None
+    servable_cls: type[Servable]
+
+
 class Servable:
     __servable_methods__: dict[str, APIMethod[..., t.Any]] = {}
-    __clients_cache: dict[str, AbstractClient]
     # User defined attributes
     name: str
     SUPPORTED_RESOURCES: tuple[str, ...] = ("cpu",)
@@ -22,17 +26,12 @@ class Servable:
         new_servable_methods: dict[str, APIMethod[..., t.Any]] = {}
         for attr in vars(cls).values():
             if isinstance(attr, APIMethod):
-                new_servable_methods[attr.name] = attr
+                new_servable_methods[attr.name] = attr  # type: ignore
         cls.__servable_methods__ = {**cls.__servable_methods__, **new_servable_methods}
 
     def get_client(self, name_or_class: str | type[Servable]) -> AbstractClient:
-        if not hasattr(self, "__clients_cache"):
-            self.__clients_cache = {}
-        name = name_or_class if isinstance(name_or_class, str) else name_or_class.name
-        if name not in self.__clients_cache:
-            # TODO: create client
-            ...
-        return self.__clients_cache[name]
+        # To be injected by service
+        raise NotImplementedError
 
     def schema(self) -> dict[str, t.Any]:
         return {
@@ -50,3 +49,9 @@ class Servable:
         input_model = method.input_spec(**input_data)
         args = {k: getattr(input_model, k) for k in input_model.model_fields}
         return method.func(self, **args)
+
+    def test(self):
+        return self.get_client("abc")
+
+    async def async_test(self):
+        return self.get_client("abc")

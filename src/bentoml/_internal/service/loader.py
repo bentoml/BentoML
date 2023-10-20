@@ -60,7 +60,10 @@ def import_service(
         import_service("fraud_detector.py")
         import_service("fraud_detector")
     """
-    from bentoml import Service
+    if BentoMLContainer.new_io:
+        from bentoml_io.server import Service
+    else:
+        from bentoml import Service
 
     prev_cwd = None
     sys_path_modified = False

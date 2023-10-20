@@ -3,22 +3,19 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-import os
 import sys
 import typing as t
 
-from starlette.staticfiles import StaticFiles
+from starlette.middleware import Middleware
 
 from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
 
-from ..servable import Servable
 from .service import Service
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
     from starlette.applications import Starlette
-    from starlette.middleware import Middleware
     from starlette.requests import Request
     from starlette.responses import Response
     from starlette.routing import BaseRoute
@@ -36,28 +33,15 @@ class ServiceAppFactory(BaseAppFactory):
         enable_metrics: bool = False,
     ) -> None:
         self.service = service
-        self.__servable: Servable | None = None
         self.enable_metrics = enable_metrics
         super().__init__(timeout=timeout, max_concurrency=max_concurrency)
-
-    @property
-    def servable(self) -> Servable:
-        if self.__servable is None:
-            raise RuntimeError("Servable not initialized")
-        return self.__servable
 
     def __call__(self, is_main: bool = False) -> Starlette:
         app = super().__call__()
         app.add_route("/schema.json", self.schema_view, name="schema")
         if is_main:
-            parent_dir_path = os.path.dirname(os.path.realpath(__file__))
-            app.mount(
-                "/static_content",
-                app=StaticFiles(
-                    directory=os.path.join(parent_dir_path, "static_content")
-                ),
-                name="static_content",
-            )
+            # TODO: enable static content
+            pass
         for mount_app, path, name in self.service.mount_apps:
             app.mount(app=mount_app, path=path, name=name)
         return app
@@ -119,29 +103,18 @@ class ServiceAppFactory(BaseAppFactory):
 
         return middlewares
 
-    def init_servable(self) -> None:
-        if self.__servable is None:
-            self.__servable = self.service.get_servable()
-
-    def destroy_servable(self) -> None:
-        self.__servable = None
-
     @property
     def on_startup(self) -> list[LifecycleHook]:
-        return [*super().on_startup, *self.service.startup_hooks, self.init_servable]
+        return [*super().on_startup, *self.service.startup_hooks]
 
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
-        return [
-            *super().on_shutdown,
-            *self.service.shutdown_hooks,
-            self.destroy_servable,
-        ]
+        return [*super().on_shutdown, *self.service.shutdown_hooks]
 
     async def schema_view(self, request: Request) -> Response:
         from starlette.responses import JSONResponse
 
-        schema = self.servable.schema()
+        schema = self.service.servable.schema()
         return JSONResponse(schema)
 
     @property
@@ -176,10 +149,11 @@ class ServiceAppFactory(BaseAppFactory):
         media_type = request.headers.get("Content-Type", "application/json")
         serde = ALL_SERDE[media_type]()
         try:
-            method = self.servable.__servable_methods__[name]
-        except RuntimeError as e:
+            servable = self.service.servable
+        except Exception as e:
             return JSONResponse(str(e), status_code=500)
-        func = getattr(self.servable, name)
+        method = servable.__servable_methods__[name]
+        func = getattr(servable, name)
 
         with self.service.context.in_request(request) as ctx:
             input_data = await method.input_spec.from_http_request(request, serde)

@@ -265,7 +265,6 @@ class _BentoMLContainerClass:
     serialization_strategy: providers.Static[SerializationStrategy] = providers.Static(
         "EXPORT_BENTO"
     )
-    worker_index: providers.Static[int] = providers.Static(0)
 
     @providers.SingletonFactory
     @staticmethod

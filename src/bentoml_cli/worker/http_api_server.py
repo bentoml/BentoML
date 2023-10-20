@@ -132,8 +132,6 @@ def main(
         # worker ID is not set; this server is running in standalone mode
         # and should not be concerned with the status of its runners
         BentoMLContainer.config.runner_probe.enabled.set(False)
-    else:
-        BentoMLContainer.worker_index.set(worker_id)
 
     BentoMLContainer.development_mode.set(development_mode)
     if prometheus_dir is not None:

@@ -509,3 +509,19 @@ def async_gen_to_sync(
     finally:
         loop.close()
         asyncio.set_event_loop(None)
+
+
+async def sync_gen_to_async(
+    gen: t.Generator[T, None, None]
+) -> t.AsyncGenerator[T, None]:
+    """
+    Convert a sync generator to an async generator
+    """
+    from starlette.concurrency import run_in_threadpool
+
+    while True:
+        try:
+            rv = await run_in_threadpool(gen.__next__)
+            yield rv
+        except StopIteration:
+            break

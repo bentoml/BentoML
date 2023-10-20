@@ -13,6 +13,8 @@ from simple_di import inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
+from bentoml._internal.runner.strategy import DefaultStrategy
+from bentoml._internal.runner.strategy import Strategy
 from bentoml.exceptions import BentoMLException
 
 from ..client import ClientManager
@@ -27,33 +29,28 @@ if t.TYPE_CHECKING:
     HookF_ctx = t.TypeVar("HookF_ctx", bound=ContextFunc)
 
 
-@attrs.define
+@attrs.define(slots=False)
 class Service:
     servable_cls: type[Servable]
-    args: tuple[t.Any, ...] = attrs.field(default=(), repr=False)
-    kwargs: dict[str, t.Any] = attrs.field(factory=dict, repr=False)
+    args: tuple[t.Any, ...] = attrs.field(default=())
+    kwargs: dict[str, t.Any] = attrs.field(factory=dict)
     dependencies: list[Service] = attrs.field(factory=list)
+    strategy: type[Strategy] = attrs.field(default=DefaultStrategy, kw_only=True)
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
-        factory=list, init=False, repr=False
+        factory=list, init=False
     )
     middlewares: list[tuple[type[ext.AsgiMiddleware], dict[str, t.Any]]] = attrs.field(
-        factory=list, init=False, repr=False
+        factory=list, init=False
     )
-    startup_hooks: list[LifecycleHook] = attrs.field(
-        factory=list, init=False, repr=False
-    )
-    shutdown_hooks: list[LifecycleHook] = attrs.field(
-        factory=list, init=False, repr=False
-    )
+    startup_hooks: list[LifecycleHook] = attrs.field(factory=list, init=False)
+    shutdown_hooks: list[LifecycleHook] = attrs.field(factory=list, init=False)
     # service context
-    context: ServiceContext = attrs.field(
-        init=False, factory=ServiceContext, repr=False
-    )
+    context: ServiceContext = attrs.field(init=False, factory=ServiceContext)
     # import info
-    _caller_module: str = attrs.field(init=False, repr=False)
-    _working_dir: str = attrs.field(init=False, repr=False, factory=os.getcwd)
-    _servable: Servable | None = attrs.field(init=False, repr=False, default=None)
-    _client_manager: ClientManager = attrs.field(init=False, repr=False)
+    _caller_module: str = attrs.field(init=False)
+    _working_dir: str = attrs.field(init=False, factory=os.getcwd)
+    _servable: Servable | None = attrs.field(init=False, default=None)
+    _client_manager: ClientManager = attrs.field(init=False)
 
     def __attrs_post_init__(self):
         self.startup_hooks.append(self.init_servable)  # type: ignore
@@ -63,6 +60,9 @@ class Service:
             self.destroy_servable()
 
         self.shutdown_hooks.append(cleanup)
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__} name={self.name}>"
 
     @_caller_module.default
     def get_caller_module(self) -> str:
@@ -152,6 +152,35 @@ class Service:
         self.shutdown_hooks.append(partial(func, self.context))
         return func
 
+    @cached_property
+    def config(self) -> dict[str, t.Any]:
+        config = BentoMLContainer.runners_config.get()
+        if self.name in config:
+            return config[self.name]
+        return config
+
+    @property
+    def worker_count(self) -> int:
+        config = self.config
+        return self.strategy.get_worker_count(
+            self.servable_cls,
+            config["resources"],
+            config.get("workers_per_resource", 1),
+        )
+
+    @property
+    def worker_env_map(self) -> list[dict[str, t.Any]]:
+        config = self.config
+        return [
+            self.strategy.get_worker_env(
+                self.servable_cls,
+                config["resources"],
+                config.get("workers_per_resource", 1),
+                i,
+            )
+            for i in range(self.worker_count)
+        ]
+
     @inject
     def serve_http(
         self,
@@ -174,10 +203,14 @@ class Service:
         development_mode: bool = False,
         reload: bool = False,
     ) -> None:
+        from bentoml._internal.log import configure_logging
+
         from .serving import serve_http_production
 
+        configure_logging()
+
         if working_dir is None:
-            working_dir = os.getcwd()
+            working_dir = self._working_dir
         serve_http_production(
             self,
             working_dir=working_dir,
@@ -197,3 +230,15 @@ class Service:
             development_mode=development_mode,
             reload=reload,
         )
+
+
+class APIService(Service):
+    """A service that doesn't scale on requested resources"""
+
+    @property
+    def worker_count(self) -> int:
+        return BentoMLContainer.api_server_workers.get()
+
+    @property
+    def worker_env_map(self) -> list[dict[str, t.Any]]:
+        return []

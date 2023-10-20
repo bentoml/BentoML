@@ -112,7 +112,7 @@ MODULE_NAME = "bentoml.transformers"
 API_VERSION = "v2"
 PIPELINE_PICKLE_NAME = f"pipeline.{API_VERSION}.pkl"
 PRETRAINED_PROTOCOL_NAME = f"pretrained.{API_VERSION}.pkl"
-
+CONFIG_JSON_FILE_NAME = "config.json"
 
 logger = logging.getLogger(__name__)
 
@@ -195,140 +195,17 @@ def _try_import_huggingface_hub():
         import huggingface_hub  # noqa: F401
     except ImportError:  # pragma: no cover
         raise MissingDependencyException(
-            "'huggingface_hub' is required in order to download pretrained diffusion models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
+            "'huggingface_hub' is required in order to download pretrained transformer models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
         )
 
 
-def download_model_from_hf(pretrained_model_name_or_path, **kwargs):
-    # based off of transformers.AutoModel.from_pretrained method
-    # https://github.com/huggingface/transformers/blob/main/src/transformers/modeling_utils.py#L2905
-
-    from transformers.modeling_utils import _add_variant
-    from transformers.utils import cached_file
-    from transformers.utils.hub import has_file
-
-    WEIGHTS_NAME = "pytorch_model.bin"
-    WEIGHTS_INDEX_NAME = "pytorch_model.bin.index.json"
-
-    TF2_WEIGHTS_NAME = "tf_model.h5"
-    TF_WEIGHTS_NAME = "model.ckpt"
-    FLAX_WEIGHTS_NAME = "flax_model.msgpack"
-    SAFE_WEIGHTS_NAME = "model.safetensors"
-    SAFE_WEIGHTS_INDEX_NAME = "model.safetensors.index.json"
-
-    from_tf = kwargs.pop("from_tf", False)
-    from_flax = kwargs.pop("from_flax", False)
-    use_safetensors = kwargs.pop("use_safetensors", False)
-    proxies = kwargs.pop("proxies", None)
-    commit_hash = kwargs.pop("_commit_hash", None)
-    variant = kwargs.pop("variant", None)
-    revision = kwargs.pop("revision", None)
-
-    # set correct filename
-    if from_tf:
-        filename = TF2_WEIGHTS_NAME
-    elif from_flax:
-        filename = FLAX_WEIGHTS_NAME
-    elif use_safetensors is not False:
-        filename = _add_variant(SAFE_WEIGHTS_NAME, variant)
-    else:
-        filename = _add_variant(WEIGHTS_NAME, variant)
-
+def _try_import_accelerate():
     try:
-        # Load from URL or cache if already cached
-        cached_file_kwargs = {
-            "proxies": proxies,
-            "revision": revision,
-            "_commit_hash": commit_hash,
-        }
-        resolved_archive_file = cached_file(
-            pretrained_model_name_or_path, filename, **cached_file_kwargs
+        import accelerate  # noqa: F401
+    except ImportError:  # pragma: no cover
+        raise MissingDependencyException(
+            "'accelerate' is required in order to download pretrained transformer models, install with 'pip install accelerate'.",
         )
-
-        # Since we set _raise_exceptions_for_missing_entries=False, we don't get an exception but a None
-        # result when internet is up, the repo and revision exist, but the file does not.
-        if resolved_archive_file is None and filename == _add_variant(
-            SAFE_WEIGHTS_NAME, variant
-        ):
-            # Maybe the checkpoint is sharded, we try to grab the index name in this case.
-            resolved_archive_file = cached_file(
-                pretrained_model_name_or_path,
-                _add_variant(SAFE_WEIGHTS_INDEX_NAME, variant),
-                **cached_file_kwargs,
-            )
-            if resolved_archive_file is not None:
-                pass
-            elif use_safetensors:
-                raise EnvironmentError(
-                    f" {_add_variant(SAFE_WEIGHTS_NAME, variant)} or {_add_variant(SAFE_WEIGHTS_INDEX_NAME, variant)} and thus cannot be loaded with `safetensors`. Please make sure that the model has been saved with `safe_serialization=True` or do not set `use_safetensors=True`."
-                )
-            else:
-                # This repo has no safetensors file of any kind, we switch to PyTorch.
-                filename = _add_variant(WEIGHTS_NAME, variant)
-                resolved_archive_file = cached_file(
-                    pretrained_model_name_or_path, filename, **cached_file_kwargs
-                )
-        if resolved_archive_file is None and filename == _add_variant(
-            WEIGHTS_NAME, variant
-        ):
-            # Maybe the checkpoint is sharded, we try to grab the index name in this case.
-            resolved_archive_file = cached_file(
-                pretrained_model_name_or_path,
-                _add_variant(WEIGHTS_INDEX_NAME, variant),
-                **cached_file_kwargs,
-            )
-        if resolved_archive_file is None:
-            # Otherwise, maybe there is a TF or Flax model file.  We try those to give a helpful error
-            # message.
-            has_file_kwargs = {
-                "revision": revision,
-                "proxies": proxies,
-            }
-            if has_file(
-                pretrained_model_name_or_path, TF2_WEIGHTS_NAME, **has_file_kwargs
-            ):
-                raise EnvironmentError(
-                    f"{pretrained_model_name_or_path} does not appear to have a file named"
-                    f" {_add_variant(WEIGHTS_NAME, variant)} but there is a file for TensorFlow weights."
-                    " Use `from_tf=True` to load this model from those weights."
-                )
-            elif has_file(
-                pretrained_model_name_or_path, FLAX_WEIGHTS_NAME, **has_file_kwargs
-            ):
-                raise EnvironmentError(
-                    f"{pretrained_model_name_or_path} does not appear to have a file named"
-                    f" {_add_variant(WEIGHTS_NAME, variant)} but there is a file for Flax weights. Use"
-                    " `from_flax=True` to load this model from those weights."
-                )
-            elif variant is not None and has_file(
-                pretrained_model_name_or_path, WEIGHTS_NAME, **has_file_kwargs
-            ):
-                raise EnvironmentError(
-                    f"{pretrained_model_name_or_path} does not appear to have a file named"
-                    f" {_add_variant(WEIGHTS_NAME, variant)} but there is a file without the variant"
-                    f" {variant}. Use `variant=None` to load this model from those weights."
-                )
-            else:
-                raise EnvironmentError(
-                    f"{pretrained_model_name_or_path} does not appear to have a file named"
-                    f" {_add_variant(WEIGHTS_NAME, variant)}, {TF2_WEIGHTS_NAME}, {TF_WEIGHTS_NAME} or"
-                    f" {FLAX_WEIGHTS_NAME}."
-                )
-    except EnvironmentError:
-        # Raise any environment error raise by `cached_file`. It will have a helpful error message adapted
-        # to the original exception.
-        raise
-    except Exception:
-        # For any other exception, we throw a generic error.
-        raise EnvironmentError(
-            f"Can't load the model for '{pretrained_model_name_or_path}'. If you were trying to load it"
-            " from 'https://huggingface.co/models', make sure you don't have a local directory with the"
-            f" same name. Otherwise, make sure '{pretrained_model_name_or_path}' is the correct path to a"
-            f" directory containing a file named {_add_variant(WEIGHTS_NAME, variant)},"
-            f" {TF2_WEIGHTS_NAME}, {TF_WEIGHTS_NAME} or {FLAX_WEIGHTS_NAME}."
-        )
-
-    return resolved_archive_file
 
 
 @attr.define
@@ -928,9 +805,13 @@ def import_model(
         )
 
     config = transformers.AutoConfig.from_pretrained(
-        model_name_or_path, proxies=proxies, revision=revision
+        model_name_or_path,
+        proxies=proxies,
+        revision=revision,
+        variant=variant,
+        **kwargs,
     )
-
+    model = None
     downloaded_model_successfully = False
     if os.path.isdir(model_name_or_path):
         src_dir = model_name_or_path
@@ -940,13 +821,26 @@ def import_model(
             )
     else:
         try:
-            model_file_path = download_model_from_hf(
-                model_name_or_path,
-                proxies=proxies,
-                revision=revision,
-                variant=variant,
-                **kwargs,
-            )
+            _try_import_accelerate()
+            from accelerate import init_empty_weights
+            from transformers.utils import cached_file
+
+            with init_empty_weights():
+                model = transformers.AutoModel.from_pretrained(
+                    model_name_or_path,
+                    proxies=proxies,
+                    revision=revision,
+                    variant=variant,
+                    **kwargs,
+                )
+                resolved_archive_file = cached_file(
+                    model_name_or_path,
+                    CONFIG_JSON_FILE_NAME,
+                    proxies=proxies,
+                    revision=revision,
+                    variant=variant,
+                )
+                src_dir = os.path.dirname(resolved_archive_file)
             downloaded_model_successfully = True
         except Exception:
             logger.info(
@@ -1008,44 +902,17 @@ def import_model(
                     f"Task '{task_name}' is not a valid task for pipeline (available: {get_supported_tasks()}."
                 )
 
-        pipeline_class = options_args[1]["impl"]
-
-        with bentoml.models.create(
-            tag,
-            module=MODULE_NAME,
-            api_version=API_VERSION,
-            signatures=signatures,
-            labels=labels,
-            options=TransformersOptions.from_task(*options_args),
-            custom_objects=custom_objects,
-            external_modules=external_modules,
-            metadata=metadata,
-            context=context,
-        ) as bento_model:
-            if downloaded_model_successfully:
-                # using AutoTokenizer as it automatically selects the right files to download, tokenizer is needed for pipeline
-                tokenizer = transformers.AutoTokenizer.from_pretrained(
-                    model_name_or_path, proxies=proxies, revision=revision
-                )
-                tokenizer.save_pretrained(bento_model.path)
-                config.save_pretrained(bento_model.path)
-                shutil.copy(model_file_path, bento_model.path)
-            else:
-                ignore = shutil.ignore_patterns(".git")
-                shutil.copytree(
-                    src_dir,
-                    bento_model.path,
-                    symlinks=False,
-                    ignore=ignore,
-                    dirs_exist_ok=True,
-                )
-
-            with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "wb") as f:
-                cloudpickle.dump(pipeline_class, f)
-
-            return bento_model
+        pickle_content = options_args[1]["impl"]
+        pickle_file = PIPELINE_PICKLE_NAME
+        options = TransformersOptions.from_task(*options_args)
     else:
-        model = transformers.AutoModel.from_config(config=config)
+        if model is None:
+            _try_import_accelerate()
+            from accelerate import init_empty_weights
+
+            with init_empty_weights():
+                model = transformers.AutoModel.from_config(config=config)
+
         pretrained = t.cast("PreTrainedProtocol", model)
         assert all(
             hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
@@ -1068,35 +935,43 @@ def import_model(
         ):
             # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
             metadata["_framework"] = pretrained.framework
+        pickle_content = pretrained.__class__
+        pickle_file = PRETRAINED_PROTOCOL_NAME
+        options = TransformersOptions()
 
-        with bentoml.models.create(
-            name,
-            module=MODULE_NAME,
-            api_version=API_VERSION,
-            labels=labels,
-            context=context,
-            options=TransformersOptions(),
-            signatures=signatures,
-            custom_objects=custom_objects,
-            external_modules=external_modules,
-            metadata=metadata,
-        ) as bento_model:
-            if downloaded_model_successfully:
-                config.save_pretrained(bento_model.path)
-                shutil.copy(model_file_path, bento_model.path)
-            else:
-                ignore = shutil.ignore_patterns(".git")
-                shutil.copytree(
-                    src_dir,
-                    bento_model.path,
-                    symlinks=False,
-                    ignore=ignore,
-                    dirs_exist_ok=True,
-                )
+    with bentoml.models.create(
+        tag,
+        module=MODULE_NAME,
+        api_version=API_VERSION,
+        signatures=signatures,
+        labels=labels,
+        options=options,
+        custom_objects=custom_objects,
+        external_modules=external_modules,
+        metadata=metadata,
+        context=context,
+    ) as bento_model:
+        if task_name is not None:
+            # using AutoTokenizer as it automatically selects the right files to download to cache, tokenizer is needed for pipeline
+            transformers.AutoTokenizer.from_pretrained(
+                model_name_or_path,
+                proxies=proxies,
+                revision=revision,
+                variant=variant,
+                **kwargs,
+            )
 
-            with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "wb") as f:
-                cloudpickle.dump(pretrained.__class__, f)
-            return bento_model
+        ignore = shutil.ignore_patterns(".git")
+        shutil.copytree(
+            src_dir,
+            bento_model.path,
+            symlinks=False,
+            ignore=ignore,
+            dirs_exist_ok=True,
+        )
+        with open(bento_model.path_of(pickle_file), "wb") as f:
+            cloudpickle.dump(pickle_content, f)
+        return bento_model
 
 
 def save_model(

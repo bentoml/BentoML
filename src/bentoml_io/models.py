@@ -146,7 +146,7 @@ class IODescriptor(BaseModel, IOMixin):
 
 
 def ensure_io_descriptor(output_type: type) -> type[IODescriptor]:
-    if issubclass(output_type, BaseModel):
+    if inspect.isclass(output_type) and issubclass(output_type, BaseModel):
         if not issubclass(output_type, IODescriptor):
 
             class Output(output_type, IOMixin):

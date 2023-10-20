@@ -154,7 +154,7 @@ class AsyncHTTPClient(AsyncClient):
 
         # TODO: Temporary workaround before moving everything to StreamingResponse
         if isinstance(fake_resp, starlette.responses.StreamingResponse):
-            req_body = fake_resp.body
+            req_body = "".join([s async for s in fake_resp.body_iterator])
         else:
             req_body = fake_resp.body
 
@@ -308,7 +308,7 @@ class SyncHTTPClient(SyncClient):
             async def get_body():
                 return "".join([s async for s in fake_resp.body_iterator])
 
-            req_body = asyncio.run(get_body)
+            req_body = asyncio.run(get_body())
         else:
             req_body = fake_resp.body
 

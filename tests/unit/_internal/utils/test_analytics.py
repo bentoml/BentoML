@@ -67,7 +67,7 @@ def test_get_payload(event_properties: analytics.schemas.ModelSaveEvent):
     assert SCHEMA.validate(payload)
 
 
-@patch("bentoml._internal.utils.analytics.usage_stats.httx.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 @patch("bentoml._internal.utils.analytics.usage_stats._usage_event_debugging")
 def test_send_usage(

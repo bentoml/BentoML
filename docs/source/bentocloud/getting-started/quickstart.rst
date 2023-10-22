@@ -66,7 +66,7 @@ Obtain an API token
 To transfer your Bento from the local Bento Store to BentoCloud, you need to create an API token that contains the required permissions to create resources on BentoCloud.
 
 1. Navigate to the **API Tokens** page and click **Create**.
-2. Enter the token name and enable **Developer Permissions**. This will create a Developer token that allows you to access BentoCloud and manage resources on it.
+2. Enter the token name and enable **Developer Operations Access**. This will create a Developer token that allows you to access BentoCloud and manage resources on it.
 
    .. image:: ../../_static/img/bentocloud/get-started/quickstart/get-api-token.png
 

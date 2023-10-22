@@ -33,10 +33,13 @@ To create an API token, perform the following steps:
 2. Click **Create**.
 3. In the dialog that appears, specify the following fields. Note that you must select at least one of the token types.
 
+   .. image:: ../../_static/img/bentocloud/how-to/manage-access-tokens/token-creation-dialog.png
+
    - **Name**: The name of the API token.
    - **Description**: A description of the token, detailing its usage.
-   - **Developer Permissions (Developer token)**: Grant permissions to access BentoCloud and manage resources on it.
-   - **User Permissions (User token)**: Grant permissions to access Bento Deployments with Protected endpoints. If you select this token type, you need to choose the Deployment that you want the token to access.
+   - **Developer Operations Access (Developer token)**: Grant permissions to access BentoCloud and manage resources on it.
+   - **Protected Endpoint Access (User token)**: Grant permissions to access Bento Deployments with Protected endpoints. If you select this token type, you need to choose the Deployment that you want the token to access. If you want to use the token to access all the Protected Deployments, select **All Deployments**.
+   - **Expired At**: Set an expiration date for the token. You won't be able to use the token after it expires.
 
 4. Click **Submit**.
 5. Record the token. This is the only opportunity to record it.

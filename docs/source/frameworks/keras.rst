@@ -83,7 +83,7 @@ Building a Service using Keras
 
 .. seealso::
 
-   See :ref:`Building a Service <concepts/service:Service and APIs>` for more
+   See :ref:`Building a Service <concepts/service:Service APIs>` for more
    information on creating a prediction service with BentoML.
 
 The following service example creates a ``predict`` API endpoint that accepts an image as input
@@ -115,8 +115,7 @@ previously saved ResNet50 model is used for inference.
        return decode_predictions(preds, top=1)[0]
 
 
-When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build
-Options>`, there are two ways to include Keras as a dependency, via
+When constructing a :ref:`bentofile.yaml <concepts/bento:Bento build options>`, there are two ways to include Keras as a dependency, via
 ``python`` (if using pip) or ``conda``:
 
 .. tab-set::

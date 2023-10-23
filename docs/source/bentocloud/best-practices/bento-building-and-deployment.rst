@@ -75,7 +75,7 @@ Incorporate tests
 -----------------
 
 You can integrate unit and end-to-end tests into the CI process, which are triggered once new Bentos are built.
-See :ref:`concepts/bento:Testing` to learn more.
+See :ref:`concepts/bento:Test Bentos` to learn more.
 
 Preview changes with tags
 -------------------------

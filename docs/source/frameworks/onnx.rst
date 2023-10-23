@@ -220,7 +220,7 @@ Saving ONNX model with BentoML
 ------------------------------
 
 To quickly save any given ONNX model to BentoML's :ref:`Model
-Store<concepts/model:Managing Models>`, use ``onnx.load`` to
+Store <concepts/model:Manage models>`, use ``onnx.load`` to
 load the exported ONNX model back into the Python session,
 then call BentoML's :obj:`~bentoml.onnx.save_model()`:
 
@@ -285,7 +285,7 @@ This means by default, BentoML's :ref:`guides/batching:Adaptive Batching` is dis
 If you want to enable adaptive batching, provide a signature similar to the
 aboved example.
 
-Refer to :ref:`concepts/model:Model Signatures` and :ref:`Batching behaviour <concepts/model:Batching>` for more information.
+Refer to :ref:`concepts/model:Model signatures` and :ref:`Batching behaviour <concepts/model:Batching>` for more information.
 
 .. note::
 
@@ -304,7 +304,7 @@ Building a Service for **ONNX**
 
 .. seealso::
 
-   :ref:`Building a Service <concepts/service:Service and APIs>` for how to
+   :ref:`Building a Service <concepts/service:Service APIs>` for how to
    create a prediction service with BentoML.
 
 .. tab-set::
@@ -397,8 +397,7 @@ Building a Service for **ONNX**
    2. The ``async_run`` refers to BentoML's runner inference API for invoking a model's signature. In the case of ONNX, it happens to have a similar name like the ``InferenceSession`` endpoint.
 
 
-When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build
-Options>`, there are two ways to include ONNX as a dependency, via
+When constructing a :ref:`bentofile.yaml <concepts/bento:Bento build options>`, there are two ways to include ONNX as a dependency, via
 ``python`` (if using pip) or ``conda``:
 
 .. tab-set::

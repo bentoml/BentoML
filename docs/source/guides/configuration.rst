@@ -21,7 +21,7 @@ users can configure such runtime variables and settings via a configuration file
 .. note::
 
    This is not to be **mistaken** with the ``bentofile.yaml`` which is used to define and
-   package your :ref:`Bento 🍱 <concepts/bento:What is a Bento?>`
+   package your :doc:`/concepts/bento`.
 
    This configuration file are for BentoML runtime configuration.
 

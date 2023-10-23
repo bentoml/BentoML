@@ -2,7 +2,7 @@
 Bentos
 ======
 
-A :ref:`Bento <reference/core:bentoml.Bento>` is an archive containing all essential components - source
+A :ref:`Bento <reference/core:bentoml.Bento>` is a format containing all essential components - source
 code, models, data files, and dependency configurations - required for running a
 user-defined :ref:`BentoML Service <reference/core:bentoml.Service>`. It is the standardized distribution unit in the BentoML ecosystem.
 
@@ -82,7 +82,7 @@ put all Service definition code and ``bentofile.yaml`` in the project's root dir
 BentoML allows the placement of the Service definition and ``bentofile.yaml`` anywhere in the project directory.
 In such scenarios, specify the ``build_ctx`` and ``bentofile`` arguments when running the ``bentoml build`` command.
 
-* ``build_ctx``: The build context represents the working directory of your Python project. It's the location where the Python interpreter starts,
+* ``build_ctx``: The build context represents the working directory of your Python project. It will be prepended to the PYTHONPATH during build process,
   ensuring the correct import of local Python modules. By default, it's set to the current directory where the ``bentoml build`` command is executed.
 * ``bentofile``: A YAML configuration file that specifies the :ref:`concepts/bento:Bento build options`. It defaults to the ``bentofile.yaml`` file in the build context.
 
@@ -90,7 +90,7 @@ To customize their values, use the following:
 
 .. code-block:: bash
 
-    bentoml build -f ./src/my_project_a/bento_fraud_detect.yaml ./src/
+    $ bentoml build -f ./src/my_project_a/bento_fraud_detect.yaml ./src/
 
 Structure
 ^^^^^^^^^
@@ -762,7 +762,7 @@ To add it in your ``bentofile.yaml``:
     When ``conda`` options are provided, BentoML will select a Docker base image
     that comes with Miniconda pre-installed in the generated Dockerfile. Note that only
     the ``debian`` and ``alpine`` distro support ``conda``. Learn more in
-    the :ref:`concepts/bento:Docker Options` section below.
+    the :ref:`concepts/bento:Docker options` section below.
 
 Conda options table
 """""""""""""""""""

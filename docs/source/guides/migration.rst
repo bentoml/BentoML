@@ -41,7 +41,7 @@ BentoML version 1.0.0 introduces the model store concept to help improve model m
 Once we are happy with the model trained, we can save the  model instance with the :code:`save_model()`
 framework API to persist it in the model store. Optionally, you may attach custom labels, metadata, or custom
 objects like tokenizers to be saved alongside the model. See
-:ref:`Save A Trained Model <concepts/model:Save A Trained Model>` to learn more.
+:ref:`concepts/model:Save a trained model` to learn more.
 
 .. admonition:: 💡 Migration Task
 
@@ -124,7 +124,7 @@ dependencies (e.g. :code:`pip_packages`, :code:`pip_index_url`), Conda dependenc
 
 BentoML version 1.0.0 no longer relies on the environment decorator. Environment settings and service dependencies are
 defined in the :code:`bentofile.yaml` file in the project directory. The contents are used to specify the
-:code:`bentoml build` opations when :ref:`building bentos <concepts/bento:Bento Build Options>`.
+:code:`bentoml build` opations when :ref:`building bentos <concepts/bento:Bento build options>`.
 
 .. admonition:: 💡 Migration Task
 
@@ -156,7 +156,7 @@ when saving and loading a BentoService.
 
     @artifacts([SklearnModelArtifact('model')])
 
-BentoML 1.0.0 leverages a combination of :ref:`model store <concepts/model:Managing Models>` and
+BentoML 1.0.0 leverages a combination of :ref:`model store <concepts/model:Manage models>` and
 :ref:`runners <concepts/runner:What is Runner?>` APIs for specifying the required models at runtime. Methods on the
 model can be invoked by calling the run function on the runner. Runner represents a unit of computation that can be
 executed on a remote Python worker and scales independently.

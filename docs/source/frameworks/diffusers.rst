@@ -50,7 +50,7 @@ If you plan to use the model with a custom pipeline that has method other than :
 .. note::
 
     :code:`bentoml.diffusers.import_model` has parameter ``signatures``.
-    The ``signatures`` argument of type :ref:`Model Signatures <concepts/model:Model Signatures>` in :obj:`bentoml.diffusers.import_model` is used to determine which methods will be used for inference and exposed in the Runner. The signatures dictionary will then be used during the creation process of a Runner instance.
+    The ``signatures`` argument of type :ref:`concepts/model:Model signatures` in :obj:`bentoml.diffusers.import_model` is used to determine which methods will be used for inference and exposed in the Runner. The signatures dictionary will then be used during the creation process of a Runner instance.
 
 The signatures used for creating a Runner is ``{"__call__": {"batchable": False}}``. This means by default, BentoML's :doc:`/guides/batching` is disabled when using :obj:`~bentoml.diffusers.import_model()`. If you want to utilize adaptive batching behavior and know your model's dynamic batching dimension, make sure to pass in ``signatures`` as follow:
 

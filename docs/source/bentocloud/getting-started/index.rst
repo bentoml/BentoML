@@ -1,5 +1,5 @@
 ===========
-Get Started
+Get started
 ===========
 
 Get started with your BentoCloud journey by understanding the platform and deploying a simple application on it.
@@ -21,8 +21,15 @@ Get started with your BentoCloud journey by understanding the platform and deplo
 
         Deploy a text summarization application on BentoCloud.
 
+    .. grid-item-card:: BYOC
+        :link: byoc
+        :link-type: doc
+
+        Try BentoCloud Bring Your Own Cloud (BYOC) for better data privacy, flexibility, and cost efficiency.
+
 .. toctree::
    :hidden:
 
    understand-bentocloud
    quickstart
+   byoc

@@ -1,7 +1,8 @@
 ============
-Topic Guides
+Topic guides
 ============
-Topic Guides Discusses key topics and concepts at a fairly high level and provide useful background information and explanation.
+
+This section includes key topics and concepts at a fairly high level and provide useful background information and explanation.
 
 * :doc:`observability`
 

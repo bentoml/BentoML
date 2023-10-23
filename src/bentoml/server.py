@@ -16,6 +16,9 @@ from simple_di import Provide
 from simple_di import inject
 
 from ._internal.bento import Bento
+from ._internal.client import Client
+from ._internal.client.grpc import GrpcClient
+from ._internal.client.http import HTTPClient
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import Service
 from ._internal.tag import Tag
@@ -27,10 +30,6 @@ from .exceptions import UnservableException
 if TYPE_CHECKING:
     from types import TracebackType
 
-    from ._internal.client import Client
-    from ._internal.client import GrpcClient
-    from ._internal.client import HTTPClient
-
     _FILE: t.TypeAlias = None | int | t.IO[t.Any]
 
 
@@ -40,7 +39,10 @@ logger = logging.getLogger(__name__)
 __all__ = ["Server", "GrpcServer", "HTTPServer"]
 
 
-class Server(ABC):
+ClientType = t.TypeVar("ClientType", bound=Client)
+
+
+class Server(ABC, t.Generic[ClientType]):
     servable: str | Bento | Tag | Service
     host: str
     port: int
@@ -134,7 +136,7 @@ class Server(ABC):
         stdout: _FILE = None,
         stderr: _FILE = None,
         text: bool | None = None,
-    ):
+    ) -> t.ContextManager[ClientType]:
         """Start the server programmatically.
 
         To get the client, use the context manager.
@@ -182,7 +184,7 @@ class Server(ABC):
                     except KeyboardInterrupt:
                         pass
 
-            def __enter__(__inner_self):
+            def __enter__(__inner_self) -> ClientType:
                 return self.get_client()
 
             def __exit__(
@@ -195,7 +197,7 @@ class Server(ABC):
 
         return _Manager()
 
-    def get_client(self) -> Client:
+    def get_client(self) -> ClientType:
         if self.process is None:
             # NOTE: if the process is None, we reset this envvar
             del os.environ[BENTOML_SERVE_FROM_SERVER_API]
@@ -229,7 +231,7 @@ class Server(ABC):
         return self._get_client()
 
     @abstractmethod
-    def _get_client(self) -> Client:
+    def _get_client(self) -> ClientType:
         pass
 
     def stop(self) -> None:
@@ -296,7 +298,7 @@ class Server(ABC):
             logger.error(f"Error stopping server: {e}", exc_info=e)
 
 
-class HTTPServer(Server):
+class HTTPServer(Server[HTTPClient]):
     _client: HTTPClient | None = None
 
     @inject
@@ -352,6 +354,9 @@ class HTTPServer(Server):
 
         self.args.extend(construct_ssl_args(**ssl_args))
 
+    def get_client(self) -> HTTPClient:
+        return super().get_client()
+
     def client(self) -> HTTPClient | None:
         warn(
             "'Server.client()' is deprecated, use 'Server.get_client()' instead.",
@@ -371,7 +376,7 @@ class HTTPServer(Server):
         return self._client
 
 
-class GrpcServer(Server):
+class GrpcServer(Server[GrpcClient]):
     _client: GrpcClient | None = None
 
     @inject

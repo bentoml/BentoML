@@ -1,5 +1,5 @@
 ==============
-Best Practices
+Best practices
 ==============
 
 This section contains a list of best practices for BentoCloud usage.
@@ -9,13 +9,20 @@ This section contains a list of best practices for BentoCloud usage.
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: Cost Optimization
+    .. grid-item-card:: Cost optimization
         :link: cost-optimization
         :link-type: doc
 
         Optimize your overall costs on BentoCloud by applying best practices.
 
+    .. grid-item-card:: Bento building and deployment
+        :link: bento-building-and-deployment
+        :link-type: doc
+
+        Accelerate your Bento application delivery lifecycle.
+
 .. toctree::
    :hidden:
 
    cost-optimization
+   bento-building-and-deployment

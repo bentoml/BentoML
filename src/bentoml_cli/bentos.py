@@ -66,7 +66,6 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.bento.build_config import BentoBuildConfig
     from bentoml._internal.configuration import get_quiet_mode
     from bentoml._internal.configuration.containers import BentoMLContainer
-    from bentoml._internal.utils import calc_dir_size
     from bentoml._internal.utils import human_readable_size
     from bentoml._internal.utils import resolve_user_filepath
     from bentoml._internal.utils import rich_console as console
@@ -121,18 +120,20 @@ def add_bento_management_commands(cli: Group):
         $ bentoml list FraudDetector
         """
         bentos = bento_store.list(bento_name)
-        res = [
-            {
-                "tag": str(bento.tag),
-                "size": human_readable_size(calc_dir_size(bento.path)),
-                "creation_time": bento.info.creation_time.astimezone().strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
-            }
-            for bento in sorted(
-                bentos, key=lambda x: x.info.creation_time, reverse=True
+        res: list[dict[str, str]] = []
+        for bento in sorted(bentos, key=lambda x: x.info.creation_time, reverse=True):
+            bento_size = bento.file_size
+            model_size = bento.total_size() - bento_size
+            res.append(
+                {
+                    "tag": str(bento.tag),
+                    "size": human_readable_size(bento_size),
+                    "model_size": human_readable_size(model_size),
+                    "creation_time": bento.info.creation_time.astimezone().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
+                }
             )
-        ]
 
         if output == "json":
             info = json.dumps(res, indent=2)
@@ -144,11 +145,13 @@ def add_bento_management_commands(cli: Group):
             table = Table(box=None)
             table.add_column("Tag")
             table.add_column("Size")
+            table.add_column("Model Size")
             table.add_column("Creation Time")
             for bento in res:
                 table.add_row(
                     bento["tag"],
                     bento["size"],
+                    bento["model_size"],
                     bento["creation_time"],
                 )
             console.print(table)

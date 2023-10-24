@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 import shutil
 import typing as t
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import attr
 
 import bentoml
 from bentoml import Tag
+from bentoml._internal.utils.transformers import extract_commit_hash
+from bentoml._internal.utils.transformers import is_huggingface_hub_available
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
@@ -167,33 +167,6 @@ def _str2cls(
     module = importlib.import_module(module_name)
     cls = getattr(module, class_name)
     return cls
-
-
-def _extract_commit_hash(
-    resolved_dir: str, regex_commit_hash: t.Pattern[str]
-) -> str | None:
-    """
-    Extracts the commit hash from a resolved filename toward a cache file.
-    modified from https://github.com/huggingface/transformers/blob/0b7b4429c78de68acaf72224eb6dae43616d820c/src/transformers/utils/hub.py#L219
-    """
-
-    resolved_dir = str(Path(resolved_dir).as_posix()) + "/"
-    search = re.search(r"snapshots/([^/]+)/", resolved_dir)
-
-    if search is None:
-        return None
-
-    commit_hash = search.groups()[0]
-    return commit_hash if regex_commit_hash.match(commit_hash) else None
-
-
-def _try_import_huggingface_hub():
-    try:
-        import huggingface_hub  # noqa: F401
-    except ImportError:  # pragma: no cover
-        raise MissingDependencyException(
-            "'huggingface_hub' is required in order to download pretrained diffusion models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
-        )
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -525,7 +498,7 @@ def import_model(
             )
 
     elif pipeline_class:
-        _try_import_huggingface_hub()
+        is_huggingface_hub_available()
 
         src_dir = pipeline_class.download(
             model_name_or_path, proxies=proxies, revision=revision, variant=variant
@@ -534,14 +507,14 @@ def import_model(
         if sync_with_hub_version:
             from huggingface_hub.file_download import REGEX_COMMIT_HASH
 
-            version = _extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
+            version = extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
             if version is not None:
                 if variant is not None:
                     version = version + "-" + variant
                 tag.version = version
 
     else:
-        _try_import_huggingface_hub()
+        is_huggingface_hub_available()
         from huggingface_hub import snapshot_download
 
         src_dir = snapshot_download(
@@ -553,7 +526,7 @@ def import_model(
         if sync_with_hub_version:
             from huggingface_hub.file_download import REGEX_COMMIT_HASH
 
-            version = _extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
+            version = extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
             if version is not None:
                 tag.version = version
 

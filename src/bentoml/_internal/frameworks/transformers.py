@@ -3,16 +3,17 @@ from __future__ import annotations
 import logging
 import os
 import platform
-import re
 import shutil
 import typing as t
 import warnings
-from pathlib import Path
 from types import ModuleType
 
 import attr
 
 import bentoml
+from bentoml._internal.utils.transformers import extract_commit_hash
+from bentoml._internal.utils.transformers import is_accelerate_available
+from bentoml._internal.utils.transformers import is_huggingface_hub_available
 
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
@@ -170,42 +171,6 @@ def _autoclass_converter(
     elif not isinstance(value, tuple):
         value = (value,)
     return tuple(it if isinstance(it, str) else it.__qualname__ for it in value)
-
-
-def _extract_commit_hash(
-    resolved_dir: str, regex_commit_hash: t.Pattern[str]
-) -> str | None:
-    """
-    Extracts the commit hash from a resolved filename toward a cache file.
-    modified from https://github.com/huggingface/transformers/blob/0b7b4429c78de68acaf72224eb6dae43616d820c/src/transformers/utils/hub.py#L219
-    """
-
-    resolved_dir = str(Path(resolved_dir).as_posix()) + "/"
-    search = re.search(r"snapshots/([^/]+)/", resolved_dir)
-
-    if search is None:
-        return None
-
-    commit_hash = search.groups()[0]
-    return commit_hash if regex_commit_hash.match(commit_hash) else None
-
-
-def _try_import_huggingface_hub():
-    try:
-        import huggingface_hub  # noqa: F401
-    except ImportError:  # pragma: no cover
-        raise MissingDependencyException(
-            "'huggingface_hub' is required in order to download pretrained transformer models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
-        )
-
-
-def _try_import_accelerate():
-    try:
-        import accelerate  # noqa: F401
-    except ImportError:  # pragma: no cover
-        raise MissingDependencyException(
-            "'accelerate' is required in order to download pretrained transformer models, install with 'pip install accelerate'.",
-        )
 
 
 @attr.define
@@ -647,8 +612,6 @@ def import_model(
     name: Tag | str,
     model_name_or_path: str | os.PathLike[str],
     *,
-    task_name: str | None = None,
-    task_definition: dict[str, t.Any] | TaskDefinition | None = None,
     proxies: dict[str, str] | None = None,
     revision: str = "main",
     variant: str | None = None,
@@ -658,7 +621,6 @@ def import_model(
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
-    # ...
     **kwargs: dict[str, t.Any],
 ) -> bentoml.Model:
     """
@@ -675,27 +637,6 @@ def import_model(
               `CompVis/ldm-text2im-large-256`.
             - A path to a *directory* containing weights saved using
               [`~transformers.AutoModel.save_pretrained`], e.g., `./my_pretrained_directory/`.
-        task_name (`str`, *optional*): Name of the pipeline task. Only needed when bentoml model is to be loaded as a pipeline.
-        task_definition (`Dict[str, AnyType]`, *optional*): Task definition for the Transformers custom pipeline. The definition is a dictionary
-                         consisting of the following keys:
-
-                        - ``impl`` (``type[transformers.Pipeline]``): The name of the pipeline implementation module. The name should be the same as the pipeline passed in the ``pipeline`` argument.
-                        - ``tf`` (:code:`tuple[AnyType]`): The name of the Tensorflow auto model class. One of ``tf`` and ``pt`` auto model class argument is required.
-                        - ``pt`` (:code:`tuple[AnyType]`): The name of the PyTorch auto model class. One of ``tf`` and ``pt`` auto model class argument is required.
-                        - ``default`` (:code:`Dict[str, AnyType]`): The names of the default models, tokenizers, feature extractors, etc.
-                        - ``type`` (:code:`str`): The type of the pipeline, e.g. ``text``, ``audio``, ``image``, ``multimodal``.
-
-                        Example:
-
-                        .. code-block:: python
-
-                            task_definition = {
-                                "impl": Text2TextGenerationPipeline,
-                                "tf": (TFAutoModelForSeq2SeqLM,) if is_tf_available() else (),
-                                "pt": (AutoModelForSeq2SeqLM,) if is_torch_available() else (),
-                                "default": {"model": {"pt": "t5-base", "tf": "t5-base"}},
-                                "type": "text",
-                            }
         proxies (`Dict[str, str]`, *optional*):
             A dictionary of proxy servers to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128',
             'http://hostname': 'foo.bar:4012'}`. The proxies are used on each request.
@@ -779,9 +720,7 @@ def import_model(
     if is_tf_available():
         from .utils.tensorflow import get_tf_version
 
-        framework_versions[
-            "tensorflow-macos" if platform.system() == "Darwin" else "tensorflow"
-        ] = get_tf_version()
+        framework_versions["tensorflow"] = get_tf_version()
     if is_flax_available():
         framework_versions.update(
             {
@@ -794,16 +733,6 @@ def import_model(
         framework_name="transformers", framework_versions=framework_versions
     )
 
-    if signatures is None:
-        signatures = {
-            "__call__": {"batchable": False},
-        }
-        logger.info(
-            'Using the default model signature for Transformers (%s) for model "%s".',
-            signatures,
-            name,
-        )
-
     config = transformers.AutoConfig.from_pretrained(
         model_name_or_path,
         proxies=proxies,
@@ -811,6 +740,7 @@ def import_model(
         variant=variant,
         **kwargs,
     )
+
     model = None
     downloaded_model_successfully = False
     if os.path.isdir(model_name_or_path):
@@ -821,7 +751,7 @@ def import_model(
             )
     else:
         try:
-            _try_import_accelerate()
+            is_accelerate_available()
             from accelerate import init_empty_weights
             from transformers.utils import cached_file
 
@@ -850,7 +780,7 @@ def import_model(
 
         if not downloaded_model_successfully:
             # clone entire repository as fallback
-            _try_import_huggingface_hub()
+            is_huggingface_hub_available()
             from huggingface_hub import snapshot_download
 
             src_dir = snapshot_download(
@@ -862,82 +792,51 @@ def import_model(
             if sync_with_hub_version:
                 from huggingface_hub.file_download import REGEX_COMMIT_HASH
 
-                version = _extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
+                version = extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
                 if version is not None:
                     tag.version = version
 
-    if task_name is not None:
-        # define a pipeline
-        if task_definition is not None:
-            from transformers.pipelines import get_supported_tasks
+    if model is None:
+        is_accelerate_available()
+        from accelerate import init_empty_weights
 
-            # NOTE: safe casting to annotate task_definition types
-            task_definition = t.cast(TaskDefinition, task_definition)
+        with init_empty_weights():
+            model = transformers.AutoModel.from_config(config=config)
 
-            assert "impl" in task_definition, "'task_definition' requires 'impl' key."
-            options_args = (task_name, task_definition)
+    pretrained = t.cast("PreTrainedProtocol", model)
+    assert all(
+        hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
+    ), f"'pretrained={pretrained}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+    if metadata is None:
+        metadata = {}
 
-            if task_name not in get_supported_tasks():
-                register_pipeline(task_name, **task_definition)
-                logger.info(
-                    "Task '%s' is a custom task and has been registered to the pipeline registry.",
-                    task_name,
-                )
-            assert (
-                task_name in get_supported_tasks()
-            ), f"Task '{task_name}' failed to register into pipeline registry."
-        else:
-            from transformers.pipelines import check_task
-            from transformers.pipelines import get_supported_tasks
+    if signatures is None:
+        signatures = make_default_signatures(pretrained)
+        # NOTE: ``make_default_signatures`` can return an empty dict, hence we will only
+        # log when signatures are available.
+        if signatures:
+            logger.info(
+                'Using the default model signature for Transformers (%s) for model "%s".',
+                signatures,
+                name,
+            )
 
-            try:
-                options_args = t.cast(
-                    "tuple[str, TaskDefinition]",
-                    check_task(task_name)[:2],
-                )
-                if task_name.startswith("translation"):
-                    options_args = (task_name, options_args[1])
-            except Exception:
-                raise BentoMLException(
-                    f"Task '{task_name}' is not a valid task for pipeline (available: {get_supported_tasks()}."
-                )
+    metadata.update(
+        {
+            "_pretrained_class": pretrained.__class__.__name__,
+        }
+    )
 
-        pickle_content = options_args[1]["impl"]
-        pickle_file = PIPELINE_PICKLE_NAME
-        options = TransformersOptions.from_task(*options_args)
-    else:
-        if model is None:
-            _try_import_accelerate()
-            from accelerate import init_empty_weights
-
-            with init_empty_weights():
-                model = transformers.AutoModel.from_config(config=config)
-
-        pretrained = t.cast("PreTrainedProtocol", model)
-        assert all(
-            hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
-        ), f"'pretrained={pretrained}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
-        if metadata is None:
-            metadata = {}
-
-        metadata.update(
-            {
-                "_pretrained_class": pretrained.__class__.__name__,
-            }
-        )
-        if hasattr(pretrained, "framework") and isinstance(
-            pretrained,
-            (
-                transformers.PreTrainedModel,
-                transformers.TFPreTrainedModel,
-                transformers.FlaxPreTrainedModel,
-            ),
-        ):
-            # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
-            metadata["_framework"] = pretrained.framework
-        pickle_content = pretrained.__class__
-        pickle_file = PRETRAINED_PROTOCOL_NAME
-        options = TransformersOptions()
+    if hasattr(pretrained, "framework") and isinstance(
+        pretrained,
+        (
+            transformers.PreTrainedModel,
+            transformers.TFPreTrainedModel,
+            transformers.FlaxPreTrainedModel,
+        ),
+    ):
+        # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
+        metadata["_framework"] = pretrained.framework
 
     with bentoml.models.create(
         tag,
@@ -945,22 +844,12 @@ def import_model(
         api_version=API_VERSION,
         signatures=signatures,
         labels=labels,
-        options=options,
+        options=TransformersOptions(),
         custom_objects=custom_objects,
         external_modules=external_modules,
         metadata=metadata,
         context=context,
     ) as bento_model:
-        if task_name is not None:
-            # using AutoTokenizer as it automatically selects the right files to download to cache, tokenizer is needed for pipeline
-            transformers.AutoTokenizer.from_pretrained(
-                model_name_or_path,
-                proxies=proxies,
-                revision=revision,
-                variant=variant,
-                **kwargs,
-            )
-
         ignore = shutil.ignore_patterns(".git")
         shutil.copytree(
             src_dir,
@@ -969,8 +858,8 @@ def import_model(
             ignore=ignore,
             dirs_exist_ok=True,
         )
-        with open(bento_model.path_of(pickle_file), "wb") as f:
-            cloudpickle.dump(pickle_content, f)
+        with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "wb") as f:
+            cloudpickle.dump(pretrained.__class__, f)
         return bento_model
 
 

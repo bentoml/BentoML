@@ -4,7 +4,9 @@ import typing as t
 from contextlib import contextmanager
 from types import ModuleType
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
+import inflection
 from simple_di import Provide
 from simple_di import inject
 
@@ -65,7 +67,7 @@ def import_model(
     params: t.Optional[t.Dict[str, str]] = None,
     subpath: t.Optional[str] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    name: t.Optional[str] = None,
+    framework: t.Optional[t.Literal["transformers", "diffusers"]] = None,
 ) -> Model:
     """
     Import a bento model exported with :code:`bentoml.models.export_model`. To import a model saved
@@ -118,7 +120,10 @@ def import_model(
     Returns:
         Model: the imported model
     """
-    if path.startswith("hf:"):
+    parsedURL = urlparse(path)
+    if (
+        parsedURL.scheme == "http" or parsedURL.scheme == "https"
+    ) and parsedURL.netloc == "huggingface.co":
         from ._internal.frameworks.diffusers import (
             import_model as diffusers_import_model,
         )
@@ -131,20 +136,36 @@ def import_model(
             "diffusers": diffusers_import_model,
         }
 
-        _, repo_name = path.split(":")
-        name = name if name is not None else repo_name.replace("/", "--")
+        model_id = parsedURL.path.strip("/")
+
+        if model_id == "":
+            raise BentoMLException(
+                "Invalid HuggingFace model URL, please check your URL"
+            )
+
+        bento_name = inflection.dasherize(model_id.replace("/", "--"))
+
+        if framework is not None:
+            if framework in FRAMEWORK_MAPPING:
+                return FRAMEWORK_MAPPING[framework](bento_name, model_id)
+            else:
+                raise ValueError(
+                    f"Ensure to set the environment variable BENTOML_IMPORT_FRAMEWORK='{'|'.join(FRAMEWORK_MAPPING.keys())}' to explicitly set loading framework."
+                )
+
         try:
             from huggingface_hub import repo_info
 
-            res = repo_info(repo_name)
+            res = repo_info(model_id)
             for tag in res.tags:
                 if tag in FRAMEWORK_MAPPING:
-                    return FRAMEWORK_MAPPING[tag](name, repo_name)
-        except:
-            raise
-        raise ValueError(
-            f"Failed to import repository {repo_name}. Ensure the huggingface repository has the supported framework tags {[*FRAMEWORK_MAPPING.keys()]}"
-        )
+                    return FRAMEWORK_MAPPING[tag](bento_name, model_id)
+            else:
+                raise
+        except Exception:
+            raise ValueError(
+                f"BentoML cannot automatically determine which framework to save the model. Ensure the huggingface repository has the supported framework tags {[*FRAMEWORK_MAPPING.keys()]} or set the environment BENTOML_IMPORT_FRAMEWORK='{'|'.join(FRAMEWORK_MAPPING.keys())}' to explicitly set loading framework."
+            )
 
     return Model.import_from(
         path,

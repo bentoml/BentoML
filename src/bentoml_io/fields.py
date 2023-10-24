@@ -12,6 +12,7 @@ from pydantic_core import core_schema
 
 if t.TYPE_CHECKING:
     import numpy as np
+    import pandas as pd
     import tensorflow as tf
     import torch
     from pydantic import GetCoreSchemaHandler
@@ -26,6 +27,7 @@ else:
     tf = LazyLoader("tf", globals(), "tensorflow")
     torch = LazyLoader("torch", globals(), "torch")
     pa = LazyLoader("pa", globals(), "pyarrow")
+    pd = LazyLoader("pd", globals(), "pandas")
 
 T = t.TypeVar("T")
 # This is an internal global state that is True when the model is being serialized for arrow
@@ -63,7 +65,18 @@ class FileEncoder(t.Generic[T]):
         )
 
 
-File = t.Annotated[t.BinaryIO, FileEncoder(io.BytesIO, lambda x: x.getvalue())]
+def _get_file(obj: bytes | t.BinaryIO) -> t.BinaryIO:
+    if hasattr(obj, "read"):
+        return obj
+    return io.BytesIO(obj)
+
+
+def _get_file_bytes(obj: t.BinaryIO) -> bytes:
+    obj.seek(0)
+    return obj.read()
+
+
+File = t.Annotated[t.BinaryIO, FileEncoder(_get_file, _get_file_bytes)]
 
 # `slots` is available on Python >= 3.10
 if sys.version_info >= (3, 10):
@@ -150,6 +163,49 @@ class TensorSchema:
         return arr
 
 
+@dataclass(unsafe_hash=True, **slots_true)
+class DataframeSchema:
+    orient: str = "records"
+    columns: list[str] | None = None
+
+    def __get_pydantic_json_schema__(
+        self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> dict[str, t.Any]:
+        return _dict_filter_none(
+            {
+                "type": "dataframe",
+                "orient": self.orient,
+                "columns": self.columns,
+                "media_type": "application/json",
+            }
+        )
+
+    def __get_pydantic_core_schema__(
+        self, source_type: t.Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        return core_schema.no_info_after_validator_function(
+            self._validate,
+            core_schema.list_schema(core_schema.dict_schema())
+            if self.orient == "records"
+            else core_schema.dict_schema(
+                keys_schema=core_schema.str_schema(),
+                values_schema=core_schema.list_schema(),
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
+        )
+
+    def encode(self, df: pd.DataFrame) -> list | dict:
+        if self.orient == "records":
+            return df.to_dict(orient="records")
+        elif self.orient == "columns":
+            return df.to_dict(orient="list")
+        else:
+            raise ValueError("Only 'records' and 'columns' are supported for orient")
+
+    def _validate(self, obj: t.Any) -> pd.DataFrame:
+        return pd.DataFrame(obj, columns=self.columns)
+
+
 @t.overload
 def Tensor(
     format: Literal["numpy-array"], dtype: str, shape: tuple[int, ...]
@@ -183,3 +239,10 @@ def Tensor(
     else:
         annotation = tf.Tensor
     return t.Annotated[annotation, TensorSchema(format, dtype, shape)]
+
+
+def Dataframe(
+    orient: t.Literal["records", "columns"] = "records",
+    columns: list[str] | None = None,
+) -> t.Type[pd.DataFrame]:
+    return t.Annotated[pd.DataFrame, DataframeSchema(orient, columns)]

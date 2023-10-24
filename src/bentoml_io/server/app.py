@@ -156,12 +156,13 @@ class ServiceAppFactory(BaseAppFactory):
         func = getattr(servable, name)
 
         with self.service.context.in_request(request) as ctx:
-            input_data = await method.input_spec.from_http_request(request, serde)
-            input_params = {k: getattr(input_data, k) for k in input_data.model_fields}
-            if method.ctx_param is not None:
-                input_params[method.ctx_param] = ctx
-
             try:
+                input_data = await method.input_spec.from_http_request(request, serde)
+                input_params = {
+                    k: getattr(input_data, k) for k in input_data.model_fields
+                }
+                if method.ctx_param is not None:
+                    input_params[method.ctx_param] = ctx
                 if is_async_callable(func):
                     output = await func(**input_params)
                 elif inspect.isasyncgenfunction(func):

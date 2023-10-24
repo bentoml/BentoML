@@ -52,4 +52,4 @@ input_spec = Multipart(img=Image(), prompt=Text())
 
 @svc.api(input=input_spec, output=Text())
 async def generate(img: PILImage, prompt: str) -> str:
-    return await runner.async_run(img, prompt)
+    return await runner.generate.async_run(img, prompt)

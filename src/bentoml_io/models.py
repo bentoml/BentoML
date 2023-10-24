@@ -11,6 +11,7 @@ from pydantic import create_model
 from typing_extensions import get_args
 
 from .typing_utils import is_iterator_type
+from .typing_utils import is_list_type
 
 if t.TYPE_CHECKING:
     from starlette.requests import Request
@@ -20,11 +21,34 @@ if t.TYPE_CHECKING:
 
 
 class IOMixin:
+    multipart_fields: t.ClassVar[list[str]]
+
     @classmethod
-    async def from_http_request(cls, request: Request, serde: Serde) -> BaseModel:
+    def __pydantic_init_subclass__(cls) -> None:
+        from pydantic._internal._typing_extra import is_annotated
+
+        from .fields import FileEncoder
+
+        cls.multipart_fields = []
+        for k, field in cls.model_fields.items():
+            is_multipart = False
+            if any(isinstance(d, FileEncoder) for d in field.metadata):
+                is_multipart = True
+            else:
+                annotation = field.annotation
+                if is_list_type(annotation):
+                    annotation = get_args(annotation)[0]
+                    if is_annotated(annotation) and any(
+                        isinstance(d, FileEncoder) for d in get_args(annotation)[1:]
+                    ):
+                        is_multipart = True
+            if is_multipart:
+                cls.multipart_fields.append(k)
+
+    @classmethod
+    async def from_http_request(cls, request: Request, serde: Serde) -> IODescriptor:
         """Parse a input model from HTTP request"""
-        json_str = await request.body()
-        return serde.deserialize_model(json_str, t.cast(t.Type[BaseModel], cls))
+        return await serde.parse_request(request, t.cast(t.Type[IODescriptor], cls))
 
     @classmethod
     async def to_http_response(cls, obj: t.Any, serde: Serde) -> Response:
@@ -35,7 +59,7 @@ class IOMixin:
 
         if not issubclass(cls, RootModel):
             return Response(
-                content=serde.serialize_model(t.cast("BaseModel", obj)),
+                content=serde.serialize_model(t.cast(IODescriptor, obj)),
                 media_type=serde.media_type,
             )
         if inspect.isasyncgen(obj):
@@ -45,7 +69,7 @@ class IOMixin:
                     if isinstance(item, (str, bytes)):
                         yield item
                     else:
-                        yield serde.serialize_model(cls(item))
+                        yield serde.serialize_model(t.cast(IODescriptor, cls(item)))
 
             return StreamingResponse(async_stream(), media_type="text/plain")
 
@@ -56,14 +80,14 @@ class IOMixin:
                     if isinstance(item, (str, bytes)):
                         yield item
                     else:
-                        yield serde.serialize_model(cls(item))
+                        yield serde.serialize_model(t.cast(IODescriptor, cls(item)))
 
             return StreamingResponse(content_stream(), media_type="text/plain")
         else:
             if not isinstance(obj, RootModel):
-                ins = cls(obj)
+                ins: IODescriptor = t.cast(IODescriptor, cls(obj))
             else:
-                ins = obj
+                ins = t.cast(IODescriptor, obj)
             if isinstance(rendered := ins.model_dump(), (str, bytes)):
                 media_type = cls.model_json_schema().get("media_type", "text/plain")
                 return Response(content=rendered, media_type=media_type)
@@ -73,7 +97,7 @@ class IOMixin:
                 )
 
 
-class IODescriptor(BaseModel, IOMixin):
+class IODescriptor(IOMixin, BaseModel):
     @classmethod
     def from_input(
         cls, func: t.Callable[..., t.Any], *, skip_self: bool = False

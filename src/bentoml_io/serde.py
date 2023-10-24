@@ -1,20 +1,27 @@
+from __future__ import annotations
+
 import abc
 import io
 import json
 import pickle
 import typing as t
 
-from pydantic import BaseModel
 from pydantic import RootModel
+from starlette.datastructures import UploadFile
 
-T = t.TypeVar("T", bound=BaseModel)
+if t.TYPE_CHECKING:
+    from starlette.requests import Request
+
+    from .models import IODescriptor
+
+T = t.TypeVar("T", bound="IODescriptor")
 
 
 class Serde(abc.ABC):
     media_type: str
 
     @abc.abstractmethod
-    def serialize_model(self, model: BaseModel) -> bytes:
+    def serialize_model(self, model: IODescriptor) -> bytes:
         ...
 
     @abc.abstractmethod
@@ -29,11 +36,16 @@ class Serde(abc.ABC):
     def deserialize(self, obj_bytes: bytes) -> t.Any:
         ...
 
+    async def parse_request(self, request: Request, cls: type[T]) -> T:
+        """Parse a input model from HTTP request"""
+        json_str = await request.body()
+        return self.deserialize_model(json_str, cls)
+
 
 class JSONSerde(Serde):
     media_type = "application/json"
 
-    def serialize_model(self, model: BaseModel) -> bytes:
+    def serialize_model(self, model: IODescriptor) -> bytes:
         return model.model_dump_json().encode("utf-8")
 
     def deserialize_model(self, model_bytes: bytes, cls: type[T]) -> T:
@@ -46,10 +58,27 @@ class JSONSerde(Serde):
         return json.loads(obj_bytes)
 
 
+class MultipartSerde(JSONSerde):
+    media_type = "multipart/form-data"
+
+    async def parse_request(self, request: Request, cls: type[T]) -> T:
+        async with request.form() as form:
+            data: dict[str, t.Any] = json.loads(t.cast(str, form.get("data")))
+            for k in form:
+                if k == "data" or k not in cls.multipart_fields:
+                    continue
+                value = form.getlist(k)
+                if not all(isinstance(v, UploadFile) for v in value):
+                    raise ValueError("Unable to parse multipart request")
+                files = [v.file for v in value]
+                data[k] = files[0] if len(files) == 1 else files
+        return cls.model_validate(data)
+
+
 class PickleSerde(Serde):
     media_type = "application/vnd.bentoml+pickle"
 
-    def serialize_model(self, model: BaseModel) -> bytes:
+    def serialize_model(self, model: IODescriptor) -> bytes:
         if isinstance(model, RootModel):
             model_data: t.Any = model.root
         else:
@@ -72,7 +101,7 @@ class PickleSerde(Serde):
 class ArrowSerde(Serde):
     media_type = "application/vnd.bentoml+arrow"
 
-    def serialize_model(self, model: BaseModel) -> bytes:
+    def serialize_model(self, model: IODescriptor) -> bytes:
         from .arrow import serialize_to_arrow
 
         buffer = io.BytesIO()
@@ -97,5 +126,5 @@ class ArrowSerde(Serde):
 
 
 ALL_SERDE: t.Mapping[str, type[Serde]] = {
-    s.media_type: s for s in [JSONSerde, PickleSerde, ArrowSerde]
+    s.media_type: s for s in [JSONSerde, PickleSerde, ArrowSerde, MultipartSerde]
 }

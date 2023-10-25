@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import collections.abc
-import io
 import types
 import typing as t
 
 from typing_extensions import Literal
 
+if t.TYPE_CHECKING:
+    from PIL import Image
+
 LITERAL_TYPES: set[type] = {Literal}
 if hasattr(t, "Literal"):
     LITERAL_TYPES.add(t.Literal)
-BINARY_FILE_TYPES: set[type] = {t.BinaryIO, t.IO[bytes], io.BytesIO}
 LIST_TYPES: set[type] = {list, t.List, t.Sequence, t.MutableSequence}
 TUPLE_TYPES: set[type] = {tuple, t.Tuple}
 SYNC_ITERATOR_TYPES: set[type] = {
@@ -36,10 +37,6 @@ def is_literal_type(typ_: t.Any) -> bool:
     return get_origin(typ_) in LITERAL_TYPES
 
 
-def is_binary_file_type(typ_: t.Any) -> bool:
-    return typ_ in BINARY_FILE_TYPES
-
-
 def is_list_type(typ_: t.Any) -> bool:
     origin = get_origin(typ_)
     return issubclass(origin, list) or origin in LIST_TYPES
@@ -55,3 +52,13 @@ def is_union_type(typ_: t.Any) -> bool:
 
 def is_iterator_type(typ_: t.Any) -> bool:
     return get_origin(typ_) in (SYNC_ITERATOR_TYPES | ASYNC_ITERATOR_TYPES)
+
+
+def is_file_like(obj: t.Any) -> t.TypeGuard[t.BinaryIO]:
+    return hasattr(obj, "read") and hasattr(obj, "seek")
+
+
+def is_image_type(type_: type) -> t.TypeGuard[type[Image.Image]]:
+    from bentoml._internal.io_descriptors.image import PIL
+
+    return type_.__module__.startswith("PIL.") and issubclass(type_, PIL.Image.Image)

@@ -36,17 +36,32 @@ class Serde(abc.ABC):
     def deserialize(self, obj_bytes: bytes) -> t.Any:
         ...
 
+    @t.overload
     async def parse_request(self, request: Request, cls: type[T]) -> T:
+        ...
+
+    @t.overload
+    async def parse_request(self, request: Request, cls: None) -> t.Any:
+        ...
+
+    async def parse_request(
+        self, request: Request, cls: type[IODescriptor] | None
+    ) -> t.Any:
         """Parse a input model from HTTP request"""
         json_str = await request.body()
-        return self.deserialize_model(json_str, cls)
+        if cls is None:
+            return self.deserialize(json_str)
+        else:
+            return self.deserialize_model(json_str, cls)
 
 
 class JSONSerde(Serde):
     media_type = "application/json"
 
     def serialize_model(self, model: IODescriptor) -> bytes:
-        return model.model_dump_json().encode("utf-8")
+        return model.model_dump_json(exclude=set(model.multipart_fields)).encode(
+            "utf-8"
+        )
 
     def deserialize_model(self, model_bytes: bytes, cls: type[T]) -> T:
         return cls.model_validate_json(model_bytes)
@@ -61,18 +76,20 @@ class JSONSerde(Serde):
 class MultipartSerde(JSONSerde):
     media_type = "multipart/form-data"
 
-    async def parse_request(self, request: Request, cls: type[T]) -> T:
-        async with request.form() as form:
-            data: dict[str, t.Any] = json.loads(t.cast(str, form.get("data")))
-            for k in form:
-                if k == "data" or k not in cls.multipart_fields:
-                    continue
-                value = form.getlist(k)
-                if not all(isinstance(v, UploadFile) for v in value):
-                    raise ValueError("Unable to parse multipart request")
-                files = [v.file for v in value]
-                data[k] = files[0] if len(files) == 1 else files
-        return cls.model_validate(data)
+    async def parse_request(
+        self, request: Request, cls: type[IODescriptor] | None
+    ) -> t.Any:
+        form = await request.form()
+        data: dict[str, t.Any] = json.loads(t.cast(str, form.get("__data", "{}")))
+        for k in form:
+            if k == "__data" or cls is not None and k not in cls.multipart_fields:
+                continue
+            value = form.getlist(k)
+            if not all(isinstance(v, UploadFile) for v in value):
+                raise ValueError("Unable to parse multipart request")
+            files = [v.file for v in value]
+            data[k] = files[0] if len(files) == 1 else files
+        return cls.model_validate(data) if cls is not None else data
 
 
 class PickleSerde(Serde):

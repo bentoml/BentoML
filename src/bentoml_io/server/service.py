@@ -15,8 +15,11 @@ from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
 from bentoml._internal.runner.strategy import DefaultStrategy
 from bentoml._internal.runner.strategy import Strategy
+from bentoml._internal.utils import dict_filter_none
+from bentoml._internal.utils import first_not_none
 from bentoml.exceptions import BentoMLException
 
+from ..api import APIMethod
 from ..client import ClientManager
 from ..servable import Servable
 
@@ -28,14 +31,26 @@ if t.TYPE_CHECKING:
     HookF = t.TypeVar("HookF", bound=LifecycleHook)
     HookF_ctx = t.TypeVar("HookF_ctx", bound=ContextFunc)
 
+    class BatchingConfig(t.TypedDict, total=False):
+        max_batch_size: int
+        max_latency_ms: int
+
 
 @attrs.define(slots=False)
 class Service:
     servable_cls: type[Servable]
+    name: str = attrs.field()
     args: tuple[t.Any, ...] = attrs.field(default=())
     kwargs: dict[str, t.Any] = attrs.field(factory=dict)
     dependencies: list[Service] = attrs.field(factory=list)
+    max_batch_size: int | None = attrs.field(default=None, kw_only=True)
+    max_latency_ms: int | None = attrs.field(default=None, kw_only=True)
+    method_configs: dict[str, BatchingConfig] = attrs.field(factory=dict, kw_only=True)
     strategy: type[Strategy] = attrs.field(default=DefaultStrategy, kw_only=True)
+
+    service_methods: dict[str, APIMethod[..., t.Any]] = attrs.field(
+        init=False, factory=dict
+    )
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
         factory=list, init=False
     )
@@ -61,6 +76,28 @@ class Service:
 
         self.shutdown_hooks.append(cleanup)
 
+        config = BentoMLContainer.runners_config.get()
+        if not isinstance(self, APIService) and self.name in config:
+            config = config[self.name]
+
+        for name, method in self.servable_cls.__servable_methods__.items():
+            method_config = self.method_configs.get(name, {})
+            new_config = dict_filter_none(
+                dict(
+                    max_batch_size=first_not_none(
+                        method_config.get("max_batch_size"),
+                        self.max_batch_size,
+                        config["batching"]["max_batch_size"],
+                    ),
+                    max_latency_ms=first_not_none(
+                        method_config.get("max_latency_ms"),
+                        self.max_latency_ms,
+                        config["batching"]["max_latency_ms"],
+                    ),
+                ),
+            )
+            self.service_methods[name] = attrs.evolve(method, **new_config)
+
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} name={self.name}>"
 
@@ -80,6 +117,10 @@ class Service:
     @_client_manager.default
     def get_client_manager(self) -> ClientManager:
         return ClientManager(self)
+
+    @name.default
+    def get_name(self) -> str:
+        return self.servable_cls.name
 
     @cached_property
     def import_string(self) -> str:
@@ -124,10 +165,6 @@ class Service:
         self, middleware_cls: t.Type[ext.AsgiMiddleware], **options: t.Any
     ) -> None:
         self.middlewares.append((middleware_cls, options))
-
-    @property
-    def name(self) -> str:
-        return self.servable_cls.name
 
     @property
     def servable(self) -> Servable:

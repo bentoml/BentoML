@@ -7,8 +7,9 @@ from typing_extensions import get_origin
 
 from bentoml._internal.utils.pkg import pkg_version_info
 
-from .fields import DataframeSchema
-from .fields import TensorSchema
+from .types import DataframeSchema
+from .types import ImageEncoder
+from .types import TensorSchema
 
 if (ver := pkg_version_info("pydantic")) < (2,):
     raise RuntimeError(
@@ -27,6 +28,7 @@ if t.TYPE_CHECKING:
     import pandas as pd
     import tensorflow as tf
     import torch
+    from PIL import Image
 else:
     from bentoml._internal.utils.lazy_loader import LazyLoader
 
@@ -34,6 +36,7 @@ else:
     tf = LazyLoader("tf", globals(), "tensorflow")
     torch = LazyLoader("torch", globals(), "torch")
     pd = LazyLoader("pd", globals(), "pandas")
+    Image = LazyLoader("Image", globals(), "PIL.Image")
 
 
 def numpy_prepare_pydantic_annotations(
@@ -118,6 +121,24 @@ def pandas_prepare_pydantic_annotations(
     return origin, remaining_annotations
 
 
+def pil_prepare_pydantic_annotations(
+    source: t.Any, annotations: t.Iterable[t.Any], config: ConfigDict
+) -> tuple[t.Any, list[t.Any]] | None:
+    if not getattr(source, "__module__", "").startswith("PIL."):
+        return None
+
+    origin = get_origin(source) or source
+    if not issubclass(origin, Image.Image):
+        return None
+
+    _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
+        annotations
+    )
+    if not any(isinstance(a, ImageEncoder) for a in remaining_annotations):
+        remaining_annotations.insert(0, ImageEncoder())
+    return origin, remaining_annotations
+
+
 def add_custom_preparers():
     try:
         from pydantic._internal import _std_types_schema
@@ -131,4 +152,6 @@ def add_custom_preparers():
         tf_prepare_pydantic_annotations,
         # dataframe
         pandas_prepare_pydantic_annotations,
+        # PIL image
+        pil_prepare_pydantic_annotations,
     )

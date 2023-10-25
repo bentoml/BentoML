@@ -299,7 +299,7 @@ Additonally, the Triton runner exposes all `tritonclient <https://github.com/tri
     - ``update_trace_settings``
 
 .. epigraph::
-   :bdg-primary:`Important:` All of the client APIs are asynchronous. To use them, make sure to use it under an async ``@svc.api``. See :ref:`concepts/service:Sync vs Async APIs`
+   :bdg-primary:`Important:` All of the client APIs are asynchronous. To use them, make sure to use it under an async ``@svc.api``. See :ref:`concepts/service:Synchronous and asynchronous APIs`
 
    .. code-block:: python
       :caption: `service.py`

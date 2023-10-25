@@ -3,7 +3,7 @@ Kubeflow
 ========
 
 Starting with the release of `Kubeflow <https://www.kubeflow.org/>`_ 1.7, BentoML provides a native integration with Kubeflow.
-This integration allows you to package models trained in Kubeflow Notebooks or Pipelines as :ref:`Bentos <concepts/bento:Building Bentos>`,
+This integration allows you to package models trained in Kubeflow Notebooks or Pipelines as :ref:`Bentos <concepts/bento:Build a Bento>`,
 and deploy them as microservices in the Kubernetes cluster through BentoML's cloud native components and custom resource definitions (CRDs).
 This documentation provides a comprehensive guide on how to use BentoML and Kubeflow together to streamline the process of deploying models at scale.
 

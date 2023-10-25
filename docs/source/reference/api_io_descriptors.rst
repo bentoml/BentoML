@@ -14,7 +14,7 @@ NumPy ``ndarray``
 
    Install it with ``pip install numpy`` and add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
-   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+   Refer to :ref:`Build Options <concepts/bento:Bento build options>`.
 
    .. tab-set::
 
@@ -65,7 +65,7 @@ To use the IO descriptor, install bentoml with extra ``io-pandas`` dependency:
 
    Install it with ``pip install pandas`` and add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
-   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+   Refer to :ref:`Build Options <concepts/bento:Bento build options>`.
 
    .. tab-set::
 
@@ -125,7 +125,7 @@ Structured Data with JSON
 
    Then proceed to add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
-   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`. We also provide
+   Refer to :ref:`Build Options <concepts/bento:Bento build options>`. We also provide
    :examples:`an example project <pydantic_validation>` using Pydantic for request validation.
 
    .. tab-set::
@@ -152,7 +152,7 @@ Structured Data with JSON
               dependencies:
                 - pydantic
 
-   Refers to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+   Refers to :ref:`Build Options <concepts/bento:Bento build options>`.
 
    .. tab-set::
 
@@ -212,7 +212,7 @@ To use the IO descriptor, install bentoml with extra ``io-image`` dependency:
 
    Install it with ``pip install Pillow`` and add it to your :code:`bentofile.yaml`'s under either Python or Conda packages list.
 
-   Refer to :ref:`Build Options <concepts/bento:Bento Build Options>`.
+   Refer to :ref:`Build Options <concepts/bento:Bento build options>`.
 
    .. tab-set::
 

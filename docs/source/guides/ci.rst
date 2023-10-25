@@ -6,8 +6,8 @@ Training Pipeline Integration (CI/CD)
     Document how to build CI pipelines with BentoML.
 
 Before a more detailed documentation is coming, check out the APIs for
-:doc:`/concepts/bento`, :ref:`concepts/bento:Managing Bentos` and
-:ref:`concepts/model:Managing Models`. They are essential to building a CI pipeline
+:doc:`/concepts/bento`, :ref:`concepts/bento:Manage Bentos` and
+:ref:`concepts/model:Manage models`. They are essential to building a CI pipeline
 with BentoML.
 
 

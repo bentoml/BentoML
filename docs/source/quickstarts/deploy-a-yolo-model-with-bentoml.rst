@@ -156,7 +156,7 @@ For more information about custom Runners, see :doc:`/concepts/runner`.
 
 Run ``bentoml serve`` to start the Service.
 
-.. code-block:: python
+.. code-block:: bash
 
    $ bentoml serve service:svc
 

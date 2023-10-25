@@ -95,7 +95,7 @@ later by using the name and version to create a BentoML Service. Run ``bentoml m
    Tag                                                                 Module                              Size       Creation Time
    iris_clf:xuvqdjblrc7xynry                                           bentoml.sklearn                     5.98 KiB   2023-07-26 15:47:58
 
-You can manage saved models via the ``bentoml models`` CLI command or Python API. For more information, see :ref:`Managing Models <concepts/model:Managing models>`.
+You can manage saved models via the ``bentoml models`` CLI command or Python API. For more information, see :ref:`concepts/model:Manage models`.
 
 Create a BentoML Service
 ------------------------

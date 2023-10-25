@@ -85,7 +85,7 @@ Building a Service using fastai
 
 .. seealso::
 
-   :ref:`Building a Service <concepts/service:Service and APIs>`: more information on creating a prediction service with BentoML.
+   :ref:`Building a Service <concepts/service:Service APIs>`: more information on creating a prediction service with BentoML.
 
 .. code-block:: python
 
@@ -108,7 +108,7 @@ Building a Service using fastai
       return np.asarray(res[-1])
 
 
-When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`,
+When constructing a :ref:`bentofile.yaml <concepts/bento:Bento build options>`,
 there are two ways to include fastai as a dependency, via ``python`` or
 ``conda``:
 

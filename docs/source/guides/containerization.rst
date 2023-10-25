@@ -11,14 +11,14 @@ provided by BentoML:
 - :ref:`Using dockerfile template <guides/containerization:Dockerfile Template>`
 
 This is an advanced feature for user to customize container environment that are not directly supported in BentoML.
-For basic containerizing options, see :ref:`Docker Options <concepts/bento:Docker Options>`.
+For basic containerizing options, see :ref:`Docker Options <concepts/bento:Docker options>`.
 
 Why you may need this?
 ----------------------
 
 - If you want to customize the containerization process of your Bento.
 - If you need a certain tools, configs, prebuilt binaries that is available across all your Bento generated container images.
-- A big difference with :ref:`base image <concepts/bento:Docker Options Table>` features is that you don't have to setup a custom base image and then push it to a remote registry.
+- A big difference with :ref:`base image <concepts/bento:Docker options table>` features is that you don't have to setup a custom base image and then push it to a remote registry.
 
 Custom Base Image
 -----------------

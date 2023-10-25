@@ -213,7 +213,7 @@ plugins could be more platform specific.
 .. note::
     To use plugins, you need to install the plugin and include it in the dependencies section of the bentofile.
     For example, it is required to add `bentoml-plugins-arize` to the `python:packages` to use the Arize plugin.
-    See :ref:`the build command<concepts/bento:The Build Command>` for more details.
+    See :ref:`the build command<concepts/bento:Build a Bento>` for more details.
 
 Arize AI
 ~~~~~~~~

@@ -14,7 +14,7 @@ Compatibility
 BentoML requires Transformers version 4 or above. For other versions of Transformers, consider using a
 :ref:`concepts/runner:Custom Runner`.
 
-When constructing a :ref:`bentofile.yaml <concepts/bento:Bento Build Options>`, include ``transformers`` and the machine learning
+When constructing a :ref:`bentofile.yaml <concepts/bento:Bento build options>`, include ``transformers`` and the machine learning
 framework of the model, e.g. ``pytorch``, ``tensorflow``, or ``jax``.
 
 .. tab-set::
@@ -191,7 +191,7 @@ Serving a Pipeline
 
 .. seealso::
 
-   See :ref:`Building a Service <concepts/service:Service and APIs>` to learn more on creating a prediction service with BentoML.
+   See :ref:`Building a Service <concepts/service:Service APIs>` to learn more on creating a prediction service with BentoML.
 
 To serve a Transformers pipeline, first get the pipeline reference using the ``bentoml.transformers.get`` API and convert it to a runner using
 the ``to_runner`` method.

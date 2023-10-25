@@ -10,14 +10,14 @@ import attr
 
 import bentoml
 from bentoml import Tag
-from bentoml._internal.utils.transformers import extract_commit_hash
-from bentoml._internal.utils.transformers import is_huggingface_hub_available
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
 from bentoml.models import ModelContext
 
 from ..models.model import PartialKwargsModelOptions
+from .utils.transformers import extract_commit_hash
+from .utils.transformers import is_huggingface_hub_available
 
 if TYPE_CHECKING:
     from types import ModuleType

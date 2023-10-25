@@ -11,9 +11,6 @@ from types import ModuleType
 import attr
 
 import bentoml
-from bentoml._internal.utils.transformers import extract_commit_hash
-from bentoml._internal.utils.transformers import is_accelerate_available
-from bentoml._internal.utils.transformers import is_huggingface_hub_available
 
 from ...exceptions import BentoMLException
 from ...exceptions import MissingDependencyException
@@ -27,6 +24,8 @@ from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
+from .utils.transformers import extract_commit_hash
+from .utils.transformers import is_huggingface_hub_available
 
 if t.TYPE_CHECKING:
     import cloudpickle
@@ -751,9 +750,9 @@ def import_model(
             )
     else:
         try:
-            is_accelerate_available()
-            from accelerate import init_empty_weights
             from transformers.utils import cached_file
+
+            from .utils.transformers import init_empty_weights
 
             with init_empty_weights():
                 model = transformers.AutoModel.from_pretrained(
@@ -797,8 +796,7 @@ def import_model(
                     tag.version = version
 
     if model is None:
-        is_accelerate_available()
-        from accelerate import init_empty_weights
+        from .utils.transformers import init_empty_weights
 
         with init_empty_weights():
             model = transformers.AutoModel.from_config(config=config)

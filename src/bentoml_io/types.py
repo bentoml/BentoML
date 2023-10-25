@@ -9,6 +9,12 @@ import typing as t
 from dataclasses import dataclass
 
 from pydantic_core import core_schema
+from starlette.datastructures import UploadFile
+
+from bentoml._internal.utils import dict_filter_none
+
+from .typing_utils import is_file_like
+from .typing_utils import is_image_type
 
 if t.TYPE_CHECKING:
     import numpy as np
@@ -20,6 +26,7 @@ if t.TYPE_CHECKING:
     from typing_extensions import Literal
 
     TensorType = t.Union[np.ndarray[t.Any, t.Any], tf.Tensor, torch.Tensor]
+    from PIL import Image as PILImage
 else:
     from bentoml._internal.utils.lazy_loader import LazyLoader
 
@@ -28,6 +35,7 @@ else:
     torch = LazyLoader("torch", globals(), "torch")
     pa = LazyLoader("pa", globals(), "pyarrow")
     pd = LazyLoader("pd", globals(), "pandas")
+    PILImage = LazyLoader("PILImage", globals(), "PIL.Image")
 
 T = t.TypeVar("T")
 # This is an internal global state that is True when the model is being serialized for arrow
@@ -44,49 +52,67 @@ def arrow_serialization():
         __in_arrow_serialization__ = False
 
 
-class FileEncoder(t.Generic[T]):
-    __slots__ = ("decoder", "encoder")
+class FileEncoder:
+    def encode(self, obj: t.BinaryIO) -> bytes:
+        obj.seek(0)
+        return obj.read()
 
-    def __init__(
-        self, decoder: t.Callable[[t.Any], T], encoder: t.Callable[[T], bytes]
-    ) -> None:
-        self.decoder = decoder
-        self.encoder = encoder
+    def __get_pydantic_json_schema__(
+        self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> dict[str, t.Any]:
+        return {"type": "file"}
+
+    def decode(self, obj: bytes | t.BinaryIO | UploadFile) -> t.BinaryIO:
+        if isinstance(obj, UploadFile):
+            return obj.file
+        if is_file_like(obj):
+            return obj
+        return io.BytesIO(obj)
 
     def __get_pydantic_core_schema__(
         self, source: type[t.Any], handler: t.Callable[[t.Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
-            function=self.decoder,
-            schema=core_schema.bytes_schema(),
-            serialization=core_schema.plain_serializer_function_ser_schema(
-                self.encoder
-            ),
+            function=self.decode,
+            schema=core_schema.any_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
         )
 
 
-def _get_file(obj: bytes | t.BinaryIO) -> t.BinaryIO:
-    if hasattr(obj, "read"):
-        return obj
-    return io.BytesIO(obj)
+class ImageEncoder(FileEncoder):
+    def decode(
+        self, obj: bytes | t.BinaryIO | UploadFile | PILImage.Image
+    ) -> PILImage.Image:
+        if is_image_type(type(obj)):
+            return obj
+        if isinstance(obj, UploadFile):
+            formats = None
+            if obj.headers.get("Content-Type", "").startswith("image/"):
+                formats = [obj.headers.get("Content-Type")[6:].upper()]
+            return PILImage.open(obj.file, formats=formats)
+        if is_file_like(obj):
+            return PILImage.open(obj)
+        return PILImage.open(io.BytesIO(obj))
+
+    def encode(self, obj: PILImage.Image) -> bytes:
+        buffer = io.BytesIO()
+        obj.save(buffer, format=obj.format)
+        return buffer.getvalue()
+
+    def __get_pydantic_json_schema__(
+        self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> dict[str, t.Any]:
+        return {"type": "image"}
 
 
-def _get_file_bytes(obj: t.BinaryIO) -> bytes:
-    obj.seek(0)
-    return obj.read()
-
-
-File = t.Annotated[t.BinaryIO, FileEncoder(_get_file, _get_file_bytes)]
+File = t.Annotated[t.BinaryIO, FileEncoder()]
+Image = t.Annotated[PILImage.Image, ImageEncoder()]
 
 # `slots` is available on Python >= 3.10
 if sys.version_info >= (3, 10):
     slots_true = {"slots": True}
 else:
     slots_true = {}
-
-
-def _dict_filter_none(d: dict[str, t.Any]) -> dict[str, t.Any]:
-    return {k: v for k, v in d.items() if v is not None}
 
 
 @dataclass(unsafe_hash=True, **slots_true)
@@ -104,7 +130,7 @@ class TensorSchema:
     def __get_pydantic_json_schema__(
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
-        return _dict_filter_none(
+        return dict_filter_none(
             {
                 "type": "tensor",
                 "format": self.format,
@@ -171,7 +197,7 @@ class DataframeSchema:
     def __get_pydantic_json_schema__(
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
-        return _dict_filter_none(
+        return dict_filter_none(
             {
                 "type": "dataframe",
                 "orient": self.orient,

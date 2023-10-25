@@ -14,7 +14,7 @@ This quickstart demonstrates how to use OneDiffusion to create an image generati
 
 .. note::
 
-   You can try a similar project to this quickstart on `Google Colab <https://colab.research.google.com/drive/1Kc5WQWmcTkQ7B-eVk3CT_G00wSPT2DzO?usp=sharing>`_.
+   You can try a similar project to this quickstart on `Google Colab <https://colab.research.google.com/github/bentoml/OneDiffusion/blob/main/examples/onediffusion_demo.ipynb>`_.
 
 Prerequisites
 -------------

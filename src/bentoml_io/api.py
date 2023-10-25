@@ -24,6 +24,11 @@ class APIMethod(t.Generic[P, R]):
     input_spec: type[IODescriptor] = attrs.field()
     output_spec: type[IODescriptor] = attrs.field()
     batchable: bool = False
+    batch_dim: tuple[int, int] = attrs.field(
+        default=(0, 0), converter=lambda x: (x, x) if not isinstance(x, tuple) else x
+    )
+    max_batch_size: int | None = None
+    max_latency_ms: int | None = None
     is_stream: bool = attrs.field(init=False)
     doc: str | None = attrs.field(init=False)
     ctx_param: str | None = attrs.field(init=False)
@@ -105,6 +110,9 @@ def api(
     input_spec: type[IODescriptor] | None = ...,
     output_spec: type[IODescriptor] | None = ...,
     batchable: bool = ...,
+    batch_dim: int | tuple[int, int] = ...,
+    max_batch_size: int | None = ...,
+    max_latency_ms: int | None = ...,
 ) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]:
     ...
 
@@ -117,12 +125,20 @@ def api(
     input_spec: type[IODescriptor] | None = None,
     output_spec: type[IODescriptor] | None = None,
     batchable: bool = False,
+    batch_dim: int | tuple[int, int] = 0,
+    max_batch_size: int | None = None,
+    max_latency_ms: int | None = None,
 ) -> (
     APIMethod[P, R]
     | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]
 ):
     def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
-        params: dict[str, t.Any] = {"batchable": batchable}
+        params: dict[str, t.Any] = {
+            "batchable": batchable,
+            "batch_dim": batch_dim,
+            "max_batch_size": max_batch_size,
+            "max_latency_ms": max_latency_ms,
+        }
         if route is not None:
             params["route"] = route
         if name is not None:

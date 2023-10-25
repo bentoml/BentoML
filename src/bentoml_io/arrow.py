@@ -5,7 +5,7 @@ import typing as t
 import pyarrow as pa
 from pydantic import BaseModel
 
-from .fields import arrow_serialization
+from .types import arrow_serialization
 
 SchemaDict: t.TypeAlias = t.Dict[str, t.Any]
 

@@ -101,7 +101,6 @@ class Optimizer:
 
 T_IN = t.TypeVar("T_IN")
 T_OUT = t.TypeVar("T_OUT")
-T_OUT_L = t.TypeVar("T_OUT_L")
 
 
 @attr.define
@@ -112,7 +111,7 @@ class Job(t.Generic[T_IN, T_OUT]):
     dispatch_time: float = 0
 
 
-class CorkDispatcher(t.Generic[T_IN, T_OUT, T_OUT_L]):
+class CorkDispatcher(t.Generic[T_IN, T_OUT]):
     """
     A decorator that:
         * wrap batch function
@@ -120,36 +119,16 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT, T_OUT_L]):
     The wrapped function should be an async function.
     """
 
-    @t.overload
-    def __init__(
-        self: CorkDispatcher[T_IN, T_OUT, None],
-        max_latency_in_ms: int,
-        max_batch_size: int,
-        shared_sema: NonBlockSema | None = None,
-        fallback: None = None,
-        get_batch_size: t.Callable[[T_IN], int] = ...,
-    ) -> None:
-        ...
-
-    @t.overload
-    def __init__(
-        self: CorkDispatcher[T_IN, T_OUT, T_OUT],
-        max_latency_in_ms: int,
-        max_batch_size: int,
-        shared_sema: t.Optional[NonBlockSema] = None,
-        fallback: t.Callable[[], T_OUT] = ...,
-        get_batch_size: t.Callable[[T_IN], int] = ...,
-    ) -> None:
-        ...
-
     def __init__(
         self,
         max_latency_in_ms: int,
         max_batch_size: int,
+        *,
         shared_sema: t.Optional[NonBlockSema] = None,
-        fallback: t.Callable[[], T_OUT] | None = None,
+        fallback: t.Callable[[], T_OUT],
         get_batch_size: t.Callable[[T_IN], int] = lambda x: x.sample.batch_size,
-    ):
+    ) -> None:
+        ...
         """
         params:
             * max_latency_in_ms: max_latency_in_ms for inbound tasks in milliseconds
@@ -191,17 +170,17 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT, T_OUT_L]):
         callback: t.Callable[
             [t.Sequence[T_IN]], t.Coroutine[None, None, t.Sequence[T_OUT]]
         ],
-    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT_L]]:
+    ) -> t.Callable[[T_IN], t.Coroutine[None, None, T_OUT]]:
         self.callback = callback
 
         @functools.wraps(callback)
-        async def _func(data: T_IN) -> T_OUT_L:
+        async def _func(data: T_IN) -> T_OUT:
             if self._controller is None:
                 self._controller = self._loop.create_task(self.controller())
             try:
                 r = await self.inbound_call(data)
             except asyncio.CancelledError:
-                return None if self.fallback is None else self.fallback()
+                return self.fallback()
             if isinstance(r, Exception):
                 raise r
             return r

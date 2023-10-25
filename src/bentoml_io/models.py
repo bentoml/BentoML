@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import sys
 import typing as t
+from typing import ClassVar
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -10,6 +11,8 @@ from pydantic import RootModel
 from pydantic import create_model
 from typing_extensions import get_args
 
+from .typing_utils import is_file_like
+from .typing_utils import is_image_type
 from .typing_utils import is_iterator_type
 from .typing_utils import is_list_type
 
@@ -21,28 +24,20 @@ if t.TYPE_CHECKING:
 
 
 class IOMixin:
-    multipart_fields: t.ClassVar[list[str]]
+    multipart_fields: ClassVar[list[str]]
 
     @classmethod
     def __pydantic_init_subclass__(cls) -> None:
         from pydantic._internal._typing_extra import is_annotated
 
-        from .fields import FileEncoder
-
         cls.multipart_fields = []
         for k, field in cls.model_fields.items():
-            is_multipart = False
-            if any(isinstance(d, FileEncoder) for d in field.metadata):
-                is_multipart = True
-            else:
-                annotation = field.annotation
-                if is_list_type(annotation):
-                    annotation = get_args(annotation)[0]
-                    if is_annotated(annotation) and any(
-                        isinstance(d, FileEncoder) for d in get_args(annotation)[1:]
-                    ):
-                        is_multipart = True
-            if is_multipart:
+            annotation = field.annotation
+            if is_list_type(annotation):
+                annotation = get_args(annotation)[0]
+            if is_annotated(annotation):
+                annotation = get_args(annotation)[0]
+            if is_file_like(annotation) or is_image_type(annotation):
                 cls.multipart_fields.append(k)
 
     @classmethod

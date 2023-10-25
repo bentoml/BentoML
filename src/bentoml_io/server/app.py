@@ -8,8 +8,10 @@ import typing as t
 
 from starlette.middleware import Middleware
 
+from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
+from bentoml.exceptions import ServiceUnavailable
 
 from .service import Service
 
@@ -22,6 +24,8 @@ if t.TYPE_CHECKING:
 
     from bentoml._internal.types import LifecycleHook
 
+R = t.TypeVar("R")
+
 
 class ServiceAppFactory(BaseAppFactory):
     def __init__(
@@ -32,9 +36,28 @@ class ServiceAppFactory(BaseAppFactory):
         max_concurrency: int | None = None,
         enable_metrics: bool = False,
     ) -> None:
+        from bentoml._internal.runner.container import AutoContainer
+
         self.service = service
         self.enable_metrics = enable_metrics
         super().__init__(timeout=timeout, max_concurrency=max_concurrency)
+
+        self.dispatchers: dict[str, CorkDispatcher[t.Any, t.Any]] = {}
+
+        def fallback() -> t.NoReturn:
+            raise ServiceUnavailable("process is overloaded")
+
+        for name, method in service.service_methods.items():
+            if not method.batchable:
+                continue
+            self.dispatchers[name] = CorkDispatcher(
+                max_latency_in_ms=t.cast(int, method.max_latency_ms),
+                max_batch_size=t.cast(int, method.max_batch_size),
+                fallback=fallback,
+                get_batch_size=functools.partial(
+                    AutoContainer.get_batch_size, batch_dim=method.batch_dim[0]
+                ),
+            )
 
     def __call__(self, is_main: bool = False) -> Starlette:
         app = super().__call__()
@@ -123,16 +146,42 @@ class ServiceAppFactory(BaseAppFactory):
 
         routes = super().routes
 
-        for (
-            name,
-            method,
-        ) in self.service.servable_cls.__servable_methods__.items():
+        for name, method in self.service.service_methods.items():
             api_endpoint = functools.partial(self.api_endpoint, name)
             route_path = method.route
             if not route_path.startswith("/"):
                 route_path = "/" + route_path
             routes.append(Route(route_path, api_endpoint, methods=["POST"], name=name))
         return routes
+
+    async def batch_infer(self, name: str, input_kwargs: dict[str, t.Any]) -> t.Any:
+        method = self.service.service_methods[name]
+        func = getattr(self.service.servable, name)
+
+        async def inner_infer(
+            batches: t.Sequence[t.Any], **kwargs: t.Any
+        ) -> t.Sequence[t.Any]:
+            from starlette.concurrency import run_in_threadpool
+
+            from bentoml._internal.runner.container import AutoContainer
+            from bentoml._internal.utils import is_async_callable
+
+            batch, indices = AutoContainer.batches_to_batch(
+                batches, method.batch_dim[0]
+            )
+            if is_async_callable(func):
+                result = await func(batch, **kwargs)
+            else:
+                result = await run_in_threadpool(func, batch, **kwargs)
+            return AutoContainer.batch_to_batches(result, indices, method.batch_dim[1])
+
+        arg_names = [k for k in input_kwargs if k not in ("ctx", "context")]
+        if len(arg_names) != 1:
+            raise TypeError("Batch inference function only accept one argument")
+        value = input_kwargs.pop(arg_names[0])
+        return await self.dispatchers[name](
+            functools.partial(inner_infer, **input_kwargs)
+        )(value)
 
     async def api_endpoint(self, name: str, request: Request) -> Response:
         from starlette.concurrency import run_in_threadpool
@@ -147,23 +196,27 @@ class ServiceAppFactory(BaseAppFactory):
         from ..serde import ALL_SERDE
 
         media_type = request.headers.get("Content-Type", "application/json")
-        serde = ALL_SERDE[media_type]()
+        media_type = media_type.split(";")[0].strip()
         try:
             servable = self.service.servable
         except Exception as e:
             return JSONResponse(str(e), status_code=500)
-        method = servable.__servable_methods__[name]
+        method = self.service.service_methods[name]
         func = getattr(servable, name)
 
         with self.service.context.in_request(request) as ctx:
             try:
+                serde = ALL_SERDE[media_type]()
                 input_data = await method.input_spec.from_http_request(request, serde)
+                request.close
                 input_params = {
                     k: getattr(input_data, k) for k in input_data.model_fields
                 }
                 if method.ctx_param is not None:
                     input_params[method.ctx_param] = ctx
-                if is_async_callable(func):
+                if method.batchable:
+                    output = await self.batch_infer(name, input_params)
+                elif is_async_callable(func):
                     output = await func(**input_params)
                 elif inspect.isasyncgenfunction(func):
                     output = func(**input_params)
@@ -208,4 +261,6 @@ class ServiceAppFactory(BaseAppFactory):
                     "An error has occurred in BentoML user code when handling this request, find the error details in server logs",
                     status_code=500,
                 )
+            finally:
+                await request.close()
             return response

@@ -25,6 +25,7 @@ class Servable:
         cls.__servable_methods__ = {**cls.__servable_methods__, **new_servable_methods}
 
     def get_client(self, name_or_class: str | type[Servable]) -> AbstractClient:
+        """A context-sensitive method to get a sync or async client"""
         # To be injected by service
         raise NotImplementedError
 
@@ -44,9 +45,3 @@ class Servable:
         input_model = method.input_spec(**input_data)
         args = {k: getattr(input_model, k) for k in input_model.model_fields}
         return method.func(self, **args)
-
-    def test(self):
-        return self.get_client("abc")
-
-    async def async_test(self):
-        return self.get_client("abc")

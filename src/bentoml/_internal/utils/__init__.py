@@ -525,3 +525,7 @@ async def sync_gen_to_async(
             yield rv
         except StopIteration:
             break
+
+
+def dict_filter_none(d: dict[str, t.Any]) -> dict[str, t.Any]:
+    return {k: v for k, v in d.items() if v is not None}

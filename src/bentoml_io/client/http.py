@@ -15,12 +15,15 @@ import attr
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
 
+from ..typing_utils import is_file_like
+from ..typing_utils import is_image_type
 from .base import AbstractClient
 
 if t.TYPE_CHECKING:
     import yarl
     from aiohttp import ClientResponse
     from aiohttp import ClientSession
+    from aiohttp import MultipartWriter
 
     from ..models import IODescriptor
     from ..servable import Servable
@@ -194,12 +197,19 @@ class HTTPClient(AbstractClient):
             return await self._parse_response(endpoint, resp)
 
     async def _request(
-        self, url: str, data: bytes, headers: dict[str, str] | None = None
+        self,
+        url: str,
+        data: bytes | MultipartWriter,
+        headers: dict[str, str] | None = None,
     ) -> ClientResponse:
+        from aiohttp import MultipartWriter
+
         from bentoml import __version__
 
         req_headers = {
-            "Content-Type": self.media_type,
+            "Content-Type": f"multipart/form-data; boundary={data.boundary}"
+            if isinstance(data, MultipartWriter)
+            else self.media_type,
             "User-Agent": f"BentoML HTTP Client/{__version__}",
         }
         if headers is not None:
@@ -214,19 +224,64 @@ class HTTPClient(AbstractClient):
             )
         return resp
 
+    def _build_multipart(
+        self, model: IODescriptor | dict[str, t.Any]
+    ) -> MultipartWriter:
+        import aiohttp
+
+        if isinstance(model, dict):
+            multipart_fields = {
+                k
+                for k, v in model.items()
+                if is_file_like(v)
+                or isinstance(v, t.Sequence)
+                and v
+                and is_file_like(v[0])
+            }
+            data = {k: v for k, v in model.items() if k not in multipart_fields}
+        else:
+            multipart_fields = set(model.multipart_fields)
+            data = model.model_dump(exclude=multipart_fields)
+
+        with aiohttp.MultipartWriter("form-data") as mp:
+            if data:
+                part = mp.append_json(data)
+                mp.append_form
+                part.set_content_disposition("form-data", name="__data")
+
+            for name in multipart_fields:
+                value = model[name] if isinstance(model, dict) else getattr(model, name)
+                if not isinstance(value, t.Sequence):
+                    value = [value]
+                for v in value:
+                    if is_image_type(type(v)):
+                        part = mp.append(
+                            getattr(v, "_fp", v.fp),
+                            headers={"Content-Type": f"image/{v.format.lower()}"},
+                        )
+                    else:
+                        part = mp.append(v)
+                    part.set_content_disposition(
+                        "attachment", filename=part.filename, name=name
+                    )
+            return mp
+
     async def _prepare_request(
         self,
         endpoint: ClientEndpoint,
         args: t.Sequence[t.Any],
         kwargs: dict[str, t.Any],
-    ) -> bytes:
+    ) -> bytes | MultipartWriter:
         for name, value in zip(endpoint.input["properties"], args):
             if name in kwargs:
                 raise TypeError(f"Duplicate argument {name}")
             kwargs[name] = value
         if endpoint.input_spec is not None:
             model = endpoint.input_spec(**kwargs)
-            return self.serde.serialize_model(model)
+            if not model.multipart_fields:
+                return self.serde.serialize_model(model)
+            else:
+                return self._build_multipart(model)
         else:
             params = set(endpoint.input["properties"].keys())
             non_exist_args = set(kwargs.keys()) - set(params)
@@ -240,6 +295,16 @@ class HTTPClient(AbstractClient):
                 raise TypeError(
                     f"Missing required arguments in endpoint {endpoint.name}: {missing_args}"
                 )
+            multipart_fields = {
+                k
+                for k, v in kwargs.items()
+                if is_file_like(v)
+                or isinstance(v, t.Sequence)
+                and v
+                and is_file_like(v[0])
+            }
+            if multipart_fields:
+                return self._build_multipart(kwargs)
             return self.serde.serialize(kwargs)
 
     def _deserialize_output(self, data: bytes, endpoint: ClientEndpoint) -> t.Any:

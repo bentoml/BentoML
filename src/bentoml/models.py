@@ -116,6 +116,7 @@ def import_model(
         params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}` for setting a proxy for FTP
         subpath: (expert) the path inside the FS that the model should be exported to
         _model_store: the model store to save the model to
+        framework: Declare the framework explicitly. Otherwise, Bentoml will try to determine the framework automatically.
         name: The name to give to the model in the BentoML store
 
     Returns:

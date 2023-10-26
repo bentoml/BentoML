@@ -615,14 +615,13 @@ def import_model(
     revision: str = "main",
     force_download: bool = False,
     resume_download: bool = False,
-    extra_hf_hub_kwargs: dict[str, t.Any] | None = None,
     sync_with_hub_version: bool = False,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
-    **kwargs: dict[str, t.Any],
+    **extra_hf_hub_kwargs: dict[str, t.Any],
 ) -> bentoml.Model:
     """
     Import Transformer model from a artifact URI to the BentoML model store.
@@ -645,6 +644,10 @@ def import_model(
             The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
             git-based system for storing models and other artifacts on huggingface.co, so `revision` can be any
             identifier allowed by git.
+        force_download (`boolean`, *optional*, defaults to False):
+            Force to (re-)download the model weights and configuration files and override the cached versions if they exist.
+        resume_download (`boolean`, *optional*, defaults to False):
+            Do not delete incompletely received file. Attempt to resume the download if such a file exists.
         sync_with_hub_version (`bool`, default to False):
             If sync_with_hub_version is true, then the model imported by
         signatures:
@@ -664,16 +667,12 @@ def import_model(
             Metadata is intended for display in a model management UI and therefore all
             values in metadata dictionary must be a primitive Python type, such as
             ``str`` or ``int``.
-        kwargs:
+        extra_hf_hub_kwargs:
             Additional keyword arguments for download options.
                 Setting `from_tf=True` will download the following file `tf_model.h5`.
                 Setting `from_flax=True` will download the following file `flax_model.msgpack`.
                 Setting `use_safetensors=True` will download the following file `model.safetensors`.
                 Otherwise, the default targeted file is `pytorch_model.bin`
-
-    .. note::
-
-        Both arguments ``task_name`` and ``task_definition`` must be provided to set save a custom pipeline.
 
     Returns:
         A :obj:`~bentoml.Model` instance referencing a saved model in the local BentoML
@@ -693,9 +692,6 @@ def import_model(
             }
         )
     """
-
-    if extra_hf_hub_kwargs is None:
-        extra_hf_hub_kwargs = {}
 
     tag = Tag.from_taglike(name)
 

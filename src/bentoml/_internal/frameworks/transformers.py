@@ -613,7 +613,9 @@ def import_model(
     *,
     proxies: dict[str, str] | None = None,
     revision: str = "main",
-    variant: str | None = None,
+    force_download: bool = False,
+    resume_download: bool = False,
+    extra_hf_hub_kwargs: dict[str, t.Any] | None = None,
     sync_with_hub_version: bool = False,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
@@ -643,9 +645,6 @@ def import_model(
             The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
             git-based system for storing models and other artifacts on huggingface.co, so `revision` can be any
             identifier allowed by git.
-        variant (`str`, *optional*):
-            Variant of the model to import.
-            This may save download bandwidth and local disk space.
         sync_with_hub_version (`bool`, default to False):
             If sync_with_hub_version is true, then the model imported by
         signatures:
@@ -695,6 +694,9 @@ def import_model(
         )
     """
 
+    if extra_hf_hub_kwargs is None:
+        extra_hf_hub_kwargs = {}
+
     tag = Tag.from_taglike(name)
 
     if sync_with_hub_version:
@@ -736,8 +738,9 @@ def import_model(
         model_name_or_path,
         proxies=proxies,
         revision=revision,
-        variant=variant,
-        **kwargs,
+        force_download=force_download,
+        resume_download=resume_download,
+        **extra_hf_hub_kwargs,
     )
 
     model = None
@@ -759,15 +762,18 @@ def import_model(
                     model_name_or_path,
                     proxies=proxies,
                     revision=revision,
-                    variant=variant,
-                    **kwargs,
+                    force_download=force_download,
+                    resume_download=resume_download,
+                    **extra_hf_hub_kwargs,
                 )
                 resolved_archive_file = cached_file(
                     model_name_or_path,
                     CONFIG_JSON_FILE_NAME,
                     proxies=proxies,
                     revision=revision,
-                    variant=variant,
+                    force_download=force_download,
+                    resume_download=resume_download,
+                    **extra_hf_hub_kwargs,
                 )
                 src_dir = os.path.dirname(resolved_archive_file)
             downloaded_model_successfully = True

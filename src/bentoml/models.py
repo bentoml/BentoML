@@ -68,6 +68,7 @@ def import_model(
     subpath: t.Optional[str] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     framework: t.Optional[t.Literal["transformers", "diffusers"]] = None,
+    name: t.Optional[str] = None,
 ) -> Model:
     """
     Import a bento model exported with :code:`bentoml.models.export_model`. To import a model saved
@@ -147,7 +148,9 @@ def import_model(
 
         if framework is not None:
             if framework in FRAMEWORK_MAPPING:
-                return FRAMEWORK_MAPPING[framework](bento_name, model_id)
+                return FRAMEWORK_MAPPING[framework](
+                    bento_name if name is None else name, model_id
+                )
             else:
                 raise ValueError(
                     f"Ensure to set the environment variable BENTOML_IMPORT_FRAMEWORK='{'|'.join(FRAMEWORK_MAPPING.keys())}' to explicitly set loading framework."
@@ -159,7 +162,9 @@ def import_model(
             res = repo_info(model_id)
             for tag in res.tags:
                 if tag in FRAMEWORK_MAPPING:
-                    return FRAMEWORK_MAPPING[tag](bento_name, model_id)
+                    return FRAMEWORK_MAPPING[tag](
+                        bento_name if name is None else name, model_id
+                    )
             else:
                 raise
         except Exception:

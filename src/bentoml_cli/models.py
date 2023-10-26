@@ -248,7 +248,9 @@ def add_model_management_commands(cli: Group) -> None:
         bentoml models import https://huggingface.co/t5-base --name myModelName
         """
         BENTOML_IMPORT_FRAMEWORK = os.environ.get("BENTOML_IMPORT_FRAMEWORK", None)
-        bentomodel = import_model(model_path, framework=BENTOML_IMPORT_FRAMEWORK)
+        bentomodel = import_model(
+            model_path, name=name, framework=BENTOML_IMPORT_FRAMEWORK
+        )
         click.echo(f"{bentomodel} imported.")
 
     @model_cli.command()

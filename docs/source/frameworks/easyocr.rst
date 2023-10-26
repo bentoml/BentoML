@@ -45,7 +45,7 @@ Building a Service
 
 .. seealso::
 
-   :ref:`Building a Service <concepts/service:Service and APIs>`: more information on creating a
+   :ref:`Building a Service <concepts/service:Service APIs>`: more information on creating a
    prediction service with BentoML.
 
 Create a ``service.py`` file separate from your training code that will be used to define the

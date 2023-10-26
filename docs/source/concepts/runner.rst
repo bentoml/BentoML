@@ -101,7 +101,7 @@ This information is then used by the BentoServer scheduler to determine the work
 The :code:`bentoml.Runnable.method` decorator is used for creating
 :code:`RunnableMethod` - the decorated method will be exposed as the runner interface
 for accessing remotely. :code:`RunnableMethod` can be configured with a signature,
-which is defined same as the :ref:`concepts/model:Model Signatures`.
+which is defined same as the :ref:`concepts/model:Model signatures`.
 
 More examples about custom runners implementing their own :code:`Runnable` class can be found at:
 :examples:`examples/custom_runner <custom_runner>`.

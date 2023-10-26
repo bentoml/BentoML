@@ -215,7 +215,7 @@ You cannot access the inference context within the ``on_deployment`` hook.
 .. note::
 
     While the ``on_deployment`` hook can run each time the Service starts, we still recommend you place any
-    one-time initialization tasks in the :ref:`Setup Script <concepts/bento:Setup Script>` to avoid repeated execution.
+    one-time initialization tasks in the :ref:`Setup Script <concepts/bento:Setup script>` to avoid repeated execution.
 
 You can register multiple functions for each hook, and they will be executed in the order they are registered.
 All hooks support both synchronous and asynchronous functions.

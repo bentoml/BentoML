@@ -10,7 +10,7 @@ with BentoML on GPU.
 Docker Images Options
 ---------------------
 
-See :ref:`concepts/bento:Docker Options` for all options related to setting up docker
+See :ref:`concepts/bento:Docker options` for all options related to setting up docker
 image options related to GPU. Here's a sample :code:`bentofile.yaml` config for serving
 with GPU:
 
@@ -41,7 +41,7 @@ install the corresponding cuda version onto the docker image created:
 If the desired :code:`cuda_version` is not natively supported by BentoML, users can
 still customize the installation of cuda driver and libraries via the
 :code:`system_packages`, :code:`setup_script`, or :code:`base_image` options under the
-:ref:`Bento build docker options<concepts/bento:Docker Options>`.
+:ref:`Bento build docker options<concepts/bento:Docker options>`.
 
 
 Running Docker with GPU

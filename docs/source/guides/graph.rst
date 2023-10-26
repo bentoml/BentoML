@@ -3,7 +3,7 @@ Inference Graph
 ===============
 
 Many ML problems require an ensemble of models to work together to solve. BentoML architecture can support any model inference graph natively in its
-:ref:`Service APIs <concepts/service:Service and APIs>` definition. Users can define parallel and sequential inference graphs with any control flows
+:ref:`Service APIs <concepts/service:Service APIs>` definition. Users can define parallel and sequential inference graphs with any control flows
 by writing simple Python code. In this guide, we will build a text generation and classification service using model inference graph. The project
 source code can be found in the BentoML `inference graph <https://github.com/bentoml/BentoML/tree/main/examples/inference_graph>`_ example.
 
@@ -68,7 +68,7 @@ Create a :doc:`Service </concepts/service>` named ``inference_graph`` and specif
 Define API
 ##########
 
-First, define an async :ref:`API <concepts/service:Service and APIs>` named ``classify_generated_texts`` that accepts a :ref:`Text <reference/api_io_descriptors:Texts>`
+First, define an async :ref:`API <concepts/service:Service APIs>` named ``classify_generated_texts`` that accepts a :ref:`Text <reference/api_io_descriptors:Texts>`
 input and returns :ref:`JSON <reference/api_io_descriptors:Structured Data with JSON>` output. Second, pass the input simultaneously to all three text generation
 runners through ``asyncio.gather`` and receive a list of three generated texts. Using ``asyncio.gather`` and Runner's ``async_run`` allows the inferences to happen
 in parallel. Third, pass the list of generated texts to the text classification runner iteratively using a loop to get the classification score of each generated text.
@@ -77,7 +77,7 @@ Finally, return the list of generated texts and classification results in a dict
 .. tip::
 
     Using asynchronous Service and Runner APIs achives better performance and throughput for IO-intensive workloads.
-    See :ref:`Sync vs Async APIs <concepts/service:Sync vs Async APIs>` for more details.
+    See :ref:`Sync vs Async APIs <concepts/service:Synchronous and asynchronous APIs>` for more details.
 
 
 .. code-block:: python

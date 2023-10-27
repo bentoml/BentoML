@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import typing as t
 
 import click
@@ -234,23 +233,13 @@ def add_model_management_commands(cli: Group) -> None:
 
     @model_cli.command(name="import")
     @click.argument("model_path", type=click.STRING)
-    @click.option(
-        "--name",
-        type=click.STRING,
-        default=None,
-        help="The name to give to the model in the BentoML store",
-    )
-    def import_from(model_path: str, name: str | None) -> None:  # type: ignore (not accessed)
-        """Import a previously exported Model archive file or a model from remote model store
+    def import_from(model_path: str) -> None:  # type: ignore (not accessed)
+        """Import a previously exported Model archive file
 
         bentoml models import ./my_model.bentomodel
         bentoml models import s3://mybucket/models/my_model.bentomodel
-        bentoml models import https://huggingface.co/t5-base --name myModelName
         """
-        BENTOML_IMPORT_FRAMEWORK = os.environ.get("BENTOML_IMPORT_FRAMEWORK", None)
-        bentomodel = import_model(
-            model_path, name=name, framework=BENTOML_IMPORT_FRAMEWORK
-        )
+        bentomodel = import_model(model_path)
         click.echo(f"{bentomodel} imported.")
 
     @model_cli.command()

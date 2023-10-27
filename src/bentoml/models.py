@@ -4,9 +4,7 @@ import typing as t
 from contextlib import contextmanager
 from types import ModuleType
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
 
-import inflection
 from simple_di import Provide
 from simple_di import inject
 
@@ -67,8 +65,6 @@ def import_model(
     params: t.Optional[t.Dict[str, str]] = None,
     subpath: t.Optional[str] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    framework: t.Optional[t.Literal["transformers", "diffusers"]] = None,
-    name: t.Optional[str] = None,
 ) -> Model:
     """
     Import a bento model exported with :code:`bentoml.models.export_model`. To import a model saved
@@ -106,73 +102,19 @@ def import_model(
 
     Args:
         tag: the tag of the model to export
-        path: can be one of few things:
+        path: can be one of two things:
               * a folder on the local filesystem
               * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_, for example :code:`'s3://my_bucket/folder/my_model.bentomodel'`
-              * A string, the *repo id* of a model repo hosted on https://huggingface.co/
         protocol: (expert) The FS protocol to use when exporting. Some example protocols are :code:`'ftp'`, :code:`'s3'`, and :code:`'userdata'`
         user: (expert) the username used for authentication if required, e.g. for FTP
         passwd: (expert) the username used for authentication if required, e.g. for FTP
         params: (expert) a map of parameters to be passed to the FS used for export, e.g. :code:`{'proxy': 'myproxy.net'}` for setting a proxy for FTP
         subpath: (expert) the path inside the FS that the model should be exported to
         _model_store: the model store to save the model to
-        framework: Declare the framework explicitly. Otherwise, Bentoml will try to determine the framework automatically.
-        name: The name to give to the model in the BentoML store
 
     Returns:
         Model: the imported model
     """
-    parsedURL = urlparse(path)
-    if (
-        parsedURL.scheme == "http" or parsedURL.scheme == "https"
-    ) and parsedURL.netloc == "huggingface.co":
-        from ._internal.frameworks.diffusers import (
-            import_model as diffusers_import_model,
-        )
-        from ._internal.frameworks.transformers import (
-            import_model as transformers_import_model,
-        )
-
-        FRAMEWORK_MAPPING = {
-            "transformers": transformers_import_model,
-            "diffusers": diffusers_import_model,
-        }
-
-        model_id = parsedURL.path.strip("/")
-
-        if model_id == "":
-            raise BentoMLException(
-                "Invalid HuggingFace model URL, please check your URL"
-            )
-
-        bento_name = inflection.dasherize(model_id.replace("/", "--"))
-
-        if framework is not None:
-            if framework in FRAMEWORK_MAPPING:
-                return FRAMEWORK_MAPPING[framework](
-                    bento_name if name is None else name, model_id
-                )
-            else:
-                raise ValueError(
-                    f"Ensure to set the environment variable BENTOML_IMPORT_FRAMEWORK='{'|'.join(FRAMEWORK_MAPPING.keys())}' to explicitly set loading framework."
-                )
-
-        try:
-            from huggingface_hub import repo_info
-
-            res = repo_info(model_id)
-            for tag in res.tags:
-                if tag in FRAMEWORK_MAPPING:
-                    return FRAMEWORK_MAPPING[tag](
-                        bento_name if name is None else name, model_id
-                    )
-            else:
-                raise
-        except Exception:
-            raise ValueError(
-                f"BentoML cannot automatically determine which framework to save the model. Ensure the huggingface repository has the supported framework tags {[*FRAMEWORK_MAPPING.keys()]} or set the environment BENTOML_IMPORT_FRAMEWORK='{'|'.join(FRAMEWORK_MAPPING.keys())}' to explicitly set loading framework."
-            )
-
     return Model.import_from(
         path,
         input_format,

@@ -615,6 +615,7 @@ def import_model(
     revision: str = "main",
     force_download: bool = False,
     resume_download: bool = False,
+    clone_repository: bool = False,
     sync_with_hub_version: bool = False,
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
@@ -648,6 +649,8 @@ def import_model(
             Force to (re-)download the model weights and configuration files and override the cached versions if they exist.
         resume_download (`boolean`, *optional*, defaults to False):
             Do not delete incompletely received file. Attempt to resume the download if such a file exists.
+        clone_repository: (`boolean`, *optional*, defaults to False):
+            Download all files from the huggingface repository of the given model
         sync_with_hub_version (`bool`, default to False):
             If sync_with_hub_version is true, then the model imported by
         signatures:
@@ -740,7 +743,6 @@ def import_model(
     )
 
     model = None
-    downloaded_model_successfully = False
     if os.path.isdir(model_name_or_path):
         src_dir = model_name_or_path
         if sync_with_hub_version:
@@ -749,12 +751,11 @@ def import_model(
             )
     else:
         try:
-            from transformers.utils import cached_file
+            is_huggingface_hub_available()
+            if clone_repository:
+                from huggingface_hub import snapshot_download
 
-            from .utils.transformers import init_empty_weights
-
-            with init_empty_weights():
-                model = transformers.AutoModel.from_pretrained(
+                src_dir = snapshot_download(
                     model_name_or_path,
                     proxies=proxies,
                     revision=revision,
@@ -762,40 +763,43 @@ def import_model(
                     resume_download=resume_download,
                     **extra_hf_hub_kwargs,
                 )
-                resolved_archive_file = cached_file(
-                    model_name_or_path,
-                    CONFIG_JSON_FILE_NAME,
-                    proxies=proxies,
-                    revision=revision,
-                    force_download=force_download,
-                    resume_download=resume_download,
-                    **extra_hf_hub_kwargs,
-                )
-                src_dir = os.path.dirname(resolved_archive_file)
-            downloaded_model_successfully = True
+            else:
+                from transformers.utils import cached_file
+
+                from .utils.transformers import init_empty_weights
+
+                with init_empty_weights():
+                    model = transformers.AutoModel.from_pretrained(
+                        model_name_or_path,
+                        proxies=proxies,
+                        revision=revision,
+                        force_download=force_download,
+                        resume_download=resume_download,
+                        **extra_hf_hub_kwargs,
+                    )
+                    path_to_config = cached_file(
+                        model_name_or_path,
+                        CONFIG_JSON_FILE_NAME,
+                        proxies=proxies,
+                        revision=revision,
+                        force_download=force_download,
+                        resume_download=resume_download,
+                        **extra_hf_hub_kwargs,
+                    )
+                    src_dir = os.path.dirname(path_to_config)
+
+                if sync_with_hub_version:
+                    from huggingface_hub.file_download import REGEX_COMMIT_HASH
+
+                    version = extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
+                    if version is not None:
+                        tag.version = version
         except Exception:
             logger.info(
-                "Failed to download model file for (%s). Will attempt to clone repository instead.",
+                "Failed to download model file for (%s).",
                 model_name_or_path,
             )
-
-        if not downloaded_model_successfully:
-            # clone entire repository as fallback
-            is_huggingface_hub_available()
-            from huggingface_hub import snapshot_download
-
-            src_dir = snapshot_download(
-                model_name_or_path,
-                proxies=proxies,
-                revision=revision,
-            )
-
-            if sync_with_hub_version:
-                from huggingface_hub.file_download import REGEX_COMMIT_HASH
-
-                version = extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
-                if version is not None:
-                    tag.version = version
+            raise
 
     if model is None:
         from .utils.transformers import init_empty_weights

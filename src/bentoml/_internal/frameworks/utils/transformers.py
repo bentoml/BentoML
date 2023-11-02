@@ -80,7 +80,7 @@ def is_huggingface_hub_available():
     except ImportError:  # pragma: no cover
         raise MissingDependencyException(
             "'huggingface_hub' is required in order to download pretrained models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
-        )
+        ) from None
 
 
 @contextmanager

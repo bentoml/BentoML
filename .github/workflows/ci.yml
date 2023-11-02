@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           pdm venv create --with-pip --force
-          pdm sync -d -G io -G testing
+          pdm sync -d -G grpc -G io -G testing
       - name: Unit tests
         run: pdm run -v unit
       - name: Disambiguate coverage filename

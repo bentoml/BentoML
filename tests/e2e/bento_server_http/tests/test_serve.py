@@ -20,7 +20,7 @@ def test_http_server():
     client = server.get_client()
     resp = client.health()
 
-    assert resp.status == 200
+    assert resp.status_code == 200
 
     res = client.call("echo_json", {"test": "json"})
 
@@ -55,7 +55,7 @@ def test_http_server_ctx():
 
     with server.start() as client:
         resp = client.health()
-        assert resp.status == 200
+        assert resp.status_code == 200
 
         res = client.call("echo_json", {"more_test": "and more json"})
 
@@ -89,7 +89,7 @@ def test_serve_from_svc():
     server.start()
     client = server.get_client()
     resp = client.health()
-    assert resp.status == 200
+    assert resp.status_code == 200
     server.stop()
 
     assert server.process is not None  # process should not be removed
@@ -136,14 +136,15 @@ async def test_serve_with_api_max_concurrency():
     env = os.environ.copy()
     env.update(BENTOML_CONFIG=config_file)
 
-    with server.start(env=env) as client:
+    with server.start(env=env):
+        client = await bentoml.client.AsyncHTTPClient.from_url(f"http://{server.host}:{server.port}")
         tasks = [
-            asyncio.create_task(client.async_call("echo_delay", {"delay": 0.5})),
-            asyncio.create_task(client.async_call("echo_delay", {"delay": 0.5})),
+            asyncio.create_task(client.call("echo_delay", {"delay": 0.5})),
+            asyncio.create_task(client.call("echo_delay", {"delay": 0.5})),
         ]
         await asyncio.sleep(0.1)
         tasks.append(
-            asyncio.create_task(client.async_call("echo_delay", {"delay": 0.5}))
+            asyncio.create_task(client.call("echo_delay", {"delay": 0.5}))
         )
         results = await asyncio.gather(*tasks, return_exceptions=True)
 

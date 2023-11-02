@@ -12,8 +12,6 @@ import torch
 import torch.nn as nn
 from packaging import version
 
-from ....exceptions import MissingDependencyException
-
 logger = logging.getLogger(__name__)
 
 
@@ -74,15 +72,12 @@ def extract_commit_hash(
     return commit_hash if regex_commit_hash.match(commit_hash) else None
 
 
-def is_huggingface_hub_available():
-    try:
-        import huggingface_hub  # noqa: F401
-    except ImportError:  # pragma: no cover
-        raise MissingDependencyException(
-            "'huggingface_hub' is required in order to download pretrained models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
-        ) from None
+def is_huggingface_hub_available() -> bool:
+    return importlib.util.find_spec("huggingface_hub") is not None
 
 
+# init_empty_weights is vendored from accelerate. This is a useful function as it allows us to call transformers.AutoModel.from_pretrained without loading
+# the actual weights of the model. This grants access to the model class and its attributes without using a significant amount of memory.
 @contextmanager
 def init_empty_weights(include_buffers: bool = False):
     """

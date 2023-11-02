@@ -695,7 +695,10 @@ def import_model(
             }
         )
     """
-
+    if is_huggingface_hub_available():
+        raise MissingDependencyException(
+            "'huggingface_hub' is required in order to download pretrained models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
+        ) from None
     tag = Tag.from_taglike(name)
 
     if sync_with_hub_version:
@@ -751,7 +754,11 @@ def import_model(
             )
     else:
         try:
-            is_huggingface_hub_available()
+            if not is_huggingface_hub_available():
+                raise MissingDependencyException(
+                    "'huggingface_hub' is required in order to download pretrained models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
+                ) from None
+
             if clone_repository:
                 from huggingface_hub import snapshot_download
 

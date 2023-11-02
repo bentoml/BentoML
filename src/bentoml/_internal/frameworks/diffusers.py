@@ -498,7 +498,10 @@ def import_model(
             )
 
     elif pipeline_class:
-        is_huggingface_hub_available()
+        if not is_huggingface_hub_available():
+            raise MissingDependencyException(
+                "'huggingface_hub' is required in order to download pretrained models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
+            ) from None
 
         src_dir = pipeline_class.download(
             model_name_or_path, proxies=proxies, revision=revision, variant=variant
@@ -514,7 +517,11 @@ def import_model(
                 tag.version = version
 
     else:
-        is_huggingface_hub_available()
+        if not is_huggingface_hub_available():
+            raise MissingDependencyException(
+                "'huggingface_hub' is required in order to download pretrained models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
+            ) from None
+
         from huggingface_hub import snapshot_download
 
         src_dir = snapshot_download(

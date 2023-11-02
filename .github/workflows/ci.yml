@@ -44,9 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           pdm venv create --with-pip --force
-          pdm sync -d -G io -G testing -G frameworks
-          pdm run pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
-          pdm run pip install -U tensorflow
+          pdm sync -d -G io -G testing
       - name: Unit tests
         run: pdm run -v unit
       - name: Disambiguate coverage filename

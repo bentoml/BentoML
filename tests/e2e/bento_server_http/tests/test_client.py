@@ -1,7 +1,7 @@
 import pytest
 
-from bentoml.client import HTTPClient
 from bentoml.client import AsyncHTTPClient
+from bentoml.client import HTTPClient
 
 
 @pytest.mark.asyncio

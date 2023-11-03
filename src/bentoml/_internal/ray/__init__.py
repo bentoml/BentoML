@@ -5,7 +5,7 @@ from functools import partial
 
 import requests
 
-from ._internal.utils import pkg
+from ..._internal.utils import pkg
 
 if pkg.pkg_version_info("ray")[:2] >= (2, 5):
     from ray.serve._private.http_util import BufferedASGISender as ASGIHTTPSender

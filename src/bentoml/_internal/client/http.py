@@ -197,6 +197,7 @@ class SyncHTTPClient(SyncClient):
         # set kwargs here to omit gRPC kwargs
         **kwargs: t.Any,
     ) -> None:
+        host = host if "://" in host else "http://" + host
         start_time = time.time()
 
         logger.debug("Waiting for host %s to be ready.", f"{host}:{port}")

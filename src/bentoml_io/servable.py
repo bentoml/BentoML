@@ -29,13 +29,12 @@ class Servable:
         # To be injected by service
         raise NotImplementedError
 
-    def schema(self) -> dict[str, t.Any]:
+    @classmethod
+    def schema(cls) -> dict[str, t.Any]:
         return {
-            "name": self.__class__.__name__,
+            "name": cls.name,
             "type": "service",
-            "routes": [
-                method.schema() for method in self.__servable_methods__.values()
-            ],
+            "routes": [method.schema() for method in cls.__servable_methods__.values()],
         }
 
     def call(self, method_name: str, input_data: dict[str, t.Any]) -> t.Any:

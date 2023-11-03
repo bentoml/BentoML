@@ -67,7 +67,7 @@ def test_get_payload(event_properties: analytics.schemas.ModelSaveEvent):
     assert SCHEMA.validate(payload)
 
 
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 @patch("bentoml._internal.utils.analytics.usage_stats._usage_event_debugging")
 def test_send_usage(
@@ -91,7 +91,7 @@ def test_send_usage(
     assert "Tracking Payload" in caplog.text
 
 
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 def test_do_not_track(
     mock_do_not_track: MagicMock,
@@ -106,7 +106,7 @@ def test_do_not_track(
 
 
 @patch("bentoml._internal.utils.analytics.usage_stats.logger")
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 def test_send_usage_failure(
     mock_do_not_track: MagicMock,
@@ -123,7 +123,7 @@ def test_send_usage_failure(
     mock_logger.debug.assert_called_with("Tracking Error: %s", mock_post.side_effect)
 
 
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 @patch("bentoml._internal.utils.analytics.usage_stats._usage_event_debugging")
 @pytest.mark.parametrize("production", [False, True])
@@ -324,7 +324,7 @@ def test_get_metrics_report(
 
 
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats._track_serve_init")
 @patch("bentoml._internal.utils.analytics.usage_stats._usage_event_debugging")
 @patch("bentoml._internal.server.metrics.prometheus.PrometheusClient")

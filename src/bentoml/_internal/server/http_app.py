@@ -346,17 +346,6 @@ class HTTPAppFactory(BaseAppFactory):
                         output, ctx if api.needs_ctx else None
                     )
 
-                    if trace_context.request_id is not None:
-                        response.headers["X-BentoML-Request-ID"] = str(
-                            trace_context.request_id
-                        )
-                    if (
-                        BentoMLContainer.http.response.trace_id.get()
-                        and trace_context.trace_id is not None
-                    ):
-                        response.headers["X-BentoML-Trace-ID"] = str(
-                            trace_context.trace_id
-                        )
                 except BentoMLException as e:
                     log_exception(request, sys.exc_info())
                     if output is not None:
@@ -396,6 +385,15 @@ class HTTPAppFactory(BaseAppFactory):
                         "An error has occurred in BentoML user code when handling this request, find the error details in server logs",
                         status_code=500,
                     )
+                if trace_context.request_id is not None:
+                    response.headers["X-BentoML-Request-ID"] = str(
+                        trace_context.request_id
+                    )
+                if (
+                    BentoMLContainer.http.response.trace_id.get()
+                    and trace_context.trace_id is not None
+                ):
+                    response.headers["X-BentoML-Trace-ID"] = str(trace_context.trace_id)
                 return response
 
         return api_func

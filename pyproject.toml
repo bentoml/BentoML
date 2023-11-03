@@ -222,7 +222,7 @@ _run_test = { cmd = [
 ] }
 tests = { composite = ["_run_test {args:tests}"] }
 unit = { composite = [
-    "_run_test {args:tests} -n auto --ignore tests/e2e --ignore tests/integration/frameworks/models --ignore tests/integration/frameworks/test_frameworks.py",
+    "_run_test tests/unit -n auto",
 ] }
 integration = { composite = [
     "tests tests/integration/frameworks/test_frameworks.py --framework {args}",

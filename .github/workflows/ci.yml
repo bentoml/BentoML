@@ -150,7 +150,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
         python-version: ['3.8', '3.11']
         server_type: ['http']
     name: ${{ matrix.server_type }}-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})

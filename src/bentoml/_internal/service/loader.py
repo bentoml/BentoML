@@ -26,6 +26,8 @@ from ..tag import Tag
 from .service import on_load_bento
 
 if TYPE_CHECKING:
+    from bentoml_io.server import Service as NewService
+
     from ..bento import BentoStore
     from .service import Service
 
@@ -39,7 +41,7 @@ def import_service(
     working_dir: t.Optional[str] = None,
     standalone_load: bool = False,
     model_store: ModelStore = Provide[BentoMLContainer.model_store],
-) -> Service:
+) -> Service | NewService:
     """Import a Service instance from source code, by providing the svc_import_path
     which represents the module where the Service instance is created and optionally
     what attribute can be used to access this Service instance in that module
@@ -60,10 +62,9 @@ def import_service(
         import_service("fraud_detector.py")
         import_service("fraud_detector")
     """
-    if BentoMLContainer.new_io:
-        from bentoml_io.server import Service
-    else:
-        from bentoml import Service
+    from bentoml_io.server import Service as NewService
+
+    from bentoml import Service
 
     prev_cwd = None
     sys_path_modified = False
@@ -154,7 +155,9 @@ def import_service(
                 )
         else:
             instances = [
-                (k, v) for k, v in module.__dict__.items() if isinstance(v, Service)
+                (k, v)
+                for k, v in module.__dict__.items()
+                if isinstance(v, (Service, NewService))
             ]
 
             if len(instances) == 1:
@@ -168,7 +171,7 @@ def import_service(
                 )
 
         assert isinstance(
-            instance, Service
+            instance, (Service, NewService)
         ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
 
         # set import_str for retrieving the service import origin
@@ -188,7 +191,7 @@ def load_bento(
     bento: str | Tag | Bento,
     bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     standalone_load: bool = False,
-) -> "Service":
+) -> Service | NewService:
     """Load a Service instance from a bento found in local bento store:
 
     Example usage:
@@ -223,7 +226,7 @@ def load_bento(
     return _load_bento(bento, standalone_load)
 
 
-def load_bento_dir(path: str, standalone_load: bool = False) -> "Service":
+def load_bento_dir(path: str, standalone_load: bool = False) -> Service | NewService:
     """Load a Service instance from a bento directory
 
     Example usage:
@@ -239,7 +242,7 @@ def load_bento_dir(path: str, standalone_load: bool = False) -> "Service":
     return _load_bento(bento, standalone_load)
 
 
-def _load_bento(bento: Bento, standalone_load: bool) -> "Service":
+def _load_bento(bento: Bento, standalone_load: bool) -> Service | NewService:
     # Use Bento's user project path as working directory when importing the service
     working_dir = bento._fs.getsyspath(BENTO_PROJECT_DIR_NAME)
 
@@ -268,7 +271,7 @@ def load(
     bento_identifier: str | Tag | Bento,
     working_dir: t.Optional[str] = None,
     standalone_load: bool = False,
-) -> "Service":
+) -> Service | NewService:
     """Load a Service instance by the bento_identifier
 
     Args:

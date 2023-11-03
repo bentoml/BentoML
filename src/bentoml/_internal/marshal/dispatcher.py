@@ -17,10 +17,6 @@ from ..utils.alg import TokenBucket
 logger = logging.getLogger(__name__)
 
 
-if t.TYPE_CHECKING:
-    pass
-
-
 class NonBlockSema:
     def __init__(self, count: int):
         self.sema = count

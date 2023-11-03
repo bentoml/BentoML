@@ -60,3 +60,11 @@ class RayRunnerHandle(RunnerHandle):
                 *args, **kwargs
             )
         )
+
+    def async_stream_method(
+        self,
+        __bentoml_method: RunnerMethod[t.Any, P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> t.AsyncGenerator[R, None]:
+        raise NotImplementedError

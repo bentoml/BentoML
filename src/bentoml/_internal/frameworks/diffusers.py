@@ -455,6 +455,12 @@ def import_model(
 
     tag = Tag.from_taglike(name)
 
+    try:
+        model = bentoml.models.get(tag)
+        return model
+    except bentoml.exceptions.NotFound:
+        pass
+
     if sync_with_hub_version:
         if tag.version is not None:
             logger.warn(

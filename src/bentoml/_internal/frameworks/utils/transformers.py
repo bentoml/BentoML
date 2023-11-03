@@ -76,11 +76,12 @@ def is_huggingface_hub_available() -> bool:
     return importlib.util.find_spec("huggingface_hub") is not None
 
 
-# init_empty_weights is vendored from accelerate. This is a useful function as it allows us to call transformers.AutoModel.from_pretrained without loading
-# the actual weights of the model. This grants access to the model class and its attributes without using a significant amount of memory.
 @contextmanager
 def init_empty_weights(include_buffers: bool = False):
     """
+    init_empty_weights is vendored from accelerate. This is a useful function as it allows us to call transformers.AutoModel.from_pretrained without loading
+    the actual weights of the model. This grants access to the model class and its attributes without using a significant amount of memory.
+
     A context manager under which models are initialized with all parameters on the meta device, therefore creating an
     empty model. Useful when just initializing the model would blow the available RAM.
 

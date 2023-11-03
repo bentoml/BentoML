@@ -611,6 +611,7 @@ def import_model(
     name: Tag | str,
     model_name_or_path: str | os.PathLike[str],
     *,
+    pretrained_model_class: t.Type[BaseAutoModelClass] | None = None,
     proxies: dict[str, str] | None = None,
     revision: str = "main",
     force_download: bool = False,
@@ -638,6 +639,8 @@ def import_model(
               `CompVis/ldm-text2im-large-256`.
             - A path to a *directory* containing weights saved using
               [`~transformers.AutoModel.save_pretrained`], e.g., `./my_pretrained_directory/`.
+        pretrained_model_class:
+            The pretrained class/architecture to load the model weights. This determines what LM heads are available to the model.
         proxies (`Dict[str, str]`, *optional*):
             A dictionary of proxy servers to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128',
             'http://hostname': 'foo.bar:4012'}`. The proxies are used on each request.
@@ -698,6 +701,12 @@ def import_model(
 
     tag = Tag.from_taglike(name)
 
+    try:
+        model = bentoml.models.get(tag)
+        return model
+    except bentoml.exceptions.NotFound:
+        pass
+
     if sync_with_hub_version:
         if tag.version is not None:
             logger.warn(
@@ -741,6 +750,11 @@ def import_model(
         resume_download=resume_download,
         **extra_hf_hub_kwargs,
     )
+    if pretrained_model_class is None:
+        pretrained_model_class = getattr(transformers, config.architectures[0])
+        logger.info(
+            f"pretrained_model_class is not provided, bentoml will create a model with the following pretrained model class {config.architectures[0]}. Available pretrained classes for this model: {config.architectures}."
+        )
 
     model = None
     if os.path.isdir(model_name_or_path):
@@ -773,7 +787,7 @@ def import_model(
                 from .utils.transformers import init_empty_weights
 
                 with init_empty_weights():
-                    model = transformers.AutoModel.from_pretrained(
+                    model = pretrained_model_class.from_pretrained(
                         model_name_or_path,
                         proxies=proxies,
                         revision=revision,
@@ -809,7 +823,7 @@ def import_model(
         from .utils.transformers import init_empty_weights
 
         with init_empty_weights():
-            model = transformers.AutoModel.from_config(config=config)
+            model = pretrained_model_class(config=config)
 
     pretrained = t.cast("PreTrainedProtocol", model)
     assert all(

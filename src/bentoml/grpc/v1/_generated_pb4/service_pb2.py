@@ -21,7 +21,6 @@ _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'bentoml.grpc.v1.service_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
-
   DESCRIPTOR._options = None
   DESCRIPTOR._serialized_options = b'\n\023com.bentoml.grpc.v1B\014ServiceProtoP\001Z*github.com/bentoml/bentoml/grpc/v1;service\220\001\001\370\001\001\242\002\003SVC'
   _MULTIPART_FIELDSENTRY._options = None

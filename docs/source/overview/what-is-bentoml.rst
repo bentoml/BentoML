@@ -16,14 +16,14 @@ By seamlessly bridging the gap between model creation and production deployment,
 Why BentoML?
 ------------
 
-BentoML’s comprehensive toolkit for AI application development provides a unified distribution format, which features a simplified AI architecture
+BentoML's comprehensive toolkit for AI application development provides a unified distribution format, which features a simplified AI architecture
 and supports deployment anywhere.
 
 Streamline distribution with a unified format
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ML projects often involve different roles and complex collaboration. BentoML simplifies this process through a unified distribution format - a file
-archive known as a :doc:`Bento </concepts/bento>`. With BentoML’s open standard and SDK for AI applications,
+archive known as a :doc:`Bento </concepts/bento>`. With BentoML's open standard and SDK for AI applications,
 you can package all the necessary components into a Bento.
 
 You can manage all the Bentos in the local Bento Store and keep iterating them as your application evolves. BentoML auto-generates API servers
@@ -35,7 +35,7 @@ Build applications with any AI models
 
 BentoML provides the flexibility and ease to build any AI applications with any tools your team prefers. Whether you want to import models from any
 model hub or bring your own models built with frameworks such as PyTorch, TensorFlow, Keras, Scikit-Learn, XGBoost,
-and :doc:`many more </frameworks/index>`, you can use BentoML’s local Model Store to manage them and build
+and :doc:`many more </frameworks/index>`, you can use BentoML's local Model Store to manage them and build
 applications on top of them.
 
 BentoML offers native support for `Large Language Model (LLM) inference <https://github.com/bentoml/openllm/#bentoml>`_,
@@ -48,7 +48,7 @@ like :doc:`MLFlow </integrations/mlflow>`, `LangChain <https://github.com/ssheng
 Inference optimization for AI applications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-BentoML’s proven open-source architecture ensures high performance for your AI applications through efficient resource utilization and latency
+BentoML's proven open-source architecture ensures high performance for your AI applications through efficient resource utilization and latency
 reduction techniques. It supports model inference parallelization and adaptive batching. With built-in optimization for specific model
 architectures (like OpenLLM for LLMs) and support for high-performance runtimes like ONNX-runtime and TorchScript, BentoML delivers faster
 response time and higher throughput, offering scalable and cost-efficient backbone infrastructure for any AI applications.
@@ -68,8 +68,7 @@ BentoML standardizes the saved model format, Service API definition and the Bent
 for ML teams. You can deploy your models virtually anywhere. Deployment options include:
 
 - One-click deployment to `BentoCloud <https://bentoml.com/cloud>`_, a fully-managed platform specifically designed for hosting and operating AI applications.
-- Push Bentos to `Yatai <https://github.com/bentoml/yatai>`_, an open-source platform in the BentoML ecosystem for model management and deployment at scale on Kubernetes.
-- Containerize Bentos and deploy images to any environment where Docker runs, such as Kubernetes.
+- Containerize Bentos and deploy the images to any environment where Docker runs, such as Kubernetes.
 
 How does BentoML work?
 ----------------------
@@ -105,7 +104,7 @@ Build a Bento
 ^^^^^^^^^^^^^
 
 Package your model and the BentoML Service into a Bento through a configuration YAML file, which contains all the build options,
-such as Service, description, Python packages, models, and Docker settings. All created Bentos are stored in BentoML’s local Bento Store
+such as Service, description, Python packages, models, and Docker settings. All created Bentos are stored in BentoML's local Bento Store
 for centralized management. Each Bento corresponds to a directory that contains all the source code, dependencies, and model files
 required to serve the Bento, and an auto-generated Dockerfile for containerization.
 
@@ -115,8 +114,7 @@ Deploy a Bento
 To deploy a Bento to production, you can choose either of the following ways:
 
 - Containerize the Bento with the Dockerfile and deploy it to any Docker-compatible environments like Kubernetes.
-- Push the Bento to Yatai or BentoCloud to manage your model deployments at scale. Compared with the open-source platform Yatai,
-  BentoCloud provides a serverless and scalable solution that allows you to run your AI applications on the best hardware per usage.
+- Push the Bento to BentoCloud to manage your model deployments at scale. BentoCloud provides a serverless and scalable solution that allows you to run your AI applications on the best hardware per usage.
 
 See also
 --------

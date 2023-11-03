@@ -302,8 +302,8 @@ The API servers and runners will run in separate processes to maximize server ut
 Generate Docker Images
 ----------------------
 
-Similar to version 0.13.1, we can generate docker images from bentos using the :code:`bentoml containerize` command in BentoML
-version 1.0.0, see :ref:`Containerize Bentos <concepts/deploy:Containerize Bentos>` to learn more.
+Similar to version 0.13.1, you can generate Docker images from Bentos using the ``bentoml containerize`` command in BentoML
+version 1.0.0. See :doc:`/concepts/deploy` to learn more.
 
 .. code-block:: bash
 
@@ -312,7 +312,7 @@ version 1.0.0, see :ref:`Containerize Bentos <concepts/deploy:Containerize Bento
     Building docker image for Bento(tag="iris_classifier:6otbsmxzq6lwbgxi")...
     Successfully built docker image "iris_classifier:6otbsmxzq6lwbgxi"
 
-You can run the docker image to start the service.
+You can run the Docker image to start the service.
 
 .. code-block:: bash
 
@@ -338,11 +338,5 @@ deploying your machine-learning models to any cloud platforms.
 Manage Bentos
 -------------
 
-BentoML version 0.13.1 relies on Yatai as a bento registry to help teams collaborate and manage bentos. In addition to bento management,
-`🦄️ Yatai <https://github.com/bentoml/Yatai>`_ project has since been expanded into a platform for deploying large scale model
-serving workloads on Kubernetes. Yatai standardizes BentoML deployment and provides UI for managing all your ML models and deployments
-in one place, and enables advanced GitOps and CI/CD workflow.
-
-
-🎉 Ta-da, you have migrated your project to BentoML 1.0.0. Have more questions?
-`Join the BentoML Slack community <https://l.bentoml.com/join-slack>`_.
+BentoML version 0.13.1 relies on Yatai as a Bento registry to help teams collaborate and manage Bentos. In addition to Bento management,
+you can use `🦄️ Yatai <https://github.com/bentoml/Yatai>`_ to deploy and scale ML services on Kubernetes.

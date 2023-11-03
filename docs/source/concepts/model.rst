@@ -33,7 +33,7 @@ When using the ``save_model`` method, you can optionally attach custom labels, m
     bentoml.pytorch.save_model(
         "demo_mnist",   # Model name in the local Model Store
         trained_model,  # Model instance being saved
-        labels={    # User-defined labels for managing models in BentoCloud or Yatai
+        labels={    # User-defined labels for managing models in BentoCloud
             "owner": "nlp_team",
             "stage": "dev",
         },

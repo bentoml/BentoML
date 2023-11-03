@@ -58,11 +58,7 @@ It is a common practice to set up a reverse proxy server to handle rate limiting
 Service Mesh
 ^^^^^^^^^^^^
 
-For Kubernetes users looking for advanced authentication, access control, and routing
-policies, we recommend you to deploy Bentos with `Yatai <https://github.com/bentoml/Yatai>`_
-and use Yatai's `Istio <https://istio.io/>`_ integration.
-
-
+For Kubernetes users looking for advanced authentication, access control, and routing policies, we recommend you deploy Bentos with BentoCloud.
 
 Security Policy
 ---------------
@@ -76,6 +72,5 @@ View the full BentoML’s security policy `here <https://github.com/bentoml/Bent
 .. TODO::
 
     * Base Image Security
-    * Securing Yatai deployment
     * Reverse Proxy setup guide and sample code/config
     * Service Mesh setup guide and sample code/config

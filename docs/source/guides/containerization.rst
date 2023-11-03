@@ -518,8 +518,8 @@ If you need to use conda for CUDA images, use the following template ( *partiall
       :language: jinja
       :caption: `Dockerfile.template`
 
-Containerization with different container engines.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Containerization with different container engines
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In BentoML version 1.0.11 [#pr_3164]_, we support different container engines aside from docker.
 

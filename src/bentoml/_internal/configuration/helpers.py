@@ -3,6 +3,7 @@ from __future__ import annotations
 import ipaddress
 import logging
 import os
+import re
 import typing as t
 from functools import singledispatch
 from typing import TYPE_CHECKING
@@ -165,3 +166,28 @@ def is_valid_ip_address(addr: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+_ENV_VAR_PATTERN = r"\$\{(?P<name>.+?)(?:\:-(?P<default>.+?))?\}"
+
+
+def expand_env_var(value: t.Any) -> str:
+    if not isinstance(value, str) or "${" not in value:
+        return value
+
+    def _replace_env(match: t.Match[str]) -> str:
+        name = match.group("name")
+        default = match.group("default")
+        return os.getenv(name, default or "")
+
+    return re.sub(_ENV_VAR_PATTERN, _replace_env, value)
+
+
+def expand_env_var_in_values(d: t.MutableMapping[str, t.Any]) -> None:
+    for k, v in d.items():
+        if isinstance(v, t.MutableMapping):
+            expand_env_var_in_values(v)
+        elif isinstance(v, str):
+            d[k] = expand_env_var(v)
+        elif isinstance(v, t.Sequence):
+            d[k] = [expand_env_var(i) for i in v]

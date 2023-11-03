@@ -161,3 +161,17 @@ runners:
     assert runner_cfg["test_runner_1"]["traffic"]["timeout"] == 100
     assert runner_cfg["test_runner_2"]["traffic"]["timeout"] == 50
     assert runner_cfg["test_runner_3"]["traffic"]["timeout"] == 60
+
+
+def test_expand_env_vars_in_values(container_from_file, monkeypatch):
+    CONFIG = """\
+api_server:
+    ssl:
+        keyfile_password: ${KEYFILE_PASSWORD:-123456}
+"""
+    config = container_from_file(CONFIG)
+    assert config["api_server"]["ssl"]["keyfile_password"] == "123456"
+
+    monkeypatch.setenv("KEYFILE_PASSWORD", "654321")
+    config = container_from_file(CONFIG)
+    assert config["api_server"]["ssl"]["keyfile_password"] == "654321"

@@ -28,6 +28,7 @@ from .inference_api import InferenceAPI
 
 if t.TYPE_CHECKING:
     import grpc
+    from bentoml_io.server import Service as NewService
 
     import bentoml
     from bentoml.grpc.types import AddServicerFn
@@ -477,6 +478,9 @@ class Service:
         self.grpc_handlers.extend(handlers)
 
 
-def on_load_bento(svc: Service, bento: Bento):
-    svc.bento = bento
-    svc.tag = bento.info.tag
+def on_load_bento(svc: Service | NewService, bento: Bento):
+    if isinstance(svc, Service):
+        svc.bento = bento
+        svc.tag = bento.info.tag
+    else:
+        svc.bento = bento

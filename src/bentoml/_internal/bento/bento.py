@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import typing as t
@@ -44,6 +45,7 @@ from .build_config import DockerOptions
 from .build_config import PythonOptions
 
 if TYPE_CHECKING:
+    from bentoml_io.server import Service as NewService
     from fs.base import FS
 
     from ..models import Model
@@ -81,15 +83,21 @@ def create_inference_api_table(svc: Service) -> str:
     return INFERENCE_TABLE_MD.format(content="\n".join(contents))
 
 
-def get_default_svc_readme(svc: Service, svc_version: str | None = None) -> str:
+def get_default_svc_readme(
+    svc: Service | NewService, svc_version: str | None = None
+) -> str:
+    from ..service import Service
+
     if svc.bento:
         bentoml_version = svc.bento.info.bentoml_version
     else:
         bentoml_version = BENTOML_VERSION
 
+    is_legacy = isinstance(svc, Service)
+
     if not svc_version:
-        if svc.tag and svc.tag.version:
-            svc_version = svc.tag.version
+        if svc.bento and svc.bento.tag.version:
+            svc_version = svc.bento.tag.version
         else:
             svc_version = "None"
 
@@ -104,7 +112,7 @@ def get_default_svc_readme(svc: Service, svc_version: str | None = None) -> str:
 
 This is a Machine Learning Service created with BentoML."""
 
-    if svc.apis:
+    if is_legacy and svc.apis:
         doc += f"\n{create_inference_api_table(svc)}\n\n"
 
     doc += """
@@ -170,6 +178,7 @@ class Bento(StoreItem):
         build_ctx: t.Optional[str] = None,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Bento:
+        from ..service import Service
         from ..service.loader import import_service
 
         build_ctx = (
@@ -187,6 +196,7 @@ class Bento(StoreItem):
         svc = import_service(
             build_config.service, working_dir=build_ctx, standalone_load=True
         )
+        is_legacy = isinstance(svc, Service)
         # Apply default build options
         build_config = build_config.with_defaults()
 
@@ -210,7 +220,7 @@ class Bento(StoreItem):
                 models.add(model)
                 if model_spec.alias:
                     resolved_aliases[model.tag] = model_spec.alias
-        else:
+        elif is_legacy:
             # XXX: legacy way to get models from service
             # Add all models required by the service
             for model in svc.models:
@@ -267,8 +277,12 @@ class Bento(StoreItem):
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
-        with bento_fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
-            yaml.dump(svc.openapi_spec, f)
+        if is_legacy:
+            with bento_fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
+                yaml.dump(svc.openapi_spec, f)
+        else:
+            with bento_fs.open(fs.path.combine("apis", "schema.json"), "w") as f:
+                json.dump(svc.servable_cls.schema(), f, indent=2)
 
         res = Bento(
             tag,
@@ -283,10 +297,12 @@ class Bento(StoreItem):
                     )
                     for m in models
                 ],
-                runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners],
-                apis=[
-                    BentoApiInfo.from_inference_api(api) for api in svc.apis.values()
-                ],
+                runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners]
+                if is_legacy
+                else [BentoRunnerInfo.from_dependency(d) for d in svc.dependencies],
+                apis=[BentoApiInfo.from_inference_api(api) for api in svc.apis.values()]
+                if is_legacy
+                else [],
                 docker=build_config.docker,
                 python=build_config.python,
                 conda=build_config.conda,
@@ -452,6 +468,19 @@ class BentoRunnerInfo:
             resource_config=r.resource_config,
         )
 
+    @classmethod
+    def from_dependency(cls, d: NewService) -> BentoRunnerInfo:
+        config = BentoMLContainer.runners_config.get()
+        if d.name in config:
+            config = config[d.name]
+        return cls(
+            name=d.name,
+            runnable_type=d.servable_cls.name,
+            embedded=False,
+            models=[],
+            resource_config=config["resources"],
+        )
+
 
 @attr.frozen
 class BentoApiInfo:
@@ -488,10 +517,14 @@ class BentoModelInfo:
 
 
 def get_service_import_str(svc: Service | str):
+    from bentoml_io.server import Service as NewService
+
     from ..service import Service
 
     if isinstance(svc, Service):
         return svc.get_service_import_origin()[0]
+    elif isinstance(svc, NewService):
+        return svc.import_string
     else:
         return svc
 

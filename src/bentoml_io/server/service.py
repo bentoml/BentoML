@@ -11,6 +11,7 @@ import attrs
 from simple_di import Provide
 from simple_di import inject
 
+from bentoml._internal.bento.bento import Bento
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
 from bentoml._internal.runner.strategy import DefaultStrategy
@@ -43,6 +44,7 @@ class Service:
     args: tuple[t.Any, ...] = attrs.field(default=())
     kwargs: dict[str, t.Any] = attrs.field(factory=dict)
     dependencies: list[Service] = attrs.field(factory=list)
+    bento: Bento | None = None
     max_batch_size: int | None = attrs.field(default=None, kw_only=True)
     max_latency_ms: int | None = attrs.field(default=None, kw_only=True)
     method_configs: dict[str, BatchingConfig] = attrs.field(factory=dict, kw_only=True)
@@ -64,6 +66,7 @@ class Service:
     # import info
     _caller_module: str = attrs.field(init=False)
     _working_dir: str = attrs.field(init=False, factory=os.getcwd)
+    _import_str: str | None = attrs.field(init=False, default=None)
     _servable: Servable | None = attrs.field(init=False, default=None)
     _client_manager: ClientManager = attrs.field(init=False)
 
@@ -122,28 +125,32 @@ class Service:
     def get_name(self) -> str:
         return self.servable_cls.name
 
-    @cached_property
+    @property
     def import_string(self) -> str:
-        import_module = self._caller_module
-        if import_module == "__main__":
-            if hasattr(sys.modules["__main__"], "__file__"):
-                import_module = sys.modules["__main__"].__file__
-            else:
+        if self._import_str is None:
+            import_module = self._caller_module
+            if import_module == "__main__":
+                if hasattr(sys.modules["__main__"], "__file__"):
+                    import_module = sys.modules["__main__"].__file__
+                else:
+                    raise BentoMLException(
+                        "Failed to get service import origin, bentoml.Service object defined interactively in console or notebook is not supported"
+                    )
+
+            if self._caller_module not in sys.modules:
                 raise BentoMLException(
-                    "Failed to get service import origin, bentoml.Service object defined interactively in console or notebook is not supported"
+                    "Failed to get service import origin, bentoml.Service object must be defined in a module"
                 )
 
-        if self._caller_module not in sys.modules:
-            raise BentoMLException(
-                "Failed to get service import origin, bentoml.Service object must be defined in a module"
-            )
-
-        for name, value in vars(sys.modules[self._caller_module]).items():
-            if value is self:
-                return f"{import_module}:{name}"
-        raise BentoMLException(
-            "Failed to get service import origin, bentoml.Service object must be assigned to a variable at module level"
-        )
+            for name, value in vars(sys.modules[self._caller_module]).items():
+                if value is self:
+                    self._import_str = f"{import_module}:{name}"
+                    break
+            else:
+                raise BentoMLException(
+                    "Failed to get service import origin, bentoml.Service object must be assigned to a variable at module level"
+                )
+        return self._import_str
 
     def add_dependencies(self, *services: Service) -> None:
         self.dependencies.extend(services)

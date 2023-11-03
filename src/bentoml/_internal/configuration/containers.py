@@ -514,7 +514,7 @@ class _BentoMLContainerClass:
     def enabled_features() -> list[str]:
         return os.getenv("BENTOML_ENABLE_FEATURES", "").split(",")
 
-    @property
+    @providers.SingletonFactory
     def new_io(self) -> bool:
         return "newio" in self.enabled_features.get()
 

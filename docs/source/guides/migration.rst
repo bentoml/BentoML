@@ -338,5 +338,5 @@ deploying your machine-learning models to any cloud platforms.
 Manage Bentos
 -------------
 
-BentoML version 0.13.1 relies on Yatai as a Bento registry to help teams collaborate and manage Bentos. In addition to Bento management,
-you can use `🦄️ Yatai <https://github.com/bentoml/Yatai>`_ to deploy and scale ML services on Kubernetes.
+BentoML version 0.13.1 relies on Yatai as a Bento registry to help teams collaborate and manage Bentos. This feature is also available in BentoCloud,
+a serverless platform for building and operating AI applications, allowing you to better manage and scale ML services.

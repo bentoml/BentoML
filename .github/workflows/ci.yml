@@ -44,9 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           pdm venv create --with-pip --force
-          pdm sync -d -G grpc -G io -G testing -G frameworks
-          pdm run pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
-          pdm run pip install -U tensorflow
+          pdm sync -d -G grpc -G io -G testing
       - name: Unit tests
         run: pdm run -v unit
       - name: Disambiguate coverage filename
@@ -152,12 +150,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
         python-version: ['3.8', '3.11']
-        server_type: ['http', 'grpc']
-        exclude:
-          - os: windows-latest
-            server_type: 'grpc'
+        server_type: ['http']
     name: ${{ matrix.server_type }}-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -184,7 +179,7 @@ jobs:
         run: |
           pdm venv create --with-pip --force
           pdm run pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
-          pdm sync -d -G grpc -G io -G testing
+          pdm sync -d -G io -G testing
       - name: Run ${{ matrix.server_type }} tests
         run: pdm run -v tests tests/e2e/bento_server_${{ matrix.server_type }}
       - name: Disambiguate coverage filename

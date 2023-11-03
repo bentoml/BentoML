@@ -63,13 +63,11 @@ For more information, see the `OneDiffusion GitHub repository <https://github.co
 Yatai
 -----
 
-Yatai is an open-source solution for automating and running
-machine learning (ML) deployments at scale on Kubernetes. As a key part
-of the BentoML ecosystem, Yatai simplifies the deployment of ML services
-built with the BentoML framework. Being a cloud-native tool, Yatai
-integrates smoothly with various ecosystem tools, such as the Grafana
-stack for observability and Istio for traffic control. For more
-information, see the `Yatai
+Yatai is the Kubernetes deployment operator for BentoML, allowing DevOps teams to seamlessly
+integrate BentoML into their GitOps practices. It simplifies the deployment and scaling of ML services,
+offering a subset of scalability features from BentoCloud. Designed with cloud-native principles,
+Yatai leverages Custom Resource Definitions (CRDs) like `BentoDeployment <https://docs.yatai.io/en/latest/concepts/bentodeployment_crd.html>`_
+to fit ML services into existing workflows. For more information, see the `Yatai
 documentation <https://docs.yatai.io/en/latest/index.html>`_.
 
 For more information about the BentoML ecosystem, see the `BentoML

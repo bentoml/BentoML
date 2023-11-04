@@ -23,8 +23,8 @@ Managing Models
 .. autofunction:: bentoml.models.import_model
 
 
-Working with Yatai
-------------------
+Working with BentoCloud
+-----------------------
 
 .. autofunction:: bentoml.push
 .. autofunction:: bentoml.pull

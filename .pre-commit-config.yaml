@@ -5,26 +5,26 @@ ci:
 exclude: '(.*\.(css|js|svg))|(.*_generated.*)$'
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.0.291'
+    rev: 'v0.1.4'
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --show-fixes]
   - repo: https://github.com/psf/black
-    rev: 23.9.1
+    rev: 23.10.1
     hooks:
       - id: black-jupyter
         files: '(src|tests|docs|examples|typings)/'
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.9.3
+    rev: 2.10.0
     hooks:
       - id: pdm-lock-check
   - repo: https://github.com/bufbuild/buf
-    rev: v1.26.1
+    rev: v1.27.2
     hooks:
       - id: buf-format
         args: [--config=src/bentoml/grpc/buf.yaml, src/bentoml/grpc]

@@ -25,7 +25,6 @@ from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
 from .utils.transformers import extract_commit_hash
-from .utils.transformers import is_huggingface_hub_available
 
 if t.TYPE_CHECKING:
     import cloudpickle
@@ -765,11 +764,6 @@ def import_model(
             )
     else:
         try:
-            if not is_huggingface_hub_available():
-                raise MissingDependencyException(
-                    "'huggingface_hub' is required in order to download pretrained models, install with 'pip install huggingface-hub'. For more information, refer to https://huggingface.co/docs/huggingface_hub/quick-start",
-                ) from None
-
             if clone_repository:
                 from huggingface_hub import snapshot_download
 

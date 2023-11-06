@@ -72,10 +72,6 @@ def extract_commit_hash(
     return commit_hash if regex_commit_hash.match(commit_hash) else None
 
 
-def is_huggingface_hub_available() -> bool:
-    return importlib.util.find_spec("huggingface_hub") is not None
-
-
 @contextmanager
 def init_empty_weights(include_buffers: bool = False):
     """

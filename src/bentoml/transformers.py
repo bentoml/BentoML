@@ -6,6 +6,7 @@ import typing as t
 from ._internal.frameworks.transformers import TransformersOptions as ModelOptions
 from ._internal.frameworks.transformers import get
 from ._internal.frameworks.transformers import get_runnable
+from ._internal.frameworks.transformers import import_model
 from ._internal.frameworks.transformers import load_model
 from ._internal.frameworks.transformers import save_model
 
@@ -52,4 +53,11 @@ def load_runner(tag: Tag | str, *args: t.Any, **kwargs: t.Any):
     return get(tag).to_runner()
 
 
-__all__ = ["load_model", "save_model", "get", "get_runnable", "ModelOptions"]
+__all__ = [
+    "load_model",
+    "import_model",
+    "save_model",
+    "get",
+    "get_runnable",
+    "ModelOptions",
+]

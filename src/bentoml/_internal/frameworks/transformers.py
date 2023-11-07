@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import platform
+import shutil
 import typing as t
 import warnings
 from types import ModuleType
@@ -23,6 +24,8 @@ from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
+from .utils.transformers import extract_commit_hash
+from .utils.transformers import init_empty_weights
 
 if t.TYPE_CHECKING:
     import cloudpickle
@@ -101,7 +104,7 @@ if t.TYPE_CHECKING:
     )
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get"]
+__all__ = ["load_model", "import_model", "save_model", "get_runnable", "get"]
 
 _object_setattr = object.__setattr__
 
@@ -109,7 +112,7 @@ MODULE_NAME = "bentoml.transformers"
 API_VERSION = "v2"
 PIPELINE_PICKLE_NAME = f"pipeline.{API_VERSION}.pkl"
 PRETRAINED_PROTOCOL_NAME = f"pretrained.{API_VERSION}.pkl"
-
+CONFIG_JSON_FILE_NAME = "config.json"
 
 logger = logging.getLogger(__name__)
 
@@ -397,7 +400,6 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
     api_version = bento_model.info.api_version
     task = options.task
     pipeline: transformers.Pipeline | None = None
-
     if api_version == "v1":
         # NOTE: backward compatibility
         from transformers.pipelines import get_supported_tasks
@@ -603,6 +605,273 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
         return {}
 
     return {k: default_config for k in infer_fn}
+
+
+def import_model(
+    name: Tag | str,
+    model_name_or_path: str | os.PathLike[str],
+    *,
+    pretrained_model_class: t.Type[BaseAutoModelClass] | None = None,
+    proxies: dict[str, str] | None = None,
+    revision: str = "main",
+    force_download: bool = False,
+    resume_download: bool = False,
+    clone_repository: bool = False,
+    sync_with_hub_version: bool = False,
+    signatures: ModelSignaturesType | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: t.List[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
+    **extra_hf_hub_kwargs: dict[str, t.Any],
+) -> bentoml.Model:
+    """
+    Import Transformer model from a artifact URI to the BentoML model store.
+
+    Args:
+        name:
+            The name to give to the model in the BentoML store. This must be a valid
+            :obj:`~bentoml.Tag` name.
+        model_name_or_path:
+            Can be either:
+            - A string, the *repo id* of a model repo hosted on https://huggingface.co/
+              Valid repo ids have to be located under a user or organization name, like
+              `CompVis/ldm-text2im-large-256`.
+            - A path to a *directory* containing weights saved using
+              [`~transformers.AutoModel.save_pretrained`], e.g., `./my_pretrained_directory/`.
+        pretrained_model_class:
+            The pretrained class/architecture to load the model weights. This determines what LM heads are available to the model.
+        proxies (`Dict[str, str]`, *optional*):
+            A dictionary of proxy servers to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128',
+            'http://hostname': 'foo.bar:4012'}`. The proxies are used on each request.
+        revision (`str`, *optional*, defaults to `"main"`):
+            The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
+            git-based system for storing models and other artifacts on huggingface.co, so `revision` can be any
+            identifier allowed by git.
+        force_download (`boolean`, *optional*, defaults to False):
+            Force to (re-)download the model weights and configuration files and override the cached versions if they exist.
+        resume_download (`boolean`, *optional*, defaults to False):
+            Do not delete incompletely received file. Attempt to resume the download if such a file exists.
+        clone_repository: (`boolean`, *optional*, defaults to False):
+            Download all files from the huggingface repository of the given model
+        sync_with_hub_version (`bool`, default to False):
+            If sync_with_hub_version is true, then the model imported by
+        signatures:
+            Signatures of predict methods to be used. If not provided, the signatures
+            default to {"__call__": {"batchable": False}}. See
+            :obj:`~bentoml.types.ModelSignature` for more details.
+        labels:
+            A default set of management labels to be associated with the model. For
+            example: ``{"training-set": "data-v1"}``.
+        custom_objects:
+            Custom objects to be saved with the model. An example is
+            ``{"my-normalizer": normalizer}``. Custom objects are serialized with
+            cloudpickle.
+        metadata:
+            Metadata to be associated with the model. An example is ``{"param_a": .2}``.
+
+            Metadata is intended for display in a model management UI and therefore all
+            values in metadata dictionary must be a primitive Python type, such as
+            ``str`` or ``int``.
+        extra_hf_hub_kwargs:
+            Additional keyword arguments for download options.
+                Setting `from_tf=True` will download the following file `tf_model.h5`.
+                Setting `from_flax=True` will download the following file `flax_model.msgpack`.
+                Setting `use_safetensors=True` will download the following file `model.safetensors`.
+                Otherwise, the default targeted file is `pytorch_model.bin`
+
+    Returns:
+        A :obj:`~bentoml.Model` instance referencing a saved model in the local BentoML
+        model store.
+
+    Example:
+
+    .. code-block:: python
+
+        import bentoml
+
+        bentoml.transformers.import_model(
+            'my_t5_model',
+            "t5-base",
+            signatures={
+                "__call__": {"batchable": False},
+            }
+        )
+    """
+
+    tag = Tag.from_taglike(name)
+
+    try:
+        model = bentoml.models.get(tag)
+        return model
+    except bentoml.exceptions.NotFound:
+        pass
+
+    if sync_with_hub_version:
+        if tag.version is not None:
+            logger.warn(
+                f"sync_with_hub_version is True, user provided version {tag.version} may be overridden by huggingface hub's commit hash"
+            )
+
+    # The below API are introduced since 4.18
+    if pkg_version_info("transformers")[:2] >= (4, 18):
+        from transformers.utils import is_flax_available
+        from transformers.utils import is_tf_available
+        from transformers.utils import is_torch_available
+    else:
+        from .utils.transformers import is_flax_available
+        from .utils.transformers import is_tf_available
+        from .utils.transformers import is_torch_available
+
+    framework_versions = {"transformers": get_pkg_version("transformers")}
+    if is_torch_available():
+        framework_versions["torch"] = get_pkg_version("torch")
+    if is_tf_available():
+        from .utils.tensorflow import get_tf_version
+
+        framework_versions["tensorflow"] = get_tf_version()
+    if is_flax_available():
+        framework_versions.update(
+            {
+                "flax": get_pkg_version("flax"),
+                "jax": get_pkg_version("jax"),
+                "jaxlib": get_pkg_version("jaxlib"),
+            }
+        )
+    context = ModelContext(
+        framework_name="transformers", framework_versions=framework_versions
+    )
+
+    config = transformers.AutoConfig.from_pretrained(
+        model_name_or_path,
+        proxies=proxies,
+        revision=revision,
+        force_download=force_download,
+        resume_download=resume_download,
+        **extra_hf_hub_kwargs,
+    )
+    if pretrained_model_class is None:
+        pretrained_model_class = getattr(transformers, config.architectures[0])
+        logger.info(
+            f"pretrained_model_class is not provided, bentoml will create a model with the following pretrained model class {config.architectures[0]}. Available pretrained classes for this model: {config.architectures}."
+        )
+
+    model = None
+    if os.path.isdir(model_name_or_path):
+        src_dir = model_name_or_path
+        if sync_with_hub_version:
+            raise BentoMLException(
+                "Cannot sync version with huggingface hub when importing a local model"
+            )
+    else:
+        try:
+            if clone_repository:
+                from huggingface_hub import snapshot_download
+
+                src_dir = snapshot_download(
+                    model_name_or_path,
+                    proxies=proxies,
+                    revision=revision,
+                    force_download=force_download,
+                    resume_download=resume_download,
+                    **extra_hf_hub_kwargs,
+                )
+            else:
+                with init_empty_weights():
+                    model = pretrained_model_class.from_pretrained(
+                        model_name_or_path,
+                        proxies=proxies,
+                        revision=revision,
+                        force_download=force_download,
+                        resume_download=resume_download,
+                        **extra_hf_hub_kwargs,
+                    )
+                    path_to_config = transformers.utils.cached_file(
+                        model_name_or_path,
+                        CONFIG_JSON_FILE_NAME,
+                        proxies=proxies,
+                        revision=revision,
+                        force_download=force_download,
+                        resume_download=resume_download,
+                        **extra_hf_hub_kwargs,
+                    )
+                    src_dir = os.path.dirname(path_to_config)
+
+                if sync_with_hub_version:
+                    from huggingface_hub.file_download import REGEX_COMMIT_HASH
+
+                    version = extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
+                    if version is not None:
+                        tag.version = version
+        except Exception:
+            logger.info(
+                "Failed to download model file for (%s).",
+                model_name_or_path,
+            )
+            raise
+
+    if model is None:
+        with init_empty_weights():
+            model = pretrained_model_class(config=config)
+
+    pretrained = t.cast("PreTrainedProtocol", model)
+    assert all(
+        hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
+    ), f"'pretrained={pretrained}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+    if metadata is None:
+        metadata = {}
+
+    if signatures is None:
+        signatures = make_default_signatures(pretrained)
+        # NOTE: ``make_default_signatures`` can return an empty dict, hence we will only
+        # log when signatures are available.
+        if signatures:
+            logger.info(
+                'Using the default model signature for Transformers (%s) for model "%s".',
+                signatures,
+                name,
+            )
+
+    metadata.update(
+        {
+            "_pretrained_class": pretrained.__class__.__name__,
+        }
+    )
+
+    if hasattr(pretrained, "framework") and isinstance(
+        pretrained,
+        (
+            transformers.PreTrainedModel,
+            transformers.TFPreTrainedModel,
+            transformers.FlaxPreTrainedModel,
+        ),
+    ):
+        # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
+        metadata["_framework"] = pretrained.framework
+
+    with bentoml.models.create(
+        tag,
+        module=MODULE_NAME,
+        api_version=API_VERSION,
+        signatures=signatures,
+        labels=labels,
+        options=TransformersOptions(),
+        custom_objects=custom_objects,
+        external_modules=external_modules,
+        metadata=metadata,
+        context=context,
+    ) as bento_model:
+        ignore = shutil.ignore_patterns(".git")
+        shutil.copytree(
+            src_dir,
+            bento_model.path,
+            symlinks=False,
+            ignore=ignore,
+            dirs_exist_ok=True,
+        )
+        with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "wb") as f:
+            cloudpickle.dump(pretrained.__class__, f)
+        return bento_model
 
 
 def save_model(

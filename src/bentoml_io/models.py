@@ -23,8 +23,13 @@ if t.TYPE_CHECKING:
     from .serde import Serde
 
 
+DEFAULT_STREAM_MEDIA_TYPE = "text/event-stream"
+DEFAULT_TEXT_MEDIA_TYPE = "text/plain"
+
+
 class IOMixin:
     multipart_fields: ClassVar[list[str]]
+    media_type: ClassVar[str | None] = None
 
     @classmethod
     def __pydantic_init_subclass__(cls) -> None:
@@ -52,10 +57,13 @@ class IOMixin:
         from starlette.responses import Response
         from starlette.responses import StreamingResponse
 
+        stream_media_type = cls.media_type or DEFAULT_STREAM_MEDIA_TYPE
+        structured_media_type = cls.media_type or serde.media_type
+
         if not issubclass(cls, RootModel):
             return Response(
                 content=serde.serialize_model(t.cast(IODescriptor, obj)),
-                media_type=serde.media_type,
+                media_type=structured_media_type,
             )
         if inspect.isasyncgen(obj):
 
@@ -66,7 +74,7 @@ class IOMixin:
                     else:
                         yield serde.serialize_model(t.cast(IODescriptor, cls(item)))
 
-            return StreamingResponse(async_stream(), media_type="text/plain")
+            return StreamingResponse(async_stream(), media_type=stream_media_type)
 
         elif inspect.isgenerator(obj):
 
@@ -77,18 +85,20 @@ class IOMixin:
                     else:
                         yield serde.serialize_model(t.cast(IODescriptor, cls(item)))
 
-            return StreamingResponse(content_stream(), media_type="text/plain")
+            return StreamingResponse(content_stream(), media_type=stream_media_type)
         else:
             if not isinstance(obj, RootModel):
                 ins: IODescriptor = t.cast(IODescriptor, cls(obj))
             else:
                 ins = t.cast(IODescriptor, obj)
             if isinstance(rendered := ins.model_dump(), (str, bytes)):
-                media_type = cls.model_json_schema().get("media_type", "text/plain")
-                return Response(content=rendered, media_type=media_type)
+                return Response(
+                    content=rendered,
+                    media_type=cls.media_type or DEFAULT_TEXT_MEDIA_TYPE,
+                )
             else:
                 return Response(
-                    content=serde.serialize_model(ins), media_type=serde.media_type
+                    content=serde.serialize_model(ins), media_type=structured_media_type
                 )
 
 

@@ -25,6 +25,7 @@ from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
 from .utils.transformers import extract_commit_hash
+from .utils.transformers import init_empty_weights
 
 if t.TYPE_CHECKING:
     import cloudpickle
@@ -776,10 +777,6 @@ def import_model(
                     **extra_hf_hub_kwargs,
                 )
             else:
-                from transformers.utils import cached_file
-
-                from .utils.transformers import init_empty_weights
-
                 with init_empty_weights():
                     model = pretrained_model_class.from_pretrained(
                         model_name_or_path,
@@ -789,7 +786,7 @@ def import_model(
                         resume_download=resume_download,
                         **extra_hf_hub_kwargs,
                     )
-                    path_to_config = cached_file(
+                    path_to_config = transformers.utils.cached_file(
                         model_name_or_path,
                         CONFIG_JSON_FILE_NAME,
                         proxies=proxies,
@@ -814,8 +811,6 @@ def import_model(
             raise
 
     if model is None:
-        from .utils.transformers import init_empty_weights
-
         with init_empty_weights():
             model = pretrained_model_class(config=config)
 

@@ -97,15 +97,17 @@ def create_service_watchers(
     uds_path: str | None,
     port_stack: contextlib.ExitStack,
     backlog: int,
+    dependency_map: dict[str, str],
 ) -> tuple[list[Watcher], list[CircusSocket], str]:
     from bentoml.serve import create_watcher
 
-    dependency_map: dict[str, str] = {}
     watchers: list[Watcher] = []
     sockets: list[CircusSocket] = []
     for dep in svc.dependencies:
+        if dep.name in dependency_map:
+            continue
         new_watchers, new_sockets, uri = create_service_watchers(
-            dep, work_dir, uds_path, port_stack, backlog
+            dep, work_dir, uds_path, port_stack, backlog, dependency_map
         )
         watchers.extend(new_watchers)
         sockets.extend(new_sockets)
@@ -123,8 +125,6 @@ def create_service_watchers(
         work_dir,
         "--worker-id",
         "$(CIRCUS.WID)",
-        "--runner-map",
-        json.dumps(dependency_map),
     ]
 
     if env_map := svc.worker_env_map:
@@ -192,8 +192,10 @@ def serve_http_production(
             )
         if not development_mode:
             for dep in svc.dependencies:
+                if dep.name in dependency_map:
+                    continue
                 new_watchers, new_sockets, uri = create_service_watchers(
-                    dep, working_dir, uds_path, stack, backlog
+                    dep, working_dir, uds_path, stack, backlog, dependency_map
                 )
                 watchers.extend(new_watchers)
                 sockets.extend(new_sockets)
@@ -243,8 +245,6 @@ def serve_http_production(
             else bento_identifier.import_string,
             "--fd",
             f"$(circus.sockets.{API_SERVER_NAME})",
-            "--runner-map",
-            json.dumps(dependency_map),
             "--working-dir",
             working_dir,
             "--backlog",
@@ -280,6 +280,14 @@ def serve_http_production(
                 bento_identifier,
                 f"{scheme}://{log_host}:{port}/metrics",
             )
+
+        # inject runner map now
+        inject_env = {"BENTOML_RUNNER_MAP": json.dumps(dependency_map)}
+        for watcher in watchers:
+            if watcher.env is None:
+                watcher.env = inject_env
+            else:
+                watcher.env.update(inject_env)
 
         arbiter_kwargs: dict[str, t.Any] = {"watchers": watchers, "sockets": sockets}
 

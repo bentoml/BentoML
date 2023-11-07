@@ -23,6 +23,7 @@ class APIMethod(t.Generic[P, R]):
     name: str = attrs.field()
     input_spec: type[IODescriptor] = attrs.field()
     output_spec: type[IODescriptor] = attrs.field()
+    media_type: str | None = None
     batchable: bool = False
     batch_dim: tuple[int, int] = attrs.field(
         default=(0, 0), converter=lambda x: (x, x) if not isinstance(x, tuple) else x
@@ -70,6 +71,10 @@ class APIMethod(t.Generic[P, R]):
     def default_output_spec(self) -> type[IODescriptor]:
         return IODescriptor.from_output(self.func)
 
+    def __attrs_post_init__(self) -> None:
+        if self.media_type:
+            self.output_spec.media_type = self.media_type
+
     @t.overload
     def __get__(self: T, instance: None, owner: type) -> T:
         ...
@@ -87,6 +92,8 @@ class APIMethod(t.Generic[P, R]):
         output = self.output_spec.model_json_schema()
         if self.is_stream:
             output["is_stream"] = True
+        if self.output_spec.media_type:
+            output["media_type"] = self.output_spec.media_type
         return {
             "name": self.name,
             "route": self.route,
@@ -109,6 +116,7 @@ def api(
     name: str | None = ...,
     input_spec: type[IODescriptor] | None = ...,
     output_spec: type[IODescriptor] | None = ...,
+    media_type: str | None = ...,
     batchable: bool = ...,
     batch_dim: int | tuple[int, int] = ...,
     max_batch_size: int | None = ...,
@@ -124,6 +132,7 @@ def api(
     name: str | None = None,
     input_spec: type[IODescriptor] | None = None,
     output_spec: type[IODescriptor] | None = None,
+    media_type: str | None = None,
     batchable: bool = False,
     batch_dim: int | tuple[int, int] = 0,
     max_batch_size: int | None = None,
@@ -134,6 +143,7 @@ def api(
 ):
     def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
         params: dict[str, t.Any] = {
+            "media_type": media_type,
             "batchable": batchable,
             "batch_dim": batch_dim,
             "max_batch_size": max_batch_size,

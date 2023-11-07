@@ -137,7 +137,6 @@ class TensorSchema:
                 "dtype": self.dtype,
                 "shape": self.shape,
                 "dim": self.dim,
-                "media_type": "application/json",
             }
         )
 
@@ -202,7 +201,6 @@ class DataframeSchema:
                 "type": "dataframe",
                 "orient": self.orient,
                 "columns": self.columns,
-                "media_type": "application/json",
             }
         )
 

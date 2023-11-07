@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from bentoml._internal.configuration.helpers import expand_env_var_in_values
 from bentoml._internal.configuration.helpers import flatten_dict
 from bentoml._internal.configuration.helpers import is_valid_ip_address
 from bentoml._internal.configuration.helpers import load_config_file
@@ -134,3 +135,48 @@ def test_invalid_ip_address():
     assert not is_valid_ip_address("256.255.255.255")
     assert not is_valid_ip_address("256.256.256.256")
     assert not is_valid_ip_address("")
+
+
+def test_expand_env_in_values(monkeypatch: pytest.MonkeyPatch):
+    data = {
+        "foo": "${FOO}",
+        "foo-list": ["${FOO_ITEM1:-default1}", "${FOO_ITEM2:-default2}"],
+        "bar": {
+            "name": "${BAR_NAME:-bardefault}",
+            "bar-list": ["${BAR_ITEM1:-default1}", "${BAR_ITEM2:-default2}"],
+        },
+    }
+    expand_env_var_in_values(data)
+    assert data == {
+        "foo": "",
+        "foo-list": ["default1", "default2"],
+        "bar": {
+            "name": "bardefault",
+            "bar-list": ["default1", "default2"],
+        },
+    }
+    data = {
+        "foo": "${FOO}",
+        "foo-list": ["${FOO_ITEM1:-default1}", "${FOO_ITEM2:-default2}"],
+        "bar": {
+            "name": "${BAR_NAME:-bardefault}",
+            "bar-list": ["${BAR_ITEM1:-default1}", "${BAR_ITEM2:-default2}"],
+        },
+    }
+    with monkeypatch.context() as m:
+        m.setenv("FOO", "foo")
+        m.setenv("FOO_ITEM1", "foo-item1")
+        m.setenv("FOO_ITEM2", "foo-item2")
+        m.setenv("BAR_NAME", "bar-name")
+        m.setenv("BAR_ITEM1", "bar-item1")
+        m.setenv("BAR_ITEM2", "bar-item2")
+
+        expand_env_var_in_values(data)
+        assert data == {
+            "foo": "foo",
+            "foo-list": ["foo-item1", "foo-item2"],
+            "bar": {
+                "name": "bar-name",
+                "bar-list": ["bar-item1", "bar-item2"],
+            },
+        }

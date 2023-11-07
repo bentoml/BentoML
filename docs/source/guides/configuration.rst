@@ -55,6 +55,23 @@ below:
    In the example above, the number of API workers count is overridden to 4.
    Remaining properties will take their defaults values.
 
+Variables in the form of ``${ENV_VAR}`` will be expanded at runtime to the value of the corresponding environment variable, but please note that this only supports string types.
+For example:
+
+.. code-block:: yaml
+   :caption: `~/bentoml_configuration.yaml`
+
+   ssl:
+     keyfile_password: ${MY_SSL_KEYFILE_PASSWORD}
+
+In addition, you can provide default values that will take effect when the environment variable is not set in the following form：
+
+.. code-block:: yaml
+   :caption: `~/bentoml_configuration.yaml`
+
+   ssl:
+     keyfile_password: ${MY_SSL_KEYFILE_PASSWORD:-default_value}
+
 .. seealso::
 
    :ref:`guides/configuration:Configuration fields`

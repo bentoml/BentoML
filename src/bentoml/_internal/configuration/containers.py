@@ -25,6 +25,7 @@ from ..utils import split_with_quotes
 from ..utils import validate_or_create_dir
 from ..utils.unflatten import unflatten
 from . import expand_env_var
+from .helpers import expand_env_var_in_values
 from .helpers import flatten_dict
 from .helpers import get_default_config
 from .helpers import import_configuration_spec
@@ -166,6 +167,7 @@ class BentoMLConfiguration:
                     deepcopy(global_runner_cfg),
                     runner_cfg,
                 )
+        expand_env_var_in_values(self.config)
 
     def to_dict(self) -> providers.ConfigDictType:
         return t.cast(providers.ConfigDictType, self.config)

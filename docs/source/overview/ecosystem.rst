@@ -11,7 +11,7 @@ BentoCloud
 ----------
 
 BentoCloud is a fully-managed platform for building and operating AI
-applications. It’s designed to accelerate AI application development by
+applications. It's designed to accelerate AI application development by
 providing efficient workflows to deploy and scale a wide range of
 machine learning models.
 
@@ -63,30 +63,12 @@ For more information, see the `OneDiffusion GitHub repository <https://github.co
 Yatai
 -----
 
-Yatai is an open-source, end-to-end solution for automating and running
-machine learning (ML) deployments at scale on Kubernetes. As a key part
-of the BentoML ecosystem, Yatai simplifies the deployment of ML services
-built with the BentoML framework. Being a cloud-native tool, Yatai
-integrates smoothly with various ecosystem tools, such as the Grafana
-stack for observability and Istio for traffic control. For more
-information, see the `Yatai
+Yatai is the Kubernetes deployment operator for BentoML, allowing DevOps teams to seamlessly
+integrate BentoML into their GitOps practices. It simplifies the deployment and scaling of ML services,
+offering a subset of scalability features from BentoCloud. Designed with cloud-native principles,
+Yatai leverages Custom Resource Definitions (CRDs) like `BentoDeployment <https://docs.yatai.io/en/latest/concepts/bentodeployment_crd.html>`_
+to fit ML services into existing workflows. For more information, see the `Yatai
 documentation <https://docs.yatai.io/en/latest/index.html>`_.
-
-bentoctl
---------
-
-bentoctl is designed to facilitate the deployment of machine learning
-models as production-ready API endpoints on the cloud. It supports a
-variety of cloud platforms, including AWS SageMaker, AWS Lambda, EC2,
-Google Compute Engine, Azure, Heroku, and others.
-
-bentoctl helps BentoML users streamline the process of deploying,
-updating, deleting, and rolling back machine learning models. You can
-even tailor bentoctl to specific DevOps needs by customizing `deployment
-operator and Terraform
-templates <https://github.com/bentoml/bentoctl-operator-template>`_.
-For more information, see the `bentoctl GitHub
-repository <https://github.com/bentoml/bentoctl>`_.
 
 For more information about the BentoML ecosystem, see the `BentoML
 GitHub account <https://github.com/bentoml>`_.

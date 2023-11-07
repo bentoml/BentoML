@@ -108,8 +108,8 @@ Remote Bento Service
 ^^^^^^^^^^^^^^^^^^^^
 
 Model runners can also be invoked remotely as a separately deployed Bento Service. Calling a remote Bento Service may be
-preferred if the model cannot be loaded into memory of the Flink DataStream program. This options is also advantageous because
-model runners can be scaled more easily with deployment frameworks like :ref:`Yatai <concepts/deploy:Deploy with Yatai>`.
+preferred if the model cannot be loaded into memory of the Flink DataStream program. This option is also advantageous because
+model Runners can be scaled more easily with deployment options like :doc:`BentoCloud </concepts/deploy>`.
 
 To send a prediction request to a remotely deployed Bento Service in the DataStream program, you can use any HTTP client
 implementation of your choice inside the `MapFunction` or `ProcessWindowFunction`.

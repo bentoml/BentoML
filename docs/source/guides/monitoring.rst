@@ -110,7 +110,7 @@ With a complete service definition, we can proceed to build the bento.
 Deploy the service and collect monitoring data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-With BentoML, once we have the bento, it's easy to :ref:`deploy <concepts/deploy:Deploying Bento>` the ML application to any target.
+With BentoML, once we have the bento, it's easy to :doc:`deploy </concepts/deploy>` the ML application to any target.
 
 Use ``serve`` to start the bento in production mode as a standalone server:
 

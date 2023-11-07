@@ -2,7 +2,7 @@
 Main Concepts
 =============
 
-This is a step-by-step tour that help you dive into the main concepts in BentoML.
+This section provides explanations of key concepts in BentoML.
 
 .. grid:: 1 2 2 2
     :gutter: 3
@@ -13,31 +13,31 @@ This is a step-by-step tour that help you dive into the main concepts in BentoML
         :link: /concepts/model
         :link-type: doc
 
-        Save and version your trained ML model with BentoML's model store
+        Save and version your trained ML models.
 
     .. grid-item-card:: :doc:`/concepts/service`
         :link: /concepts/service
         :link-type: doc
 
-        Create ML service and API endpoints with BentoML
-
-    .. grid-item-card:: :doc:`/concepts/bento`
-        :link: /concepts/bento
-        :link-type: doc
-
-        Build and customize Bento for production deployment
+        Create ML service and API endpoints with BentoML.
 
     .. grid-item-card:: :doc:`/concepts/runner`
         :link: /concepts/runner
         :link-type: doc
 
-        Using Runners in BentoML and fine-tune performance
+        Use Runners in BentoML and fine-tune performance.
+
+    .. grid-item-card:: :doc:`/concepts/bento`
+        :link: /concepts/bento
+        :link-type: doc
+
+        Build and customize Bentos for production deployment.
 
     .. grid-item-card:: :doc:`/concepts/deploy`
         :link: /concepts/deploy
         :link-type: doc
 
-        Understand different deployment options provided by BentoML
+        Understand different Bento deployment options.
 
 
 
@@ -48,6 +48,6 @@ This is a step-by-step tour that help you dive into the main concepts in BentoML
 
     model
     service
-    bento
     runner
+    bento
     deploy

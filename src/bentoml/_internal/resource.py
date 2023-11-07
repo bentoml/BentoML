@@ -248,7 +248,7 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
             pynvml.nvmlInit()
             device_count = pynvml.nvmlDeviceGetCount()
             return list(range(device_count))
-        except (pynvml.nvml.NVMLError, OSError):
+        except (pynvml.NVMLError_LibraryNotFound, OSError):
             logger.debug("GPU not detected. Unable to initialize pynvml lib.")
             return []
         finally:

@@ -517,16 +517,18 @@ class BentoModelInfo:
 
 
 def get_service_import_str(svc: Service | str):
-    from bentoml_io.server import Service as NewService
-
     from ..service import Service
 
     if isinstance(svc, Service):
         return svc.get_service_import_origin()[0]
-    elif isinstance(svc, NewService):
-        return svc.import_string
-    else:
-        return svc
+    try:
+        from bentoml_io.server import Service as NewService
+
+        if isinstance(svc, NewService):
+            return svc.import_string
+    except ImportError:
+        pass
+    return svc
 
 
 @attr.frozen(repr=False)

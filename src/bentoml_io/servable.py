@@ -24,8 +24,13 @@ class Servable:
                 new_servable_methods[attr.name] = attr  # type: ignore
         cls.__servable_methods__ = {**cls.__servable_methods__, **new_servable_methods}
 
-    def get_client(self, name_or_class: str | type[Servable]) -> AbstractClient:
-        """A context-sensitive method to get a sync or async client"""
+    def sync_client(self, name_or_class: str | type[Servable]) -> AbstractClient:
+        """Get a synchroneous client for this servable"""
+        # To be injected by service
+        raise NotImplementedError
+
+    def async_client(self, name_or_class: str | type[Servable]) -> AbstractClient:
+        """Get an asynchroneous client for this servable"""
         # To be injected by service
         raise NotImplementedError
 

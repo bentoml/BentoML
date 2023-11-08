@@ -20,3 +20,9 @@ class TestingClient(LocalClient):
         if name not in self.service.service_methods:
             raise ValueError(f"Method {name} not found")
         return getattr(self.servable, name)(*args, **kwargs)
+
+    async def __aenter__(self: T) -> T:
+        return self
+
+    async def __aexit__(self, *args: t.Any) -> None:
+        pass

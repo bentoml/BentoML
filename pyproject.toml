@@ -86,7 +86,7 @@ io = [
 ]
 io-next = ["pydantic>=2"]
 io-file = ["filetype"] # Currently use for from_sample
-io-json = ["pydantic"]
+io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["bentoml[io-file]", "Pillow"]
 io-pandas = ["pandas>=1", "pyarrow"]
 triton = ["tritonclient[all]>=2.29.0"]
@@ -143,6 +143,7 @@ name = "torch"
 [tool.pdm.resolution]
 respect-source-order = true
 [tool.pdm.resolution.overrides]
+fastapi = "==0.93.0"
 tensorflow = ">=2.3.0"
 tensorflow-io-gcs-filesystem = "==0.31.0"
 
@@ -164,6 +165,7 @@ docs = [
     "sphinx-autobuild",
     "sphinx-hoverxref",
     "pyspark",
+    "ray[serve]",
 ]
 frameworks = [
     "catboost",

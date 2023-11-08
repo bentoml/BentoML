@@ -12,9 +12,3 @@ class AbstractClient(abc.ABC):
         """Call a service method by its name.
         It takes the same arguments as the service method.
         """
-
-    async def __aenter__(self: T) -> T:
-        return self
-
-    async def __aexit__(self, *args: t.Any) -> None:
-        pass

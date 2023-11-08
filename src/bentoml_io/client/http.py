@@ -340,9 +340,6 @@ class HTTPClient(AbstractClient):
         if self._client is not None and not self._client.closed:
             await self._client.close()
 
-    async def __aexit__(self, *args: t.Any) -> None:
-        return await self.close()
-
 
 class SyncHTTPClient(HTTPClient):
     """A synchronous client for BentoML service.
@@ -435,3 +432,9 @@ class AsyncHTTPClient(HTTPClient):
         assert inspect.isasyncgen(resp)
         async for data in resp:
             yield data
+
+    async def __aenter__(self: T) -> T:
+        return self
+
+    async def __aexit__(self, *args: t.Any) -> None:
+        return await self.close()

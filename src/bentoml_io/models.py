@@ -28,8 +28,8 @@ DEFAULT_TEXT_MEDIA_TYPE = "text/plain"
 
 
 class IOMixin:
-    multipart_fields: ClassVar[list[str]]
-    media_type: ClassVar[str | None] = None
+    multipart_fields: ClassVar[t.List[str]]
+    media_type: ClassVar[t.Optional[str]] = None
 
     @classmethod
     def __pydantic_init_subclass__(cls) -> None:

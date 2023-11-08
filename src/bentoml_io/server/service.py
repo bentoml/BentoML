@@ -182,7 +182,8 @@ class Service:
     def init_servable(self) -> Servable:
         if self._servable is None:
             self._servable = self.servable_cls(*self.args, **self.kwargs)
-            self._servable.get_client = self._client_manager.get_client
+            self._servable.sync_client = self._client_manager.sync_client
+            self._servable.async_client = self._client_manager.async_client
         return self._servable
 
     def destroy_servable(self) -> None:

@@ -62,9 +62,15 @@ def import_service(
         import_service("fraud_detector.py")
         import_service("fraud_detector")
     """
-    from bentoml_io.server import Service as NewService
-
     from bentoml import Service
+
+    service_types: list[type[Service] | type[NewService]] = [Service]
+    try:
+        from bentoml_io import Service as NewService
+
+        service_types.append(NewService)
+    except ImportError:
+        pass
 
     prev_cwd = None
     sys_path_modified = False
@@ -157,7 +163,7 @@ def import_service(
             instances = [
                 (k, v)
                 for k, v in module.__dict__.items()
-                if isinstance(v, (Service, NewService))
+                if isinstance(v, tuple(service_types))
             ]
 
             if len(instances) == 1:
@@ -171,7 +177,7 @@ def import_service(
                 )
 
         assert isinstance(
-            instance, (Service, NewService)
+            instance, tuple(service_types)
         ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
 
         # set import_str for retrieving the service import origin

@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as t
 
 from starlette.requests import Request
-from starlette.responses import Response
 from starlette.responses import StreamingResponse
 
 from ..service.openapi import SUCCESS_DESCRIPTION
@@ -162,30 +161,20 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
 
     async def to_http_response(
         self, obj: str | t.AsyncGenerator[str, None], ctx: Context | None = None
-    ) -> Response | StreamingResponse:
+    ) -> StreamingResponse:
         content_stream = iter([obj]) if isinstance(obj, str) else obj
+
         if ctx is not None:
-            if isinstance(obj, str):
-                res = Response(
-                    obj,
-                    media_type=self._mime_type,
-                    headers=ctx.response.metadata,  # type: ignore (bad starlette types)
-                    status_code=ctx.response.status_code,
-                )
-            else:
-                res = StreamingResponse(
-                    content_stream,
-                    media_type=self._mime_type,
-                    headers=ctx.response.metadata,  # type: ignore (bad starlette types)
-                    status_code=ctx.response.status_code,
-                )
+            res = StreamingResponse(
+                content_stream,
+                media_type=self._mime_type,
+                headers=ctx.response.metadata,  # type: ignore (bad starlette types)
+                status_code=ctx.response.status_code,
+            )
             set_cookies(res, ctx.response.cookies)
             return res
         else:
-            if isinstance(obj, str):
-                return Response(obj, media_type=self._mime_type)
-            else:
-                return StreamingResponse(content_stream, media_type=self._mime_type)
+            return StreamingResponse(content_stream, media_type=self._mime_type)
 
     async def from_proto(self, field: wrappers_pb2.StringValue | bytes) -> str:
         if isinstance(field, bytes):

@@ -16,6 +16,7 @@ from starlette.datastructures import MutableHeaders
 from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.responses import StreamingResponse
 
 from ...exceptions import BentoMLException
 from .http import set_cookies
@@ -339,7 +340,7 @@ def _get_disp_filename(headers: MutableHeaders) -> t.Optional[bytes]:
 
 
 async def concat_to_multipart_response(
-    responses: t.Mapping[str, Response], ctx: Context | None
+    responses: t.Mapping[str, Response | StreamingResponse], ctx: Context | None
 ) -> Response:
     boundary = uuid.uuid4().hex
     boundary_bytes = boundary.encode("latin1")
@@ -368,7 +369,13 @@ async def concat_to_multipart_response(
         writer.write(b"\r\n")
 
         # body
-        writer.write(resp.body)
+        if isinstance(resp, StreamingResponse):
+            async for chunk in resp.body_iterator:
+                writer.write(chunk) if isinstance(chunk, bytes) else writer.write(
+                    chunk.encode(resp.charset)
+                )
+        else:
+            writer.write(resp.body)
         writer.write(b"\r\n")
 
     writer.write(b"--%b--\r\n" % boundary_bytes)

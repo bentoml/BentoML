@@ -40,6 +40,9 @@ class SyncLocalClient(LocalClient):
     def __enter__(self: T) -> T:
         return self
 
+    def __exit__(self, *args: t.Any) -> None:
+        pass
+
 
 class AsyncLocalClient(LocalClient):
     def __init__(self, service: Service):
@@ -59,3 +62,9 @@ class AsyncLocalClient(LocalClient):
         elif not is_async_callable(meth) and not inspect.isasyncgenfunction(meth):
             return run_in_threadpool(meth, *args, **kwargs)
         return meth(*args, **kwargs)
+
+    async def __aenter__(self: T) -> T:
+        return self
+
+    async def __aexit__(self, *args: t.Any) -> None:
+        pass

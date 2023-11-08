@@ -2,21 +2,13 @@ from __future__ import annotations
 
 import typing as t
 
+from pydantic._internal import _known_annotated_metadata
 from typing_extensions import get_args
 from typing_extensions import get_origin
-
-from bentoml._internal.utils.pkg import pkg_version_info
 
 from .types import DataframeSchema
 from .types import ImageEncoder
 from .types import TensorSchema
-
-if (ver := pkg_version_info("pydantic")) < (2,):
-    raise RuntimeError(
-        f"bentoml_io runs on pydantic>=2.0.0, but the you have {'.'.join(ver)}. "
-        "Please upgrade it"
-    )
-from pydantic._internal import _known_annotated_metadata
 
 if t.TYPE_CHECKING:
     from pydantic import ConfigDict

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
+from bentoml._internal.utils import dict_filter_none
 from bentoml_io.api import APIMethod
 
 if t.TYPE_CHECKING:
@@ -36,11 +37,16 @@ class Servable:
 
     @classmethod
     def schema(cls) -> dict[str, t.Any]:
-        return {
-            "name": cls.name,
-            "type": "service",
-            "routes": [method.schema() for method in cls.__servable_methods__.values()],
-        }
+        return dict_filter_none(
+            {
+                "name": cls.name,
+                "type": "service",
+                "routes": [
+                    method.schema() for method in cls.__servable_methods__.values()
+                ],
+                "description": getattr(cls, "__doc__", None),
+            }
+        )
 
     def call(self, method_name: str, input_data: dict[str, t.Any]) -> t.Any:
         method = self.__servable_methods__.get(method_name)

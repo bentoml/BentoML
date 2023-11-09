@@ -6,6 +6,8 @@ import typing as t
 
 import attrs
 
+from bentoml._internal.utils import dict_filter_none
+
 from .models import IODescriptor
 
 R = t.TypeVar("R")
@@ -94,14 +96,16 @@ class APIMethod(t.Generic[P, R]):
             output["is_stream"] = True
         if self.output_spec.media_type:
             output["media_type"] = self.output_spec.media_type
-        return {
-            "name": self.name,
-            "route": self.route,
-            "doc": self.__doc__,
-            "batchable": self.batchable,
-            "input": self.input_spec.model_json_schema(),
-            "output": output,
-        }
+        return dict_filter_none(
+            {
+                "name": self.name,
+                "route": self.route,
+                "description": self.__doc__,
+                "batchable": self.batchable,
+                "input": self.input_spec.model_json_schema(),
+                "output": output,
+            }
+        )
 
 
 @t.overload

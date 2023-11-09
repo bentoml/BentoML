@@ -14,7 +14,7 @@ from bentoml.io import Multipart
 from bentoml.io import Text
 
 example = Multipart(arg1=JSON(), arg2=Image(mime_type="image/bmp", pilmode="RGB"))
-example2 = Multipart(arg1=Image(), arg2=Text())
+example2 = Multipart(arg1=Image(), arg2=Text(content_type='text/event-stream'))
 
 if TYPE_CHECKING:
     import PIL.Image as PILImage

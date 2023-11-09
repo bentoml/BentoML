@@ -53,6 +53,9 @@ def arrow_serialization():
 
 
 class FileEncoder:
+    def __init__(self, format: str = "binary") -> None:
+        self.format = format
+
     def encode(self, obj: t.BinaryIO) -> bytes:
         obj.seek(0)
         return obj.read()
@@ -60,7 +63,9 @@ class FileEncoder:
     def __get_pydantic_json_schema__(
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
-        return {"type": "file"}
+        value = handler(schema)
+        value.update({"type": "file", "format": self.format})
+        return value
 
     def decode(self, obj: bytes | t.BinaryIO | UploadFile) -> t.BinaryIO:
         if isinstance(obj, UploadFile):
@@ -102,10 +107,13 @@ class ImageEncoder(FileEncoder):
     def __get_pydantic_json_schema__(
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
-        return {"type": "image"}
+        value = handler(schema)
+        value.update({"type": "file", "format": "image"})
+        return value
 
 
 File = t.Annotated[t.BinaryIO, FileEncoder()]
+Audio = t.Annotated[t.BinaryIO, FileEncoder(format="audio")]
 Image = t.Annotated[PILImage.Image, ImageEncoder()]
 
 # `slots` is available on Python >= 3.10
@@ -130,15 +138,19 @@ class TensorSchema:
     def __get_pydantic_json_schema__(
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
-        return dict_filter_none(
-            {
-                "type": "tensor",
-                "format": self.format,
-                "dtype": self.dtype,
-                "shape": self.shape,
-                "dim": self.dim,
-            }
+        value = handler(schema)
+        value.update(
+            dict_filter_none(
+                {
+                    "type": "tensor",
+                    "format": self.format,
+                    "dtype": self.dtype,
+                    "shape": self.shape,
+                    "dim": self.dim,
+                }
+            )
         )
+        return value
 
     def __get_pydantic_core_schema__(
         self, source_type: t.Any, handler: GetCoreSchemaHandler
@@ -196,13 +208,17 @@ class DataframeSchema:
     def __get_pydantic_json_schema__(
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
-        return dict_filter_none(
-            {
-                "type": "dataframe",
-                "orient": self.orient,
-                "columns": self.columns,
-            }
+        value = handler(schema)
+        value.update(
+            dict_filter_none(
+                {
+                    "type": "dataframe",
+                    "orient": self.orient,
+                    "columns": self.columns,
+                }
+            )
         )
+        return value
 
     def __get_pydantic_core_schema__(
         self, source_type: t.Any, handler: GetCoreSchemaHandler

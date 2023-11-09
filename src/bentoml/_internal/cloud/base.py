@@ -44,7 +44,7 @@ def io_wrapper(
             memory * 1024**3, read_cb=read_cb, write_cb=write_cb
         )
     else:
-        raise BentoMLException(f"Option maxmemory must be -1 or > 0, got {memory}")
+        raise BentoMLException(f"Option max_memory must be -1 or > 0, got {memory}")
 
 
 class CallbackSpooledTemporaryFileIO(SpooledTemporaryFile):

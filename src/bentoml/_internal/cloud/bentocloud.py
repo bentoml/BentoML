@@ -71,7 +71,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
-        maxmemory: int = -1,
+        max_memory: int = -1,
     ):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
@@ -83,7 +83,7 @@ class BentoCloudClient(CloudClient):
                 force=force,
                 threads=threads,
                 context=context,
-                maxmemory=maxmemory,
+                max_memory=max_memory,
             )
 
     @inject
@@ -95,7 +95,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
-        maxmemory: int = -1,
+        max_memory: int = -1,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ):
         yatai_rest_client = get_rest_api_client(context)
@@ -121,7 +121,7 @@ class BentoCloudClient(CloudClient):
                     force=force,
                     threads=threads,
                     context=context,
-                    maxmemory=maxmemory,
+                    max_memory=max_memory,
                 )
 
             futures: t.Iterator[None] = executor.map(push_model, models)
@@ -579,7 +579,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
-        maxmemory: int = -1,
+        max_memory: int = -1,
     ):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
@@ -591,7 +591,7 @@ class BentoCloudClient(CloudClient):
                 force=force,
                 threads=threads,
                 context=context,
-                maxmemory=maxmemory,
+                max_memory=max_memory,
             )
 
     def _do_push_model(
@@ -602,7 +602,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
-        maxmemory: int = -1,
+        max_memory: int = -1,
     ):
         yatai_rest_client = get_rest_api_client(context)
         name = model.tag.name
@@ -684,7 +684,7 @@ class BentoCloudClient(CloudClient):
                 self.transmission_progress.update(upload_task_id, advance=x)
 
         # limit the max memory usage when uploading model
-        with io_wrapper(maxmemory, read_cb=io_cb) as tar_io:
+        with io_wrapper(max_memory, read_cb=io_cb) as tar_io:
             with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:") as tar:
                     tar.add(model.path, arcname="./")

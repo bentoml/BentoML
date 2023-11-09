@@ -291,3 +291,83 @@ def test_custom_pipeline(pair_classification_pipeline: PairClassificationPipelin
     ) == pair_classification_pipeline("I hate you", second_text="I love you")
 
     runner.destroy()
+
+
+def test_import_model_with_synced_version():
+    revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
+    bento_model = bentoml.transformers.import_model(
+        "tiny-bert",
+        "hf-internal-testing/tiny-random-BertModel",
+        sync_with_hub_version=True,
+        revision=revision,
+    )
+
+    assert bento_model.tag.version == revision
+    bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")
+
+    revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
+    bento_model = bentoml.transformers.import_model(
+        "tiny-bert:asdf",
+        "hf-internal-testing/tiny-random-BertModel",
+        sync_with_hub_version=True,
+        revision=revision,
+    )
+
+    assert bento_model.tag.version == revision
+    bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")
+
+    revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
+    bento_model = bentoml.transformers.import_model(
+        "tiny-bert:asdf",
+        "hf-internal-testing/tiny-random-BertModel",
+        revision=revision,
+    )
+
+    assert bento_model.tag.version == "asdf"
+    bentoml.models.delete("tiny-bert:asdf")
+
+
+def test_import_model_has_required_files():
+    revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
+    labels = {"framework": "transformers"}
+    bento_model = bentoml.transformers.import_model(
+        "tiny-bert",
+        "hf-internal-testing/tiny-random-BertModel",
+        sync_with_hub_version=True,
+        revision=revision,
+        labels=labels,
+    )
+
+    assert os.path.exists(bento_model.path_of("config.json"))
+    assert os.path.exists(bento_model.path_of("pytorch_model.bin"))
+    assert os.path.exists(bento_model.path_of("pretrained.v2.pkl"))
+    assert os.path.exists(bento_model.path_of("model.yaml"))
+    assert bento_model.info.labels == labels
+    bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")
+
+
+def test_import_model_with_pretrained_class():
+    revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
+    pretrained_class = transformers.BertForMaskedLM
+    bento_model = bentoml.transformers.import_model(
+        "tiny-bert",
+        "hf-internal-testing/tiny-random-BertModel",
+        sync_with_hub_version=True,
+        pretrained_model_class=pretrained_class,
+        revision=revision,
+    )
+
+    assert bento_model.info.metadata["_pretrained_class"] == pretrained_class.__name__
+    bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")
+
+    pretrained_class = transformers.BertForNextSentencePrediction
+    bento_model = bentoml.transformers.import_model(
+        "tiny-bert",
+        "hf-internal-testing/tiny-random-BertModel",
+        sync_with_hub_version=True,
+        pretrained_model_class=pretrained_class,
+        revision=revision,
+    )
+
+    assert bento_model.info.metadata["_pretrained_class"] == pretrained_class.__name__
+    bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")

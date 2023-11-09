@@ -71,15 +71,15 @@ def import_service(
         os.chdir(prev_cwd)
         BentoMLContainer.model_store.set(global_model_store)
 
-    try:
-        if working_dir is not None:
-            working_dir = os.path.realpath(os.path.expanduser(working_dir))
-            # Set cwd(current working directory) to the Bento's project directory,
-            # which allows user code to read files using relative path
-            os.chdir(working_dir)
-        else:
-            working_dir = os.getcwd()
+    if working_dir is not None:
+        working_dir = os.path.realpath(os.path.expanduser(working_dir))
+        # Set cwd(current working directory) to the Bento's project directory,
+        # which allows user code to read files using relative path
+        os.chdir(working_dir)
+    else:
+        working_dir = os.getcwd()
 
+    try:
         sys.path.insert(0, working_dir)
 
         if model_store is not global_model_store:
@@ -169,9 +169,8 @@ def import_service(
         object.__setattr__(instance, "_import_str", f"{module_name}:{attrs_str}")
         return instance
     except ImportServiceError:
-        if working_dir:
-            # Undo changes to sys.path
-            sys.path.remove(working_dir)
+        # Undo changes to sys.path
+        sys.path.remove(working_dir)
 
         recover_standalone_env_change()
         raise

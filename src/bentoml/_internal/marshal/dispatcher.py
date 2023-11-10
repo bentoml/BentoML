@@ -190,13 +190,15 @@ class CorkDispatcher:
         num_reqs_to_train: int,
         batch_size: int,
     ):
+        training_batch_size = batch_size
         if self.max_batch_size < batch_size:
-            batch_size = self.max_batch_size
+            training_batch_size = self.max_batch_size
 
-        if batch_size > 1:
+        if training_batch_size > 1:
             wait = min(
                 self.max_latency * 0.95,
-                (batch_size * 2 + 1) * (self.optimizer.o_a + self.optimizer.o_b),
+                (training_batch_size * 2 + 1)
+                * (self.optimizer.o_a + self.optimizer.o_b),
             )
 
         req_count = 0
@@ -214,11 +216,14 @@ class CorkDispatcher:
                     # we're being very conservative and only canceling requests if they have already timed out
                     self._queue.popleft().future.cancel()
                     continue
-                if batch_size > 1:  # only wait if batch_size
+                if training_batch_size > 1:  # only wait if batch_size
                     a = self.optimizer.o_a
                     b = self.optimizer.o_b
 
-                    if n < batch_size and (batch_size * a + b) + w0 <= wait:
+                    if (
+                        n < training_batch_size
+                        and (training_batch_size * a + b) + w0 <= wait
+                    ):
                         await asyncio.sleep(self.tick_interval)
                         continue
                 if self._sema.is_locked():
@@ -227,18 +232,18 @@ class CorkDispatcher:
 
                 if self.max_batch_size == -1:  # batching is disabled
                     n_call_out = 1
-                    batch_size = self._queue[0].data.sample.batch_size
+                    training_batch_size = self._queue[0].data.sample.batch_size
                 else:
                     n_call_out = 0
-                    batch_size = 0
+                    training_batch_size = 0
                     try:
                         for input_info in self._queue:
                             if (
-                                batch_size + input_info.data.sample.batch_size
+                                training_batch_size + input_info.data.sample.batch_size
                                 < self.max_batch_size
                             ):
                                 n_call_out += 1
-                                batch_size += input_info.data.sample.batch_size
+                                training_batch_size += input_info.data.sample.batch_size
                             else:
                                 break
                     except Exception as e:

@@ -89,7 +89,7 @@ For HTTP-based servers, include the token in the header of your HTTP request.
             curl "http://app-name.organization.cloud-apps.bentoml.com" \
                -H "Content-Type: application/json" \
                -H "Authorization: Bearer $YOUR_TOKEN" \
-               --data '{"prompt": "What state is Los Angeles in?", "max_length": 100}'
+               --data '{"prompt": "What state is Los Angeles in?", "llm_config": {"max_new_tokens": 129}}'
 
     .. tab-item:: Browser
 

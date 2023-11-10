@@ -219,7 +219,7 @@ For HTTP-based servers, include the token in the header of your HTTP request lik
    curl "http://flan.bentocloud.com/predict" \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer $YOUR_TOKEN" \
-     --data '{"prompt": "What state is Los Angeles in?", "max_length": 100}'
+     --data '{"prompt": "What state is Los Angeles in?", "llm_config": {"max_new_tokens": 129}}'
 
 The exact way you interact with your Deployment will depend on the :doc:`Service </concepts/service>`
 endpoints and the :ref:`io-descriptors` of the endpoint.

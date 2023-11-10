@@ -220,10 +220,7 @@ class CorkDispatcher:
                     a = self.optimizer.o_a
                     b = self.optimizer.o_b
 
-                    if (
-                        n < batch_size
-                        and (batch_size * a + b) + w0 <= wait
-                    ):
+                    if n < batch_size and (batch_size * a + b) + w0 <= wait:
                         await asyncio.sleep(self.tick_interval)
                         continue
                 if self._sema.is_locked():

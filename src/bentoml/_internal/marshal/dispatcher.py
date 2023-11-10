@@ -216,13 +216,13 @@ class CorkDispatcher:
                     # we're being very conservative and only canceling requests if they have already timed out
                     self._queue.popleft().future.cancel()
                     continue
-                if training_batch_size > 1:  # only wait if batch_size
+                if batch_size > 1:  # only wait if batch_size
                     a = self.optimizer.o_a
                     b = self.optimizer.o_b
 
                     if (
-                        n < training_batch_size
-                        and (training_batch_size * a + b) + w0 <= wait
+                        n < batch_size
+                        and (batch_size * a + b) + w0 <= wait
                     ):
                         await asyncio.sleep(self.tick_interval)
                         continue
@@ -232,18 +232,18 @@ class CorkDispatcher:
 
                 if self.max_batch_size == -1:  # batching is disabled
                     n_call_out = 1
-                    training_batch_size = self._queue[0].data.sample.batch_size
+                    batch_size = self._queue[0].data.sample.batch_size
                 else:
                     n_call_out = 0
-                    training_batch_size = 0
+                    batch_size = 0
                     try:
                         for input_info in self._queue:
                             if (
-                                training_batch_size + input_info.data.sample.batch_size
+                                batch_size + input_info.data.sample.batch_size
                                 < self.max_batch_size
                             ):
                                 n_call_out += 1
-                                training_batch_size += input_info.data.sample.batch_size
+                                batch_size += input_info.data.sample.batch_size
                             else:
                                 break
                     except Exception as e:

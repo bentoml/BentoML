@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import logging
 import os
 import platform
@@ -750,10 +751,29 @@ def import_model(
         resume_download=resume_download,
         **extra_hf_hub_kwargs,
     )
+
+    is_auto_class = False
     if pretrained_model_class is None:
-        pretrained_model_class = getattr(transformers, config.architectures[0])
-        logger.info(
-            f"pretrained_model_class is not provided, bentoml will create a model with the following pretrained model class {config.architectures[0]}. Available pretrained classes for this model: {config.architectures}."
+        if getattr(config, "architectures", None):
+            try:
+                pretrained_model_class = getattr(transformers, config.architectures[0])
+                logger.info(
+                    f"pretrained_model_class is not provided, bentoml will create a model with the following pretrained model class {config.architectures[0]}. Available pretrained classes for this model: {config.architectures}."
+                )
+            except AttributeError:
+                logger.info(
+                    "Config architecture does not exist in transformers module."
+                )
+        if getattr(config, "auto_map", None):
+            for auto_class in config.auto_map:
+                if auto_class.startswith("AutoModel"):
+                    pretrained_model_class = getattr(transformers, auto_class)
+                    is_auto_class = True
+                    break
+
+    if pretrained_model_class is None:
+        raise BentoMLException(
+            "BentoML cannot automatically determine the pretrained model class/architecture for the given model. Please explicitly set the pretrained_model_class argument."
         )
 
     model = None
@@ -768,13 +788,19 @@ def import_model(
             if clone_repository:
                 from huggingface_hub import snapshot_download
 
+                # filter out kwargs as snapshot_download my not accept some kwargs
+                params = inspect.signature(snapshot_download).parameters.values()
+                param_names = {param.name for param in params}
+                input_params = dict(
+                    filter(lambda x: x[0] in param_names, extra_hf_hub_kwargs.items())
+                )
                 src_dir = snapshot_download(
                     model_name_or_path,
                     proxies=proxies,
                     revision=revision,
                     force_download=force_download,
                     resume_download=resume_download,
-                    **extra_hf_hub_kwargs,
+                    **input_params,
                 )
             else:
                 with init_empty_weights():
@@ -812,7 +838,12 @@ def import_model(
 
     if model is None:
         with init_empty_weights():
-            model = pretrained_model_class(config=config)
+            if is_auto_class:
+                model = pretrained_model_class.from_config(
+                    config=config, **extra_hf_hub_kwargs
+                )
+            else:
+                model = pretrained_model_class(config=config)
 
     pretrained = t.cast("PreTrainedProtocol", model)
     assert all(

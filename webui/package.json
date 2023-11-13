@@ -1,0 +1,36 @@
+{
+  "name": "bentoml-webui",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "ace-builds": "^1.31.1",
+    "baseui": "^13.0.0",
+    "jotai": "^2.5.1",
+    "react": "^18.2.0",
+    "react-ace": "^10.1.0",
+    "react-dom": "^18.2.0",
+    "react-jss": "^10.10.0",
+    "react-router-dom": "^6.18.0",
+    "styletron-engine-atomic": "^1.6.2",
+    "styletron-react": "^6.1.1",
+    "swr": "^2.2.4",
+    "vite-plugin-svgr": "^4.1.0"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^1.1.0",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.3",
+    "eslint": "^8.53.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5"
+  }
+}

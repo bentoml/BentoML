@@ -57,6 +57,26 @@ managing all your local models as well as accessing them for serving.
        metadata=dict(model_name=model),
    )
 
+Starting from BentoML version 1.1.9, you can also use the ``bentoml.transformers.import_model`` function to import the model directly without having to load it into memory first,
+which is particularly useful for large models. For example:
+
+.. code-block:: python
+   :caption: `download_model.py`
+
+   import bentoml
+
+   model = "sshleifer/distilbart-cnn-12-6"
+   task = "summarization"
+
+   # Import the model directly without loading it into memory
+   bentoml.transformers.import_model(
+      name=task, 
+      model_name_or_path=model,
+      metadata=dict(model_name=model)
+   )
+
+For more information about BentoML's integration with the Transformers framework, see :doc:`/frameworks/transformers`.
+
 Create and run this script to download the model.
 
 .. code-block:: bash
@@ -267,7 +287,7 @@ You can containerize the Bento with Docker. When creating the Bento, a Dockerfil
 
       bentoml containerize --platform=linux/amd64 summarization:latest
 
-The Docker image’s tag is the same as the Bento tag by default. View the created Docker image:
+The Docker image's tag is the same as the Bento tag by default. View the created Docker image:
 
 .. code-block:: bash
 

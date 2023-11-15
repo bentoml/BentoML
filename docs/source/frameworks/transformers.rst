@@ -87,6 +87,29 @@ such as tokenizers, preprocessors, and feature extractors, can also be saved as 
 
 To load the pre-trained instances for testing and debugging, use :code:`bentoml.transformers.load_model` with the same tags.
 
+Starting from BentoML version 1.1.9, importing pre-trained Transformer models from Hugging Face has been further streamlined.
+You can choose to use the new ``bentoml.transformers.import_model`` function to import models directly into the BentoML Model Store without the overhead of loading them into memory.
+By contrast, ``bentoml.transformers.save_model`` necessitates prior model loading and can be resource-intensive for models with large weights.
+Here is an example of using the new function:
+
+.. code-block:: python
+    :caption: `download_model.py`
+
+    import bentoml
+    from transformers import AutoTokenizer
+
+    # Save the tokenizer with minimal memory overhead
+    tokenizer = AutoTokenizer.from_pretrained("t5-small")
+    bentoml.transformers.save_model('t5-small-tokenizer', tokenizer)
+
+    # Import the model without loading into memory, conserving memory
+    bentoml.transformers.import_model("t5-small-model", "t5-small")
+
+The ``bentoml.transformers.import_model`` function has two required parameters:
+
+* ``name``: The name of the model in the BentoML Model Store.
+* ``model_name_or_path``: This can be a string, a Hugging Face repository identifier (repo_id), or a directory path containing weights saved using ``transformers.AutoModel.save_pretrained`` (for example, ``./my_pretrained_directory/``).
+
 Serving Pretrained Models and Instances
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

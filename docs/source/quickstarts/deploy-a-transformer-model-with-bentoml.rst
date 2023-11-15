@@ -184,8 +184,9 @@ Once the model is functioning properly, you can package it into the standard dis
 It is a self-contained archive that contains all the source code, model files, and dependencies required to run the Service.
 
 To build a Bento, you need a configuration YAML file (by convention, it’s ``bentofile.yaml``). This file defines the build options, such as dependencies,
-Docker image settings, and models. The example file below only lists the basic information required to build a Bento,
-including the Service, Python files, dependencies, and model. See :ref:`Bento build options <concepts/bento:Bento build options>` to learn more.
+Docker image settings, and models.
+
+The example file below lists only the basic information required to build a Bento for running on CPU.
 
 .. code-block:: yaml
    :caption: `bentofile.yaml`
@@ -199,6 +200,25 @@ including the Service, Python files, dependencies, and model. See :ref:`Bento bu
        - transformers
    models:
      - summarization:latest
+
+For running on GPU, we should in addition specify the CUDA version to be used in the image.
+
+.. code-block:: yaml
+   :caption: `bentofile.yaml`
+
+   service: 'service:svc'
+   include:
+     - '*.py'
+   python:
+     packages:
+       - torch
+       - transformers
+   docker:
+      cuda_version: 12.1.1
+   models:
+     - summarization:latest
+
+See :ref:`Bento build options <concepts/bento:Bento build options>` to learn more.
 
 Run ``bentoml build`` in your project directory (which should contain ``download_model.py``, ``service.py``, and ``bentofile.yaml`` now) to build the Bento. You can find all created Bentos in ``/home/user/bentoml/bentos/``.
 

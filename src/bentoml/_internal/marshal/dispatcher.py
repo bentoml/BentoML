@@ -193,6 +193,7 @@ class CorkDispatcher:
         if self.max_batch_size < training_batch_size:
             training_batch_size = self.max_batch_size
 
+        wait = 0.0
         if training_batch_size > 1:
             wait = min(
                 self.max_latency * 0.95,
@@ -220,8 +221,8 @@ class CorkDispatcher:
                     b = self.optimizer.o_b
 
                     if (
-                        n < traning_batch_size
-                        and (traning_batch_size * a + b) + w0 <= wait
+                        n < training_batch_size
+                        and (training_batch_size * a + b) + w0 <= wait
                     ):
                         await asyncio.sleep(self.tick_interval)
                         continue

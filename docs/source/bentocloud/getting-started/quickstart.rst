@@ -130,7 +130,7 @@ Complete the following procedure to create a Bento Deployment.
    * **Cluster**: The name of the cluster where the Bento is deployed.
    * **Deployment Name**: The name of the Bento Deployment.
    * **Endpoint Access Type**: Manages endpoint access to the Deployment. Select **Public** to make the endpoint URL accessible to all. You can change it later as needed.
-   * **Bento Repository** and **Bento**: The name of the Bento Repository and the Bento's version to be used.
+   * **Bento Repository** and **Bento**: The name of the Bento Repository and the Bento's version to be used. If your desired Repository or Bento is not displayed in the drop-down list, enter its name to search for it.
    * **API Server** and **Runner**: Set the minimum and maximum number of replicas allowed for scaling and choose the respective instance type to run the workloads.
 
    For detailed explanations of available properties, see :doc:`/bentocloud/reference/deployment-creation-and-update-info`.

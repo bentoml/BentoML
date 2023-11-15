@@ -38,7 +38,7 @@ Deploy your Bento
 
    .. image:: ../../_static/img/bentocloud/type-of-deployment.png
 
-3. Name your Deployment, select the Bento you want to deploy, and specify other details like the number of instances, the amount of memory, and more.
+3. Name your Deployment, select the Bento you want to deploy, and specify other details like the number of instances, the amount of memory, and more. Note that if your desired Repository or Bento is not displayed in the drop-down list, enter its name to search for it.
 
    .. image:: ../../_static/img/bentocloud/create-deployment.png
 

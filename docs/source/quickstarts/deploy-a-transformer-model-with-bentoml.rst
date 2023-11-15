@@ -70,7 +70,7 @@ which is particularly useful for large models. For example:
 
    # Import the model directly without loading it into memory
    bentoml.transformers.import_model(
-      name=task, 
+      name=task,
       model_name_or_path=model,
       metadata=dict(model_name=model)
    )

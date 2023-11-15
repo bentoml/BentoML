@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { Input } from 'baseui/input'
 import { Checkbox } from 'baseui/checkbox'
 import type { DataType } from '../types'
-import JSONInput from './JSONInput'
+import JSONInput from './form/JSONInput'
 
 interface IFieldProps<T> {
   value: T
@@ -35,7 +35,7 @@ export default function FormField<T = unknown>({ value, schema, onChange }: IFie
     case 'object':
     case 'tensor':
     case 'dataframe':
-      return <JSONInput value={value as string} onChange={v => onChange?.(v as T)} placeholder={placeholder} />
+      return <JSONInput value={value as string} onChange={v => onChange?.(v as T)} />
     default:
       return <Input value={value as string} placeholder={placeholder} onChange={handleChange} />
   }

@@ -13,6 +13,6 @@ export default function Form({ form, onSubmit, ...props }: PropsWithChildren<For
       {props.children}
     </form>
   )
-  
+
   return <FormProvider form={form}>{renderContent()}</FormProvider>
 }

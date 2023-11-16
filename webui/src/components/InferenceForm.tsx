@@ -10,7 +10,7 @@ import FormField, { generateFormSchema } from './form/FormField'
 import Submit from './form/Submit'
 
 export default function InferenceForm() {
-  const { data, isLoading } = useSchema()
+  const data = useSchema()
   const { currentRoute, setCurrentPath } = useCurrentPath()
   const [result, setResult] = useState<object | string>()
   const [error, setError] = useState<string | undefined>()
@@ -42,7 +42,6 @@ export default function InferenceForm() {
             options={data?.routes.map(route => ({ label: route.route, id: route.name }))}
             placeholder="Select endpoint"
             value={currentRoute ? [{ label: currentRoute.route, id: currentRoute.name }] : []}
-            isLoading={isLoading}
             clearable={false}
             onChange={(params) => {
               if (!params.option)

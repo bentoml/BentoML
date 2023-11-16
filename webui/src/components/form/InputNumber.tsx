@@ -9,6 +9,7 @@ import { Slider as BaseUISlider } from 'baseui/slider'
 export interface IInputNumberProps extends Omit<InputProps, 'max' | 'min' | 'step' | 'value' | 'onChange'> {
   value: number
   step?: number
+  isInteger?: boolean
   minimum?: number
   maximum?: number
   exclusiveMinimum?: number
@@ -19,6 +20,7 @@ export interface IInputNumberProps extends Omit<InputProps, 'max' | 'min' | 'ste
 export function InputNumber({
   value,
   step = 1,
+  isInteger,
   onChange,
   minimum,
   maximum,
@@ -51,13 +53,15 @@ export function InputNumber({
     if (Number.isNaN(value))
       return onChange?.(e.target.value as unknown as number)
 
+    if (isInteger)
+      value = Math.floor(value)
     // check range
     if (max !== undefined && value > max)
       value = max
     if (min !== undefined && value < min)
       value = min
     onChange?.(value)
-  }, [onChange, min, max])
+  }, [onChange, min, max, isInteger])
 
   return (
     <div

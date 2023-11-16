@@ -1,44 +1,27 @@
+import { useState } from 'react'
 import { Select } from 'baseui/select'
 import { FormControl } from 'baseui/form-control'
-import { useCallback, useEffect, useState } from 'react'
-import { Button } from 'baseui/button'
+import { createForm } from '@formily/core'
 import { FlexGrid, FlexGridItem } from 'baseui/flex-grid'
 import useCurrentPath from '../hooks/useCurrentPath'
 import { postData, useSchema } from '../hooks/useQuery'
-import FormField from './FormField'
+import Form from './form/Form'
+import FormField, { generateFormSchema } from './form/FormField'
+import Submit from './form/Submit'
 
 export default function InferenceForm() {
   const { data, isLoading } = useSchema()
   const { currentRoute, setCurrentPath } = useCurrentPath()
   const [result, setResult] = useState<object | string>()
   const [error, setError] = useState<string | undefined>()
-  const [formData, setFormData] = useState<Record<string, unknown>>({})
-
-  useEffect(() => {
-    if (!currentRoute)
-      return
-    setFormData(Object.entries(currentRoute.input.properties ?? {}).reduce((acc, [key, schema]) => {
-      return {
-        ...acc,
-        [key]: schema.default,
-      }
-    }, {}))
-  }, [setFormData, currentRoute])
-
-  const handleChange = useCallback((key: string, value: unknown) => {
-    setFormData((prev) => {
-      return {
-        ...prev,
-        [key]: value,
-      }
-    })
-  }, [setFormData])
-
+  const form = createForm({})
+  const formSchema = generateFormSchema(currentRoute?.input)
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!currentRoute)
       return
+    const formData = await form.submit()
     const resp = await postData(currentRoute.route, formData)
     if (resp.status >= 400) {
       const e = await resp.text()
@@ -75,16 +58,10 @@ export default function InferenceForm() {
         flexGridRowGap="scale800"
       >
         <FlexGridItem>
-          <form onSubmit={handleSubmit}>
-            {Object.entries(currentRoute?.input.properties ?? {}).map(([key, schema]) => {
-              return (
-                <FormControl label={schema.title} caption={schema.description} key={key}>
-                  <FormField value={formData[key]} schema={schema} onChange={(value: unknown) => handleChange(key, value)} />
-                </FormControl>
-              )
-            })}
-            <Button type="submit">Submit</Button>
-          </form>
+          <Form form={form} onSubmit={handleSubmit}>
+            <FormField schema={formSchema} />
+            <Submit>Submit</Submit>
+          </Form>
         </FlexGridItem>
         <FlexGridItem>
           <FormControl label="Result" error={error}>

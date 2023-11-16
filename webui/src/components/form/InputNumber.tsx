@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react'
 import { useCallback, useMemo } from 'react'
+import { connect } from '@formily/react'
 import type { InputProps } from 'baseui/input'
 import { useStyletron } from 'baseui'
 import { Input as BaseUIInput } from 'baseui/input'
@@ -15,7 +16,7 @@ export interface IInputNumberProps extends Omit<InputProps, 'max' | 'min' | 'ste
   onChange?: (value: number) => void
 }
 
-export default function InputNumber({
+export function InputNumber({
   value,
   step = 1,
   onChange,
@@ -103,3 +104,5 @@ export default function InputNumber({
     </div>
   )
 }
+
+export default connect(InputNumber)

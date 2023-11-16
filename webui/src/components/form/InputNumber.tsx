@@ -51,9 +51,9 @@ export default function InputNumber({
       return onChange?.(e.target.value as unknown as number)
 
     // check range
-    if (max && value > max)
+    if (max !== undefined && value > max)
       value = max
-    if (min && value < min)
+    if (min !== undefined && value < min)
       value = min
     onChange?.(value)
   }, [onChange, min, max])

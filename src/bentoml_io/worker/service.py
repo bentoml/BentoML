@@ -142,14 +142,14 @@ def main(
     from bentoml._internal.context import component_context
     from bentoml._internal.log import configure_server_logging
     from bentoml._internal.service import load
-    from bentoml_io.server import Service
+    from bentoml_io.factory import Service
     from bentoml_io.server.app import ServiceAppFactory
 
     if runner_map:
         BentoMLContainer.remote_runner_mapping.set(
             t.cast(t.Dict[str, str], json.loads(runner_map))
         )
-    service = t.cast(Service, load(bento_identifier, working_dir=working_dir))
+    service = t.cast(Service[t.Any], load(bento_identifier, working_dir=working_dir))
 
     component_context.component_type = "api_server"
     if worker_id is not None:
@@ -162,12 +162,7 @@ def main(
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
     component_context.component_name = service.name
 
-    app_factory = ServiceAppFactory(
-        service,
-        timeout=timeout,
-        max_concurrency=BentoMLContainer.api_server_config.traffic.max_concurrency.get(),
-        enable_metrics=BentoMLContainer.http.cors.enabled.get(),
-    )
+    app_factory = ServiceAppFactory(service)
     asgi_app = app_factory(is_main=is_main)
     uvicorn_extra_options: dict[str, t.Any] = {}
     if ssl_version is not None:

@@ -17,7 +17,9 @@ from simple_di import inject
 from bentoml._internal.container import BentoMLContainer
 from bentoml.exceptions import BentoMLConfigException
 
-from .service import Service
+from ..factory import Service
+
+AnyService = Service[t.Any]
 
 if t.TYPE_CHECKING:
     from circus.sockets import CircusSocket
@@ -37,7 +39,7 @@ logger = logging.getLogger("bentoml.serve")
 if POSIX and not IS_WSL:
 
     def _get_server_socket(
-        service: Service,
+        service: AnyService,
         uds_path: str | None,
         port_stack: contextlib.ExitStack,
         backlog: int,
@@ -56,7 +58,7 @@ if POSIX and not IS_WSL:
 elif WINDOWS or IS_WSL:
 
     def _get_server_socket(
-        service: Service,
+        service: AnyService,
         uds_path: str | None,
         port_stack: contextlib.ExitStack,
         backlog: int,
@@ -78,7 +80,7 @@ elif WINDOWS or IS_WSL:
 else:
 
     def _get_server_socket(
-        service: Service,
+        service: AnyService,
         uds_path: str | None,
         port_stack: contextlib.ExitStack,
         backlog: int,
@@ -92,7 +94,7 @@ SERVICE_WORKER_SCRIPT = "bentoml_io.worker.service"
 
 
 def create_service_watchers(
-    svc: Service,
+    svc: AnyService,
     work_dir: str,
     uds_path: str | None,
     port_stack: contextlib.ExitStack,
@@ -103,15 +105,15 @@ def create_service_watchers(
 
     watchers: list[Watcher] = []
     sockets: list[CircusSocket] = []
-    for dep in svc.dependencies:
-        if dep.name in dependency_map:
+    for dep in svc.dependencies.values():
+        if dep.on.name in dependency_map:
             continue
         new_watchers, new_sockets, uri = create_service_watchers(
-            dep, work_dir, uds_path, port_stack, backlog, dependency_map
+            dep.on, work_dir, uds_path, port_stack, backlog, dependency_map
         )
         watchers.extend(new_watchers)
         sockets.extend(new_sockets)
-        dependency_map[dep.name] = uri
+        dependency_map[dep.on.name] = uri
 
     uri, socket = _get_server_socket(svc, uds_path, port_stack, backlog)
     sockets.append(socket)
@@ -144,7 +146,7 @@ def create_service_watchers(
 
 @inject
 def serve_http_production(
-    bento_identifier: str | Service,
+    bento_identifier: str | AnyService,
     working_dir: str,
     host: str = Provide[BentoMLContainer.http.host],
     port: int = Provide[BentoMLContainer.http.port],
@@ -178,7 +180,7 @@ def serve_http_production(
     if isinstance(bento_identifier, Service):
         svc = bento_identifier
     else:
-        svc = t.cast("Service", load(bento_identifier, working_dir))
+        svc = t.cast(AnyService, load(bento_identifier, working_dir))
     BentoMLContainer.api_server_workers.set(api_workers)
 
     watchers: list[Watcher] = []
@@ -191,15 +193,15 @@ def serve_http_production(
                 tempfile.TemporaryDirectory(prefix="bentoml-uds-")
             )
         if not development_mode:
-            for dep in svc.dependencies:
-                if dep.name in dependency_map:
+            for dep in svc.dependencies.values():
+                if dep.on.name in dependency_map:
                     continue
                 new_watchers, new_sockets, uri = create_service_watchers(
-                    dep, working_dir, uds_path, stack, backlog, dependency_map
+                    dep.on, working_dir, uds_path, stack, backlog, dependency_map
                 )
                 watchers.extend(new_watchers)
                 sockets.extend(new_sockets)
-                dependency_map[dep.name] = uri
+                dependency_map[dep.on.name] = uri
             # reserve one more to avoid conflicts
             stack.enter_context(reserve_free_port())
 

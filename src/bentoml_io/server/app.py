@@ -13,7 +13,7 @@ from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
 from bentoml.exceptions import ServiceUnavailable
 
-from .service import Service
+from ..factory import Service
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
@@ -28,26 +28,22 @@ R = t.TypeVar("R")
 
 
 class ServiceAppFactory(BaseAppFactory):
-    def __init__(
-        self,
-        service: Service,
-        *,
-        timeout: int | None = None,
-        max_concurrency: int | None = None,
-        enable_metrics: bool = False,
-    ) -> None:
+    def __init__(self, service: Service[t.Any]) -> None:
         from bentoml._internal.runner.container import AutoContainer
 
         self.service = service
-        self.enable_metrics = enable_metrics
+        self.enable_metrics = service.config.get("metrics", {}).get("enabled", True)
+        timeout = (traffic := service.config.get("traffic", {})).get("timeout")
+        max_concurrency = traffic.get("max_concurrency")
         super().__init__(timeout=timeout, max_concurrency=max_concurrency)
 
         self.dispatchers: dict[str, CorkDispatcher[t.Any, t.Any]] = {}
+        self._service_instance: t.Any | None = None
 
         def fallback() -> t.NoReturn:
             raise ServiceUnavailable("process is overloaded")
 
-        for name, method in service.service_methods.items():
+        for name, method in service.api_methods.items():
             if not method.batchable:
                 continue
             self.dispatchers[name] = CorkDispatcher(
@@ -71,7 +67,7 @@ class ServiceAppFactory(BaseAppFactory):
 
     @property
     def name(self) -> str:
-        return self.service.name
+        return self.service.inner.__name__
 
     @property
     def middlewares(self) -> list[Middleware]:
@@ -126,18 +122,28 @@ class ServiceAppFactory(BaseAppFactory):
 
         return middlewares
 
+    def create_instance(self) -> None:
+        self._service_instance = self.service.inner()
+
+    def destroy_instance(self) -> None:
+        self._service_instance = None
+
     @property
     def on_startup(self) -> list[LifecycleHook]:
-        return [*super().on_startup, *self.service.startup_hooks]
+        return [*super().on_startup, self.create_instance, *self.service.startup_hooks]
 
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
-        return [*super().on_shutdown, *self.service.shutdown_hooks]
+        return [
+            *super().on_shutdown,
+            self.destroy_instance,
+            *self.service.shutdown_hooks,
+        ]
 
     async def schema_view(self, request: Request) -> Response:
         from starlette.responses import JSONResponse
 
-        schema = self.service.servable.schema()
+        schema = self.service.schema()
         return JSONResponse(schema)
 
     @property
@@ -146,7 +152,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         routes = super().routes
 
-        for name, method in self.service.service_methods.items():
+        for name, method in self.service.api_methods.items():
             api_endpoint = functools.partial(self.api_endpoint, name)
             route_path = method.route
             if not route_path.startswith("/"):
@@ -155,8 +161,8 @@ class ServiceAppFactory(BaseAppFactory):
         return routes
 
     async def batch_infer(self, name: str, input_kwargs: dict[str, t.Any]) -> t.Any:
-        method = self.service.service_methods[name]
-        func = getattr(self.service.servable, name)
+        method = self.service.api_methods[name]
+        func = getattr(self._service_instance, name)
 
         async def inner_infer(
             batches: t.Sequence[t.Any], **kwargs: t.Any
@@ -197,12 +203,9 @@ class ServiceAppFactory(BaseAppFactory):
 
         media_type = request.headers.get("Content-Type", "application/json")
         media_type = media_type.split(";")[0].strip()
-        try:
-            servable = self.service.servable
-        except Exception as e:
-            return JSONResponse(str(e), status_code=500)
-        method = self.service.service_methods[name]
-        func = getattr(servable, name)
+
+        method = self.service.api_methods[name]
+        func = getattr(self._service_instance, name)
 
         with self.service.context.in_request(request) as ctx:
             try:

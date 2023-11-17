@@ -9,11 +9,7 @@ from ..resource import get_resource
 from ..resource import system_resources
 
 if t.TYPE_CHECKING:
-    from bentoml_io import Servable
-
     from .runnable import Runnable
-
-    ServableType = t.Union[type[Servable], type[Runnable]]
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +19,7 @@ class Strategy(abc.ABC):
     @abc.abstractmethod
     def get_worker_count(
         cls,
-        runnable_class: ServableType,
+        runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
         workers_per_resource: int | float,
     ) -> int:
@@ -33,7 +29,7 @@ class Strategy(abc.ABC):
     @abc.abstractmethod
     def get_worker_env(
         cls,
-        runnable_class: ServableType,
+        runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
         workers_per_resource: int | float,
         worker_index: int,
@@ -66,7 +62,7 @@ class DefaultStrategy(Strategy):
     @classmethod
     def get_worker_count(
         cls,
-        runnable_class: ServableType,
+        runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
         workers_per_resource: int | float,
     ) -> int:
@@ -109,7 +105,7 @@ class DefaultStrategy(Strategy):
     @classmethod
     def get_worker_env(
         cls,
-        runnable_class: ServableType,
+        runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
         workers_per_resource: int | float,
         worker_index: int,

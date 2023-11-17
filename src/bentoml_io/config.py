@@ -4,12 +4,12 @@ from typing import Annotated
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Sequence
 from typing import Union
 
 from annotated_types import Ge
 from annotated_types import Gt
 from annotated_types import Le
-from git import Sequence
 from pydantic import IPvAnyAddress
 from pydantic import TypeAdapter
 from typing_extensions import Literal

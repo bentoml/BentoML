@@ -6,6 +6,9 @@ if (ver := pkg_version_info("pydantic")) < (2,):
         "Please upgrade it"
     )
 
+# for convenience, re-export the following
+from bentoml import models as models
+
 from ._pydantic import add_custom_preparers
 from .api import api as api
 from .dependency import depends as depends

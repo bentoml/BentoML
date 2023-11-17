@@ -187,7 +187,7 @@ Through a OTLP endpoint
     :caption: ⚙️ `configuration.yml`
 
     monitoring:
-      enable: true
+      enabled: true
       type: otlp
       options:
         endpoint: http://localhost:5000
@@ -229,7 +229,7 @@ And the `bentoml-plugins-arize` makes it easy to work with BentoML.
     :caption: ⚙️ `configuration.yml`
 
     monitoring:
-        enable: true
+        enabled: true
         type: bentoml_plugins.arize.ArizeMonitor
         options:
             space_key: <your_space_key>

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import importlib.metadata
 import inspect
 import logging
 import typing as t
@@ -204,13 +205,11 @@ class HTTPClient(AbstractClient):
     ) -> ClientResponse:
         from aiohttp import MultipartWriter
 
-        from bentoml import __version__
-
         req_headers = {
             "Content-Type": f"multipart/form-data; boundary={data.boundary}"
             if isinstance(data, MultipartWriter)
             else self.media_type,
-            "User-Agent": f"BentoML HTTP Client/{__version__}",
+            "User-Agent": f"BentoML HTTP Client/{importlib.metadata.version('bentoml')}",
         }
         if headers is not None:
             req_headers.update(headers)

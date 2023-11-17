@@ -22,7 +22,7 @@ You can import a pretrained diffusion model from huggingface hub or local direct
 .. note::
 
     ``bentoml.diffusers.save_model`` can also be used to import diffusion models from Hugging Face, but it requires models to be loaded into memory first,
-    which is resource-intensive for large models. By contrast, ``bentoml.diffusers.import_model`` imports diffusion models directly without loading them into memory.
+    which is resource-intensive for large models. By contrast, ``bentoml.diffusers.import_model`` tries to import diffusion models directly without loading them into memory.
 
 If you plan to use the model with a custom pipeline that has method other than :code:`__call__` (e.g. a :code:`StableDiffusionMegaPipeline`), you need to explicitly list them like this:
 

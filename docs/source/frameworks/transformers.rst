@@ -110,7 +110,7 @@ The ``bentoml.transformers.import_model`` function has two required parameters:
 * ``name``: The name of the model in the BentoML Model Store.
 * ``model_name_or_path``: This can be a string, a Hugging Face repository identifier (repo_id), or a directory path containing weights saved using ``transformers.AutoModel.save_pretrained`` (for example, ``./my_pretrained_directory/``).
 
-When importing models from repositories that require the keyword argument ``trust_remote_code=True`` for custom pipeline execution, BentoML will load the model into memory by default.
+When importing models from repositories that require the keyword argument ``trust_remote_code=True`` for custom defined model classes, BentoML will load the model into memory by default.
 In such cases, to avoid loading the model into memory, add the keyword argument ``clone_repository=True``. Note that since this downloads all the files in the repository instead of selectively picking certain model files,
 it results in greater storage requirements. Here is how you can invoke this:
 

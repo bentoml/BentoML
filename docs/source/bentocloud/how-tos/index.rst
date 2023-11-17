@@ -10,6 +10,7 @@ They are recipes, directions to achieve a specific end result, and are wholly **
 * :doc:`manage-access-token`
 * :doc:`manage-models-and-bentos`
 * :doc:`manage-users`
+* :doc:`manage-cost-and-payment-info`
 * :doc:`monitor-events`
 
 .. toctree::
@@ -19,4 +20,5 @@ They are recipes, directions to achieve a specific end result, and are wholly **
    manage-access-token
    manage-models-and-bentos
    manage-users
+   manage-cost-and-payment-info
    monitor-events

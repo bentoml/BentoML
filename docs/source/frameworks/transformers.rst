@@ -124,7 +124,7 @@ resulting in greater storage requirements; this approach uses the ``.from_pretra
     task = "your_task_name"
 
     bentoml.transformers.import_model(
-        name=task, 
+        name=task,
         model_name_or_path=model,
         trust_remote_code=True,
         clone_repository=True,  # This will avoid loading the model into memory

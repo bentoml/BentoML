@@ -478,7 +478,7 @@ class Service:
         self.grpc_handlers.extend(handlers)
 
 
-def on_load_bento(svc: Service | NewService, bento: Bento):
+def on_load_bento(svc: Service | NewService[t.Any], bento: Bento):
     if isinstance(svc, Service):
         svc.bento = bento
         svc.tag = bento.info.tag

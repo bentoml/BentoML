@@ -25,8 +25,8 @@ if t.TYPE_CHECKING:
     from aiohttp import ClientSession
     from aiohttp import MultipartWriter
 
+    from ..factory import Service
     from ..models import IODescriptor
-    from ..servable import Servable
 
     T = t.TypeVar("T", bound="HTTPClient")
 
@@ -60,7 +60,7 @@ class HTTPClient(AbstractClient):
         url: str,
         *,
         media_type: str = "application/json",
-        servable: type[Servable] | None = None,
+        service: Service[t.Any] | None = None,
     ) -> None:
         """Create a client instance from a URL.
 
@@ -74,7 +74,7 @@ class HTTPClient(AbstractClient):
             The client created with this method can only return primitive types without a model.
         """
         routes: dict[str, ClientEndpoint] = {}
-        if servable is None:
+        if service is None:
             import requests  # TODO: replace with httpx
 
             schema_url = urljoin(url, "/schema.json")
@@ -92,7 +92,7 @@ class HTTPClient(AbstractClient):
                     stream_output=route["output"].get("is_stream", False),
                 )
         else:
-            for name, method in servable.__servable_methods__.items():
+            for name, method in service.api_methods.items():
                 routes[name] = ClientEndpoint(
                     name=name,
                     route=method.route,

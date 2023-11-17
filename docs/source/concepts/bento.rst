@@ -840,21 +840,17 @@ support matrix for all distros:
 GPU support
 """""""""""
 
-You use the ``cuda_version`` field to specify the target CUDA version to install on the
-the generated Docker image. Currently, the following CUDA versions are supported:
-
-* ``"11.6.2"``
-* ``"11.4.3"``
-* ``"11.2.2"``
-
-BentoML will also install additional packages required for a given target CUDA version.
+You use the ``cuda_version`` field to specify the target CUDA version to install on the generated Docker image. For example:
 
 .. code-block:: yaml
 
     docker:
         cuda_version: "11.6.2"
 
-If you need a different CUDA version that is not currently supported in BentoML, you can install it by specifying it in the ``system_packages`` or the
+When choosing the CUDA version, it is important to ensure compatibility between the CUDA version and the machine learning framework you are using, such as PyTorch or TensorFlow.
+For details, refer to the official documentation or the installation instructions of these frameworks.
+
+BentoML supports the following CUDA versions: ``12.1.1``, ``12.1.0``, ``12.0.1``, ``12.0.0``, ``11.8.0``, ``11.7.1``, ``11.6.2``, ``11.4.3``, and ``11.2.2``. If you need a different CUDA version, you can install it by specifying it in the ``system_packages`` or the
 ``setup_script`` field.
 
 .. dropdown:: Install a custom CUDA version with conda

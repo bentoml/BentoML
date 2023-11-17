@@ -766,11 +766,8 @@ def import_model(
     if getattr(config, "architectures", None):
         try:
             pretrained_model_class = getattr(transformers, config.architectures[0])
-            logger.info(
-                f"pretrained_model_class is not provided, bentoml will create a model with the following pretrained model class {config.architectures[0]}. Available pretrained classes for this model: {config.architectures}."
-            )
         except AttributeError:
-            logger.info("Config architecture does not exist in transformers module.")
+            pass
     if getattr(config, "auto_map", None):
         for auto_class in config.auto_map:
             if "AutoModel" in auto_class:

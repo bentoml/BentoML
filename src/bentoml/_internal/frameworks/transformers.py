@@ -1150,7 +1150,10 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
                 self.model = load_model(bento_model, **kwargs)
             else:
                 if "_framework" in bento_model.info.metadata:
-                    if "torch" == bento_model.info.metadata["_framework"] or "pt" == bento_model.info.metadata["_framework"]:
+                    if (
+                        "torch" == bento_model.info.metadata["_framework"]
+                        or "pt" == bento_model.info.metadata["_framework"]
+                    ):
                         self.model = t.cast(
                             transformers.PreTrainedModel,
                             load_model(bento_model, **kwargs),

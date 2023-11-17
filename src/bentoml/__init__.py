@@ -157,6 +157,37 @@ else:
 
     del _LazyLoader
 
+
+import typing as t
+
+
+class _Service:
+    def __call__(
+        self,
+        klass: type | None = None,
+        resources: dict[str, str | float] | None = None,
+        traffic: t.Mapping[str, str | float] | None = None,
+        workers: int | t.List[dict[str, str | float]] | None = None,
+        deployment_config: t.Any = None,
+    ):
+        if klass is not None:
+            return klass
+
+        def _(klass: type):
+            return klass
+
+        return _
+
+    def depends(self, klass: type, *args: t.Any, **kwargs: t.Any):
+        return klass(*args, **kwargs)
+
+    def api(self, method: t.Callable[..., t.Any]):
+        return method
+
+
+service = _Service()
+
+
 __all__ = [
     "__version__",
     "Context",

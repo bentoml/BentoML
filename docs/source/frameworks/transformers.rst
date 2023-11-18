@@ -87,6 +87,50 @@ such as tokenizers, preprocessors, and feature extractors, can also be saved as 
 
 To load the pre-trained instances for testing and debugging, use :code:`bentoml.transformers.load_model` with the same tags.
 
+Starting from BentoML version 1.1.9, importing pre-trained Transformer models from Hugging Face has been further streamlined.
+You can choose to use the new ``bentoml.transformers.import_model`` function to import models directly into the BentoML Model Store without the overhead of loading them into memory.
+By contrast, ``bentoml.transformers.save_model`` necessitates prior model loading and can be resource-intensive for models with large weights.
+Here is an example of using the new function:
+
+.. code-block:: python
+    :caption: `download_model.py`
+
+    import bentoml
+    from transformers import AutoTokenizer
+
+    # Save the tokenizer with minimal memory overhead
+    tokenizer = AutoTokenizer.from_pretrained("t5-small")
+    bentoml.transformers.save_model('t5-small-tokenizer', tokenizer)
+
+    # Import the model without loading into memory, conserving memory
+    bentoml.transformers.import_model("t5-small-model", "t5-small")
+
+The ``bentoml.transformers.import_model`` function has two required parameters:
+
+* ``name``: The name of the model in the BentoML Model Store.
+* ``model_name_or_path``: This can be a string, a Hugging Face repository identifier (repo_id), or a directory path containing weights saved using ``transformers.AutoModel.save_pretrained`` (for example, ``./my_pretrained_directory/``).
+
+When importing models from repositories that require the keyword argument ``trust_remote_code=True`` for custom defined model classes, BentoML will load the model into memory by default.
+In such cases, to avoid loading the model into memory, add the keyword argument ``clone_repository=True``. Note that since this downloads all the files in the repository instead of selectively picking certain model files,
+it results in greater storage requirements. Here is how you can invoke this:
+
+.. code-block:: python
+
+    # Import a trust_remote_code=True model without loading into memory by cloning the entire repository
+
+    import bentoml
+
+    model = "your_model_name_or_path"
+    task = "your_task_name"
+
+    bentoml.transformers.import_model(
+        name=task,
+        model_name_or_path=model,
+        trust_remote_code=True,
+        clone_repository=True,  # This will avoid loading the model into memory
+        metadata=dict(model_name=model)
+    )
+
 Serving Pretrained Models and Instances
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

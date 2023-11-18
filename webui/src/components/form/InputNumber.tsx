@@ -35,14 +35,14 @@ export function InputNumber({
     if (minimum !== undefined)
       return minimum
     return undefined
-  }, [minimum, exclusiveMinimum])
+  }, [minimum, exclusiveMinimum, step])
   const max = useMemo(() => {
     if (exclusiveMaximum !== undefined)
       return exclusiveMaximum - step
     if (maximum !== undefined)
       return maximum
     return undefined
-  }, [maximum, exclusiveMaximum])
+  }, [maximum, exclusiveMaximum, step])
   // component show slider when both max and min exist
   const showSlider = useMemo(() => min !== undefined && max !== undefined, [min, max])
   const handleInputChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

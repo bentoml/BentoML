@@ -27,7 +27,7 @@ dependencies = [
     "PyYAML>=5.0",
     "aiohttp",
     "attrs>=21.1.0",
-    "cattrs>=22.1.0",
+    "cattrs>=22.1.0,<23.2.0",
     "circus>=0.17.0,!=0.17.2",
     "click>=7.0",
     "click-option-group",

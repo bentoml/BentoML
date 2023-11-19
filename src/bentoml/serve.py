@@ -579,7 +579,7 @@ def serve_grpc_production(
 
     # Check whether users are running --grpc on windows
     # also raising warning if users running on MacOS or FreeBSD
-    if psutil.WINDOWS:
+    if psutil.WINDOWS and (not development_mode):
         raise BentoMLException(
             "'grpc' is not supported on Windows without '--development'. The reason being SO_REUSEPORT socket option is only available on UNIX system, and gRPC implementation depends on this behaviour."
         )

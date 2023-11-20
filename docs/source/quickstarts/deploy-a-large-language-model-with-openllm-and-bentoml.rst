@@ -4,14 +4,14 @@ Deploy a large language model with OpenLLM and BentoML
 
 As an important component in the BentoML ecosystem, `OpenLLM <https://github.com/bentoml/OpenLLM>`_ is an open platform designed to facilitate the
 operation and deployment of large language models (LLMs) in production. The platform provides functionalities that allow users to fine-tune, serve,
-deploy, and monitor LLMs with ease. OpenLLM supports a wide range of state-of-the-art LLMs and model runtimes, such as StableLM, Falcon, Dolly,
+deploy, and monitor LLMs with ease. OpenLLM supports a wide range of state-of-the-art LLMs and model runtimes, such as Llama 2, Mistral, StableLM, Falcon, Dolly,
 Flan-T5, ChatGLM, StarCoder, and more.
 
 With OpenLLM, you can deploy your models to the cloud or on-premises, and build powerful AI applications. It supports the integration of your LLMs
-with other models and services such as LangChain, BentoML, and Hugging Face, thereby allowing the creation of complex AI applications.
+with other models and services such as LangChain, LlamaIndex, BentoML, and Hugging Face, thereby allowing the creation of complex AI applications.
 
 This quickstart demonstrates how to integrate OpenLLM with BentoML to deploy a large language model. To learn more about OpenLLM,
-you can also try the `OpenLLM tutorial in Google Colab: Serving Llama 2 with OpenLLM <https://colab.research.google.com/github/bentoml/OpenLLM/blob/main/examples/openllm-llama2-demo/openllm_llama2_demo.ipynb>`_.
+you can also try the `OpenLLM tutorial in Google Colab: Serving Llama 2 with OpenLLM <https://colab.research.google.com/github/bentoml/OpenLLM/blob/main/examples/llama2.ipynb>`_.
 
 Prerequisites
 -------------
@@ -32,6 +32,14 @@ Run the following command to install OpenLLM.
 
    pip install openllm
 
+.. note::
+
+   If you are running on GPUs, we recommend using OpenLLM with vLLM runtime. Install with
+
+   .. code-block:: bash
+
+      pip install "openllm[vllm]"
+
 Create a BentoML Service
 ------------------------
 
@@ -40,35 +48,62 @@ Create a ``service.py`` file to define a BentoML :doc:`Service </concepts/servic
 .. code-block:: python
    :caption: `service.py`
 
-   from __future__ import annotations
+    from __future__ import annotations
+    import uuid
+    from typing import Any, AsyncGenerator, Dict, TypedDict, Union
 
-   import bentoml
-   import openllm
+    from bentoml import Service
+    from bentoml.io import JSON, Text
+    from openllm import LLM
 
-   model = "dolly-v2"
-
-   llm_runner = openllm.Runner(model)
-
-   svc = bentoml.Service(name="llm-dolly-service", runners=[llm_runner])
-
-
-   @svc.on_startup
-   def download(_: bentoml.Context):
-       llm_runner.download_model()
+    llm = LLM[Any, Any]('HuggingFaceH4/zephyr-7b-beta', backend='vllm')
 
 
-   @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
-   async def prompt(input_text: str) -> str:
-       answer = await llm_runner.generate.async_run(input_text)
-       return answer[0]["generated_text"]
+    svc = Service('tinyllm', runners=[llm.runner])
+
+
+    class GenerateInput(TypedDict):
+      prompt: str
+      stream: bool
+      sampling_params: Dict[str, Any]
+
+
+    @svc.api(
+      route='/v1/generate',
+      input=JSON.from_sample(
+        GenerateInput(prompt='What is time?', stream=False, sampling_params={'temperature': 0.73, 'logprobs': 1})
+      ),
+      output=Text(content_type='text/event-stream'),
+    )
+    async def generate(request: GenerateInput) -> Union[AsyncGenerator[str, None], str]:
+      n = request['sampling_params'].pop('n', 1)
+      request_id = f'tinyllm-{uuid.uuid4().hex}'
+      previous_texts = [''] * n
+
+      generator = llm.generate_iterator(request['prompt'], request_id=request_id, n=n, **request['sampling_params'])
+
+      async def streamer() -> AsyncGenerator[str, None]:
+        async for request_output in generator:
+          for output in request_output.outputs:
+            i = output.index
+            delta_text = output.text[len(previous_texts[i]) :]
+            previous_texts[i] = output.text
+            yield delta_text
+
+      if request['stream']:
+        return streamer()
+
+      final_output = None
+      async for request_output in generator:
+        final_output = request_output
+      assert final_output is not None
+      return final_output.outputs[0].text
 
 Here is a breakdown of this ``service.py`` file.
 
-- ``model``: The ``model`` variable is assigned the name of the model to be used (``dolly-v2`` in this example). Run ``openllm models`` to view all supported models and their corresponding model IDs. Note that certain models may only support running on GPUs.
-- ``openllm.Runner()``: Creates a :doc:`bentoml.Runner </concepts/runner>` instance for the model specified.
-- ``bentoml.Service()``: Creates a BentoML Service named ``llm-dolly-service`` and wraps the previously created Runner into the Service.
-- ``@svc.on_startup``: Different from the Transformer model quickstart, this tutorial creates an action to be performed when the Service starts using the ``on_startup`` hook in the ``service.py`` file. It calls the ``download_model()`` function to ensure the necessary model and weights are downloaded if they do not exist locally. This makes sure the Service is ready to serve requests when it starts.
-- ``@svc.api()``: Defines an API endpoint for the BentoML Service that takes a text input and outputs a text. The endpoint’s functionality is defined in the ``prompt()`` function: it takes in a string of text, runs it through the model to generate an answer, and returns the generated text.
+- ``openllm.LLM()``: Creates an LLM abstraction object that allows easy to use APIs for streaming text with optimization built-in. It supports a variety of architectures (See `openllm models` for more information). ``openllm.LLM`` is built on top of a :doc:`bentoml.Runner </concepts/runner>` for this LLM.
+- ``bentoml.Service()``: Creates a BentoML Service named ``llm-mistral-service`` and turns the aforementioned `llm.runner` into a `bentoml.Service`.
+- ``@svc.api()``: Defines an API endpoint for the BentoML Service that takes a text input and outputs a text. The endpoint’s functionality is defined in the ``generate()`` function: it takes in a string of text, runs it through the model to generate an answer, and returns the generated text. It both supports streaming and one-shot generation.
 
 Use ``bentoml serve`` to start the Service.
 
@@ -85,30 +120,51 @@ The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_. You c
 
     .. tab-item:: CURL
 
+        For one-shot generation
+
         .. code-block:: bash
 
-         curl -X 'POST' \
-            'http://0.0.0.0:3000/prompt' \
-            -H 'accept: text/plain' \
-            -H 'Content-Type: text/plain' \
-            -d '$PROMPT' # Replace $PROMPT here with your prompt.
+
+           curl -X 'POST' \
+               'http://0.0.0.0:3000/v1/generate' \
+               -H 'accept: application/json' \
+               -H 'Content-Type: application/json' \
+               -d '{"prompt": "What is the meaning of life?", "stream": "False", "sampling_params": {"temperature": 0.73}}'
+
+        For streaming generation
+
+        .. code-block:: bash
+
+           curl -X 'POST' -N \
+               'http://0.0.0.0:3000/v1/generate' \
+               -H 'accept: application/json' \
+               -H 'Content-Type: application/json' \
+               -d '{"prompt": "What is the meaning of life?", "stream": "True", "sampling_params": {"temperature": 0.73}}'
 
     .. tab-item:: Python
 
+        For one-shot generation
+
         .. code-block:: bash
 
-         import requests
+            import openllm
 
-         response = requests.post(
-            "http://0.0.0.0:3000/prompt",
-            headers={
-               "accept": "text/plain",
-               "Content-Type": "text/plain",
-            },
-            data="$PROMPT", # Replace $PROMPT here with your prompt.
-         )
+            client = openllm.HTTPClient('http://localhost:3000')
 
-         print(response.text)
+            response = client.generate("What is the meaning of life?", max_new_tokens=256)
+
+            print(response.outputs[0].text)
+
+        For streaming generation
+
+        .. code-block:: bash
+
+            import openllm
+
+            client = openllm.HTTPClient('http://localhost:3000')
+
+            for it in client.generate_stream("What is the meaning of life?", max_new_tokens=256): print(it.text, flush=True, end='')
+
 
     .. tab-item:: Browser
 
@@ -136,8 +192,8 @@ The model should be downloaded automatically to the Model Store.
 
    $ bentoml models list
 
-   Tag                                                                 Module                              Size       Creation Time
-   pt-databricks-dolly-v2-3b:f6c9be08f16fe4d3a719bee0a4a7c7415b5c65df  openllm.serialisation.transformers  5.30 GiB   2023-07-11 16:17:26
+      Tag                                                                           Module                              Size        Creation Time
+      vllm-huggingfaceh4--zephyr-7b-beta:8af01af3d4f9dc9b962447180d6d0f8c5315da86   openllm.serialisation.transformers  13.49 GiB   2023-11-16 06:32:45
 
 Build a Bento
 -------------
@@ -154,7 +210,7 @@ After the Service is ready, you can package it into a :doc:`Bento </concepts/ben
       packages:
       - openllm
    models:
-     - pt-databricks-dolly-v2-3b:latest
+     - vllm-huggingfaceh4--zephyr-7b-beta:latest
 
 Run ``bentoml build`` in your project directory to build the Bento.
 
@@ -162,8 +218,8 @@ Run ``bentoml build`` in your project directory to build the Bento.
 
    $ bentoml build
 
-   Building BentoML service "llm-dolly-service:oatecjraxktp6nry" from build context "/Users/demo/Documents/openllm-test".
-   Packing model "pt-databricks-dolly-v2-3b:f6c9be08f16fe4d3a719bee0a4a7c7415b5c65df"
+   Building BentoML service "llm-mistral-service:oatecjraxktp6nry" from build context "/Users/demo/Documents/openllm-test".
+   Packing model "vllm-huggingfaceh4--zephyr-7b-beta:8af01af3d4f9dc9b962447180d6d0f8c5315da86"
    Locking PyPI package versions.
 
    ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
@@ -173,15 +229,15 @@ Run ``bentoml build`` in your project directory to build the Bento.
    ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
    ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
 
-   Successfully built Bento(tag="llm-dolly-service:oatecjraxktp6nry").
+   Successfully built Bento(tag="llm-mistral-service:oatecjraxktp6nry").
 
    Possible next steps:
 
     * Containerize your Bento with `bentoml containerize`:
-       $ bentoml containerize llm-dolly-service:oatecjraxktp6nry
+       $ bentoml containerize llm-mistral-service:oatecjraxktp6nry
 
     * Push to BentoCloud with `bentoml push`:
-       $ bentoml push llm-dolly-service:oatecjraxktp6nry
+       $ bentoml push llm-mistral-service:oatecjraxktp6nry
 
 Deploy a Bento
 --------------
@@ -190,7 +246,7 @@ To containerize the Bento with Docker, run:
 
 .. code-block:: bash
 
-   bentoml containerize llm-dolly-service:oatecjraxktp6nry
+   bentoml containerize llm-mistral-service:oatecjraxktp6nry
 
 You can then deploy the Docker image in different environments like Kubernetes. Alternatively, push the Bento to `BentoCloud <https://bentoml.com/cloud>`_ for distributed deployments of your model.
 For more information, see :doc:`/bentocloud/how-tos/deploy-bentos`.

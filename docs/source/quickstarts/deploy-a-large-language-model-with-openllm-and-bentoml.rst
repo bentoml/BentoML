@@ -48,6 +48,7 @@ Create a ``service.py`` file to define a BentoML :doc:`Service </concepts/servic
 .. code-block:: python
    :caption: `service.py`
 
+    from __future__ import annotations
     import uuid
     from typing import Any, AsyncGenerator, Dict, TypedDict, Union
 

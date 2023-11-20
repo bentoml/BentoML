@@ -34,7 +34,7 @@ Run the following command to install OpenLLM.
 
 .. note::
 
-   If you are running on GPUs, we recommend to use OpenLLM with vLLM runtime. Install with
+   If you are running on GPUs, we recommend using OpenLLM with vLLM runtime. Install with
 
    .. code-block:: bash
 
@@ -101,11 +101,9 @@ Create a ``service.py`` file to define a BentoML :doc:`Service </concepts/servic
 
 Here is a breakdown of this ``service.py`` file.
 
-- ``openllm.LLM()``: Creates a LLM abstraction object that allows easy to use APIs for streaming text with optimization built-in. It supports a variety of architectures (See `openllm models` for more information).
-                     `openllm.LLM` builts on top of a :doc:`bentoml.Runner </concepts/runner>` for this LLM.
+- ``openllm.LLM()``: Creates an LLM abstraction object that allows easy to use APIs for streaming text with optimization built-in. It supports a variety of architectures (See `openllm models` for more information). ``openllm.LLM`` is built on top of a :doc:`bentoml.Runner </concepts/runner>` for this LLM.
 - ``bentoml.Service()``: Creates a BentoML Service named ``llm-mistral-service`` and turns the aforementioned `llm.runner` into a `bentoml.Service`.
-- ``@svc.api()``: Defines an API endpoint for the BentoML Service that takes a text input and outputs a text. The endpoint’s functionality is defined in the ``generate()`` function: it takes in a string of text,
-                  runs it through the model to generate an answer, and returns the generated text. It both supports streaming and one-shot generation.
+- ``@svc.api()``: Defines an API endpoint for the BentoML Service that takes a text input and outputs a text. The endpoint’s functionality is defined in the ``generate()`` function: it takes in a string of text, runs it through the model to generate an answer, and returns the generated text. It both supports streaming and one-shot generation.
 
 Use ``bentoml serve`` to start the Service.
 

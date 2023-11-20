@@ -129,7 +129,7 @@ The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_. You c
                'http://0.0.0.0:3000/v1/generate' \
                -H 'accept: application/json' \
                -H 'Content-Type: application/json' \
-               -d '{"prompt": "What is the meaning of life?", "stream": "False"}'
+               -d '{"prompt": "What is the meaning of life?", "stream": "False", "sampling_params": {"temperature": 0.73}}'
 
         For streaming generation
 
@@ -139,7 +139,7 @@ The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_. You c
                'http://0.0.0.0:3000/v1/generate' \
                -H 'accept: application/json' \
                -H 'Content-Type: application/json' \
-               -d '{"prompt": "What is the meaning of life?", "stream": "True"}'
+               -d '{"prompt": "What is the meaning of life?", "stream": "True", "sampling_params": {"temperature": 0.73}}'
 
     .. tab-item:: Python
 

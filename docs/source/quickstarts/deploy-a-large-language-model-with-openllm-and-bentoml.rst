@@ -87,7 +87,7 @@ Create a ``service.py`` file to define a BentoML :doc:`Service </concepts/servic
           for output in request_output.outputs:
             i = output.index
             delta_text = output.text[len(previous_texts[i]) :]
-            previous_texts[i] = output.text
+            previous_texts[i] += output.text
             yield delta_text
 
       if request['stream']:

@@ -6,6 +6,7 @@ import Checkbox from './Checkbox'
 import Input from './Input'
 import InputNumber from './InputNumber'
 import JSONInput from './JSONInput'
+import File from './File'
 import { ArrayItem, ArrayItems } from './Array'
 
 function renderExample(examples?: unknown[]) {
@@ -85,14 +86,14 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
           'x-component': 'JSONInput',
         }
       }
+    case 'file':
     case 'tensor':
     case 'dataframe':
       return {
         ...base,
-        // the type must is JSON string, otherwise the editor cannot be mounted
-        'type': 'string',
-        'default': base.default ?? '{}',
-        'x-component': 'JSONInput',
+        'type': 'file',
+        'default': undefined,
+        'x-component': 'File',
       }
     case 'string':
     default:
@@ -121,6 +122,7 @@ export default createSchemaField({
     Input,
     InputNumber,
     JSONInput,
+    File,
     ArrayItems,
     ArrayItem,
   },

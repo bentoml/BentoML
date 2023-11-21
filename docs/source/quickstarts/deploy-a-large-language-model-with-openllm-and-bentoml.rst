@@ -48,56 +48,10 @@ Create a ``service.py`` file to define a BentoML :doc:`Service </concepts/servic
 .. code-block:: python
    :caption: `service.py`
 
-    from __future__ import annotations
-    import uuid
-    from typing import Any, AsyncGenerator, Dict, TypedDict, Union
+.. literalinclude:: ./snippets/openllm_api_server.py
+   :language: python
+   :caption: `service.py`
 
-    from bentoml import Service
-    from bentoml.io import JSON, Text
-    from openllm import LLM
-
-    llm = LLM[Any, Any]('HuggingFaceH4/zephyr-7b-beta', backend='vllm')
-
-
-    svc = Service('tinyllm', runners=[llm.runner])
-
-
-    class GenerateInput(TypedDict):
-      prompt: str
-      stream: bool
-      sampling_params: Dict[str, Any]
-
-
-    @svc.api(
-      route='/v1/generate',
-      input=JSON.from_sample(
-        GenerateInput(prompt='What is time?', stream=False, sampling_params={'temperature': 0.73, 'logprobs': 1})
-      ),
-      output=Text(content_type='text/event-stream'),
-    )
-    async def generate(request: GenerateInput) -> Union[AsyncGenerator[str, None], str]:
-      n = request['sampling_params'].pop('n', 1)
-      request_id = f'tinyllm-{uuid.uuid4().hex}'
-      previous_texts = [''] * n
-
-      generator = llm.generate_iterator(request['prompt'], request_id=request_id, n=n, **request['sampling_params'])
-
-      async def streamer() -> AsyncGenerator[str, None]:
-        async for request_output in generator:
-          for output in request_output.outputs:
-            i = output.index
-            delta_text = output.text[len(previous_texts[i]) :]
-            previous_texts[i] = output.text
-            yield delta_text
-
-      if request['stream']:
-        return streamer()
-
-      final_output = None
-      async for request_output in generator:
-        final_output = request_output
-      assert final_output is not None
-      return final_output.outputs[0].text
 
 Here is a breakdown of this ``service.py`` file.
 
@@ -147,23 +101,31 @@ The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_. You c
 
         .. code-block:: bash
 
-            import openllm
-
-            client = openllm.HTTPClient('http://localhost:3000')
-
-            response = client.generate("What is the meaning of life?", max_new_tokens=256)
-
-            print(response.outputs[0].text)
+           with httpx.Client(base_url='http://localhost:3000') as client:
+               print(
+                   client.post('/v1/generate',
+                               json={
+                                   'prompt': 'What is time?',
+                                   'sampling_params': {
+                                       'temperature': 0.73
+                                   },
+                                   "stream": False
+                               }).content.decode())
 
         For streaming generation
 
         .. code-block:: bash
 
-            import openllm
-
-            client = openllm.HTTPClient('http://localhost:3000')
-
-            for it in client.generate_stream("What is the meaning of life?", max_new_tokens=256): print(it.text, flush=True, end='')
+           async with httpx.AsyncClient(base_url='http://localhost:3000') as client:
+             async with client.stream('POST', '/v1/generate',
+                               json={
+                                   'prompt': 'What is time?',
+                                   'sampling_params': {
+                                       'temperature': 0.73
+                                   },
+                                   "stream": True
+                               }) as it:
+               async for chunk in it.aiter_text(): print(chunk, flush=True, end='')
 
 
     .. tab-item:: Browser
@@ -193,7 +155,7 @@ The model should be downloaded automatically to the Model Store.
    $ bentoml models list
 
       Tag                                                                           Module                              Size        Creation Time
-      vllm-huggingfaceh4--zephyr-7b-beta:8af01af3d4f9dc9b962447180d6d0f8c5315da86   openllm.serialisation.transformers  13.49 GiB   2023-11-16 06:32:45
+      vllm-huggingfaceh4--zephyr-7b-alpha:8af01af3d4f9dc9b962447180d6d0f8c5315da86   openllm.serialisation.transformers  13.49 GiB   2023-11-16 06:32:45
 
 Build a Bento
 -------------
@@ -210,7 +172,7 @@ After the Service is ready, you can package it into a :doc:`Bento </concepts/ben
       packages:
       - openllm
    models:
-     - vllm-huggingfaceh4--zephyr-7b-beta:latest
+     - vllm-huggingfaceh4--zephyr-7b-alpha:latest
 
 Run ``bentoml build`` in your project directory to build the Bento.
 
@@ -219,7 +181,7 @@ Run ``bentoml build`` in your project directory to build the Bento.
    $ bentoml build
 
    Building BentoML service "llm-mistral-service:oatecjraxktp6nry" from build context "/Users/demo/Documents/openllm-test".
-   Packing model "vllm-huggingfaceh4--zephyr-7b-beta:8af01af3d4f9dc9b962447180d6d0f8c5315da86"
+   Packing model "vllm-huggingfaceh4--zephyr-7b-alpha:8af01af3d4f9dc9b962447180d6d0f8c5315da86"
    Locking PyPI package versions.
 
    ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░

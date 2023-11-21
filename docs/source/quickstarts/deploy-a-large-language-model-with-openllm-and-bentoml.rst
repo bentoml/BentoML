@@ -56,7 +56,7 @@ Create a ``service.py`` file to define a BentoML :doc:`Service </concepts/servic
     from bentoml.io import JSON, Text
     from openllm import LLM
 
-    llm = LLM[Any, Any]('HuggingFaceH4/zephyr-7b-beta', backend='vllm')
+    llm = LLM[Any, Any]('HuggingFaceH4/zephyr-7b-alpha', backend='vllm')
 
 
     svc = Service('tinyllm', runners=[llm.runner])
@@ -193,7 +193,7 @@ The model should be downloaded automatically to the Model Store.
    $ bentoml models list
 
       Tag                                                                           Module                              Size        Creation Time
-      vllm-huggingfaceh4--zephyr-7b-beta:8af01af3d4f9dc9b962447180d6d0f8c5315da86   openllm.serialisation.transformers  13.49 GiB   2023-11-16 06:32:45
+      vllm-huggingfaceh4--zephyr-7b-alpha:8af01af3d4f9dc9b962447180d6d0f8c5315da86   openllm.serialisation.transformers  13.49 GiB   2023-11-16 06:32:45
 
 Build a Bento
 -------------
@@ -210,7 +210,7 @@ After the Service is ready, you can package it into a :doc:`Bento </concepts/ben
       packages:
       - openllm
    models:
-     - vllm-huggingfaceh4--zephyr-7b-beta:latest
+     - vllm-huggingfaceh4--zephyr-7b-alpha:latest
 
 Run ``bentoml build`` in your project directory to build the Bento.
 
@@ -219,7 +219,7 @@ Run ``bentoml build`` in your project directory to build the Bento.
    $ bentoml build
 
    Building BentoML service "llm-mistral-service:oatecjraxktp6nry" from build context "/Users/demo/Documents/openllm-test".
-   Packing model "vllm-huggingfaceh4--zephyr-7b-beta:8af01af3d4f9dc9b962447180d6d0f8c5315da86"
+   Packing model "vllm-huggingfaceh4--zephyr-7b-alpha:8af01af3d4f9dc9b962447180d6d0f8c5315da86"
    Locking PyPI package versions.
 
    ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░

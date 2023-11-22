@@ -252,7 +252,7 @@ export BENTOML_DO_NOT_TRACK=True
 ### Citation
 
 If you use BentoML in your research, please cite using the following
-[citation](./CITATION.cff:
+[citation](./CITATION.cff):
 
 ```bibtex
 @software{Yang_BentoML_The_framework,

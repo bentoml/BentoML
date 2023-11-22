@@ -1,6 +1,6 @@
 export interface TBase {
   type: string
-  title: string
+  title?: string
   default?: unknown
   description?: string
   examples?: unknown[]
@@ -20,7 +20,7 @@ export type TNumber = TBase & INumberRange & { type: 'number' }
 export type TInteger = TBase & INumberRange & { type: 'integer' }
 export interface TArray<T extends DataType = DataType> extends TBase {
   type: 'array'
-  items: Omit<T, 'title'>
+  items: T
 }
 export type TTensor = TBase & { type: 'tensor' }
 export type TFile = TBase & { type: 'file'; format: 'binary' }

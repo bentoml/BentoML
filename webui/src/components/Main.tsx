@@ -1,37 +1,12 @@
 import { useStyletron } from 'baseui'
-import { Card, StyledBody } from 'baseui/card'
-import { Spinner } from 'baseui/spinner'
 import { DisplaySmall } from 'baseui/typography'
 import { useSchema } from '../hooks/useQuery'
 import Indicator from './Indicator'
 import Router from './Router'
 
 function Inner() {
-  const { data, error, isLoading } = useSchema()
+  const data = useSchema()
   const [css, theme] = useStyletron()
-
-  if (isLoading) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        padding: '1rem',
-      }}
-      >
-        <Spinner />
-      </div>
-    )
-  }
-  if (error) {
-    return (
-      <Card>
-        <StyledBody>
-          Error:
-          {error.message}
-        </StyledBody>
-      </Card>
-    )
-  }
 
   return (
     <>

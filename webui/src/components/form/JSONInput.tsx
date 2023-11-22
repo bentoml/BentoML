@@ -1,4 +1,5 @@
 import type { editor } from 'monaco-editor'
+import { connect } from '@formily/react'
 import Editor, { loader } from '@monaco-editor/react'
 import * as monaco from 'monaco-editor'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
@@ -75,7 +76,7 @@ const editorOptions: editor.IStandaloneEditorConstructionOptions = {
   wrappingIndent: 'none',
 }
 
-export default function JSONInput({ value, onChange }: IJSONInputProps) {
+export function JSONInput({ value, onChange }: IJSONInputProps) {
   return (
     <Editor
       height="500px"
@@ -86,3 +87,5 @@ export default function JSONInput({ value, onChange }: IJSONInputProps) {
     />
   )
 }
+
+export default connect(JSONInput)

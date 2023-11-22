@@ -11,6 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@formily/core": "^2.3.0",
+    "@formily/react": "^2.3.0",
     "@monaco-editor/react": "^4.6.0",
     "@tabler/icons-react": "^2.40.0",
     "baseui": "^13.0.0",

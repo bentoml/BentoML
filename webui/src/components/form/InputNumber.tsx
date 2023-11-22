@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react'
 import { useCallback, useMemo } from 'react'
+import { connect } from '@formily/react'
 import type { InputProps } from 'baseui/input'
 import { useStyletron } from 'baseui'
 import { Input as BaseUIInput } from 'baseui/input'
@@ -8,6 +9,7 @@ import { Slider as BaseUISlider } from 'baseui/slider'
 export interface IInputNumberProps extends Omit<InputProps, 'max' | 'min' | 'step' | 'value' | 'onChange'> {
   value: number
   step?: number
+  isInteger?: boolean
   minimum?: number
   maximum?: number
   exclusiveMinimum?: number
@@ -15,9 +17,10 @@ export interface IInputNumberProps extends Omit<InputProps, 'max' | 'min' | 'ste
   onChange?: (value: number) => void
 }
 
-export default function InputNumber({
+export function InputNumber({
   value,
   step = 1,
+  isInteger,
   onChange,
   minimum,
   maximum,
@@ -32,14 +35,14 @@ export default function InputNumber({
     if (minimum !== undefined)
       return minimum
     return undefined
-  }, [minimum, exclusiveMinimum])
+  }, [minimum, exclusiveMinimum, step])
   const max = useMemo(() => {
     if (exclusiveMaximum !== undefined)
       return exclusiveMaximum - step
     if (maximum !== undefined)
       return maximum
     return undefined
-  }, [maximum, exclusiveMaximum])
+  }, [maximum, exclusiveMaximum, step])
   // component show slider when both max and min exist
   const showSlider = useMemo(() => min !== undefined && max !== undefined, [min, max])
   const handleInputChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -50,13 +53,15 @@ export default function InputNumber({
     if (Number.isNaN(value))
       return onChange?.(e.target.value as unknown as number)
 
+    if (isInteger)
+      value = Math.floor(value)
     // check range
     if (max !== undefined && value > max)
       value = max
     if (min !== undefined && value < min)
       value = min
     onChange?.(value)
-  }, [onChange, min, max])
+  }, [onChange, min, max, isInteger])
 
   return (
     <div
@@ -103,3 +108,5 @@ export default function InputNumber({
     </div>
   )
 }
+
+export default connect(InputNumber)

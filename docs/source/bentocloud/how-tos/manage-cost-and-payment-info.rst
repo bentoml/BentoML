@@ -32,4 +32,3 @@ View cost information
      * **Draft**: A preliminary bill has been automatically generated, pending review or adjustments before being issued.
      * **Active**: The bill has been finalized and sent to the customer, awaiting payment.
      * **Paid**: Payment for the bill has been received and recorded.
-     * **Void**: The bill has been voided.

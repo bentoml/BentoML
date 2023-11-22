@@ -45,9 +45,6 @@ Create a BentoML Service
 
 Create a ``service.py`` file to define a BentoML :doc:`Service </concepts/service>` and a model :doc:`Runner </concepts/runner>`. As the Service starts, the model defined in it will be downloaded automatically if it does not exist locally.
 
-.. code-block:: python
-   :caption: `service.py`
-
 .. literalinclude:: ./snippets/openllm_api_server.py
    :language: python
    :caption: `service.py`
@@ -55,9 +52,10 @@ Create a ``service.py`` file to define a BentoML :doc:`Service </concepts/servic
 
 Here is a breakdown of this ``service.py`` file.
 
-- ``openllm.LLM()``: Creates an LLM abstraction object that allows easy to use APIs for streaming text with optimization built-in. It supports a variety of architectures (See `openllm models` for more information). ``openllm.LLM`` is built on top of a :doc:`bentoml.Runner </concepts/runner>` for this LLM.
-- ``bentoml.Service()``: Creates a BentoML Service named ``llm-mistral-service`` and turns the aforementioned `llm.runner` into a `bentoml.Service`.
-- ``@svc.api()``: Defines an API endpoint for the BentoML Service that takes a text input and outputs a text. The endpoint’s functionality is defined in the ``generate()`` function: it takes in a string of text, runs it through the model to generate an answer, and returns the generated text. It both supports streaming and one-shot generation.
+- ``openllm.LLM()``: Built on top of a :doc:`bentoml.Runner </concepts/runner>`, it creates an LLM abstraction object that provides easy-to-use APIs for streaming text with optimization built-in. This example uses `HuggingFaceH4/zephyr-7b-alpha <https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha>`_ with ``vllm`` as the backend. You can also choose other LLMs and backends supported by OpenLLM. Run ``openllm models`` for more information.
+- ``bentoml.Service()``: Creates a BentoML Service named ``tinyllm`` and turns the aforementioned ``llm.runner`` into a ``bentoml.Service``.
+- ``GenerateInput(TypedDict)``: Defines a new type ``GenerateInput`` which is a dictionary with required fields to generate text (``prompt``, ``stream``, and ``sampling_params``).
+- ``@svc.api()``: Defines an API endpoint for the BentoML Service, accepting JSON formatted ``GenerateInput`` and outputting text. The endpoint's functionality is defined in the ``generate()`` function: It takes in a string of text, runs it through the model to generate an answer, and returns the generated text. It both supports streaming and one-shot generation.
 
 Use ``bentoml serve`` to start the Service.
 
@@ -83,7 +81,7 @@ The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_. You c
                'http://0.0.0.0:3000/v1/generate' \
                -H 'accept: application/json' \
                -H 'Content-Type: application/json' \
-               -d '{"prompt": "What is the meaning of life?", "stream": "False", "sampling_params": {"temperature": 0.73}}'
+               -d '{"prompt": "What are Large Language Models?", "stream": "False", "sampling_params": {"temperature": 0.73}}'
 
         For streaming generation
 
@@ -93,7 +91,7 @@ The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_. You c
                'http://0.0.0.0:3000/v1/generate' \
                -H 'accept: application/json' \
                -H 'Content-Type: application/json' \
-               -d '{"prompt": "What is the meaning of life?", "stream": "True", "sampling_params": {"temperature": 0.73}}'
+               -d '{"prompt": "What are Large Language Models?", "stream": "True", "sampling_params": {"temperature": 0.73}}'
 
     .. tab-item:: Python
 
@@ -105,7 +103,7 @@ The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_. You c
                print(
                    client.post('/v1/generate',
                                json={
-                                   'prompt': 'What is time?',
+                                   'prompt': 'What are Large Language Models?',
                                    'sampling_params': {
                                        'temperature': 0.73
                                    },
@@ -119,7 +117,7 @@ The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_. You c
            async with httpx.AsyncClient(base_url='http://localhost:3000') as client:
              async with client.stream('POST', '/v1/generate',
                                json={
-                                   'prompt': 'What is time?',
+                                   'prompt': 'What are Large Language Models?',
                                    'sampling_params': {
                                        'temperature': 0.73
                                    },
@@ -134,19 +132,18 @@ The server is now active at `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_. You c
 
         .. image:: ../../_static/img/quickstarts/deploy-a-large-language-model-with-openllm-and-bentoml/service-ui.png
 
-The following example shows the model’s answer to a question about the concept of large language models.
+Example output:
 
-Input:
+.. code-block:: bash
 
-.. code-block::
+   LLMs (Large Language Models) are a type of machine learning model that uses deep neural networks to process and understand human language. They are designed to be trained on large amounts of text data and can generate human-like responses to prompts or questions. LLMs have become increasingly popular in recent years due to their ability to learn and understand the nuances of human language, making them ideal for use in a wide range of applications, from customer service chatbots to content creation.
 
-   What are Large Language Models?
+   What are some real-world use cases for Large Language Models?
+   1. Customer Service Chatbots: LLMs can be used to create intelligent chatbots that can handle customer inquiries and provide personalized support. These chatbots can be trained to respond to common customer questions and concerns, improving the customer experience and reducing the workload for human support agents.
 
-Output:
+   2. Content Creation: LLMs can be used to generate new content, such as news articles or product descriptions. This can save time and resources for content creators and help them to produce more content in less time.
 
-.. code-block::
-
-   Large Language Models (LLMs) are statistical models that are trained using a large body of text to recognize words, phrases, sentences, and paragraphs. A neural network is used to train the LLM and a likelihood score is used to quantify the quality of the model’s predictions. LLMs are also called named entity recognition models and can be used in various applications, including question answering, sentiment analysis, and information retrieval.
+   3. Legal Research: LLMs can be used to assist with legal research by analyzing vast amounts of legal documents and identifying relevant information.
 
 The model should be downloaded automatically to the Model Store.
 
@@ -154,8 +151,8 @@ The model should be downloaded automatically to the Model Store.
 
    $ bentoml models list
 
-      Tag                                                                           Module                              Size        Creation Time
-      vllm-huggingfaceh4--zephyr-7b-alpha:8af01af3d4f9dc9b962447180d6d0f8c5315da86   openllm.serialisation.transformers  13.49 GiB   2023-11-16 06:32:45
+   Tag                                                                           Module                              Size        Creation Time
+   vllm-huggingfaceh4--zephyr-7b-alpha:8af01af3d4f9dc9b962447180d6d0f8c5315da86  openllm.serialisation.transformers  13.49 GiB   2023-11-16 06:32:45
 
 Build a Bento
 -------------
@@ -180,8 +177,6 @@ Run ``bentoml build`` in your project directory to build the Bento.
 
    $ bentoml build
 
-   Building BentoML service "llm-mistral-service:oatecjraxktp6nry" from build context "/Users/demo/Documents/openllm-test".
-   Packing model "vllm-huggingfaceh4--zephyr-7b-alpha:8af01af3d4f9dc9b962447180d6d0f8c5315da86"
    Locking PyPI package versions.
 
    ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
@@ -191,15 +186,15 @@ Run ``bentoml build`` in your project directory to build the Bento.
    ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
    ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
 
-   Successfully built Bento(tag="llm-mistral-service:oatecjraxktp6nry").
+   Successfully built Bento(tag="tinyllm:oatecjraxktp6nry").
 
    Possible next steps:
 
     * Containerize your Bento with `bentoml containerize`:
-       $ bentoml containerize llm-mistral-service:oatecjraxktp6nry
+       $ bentoml containerize tinyllm:oatecjraxktp6nry
 
     * Push to BentoCloud with `bentoml push`:
-       $ bentoml push llm-mistral-service:oatecjraxktp6nry
+       $ bentoml push tinyllm:oatecjraxktp6nry
 
 Deploy a Bento
 --------------
@@ -208,7 +203,7 @@ To containerize the Bento with Docker, run:
 
 .. code-block:: bash
 
-   bentoml containerize llm-mistral-service:oatecjraxktp6nry
+   bentoml containerize tinyllm:oatecjraxktp6nry
 
 You can then deploy the Docker image in different environments like Kubernetes. Alternatively, push the Bento to `BentoCloud <https://bentoml.com/cloud>`_ for distributed deployments of your model.
 For more information, see :doc:`/bentocloud/how-tos/deploy-bentos`.

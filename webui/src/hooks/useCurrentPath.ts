@@ -6,7 +6,7 @@ export default function useCurrentPath() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const { data } = useSchema()
+  const data = useSchema()
 
   const currentPath = location.pathname === '/' ? data?.routes[0].route : location.pathname
 

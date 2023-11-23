@@ -6,7 +6,7 @@ import Checkbox from './Checkbox'
 import Input from './Input'
 import InputNumber from './InputNumber'
 import JSONInput from './JSONInput'
-import File from './File'
+import { MultipleFiles, SingleFile } from './file'
 import { MultipleImages, SingleImage } from './image'
 import { ArrayItem, ArrayItems } from './Array'
 
@@ -31,7 +31,13 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
   switch (propertie.type) {
     case 'array':
       switch (propertie.items.type) {
-        // Use special components to render page when the array type is file, image, audio etc.
+        // Use special components to render page when the array type is tensor, dataframe, file etc.
+        case 'tensor':
+        case 'dataframe':
+          return {
+            ...base,
+            'x-component': 'MultipleFiles',
+          }
         case 'file':
           switch (propertie.items.format) {
             case 'image':
@@ -42,14 +48,7 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
             default:
               return {
                 ...base,
-                'x-component': 'ArrayItems',
-                'items': {
-                  'type': 'void',
-                  'x-component': 'ArrayItem',
-                  'properties': {
-                    input: getSchema(propertie.items),
-                  },
-                },
+                'x-component': 'MultipleFiles',
               }
           }
         default:
@@ -125,7 +124,7 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
             ...base,
             'type': 'file',
             'default': undefined,
-            'x-component': 'File',
+            'x-component': 'SingleFile',
           }
       }
     case 'tensor':
@@ -134,7 +133,7 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
         ...base,
         'type': 'file',
         'default': undefined,
-        'x-component': 'File',
+        'x-component': 'SingleFile',
       }
     case 'string':
     default:
@@ -163,7 +162,8 @@ export default createSchemaField({
     Input,
     InputNumber,
     JSONInput,
-    File,
+    SingleFile,
+    MultipleFiles,
     SingleImage,
     MultipleImages,
     ArrayItems,

@@ -7,6 +7,7 @@ import Input from './Input'
 import InputNumber from './InputNumber'
 import JSONInput from './JSONInput'
 import File from './File'
+import { MultipleImages, SingleImage } from './image'
 import { ArrayItem, ArrayItems } from './Array'
 
 function renderExample(examples?: unknown[]) {
@@ -29,16 +30,40 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
 
   switch (propertie.type) {
     case 'array':
-      return {
-        ...base,
-        'x-component': 'ArrayItems',
-        'items': {
-          'type': 'void',
-          'x-component': 'ArrayItem',
-          'properties': {
-            input: getSchema(propertie.items),
-          },
-        },
+      switch (propertie.items.type) {
+        // Use special components to render page when the array type is file, image, audio etc.
+        case 'file':
+          switch (propertie.items.format) {
+            case 'image':
+              return {
+                ...base,
+                'x-component': 'MultipleImages',
+              }
+            default:
+              return {
+                ...base,
+                'x-component': 'ArrayItems',
+                'items': {
+                  'type': 'void',
+                  'x-component': 'ArrayItem',
+                  'properties': {
+                    input: getSchema(propertie.items),
+                  },
+                },
+              }
+          }
+        default:
+          return {
+            ...base,
+            'x-component': 'ArrayItems',
+            'items': {
+              'type': 'void',
+              'x-component': 'ArrayItem',
+              'properties': {
+                input: getSchema(propertie.items),
+              },
+            },
+          }
       }
     case 'integer':
     case 'number': {
@@ -87,6 +112,22 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
         }
       }
     case 'file':
+      switch (propertie.format) {
+        case 'image':
+          return {
+            ...base,
+            'type': 'file',
+            'default': undefined,
+            'x-component': 'SingleImage',
+          }
+        default:
+          return {
+            ...base,
+            'type': 'file',
+            'default': undefined,
+            'x-component': 'File',
+          }
+      }
     case 'tensor':
     case 'dataframe':
       return {
@@ -123,6 +164,8 @@ export default createSchemaField({
     InputNumber,
     JSONInput,
     File,
+    SingleImage,
+    MultipleImages,
     ArrayItems,
     ArrayItem,
   },

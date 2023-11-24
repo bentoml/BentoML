@@ -16,6 +16,7 @@ export default function Footer() {
     >
       <div>
         Powered by
+        {' '}
         <StyledLink href="https://bentoml.com" target="_blank">BentoML</StyledLink>
       </div>
     </footer>

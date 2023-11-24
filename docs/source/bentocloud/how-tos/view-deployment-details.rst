@@ -7,7 +7,7 @@ This page describes how to view the detailed information of a Deployment on the 
 1. In the navigation sidebar, click **Deployments**.
 2. The **Deployments** page lists all Deployments in your BentoCloud account. Select the Deployment you want to view. The page opens with the **Overview** tab selected.
 3. The Deployment details page provides a comprehensive view of a specific Deployment, with several tabs that allow you to inspect various aspects of the Deployment.
-   
+
    * **Overview**: Provides information about the Deployment's general health and settings, including its current status, the URL endpoint for the deployed Bento, resource allocations, and basic configuration details.
    * **Replicas**: Provides detailed information about the individual replicas of the Deployment. It displays each replica's status, type, the cluster and node it's running on, the time it started, and any operations that can be performed on them. This tab is useful for understanding the scale and distribution of the Deployment.
    * **Logging**: Contains a live feed of logs related to the Deployment. It allows you to search for logs, troubleshoot issues, and analyze the behavior of the application through the logs of different components.

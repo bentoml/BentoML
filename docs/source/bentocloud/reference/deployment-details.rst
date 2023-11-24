@@ -51,7 +51,7 @@ Component Status
      - The allocated computing resources for the component, such as CPU and memory.
    * - Status
      - The current operational status of the component, indicated by one of the status lights:
-       
+
        - Green: Active
        - Grey: Not deployed
        - Red: Failed
@@ -59,7 +59,7 @@ Component Status
 Events
 ^^^^^^
 
-This section displays a chronological record of system events related to the Deployment's operation on BentoCloud. Each entry logs the actions performed by the system, such as scaling, component status changes, and updates to the Bento configurations. These logs are instrumental for auditing, debugging, and understanding the behavior of the Deployment over time. 
+This section displays a chronological record of system events related to the Deployment's operation on BentoCloud. Each entry logs the actions performed by the system, such as scaling, component status changes, and updates to the Bento configurations. These logs are instrumental for auditing, debugging, and understanding the behavior of the Deployment over time.
 
 You can search for event keywords in the search bar.
 
@@ -90,7 +90,7 @@ Replicas
      - The time when the replica was deployed.
    * - Operation
      - Operations that you can perform:
-       
+
        - View logs: Inspect the logs of different containers within the Pod replica. You can use the drop-down menu at the top to switch between containers.
        - Inspect events: View the operational events of the replica.
        - Enter containers: `Exec into different containers <https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/>`_ of the Pod replica. You can click **Show File Manager** to upload files to and download files from the container.
@@ -128,8 +128,8 @@ Logging
    * - Download
      - Download logs in text or JSON format.
 
-.. note:: 
-    
+.. note::
+
    The **Logging** tab integrates Grafana Loki. For more information, see the `Loki documentation <https://grafana.com/docs/loki/latest/>`_.
 
 Monitoring

@@ -14,6 +14,7 @@ from typing_extensions import Unpack
 from bentoml._internal.bento.bento import Bento
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
+from bentoml._internal.models import Model
 from bentoml._internal.utils import dict_filter_none
 from bentoml.exceptions import BentoMLException
 
@@ -40,18 +41,13 @@ if t.TYPE_CHECKING:
             ...
 
 
-# TODO: A placeholder type, change it to the actual type when it's ready
-class ModelReference:
-    pass
-
-
 @attrs.define
 class Service(t.Generic[T]):
     config: Config
     inner: type[T]
 
     bento: t.Optional[Bento] = attrs.field(init=False, default=None)
-    models: dict[str, ModelReference] = attrs.field(factory=dict, init=False)
+    models: dict[str, Model] = attrs.field(factory=dict, init=False)
     dependencies: dict[str, Dependency[t.Any]] = attrs.field(factory=dict, init=False)
     api_methods: dict[str, APIMethod[..., t.Any]] = attrs.field(
         factory=dict, init=False
@@ -78,7 +74,7 @@ class Service(t.Generic[T]):
             value = getattr(self.inner, field)
             if isinstance(value, Dependency):
                 self.dependencies[field] = t.cast(Dependency[t.Any], value)
-            elif isinstance(value, ModelReference):
+            elif isinstance(value, Model):
                 self.models[field] = value
             elif isinstance(value, APIMethod):
                 self.api_methods[field] = t.cast(APIMethod[..., t.Any], value)

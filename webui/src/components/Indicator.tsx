@@ -1,4 +1,5 @@
 import useSWR from 'swr'
+import { useStyletron } from 'baseui'
 import { StyledLink } from 'baseui/link'
 import Circle from '../assets/circle.svg?react'
 
@@ -17,6 +18,7 @@ async function fetcher(url: string) {
 }
 
 export default function Indicator({ endpoint, children }: IIndicatorProps) {
+  const [css] = useStyletron()
   const { error, isLoading } = useSWR(endpoint, fetcher, {
     onErrorRetry: (error, _key, _config, revalidate, { retryCount }) => {
       // Never retry on 404.
@@ -32,14 +34,16 @@ export default function Indicator({ endpoint, children }: IIndicatorProps) {
     },
   })
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      margin: '1rem 0',
-    }}
+    <div
+      className={css({
+        display: 'flex',
+        alignItems: 'flex-top',
+        gap: '0.5rem',
+        margin: '1rem 0',
+        lineHeight: 1.1
+      })}
     >
-      <span>
+      <span className={css({ whiteSpace: 'nowrap' })}>
         GET
         {' '}
         <StyledLink href={endpoint} target="_blank" rel="noreferrer">
@@ -48,7 +52,12 @@ export default function Indicator({ endpoint, children }: IIndicatorProps) {
         :
         {' '}
       </span>
-      <Circle color={isLoading ? 'yellow' : error ? 'red' : 'green'} width={16} height={16} style={{ flexShrink: 0 }} />
+      <Circle
+        color={isLoading ? 'yellow' : error ? 'red' : 'green'}
+        width={16}
+        height={16}
+        className={css({ flexShrink: 0, marginTop: '2px' })}
+      />
       <span>{children}</span>
     </div>
   )

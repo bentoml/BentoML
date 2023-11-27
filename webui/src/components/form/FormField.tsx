@@ -6,7 +6,9 @@ import Checkbox from './Checkbox'
 import Input from './Input'
 import InputNumber from './InputNumber'
 import JSONInput from './JSONInput'
-import File from './File'
+import { MultipleFiles, SingleFile } from './file'
+import { MultipleImages, SingleImage } from './image'
+import { MultipleAudios, SingleAudio } from './audio'
 import { ArrayItem, ArrayItems } from './Array'
 
 function renderExample(examples?: unknown[]) {
@@ -29,16 +31,44 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
 
   switch (propertie.type) {
     case 'array':
-      return {
-        ...base,
-        'x-component': 'ArrayItems',
-        'items': {
-          'type': 'void',
-          'x-component': 'ArrayItem',
-          'properties': {
-            input: getSchema(propertie.items),
-          },
-        },
+      switch (propertie.items.type) {
+        // Use special components to render page when the array type is tensor, dataframe, file etc.
+        case 'tensor':
+        case 'dataframe':
+          return {
+            ...base,
+            'x-component': 'MultipleFiles',
+          }
+        case 'file':
+          switch (propertie.items.format) {
+            case 'image':
+              return {
+                ...base,
+                'x-component': 'MultipleImages',
+              }
+            case 'audio':
+              return {
+                ...base,
+                'x-component': 'MultipleAudios',
+              }
+            default:
+              return {
+                ...base,
+                'x-component': 'MultipleFiles',
+              }
+          }
+        default:
+          return {
+            ...base,
+            'x-component': 'ArrayItems',
+            'items': {
+              'type': 'void',
+              'x-component': 'ArrayItem',
+              'properties': {
+                input: getSchema(propertie.items),
+              },
+            },
+          }
       }
     case 'integer':
     case 'number': {
@@ -87,13 +117,36 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
         }
       }
     case 'file':
+      switch (propertie.format) {
+        case 'image':
+          return {
+            ...base,
+            'type': 'file',
+            'default': undefined,
+            'x-component': 'SingleImage',
+          }
+        case 'audio':
+          return {
+            ...base,
+            'type': 'file',
+            'default': undefined,
+            'x-component': 'SingleAudio',
+          }
+        default:
+          return {
+            ...base,
+            'type': 'file',
+            'default': undefined,
+            'x-component': 'SingleFile',
+          }
+      }
     case 'tensor':
     case 'dataframe':
       return {
         ...base,
         'type': 'file',
         'default': undefined,
-        'x-component': 'File',
+        'x-component': 'SingleFile',
       }
     case 'string':
     default:
@@ -122,7 +175,12 @@ export default createSchemaField({
     Input,
     InputNumber,
     JSONInput,
-    File,
+    SingleFile,
+    MultipleFiles,
+    SingleImage,
+    MultipleImages,
+    SingleAudio,
+    MultipleAudios,
     ArrayItems,
     ArrayItem,
   },

@@ -20,6 +20,9 @@ dependencies:
   baseui:
     specifier: ^13.0.0
     version: 13.0.0(@types/react@18.2.37)(react-dom@18.2.0)(react@18.2.0)(styletron-react@6.1.1)(webpack@5.89.0)
+  dayjs:
+    specifier: ^1.11.10
+    version: 1.11.10
   jotai:
     specifier: ^2.5.1
     version: 2.5.1(@types/react@18.2.37)(react@18.2.0)
@@ -1969,6 +1972,10 @@ packages:
     engines: {node: '>=0.11'}
     dependencies:
       '@babel/runtime': 7.23.2
+    dev: false
+
+  /dayjs@1.11.10:
+    resolution: {integrity: sha512-vjAczensTgRcqDERK0SR2XMwsF/tSvnvlv6VcF2GIhg6Sx4yOIt/irsr1RDJsKiIyBzJDpCoXiWWq28MqH2cnQ==}
     dev: false
 
   /debug@3.2.7:

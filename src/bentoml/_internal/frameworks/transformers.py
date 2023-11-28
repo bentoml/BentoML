@@ -844,8 +844,8 @@ def import_model(
     if model is None:
         with init_empty_weights():
             if is_auto_class:
-                # using .from_config with init_empty_weights() is a sure-fire way to get an instance of a model class without loading the model weights
-                # for a detailed discussion between the use of .from_pretrained and .from_config with init_empty_weights(), check out https://github.com/huggingface/accelerate/issues/2163
+                # NOTE: Under `init_empty_weights`, `.from_config` won't load the model weights. Whereas for `.from_pretrained`, transformers needs to find out what layers to load with the architecture, thereby loading the models into memory, then unload afterwards.
+                # See https://github.com/huggingface/accelerate/issues/2163 for more information.
                 model = pretrained_model_class.from_config(
                     trust_remote_code=trust_remote_code,
                     config=config,

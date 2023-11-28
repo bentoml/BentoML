@@ -114,6 +114,7 @@ class ImageEncoder(FileEncoder):
 
 File = t.Annotated[t.BinaryIO, FileEncoder()]
 Audio = t.Annotated[t.BinaryIO, FileEncoder(format="audio")]
+Video = t.Annotated[t.BinaryIO, FileEncoder(format="video")]
 Image = t.Annotated[PILImage.Image, ImageEncoder()]
 
 # `slots` is available on Python >= 3.10

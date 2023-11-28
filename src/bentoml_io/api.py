@@ -91,7 +91,7 @@ class APIMethod(t.Generic[P, R]):
         return t.cast("t.Callable[P, R]", functools.partial(self.func, instance))
 
     def schema(self) -> dict[str, t.Any]:
-        output = self.output_spec.model_json_schema()
+        output = _flatten_model_schema(self.output_spec)
         if self.is_stream:
             output["is_stream"] = True
         if self.output_spec.media_type:
@@ -102,10 +102,24 @@ class APIMethod(t.Generic[P, R]):
                 "route": self.route,
                 "description": self.__doc__,
                 "batchable": self.batchable,
-                "input": self.input_spec.model_json_schema(),
+                "input": _flatten_model_schema(self.input_spec),
                 "output": output,
             }
         )
+
+
+def _flatten_model_schema(model: type[IODescriptor]) -> dict[str, t.Any]:
+    schema = model.model_json_schema()
+    if not schema.get("properties") or "$defs" not in schema:
+        return schema
+    defs = schema.pop("$defs", {})
+    for value in schema["properties"].values():
+        if "allOf" in value:
+            value.update(value.pop("allOf")[0])
+        if "$ref" in value:
+            ref = value.pop("$ref")[len("#/$defs/") :]
+            value.update(defs[ref])
+    return schema
 
 
 @t.overload

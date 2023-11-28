@@ -26,6 +26,7 @@ export type TTensor = TBase & { type: 'tensor' }
 export type TFile = TBase & { type: 'file'; format: 'binary' }
 export type TImage = TBase & { type: 'file'; format: 'image' }
 export type TAudio = TBase & { type: 'file'; format: 'audio' }
+export type TVideo = TBase & { type: 'file'; format: 'video' }
 export type TDataframe = TBase & { type: 'dataframe' }
 export interface TObject extends TBase {
   type: 'object'
@@ -33,7 +34,7 @@ export interface TObject extends TBase {
   required?: string[]
 }
 
-export type DataType = TString | TBoolean | TNumber | TInteger | TArray | TTensor | TFile | TImage | TObject | TAudio | TDataframe
+export type DataType = TString | TBoolean | TNumber | TInteger | TArray | TTensor | TFile | TImage | TObject | TAudio | TDataframe | TVideo
 export interface IRoute {
   name: string
   route: string

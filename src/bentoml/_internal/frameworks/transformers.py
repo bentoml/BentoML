@@ -777,7 +777,7 @@ def import_model(
 
     if pretrained_model_class is None:
         raise BentoMLException(
-            "BentoML cannot automatically determine the pretrained model class/architecture for the given model. Please explicitly set the pretrained_model_class argument."
+            "BentoML cannot automatically determine the pretrained model class/architecture for the given model."
         )
 
     model = None

@@ -59,6 +59,24 @@ def test_models(tmpdir: "Path"):
         testmodel_file_content = createfile(testmodel.path_of("file"))
         testmodel_infolder_content = createfile(testmodel.path_of("folder/file"))
 
+    with bentoml.models.save(
+        "savedmodel",
+        module=__name__,
+        _model_store=store,
+    ) as savedmodel:
+        savedmodel1tag = savedmodel.tag
+        savedmodel1_file_content = createfile(savedmodel.path_of("file"))
+        savedmodel1_infolder_content = createfile(savedmodel.path_of("folder/file"))
+
+    with bentoml.models.save(
+        "savedmodel",
+        module=__name__,
+        _model_store=store,
+    ) as savedmodel:
+        savedmodel2tag = savedmodel.tag
+        savedmodel2_file_content = createfile(savedmodel.path_of("file"))
+        savedmodel2_infolder_content = createfile(savedmodel.path_of("folder/file"))
+
     with bentoml.models.create(
         "anothermodel",
         module=__name__,
@@ -73,9 +91,15 @@ def test_models(tmpdir: "Path"):
     assert (
         bentoml.models.get("testmodel:latest", _model_store=store).tag == testmodel2tag
     )
+    assert (
+        bentoml.models.get("savedmodel:latest", _model_store=store).tag
+        == savedmodel2tag
+    )
     assert set([model.tag for model in bentoml.models.list(_model_store=store)]) == {
         testmodel1tag,
         testmodel2tag,
+        savedmodel1tag,
+        savedmodel2tag,
         anothermodeltag,
     }
 
@@ -89,6 +113,18 @@ def test_models(tmpdir: "Path"):
     with open(testmodel2.path_of("folder/file"), encoding="utf-8") as f:
         assert f.read() == testmodel_infolder_content
 
+    savedmodel1 = bentoml.models.get(savedmodel1tag, _model_store=store)
+    with open(savedmodel1.path_of("file"), encoding="utf-8") as f:
+        assert f.read() == savedmodel1_file_content
+    with open(savedmodel1.path_of("folder/file"), encoding="utf-8") as f:
+        assert f.read() == savedmodel1_infolder_content
+
+    savedmodel2 = bentoml.models.get(savedmodel2tag, _model_store=store)
+    with open(savedmodel2.path_of("file"), encoding="utf-8") as f:
+        assert f.read() == savedmodel2_file_content
+    with open(savedmodel2.path_of("folder/file"), encoding="utf-8") as f:
+        assert f.read() == savedmodel2_infolder_content
+
     anothermodel = bentoml.models.get(anothermodeltag, _model_store=store)
     with open(anothermodel.path_of("file"), encoding="utf-8") as f:
         assert f.read() == anothermodel_file_content
@@ -99,11 +135,20 @@ def test_models(tmpdir: "Path"):
     bentoml.models.export_model(testmodel2tag, export_path, _model_store=store)
     bentoml.models.delete(testmodel2tag, _model_store=store)
 
+    export_path_for_savedmodel = os.path.join(tmpdir, "savedmodel2.bentomodel")
+    bentoml.models.export_model(
+        savedmodel2tag, export_path_for_savedmodel, _model_store=store
+    )
+    bentoml.models.delete(savedmodel2tag, _model_store=store)
+
     with pytest.raises(NotFound):
         bentoml.models.delete(testmodel2tag, _model_store=store)
+    with pytest.raises(NotFound):
+        bentoml.models.delete(savedmodel2tag, _model_store=store)
 
     assert set([model.tag for model in bentoml.models.list(_model_store=store)]) == {
         testmodel1tag,
+        savedmodel1tag,
         anothermodeltag,
     }
 
@@ -119,14 +164,27 @@ def test_models(tmpdir: "Path"):
         retrieved_testmodel1.info.context.framework_versions
         == TEST_MODEL_CONTEXT.framework_versions
     )
+    assert bentoml.models.get("savedmodel", _model_store=store).tag == savedmodel1tag
 
     bentoml.models.import_model(export_path, _model_store=store)
+    bentoml.models.import_model(export_path_for_savedmodel, _model_store=store)
 
     assert bentoml.models.get("testmodel", _model_store=store).tag == testmodel2tag
+    assert bentoml.models.get("savedmodel", _model_store=store).tag == savedmodel2tag
 
     export_path_2 = os.path.join(tmpdir, "testmodel1")
     bentoml.models.export_model(testmodel1tag, export_path_2, _model_store=store)
     bentoml.models.delete(testmodel1tag, _model_store=store)
     bentoml.models.import_model(export_path_2 + ".bentomodel", _model_store=store)
 
+    export_path_2_for_savedmodel = os.path.join(tmpdir, "testmodel1")
+    bentoml.models.export_model(
+        savedmodel1tag, export_path_2_for_savedmodel, _model_store=store
+    )
+    bentoml.models.delete(savedmodel1tag, _model_store=store)
+    bentoml.models.import_model(
+        export_path_2_for_savedmodel + ".bentomodel", _model_store=store
+    )
+
     assert bentoml.models.get("testmodel", _model_store=store).tag == testmodel2tag
+    assert bentoml.models.get("savedmodel", _model_store=store).tag == savedmodel2tag

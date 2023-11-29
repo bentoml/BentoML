@@ -318,6 +318,35 @@ def create(
         res.exit_cloudpickle_context(imported_modules)
 
 
+@inject
+@contextmanager
+def save(
+    name: Tag | str,
+    *,
+    module: str = "",
+    api_version: str | None = None,
+    metadata: dict[str, t.Any] | None = None,
+    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
+) -> t.Generator[Model, None, None]:
+    api_version = "v1" if api_version is None else api_version
+    res = Model.create(
+        name,
+        module=module,
+        api_version=api_version,
+        signatures={},
+        metadata=metadata,
+        context=ModelContext(framework_name="", framework_versions={}),
+    )
+
+    try:
+        yield res
+    except Exception:
+        raise
+    else:
+        res.flush()
+        res.save(_model_store)
+
+
 __all__ = [
     "list",
     "get",
@@ -328,4 +357,5 @@ __all__ = [
     "pull",
     "ModelContext",
     "ModelOptions",
+    "save",
 ]

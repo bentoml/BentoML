@@ -4,7 +4,7 @@ import { FormControl } from 'baseui/form-control'
 import { createForm } from '@formily/core'
 import { FlexGrid, FlexGridItem } from 'baseui/flex-grid'
 import useCurrentPath from '../hooks/useCurrentPath'
-import { postData, useSchema } from '../hooks/useQuery'
+import { useFormSubmit, useSchema } from '../hooks/useQuery'
 import Form from './form/Form'
 import FormField, { generateFormSchema } from './form/FormField'
 import Submit from './form/Submit'
@@ -15,14 +15,14 @@ export default function InferenceForm() {
   const [result, setResult] = useState<object | string>()
   const [error, setError] = useState<string | undefined>()
   const form = createForm({})
+  const submit = useFormSubmit(form, currentRoute?.input)
   const formSchema = generateFormSchema(currentRoute?.input)
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!currentRoute)
       return
-    const formData = await form.submit()
-    const resp = await postData(currentRoute.route, formData)
+    const resp = await submit(currentRoute.route)
     if (resp.status >= 400) {
       const e = await resp.text()
       setError(`Error: ${resp.status} ${e}`)

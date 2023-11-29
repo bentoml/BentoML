@@ -7,7 +7,6 @@ if (ver := pkg_version_info("pydantic")) < (2,):
     )
 
 # for convenience, re-export the following
-from bentoml import models as models
 
 from ._pydantic import add_custom_preparers
 from .api import api as api

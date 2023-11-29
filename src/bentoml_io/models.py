@@ -16,6 +16,8 @@ from .typing_utils import is_image_type
 from .typing_utils import is_iterator_type
 from .typing_utils import is_list_type
 
+from bentoml.models import create, get
+
 if t.TYPE_CHECKING:
     from starlette.requests import Request
     from starlette.responses import Response
@@ -188,3 +190,12 @@ def ensure_io_descriptor(output_type: type) -> type[IODescriptor]:
         t.Type[IODescriptor],
         create_model("Output", __base__=(IOMixin, RootModel[output_type])),  # type: ignore
     )
+
+
+__all__ = [
+    "IODescriptor",
+    "IOMixin",
+    "ensure_io_descriptor",
+    "get",
+    "create",
+]

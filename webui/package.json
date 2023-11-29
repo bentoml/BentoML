@@ -39,7 +39,7 @@
     "vite-plugin-svgr": "^4.1.0"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^1.1.0",
+    "@antfu/eslint-config": "^2.1.0",
     "@types/fs-extra": "^11.0.4",
     "@types/lodash": "^4.14.202",
     "@types/react": "^18.2.15",

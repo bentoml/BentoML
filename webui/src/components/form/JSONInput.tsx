@@ -1,10 +1,10 @@
-import { useStyletron, LightTheme } from 'baseui'
 import type { editor } from 'monaco-editor'
 import { connect } from '@formily/react'
 import Editor, { loader } from '@monaco-editor/react'
 import * as monaco from 'monaco-editor'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import JsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
+import { useIsLight } from '../../hooks/useTheme'
 
 interface IJSONInputProps {
   value: string
@@ -78,11 +78,12 @@ const editorOptions: editor.IStandaloneEditorConstructionOptions = {
 }
 
 export function JSONInput({ value, onChange }: IJSONInputProps) {
-  const [, theme] = useStyletron()
+  const isLight = useIsLight()
+
   return (
     <Editor
       height="500px"
-      theme={theme.name === LightTheme.name ? 'light' : 'vs-dark'}
+      theme={isLight ? 'light' : 'vs-dark'}
       defaultLanguage="json"
       value={value}
       onChange={str => str && onChange?.(str)}

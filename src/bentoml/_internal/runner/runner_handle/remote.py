@@ -326,13 +326,29 @@ class RemoteRunnerClient(RunnerHandle):
                 data=data,
                 headers=headers,
             ) as resp:
+                # buffer = bytearray()
+                # async for b, end_of_http_chunk in resp.content.iter_chunks():
+                #     buffer.extend(b)
+
+                #     # This is to handle large payload that is split into multiple chunks
+                #     if end_of_http_chunk and len(buffer) > 0:
+                #         # TODO: To remove pickling so that we can stream data as it is
+                #         payload = pickle.loads(buffer)
+                #         yield AutoContainer.from_payload(payload)
+
+                #         # Clearing the buffer for the next data
+                #         buffer = bytearray()
+
                 buffer = bytearray()
-                async for b, end_of_http_chunk in resp.content.iter_chunks():
+                async for b in resp.content.iter_any():
                     buffer.extend(b)
 
+                    print(f"First 100 bytes of buffer: {buffer[:100]}")
+                    print(f"Last 100 bytes of buffer: {buffer[-100:]}")
                     # This is to handle large payload that is split into multiple chunks
-                    if end_of_http_chunk and len(buffer) > 0:
+                    if b"ilovebentoml!@#$%^&*()" in buffer:
                         # TODO: To remove pickling so that we can stream data as it is
+                        # We dont need to remove the stop bytes because pickle will ignore them
                         payload = pickle.loads(buffer)
                         yield AutoContainer.from_payload(payload)
 

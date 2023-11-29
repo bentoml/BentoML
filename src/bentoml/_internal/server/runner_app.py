@@ -354,7 +354,7 @@ class RunnerAppFactory(BaseAppFactory):
                     Extract Data from a AsyncGenerator[Payload, None]
                     """
                     async for p in payload:
-                        yield pickle.dumps(p)
+                        yield pickle.dumps(p) + b"ilovebentoml!@#$%^&*()"
 
                 return StreamingResponse(
                     streamer(),

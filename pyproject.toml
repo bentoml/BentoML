@@ -61,7 +61,7 @@ dependencies = [
     "rich>=11.2.0",
     "schema",
     "simple-di>=0.1.4",
-    "starlette>=0.13.5",
+    "starlette>=0.24.0",
     "uvicorn",
     "watchfiles>=0.15.0",
 ]

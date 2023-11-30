@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import pickle
+import struct
 import time
 import traceback
 import typing as t
@@ -24,6 +25,7 @@ from ..utils import Params
 from . import RunnerHandle
 
 TRITON_EXC_MSG = "tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[all]>=2.29.0\"'."
+PAYLOAD_SUFFIX_BYTE = 4
 
 if t.TYPE_CHECKING:
     import tritonclient.grpc.aio as tritongrpcclient
@@ -326,30 +328,19 @@ class RemoteRunnerClient(RunnerHandle):
                 data=data,
                 headers=headers,
             ) as resp:
-                # buffer = bytearray()
-                # async for b, end_of_http_chunk in resp.content.iter_chunks():
-                #     buffer.extend(b)
-
-                #     # This is to handle large payload that is split into multiple chunks
-                #     if end_of_http_chunk and len(buffer) > 0:
-                #         # TODO: To remove pickling so that we can stream data as it is
-                #         payload = pickle.loads(buffer)
-                #         yield AutoContainer.from_payload(payload)
-
-                #         # Clearing the buffer for the next data
-                #         buffer = bytearray()
-
                 buffer = bytearray()
                 async for b in resp.content.iter_any():
                     buffer.extend(b)
 
-                    print(f"First 100 bytes of buffer: {buffer[:100]}")
-                    print(f"Last 100 bytes of buffer: {buffer[-100:]}")
+                    # The first 4 bytes of the payload is the size of the payload
+                    size_suffix = buffer[:PAYLOAD_SUFFIX_BYTE]
+                    payload_size = struct.unpack(">I", size_suffix)[0]
+
                     # This is to handle large payload that is split into multiple chunks
-                    if b"ilovebentoml!@#$%^&*()" in buffer:
+                    if len(buffer) >= payload_size + PAYLOAD_SUFFIX_BYTE:
                         # TODO: To remove pickling so that we can stream data as it is
                         # We dont need to remove the stop bytes because pickle will ignore them
-                        payload = pickle.loads(buffer)
+                        payload = pickle.loads(buffer[PAYLOAD_SUFFIX_BYTE:])
                         yield AutoContainer.from_payload(payload)
 
                         # Clearing the buffer for the next data

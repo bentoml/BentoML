@@ -4,12 +4,14 @@ import functools
 import json
 import logging
 import pickle
+import struct
 import traceback
 import typing as t
 from typing import TYPE_CHECKING
 
 from simple_di import Provide
 from simple_di import inject
+from starlette.responses import StreamingResponse
 
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
@@ -345,16 +347,32 @@ class RunnerAppFactory(BaseAppFactory):
                         "Server": server_str,
                     },
                 )
-            from starlette.responses import StreamingResponse
 
             if runner_method.config.is_stream:
+
+                def append_payload_size(data: bytes) -> bytes:
+                    """
+                    Prepend the size of the payload as a 4-byte integer in front of the data.
+
+                    Args:
+                    data (bytes): The original data
+
+                    Returns:
+                    bytes: The data with the size prepended
+                    """
+
+                    # Prepend the size as a 4-byte big-endian integer
+                    size_prefix = struct.pack(">I", len(data))
+
+                    # Return the size-prefixed data
+                    return size_prefix + data
 
                 async def streamer() -> t.AsyncGenerator[bytes, None]:
                     """
                     Extract Data from a AsyncGenerator[Payload, None]
                     """
                     async for p in payload:
-                        yield pickle.dumps(p) + b"ilovebentoml!@#$%^&*()"
+                        yield append_payload_size(pickle.dumps(p))
 
                 return StreamingResponse(
                     streamer(),

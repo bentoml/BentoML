@@ -186,16 +186,16 @@ function Player({ files, onRemove }: IPlayerProps) {
         <StyledDivider />
         {files.map((file, index) => (
           <ListItem
-            key={index}
-            before={(
-              <Button
-                type="button"
-                size={SIZE.mini}
-                kind={KIND.tertiary}
-                shape={SHAPE.circle}
-                onClick={() => toggle(file)}
-              >
-                {
+  key={index}
+  before={(
+            <Button
+              type="button"
+              size={SIZE.mini}
+              kind={KIND.tertiary}
+              shape={SHAPE.circle}
+              onClick={() => toggle(file)}
+            >
+              {
                   index !== activeIndex
                     ? (
                       <IconPlayerPlayFilled size={14} />
@@ -208,11 +208,11 @@ function Player({ files, onRemove }: IPlayerProps) {
                         <IconPlayerPlayFilled size={14} />
                         )
                 }
-              </Button>
-            )}
-            value={file}
-            onRemove={() => remove(index)}
-          />
+            </Button>
+          )}
+  value={file}
+  onRemove={() => remove(index)}
+/>
         ))}
       </StyledAction>
     </Card>

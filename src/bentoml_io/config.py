@@ -185,7 +185,6 @@ class LoggingSchema(TypedDict, total=False):
 
 class Schema(TypedDict, total=False):
     envs: list[EnvSchema]
-    access_type: Literal["protected", "public"]  # bentocloud only
     traffic: TrafficSchema
     backlog: Annotated[int, Ge(64)]
     max_runner_connections: Posint

@@ -40,7 +40,7 @@ export default function Indicator({ endpoint, children }: IIndicatorProps) {
         alignItems: 'flex-top',
         gap: '0.5rem',
         margin: '1rem 0',
-        lineHeight: 1.1
+        lineHeight: 1.1,
       })}
     >
       <span className={css({ whiteSpace: 'nowrap' })}>

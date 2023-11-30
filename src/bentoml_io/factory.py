@@ -19,7 +19,7 @@ from bentoml._internal.utils import dict_filter_none
 from bentoml.exceptions import BentoMLException
 
 from .api import APIMethod
-from .config import Schema as Config
+from .config import ServiceConfig as Config
 from .config import validate
 
 T = t.TypeVar("T", bound=object)
@@ -47,11 +47,9 @@ class Service(t.Generic[T]):
     inner: type[T]
 
     bento: t.Optional[Bento] = attrs.field(init=False, default=None)
-    models: dict[str, Model] = attrs.field(factory=dict, init=False)
+    models: list[Model] = attrs.field(factory=list, init=False)
     dependencies: dict[str, Dependency[t.Any]] = attrs.field(factory=dict, init=False)
-    api_methods: dict[str, APIMethod[..., t.Any]] = attrs.field(
-        factory=dict, init=False
-    )
+    apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict, init=False)
     startup_hooks: list[LifecycleHook] = attrs.field(factory=list, init=False)
     shutdown_hooks: list[LifecycleHook] = attrs.field(factory=list, init=False)
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
@@ -75,9 +73,9 @@ class Service(t.Generic[T]):
             if isinstance(value, Dependency):
                 self.dependencies[field] = t.cast(Dependency[t.Any], value)
             elif isinstance(value, Model):
-                self.models[field] = value
+                self.models.append(value)
             elif isinstance(value, APIMethod):
-                self.api_methods[field] = t.cast(APIMethod[..., t.Any], value)
+                self.apis[field] = t.cast(APIMethod[..., t.Any], value)
 
     @_caller_module.default
     def _get_caller_module(self) -> str:
@@ -106,7 +104,7 @@ class Service(t.Generic[T]):
             {
                 "name": self.inner.__name__,
                 "type": "service",
-                "routes": [method.schema() for method in self.api_methods.values()],
+                "routes": [method.schema() for method in self.apis.values()],
                 "description": getattr(self.inner, "__doc__", None),
             }
         )

@@ -32,6 +32,7 @@ from .helpers import import_configuration_spec
 from .helpers import load_config_file
 
 if TYPE_CHECKING:
+    from bentoml_io.config import ServiceConfig
     from fs.base import FS
 
     from .. import external_typing as ext
@@ -518,6 +519,25 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     def new_io(self) -> bool:
         return "newio" in self.enabled_features.get()
+
+    def set_service_config(self, config: ServiceConfig) -> None:
+        """A backward-compatible merging of new service config and legacy configf"""
+        api_server_keys = (
+            "traffic",
+            "metrics",
+            "logging",
+            "ssl",
+            "http",
+            "grpc",
+            "backlog",
+            "runner_probe",
+            "max_runner_connections",
+        )
+        api_server_config = {k: v for k, v in config.items() if k in api_server_keys}
+        rest_config = {k: v for k, v in config.items() if k not in api_server_keys}
+        existing = t.cast(t.Dict[str, t.Any], self.config.get())
+        config_merger.merge(existing, {"api_server": api_server_config, **rest_config})
+        self.config.set(existing)  # type: ignore
 
 
 BentoMLContainer = _BentoMLContainerClass()

@@ -10,6 +10,7 @@ import JSONInput from './JSONInput'
 import { MultipleFiles, SingleFile } from './file'
 import { MultipleImages, SingleImage } from './image'
 import { MultipleAudios, SingleAudio } from './audio'
+import { MultipleVideos, SingleVideo } from './video'
 import { ArrayItem, ArrayItems } from './Array'
 
 function renderExample(examples?: unknown[]) {
@@ -51,6 +52,11 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
               return {
                 ...base,
                 'x-component': 'MultipleAudios',
+              }
+            case 'video':
+              return {
+                ...base,
+                'x-component': 'MultipleVideos',
               }
             default:
               return {
@@ -113,6 +119,13 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
             'type': 'file',
             'default': undefined,
             'x-component': 'SingleAudio',
+          }
+        case 'video':
+          return {
+            ...base,
+            'type': 'file',
+            'default': undefined,
+            'x-component': 'SingleVideo',
           }
         default:
           return {
@@ -203,6 +216,8 @@ export default createSchemaField({
     MultipleImages,
     SingleAudio,
     MultipleAudios,
+    SingleVideo,
+    MultipleVideos,
     ArrayItems,
     ArrayItem,
   },

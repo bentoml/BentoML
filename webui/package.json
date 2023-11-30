@@ -3,10 +3,10 @@
   "type": "module",
   "version": "0.0.0",
   "main": "lib/bentoml-ui.umd.js",
-  "module": "lib/bentoml-ui.es.js",
+  "module": "src/index.tsx",
   "exports": {
     ".": {
-      "import": "./lib/bentoml-ui.es.js",
+      "import": "./src/index.tsx",
       "require": "./lib/bentoml-ui.umd.js"
     }
   },

@@ -11,7 +11,7 @@ export default defineConfig({
       entry: 'src/index.tsx',
       name: 'BentoMLUI',
       fileName: format => `bentoml-ui.${format}.js`,
-      formats: ['umd', 'es'],
+      formats: ['umd'],
     },
   },
 })

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import logging
 import os
 import platform
@@ -112,7 +113,6 @@ MODULE_NAME = "bentoml.transformers"
 API_VERSION = "v2"
 PIPELINE_PICKLE_NAME = f"pipeline.{API_VERSION}.pkl"
 PRETRAINED_PROTOCOL_NAME = f"pretrained.{API_VERSION}.pkl"
-CONFIG_JSON_FILE_NAME = "config.json"
 
 logger = logging.getLogger(__name__)
 
@@ -528,7 +528,7 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
                 raise
 
 
-def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
+def make_default_signatures(pretrained_cls: t.Any) -> ModelSignaturesType:
     default_config = ModelSignature(batchable=False)
     infer_fn = ("__call__",)
 
@@ -540,14 +540,14 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
         )
         return {}
 
-    if transformers.processing_utils.ProcessorMixin in pretrained.__class__.__bases__:
+    if transformers.processing_utils.ProcessorMixin in pretrained_cls.__bases__:
         logger.info(
             "Given '%s' extends the 'transformers.ProcessorMixin'. Make sure to specify the signatures manually if it has additional functions.",
-            pretrained.__class__.__name__,
+            pretrained_cls.__name__,
         )
         return {k: default_config for k in ("__call__", "batch_decode", "decode")}
 
-    if isinstance(pretrained, transformers.PreTrainedTokenizerBase):
+    if issubclass(pretrained_cls, transformers.PreTrainedTokenizerBase):
         infer_fn = (
             "__call__",
             "tokenize",
@@ -566,7 +566,7 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
             "clean_up_tokenization",
             "prepare_seq2seq_batch",
         )
-    elif isinstance(pretrained, transformers.PreTrainedModel):
+    elif issubclass(pretrained_cls, transformers.PreTrainedModel):
         infer_fn = (
             "__call__",
             "forward",
@@ -579,7 +579,7 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
             "group_beam_search",
             "constrained_beam_search",
         )
-    elif isinstance(pretrained, transformers.TFPreTrainedModel):
+    elif issubclass(pretrained_cls, transformers.TFPreTrainedModel):
         infer_fn = (
             "__call__",
             "predict",
@@ -591,16 +591,18 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
             "beam_search",
             "contrastive_search",
         )
-    elif isinstance(pretrained, transformers.FlaxPreTrainedModel):
+    elif issubclass(pretrained_cls, transformers.FlaxPreTrainedModel):
         infer_fn = ("__call__", "generate")
-    elif isinstance(pretrained, transformers.image_processing_utils.BaseImageProcessor):
+    elif issubclass(
+        pretrained_cls, transformers.image_processing_utils.BaseImageProcessor
+    ):
         infer_fn = ("__call__", "preprocess")
-    elif isinstance(pretrained, transformers.SequenceFeatureExtractor):
+    elif issubclass(pretrained_cls, transformers.SequenceFeatureExtractor):
         infer_fn = ("pad",)
-    elif not isinstance(pretrained, transformers.Pipeline):
+    elif not issubclass(pretrained_cls, transformers.Pipeline):
         logger.warning(
             "Unable to infer default signatures for '%s'. Make sure to specify it manually.",
-            pretrained,
+            pretrained_cls,
         )
         return {}
 
@@ -611,11 +613,11 @@ def import_model(
     name: Tag | str,
     model_name_or_path: str | os.PathLike[str],
     *,
-    pretrained_model_class: t.Type[BaseAutoModelClass] | None = None,
     proxies: dict[str, str] | None = None,
     revision: str = "main",
     force_download: bool = False,
     resume_download: bool = False,
+    trust_remote_code: bool = False,
     clone_repository: bool = False,
     sync_with_hub_version: bool = False,
     signatures: ModelSignaturesType | None = None,
@@ -639,8 +641,6 @@ def import_model(
               `CompVis/ldm-text2im-large-256`.
             - A path to a *directory* containing weights saved using
               [`~transformers.AutoModel.save_pretrained`], e.g., `./my_pretrained_directory/`.
-        pretrained_model_class:
-            The pretrained class/architecture to load the model weights. This determines what LM heads are available to the model.
         proxies (`Dict[str, str]`, *optional*):
             A dictionary of proxy servers to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128',
             'http://hostname': 'foo.bar:4012'}`. The proxies are used on each request.
@@ -652,6 +652,10 @@ def import_model(
             Force to (re-)download the model weights and configuration files and override the cached versions if they exist.
         resume_download (`boolean`, *optional*, defaults to False):
             Do not delete incompletely received file. Attempt to resume the download if such a file exists.
+        trust_remote_code (`boolean`, *optional*, defaults to False):
+            Whether or not to allow for custom models defined on the Hub in their own modeling files. This option
+            should only be set to `True` for repositories you trust and in which you have read the code, as it will
+            execute code present on the Hub on your local machine.
         clone_repository: (`boolean`, *optional*, defaults to False):
             Download all files from the huggingface repository of the given model
         sync_with_hub_version (`bool`, default to False):
@@ -742,18 +746,38 @@ def import_model(
         framework_name="transformers", framework_versions=framework_versions
     )
 
+    if trust_remote_code:
+        logger.warning(
+            "trust_remote_code is set to True. Bentoml will load the specified model into memory by default. To avoid loading the model to memory, try setting the keyword argument clone_repository=True."
+        )
+
     config = transformers.AutoConfig.from_pretrained(
         model_name_or_path,
         proxies=proxies,
         revision=revision,
         force_download=force_download,
         resume_download=resume_download,
+        trust_remote_code=trust_remote_code,
         **extra_hf_hub_kwargs,
     )
+
+    is_auto_class = False
+    pretrained_model_class = None
+    if getattr(config, "architectures", None):
+        try:
+            pretrained_model_class = getattr(transformers, config.architectures[0])
+        except AttributeError:
+            pass
+    if getattr(config, "auto_map", None):
+        for auto_class in config.auto_map:
+            if "AutoModel" in auto_class:
+                pretrained_model_class = getattr(transformers, auto_class)
+                is_auto_class = True
+                break
+
     if pretrained_model_class is None:
-        pretrained_model_class = getattr(transformers, config.architectures[0])
-        logger.info(
-            f"pretrained_model_class is not provided, bentoml will create a model with the following pretrained model class {config.architectures[0]}. Available pretrained classes for this model: {config.architectures}."
+        raise BentoMLException(
+            "BentoML cannot automatically determine the pretrained model class/architecture for the given model."
         )
 
     model = None
@@ -768,13 +792,19 @@ def import_model(
             if clone_repository:
                 from huggingface_hub import snapshot_download
 
+                # filter out kwargs as snapshot_download my not accept some kwargs
+                params = inspect.signature(snapshot_download).parameters.values()
+                param_names = {param.name for param in params}
+                input_params = dict(
+                    filter(lambda x: x[0] in param_names, extra_hf_hub_kwargs.items())
+                )
                 src_dir = snapshot_download(
                     model_name_or_path,
                     proxies=proxies,
                     revision=revision,
                     force_download=force_download,
                     resume_download=resume_download,
-                    **extra_hf_hub_kwargs,
+                    **input_params,
                 )
             else:
                 with init_empty_weights():
@@ -784,11 +814,12 @@ def import_model(
                         revision=revision,
                         force_download=force_download,
                         resume_download=resume_download,
+                        trust_remote_code=trust_remote_code,
                         **extra_hf_hub_kwargs,
                     )
                     path_to_config = transformers.utils.cached_file(
                         model_name_or_path,
-                        CONFIG_JSON_FILE_NAME,
+                        transformers.CONFIG_NAME,
                         proxies=proxies,
                         revision=revision,
                         force_download=force_download,
@@ -812,7 +843,16 @@ def import_model(
 
     if model is None:
         with init_empty_weights():
-            model = pretrained_model_class(config=config)
+            if is_auto_class:
+                # NOTE: Under `init_empty_weights`, `.from_config` won't load the model weights. Whereas for `.from_pretrained`, transformers needs to find out what layers to load with the architecture, thereby loading the models into memory, then unload afterwards.
+                # See https://github.com/huggingface/accelerate/issues/2163 for more information.
+                model = pretrained_model_class.from_config(
+                    trust_remote_code=trust_remote_code,
+                    config=config,
+                    **extra_hf_hub_kwargs,
+                )
+            else:
+                model = pretrained_model_class(config=config)
 
     pretrained = t.cast("PreTrainedProtocol", model)
     assert all(
@@ -822,7 +862,7 @@ def import_model(
         metadata = {}
 
     if signatures is None:
-        signatures = make_default_signatures(pretrained)
+        signatures = make_default_signatures(pretrained.__class__)
         # NOTE: ``make_default_signatures`` can return an empty dict, hence we will only
         # log when signatures are available.
         if signatures:
@@ -995,7 +1035,7 @@ def save_model(
     )
 
     if signatures is None:
-        signatures = make_default_signatures(pretrained_or_pipeline)
+        signatures = make_default_signatures(pretrained_or_pipeline.__class__)
         # NOTE: ``make_default_signatures`` can return an empty dict, hence we will only
         # log when signatures are available.
         if signatures:

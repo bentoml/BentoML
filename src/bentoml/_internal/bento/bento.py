@@ -45,6 +45,7 @@ from .build_config import DockerOptions
 from .build_config import PythonOptions
 
 if TYPE_CHECKING:
+    from bentoml_io.api import APIMethod
     from bentoml_io.server import Service as NewService
     from fs.base import FS
 
@@ -84,7 +85,7 @@ def create_inference_api_table(svc: Service) -> str:
 
 
 def get_default_svc_readme(
-    svc: Service | NewService, svc_version: str | None = None
+    svc: Service | NewService[t.Any], svc_version: str | None = None
 ) -> str:
     from ..service import Service
 
@@ -220,15 +221,16 @@ class Bento(StoreItem):
                 models.add(model)
                 if model_spec.alias:
                     resolved_aliases[model.tag] = model_spec.alias
-        elif is_legacy:
+        else:
             # XXX: legacy way to get models from service
             # Add all models required by the service
             for model in svc.models:
                 models.add(model)
             # Add all models required by service runners
-            for runner in svc.runners:
-                for model in runner.models:
-                    models.add(model)
+            if is_legacy:
+                for runner in svc.runners:
+                    for model in runner.models:
+                        models.add(model)
 
         # create ignore specs
         specs = BentoPathSpec(build_config.include, build_config.exclude)
@@ -282,7 +284,7 @@ class Bento(StoreItem):
                 yaml.dump(svc.openapi_spec, f)
         else:
             with bento_fs.open(fs.path.combine("apis", "schema.json"), "w") as f:
-                json.dump(svc.servable_cls.schema(), f, indent=2)
+                json.dump(svc.schema(), f, indent=2)
 
         res = Bento(
             tag,
@@ -299,9 +301,15 @@ class Bento(StoreItem):
                 ],
                 runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners]
                 if is_legacy
-                else [BentoRunnerInfo.from_dependency(d) for d in svc.dependencies],
+                else [],
                 apis=[BentoApiInfo.from_inference_api(api) for api in svc.apis.values()]
                 if is_legacy
+                else [BentoApiInfo.from_api_method(api) for api in svc.apis.values()],
+                services=[
+                    BentoDependencyInfo.from_dependency(d.on, seen={svc.name})
+                    for d in svc.dependencies.values()
+                ]
+                if not is_legacy
                 else [],
                 docker=build_config.docker,
                 python=build_config.python,
@@ -469,16 +477,13 @@ class BentoRunnerInfo:
         )
 
     @classmethod
-    def from_dependency(cls, d: NewService) -> BentoRunnerInfo:
-        config = BentoMLContainer.runners_config.get()
-        if d.name in config:
-            config = config[d.name]
+    def from_dependency(cls, d: NewService[t.Any]) -> BentoRunnerInfo:
         return cls(
             name=d.name,
-            runnable_type=d.servable_cls.name,
+            runnable_type=d.name,
             embedded=False,
-            models=[],
-            resource_config=config["resources"],
+            models=[str(model.tag) for model in d.models],
+            resource_config=d.config.get("resources"),
         )
 
 
@@ -494,6 +499,14 @@ class BentoApiInfo:
             name=api.name,
             input_type=api.input.__class__.__name__,
             output_type=api.output.__class__.__name__,
+        )
+
+    @classmethod
+    def from_api_method(cls, api: APIMethod[..., t.Any]) -> BentoApiInfo:
+        return cls(
+            name=api.name,
+            input_type=api.input_spec.__name__,
+            output_type=api.output_spec.__name__,
         )
 
 
@@ -513,6 +526,32 @@ class BentoModelInfo:
             module=bento_model.info.module,
             creation_time=bento_model.info.creation_time,
             alias=alias,
+        )
+
+
+@attr.frozen
+class BentoDependencyInfo:
+    name: str
+    service: str
+    models: t.List[BentoModelInfo] = attr.field(factory=list)
+    dependencies: t.List[BentoDependencyInfo] = attr.field(factory=list)
+
+    @classmethod
+    def from_dependency(
+        cls, d: NewService[t.Any], seen: set[str] | None = None
+    ) -> BentoDependencyInfo:
+        if seen is None:
+            seen = set()
+        if (name := d.name) in seen:
+            return cls(name=name, service=d.import_string)
+        return cls(
+            name=name,
+            service=d.import_string,
+            models=[BentoModelInfo.from_bento_model(m) for m in d.models],
+            dependencies=[
+                cls.from_dependency(dep.on, seen=seen | {name})
+                for dep in d.dependencies.values()
+            ],
         )
 
 
@@ -551,6 +590,8 @@ class BentoInfo:
     )
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
+    # for BentoML 1.2+ SDK
+    services: t.List[BentoDependencyInfo] = attr.field(factory=list)
     apis: t.List[BentoApiInfo] = attr.field(factory=list)
     docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
     python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())

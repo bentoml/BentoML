@@ -1,25 +1,15 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import { JSONSchemaProvider } from './components/JSONSchema.tsx'
-import type { IAPISchema } from './types'
 import './index.css'
+import { mount } from './index.tsx'
 
-function mount(schema: IAPISchema) {
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <JSONSchemaProvider value={schema}>
-        <App />
-      </JSONSchemaProvider>
-    </React.StrictMode>,
-  )
-}
+const root = document.getElementById('root')!
 
 fetch('/schema.json')
   .then(res => res.json())
-  .then(mount)
+  .then(schema => mount(schema, root))
   .catch((err) => {
-    ReactDOM.createRoot(document.getElementById('root')!).render(
+    ReactDOM.createRoot(root).render(
       <React.StrictMode>
         <div>
           Error:

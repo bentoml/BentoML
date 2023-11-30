@@ -6,7 +6,7 @@ export interface TBase {
   examples?: unknown[]
 }
 
-export type TString = TBase & { type: 'string'; is_stream?: boolean; enum?: string[] }
+export type TString = TBase & { type: 'string', is_stream?: boolean, enum?: string[] }
 export type TBoolean = TBase & { type: 'boolean' }
 
 interface INumberRange {
@@ -16,8 +16,8 @@ interface INumberRange {
   exclusiveMaximum?: number
 }
 
-export type TNumber = TBase & INumberRange & { type: 'number'; enum?: number[] }
-export type TInteger = TBase & INumberRange & { type: 'integer'; enum?: number[] }
+export type TNumber = TBase & INumberRange & { type: 'number', enum?: number[] }
+export type TInteger = TBase & INumberRange & { type: 'integer', enum?: number[] }
 export interface TArray<T extends DataType = DataType> extends TBase {
   type: 'array'
   items: T

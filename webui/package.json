@@ -2,14 +2,14 @@
   "name": "bentoml-webui",
   "type": "module",
   "version": "0.0.0",
-  "main": "lib/bentoml-ui.umd.js",
-  "module": "src/index.tsx",
   "exports": {
     ".": {
       "import": "./src/index.tsx",
       "require": "./lib/bentoml-ui.umd.js"
     }
   },
+  "main": "lib/bentoml-ui.umd.js",
+  "module": "src/index.tsx",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build --config vite.lib.config.ts",

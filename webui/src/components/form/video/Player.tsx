@@ -33,15 +33,16 @@ function Player({ files, onRemove }: IPlayerProps) {
         videoRef.current?.play()
         videoRef.current?.removeEventListener('loadedmetadata', cb)
       }
-  
+
       setActiveFile(file)
       videoRef.current?.addEventListener('loadedmetadata', cb)
-    } else if (playerState) {
+    }
+    else if (playerState) {
       videoRef.current?.pause()
-    } else {
+    }
+    else {
       videoRef.current?.play()
     }
-      
   }, [videoRef, playerState, activeFile])
 
   useEffect(() => {

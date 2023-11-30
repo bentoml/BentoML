@@ -1,5 +1,6 @@
 import type { Key } from 'react'
 import { useMemo, useState } from 'react'
+import { useStyletron } from 'baseui'
 import { Select } from 'baseui/select'
 import { FormControl } from 'baseui/form-control'
 import { createForm } from '@formily/core'
@@ -14,6 +15,7 @@ import Submit from './form/Submit'
 import CURL from './code/CURL'
 
 export default function InferenceForm() {
+  const [css, theme] = useStyletron()
   const data = useSchema()
   const { currentRoute, setCurrentPath } = useCurrentPath()
   const [activeTab, setActiveTab] = useState<Key>('0')
@@ -66,6 +68,28 @@ export default function InferenceForm() {
             <Tabs
               activeKey={activeTab}
               onChange={({ activeKey }) => setActiveTab(activeKey)}
+              overrides={{
+                TabBar: {
+                  props: {
+                    className: css({
+                      backgroundColor: 'transparent!important',
+                      paddingLeft: '0!important',
+                      paddingRight: '0!important',
+                      borderBottomWidth: '1px',
+                      borderBottomStyle: 'solid',
+                      borderBottomColor: `${theme.colors.borderOpaque}`,
+                    }),
+                  },
+                },
+                TabContent: {
+                  props: {
+                    className: css({
+                      paddingLeft: '0!important',
+                      paddingRight: '0!important',
+                    }),
+                  },
+                },
+              }}
             >
               <Tab title="Form">
                 <FormField schema={formSchema} />

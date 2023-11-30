@@ -332,19 +332,29 @@ class RemoteRunnerClient(RunnerHandle):
                 async for b in resp.content.iter_any():
                     buffer.extend(b)
 
-                    # The first 4 bytes of the payload is the size of the payload
-                    size_suffix = buffer[:PAYLOAD_SUFFIX_BYTE]
-                    payload_size = struct.unpack(">I", size_suffix)[0]
+                    while True:
+                        # Check if the size of the payload is in the buffer
+                        if len(buffer) < PAYLOAD_SUFFIX_BYTE:
+                            break
 
-                    # This is to handle large payload that is split into multiple chunks
-                    if len(buffer) >= payload_size + PAYLOAD_SUFFIX_BYTE:
-                        # TODO: To remove pickling so that we can stream data as it is
-                        # We dont need to remove the stop bytes because pickle will ignore them
-                        payload = pickle.loads(buffer[PAYLOAD_SUFFIX_BYTE:])
+                        # Unpack the size of the payload
+                        size_suffix = buffer[:PAYLOAD_SUFFIX_BYTE]
+                        payload_size = struct.unpack(">I", size_suffix)[0]
+
+                        # Check if the complete payload is in the buffer
+                        if len(buffer) < payload_size + PAYLOAD_SUFFIX_BYTE:
+                            break
+
+                        # Deserialize payload (assuming payload doesn't include the size prefix)
+                        payload = pickle.loads(
+                            buffer[
+                                PAYLOAD_SUFFIX_BYTE : payload_size + PAYLOAD_SUFFIX_BYTE
+                            ]
+                        )
                         yield AutoContainer.from_payload(payload)
 
-                        # Clearing the buffer for the next data
-                        buffer = bytearray()
+                        # Clear processed data from buffer
+                        buffer = buffer[payload_size + PAYLOAD_SUFFIX_BYTE :]
 
         except aiohttp.ClientOSError as e:
             raise RemoteException("Failed to connect to runner server.") from e

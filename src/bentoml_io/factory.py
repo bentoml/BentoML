@@ -168,6 +168,9 @@ class Service(t.Generic[T]):
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 
+    def __call__(self) -> T:
+        return self.inner()
+
     @property
     def worker_env_map(self) -> list[dict[str, str]]:
         # TODO: to be implemented

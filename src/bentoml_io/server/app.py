@@ -5,9 +5,14 @@ import inspect
 import logging
 import sys
 import typing as t
+from pathlib import Path
 
+from simple_di import Provide
+from simple_di import inject
 from starlette.middleware import Middleware
+from starlette.staticfiles import StaticFiles
 
+from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
@@ -28,12 +33,20 @@ R = t.TypeVar("R")
 
 
 class ServiceAppFactory(BaseAppFactory):
-    def __init__(self, service: Service[t.Any]) -> None:
+    @inject
+    def __init__(
+        self,
+        service: Service[t.Any],
+        enable_metrics: bool = Provide[
+            BentoMLContainer.api_server_config.metrics.enabled
+        ],
+        traffic: dict[str, t.Any] = Provide[BentoMLContainer.api_server_config.traffic],
+    ) -> None:
         from bentoml._internal.runner.container import AutoContainer
 
         self.service = service
-        self.enable_metrics = service.config.get("metrics", {}).get("enabled", True)
-        timeout = (traffic := service.config.get("traffic", {})).get("timeout")
+        self.enable_metrics = enable_metrics
+        timeout = traffic.get("timeout")
         max_concurrency = traffic.get("max_concurrency")
         super().__init__(timeout=timeout, max_concurrency=max_concurrency)
 
@@ -43,7 +56,7 @@ class ServiceAppFactory(BaseAppFactory):
         def fallback() -> t.NoReturn:
             raise ServiceUnavailable("process is overloaded")
 
-        for name, method in service.api_methods.items():
+        for name, method in service.apis.items():
             if not method.batchable:
                 continue
             self.dispatchers[name] = CorkDispatcher(
@@ -55,12 +68,21 @@ class ServiceAppFactory(BaseAppFactory):
                 ),
             )
 
+    async def index_page(self, request: Request) -> Response:
+        from starlette.responses import FileResponse
+
+        return FileResponse(Path(__file__).parent / "index.html")
+
     def __call__(self, is_main: bool = False) -> Starlette:
         app = super().__call__()
         app.add_route("/schema.json", self.schema_view, name="schema")
         if is_main:
-            # TODO: enable static content
-            pass
+            app.mount(
+                "/assets",
+                StaticFiles(directory=Path(__file__).parent / "assets"),
+                name="assets",
+            )
+            app.add_route("/", self.index_page, name="index")
         for mount_app, path, name in self.service.mount_apps:
             app.mount(app=mount_app, path=path, name=name)
         return app
@@ -152,7 +174,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         routes = super().routes
 
-        for name, method in self.service.api_methods.items():
+        for name, method in self.service.apis.items():
             api_endpoint = functools.partial(self.api_endpoint, name)
             route_path = method.route
             if not route_path.startswith("/"):
@@ -161,7 +183,7 @@ class ServiceAppFactory(BaseAppFactory):
         return routes
 
     async def batch_infer(self, name: str, input_kwargs: dict[str, t.Any]) -> t.Any:
-        method = self.service.api_methods[name]
+        method = self.service.apis[name]
         func = getattr(self._service_instance, name)
 
         async def inner_infer(
@@ -204,7 +226,7 @@ class ServiceAppFactory(BaseAppFactory):
         media_type = request.headers.get("Content-Type", "application/json")
         media_type = media_type.split(";")[0].strip()
 
-        method = self.service.api_methods[name]
+        method = self.service.apis[name]
         func = getattr(self._service_instance, name)
 
         with self.service.context.in_request(request) as ctx:

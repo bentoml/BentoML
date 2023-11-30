@@ -226,6 +226,9 @@ def add_serve_command(cli: click.Group) -> None:
         - when specified, respect 'include' and 'exclude' under 'bentofile.yaml' as well as the '.bentoignore' file in '--working-dir', for code and file changes
         - all model store changes will also trigger a restart (new model saved or existing model removed)
         """
+        from bentoml import Service
+        from bentoml._internal.service.loader import load
+
         configure_server_logging()
         if working_dir is None:
             if os.path.isdir(os.path.expanduser(bento)):
@@ -234,45 +237,67 @@ def add_serve_command(cli: click.Group) -> None:
                 working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
+        svc = load(bento_identifier=bento, working_dir=working_dir)
+        if isinstance(svc, Service):
+            from bentoml.serve import serve_http_production
 
-        from bentoml.serve import serve_http_production
-
-        if development:
-            serve_http_production(
-                bento,
-                working_dir=working_dir,
-                port=port,
-                host=DEFAULT_DEV_SERVER_HOST if not host else host,
-                backlog=backlog,
-                api_workers=1,
-                timeout=timeout,
-                ssl_keyfile=ssl_keyfile,
-                ssl_certfile=ssl_certfile,
-                ssl_keyfile_password=ssl_keyfile_password,
-                ssl_version=ssl_version,
-                ssl_cert_reqs=ssl_cert_reqs,
-                ssl_ca_certs=ssl_ca_certs,
-                ssl_ciphers=ssl_ciphers,
-                reload=reload,
-                development_mode=True,
-            )
+            if development:
+                serve_http_production(
+                    bento,
+                    working_dir=working_dir,
+                    port=port,
+                    host=DEFAULT_DEV_SERVER_HOST if not host else host,
+                    backlog=backlog,
+                    api_workers=1,
+                    timeout=timeout,
+                    ssl_keyfile=ssl_keyfile,
+                    ssl_certfile=ssl_certfile,
+                    ssl_keyfile_password=ssl_keyfile_password,
+                    ssl_version=ssl_version,
+                    ssl_cert_reqs=ssl_cert_reqs,
+                    ssl_ca_certs=ssl_ca_certs,
+                    ssl_ciphers=ssl_ciphers,
+                    reload=reload,
+                    development_mode=True,
+                )
+            else:
+                serve_http_production(
+                    bento,
+                    working_dir=working_dir,
+                    port=port,
+                    host=host,
+                    api_workers=api_workers,
+                    timeout=timeout,
+                    ssl_keyfile=ssl_keyfile,
+                    ssl_certfile=ssl_certfile,
+                    ssl_keyfile_password=ssl_keyfile_password,
+                    ssl_version=ssl_version,
+                    ssl_cert_reqs=ssl_cert_reqs,
+                    ssl_ca_certs=ssl_ca_certs,
+                    ssl_ciphers=ssl_ciphers,
+                    reload=reload,
+                    development_mode=False,
+                )
         else:
+            from bentoml_io.server.serving import serve_http_production
+
             serve_http_production(
-                bento,
+                svc,
                 working_dir=working_dir,
-                port=port,
                 host=host,
+                port=port,
+                backlog=backlog,
                 api_workers=api_workers,
                 timeout=timeout,
-                ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
+                ssl_keyfile=ssl_keyfile,
                 ssl_keyfile_password=ssl_keyfile_password,
                 ssl_version=ssl_version,
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
+                development_mode=development,
                 reload=reload,
-                development_mode=False,
             )
 
     @cli.command(name="serve-grpc")

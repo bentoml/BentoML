@@ -1,6 +1,11 @@
 import Highlight, { defaultProps } from 'prism-react-renderer'
 import type { Language } from 'prism-react-renderer'
 import { useStyletron } from 'baseui'
+import { Button, KIND, SHAPE, SIZE } from 'baseui/button'
+import { SnackbarProvider, useSnackbar } from 'baseui/snackbar'
+import { IconCopy } from '@tabler/icons-react'
+import Check from 'baseui/icon/check'
+import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useIsLight } from '../../hooks/useTheme'
 
 interface ICodeProps {
@@ -171,10 +176,12 @@ const darkTheme = {
 function Code({ children, language }: ICodeProps) {
   const [css, theme] = useStyletron()
   const isLight = useIsLight()
+  const { enqueue } = useSnackbar()
 
   return (
     <div
       className={css({
+        position: 'relative',
         overflow: 'auto',
         padding: theme.sizing.scale400,
         borderRadius: '8px',
@@ -184,6 +191,28 @@ function Code({ children, language }: ICodeProps) {
         marginTop: theme.sizing.scale400,
       })}
     >
+      <CopyToClipboard
+        text={children}
+        onCopy={() => enqueue({
+          message: 'Copied to clipboard',
+          startEnhancer: ({ size }) => <Check size={size} />,
+        }, 1000)}
+      >
+        <Button
+          type="button"
+          kind={KIND.tertiary}
+          size={SIZE.compact}
+          shape={SHAPE.circle}
+          className={css({
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+          })}
+        >
+          <IconCopy size={18} />
+        </Button>
+      </CopyToClipboard>
+
       <Highlight
         {...defaultProps}
         code={children.replace(/[\r\n]+$/, '')}
@@ -203,7 +232,16 @@ function Code({ children, language }: ICodeProps) {
         )}
       </Highlight>
     </div>
+
   )
 }
 
-export default Code
+function CopyCode(props: ICodeProps) {
+  return (
+    <SnackbarProvider>
+      <Code {...props} />
+    </SnackbarProvider>
+  )
+}
+
+export default CopyCode

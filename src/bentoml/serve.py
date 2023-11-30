@@ -537,12 +537,16 @@ def serve_grpc_production(
     prometheus_dir = ensure_prometheus_dir()
 
     from . import load
+    from ._internal.service import Service
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir)
+
+    if not isinstance(svc, Service):
+        raise BentoMLException(f"{type(svc)} type doesn't support gRPC serving")
 
     from circus.sockets import CircusSocket  # type: ignore
 

@@ -2,16 +2,25 @@
   "name": "bentoml-webui",
   "type": "module",
   "version": "0.0.0",
-  "private": true,
+  "main": "lib/bentoml-ui.umd.js",
+  "module": "lib/bentoml-ui.es.js",
+  "exports": {
+    ".": {
+      "import": "./lib/bentoml-ui.es.js",
+      "require": "./lib/bentoml-ui.umd.js"
+    }
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build --config vite.lib.config.ts",
+    "build:copy": "pnpm run build && node scripts/copy-lib.cjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview"
   },
   "dependencies": {
     "@formily/core": "^2.3.0",
+    "@formily/json-schema": "^2.3.0",
     "@formily/react": "^2.3.0",
     "@monaco-editor/react": "^4.6.0",
     "@tabler/icons-react": "^2.40.0",
@@ -30,10 +39,12 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^1.1.0",
+    "@types/fs-extra": "^11.0.4",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",
     "eslint": "^8.53.0",
+    "fs-extra": "^11.2.0",
     "typescript": "^5.0.2",
     "vite": "^4.4.5"
   }

@@ -92,7 +92,7 @@ class HTTPClient(AbstractClient):
                     stream_output=route["output"].get("is_stream", False),
                 )
         else:
-            for name, method in service.api_methods.items():
+            for name, method in service.apis.items():
                 routes[name] = ClientEndpoint(
                     name=name,
                     route=method.route,

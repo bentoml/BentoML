@@ -183,7 +183,7 @@ class LoggingSchema(TypedDict, total=False):
     access: AccessLoggingSchema
 
 
-class Schema(TypedDict, total=False):
+class ServiceConfig(TypedDict, total=False):
     envs: list[EnvSchema]
     traffic: TrafficSchema
     backlog: Annotated[int, Ge(64)]
@@ -200,8 +200,8 @@ class Schema(TypedDict, total=False):
     monitoring: MonitoringSchema
 
 
-schema_type = TypeAdapter(Schema)
+schema_type = TypeAdapter(ServiceConfig)
 
 
-def validate(data: Schema) -> Schema:
+def validate(data: ServiceConfig) -> ServiceConfig:
     return schema_type.validate_python(data)

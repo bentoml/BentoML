@@ -16,7 +16,7 @@ T = t.TypeVar("T")
 _dependent_cache: dict[str, t.Any] = {}
 
 
-def _get_cache_key(service: Service[t.Any]) -> str:
+def get_cache_key(service: Service[t.Any]) -> str:
     return service.name
 
 
@@ -27,13 +27,10 @@ def _get_dependency(
 ) -> T:
     from .client.proxy import RemoteProxy
 
-    key = _get_cache_key(service)
+    key = get_cache_key(service)
     if key not in _dependent_cache:
-        # TODO: return the remote client or the instance
-        if service.name in runner_mapping:
-            inst = RemoteProxy(
-                runner_mapping[service.name], service=service
-            ).as_service()
+        if key in runner_mapping:
+            inst = RemoteProxy(runner_mapping[key], service=service).as_service()
         else:
             inst = service.inner()
         _dependent_cache[key] = inst

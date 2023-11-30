@@ -150,6 +150,7 @@ def main(
             t.cast(t.Dict[str, str], json.loads(runner_map))
         )
     service = t.cast(Service[t.Any], load(bento_identifier, working_dir=working_dir))
+    BentoMLContainer.set_service_config(service.config)
 
     component_context.component_type = "api_server"
     if worker_id is not None:

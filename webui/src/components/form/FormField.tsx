@@ -4,11 +4,13 @@ import type { DataType, TObject } from '../../types'
 import FormControl from './FormControl'
 import Checkbox from './Checkbox'
 import Input from './Input'
+import Select from './Select'
 import InputNumber from './InputNumber'
 import JSONInput from './JSONInput'
 import { MultipleFiles, SingleFile } from './file'
 import { MultipleImages, SingleImage } from './image'
 import { MultipleAudios, SingleAudio } from './audio'
+import { MultipleVideos, SingleVideo } from './video'
 import { ArrayItem, ArrayItems } from './Array'
 
 function renderExample(examples?: unknown[]) {
@@ -51,6 +53,11 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
                 ...base,
                 'x-component': 'MultipleAudios',
               }
+            case 'video':
+              return {
+                ...base,
+                'x-component': 'MultipleVideos',
+              }
             default:
               return {
                 ...base,
@@ -70,25 +77,6 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
             },
           }
       }
-    case 'integer':
-    case 'number': {
-      const isInteger = propertie.type === 'integer'
-
-      return {
-        ...base,
-        'default': base.default ?? 0,
-        'x-component': 'InputNumber',
-        'x-component-props': {
-          isInteger,
-          step: isInteger ? 1 : 0.01,
-          maximum: propertie.maximum,
-          minimum: propertie.minimum,
-          exclusiveMaximum: propertie.exclusiveMaximum,
-          exclusiveMinimum: propertie.exclusiveMinimum,
-          placeholder,
-        },
-      }
-    }
     case 'boolean':
       return {
         ...base,
@@ -132,6 +120,13 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
             'default': undefined,
             'x-component': 'SingleAudio',
           }
+        case 'video':
+          return {
+            ...base,
+            'type': 'file',
+            'default': undefined,
+            'x-component': 'SingleVideo',
+          }
         default:
           return {
             ...base,
@@ -148,15 +143,54 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
         'default': undefined,
         'x-component': 'SingleFile',
       }
+    case 'integer':
+    case 'number':
     case 'string':
     default:
-      return {
-        ...base,
-        'default': base.default ?? '',
-        'x-component': 'Input',
-        'x-component-props': {
-          placeholder,
-        },
+      if (propertie.enum) {
+        return {
+          ...base,
+          'default': base.default,
+          'x-component': 'Select',
+          'x-component-props': {
+            options: propertie.enum.map(item => ({ label: item, id: item })),
+            clearable: !addition.required,
+            placeholder,
+          },
+        }
+      }
+      else {
+        switch (propertie.type) {
+          case 'integer':
+          case 'number': {
+            const isInteger = propertie.type === 'integer'
+
+            return {
+              ...base,
+              'default': base.default ?? 0,
+              'x-component': 'InputNumber',
+              'x-component-props': {
+                isInteger,
+                step: isInteger ? 1 : 0.01,
+                maximum: propertie.maximum,
+                minimum: propertie.minimum,
+                exclusiveMaximum: propertie.exclusiveMaximum,
+                exclusiveMinimum: propertie.exclusiveMinimum,
+                placeholder,
+              },
+            }
+          }
+          case 'string':
+          default:
+            return {
+              ...base,
+              'default': base.default ?? '',
+              'x-component': 'Input',
+              'x-component-props': {
+                placeholder,
+              },
+            }
+        }
       }
   }
 }
@@ -173,6 +207,7 @@ export default createSchemaField({
     FormControl,
     Checkbox,
     Input,
+    Select,
     InputNumber,
     JSONInput,
     SingleFile,
@@ -181,6 +216,8 @@ export default createSchemaField({
     MultipleImages,
     SingleAudio,
     MultipleAudios,
+    SingleVideo,
+    MultipleVideos,
     ArrayItems,
     ArrayItem,
   },

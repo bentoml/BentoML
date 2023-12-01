@@ -102,7 +102,7 @@ export function InputNumber({
               },
             },
           }}
-          onChange={({ value: [value] }) => value && onChange?.(value)}
+          onChange={({ value: [value] }) => value !== undefined && onChange?.(value)}
         />
       )}
     </div>

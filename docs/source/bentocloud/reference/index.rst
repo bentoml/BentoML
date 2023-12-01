@@ -15,9 +15,16 @@ This section contains detailed explanations of BentoCloud UI elements.
 
         Understand the properties available for creating and updating Bento Deployments.
 
+    .. grid-item-card:: Deployment details
+        :link: deployment-details
+        :link-type: doc
+
+        Understand the properties on the Deployment details page.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
     :hidden:
 
     deployment-creation-and-update-info
+    deployment-details

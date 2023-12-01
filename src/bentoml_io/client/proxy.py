@@ -50,12 +50,12 @@ class RemoteProxy(HTTPClient, t.Generic[T]):
             logger.warn("Timed out waiting for runner to be ready")
             return False
 
-    def call(self, name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
+    def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         try:
-            endpoint = self.endpoints[name]
+            endpoint = self.endpoints[__name]
         except KeyError:
-            raise BentoMLException(f"Endpoint {name} not found") from None
-        original_func = getattr(self._inner, name)
+            raise BentoMLException(f"Endpoint {__name} not found") from None
+        original_func = getattr(self._inner, __name)
         while isinstance(original_func, functools.partial):
             original_func = original_func.func
         is_async_func = (
@@ -70,9 +70,9 @@ class RemoteProxy(HTTPClient, t.Generic[T]):
             if endpoint.stream_output:
                 return self._get_async_stream(endpoint, *args, **kwargs)
             else:
-                return self._call(name, args, kwargs)
+                return self._call(__name, args, kwargs)
         else:
-            return self._sync_call(name, *args, **kwargs)
+            return self._sync_call(__name, *args, **kwargs)
 
     def _sync_call(self, name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
         if self._loop is None:

@@ -354,12 +354,12 @@ class SyncHTTPClient(HTTPClient):
             assert resp == [0]
     """
 
-    def call(self, name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
+    def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         from bentoml._internal.utils import async_gen_to_sync
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        res = loop.run_until_complete(self._call(name, args, kwargs))
+        res = loop.run_until_complete(self._call(__name, args, kwargs))
         if inspect.isasyncgen(res):
             return async_gen_to_sync(res, loop=loop)
         return res
@@ -415,15 +415,15 @@ class AsyncHTTPClient(HTTPClient):
             logger.warn("Timed out waiting for runner to be ready")
             return False
 
-    def call(self, name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
+    def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         try:
-            endpoint = self.endpoints[name]
+            endpoint = self.endpoints[__name]
         except KeyError:
-            raise BentoMLException(f"Endpoint {name} not found") from None
+            raise BentoMLException(f"Endpoint {__name} not found") from None
         if endpoint.stream_output:
             return self._get_stream(endpoint, *args, **kwargs)
         else:
-            return self._call(name, args, kwargs)
+            return self._call(__name, args, kwargs)
 
     async def _get_stream(
         self, endpoint: ClientEndpoint, *args: t.Any, **kwargs: t.Any

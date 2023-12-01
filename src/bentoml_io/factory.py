@@ -169,16 +169,6 @@ class Service(t.Generic[T]):
     def __call__(self) -> T:
         return self.inner()
 
-    @property
-    def worker_env_map(self) -> list[dict[str, str]]:
-        # TODO: to be implemented
-        return []
-
-    @property
-    def worker_count(self) -> int:
-        # TODO: to be implemented
-        return 1
-
     @inject
     def serve_http(
         self,
@@ -187,7 +177,6 @@ class Service(t.Generic[T]):
         port: int = Provide[BentoMLContainer.http.port],
         host: str = Provide[BentoMLContainer.http.host],
         backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-        api_workers: int = Provide[BentoMLContainer.api_server_workers],
         timeout: int | None = None,
         ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
         ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
@@ -215,7 +204,6 @@ class Service(t.Generic[T]):
             host=host,
             port=port,
             backlog=backlog,
-            api_workers=api_workers,
             timeout=timeout,
             ssl_certfile=ssl_certfile,
             ssl_keyfile=ssl_keyfile,

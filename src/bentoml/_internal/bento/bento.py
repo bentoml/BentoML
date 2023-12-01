@@ -534,7 +534,7 @@ class BentoDependencyInfo:
     name: str
     service: str
     models: t.List[BentoModelInfo] = attr.field(factory=list)
-    dependencies: t.List[BentoDependencyInfo] = attr.field(factory=list)
+    services: t.List[BentoDependencyInfo] = attr.field(factory=list)
 
     @classmethod
     def from_dependency(
@@ -548,7 +548,7 @@ class BentoDependencyInfo:
             name=name,
             service=d.import_string,
             models=[BentoModelInfo.from_bento_model(m) for m in d.models],
-            dependencies=[
+            services=[
                 cls.from_dependency(dep.on, seen=seen | {name})
                 for dep in d.dependencies.values()
             ],

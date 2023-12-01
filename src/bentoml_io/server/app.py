@@ -76,12 +76,8 @@ class ServiceAppFactory(BaseAppFactory):
     def __call__(self, is_main: bool = False) -> Starlette:
         app = super().__call__()
         app.add_route("/schema.json", self.schema_view, name="schema")
-        if is_main:
-            app.mount(
-                "/assets",
-                StaticFiles(directory=Path(__file__).parent / "assets"),
-                name="assets",
-            )
+        if is_main and (assets := Path(__file__).parent / "assets").exists():
+            app.mount("/assets", StaticFiles(directory=assets), name="assets")
             app.add_route("/", self.index_page, name="index")
         for mount_app, path, name in self.service.mount_apps:
             app.mount(app=mount_app, path=path, name=name)

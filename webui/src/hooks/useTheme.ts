@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { atom, useAtom } from 'jotai'
+import { LightTheme, useStyletron } from 'baseui'
 import useSystemTheme from './useSystemTheme'
 
 type BaseThemeType = 'light' | 'dark'
@@ -24,4 +25,10 @@ export default function useTheme() {
     window.localStorage.setItem(storageKey, v)
     setTheme(v)
   }] as [BaseThemeType, (t: BaseThemeType) => void]
+}
+
+export function useIsLight() {
+  const [, theme] = useStyletron()
+
+  return useMemo(() => theme.name === LightTheme.name, [theme])
 }

@@ -25,16 +25,23 @@ function isFileOrFileArray(value: any): boolean {
  * @returns Returns true if a file type is found in the schema, false otherwise.
  */
 export function hasFileInSchema(value: Record<string, DataType>): boolean {
-  return !!findKey(value, (o: DataType) => {
-    switch (o.type) {
-      case 'object':
-        return o.properties ? hasFileInSchema(o.properties) : false
-      case 'array':
-        return o.items.type === 'file'
-      default:
-        return o.type === 'file'
-    }
-  })
+  return !!findKey(value, isFileField)
+}
+
+/**
+ * Checks if the given schema contains a file type.
+ * @param value - The schema to check, represented as an array.
+ * @returns Returns true if a file type is found in the schema, false otherwise.
+ */
+export function isFileField(value: DataType): boolean {
+  switch (value.type) {
+    case 'object':
+      return value.properties ? hasFileInSchema(value.properties) : false
+    case 'array':
+      return value.items.type === 'file'
+    default:
+      return value.type === 'file'
+  }
 }
 
 /**
@@ -86,7 +93,6 @@ export function useFormSubmit(form: Form, input?: TObject) {
 
       return fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'multipart/form-data' },
         body: formData,
       })
     }

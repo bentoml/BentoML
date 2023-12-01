@@ -7,6 +7,7 @@ import { IconCopy } from '@tabler/icons-react'
 import Check from 'baseui/icon/check'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useIsLight } from '../../hooks/useTheme'
+import { TObject } from '../../types'
 
 interface ICodeProps {
   children: string
@@ -242,6 +243,24 @@ function CopyCode(props: ICodeProps) {
       <Code {...props} />
     </SnackbarProvider>
   )
+}
+
+/**
+ * Formats a JSON object into a string with custom indentation.
+ * @param json - The JSON object to be formatted.
+ * @param indent - The number of spaces used for indentation. Defaults to 4.
+ * @returns A string representation of the JSON object with custom indentation.
+ */
+export function formatJSON(json: object, indent = 4) {
+  return JSON.stringify(json, null, indent)
+    .split('\n')
+    .join(`\n${' '.repeat(indent)}`)
+}
+
+export interface IClientProps {
+  values: object
+  schema?: TObject
+  path?: string
 }
 
 export default CopyCode

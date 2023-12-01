@@ -13,6 +13,7 @@ import Form from './form/Form'
 import FormField, { generateFormSchema } from './form/FormField'
 import Submit from './form/Submit'
 import CURL from './code/CURL'
+import Python from './code/Python'
 
 export default function InferenceForm() {
   const [css, theme] = useStyletron()
@@ -95,7 +96,12 @@ export default function InferenceForm() {
                 <FormField schema={formSchema} />
                 <Submit>Submit</Submit>
               </Tab>
-              <Tab title="HTTP">
+              <Tab title="Python">
+                <FormConsumer>
+                  {() => <Python path={currentRoute?.route} values={form.values} schema={currentRoute?.input} />}
+                </FormConsumer>
+              </Tab>
+              <Tab title="CURL">
                 <FormConsumer>
                   {() => <CURL path={currentRoute?.route} values={form.values} schema={currentRoute?.input} />}
                 </FormConsumer>

@@ -132,9 +132,10 @@ fallback_version = "0.0.0"
 [tool.hatch.metadata]
 allow-direct-references = true
 [tool.hatch.build.targets.sdist]
-only-include = ["src/bentoml", "src/bentoml_cli"]
+only-include = ["src/bentoml", "src/bentoml_cli", "src/bentoml_io"]
 [tool.hatch.build.targets.wheel]
-packages = ["src/bentoml", "src/bentoml_cli"]
+packages = ["src/bentoml", "src/bentoml_cli", "src/bentoml_io"]
+[tool.hatch.build.hooks.custom]
 
 [[tool.pdm.source]]
 url = "https://download.pytorch.org/whl/cpu"

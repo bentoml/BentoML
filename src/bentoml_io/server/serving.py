@@ -26,6 +26,8 @@ if t.TYPE_CHECKING:
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
 
+    from .scheduler import Scheduler
+
 POSIX = os.name == "posix"
 WINDOWS = os.name == "nt"
 IS_WSL = "microsoft-standard" in platform.release()
@@ -101,17 +103,19 @@ def create_service_watchers(
     port_stack: contextlib.ExitStack,
     backlog: int,
     dependency_map: dict[str, str],
+    scheduler: Scheduler,
 ) -> tuple[list[Watcher], list[CircusSocket], str]:
     from bentoml.serve import create_watcher
 
     watchers: list[Watcher] = []
     sockets: list[CircusSocket] = []
+    num_workers, worker_envs = scheduler.get_worker_env(svc)
     for dep in svc.dependencies.values():
         dep_key = get_cache_key(dep.on)
         if dep_key in dependency_map:
             continue
         new_watchers, new_sockets, uri = create_service_watchers(
-            dep.on, work_dir, uds_path, port_stack, backlog, dependency_map
+            dep.on, work_dir, uds_path, port_stack, backlog, dependency_map, scheduler
         )
         watchers.extend(new_watchers)
         sockets.extend(new_sockets)
@@ -131,15 +135,15 @@ def create_service_watchers(
         "$(CIRCUS.WID)",
     ]
 
-    if env_map := svc.worker_env_map:
-        args.extend(["--worker-env", json.dumps(env_map)])
+    if worker_envs:
+        args.extend(["--worker-env", json.dumps(worker_envs)])
 
     watchers.append(
         create_watcher(
             name=f"dependency_{svc.name}",
             args=args,
             working_dir=work_dir,
-            numprocesses=svc.worker_count,
+            numprocesses=num_workers,
         )
     )
 
@@ -153,7 +157,6 @@ def serve_http_production(
     host: str = Provide[BentoMLContainer.http.host],
     port: int = Provide[BentoMLContainer.http.port],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
-    api_workers: int = Provide[BentoMLContainer.api_server_workers],
     timeout: int | None = None,
     ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
     ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
@@ -180,6 +183,8 @@ def serve_http_production(
     from bentoml.serve import ensure_prometheus_dir
     from bentoml.serve import make_reload_plugin
 
+    from .scheduler import Scheduler
+
     prometheus_dir = ensure_prometheus_dir()
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     if isinstance(bento_identifier, Service):
@@ -191,8 +196,10 @@ def serve_http_production(
 
     watchers: list[Watcher] = []
     sockets: list[CircusSocket] = []
+    scheduler = Scheduler()
     if dependency_map is None:
         dependency_map = {}
+    num_workers, worker_envs = scheduler.get_worker_env(svc)
     with contextlib.ExitStack() as stack:
         uds_path: str | None = None
         if POSIX and not IS_WSL:
@@ -205,7 +212,13 @@ def serve_http_production(
                 if dep_key in dependency_map:
                     continue
                 new_watchers, new_sockets, uri = create_service_watchers(
-                    dep.on, working_dir, uds_path, stack, backlog, dependency_map
+                    dep.on,
+                    working_dir,
+                    uds_path,
+                    stack,
+                    backlog,
+                    dependency_map,
+                    scheduler,
                 )
                 watchers.extend(new_watchers)
                 sockets.extend(new_sockets)
@@ -267,8 +280,8 @@ def serve_http_production(
             *ssl_args,
             *timeout_args,
         ]
-        if env_map := svc.worker_env_map:
-            server_args.extend(["--worker-env", json.dumps(env_map)])
+        if worker_envs:
+            server_args.extend(["--worker-env", json.dumps(worker_envs)])
         if development_mode:
             server_args.append("--development-mode")
 
@@ -278,7 +291,7 @@ def serve_http_production(
                 name="api_server",
                 args=server_args,
                 working_dir=working_dir,
-                numprocesses=svc.worker_count,
+                numprocesses=num_workers,
                 close_child_stdin=not development_mode,
             )
         )

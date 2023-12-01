@@ -42,7 +42,7 @@ class _IndividualWorkerSchema(TypedDict):
     gpus: Posint | list[Posint]
 
 
-WorkerSchema = Union[Posint, List[_IndividualWorkerSchema]]
+WorkerSchema = Union[Posint, Literal["cpu_count"], List[_IndividualWorkerSchema]]
 
 
 class MetricDuration(TypedDict, total=False):

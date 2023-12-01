@@ -287,7 +287,6 @@ def add_serve_command(cli: click.Group) -> None:
                 host=host,
                 port=port,
                 backlog=backlog,
-                api_workers=api_workers,
                 timeout=timeout,
                 ssl_certfile=ssl_certfile,
                 ssl_keyfile=ssl_keyfile,

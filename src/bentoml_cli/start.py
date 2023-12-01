@@ -202,7 +202,6 @@ def add_start_command(cli: click.Group) -> None:
                 port=port,
                 host=host,
                 backlog=backlog,
-                api_workers=api_workers or 1,
                 timeout=timeout,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
@@ -212,6 +211,7 @@ def add_start_command(cli: click.Group) -> None:
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
                 dependency_map=runner_map_dict,
+                standalone=True,
             )
 
     @cli.command(hidden=True)

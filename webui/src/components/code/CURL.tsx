@@ -1,8 +1,8 @@
 import isEmpty from 'lodash/isEmpty'
 import { convert, hasFileInSchema } from '../../hooks/useQuery'
 import type { TObject } from '../../types'
-import Code from './Base'
-import { formatJSON, IClientProps } from './Base'
+import type { IClientProps } from './Base'
+import Code, { formatJSON } from './Base'
 
 /**
  * Formats a file or an array of files into a string representation.
@@ -47,7 +47,7 @@ function CURL({ path, values, schema }: IClientProps) {
   return (
     // values is proxy object, so it must rendered every time
     // otherwise it will fail to update
-    <Code language='bash'>{generateCode(values, path, schema)}</Code>
+    <Code language="bash">{generateCode(values, path, schema)}</Code>
   )
 }
 

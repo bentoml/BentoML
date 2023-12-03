@@ -7,7 +7,7 @@ import { IconCopy } from '@tabler/icons-react'
 import Check from 'baseui/icon/check'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useIsLight } from '../../hooks/useTheme'
-import { TObject } from '../../types'
+import type { TObject } from '../../types'
 
 interface ICodeProps {
   children: string
@@ -183,8 +183,6 @@ function Code({ children, language }: ICodeProps) {
     <div
       className={css({
         position: 'relative',
-        overflow: 'auto',
-        padding: theme.sizing.scale400,
         borderRadius: '8px',
         borderLeftColor: isLight ? theme.colors.warning200 : theme.colors.mono500,
         backgroundColor: isLight ? 'rgb(253, 253, 253)' : '#292929',
@@ -221,15 +219,28 @@ function Code({ children, language }: ICodeProps) {
         theme={theme.name.startsWith('light-theme') ? lightTheme : darkTheme}
       >
         {({ style, tokens, getLineProps, getTokenProps }) => (
-          <pre dir="ltr" style={{ ...style, padding: '12px' }}>
-            {tokens.map((line, i) => (
-              <div key={i} {...getLineProps({ line, key: i })}>
-                {line.map((token, key) => (
-                  <span key={key} {...getTokenProps({ token, key })} />
-                ))}
-              </div>
-            ))}
-          </pre>
+          <div className={css({
+            overflow: 'auto',
+            padding: theme.sizing.scale400,
+          })}
+          >
+            <pre
+              dir="ltr"
+              className={css({
+                ...style,
+                display: 'inline-block',
+                padding: '12px',
+              })}
+            >
+              {tokens.map((line, i) => (
+                <div key={i} {...getLineProps({ line, key: i })}>
+                  {line.map((token, key) => (
+                    <span key={key} {...getTokenProps({ token, key })} />
+                  ))}
+                </div>
+              ))}
+            </pre>
+          </div>
         )}
       </Highlight>
     </div>

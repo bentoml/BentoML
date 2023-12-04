@@ -11,12 +11,14 @@ from pydantic import RootModel
 from pydantic import create_model
 from typing_extensions import get_args
 
+from bentoml.models import create
+from bentoml.models import get
+
+from .types import File
 from .typing_utils import is_file_like
 from .typing_utils import is_image_type
 from .typing_utils import is_iterator_type
 from .typing_utils import is_list_type
-
-from bentoml.models import create, get
 
 if t.TYPE_CHECKING:
     from starlette.requests import Request
@@ -56,6 +58,7 @@ class IOMixin:
     async def to_http_response(cls, obj: t.Any, serde: Serde) -> Response:
         """Convert a output value to HTTP response"""
         from pydantic import RootModel
+        from starlette.responses import FileResponse
         from starlette.responses import Response
         from starlette.responses import StreamingResponse
 
@@ -63,6 +66,10 @@ class IOMixin:
         structured_media_type = cls.media_type or serde.media_type
 
         if not issubclass(cls, RootModel):
+            if cls.multipart_fields:
+                return Response(
+                    "Multipart response is not supported yet", status_code=500
+                )
             return Response(
                 content=serde.serialize_model(t.cast(IODescriptor, obj)),
                 media_type=structured_media_type,
@@ -89,6 +96,28 @@ class IOMixin:
 
             return StreamingResponse(content_stream(), media_type=stream_media_type)
         else:
+            if isinstance(obj, File):
+                media_type = obj.media_type or "application/octet-stream"
+                should_inline = obj.media_type and obj.media_type.startswith(
+                    ("image/", "audio/", "video/")
+                )
+                if obj.path:
+                    return FileResponse(
+                        obj.path,
+                        filename=obj.filename,
+                        media_type=media_type,
+                        content_disposition_type="inline"
+                        if should_inline
+                        else "attachment",
+                    )
+                else:
+                    headers = None
+                    if obj.filename:
+                        headers = {
+                            "Content-Disposition": f"{'inline' if should_inline else 'attachment'}; "
+                            f"filename={obj.filename}"
+                        }
+                    return Response(obj.read(), media_type=media_type, headers=headers)
             if not isinstance(obj, RootModel):
                 ins: IODescriptor = t.cast(IODescriptor, cls(obj))
             else:

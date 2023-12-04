@@ -1,5 +1,5 @@
 import isEmpty from 'lodash/isEmpty'
-import { convert, hasFileInSchema } from '../../hooks/useQuery'
+import { hasFileInSchema, splitFileAndNonFileFields } from '../../hooks/useQuery'
 import type { TObject } from '../../types'
 import type { IClientProps } from './Base'
 import Code, { formatJSON } from './Base'
@@ -28,7 +28,7 @@ function formatFiles(files: { [field: string]: File | File[] }, indent = 4) {
 function generateCode(data: object, path = '/', schema?: TObject) {
   const hasFiles = hasFileInSchema(schema ? { schema } : {})
   if (hasFiles) {
-    const { nonFileFields, fileFields } = convert(data)
+    const { nonFileFields, fileFields } = splitFileAndNonFileFields(data)
 
     return `$ curl -s -X POST \\
     -F '__data=${formatJSON(nonFileFields, 4)}' \\

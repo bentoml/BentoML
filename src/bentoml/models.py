@@ -325,6 +325,7 @@ def save(
     *,
     module: str = "",
     api_version: str | None = None,
+    labels: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> t.Generator[Model, None, None]:
@@ -333,6 +334,7 @@ def save(
         name,
         module=module,
         api_version=api_version,
+        labels=labels,
         signatures={},
         metadata=metadata,
         context=ModelContext(framework_name="", framework_versions={}),

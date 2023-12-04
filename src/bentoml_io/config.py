@@ -13,16 +13,9 @@ from annotated_types import Le
 from pydantic import IPvAnyAddress
 from pydantic import TypeAdapter
 from typing_extensions import Literal
-from typing_extensions import Required
 from typing_extensions import TypedDict
 
 Posint = Annotated[int, Gt(0)]
-
-
-class EnvSchema(TypedDict, total=False):
-    name: Required[str]
-    required: bool
-    default: Any
 
 
 class TrafficSchema(TypedDict, total=False):
@@ -184,7 +177,6 @@ class LoggingSchema(TypedDict, total=False):
 
 
 class ServiceConfig(TypedDict, total=False):
-    envs: list[EnvSchema]
     traffic: TrafficSchema
     backlog: Annotated[int, Ge(64)]
     max_runner_connections: Posint

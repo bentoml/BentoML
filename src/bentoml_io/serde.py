@@ -87,8 +87,7 @@ class MultipartSerde(JSONSerde):
             value = form.getlist(k)
             if not all(isinstance(v, UploadFile) for v in value):
                 raise ValueError("Unable to parse multipart request")
-            files = [v.file for v in value]
-            data[k] = files[0] if len(files) == 1 else files
+            data[k] = value[0] if len(value) == 1 else value
         return cls.model_validate(data) if cls is not None else data
 
 

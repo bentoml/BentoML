@@ -7,7 +7,7 @@ from typing_extensions import get_args
 from typing_extensions import get_origin
 
 from .types import DataframeSchema
-from .types import ImageEncoder
+from .types import PILImageEncoder
 from .types import TensorSchema
 
 if t.TYPE_CHECKING:
@@ -126,8 +126,8 @@ def pil_prepare_pydantic_annotations(
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
         annotations
     )
-    if not any(isinstance(a, ImageEncoder) for a in remaining_annotations):
-        remaining_annotations.insert(0, ImageEncoder())
+    if not any(isinstance(a, PILImageEncoder) for a in remaining_annotations):
+        remaining_annotations.insert(0, PILImageEncoder())
     return origin, remaining_annotations
 
 

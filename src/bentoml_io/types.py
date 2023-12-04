@@ -4,10 +4,12 @@ import contextlib
 import functools
 import io
 import operator
-import sys
 import typing as t
-from dataclasses import dataclass
+from mimetypes import guess_type
+from pathlib import Path
+from typing import BinaryIO
 
+import attrs
 from pydantic_core import core_schema
 from starlette.datastructures import UploadFile
 
@@ -52,44 +54,12 @@ def arrow_serialization():
         __in_arrow_serialization__ = False
 
 
-class FileEncoder:
-    def __init__(self, format: str = "binary") -> None:
-        self.format = format
-
-    def encode(self, obj: t.BinaryIO) -> bytes:
-        obj.seek(0)
-        return obj.read()
-
-    def __get_pydantic_json_schema__(
-        self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
-    ) -> dict[str, t.Any]:
-        value = handler(schema)
-        value.update({"type": "file", "format": self.format})
-        return value
-
-    def decode(self, obj: bytes | t.BinaryIO | UploadFile) -> t.BinaryIO:
-        if isinstance(obj, UploadFile):
-            return obj.file
-        if is_file_like(obj):
-            return obj
-        return io.BytesIO(obj)
-
-    def __get_pydantic_core_schema__(
-        self, source: type[t.Any], handler: t.Callable[[t.Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
-        return core_schema.no_info_after_validator_function(
-            function=self.decode,
-            schema=core_schema.any_schema(),
-            serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
-        )
-
-
-class ImageEncoder(FileEncoder):
+class PILImageEncoder:
     def decode(
         self, obj: bytes | t.BinaryIO | UploadFile | PILImage.Image
     ) -> PILImage.Image:
         if is_image_type(type(obj)):
-            return obj
+            return t.cast("PILImage.Image", obj)
         if isinstance(obj, UploadFile):
             formats = None
             if obj.headers.get("Content-Type", "").startswith("image/"):
@@ -112,19 +82,116 @@ class ImageEncoder(FileEncoder):
         return value
 
 
-File = t.Annotated[t.BinaryIO, FileEncoder()]
-Audio = t.Annotated[t.BinaryIO, FileEncoder(format="audio")]
-Video = t.Annotated[t.BinaryIO, FileEncoder(format="video")]
-Image = t.Annotated[PILImage.Image, ImageEncoder()]
+@attrs.define
+class File(t.BinaryIO):
+    format: t.ClassVar[str] = "binary"
 
-# `slots` is available on Python >= 3.10
-if sys.version_info >= (3, 10):
-    slots_true = {"slots": True}
-else:
-    slots_true = {}
+    _fp: t.BinaryIO | None = attrs.field(default=None, repr=False)
+    filename: str | None = None
+    media_type: str | None = None
+    path: Path | None = None
+
+    @property
+    def fp(self) -> t.BinaryIO:
+        if self._fp is None:
+            if self.path is None:
+                raise ValueError("File is not initialized")
+            self._fp = open(self.path, "rb")
+        return self._fp
+
+    def encode(self, obj: t.BinaryIO) -> bytes:
+        obj.seek(0)
+        return obj.read()
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> dict[str, t.Any]:
+        value = handler(schema)
+        value.update({"type": "file", "format": cls.format})
+        return value
+
+    @classmethod
+    def decode(cls, obj: bytes | t.BinaryIO | UploadFile) -> File:
+        if isinstance(obj, UploadFile):
+            return cls(
+                obj.file,
+                filename=obj.filename,
+                media_type=obj.content_type,
+            )
+        if is_file_like(obj):
+            return cls(obj)
+        return cls(io.BytesIO(t.cast(bytes, obj)))
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: type[t.Any], handler: t.Callable[[t.Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        return core_schema.no_info_after_validator_function(
+            function=cls.decode,
+            schema=core_schema.any_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(cls.encode),
+        )
+
+    @classmethod
+    def from_path(cls, path: str | Path, filename: str | None = None) -> File:
+        if filename is None:
+            filename = Path(path).name
+        return cls(
+            open(path, "rb"),
+            filename=filename,
+            media_type=guess_type(filename)[0],
+            path=Path(path),
+        )
+
+    def __enter__(self) -> BinaryIO:
+        return self
+
+    def __exit__(self, *args: t.Any) -> None:
+        self.close()
+
+    def close(self) -> None:
+        if self._fp is not None:
+            self._fp.close()
+
+    def read(self, __n: int = -1) -> bytes:
+        return self.fp.read(__n)
+
+    def readlines(self, __hint: int = -1) -> list[bytes]:
+        return self.fp.readlines(__hint)
+
+    def __iter__(self) -> t.Iterator[bytes]:
+        return self.fp.__iter__()
+
+    def seek(self, __offset: int, __whence: int = 0) -> int:
+        return self.fp.seek(__offset, __whence)
+
+    def fileno(self) -> int:
+        return self.fp.fileno()
+
+    def tell(self) -> int:
+        return self.fp.tell()
 
 
-@dataclass(unsafe_hash=True, **slots_true)
+class Image(File):
+    format: t.ClassVar[str] = "image"
+
+    def to_pil_image(self) -> PILImage.Image:
+        formats = None
+        if self.media_type and self.media_type.startswith("image/"):
+            formats = [self.media_type[6:].upper()]
+        return PILImage.open(self, formats=formats)
+
+
+class Audio(File):
+    format: t.ClassVar[str] = "audio"
+
+
+class Video(File):
+    format: t.ClassVar[str] = "video"
+
+
+@attrs.frozen(unsafe_hash=True)
 class TensorSchema:
     format: str
     dtype: t.Optional[str] = None
@@ -201,7 +268,7 @@ class TensorSchema:
         return arr
 
 
-@dataclass(unsafe_hash=True, **slots_true)
+@attrs.frozen(unsafe_hash=True)
 class DataframeSchema:
     orient: str = "records"
     columns: list[str] | None = None

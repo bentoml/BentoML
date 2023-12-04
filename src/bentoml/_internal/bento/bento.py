@@ -53,6 +53,8 @@ if TYPE_CHECKING:
     from ..models import Model
     from ..service import Service
     from ..service.inference_api import InferenceAPI
+else:
+    ServiceConfig = t.Dict[str, t.Any]
 
 logger = logging.getLogger(__name__)
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import inspect
+import io
 import logging
 import typing as t
 from http import HTTPStatus
@@ -15,6 +16,7 @@ import attr
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
 
+from ..types import File
 from ..typing_utils import is_file_like
 from ..typing_utils import is_image_type
 from .base import AbstractClient
@@ -192,7 +194,9 @@ class HTTPClient(AbstractClient):
         data = await self._prepare_request(endpoint, args, kwargs)
         resp = await self._request(endpoint.route, data, headers=headers)
         if endpoint.stream_output:
-            return self._parse_response_stream(endpoint, resp)
+            return self._parse_stream_response(endpoint, resp)
+        elif endpoint.output["type"] == "file":
+            return await self._parse_file_response(endpoint, resp)
         else:
             return await self._parse_response(endpoint, resp)
 
@@ -326,7 +330,7 @@ class HTTPClient(AbstractClient):
         else:
             return self._deserialize_output(data, endpoint)
 
-    async def _parse_response_stream(
+    async def _parse_stream_response(
         self, endpoint: ClientEndpoint, resp: ClientResponse
     ) -> t.AsyncGenerator[t.Any, None]:
         buffer = bytearray()
@@ -335,6 +339,24 @@ class HTTPClient(AbstractClient):
             if eoc:
                 yield self._deserialize_output(bytes(buffer), endpoint)
                 buffer.clear()
+
+    async def _parse_file_response(
+        self, endpoint: ClientEndpoint, resp: ClientResponse
+    ) -> File:
+        from ..types import Audio
+        from ..types import Image
+        from ..types import Video
+
+        content_type = resp.headers.get("Content-Type")
+        cls = File
+        if content_type:
+            if content_type.startswith("image/"):
+                cls = Image
+            elif content_type.startswith("audio/"):
+                cls = Audio
+            elif content_type.startswith("video/"):
+                cls = Video
+        return cls(io.BytesIO(await resp.read()), media_type=content_type)
 
     async def close(self) -> None:
         if self._client is not None and not self._client.closed:

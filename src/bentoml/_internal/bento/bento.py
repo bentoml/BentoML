@@ -46,12 +46,15 @@ from .build_config import PythonOptions
 
 if TYPE_CHECKING:
     from bentoml_io.api import APIMethod
+    from bentoml_io.config import ServiceConfig
     from bentoml_io.server import Service as NewService
     from fs.base import FS
 
     from ..models import Model
     from ..service import Service
     from ..service.inference_api import InferenceAPI
+else:
+    ServiceConfig = t.Dict[str, t.Any]
 
 logger = logging.getLogger(__name__)
 
@@ -535,6 +538,7 @@ class BentoDependencyInfo:
     service: str
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     services: t.List[BentoDependencyInfo] = attr.field(factory=list)
+    config: ServiceConfig = attr.field(factory=dict)
 
     @classmethod
     def from_dependency(
@@ -543,10 +547,11 @@ class BentoDependencyInfo:
         if seen is None:
             seen = set()
         if (name := d.name) in seen:
-            return cls(name=name, service=d.import_string)
+            return cls(name=name, service=d.import_string, config=d.config)
         return cls(
             name=name,
             service=d.import_string,
+            config=d.config,
             models=[BentoModelInfo.from_bento_model(m) for m in d.models],
             services=[
                 cls.from_dependency(dep.on, seen=seen | {name})
@@ -592,6 +597,7 @@ class BentoInfo:
     runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
     # for BentoML 1.2+ SDK
     services: t.List[BentoDependencyInfo] = attr.field(factory=list)
+    config: ServiceConfig = attr.field(factory=dict)
     apis: t.List[BentoApiInfo] = attr.field(factory=list)
     docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
     python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())

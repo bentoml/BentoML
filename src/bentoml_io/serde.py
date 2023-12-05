@@ -9,6 +9,8 @@ import typing as t
 from pydantic import RootModel
 from starlette.datastructures import UploadFile
 
+from .typing_utils import is_list_type
+
 if t.TYPE_CHECKING:
     from starlette.requests import Request
 
@@ -36,23 +38,10 @@ class Serde(abc.ABC):
     def deserialize(self, obj_bytes: bytes) -> t.Any:
         ...
 
-    @t.overload
     async def parse_request(self, request: Request, cls: type[T]) -> T:
-        ...
-
-    @t.overload
-    async def parse_request(self, request: Request, cls: None) -> t.Any:
-        ...
-
-    async def parse_request(
-        self, request: Request, cls: type[IODescriptor] | None
-    ) -> t.Any:
         """Parse a input model from HTTP request"""
         json_str = await request.body()
-        if cls is None:
-            return self.deserialize(json_str)
-        else:
-            return self.deserialize_model(json_str, cls)
+        return self.deserialize_model(json_str, cls)
 
 
 class JSONSerde(Serde):
@@ -76,19 +65,26 @@ class JSONSerde(Serde):
 class MultipartSerde(JSONSerde):
     media_type = "multipart/form-data"
 
-    async def parse_request(
-        self, request: Request, cls: type[IODescriptor] | None
-    ) -> t.Any:
+    async def parse_request(self, request: Request, cls: type[T]) -> T:
         form = await request.form()
-        data: dict[str, t.Any] = json.loads(t.cast(str, form.get("__data", "{}")))
+        data: dict[str, t.Any] = {}
         for k in form:
-            if k == "__data" or cls is not None and k not in cls.multipart_fields:
-                continue
-            value = form.getlist(k)
-            if not all(isinstance(v, UploadFile) for v in value):
-                raise ValueError("Unable to parse multipart request")
-            data[k] = value[0] if len(value) == 1 else value
-        return cls.model_validate(data) if cls is not None else data
+            if k in cls.multipart_fields:
+                value = form.getlist(k)
+                if not all(isinstance(v, UploadFile) for v in value):
+                    raise ValueError("Unable to parse multipart request")
+                field_annotation = cls.model_fields[k].annotation
+                if is_list_type(field_annotation):
+                    data[k] = value
+                elif len(value) >= 1:
+                    data[k] = value[0]
+            else:
+                assert isinstance(v := form[k], str)
+                try:
+                    data[k] = json.loads(v)
+                except json.JSONDecodeError:
+                    data[k] = v
+        return cls.model_validate(data)
 
 
 class PickleSerde(Serde):

@@ -103,7 +103,7 @@ def get_default_svc_readme(
         if svc.bento and svc.bento.tag.version:
             svc_version = svc.bento.tag.version
         else:
-            svc_version = "None"
+            svc_version = "dev"
 
     doc = f"""\
 # {svc.name}:{svc_version}
@@ -282,10 +282,9 @@ class Bento(StoreItem):
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
-        if is_legacy:
-            with bento_fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
-                yaml.dump(svc.openapi_spec, f)
-        else:
+        with bento_fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
+            yaml.dump(svc.openapi_spec, f)
+        if not is_legacy:
             with bento_fs.open(fs.path.combine("apis", "schema.json"), "w") as f:
                 json.dump(svc.schema(), f, indent=2)
 

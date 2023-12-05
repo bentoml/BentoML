@@ -1,5 +1,5 @@
-import type { Key } from 'react'
-import { useMemo, useState } from 'react'
+import type { FC, Key } from 'react'
+import { createElement, useMemo, useState } from 'react'
 import { useStyletron } from 'baseui'
 import { Select } from 'baseui/select'
 import { FormControl } from 'baseui/form-control'
@@ -8,12 +8,18 @@ import { FormConsumer } from '@formily/react'
 import { FlexGrid, FlexGridItem } from 'baseui/flex-grid'
 import { Tab, Tabs } from 'baseui/tabs'
 import useCurrentPath from '../hooks/useCurrentPath'
-import { useFormSubmit, useSchema } from '../hooks/useQuery'
+import { transformData, useFormSubmit, useSchema } from '../hooks/useQuery'
 import Form from './form/Form'
 import FormField, { generateFormSchema } from './form/FormField'
 import Submit from './form/Submit'
+import type { IClientProps } from './code/Base'
 import CURL from './code/CURL'
 import Python from './code/Python'
+
+const codeExamples = {
+  Python,
+  CURL,
+}
 
 export default function InferenceForm() {
   const [css, theme] = useStyletron()
@@ -96,16 +102,21 @@ export default function InferenceForm() {
                 <FormField schema={formSchema} />
                 <Submit>Submit</Submit>
               </Tab>
-              <Tab title="Python">
-                <FormConsumer>
-                  {() => <Python path={currentRoute?.route} values={form.values} schema={currentRoute?.input} />}
-                </FormConsumer>
-              </Tab>
-              <Tab title="CURL">
-                <FormConsumer>
-                  {() => <CURL path={currentRoute?.route} values={form.values} schema={currentRoute?.input} />}
-                </FormConsumer>
-              </Tab>
+              <>
+                {
+                  Object.entries(codeExamples).map(([title, comp]) => (
+                    <Tab title={title} key={title}>
+                      <FormConsumer>
+                        {() => createElement(comp as FC<IClientProps>, {
+                          path: currentRoute?.route,
+                          values: transformData(form.values, currentRoute?.input),
+                          schema: currentRoute?.input,
+                        })}
+                      </FormConsumer>
+                    </Tab>
+                  ))
+                }
+              </>
             </Tabs>
           </Form>
         </FlexGridItem>

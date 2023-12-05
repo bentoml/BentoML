@@ -323,17 +323,14 @@ def create(
 def save(
     name: Tag | str,
     *,
-    module: str = "",
-    api_version: str | None = None,
     labels: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> t.Generator[Model, None, None]:
-    api_version = "v1" if api_version is None else api_version
     res = Model.create(
         name,
-        module=module,
-        api_version=api_version,
+        module="",
+        api_version="v1",
         labels=labels,
         signatures={},
         metadata=metadata,

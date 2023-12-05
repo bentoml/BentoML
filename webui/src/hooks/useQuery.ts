@@ -2,6 +2,7 @@ import { useCallback, useContext } from 'react'
 import type { Form } from '@formily/core'
 import isObject from 'lodash/isObject'
 import findKey from 'lodash/findKey'
+import transform from 'lodash/transform'
 import { JSONSchemaContext } from '../components/JSONSchema'
 import type { DataType, TObject } from '../types'
 
@@ -45,12 +46,45 @@ export function isFileField(value: DataType): boolean {
 }
 
 /**
- * Converts an object by separating File objects and other data.
- * @param srcValue The source object to convert.
+ * Transforms the source value according to the provided schema.
+ * @param {any} srcValue - The value to be transformed.
+ * @param {DataType} [schema] - The schema defining the transformation rules.
+ * @returns {any} - The transformed data.
+ */
+export function transformData(srcValue: any, schema?: DataType) {
+  if (!schema)
+    return srcValue
+  switch (schema?.type) {
+    case 'object':
+      if (schema.properties) {
+        return transform<DataType, { [key: string]: any }>(schema.properties, (res, value, key) => {
+          res[key] = transformData(srcValue[key], value)
+          return res
+        }, {})
+      }
+      else {
+        try {
+          return JSON.parse(srcValue)
+        }
+        catch {
+          // return empty object when JSON string parse failed
+          return {}
+        }
+      }
+    case 'array':
+      return srcValue?.map((item: any) => transformData(item, schema.items))
+    default:
+      return srcValue
+  }
+}
+
+/**
+ * Splits the source object into two separate objects based on field types: non-file fields and file fields.
+ * @param srcValue The source object containing the fields to be split. This object can be nested.
  * @param parentPath The path used to construct the key for nested objects.
  * @returns An object containing separated nonFileFields and fileFields.
  */
-export function convert(srcValue: object, parentPath = '') {
+export function splitFileAndNonFileFields(srcValue: object, parentPath = '') {
   const nonFileFields: { [key: string]: unknown } = {}
   const fileFields: { [key: string]: File | File[] } = {}
 
@@ -62,7 +96,7 @@ export function convert(srcValue: object, parentPath = '') {
       fileFields[path] = value
     }
     else if (isObject(value)) {
-      const res = convert(value, path)
+      const res = splitFileAndNonFileFields(value, path)
       nonFileFields[key] = res.nonFileFields
       Object.assign(fileFields, res.fileFields)
     }
@@ -77,10 +111,11 @@ export function convert(srcValue: object, parentPath = '') {
 export function useFormSubmit(form: Form, input?: TObject) {
   return useCallback(async (url: string) => {
     const submittedFormData = await form.submit<object>()
+    const transformedData = transformData(submittedFormData, input)
     const hasFiles = hasFileInSchema(input ? { input } : {})
 
     if (hasFiles) {
-      const { nonFileFields, fileFields } = convert(submittedFormData)
+      const { nonFileFields, fileFields } = splitFileAndNonFileFields(transformedData)
       const formData = new FormData()
 
       formData.append('__data', JSON.stringify(nonFileFields))

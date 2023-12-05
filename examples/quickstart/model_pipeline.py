@@ -1,10 +1,9 @@
+import bentoml_io as bentoml
 import joblib
 from sklearn import datasets
 from sklearn import svm
 
-import bentoml_io as bentoml
 from bentoml.models import ModelContext
-
 
 if __name__ == "__main__":
     # Load training data

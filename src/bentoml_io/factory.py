@@ -26,6 +26,7 @@ T = t.TypeVar("T", bound=object)
 
 if t.TYPE_CHECKING:
     from bentoml._internal import external_typing as ext
+    from bentoml._internal.service.openapi.specification import OpenAPISpecification
     from bentoml._internal.types import LifecycleHook
 
     from .dependency import Dependency
@@ -99,6 +100,15 @@ class Service(t.Generic[T]):
             result.update(dep.on.all_config())
         return result
 
+    @property
+    def doc(self) -> str:
+        from bentoml._internal.bento.bento import get_default_svc_readme
+
+        if self.bento is not None:
+            return self.bento.doc
+
+        return get_default_svc_readme(self)
+
     def schema(self) -> dict[str, t.Any]:
         return dict_filter_none(
             {
@@ -168,6 +178,12 @@ class Service(t.Generic[T]):
 
     def __call__(self) -> T:
         return self.inner()
+
+    @property
+    def openapi_spec(self) -> OpenAPISpecification:
+        from .openapi import generate_spec
+
+        return generate_spec(self)
 
     @inject
     def serve_http(

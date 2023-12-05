@@ -68,16 +68,37 @@ class ServiceAppFactory(BaseAppFactory):
                 ),
             )
 
-    async def index_page(self, request: Request) -> Response:
+    async def index_page(self, _: Request) -> Response:
         from starlette.responses import FileResponse
 
-        return FileResponse(Path(__file__).parent / "index.html")
+        if BentoMLContainer.new_index:
+            filename = "main-ui.html"
+        else:
+            filename = "main-openapi.html"
+        return FileResponse(Path(__file__).parent / filename)
+
+    async def openapi_spec_view(self, _: Request) -> Response:
+        from starlette.responses import JSONResponse
+
+        return JSONResponse(self.service.openapi_spec.asdict())
 
     def __call__(self, is_main: bool = False) -> Starlette:
         app = super().__call__()
         app.add_route("/schema.json", self.schema_view, name="schema")
-        if is_main and (assets := Path(__file__).parent / "assets").exists():
-            app.mount("/assets", StaticFiles(directory=assets), name="assets")
+        if is_main:
+            if BentoMLContainer.new_index:
+                assets = Path(__file__).parent / "assets"
+                app.mount("/assets", StaticFiles(directory=assets), name="assets")
+            else:
+                from bentoml._internal import server
+
+                assets = Path(server.__file__).parent / "static_content"
+                app.mount(
+                    "/static_content",
+                    StaticFiles(directory=assets),
+                    name="static_content",
+                )
+                app.add_route("/docs.json", self.openapi_spec_view, name="openapi-spec")
             app.add_route("/", self.index_page, name="index")
         for mount_app, path, name in self.service.mount_apps:
             app.mount(app=mount_app, path=path, name=name)

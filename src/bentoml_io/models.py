@@ -11,6 +11,7 @@ from pydantic import RootModel
 from pydantic import create_model
 from typing_extensions import get_args
 
+from bentoml._internal.service.openapi.specification import Schema
 from bentoml.models import create
 from bentoml.models import get
 
@@ -27,13 +28,54 @@ if t.TYPE_CHECKING:
     from .serde import Serde
 
 
-DEFAULT_STREAM_MEDIA_TYPE = "text/event-stream"
 DEFAULT_TEXT_MEDIA_TYPE = "text/plain"
 
 
 class IOMixin:
     multipart_fields: ClassVar[t.List[str]]
     media_type: ClassVar[t.Optional[str]] = None
+
+    @classmethod
+    def openapi_components(cls, name: str) -> dict[str, Schema]:
+        from .openapi import REF_TEMPLATE
+
+        if issubclass(cls, RootModel):
+            return {}
+        assert issubclass(cls, IODescriptor)
+        json_schema = cls.model_json_schema(ref_template=REF_TEMPLATE)
+        defs = json_schema.pop("$defs", None)
+        main_name = (
+            f"{name}__{cls.__name__}"
+            if cls.__name__ in ("Input", "Output")
+            else cls.__name__
+        )
+        json_schema["title"] = main_name
+        components: dict[str, Schema] = {main_name: Schema(**json_schema)}
+        if defs is not None:
+            # NOTE: This is a nested models, hence we will update the definitions
+            components.update({k: Schema(**v) for k, v in defs.items()})
+        return components
+
+    @classmethod
+    def mime_type(cls) -> str:
+        if cls.media_type is not None:
+            return cls.media_type
+        if cls.multipart_fields:
+            return "multipart/form-data"
+        if not issubclass(cls, RootModel):
+            return "application/json"
+        json_schema = cls.model_json_schema()
+        if json_schema.get("type") == "string":
+            return DEFAULT_TEXT_MEDIA_TYPE
+        elif json_schema.get("type") == "file":
+            if (format := json_schema.get("format")) == "image":
+                return "image/*"
+            elif format == "audio":
+                return "audio/*"
+            elif format == "video":
+                return "video/*"
+            return "*/*"
+        return "application/json"
 
     @classmethod
     def __pydantic_init_subclass__(cls) -> None:
@@ -62,7 +104,6 @@ class IOMixin:
         from starlette.responses import Response
         from starlette.responses import StreamingResponse
 
-        stream_media_type = cls.media_type or DEFAULT_STREAM_MEDIA_TYPE
         structured_media_type = cls.media_type or serde.media_type
 
         if not issubclass(cls, RootModel):
@@ -83,7 +124,7 @@ class IOMixin:
                     else:
                         yield serde.serialize_model(t.cast(IODescriptor, cls(item)))
 
-            return StreamingResponse(async_stream(), media_type=stream_media_type)
+            return StreamingResponse(async_stream(), media_type=cls.mime_type())
 
         elif inspect.isgenerator(obj):
 
@@ -94,7 +135,7 @@ class IOMixin:
                     else:
                         yield serde.serialize_model(t.cast(IODescriptor, cls(item)))
 
-            return StreamingResponse(content_stream(), media_type=stream_media_type)
+            return StreamingResponse(content_stream(), media_type=cls.mime_type())
         else:
             if isinstance(obj, File):
                 media_type = obj.media_type or "application/octet-stream"
@@ -123,10 +164,7 @@ class IOMixin:
             else:
                 ins = t.cast(IODescriptor, obj)
             if isinstance(rendered := ins.model_dump(), (str, bytes)):
-                return Response(
-                    content=rendered,
-                    media_type=cls.media_type or DEFAULT_TEXT_MEDIA_TYPE,
-                )
+                return Response(content=rendered, media_type=cls.mime_type())
             else:
                 return Response(
                     content=serde.serialize_model(ins), media_type=structured_media_type

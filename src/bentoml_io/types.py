@@ -74,11 +74,23 @@ class PILImageEncoder:
         obj.save(buffer, format=obj.format)
         return buffer.getvalue()
 
+    def __get_pydantic_core_schema__(
+        self, source: type[t.Any], handler: t.Callable[[t.Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        return core_schema.no_info_after_validator_function(
+            function=self.decode,
+            schema=core_schema.any_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
+        )
+
     def __get_pydantic_json_schema__(
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
         value = handler(schema)
-        value.update({"type": "file", "format": "image"})
+        if handler.mode == "validation":
+            value.update({"type": "file", "format": "image"})
+        else:
+            value.update({"type": "string", "format": "binary"})
         return value
 
 
@@ -108,7 +120,10 @@ class File(t.BinaryIO):
         cls, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
         value = handler(schema)
-        value.update({"type": "file", "format": cls.format})
+        if handler.mode == "validation":
+            value.update({"type": "file", "format": cls.format})
+        else:
+            value.update({"type": "string", "format": "binary"})
         return value
 
     @classmethod

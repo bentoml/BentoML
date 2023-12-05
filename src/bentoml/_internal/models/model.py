@@ -606,7 +606,9 @@ class ModelInfo:
     def imported_module(self) -> ModuleType:
         if self._cached_module is None:
             try:
-                module_to_import = self.module or "bentoml.dummy_module"
+                module_to_import = (
+                    self.module or "bentoml._internal.models.skeleton_module"
+                )
                 object.__setattr__(
                     self, "_cached_module", importlib.import_module(module_to_import)
                 )

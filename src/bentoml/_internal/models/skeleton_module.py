@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 def _log_warning_msg():
     logger.warning(
-        f"This function is a dummy function called from '{__name__}' and will return None."
+        f"This function is an empty function called from '{__name__}' and will return None."
     )
 
 

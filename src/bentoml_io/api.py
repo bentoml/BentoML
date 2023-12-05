@@ -6,7 +6,11 @@ import typing as t
 
 import attrs
 
+from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
+from bentoml._internal.service.openapi.specification import MediaType
+from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.utils import dict_filter_none
+from bentoml_io.openapi import REF_TEMPLATE
 
 from .models import IODescriptor
 
@@ -16,6 +20,9 @@ if t.TYPE_CHECKING:
     P = t.ParamSpec("P")
 else:
     P = t.TypeVar("P")
+
+
+DEFAULT_STREAM_MEDIA_TYPE = "text/event-stream"
 
 
 @attrs.define
@@ -76,6 +83,8 @@ class APIMethod(t.Generic[P, R]):
     def __attrs_post_init__(self) -> None:
         if self.media_type:
             self.output_spec.media_type = self.media_type
+        elif self.is_stream:
+            self.output_spec.media_type = DEFAULT_STREAM_MEDIA_TYPE
 
     @t.overload
     def __get__(self: T, instance: None, owner: type) -> T:
@@ -106,6 +115,33 @@ class APIMethod(t.Generic[P, R]):
                 "output": output,
             }
         )
+
+    def openapi_request(self) -> dict[str, t.Any]:
+        return {
+            "content": {
+                self.input_spec.mime_type(): MediaType(
+                    schema=Schema(
+                        **self.input_spec.model_json_schema(
+                            ref_template=REF_TEMPLATE, mode="serialization"
+                        )
+                    )
+                )
+            },
+        }
+
+    def openapi_response(self) -> dict[str, t.Any]:
+        return {
+            "description": SUCCESS_DESCRIPTION,
+            "content": {
+                self.output_spec.mime_type(): MediaType(
+                    schema=Schema(
+                        **self.output_spec.model_json_schema(
+                            ref_template=REF_TEMPLATE, mode="serialization"
+                        )
+                    )
+                )
+            },
+        }
 
 
 def _flatten_model_schema(model: type[IODescriptor]) -> dict[str, t.Any]:

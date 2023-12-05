@@ -25,13 +25,21 @@ function formatFiles(files: { [field: string]: File | File[] }, indent = 4) {
   return content
 }
 
+function formatDataField(data: Record<string, unknown>, indent = 4) {
+  if (isEmpty(data))
+    return ''
+  return Object.entries(data)
+    .map(([key, value]) => `-F ${key}=${JSON.stringify(value)}`)
+    .join(` \\\n${' '.repeat(indent)}`)
+}
+
 function generateCode(data: object, path = '/', schema?: TObject) {
   const hasFiles = hasFileInSchema(schema ? { schema } : {})
   if (hasFiles) {
     const { nonFileFields, fileFields } = splitFileAndNonFileFields(data)
 
     return `$ curl -s -X POST \\
-    -F '__data=${formatJSON(nonFileFields, 4)}' \\
+    ${formatDataField(nonFileFields, 4)} \\
     ${formatFiles(fileFields, 4)} \\
     http://localhost:3000${path}`
   }

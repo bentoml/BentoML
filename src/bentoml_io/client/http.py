@@ -233,28 +233,26 @@ class HTTPClient(AbstractClient):
     ) -> MultipartWriter:
         import aiohttp
 
+        def is_file_field(k: str) -> bool:
+            if isinstance(model, IODescriptor):
+                return k in model.multipart_fields
+            return (
+                is_file_like(value := model[k])
+                or isinstance(value, t.Sequence)
+                and len(value) > 0
+                and is_file_like(value[0])
+            )
+
         if isinstance(model, dict):
-            multipart_fields = {
-                k
-                for k, v in model.items()
-                if is_file_like(v)
-                or isinstance(v, t.Sequence)
-                and v
-                and is_file_like(v[0])
-            }
-            data = {k: v for k, v in model.items() if k not in multipart_fields}
+            data = model
         else:
-            multipart_fields = set(model.multipart_fields)
-            data = model.model_dump(exclude=multipart_fields)
-
+            data = {k: getattr(model, k) for k in model.model_fields}
         with aiohttp.MultipartWriter("form-data") as mp:
-            if data:
-                part = mp.append_json(data)
-                mp.append_form
-                part.set_content_disposition("form-data", name="__data")
-
-            for name in multipart_fields:
-                value = model[name] if isinstance(model, dict) else getattr(model, name)
+            for name, value in data.items():
+                if not is_file_field(name):
+                    part = mp.append_json(value)
+                    part.set_content_disposition("form-data", name=name)
+                    continue
                 if not isinstance(value, t.Sequence):
                     value = [value]
                 for v in value:

@@ -117,8 +117,9 @@ export function useFormSubmit(form: Form, input?: TObject) {
     if (hasFiles) {
       const { nonFileFields, fileFields } = splitFileAndNonFileFields(transformedData)
       const formData = new FormData()
-
-      formData.append('__data', JSON.stringify(nonFileFields))
+      Object.entries(nonFileFields).forEach(([key, value]) => {
+        formData.append(key, JSON.stringify(value))
+      })
       Object.entries(fileFields).forEach(([key, value]) => {
         if (Array.isArray(value))
           value.forEach(item => formData.append(key, item))

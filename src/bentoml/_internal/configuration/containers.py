@@ -516,9 +516,9 @@ class _BentoMLContainerClass:
     def enabled_features() -> list[str]:
         return os.getenv("BENTOML_ENABLE_FEATURES", "").split(",")
 
-    @providers.SingletonFactory
-    def new_io(self) -> bool:
-        return "newio" in self.enabled_features.get()
+    @property
+    def new_index(self) -> bool:
+        return "new_index" in self.enabled_features.get()
 
     def set_service_config(self, config: ServiceConfig) -> None:
         """A backward-compatible merging of new service config and legacy configf"""

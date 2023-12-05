@@ -2,7 +2,7 @@ import bentoml_io as bentoml
 import numpy as np
 
 
-@bentoml.service(resources={"num_cpus": 1, "gpu_type": "T4"}, traffic={"timeout": 10})
+@bentoml.service(resources={"memory": "512MiB"})
 class IrisClassifier:
     iris_model = bentoml.models.get("iris_clf:latest")
 
@@ -14,7 +14,3 @@ class IrisClassifier:
     @bentoml.api
     def classify(self, input_series: np.ndarray) -> np.ndarray:
         return self.model.predict(input_series)
-
-
-if __name__ == "__main__":
-    IrisClassifier.serve_http()

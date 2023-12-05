@@ -29,7 +29,7 @@ function formatDataField(data: Record<string, unknown>, indent = 4) {
   if (isEmpty(data))
     return ''
   return Object.entries(data)
-    .map(([key, value]) => `-F ${key}=${JSON.stringify(value)}`)
+    .map(([key, value]) => `-F ${key}='${JSON.stringify(value)}'`)
     .join(` \\\n${' '.repeat(indent)}`)
 }
 

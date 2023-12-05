@@ -65,67 +65,70 @@ export default function InferenceForm() {
           />
         </div>
       </div>
-      <FlexGrid
-        flexGridColumnCount={[1, 1, 2, 2]}
-        flexGridColumnGap="scale800"
-        flexGridRowGap="scale800"
-      >
-        <FlexGridItem>
-          <Form form={form} onSubmit={handleSubmit}>
-            <Tabs
-              activeKey={activeTab}
-              onChange={({ activeKey }) => setActiveTab(activeKey)}
-              overrides={{
-                TabBar: {
-                  props: {
-                    className: css({
-                      backgroundColor: 'transparent!important',
-                      paddingLeft: '0!important',
-                      paddingRight: '0!important',
-                      borderBottomWidth: '1px',
-                      borderBottomStyle: 'solid',
-                      borderBottomColor: `${theme.colors.borderOpaque}`,
-                    }),
+      {currentRoute && (
+        <FlexGrid
+          flexGridColumnCount={[1, 1, 2, 2]}
+          flexGridColumnGap="scale800"
+          flexGridRowGap="scale800"
+        >
+          <FlexGridItem>
+            <Form form={form} onSubmit={handleSubmit}>
+              <Tabs
+                activeKey={activeTab}
+                onChange={({ activeKey }) => setActiveTab(activeKey)}
+                overrides={{
+                  TabBar: {
+                    props: {
+                      className: css({
+                        backgroundColor: 'transparent!important',
+                        paddingLeft: '0!important',
+                        paddingRight: '0!important',
+                        borderBottomWidth: '1px',
+                        borderBottomStyle: 'solid',
+                        borderBottomColor: `${theme.colors.borderOpaque}`,
+                      }),
+                    },
                   },
-                },
-                TabContent: {
-                  props: {
-                    className: css({
-                      paddingLeft: '0!important',
-                      paddingRight: '0!important',
-                    }),
+                  TabContent: {
+                    props: {
+                      className: css({
+                        paddingLeft: '0!important',
+                        paddingRight: '0!important',
+                      }),
+                    },
                   },
-                },
-              }}
-            >
-              <Tab title="Form">
-                <FormField schema={formSchema} />
-                <Submit>Submit</Submit>
-              </Tab>
-              <>
-                {
-                  Object.entries(codeExamples).map(([title, comp]) => (
-                    <Tab title={title} key={title}>
-                      <FormConsumer>
-                        {() => createElement(comp as FC<IClientProps>, {
-                          path: currentRoute?.route,
-                          values: transformData(form.values, currentRoute?.input),
-                          schema: currentRoute?.input,
-                        })}
-                      </FormConsumer>
-                    </Tab>
-                  ))
-                }
-              </>
-            </Tabs>
-          </Form>
-        </FlexGridItem>
-        <FlexGridItem>
-          <FormControl label="Result" error={error}>
-            <div>{JSON.stringify(result)}</div>
-          </FormControl>
-        </FlexGridItem>
-      </FlexGrid>
+                }}
+              >
+                <Tab title="Form">
+                  <FormField schema={formSchema} />
+                  <Submit>Submit</Submit>
+                </Tab>
+                <>
+                  {
+                    Object.entries(codeExamples).map(([title, comp]) => (
+                      <Tab title={title} key={title}>
+                        <FormConsumer>
+                          {() => createElement(comp as FC<IClientProps>, {
+                            path: currentRoute.route,
+                            values: transformData(form.values, currentRoute.input),
+                            schema: currentRoute.input,
+                          })}
+                        </FormConsumer>
+                      </Tab>
+                    ))
+                  }
+                </>
+              </Tabs>
+            </Form>
+          </FlexGridItem>
+          <FlexGridItem>
+            <FormControl label="Result" error={error}>
+              <div>{JSON.stringify(result)}</div>
+            </FormControl>
+          </FlexGridItem>
+        </FlexGrid>
+      )}
+      
     </>
   )
 }

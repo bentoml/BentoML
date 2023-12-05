@@ -282,7 +282,7 @@ def add_serve_command(cli: click.Group) -> None:
             from bentoml_io.server.serving import serve_http_production
 
             serve_http_production(
-                svc,
+                bento,
                 working_dir=working_dir,
                 host=host,
                 port=port,

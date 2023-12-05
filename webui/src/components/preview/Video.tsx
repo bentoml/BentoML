@@ -4,29 +4,25 @@ import { Card, StyledAction, StyledBody } from 'baseui/card'
 import { StyledDivider } from 'baseui/divider'
 import { Button, KIND, SHAPE, SIZE } from 'baseui/button'
 import { IconPlayerPauseFilled, IconPlayerPlayFilled } from '@tabler/icons-react'
-import ListItem from '../file/ListItem'
+import BasePreview from './Base'
 
-interface IPlayerProps {
+interface IVideoPlayerProps {
   files: File[]
-  onRemove: (index: number) => void
+  children: (
+    file: File,
+    index: number,
+    activeIndex: number,
+    setActive: (file: File) => void,
+  ) => JSX.Element
 }
 
-function Player({ files, onRemove }: IPlayerProps) {
+function VideoPlayer({ files, children }: IVideoPlayerProps) {
   const [css] = useStyletron()
   const videoRef = useRef<HTMLVideoElement>(null)
   const [activeFile, setActiveFile] = useState(files[0])
   const activeIndex = files.indexOf(activeFile)
   const videoSrc = useMemo(() => URL.createObjectURL(activeFile), [activeFile])
   const [playerState, setPlayerState] = useState(false)
-  const remove = useCallback((index: number) => {
-    if (index === activeIndex && files.length > 1) {
-      if (index === 0)
-        setActiveFile(files[1])
-      else
-        setActiveFile(files[0])
-    }
-    onRemove(index)
-  }, [activeIndex, setActiveFile, onRemove])
   const toggle = useCallback((file: File) => {
     if (file !== activeFile) {
       const cb = () => {
@@ -81,9 +77,9 @@ function Player({ files, onRemove }: IPlayerProps) {
       <StyledAction>
         <StyledDivider />
         {files.map((file, index) => (
-          <ListItem
+          <BasePreview
             key={index}
-            before={(
+            operation={(
               <Button
                 type="button"
                 size={SIZE.mini}
@@ -107,12 +103,13 @@ function Player({ files, onRemove }: IPlayerProps) {
               </Button>
             )}
             value={file}
-            onRemove={() => remove(index)}
-          />
+          >
+            {children(file, index, activeIndex, setActiveFile)}
+          </BasePreview>
         ))}
       </StyledAction>
     </Card>
   )
 }
 
-export default Player
+export default VideoPlayer

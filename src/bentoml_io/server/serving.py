@@ -98,7 +98,6 @@ SERVICE_WORKER_SCRIPT = "bentoml_io.worker.service"
 
 def create_service_watchers(
     svc: AnyService,
-    work_dir: str,
     uds_path: str | None,
     port_stack: contextlib.ExitStack,
     backlog: int,
@@ -115,7 +114,7 @@ def create_service_watchers(
         if dep_key in dependency_map:
             continue
         new_watchers, new_sockets, uri = create_service_watchers(
-            dep.on, work_dir, uds_path, port_stack, backlog, dependency_map, scheduler
+            dep.on, uds_path, port_stack, backlog, dependency_map, scheduler
         )
         watchers.extend(new_watchers)
         sockets.extend(new_sockets)
@@ -130,7 +129,7 @@ def create_service_watchers(
         "--fd",
         f"$(circus.sockets.{svc.name})",
         "--working-dir",
-        work_dir,
+        svc._working_dir,
         "--worker-id",
         "$(CIRCUS.WID)",
     ]
@@ -142,7 +141,6 @@ def create_service_watchers(
         create_watcher(
             name=f"dependency_{svc.name}",
             args=args,
-            working_dir=work_dir,
             numprocesses=num_workers,
         )
     )
@@ -213,7 +211,6 @@ def serve_http_production(
                     continue
                 new_watchers, new_sockets, uri = create_service_watchers(
                     dep.on,
-                    working_dir,
                     uds_path,
                     stack,
                     backlog,

@@ -6,6 +6,8 @@ import transform from 'lodash/transform'
 import mime from 'mime'
 import { JSONSchemaContext } from '../components/JSONSchema'
 import type { DataType, IRoute } from '../types'
+import { useMountOptions } from './useMountOptions'
+import useToken from './useToken'
 
 export function useSchema() {
   return useContext(JSONSchemaContext)
@@ -56,13 +58,15 @@ export function transformData(srcValue: any, schema?: DataType) {
   if (!schema)
     return srcValue
   switch (schema?.type) {
+    // @ts-expect-error (no-fallthrough)
     case 'object':
       if (schema.properties) {
         return transform<DataType, { [key: string]: any }>(schema.properties, (res, value, key) => {
           res[key] = transformData(srcValue[key], value)
           return res
         }, {})
-      } // fallthrough
+      }
+    // eslint-disable-next-line no-fallthrough
     case 'tensor':
     case 'dataframe':
       try {
@@ -126,6 +130,9 @@ function extractFilename(contentDisposition: string) {
 }
 
 export function useFormSubmit(form: Form, route?: IRoute) {
+  const { needAuth } = useMountOptions()
+  const [token] = useToken()
+  const authHeaders: { Authorization?: string } = needAuth ? { Authorization: `Bearer ${token}` } : {}
   return useCallback(async () => {
     if (!route)
       throw new Error('Route config not found')
@@ -151,12 +158,13 @@ export function useFormSubmit(form: Form, route?: IRoute) {
         return fetch(path, {
           method: 'POST',
           body: formData,
+          headers: authHeaders,
         })
       }
       else {
         return fetch(path, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...authHeaders },
           body: JSON.stringify(transformedData),
         })
       }

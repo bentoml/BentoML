@@ -1,6 +1,7 @@
 import isEmpty from 'lodash/isEmpty'
 import { hasFileInSchema, splitFileAndNonFileFields } from '../../hooks/useQuery'
 import type { TObject } from '../../types'
+import { useMountOptions } from '../../hooks/useMountOptions'
 import type { IClientProps } from './Base'
 import Code, { formatJSON } from './Base'
 
@@ -33,18 +34,19 @@ function formatDataField(data: Record<string, unknown>, indent = 4) {
     .join(` \\\n${' '.repeat(indent)}`)
 }
 
-function generateCode(data: object, path = '/', schema?: TObject) {
+function generateCode(data: object, path = '/', schema?: TObject, needAuth?: boolean) {
   const hasFiles = hasFileInSchema(schema ? { schema } : {})
+  const auth = needAuth ? '\n    -H "Authorization:Bearer $YOUR_TOKEN" \\' : ''
   if (hasFiles) {
     const { nonFileFields, fileFields } = splitFileAndNonFileFields(data)
 
-    return `$ curl -s -X POST \\
+    return `$ curl -s -X POST \\${auth}
     ${formatDataField(nonFileFields, 4)} \\
     ${formatFiles(fileFields, 4)} \\
     http://localhost:3000${path}`
   }
   else {
-    return `$ curl -s -X POST \\
+    return `$ curl -s -X POST \\${auth}
     -H "Content-Type: application/json" \\
     -d '${formatJSON(data, 4)} \\
     http://localhost:3000${path}`
@@ -52,10 +54,11 @@ function generateCode(data: object, path = '/', schema?: TObject) {
 }
 
 function CURL({ path, values, schema }: IClientProps) {
+  const { needAuth } = useMountOptions()
   return (
     // values is proxy object, so it must rendered every time
     // otherwise it will fail to update
-    <Code language="bash">{generateCode(values, path, schema)}</Code>
+    <Code language="bash">{generateCode(values, path, schema, needAuth)}</Code>
   )
 }
 

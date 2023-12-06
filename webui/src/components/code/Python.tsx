@@ -2,6 +2,7 @@ import { StyledLink } from 'baseui/link'
 import isEmpty from 'lodash/isEmpty'
 import { isFileField } from '../../hooks/useQuery'
 import type { DataType, TObject } from '../../types'
+import { useMountOptions } from '../../hooks/useMountOptions'
 import type { IClientProps } from './Base'
 import Code, { formatJSON } from './Base'
 
@@ -39,25 +40,29 @@ function formatQuery(data: object, schema: TObject, indent = 4) {
     .join(`,\n${' '.repeat(indent + 4)}`)},\n${' '.repeat(indent)}`
 }
 
-function generateCode(data: object, path = '/', schema?: TObject) {
+function generateCode(data: object, path = '/', schema?: TObject, needAuth?: boolean) {
+  const auth = needAuth ? `, token="******"` : ''
+
   return `from bentoml_io.client import SyncHTTPClient
 
-with SyncHTTPClient("http://localhost:3000") as client:
+with SyncHTTPClient("http://localhost:3000"${auth}) as client:
     result = client.${path.slice(1)}(${formatQuery(data, schema!, 4)})
 `
 }
 
 function Python({ path, values, schema }: IClientProps) {
+  const { needAuth } = useMountOptions()
   return (
     <div>
       <p>
         First, install
+        {' '}
         <StyledLink href="https://bentoml.com/">BentoML</StyledLink>
         :
       </p>
       <Code language="bash">$ pip install bentoml</Code>
       <p>Then, paste the following code into your script or REPL:</p>
-      <Code language="python">{generateCode(values, path, schema)}</Code>
+      <Code language="python">{generateCode(values, path, schema, needAuth)}</Code>
     </div>
   )
 }

@@ -301,7 +301,7 @@ class Bento(StoreItem):
                     )
                     for m in models
                 ],
-                config=svc.config,
+                config=svc.all_config(),
                 runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners]
                 if is_legacy
                 else [],
@@ -538,7 +538,6 @@ class BentoDependencyInfo:
     service: str
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     services: t.List[BentoDependencyInfo] = attr.field(factory=list)
-    config: ServiceConfig = attr.field(factory=dict)
 
     @classmethod
     def from_dependency(
@@ -547,11 +546,10 @@ class BentoDependencyInfo:
         if seen is None:
             seen = set()
         if (name := d.name) in seen:
-            return cls(name=name, service=d.import_string, config=d.config)
+            return cls(name=name, service=d.import_string)
         return cls(
             name=name,
             service=d.import_string,
-            config=d.config,
             models=[BentoModelInfo.from_bento_model(m) for m in d.models],
             services=[
                 cls.from_dependency(dep.on, seen=seen | {name})

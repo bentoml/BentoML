@@ -95,7 +95,7 @@ class Service(t.Generic[T]):
         return f"<{self.__class__.__name__} name={self.name!r}>"
 
     def all_config(self) -> dict[str, Config]:
-        result = {self.inner.__name__: self.config}
+        result = {self.name: self.config}
         for dep in self.dependencies.values():
             result.update(dep.on.all_config())
         return result
@@ -112,7 +112,7 @@ class Service(t.Generic[T]):
     def schema(self) -> dict[str, t.Any]:
         return dict_filter_none(
             {
-                "name": self.inner.__name__,
+                "name": self.name,
                 "type": "service",
                 "routes": [method.schema() for method in self.apis.values()],
                 "description": getattr(self.inner, "__doc__", None),
@@ -121,7 +121,7 @@ class Service(t.Generic[T]):
 
     @property
     def name(self) -> str:
-        return self.inner.__name__
+        return self.inner.__name__.lower()
 
     @property
     def import_string(self) -> str:

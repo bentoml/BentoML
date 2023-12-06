@@ -31,7 +31,7 @@ function Panel({ route }: IPanelProps) {
   const [activeTab, setActiveTab] = useState<Key>('0')
   const [result, setResult] = useState<any>()
   const [error, setError] = useState<Error>()
-  const form = useMemo(() => createForm({}), [route])
+  const form = useMemo(() => createForm({ validateFirst: true }), [route])
   const submit = useFormSubmit(form, route)
   const formSchema = generateFormSchema(route.input)
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -44,8 +44,10 @@ function Panel({ route }: IPanelProps) {
       setError(undefined)
     }
     catch (err) {
-      setResult(undefined)
-      setError(err as Error)
+      if (err instanceof Error) {
+        setResult(undefined)
+        setError(err)
+      }
     }
   }
 

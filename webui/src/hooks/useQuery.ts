@@ -62,15 +62,15 @@ export function transformData(srcValue: any, schema?: DataType) {
           res[key] = transformData(srcValue[key], value)
           return res
         }, {})
+      } // fallthrough
+    case 'tensor':
+    case 'dataframe':
+      try {
+        return JSON.parse(srcValue)
       }
-      else {
-        try {
-          return JSON.parse(srcValue)
-        }
-        catch {
-          // return empty object when JSON string parse failed
-          return {}
-        }
+      catch {
+        // return empty object when JSON string parse failed
+        return {}
       }
     case 'array':
       return srcValue?.map((item: any) => transformData(item, schema.items))
@@ -138,7 +138,9 @@ export function useFormSubmit(form: Form, route?: IRoute) {
         const { nonFileFields, fileFields } = splitFileAndNonFileFields(transformedData)
         const formData = new FormData()
 
-        formData.append('__data', JSON.stringify(nonFileFields))
+        Object.entries(nonFileFields).forEach(([key, value]) => {
+          formData.append(key, JSON.stringify(value))
+        })
         Object.entries(fileFields).forEach(([key, value]) => {
           if (Array.isArray(value))
             value.forEach(item => formData.append(key, item))

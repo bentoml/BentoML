@@ -178,12 +178,10 @@ export function useFormSubmit(form: Form, route: IRoute) {
     }
     else if (output.type === 'file') {
       const contentDisposition = resp.headers.get('Content-Disposition')
-      const contentType = resp.headers.get('Content-Type')
+      const contentType = resp.headers.get('Content-Type') || ''
       const blob = await resp.blob()
-      const filename = contentDisposition
-        ? extractFilename(contentDisposition)
-        : null
-      const extension = contentType ? `.${mime.getExtension(contentType)}` : ''
+      const filename = contentDisposition && extractFilename(contentDisposition)
+      const extension = contentType && `.${mime.getExtension(contentType)}`
 
       return new File([blob], filename || (output.title ?? 'output') + extension)
     }

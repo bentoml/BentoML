@@ -7,6 +7,7 @@ import { FlexGrid, FlexGridItem } from 'baseui/flex-grid'
 import useCurrentPath from '../hooks/useCurrentPath'
 import { transformData, useFormSubmit, useSchema } from '../hooks/useQuery'
 import { useMountOptions } from '../hooks/useMountOptions'
+import type { IRoute } from '../types'
 import { Tab, Tabs } from './Tabs'
 import Form from './form/Form'
 import FormField, { generateFormSchema } from './form/FormField'
@@ -22,16 +23,17 @@ const codeExamples = {
   CURL,
 }
 
-export default function InferenceForm() {
-  const data = useSchema()
-  const { currentRoute, setCurrentPath } = useCurrentPath()
+interface IPanelProps {
+  route: IRoute
+}
+
+function Panel({ route }: IPanelProps) {
   const [activeTab, setActiveTab] = useState<Key>('0')
   const [result, setResult] = useState<any>()
   const [error, setError] = useState<Error>()
-  const { needAuth } = useMountOptions()
-  const form = useMemo(() => createForm({}), [currentRoute])
-  const submit = useFormSubmit(form, currentRoute)
-  const formSchema = generateFormSchema(currentRoute?.input)
+  const form = useMemo(() => createForm({}), [route])
+  const submit = useFormSubmit(form, route)
+  const formSchema = generateFormSchema(route.input)
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
@@ -48,7 +50,70 @@ export default function InferenceForm() {
   useEffect(() => {
     setResult(undefined)
     setError(undefined)
-  }, [currentRoute, setResult, setError])
+  }, [route, setResult, setError])
+
+  return (
+    <FlexGrid
+      flexGridColumnCount={[1, 1, 2, 2]}
+      flexGridColumnGap="scale800"
+      flexGridRowGap="scale800"
+    >
+      <FlexGridItem>
+        <Form form={form} onSubmit={handleSubmit}>
+          <Tabs
+            activeKey={activeTab}
+            onChange={({ activeKey }) => setActiveTab(activeKey)}
+          >
+            <Tab title="Form">
+              <FormField schema={formSchema} />
+              <Submit>Submit</Submit>
+            </Tab>
+            {
+              Object.entries(codeExamples).map(([title, comp]) => (
+                <Tab title={title} key={title}>
+                  <FormConsumer>
+                    {() => createElement<IClientProps>(comp, {
+                      path: route.route,
+                      values: transformData(form.values, route.input),
+                      schema: route.input,
+                    })}
+                  </FormConsumer>
+                </Tab> as ReactElement<any, any>
+              ))
+            }
+          </Tabs>
+        </Form>
+      </FlexGridItem>
+      <FlexGridItem>
+        <Tabs activeKey="0">
+          <Tab title="Result">
+            {error
+              ? (
+                <div style={{ color: 'red' }}>
+                  Error:
+                  {' '}
+                  {error.message}
+                </div>
+                )
+              : result
+                ? (
+                  <Output
+                    result={result}
+                    schema={route.output}
+                  />
+                  )
+                : null}
+          </Tab>
+        </Tabs>
+      </FlexGridItem>
+    </FlexGrid>
+  )
+}
+
+export default function InferenceForm() {
+  const data = useSchema()
+  const { needAuth } = useMountOptions()
+  const { currentRoute, setCurrentPath } = useCurrentPath()
 
   return (
     <>
@@ -69,62 +134,7 @@ export default function InferenceForm() {
         </div>
         {needAuth && <AuthInput />}
       </div>
-      {currentRoute && (
-        <FlexGrid
-          flexGridColumnCount={[1, 1, 2, 2]}
-          flexGridColumnGap="scale800"
-          flexGridRowGap="scale800"
-        >
-          <FlexGridItem>
-            <Form form={form} onSubmit={handleSubmit}>
-              <Tabs
-                activeKey={activeTab}
-                onChange={({ activeKey }) => setActiveTab(activeKey)}
-              >
-                <Tab title="Form">
-                  <FormField schema={formSchema} />
-                  <Submit>Submit</Submit>
-                </Tab>
-                {
-                  Object.entries(codeExamples).map(([title, comp]) => (
-                    <Tab title={title} key={title}>
-                      <FormConsumer>
-                        {() => createElement<IClientProps>(comp, {
-                          path: currentRoute.route,
-                          values: transformData(form.values, currentRoute.input),
-                          schema: currentRoute.input,
-                        })}
-                      </FormConsumer>
-                    </Tab> as ReactElement<any, any>
-                  ))
-                }
-              </Tabs>
-            </Form>
-          </FlexGridItem>
-          <FlexGridItem>
-            <Tabs activeKey="0">
-              <Tab title="Result">
-                {error
-                  ? (
-                    <div style={{ color: 'red' }}>
-                      Error:
-                      {' '}
-                      {error.message}
-                    </div>
-                    )
-                  : result
-                    ? (
-                      <Output
-                        result={result}
-                        schema={currentRoute.output}
-                      />
-                      )
-                    : null}
-              </Tab>
-            </Tabs>
-          </FlexGridItem>
-        </FlexGrid>
-      )}
+      {currentRoute && <Panel route={currentRoute} />}
     </>
   )
 }

@@ -1,10 +1,10 @@
-import logging
 import typing as t
-
-logger = logging.getLogger(__name__)
 
 
 def _log_warning_msg():
+    import logging
+
+    logger = logging.getLogger(__name__)
     logger.warning(
         f"This function is an empty function called from '{__name__}' and will return None."
     )

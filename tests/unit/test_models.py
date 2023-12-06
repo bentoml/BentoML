@@ -61,7 +61,6 @@ def test_models(tmpdir: "Path"):
 
     with bentoml.models.save(
         "savedmodel",
-        module=__name__,
         _model_store=store,
     ) as savedmodel:
         savedmodel1tag = savedmodel.tag
@@ -70,7 +69,6 @@ def test_models(tmpdir: "Path"):
 
     with bentoml.models.save(
         "savedmodel",
-        module=__name__,
         _model_store=store,
     ) as savedmodel:
         savedmodel2tag = savedmodel.tag

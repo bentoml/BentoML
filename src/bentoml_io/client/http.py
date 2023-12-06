@@ -54,6 +54,7 @@ class HTTPClient(AbstractClient):
     media_type: str = "application/json"
     timeout: int | None = None
     limiter: t.AsyncContextManager[t.Any] = contextlib.nullcontext()
+    token: str | None = None
     _client: ClientSession | None = attr.field(init=False, default=None)
     _loop: asyncio.AbstractEventLoop | None = attr.field(init=False, default=None)
 
@@ -63,6 +64,7 @@ class HTTPClient(AbstractClient):
         *,
         media_type: str = "application/json",
         service: Service[t.Any] | None = None,
+        token: str | None = None,
     ) -> None:
         """Create a client instance from a URL.
 
@@ -106,7 +108,9 @@ class HTTPClient(AbstractClient):
                     stream_output=method.is_stream,
                 )
 
-        self.__attrs_init__(url=url, endpoints=routes, media_type=media_type)
+        self.__attrs_init__(
+            url=url, endpoints=routes, media_type=media_type, token=token
+        )
 
     def __attrs_post_init__(self) -> None:
         from ..serde import ALL_SERDE
@@ -220,6 +224,8 @@ class HTTPClient(AbstractClient):
             else self.media_type,
             "User-Agent": f"BentoML HTTP Client/{__version__}",
         }
+        if self.token:
+            req_headers["Authorization"] = f"Bearer {self.token}"
         if headers is not None:
             req_headers.update(headers)
         client = await self._get_client()

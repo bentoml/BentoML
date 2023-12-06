@@ -15,9 +15,7 @@ class IrisClassifier:
     preprocessing = bentoml.depends(Preprocessing)
 
     def __init__(self):
-        import joblib
-
-        self.model = joblib.load(self.iris_model.path_of("model.pkl"))
+        self.model = self.iris_model.load_model()
 
     @bentoml.api
     def classify(self, input_series: np.ndarray) -> np.ndarray:

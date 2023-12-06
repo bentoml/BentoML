@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 import anyio
 import attr
+from pydantic import RootModel
 
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
@@ -320,23 +321,23 @@ class HTTPClient(AbstractClient):
             return self.serde.serialize(kwargs)
 
     def _deserialize_output(self, data: bytes, endpoint: ClientEndpoint) -> t.Any:
-        if endpoint.output["type"] == "string":
+        if endpoint.output_spec is not None:
+            model = self.serde.deserialize_model(data, endpoint.output_spec)
+            if isinstance(model, RootModel):
+                return model.root  # type: ignore
+            return model
+        elif endpoint.output["type"] == "string":
             return data.decode("utf-8")
         elif endpoint.output["type"] == "bytes":
             return data
-        if endpoint.output_spec is None:
-            return self.serde.deserialize(data)
         else:
-            return self.serde.deserialize_model(data, endpoint.output_spec)
+            return self.serde.deserialize(data)
 
     async def _parse_response(
         self, endpoint: ClientEndpoint, resp: ClientResponse
     ) -> t.Any:
         data = await resp.read()
-        if endpoint.output_spec is not None:
-            return self.serde.deserialize_model(data, endpoint.output_spec)
-        else:
-            return self._deserialize_output(data, endpoint)
+        return self._deserialize_output(data, endpoint)
 
     async def _parse_stream_response(
         self, endpoint: ClientEndpoint, resp: ClientResponse

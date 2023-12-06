@@ -13,16 +13,21 @@ import {
   IconPlayerSkipBackFilled,
   IconPlayerSkipForwardFilled,
 } from '@tabler/icons-react'
-import ListItem from '../file/ListItem'
+import BasePreview from './Base'
 
 dayjs.extend(duration)
 
-interface IPlayerProps {
+interface IAudioPlayerProps {
   files: File[]
-  onRemove: (index: number) => void
+  children: (
+    file: File,
+    index: number,
+    activeIndex: number,
+    setActive: (file: File) => void,
+  ) => JSX.Element
 }
 
-function Player({ files, onRemove }: IPlayerProps) {
+function AudioPlayer({ files, children }: IAudioPlayerProps) {
   const [css, theme] = useStyletron()
   const timeStyle = css({
     ...(theme.typography.LabelSmall),
@@ -35,15 +40,6 @@ function Player({ files, onRemove }: IPlayerProps) {
   const [playerState, setPlayerState] = useState(false)
   const [currentTime, setCurrentTime] = useState([0])
   const [duration, setDuration] = useState(audio.duration)
-  const remove = useCallback((index: number) => {
-    if (index === activeIndex && files.length > 1) {
-      if (index === 0)
-        setActiveFile(files[1])
-      else
-        setActiveFile(files[0])
-    }
-    onRemove(index)
-  }, [activeIndex, setActiveFile, onRemove])
   const play = useCallback((file: File) => {
     const cb = () => {
       audio.play()
@@ -185,9 +181,9 @@ function Player({ files, onRemove }: IPlayerProps) {
       <StyledAction>
         <StyledDivider />
         {files.map((file, index) => (
-          <ListItem
+          <BasePreview
             key={index}
-            before={(
+            operation={(
               <Button
                 type="button"
                 size={SIZE.mini}
@@ -211,12 +207,13 @@ function Player({ files, onRemove }: IPlayerProps) {
               </Button>
             )}
             value={file}
-            onRemove={() => remove(index)}
-          />
+          >
+            {children(file, index, activeIndex, setActiveFile)}
+          </BasePreview>
         ))}
       </StyledAction>
     </Card>
   )
 }
 
-export default Player
+export default AudioPlayer

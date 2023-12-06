@@ -3,7 +3,8 @@ import type { ArrayField } from '@formily/core'
 import { observer, useField, useFieldSchema } from '@formily/react'
 import { useStyletron } from 'baseui'
 import { FileUploader as BaseUIFileUploader } from 'baseui/file-uploader'
-import Player from './Player'
+import VideoPlayer from '../../preview/Video'
+import { Remove } from '../../preview/Base'
 
 type IMultipleProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>
 
@@ -25,10 +26,18 @@ export const Multiple: FC<IMultipleProps> = observer((props) => {
       />
       {dataSource.length > 0 && (
         <div className={css({ marginTop: theme.sizing.scale200 })}>
-          <Player
-            files={dataSource}
-            onRemove={index => field.remove(index)}
-          />
+          <VideoPlayer files={dataSource}>
+            {(_, index, activeIndex, setActive) => (
+              <Remove
+                onClick={() => {
+                  if (index === activeIndex && dataSource.length > 1)
+                    setActive(dataSource[index === 0 ? 1 : 0])
+
+                  field.remove(index)
+                }}
+              />
+            )}
+          </VideoPlayer>
         </div>
       )}
     </div>

@@ -3,8 +3,9 @@ import type { Form } from '@formily/core'
 import isObject from 'lodash/isObject'
 import findKey from 'lodash/findKey'
 import transform from 'lodash/transform'
+import mime from 'mime'
 import { JSONSchemaContext } from '../components/JSONSchema'
-import type { DataType, TObject } from '../types'
+import type { DataType, IRoute } from '../types'
 
 export function useSchema() {
   return useContext(JSONSchemaContext)
@@ -108,36 +109,77 @@ export function splitFileAndNonFileFields(srcValue: object, parentPath = '') {
   return { nonFileFields, fileFields }
 }
 
-export function useFormSubmit(form: Form, input?: TObject) {
-  return useCallback(async (url: string) => {
-    const submittedFormData = await form.submit<object>()
-    const transformedData = transformData(submittedFormData, input)
-    const hasFiles = hasFileInSchema(input ? { input } : {})
+/**
+ * Define a function to extract the filename from the Content-Disposition header
+ * @param contentDisposition - The Content-Disposition header string from which to extract the filename.
+ * @returns The extracted filename, if found; otherwise, null.
+ */
+function extractFilename(contentDisposition: string) {
+  const regex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
+  const matches = regex.exec(contentDisposition)
 
-    if (hasFiles) {
-      const { nonFileFields, fileFields } = splitFileAndNonFileFields(transformedData)
-      const formData = new FormData()
-      Object.entries(nonFileFields).forEach(([key, value]) => {
-        formData.append(key, JSON.stringify(value))
-      })
-      Object.entries(fileFields).forEach(([key, value]) => {
-        if (Array.isArray(value))
-          value.forEach(item => formData.append(key, item))
-        else
-          formData.append(key, value)
-      })
+  if (matches != null && matches[1]) {
+    // If a filename is matched, remove any surrounding quotes and return it
+    return matches[1].replace(/['"]/g, '')
+  }
+  return null
+}
 
-      return fetch(url, {
-        method: 'POST',
-        body: formData,
-      })
+export function useFormSubmit(form: Form, route?: IRoute) {
+  return useCallback(async () => {
+    if (!route)
+      throw new Error('Route config not found')
+    const { input, output, route: path } = route
+    const request = async () => {
+      const submittedFormData = await form.submit<object>()
+      const transformedData = transformData(submittedFormData, input)
+
+      if (hasFileInSchema({ input })) {
+        const { nonFileFields, fileFields } = splitFileAndNonFileFields(transformedData)
+        const formData = new FormData()
+
+        formData.append('__data', JSON.stringify(nonFileFields))
+        Object.entries(fileFields).forEach(([key, value]) => {
+          if (Array.isArray(value))
+            value.forEach(item => formData.append(key, item))
+          else
+            formData.append(key, value)
+        })
+
+        return fetch(path, {
+          method: 'POST',
+          body: formData,
+        })
+      }
+      else {
+        return fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transformedData),
+        })
+      }
+    }
+    const resp = await request()
+
+    if (resp.status >= 400)
+      throw new Error(`${resp.status} ${await resp.text()}`)
+
+    if (!hasFileInSchema({ output })) {
+      return resp.json()
+    }
+    else if (output.type === 'file') {
+      const contentDisposition = resp.headers.get('Content-Disposition')
+      const contentType = resp.headers.get('Content-Type')
+      const blob = await resp.blob()
+      const filename = contentDisposition
+        ? extractFilename(contentDisposition)
+        : null
+      const extension = contentType ? `.${mime.getExtension(contentType)}` : ''
+
+      return new File([blob], filename || (output.title ?? 'output') + extension)
     }
     else {
-      return fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submittedFormData),
-      })
+      throw new Error('Unsupport output type')
     }
   }, [form])
 }

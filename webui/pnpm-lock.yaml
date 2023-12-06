@@ -32,6 +32,9 @@ dependencies:
   lodash:
     specifier: ^4.17.21
     version: 4.17.21
+  mime:
+    specifier: ^4.0.0
+    version: 4.0.0
   monaco-editor:
     specifier: ^0.44.0
     version: 0.44.0
@@ -3402,6 +3405,12 @@ packages:
     engines: {node: '>= 0.6'}
     dependencies:
       mime-db: 1.52.0
+    dev: false
+
+  /mime@4.0.0:
+    resolution: {integrity: sha512-pzhgdeqU5pJ9t5WK9m4RT4GgGWqYJylxUf62Yb9datXRwdcw5MjiD1BYI5evF8AgTXN9gtKX3CFLvCUL5fAhEA==}
+    engines: {node: '>=16'}
+    hasBin: true
     dev: false
 
   /mimic-fn@4.0.0:

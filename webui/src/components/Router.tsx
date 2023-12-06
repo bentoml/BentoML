@@ -3,10 +3,7 @@ import InferenceForm from './InferenceForm'
 
 export default function Router() {
   const router = createHashRouter([{
-    path: '/:name',
-    element: <InferenceForm />,
-  }, {
-    path: '/',
+    path: '*',
     element: <InferenceForm />,
   }])
 

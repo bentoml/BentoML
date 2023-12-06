@@ -1,6 +1,7 @@
 import type { FileUploaderProps } from 'baseui/file-uploader'
 import { FileUploader as BaseUIFileUploader } from 'baseui/file-uploader'
-import Player from './Player'
+import VideoPlayer from '../../preview/Video'
+import { Remove } from '../../preview/Base'
 
 interface ISingleProps extends FileUploaderProps {
   value?: File
@@ -10,10 +11,9 @@ interface ISingleProps extends FileUploaderProps {
 export function Single({ value, onChange, onDrop, ...restProps }: ISingleProps) {
   return value
     ? (
-      <Player
-        files={[value]}
-        onRemove={() => onChange?.()}
-      />
+      <VideoPlayer files={[value]}>
+        {() => <Remove onClick={() => onChange?.()} />}
+      </VideoPlayer>
       )
     : (
       <BaseUIFileUploader

@@ -3,8 +3,7 @@ import { observer, useField, useFieldSchema } from '@formily/react'
 import type { ArrayField } from '@formily/core'
 import { useStyletron } from 'baseui'
 import { FileUploader as BaseUIFileUploader } from 'baseui/file-uploader'
-import { IconFileInvoice } from '@tabler/icons-react'
-import ListItem from './ListItem'
+import BasePreview, { Remove } from '../../preview/Base'
 
 type IMultipleProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>
 
@@ -28,12 +27,12 @@ export const Multiple: FC<IMultipleProps> = observer((props) => {
           <div className={css({ marginTop: theme.sizing.scale200 })}>
             {
               dataSource.map((file: File, index) => (
-                <ListItem
+                <BasePreview
                   key={index}
-                  before={<IconFileInvoice size={18} />}
                   value={file}
-                  onRemove={() => field.remove(index)}
-                />
+                >
+                  <Remove onClick={() => field.remove(index)} />
+                </BasePreview>
               ))
             }
           </div>

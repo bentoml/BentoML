@@ -37,11 +37,19 @@ def _get_dependency(
     return _dependent_cache[key]
 
 
-@attrs.define
+@attrs.frozen
 class Dependency(t.Generic[T]):
     on: Service[T]
 
-    def __get__(self, instance: t.Any, owner: t.Any) -> t.Any:
+    @t.overload
+    def __get__(self, instance: None, owner: t.Any) -> Dependency[T]:
+        ...
+
+    @t.overload
+    def __get__(self, instance: t.Any, owner: t.Any) -> T:
+        ...
+
+    def __get__(self, instance: t.Any, owner: t.Any) -> Dependency[T] | T:
         if instance is None:
             return self
         return _get_dependency(self.on)
@@ -50,9 +58,9 @@ class Dependency(t.Generic[T]):
         raise RuntimeError("Dependancy must be accessed as a class attribute")
 
 
-def depends(on: Service[T]) -> T:
+def depends(on: Service[T]) -> Dependency[T]:
     if not isinstance(on, Service):
         raise TypeError(
             "depends() expects a class decorated with @bentoml_io.service()"
         )
-    return t.cast(T, Dependency(on=on))
+    return Dependency(on)

@@ -248,7 +248,7 @@ def save_model(
             output_names=output_names,
         )
 
-        bento_model = bentoml.onnx.save_model("onnx_model", model_path, signatures={"run": "batchable": True})
+        bento_model = bentoml.onnx.save_model("onnx_model", model_path, signatures={"run": {"batchable": True}})
 
     """
 

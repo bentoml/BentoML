@@ -41,8 +41,10 @@ function Panel({ route }: IPanelProps) {
       const res = await submit()
 
       setResult(res)
+      setError(undefined)
     }
     catch (err) {
+      setResult(undefined)
       setError(err as Error)
     }
   }

@@ -6,6 +6,7 @@ import { FormConsumer } from '@formily/react'
 import { FlexGrid, FlexGridItem } from 'baseui/flex-grid'
 import useCurrentPath from '../hooks/useCurrentPath'
 import { transformData, useFormSubmit, useSchema } from '../hooks/useQuery'
+import { useMountOptions } from '../hooks/useMountOptions'
 import { Tab, Tabs } from './Tabs'
 import Form from './form/Form'
 import FormField, { generateFormSchema } from './form/FormField'
@@ -14,6 +15,7 @@ import type { IClientProps } from './code/Base'
 import CURL from './code/CURL'
 import Python from './code/Python'
 import Output from './Output'
+import AuthInput from './AuthInput'
 
 const codeExamples = {
   Python,
@@ -26,6 +28,7 @@ export default function InferenceForm() {
   const [activeTab, setActiveTab] = useState<Key>('0')
   const [result, setResult] = useState<any>()
   const [error, setError] = useState<Error>()
+  const { needAuth } = useMountOptions()
   const form = useMemo(() => createForm({}), [currentRoute])
   const submit = useFormSubmit(form, currentRoute)
   const formSchema = generateFormSchema(currentRoute?.input)
@@ -64,6 +67,7 @@ export default function InferenceForm() {
             }}
           />
         </div>
+        {needAuth && <AuthInput />}
       </div>
       {currentRoute && (
         <FlexGrid

@@ -23,7 +23,10 @@ function formatValue(value: unknown, schema?: DataType, indent = 4) {
     }
   }
   else {
-    return formatJSON(value, indent).replace(/\bnull\b/g, 'None')
+    return formatJSON(value, indent)
+      .replace(/\bnull\b/g, 'None')
+      .replace(/\btrue\b/g, 'True')
+      .replace(/\bfalse\b/g, 'False')
   }
 }
 

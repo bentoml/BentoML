@@ -135,7 +135,6 @@ allow-direct-references = true
 only-include = ["src/bentoml", "src/bentoml_cli", "src/bentoml_io"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/bentoml", "src/bentoml_cli", "src/bentoml_io"]
-[tool.hatch.build.hooks.custom]
 
 [[tool.pdm.source]]
 url = "https://download.pytorch.org/whl/cpu"

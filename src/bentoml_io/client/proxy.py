@@ -75,11 +75,10 @@ class RemoteProxy(HTTPClient, t.Generic[T]):
             return self._sync_call(__name, *args, **kwargs)
 
     def _sync_call(self, name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        if self._loop is None:
-            self._loop = asyncio.get_event_loop()
-        res = self._loop.run_until_complete(self._call(name, args, kwargs))
+        loop = self._ensure_event_loop()
+        res = loop.run_until_complete(self._call(name, args, kwargs))
         if inspect.isasyncgen(res):
-            return async_gen_to_sync(res, loop=self._loop)
+            return async_gen_to_sync(res, loop=loop)
         return res
 
     async def _get_async_stream(

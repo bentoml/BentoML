@@ -127,19 +127,23 @@ class HTTPClient(AbstractClient):
             method.__signature__ = endpoint.input_spec.__signature__
         return method
 
+    def _ensure_event_loop(self) -> asyncio.BaseEventLoop:
+        if self._loop is None or self._loop.is_closed():
+            try:
+                self._loop = asyncio.get_event_loop()
+            except RuntimeError:
+                self._loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self._loop)
+        return self._loop
+
     async def _get_client(self) -> ClientSession:
         import aiohttp
         from opentelemetry.instrumentation.aiohttp_client import create_trace_config
 
         from bentoml._internal.container import BentoMLContainer
 
-        if (
-            self._loop is None
-            or self._client is None
-            or self._client.closed
-            or self._loop.is_closed()
-        ):
-            self._loop = asyncio.get_event_loop()
+        if self._client is None or self._client.closed:
+            self._ensure_event_loop()
             if self._client is not None:
                 await self._client.close()
 

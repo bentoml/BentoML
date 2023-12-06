@@ -34,13 +34,7 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
   switch (propertie.type) {
     case 'array':
       switch (propertie.items.type) {
-        // Use special components to render page when the array type is tensor, dataframe, file etc.
-        case 'tensor':
-        case 'dataframe':
-          return {
-            ...base,
-            'x-component': 'MultipleFiles',
-          }
+        // Use special components to render page when the array type is file, audio, image, etc.
         case 'file':
           switch (propertie.items.format) {
             case 'image':
@@ -139,9 +133,9 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
     case 'dataframe':
       return {
         ...base,
-        'type': 'file',
-        'default': undefined,
-        'x-component': 'SingleFile',
+        'type': 'string',
+        'default': base.default ?? '{}',
+        'x-component': 'JSONInput',
       }
     case 'integer':
     case 'number':

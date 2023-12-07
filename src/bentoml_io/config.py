@@ -16,6 +16,7 @@ from typing_extensions import Literal
 from typing_extensions import TypedDict
 
 Posint = Annotated[int, Gt(0)]
+Posfloat = Annotated[float, Gt(0.0)]
 
 
 class TrafficSchema(TypedDict, total=False):
@@ -25,9 +26,9 @@ class TrafficSchema(TypedDict, total=False):
 
 
 class ResourceSchema(TypedDict, total=False):
-    num_cpus: Posint
+    cpu: str
     memory: str
-    num_gpus: Posint
+    gpu: Posfloat
     gpu_type: str
 
 

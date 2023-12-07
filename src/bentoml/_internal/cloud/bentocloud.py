@@ -162,12 +162,14 @@ class BentoCloudClient(CloudClient):
             for r in info.runners
         ]
         manifest = BentoManifestSchema(
+            name=info.name,
             service=info.service,
             bentoml_version=info.bentoml_version,
             apis=apis,
             models=models,
             runners=runners,
             size_bytes=bento.total_size(),
+            config=info.config,
         )
         if not remote_bento:
             with self.spin(

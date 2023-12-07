@@ -189,8 +189,8 @@ function getSchema(propertie: DataType, addition: ISchema = {}): ISchema {
   }
 }
 
-export function generateFormSchema(jsonSchema?: TObject) {
-  if (!jsonSchema || !jsonSchema.properties)
+export function generateFormSchema(jsonSchema: TObject) {
+  if (!jsonSchema.properties)
     return { type: 'object' }
 
   return getSchema(jsonSchema, { 'x-decorator': undefined })

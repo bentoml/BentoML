@@ -50,11 +50,11 @@ export function isFileField(value: DataType): boolean {
 
 /**
  * Transforms the source value according to the provided schema.
- * @param {any} srcValue - The value to be transformed.
- * @param {DataType} [schema] - The schema defining the transformation rules.
- * @returns {any} - The transformed data.
+ * @param srcValue - The value to be transformed.
+ * @param schema - The schema defining the transformation rules.
+ * @returns - The transformed data.
  */
-export function transformData(srcValue: any, schema?: DataType) {
+export function transformData(srcValue: any, schema: DataType) {
   if (!schema)
     return srcValue
   switch (schema?.type) {
@@ -129,15 +129,14 @@ function extractFilename(contentDisposition: string) {
   return null
 }
 
-export function useFormSubmit(form: Form, route?: IRoute) {
+export function useFormSubmit(form: Form, route: IRoute) {
   const { needAuth } = useMountOptions()
   const [token] = useToken()
-  const authHeaders: { Authorization?: string } = needAuth ? { Authorization: `Bearer ${token}` } : {}
+
   return useCallback(async () => {
-    if (!route)
-      throw new Error('Route config not found')
     const { input, output, route: path } = route
     const request = async () => {
+      const authHeaders: { Authorization?: string } = needAuth ? { Authorization: `Bearer ${token}` } : {}
       const submittedFormData = await form.submit<object>()
       const transformedData = transformData(submittedFormData, input)
 
@@ -179,17 +178,15 @@ export function useFormSubmit(form: Form, route?: IRoute) {
     }
     else if (output.type === 'file') {
       const contentDisposition = resp.headers.get('Content-Disposition')
-      const contentType = resp.headers.get('Content-Type')
+      const contentType = resp.headers.get('Content-Type') || ''
       const blob = await resp.blob()
-      const filename = contentDisposition
-        ? extractFilename(contentDisposition)
-        : null
-      const extension = contentType ? `.${mime.getExtension(contentType)}` : ''
+      const filename = contentDisposition && extractFilename(contentDisposition)
+      const extension = contentType && `.${mime.getExtension(contentType)}`
 
       return new File([blob], filename || (output.title ?? 'output') + extension)
     }
     else {
       throw new Error('Unsupport output type')
     }
-  }, [form])
+  }, [form, needAuth, token])
 }

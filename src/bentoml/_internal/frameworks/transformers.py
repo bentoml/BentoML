@@ -613,6 +613,7 @@ def import_model(
     name: Tag | str,
     model_name_or_path: str | os.PathLike[str],
     *,
+    with_tokenizer: bool = False,
     proxies: dict[str, str] | None = None,
     revision: str = "main",
     force_download: bool = False,
@@ -911,6 +912,12 @@ def import_model(
         )
         with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "wb") as f:
             cloudpickle.dump(pretrained.__class__, f)
+
+        if with_tokenizer:
+            transformers.AutoTokenizer.from_pretrained(
+                model_name_or_path
+            ).save_pretrained(bento_model.path)
+
         return bento_model
 
 

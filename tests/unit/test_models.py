@@ -11,6 +11,7 @@ import pytest
 import bentoml
 from bentoml._internal.models import ModelContext
 from bentoml._internal.models import ModelStore
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import NotFound
 
 if TYPE_CHECKING:
@@ -116,12 +117,20 @@ def test_models(tmpdir: "Path"):
         assert f.read() == savedmodel1_file_content
     with open(savedmodel1.path_of("folder/file"), encoding="utf-8") as f:
         assert f.read() == savedmodel1_infolder_content
+    with pytest.raises(BentoMLException):
+        savedmodel1.load_model()
+    with pytest.raises(BentoMLException):
+        savedmodel1.to_runnable()
 
     savedmodel2 = bentoml.models.get(savedmodel2tag, _model_store=store)
     with open(savedmodel2.path_of("file"), encoding="utf-8") as f:
         assert f.read() == savedmodel2_file_content
     with open(savedmodel2.path_of("folder/file"), encoding="utf-8") as f:
         assert f.read() == savedmodel2_infolder_content
+    with pytest.raises(BentoMLException):
+        savedmodel1.load_model()
+    with pytest.raises(BentoMLException):
+        savedmodel1.to_runnable()
 
     anothermodel = bentoml.models.get(anothermodeltag, _model_store=store)
     with open(anothermodel.path_of("file"), encoding="utf-8") as f:

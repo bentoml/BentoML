@@ -606,11 +606,8 @@ class ModelInfo:
     def imported_module(self) -> ModuleType:
         if self._cached_module is None:
             try:
-                module_to_import = (
-                    self.module or "bentoml._internal.models.skeleton_module"
-                )
                 object.__setattr__(
-                    self, "_cached_module", importlib.import_module(module_to_import)
+                    self, "_cached_module", importlib.import_module(self.module)
                 )
             except (ValueError, ModuleNotFoundError) as e:
                 raise BentoMLException(
@@ -622,7 +619,7 @@ class ModelInfo:
     @property
     def options(self) -> ModelOptions:
         if self._cached_options is None:
-            if hasattr(self.imported_module, "ModelOptions"):
+            if self.module and hasattr(self.imported_module, "ModelOptions"):
                 object.__setattr__(
                     self,
                     "_cached_options",

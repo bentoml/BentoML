@@ -285,6 +285,10 @@ def create(
     context: ModelContext,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> t.Generator[Model, None, None]:
+    """
+    `bentoml.models.create` is deprecated and replaced with `bentoml.models.save`. Moving forward, we encourage users to use `bentoml.models.save`.
+    """
+
     options = ModelOptions() if options is None else options
     api_version = "v1" if api_version is None else api_version
     res = Model.create(
@@ -337,13 +341,10 @@ def save(
         context=ModelContext(framework_name="", framework_versions={}),
     )
 
-    try:
-        yield res
-    except Exception:
-        raise
-    else:
-        res.flush()
-        res.save(_model_store)
+    yield res
+
+    res.flush()
+    res.save(_model_store)
 
 
 __all__ = [

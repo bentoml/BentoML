@@ -29,7 +29,7 @@ if t.TYPE_CHECKING:
     from aiohttp import MultipartWriter
 
     from ..factory import Service
-    from ..models import IODescriptor
+    from ..io_models import IODescriptor
 
     T = t.TypeVar("T", bound="HTTPClient")
 

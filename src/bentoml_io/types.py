@@ -40,6 +40,8 @@ else:
     PILImage = LazyLoader("PILImage", globals(), "PIL.Image")
 
 T = t.TypeVar("T")
+
+__all__ = ["File", "Image", "Audio", "Video", "Tensor", "Dataframe"]
 # This is an internal global state that is True when the model is being serialized for arrow
 __in_arrow_serialization__ = False
 

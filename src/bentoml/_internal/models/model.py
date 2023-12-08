@@ -607,7 +607,7 @@ class ModelInfo:
         if self._cached_module is None:
             if not self.module:
                 raise BentoMLException(
-                    f"Module is not defined in {MODEL_YAML_FILENAME}. If the model is saved using `bentoml.models.save`, methods that use `ModelInfo.imported_module` are not supported."
+                    f"Module is not defined in {MODEL_YAML_FILENAME}. If the module argument is not defined when creating a model using `bentoml.models.create`, methods that use `ModelInfo.imported_module` are not supported."
                 ) from None
             try:
                 object.__setattr__(

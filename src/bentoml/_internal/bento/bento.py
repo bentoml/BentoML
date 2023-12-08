@@ -301,7 +301,7 @@ class Bento(StoreItem):
                     )
                     for m in models
                 ],
-                config=svc.all_config(),
+                config=svc.all_config() if not is_legacy else {},
                 runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners]
                 if is_legacy
                 else [],

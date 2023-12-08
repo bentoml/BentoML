@@ -80,6 +80,7 @@ def fixture_get_schema() -> DeploymentSchema:
                         presigned_upload_url="",
                         presigned_download_url="",
                         manifest=BentoManifestSchema(
+                            name="",
                             service="",
                             bentoml_version="",
                             size_bytes=0,

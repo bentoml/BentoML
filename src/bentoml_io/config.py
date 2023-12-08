@@ -20,7 +20,7 @@ Posfloat = Annotated[float, Gt(0.0)]
 
 
 class TrafficSchema(TypedDict, total=False):
-    timeout: Annotated[float, Gt(0)]
+    timeout: Posfloat
     max_concurrency: Posint
     external_queue: bool  # bentocloud only
 

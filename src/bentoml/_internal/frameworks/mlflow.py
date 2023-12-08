@@ -170,7 +170,7 @@ def import_model(
             f"MLflow pyfunc model support only the `predict` method, signatures={signatures} is not supported"
         )
 
-    with bentoml.models.create(
+    with bentoml.models._create(
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

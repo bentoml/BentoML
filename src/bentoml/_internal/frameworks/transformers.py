@@ -889,7 +889,7 @@ def import_model(
         # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
         metadata["_framework"] = pretrained.framework
 
-    with bentoml.models.create(
+    with bentoml.models._create(
         tag,
         module=MODULE_NAME,
         api_version=API_VERSION,
@@ -1099,7 +1099,7 @@ def save_model(
                 check_task(pipeline_.task if task_name is None else task_name)[:2],
             )
 
-        with bentoml.models.create(
+        with bentoml.models._create(
             name,
             module=MODULE_NAME,
             api_version=API_VERSION,
@@ -1142,7 +1142,7 @@ def save_model(
             # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
             metadata["_framework"] = pretrained.framework
 
-        with bentoml.models.create(
+        with bentoml.models._create(
             name,
             module=MODULE_NAME,
             api_version=API_VERSION,

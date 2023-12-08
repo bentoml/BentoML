@@ -242,7 +242,7 @@ def save_model(
 
     custom_objects["config"] = config
 
-    with bentoml.models.create(
+    with bentoml.models._create(
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

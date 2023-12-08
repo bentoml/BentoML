@@ -302,7 +302,7 @@ def save_model(
 
     options = ONNXOptions(input_specs=input_specs, output_specs=output_specs)
 
-    with bentoml.models.create(
+    with bentoml.models._create(
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

@@ -244,7 +244,7 @@ if t.TYPE_CHECKING:
 
 @t.overload
 @contextmanager
-def create(
+def _create(
     name: Tag | str, /, **attrs: t.Unpack[CreateKwargs]
 ) -> t.Generator[Model, None, None]:
     ...
@@ -252,7 +252,7 @@ def create(
 
 @t.overload
 @contextmanager
-def create(
+def _create(
     name: Tag | str,
     *,
     module: str = ...,
@@ -271,7 +271,7 @@ def create(
 
 @inject
 @contextmanager
-def create(
+def _create(
     name: Tag | str,
     *,
     module: str = "",
@@ -285,10 +285,6 @@ def create(
     context: ModelContext,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> t.Generator[Model, None, None]:
-    """
-    `bentoml.models.create` is deprecated and replaced with `bentoml.models.save`. Moving forward, we encourage users to use `bentoml.models.save`.
-    """
-
     options = ModelOptions() if options is None else options
     api_version = "v1" if api_version is None else api_version
     res = Model.create(
@@ -324,27 +320,58 @@ def create(
 
 @inject
 @contextmanager
-def save(
+def create(
     name: Tag | str,
     *,
     labels: dict[str, t.Any] | None = None,
     metadata: dict[str, t.Any] | None = None,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    module: str = "",  # deprecated
+    api_version: str = "v1",  # deprecated
+    signatures: ModelSignaturesType = {},  # deprecated
+    options: ModelOptions = ModelOptions(),  # deprecated
+    custom_objects: dict[str, t.Any] | None = None,  # deprecated
+    external_modules: t.List[ModuleType] | None = None,  # deprecated
+    context: ModelContext = ModelContext(
+        framework_name="", framework_versions={}
+    ),  # deprecated
 ) -> t.Generator[Model, None, None]:
+    """
+    Create a model instance in BentoML modelstore.
+
+    The following function arguments are deprecated:
+        module, api_version, signatures, options, custom_objects, external_modules, context
+    """
+
     res = Model.create(
         name,
-        module="",
-        api_version="v1",
+        module=module,
+        api_version=api_version,
         labels=labels,
-        signatures={},
+        signatures=signatures,
+        options=options,
+        custom_objects=custom_objects,
         metadata=metadata,
-        context=ModelContext(framework_name="", framework_versions={}),
+        context=context,
     )
-
-    yield res
-
-    res.flush()
-    res.save(_model_store)
+    external_modules = [] if external_modules is None else external_modules
+    imported_modules: t.List[ModuleType] = []
+    try:
+        res.enter_cloudpickle_context(external_modules, imported_modules)
+        yield res
+    except Exception:
+        raise
+    else:
+        res.flush()
+        res.save(_model_store)
+        track(
+            ModelSaveEvent(
+                module=res.info.module,
+                model_size_in_kb=calc_dir_size(res.path_of("/")) / 1024,
+            ),
+        )
+    finally:
+        res.exit_cloudpickle_context(imported_modules)
 
 
 __all__ = [
@@ -357,5 +384,5 @@ __all__ = [
     "pull",
     "ModelContext",
     "ModelOptions",
-    "save",
+    "create",
 ]

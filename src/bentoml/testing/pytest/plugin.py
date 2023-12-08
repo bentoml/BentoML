@@ -131,21 +131,21 @@ def _setup_deployment_mode(metafunc: Metafunc):
 
 def _setup_model_store(metafunc: Metafunc):
     """Setup dummy models for test session."""
-    with bentoml.models.create(
+    with bentoml.models._create(
         "testmodel",
         module=__name__,
         signatures={},
         context=TEST_MODEL_CONTEXT,
     ):
         pass
-    with bentoml.models.create(
+    with bentoml.models._create(
         "testmodel",
         module=__name__,
         signatures={},
         context=TEST_MODEL_CONTEXT,
     ):
         pass
-    with bentoml.models.create(
+    with bentoml.models._create(
         "anothermodel",
         module=__name__,
         signatures={},

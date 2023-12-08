@@ -532,7 +532,7 @@ def import_model(
             if version is not None:
                 tag.version = version
 
-    with bentoml.models.create(
+    with bentoml.models._create(
         tag,
         module=MODULE_NAME,
         api_version=API_VERSION,
@@ -619,7 +619,7 @@ def save_model(
             name,
         )
 
-    with bentoml.models.create(
+    with bentoml.models._create(
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

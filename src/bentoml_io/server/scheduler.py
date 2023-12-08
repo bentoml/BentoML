@@ -4,10 +4,11 @@ from typing import Any
 
 from bentoml._internal.resource import system_resources
 from bentoml.exceptions import BentoMLConfigException
-from bentoml_io.factory import Service
+
+from ..factory import Service
 
 
-class ResourceUnaiable(Exception):
+class ResourceUnaiable(BentoMLConfigException):
     pass
 
 

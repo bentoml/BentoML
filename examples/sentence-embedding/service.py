@@ -43,7 +43,7 @@ class SentenceEmbedding:
             input_mask_expanded.sum(1), min=1e-9
         )
 
-    @bentoml_io.api
+    @bentoml_io.api(batchable=True)
     def encode(
         self,
         sentences: list[str] = Field(["hello world"], description="input sentences"),

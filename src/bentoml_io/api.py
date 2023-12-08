@@ -10,9 +10,9 @@ from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
 from bentoml._internal.service.openapi.specification import MediaType
 from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.utils import dict_filter_none
-from bentoml_io.openapi import REF_TEMPLATE
 
-from .models import IODescriptor
+from .io_models import IODescriptor
+from .openapi import REF_TEMPLATE
 
 R = t.TypeVar("R")
 T = t.TypeVar("T", bound="APIMethod[..., t.Any]")
@@ -37,8 +37,8 @@ class APIMethod(t.Generic[P, R]):
     batch_dim: tuple[int, int] = attrs.field(
         default=(0, 0), converter=lambda x: (x, x) if not isinstance(x, tuple) else x
     )
-    max_batch_size: int | None = None
-    max_latency_ms: int | None = None
+    max_batch_size: int = 100
+    max_latency_ms: int = 60000
     is_stream: bool = attrs.field(init=False)
     doc: str | None = attrs.field(init=False)
     ctx_param: str | None = attrs.field(init=False)
@@ -173,8 +173,8 @@ def api(
     media_type: str | None = ...,
     batchable: bool = ...,
     batch_dim: int | tuple[int, int] = ...,
-    max_batch_size: int | None = ...,
-    max_latency_ms: int | None = ...,
+    max_batch_size: int = ...,
+    max_latency_ms: int = ...,
 ) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]:
     ...
 
@@ -189,8 +189,8 @@ def api(
     media_type: str | None = None,
     batchable: bool = False,
     batch_dim: int | tuple[int, int] = 0,
-    max_batch_size: int | None = None,
-    max_latency_ms: int | None = None,
+    max_batch_size: int = 100,
+    max_latency_ms: int = 60000,
 ) -> (
     APIMethod[P, R]
     | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]

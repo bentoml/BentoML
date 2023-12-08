@@ -12,8 +12,6 @@ from pydantic import create_model
 from typing_extensions import get_args
 
 from bentoml._internal.service.openapi.specification import Schema
-from bentoml.models import create
-from bentoml.models import get
 
 from .types import File
 from .typing_utils import is_file_like
@@ -257,12 +255,3 @@ def ensure_io_descriptor(output_type: type) -> type[IODescriptor]:
         t.Type[IODescriptor],
         create_model("Output", __base__=(IOMixin, RootModel[output_type])),  # type: ignore
     )
-
-
-__all__ = [
-    "IODescriptor",
-    "IOMixin",
-    "ensure_io_descriptor",
-    "get",
-    "create",
-]

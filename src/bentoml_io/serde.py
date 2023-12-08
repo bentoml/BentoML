@@ -14,7 +14,7 @@ from .typing_utils import is_list_type
 if t.TYPE_CHECKING:
     from starlette.requests import Request
 
-    from .models import IODescriptor
+    from .io_models import IODescriptor
 
 T = t.TypeVar("T", bound="IODescriptor")
 

@@ -60,8 +60,8 @@ class ServiceAppFactory(BaseAppFactory):
             if not method.batchable:
                 continue
             self.dispatchers[name] = CorkDispatcher(
-                max_latency_in_ms=t.cast(int, method.max_latency_ms),
-                max_batch_size=t.cast(int, method.max_batch_size),
+                max_latency_in_ms=method.max_latency_ms,
+                max_batch_size=method.max_batch_size,
                 fallback=fallback,
                 get_batch_size=functools.partial(
                     AutoContainer.get_batch_size, batch_dim=method.batch_dim[0]

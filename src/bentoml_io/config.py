@@ -33,7 +33,7 @@ class ResourceSchema(TypedDict, total=False):
 
 
 class _IndividualWorkerSchema(TypedDict):
-    gpus: Posint | list[Posint]
+    gpus: Posfloat | list[int]
 
 
 WorkerSchema = Union[Posint, Literal["cpu_count"], List[_IndividualWorkerSchema]]

@@ -26,7 +26,7 @@ if t.TYPE_CHECKING:
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
 
-    from .scheduler import Scheduler
+    from .allocator import ResourceAllocator
 
 POSIX = os.name == "posix"
 WINDOWS = os.name == "nt"
@@ -102,7 +102,7 @@ def create_service_watchers(
     port_stack: contextlib.ExitStack,
     backlog: int,
     dependency_map: dict[str, str],
-    scheduler: Scheduler,
+    scheduler: ResourceAllocator,
 ) -> tuple[list[Watcher], list[CircusSocket], str]:
     from bentoml.serve import create_watcher
 
@@ -181,7 +181,7 @@ def serve_http_production(
     from bentoml.serve import ensure_prometheus_dir
     from bentoml.serve import make_reload_plugin
 
-    from .scheduler import Scheduler
+    from .allocator import ResourceAllocator
 
     prometheus_dir = ensure_prometheus_dir()
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
@@ -194,10 +194,10 @@ def serve_http_production(
 
     watchers: list[Watcher] = []
     sockets: list[CircusSocket] = []
-    scheduler = Scheduler()
+    allocator = ResourceAllocator()
     if dependency_map is None:
         dependency_map = {}
-    num_workers, worker_envs = scheduler.get_worker_env(svc)
+    num_workers, worker_envs = allocator.get_worker_env(svc)
     with contextlib.ExitStack() as stack:
         uds_path: str | None = None
         if POSIX and not IS_WSL:
@@ -215,7 +215,7 @@ def serve_http_production(
                     stack,
                     backlog,
                     dependency_map,
-                    scheduler,
+                    allocator,
                 )
                 watchers.extend(new_watchers)
                 sockets.extend(new_sockets)

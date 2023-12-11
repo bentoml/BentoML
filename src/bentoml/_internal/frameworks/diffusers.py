@@ -807,9 +807,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         if support_lora:
 
             def _run_method(
-                runnable_self: DiffusersRunnable,
-                *args: t.Any,
-                **kwargs: t.Any,
+                runnable_self: DiffusersRunnable, *args: t.Any, **kwargs: t.Any
             ) -> t.Any:
                 if method_partial_kwargs is not None:
                     kwargs = dict(method_partial_kwargs, **kwargs)

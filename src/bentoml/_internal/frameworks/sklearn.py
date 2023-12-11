@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
     from bentoml.types import ModelSignature
 
-    from .. import external_typing as ext
     from ..models.model import ModelSignaturesType
 
     SklearnModel: t.TypeAlias = BaseEstimator | Pipeline
@@ -182,15 +181,10 @@ def get_runnable(bento_model: Model):
             self.model = load_model(bento_model)
 
     def add_runnable_method(method_name: str, options: ModelSignature):
-        def _run(
-            self: SklearnRunnable,
-            input_data: ext.NpNDArray | ext.PdDataFrame,
-            *args: t.Any,
-            **kwargs: t.Any,
-        ) -> ext.NpNDArray:
+        def _run(self: SklearnRunnable, *args: t.Any, **kwargs: t.Any) -> t.Any:
             # TODO: set inner_max_num_threads and n_jobs param here base on strategy env vars
             with parallel_backend(backend="loky"):
-                return getattr(self.model, method_name)(input_data, *args, **kwargs)
+                return getattr(self.model, method_name)(*args, **kwargs)
 
         SklearnRunnable.add_method(
             _run,

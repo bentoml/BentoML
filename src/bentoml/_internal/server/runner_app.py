@@ -201,7 +201,7 @@ class RunnerAppFactory(BaseAppFactory):
             # Streaming does not have batching implemented yet
             async def infer_stream(
                 paramss: t.Sequence[Params[t.Any]],
-            ) -> t.Sequence[t.AsyncGenerator[Payload, None]]:
+            ) -> t.Sequence[t.AsyncGenerator[str, None]]:
                 async def inner():
                     # This is a workaround to allow infer stream to return a iterable of
                     # async generator, to align with how non stream inference works
@@ -212,8 +212,8 @@ class RunnerAppFactory(BaseAppFactory):
                         traceback.print_exc()
                         raise
                     async for data in ret:
-                        payload = AutoContainer.to_payload(data, 0)
-                        yield payload
+                        # payload = AutoContainer.to_payload(data, 0)
+                        yield data
 
                 return (inner(),)
 
@@ -354,7 +354,7 @@ class RunnerAppFactory(BaseAppFactory):
                     Extract Data from a AsyncGenerator[Payload, None]
                     """
                     async for p in payload:
-                        yield pickle.dumps(p)
+                        yield p.encode("utf-8")
 
                 return StreamingResponse(
                     streamer(),

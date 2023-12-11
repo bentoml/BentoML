@@ -56,7 +56,7 @@ class RunnerMethod(t.Generic[T, P, R]):
 
     def async_stream(
         self, *args: P.args, **kwargs: P.kwargs
-    ) -> t.AsyncGenerator[R, None]:
+    ) -> t.AsyncGenerator[str, None]:
         return self.runner._runner_handle.async_stream_method(self, *args, **kwargs)
 
 

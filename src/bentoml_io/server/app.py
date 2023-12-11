@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import functools
 import inspect
 import logging
@@ -77,10 +78,14 @@ class ServiceAppFactory(BaseAppFactory):
             filename = "main-openapi.html"
         return FileResponse(Path(__file__).parent / filename)
 
-    async def openapi_spec_view(self, _: Request) -> Response:
+    async def openapi_spec_view(self, req: Request) -> Response:
         from starlette.responses import JSONResponse
 
-        return JSONResponse(self.service.openapi_spec.asdict())
+        try:
+            return JSONResponse(self.service.openapi_spec.asdict())
+        except Exception:
+            log_exception(req, sys.exc_info())
+            raise
 
     def __call__(self, is_main: bool = False) -> Starlette:
         app = super().__call__()
@@ -162,10 +167,29 @@ class ServiceAppFactory(BaseAppFactory):
         return middlewares
 
     def create_instance(self) -> None:
-        self._service_instance = self.service.inner()
+        self._service_instance = self.service()
 
     def destroy_instance(self) -> None:
         self._service_instance = None
+
+    async def readyz(self, _: Request) -> Response:
+        from starlette.exceptions import HTTPException
+        from starlette.responses import PlainTextResponse
+
+        from ..client import RemoteProxy
+
+        if BentoMLContainer.api_server_config.runner_probe.enabled.get():
+            dependency_statuses: list[t.Coroutine[None, None, bool]] = []
+            for dependency in self.service.dependencies.values():
+                real = dependency.get()
+                if isinstance(real, RemoteProxy):
+                    dependency_statuses.append(real.is_ready())
+            runners_ready = all(await asyncio.gather(*dependency_statuses))
+
+            if not runners_ready:
+                raise HTTPException(status_code=503, detail="Runners are not ready.")
+
+        return PlainTextResponse("\n", status_code=200)
 
     @property
     def on_startup(self) -> list[LifecycleHook]:
@@ -199,7 +223,9 @@ class ServiceAppFactory(BaseAppFactory):
             routes.append(Route(route_path, api_endpoint, methods=["POST"], name=name))
         return routes
 
-    async def batch_infer(self, name: str, input_kwargs: dict[str, t.Any]) -> t.Any:
+    async def batch_infer(
+        self, name: str, input_args: tuple[t.Any, ...], input_kwargs: dict[str, t.Any]
+    ) -> t.Any:
         method = self.service.apis[name]
         func = getattr(self._service_instance, name)
 
@@ -221,9 +247,14 @@ class ServiceAppFactory(BaseAppFactory):
             return AutoContainer.batch_to_batches(result, indices, method.batch_dim[1])
 
         arg_names = [k for k in input_kwargs if k not in ("ctx", "context")]
-        if len(arg_names) != 1:
-            raise TypeError("Batch inference function only accept one argument")
-        value = input_kwargs.pop(arg_names[0])
+        if input_args:
+            if len(input_args) > 1 or len(arg_names) > 0:
+                raise TypeError("Batch inference function only accept one argument")
+            value = input_args[0]
+        else:
+            if len(arg_names) != 1:
+                raise TypeError("Batch inference function only accept one argument")
+            value = input_kwargs.pop(arg_names[0])
         return await self.dispatchers[name](
             functools.partial(inner_infer, **input_kwargs)
         )(value)
@@ -238,6 +269,8 @@ class ServiceAppFactory(BaseAppFactory):
         from bentoml._internal.utils.http import set_cookies
         from bentoml.exceptions import BentoMLException
 
+        from ..io_models import ARGS
+        from ..io_models import KWARGS
         from ..serde import ALL_SERDE
 
         media_type = request.headers.get("Content-Type", "application/json")
@@ -250,20 +283,24 @@ class ServiceAppFactory(BaseAppFactory):
             try:
                 serde = ALL_SERDE[media_type]()
                 input_data = await method.input_spec.from_http_request(request, serde)
-                request.close
+                input_args: tuple[t.Any, ...] = ()
                 input_params = {
                     k: getattr(input_data, k) for k in input_data.model_fields
                 }
                 if method.ctx_param is not None:
                     input_params[method.ctx_param] = ctx
+                if ARGS in input_params:
+                    input_args = tuple(input_params.pop(ARGS))
+                if KWARGS in input_params:
+                    input_params.update(input_params.pop(KWARGS))
                 if method.batchable:
-                    output = await self.batch_infer(name, input_params)
+                    output = await self.batch_infer(name, input_args, input_params)
                 elif is_async_callable(func):
-                    output = await func(**input_params)
+                    output = await func(*input_args, **input_params)
                 elif inspect.isasyncgenfunction(func):
-                    output = func(**input_params)
+                    output = func(*input_args, **input_params)
                 else:
-                    output = await run_in_threadpool(func, **input_params)
+                    output = await run_in_threadpool(func, *input_args, **input_params)
 
                 response = await method.output_spec.to_http_response(output, serde)
                 response.headers.update(

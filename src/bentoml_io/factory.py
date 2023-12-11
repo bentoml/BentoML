@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import inspect
+import logging
+import math
 import os
 import sys
 import typing as t
@@ -11,6 +13,7 @@ from simple_di import Provide
 from simple_di import inject
 from typing_extensions import Unpack
 
+from bentoml import Runner
 from bentoml._internal.bento.bento import Bento
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
@@ -21,6 +24,8 @@ from bentoml.exceptions import BentoMLException
 from .api import APIMethod
 from .config import ServiceConfig as Config
 from .config import validate
+
+logger = logging.getLogger("bentoml.io")
 
 T = t.TypeVar("T", bound=object)
 
@@ -48,9 +53,9 @@ class Service(t.Generic[T]):
     inner: type[T]
 
     bento: t.Optional[Bento] = attrs.field(init=False, default=None)
-    models: list[Model] = attrs.field(factory=list, init=False)
+    models: list[Model] = attrs.field(factory=list)
+    apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict)
     dependencies: dict[str, Dependency[t.Any]] = attrs.field(factory=dict, init=False)
-    apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict, init=False)
     startup_hooks: list[LifecycleHook] = attrs.field(factory=list, init=False)
     shutdown_hooks: list[LifecycleHook] = attrs.field(factory=list, init=False)
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
@@ -177,7 +182,11 @@ class Service(t.Generic[T]):
         self.middlewares.append((middleware_cls, options))
 
     def __call__(self) -> T:
-        return self.inner()
+        try:
+            return self.inner()
+        except Exception:
+            logger.exception("Initializing service error")
+            raise
 
     @property
     def openapi_spec(self) -> OpenAPISpecification:
@@ -253,3 +262,62 @@ def service(**kwargs: Unpack[Config]) -> _ServiceDecorator:
         return Service(config=config, inner=service)
 
     return decorator
+
+
+def runner_service(runner: Runner, **kwargs: Unpack[Config]) -> Service[t.Any]:
+    """Make a service from a legacy Runner"""
+    if not isinstance(runner, Runner):  # type: ignore
+        raise ValueError(f"Expect an instance of Runner, but got {type(runner)}")
+
+    class RunnerHandle(runner.runnable_class):
+        def __init__(self) -> None:
+            super().__init__(**runner.runnable_init_params)
+
+    RunnerHandle.__name__ = runner.name
+    apis: dict[str, APIMethod[..., t.Any]] = {}
+    assert runner.runnable_class.bentoml_runnable_methods__ is not None
+    for method in runner.runner_methods:
+        runnable_method = runner.runnable_class.bentoml_runnable_methods__[method.name]
+        api = APIMethod(  # type: ignore
+            func=runnable_method.func,
+            name=method.name,
+            batchable=runnable_method.config.batchable,
+            batch_dim=runnable_method.config.batch_dim,
+            max_batch_size=method.max_batch_size,
+            max_latency_ms=method.max_latency_ms,
+        )
+        apis[method.name] = api
+    config: Config = {}
+    resource_config = runner.resource_config or {}
+    if (
+        "nvidia.com/gpu" in runner.runnable_class.SUPPORTED_RESOURCES
+        and "nvidia.com/gpu" in resource_config
+    ):
+        gpus: list[int] | str | int = resource_config["nvidia.com/gpu"]
+        if isinstance(gpus, str):
+            gpus = int(gpus)
+        if runner.workers_per_resource > 1:
+            config["workers"] = {}
+            workers_per_resource = int(runner.workers_per_resource)
+            if isinstance(gpus, int):
+                gpus = list(range(gpus))
+            for i in gpus:
+                config["workers"].extend([{"gpus": i}] * workers_per_resource)
+        else:
+            resources_per_worker = int(1 / runner.workers_per_resource)
+            if isinstance(gpus, int):
+                config["workers"] = [
+                    {"gpus": resources_per_worker}
+                    for _ in range(gpus // resources_per_worker)
+                ]
+            else:
+                config["workers"] = [
+                    {"gpus": gpus[i : i + resources_per_worker]}
+                    for i in range(0, len(gpus), resources_per_worker)
+                ]
+    elif "cpus" in resource_config:
+        config["workers"] = (
+            math.ceil(resource_config["cpus"]) * runner.workers_per_resource
+        )
+    config.update(kwargs)
+    return Service(config=config, inner=RunnerHandle, models=runner.models, apis=apis)

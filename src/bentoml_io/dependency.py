@@ -16,30 +16,30 @@ T = t.TypeVar("T")
 _dependent_cache: dict[str, t.Any] = {}
 
 
-def get_cache_key(service: Service[t.Any]) -> str:
-    return service.name
-
-
-@inject
-def _get_dependency(
-    service: Service[T],
-    runner_mapping: dict[str, str] = Provide[BentoMLContainer.remote_runner_mapping],
-) -> T:
-    from .client.proxy import RemoteProxy
-
-    key = get_cache_key(service)
-    if key not in _dependent_cache:
-        if key in runner_mapping:
-            inst = RemoteProxy(runner_mapping[key], service=service).as_service()
-        else:
-            inst = service.inner()
-        _dependent_cache[key] = inst
-    return _dependent_cache[key]
-
-
 @attrs.frozen
 class Dependency(t.Generic[T]):
     on: Service[T]
+
+    def cache_key(self) -> str:
+        return self.on.name
+
+    @inject
+    def get(
+        self,
+        runner_mapping: dict[str, str] = Provide[
+            BentoMLContainer.remote_runner_mapping
+        ],
+    ) -> T:
+        from .client.proxy import RemoteProxy
+
+        key = self.cache_key()
+        if key not in _dependent_cache:
+            if key in runner_mapping:
+                inst = RemoteProxy(runner_mapping[key], service=self.on).as_service()
+            else:
+                inst = self.on()
+            _dependent_cache[key] = inst
+        return _dependent_cache[key]
 
     @t.overload
     def __get__(self, instance: None, owner: t.Any) -> Dependency[T]:
@@ -52,7 +52,7 @@ class Dependency(t.Generic[T]):
     def __get__(self, instance: t.Any, owner: t.Any) -> Dependency[T] | T:
         if instance is None:
             return self
-        return _get_dependency(self.on)
+        return self.get()
 
     def __getattr__(self, name: str) -> t.Any:
         raise RuntimeError("Dependancy must be accessed as a class attribute")

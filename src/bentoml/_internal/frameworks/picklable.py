@@ -19,8 +19,6 @@ from ..models.model import ModelSignature
 from ..models.model import PartialKwargsModelOptions as ModelOptions
 
 if TYPE_CHECKING:
-    from .. import external_typing as ext
-
     ModelType = t.Any
 
 MODULE_NAME = "bentoml.picklable_model"
@@ -162,11 +160,7 @@ def get_runnable(bento_model: Model):
         if partial_kwargs is None:
             partial_kwargs = {}
 
-        def _run(
-            self: PicklableRunnable,
-            *args: ext.NpNDArray | ext.PdDataFrame,
-            **kwargs: ext.NpNDArray | ext.PdDataFrame,
-        ) -> ext.NpNDArray:
+        def _run(self: PicklableRunnable, *args: t.Any, **kwargs: t.Any) -> t.Any:
             assert isinstance(method_name, str), repr(method_name)
             return getattr(self.model, method_name)(
                 *args, **dict(partial_kwargs, **kwargs)

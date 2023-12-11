@@ -25,6 +25,10 @@ else:
 DEFAULT_STREAM_MEDIA_TYPE = "text/event-stream"
 
 
+def _only_include(data: dict[str, t.Any], fields: t.Container[str]) -> dict[str, t.Any]:
+    return {k: v for k, v in data.items() if k in fields}
+
+
 @attrs.define
 class APIMethod(t.Generic[P, R]):
     func: t.Callable[t.Concatenate[t.Any, P], R]
@@ -121,8 +125,11 @@ class APIMethod(t.Generic[P, R]):
             "content": {
                 self.input_spec.mime_type(): MediaType(
                     schema=Schema(
-                        **self.input_spec.model_json_schema(
-                            ref_template=REF_TEMPLATE, mode="serialization"
+                        **_only_include(
+                            self.input_spec.model_json_schema(
+                                ref_template=REF_TEMPLATE, mode="serialization"
+                            ),
+                            [attr.name for attr in Schema.__attrs_attrs__],
                         )
                     )
                 )
@@ -135,8 +142,11 @@ class APIMethod(t.Generic[P, R]):
             "content": {
                 self.output_spec.mime_type(): MediaType(
                     schema=Schema(
-                        **self.output_spec.model_json_schema(
-                            ref_template=REF_TEMPLATE, mode="serialization"
+                        **_only_include(
+                            self.output_spec.model_json_schema(
+                                ref_template=REF_TEMPLATE, mode="serialization"
+                            ),
+                            [attr.name for attr in Schema.__attrs_attrs__],
                         )
                     )
                 )

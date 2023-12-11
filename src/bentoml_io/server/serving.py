@@ -17,7 +17,6 @@ from simple_di import inject
 from bentoml._internal.container import BentoMLContainer
 from bentoml.exceptions import BentoMLConfigException
 
-from ..dependency import get_cache_key
 from ..factory import Service
 
 AnyService = Service[t.Any]
@@ -110,7 +109,7 @@ def create_service_watchers(
     sockets: list[CircusSocket] = []
     num_workers, worker_envs = scheduler.get_worker_env(svc)
     for dep in svc.dependencies.values():
-        dep_key = get_cache_key(dep.on)
+        dep_key = dep.cache_key()
         if dep_key in dependency_map:
             continue
         new_watchers, new_sockets, uri = create_service_watchers(
@@ -206,7 +205,7 @@ def serve_http_production(
             )
         if not standalone:
             for dep in svc.dependencies.values():
-                dep_key = get_cache_key(dep.on)
+                dep_key = dep.cache_key()
                 if dep_key in dependency_map:
                     continue
                 new_watchers, new_sockets, uri = create_service_watchers(

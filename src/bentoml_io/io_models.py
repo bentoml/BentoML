@@ -4,6 +4,7 @@ import inspect
 import sys
 import typing as t
 from typing import ClassVar
+from urllib.parse import quote
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -90,6 +91,25 @@ class IOMixin:
                 cls.multipart_fields.append(k)
 
     @classmethod
+    def from_inputs(cls, *args: t.Any, **kwargs: t.Any) -> IODescriptor:
+        assert issubclass(cls, IODescriptor)
+        model_fields = list(cls.model_fields)
+        for i, arg in enumerate(args):
+            if i < len(model_fields) and model_fields[i] == ARGS:
+                kwargs[ARGS] = args[i:]
+                break
+            if i < len(model_fields):
+                if model_fields[i] in kwargs:
+                    raise TypeError(f"Duplicate arg given: {model_fields[i]}")
+                kwargs[model_fields[i]] = arg
+            else:
+                raise TypeError("unexpected positional arg")
+        extra_fields = set(kwargs.keys()) - set(cls.model_fields.keys())
+        if KWARGS in model_fields:
+            kwargs[KWARGS] = {k: kwargs.pop(k) for k in extra_fields}
+        return cls(**kwargs)
+
+    @classmethod
     async def from_http_request(cls, request: Request, serde: Serde) -> IODescriptor:
         """Parse a input model from HTTP request"""
         return await serde.parse_request(request, t.cast(t.Type[IODescriptor], cls))
@@ -101,6 +121,8 @@ class IOMixin:
         from starlette.responses import FileResponse
         from starlette.responses import Response
         from starlette.responses import StreamingResponse
+
+        from .serde import JSONSerde
 
         structured_media_type = cls.media_type or serde.media_type
 
@@ -135,38 +157,48 @@ class IOMixin:
 
             return StreamingResponse(content_stream(), media_type=cls.mime_type())
         else:
-            if isinstance(obj, File):
+            if isinstance(obj, File) and isinstance(serde, JSONSerde):
                 media_type = obj.media_type or "application/octet-stream"
                 should_inline = obj.media_type and obj.media_type.startswith(
                     ("image/", "audio/", "video/")
                 )
+                content_disposition_type = "inline" if should_inline else "attachment"
                 if obj.path:
                     return FileResponse(
                         obj.path,
                         filename=obj.filename,
                         media_type=media_type,
-                        content_disposition_type="inline"
-                        if should_inline
-                        else "attachment",
+                        content_disposition_type=content_disposition_type,
                     )
                 else:
                     headers = None
                     if obj.filename:
-                        headers = {
-                            "Content-Disposition": f"{'inline' if should_inline else 'attachment'}; "
-                            f"filename={obj.filename}"
-                        }
+                        if (quoted := quote(obj.filename)) != obj.filename:
+                            content_disposition = (
+                                f"{content_disposition_type}; filename*=utf-8''{quoted}"
+                            )
+                        else:
+                            content_disposition = (
+                                f'{content_disposition_type}; filename="{obj.filename}"'
+                            )
+                        headers = {"Content-Disposition": content_disposition}
                     return Response(obj.read(), media_type=media_type, headers=headers)
             if not isinstance(obj, RootModel):
                 ins: IODescriptor = t.cast(IODescriptor, cls(obj))
             else:
                 ins = t.cast(IODescriptor, obj)
-            if isinstance(rendered := ins.model_dump(), (str, bytes)):
+            if isinstance(rendered := ins.model_dump(), (str, bytes)) and isinstance(
+                serde, JSONSerde
+            ):
                 return Response(content=rendered, media_type=cls.mime_type())
             else:
                 return Response(
                     content=serde.serialize_model(ins), media_type=structured_media_type
                 )
+
+
+ARGS = "args"
+KWARGS = "kwargs"
 
 
 class IODescriptor(IOMixin, BaseModel):
@@ -185,16 +217,15 @@ class IODescriptor(IOMixin, BaseModel):
             if name in ("context", "ctx"):
                 # Reserved name for context object passed in
                 continue
-            if param.kind in (param.VAR_KEYWORD, param.VAR_POSITIONAL):
-                raise TypeError(
-                    f"Unable to infer the input spec for function {func} because of var args, "
-                    "please specify input_spec manually"
-                ) from None
             annotation = param.annotation
             if annotation is param.empty:
-                raise TypeError(
-                    f"Missing type annotation for parameter {name} in function {func}"
-                )
+                annotation = t.Any
+            if param.kind == param.VAR_KEYWORD:
+                name = KWARGS
+                annotation = t.Dict[str, t.Any]
+            elif param.kind == param.VAR_POSITIONAL:
+                name = ARGS
+                annotation = t.List[annotation]
             default = param.default
             if default is param.empty:
                 default = Field()
@@ -207,11 +238,11 @@ class IODescriptor(IOMixin, BaseModel):
                     "Input", __module__=func.__module__, __base__=IODescriptor, **fields
                 ),  # type: ignore
             )
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
             raise TypeError(
                 f"Unable to infer the input spec for function {func}, "
                 "please specify input_spec manually"
-            ) from None
+            ) from e
 
     @classmethod
     def from_output(cls, func: t.Callable[..., t.Any]) -> type[IODescriptor]:
@@ -225,20 +256,21 @@ class IODescriptor(IOMixin, BaseModel):
             global_ns = module.__dict__
         signature = inspect.signature(func)
         if signature.return_annotation is inspect.Signature.empty:
-            raise TypeError(f"Missing return type annotation for function {func}")
-        return_annotation = eval_type_lenient(
-            signature.return_annotation, global_ns, None
-        )
+            return_annotation = t.Any
+        else:
+            return_annotation = eval_type_lenient(
+                signature.return_annotation, global_ns, None
+            )
 
         if is_iterator_type(return_annotation):
             return_annotation = get_args(return_annotation)[0]
         try:
             return ensure_io_descriptor(return_annotation)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
             raise TypeError(
                 f"Unable to infer the output spec for function {func}, "
                 "please specify output_spec manually"
-            ) from None
+            ) from e
 
 
 def ensure_io_descriptor(output_type: type) -> type[IODescriptor]:

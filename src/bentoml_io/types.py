@@ -105,6 +105,11 @@ class File(t.BinaryIO):
     media_type: str | None = None
     path: Path | None = None
 
+    def __attrs_post_int__(self) -> None:
+        if self.filename is None:
+            if self._fp is not None and hasattr(self._fp, "name"):
+                self.filename = self._fp.name
+
     @property
     def fp(self) -> t.BinaryIO:
         if self._fp is None:
@@ -113,7 +118,8 @@ class File(t.BinaryIO):
             self._fp = open(self.path, "rb")
         return self._fp
 
-    def encode(self, obj: t.BinaryIO) -> bytes:
+    @classmethod
+    def encode(cls, obj: t.BinaryIO) -> bytes:
         obj.seek(0)
         return obj.read()
 
@@ -189,6 +195,22 @@ class File(t.BinaryIO):
     def tell(self) -> int:
         return self.fp.tell()
 
+    def __getstate__(self) -> dict[str, t.Any]:
+        d = attrs.asdict(self)
+        if self._fp is not None:
+            d["_pos"] = self._fp.tell()
+            self._fp.seek(0)
+            d["_fp"] = self._fp.read()
+            self._fp.seek(d["_pos"])
+        return d
+
+    def __setstate__(self, d: dict[str, t.Any]) -> None:
+        if d["_fp"] is not None:
+            fp = d["_fp"] = io.BytesIO(d["_fp"])
+            fp.seek(d.pop("_pos", 0))
+        for k, v in d.items():
+            setattr(self, k, v)
+
 
 class Image(File):
     format: t.ClassVar[str] = "image"
@@ -242,11 +264,11 @@ class TensorSchema:
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
             self._validate,
-            core_schema.list_schema(),
+            core_schema.any_schema(),
             serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
         )
 
-    def encode(self, arr: TensorType) -> list[t.Any]:
+    def encode(self, arr: TensorType) -> bytes:
         if self.format == "numpy-array":
             numpy_array = arr
         elif self.format == "tf-tensor":

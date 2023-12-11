@@ -24,11 +24,12 @@ class RemoteProxy(HTTPClient, t.Generic[T]):
         self,
         url: str,
         *,
-        media_type: str = "application/json",
         service: Service[T] | None = None,
     ) -> None:
         assert service is not None, "service must be provided"
-        super().__init__(url, media_type=media_type, service=service)
+        super().__init__(
+            url, media_type="application/vnd.bentoml+pickle", service=service
+        )
         self._inner = service.inner
 
     def as_service(self) -> T:

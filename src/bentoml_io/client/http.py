@@ -204,7 +204,10 @@ class HTTPClient(AbstractClient):
         resp = await self._request(endpoint.route, data, headers=headers)
         if endpoint.stream_output:
             return self._parse_stream_response(endpoint, resp)
-        elif endpoint.output["type"] == "file":
+        elif (
+            endpoint.output.get("type") == "file"
+            and self.media_type == "application/json"
+        ):
             return await self._parse_file_response(endpoint, resp)
         else:
             return await self._parse_response(endpoint, resp)
@@ -241,7 +244,7 @@ class HTTPClient(AbstractClient):
 
     def _build_multipart(
         self, model: IODescriptor | dict[str, t.Any]
-    ) -> MultipartWriter:
+    ) -> MultipartWriter | bytes:
         import aiohttp
 
         def is_file_field(k: str) -> bool:
@@ -258,26 +261,34 @@ class HTTPClient(AbstractClient):
             data = model
         else:
             data = {k: getattr(model, k) for k in model.model_fields}
-        with aiohttp.MultipartWriter("form-data") as mp:
-            for name, value in data.items():
-                if not is_file_field(name):
-                    part = mp.append_json(value)
-                    part.set_content_disposition("form-data", name=name)
-                    continue
-                if not isinstance(value, t.Sequence):
-                    value = [value]
-                for v in value:
-                    if is_image_type(type(v)):
-                        part = mp.append(
-                            getattr(v, "_fp", v.fp),
-                            headers={"Content-Type": f"image/{v.format.lower()}"},
+        if self.media_type == "application/json":
+            with aiohttp.MultipartWriter("form-data") as mp:
+                for name, value in data.items():
+                    if not is_file_field(name):
+                        part = mp.append_json(value)
+                        part.set_content_disposition("form-data", name=name)
+                        continue
+                    if not isinstance(value, t.Sequence):
+                        value = [value]
+                    for v in value:
+                        if is_image_type(type(v)):
+                            part = mp.append(
+                                getattr(v, "_fp", v.fp),
+                                headers={"Content-Type": f"image/{v.format.lower()}"},
+                            )
+                        else:
+                            part = mp.append(v)
+                        part.set_content_disposition(
+                            "attachment", filename=part.filename, name=name
                         )
-                    else:
-                        part = mp.append(v)
-                    part.set_content_disposition(
-                        "attachment", filename=part.filename, name=name
-                    )
-            return mp
+                return mp
+        elif isinstance(model, dict):
+            for k, v in data.items():
+                if is_file_field(v) and not isinstance(v, File):
+                    data[k] = File(v)
+            return self.serde.serialize(data)
+        else:
+            return self.serde.serialize_model(model)
 
     async def _prepare_request(
         self,
@@ -285,40 +296,38 @@ class HTTPClient(AbstractClient):
         args: t.Sequence[t.Any],
         kwargs: dict[str, t.Any],
     ) -> bytes | MultipartWriter:
-        for name, value in zip(endpoint.input["properties"], args):
-            if name in kwargs:
-                raise TypeError(f"Duplicate argument {name}")
-            kwargs[name] = value
         if endpoint.input_spec is not None:
-            model = endpoint.input_spec(**kwargs)
+            model = endpoint.input_spec.from_inputs(*args, **kwargs)
             if not model.multipart_fields:
                 return self.serde.serialize_model(model)
             else:
                 return self._build_multipart(model)
-        else:
-            params = set(endpoint.input["properties"].keys())
-            non_exist_args = set(kwargs.keys()) - set(params)
-            if non_exist_args:
-                raise TypeError(
-                    f"Arguments not found in endpoint {endpoint.name}: {non_exist_args}"
-                )
-            required = set(endpoint.input.get("required", []))
-            missing_args = set(required) - set(kwargs.keys())
-            if missing_args:
-                raise TypeError(
-                    f"Missing required arguments in endpoint {endpoint.name}: {missing_args}"
-                )
-            multipart_fields = {
-                k
-                for k, v in kwargs.items()
-                if is_file_like(v)
-                or isinstance(v, t.Sequence)
-                and v
-                and is_file_like(v[0])
-            }
-            if multipart_fields:
-                return self._build_multipart(kwargs)
-            return self.serde.serialize(kwargs)
+
+        for name, value in zip(endpoint.input["properties"], args):
+            if name in kwargs:
+                raise TypeError(f"Duplicate argument {name}")
+            kwargs[name] = value
+
+        params = set(endpoint.input["properties"].keys())
+        non_exist_args = set(kwargs.keys()) - set(params)
+        if non_exist_args:
+            raise TypeError(
+                f"Arguments not found in endpoint {endpoint.name}: {non_exist_args}"
+            )
+        required = set(endpoint.input.get("required", []))
+        missing_args = set(required) - set(kwargs.keys())
+        if missing_args:
+            raise TypeError(
+                f"Missing required arguments in endpoint {endpoint.name}: {missing_args}"
+            )
+        multipart_fields = {
+            k
+            for k, v in kwargs.items()
+            if is_file_like(v) or isinstance(v, t.Sequence) and v and is_file_like(v[0])
+        }
+        if multipart_fields:
+            return self._build_multipart(kwargs)
+        return self.serde.serialize(kwargs)
 
     def _deserialize_output(self, data: bytes, endpoint: ClientEndpoint) -> t.Any:
         if endpoint.output_spec is not None:
@@ -326,9 +335,9 @@ class HTTPClient(AbstractClient):
             if isinstance(model, RootModel):
                 return model.root  # type: ignore
             return model
-        elif endpoint.output["type"] == "string":
+        elif (ot := endpoint.output.get("type")) == "string":
             return data.decode("utf-8")
-        elif endpoint.output["type"] == "bytes":
+        elif ot == "bytes":
             return data
         else:
             return self.serde.deserialize(data)

@@ -18,4 +18,5 @@ from .api import api as api
 from .dependency import depends as depends
 from .factory import Service as Service
 from .factory import service as service
+from .factory import runner_service as runner_service
 from .io_models import IODescriptor as IODescriptor

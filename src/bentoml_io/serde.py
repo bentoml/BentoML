@@ -6,7 +6,6 @@ import json
 import pickle
 import typing as t
 
-from pydantic import RootModel
 from starlette.datastructures import UploadFile
 
 from .typing_utils import is_list_type
@@ -91,10 +90,7 @@ class PickleSerde(Serde):
     media_type = "application/vnd.bentoml+pickle"
 
     def serialize_model(self, model: IODescriptor) -> bytes:
-        if isinstance(model, RootModel):
-            model_data: t.Any = model.root
-        else:
-            model_data = {k: getattr(model, k) for k in model.model_fields}
+        model_data = model.model_dump()
         return pickle.dumps(model_data)
 
     def deserialize_model(self, model_bytes: bytes, cls: type[T]) -> T:

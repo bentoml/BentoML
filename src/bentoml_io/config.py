@@ -33,14 +33,14 @@ class ResourceSchema(TypedDict, total=False):
 
 
 class _IndividualWorkerSchema(TypedDict):
-    gpus: Posfloat | list[int]
+    gpus: Union[Posint, List[int]]
 
 
 WorkerSchema = Union[Posint, Literal["cpu_count"], List[_IndividualWorkerSchema]]
 
 
 class MetricDuration(TypedDict, total=False):
-    buckets: list[float]
+    buckets: List[float]
     min: Annotated[float, Gt(0)]
     max: Annotated[float, Gt(0)]
     factor: Annotated[float, Gt(1.0)]
@@ -76,13 +76,13 @@ class SSLSchema(TypedDict, total=False):
 
 class HTTPCorsSchema(TypedDict, total=False):
     enabled: bool
-    access_control_allow_origins: str | list[str]
+    access_control_allow_origins: Union[str, List[str]]
     access_control_allow_credentials: bool
-    access_control_allow_methods: str | list[str]
-    access_control_allow_headers: str | list[str]
+    access_control_allow_methods: Union[str, List[str]]
+    access_control_allow_headers: Union[str, List[str]]
     access_control_allow_origin_regex: str
     access_control_max_age: int
-    access_control_expose_headers: str | list[str]
+    access_control_expose_headers: Union[str, List[str]]
 
 
 class HTTPSchema(TypedDict, total=False):
@@ -126,8 +126,8 @@ class MonitoringSchema(TypedDict, total=False):
 
 class ZipkinSchema(TypedDict, total=False):
     endpoint: str
-    local_node_ipv4: IPvAnyAddress | int
-    local_node_ipv6: IPvAnyAddress | int
+    local_node_ipv4: Union[IPvAnyAddress, int]
+    local_node_ipv6: Union[IPvAnyAddress, int]
     local_node_port: Posint
 
 
@@ -167,7 +167,7 @@ class TracingSchema(TypedDict, total=False):
     sample_rate: Annotated[float, Ge(0.0), Le(1.0)]
     timeout: Posint
     max_tag_value_length: Posint
-    excluded_urls: list[str] | str
+    excluded_urls: Union[str, List[str]]
     zipkin: ZipkinSchema
     jaeger: JaegerSchema
     otlp: OTLPSchema

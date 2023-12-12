@@ -38,7 +38,7 @@ def test_models(tmpdir: "Path"):
     os.makedirs(os.path.join(tmpdir, "models"))
     store = ModelStore(os.path.join(tmpdir, "models"))
 
-    with bentoml.models._create(
+    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
         "testmodel",
         module=__name__,
         signatures={},
@@ -49,7 +49,7 @@ def test_models(tmpdir: "Path"):
 
     time.sleep(1)
 
-    with bentoml.models._create(
+    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
         "testmodel",
         module=__name__,
         signatures={},
@@ -60,7 +60,7 @@ def test_models(tmpdir: "Path"):
         testmodel_file_content = createfile(testmodel.path_of("file"))
         testmodel_infolder_content = createfile(testmodel.path_of("folder/file"))
 
-    with bentoml.models._create(
+    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
         "anothermodel",
         module=__name__,
         signatures={},

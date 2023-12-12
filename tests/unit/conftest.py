@@ -112,7 +112,7 @@ def simple_service() -> bentoml.Service:
         def predict(self, data: t.Any) -> t.Any:
             return data
 
-    with bentoml.models._create(
+    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
         "python_function",
         context=TEST_MODEL_CONTEXT,
         module=__name__,

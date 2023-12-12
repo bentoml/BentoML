@@ -209,7 +209,7 @@ def save_model(
         message = f"Batchable signatures are not supported for fastai models. The following signatures have batchable sets to 'True': {batchable_enabled_signatures}. Consider using PyTorch layer from the learner model. To learn more, visit https://docs.bentoml.com/en/latest/frameworks/fastai.html."
         raise BentoMLException(message)
 
-    with bentoml.models._create(
+    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

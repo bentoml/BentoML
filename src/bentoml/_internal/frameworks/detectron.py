@@ -242,7 +242,7 @@ def save_model(
 
     custom_objects["config"] = config
 
-    with bentoml.models._create(
+    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

@@ -150,7 +150,7 @@ def save_model(
             name,
         )
 
-    with bentoml.models._create(
+    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
         name,
         module=_module_name,
         api_version=API_VERSION,

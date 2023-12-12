@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Annotated
 from typing import Any
 from typing import Dict
 from typing import List
@@ -12,6 +11,7 @@ from annotated_types import Gt
 from annotated_types import Le
 from pydantic import IPvAnyAddress
 from pydantic import TypeAdapter
+from typing_extensions import Annotated
 from typing_extensions import Literal
 from typing_extensions import TypedDict
 

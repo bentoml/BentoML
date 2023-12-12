@@ -7,11 +7,11 @@ import operator
 import typing as t
 from mimetypes import guess_type
 from pathlib import Path
-from typing import BinaryIO
 
 import attrs
 from pydantic_core import core_schema
 from starlette.datastructures import UploadFile
+from typing_extensions import Annotated
 
 from bentoml._internal.utils import dict_filter_none
 
@@ -167,7 +167,7 @@ class File(t.BinaryIO):
             path=Path(path),
         )
 
-    def __enter__(self) -> BinaryIO:
+    def __enter__(self) -> t.BinaryIO:
         return self
 
     def __exit__(self, *args: t.Any) -> None:
@@ -385,11 +385,11 @@ def Tensor(
         annotation = torch.Tensor
     else:
         annotation = tf.Tensor
-    return t.Annotated[annotation, TensorSchema(format, dtype, shape)]
+    return Annotated[annotation, TensorSchema(format, dtype, shape)]
 
 
 def Dataframe(
     orient: t.Literal["records", "columns"] = "records",
     columns: list[str] | None = None,
 ) -> t.Type[pd.DataFrame]:
-    return t.Annotated[pd.DataFrame, DataframeSchema(orient, columns)]
+    return Annotated[pd.DataFrame, DataframeSchema(orient, columns)]

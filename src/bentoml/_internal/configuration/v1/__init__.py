@@ -1,8 +1,8 @@
 from __future__ import annotations
-from copy import deepcopy
 
 import re
 import typing as t
+from copy import deepcopy
 
 import schema as s
 

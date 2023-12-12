@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import importlib.metadata
+import json
 import logging
 import os
 import re
 import typing as t
-import json
 from functools import lru_cache
 
 from ...exceptions import BentoMLConfigException
@@ -98,14 +98,16 @@ def get_bentoml_override_config_from_env() -> str | None:
         return os.environ.get(CONFIG_OVERRIDE_ENV_VAR, None)
     return None
 
+
 def get_bentoml_override_config_json_from_env() -> dict[str, t.Any] | None:
     if CONFIG_OVERRIDE_JSON_ENV_VAR in os.environ:
         # User local config options for customizing bentoml
         values = os.environ.get(CONFIG_OVERRIDE_JSON_ENV_VAR, None)
         if values is not None:
-            return json.loads(values) 
+            return json.loads(values)
 
     return None
+
 
 def set_debug_mode(enabled: bool) -> None:
     os.environ[DEBUG_ENV_VAR] = str(enabled)

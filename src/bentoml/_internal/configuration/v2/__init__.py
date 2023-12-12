@@ -1,8 +1,8 @@
 from __future__ import annotations
-from copy import deepcopy
 
 import re
 import typing as t
+from copy import deepcopy
 
 import schema as s
 
@@ -14,7 +14,6 @@ from ..helpers import ensure_larger_than
 from ..helpers import ensure_larger_than_zero
 from ..helpers import ensure_range
 from ..helpers import is_valid_ip_address
-from ..helpers import rename_fields
 from ..helpers import validate_otlp_protocol
 from ..helpers import validate_tracing_type
 

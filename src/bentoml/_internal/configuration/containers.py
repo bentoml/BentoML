@@ -5,7 +5,6 @@ import math
 import os
 import typing as t
 import uuid
-from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -20,12 +19,10 @@ from ...exceptions import BentoMLConfigException
 from ..context import component_context
 from ..context import trace_context
 from ..resource import CpuResource
-from ..resource import system_resources
 from ..utils import split_with_quotes
 from ..utils import validate_or_create_dir
 from ..utils.unflatten import unflatten
 from . import expand_env_var
-from .helpers import expand_env_var_in_values
 from .helpers import flatten_dict
 from .helpers import get_default_config
 from .helpers import import_configuration_spec
@@ -88,7 +85,10 @@ class BentoMLConfiguration:
             migration = getattr(import_configuration_spec(current), "migration", None)
             # Running migration layer if it exists
             if migration is not None:
-               override = migration(default_config=self.config, override_config=dict(flatten_dict(override)))
+                override = migration(
+                    default_config=self.config,
+                    override_config=dict(flatten_dict(override)),
+                )
             config_merger.merge(self.config, override)
 
         if override_config_json is not None:
@@ -108,7 +108,10 @@ class BentoMLConfiguration:
             migration = getattr(import_configuration_spec(current), "migration", None)
             # Running migration layer if it exists
             if migration is not None:
-               override = migration(default_config=self.config, override_config=dict(flatten_dict(override_config_json)))
+                override = migration(
+                    default_config=self.config,
+                    override_config=dict(flatten_dict(override_config_json)),
+                )
             config_merger.merge(self.config, override_config_json)
 
         if override_config_values is not None:
@@ -143,7 +146,9 @@ class BentoMLConfiguration:
             )
             # Running migration layer if it exists
             if migration is not None:
-                override_config_map = migration(default_config=self.config, override_config=override_config_map)
+                override_config_map = migration(
+                    default_config=self.config, override_config=override_config_map
+                )
             # Previous behaviour, before configuration versioning.
             try:
                 override = unflatten(override_config_map)

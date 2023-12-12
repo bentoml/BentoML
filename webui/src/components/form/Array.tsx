@@ -55,7 +55,7 @@ export const ArrayItems: FC<IArrayItemsProps> = observer((props) => {
         <Button
           type="button"
           onClick={() => {
-            field?.push?.(schema.default)
+            field?.push?.((schema.items as Schema)?.default)
           }}
         >
           Add

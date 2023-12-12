@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 
 import re
 import typing as t
@@ -185,11 +186,12 @@ SCHEMA = s.Schema(
             s.Optional("type"): s.Or(str, None),
             s.Optional("options"): s.Or(dict, None),
         },
+        s.Optional("services"): s.Or(dict, None),
     }
 )
 
 
-def migration(*, override_config: dict[str, t.Any]):
+def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.Any]):
     # We will use a flattened config to make it easier to migrate,
     # Then we will convert it back to a nested config.
     if depth(override_config) > 1:
@@ -304,4 +306,11 @@ def migration(*, override_config: dict[str, t.Any]):
                 current=f"runners.{runner_name}.timeout",
                 replace_with=f"runners.{runner_name}.traffic.timeout",
             )
+
+    # 8. if runner is overriden, set the runner default values
+    default_runner_config = deepcopy(default_config["runners"])
+    for key in list(override_config):
+        if key.startswith("runners."):
+            runner_name = key.split(".")[1]
+            default_config["runners"][runner_name] = default_runner_config
     return unflatten(override_config)

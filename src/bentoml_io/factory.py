@@ -81,7 +81,7 @@ class Service(t.Generic[T]):
             elif isinstance(value, Model):
                 self.models.append(value)
             elif isinstance(value, APIMethod):
-                self.apis[field] = t.cast(APIMethod[..., t.Any], value)
+                self.apis[field] = t.cast("APIMethod[..., t.Any]", value)
 
     @_caller_module.default
     def _get_caller_module(self) -> str:

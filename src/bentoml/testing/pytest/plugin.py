@@ -131,21 +131,21 @@ def _setup_deployment_mode(metafunc: Metafunc):
 
 def _setup_model_store(metafunc: Metafunc):
     """Setup dummy models for test session."""
-    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
+    with bentoml.models._create(  # type: ignore
         "testmodel",
         module=__name__,
         signatures={},
         context=TEST_MODEL_CONTEXT,
     ):
         pass
-    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
+    with bentoml.models._create(  # type: ignore
         "testmodel",
         module=__name__,
         signatures={},
         context=TEST_MODEL_CONTEXT,
     ):
         pass
-    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
+    with bentoml.models._create(  # type: ignore
         "anothermodel",
         module=__name__,
         signatures={},

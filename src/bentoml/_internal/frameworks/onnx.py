@@ -302,7 +302,7 @@ def save_model(
 
     options = ONNXOptions(input_specs=input_specs, output_specs=output_specs)
 
-    with bentoml.models._create(  # pyright: ignore [reportPrivateUsage]
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

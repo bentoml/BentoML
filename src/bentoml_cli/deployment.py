@@ -6,8 +6,8 @@ import click
 
 if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
-    from bentoml._internal.cloud.schemas import DeploymentListSchema
-    from bentoml._internal.cloud.schemas import DeploymentSchema
+    from bentoml._internal.cloud.schemas.schemasv1 import DeploymentListSchema
+    from bentoml._internal.cloud.schemas.schemasv1 import DeploymentSchema
 
     from .utils import SharedOptions
 else:

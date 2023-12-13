@@ -5,6 +5,7 @@ import logging
 import typing as t
 
 import attr
+import yaml
 from deepmerge.merger import Merger
 
 from ...exceptions import BentoMLException
@@ -13,17 +14,18 @@ from ..utils import bentoml_cattr
 from ..utils import first_not_none
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
-from .schemas import CreateDeploymentSchema
-from .schemas import DeploymentListSchema
-from .schemas import DeploymentMode
-from .schemas import DeploymentSchema
-from .schemas import DeploymentTargetCanaryRule
-from .schemas import DeploymentTargetConfig
-from .schemas import DeploymentTargetHPAConf
-from .schemas import DeploymentTargetRunnerConfig
-from .schemas import DeploymentTargetType
-from .schemas import FullDeploymentSchema
-from .schemas import UpdateDeploymentSchema
+from .schemas.modelschemas import DeploymentTargetHPAConf
+from .schemas.modelschemas import DeploymentTargetRunnerConfig
+from .schemas.schemasv1 import CreateDeploymentSchema as CreateDeploymentSchemaV1
+from .schemas.schemasv1 import DeploymentListSchema
+from .schemas.schemasv1 import DeploymentMode
+from .schemas.schemasv1 import DeploymentSchema
+from .schemas.schemasv1 import DeploymentTargetCanaryRule
+from .schemas.schemasv1 import DeploymentTargetConfig
+from .schemas.schemasv1 import DeploymentTargetType
+from .schemas.schemasv1 import FullDeploymentSchema
+from .schemas.schemasv1 import UpdateDeploymentSchema
+from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +60,10 @@ class Resource:
         return bentoml_cattr.structure(kwargs, DeploymentTargetConfig)
 
 
+@attr.define
 class Deployment:
+    schema: t.Optional[DeploymentSchema] = attr.field(default=None)
+
     @classmethod
     def _get_default_kube_namespace(
         cls,
@@ -84,7 +89,7 @@ class Deployment:
     @classmethod
     def _create_deployment(
         cls,
-        create_deployment_schema: CreateDeploymentSchema,
+        create_deployment_schema: CreateDeploymentSchemaV1,
         context: str | None = None,
         cluster_name: str | None = None,
     ) -> DeploymentSchema:
@@ -396,7 +401,7 @@ class Deployment:
             context=context,
             cluster_name=cluster_name,
             create_deployment_schema=bentoml_cattr.structure(
-                dct, CreateDeploymentSchema
+                dct, CreateDeploymentSchemaV1
             ),
         )
 
@@ -560,3 +565,98 @@ class Deployment:
         if res is None:
             raise BentoMLException("Terminate deployment request failed")
         return res
+
+    @classmethod
+    def _create_deploymentV2(
+        cls,
+        create_deployment_schema: CreateDeploymentSchemaV2,
+        context: str | None = None,
+    ) -> DeploymentSchema:
+        cloud_rest_client = get_rest_api_client(context)
+        res = cloud_rest_client.create_deployment_v2(create_deployment_schema)
+        if res is None:
+            raise BentoMLException("Create deployment request failed")
+        logger.debug("Deployment Schema: %s", create_deployment_schema)
+        return res
+
+    @classmethod
+    def create_deploymentV2(
+        cls,
+        project_path: str | None = None,
+        bento: Tag | str | None = None,
+        access_type: str | None = None,
+        name: str | None = None,
+        cluster: str | None = None,
+        scailing_min: int | None = None,
+        scailing_max: int | None = None,
+        instance_type: str | None = None,
+        strategy: str | None = None,
+        envs: t.List[dict[str, t.Any]] | None = None,
+        extras: dict[str, t.Any] | None = None,
+        config_dct: dict[str, t.Any] | None = None,
+        config_file: str | None = None,
+        path_context: str | None = None,
+        context: str | None = None,
+    ) -> Deployment:
+        if (not bento and not project_path) or (bento and project_path):
+            raise BentoMLException(
+                "Create a deployment needs one and only one target - either a project path or a bento"
+            )
+        bento_target = ""
+        if project_path:
+            from bentoml import bentos
+
+            print(f"Building bento: {project_path}")
+            bento_target = bentos.build_bentofile(build_ctx=project_path).tag
+        elif bento is not None:
+            bento_target = bento
+
+        from bentoml._internal.configuration.containers import BentoMLContainer
+
+        client = BentoMLContainer.bentocloud_client.get()
+        bento_store = BentoMLContainer.bento_store.get()
+        bento_target = Tag.from_taglike(bento_target)
+        bento_obj = bento_store.get(bento_target)
+        if not bento_obj:
+            raise ValueError(f"Bento {bento} not found in local store")
+        client.push_bento(bento=bento_obj)
+
+        dct = {"name": name, "bento": str(bento_target)}
+        if config_dct:
+            merging_dct = config_dct
+            pass
+        elif config_file:
+            real_path = resolve_user_filepath(config_file, path_context)
+            try:
+                with open(real_path, "r") as file:
+                    merging_dct = yaml.safe_load(file)
+            except FileNotFoundError:
+                raise ValueError(f"File not found: {real_path}")
+            except yaml.YAMLError as exc:
+                logger.error("Error while parsing YAML file: %s", exc)
+                raise
+            except Exception as e:
+                raise ValueError(
+                    f"An error occurred while reading the file: {real_path}\n{e}"
+                )
+        else:
+            if scailing_min is None:
+                scailing_min = 1
+            if scailing_max is None:
+                scailing_max = max(1, scailing_min)
+            merging_dct = {
+                "scaling": {"min_replicas": scailing_min, "max_replicas": scailing_max},
+                "instance_type": instance_type,
+                "deployment_strategy": strategy,
+                "envs": envs,
+                "extras": extras,
+                "access_type": access_type,
+            }
+        if "cluster" not in dct:
+            cluster = cls._get_default_cluster(context)
+            dct["cluster"] = cluster
+        config_merger.merge(dct, merging_dct)
+        res = cls._create_deploymentV2(
+            bentoml_cattr.structure(dct, CreateDeploymentSchemaV2), context
+        )
+        return Deployment(schema=res)

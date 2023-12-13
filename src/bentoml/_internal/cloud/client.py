@@ -8,32 +8,33 @@ import requests
 
 from ...exceptions import CloudRESTApiClientError
 from ..configuration import BENTOML_VERSION
-from .schemas import BentoRepositorySchema
-from .schemas import BentoSchema
-from .schemas import BentoWithRepositoryListSchema
-from .schemas import ClusterFullSchema
-from .schemas import ClusterListSchema
-from .schemas import CompleteMultipartUploadSchema
-from .schemas import CreateBentoRepositorySchema
-from .schemas import CreateBentoSchema
-from .schemas import CreateDeploymentSchema
-from .schemas import CreateModelRepositorySchema
-from .schemas import CreateModelSchema
-from .schemas import DeploymentListSchema
-from .schemas import DeploymentSchema
-from .schemas import FinishUploadBentoSchema
-from .schemas import FinishUploadModelSchema
-from .schemas import ModelRepositorySchema
-from .schemas import ModelSchema
-from .schemas import ModelWithRepositoryListSchema
-from .schemas import OrganizationSchema
-from .schemas import PreSignMultipartUploadUrlSchema
-from .schemas import UpdateBentoSchema
-from .schemas import UpdateDeploymentSchema
-from .schemas import UserSchema
-from .schemas import schema_from_json
-from .schemas import schema_from_object
-from .schemas import schema_to_json
+from .schemas.schemasv1 import BentoRepositorySchema
+from .schemas.schemasv1 import BentoSchema
+from .schemas.schemasv1 import BentoWithRepositoryListSchema
+from .schemas.schemasv1 import ClusterFullSchema
+from .schemas.schemasv1 import ClusterListSchema
+from .schemas.schemasv1 import CompleteMultipartUploadSchema
+from .schemas.schemasv1 import CreateBentoRepositorySchema
+from .schemas.schemasv1 import CreateBentoSchema
+from .schemas.schemasv1 import CreateDeploymentSchema as CreateDeploymentSchemaV1
+from .schemas.schemasv1 import CreateModelRepositorySchema
+from .schemas.schemasv1 import CreateModelSchema
+from .schemas.schemasv1 import DeploymentListSchema
+from .schemas.schemasv1 import DeploymentSchema
+from .schemas.schemasv1 import FinishUploadBentoSchema
+from .schemas.schemasv1 import FinishUploadModelSchema
+from .schemas.schemasv1 import ModelRepositorySchema
+from .schemas.schemasv1 import ModelSchema
+from .schemas.schemasv1 import ModelWithRepositoryListSchema
+from .schemas.schemasv1 import OrganizationSchema
+from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
+from .schemas.schemasv1 import UpdateBentoSchema
+from .schemas.schemasv1 import UpdateDeploymentSchema
+from .schemas.schemasv1 import UserSchema
+from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
+from .schemas.utils import schema_from_json
+from .schemas.utils import schema_from_object
+from .schemas.utils import schema_to_json
 
 logger = logging.getLogger(__name__)
 
@@ -432,9 +433,18 @@ class RestApiClient:
         return schema_from_json(resp.text, DeploymentListSchema)
 
     def create_deployment(
-        self, cluster_name: str, create_schema: CreateDeploymentSchema
+        self, cluster_name: str, create_schema: CreateDeploymentSchemaV1
     ) -> DeploymentSchema | None:
         url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster_name}/deployments")
+        resp = self.session.post(url, data=schema_to_json(create_schema))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+    def create_deployment_v2(
+        self, create_schema: CreateDeploymentSchemaV2
+    ) -> DeploymentSchema | None:
+        url = urljoin(self.endpoint, "/api/v2/deployments")
+        print(schema_to_json(create_schema))
         resp = self.session.post(url, data=schema_to_json(create_schema))
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentSchema)

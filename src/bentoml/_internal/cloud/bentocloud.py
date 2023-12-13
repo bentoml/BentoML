@@ -30,33 +30,33 @@ from .base import CallbackIOWrapper
 from .base import CloudClient
 from .config import get_rest_api_client
 from .deployment import Deployment
-from .schemas import BentoApiSchema
-from .schemas import BentoManifestSchema
-from .schemas import BentoRunnerResourceSchema
-from .schemas import BentoRunnerSchema
-from .schemas import BentoUploadStatus
-from .schemas import CompleteMultipartUploadSchema
-from .schemas import CompletePartSchema
-from .schemas import CreateBentoRepositorySchema
-from .schemas import CreateBentoSchema
-from .schemas import CreateModelRepositorySchema
-from .schemas import CreateModelSchema
-from .schemas import FinishUploadBentoSchema
-from .schemas import FinishUploadModelSchema
-from .schemas import LabelItemSchema
-from .schemas import ModelManifestSchema
-from .schemas import ModelUploadStatus
-from .schemas import PreSignMultipartUploadUrlSchema
-from .schemas import TransmissionStrategy
-from .schemas import UpdateBentoSchema
+from .schemas.modelschemas import BentoApiSchema
+from .schemas.modelschemas import BentoRunnerResourceSchema
+from .schemas.modelschemas import BentoRunnerSchema
+from .schemas.schemasv1 import BentoManifestSchema
+from .schemas.schemasv1 import BentoUploadStatus
+from .schemas.schemasv1 import CompleteMultipartUploadSchema
+from .schemas.schemasv1 import CompletePartSchema
+from .schemas.schemasv1 import CreateBentoRepositorySchema
+from .schemas.schemasv1 import CreateBentoSchema
+from .schemas.schemasv1 import CreateModelRepositorySchema
+from .schemas.schemasv1 import CreateModelSchema
+from .schemas.schemasv1 import FinishUploadBentoSchema
+from .schemas.schemasv1 import FinishUploadModelSchema
+from .schemas.schemasv1 import LabelItemSchema
+from .schemas.schemasv1 import ModelManifestSchema
+from .schemas.schemasv1 import ModelUploadStatus
+from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
+from .schemas.schemasv1 import TransmissionStrategy
+from .schemas.schemasv1 import UpdateBentoSchema
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
     from rich.progress import TaskID
 
-    from .schemas import BentoWithRepositoryListSchema
-    from .schemas import ModelWithRepositoryListSchema
+    from .schemas.schemasv1 import BentoWithRepositoryListSchema
+    from .schemas.schemasv1 import ModelWithRepositoryListSchema
 
 
 class BentoCloudClient(CloudClient):

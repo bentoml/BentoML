@@ -187,6 +187,6 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
     for key in list(override_config):
         if key.startswith("services."):
             svc_name = key.split(".")[1]
-            default_config["services"][svc_name] = default_service_config
+            default_config["services"][svc_name] = deepcopy(default_service_config)
 
     return unflatten(override_config)

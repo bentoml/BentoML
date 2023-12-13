@@ -23,6 +23,7 @@ from ..utils import split_with_quotes
 from ..utils import validate_or_create_dir
 from ..utils.unflatten import unflatten
 from . import expand_env_var
+from .helpers import expand_env_var_in_values
 from .helpers import flatten_dict
 from .helpers import get_default_config
 from .helpers import import_configuration_spec
@@ -166,6 +167,7 @@ class BentoMLConfiguration:
                     f"Failed to parse config options from the env var:\n{e}.\n*** Note: You can use '\"' to quote the key if it contains special characters. ***"
                 ) from None
             config_merger.merge(self.config, override)
+        expand_env_var_in_values(self.config)
 
         if validate_schema:
             try:

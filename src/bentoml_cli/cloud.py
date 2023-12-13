@@ -47,12 +47,12 @@ def add_cloud_command(cli: click.Group) -> click.Group:
     def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
         """Login to BentoCloud or Yatai server."""
         cloud_rest_client = RestApiClient(endpoint, api_token)
-        user = cloud_rest_client.get_current_user()
+        user = cloud_rest_client.v1.get_current_user()
 
         if user is None:
             raise CLIException("current user is not found")
 
-        org = cloud_rest_client.get_current_organization()
+        org = cloud_rest_client.v1.get_current_organization()
 
         if org is None:
             raise CLIException("current organization is not found")

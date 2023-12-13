@@ -71,7 +71,7 @@ class Deployment:
         context: str | None = None,
     ) -> str:
         cloud_rest_client = get_rest_api_client(context)
-        res = cloud_rest_client.get_cluster(cluster_name)
+        res = cloud_rest_client.v1.get_cluster(cluster_name)
         if not res:
             raise BentoMLException("Cannot get default kube namespace")
         return res.config.default_deployment_kube_namespace
@@ -79,7 +79,7 @@ class Deployment:
     @classmethod
     def _get_default_cluster(cls, context: str | None = None) -> str:
         cloud_rest_client = get_rest_api_client(context)
-        res = cloud_rest_client.get_cluster_list(params={"count": 1})
+        res = cloud_rest_client.v1.get_cluster_list(params={"count": 1})
         if not res:
             raise BentoMLException("Failed to get list of clusters.")
         if not res.items:
@@ -102,14 +102,14 @@ class Deployment:
             )
         for target in create_deployment_schema.targets:
             if (
-                cloud_rest_client.get_bento(target.bento_repository, target.bento)
+                cloud_rest_client.v1.get_bento(target.bento_repository, target.bento)
                 is None
             ):
                 raise BentoMLException(
                     f"Create deployment: {target.bento_repository}:{target.bento} does not exist"
                 )
         if (
-            cloud_rest_client.get_deployment(
+            cloud_rest_client.v1.get_deployment(
                 cluster_name,
                 create_deployment_schema.kube_namespace,
                 create_deployment_schema.name,
@@ -117,7 +117,7 @@ class Deployment:
             is not None
         ):
             raise BentoMLException("Create deployment: Deployment already exists")
-        res = cloud_rest_client.create_deployment(
+        res = cloud_rest_client.v1.create_deployment(
             cluster_name, create_deployment_schema
         )
         if res is None:
@@ -141,19 +141,19 @@ class Deployment:
             kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
         for target in update_deployment_schema.targets:
             if (
-                cloud_rest_client.get_bento(target.bento_repository, target.bento)
+                cloud_rest_client.v1.get_bento(target.bento_repository, target.bento)
                 is None
             ):
                 raise BentoMLException(
                     f"Update deployment: {target.bento_repository}:{target.bento} does not exist"
                 )
-            cloud_rest_client.get_deployment(
+            cloud_rest_client.v1.get_deployment(
                 cluster_name,
                 kube_namespace,
                 deployment_name,
             )
 
-        res = cloud_rest_client.update_deployment(
+        res = cloud_rest_client.v1.update_deployment(
             cluster_name, kube_namespace, deployment_name, update_deployment_schema
         )
         if res is None:
@@ -420,12 +420,12 @@ class Deployment:
             cluster_name = cls._get_default_cluster(context)
         if query or start or count or search:
             params = {"start": start, "count": count, "search": search, "q": query}
-            res = cloud_rest_client.get_deployment_list(cluster_name, **params)
+            res = cloud_rest_client.v1.get_deployment_list(cluster_name, **params)
             if res is None:
                 raise BentoMLException("List deployments request failed")
             return res
         else:
-            all_deployment = cloud_rest_client.get_deployment_list(cluster_name)
+            all_deployment = cloud_rest_client.v1.get_deployment_list(cluster_name)
             if all_deployment is None:
                 raise BentoMLException("List deployments request failed")
             return all_deployment
@@ -504,7 +504,7 @@ class Deployment:
             cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
             kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
-        res = cloud_rest_client.get_deployment(
+        res = cloud_rest_client.v1.get_deployment(
             cluster_name, kube_namespace, deployment_name
         )
         if res is None:
@@ -524,7 +524,7 @@ class Deployment:
             cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
             kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
-        res = cloud_rest_client.get_deployment(
+        res = cloud_rest_client.v1.get_deployment(
             cluster_name,
             kube_namespace,
             deployment_name,
@@ -532,7 +532,7 @@ class Deployment:
         if res is None:
             raise BentoMLException("Delete deployment: Deployment does not exist")
 
-        res = cloud_rest_client.delete_deployment(
+        res = cloud_rest_client.v1.delete_deployment(
             cluster_name, kube_namespace, deployment_name
         )
         if res is None:
@@ -552,14 +552,14 @@ class Deployment:
             cluster_name = cls._get_default_cluster(context)
         if kube_namespace is None:
             kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
-        res = cloud_rest_client.get_deployment(
+        res = cloud_rest_client.v1.get_deployment(
             cluster_name,
             kube_namespace,
             deployment_name,
         )
         if res is None:
             raise BentoMLException("Teminate deployment: Deployment does not exist")
-        res = cloud_rest_client.terminate_deployment(
+        res = cloud_rest_client.v1.terminate_deployment(
             cluster_name, kube_namespace, deployment_name
         )
         if res is None:
@@ -573,7 +573,7 @@ class Deployment:
         context: str | None = None,
     ) -> DeploymentSchema:
         cloud_rest_client = get_rest_api_client(context)
-        res = cloud_rest_client.create_deployment_v2(create_deployment_schema)
+        res = cloud_rest_client.v2.create_deployment(create_deployment_schema)
         if res is None:
             raise BentoMLException("Create deployment request failed")
         logger.debug("Deployment Schema: %s", create_deployment_schema)

@@ -39,17 +39,10 @@ from .schemas.utils import schema_to_json
 logger = logging.getLogger(__name__)
 
 
-class RestApiClient:
-    def __init__(self, endpoint: str, api_token: str) -> None:
+class BaseRestApiClient:
+    def __init__(self, endpoint: str, session: requests.Session) -> None:
         self.endpoint = endpoint
-        self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "X-YATAI-API-TOKEN": api_token,
-                "Content-Type": "application/json",
-                "X-Bentoml-Version": BENTOML_VERSION,
-            }
-        )
+        self.session = session
 
     def _is_not_found(self, resp: requests.Response) -> bool:
         # We used to return 400 for record not found, handle both cases
@@ -65,6 +58,8 @@ class RestApiClient:
                 f"request failed with status code {resp.status_code}: {resp.text}"
             )
 
+
+class RestApiClientV1(BaseRestApiClient):
     def get_current_user(self) -> UserSchema | None:
         url = urljoin(self.endpoint, "/api/v1/auth/current")
         resp = self.session.get(url)
@@ -440,15 +435,6 @@ class RestApiClient:
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentSchema)
 
-    def create_deployment_v2(
-        self, create_schema: CreateDeploymentSchemaV2
-    ) -> DeploymentSchema | None:
-        url = urljoin(self.endpoint, "/api/v2/deployments")
-        print(schema_to_json(create_schema))
-        resp = self.session.post(url, data=schema_to_json(create_schema))
-        self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentSchema)
-
     def get_deployment(
         self, cluster_name: str, kube_namespace: str, deployment_name: str
     ) -> DeploymentSchema | None:
@@ -537,3 +523,28 @@ class RestApiClient:
         self._check_resp(resp)
         models = resp.json()["items"]
         return schema_from_object(models[0], ModelSchema) if models else None
+
+
+class RestApiClientV2(BaseRestApiClient):
+    def create_deployment(
+        self, create_schema: CreateDeploymentSchemaV2
+    ) -> DeploymentSchema | None:
+        url = urljoin(self.endpoint, "/api/v2/deployments")
+        print(schema_to_json(create_schema))
+        resp = self.session.post(url, data=schema_to_json(create_schema))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+
+class RestApiClient:
+    def __init__(self, endpoint: str, api_token: str) -> None:
+        self.session = requests.Session()
+        self.session.headers.update(
+            {
+                "X-YATAI-API-TOKEN": api_token,
+                "Content-Type": "application/json",
+                "X-Bentoml-Version": BENTOML_VERSION,
+            }
+        )
+        self.v2 = RestApiClientV2(endpoint, self.session)
+        self.v1 = RestApiClientV1(endpoint, self.session)

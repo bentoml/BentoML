@@ -5,7 +5,6 @@ import math
 import os
 import typing as t
 import uuid
-from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -20,12 +19,10 @@ from ...exceptions import BentoMLConfigException
 from ..context import component_context
 from ..context import trace_context
 from ..resource import CpuResource
-from ..resource import system_resources
 from ..utils import split_with_quotes
 from ..utils import validate_or_create_dir
 from ..utils.unflatten import unflatten
 from . import expand_env_var
-from .helpers import expand_env_var_in_values
 from .helpers import flatten_dict
 from .helpers import get_default_config
 from .helpers import import_configuration_spec
@@ -60,6 +57,7 @@ class BentoMLConfiguration:
         self,
         override_config_file: str | None = None,
         override_config_values: str | None = None,
+        override_config_json: dict[str, t.Any] | None = None,
         *,
         validate_schema: bool = True,
         use_version: int = 1,
@@ -87,8 +85,34 @@ class BentoMLConfiguration:
             migration = getattr(import_configuration_spec(current), "migration", None)
             # Running migration layer if it exists
             if migration is not None:
-                override = migration(override_config=dict(flatten_dict(override)))
+                override = migration(
+                    default_config=self.config,
+                    override_config=dict(flatten_dict(override)),
+                )
             config_merger.merge(self.config, override)
+
+        if override_config_json is not None:
+            logger.info(
+                "Applying user config override from json: %s" % override_config_json
+            )
+            if "version" not in override_config_json:
+                # If users does not define a version, we then by default assume they are using v1
+                # and we will migrate it to latest version
+                logger.debug(
+                    "User config does not define a version, assuming given config is version %d..."
+                    % use_version
+                )
+                current = use_version
+            else:
+                current = override_config_json["version"]
+            migration = getattr(import_configuration_spec(current), "migration", None)
+            # Running migration layer if it exists
+            if migration is not None:
+                override = migration(
+                    default_config=self.config,
+                    override_config=dict(flatten_dict(override_config_json)),
+                )
+            config_merger.merge(self.config, override_config_json)
 
         if override_config_values is not None:
             logger.info(
@@ -122,7 +146,9 @@ class BentoMLConfiguration:
             )
             # Running migration layer if it exists
             if migration is not None:
-                override_config_map = migration(override_config=override_config_map)
+                override_config_map = migration(
+                    default_config=self.config, override_config=override_config_map
+                )
             # Previous behaviour, before configuration versioning.
             try:
                 override = unflatten(override_config_map)
@@ -132,9 +158,6 @@ class BentoMLConfiguration:
                 ) from None
             config_merger.merge(self.config, override)
 
-        if override_config_file is not None or override_config_values is not None:
-            self._finalize()
-
         if validate_schema:
             try:
                 spec_module.SCHEMA.validate(self.config)
@@ -142,33 +165,6 @@ class BentoMLConfiguration:
                 raise BentoMLConfigException(
                     f"Invalid configuration file was given:\n{e}"
                 ) from None
-
-    def _finalize(self):
-        RUNNER_CFG_KEYS = [
-            "batching",
-            "resources",
-            "logging",
-            "metrics",
-            "traffic",
-            "workers_per_resource",
-        ]
-        global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
-        custom_runners_cfg = dict(
-            filter(
-                lambda kv: kv[0] not in RUNNER_CFG_KEYS,
-                self.config["runners"].items(),
-            )
-        )
-        if custom_runners_cfg:
-            for runner_name, runner_cfg in custom_runners_cfg.items():
-                # key is a runner name
-                if runner_cfg.get("resources") == "system":
-                    runner_cfg["resources"] = system_resources()
-                self.config["runners"][runner_name] = config_merger.merge(
-                    deepcopy(global_runner_cfg),
-                    runner_cfg,
-                )
-        expand_env_var_in_values(self.config)
 
     def to_dict(self) -> providers.ConfigDictType:
         return t.cast(providers.ConfigDictType, self.config)

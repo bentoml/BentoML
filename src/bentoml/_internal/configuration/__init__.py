@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.metadata
+import json
 import logging
 import os
 import re
@@ -24,6 +25,7 @@ DEBUG_ENV_VAR = "BENTOML_DEBUG"
 QUIET_ENV_VAR = "BENTOML_QUIET"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
 CONFIG_OVERRIDE_ENV_VAR = "BENTOML_CONFIG_OPTIONS"
+CONFIG_OVERRIDE_JSON_ENV_VAR = "BENTOML_CONFIG_OVERRIDES"
 # https://github.com/grpc/grpc/blob/master/doc/environment_variables.md
 GRPC_DEBUG_ENV_VAR = "GRPC_VERBOSITY"
 
@@ -97,6 +99,16 @@ def get_bentoml_override_config_from_env() -> str | None:
     return None
 
 
+def get_bentoml_override_config_json_from_env() -> dict[str, t.Any] | None:
+    if CONFIG_OVERRIDE_JSON_ENV_VAR in os.environ:
+        # User local config options for customizing bentoml
+        values = os.environ.get(CONFIG_OVERRIDE_JSON_ENV_VAR, None)
+        if values is not None:
+            return json.loads(values)
+
+    return None
+
+
 def set_debug_mode(enabled: bool) -> None:
     os.environ[DEBUG_ENV_VAR] = str(enabled)
     os.environ[GRPC_DEBUG_ENV_VAR] = "DEBUG"
@@ -148,6 +160,8 @@ def load_config(bentoml_config_file: str | None = None):
         BentoMLConfiguration(
             override_config_file=bentoml_config_file,
             override_config_values=get_bentoml_override_config_from_env(),
+            override_config_json=get_bentoml_override_config_json_from_env(),
+            use_version=2,
         ).to_dict()
     )
 

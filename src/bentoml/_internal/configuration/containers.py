@@ -29,7 +29,6 @@ from .helpers import import_configuration_spec
 from .helpers import load_config_file
 
 if TYPE_CHECKING:
-    from bentoml_io.config import ServiceConfig
     from fs.base import FS
 
     from .. import external_typing as ext
@@ -57,6 +56,7 @@ class BentoMLConfiguration:
         self,
         override_config_file: str | None = None,
         override_config_values: str | None = None,
+        override_defaults: dict[str, t.Any] | None = None,
         override_config_json: dict[str, t.Any] | None = None,
         *,
         validate_schema: bool = True,
@@ -65,6 +65,15 @@ class BentoMLConfiguration:
         # Load default configuration with latest version.
         self.config = get_default_config(version=use_version)
         spec_module = import_configuration_spec(version=use_version)
+
+        if override_defaults:
+            migration = getattr(spec_module, "migration", None)
+            if migration is not None:
+                override_defaults = migration(
+                    default_config=self.config,
+                    override_config=dict(flatten_dict(override_defaults)),
+                )
+            config_merger.merge(self.config, override_defaults)
 
         # User override configuration
         if override_config_file is not None:
@@ -515,25 +524,6 @@ class _BentoMLContainerClass:
     @property
     def new_index(self) -> bool:
         return "new_index" in self.enabled_features.get()
-
-    def set_service_config(self, config: ServiceConfig) -> None:
-        """A backward-compatible merging of new service config and legacy configf"""
-        api_server_keys = (
-            "traffic",
-            "metrics",
-            "logging",
-            "ssl",
-            "http",
-            "grpc",
-            "backlog",
-            "runner_probe",
-            "max_runner_connections",
-        )
-        api_server_config = {k: v for k, v in config.items() if k in api_server_keys}
-        rest_config = {k: v for k, v in config.items() if k not in api_server_keys}
-        existing = t.cast(t.Dict[str, t.Any], self.config.get())
-        config_merger.merge(existing, {"api_server": api_server_config, **rest_config})
-        self.config.set(existing)  # type: ignore
 
 
 BentoMLContainer = _BentoMLContainerClass()

@@ -17,9 +17,6 @@ if __name__ == "__main__":
     # Save model to BentoML local model store
     with bentoml.models.create(
         "iris_clf",
-        module="bentoml.pytorch",
-        context=ModelContext(framework_name="", framework_versions={}),
-        signatures={},
     ) as bento_model:
         joblib.dump(clf, bento_model.path_of("model.pkl"))
     print(f"Model saved: {bento_model}")

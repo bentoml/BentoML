@@ -276,13 +276,13 @@ def create(
     *,
     module: str = "",
     api_version: str | None = None,
-    signatures: ModelSignaturesType,
+    signatures: ModelSignaturesType | None = None,
     labels: dict[str, t.Any] | None = None,
     options: ModelOptions | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
-    context: ModelContext,
+    context: ModelContext | None = None,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> t.Generator[Model, None, None]:
     options = ModelOptions() if options is None else options
@@ -292,11 +292,11 @@ def create(
         module=module,
         api_version=api_version,
         labels=labels,
-        signatures=signatures,
+        signatures=signatures or {},
         options=options,
         custom_objects=custom_objects,
         metadata=metadata,
-        context=context,
+        context=context or ModelContext("", {}),
     )
     external_modules = [] if external_modules is None else external_modules
     imported_modules: t.List[ModuleType] = []

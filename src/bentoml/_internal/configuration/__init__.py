@@ -161,7 +161,7 @@ def load_config(bentoml_config_file: str | None = None):
             override_config_file=bentoml_config_file,
             override_config_values=get_bentoml_override_config_from_env(),
             override_config_json=get_bentoml_override_config_json_from_env(),
-            use_version=2,
+            use_version=1,
         ).to_dict()
     )
 

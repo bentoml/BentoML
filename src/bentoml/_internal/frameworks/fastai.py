@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ...types import ModelSignature
-    from .. import external_typing as ext
     from ..models.model import ModelSignaturesType
     from ..tag import Tag
 
@@ -267,10 +266,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 self._no_grad_context.close()
 
     def add_runnable_method(method_name: str, options: ModelSignature):
-        def _run(
-            self: FastAIRunnable,
-            input_data: ext.NpNDArray | torch.Tensor | ext.PdSeries | ext.PdDataFrame,
-        ) -> torch.Tensor:
+        def _run(self: FastAIRunnable, input_data: t.Any) -> torch.Tensor:
             return self.predict_fns[method_name](input_data)
 
         FastAIRunnable.add_method(

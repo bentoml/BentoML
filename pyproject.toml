@@ -61,7 +61,7 @@ dependencies = [
     "rich>=11.2.0",
     "schema",
     "simple-di>=0.1.4",
-    "starlette>=0.13.5",
+    "starlette>=0.24.0",
     "uvicorn",
     "watchfiles>=0.15.0",
 ]
@@ -84,6 +84,7 @@ aws = ["fs-s3fs"]
 io = [
     "bentoml[io-json,io-image,io-pandas,io-file]",
 ]
+io-next = ["pydantic>=2"]
 io-file = ["filetype"] # Currently use for from_sample
 io-json = ["pydantic<2"] # currently we don't have support for pydantic 2.0
 io-image = ["bentoml[io-file]", "Pillow"]
@@ -131,9 +132,9 @@ fallback_version = "0.0.0"
 [tool.hatch.metadata]
 allow-direct-references = true
 [tool.hatch.build.targets.sdist]
-only-include = ["src/bentoml", "src/bentoml_cli"]
+only-include = ["src/bentoml", "src/bentoml_cli", "src/bentoml_io"]
 [tool.hatch.build.targets.wheel]
-packages = ["src/bentoml", "src/bentoml_cli"]
+packages = ["src/bentoml", "src/bentoml_cli", "src/bentoml_io"]
 
 [[tool.pdm.source]]
 url = "https://download.pytorch.org/whl/cpu"
@@ -196,7 +197,6 @@ frameworks = [
 tooling = ["pre-commit", "setuptools-scm", "pandas-stubs"]
 testing = [
     "pandas>=1",
-    "pydantic<2",
     "scikit-learn",
     "yamllint==1.32.0",
     "coverage[toml]==7.2.6",

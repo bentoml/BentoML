@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from bentoml.types import ModelSignatureDict
 
     from .utils.onnx import ONNXArgCastedType
-    from .utils.onnx import ONNXArgType
 
     ProvidersType = list[str | tuple[str, dict[str, t.Any]]]
 
@@ -415,7 +414,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             def _process_output(outs):
                 return outs[0]
 
-        def _run(self: ONNXRunnable, *args: ONNXArgType) -> t.Any:
+        def _run(self: ONNXRunnable, *args: t.Any) -> t.Any:
             casted_args = [
                 casting_funcs[idx](args[idx]) for idx in range(len(casting_funcs))
             ]

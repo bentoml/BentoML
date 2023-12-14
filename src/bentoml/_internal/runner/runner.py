@@ -47,6 +47,7 @@ class RunnerMethod(t.Generic[T, P, R]):
     config: RunnableMethodConfig
     max_batch_size: int
     max_latency_ms: int
+    doc: str | None = None
 
     def run(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self.runner._runner_handle.run_method(self, *args, **kwargs)
@@ -239,6 +240,7 @@ class Runner(AbstractRunner):
                 runner=self,
                 name=method_name,
                 config=method.config,
+                doc=method.func.__doc__,
                 max_batch_size=first_not_none(
                     method_max_batch_size,
                     max_batch_size,

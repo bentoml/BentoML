@@ -28,10 +28,12 @@ from .inference_api import InferenceAPI
 
 if t.TYPE_CHECKING:
     import grpc
+    from bentoml_io.server import Service as NewService
 
     import bentoml
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
+    from bentoml.triton import _TritonRunner
 
     from ...grpc.v1 import service_pb2_grpc as services
     from .. import external_typing as ext
@@ -89,7 +91,7 @@ class Service:
     """
 
     name: str
-    runners: t.List[Runner]
+    runners: t.List[Runner | _TritonRunner]
     models: t.List[Model]
 
     # starlette related
@@ -323,7 +325,7 @@ class Service:
 
         return t.cast("_inference_api_wrapper[IOType]", decorator)
 
-    def __str__(self):
+    def __repr__(self):
         if self.bento:
             return f'bentoml.Service(tag="{self.tag}", ' f'path="{self.bento.path}")'
 
@@ -340,10 +342,12 @@ class Service:
                 f'runners=[{",".join([r.name for r in self.runners])}])'
             )
 
-    def __repr__(self):
-        return self.__str__()
+    def __str__(self) -> str:
+        return repr(self)
 
-    def __eq__(self, other: Service):
+    def __eq__(self, other: t.Any) -> bool:
+        if not isinstance(other, Service):
+            return NotImplemented
         if self is other:
             return True
 
@@ -351,8 +355,7 @@ class Service:
             return self.bento.tag == other.bento.tag
 
         try:
-            if self.get_service_import_origin() == other.get_service_import_origin():
-                return True
+            return self.get_service_import_origin() == other.get_service_import_origin()
         except BentoMLException:
             return False
 
@@ -475,6 +478,9 @@ class Service:
         self.grpc_handlers.extend(handlers)
 
 
-def on_load_bento(svc: Service, bento: Bento):
-    object.__setattr__(svc, "bento", bento)
-    object.__setattr__(svc, "tag", bento.info.tag)
+def on_load_bento(svc: Service | NewService[t.Any], bento: Bento):
+    if isinstance(svc, Service):
+        svc.bento = bento
+        svc.tag = bento.info.tag
+    else:
+        svc.bento = bento

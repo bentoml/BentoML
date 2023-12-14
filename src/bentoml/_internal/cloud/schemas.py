@@ -14,6 +14,11 @@ time_format = "%Y-%m-%d %H:%M:%S.%f"
 
 T = t.TypeVar("T")
 
+if TYPE_CHECKING:
+    from bentoml_io.config import ServiceConfig
+else:
+    ServiceConfig = t.Dict[str, t.Any]
+
 
 def datetime_encoder(time_obj: t.Optional[datetime]) -> t.Optional[str]:
     if not time_obj:
@@ -185,12 +190,14 @@ class BentoRunnerSchema:
 
 @attr.define
 class BentoManifestSchema:
+    name: str
     service: str
     bentoml_version: str
     size_bytes: int
     apis: t.Dict[str, BentoApiSchema] = attr.field(factory=dict)
     models: t.List[str] = attr.field(factory=list)
     runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)
+    config: ServiceConfig = attr.field(factory=dict)
 
 
 if TYPE_CHECKING:

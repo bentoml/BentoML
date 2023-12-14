@@ -157,6 +157,7 @@ else:
 
     del _LazyLoader
 
+
 __all__ = [
     "__version__",
     "Context",
@@ -194,6 +195,7 @@ __all__ = [
     "catboost",
     "detectron",
     "diffusers",
+    "diffusers_simple",
     "easyocr",
     "flax",
     "fastai",

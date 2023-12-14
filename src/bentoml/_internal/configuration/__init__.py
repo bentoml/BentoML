@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import importlib.metadata
+import json
 import logging
 import os
 import re
 import typing as t
 from functools import lru_cache
+from warnings import warn
 
 from ...exceptions import BentoMLConfigException
 from ...exceptions import BentoMLException
@@ -24,6 +26,7 @@ DEBUG_ENV_VAR = "BENTOML_DEBUG"
 QUIET_ENV_VAR = "BENTOML_QUIET"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
 CONFIG_OVERRIDE_ENV_VAR = "BENTOML_CONFIG_OPTIONS"
+CONFIG_OVERRIDE_JSON_ENV_VAR = "BENTOML_CONFIG_OVERRIDES"
 # https://github.com/grpc/grpc/blob/master/doc/environment_variables.md
 GRPC_DEBUG_ENV_VAR = "GRPC_VERBOSITY"
 
@@ -93,7 +96,23 @@ def get_bentoml_config_file_from_env() -> str | None:
 def get_bentoml_override_config_from_env() -> str | None:
     if CONFIG_OVERRIDE_ENV_VAR in os.environ:
         # User local config options for customizing bentoml
+        warn(
+            f"Overriding BentoML config with {CONFIG_OVERRIDE_ENV_VAR} is deprecated "
+            f"and will be removed in future release. Please use {CONFIG_OVERRIDE_JSON_ENV_VAR} instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return os.environ.get(CONFIG_OVERRIDE_ENV_VAR, None)
+    return None
+
+
+def get_bentoml_override_config_json_from_env() -> dict[str, t.Any] | None:
+    if CONFIG_OVERRIDE_JSON_ENV_VAR in os.environ:
+        # User local config options for customizing bentoml
+        values = os.environ.get(CONFIG_OVERRIDE_JSON_ENV_VAR, None)
+        if values is not None:
+            return json.loads(values)
+
     return None
 
 
@@ -125,7 +144,11 @@ def get_quiet_mode() -> bool:
     return False
 
 
-def load_config(bentoml_config_file: str | None = None):
+def load_config(
+    bentoml_config_file: str | None = None,
+    override_defaults: dict[str, t.Any] | None = None,
+    use_version: int = 1,
+):
     """Load global configuration of BentoML"""
 
     from .containers import BentoMLConfiguration
@@ -148,6 +171,9 @@ def load_config(bentoml_config_file: str | None = None):
         BentoMLConfiguration(
             override_config_file=bentoml_config_file,
             override_config_values=get_bentoml_override_config_from_env(),
+            override_defaults=override_defaults,
+            override_config_json=get_bentoml_override_config_json_from_env(),
+            use_version=use_version,
         ).to_dict()
     )
 

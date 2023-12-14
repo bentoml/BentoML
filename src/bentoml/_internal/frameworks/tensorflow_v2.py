@@ -320,8 +320,8 @@ def get_runnable(
 
     def add_run_method(method_name: str, options: ModelSignature):
         def run_method(
-            runnable_self: TensorflowRunnable, *args: TFArgType, **kwargs: TFArgType
-        ) -> TFRunnableOutputType:
+            runnable_self: TensorflowRunnable, *args: t.Any, **kwargs: t.Any
+        ) -> t.Any:
             _run_method = runnable_self.methods_cache.get(
                 method_name
             )  # is methods_cache nessesary?

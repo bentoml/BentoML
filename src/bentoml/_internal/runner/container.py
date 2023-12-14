@@ -6,6 +6,7 @@ import io
 import itertools
 import pickle
 import typing as t
+from typing import Any
 
 from ..types import LazyType
 from ..utils import LazyLoader
@@ -19,6 +20,7 @@ BatchType = t.TypeVar("BatchType")
 TRITON_EXC_MSG = "tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[all]>=2.29.0\"'."
 
 if t.TYPE_CHECKING:
+    import numpy as np
     import tritonclient.grpc.aio as tritongrpcclient
     import tritonclient.http.aio as tritonhttpclient
 
@@ -153,6 +155,11 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     ) -> tuple[BatchType, list[int]]:
         ...
 
+    @classmethod
+    def get_batch_size(cls, batch: BatchType, batch_dim: int) -> int:
+        """A default implementation for backward compatibility"""
+        return 1
+
 
 class TritonInferInputDataContainer(
     DataContainer[
@@ -185,7 +192,6 @@ class TritonInferInputDataContainer(
         return t.cast("tritonhttpclient.InferInput", inp)
 
     @classmethod
-    @abc.abstractmethod
     def batches_to_batch(
         cls,
         batches: t.Sequence[tritongrpcclient.InferInput | tritonhttpclient.InferInput],
@@ -194,7 +200,6 @@ class TritonInferInputDataContainer(
         raise NotImplementedError
 
     @classmethod
-    @abc.abstractmethod
     def batch_to_batches(
         cls,
         batch: tritongrpcclient.InferInput | tritonhttpclient.InferInput,
@@ -204,7 +209,6 @@ class TritonInferInputDataContainer(
         raise NotImplementedError
 
     @classmethod
-    @abc.abstractmethod
     def batch_to_payloads(
         cls,
         batch: tritongrpcclient.InferInput | tritonhttpclient.InferInput,
@@ -214,7 +218,6 @@ class TritonInferInputDataContainer(
         raise NotImplementedError
 
     @classmethod
-    @abc.abstractmethod
     def from_batch_payloads(
         cls,
         payloads: t.Sequence[Payload],
@@ -304,6 +307,10 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
             batch.shape[batch_dim],
             {"format": "default"},
         )
+
+    @classmethod
+    def get_batch_size(cls, batch: ext.NpNDArray, batch_dim: int) -> int:
+        return batch.shape[batch_dim]
 
     @classmethod
     def from_payload(
@@ -413,6 +420,13 @@ class PandasDataFrameContainer(
             batch.shape[0],
             meta=meta,
         )
+
+    @classmethod
+    def get_batch_size(cls, batch: ext.PdDataFrame, batch_dim: int) -> int:
+        assert (
+            batch_dim == 0
+        ), "PandasDataFrameContainer does not support batch_dim other than 0"
+        return batch.shape[0]
 
     @classmethod
     def from_payload(
@@ -529,6 +543,12 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
             batch_size = 1
 
         return cls.create_payload(data=data, batch_size=batch_size)
+
+    @classmethod
+    def get_batch_size(cls, batch: t.Any, batch_dim: int) -> int:
+        if isinstance(batch, list):
+            return len(t.cast(t.List[t.Any], batch))
+        return 1
 
     @classmethod
     def from_payload(cls, payload: Payload) -> t.Any:
@@ -663,6 +683,13 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
             DataContainer[t.Any, t.Any]
         ] = DataContainerRegistry.find_by_batch_type(type(batch))
         return container_cls.to_payload(batch, batch_dim)
+
+    @classmethod
+    def get_batch_size(cls, batch: Any, batch_dim: int) -> int:
+        container_cls: t.Type[
+            DataContainer[t.Any, t.Any]
+        ] = DataContainerRegistry.find_by_batch_type(type(batch))
+        return container_cls.get_batch_size(batch, batch_dim)
 
     @classmethod
     def from_payload(cls, payload: Payload) -> t.Any:

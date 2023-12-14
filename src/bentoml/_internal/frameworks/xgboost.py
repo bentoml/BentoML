@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
-    from .. import external_typing as ext
 
 try:
     import xgboost as xgb
@@ -270,7 +269,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                     nthreads = max(int(nthreads), 1)
                 else:
                     nthreads = 1
-                self.booster.set_param({"predictor": "cpu_predictor", "nthread": nthreads})  # type: ignore (incomplete XGBoost types)
+                self.booster.set_param(
+                    {"predictor": "cpu_predictor", "nthread": nthreads}
+                )  # type: ignore (incomplete XGBoost types)
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
             for method_name in bento_model.info.signatures:
@@ -283,12 +284,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
 
     def add_runnable_method(method_name: str, options: ModelSignature):
         def _run(
-            self: XGBoostRunnable,
-            input_data: ext.NpNDArray
-            | ext.PdDataFrame,  # TODO: add support for DMatrix
-            *args: t.Any,
-            **kwargs: t.Any,
-        ) -> ext.NpNDArray:
+            self: XGBoostRunnable, input_data: t.Any, *args: t.Any, **kwargs: t.Any
+        ) -> t.Any:
             if isinstance(self.model, xgb.Booster):
                 inp = xgb.DMatrix(input_data)
             else:

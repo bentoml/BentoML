@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
-    from .. import external_typing as ext
 
 try:
     import catboost as cb
@@ -263,10 +262,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                     )
 
     def add_runnable_method(method_name: str, options: ModelSignature):
-        def _run(
-            self: CatBoostRunnable,
-            input_data: ext.NpNDArray | ext.CbPool | ext.PdDataFrame,
-        ) -> ext.NpNDArray:
+        def _run(self: CatBoostRunnable, input_data: t.Any) -> t.Any:
             if not isinstance(input_data, cb.Pool):
                 input_data = cb.Pool(input_data)
             res = self.predict_fns[method_name](input_data, **self.predict_params)

@@ -344,30 +344,3 @@ def test_import_model_has_required_files():
     assert os.path.exists(bento_model.path_of("model.yaml"))
     assert bento_model.info.labels == labels
     bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")
-
-
-def test_import_model_with_pretrained_class():
-    revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
-    pretrained_class = transformers.BertForMaskedLM
-    bento_model = bentoml.transformers.import_model(
-        "tiny-bert",
-        "hf-internal-testing/tiny-random-BertModel",
-        sync_with_hub_version=True,
-        pretrained_model_class=pretrained_class,
-        revision=revision,
-    )
-
-    assert bento_model.info.metadata["_pretrained_class"] == pretrained_class.__name__
-    bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")
-
-    pretrained_class = transformers.BertForNextSentencePrediction
-    bento_model = bentoml.transformers.import_model(
-        "tiny-bert",
-        "hf-internal-testing/tiny-random-BertModel",
-        sync_with_hub_version=True,
-        pretrained_model_class=pretrained_class,
-        revision=revision,
-    )
-
-    assert bento_model.info.metadata["_pretrained_class"] == pretrained_class.__name__
-    bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")

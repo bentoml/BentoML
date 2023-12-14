@@ -5,7 +5,6 @@ import math
 import os
 import typing as t
 import uuid
-from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -20,7 +19,6 @@ from ...exceptions import BentoMLConfigException
 from ..context import component_context
 from ..context import trace_context
 from ..resource import CpuResource
-from ..resource import system_resources
 from ..utils import split_with_quotes
 from ..utils import validate_or_create_dir
 from ..utils.unflatten import unflatten
@@ -59,6 +57,8 @@ class BentoMLConfiguration:
         self,
         override_config_file: str | None = None,
         override_config_values: str | None = None,
+        override_defaults: dict[str, t.Any] | None = None,
+        override_config_json: dict[str, t.Any] | None = None,
         *,
         validate_schema: bool = True,
         use_version: int = 1,
@@ -66,6 +66,15 @@ class BentoMLConfiguration:
         # Load default configuration with latest version.
         self.config = get_default_config(version=use_version)
         spec_module = import_configuration_spec(version=use_version)
+
+        if override_defaults:
+            migration = getattr(spec_module, "migration", None)
+            if migration is not None:
+                override_defaults = migration(
+                    default_config=self.config,
+                    override_config=dict(flatten_dict(override_defaults)),
+                )
+            config_merger.merge(self.config, override_defaults)
 
         # User override configuration
         if override_config_file is not None:
@@ -86,8 +95,34 @@ class BentoMLConfiguration:
             migration = getattr(import_configuration_spec(current), "migration", None)
             # Running migration layer if it exists
             if migration is not None:
-                override = migration(override_config=dict(flatten_dict(override)))
+                override = migration(
+                    default_config=self.config,
+                    override_config=dict(flatten_dict(override)),
+                )
             config_merger.merge(self.config, override)
+
+        if override_config_json is not None:
+            logger.info(
+                "Applying user config override from json: %s" % override_config_json
+            )
+            if "version" not in override_config_json:
+                # If users does not define a version, we then by default assume they are using v1
+                # and we will migrate it to latest version
+                logger.debug(
+                    "User config does not define a version, assuming given config is version %d..."
+                    % use_version
+                )
+                current = use_version
+            else:
+                current = override_config_json["version"]
+            migration = getattr(import_configuration_spec(current), "migration", None)
+            # Running migration layer if it exists
+            if migration is not None:
+                override = migration(
+                    default_config=self.config,
+                    override_config=dict(flatten_dict(override_config_json)),
+                )
+            config_merger.merge(self.config, override_config_json)
 
         if override_config_values is not None:
             logger.info(
@@ -121,7 +156,9 @@ class BentoMLConfiguration:
             )
             # Running migration layer if it exists
             if migration is not None:
-                override_config_map = migration(override_config=override_config_map)
+                override_config_map = migration(
+                    default_config=self.config, override_config=override_config_map
+                )
             # Previous behaviour, before configuration versioning.
             try:
                 override = unflatten(override_config_map)
@@ -130,9 +167,7 @@ class BentoMLConfiguration:
                     f"Failed to parse config options from the env var:\n{e}.\n*** Note: You can use '\"' to quote the key if it contains special characters. ***"
                 ) from None
             config_merger.merge(self.config, override)
-
-        if override_config_file is not None or override_config_values is not None:
-            self._finalize()
+        expand_env_var_in_values(self.config)
 
         if validate_schema:
             try:
@@ -141,33 +176,6 @@ class BentoMLConfiguration:
                 raise BentoMLConfigException(
                     f"Invalid configuration file was given:\n{e}"
                 ) from None
-
-    def _finalize(self):
-        RUNNER_CFG_KEYS = [
-            "batching",
-            "resources",
-            "logging",
-            "metrics",
-            "traffic",
-            "workers_per_resource",
-        ]
-        global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
-        custom_runners_cfg = dict(
-            filter(
-                lambda kv: kv[0] not in RUNNER_CFG_KEYS,
-                self.config["runners"].items(),
-            )
-        )
-        if custom_runners_cfg:
-            for runner_name, runner_cfg in custom_runners_cfg.items():
-                # key is a runner name
-                if runner_cfg.get("resources") == "system":
-                    runner_cfg["resources"] = system_resources()
-                self.config["runners"][runner_name] = config_merger.merge(
-                    deepcopy(global_runner_cfg),
-                    runner_cfg,
-                )
-        expand_env_var_in_values(self.config)
 
     def to_dict(self) -> providers.ConfigDictType:
         return t.cast(providers.ConfigDictType, self.config)
@@ -262,7 +270,10 @@ class _BentoMLContainerClass:
     ssl = api_server_config.ssl
 
     development_mode = providers.Static(True)
-    serialization_strategy: SerializationStrategy = providers.Static("EXPORT_BENTO")
+    serialization_strategy: providers.Static[SerializationStrategy] = providers.Static(
+        "EXPORT_BENTO"
+    )
+    worker_index: providers.Static[int] = providers.Static(0)
 
     @providers.SingletonFactory
     @staticmethod
@@ -506,6 +517,15 @@ class _BentoMLContainerClass:
         cfg: dict[str, t.Any] = Provide[api_server_config.logging.access.format],
     ) -> dict[str, str]:
         return cfg
+
+    @providers.SingletonFactory
+    @staticmethod
+    def enabled_features() -> list[str]:
+        return os.getenv("BENTOML_ENABLE_FEATURES", "").split(",")
+
+    @property
+    def new_index(self) -> bool:
+        return "new_index" in self.enabled_features.get()
 
 
 BentoMLContainer = _BentoMLContainerClass()

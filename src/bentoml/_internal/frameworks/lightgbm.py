@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
-    from .. import external_typing as ext
 
 try:
     import lightgbm as lgb
@@ -248,10 +247,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                     )
 
     def add_runnable_method(method_name: str, options: ModelSignature):
-        def _run(
-            self: LightGBMRunnable,
-            input_data: ext.NpNDArray | ext.PdDataFrame,
-        ) -> ext.NpNDArray:
+        def _run(self: LightGBMRunnable, input_data: t.Any) -> t.Any:
             res = self.predict_fns[method_name](input_data)
             return np.asarray(res)  # type: ignore (unknown ndarray types)
 

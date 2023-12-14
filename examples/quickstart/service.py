@@ -1,18 +1,25 @@
+import bentoml_io as bentoml
 import numpy as np
 
-import bentoml
-from bentoml.io import NumpyNdarray
 
-iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
+@bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})
+class Preprocessing:
+    @bentoml.api
+    def preprocess(self, input_series: np.ndarray) -> np.ndarray:
+        return input_series
 
-svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
+@bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})
+class IrisClassifier:
+    iris_model = bentoml.models.get("iris_clf:latest")
+    preprocessing = bentoml.depends(Preprocessing)
 
-@svc.api(
-    input=NumpyNdarray.from_sample(
-        np.array([[4.9, 3.0, 1.4, 0.2]], dtype=np.double), enforce_shape=False
-    ),
-    output=NumpyNdarray.from_sample(np.array([0.0], dtype=np.double)),
-)
-async def classify(input_series: np.ndarray) -> np.ndarray:
-    return await iris_clf_runner.predict.async_run(input_series)
+    def __init__(self):
+        import joblib
+
+        self.model = joblib.load(self.iris_model.path_of("model.pkl"))
+
+    @bentoml.api
+    def classify(self, input_series: np.ndarray) -> np.ndarray:
+        input_series = self.preprocessing.preprocess(input_series)
+        return self.model.predict(input_series)

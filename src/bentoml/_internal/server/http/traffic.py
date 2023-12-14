@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class TimeoutMiddleware:
-    def __init__(self, app: ext.ASGIApp, timeout: int) -> None:
+    def __init__(self, app: ext.ASGIApp, timeout: float) -> None:
         self.app = app
         self.timeout = timeout
 

@@ -45,9 +45,9 @@ from .build_config import DockerOptions
 from .build_config import PythonOptions
 
 if TYPE_CHECKING:
-    from bentoml_io.api import APIMethod
-    from bentoml_io.config import ServiceConfig
-    from bentoml_io.server import Service as NewService
+    from _bentoml_sdk import Service as NewService
+    from _bentoml_sdk.api import APIMethod
+    from _bentoml_sdk.service import ServiceConfig
     from fs.base import FS
 
     from ..models import Model
@@ -558,19 +558,14 @@ class BentoDependencyInfo:
         )
 
 
-def get_service_import_str(svc: Service | str):
+def get_service_import_str(svc: Service | NewService[t.Any] | str) -> str:
     from ..service import Service
 
     if isinstance(svc, Service):
         return svc.get_service_import_origin()[0]
-    try:
-        from bentoml_io.server import Service as NewService
-
-        if isinstance(svc, NewService):
-            return svc.import_string
-    except ImportError:
-        pass
-    return svc
+    if isinstance(svc, str):
+        return svc
+    return svc.import_string
 
 
 @attr.frozen(repr=False)

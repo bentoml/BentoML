@@ -21,7 +21,7 @@ from bentoml._internal.models import Model
 from bentoml._internal.utils import dict_filter_none
 from bentoml.exceptions import BentoMLException
 
-from .api import APIMethod
+from ..api import APIMethod
 from .config import ServiceConfig as Config
 from .config import validate
 
@@ -75,7 +75,7 @@ class Service(t.Generic[T]):
     )
     # service context
     context: ServiceContext = attrs.field(init=False, factory=ServiceContext)
-    _working_dir: str = attrs.field(init=False, factory=os.getcwd)
+    working_dir: str = attrs.field(init=False, factory=os.getcwd)
     # import info
     _caller_module: str = attrs.field(init=False)
     _import_str: str | None = attrs.field(init=False, default=None)
@@ -260,14 +260,14 @@ class Service(t.Generic[T]):
         development_mode: bool = False,
         reload: bool = False,
     ) -> None:
-        from bentoml._internal.log import configure_logging
+        from _bentoml_impl.server import serve_http
 
-        from .server.serving import serve_http
+        from bentoml._internal.log import configure_logging
 
         configure_logging()
 
         if working_dir is None:
-            working_dir = self._working_dir
+            working_dir = self.working_dir
         serve_http(
             self,
             working_dir=working_dir,

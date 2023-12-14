@@ -1,14 +1,14 @@
 from unittest import mock
 
 import pytest
-from bentoml_io import service
-from bentoml_io.server.allocator import BentoMLConfigException
-from bentoml_io.server.allocator import ResourceAllocator
-from bentoml_io.server.allocator import ResourceUnavailable
+from _bentoml_impl.server.allocator import BentoMLConfigException
+from _bentoml_impl.server.allocator import ResourceAllocator
+from _bentoml_impl.server.allocator import ResourceUnavailable
+from _bentoml_sdk import service
 
 
 @mock.patch(
-    "bentoml_io.server.allocator.system_resources",
+    "_bentoml_impl.server.allocator.system_resources",
     return_value={"cpu": 8, "nvidia.com/gpu": list(range(4))},
 )
 def test_assign_gpus(_):
@@ -28,7 +28,7 @@ def test_assign_gpus(_):
 
 
 @mock.patch(
-    "bentoml_io.server.allocator.system_resources",
+    "_bentoml_impl.server.allocator.system_resources",
     return_value={"cpu": 8, "nvidia.com/gpu": list(range(4))},
 )
 def test_assign_gpus_float(_):
@@ -48,7 +48,7 @@ def test_assign_gpus_float(_):
 
 
 @mock.patch(
-    "bentoml_io.server.allocator.system_resources",
+    "_bentoml_impl.server.allocator.system_resources",
     return_value={"cpu": 8, "nvidia.com/gpu": list(range(4))},
 )
 def test_get_worker_env_gpu(_):
@@ -71,7 +71,7 @@ def test_get_worker_env_gpu(_):
 
 
 @mock.patch(
-    "bentoml_io.server.allocator.system_resources",
+    "_bentoml_impl.server.allocator.system_resources",
     return_value={"cpu": 8, "nvidia.com/gpu": list(range(4))},
 )
 def test_get_worker_env_gpu_float(_):
@@ -101,7 +101,7 @@ def test_get_worker_env_gpu_float(_):
 
 
 @mock.patch(
-    "bentoml_io.server.allocator.system_resources",
+    "_bentoml_impl.server.allocator.system_resources",
     return_value={"cpu": 8, "nvidia.com/gpu": list(range(4))},
 )
 def test_get_worker_env_cpu_count(_):
@@ -118,7 +118,7 @@ def test_get_worker_env_cpu_count(_):
 
 
 @mock.patch(
-    "bentoml_io.server.allocator.system_resources",
+    "_bentoml_impl.server.allocator.system_resources",
     return_value={"cpu": 8, "nvidia.com/gpu": list(range(4))},
 )
 def test_get_worker_env_worker_number(_):
@@ -150,7 +150,7 @@ def test_get_worker_env_worker_number(_):
 
 
 @mock.patch(
-    "bentoml_io.server.allocator.system_resources",
+    "_bentoml_impl.server.allocator.system_resources",
     return_value={"cpu": 8, "nvidia.com/gpu": list(range(4))},
 )
 def test_get_worker_env_worker_gpu(_):
@@ -180,7 +180,7 @@ def test_get_worker_env_worker_gpu(_):
 
 
 @mock.patch(
-    "bentoml_io.server.allocator.system_resources",
+    "_bentoml_impl.server.allocator.system_resources",
     return_value={"cpu": 8, "nvidia.com/gpu": list(range(4))},
 )
 def test_get_worker_env_gpu_id(_):

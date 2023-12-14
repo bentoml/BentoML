@@ -8,6 +8,7 @@ import sys
 import typing as t
 from pathlib import Path
 
+from _bentoml_sdk import Service
 from simple_di import Provide
 from simple_di import inject
 from starlette.middleware import Middleware
@@ -18,8 +19,6 @@ from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
 from bentoml.exceptions import ServiceUnavailable
-
-from ..factory import Service
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span

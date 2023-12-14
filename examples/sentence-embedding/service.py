@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 
-import bentoml_io
 import numpy as np
 import torch
 from pydantic import Field
@@ -10,10 +9,7 @@ from pydantic import Field
 import bentoml
 
 
-@bentoml_io.service(
-    resources={"memory": "500MiB"},
-    traffic={"timeout": 1},
-)
+@bentoml.service(resources={"memory": "500MiB"}, traffic={"timeout": 1})
 class SentenceEmbedding:
     model_ref = bentoml.models.get("all-MiniLM-L6-v2")
 
@@ -43,7 +39,7 @@ class SentenceEmbedding:
             input_mask_expanded.sum(1), min=1e-9
         )
 
-    @bentoml_io.api(batchable=True)
+    @bentoml.api(batchable=True)
     def encode(
         self,
         sentences: list[str] = Field(["hello world"], description="input sentences"),

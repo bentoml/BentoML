@@ -15,6 +15,7 @@ And join us in the BentoML slack community: https://l.bentoml.com/join-slack
 """
 
 from typing import TYPE_CHECKING
+from typing import Any
 
 from ._internal.configuration import BENTOML_VERSION as __version__
 from ._internal.configuration import load_config
@@ -98,6 +99,10 @@ if TYPE_CHECKING:
     from . import cloud  # Cloud API
 
     # isort: on
+    from _bentoml_sdk import api
+    from _bentoml_sdk import depends
+    from _bentoml_sdk import runner_service
+    from _bentoml_sdk import service
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
 
@@ -156,6 +161,16 @@ else:
     cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
 
     del _LazyLoader
+
+    _NEW_SDK_ATTRS = ["service", "runner_service", "api", "depends"]
+
+    def __getattr__(name: str) -> Any:
+        if name not in _NEW_SDK_ATTRS:
+            raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+        import _bentoml_sdk
+
+        return getattr(_bentoml_sdk, name)
 
 
 __all__ = [
@@ -229,4 +244,8 @@ __all__ = [
     "set_serialization_strategy",
     "Strategy",
     "Resource",
+    "service",
+    "runner_service",
+    "api",
+    "depends",
 ]

@@ -279,7 +279,7 @@ def add_serve_command(cli: click.Group) -> None:
                     development_mode=False,
                 )
         else:
-            from bentoml_io.server.serving import serve_http
+            from _bentoml_impl.server import serve_http
 
             svc.inject_config()
             serve_http(

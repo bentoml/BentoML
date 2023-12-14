@@ -60,7 +60,5 @@ class Dependency(t.Generic[T]):
 
 def depends(on: Service[T]) -> Dependency[T]:
     if not isinstance(on, Service):
-        raise TypeError(
-            "depends() expects a class decorated with @bentoml_io.service()"
-        )
+        raise TypeError("depends() expects a class decorated with @bentoml.service()")
     return Dependency(on)

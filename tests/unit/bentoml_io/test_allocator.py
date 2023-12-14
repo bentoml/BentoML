@@ -58,6 +58,7 @@ def test_get_worker_env_gpu(_):
     class Foo:
         pass
 
+    Foo.inject_config()
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 2
     assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "0"
@@ -84,6 +85,7 @@ def test_get_worker_env_gpu_float(_):
     class Bar:
         pass
 
+    Foo.inject_config()
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 1
     assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "0"
@@ -91,7 +93,7 @@ def test_get_worker_env_gpu_float(_):
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 1
     assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "0"
-
+    Bar.inject_config()
     num_workers, worker_env = s.get_worker_env(Bar)
     assert num_workers == 2
     assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "1"
@@ -109,6 +111,7 @@ def test_get_worker_env_cpu_count(_):
     class Foo:
         pass
 
+    Foo.inject_config()
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 8
     assert not worker_env
@@ -129,11 +132,12 @@ def test_get_worker_env_worker_number(_):
     class Bar:
         pass
 
+    Foo.inject_config()
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 2
     assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "0,1"
     assert worker_env[1]["CUDA_VISIBLE_DEVICES"] == "0,1"
-
+    Bar.inject_config()
     num_workers, worker_env = s.get_worker_env(Bar)
     assert num_workers == 2
     assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "2"
@@ -160,6 +164,7 @@ def test_get_worker_env_worker_gpu(_):
     class Bar:
         pass
 
+    Foo.inject_config()
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 2
     assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "0,1"
@@ -167,7 +172,7 @@ def test_get_worker_env_worker_gpu(_):
 
     with pytest.raises(ResourceUnavailable):
         s.get_worker_env(Foo)
-
+    Bar.inject_config()
     num_workers, worker_env = s.get_worker_env(Bar)
     assert num_workers == 2
     assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "3"
@@ -189,9 +194,11 @@ def test_get_worker_env_gpu_id(_):
     class Bar:
         pass
 
+    Foo.inject_config()
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 2
     assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "0,1"
     assert worker_env[1]["CUDA_VISIBLE_DEVICES"] == "1,2"
+    Bar.inject_config()
     with pytest.raises(ResourceUnavailable):
         num_workers, worker_env = s.get_worker_env(Bar)

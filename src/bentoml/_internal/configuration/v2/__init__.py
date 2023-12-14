@@ -70,8 +70,15 @@ _SERVICE_CONFIG = {
     },
     # NOTE: there is a distinction between being unset and None here; if set to 'None'
     # in configuration for a specific runner, it will override the global configuration.
-    s.Optional("resources"): s.Or({s.Optional(str): object}, lambda s: s == "system", None),  # type: ignore (incomplete schema typing)
-    s.Optional("workers"): s.Or([{"gpus": s.Or(ensure_larger_than_zero, list)}], None),
+    s.Optional("resources"): s.Or(
+        {s.Optional(str): object}, lambda s: s == "system", None
+    ),  # type: ignore (incomplete schema typing)
+    s.Optional("workers"): s.Or(
+        [{"gpus": s.Or(ensure_larger_than_zero, list)}],
+        lambda s: s == "cpu_count",
+        ensure_larger_than_zero,
+        None,
+    ),
     s.Optional("traffic"): {
         "timeout": s.And(int, ensure_larger_than_zero),
         "max_concurrency": s.Or(s.And(int, ensure_larger_than_zero), None),
@@ -180,6 +187,6 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
     for key in list(override_config):
         if key.startswith("services."):
             svc_name = key.split(".")[1]
-            default_config["services"][svc_name] = default_service_config
+            default_config["services"][svc_name] = deepcopy(default_service_config)
 
     return unflatten(override_config)

@@ -195,6 +195,7 @@ __all__ = [
     "catboost",
     "detectron",
     "diffusers",
+    "diffusers_simple",
     "easyocr",
     "flax",
     "fastai",

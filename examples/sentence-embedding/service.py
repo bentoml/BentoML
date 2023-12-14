@@ -4,9 +4,9 @@ import os
 
 import numpy as np
 import torch
-from pydantic import Field
 
 import bentoml
+from bentoml.types import Field
 
 
 @bentoml.service(resources={"memory": "500MiB"}, traffic={"timeout": 1})

@@ -95,6 +95,7 @@ if TYPE_CHECKING:
     from . import batch  # Batch API
     from . import exceptions  # BentoML exceptions
     from . import server  # Server API
+    from . import types  # BentoML types
     from . import monitoring  # Monitoring API
     from . import cloud  # Cloud API
 
@@ -150,6 +151,7 @@ else:
     ray = _LazyLoader("bentoml.ray", globals(), "bentoml.ray")
 
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
+    types = _LazyLoader("bentoml.types", globals(), "bentoml.types")
     batch = _LazyLoader("bentoml.batch", globals(), "bentoml.batch")
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
     metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
@@ -185,6 +187,7 @@ __all__ = [
     "client",
     "server",
     "io",
+    "types",
     "Tag",
     "Model",
     "Runner",

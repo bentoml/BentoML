@@ -142,15 +142,16 @@ def main(
     from bentoml._internal.context import component_context
     from bentoml._internal.log import configure_server_logging
     from bentoml._internal.service import load
-    from bentoml_io.factory import Service
-    from bentoml_io.server.app import ServiceAppFactory
+
+    from ..factory import Service
+    from ..server.app import ServiceAppFactory
 
     if runner_map:
         BentoMLContainer.remote_runner_mapping.set(
             t.cast(t.Dict[str, str], json.loads(runner_map))
         )
     service = t.cast(Service[t.Any], load(bento_identifier, working_dir=working_dir))
-    BentoMLContainer.set_service_config(service.config)
+    service.inject_config()
 
     component_context.component_type = "api_server"
     if worker_id is not None:

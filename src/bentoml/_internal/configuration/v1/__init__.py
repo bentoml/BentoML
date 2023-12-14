@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import typing as t
-from copy import deepcopy
 
 import schema as s
 
@@ -13,6 +12,7 @@ from ..helpers import ensure_iterable_type
 from ..helpers import ensure_larger_than
 from ..helpers import ensure_larger_than_zero
 from ..helpers import ensure_range
+from ..helpers import flatten_dict
 from ..helpers import is_valid_ip_address
 from ..helpers import rename_fields
 from ..helpers import validate_otlp_protocol
@@ -150,7 +150,9 @@ _RUNNER_CONFIG = {
     },
     # NOTE: there is a distinction between being unset and None here; if set to 'None'
     # in configuration for a specific runner, it will override the global configuration.
-    s.Optional("resources"): s.Or({s.Optional(str): object}, lambda s: s == "system", None),  # type: ignore (incomplete schema typing)
+    s.Optional("resources"): s.Or(
+        {s.Optional(str): object}, lambda s: s == "system", None
+    ),  # type: ignore (incomplete schema typing)
     s.Optional("workers_per_resource"): s.And(
         s.Or(int, float), ensure_larger_than_zero
     ),
@@ -308,9 +310,26 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
             )
 
     # 8. if runner is overriden, set the runner default values
-    default_runner_config = deepcopy(default_config["runners"])
+    default_runner_config = dict(flatten_dict(default_config["runners"]))
+    RUNNER_CFG_KEYS = [
+        "batching",
+        "resources",
+        "logging",
+        "metrics",
+        "traffic",
+        "workers_per_resource",
+    ]
     for key in list(override_config):
         if key.startswith("runners."):
-            runner_name = key.split(".")[1]
-            default_config["runners"][runner_name] = default_runner_config
+            key_parts = key.split(".")
+            runner_name = key_parts[1]
+            if runner_name in RUNNER_CFG_KEYS:
+                default_runner_config[".".join(key_parts[1:])] = override_config[key]
+                for i in range(2, len(key_parts)):
+                    if (k := ".".join(key_parts[1:i])) in default_runner_config:
+                        del default_runner_config[k]
+            else:
+                default_config["runners"][runner_name] = unflatten(
+                    default_runner_config
+                )
     return unflatten(override_config)

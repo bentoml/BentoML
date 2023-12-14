@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from simple_di import Provide
+from simple_di import inject
+
+from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.resource import system_resources
 from bentoml.exceptions import BentoMLConfigException
 
@@ -68,15 +72,20 @@ class ResourceAllocator:
                 del self._available_gpus[gpu]
             return assigned
 
-    def get_worker_env(self, service: Service[Any]) -> tuple[int, list[dict[str, str]]]:
-        config = service.config
+    @inject
+    def get_worker_env(
+        self,
+        service: Service[Any],
+        services: dict[str, Any] = Provide[BentoMLContainer.config.services],
+    ) -> tuple[int, list[dict[str, str]]]:
+        config = services[service.name]
 
         num_gpus = 0
         num_workers = 1
         worker_env: list[dict[str, str]] = []
-        if "gpu" in config.get("resources", {}):
+        if "gpu" in (config.get("resources") or {}):
             num_gpus = config["resources"]["gpu"]  # type: ignore
-        if "workers" in config:
+        if config.get("workers"):
             if (workers := config["workers"]) == "cpu_count":
                 num_workers = int(self.system_resources["cpu"])
             elif isinstance(workers, int):

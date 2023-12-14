@@ -34,6 +34,7 @@ if t.TYPE_CHECKING:
     T = t.TypeVar("T", bound="HTTPClient")
 
 logger = logging.getLogger("bentoml.io")
+MAX_RETRIES = 3
 
 
 @attr.define(slots=True)
@@ -132,7 +133,7 @@ class HTTPClient(AbstractClient):
             method.__signature__ = endpoint.input_spec.__signature__
         return method
 
-    def _ensure_event_loop(self) -> asyncio.BaseEventLoop:
+    def _ensure_event_loop(self) -> asyncio.AbstractEventLoop:
         if self._loop is None or self._loop.is_closed():
             try:
                 self._loop = asyncio.get_event_loop()
@@ -219,6 +220,7 @@ class HTTPClient(AbstractClient):
         headers: dict[str, str] | None = None,
     ) -> ClientResponse:
         from aiohttp import MultipartWriter
+        from aiohttp.client_exceptions import ClientOSError
 
         from bentoml import __version__
 
@@ -234,7 +236,16 @@ class HTTPClient(AbstractClient):
             req_headers.update(headers)
         client = await self._get_client()
         async with self.limiter:
-            resp = await client.post(url, data=data, headers=req_headers)
+            for i in range(MAX_RETRIES):
+                try:
+                    resp = await client.post(url, data=data, headers=req_headers)
+                except ClientOSError:
+                    if i == MAX_RETRIES - 1:
+                        raise
+                    await self.close()
+                    client = await self._get_client()
+                else:
+                    break
         if not resp.ok:
             raise BentoMLException(
                 f"Error making request: {resp.status}: {await resp.text(errors='ignore')}",

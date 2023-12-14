@@ -36,15 +36,24 @@ if t.TYPE_CHECKING:
 
     from .dependency import Dependency
 
+    P = t.ParamSpec("P")
+    R = t.TypeVar("R")
+
     ContextFunc = t.Callable[[ServiceContext], None | t.Coroutine[t.Any, t.Any, None]]
     HookF = t.TypeVar("HookF", bound=LifecycleHook)
     HookF_ctx = t.TypeVar("HookF_ctx", bound=ContextFunc)
-    # service context
-    context: ServiceContext = attrs.field(init=False, factory=ServiceContext)
 
     class _ServiceDecorator(t.Protocol):
         def __call__(self, service: type[T]) -> Service[T]:
             ...
+
+
+def with_config(func: t.Callable[t.Concatenate["Service[t.Any]", P], R]):
+    def wrapper(self: Service[t.Any], *args: P.args, **kwargs: P.kwargs) -> R:
+        self.inject_config()
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 @attrs.define
@@ -194,6 +203,42 @@ class Service(t.Generic[T]):
 
         return generate_spec(self)
 
+    def inject_config(self) -> None:
+        from bentoml._internal.configuration import load_config
+        from bentoml._internal.configuration.containers import BentoMLContainer
+        from bentoml._internal.configuration.containers import config_merger
+
+        # XXX: ensure at least one item to make `flatten_dict` work
+        override_defaults = {
+            "services": {
+                k: (v or {"workers": None}) for k, v in self.all_config().items()
+            }
+        }
+
+        load_config(override_defaults=override_defaults, use_version=2)
+        main_config = BentoMLContainer.config.services[self.name].get()
+        api_server_keys = (
+            "traffic",
+            "metrics",
+            "logging",
+            "ssl",
+            "http",
+            "grpc",
+            "backlog",
+            "runner_probe",
+            "max_runner_connections",
+        )
+        api_server_config = {
+            k: main_config[k] for k in api_server_keys if main_config.get(k) is not None
+        }
+        rest_config = {
+            k: main_config[k] for k in main_config if k not in api_server_keys
+        }
+        existing = t.cast(t.Dict[str, t.Any], BentoMLContainer.config.get())
+        config_merger.merge(existing, {"api_server": api_server_config, **rest_config})
+        BentoMLContainer.config.set(existing)  # type: ignore
+
+    @with_config
     @inject
     def serve_http(
         self,
@@ -217,13 +262,13 @@ class Service(t.Generic[T]):
     ) -> None:
         from bentoml._internal.log import configure_logging
 
-        from .server.serving import serve_http_production
+        from .server.serving import serve_http
 
         configure_logging()
 
         if working_dir is None:
             working_dir = self._working_dir
-        serve_http_production(
+        serve_http(
             self,
             working_dir=working_dir,
             host=host,

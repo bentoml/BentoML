@@ -148,7 +148,7 @@ def create_service_watchers(
 
 
 @inject
-def serve_http_production(
+def serve_http(
     bento_identifier: str | AnyService,
     working_dir: str,
     host: str = Provide[BentoMLContainer.http.host],
@@ -188,8 +188,6 @@ def serve_http_production(
         svc = bento_identifier
     else:
         svc = t.cast(AnyService, load(bento_identifier, working_dir))
-    if development_mode:
-        standalone = True
 
     watchers: list[Watcher] = []
     sockets: list[CircusSocket] = []
@@ -203,7 +201,7 @@ def serve_http_production(
             uds_path = stack.enter_context(
                 tempfile.TemporaryDirectory(prefix="bentoml-uds-")
             )
-        if not standalone:
+        if not standalone and not development_mode:
             for dep in svc.dependencies.values():
                 dep_key = dep.cache_key()
                 if dep_key in dependency_map:

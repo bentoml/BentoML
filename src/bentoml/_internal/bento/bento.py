@@ -45,10 +45,11 @@ from .build_config import DockerOptions
 from .build_config import PythonOptions
 
 if TYPE_CHECKING:
+    from fs.base import FS
+
     from _bentoml_sdk import Service as NewService
     from _bentoml_sdk.api import APIMethod
     from _bentoml_sdk.service import ServiceConfig
-    from fs.base import FS
 
     from ..models import Model
     from ..service import Service

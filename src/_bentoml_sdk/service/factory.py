@@ -261,7 +261,6 @@ class Service(t.Generic[T]):
         reload: bool = False,
     ) -> None:
         from _bentoml_impl.server import serve_http
-
         from bentoml._internal.log import configure_logging
 
         configure_logging()

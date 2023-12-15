@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from _bentoml_sdk import Service
 from simple_di import Provide
 from simple_di import inject
 
+from _bentoml_sdk import Service
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.resource import system_resources
 from bentoml.exceptions import BentoMLConfigException

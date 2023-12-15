@@ -1,6 +1,7 @@
 from unittest import mock
 
 import pytest
+
 from _bentoml_impl.server.allocator import BentoMLConfigException
 from _bentoml_impl.server.allocator import ResourceAllocator
 from _bentoml_impl.server.allocator import ResourceUnavailable

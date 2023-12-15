@@ -11,10 +11,10 @@ import socket
 import tempfile
 import typing as t
 
-from _bentoml_sdk import Service
 from simple_di import Provide
 from simple_di import inject
 
+from _bentoml_sdk import Service
 from bentoml._internal.container import BentoMLContainer
 from bentoml.exceptions import BentoMLConfigException
 

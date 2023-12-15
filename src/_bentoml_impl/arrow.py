@@ -3,8 +3,9 @@ from __future__ import annotations
 import typing as t
 
 import pyarrow as pa
-from _bentoml_sdk.types import arrow_serialization
 from pydantic import BaseModel
+
+from _bentoml_sdk.types import arrow_serialization
 
 SchemaDict: t.TypeAlias = t.Dict[str, t.Any]
 

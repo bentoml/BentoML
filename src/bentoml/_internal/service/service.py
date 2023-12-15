@@ -28,9 +28,9 @@ from .inference_api import InferenceAPI
 
 if t.TYPE_CHECKING:
     import grpc
-    from _bentoml_sdk import Service as NewService
 
     import bentoml
+    from _bentoml_sdk import Service as NewService
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
     from bentoml.triton import _TritonRunner

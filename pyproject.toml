@@ -378,7 +378,7 @@ convention = "google"
 
 [tool.ruff.isort]
 force-single-line = true
-known-first-party = ["bentoml"]
+known-first-party = ["bentoml", "bentoml_cli", "_bentoml_sdk", "_bentoml_impl"]
 
 [tool.pyright]
 pythonVersion = "3.12"

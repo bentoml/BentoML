@@ -8,12 +8,12 @@ import sys
 import typing as t
 from pathlib import Path
 
-from _bentoml_sdk import Service
 from simple_di import Provide
 from simple_di import inject
 from starlette.middleware import Middleware
 from starlette.staticfiles import StaticFiles
 
+from _bentoml_sdk import Service
 from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.server.base_app import BaseAppFactory

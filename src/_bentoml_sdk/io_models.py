@@ -21,9 +21,10 @@ from .typing_utils import is_iterator_type
 from .typing_utils import is_list_type
 
 if t.TYPE_CHECKING:
-    from _bentoml_impl.serde import Serde
     from starlette.requests import Request
     from starlette.responses import Response
+
+    from _bentoml_impl.serde import Serde
 
 
 DEFAULT_TEXT_MEDIA_TYPE = "text/plain"
@@ -116,11 +117,12 @@ class IOMixin:
     @classmethod
     async def to_http_response(cls, obj: t.Any, serde: Serde) -> Response:
         """Convert a output value to HTTP response"""
-        from _bentoml_impl.serde import JSONSerde
         from pydantic import RootModel
         from starlette.responses import FileResponse
         from starlette.responses import Response
         from starlette.responses import StreamingResponse
+
+        from _bentoml_impl.serde import JSONSerde
 
         structured_media_type = cls.media_type or serde.media_type
 

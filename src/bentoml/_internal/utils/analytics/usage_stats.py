@@ -31,9 +31,9 @@ if TYPE_CHECKING:
     T = t.TypeVar("T")
     AsyncFunc = t.Callable[P, t.Coroutine[t.Any, t.Any, t.Any]]
 
-    from _bentoml_sdk import Service as NewService
     from prometheus_client.samples import Sample
 
+    from _bentoml_sdk import Service as NewService
     from bentoml import Service
 
     from ...server.metrics.prometheus import PrometheusClient

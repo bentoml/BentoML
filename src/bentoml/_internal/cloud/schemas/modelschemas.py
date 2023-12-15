@@ -100,16 +100,11 @@ class BentoConfigServiceSchema:
 
 
 @attr.define
-class BentoConfigManifestSchema:
-    services: t.Dict[str, BentoConfigServiceSchema] = attr.field(factory=dict)
-
-
-@attr.define
 class BentoManifestSchema:
-    name: str
     service: str
     bentoml_version: str
     size_bytes: int
+    name: t.Optional[str] = attr.field(default=None)
     apis: t.Dict[str, BentoApiSchema] = attr.field(factory=dict)
     models: t.List[str] = attr.field(factory=list)
     runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)
@@ -179,6 +174,15 @@ class ApiServerBentoFunctionOverrides:
     __forbid_extra_keys__ = True
     annotations: t.Optional[t.Dict[str, str]] = attr.field(default=None)
     monitorExporter: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+
+
+@attr.define
+class RunnerBentoFunctionOverrides:
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = True
+    annotations: t.Optional[t.Dict[str, str]] = attr.field(default=None)
     extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
     extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
 
@@ -311,7 +315,7 @@ class DeploymentTargetRunnerConfig:
     resource_instance: t.Optional[str] = attr.field(default=None)
     resources: t.Optional[DeploymentTargetResources] = attr.field(default=None)
     hpa_conf: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
-    envs: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
+    envs: t.Optional[t.List[t.Optional[LabelItemSchema]]] = attr.field(default=None)
     enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(default=None)
     enable_debug_mode: t.Optional[bool] = attr.field(default=None)
     enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
@@ -319,6 +323,9 @@ class DeploymentTargetRunnerConfig:
     )
     deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(default=None)
     bento_deployment_overrides: t.Optional[RunnerBentoDeploymentOverrides] = attr.field(
+        default=None
+    )
+    bento_function_overrides: t.Optional[RunnerBentoFunctionOverrides] = attr.field(
         default=None
     )
     traffic_control: t.Optional[TrafficControlConfig] = attr.field(default=None)
@@ -341,11 +348,11 @@ class DeploymentTargetConfig:
     kubeResourceVersion: str = attr.field(default="")
     resource_instance: t.Optional[str] = attr.field(default=None)
     hpa_conf: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
-    envs: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
+    envs: t.Optional[t.List[t.Optional[LabelItemSchema]]] = attr.field(default=None)
     runners: t.Optional[t.Dict[str, DeploymentTargetRunnerConfig]] = attr.field(
         default=None
     )
-    access_control: t.Optional[str] = attr.field(default=None)
+    access_control: t.Optional[AccessControl] = attr.field(default=None)
     enable_ingress: t.Optional[bool] = attr.field(default=None)  # false for enables
     enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(default=None)
     enable_debug_mode: t.Optional[bool] = attr.field(default=None)
@@ -361,15 +368,23 @@ class DeploymentTargetConfig:
     bento_request_overrides: t.Optional[BentoRequestOverrides] = attr.field(
         default=None
     )  # Put into image builder
+    bento_function_overrides: t.Optional[ApiServerBentoFunctionOverrides] = attr.field(
+        default=None
+    )
     traffic_control: t.Optional[TrafficControlConfig] = attr.field(default=None)
     deployment_cold_start_wait_timeout: t.Optional[int] = attr.field(default=None)
+    bentoml_config_overrides: t.Optional[
+        dict[str, BentoConfigServiceSchema]
+    ] = attr.field(default=None)
 
 
 @attr.define
 class DeploymentTargetConfigV2:
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = True
     resource_instance: t.Optional[str] = attr.field(default=None)
     scaling: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
-    envs: t.Optional[t.List[t.Optional[LabelItemSchema]]] = attr.field(default=None)
+    # envs: t.Optional[t.List[t.Optional[LabelItemSchema]]] = attr.field(default=None)
     deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(default=None)
     bento_function_overrides: t.Optional[ApiServerBentoFunctionOverrides] = attr.field(
         default=None

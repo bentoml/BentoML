@@ -32,6 +32,7 @@ from .schemas.schemasv1 import UpdateBentoSchema
 from .schemas.schemasv1 import UpdateDeploymentSchema
 from .schemas.schemasv1 import UserSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
+from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 from .schemas.utils import schema_from_json
 from .schemas.utils import schema_from_object
 from .schemas.utils import schema_to_json
@@ -530,8 +531,15 @@ class RestApiClientV2(BaseRestApiClient):
         self, create_schema: CreateDeploymentSchemaV2
     ) -> DeploymentSchema | None:
         url = urljoin(self.endpoint, "/api/v2/deployments")
-        print(schema_to_json(create_schema))
         resp = self.session.post(url, data=schema_to_json(create_schema))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentSchema)
+
+    def update_deployment(
+        self, deployment_name: str, update_schema: UpdateDeploymentSchemaV2
+    ) -> DeploymentSchema | None:
+        url = urljoin(self.endpoint, f"/api/v2/deployments/{deployment_name}")
+        resp = self.session.post(url, data=schema_to_json(update_schema))
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentSchema)
 

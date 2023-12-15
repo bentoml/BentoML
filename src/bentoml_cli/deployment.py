@@ -212,7 +212,7 @@ def add_deployment_command(cli: click.Group) -> None:
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Terminate a deployment on BentoCloud."""
-        res = client.deployment.terminate(
+        res = client.deployment.terminate_deployment(
             deployment_name=deployment_name,
             context=shared_options.cloud_context,
             cluster_name=cluster_name,
@@ -236,7 +236,7 @@ def add_deployment_command(cli: click.Group) -> None:
         output: t.Literal["json", "default"],
     ) -> DeploymentSchema:
         """Delete a deployment on BentoCloud."""
-        res = client.deployment.delete(
+        res = client.deployment.delete_deployment(
             deployment_name=deployment_name,
             context=shared_options.cloud_context,
             cluster_name=cluster_name,

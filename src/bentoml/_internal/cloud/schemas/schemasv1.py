@@ -99,7 +99,7 @@ class BentoSchema(ResourceSchema):
     upload_finished_reason: str
     presigned_upload_url: str
     presigned_download_url: str
-    manifest: BentoManifestSchema
+    manifest: t.Optional[BentoManifestSchema] = attr.field(default=None)
     transmission_strategy: t.Optional[TransmissionStrategy] = attr.field(default=None)
     upload_id: t.Optional[str] = attr.field(default=None)
 
@@ -128,7 +128,7 @@ class BentoWithRepositoryListSchema(BaseListSchema):
 class CreateBentoSchema:
     description: str
     version: str
-    manifest: BentoManifestSchema
+    manifest: t.Optional[BentoManifestSchema] = attr.field(default=None)
     build_at: datetime = attr.field(factory=datetime.now)
     labels: t.List[LabelItemSchema] = attr.field(factory=list)
 

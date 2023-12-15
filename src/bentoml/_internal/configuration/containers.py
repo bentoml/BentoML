@@ -66,9 +66,9 @@ class BentoMLConfiguration:
         # Load default configuration with latest version.
         self.config = get_default_config(version=use_version)
         spec_module = import_configuration_spec(version=use_version)
+        migration = getattr(spec_module, "migration", None)
 
         if override_defaults:
-            migration = getattr(spec_module, "migration", None)
             if migration is not None:
                 override_defaults = migration(
                     default_config=self.config,
@@ -82,17 +82,6 @@ class BentoMLConfiguration:
                 "Applying user config override from path: %s" % override_config_file
             )
             override = load_config_file(override_config_file)
-            if "version" not in override:
-                # If users does not define a version, we then by default assume they are using v1
-                # and we will migrate it to latest version
-                logger.debug(
-                    "User config does not define a version, assuming given config is version %d..."
-                    % use_version
-                )
-                current = use_version
-            else:
-                current = override["version"]
-            migration = getattr(import_configuration_spec(current), "migration", None)
             # Running migration layer if it exists
             if migration is not None:
                 override = migration(
@@ -105,17 +94,6 @@ class BentoMLConfiguration:
             logger.info(
                 "Applying user config override from json: %s" % override_config_json
             )
-            if "version" not in override_config_json:
-                # If users does not define a version, we then by default assume they are using v1
-                # and we will migrate it to latest version
-                logger.debug(
-                    "User config does not define a version, assuming given config is version %d..."
-                    % use_version
-                )
-                current = use_version
-            else:
-                current = override_config_json["version"]
-            migration = getattr(import_configuration_spec(current), "migration", None)
             # Running migration layer if it exists
             if migration is not None:
                 override = migration(
@@ -142,18 +120,6 @@ class BentoMLConfiguration:
                     if line.strip()
                 ]
             }
-            # Note that this values will only support latest version of configuration,
-            # as there is no way for us to infer what values user can pass in.
-            # however, if users pass in a version inside this value, we will that to migrate up
-            # if possible
-            override_version = override_config_map.get("version", use_version)
-            logger.debug(
-                "Found defined 'version=%d' in BENTOML_CONFIG_OPTIONS."
-                % override_version
-            )
-            migration = getattr(
-                import_configuration_spec(override_version), "migration", None
-            )
             # Running migration layer if it exists
             if migration is not None:
                 override_config_map = migration(

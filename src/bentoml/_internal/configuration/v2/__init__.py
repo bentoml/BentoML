@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import typing as t
-from copy import deepcopy
 
 import schema as s
 
@@ -13,7 +12,6 @@ from ..helpers import ensure_iterable_type
 from ..helpers import ensure_larger_than
 from ..helpers import ensure_larger_than_zero
 from ..helpers import ensure_range
-from ..helpers import flatten_dict
 from ..helpers import is_valid_ip_address
 from ..helpers import validate_otlp_protocol
 from ..helpers import validate_tracing_type

@@ -204,7 +204,7 @@ def save_model(
         training_class_name=model.__class__.__name__,
     )
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

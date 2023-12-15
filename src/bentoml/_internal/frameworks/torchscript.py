@@ -150,7 +150,7 @@ def save_model(
             name,
         )
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=_module_name,
         api_version=API_VERSION,

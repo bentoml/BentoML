@@ -252,7 +252,7 @@ def save_model(
 
     options = KerasOptions(include_optimizer=include_optimizer)
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

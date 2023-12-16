@@ -330,8 +330,8 @@ class CreateDeploymentSchema(UpdateDeploymentSchema):
     distributed: t.Optional[bool] = attr.field(default=False)
 
 
-@attr.define
-class FullDeploymentSchema(CreateDeploymentSchema):
+@attr.define(kw_only=True)
+class DeploymentFullSchema(DeploymentSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
-    cluster_name: t.Optional[str] = attr.field(default=None)
+    urls: list[str]

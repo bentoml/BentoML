@@ -21,13 +21,14 @@ if t.TYPE_CHECKING:
 
 @t.overload
 def create(
-    project_path: str | None = ...,
-    bento: Tag | str | None = ...,
     name: str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     *,
-    cluster: str | None = ...,
+    project_path: str | None = ...,
+    cluster_name: str | None = ...,
     access_type: str | None = ...,
     scaling_min: int | None = ...,
     scaling_max: int | None = ...,
@@ -35,51 +36,98 @@ def create(
     strategy: str | None = ...,
     envs: t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
-    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Deployment:
     ...
 
 
 @t.overload
 def create(
-    project_path: str | None = ...,
-    bento: Tag | str | None = ...,
     name: str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     *,
+    bento: Tag | str | None = ...,
+    cluster_name: str | None = ...,
+    access_type: str | None = ...,
+    scaling_min: int | None = ...,
+    scaling_max: int | None = ...,
+    instance_type: str | None = ...,
+    strategy: str | None = ...,
+    envs: t.List[dict[str, t.Any]] | None = ...,
+    extras: dict[str, t.Any] | None = ...,
+) -> Deployment:
+    ...
+
+
+@t.overload
+def create(
+    name: str | None = ...,
+    path_context: str | None = ...,
+    context: str | None = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    bento: Tag | str | None = ...,
     config_file: str | None = ...,
-    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Deployment:
     ...
 
 
 @t.overload
 def create(
-    project_path: str | None = ...,
-    bento: Tag | str | None = ...,
     name: str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
-    *,
-    config_dct: dict[str, t.Any] | None = ...,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    project_path: str | None = ...,
+    config_file: str | None = ...,
+) -> Deployment:
+    ...
+
+
+@t.overload
+def create(
+    name: str | None = ...,
+    path_context: str | None = ...,
+    context: str | None = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    bento: Tag | str | None = ...,
+    config_dct: dict[str, t.Any] | None = ...,
+) -> Deployment:
+    ...
+
+
+@t.overload
+def create(
+    name: str | None = ...,
+    path_context: str | None = ...,
+    context: str | None = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    project_path: str | None = ...,
+    config_dct: dict[str, t.Any] | None = ...,
 ) -> Deployment:
     ...
 
 
 @inject
 def create(
-    project_path: str | None = None,
-    bento: Tag | str | None = None,
     name: str | None = None,
     path_context: str | None = None,
     context: str | None = None,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     *,
-    cluster: str | None = None,
+    project_path: str | None = None,
+    bento: Tag | str | None = None,
+    cluster_name: str | None = None,
     access_type: str | None = None,
     scaling_min: int | None = None,
     scaling_max: int | None = None,
@@ -89,15 +137,13 @@ def create(
     extras: dict[str, t.Any] | None = None,
     config_dct: dict[str, t.Any] | None = None,
     config_file: str | None = None,
-    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Deployment:
-    return Deployment.create_deployment(
+    return Deployment.create(
         project_path=project_path,
         bento=bento,
         access_type=access_type,
         name=name,
-        cluster=cluster,
+        cluster_name=cluster_name,
         scaling_min=scaling_min,
         scaling_max=scaling_max,
         instance_type=instance_type,
@@ -116,12 +162,13 @@ def create(
 @t.overload
 def update(
     name: str,
-    project_path: str | None = ...,
-    bento: Tag | str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
-    cluster: str | None = ...,
+    cluster_name: str | None = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     *,
+    project_path: str | None = ...,
     access_type: str | None = ...,
     scaling_min: int | None = ...,
     scaling_max: int | None = ...,
@@ -129,8 +176,6 @@ def update(
     strategy: str | None = ...,
     envs: t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
-    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Deployment:
     ...
 
@@ -138,15 +183,35 @@ def update(
 @t.overload
 def update(
     name: str,
-    project_path: str | None = ...,
-    bento: Tag | str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
-    cluster: str | None = None,
+    cluster_name: str | None = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     *,
+    bento: Tag | str | None = ...,
+    access_type: str | None = ...,
+    scaling_min: int | None = ...,
+    scaling_max: int | None = ...,
+    instance_type: str | None = ...,
+    strategy: str | None = ...,
+    envs: t.List[dict[str, t.Any]] | None = ...,
+    extras: dict[str, t.Any] | None = ...,
+) -> Deployment:
+    ...
+
+
+@t.overload
+def update(
+    name: str,
+    path_context: str | None = ...,
+    context: str | None = ...,
+    cluster_name: str | None = None,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    project_path: str | None = ...,
     config_file: str | None = ...,
-    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Deployment:
     ...
 
@@ -154,15 +219,44 @@ def update(
 @t.overload
 def update(
     name: str,
-    project_path: str | None = ...,
-    bento: Tag | str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
-    cluster: str | None = None,
-    *,
-    config_dct: dict[str, t.Any] | None = ...,
+    cluster_name: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    bento: Tag | str | None = ...,
+    config_file: str | None = ...,
+) -> Deployment:
+    ...
+
+
+@t.overload
+def update(
+    name: str,
+    path_context: str | None = ...,
+    context: str | None = ...,
+    cluster_name: str | None = None,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    project_path: str | None = ...,
+    config_dct: dict[str, t.Any] | None = ...,
+) -> Deployment:
+    ...
+
+
+@t.overload
+def update(
+    name: str,
+    path_context: str | None = ...,
+    context: str | None = ...,
+    cluster_name: str | None = None,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    bento: Tag | str | None = ...,
+    config_dct: dict[str, t.Any] | None = ...,
 ) -> Deployment:
     ...
 
@@ -170,12 +264,14 @@ def update(
 @inject
 def update(
     name: str,
-    project_path: str | None = None,
-    bento: Tag | str | None = None,
     path_context: str | None = None,
     context: str | None = None,
-    cluster: str | None = None,
+    cluster_name: str | None = None,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     *,
+    project_path: str | None = None,
+    bento: Tag | str | None = None,
     access_type: str | None = None,
     scaling_min: int | None = None,
     scaling_max: int | None = None,
@@ -185,15 +281,13 @@ def update(
     extras: dict[str, t.Any] | None = None,
     config_dct: dict[str, t.Any] | None = None,
     config_file: str | None = None,
-    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Deployment:
-    return Deployment.update_deployment(
+    return Deployment.update(
         project_path=project_path,
         bento=bento,
         access_type=access_type,
         name=name,
-        cluster=cluster,
+        cluster_name=cluster_name,
         scaling_min=scaling_min,
         scaling_max=scaling_max,
         instance_type=instance_type,
@@ -206,17 +300,105 @@ def update(
         context=context,
         _bento_store=_bento_store,
         _cloud_client=_cloud_client,
+    )
+
+
+@t.overload
+def apply(
+    name: str,
+    cluster_name: t.Optional[str] = ...,
+    path_context: t.Optional[str] = ...,
+    context: t.Optional[str] = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    project_path: t.Optional[str] = ...,
+    config_dct: t.Optional[dict[str, t.Any]] = ...,
+) -> Deployment:
+    ...
+
+
+@t.overload
+def apply(
+    name: str,
+    cluster_name: t.Optional[str] = ...,
+    path_context: t.Optional[str] = ...,
+    context: t.Optional[str] = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    bento: t.Optional[t.Union[Tag, str]] = ...,
+    config_dct: t.Optional[dict[str, t.Any]] = ...,
+) -> Deployment:
+    ...
+
+
+@t.overload
+def apply(
+    name: str,
+    cluster_name: t.Optional[str] = ...,
+    path_context: t.Optional[str] = ...,
+    context: t.Optional[str] = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    project_path: t.Optional[str] = ...,
+    config_file: t.Optional[str] = ...,
+) -> Deployment:
+    ...
+
+
+@t.overload
+def apply(
+    name: str,
+    cluster_name: t.Optional[str] = ...,
+    path_context: t.Optional[str] = ...,
+    context: t.Optional[str] = ...,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    bento: t.Optional[t.Union[Tag, str]] = ...,
+    config_file: t.Optional[str] = ...,
+) -> Deployment:
+    ...
+
+
+@inject
+def apply(
+    name: str,
+    cluster_name: str | None = None,
+    path_context: str | None = None,
+    context: str | None = None,
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    *,
+    project_path: str | None = None,
+    bento: Tag | str | None = None,
+    config_dct: dict[str, t.Any] | None = None,
+    config_file: str | None = None,
+) -> Deployment:
+    return Deployment.apply(
+        name=name,
+        project_path=project_path,
+        bento=bento,
+        cluster_name=cluster_name,
+        context=context,
+        path_context=path_context,
+        _bento_store=_bento_store,
+        _cloud_client=_cloud_client,
+        config_dct=config_dct,
+        config_file=config_file,
     )
 
 
 def get(
-    deployment_name: str,
+    name: str,
     context: str | None = None,
     cluster_name: str | None = None,
     kube_namespace: str | None = None,
 ) -> Deployment:
-    return Deployment.get_deployment(
-        deployment_name=deployment_name,
+    return Deployment.get(
+        name=name,
         context=context,
         cluster_name=cluster_name,
         kube_namespace=kube_namespace,
@@ -224,13 +406,13 @@ def get(
 
 
 def terminate(
-    deployment_name: str,
+    name: str,
     context: str | None = None,
     cluster_name: str | None = None,
     kube_namespace: str | None = None,
 ) -> Deployment:
-    return Deployment.terminate_deployment(
-        deployment_name=deployment_name,
+    return Deployment.terminate(
+        name=name,
         context=context,
         cluster_name=cluster_name,
         kube_namespace=kube_namespace,
@@ -238,17 +420,25 @@ def terminate(
 
 
 def delete(
-    deployment_name: str,
+    name: str,
     context: str | None = None,
     cluster_name: str | None = None,
     kube_namespace: str | None = None,
-) -> Deployment:
-    return Deployment.delete_deployment(
-        deployment_name=deployment_name,
+) -> None:
+    Deployment.delete(
+        name=name,
         context=context,
         cluster_name=cluster_name,
         kube_namespace=kube_namespace,
     )
 
 
-__all__ = ["create", "get", "update", "terminate", "delete"]
+def list(
+    context: str | None = None,
+    cluster_name: str | None = None,
+    search: str | None = None,
+) -> t.List[Deployment]:
+    return Deployment.list(context=context, cluster_name=cluster_name, search=search)
+
+
+__all__ = ["create", "get", "update", "apply", "terminate", "delete", "list"]

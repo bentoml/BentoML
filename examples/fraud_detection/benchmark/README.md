@@ -2,7 +2,7 @@
 
 1. Install dependencies:
 ```bash
-pip install -r ./dev-requirements.txt
+pip install -r ./benchmark-requirements.txt
 ```
 
 2. Benchmark with Locust

@@ -67,7 +67,7 @@ _API_SERVER_CONFIG = {
     "workers": s.Or(s.And(int, ensure_larger_than_zero), None),
     s.Optional("traffic"): {
         "timeout": s.And(int, ensure_larger_than_zero),
-        "max_concurrency": s.Or(s.And(int, ensure_larger_than_zero), None),
+        s.Optional("max_concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),
     },
     "backlog": s.And(int, ensure_larger_than(64)),
     "max_runner_connections": s.And(int, ensure_larger_than_zero),
@@ -171,7 +171,7 @@ _RUNNER_CONFIG = {
     },
     s.Optional("traffic"): {
         "timeout": s.And(int, ensure_larger_than_zero),
-        "max_concurrency": s.Or(s.And(int, ensure_larger_than_zero), None),
+        s.Optional("max_concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),
     },
 }
 SCHEMA = s.Schema(
@@ -319,6 +319,11 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
         "traffic",
         "workers_per_resource",
     ]
+    default_runner_config: dict[str, t.Any] = {}
+    for runner_name, runner_cfg in default_config["runners"].items():
+        if runner_name in RUNNER_CFG_KEYS:
+            default_runner_config[runner_name] = runner_cfg
+
     for key in list(override_config):
         if key.startswith("runners."):
             key_parts = key.split(".")
@@ -329,7 +334,8 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
                     if (k := ".".join(key_parts[1:i])) in default_runner_config:
                         del default_runner_config[k]
             else:
-                default_config["runners"][runner_name] = unflatten(
-                    default_runner_config
-                )
+                if runner_name not in default_config["runners"].keys():
+                    default_config["runners"][runner_name] = unflatten(
+                        default_runner_config
+                    )
     return unflatten(override_config)

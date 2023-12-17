@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import typing as t
-from copy import deepcopy
 
 import schema as s
 
@@ -81,7 +80,7 @@ _SERVICE_CONFIG = {
     ),
     s.Optional("traffic"): {
         "timeout": s.And(int, ensure_larger_than_zero),
-        "max_concurrency": s.Or(s.And(int, ensure_larger_than_zero), None),
+        s.Optional("max_concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),
     },
     s.Optional("backlog"): s.And(int, ensure_larger_than(64)),
     s.Optional("max_runner_connections"): s.And(int, ensure_larger_than_zero),
@@ -183,10 +182,39 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
     if "version" not in override_config:
         override_config["version"] = 2
 
-    default_service_config = deepcopy(default_config["services"])
+    SERVICE_CFG_KEYS = [
+        "batching",
+        "resources",
+        "workers",
+        "traffic",
+        "backlog",
+        "max_runner_connections",
+        "logging",
+        "metrics",
+        "http",
+        "grpc",
+        "ssl",
+        "runner_probe",
+        "monitoring",
+        "tracing",
+    ]
+    default_service_config: dict[str, t.Any] = {}
+    for svc, svc_cfg in default_config["services"].items():
+        if svc in SERVICE_CFG_KEYS:
+            default_service_config[svc] = svc_cfg
+
     for key in list(override_config):
         if key.startswith("services."):
-            svc_name = key.split(".")[1]
-            default_config["services"][svc_name] = deepcopy(default_service_config)
-
+            key_parts = key.split(".")
+            service_name = key_parts[1]
+            if service_name in SERVICE_CFG_KEYS:
+                default_service_config[".".join(key_parts[1:])] = override_config[key]
+                for i in range(2, len(key_parts)):
+                    if (k := ".".join(key_parts[1:i])) in default_service_config:
+                        del default_service_config[k]
+            else:
+                if service_name not in default_config["services"].keys():
+                    default_config["services"][service_name] = unflatten(
+                        default_service_config
+                    )
     return unflatten(override_config)

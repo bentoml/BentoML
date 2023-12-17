@@ -212,7 +212,6 @@ class RunnerAppFactory(BaseAppFactory):
                         traceback.print_exc()
                         raise
                     async for data in ret:
-                        # payload = AutoContainer.to_payload(data, 0)
                         yield data
 
                 return (inner(),)

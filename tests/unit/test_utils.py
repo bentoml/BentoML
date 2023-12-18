@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-import pytest
 from typing import TYPE_CHECKING
-from bentoml.io import from_sse, to_sse
+
+import pytest
+
+from bentoml.io import from_sse
+from bentoml.io import to_sse
 
 if TYPE_CHECKING:
     from typing import AsyncGenerator

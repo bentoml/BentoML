@@ -209,19 +209,19 @@ jobs:
           python-version: '3.11'
           enable-pep582: false
       - name: Download e2e coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: coverage-e2e-data
       - name: Download monitoring coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: coverage-monitoring-data
       - name: Download integrations coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: coverage-integrations-data
       - name: Download unit coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: coverage-unit-data
       - name: Install dependencies

@@ -50,7 +50,7 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.unit.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-unit-data
           path: .coverage.*
@@ -102,7 +102,7 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.integrations.ubuntu-latest.3.8.${{ matrix.framework }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-integrations-data
           path: .coverage.*
@@ -142,7 +142,7 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.monitoring.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-monitoring-data
           path: .coverage.*
@@ -185,7 +185,7 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.e2e.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-e2e-data
           path: .coverage.*
@@ -231,7 +231,7 @@ jobs:
       - name: Export coverage reports and generate summary
         run: pdm run -v coverage-generate-reports
       - name: Upload uncovered HTML report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: uncovered-html-report
           path: htmlcov

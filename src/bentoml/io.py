@@ -10,8 +10,6 @@ from ._internal.io_descriptors.numpy import NumpyNdarray
 from ._internal.io_descriptors.pandas import PandasDataFrame
 from ._internal.io_descriptors.pandas import PandasSeries
 from ._internal.io_descriptors.text import Text
-from ._internal.io_descriptors.utils import from_sse
-from ._internal.io_descriptors.utils import to_sse
 
 __all__ = [
     "File",
@@ -24,6 +22,4 @@ __all__ = [
     "PandasSeries",
     "Text",
     "from_spec",
-    "from_sse",
-    "to_sse",
 ]

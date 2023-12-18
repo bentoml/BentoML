@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import typing as t
+from numbers import Real
 
 import schema as s
 
@@ -79,7 +80,7 @@ _SERVICE_CONFIG = {
         None,
     ),
     s.Optional("traffic"): {
-        "timeout": s.And(int, ensure_larger_than_zero),
+        "timeout": s.And(Real, ensure_larger_than_zero),
         s.Optional("max_concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),
     },
     s.Optional("backlog"): s.And(int, ensure_larger_than(64)),

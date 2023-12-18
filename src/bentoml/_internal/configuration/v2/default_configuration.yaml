@@ -6,7 +6,7 @@ services:
   # the maximum number of connections that will be made to any given runner server at once
   max_runner_connections: 16
   traffic:
-    timeout: 60
+    timeout: 60.0
     max_concurrency: ~
   metrics:
     enabled: true

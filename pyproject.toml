@@ -25,7 +25,7 @@ classifiers = [
 dependencies = [
     "Jinja2>=3.0.1",
     "PyYAML>=5.0",
-    "aiohttp",
+    "aiohttp>=3.9.1",
     "attrs>=21.1.0",
     "cattrs>=22.1.0,<23.2.0",
     "circus>=0.17.0,!=0.17.2",

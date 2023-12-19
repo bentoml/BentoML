@@ -4,7 +4,7 @@
 [metadata]
 groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "io-json", "aws", "io-file", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "frameworks", "triton"]
 strategy = ["cross_platform"]
-lock_version = "4.4.1"
+lock_version = "4.4"
 content_hash = "sha256:b64ea11d7582785e75a2ed2d0d9529f9ed8ce5d9945a33e8fe8ee183f6a22c5b"
 
 [[package]]

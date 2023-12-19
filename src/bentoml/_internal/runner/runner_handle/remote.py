@@ -150,6 +150,7 @@ class RemoteRunnerClient(RunnerHandle):
                 timeout=timeout,
                 loop=self._loop,
                 trust_env=True,
+                max_field_size=32760,
             )
         return self._client_cache
 

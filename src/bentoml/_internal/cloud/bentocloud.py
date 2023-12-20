@@ -29,7 +29,6 @@ from .base import FILE_CHUNK_SIZE
 from .base import CallbackIOWrapper
 from .base import CloudClient
 from .config import get_rest_api_client
-from .deployment import Deployment
 from .schemas.modelschemas import BentoApiSchema
 from .schemas.modelschemas import BentoRunnerResourceSchema
 from .schemas.modelschemas import BentoRunnerSchema
@@ -60,9 +59,6 @@ if t.TYPE_CHECKING:
 
 
 class BentoCloudClient(CloudClient):
-    def __init__(self):
-        self.deployment = Deployment()
-
     def push_bento(
         self,
         bento: Bento,

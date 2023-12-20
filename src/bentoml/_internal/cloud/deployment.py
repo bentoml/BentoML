@@ -26,6 +26,7 @@ from ..tag import Tag
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
+from .schemas.modelschemas import AccessControl
 from .schemas.modelschemas import ApiServerBentoFunctionOverrides
 from .schemas.modelschemas import DeploymentStatus
 from .schemas.modelschemas import DeploymentTargetConfigV2
@@ -350,7 +351,9 @@ class Deployment:
                 "deployment_strategy": strategy,
                 "envs": envs,
                 "extras": extras,
-                "access_type": access_type,
+                "access_type": access_type
+                if access_type is not None
+                else AccessControl.PUBLIC,
             }
         config_merger.merge(dct, merging_dct)
 

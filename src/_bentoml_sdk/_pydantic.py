@@ -6,9 +6,13 @@ from pydantic._internal import _known_annotated_metadata
 from typing_extensions import get_args
 from typing_extensions import get_origin
 
-from .types import DataframeSchema
-from .types import PILImageEncoder
-from .types import TensorSchema
+from .schema import ContentType
+from .schema import DataframeSchema
+from .schema import DType
+from .schema import FileSchema
+from .schema import PILImageEncoder
+from .schema import Shape
+from .schema import TensorSchema
 
 if t.TYPE_CHECKING:
     from pydantic import ConfigDict
@@ -44,18 +48,19 @@ def numpy_prepare_pydantic_annotations(
 
     args = get_args(source)
     dtype = np.dtype(args[1]).name if args else None
+    shape: tuple[int, ...] | None = None
 
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
         annotations
     )
-    schema = next(
-        (a for a in remaining_annotations if isinstance(a, TensorSchema)), None
-    )
-    if schema is None:
-        remaining_annotations.insert(0, TensorSchema("numpy-array", dtype=dtype))
-    elif schema.dtype is None:
-        schema.dtype = dtype
-    return source, remaining_annotations
+    for i, annotation in enumerate(remaining_annotations[:]):
+        if isinstance(annotation, Shape):
+            shape = annotation.dimensions
+            del remaining_annotations[i]
+        elif isinstance(annotation, DType):
+            dtype = annotation.dtype
+            del remaining_annotations[i]
+    return source, [TensorSchema("numpy-array", dtype, shape), *remaining_annotations]
 
 
 def torch_prepare_pydantic_annotations(
@@ -69,12 +74,20 @@ def torch_prepare_pydantic_annotations(
     if not issubclass(origin, torch.Tensor):
         return None
 
+    dtype: str | None = None
+    shape: tuple[int, ...] | None = None
+
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
         annotations
     )
-    if not any(isinstance(a, TensorSchema) for a in remaining_annotations):
-        remaining_annotations.insert(0, TensorSchema("torch-tensor"))
-    return origin, remaining_annotations
+    for i, annotation in enumerate(remaining_annotations[:]):
+        if isinstance(annotation, Shape):
+            shape = annotation.dimensions
+            del remaining_annotations[i]
+        elif isinstance(annotation, DType):
+            dtype = annotation.dtype
+            del remaining_annotations[i]
+    return source, [TensorSchema("torch-tensor", dtype, shape), *remaining_annotations]
 
 
 def tf_prepare_pydantic_annotations(
@@ -87,12 +100,20 @@ def tf_prepare_pydantic_annotations(
     if not issubclass(origin, tf.Tensor):
         return None
 
+    dtype: str | None = None
+    shape: tuple[int, ...] | None = None
+
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
         annotations
     )
-    if not any(isinstance(a, TensorSchema) for a in remaining_annotations):
-        remaining_annotations.insert(0, TensorSchema("tf-tensor"))
-    return origin, remaining_annotations
+    for i, annotation in enumerate(remaining_annotations[:]):
+        if isinstance(annotation, Shape):
+            shape = annotation.dimensions
+            del remaining_annotations[i]
+        elif isinstance(annotation, DType):
+            dtype = annotation.dtype
+            del remaining_annotations[i]
+    return source, [TensorSchema("tf-tensor", dtype, shape), *remaining_annotations]
 
 
 def pandas_prepare_pydantic_annotations(
@@ -114,7 +135,7 @@ def pandas_prepare_pydantic_annotations(
 
 
 def pil_prepare_pydantic_annotations(
-    source: t.Any, annotations: t.Iterable[t.Any], config: ConfigDict
+    source: t.Any, annotations: t.Iterable[t.Any], _config: ConfigDict
 ) -> tuple[t.Any, list[t.Any]] | None:
     if not getattr(source, "__module__", "").startswith("PIL."):
         return None
@@ -126,9 +147,26 @@ def pil_prepare_pydantic_annotations(
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
         annotations
     )
-    if not any(isinstance(a, PILImageEncoder) for a in remaining_annotations):
-        remaining_annotations.insert(0, PILImageEncoder())
-    return origin, remaining_annotations
+    return origin, [PILImageEncoder(), *remaining_annotations]
+
+
+def pathlib_prepare_pydantic_annotations(
+    source: t.Any, annotations: t.Iterable[t.Any], _config: ConfigDict
+) -> tuple[t.Any, list[t.Any]] | None:
+    import pathlib
+
+    if not issubclass(source, pathlib.PurePath):
+        return None
+
+    _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
+        annotations
+    )
+    content_type: str | None = None
+    for i, annotation in enumerate(remaining_annotations[:]):
+        if isinstance(annotation, ContentType):
+            content_type = annotation.content_type
+            del remaining_annotations[i]
+    return source, [FileSchema(content_type=content_type), *remaining_annotations]
 
 
 def add_custom_preparers():
@@ -137,6 +175,9 @@ def add_custom_preparers():
     except ModuleNotFoundError:
         return
     _std_types_schema.PREPARE_METHODS = (
+        # pathlib
+        pathlib_prepare_pydantic_annotations,
+        # inherit from pydantic
         *_std_types_schema.PREPARE_METHODS,
         # tensors
         numpy_prepare_pydantic_annotations,

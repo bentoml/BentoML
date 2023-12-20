@@ -5,6 +5,9 @@ import contextlib
 import inspect
 import io
 import logging
+import pathlib
+import shutil
+import tempfile
 import typing as t
 from http import HTTPStatus
 from urllib.parse import urljoin
@@ -14,12 +17,11 @@ import anyio
 import attr
 from pydantic import RootModel
 
+from _bentoml_sdk.typing_utils import is_file_like
+from _bentoml_sdk.typing_utils import is_image_type
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
 
-from ..types import File
-from ..typing_utils import is_file_like
-from ..typing_utils import is_image_type
 from .base import AbstractClient
 
 if t.TYPE_CHECKING:
@@ -28,13 +30,17 @@ if t.TYPE_CHECKING:
     from aiohttp import ClientSession
     from aiohttp import MultipartWriter
 
-    from ..factory import Service
-    from ..io_models import IODescriptor
+    from _bentoml_sdk import IODescriptor
+    from _bentoml_sdk import Service
 
     T = t.TypeVar("T", bound="HTTPClient")
 
 logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
+
+
+def _is_file(obj: t.Any) -> bool:
+    return isinstance(obj, pathlib.PurePath) or is_file_like(obj)
 
 
 @attr.define(slots=True)
@@ -59,6 +65,14 @@ class HTTPClient(AbstractClient):
     token: str | None = None
     _client: ClientSession | None = attr.field(init=False, default=None)
     _loop: asyncio.AbstractEventLoop | None = attr.field(init=False, default=None)
+    _opened_files: list[io.BufferedReader] = attr.field(init=False, factory=list)
+    _temp_dir: tempfile.TemporaryDirectory[str] = attr.field(init=False)
+
+    @_temp_dir.default
+    def default_temp_dir(self) -> tempfile.TemporaryDirectory[str]:
+        return tempfile.TemporaryDirectory(
+            prefix="bentoml-client-", ignore_cleanup_errors=True
+        )
 
     def __init__(
         self,
@@ -201,17 +215,22 @@ class HTTPClient(AbstractClient):
             endpoint = self.endpoints[name]
         except KeyError:
             raise BentoMLException(f"Endpoint {name} not found") from None
-        data = await self._prepare_request(endpoint, args, kwargs)
-        resp = await self._request(endpoint.route, data, headers=headers)
-        if endpoint.stream_output:
-            return self._parse_stream_response(endpoint, resp)
-        elif (
-            endpoint.output.get("type") == "file"
-            and self.media_type == "application/json"
-        ):
-            return await self._parse_file_response(endpoint, resp)
-        else:
-            return await self._parse_response(endpoint, resp)
+        try:
+            data = await self._prepare_request(endpoint, args, kwargs)
+            resp = await self._request(endpoint.route, data, headers=headers)
+            if endpoint.stream_output:
+                return self._parse_stream_response(endpoint, resp)
+            elif (
+                endpoint.output.get("type") == "file"
+                and self.media_type == "application/json"
+            ):
+                return await self._parse_file_response(endpoint, resp)
+            else:
+                return await self._parse_response(endpoint, resp)
+        finally:
+            for f in self._opened_files:
+                f.close()
+            self._opened_files.clear()
 
     async def _request(
         self,
@@ -262,10 +281,10 @@ class HTTPClient(AbstractClient):
             if isinstance(model, IODescriptor):
                 return k in model.multipart_fields
             return (
-                is_file_like(value := model[k])
+                _is_file(value := model[k])
                 or isinstance(value, t.Sequence)
                 and len(value) > 0
-                and is_file_like(value[0])
+                and _is_file(value[0])
             )
 
         if isinstance(model, dict):
@@ -287,6 +306,10 @@ class HTTPClient(AbstractClient):
                                 getattr(v, "_fp", v.fp),
                                 headers={"Content-Type": f"image/{v.format.lower()}"},
                             )
+                        elif isinstance(v, pathlib.PurePath):
+                            file = open(v, "rb")
+                            part = mp.append(file)
+                            self._opened_files.append(file)
                         else:
                             part = mp.append(v)
                         part.set_content_disposition(
@@ -294,9 +317,6 @@ class HTTPClient(AbstractClient):
                         )
                 return mp
         elif isinstance(model, dict):
-            for k, v in data.items():
-                if is_file_field(v) and not isinstance(v, File):
-                    data[k] = File(v)
             return self.serde.serialize(data)
         else:
             return self.serde.serialize_model(model)
@@ -309,10 +329,10 @@ class HTTPClient(AbstractClient):
     ) -> bytes | MultipartWriter:
         if endpoint.input_spec is not None:
             model = endpoint.input_spec.from_inputs(*args, **kwargs)
-            if not model.multipart_fields:
-                return self.serde.serialize_model(model)
-            else:
+            if model.multipart_fields:
                 return self._build_multipart(model)
+            else:
+                return self.serde.serialize_model(model)
 
         for name, value in zip(endpoint.input["properties"], args):
             if name in kwargs:
@@ -334,7 +354,7 @@ class HTTPClient(AbstractClient):
         multipart_fields = {
             k
             for k, v in kwargs.items()
-            if is_file_like(v) or isinstance(v, t.Sequence) and v and is_file_like(v[0])
+            if _is_file(v) or isinstance(v, t.Sequence) and v and _is_file(v[0])
         }
         if multipart_fields:
             return self._build_multipart(kwargs)
@@ -371,25 +391,27 @@ class HTTPClient(AbstractClient):
 
     async def _parse_file_response(
         self, endpoint: ClientEndpoint, resp: ClientResponse
-    ) -> File:
-        from ..types import Audio
-        from ..types import Image
-        from ..types import Video
+    ) -> pathlib.Path:
+        from multipart.multipart import parse_options_header
 
-        content_type = resp.headers.get("Content-Type")
-        cls = File
-        if content_type:
-            if content_type.startswith("image/"):
-                cls = Image
-            elif content_type.startswith("audio/"):
-                cls = Audio
-            elif content_type.startswith("video/"):
-                cls = Video
-        return cls(io.BytesIO(await resp.read()), media_type=content_type)
+        content_disposition = resp.headers.get("content-disposition")
+        filename: str | None = None
+        if content_disposition:
+            _, options = parse_options_header(content_disposition)
+            if b"filename" in options:
+                filename = str(options[b"filename"], "utf-8", errors="ignore")
+
+        with tempfile.NamedTemporaryFile(
+            "wb", suffix=filename, dir=self._temp_dir.name, delete=False
+        ) as f:
+            f.write(await resp.read())
+        return pathlib.Path(f.name)
 
     async def close(self) -> None:
         if self._client is not None and not self._client.closed:
             await self._client.close()
+        with contextlib.suppress(OSError):
+            shutil.rmtree(self._temp_dir)
 
 
 class SyncHTTPClient(HTTPClient):

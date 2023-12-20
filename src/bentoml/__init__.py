@@ -25,6 +25,8 @@ from ._internal.configuration import set_serialization_strategy
 # Inject dependencies and configurations
 load_config()
 
+from pydantic import Field
+
 # BentoML built-in types
 from ._internal.bento import Bento
 from ._internal.cloud import YataiClient
@@ -95,11 +97,13 @@ if TYPE_CHECKING:
     from . import batch  # Batch API
     from . import exceptions  # BentoML exceptions
     from . import server  # Server API
-    from . import ui  # BentoML UI
     from . import monitoring  # Monitoring API
     from . import cloud  # Cloud API
 
     # isort: on
+    from _bentoml_sdk import ContentType
+    from _bentoml_sdk import DType
+    from _bentoml_sdk import Shape
     from _bentoml_sdk import api
     from _bentoml_sdk import depends
     from _bentoml_sdk import runner_service
@@ -151,7 +155,6 @@ else:
     ray = _LazyLoader("bentoml.ray", globals(), "bentoml.ray")
 
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
-    ui = _LazyLoader("bentoml.ui", globals(), "bentoml.ui")
     batch = _LazyLoader("bentoml.batch", globals(), "bentoml.batch")
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
     metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
@@ -164,7 +167,15 @@ else:
 
     del _LazyLoader
 
-    _NEW_SDK_ATTRS = ["service", "runner_service", "api", "depends"]
+    _NEW_SDK_ATTRS = [
+        "service",
+        "runner_service",
+        "api",
+        "depends",
+        "ContentType",
+        "Dtype",
+        "Shape",
+    ]
 
     def __getattr__(name: str) -> Any:
         if name not in _NEW_SDK_ATTRS:
@@ -187,7 +198,6 @@ __all__ = [
     "client",
     "server",
     "io",
-    "types",
     "Tag",
     "Model",
     "Runner",
@@ -251,4 +261,8 @@ __all__ = [
     "runner_service",
     "api",
     "depends",
+    "ContentType",
+    "DType",
+    "Shape",
+    "Field",
 ]

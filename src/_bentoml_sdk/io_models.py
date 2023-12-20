@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import inspect
+import pathlib
 import sys
 import typing as t
 from typing import ClassVar
-from urllib.parse import quote
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -14,8 +14,6 @@ from typing_extensions import get_args
 
 from bentoml._internal.service.openapi.specification import Schema
 
-from .types import File
-from .typing_utils import is_file_like
 from .typing_utils import is_image_type
 from .typing_utils import is_iterator_type
 from .typing_utils import is_list_type
@@ -67,6 +65,8 @@ class IOMixin:
         if json_schema.get("type") == "string":
             return DEFAULT_TEXT_MEDIA_TYPE
         elif json_schema.get("type") == "file":
+            if "content_type" in json_schema:
+                return json_schema["content_type"]
             if (format := json_schema.get("format")) == "image":
                 return "image/*"
             elif format == "audio":
@@ -87,7 +87,7 @@ class IOMixin:
                 annotation = get_args(annotation)[0]
             if is_annotated(annotation):
                 annotation = get_args(annotation)[0]
-            if is_file_like(annotation) or is_image_type(annotation):
+            if issubclass(annotation, pathlib.PurePath) or is_image_type(annotation):
                 cls.multipart_fields.append(k)
 
     @classmethod
@@ -117,6 +117,8 @@ class IOMixin:
     @classmethod
     async def to_http_response(cls, obj: t.Any, serde: Serde) -> Response:
         """Convert a output value to HTTP response"""
+        import mimetypes
+
         from pydantic import RootModel
         from starlette.responses import FileResponse
         from starlette.responses import Response
@@ -157,32 +159,16 @@ class IOMixin:
 
             return StreamingResponse(content_stream(), media_type=cls.mime_type())
         else:
-            if isinstance(obj, File) and isinstance(serde, JSONSerde):
-                media_type = obj.media_type or "application/octet-stream"
-                should_inline = obj.media_type and obj.media_type.startswith(
-                    ("image/", "audio/", "video/")
-                )
+            if isinstance(obj, pathlib.PurePath) and isinstance(serde, JSONSerde):
+                media_type = mimetypes.guess_type(obj)[0] or "application/octet-stream"
+                should_inline = media_type.startswith(("image/", "audio/", "video/"))
                 content_disposition_type = "inline" if should_inline else "attachment"
-                if obj.path:
-                    return FileResponse(
-                        obj.path,
-                        filename=obj.filename,
-                        media_type=media_type,
-                        content_disposition_type=content_disposition_type,
-                    )
-                else:
-                    headers = None
-                    if obj.filename:
-                        if (quoted := quote(obj.filename)) != obj.filename:
-                            content_disposition = (
-                                f"{content_disposition_type}; filename*=utf-8''{quoted}"
-                            )
-                        else:
-                            content_disposition = (
-                                f'{content_disposition_type}; filename="{obj.filename}"'
-                            )
-                        headers = {"Content-Disposition": content_disposition}
-                    return Response(obj.read(), media_type=media_type, headers=headers)
+                return FileResponse(
+                    obj,
+                    media_type=media_type,
+                    content_disposition_type=content_disposition_type,
+                )
+
             if not isinstance(obj, RootModel):
                 ins: IODescriptor = t.cast(IODescriptor, cls(obj))
             else:

@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import contextlib
+import fnmatch
 import functools
 import io
 import operator
+import os
+import tempfile
 import typing as t
-from mimetypes import guess_type
 from pathlib import Path
+from pathlib import PurePath
 
 import attrs
+from annotated_types import BaseMetadata
 from pydantic_core import core_schema
 from starlette.datastructures import UploadFile
-from typing_extensions import Annotated
 
 from bentoml._internal.utils import dict_filter_none
 
@@ -28,6 +31,7 @@ if t.TYPE_CHECKING:
     from typing_extensions import Literal
 
     TensorType = t.Union[np.ndarray[t.Any, t.Any], tf.Tensor, torch.Tensor]
+    TensorFormat = Literal["numpy-array", "tf-tensor", "torch-tensor"]
     from PIL import Image as PILImage
 else:
     from bentoml._internal.utils.lazy_loader import LazyLoader
@@ -41,7 +45,6 @@ else:
 
 T = t.TypeVar("T")
 
-__all__ = ["File", "Image", "Audio", "Video", "Tensor", "Dataframe"]
 # This is an internal global state that is True when the model is being serialized for arrow
 __in_arrow_serialization__ = False
 
@@ -65,11 +68,11 @@ class PILImageEncoder:
         if isinstance(obj, UploadFile):
             formats = None
             if obj.headers.get("Content-Type", "").startswith("image/"):
-                formats = [obj.headers.get("Content-Type")[6:].upper()]
+                formats = [obj.headers["Content-Type"][6:].upper()]
             return PILImage.open(obj.file, formats=formats)
         if is_file_like(obj):
             return PILImage.open(obj)
-        return PILImage.open(io.BytesIO(obj))
+        return PILImage.open(io.BytesIO(t.cast(bytes, obj)))
 
     def encode(self, obj: PILImage.Image) -> bytes:
         buffer = io.BytesIO()
@@ -97,142 +100,73 @@ class PILImageEncoder:
 
 
 @attrs.define
-class File(t.BinaryIO):
-    format: t.ClassVar[str] = "binary"
+class FileSchema:
+    format: str = "binary"
+    content_type: str | None = None
 
-    _fp: t.BinaryIO | None = attrs.field(default=None, repr=False)
-    filename: str | None = None
-    media_type: str | None = None
-    path: Path | None = None
+    def __attrs_post_init__(self) -> None:
+        if self.content_type is not None:
+            self.format = self.content_type.split("/")[0]
 
-    def __attrs_post_int__(self) -> None:
-        if self.filename is None:
-            if self._fp is not None and hasattr(self._fp, "name"):
-                self.filename = self._fp.name
-
-    @property
-    def fp(self) -> t.BinaryIO:
-        if self._fp is None:
-            if self.path is None:
-                raise ValueError("File is not initialized")
-            self._fp = open(self.path, "rb")
-        return self._fp
-
-    @classmethod
-    def encode(cls, obj: t.BinaryIO) -> bytes:
-        obj.seek(0)
-        return obj.read()
-
-    @classmethod
     def __get_pydantic_json_schema__(
-        cls, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
         value = handler(schema)
         if handler.mode == "validation":
-            value.update({"type": "file", "format": cls.format})
+            value.update({"type": "file", "format": format})
+            if self.content_type is not None:
+                value.update({"content_type": self.content_type})
         else:
             value.update({"type": "string", "format": "binary"})
         return value
 
-    @classmethod
-    def decode(cls, obj: bytes | t.BinaryIO | UploadFile) -> File:
-        if isinstance(obj, UploadFile):
-            return cls(
-                obj.file,
-                filename=obj.filename,
-                media_type=obj.content_type,
-            )
-        if is_file_like(obj):
-            return cls(obj)
-        return cls(io.BytesIO(t.cast(bytes, obj)))
+    def encode(self, obj: Path) -> bytes:
+        return obj.read_bytes()
 
-    @classmethod
+    def decode(self, obj: bytes | t.BinaryIO | UploadFile | PurePath) -> Path:
+        from bentoml._internal.context import request_directory
+
+        media_type: str | None = None
+        if isinstance(obj, PurePath):
+            return Path(obj)
+        if isinstance(obj, UploadFile):
+            fp = obj.file
+            filename = obj.filename
+            media_type = obj.content_type
+        if is_file_like(obj):
+            fp = obj
+            filename = (
+                os.path.basename(fn)
+                if (fn := getattr(obj, "name", None)) is not None
+                else None
+            )
+        else:
+            fp = io.BytesIO(t.cast(bytes, obj))
+            filename = None
+        if media_type is not None and self.content_type is not None:
+            if not fnmatch.fnmatch(media_type, self.content_type):
+                raise ValueError(
+                    f"Invalid content type {media_type}, expected {self.content_type}"
+                )
+        with tempfile.NamedTemporaryFile(
+            suffix=filename, dir=request_directory.get(), delete=False
+        ) as f:
+            f.write(fp.read())
+            return Path(f.name)
+
     def __get_pydantic_core_schema__(
-        cls, source: type[t.Any], handler: t.Callable[[t.Any], core_schema.CoreSchema]
+        self, source: type[t.Any], handler: t.Callable[[t.Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
-            function=cls.decode,
+            function=self.decode,
             schema=core_schema.any_schema(),
-            serialization=core_schema.plain_serializer_function_ser_schema(cls.encode),
+            serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
         )
-
-    @classmethod
-    def from_path(cls, path: str | Path, filename: str | None = None) -> File:
-        if filename is None:
-            filename = Path(path).name
-        return cls(
-            open(path, "rb"),
-            filename=filename,
-            media_type=guess_type(filename)[0],
-            path=Path(path),
-        )
-
-    def __enter__(self) -> t.BinaryIO:
-        return self
-
-    def __exit__(self, *args: t.Any) -> None:
-        self.close()
-
-    def close(self) -> None:
-        if self._fp is not None:
-            self._fp.close()
-
-    def read(self, __n: int = -1) -> bytes:
-        return self.fp.read(__n)
-
-    def readlines(self, __hint: int = -1) -> list[bytes]:
-        return self.fp.readlines(__hint)
-
-    def __iter__(self) -> t.Iterator[bytes]:
-        return self.fp.__iter__()
-
-    def seek(self, __offset: int, __whence: int = 0) -> int:
-        return self.fp.seek(__offset, __whence)
-
-    def fileno(self) -> int:
-        return self.fp.fileno()
-
-    def tell(self) -> int:
-        return self.fp.tell()
-
-    def __getstate__(self) -> dict[str, t.Any]:
-        d = attrs.asdict(self)
-        if self._fp is not None:
-            d["_pos"] = self._fp.tell()
-            self._fp.seek(0)
-            d["_fp"] = self._fp.read()
-            self._fp.seek(d["_pos"])
-        return d
-
-    def __setstate__(self, d: dict[str, t.Any]) -> None:
-        if d["_fp"] is not None:
-            fp = d["_fp"] = io.BytesIO(d["_fp"])
-            fp.seek(d.pop("_pos", 0))
-        for k, v in d.items():
-            setattr(self, k, v)
-
-
-class Image(File):
-    format: t.ClassVar[str] = "image"
-
-    def to_pil_image(self) -> PILImage.Image:
-        formats = None
-        if self.media_type and self.media_type.startswith("image/"):
-            formats = [self.media_type[6:].upper()]
-        return PILImage.open(self, formats=formats)
-
-
-class Audio(File):
-    format: t.ClassVar[str] = "audio"
-
-
-class Video(File):
-    format: t.ClassVar[str] = "video"
 
 
 @attrs.frozen(unsafe_hash=True)
 class TensorSchema:
-    format: str
+    format: TensorFormat
     dtype: t.Optional[str] = None
     shape: t.Optional[t.Tuple[int, ...]] = None
 
@@ -353,43 +287,16 @@ class DataframeSchema:
         return pd.DataFrame(obj, columns=self.columns)
 
 
-@t.overload
-def Tensor(
-    format: Literal["numpy-array"], dtype: str, shape: tuple[int, ...]
-) -> t.Type[np.ndarray[t.Any, t.Any]]:
-    ...
+@attrs.frozen
+class ContentType(BaseMetadata):
+    content_type: str
 
 
-@t.overload
-def Tensor(
-    format: Literal["tf-tensor"], dtype: str, shape: tuple[int, ...]
-) -> t.Type[tf.Tensor]:
-    ...
+@attrs.frozen
+class Shape(BaseMetadata):
+    dimensions: tuple[int, ...]
 
 
-@t.overload
-def Tensor(
-    format: Literal["torch-tensor"], dtype: str, shape: tuple[int, ...]
-) -> t.Type[torch.Tensor]:
-    ...
-
-
-def Tensor(
-    format: Literal["numpy-array", "torch-tensor", "tf-tensor"],
-    dtype: str | None = None,
-    shape: tuple[int, ...] | None = None,
-) -> type:
-    if format == "numpy-array":
-        annotation = np.ndarray[t.Any, t.Any]
-    elif format == "torch-tensor":
-        annotation = torch.Tensor
-    else:
-        annotation = tf.Tensor
-    return Annotated[annotation, TensorSchema(format, dtype, shape)]
-
-
-def Dataframe(
-    orient: t.Literal["records", "columns"] = "records",
-    columns: list[str] | None = None,
-) -> t.Type[pd.DataFrame]:
-    return Annotated[pd.DataFrame, DataframeSchema(orient, columns)]
+@attrs.frozen
+class DType(BaseMetadata):
+    dtype: str

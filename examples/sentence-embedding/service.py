@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 import bentoml
-from bentoml.ui import Field
+from bentoml import Field
 
 
 @bentoml.service(resources={"memory": "500MiB"}, traffic={"timeout": 1})

@@ -12,9 +12,23 @@ add_custom_preparers()
 del add_custom_preparers
 # ruff: noqa
 
-from .api import api as api
-from .service import depends as depends
-from .service import Service as Service
-from .service import service as service
-from .service import runner_service as runner_service
-from .io_models import IODescriptor as IODescriptor
+from .api import api
+from .service import depends
+from .service import Service
+from .service import service
+from .service import runner_service
+from .io_models import IODescriptor
+from .schema import ContentType, DType, Shape
+
+__all__ = [
+    "api",
+    "depends",
+    "Service",
+    "service",
+    "runner_service",
+    # io descriptors
+    "IODescriptor",
+    "ContentType",
+    "DType",
+    "Shape",
+]

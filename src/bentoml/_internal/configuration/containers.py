@@ -96,7 +96,7 @@ class BentoMLConfiguration:
             )
             # Running migration layer if it exists
             if migration is not None:
-                override = migration(
+                override_config_json = migration(
                     default_config=self.config,
                     override_config=dict(flatten_dict(override_config_json)),
                 )

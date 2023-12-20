@@ -101,6 +101,8 @@ if TYPE_CHECKING:
     from . import cloud  # Cloud API
 
     # isort: on
+    from _bentoml_impl.client import AsyncHTTPClient
+    from _bentoml_impl.client import SyncHTTPClient
     from _bentoml_sdk import ContentType
     from _bentoml_sdk import DType
     from _bentoml_sdk import Shape
@@ -176,14 +178,20 @@ else:
         "Dtype",
         "Shape",
     ]
+    _NEW_CLIENTS = ["SyncHTTPClient", "AsyncHTTPClient"]
 
     def __getattr__(name: str) -> Any:
-        if name not in _NEW_SDK_ATTRS:
+        if name not in _NEW_SDK_ATTRS + _NEW_CLIENTS:
             raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
         import _bentoml_sdk
 
-        return getattr(_bentoml_sdk, name)
+        if name in _NEW_CLIENTS:
+            import _bentoml_impl.client
+
+            return getattr(_bentoml_impl.client, name)
+        else:
+            return getattr(_bentoml_sdk, name)
 
 
 __all__ = [
@@ -257,6 +265,7 @@ __all__ = [
     "set_serialization_strategy",
     "Strategy",
     "Resource",
+    # new SDK
     "service",
     "runner_service",
     "api",
@@ -265,4 +274,7 @@ __all__ = [
     "DType",
     "Shape",
     "Field",
+    # new implementation
+    "SyncHTTPClient",
+    "AsyncHTTPClient",
 ]

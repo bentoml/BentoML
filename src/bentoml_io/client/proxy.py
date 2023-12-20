@@ -8,6 +8,7 @@ import typing as t
 
 from bentoml._internal.utils import async_gen_to_sync
 from bentoml.exceptions import BentoMLException
+from bentoml_io.api import APIMethod
 from bentoml_io.factory import Service
 
 from .http import ClientEndpoint
@@ -57,6 +58,9 @@ class RemoteProxy(HTTPClient, t.Generic[T]):
         except KeyError:
             raise BentoMLException(f"Endpoint {__name} not found") from None
         original_func = getattr(self._inner, __name)
+        if not isinstance(original_func, APIMethod):
+            raise BentoMLException(f"calling non-api method {__name} is not allowed")
+        original_func = original_func.func
         while isinstance(original_func, functools.partial):
             original_func = original_func.func
         is_async_func = (

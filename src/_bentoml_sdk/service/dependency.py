@@ -30,7 +30,7 @@ class Dependency(t.Generic[T]):
             BentoMLContainer.remote_runner_mapping
         ],
     ) -> T:
-        from .client.proxy import RemoteProxy
+        from _bentoml_impl.client.proxy import RemoteProxy
 
         key = self.cache_key()
         if key not in _dependent_cache:

@@ -155,7 +155,14 @@ def pathlib_prepare_pydantic_annotations(
 ) -> tuple[t.Any, list[t.Any]] | None:
     import pathlib
 
-    if not issubclass(source, pathlib.PurePath):
+    if source not in {
+        pathlib.PurePath,
+        pathlib.PurePosixPath,
+        pathlib.PureWindowsPath,
+        pathlib.Path,
+        pathlib.PosixPath,
+        pathlib.WindowsPath,
+    }:
         return None
 
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(

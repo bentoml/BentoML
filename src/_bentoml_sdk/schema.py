@@ -113,7 +113,7 @@ class FileSchema:
     ) -> dict[str, t.Any]:
         value = handler(schema)
         if handler.mode == "validation":
-            value.update({"type": "file", "format": format})
+            value.update({"type": "file", "format": self.format})
             if self.content_type is not None:
                 value.update({"content_type": self.content_type})
         else:
@@ -130,18 +130,18 @@ class FileSchema:
         if isinstance(obj, PurePath):
             return Path(obj)
         if isinstance(obj, UploadFile):
-            fp = obj.file
+            body = obj.file.read()
             filename = obj.filename
             media_type = obj.content_type
-        if is_file_like(obj):
-            fp = obj
+        elif is_file_like(obj):
+            body = obj.read()
             filename = (
                 os.path.basename(fn)
                 if (fn := getattr(obj, "name", None)) is not None
                 else None
             )
         else:
-            fp = io.BytesIO(t.cast(bytes, obj))
+            body = t.cast(bytes, obj)
             filename = None
         if media_type is not None and self.content_type is not None:
             if not fnmatch.fnmatch(media_type, self.content_type):
@@ -151,7 +151,7 @@ class FileSchema:
         with tempfile.NamedTemporaryFile(
             suffix=filename, dir=request_directory.get(), delete=False
         ) as f:
-            f.write(fp.read())
+            f.write(body)
             return Path(f.name)
 
     def __get_pydantic_core_schema__(

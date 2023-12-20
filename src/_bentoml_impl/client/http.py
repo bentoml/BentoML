@@ -6,7 +6,6 @@ import inspect
 import io
 import logging
 import pathlib
-import shutil
 import tempfile
 import typing as t
 from http import HTTPStatus
@@ -17,6 +16,7 @@ import anyio
 import attr
 from pydantic import RootModel
 
+from _bentoml_sdk import IODescriptor
 from _bentoml_sdk.typing_utils import is_file_like
 from _bentoml_sdk.typing_utils import is_image_type
 from bentoml._internal.utils.uri import uri_to_path
@@ -30,7 +30,6 @@ if t.TYPE_CHECKING:
     from aiohttp import ClientSession
     from aiohttp import MultipartWriter
 
-    from _bentoml_sdk import IODescriptor
     from _bentoml_sdk import Service
 
     T = t.TypeVar("T", bound="HTTPClient")
@@ -410,8 +409,6 @@ class HTTPClient(AbstractClient):
     async def close(self) -> None:
         if self._client is not None and not self._client.closed:
             await self._client.close()
-        with contextlib.suppress(OSError):
-            shutil.rmtree(self._temp_dir)
 
 
 class SyncHTTPClient(HTTPClient):

@@ -165,6 +165,7 @@ class IOMixin:
                 content_disposition_type = "inline" if should_inline else "attachment"
                 return FileResponse(
                     obj,
+                    filename=obj.name,
                     media_type=media_type,
                     content_disposition_type=content_disposition_type,
                 )

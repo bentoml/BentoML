@@ -4,6 +4,8 @@ from typing import Optional
 
 import attr
 
+from bentoml.exceptions import BentoMLException
+
 
 @attr.s(auto_attribs=True)
 class SSE:
@@ -47,5 +49,7 @@ class SSE:
                         data.append(value)
                     elif key in fields:
                         fields[key] = value
+                    else:
+                        raise BentoMLException("Invalid SSE message")
                 fields["data"] = "\n".join(data)
                 yield SSE(**fields)

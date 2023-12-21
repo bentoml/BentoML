@@ -8,12 +8,12 @@ import typing as t
 
 from starlette.datastructures import UploadFile
 
-from .typing_utils import is_list_type
+from _bentoml_sdk.typing_utils import is_list_type
 
 if t.TYPE_CHECKING:
     from starlette.requests import Request
 
-    from .io_models import IODescriptor
+    from _bentoml_sdk import IODescriptor
 
 T = t.TypeVar("T", bound="IODescriptor")
 

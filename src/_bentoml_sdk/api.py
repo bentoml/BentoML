@@ -12,7 +12,6 @@ from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.utils import dict_filter_none
 
 from .io_models import IODescriptor
-from .openapi import REF_TEMPLATE
 
 R = t.TypeVar("R")
 T = t.TypeVar("T", bound="APIMethod[..., t.Any]")
@@ -121,6 +120,8 @@ class APIMethod(t.Generic[P, R]):
         )
 
     def openapi_request(self) -> dict[str, t.Any]:
+        from .service.openapi import REF_TEMPLATE
+
         return {
             "content": {
                 self.input_spec.mime_type(): MediaType(
@@ -137,6 +138,8 @@ class APIMethod(t.Generic[P, R]):
         }
 
     def openapi_response(self) -> dict[str, t.Any]:
+        from .service.openapi import REF_TEMPLATE
+
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {

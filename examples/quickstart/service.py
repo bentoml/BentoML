@@ -1,5 +1,6 @@
-import bentoml_io as bentoml
 import numpy as np
+
+import bentoml
 
 
 @bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})

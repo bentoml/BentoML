@@ -194,7 +194,7 @@ def add_start_command(cli: click.Group) -> None:
                 ssl_ciphers=ssl_ciphers,
             )
         else:
-            from bentoml_io.server.serving import serve_http
+            from _bentoml_impl.server import serve_http
 
             svc.inject_config()
             serve_http(

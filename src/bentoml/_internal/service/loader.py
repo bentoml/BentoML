@@ -26,7 +26,7 @@ from ..tag import Tag
 from .service import on_load_bento
 
 if TYPE_CHECKING:
-    from bentoml_io.server import Service as NewService
+    from _bentoml_sdk import Service as NewService
 
     from ..bento import BentoStore
     from .service import Service
@@ -66,7 +66,7 @@ def import_service(
 
     service_types: list[type] = [Service]
     try:
-        from bentoml_io import Service as NewService
+        from _bentoml_sdk import Service as NewService
 
         service_types.append(NewService)
     except ImportError:

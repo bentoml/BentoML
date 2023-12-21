@@ -501,7 +501,7 @@ def serve(
     max_concurrent_streams: int
     | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
     grpc_protocol_version: str | None = None,
-) -> Server:
+) -> Server[t.Any]:
     logger.warning(
         "bentoml.serve and bentoml.bentos.serve are deprecated; use bentoml.Server instead."
     )

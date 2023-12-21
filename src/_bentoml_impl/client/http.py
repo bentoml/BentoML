@@ -1,39 +1,44 @@
 from __future__ import annotations
 
-import asyncio
-import contextlib
 import inspect
 import io
+import json
 import logging
+import mimetypes
 import pathlib
 import tempfile
 import typing as t
+from abc import abstractmethod
+from functools import cached_property
 from http import HTTPStatus
 from urllib.parse import urljoin
 from urllib.parse import urlparse
 
-import anyio
 import attr
+import httpx
 from pydantic import RootModel
 
 from _bentoml_sdk import IODescriptor
 from _bentoml_sdk.typing_utils import is_file_like
 from _bentoml_sdk.typing_utils import is_image_type
+from bentoml import __version__
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
 
 from .base import AbstractClient
+from .base import ClientEndpoint
 
 if t.TYPE_CHECKING:
-    import yarl
-    from aiohttp import ClientResponse
-    from aiohttp import ClientSession
-    from aiohttp import MultipartWriter
+    from httpx._client import BaseClient
+    from httpx._types import RequestFiles
 
     from _bentoml_sdk import Service
 
-    T = t.TypeVar("T", bound="HTTPClient")
+    from ..serde import Serde
 
+    T = t.TypeVar("T", bound="HTTPClient[t.Any]")
+
+C = t.TypeVar("C", bound="BaseClient")
 logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
 
@@ -42,30 +47,42 @@ def _is_file(obj: t.Any) -> bool:
     return isinstance(obj, pathlib.PurePath) or is_file_like(obj)
 
 
-@attr.define(slots=True)
-class ClientEndpoint:
-    name: str
-    route: str
-    doc: str | None = None
-    input: dict[str, t.Any] = attr.field(factory=dict)
-    output: dict[str, t.Any] = attr.field(factory=dict)
-    input_spec: type[IODescriptor] | None = None
-    output_spec: type[IODescriptor] | None = None
-    stream_output: bool = False
-
-
 @attr.define
-class HTTPClient(AbstractClient):
+class HTTPClient(AbstractClient, t.Generic[C]):
+    client_cls: t.ClassVar[type[BaseClient]]
+
     url: str
     endpoints: dict[str, ClientEndpoint] = attr.field(factory=dict)
     media_type: str = "application/json"
-    timeout: int | None = None
-    limiter: t.AsyncContextManager[t.Any] = contextlib.nullcontext()
+    timeout: int = 30
     token: str | None = None
-    _client: ClientSession | None = attr.field(init=False, default=None)
-    _loop: asyncio.AbstractEventLoop | None = attr.field(init=False, default=None)
     _opened_files: list[io.BufferedReader] = attr.field(init=False, factory=list)
     _temp_dir: tempfile.TemporaryDirectory[str] = attr.field(init=False)
+
+    @cached_property
+    def client(self) -> C:
+        parsed = urlparse(self.url)
+        transport = None
+        url = self.url
+        if parsed.scheme == "file":
+            uds = uri_to_path(self.url)
+            if self.client_cls is httpx.Client:
+                transport = httpx.HTTPTransport(uds=uds)
+            else:
+                transport = httpx.AsyncHTTPTransport(uds=uds)
+            url = "http://127.0.0.1:3000"
+        elif parsed.scheme == "tcp":
+            url = f"http://{parsed.netloc}"
+        return t.cast(
+            "C",
+            self.client_cls(
+                base_url=url,
+                transport=transport,  # type: ignore
+                headers=self.default_headers,
+                timeout=self.timeout,
+                follow_redirects=True,
+            ),
+        )
 
     @_temp_dir.default
     def default_temp_dir(self) -> tempfile.TemporaryDirectory[str]:
@@ -94,22 +111,26 @@ class HTTPClient(AbstractClient):
         """
         routes: dict[str, ClientEndpoint] = {}
         if service is None:
-            import requests  # TODO: replace with httpx
-
             schema_url = urljoin(url, "/schema.json")
-            resp = requests.get(schema_url)
 
-            if not resp.ok:
-                raise RuntimeError(f"Failed to fetch schema from {schema_url}")
-            for route in resp.json()["routes"]:
-                routes[route["name"]] = ClientEndpoint(
-                    name=route["name"],
-                    route=route["route"],
-                    input=route["input"],
-                    output=route["output"],
-                    doc=route.get("doc"),
-                    stream_output=route["output"].get("is_stream", False),
-                )
+            headers = {"User-Agent": f"BentoML HTTP Client/{__version__}"}
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+
+            with httpx.Client(headers=headers) as client:
+                resp = client.get(schema_url)
+
+                if resp.is_error:
+                    raise RuntimeError(f"Failed to fetch schema from {schema_url}")
+                for route in resp.json()["routes"]:
+                    routes[route["name"]] = ClientEndpoint(
+                        name=route["name"],
+                        route=route["route"],
+                        input=route["input"],
+                        output=route["output"],
+                        doc=route.get("doc"),
+                        stream_output=route["output"].get("is_stream", False),
+                    )
         else:
             for name, method in service.apis.items():
                 routes[name] = ClientEndpoint(
@@ -126,212 +147,40 @@ class HTTPClient(AbstractClient):
         self.__attrs_init__(
             url=url, endpoints=routes, media_type=media_type, token=token
         )
+        super().__init__()
 
-    def __attrs_post_init__(self) -> None:
+    @cached_property
+    def serde(self) -> Serde:
         from ..serde import ALL_SERDE
 
-        self.serde = ALL_SERDE[self.media_type]()
-        for name in self.endpoints:
-            setattr(self, name, self._make_method(name))
+        return ALL_SERDE[self.media_type]()
 
-    def _make_method(self, name: str) -> t.Callable[..., t.Any]:
-        endpoint = self.endpoints[name]
-
-        def method(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            return self.call(name, *args, **kwargs)
-
-        method.__doc__ = endpoint.doc
-        if endpoint.input_spec is not None:
-            method.__annotations__ = endpoint.input_spec.__annotations__
-            method.__signature__ = endpoint.input_spec.__signature__
-        return method
-
-    def _ensure_event_loop(self) -> asyncio.AbstractEventLoop:
-        if self._loop is None or self._loop.is_closed():
-            try:
-                self._loop = asyncio.get_event_loop()
-            except RuntimeError:
-                self._loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(self._loop)
-        return self._loop
-
-    async def _get_client(self) -> ClientSession:
-        import aiohttp
-        from opentelemetry.instrumentation.aiohttp_client import create_trace_config
-
-        from bentoml._internal.container import BentoMLContainer
-
-        if self._client is None or self._client.closed:
-            self._ensure_event_loop()
-            if self._client is not None:
-                await self._client.close()
-
-            def strip_query_params(url: yarl.URL) -> str:
-                return str(url.with_query(None))
-
-            parsed = urlparse(self.url)
-            client_kwargs = {
-                "loop": self._loop,
-                "trust_env": True,
-                "trace_configs": [
-                    create_trace_config(
-                        # Remove all query params from the URL attribute on the span.
-                        url_filter=strip_query_params,
-                        tracer_provider=BentoMLContainer.tracer_provider.get(),
-                    )
-                ],
-            }
-            if self.timeout:
-                client_kwargs["timeout"] = aiohttp.ClientTimeout(total=self.timeout)
-            if parsed.scheme == "file":
-                path = uri_to_path(self.url)
-                conn = aiohttp.UnixConnector(
-                    path=path,
-                    loop=self._loop,
-                    limit=800,  # TODO(jiang): make it configurable
-                    keepalive_timeout=1800.0,
-                )
-                # base_url doesn't matter with UDS
-                self._client = aiohttp.ClientSession(
-                    base_url="http://127.0.0.1:8000", connector=conn, **client_kwargs
-                )
-            elif parsed.scheme == "tcp":
-                url = f"http://{parsed.netloc}"
-                self._client = aiohttp.ClientSession(url, **client_kwargs)
-            else:
-                self._client = aiohttp.ClientSession(self.url, **client_kwargs)
-        return self._client
-
-    async def _call(
-        self,
-        name: str,
-        args: t.Sequence[t.Any],
-        kwargs: dict[str, t.Any],
-        *,
-        headers: dict[str, str] | None = None,
-    ) -> t.Any:
-        try:
-            endpoint = self.endpoints[name]
-        except KeyError:
-            raise BentoMLException(f"Endpoint {name} not found") from None
-        try:
-            data = await self._prepare_request(endpoint, args, kwargs)
-            resp = await self._request(endpoint.route, data, headers=headers)
-            if endpoint.stream_output:
-                return self._parse_stream_response(endpoint, resp)
-            elif (
-                endpoint.output.get("type") == "file"
-                and self.media_type == "application/json"
-            ):
-                return await self._parse_file_response(endpoint, resp)
-            else:
-                return await self._parse_response(endpoint, resp)
-        finally:
-            for f in self._opened_files:
-                f.close()
-            self._opened_files.clear()
-
-    async def _request(
-        self,
-        url: str,
-        data: bytes | MultipartWriter,
-        headers: dict[str, str] | None = None,
-    ) -> ClientResponse:
-        from aiohttp import MultipartWriter
-        from aiohttp.client_exceptions import ClientOSError
-
-        from bentoml import __version__
-
-        req_headers = {
-            "Content-Type": f"multipart/form-data; boundary={data.boundary}"
-            if isinstance(data, MultipartWriter)
-            else self.media_type,
-            "User-Agent": f"BentoML HTTP Client/{__version__}",
-        }
+    @property
+    def default_headers(self) -> dict[str, str]:
+        headers = {"User-Agent": f"BentoML HTTP Client/{__version__}"}
         if self.token:
-            req_headers["Authorization"] = f"Bearer {self.token}"
-        if headers is not None:
-            req_headers.update(headers)
-        client = await self._get_client()
-        async with self.limiter:
-            for i in range(MAX_RETRIES):
-                try:
-                    resp = await client.post(url, data=data, headers=req_headers)
-                except ClientOSError:
-                    if i == MAX_RETRIES - 1:
-                        raise
-                    await self.close()
-                    client = await self._get_client()
-                else:
-                    break
-        if not resp.ok:
-            raise BentoMLException(
-                f"Error making request: {resp.status}: {await resp.text(errors='ignore')}",
-                error_code=HTTPStatus(resp.status),
-            )
-        return resp
+            headers["Authorization"] = f"Bearer {self.token}"
+        return headers
 
-    def _build_multipart(
-        self, model: IODescriptor | dict[str, t.Any]
-    ) -> MultipartWriter | bytes:
-        import aiohttp
-
-        def is_file_field(k: str) -> bool:
-            if isinstance(model, IODescriptor):
-                return k in model.multipart_fields
-            return (
-                _is_file(value := model[k])
-                or isinstance(value, t.Sequence)
-                and len(value) > 0
-                and _is_file(value[0])
-            )
-
-        if isinstance(model, dict):
-            data = model
-        else:
-            data = {k: getattr(model, k) for k in model.model_fields}
-        if self.media_type == "application/json":
-            with aiohttp.MultipartWriter("form-data") as mp:
-                for name, value in data.items():
-                    if not is_file_field(name):
-                        part = mp.append_json(value)
-                        part.set_content_disposition("form-data", name=name)
-                        continue
-                    if not isinstance(value, t.Sequence):
-                        value = [value]
-                    for v in value:
-                        if is_image_type(type(v)):
-                            part = mp.append(
-                                getattr(v, "_fp", v.fp),
-                                headers={"Content-Type": f"image/{v.format.lower()}"},
-                            )
-                        elif isinstance(v, pathlib.PurePath):
-                            file = open(v, "rb")
-                            part = mp.append(file)
-                            self._opened_files.append(file)
-                        else:
-                            part = mp.append(v)
-                        part.set_content_disposition(
-                            "attachment", filename=part.filename, name=name
-                        )
-                return mp
-        elif isinstance(model, dict):
-            return self.serde.serialize(data)
-        else:
-            return self.serde.serialize_model(model)
-
-    async def _prepare_request(
+    def _build_request(
         self,
         endpoint: ClientEndpoint,
         args: t.Sequence[t.Any],
         kwargs: dict[str, t.Any],
-    ) -> bytes | MultipartWriter:
+        headers: t.Mapping[str, str],
+    ) -> httpx.Request:
+        headers = {"Content-Type": self.media_type, **headers}
         if endpoint.input_spec is not None:
             model = endpoint.input_spec.from_inputs(*args, **kwargs)
-            if model.multipart_fields:
-                return self._build_multipart(model)
+            if model.multipart_fields and self.media_type == "application/json":
+                return self._build_multipart(endpoint.route, model, headers)
             else:
-                return self.serde.serialize_model(model)
+                return self.client.build_request(
+                    "POST",
+                    endpoint.route,
+                    headers=headers,
+                    content=self.serde.serialize_model(model),
+                )
 
         for name, value in zip(endpoint.input["properties"], args):
             if name in kwargs:
@@ -355,9 +204,76 @@ class HTTPClient(AbstractClient):
             for k, v in kwargs.items()
             if _is_file(v) or isinstance(v, t.Sequence) and v and _is_file(v[0])
         }
-        if multipart_fields:
-            return self._build_multipart(kwargs)
-        return self.serde.serialize(kwargs)
+        if multipart_fields and self.media_type == "application/json":
+            return self._build_multipart(endpoint.route, kwargs, headers)
+        return self.client.build_request(
+            "POST",
+            endpoint.route,
+            content=self.serde.serialize(kwargs),
+            headers=headers,
+        )
+
+    def _build_multipart(
+        self,
+        route: str,
+        model: IODescriptor | dict[str, t.Any],
+        headers: dict[str, str],
+    ) -> httpx.Request:
+        def is_file_field(k: str) -> bool:
+            if isinstance(model, IODescriptor):
+                return k in model.multipart_fields
+            return (
+                _is_file(value := model[k])
+                or isinstance(value, t.Sequence)
+                and len(value) > 0
+                and _is_file(value[0])
+            )
+
+        if isinstance(model, dict):
+            fields = model
+        else:
+            fields = {k: getattr(model, k) for k in model.model_fields}
+        data: dict[str, str] = {}
+        files: RequestFiles = []
+
+        for name, value in fields.items():
+            if not is_file_field(name):
+                data[name] = json.dumps(value)
+                continue
+            if not isinstance(value, t.Sequence):
+                value = [value]
+
+            for v in value:
+                if is_image_type(type(v)):
+                    files.append(
+                        (
+                            name,
+                            (
+                                None,
+                                getattr(v, "_fp", v.fp),
+                                f"image/{v.format.lower()}",
+                            ),
+                        )
+                    )
+                elif isinstance(v, pathlib.PurePath):
+                    file = open(v, "rb")
+                    files.append((name, (v.name, file, mimetypes.guess_type(v)[0])))
+                    self._opened_files.append(file)
+                else:
+                    assert isinstance(v, t.BinaryIO)
+                    filename = (
+                        pathlib.Path(fn).name
+                        if (fn := getattr(v, "name", None))
+                        else None
+                    )
+                    content_type = (
+                        mimetypes.guess_type(filename)[0] if filename else None
+                    )
+                    files.append((name, (filename, v, content_type)))
+        headers.pop("content-type", None)
+        return self.client.build_request(
+            "POST", route, data=data, files=files, headers=headers
+        )
 
     def _deserialize_output(self, data: bytes, endpoint: ClientEndpoint) -> t.Any:
         if endpoint.output_spec is not None:
@@ -372,46 +288,35 @@ class HTTPClient(AbstractClient):
         else:
             return self.serde.deserialize(data)
 
-    async def _parse_response(
-        self, endpoint: ClientEndpoint, resp: ClientResponse
+    def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        try:
+            endpoint = self.endpoints[__name]
+        except KeyError:
+            raise BentoMLException(f"Endpoint {__name} not found") from None
+        if endpoint.stream_output:
+            return self._get_stream(endpoint, args, kwargs)
+        else:
+            return self._call(endpoint, args, kwargs)
+
+    @abstractmethod
+    def _call(
+        self,
+        endpoint: ClientEndpoint,
+        args: t.Sequence[t.Any],
+        kwargs: dict[str, t.Any],
+        *,
+        headers: t.Mapping[str, str] | None = None,
     ) -> t.Any:
-        data = await resp.read()
-        return self._deserialize_output(data, endpoint)
+        ...
 
-    async def _parse_stream_response(
-        self, endpoint: ClientEndpoint, resp: ClientResponse
-    ) -> t.AsyncGenerator[t.Any, None]:
-        buffer = bytearray()
-        async for data, eoc in resp.content.iter_chunks():
-            buffer.extend(data)
-            if eoc:
-                yield self._deserialize_output(bytes(buffer), endpoint)
-                buffer.clear()
-
-    async def _parse_file_response(
-        self, endpoint: ClientEndpoint, resp: ClientResponse
-    ) -> pathlib.Path:
-        from multipart.multipart import parse_options_header
-
-        content_disposition = resp.headers.get("content-disposition")
-        filename: str | None = None
-        if content_disposition:
-            _, options = parse_options_header(content_disposition)
-            if b"filename" in options:
-                filename = str(options[b"filename"], "utf-8", errors="ignore")
-
-        with tempfile.NamedTemporaryFile(
-            "wb", suffix=filename, dir=self._temp_dir.name, delete=False
-        ) as f:
-            f.write(await resp.read())
-        return pathlib.Path(f.name)
-
-    async def close(self) -> None:
-        if self._client is not None and not self._client.closed:
-            await self._client.close()
+    @abstractmethod
+    def _get_stream(
+        self, endpoint: ClientEndpoint, args: t.Any, kwargs: t.Any
+    ) -> t.Any:
+        ...
 
 
-class SyncHTTPClient(HTTPClient):
+class SyncHTTPClient(HTTPClient[httpx.Client]):
     """A synchronous client for BentoML service.
 
     Example:
@@ -424,29 +329,100 @@ class SyncHTTPClient(HTTPClient):
             assert resp == [0]
     """
 
-    def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        from bentoml._internal.utils import async_gen_to_sync
+    client_cls = httpx.Client
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        res = loop.run_until_complete(self._call(__name, args, kwargs))
-        if inspect.isasyncgen(res):
-            return async_gen_to_sync(res, loop=loop)
-        return res
-
-    def __enter__(self) -> HTTPClient:
+    def __enter__(self: T) -> T:
         return self
 
     def __exit__(self, exc_type: t.Any, exc: t.Any, tb: t.Any) -> None:
-        return anyio.run(self.close)
+        return self.close()
 
-    def is_ready(
-        self, timeout: int | None = None, headers: dict[str, str] | None = None
-    ) -> bool:
-        return anyio.run(AsyncHTTPClient.is_ready, self, timeout, headers)
+    def is_ready(self, timeout: int | None = None) -> bool:
+        try:
+            resp = self.client.get(
+                "/readyz", timeout=timeout or httpx.USE_CLIENT_DEFAULT
+            )
+            return resp.status_code == 200
+        except httpx.TimeoutException:
+            logger.warn("Timed out waiting for runner to be ready")
+            return False
+
+    def close(self) -> None:
+        if "client" in vars(self):
+            self.client.close()
+
+    def _get_stream(
+        self, endpoint: ClientEndpoint, args: t.Any, kwargs: t.Any
+    ) -> t.Generator[t.Any, None, None]:
+        resp = self._call(endpoint, args, kwargs)
+        for data in resp:
+            yield data
+
+    def _call(
+        self,
+        endpoint: ClientEndpoint,
+        args: t.Sequence[t.Any],
+        kwargs: dict[str, t.Any],
+        *,
+        headers: t.Mapping[str, str] | None = None,
+    ) -> t.Any:
+        try:
+            req = self._build_request(endpoint, args, kwargs, headers or {})
+            resp = self.client.send(req, stream=endpoint.stream_output)
+            if resp.is_error:
+                resp.read()
+                raise BentoMLException(
+                    f"Error making request: {resp.status_code}: {resp.text}",
+                    error_code=HTTPStatus(resp.status_code),
+                )
+            if endpoint.stream_output:
+                return self._parse_stream_response(endpoint, resp)
+            elif (
+                endpoint.output.get("type") == "file"
+                and self.media_type == "application/json"
+            ):
+                return self._parse_file_response(endpoint, resp)
+            else:
+                return self._parse_response(endpoint, resp)
+        finally:
+            for f in self._opened_files:
+                f.close()
+            self._opened_files.clear()
+
+    def _parse_response(self, endpoint: ClientEndpoint, resp: httpx.Response) -> t.Any:
+        data = resp.read()
+        return self._deserialize_output(data, endpoint)
+
+    def _parse_stream_response(
+        self, endpoint: ClientEndpoint, resp: httpx.Response
+    ) -> t.Generator[t.Any, None, None]:
+        for data in resp.iter_bytes():
+            yield self._deserialize_output(data, endpoint)
+
+    def _parse_file_response(
+        self, endpoint: ClientEndpoint, resp: httpx.Response
+    ) -> pathlib.Path:
+        from multipart.multipart import parse_options_header
+
+        content_disposition = resp.headers.get("content-disposition")
+        filename: str | None = None
+        if content_disposition:
+            _, options = parse_options_header(content_disposition)
+            if b"filename" in options:
+                filename = str(
+                    options[b"filename"],
+                    resp.charset_encoding or "utf-8",
+                    errors="ignore",
+                )
+
+        with tempfile.NamedTemporaryFile(
+            "wb", suffix=filename, dir=self._temp_dir.name, delete=False
+        ) as f:
+            f.write(resp.read())
+        return pathlib.Path(f.name)
 
 
-class AsyncHTTPClient(HTTPClient):
+class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
     """An asynchronous client for BentoML service.
 
     Example:
@@ -469,36 +445,22 @@ class AsyncHTTPClient(HTTPClient):
                 print(data)
     """
 
-    async def is_ready(
-        self, timeout: int | None = None, headers: dict[str, str] | None = None
-    ) -> bool:
-        import aiohttp
+    client_cls = httpx.AsyncClient
 
-        client = await self._get_client()
-        request_params: dict[str, t.Any] = {"headers": headers}
-        if timeout is not None:
-            request_params["timeout"] = aiohttp.ClientTimeout(total=timeout)
+    async def is_ready(self, timeout: int | None = None) -> bool:
         try:
-            async with client.get("/readyz", **request_params) as resp:
-                return resp.status == 200
-        except asyncio.TimeoutError:
+            resp = await self.client.get(
+                "/readyz", timeout=timeout or httpx.USE_CLIENT_DEFAULT
+            )
+            return resp.status_code == 200
+        except httpx.TimeoutException:
             logger.warn("Timed out waiting for runner to be ready")
             return False
 
-    def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        try:
-            endpoint = self.endpoints[__name]
-        except KeyError:
-            raise BentoMLException(f"Endpoint {__name} not found") from None
-        if endpoint.stream_output:
-            return self._get_stream(endpoint, *args, **kwargs)
-        else:
-            return self._call(__name, args, kwargs)
-
     async def _get_stream(
-        self, endpoint: ClientEndpoint, *args: t.Any, **kwargs: t.Any
+        self, endpoint: ClientEndpoint, args: t.Any, kwargs: t.Any
     ) -> t.AsyncGenerator[t.Any, None]:
-        resp = await self._call(endpoint.name, args, kwargs)
+        resp = await self._call(endpoint, args, kwargs)
         assert inspect.isasyncgen(resp)
         async for data in resp:
             yield data
@@ -508,3 +470,72 @@ class AsyncHTTPClient(HTTPClient):
 
     async def __aexit__(self, *args: t.Any) -> None:
         return await self.close()
+
+    async def _call(
+        self,
+        endpoint: ClientEndpoint,
+        args: t.Sequence[t.Any],
+        kwargs: dict[str, t.Any],
+        *,
+        headers: t.Mapping[str, str] | None = None,
+    ) -> t.Any:
+        try:
+            req = self._build_request(endpoint, args, kwargs, headers or {})
+            resp = await self.client.send(req, stream=endpoint.stream_output)
+            if resp.is_error:
+                await resp.aread()
+                raise BentoMLException(
+                    f"Error making request: {resp.status_code}: {resp.text}",
+                    error_code=HTTPStatus(resp.status_code),
+                )
+            if endpoint.stream_output:
+                return self._parse_stream_response(endpoint, resp)
+            elif (
+                endpoint.output.get("type") == "file"
+                and self.media_type == "application/json"
+            ):
+                return await self._parse_file_response(endpoint, resp)
+            else:
+                return await self._parse_response(endpoint, resp)
+        finally:
+            for f in self._opened_files:
+                f.close()
+            self._opened_files.clear()
+
+    async def _parse_response(
+        self, endpoint: ClientEndpoint, resp: httpx.Response
+    ) -> t.Any:
+        data = await resp.aread()
+        return self._deserialize_output(data, endpoint)
+
+    async def _parse_stream_response(
+        self, endpoint: ClientEndpoint, resp: httpx.Response
+    ) -> t.AsyncGenerator[t.Any, None]:
+        async for data in resp.aiter_bytes():
+            yield self._deserialize_output(data, endpoint)
+
+    async def _parse_file_response(
+        self, endpoint: ClientEndpoint, resp: httpx.Response
+    ) -> pathlib.Path:
+        from multipart.multipart import parse_options_header
+
+        content_disposition = resp.headers.get("content-disposition")
+        filename: str | None = None
+        if content_disposition:
+            _, options = parse_options_header(content_disposition)
+            if b"filename" in options:
+                filename = str(
+                    options[b"filename"],
+                    resp.charset_encoding or "utf-8",
+                    errors="ignore",
+                )
+
+        with tempfile.NamedTemporaryFile(
+            "wb", suffix=filename, dir=self._temp_dir.name, delete=False
+        ) as f:
+            f.write(await resp.aread())
+        return pathlib.Path(f.name)
+
+    async def close(self) -> None:
+        if "client" in vars(self):
+            await self.client.aclose()

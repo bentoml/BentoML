@@ -8,17 +8,17 @@ import typing as t
 
 from _bentoml_sdk import Service
 from _bentoml_sdk.api import APIMethod
-from bentoml._internal.utils import async_gen_to_sync
 from bentoml.exceptions import BentoMLException
 
-from .http import ClientEndpoint
-from .http import HTTPClient
+from .http import AbstractClient
+from .http import AsyncHTTPClient
+from .http import SyncHTTPClient
 
 T = t.TypeVar("T")
 logger = logging.getLogger("bentoml.io")
 
 
-class RemoteProxy(HTTPClient, t.Generic[T]):
+class RemoteProxy(AbstractClient, t.Generic[T]):
     """A remote proxy of the passed in service that has the same interfaces"""
 
     def __init__(
@@ -28,35 +28,28 @@ class RemoteProxy(HTTPClient, t.Generic[T]):
         service: Service[T] | None = None,
     ) -> None:
         assert service is not None, "service must be provided"
-        super().__init__(
+        self._sync = SyncHTTPClient(
+            url, media_type="application/vnd.bentoml+pickle", service=service
+        )
+        self._async = AsyncHTTPClient(
             url, media_type="application/vnd.bentoml+pickle", service=service
         )
         self._inner = service.inner
+        self.endpoints = self._async.endpoints
+        super().__init__()
+
+    async def is_ready(self, timeout: int | None = None) -> bool:
+        return await self._async.is_ready(timeout=timeout)
+
+    async def close(self) -> None:
+        from starlette.concurrency import run_in_threadpool
+
+        await asyncio.gather(self._async.close(), run_in_threadpool(self._sync.close))
 
     def as_service(self) -> T:
         return t.cast(T, self)
 
-    async def is_ready(
-        self, timeout: int | None = None, headers: dict[str, str] | None = None
-    ) -> bool:
-        import aiohttp
-
-        client = await self._get_client()
-        request_params: dict[str, t.Any] = {"headers": headers}
-        if timeout is not None:
-            request_params["timeout"] = aiohttp.ClientTimeout(total=timeout)
-        try:
-            async with client.get("/readyz", **request_params) as resp:
-                return resp.status == 200
-        except asyncio.TimeoutError:
-            logger.warn("Timed out waiting for runner to be ready")
-            return False
-
     def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        try:
-            endpoint = self.endpoints[__name]
-        except KeyError:
-            raise BentoMLException(f"Endpoint {__name} not found") from None
         original_func = getattr(self._inner, __name)
         if not isinstance(original_func, APIMethod):
             raise BentoMLException(f"calling non-api method {__name} is not allowed")
@@ -72,24 +65,6 @@ class RemoteProxy(HTTPClient, t.Generic[T]):
             or inspect.isasyncgenfunction(original_func)
         )
         if is_async_func:
-            if endpoint.stream_output:
-                return self._get_async_stream(endpoint, *args, **kwargs)
-            else:
-                return self._call(__name, args, kwargs)
+            return self._async.call(__name, *args, **kwargs)
         else:
-            return self._sync_call(__name, *args, **kwargs)
-
-    def _sync_call(self, name: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        loop = self._ensure_event_loop()
-        res = loop.run_until_complete(self._call(name, args, kwargs))
-        if inspect.isasyncgen(res):
-            return async_gen_to_sync(res, loop=loop)
-        return res
-
-    async def _get_async_stream(
-        self, endpoint: ClientEndpoint, *args: t.Any, **kwargs: t.Any
-    ) -> t.AsyncGenerator[t.Any, None]:
-        resp = await self._call(endpoint.name, args, kwargs)
-        assert inspect.isasyncgen(resp)
-        async for data in resp:
-            yield data
+            return self._sync.call(__name, *args, **kwargs)

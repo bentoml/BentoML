@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import contextvars
 import os
+import tempfile
 import typing as t
 from abc import ABC
 from abc import abstractmethod
@@ -16,6 +17,11 @@ from .utils.http import Cookie
 if TYPE_CHECKING:
     import starlette.requests
     import starlette.responses
+
+# A request-unique directory for storing temporary files
+request_directory: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "request_directory"
+)
 
 
 class Metadata(t.Mapping[str, str], ABC):
@@ -92,11 +98,14 @@ class ServiceContext:
             ServiceContext.RequestContext.from_http(request)
         )
         response_token = self._response_var.set(ServiceContext.ResponseContext())
-        try:
-            yield self
-        finally:
-            self._request_var.reset(request_token)
-            self._response_var.reset(response_token)
+        with tempfile.TemporaryDirectory(prefix="bentoml-request-") as temp_dir:
+            dir_token = request_directory.set(temp_dir)
+            try:
+                yield self
+            finally:
+                self._request_var.reset(request_token)
+                self._response_var.reset(response_token)
+                request_directory.reset(dir_token)
 
     @property
     def request(self) -> RequestContext:
@@ -105,6 +114,10 @@ class ServiceContext:
     @property
     def response(self) -> ResponseContext:
         return self._response_var.get()
+
+    @property
+    def directory(self) -> str:
+        return request_directory.get()
 
     @attr.define
     class RequestContext:

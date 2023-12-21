@@ -5,7 +5,7 @@ import typing as t
 import pyarrow as pa
 from pydantic import BaseModel
 
-from .types import arrow_serialization
+from _bentoml_sdk.schema import arrow_serialization
 
 SchemaDict: t.TypeAlias = t.Dict[str, t.Any]
 

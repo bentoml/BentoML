@@ -15,6 +15,7 @@ And join us in the BentoML slack community: https://l.bentoml.com/join-slack
 """
 
 from typing import TYPE_CHECKING
+from typing import Any
 
 from ._internal.configuration import BENTOML_VERSION as __version__
 from ._internal.configuration import load_config
@@ -23,6 +24,8 @@ from ._internal.configuration import set_serialization_strategy
 
 # Inject dependencies and configurations
 load_config()
+
+from pydantic import Field
 
 # BentoML built-in types
 from ._internal.bento import Bento
@@ -98,6 +101,15 @@ if TYPE_CHECKING:
     from . import cloud  # Cloud API
 
     # isort: on
+    from _bentoml_impl.client import AsyncHTTPClient
+    from _bentoml_impl.client import SyncHTTPClient
+    from _bentoml_sdk import ContentType
+    from _bentoml_sdk import DType
+    from _bentoml_sdk import Shape
+    from _bentoml_sdk import api
+    from _bentoml_sdk import depends
+    from _bentoml_sdk import runner_service
+    from _bentoml_sdk import service
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
 
@@ -156,6 +168,30 @@ else:
     cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
 
     del _LazyLoader
+
+    _NEW_SDK_ATTRS = [
+        "service",
+        "runner_service",
+        "api",
+        "depends",
+        "ContentType",
+        "Dtype",
+        "Shape",
+    ]
+    _NEW_CLIENTS = ["SyncHTTPClient", "AsyncHTTPClient"]
+
+    def __getattr__(name: str) -> Any:
+        if name not in _NEW_SDK_ATTRS + _NEW_CLIENTS:
+            raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+        import _bentoml_sdk
+
+        if name in _NEW_CLIENTS:
+            import _bentoml_impl.client
+
+            return getattr(_bentoml_impl.client, name)
+        else:
+            return getattr(_bentoml_sdk, name)
 
 
 __all__ = [
@@ -229,4 +265,16 @@ __all__ = [
     "set_serialization_strategy",
     "Strategy",
     "Resource",
+    # new SDK
+    "service",
+    "runner_service",
+    "api",
+    "depends",
+    "ContentType",
+    "DType",
+    "Shape",
+    "Field",
+    # new implementation
+    "SyncHTTPClient",
+    "AsyncHTTPClient",
 ]

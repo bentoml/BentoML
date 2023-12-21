@@ -14,10 +14,9 @@ import typing as t
 from simple_di import Provide
 from simple_di import inject
 
+from _bentoml_sdk import Service
 from bentoml._internal.container import BentoMLContainer
 from bentoml.exceptions import BentoMLConfigException
-
-from ..factory import Service
 
 AnyService = Service[t.Any]
 
@@ -92,7 +91,7 @@ else:
         raise BentoMLException("Unsupported platform")
 
 
-SERVICE_WORKER_SCRIPT = "bentoml_io.worker.service"
+SERVICE_WORKER_SCRIPT = "_bentoml_impl.worker.service"
 
 
 def create_service_watchers(
@@ -128,7 +127,7 @@ def create_service_watchers(
         "--fd",
         f"$(circus.sockets.{svc.name})",
         "--working-dir",
-        svc._working_dir,
+        svc.working_dir,
         "--worker-id",
         "$(CIRCUS.WID)",
     ]

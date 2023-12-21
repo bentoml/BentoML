@@ -1,6 +1,6 @@
 import { StyledLink } from 'baseui/link'
 import isEmpty from 'lodash/isEmpty'
-import { isFileField } from '../../hooks/useQuery'
+import { isFileField, hasFileInSchema } from '../../hooks/useQuery'
 import type { DataType, TObject } from '../../types'
 import { useMountOptions } from '../../hooks/useMountOptions'
 import type { IClientProps } from './Base'
@@ -16,11 +16,11 @@ function formatValue(value: unknown, schema?: DataType, indent = 4) {
         return '[]'
 
       return `[\n${(value as File[]).map(
-        item => `${' '.repeat(indent + 4)}open("${item.name}", "rb")`,
+        item => `${' '.repeat(indent + 4)}Path("${item.name}")`,
       ).join(',\n')},\n${' '.repeat(indent)}]`
     }
     else {
-      return `open("${(value as File).name}", "rb")`
+      return `Path("${(value as File).name}")`
     }
   }
   else {
@@ -43,9 +43,9 @@ function formatQuery(data: object, schema: TObject, indent = 4) {
 function generateCode(data: object, path = '/', schema?: TObject, needAuth?: boolean) {
   const auth = needAuth ? `, token="******"` : ''
 
-  return `from bentoml_io.client import SyncHTTPClient
-
-with SyncHTTPClient("http://localhost:3000"${auth}) as client:
+  return `import bentoml
+${hasFileInSchema(schema ? { schema } : {}) ? 'from pathlib import Path\n' : ''}
+with bentoml.SyncHTTPClient("http://localhost:3000"${auth}) as client:
     result = client.${path.slice(1)}(${formatQuery(data, schema!, 4)})
 `
 }

@@ -30,6 +30,8 @@ from .exceptions import UnservableException
 if TYPE_CHECKING:
     from types import TracebackType
 
+    from _bentoml_sdk import Service as NewService
+
     _FILE: t.TypeAlias = None | int | t.IO[t.Any]
 
 
@@ -43,7 +45,7 @@ ClientType = t.TypeVar("ClientType", bound=Client)
 
 
 class Server(ABC, t.Generic[ClientType]):
-    servable: str | Bento | Tag | Service
+    servable: str | Bento | Tag | Service | NewService[t.Any]
     host: str
     port: int
 
@@ -54,7 +56,7 @@ class Server(ABC, t.Generic[ClientType]):
 
     def __init__(
         self,
-        servable: str | Bento | Tag | Service,
+        servable: str | Bento | Tag | Service | NewService[t.Any],
         serve_cmd: str,
         reload: bool,
         production: bool,
@@ -94,6 +96,9 @@ class Server(ABC, t.Generic[ClientType]):
                     "Cannot use 'bentoml.Service' as a server if it is defined in interactive session or Jupyter Notebooks."
                 )
             bento_str, working_dir = servable.get_service_import_origin()
+        elif not isinstance(servable, str):
+            bento_str = servable.import_string
+            working_dir = servable.working_dir
         else:
             bento_str = servable
 
@@ -219,13 +224,15 @@ class Server(ABC, t.Generic[ClientType]):
             if self.process.stdout is not None and not self.process.stdout.closed:
                 s = self.process.stdout.read()
                 logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4  # type: ignore  # may be string
+                    s.decode("utf-8") if isinstance(s, bytes) else s,
+                    " " * 4,  # type: ignore  # may be string
                 )
             if self.process.stderr is not None and not self.process.stderr.closed:
                 logs += "\nServer Error:\n"
                 s = self.process.stderr.read()
                 logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4  # type: ignore  # may be string
+                    s.decode("utf-8") if isinstance(s, bytes) else s,
+                    " " * 4,  # type: ignore  # may be string
                 )
             raise ServerStateException(logs)
         return self._get_client()
@@ -253,13 +260,15 @@ class Server(ABC, t.Generic[ClientType]):
             if self.process.stdout is not None and not self.process.stdout.closed:
                 s = self.process.stdout.read()
                 logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4  # type: ignore  # may be string
+                    s.decode("utf-8") if isinstance(s, bytes) else s,
+                    " " * 4,  # type: ignore  # may be string
                 )
             if self.process.stderr is not None and not self.process.stderr.closed:
                 logs += "\nServer Error:\n"
                 s = self.process.stderr.read()
                 logs += textwrap.indent(
-                    s.decode("utf-8") if isinstance(s, bytes) else s, " " * 4  # type: ignore  # may be string
+                    s.decode("utf-8") if isinstance(s, bytes) else s,
+                    " " * 4,  # type: ignore  # may be string
                 )
             logger.warning(logs)
             return

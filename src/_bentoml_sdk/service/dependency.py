@@ -30,7 +30,7 @@ class Dependency(t.Generic[T]):
             BentoMLContainer.remote_runner_mapping
         ],
     ) -> T:
-        from .client.proxy import RemoteProxy
+        from _bentoml_impl.client.proxy import RemoteProxy
 
         key = self.cache_key()
         if key not in _dependent_cache:
@@ -60,7 +60,5 @@ class Dependency(t.Generic[T]):
 
 def depends(on: Service[T]) -> Dependency[T]:
     if not isinstance(on, Service):
-        raise TypeError(
-            "depends() expects a class decorated with @bentoml_io.service()"
-        )
+        raise TypeError("depends() expects a class decorated with @bentoml.service()")
     return Dependency(on)

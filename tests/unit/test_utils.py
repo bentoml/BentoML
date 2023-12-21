@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml.io import from_sse
-from bentoml.io import to_sse
+from bentoml._internal.server.runner_app import streamer
+from bentoml.io import SSE
 
 if TYPE_CHECKING:
     from typing import AsyncGenerator
@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 
 
 async def reverse_proxy(
-    iterator: AsyncIterator[str],
+    iterator: AsyncIterator[bytes],
     chunk_size: int = 5,
-) -> AsyncGenerator[str, str]:
+) -> AsyncGenerator[bytes, None]:
     """
     A function that will split the data into chunks. This is a mimic of a
     real HTTP reverse proxy that will split the data into chunks.
@@ -29,32 +29,49 @@ async def reverse_proxy(
             yield data
 
 
+async def stream_decoder(
+    iterator: AsyncIterator[bytes],
+) -> AsyncGenerator[str, None]:
+    """
+    Converting bytes to string
+    """
+    async for data in iterator:
+        yield data.decode("utf-8")
+
+
 @pytest.mark.asyncio  # type: ignore
 async def test_sse():
+    # \n\n is a forbidden sequence in SSE
     test_datas = [
-        "",
-        " ",
-        ":",
-        "\n",
-        "\n: ",
-        "\n\n",
-        "\n\n\n\n\n\n\n",
-        "1111111111111111111",
-        "\n111111111\n222222222",
-        "\n\n111111111\n\n222222222",
-        "111111111\n\ndata: 222222222",
-        '{"data": "111111111"}',
+        SSE(data=""),
+        SSE(data=" "),
+        SSE(data=":"),
+        SSE(data="long data i am longer than buffer"),
+        SSE(data="my data", event="my event"),
+        SSE(data="my data", id="a123cbx"),
+        SSE(data="my data", retry=123),
+        SSE(data="my data", event="my event", id="a123cbx", retry=123),
+        SSE(data="my data\nanother line", event="my event", id="a123cbx", retry=123),
+        SSE(
+            data="my data\nanother line\nand another line",
+            event="my event",
+            id="a123cbx",
+            retry=123,
+        ),
     ]
 
     async def runner_func():
         for data in test_datas:
-            yield to_sse(data)
+            yield data
 
-    runner_iterator = reverse_proxy(runner_func(), chunk_size=5)
+    runner_iterator = stream_decoder(
+        reverse_proxy(streamer(runner_func()), chunk_size=5)
+    )
 
     async def api_server_func() -> AsyncGenerator[str, None]:
-        async for event in from_sse(runner_iterator):
-            yield event.get("data", "")
+        async for data in SSE.from_chunks(runner_iterator):
+            yield data.to_str()
 
     results = [data async for data in api_server_func()]
-    assert results == test_datas
+    expected_results = [data.to_str() for data in test_datas]
+    assert results == expected_results

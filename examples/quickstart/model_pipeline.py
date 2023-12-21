@@ -1,7 +1,8 @@
-import bentoml_io as bentoml
 import joblib
 from sklearn import datasets
 from sklearn import svm
+
+import bentoml
 
 if __name__ == "__main__":
     # Load training data
@@ -13,8 +14,6 @@ if __name__ == "__main__":
     clf.fit(X, y)
 
     # Save model to BentoML local model store
-    with bentoml.models.create(
-        "iris_clf",
-    ) as bento_model:
+    with bentoml.models.create("iris_clf") as bento_model:
         joblib.dump(clf, bento_model.path_of("model.pkl"))
     print(f"Model saved: {bento_model}")

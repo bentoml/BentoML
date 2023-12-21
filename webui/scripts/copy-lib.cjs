@@ -1,7 +1,7 @@
 const path = require('node:path')
 const fs = require('fs-extra')
 
-const targetPath = path.resolve(__dirname, '../../src/bentoml_io/server/assets')
+const targetPath = path.resolve(__dirname, '../../src/_bentoml_impl/server/assets')
 const outDir = path.resolve(__dirname, '../lib/assets')
 
 async function main() {

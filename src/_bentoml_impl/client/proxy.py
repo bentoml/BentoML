@@ -6,10 +6,10 @@ import inspect
 import logging
 import typing as t
 
+from _bentoml_sdk import Service
+from _bentoml_sdk.api import APIMethod
 from bentoml._internal.utils import async_gen_to_sync
 from bentoml.exceptions import BentoMLException
-from bentoml_io.api import APIMethod
-from bentoml_io.factory import Service
 
 from .http import ClientEndpoint
 from .http import HTTPClient

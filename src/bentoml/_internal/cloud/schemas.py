@@ -15,7 +15,7 @@ time_format = "%Y-%m-%d %H:%M:%S.%f"
 T = t.TypeVar("T")
 
 if TYPE_CHECKING:
-    from bentoml_io.config import ServiceConfig
+    from _bentoml_impl.config import ServiceConfig
 else:
     ServiceConfig = t.Dict[str, t.Any]
 

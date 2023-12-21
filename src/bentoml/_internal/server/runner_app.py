@@ -17,6 +17,7 @@ from bentoml.exceptions import ServiceUnavailable
 from ..configuration.containers import BentoMLContainer
 from ..context import component_context
 from ..context import trace_context
+from ..io_descriptors.utils import SSE
 from ..marshal.dispatcher import CorkDispatcher
 from ..runner.container import AutoContainer
 from ..runner.container import Payload
@@ -347,16 +348,8 @@ class RunnerAppFactory(BaseAppFactory):
             from starlette.responses import StreamingResponse
 
             if runner_method.config.is_stream:
-
-                async def streamer() -> t.AsyncGenerator[bytes, None]:
-                    """
-                    Extract Data from a AsyncGenerator[Payload, None]
-                    """
-                    async for p in payload:
-                        yield p.encode("utf-8")
-
                 return StreamingResponse(
-                    streamer(),
+                    streamer(payload),
                     media_type="text/plain",
                     headers={
                         PAYLOAD_META_HEADER: json.dumps({}),
@@ -370,6 +363,21 @@ class RunnerAppFactory(BaseAppFactory):
             )
 
         return _request_handler
+
+
+async def streamer(
+    payload: t.AsyncGenerator[str | SSE, None]
+) -> t.AsyncGenerator[bytes, None]:
+    """
+    Extract Data from a AsyncGenerator[Payload, None]
+    """
+    async for p in payload:
+        if isinstance(p, SSE):
+            data = p.to_str()
+        else:
+            data = p
+
+        yield data.encode("utf-8")
 
 
 def _deserialize_single_param(request: Request, bs: bytes) -> Params[t.Any]:

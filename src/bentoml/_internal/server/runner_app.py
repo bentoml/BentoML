@@ -369,7 +369,7 @@ async def streamer(
     payload: t.AsyncGenerator[str | SSE, None]
 ) -> t.AsyncGenerator[bytes, None]:
     """
-    Extract Data from a AsyncGenerator[Payload, None]
+    Extract Data from a AsyncGenerator[str | SSE, None]
     """
     async for p in payload:
         if isinstance(p, SSE):

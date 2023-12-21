@@ -95,12 +95,14 @@ def add_serve_command(cli: click.Group) -> None:
         help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
         envvar="BENTOML_API_WORKERS",
         show_default=True,
+        hidden=True,
     )
     @click.option(
         "--timeout",
         type=click.INT,
         help="Specify the timeout (seconds) for API server and runners",
         envvar="BENTOML_TIMEOUT",
+        hidden=True,
     )
     @click.option(
         "--backlog",
@@ -108,6 +110,7 @@ def add_serve_command(cli: click.Group) -> None:
         default=BentoMLContainer.api_server_config.backlog.get(),
         help="The maximum number of pending connections.",
         show_default=True,
+        hidden=True,
     )
     @click.option(
         "--reload",
@@ -130,6 +133,7 @@ def add_serve_command(cli: click.Group) -> None:
         default=BentoMLContainer.ssl.certfile.get(),
         help="SSL certificate file",
         show_default=True,
+        hidden=True,
     )
     @click.option(
         "--ssl-keyfile",
@@ -137,6 +141,7 @@ def add_serve_command(cli: click.Group) -> None:
         default=BentoMLContainer.ssl.keyfile.get(),
         help="SSL key file",
         show_default=True,
+        hidden=True,
     )
     @click.option(
         "--ssl-keyfile-password",
@@ -144,6 +149,7 @@ def add_serve_command(cli: click.Group) -> None:
         default=BentoMLContainer.ssl.keyfile_password.get(),
         help="SSL keyfile password",
         show_default=True,
+        hidden=True,
     )
     @click.option(
         "--ssl-version",
@@ -151,6 +157,7 @@ def add_serve_command(cli: click.Group) -> None:
         default=BentoMLContainer.ssl.version.get(),
         help="SSL version to use (see stdlib 'ssl' module)",
         show_default=True,
+        hidden=True,
     )
     @click.option(
         "--ssl-cert-reqs",
@@ -158,6 +165,7 @@ def add_serve_command(cli: click.Group) -> None:
         default=BentoMLContainer.ssl.cert_reqs.get(),
         help="Whether client certificate is required (see stdlib 'ssl' module)",
         show_default=True,
+        hidden=True,
     )
     @click.option(
         "--ssl-ca-certs",
@@ -165,6 +173,7 @@ def add_serve_command(cli: click.Group) -> None:
         default=BentoMLContainer.ssl.ca_certs.get(),
         help="CA certificates file",
         show_default=True,
+        hidden=True,
     )
     @click.option(
         "--ssl-ciphers",
@@ -172,6 +181,7 @@ def add_serve_command(cli: click.Group) -> None:
         default=BentoMLContainer.ssl.ciphers.get(),
         help="Ciphers to use (see stdlib 'ssl' module)",
         show_default=True,
+        hidden=True,
     )
     @env_manager
     def serve(  # type: ignore (unused warning)

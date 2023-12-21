@@ -69,9 +69,7 @@ class MultipartSerde(JSONSerde):
         data: dict[str, t.Any] = {}
         for k in form:
             if k in cls.multipart_fields:
-                value = form.getlist(k)
-                if not all(isinstance(v, UploadFile) for v in value):
-                    raise ValueError("Unable to parse multipart request")
+                value = [v for v in form.getlist(k) if isinstance(v, UploadFile)]
                 field_annotation = cls.model_fields[k].annotation
                 if is_list_type(field_annotation):
                     data[k] = value

@@ -17,6 +17,7 @@ from bentoml._internal.service.openapi.specification import Schema
 from .typing_utils import is_image_type
 from .typing_utils import is_iterator_type
 from .typing_utils import is_list_type
+from .typing_utils import is_union_type
 
 if t.TYPE_CHECKING:
     from starlette.requests import Request
@@ -193,6 +194,14 @@ class IODescriptor(IOMixin, BaseModel):
     def from_input(
         cls, func: t.Callable[..., t.Any], *, skip_self: bool = False
     ) -> type[IODescriptor]:
+        from pydantic._internal._typing_extra import eval_type_lenient
+
+        try:
+            module = sys.modules[func.__module__]
+        except KeyError:
+            global_ns = None
+        else:
+            global_ns = module.__dict__
         signature = inspect.signature(func)
 
         fields: dict[str, tuple[str, t.Any]] = {}
@@ -207,6 +216,8 @@ class IODescriptor(IOMixin, BaseModel):
             annotation = param.annotation
             if annotation is param.empty:
                 annotation = t.Any
+            else:
+                annotation = eval_type_lenient(annotation, global_ns, None)
             if param.kind == param.VAR_KEYWORD:
                 name = KWARGS
                 annotation = t.Dict[str, t.Any]
@@ -214,6 +225,11 @@ class IODescriptor(IOMixin, BaseModel):
                 name = ARGS
                 annotation = t.List[annotation]
             default = param.default
+            if is_union_type(annotation):
+                any_of = get_args(annotation)
+                if len(any_of) != 2 or type(None) not in any_of:
+                    raise TypeError("Union type is not supported yet")
+                annotation = next(a for a in any_of if a is not type(None))
             if default is param.empty:
                 default = Field()
             fields[name] = (annotation, default)

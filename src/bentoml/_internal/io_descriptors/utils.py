@@ -21,9 +21,7 @@ class SSE:
     id: str | None = None
     retry: int | None = None
 
-    def marshal(
-        self,
-    ) -> str:
+    def marshal(self) -> str:
         with io.StringIO() as buffer:
             if self.event:
                 if "\n" in self.event:
@@ -41,23 +39,37 @@ class SSE:
     @classmethod
     def _read_sse(cls, buffer: io.StringIO) -> SSE:
         event: SSEArgs = {}
+        data_buffer: io.StringIO | None = None
+        first_data_line = True
+
         while True:
             line = buffer.readline()
-            if not line:  # no new line
+            if not line:
                 break
             if line == "\n":
                 break
             if line.startswith("data: "):
-                if "data" in event:
-                    event["data"] += "\n" + line[6:-1]
-                else:
+                if first_data_line:
+                    first_data_line = False
                     event["data"] = line[6:-1]
+                else:
+                    if data_buffer is None:
+                        # only init data_buffer when there is more than one data line
+                        data_buffer = io.StringIO()
+                        data_buffer.write(event.get("data", ""))
+                    data_buffer.write("\n")
+                    data_buffer.write(line[6:-1])
             if line.startswith("event: "):
                 event["event"] = line[7:].strip()
             if line.startswith("id: "):
                 event["id"] = line[4:].strip()
             if line.startswith("retry: "):
                 event["retry"] = int(line[7:].strip())
+
+        if data_buffer is not None:
+            event["data"] = data_buffer.getvalue()
+            data_buffer.close()
+
         return SSE(**event)
 
     @classmethod

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml._internal.server.runner_app import streamer
+from bentoml._internal.server.runner_app import stream_encoder
 from bentoml.io import SSE
 
 if TYPE_CHECKING:
@@ -62,16 +62,16 @@ async def test_sse():
 
     async def runner_func():
         for data in test_datas:
-            yield data
+            yield data.marshal()
 
     runner_iterator = stream_decoder(
-        reverse_proxy(streamer(runner_func()), chunk_size=5)
+        reverse_proxy(stream_encoder(runner_func()), chunk_size=5)
     )
 
-    async def api_server_func() -> AsyncGenerator[str, None]:
-        async for data in SSE.from_chunks(runner_iterator):
-            yield data.to_str()
+    async def api_server_func() -> AsyncGenerator[SSE, None]:
+        async for data in SSE.from_iterator(runner_iterator):
+            yield data
 
     results = [data async for data in api_server_func()]
-    expected_results = [data.to_str() for data in test_datas]
+    expected_results = [data for data in test_datas]
     assert results == expected_results

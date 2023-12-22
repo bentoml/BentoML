@@ -1,12 +1,19 @@
 import { createContext, useContext } from 'react'
+import type { ThemType } from './useTheme'
 
-export interface IMountOptions {
-  needAuth?: boolean
+export const defaultOptions = {
+  needAuth: false,
+  header: true,
+  theme: 'system' as ThemType,
 }
 
-const OptionContext = createContext<IMountOptions>({
-  needAuth: false,
-})
+export interface IMountOptions {
+  needAuth: boolean
+  header: boolean
+  theme: ThemType
+}
+
+const OptionContext = createContext<IMountOptions>(defaultOptions)
 
 export function useMountOptions() {
   return useContext(OptionContext)

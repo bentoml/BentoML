@@ -7,7 +7,7 @@ const root = document.getElementById('root')!
 
 fetch('/schema.json')
   .then(res => res.json())
-  .then(schema => mount(schema, root, { needAuth: true }))
+  .then(schema => mount(schema, root))
   .catch((err) => {
     ReactDOM.createRoot(root).render(
       <React.StrictMode>

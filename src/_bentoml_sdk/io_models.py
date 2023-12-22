@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import io
 import pathlib
 import sys
 import typing as t
@@ -27,6 +28,10 @@ if t.TYPE_CHECKING:
 
 
 DEFAULT_TEXT_MEDIA_TYPE = "text/plain"
+
+
+def is_file_type(type_: type) -> bool:
+    return issubclass(type_, pathlib.PurePath) or is_image_type(type_)
 
 
 class IOMixin:
@@ -58,9 +63,9 @@ class IOMixin:
     def mime_type(cls) -> str:
         if cls.media_type is not None:
             return cls.media_type
-        if cls.multipart_fields:
-            return "multipart/form-data"
         if not issubclass(cls, RootModel):
+            if cls.multipart_fields:
+                return "multipart/form-data"
             return "application/json"
         json_schema = cls.model_json_schema()
         if json_schema.get("type") == "string":
@@ -90,9 +95,7 @@ class IOMixin:
                     annotation = args[0] if args else t.Any
                 if is_annotated(annotation):
                     annotation = get_args(annotation)[0]
-                if issubclass(annotation, pathlib.PurePath) or is_image_type(
-                    annotation
-                ):
+                if is_file_type(annotation):
                     cls.multipart_fields.append(k)
             except TypeError:
                 pass
@@ -166,16 +169,30 @@ class IOMixin:
 
             return StreamingResponse(content_stream(), media_type=cls.mime_type())
         else:
-            if isinstance(obj, pathlib.PurePath) and isinstance(serde, JSONSerde):
-                media_type = mimetypes.guess_type(obj)[0] or "application/octet-stream"
-                should_inline = media_type.startswith(("image/", "audio/", "video/"))
-                content_disposition_type = "inline" if should_inline else "attachment"
-                return FileResponse(
-                    obj,
-                    filename=obj.name,
-                    media_type=media_type,
-                    content_disposition_type=content_disposition_type,
-                )
+            if is_file_type(type(obj)) and isinstance(serde, JSONSerde):
+                if isinstance(obj, pathlib.PurePath):
+                    media_type = (
+                        mimetypes.guess_type(obj)[0] or "application/octet-stream"
+                    )
+                    should_inline = media_type.startswith(
+                        ("image/", "audio/", "video/")
+                    )
+                    content_disposition_type = (
+                        "inline" if should_inline else "attachment"
+                    )
+                    return FileResponse(
+                        obj,
+                        filename=obj.name,
+                        media_type=media_type,
+                        content_disposition_type=content_disposition_type,
+                    )
+                else:  # is PIL Image
+                    buffer = io.BytesIO()
+                    obj.save(buffer, format=obj.format)
+                    return Response(
+                        content=buffer.getvalue(),
+                        media_type=f"image/{obj.format.lower()}",
+                    )
 
             if not isinstance(obj, RootModel):
                 ins: IODescriptor = t.cast(IODescriptor, cls(obj))

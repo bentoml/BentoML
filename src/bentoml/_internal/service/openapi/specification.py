@@ -81,7 +81,7 @@ class Schema:
 
     __rename_fields__ = {"ref": "$ref", "not_": "not"}
 
-    type: t.Optional[str]
+    type: t.Optional[str] = None
     ref: t.Optional[str] = None
     title: t.Optional[str] = None
     multipleOf: t.Optional[float] = None

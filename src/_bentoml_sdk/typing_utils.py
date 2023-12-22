@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
+import sys
 import types
 import typing as t
 
@@ -47,7 +48,10 @@ def is_tuple_type(typ_: t.Any) -> bool:
 
 
 def is_union_type(typ_: t.Any) -> bool:
-    return get_origin(typ_) in (t.Union, types.UnionType)
+    check_types = (t.Union,)
+    if sys.version_info >= (3, 10):
+        check_types += (types.UnionType,)
+    return get_origin(typ_) in check_types
 
 
 def is_iterator_type(typ_: t.Any) -> bool:

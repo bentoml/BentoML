@@ -85,7 +85,8 @@ class IOMixin:
         for k, field in cls.model_fields.items():
             annotation = field.annotation
             if is_list_type(annotation):
-                annotation = get_args(annotation)[0]
+                args = get_args(annotation)
+                annotation = args[0] if args else t.Any
             if is_annotated(annotation):
                 annotation = get_args(annotation)[0]
             if issubclass(annotation, pathlib.PurePath) or is_image_type(annotation):
@@ -280,7 +281,7 @@ def ensure_io_descriptor(output_type: type) -> type[IODescriptor]:
     if inspect.isclass(output_type) and issubclass(output_type, BaseModel):
         if not issubclass(output_type, IODescriptor):
 
-            class Output(output_type, IOMixin):
+            class Output(IOMixin, output_type):
                 pass
 
             return t.cast(t.Type[IODescriptor], Output)

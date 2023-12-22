@@ -1,6 +1,6 @@
 import { StyledLink } from 'baseui/link'
 import isEmpty from 'lodash/isEmpty'
-import { isFileField, hasFileInSchema } from '../../hooks/useQuery'
+import { hasFileInSchema, isFileField } from '../../hooks/useQuery'
 import type { DataType, TObject } from '../../types'
 import { useMountOptions } from '../../hooks/useMountOptions'
 import type { IClientProps } from './Base'

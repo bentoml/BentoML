@@ -157,18 +157,28 @@ class APIMethod(t.Generic[P, R]):
         }
 
 
+def _flatten_field(
+    schema: dict[str, t.Any], defs: dict[str, t.Any]
+) -> dict[str, t.Any]:
+    if "allOf" in schema:
+        schema.update(schema.pop("allOf")[0])
+    if "$ref" in schema:
+        ref = schema.pop("$ref")[len("#/$defs/") :]
+        schema.update(_flatten_field(defs[ref], defs))
+    elif schema.get("type") == "object" and "properties" in schema:
+        for k, v in schema["properties"].items():
+            schema["properties"][k] = _flatten_field(v, defs)
+    elif schema.get("type") == "array" and "items" in schema:
+        schema["items"] = _flatten_field(schema["items"], defs)
+    return schema
+
+
 def _flatten_model_schema(model: type[IODescriptor]) -> dict[str, t.Any]:
     schema = model.model_json_schema()
     if not schema.get("properties") or "$defs" not in schema:
         return schema
     defs = schema.pop("$defs", {})
-    for value in schema["properties"].values():
-        if "allOf" in value:
-            value.update(value.pop("allOf")[0])
-        if "$ref" in value:
-            ref = value.pop("$ref")[len("#/$defs/") :]
-            value.update(defs[ref])
-    return schema
+    return _flatten_field(schema, defs)
 
 
 @t.overload

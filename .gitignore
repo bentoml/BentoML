@@ -165,4 +165,5 @@ mlruns/
 
 # pdm
 .pdm-python
+.python-version
 .pdm-build/

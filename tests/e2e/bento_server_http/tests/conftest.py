@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-@pytest.fixture(scope="package", autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def install_requirements() -> None:
     subprocess.check_call(
         [

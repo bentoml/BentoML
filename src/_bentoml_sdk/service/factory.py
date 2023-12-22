@@ -44,7 +44,7 @@ if t.TYPE_CHECKING:
     HookF_ctx = t.TypeVar("HookF_ctx", bound=ContextFunc)
 
     class _ServiceDecorator(t.Protocol):
-        def __call__(self, service: type[T]) -> Service[T]:
+        def __call__(self, inner: type[T]) -> Service[T]:
             ...
 
 
@@ -287,7 +287,17 @@ class Service(t.Generic[T]):
         )
 
 
-def service(**kwargs: Unpack[Config]) -> _ServiceDecorator:
+@t.overload
+def service(inner: type[T], /) -> Service[T]:
+    ...
+
+
+@t.overload
+def service(inner: None = ..., /, **kwargs: Unpack[Config]) -> _ServiceDecorator:
+    ...
+
+
+def service(inner: type[T] | None = None, /, **kwargs: Unpack[Config]) -> t.Any:
     """Mark a class as a BentoML service.
 
     Example:
@@ -300,12 +310,12 @@ def service(**kwargs: Unpack[Config]) -> _ServiceDecorator:
     """
     config = validate(kwargs)
 
-    def decorator(service: type[T]) -> Service[T]:
-        if isinstance(service, Service):
+    def decorator(inner: type[T]) -> Service[T]:
+        if isinstance(inner, Service):
             raise TypeError("service() decorator can only be applied once")
-        return Service(config=config, inner=service)
+        return Service(config=config, inner=inner)
 
-    return decorator
+    return decorator(inner) if inner is not None else decorator
 
 
 def runner_service(runner: Runner, **kwargs: Unpack[Config]) -> Service[t.Any]:

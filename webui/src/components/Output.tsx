@@ -17,13 +17,22 @@ function Output({ result, schema }: IOutputProps) {
   const hasFiles = useMemo(() => hasFileInSchema({ schema }), [schema])
 
   if (!hasFiles) {
-    return (
-      <FormControl label={schema.title}>
-        <BaseCode language="json">
-          {JSON.stringify(result, null, 2)}
-        </BaseCode>
-      </FormControl>
-    )
+    if (schema.type === 'string') {
+      return (
+        <FormControl label={schema.title}>
+          <BaseCode>{result}</BaseCode>
+        </FormControl>
+      )
+    }
+    else {
+      return (
+        <FormControl label={schema.title}>
+          <BaseCode language="json">
+            {JSON.stringify(result, null, 2)}
+          </BaseCode>
+        </FormControl>
+      )
+    }
   }
   else if (schema.type === 'file') {
     switch (schema.format) {

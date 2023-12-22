@@ -47,9 +47,9 @@ class JSONSerde(Serde):
     media_type = "application/json"
 
     def serialize_model(self, model: IODescriptor) -> bytes:
-        return model.model_dump_json(exclude=set(model.multipart_fields)).encode(
-            "utf-8"
-        )
+        return model.model_dump_json(
+            exclude=set(getattr(model, "multipart_fields", set()))
+        ).encode("utf-8")
 
     def deserialize_model(self, model_bytes: bytes, cls: type[T]) -> T:
         return cls.model_validate_json(model_bytes)

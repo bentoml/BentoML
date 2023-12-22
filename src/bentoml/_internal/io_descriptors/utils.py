@@ -1,3 +1,4 @@
+import io
 from typing import AsyncGenerator
 from typing import AsyncIterator
 from typing import Optional
@@ -36,18 +37,22 @@ class SSE:
     async def from_iterator(
         async_iterator: AsyncIterator[str],
     ) -> AsyncGenerator["SSE", None]:
-        buffer = ""
+        buffer = io.StringIO()
         async for chunk in async_iterator:
-            buffer += chunk
-            while "\n\n" in buffer:
-                event_text, buffer = buffer.split("\n\n", 1)
+            buffer.write(chunk)
+            # Move to the beginning to read content
+            buffer.seek(0, io.SEEK_SET)
+            content = buffer.read()
+
+            while "\n\n" in content:
+                event_text, _, remaining = content.partition("\n\n")
                 fields = {"data": "", "event": None, "id": None, "retry": None}
                 data = []
                 for line in event_text.split("\n"):
                     key, _, value = line.partition(": ")
                     if key == "data":
                         data.append(value)
-                    if key == "retry":
+                    elif key == "retry":
                         fields[key] = int(value)
                     elif key in fields:
                         fields[key] = value
@@ -55,3 +60,9 @@ class SSE:
                         raise BentoMLException("Invalid SSE message")
                 fields["data"] = "\n".join(data)
                 yield SSE(**fields)
+
+                # Reset buffer
+                buffer.seek(0)
+                buffer.truncate()
+                buffer.write(remaining)
+                content = remaining

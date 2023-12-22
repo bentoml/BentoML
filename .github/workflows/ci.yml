@@ -189,6 +189,36 @@ jobs:
         with:
           name: coverage-e2e-data
           path: .coverage.*
+  e2e-new-sdk:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.8', '3.11']
+    name: new-sdk-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v3
+        with:
+          cache: true
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          pdm venv create --with-pip --force
+          pdm sync -L pdm.ionext.lock
+          pdm run pip install -r tests/e2e/bento_new_sdk/requirements.txt
+      - name: Run tests
+        run: pdm run -v tests tests/e2e/bento_new_sdk
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-e2e-data
+          path: .coverage
   coverage:
     name: report-coverage
     runs-on: ubuntu-latest

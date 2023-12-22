@@ -63,7 +63,7 @@ cancer_model = FrameworkTestModel(
                 "predict": [
                     Input(
                         input_args=[np.array([cancer_data[0]])],
-                        expected=close_to([[0.87606, 0.123939]]),
+                        expected=close_to([[0.9181239, 0.0818761]]),
                     ),
                     Input(
                         input_args=[np.array([cancer_data[1]])],

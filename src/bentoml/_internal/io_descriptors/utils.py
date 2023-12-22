@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import io
 import typing as t
+
 import attr
+
 from bentoml.exceptions import BentoMLException
 
 if t.TYPE_CHECKING:

@@ -86,9 +86,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
 
     @_temp_dir.default
     def default_temp_dir(self) -> tempfile.TemporaryDirectory[str]:
-        return tempfile.TemporaryDirectory(
-            prefix="bentoml-client-", ignore_cleanup_errors=True
-        )
+        return tempfile.TemporaryDirectory(prefix="bentoml-client-")
 
     def __init__(
         self,

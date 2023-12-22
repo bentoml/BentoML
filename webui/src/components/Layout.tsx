@@ -1,10 +1,12 @@
 import { useStyletron } from 'baseui'
+import { useMountOptions } from '../hooks/useMountOptions'
 import Header from './Header'
 import Main from './Main'
 import Footer from './Footer'
 
 export default function Layout() {
   const [css, theme] = useStyletron()
+  const { header } = useMountOptions()
 
   return (
     <div className={css({
@@ -15,7 +17,7 @@ export default function Layout() {
       color: theme.colors.contentPrimary,
     })}
     >
-      <Header />
+      {header && <Header />}
       <Main />
       <Footer />
     </div>

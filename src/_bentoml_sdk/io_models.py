@@ -84,13 +84,18 @@ class IOMixin:
         cls.multipart_fields = []
         for k, field in cls.model_fields.items():
             annotation = field.annotation
-            if is_list_type(annotation):
-                args = get_args(annotation)
-                annotation = args[0] if args else t.Any
-            if is_annotated(annotation):
-                annotation = get_args(annotation)[0]
-            if issubclass(annotation, pathlib.PurePath) or is_image_type(annotation):
-                cls.multipart_fields.append(k)
+            try:
+                if is_list_type(annotation):
+                    args = get_args(annotation)
+                    annotation = args[0] if args else t.Any
+                if is_annotated(annotation):
+                    annotation = get_args(annotation)[0]
+                if issubclass(annotation, pathlib.PurePath) or is_image_type(
+                    annotation
+                ):
+                    cls.multipart_fields.append(k)
+            except TypeError:
+                pass
 
     @classmethod
     def from_inputs(cls, *args: t.Any, **kwargs: t.Any) -> IODescriptor:

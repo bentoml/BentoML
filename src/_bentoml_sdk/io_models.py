@@ -188,10 +188,11 @@ class IOMixin:
                     )
                 else:  # is PIL Image
                     buffer = io.BytesIO()
-                    obj.save(buffer, format=obj.format)
+                    image_format = obj.format or "PNG"
+                    obj.save(buffer, format=image_format)
                     return Response(
                         content=buffer.getvalue(),
-                        media_type=f"image/{obj.format.lower()}",
+                        media_type=f"image/{image_format.lower()}",
                     )
 
             if not isinstance(obj, RootModel):

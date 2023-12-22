@@ -14,7 +14,7 @@ class SSE:
     id: Optional[str] = None
     retry: Optional[int] = None
 
-    def to_str(self) -> str:
+    def marshal(self) -> str:
         sse_data = ""
         if self.id is not None:
             sse_data += f"id: {self.id}\n"
@@ -33,7 +33,7 @@ class SSE:
         return sse_data
 
     @staticmethod
-    async def from_chunks(
+    async def from_iterator(
         async_iterator: AsyncIterator[str],
     ) -> AsyncGenerator["SSE", None]:
         buffer = ""
@@ -47,6 +47,8 @@ class SSE:
                     key, _, value = line.partition(": ")
                     if key == "data":
                         data.append(value)
+                    if key == "retry":
+                        fields[key] = int(value)
                     elif key in fields:
                         fields[key] = value
                     else:

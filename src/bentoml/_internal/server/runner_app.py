@@ -201,7 +201,7 @@ class RunnerAppFactory(BaseAppFactory):
             # Streaming does not have batching implemented yet
             async def infer_stream(
                 paramss: t.Sequence[Params[t.Any]],
-            ) -> t.Sequence[t.AsyncGenerator[Payload, None]]:
+            ) -> t.Sequence[t.AsyncGenerator[str, None]]:
                 async def inner():
                     # This is a workaround to allow infer stream to return a iterable of
                     # async generator, to align with how non stream inference works
@@ -212,8 +212,7 @@ class RunnerAppFactory(BaseAppFactory):
                         traceback.print_exc()
                         raise
                     async for data in ret:
-                        payload = AutoContainer.to_payload(data, 0)
-                        yield payload
+                        yield data
 
                 return (inner(),)
 
@@ -350,16 +349,8 @@ class RunnerAppFactory(BaseAppFactory):
             from starlette.responses import StreamingResponse
 
             if runner_method.config.is_stream:
-
-                async def streamer() -> t.AsyncGenerator[bytes, None]:
-                    """
-                    Extract Data from a AsyncGenerator[Payload, None]
-                    """
-                    async for p in payload:
-                        yield pickle.dumps(p)
-
                 return StreamingResponse(
-                    streamer(),
+                    stream_encoder(payload),
                     media_type="text/plain",
                     headers={
                         PAYLOAD_META_HEADER: json.dumps({}),
@@ -373,6 +364,16 @@ class RunnerAppFactory(BaseAppFactory):
             )
 
         return _request_handler
+
+
+async def stream_encoder(
+    payload: t.AsyncGenerator[str, None]
+) -> t.AsyncGenerator[bytes, None]:
+    """
+    Extract Data from a AsyncGenerator[str, None]
+    """
+    async for p in payload:
+        yield p.encode("utf-8")
 
 
 def _deserialize_single_param(request: Request, bs: bytes) -> Params[t.Any]:

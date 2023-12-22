@@ -16,8 +16,7 @@ if t.TYPE_CHECKING:
     from bentoml._internal.bento.bento import BentoStore
     from bentoml._internal.cloud.bentocloud import BentoCloudClient
 
-    from .schemas.schemasv1 import DeploymentFullSchema
-    from .schemas.schemasv1 import DeploymentSchema
+    from .schemas.schemasv2 import DeploymentFullSchema
 
 from ...exceptions import BentoMLException
 from ...exceptions import NotFound
@@ -27,12 +26,9 @@ from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
 from .schemas.modelschemas import AccessControl
-from .schemas.modelschemas import ApiServerBentoFunctionOverrides
 from .schemas.modelschemas import DeploymentStatus
-from .schemas.modelschemas import DeploymentTargetConfigV2
 from .schemas.modelschemas import DeploymentTargetHPAConf
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
-from .schemas.schemasv2 import ExtraDeploymentOverrides
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 
 logger = logging.getLogger(__name__)
@@ -45,65 +41,6 @@ config_merger = Merger(
     # override conflicting types
     type_conflict_strategies=["override"],
 )
-
-
-def convert_deployment_target_schema_to_v2_update_schema(
-    base_schema: DeploymentSchema,
-) -> UpdateDeploymentSchemaV2:
-    if base_schema.latest_revision is None:
-        raise BentoMLException(f"Deployment {base_schema.name} has no latest revision")
-    target_schema = base_schema.latest_revision.targets[0]
-    res = UpdateDeploymentSchemaV2(
-        bento=f"{target_schema.bento.repository.name}:{target_schema.bento.name}",
-        access_type=target_schema.config.access_control,
-        bentoml_config_overrides=target_schema.config.bentoml_config_overrides,
-        envs=target_schema.config.envs,
-    )
-    if (
-        target_schema.config.bento_request_overrides
-        or target_schema.config.bento_function_overrides
-    ):
-        res.extras = ExtraDeploymentOverrides(
-            bento_function_overrides=target_schema.config.bento_function_overrides,
-            bento_request_overrides=target_schema.config.bento_request_overrides,
-        )
-    # distributed
-    if target_schema.config.runners:
-        svc = {}
-        for name, runner in target_schema.config.runners.items():
-            runner_conf = DeploymentTargetConfigV2()
-            if runner.bento_function_overrides:
-                runner_conf.bento_function_overrides = ApiServerBentoFunctionOverrides()
-                runner_conf.bento_function_overrides.annotations = (
-                    runner.bento_function_overrides.annotations
-                )
-                runner_conf.bento_function_overrides.extraPodMetadata = (
-                    runner.bento_function_overrides.extraPodMetadata
-                )
-                runner_conf.bento_function_overrides.extraPodSpec = (
-                    runner.bento_function_overrides.extraPodSpec
-                )
-            runner_conf.deployment_strategy = runner.deployment_strategy
-            runner_conf.resource_instance = runner.resource_instance
-            runner_conf.scaling = runner.hpa_conf
-            svc[name] = runner_conf
-        api_server_conf = DeploymentTargetConfigV2()
-        api_server_conf.deployment_strategy = target_schema.config.deployment_strategy
-        api_server_conf.bento_function_overrides = (
-            target_schema.config.bento_function_overrides
-        )
-        api_server_conf.resource_instance = target_schema.config.resource_instance
-        api_server_conf.scaling = target_schema.config.hpa_conf
-        svc[target_schema.bento.repository.name] = api_server_conf
-        res.services = svc
-
-    # standalone
-    else:
-        res.scaling = target_schema.config.hpa_conf
-        res.instance_type = target_schema.config.resource_instance
-        res.deployment_strategy = target_schema.config.deployment_strategy
-        res.envs = target_schema.config.envs
-    return res
 
 
 def fix_scaling(scaling: DeploymentTargetHPAConf | None) -> DeploymentTargetHPAConf:
@@ -159,7 +96,7 @@ class Deployment:
             self.kube_namespace = self._get_default_kube_namespace(
                 self.cluster_name, self.context
             )
-        res = cloud_rest_client.v1.get_deployment(
+        res = cloud_rest_client.v2.get_deployment(
             self.cluster_name, self.kube_namespace, self.name
         )
         if res is None:
@@ -170,8 +107,31 @@ class Deployment:
     def _get_update_schema(self) -> dict[str, t.Any]:
         if self._schema is None:
             raise BentoMLException("schema is empty")
-        config = convert_deployment_target_schema_to_v2_update_schema(self._schema)
-        return bentoml_cattr.unstructure(config)
+
+        if self._schema.latest_revision is None:
+            raise BentoMLException(
+                f"Deployment {self._schema.name} has no latest revision"
+            )
+        target_schema = self._schema.latest_revision.targets[0]
+        if target_schema is None:
+            raise BentoMLException(f"Deployment {self._schema.name} has no target")
+        if target_schema.config is None:
+            raise BentoMLException(f"Deployment {self._schema.name} has no config")
+        if target_schema.bento is None:
+            raise BentoMLException(f"Deployment {self._schema.name} has no bento")
+        update_schema = UpdateDeploymentSchemaV2(
+            services=target_schema.config.services,
+            instance_type=target_schema.config.instance_type,
+            deployment_strategy=target_schema.config.deployment_strategy,
+            scaling=target_schema.config.scaling,
+            envs=target_schema.config.envs,
+            extras=target_schema.config.extras,
+            access_type=target_schema.config.access_control,
+            bentoml_config_overrides=target_schema.config.bentoml_config_overrides,
+            bento=target_schema.bento.repository.name + ":" + target_schema.bento.name,
+            cold_start_timeout=target_schema.config.cold_start_timeout,
+        )
+        return bentoml_cattr.unstructure(update_schema)
 
     def get_config(self) -> dict[str, t.Any]:
         self._refetch()
@@ -326,7 +286,12 @@ class Deployment:
             _cloud_client.push_bento(bento=bento_obj, context=context)
             bento = bento_obj.tag
 
-        dct: dict[str, t.Any] = {"name": name, "bento": str(bento)}
+        dct: dict[str, t.Any] = {"bento": str(bento)}
+        if name:
+            dct["name"] = name
+        else:
+            # the cloud takes care of the name
+            dct["name"] = ""
         if config_dct:
             merging_dct = config_dct
             pass
@@ -351,21 +316,27 @@ class Deployment:
                 "deployment_strategy": strategy,
                 "envs": envs,
                 "extras": extras,
-                "access_type": access_type
-                if access_type is not None
-                else AccessControl.PUBLIC,
+                "access_type": access_type,
+                "cluster": cluster_name,
             }
         config_merger.merge(dct, merging_dct)
 
         # add cluster
-        if "cluster" not in dct:
+        if "cluster" not in dct or dct["cluster"] is None:
             cluster_name = cls._get_default_cluster(context)
             dct["cluster"] = cluster_name
+
+        if "access_type" not in dct or dct["access_type"] is None:
+            dct["access_type"] = AccessControl.PUBLIC
+
+        if "distributed" not in dct:
+            dct["distributed"] = False
+
         config_struct = bentoml_cattr.structure(dct, CreateDeploymentSchemaV2)
 
         # add scaling
         if config_struct.distributed:
-            if config_struct.services is None:
+            if len(config_struct.services) == 0:
                 raise ValueError("The configuration for services is mandatory")
             for _, svc in config_struct.services.items():
                 svc.scaling = fix_scaling(svc.scaling)
@@ -380,6 +351,7 @@ class Deployment:
             context=context,
             cluster_name=res.cluster.name,
             kube_namespace=res.kube_namespace,
+            name=res.name,
             _schema=res,
         )
 
@@ -477,7 +449,13 @@ class Deployment:
 
         config_merger.merge(orig_dct, merging_dct)
         config_struct = bentoml_cattr.structure(orig_dct, UpdateDeploymentSchemaV2)
-        res = cloud_rest_client.v2.update_deployment(name, config_struct)
+
+        res = cloud_rest_client.v2.update_deployment(
+            cluster_name=deployment.cluster_name,
+            deployment_name=name,
+            update_schema=config_struct,
+            kube_namespace=deployment.kube_namespace,
+        )
         if res is None:
             raise BentoMLException("Update deployment request failed")
         logger.debug("Deployment Schema: %s", config_struct)
@@ -582,12 +560,10 @@ class Deployment:
         name: str,
         context: str | None = None,
         cluster_name: str | None = None,
-        kube_namespace: str | None = None,
     ) -> Deployment:
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)
-        if kube_namespace is None:
-            kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
+        kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
         deployment = Deployment(
             context=context,
             cluster_name=cluster_name,
@@ -603,13 +579,11 @@ class Deployment:
         name: str,
         context: str | None = None,
         cluster_name: str | None = None,
-        kube_namespace: str | None = None,
     ) -> Deployment:
         cloud_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)
-        if kube_namespace is None:
-            kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
+        kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
         res = cloud_rest_client.v1.terminate_deployment(
             cluster_name, kube_namespace, name
         )
@@ -629,13 +603,11 @@ class Deployment:
         name: str,
         context: str | None = None,
         cluster_name: str | None = None,
-        kube_namespace: str | None = None,
     ) -> None:
         cloud_rest_client = get_rest_api_client(context)
         if cluster_name is None:
             cluster_name = cls._get_default_cluster(context)
-        if kube_namespace is None:
-            kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
+        kube_namespace = cls._get_default_kube_namespace(cluster_name, context)
         res = cloud_rest_client.v1.delete_deployment(cluster_name, kube_namespace, name)
         if res is None:
             raise BentoMLException("Update deployment request failed")

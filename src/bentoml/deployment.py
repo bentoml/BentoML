@@ -395,13 +395,11 @@ def get(
     name: str,
     context: str | None = None,
     cluster_name: str | None = None,
-    kube_namespace: str | None = None,
 ) -> Deployment:
     return Deployment.get(
         name=name,
         context=context,
         cluster_name=cluster_name,
-        kube_namespace=kube_namespace,
     )
 
 
@@ -409,13 +407,11 @@ def terminate(
     name: str,
     context: str | None = None,
     cluster_name: str | None = None,
-    kube_namespace: str | None = None,
 ) -> Deployment:
     return Deployment.terminate(
         name=name,
         context=context,
         cluster_name=cluster_name,
-        kube_namespace=kube_namespace,
     )
 
 
@@ -423,13 +419,11 @@ def delete(
     name: str,
     context: str | None = None,
     cluster_name: str | None = None,
-    kube_namespace: str | None = None,
 ) -> None:
     Deployment.delete(
         name=name,
         context=context,
         cluster_name=cluster_name,
-        kube_namespace=kube_namespace,
     )
 
 

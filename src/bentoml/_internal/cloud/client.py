@@ -32,6 +32,7 @@ from .schemas.schemasv1 import UpdateBentoSchema
 from .schemas.schemasv1 import UpdateDeploymentSchema
 from .schemas.schemasv1 import UserSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
+from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 from .schemas.utils import schema_from_json
 from .schemas.utils import schema_from_object
@@ -546,12 +547,39 @@ class RestApiClientV2(BaseRestApiClient):
         return schema_from_json(resp.text, DeploymentFullSchema)
 
     def update_deployment(
-        self, deployment_name: str, update_schema: UpdateDeploymentSchemaV2
+        self,
+        cluster_name: str,
+        deployment_name: str,
+        kube_namespace: str,
+        update_schema: UpdateDeploymentSchemaV2,
     ) -> DeploymentFullSchema | None:
-        url = urljoin(self.endpoint, f"/api/v2/deployments/{deployment_name}")
-        resp = self.session.post(url, data=schema_to_json(update_schema))
+        # TBD:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v2/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}",
+        )
+        data = schema_to_json(update_schema)
+        params = {
+            "clusterName": cluster_name,
+            "deploymentName": deployment_name,
+            "kubeNamespace": kube_namespace,
+        }
+        resp = self.session.put(url, data=data, params=params)
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentFullSchema)
+
+    def get_deployment(
+        self, cluster_name: str, kube_namespace: str, deployment_name: str
+    ) -> DeploymentFullSchemaV2 | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v2/deployments/{deployment_name}",
+        )
+        resp = self.session.get(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentFullSchemaV2)
 
 
 class RestApiClient:

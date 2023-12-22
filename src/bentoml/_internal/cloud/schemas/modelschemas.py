@@ -379,16 +379,27 @@ class DeploymentTargetConfig:
 
 
 @attr.define
-class DeploymentTargetConfigV2:
+class ExtraDeploymentOverrides:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
-    resource_instance: t.Optional[str] = attr.field(default=None)
-    scaling: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
-    # envs: t.Optional[t.List[t.Optional[LabelItemSchema]]] = attr.field(default=None)
-    deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(default=None)
     bento_function_overrides: t.Optional[ApiServerBentoFunctionOverrides] = attr.field(
         default=None
     )
+    bento_request_overrides: t.Optional[BentoRequestOverrides] = attr.field(
+        default=None
+    )
+
+
+@attr.define
+class DeploymentServiceConfig:
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = True
+    instance_type: t.Optional[str] = attr.field(default=None)
+    scaling: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
+    envs: t.Optional[t.List[t.Optional[LabelItemSchema]]] = attr.field(default=None)
+    deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(default=None)
+    extras: t.Optional[ExtraDeploymentOverrides] = attr.field(default=None)
+    cold_start_timeout: t.Optional[int] = attr.field(default=None)
 
 
 class DeploymentStatus(Enum):

@@ -288,9 +288,9 @@ def serve_http(
                 close_child_stdin=not development_mode,
             )
         )
-        if BentoMLContainer.api_server_config.metrics.enabled.get():
-            log_host = "localhost" if host in ["0.0.0.0", "::"] else host
 
+        log_host = "localhost" if host in ["0.0.0.0", "::"] else host
+        if BentoMLContainer.api_server_config.metrics.enabled.get():
             logger.info(
                 PROMETHEUS_MESSAGE,
                 scheme.upper(),
@@ -326,7 +326,7 @@ def serve_http(
                         scheme.upper(),
                         bento_identifier,
                         scheme,
-                        host,
+                        log_host,
                         port,
                     ),
                 )

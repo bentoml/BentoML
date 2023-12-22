@@ -174,7 +174,7 @@ export function useFormSubmit(form: Form, route: IRoute) {
       throw new Error(`${resp.status} ${await resp.text()}`)
 
     if (!hasFileInSchema({ output })) {
-      return resp.json()
+      return output.type === 'string' ? resp.text() : resp.json()
     }
     else if (output.type === 'file') {
       const contentDisposition = resp.headers.get('Content-Disposition')

@@ -124,7 +124,7 @@ class ServiceAppFactory(BaseAppFactory):
         status = exc.error_code.value
         if 400 <= status < 500 and status not in (401, 403):
             return JSONResponse(
-                content="BentoService error handling API request: %s" % str(exc),
+                {"error": f"BentoService error handling API request: {exc}"},
                 status_code=status,
             )
         else:
@@ -317,7 +317,6 @@ class ServiceAppFactory(BaseAppFactory):
         from _bentoml_sdk.io_models import KWARGS
         from bentoml._internal.container import BentoMLContainer
         from bentoml._internal.context import trace_context
-        from bentoml._internal.utils import is_async_callable
         from bentoml._internal.utils.http import set_cookies
 
         from ..serde import ALL_SERDE
@@ -339,11 +338,16 @@ class ServiceAppFactory(BaseAppFactory):
                 input_args = tuple(input_params.pop(ARGS))
             if KWARGS in input_params:
                 input_params.update(input_params.pop(KWARGS))
+
+            original_func = func
+            while hasattr(original_func, "func"):
+                original_func = original_func.func
+
             if method.batchable:
                 output = await self.batch_infer(name, input_args, input_params)
-            elif is_async_callable(func):
+            elif inspect.iscoroutinefunction(original_func):
                 output = await func(*input_args, **input_params)
-            elif inspect.isasyncgenfunction(func):
+            elif inspect.isasyncgenfunction(original_func):
                 output = func(*input_args, **input_params)
             else:
                 output = await run_in_threadpool(func, *input_args, **input_params)

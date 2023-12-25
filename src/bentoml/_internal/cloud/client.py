@@ -33,6 +33,7 @@ from .schemas.schemasv1 import UpdateDeploymentSchema
 from .schemas.schemasv1 import UserSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
+from .schemas.schemasv2 import DeploymentListSchema as DeploymentListSchemaV2
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 from .schemas.utils import schema_from_json
 from .schemas.utils import schema_from_object
@@ -539,43 +540,90 @@ class RestApiClientV1(BaseRestApiClient):
 
 class RestApiClientV2(BaseRestApiClient):
     def create_deployment(
-        self, create_schema: CreateDeploymentSchemaV2
-    ) -> DeploymentFullSchema | None:
+        self, create_schema: CreateDeploymentSchemaV2, cluster_name: str
+    ) -> DeploymentFullSchemaV2:
         url = urljoin(self.endpoint, "/api/v2/deployments")
-        resp = self.session.post(url, data=schema_to_json(create_schema))
+        resp = self.session.post(
+            url, data=schema_to_json(create_schema), params={"cluster": cluster_name}
+        )
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchema)
+        return schema_from_json(resp.text, DeploymentFullSchemaV2)
 
     def update_deployment(
         self,
+        update_schema: UpdateDeploymentSchemaV2,
         cluster_name: str,
         deployment_name: str,
-        kube_namespace: str,
-        update_schema: UpdateDeploymentSchemaV2,
-    ) -> DeploymentFullSchema | None:
-        # TBD:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v2/clusters/{cluster_name}/namespaces/{kube_namespace}/deployments/{deployment_name}",
-        )
-        data = schema_to_json(update_schema)
-        params = {
-            "clusterName": cluster_name,
-            "deploymentName": deployment_name,
-            "kubeNamespace": kube_namespace,
-        }
-        resp = self.session.put(url, data=data, params=params)
-        self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchema)
-
-    def get_deployment(
-        self, cluster_name: str, kube_namespace: str, deployment_name: str
     ) -> DeploymentFullSchemaV2 | None:
         url = urljoin(
             self.endpoint,
             f"/api/v2/deployments/{deployment_name}",
         )
-        resp = self.session.get(url)
+        data = schema_to_json(update_schema)
+        resp = self.session.put(url, data=data, params={"cluster": cluster_name})
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentFullSchemaV2)
+
+    def get_deployment(
+        self, cluster_name: str, deployment_name: str
+    ) -> DeploymentFullSchemaV2 | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v2/deployments/{deployment_name}",
+        )
+        resp = self.session.get(url, params={"cluster": cluster_name})
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentFullSchemaV2)
+
+    def list_deployment(
+        self,
+        cluster_name: str,
+        count: int | None = None,
+        q: str | None = None,
+        search: str | None = None,
+        start: int | None = None,
+    ) -> DeploymentListSchemaV2 | None:
+        url = urljoin(self.endpoint, "/api/v2/deployments")
+        resp = self.session.get(
+            url,
+            params={
+                "cluster": cluster_name,
+                "count": count,
+                "q": q,
+                "search": search,
+                "start": start,
+            },
+        )
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentListSchemaV2)
+
+    def terminate_deployment(
+        self, cluster_name: str, deployment_name: str
+    ) -> DeploymentFullSchemaV2 | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v2/deployments/{deployment_name}/terminate",
+        )
+        resp = self.session.post(url, params={"cluster": cluster_name})
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentFullSchemaV2)
+
+    def delete_deployment(
+        self, cluster_name: str, deployment_name: str
+    ) -> DeploymentFullSchemaV2 | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v2/deployments/{deployment_name}",
+        )
+        resp = self.session.delete(url, params={"cluster": cluster_name})
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)

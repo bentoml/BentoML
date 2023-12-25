@@ -88,3 +88,10 @@ class DeploymentSchema(ResourceSchema):
 @attr.define
 class DeploymentFullSchema(DeploymentSchema):
     urls: t.List[str] = attr.field(factory=list)
+
+
+@attr.define
+class DeploymentListSchema(BaseListSchema):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = True
+    items: t.List[DeploymentSchema]

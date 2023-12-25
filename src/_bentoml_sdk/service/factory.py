@@ -48,7 +48,9 @@ if t.TYPE_CHECKING:
             ...
 
 
-def with_config(func: t.Callable[t.Concatenate["Service[t.Any]", P], R]):
+def with_config(
+    func: t.Callable[t.Concatenate["Service[t.Any]", P], R]
+) -> t.Callable[t.Concatenate["Service[t.Any]", P], R]:
     def wrapper(self: Service[t.Any], *args: P.args, **kwargs: P.kwargs) -> R:
         self.inject_config()
         return func(self, *args, **kwargs)

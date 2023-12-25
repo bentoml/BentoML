@@ -121,7 +121,7 @@ class RunnerProbeSchema(TypedDict, total=False):
 class MonitoringSchema(TypedDict, total=False):
     enabled: bool
     type: str
-    options: dict[str, Any]
+    options: Dict[str, Any]
 
 
 class ZipkinSchema(TypedDict, total=False):

@@ -98,9 +98,32 @@ class APIMethod(t.Generic[P, R]):
         ...
 
     def __get__(self: T, instance: t.Any, owner: type) -> t.Callable[P, R] | T:
+        from pydantic.fields import FieldInfo
+        from pydantic_core import PydanticUndefined
+
         if instance is None:
             return self
-        return t.cast("t.Callable[P, R]", functools.partial(self.func, instance))
+
+        func_sig = inspect.signature(self.func)
+        # skip the `self` parameter
+        params = list(func_sig.parameters.values())[1:]
+
+        @functools.wraps(self.func)
+        def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
+            # Extract the default values from `Field` if any
+            for i, param in enumerate(params):
+                if i < len(args) or param.name in kwargs:
+                    # skip the arguments that are already provided
+                    continue
+                if isinstance(field := param.default, FieldInfo):
+                    if field.default is not PydanticUndefined:
+                        kwargs[param.name] = field.default
+                    elif field.default_factory not in (None, PydanticUndefined):
+                        kwargs[param.name] = field.default_factory()
+            return self.func(instance, *args, **kwargs)
+
+        wrapped.__signature__ = func_sig.replace(parameters=params)
+        return wrapped
 
     def schema(self) -> dict[str, t.Any]:
         output = _flatten_model_schema(self.output_spec)

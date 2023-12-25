@@ -423,7 +423,6 @@ class PandasDataFrameContainer(
         cls,
         payload: Payload,
     ) -> ext.PdDataFrame:
-
         if payload.meta["format"] == "pickle":
             return pickle.loads(payload.data)
 

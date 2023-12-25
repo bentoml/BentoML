@@ -394,8 +394,11 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
     def _parse_stream_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response
     ) -> t.Generator[t.Any, None, None]:
-        for data in resp.iter_bytes():
-            yield self._deserialize_output(data, endpoint)
+        try:
+            for data in resp.iter_bytes():
+                yield self._deserialize_output(data, endpoint)
+        finally:
+            resp.close()
 
     def _parse_file_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response
@@ -509,8 +512,11 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
     async def _parse_stream_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response
     ) -> t.AsyncGenerator[t.Any, None]:
-        async for data in resp.aiter_bytes():
-            yield self._deserialize_output(data, endpoint)
+        try:
+            async for data in resp.aiter_bytes():
+                yield self._deserialize_output(data, endpoint)
+        finally:
+            await resp.aclose()
 
     async def _parse_file_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response

@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 import typing as t
 from urllib.parse import urljoin
-import httpx
 
+import httpx
 
 from ...exceptions import CloudRESTApiClientError
 from ..configuration import BENTOML_VERSION
@@ -632,7 +632,7 @@ class RestApiClientV2(BaseRestApiClient):
 
 class RestApiClient:
     def __init__(self, endpoint: str, api_token: str) -> None:
-        self.session = httpx.Client() 
+        self.session = httpx.Client()
         self.session.headers.update(
             {
                 "X-YATAI-API-TOKEN": api_token,

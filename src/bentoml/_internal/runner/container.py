@@ -400,10 +400,14 @@ class PandasDataFrameContainer(
         bs, concat_buffer_bs, indices = pep574_dumps(batch)
 
         if indices:
-            meta["with_buffer"] = True
-            data = concat_buffer_bs
-            meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
-            meta["indices"] = indices
+            if len(bs) > 6140:  # ceil(6140 / 3) * 4 = 8188 < 8192
+                meta["format"] = "pickle"
+                data = pickle.dumps(batch)
+            else:
+                meta["with_buffer"] = True
+                data = concat_buffer_bs
+                meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
+                meta["indices"] = indices
         else:
             meta["with_buffer"] = False
             data = bs
@@ -419,6 +423,10 @@ class PandasDataFrameContainer(
         cls,
         payload: Payload,
     ) -> ext.PdDataFrame:
+
+        if payload.meta["format"] == "pickle":
+            return pickle.loads(payload.data)
+
         if payload.meta["with_buffer"]:
             bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
             bs = base64.b64decode(bs_str)

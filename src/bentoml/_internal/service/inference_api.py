@@ -51,7 +51,7 @@ class InferenceAPI(t.Generic[IOType]):
 
         if user_defined_callback is not None:
             InferenceAPI._validate_name(name)
-            InferenceAPI._validate_route(route)
+            InferenceAPI.validate_route(route)
 
             sig = inspect.signature(user_defined_callback)
 
@@ -163,7 +163,7 @@ class InferenceAPI(t.Generic[IOType]):
             )
 
     @staticmethod
-    def _validate_route(route: str):
+    def validate_route(route: str):
         if re.findall(
             r"[?#]+|^(//)|^:", route
         ):  # contains '?' or '#' OR  start with '//' OR start with ':'

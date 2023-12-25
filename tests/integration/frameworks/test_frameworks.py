@@ -79,7 +79,7 @@ def test_backward_warnings(
 
 
 def test_wrong_module_load_exc(framework: types.ModuleType):
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         "wrong_module",
         module=__name__,
         context=ModelContext("wrong_module", {"wrong_module": "1.0.0"}),

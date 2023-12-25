@@ -1,0 +1,13 @@
+service: "service:SentenceEmbedding"
+labels:
+  owner: bentoml-team
+  project: gallery
+include:
+- "*.py"
+python:
+  packages:
+    - torch
+    - transformers
+# envs:
+#   - name: NORMALIZE
+#     value: "False"

@@ -532,7 +532,7 @@ def import_model(
             if version is not None:
                 tag.version = version
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         tag,
         module=MODULE_NAME,
         api_version=API_VERSION,
@@ -619,7 +619,7 @@ def save_model(
             name,
         )
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
@@ -807,9 +807,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         if support_lora:
 
             def _run_method(
-                runnable_self: DiffusersRunnable,
-                *args: t.Any,
-                **kwargs: t.Any,
+                runnable_self: DiffusersRunnable, *args: t.Any, **kwargs: t.Any
             ) -> t.Any:
                 if method_partial_kwargs is not None:
                     kwargs = dict(method_partial_kwargs, **kwargs)

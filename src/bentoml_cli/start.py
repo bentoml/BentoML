@@ -146,6 +146,9 @@ def add_start_command(cli: click.Group) -> None:
         """
         Start a HTTP API server standalone. This will be used inside Yatai.
         """
+        from bentoml import Service
+        from bentoml._internal.service.loader import load
+
         if working_dir is None:
             if os.path.isdir(os.path.expanduser(bento)):
                 working_dir = os.path.expanduser(bento)
@@ -153,9 +156,6 @@ def add_start_command(cli: click.Group) -> None:
                 working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
-
-        from bentoml.start import start_http_server
-
         if remote_runner:
             runner_map_dict = dict(
                 [s.split("=", maxsplit=2) for s in remote_runner or []]
@@ -171,24 +171,49 @@ def add_start_command(cli: click.Group) -> None:
             host = parsed.hostname or host
             port = parsed.port or port
 
-        click.echo(f"Using remote runners: {runner_map}")
-        start_http_server(
-            bento,
-            runner_map=runner_map_dict,
-            working_dir=working_dir,
-            port=port,
-            host=host,
-            backlog=backlog,
-            api_workers=api_workers,
-            timeout=timeout,
-            ssl_keyfile=ssl_keyfile,
-            ssl_certfile=ssl_certfile,
-            ssl_keyfile_password=ssl_keyfile_password,
-            ssl_version=ssl_version,
-            ssl_cert_reqs=ssl_cert_reqs,
-            ssl_ca_certs=ssl_ca_certs,
-            ssl_ciphers=ssl_ciphers,
-        )
+        svc = load(bento, working_dir=working_dir)
+        if isinstance(svc, Service):
+            from bentoml.start import start_http_server
+
+            click.echo(f"Using remote runners: {runner_map}")
+            start_http_server(
+                bento,
+                runner_map=runner_map_dict,
+                working_dir=working_dir,
+                port=port,
+                host=host,
+                backlog=backlog,
+                api_workers=api_workers,
+                timeout=timeout,
+                ssl_keyfile=ssl_keyfile,
+                ssl_certfile=ssl_certfile,
+                ssl_keyfile_password=ssl_keyfile_password,
+                ssl_version=ssl_version,
+                ssl_cert_reqs=ssl_cert_reqs,
+                ssl_ca_certs=ssl_ca_certs,
+                ssl_ciphers=ssl_ciphers,
+            )
+        else:
+            from bentoml_io.server.serving import serve_http
+
+            svc.inject_config()
+            serve_http(
+                bento,
+                working_dir=working_dir,
+                port=port,
+                host=host,
+                backlog=backlog,
+                timeout=timeout,
+                ssl_keyfile=ssl_keyfile,
+                ssl_certfile=ssl_certfile,
+                ssl_keyfile_password=ssl_keyfile_password,
+                ssl_version=ssl_version,
+                ssl_cert_reqs=ssl_cert_reqs,
+                ssl_ca_certs=ssl_ca_certs,
+                ssl_ciphers=ssl_ciphers,
+                dependency_map=runner_map_dict,
+                standalone=True,
+            )
 
     @cli.command(hidden=True)
     @click.argument("bento", type=click.STRING, default=".")

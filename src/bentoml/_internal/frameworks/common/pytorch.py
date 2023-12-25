@@ -85,11 +85,7 @@ def make_pytorch_runnable_method(
     if partial_kwargs is None:
         partial_kwargs = {}
 
-    def _run(
-        self: PytorchModelRunnable,
-        *args: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
-        **kwargs: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
-    ) -> torch.Tensor:
+    def _run(self: PytorchModelRunnable, *args: t.Any, **kwargs: t.Any) -> torch.Tensor:
         params = Params(*args, **kwargs)
 
         def _mapping(item: T) -> torch.Tensor | T:

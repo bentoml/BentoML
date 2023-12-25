@@ -26,6 +26,8 @@ from ..tag import Tag
 from .service import on_load_bento
 
 if TYPE_CHECKING:
+    from bentoml_io.server import Service as NewService
+
     from ..bento import BentoStore
     from .service import Service
 
@@ -39,7 +41,7 @@ def import_service(
     working_dir: t.Optional[str] = None,
     standalone_load: bool = False,
     model_store: ModelStore = Provide[BentoMLContainer.model_store],
-) -> Service:
+) -> Service | NewService[t.Any]:
     """Import a Service instance from source code, by providing the svc_import_path
     which represents the module where the Service instance is created and optionally
     what attribute can be used to access this Service instance in that module
@@ -61,6 +63,14 @@ def import_service(
         import_service("fraud_detector")
     """
     from bentoml import Service
+
+    service_types: list[type] = [Service]
+    try:
+        from bentoml_io import Service as NewService
+
+        service_types.append(NewService)
+    except ImportError:
+        pass
 
     prev_cwd = None
     sys_path_modified = False
@@ -151,7 +161,9 @@ def import_service(
                 )
         else:
             instances = [
-                (k, v) for k, v in module.__dict__.items() if isinstance(v, Service)
+                (k, v)
+                for k, v in module.__dict__.items()
+                if isinstance(v, tuple(service_types))
             ]
 
             if len(instances) == 1:
@@ -165,12 +177,12 @@ def import_service(
                 )
 
         assert isinstance(
-            instance, Service
+            instance, tuple(service_types)
         ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
 
         # set import_str for retrieving the service import origin
         object.__setattr__(instance, "_import_str", f"{module_name}:{attrs_str}")
-        return instance
+        return t.cast("Service | NewService[t.Any]", instance)
     except ImportServiceError:
         if sys_path_modified and working_dir:
             # Undo changes to sys.path
@@ -185,7 +197,7 @@ def load_bento(
     bento: str | Tag | Bento,
     bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     standalone_load: bool = False,
-) -> "Service":
+) -> Service | NewService[t.Any]:
     """Load a Service instance from a bento found in local bento store:
 
     Example usage:
@@ -220,7 +232,9 @@ def load_bento(
     return _load_bento(bento, standalone_load)
 
 
-def load_bento_dir(path: str, standalone_load: bool = False) -> "Service":
+def load_bento_dir(
+    path: str, standalone_load: bool = False
+) -> Service | NewService[t.Any]:
     """Load a Service instance from a bento directory
 
     Example usage:
@@ -236,7 +250,7 @@ def load_bento_dir(path: str, standalone_load: bool = False) -> "Service":
     return _load_bento(bento, standalone_load)
 
 
-def _load_bento(bento: Bento, standalone_load: bool) -> "Service":
+def _load_bento(bento: Bento, standalone_load: bool) -> Service | NewService[t.Any]:
     # Use Bento's user project path as working directory when importing the service
     working_dir = bento._fs.getsyspath(BENTO_PROJECT_DIR_NAME)
 
@@ -265,7 +279,7 @@ def load(
     bento_identifier: str | Tag | Bento,
     working_dir: t.Optional[str] = None,
     standalone_load: bool = False,
-) -> "Service":
+) -> Service | NewService[t.Any]:
     """Load a Service instance by the bento_identifier
 
     Args:

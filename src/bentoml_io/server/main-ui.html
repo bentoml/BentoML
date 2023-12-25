@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/assets/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BentoML Inference Service</title>
+    <link rel="stylesheet" href="/assets/style.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      window.process = { env: {} };
+    </script>
+    <script src="/assets/bentoml-ui.umd.js"></script>
+    <script>
+      fetch('/schema.json')
+        .then(res => res.json())
+        .then(schema => BentoMLUI.mount(schema, document.getElementById('root')))
+    </script>
+  </body>
+</html>

@@ -605,6 +605,10 @@ class ModelInfo:
     @property
     def imported_module(self) -> ModuleType:
         if self._cached_module is None:
+            if not self.module:
+                raise BentoMLException(
+                    f"Module is not defined in {MODEL_YAML_FILENAME}. If the module argument is not defined when creating a model using `bentoml.models.create`, methods that use `ModelInfo.imported_module` are not supported."
+                ) from None
             try:
                 object.__setattr__(
                     self, "_cached_module", importlib.import_module(self.module)
@@ -619,7 +623,7 @@ class ModelInfo:
     @property
     def options(self) -> ModelOptions:
         if self._cached_options is None:
-            if hasattr(self.imported_module, "ModelOptions"):
+            if self.module and hasattr(self.imported_module, "ModelOptions"):
                 object.__setattr__(
                     self,
                     "_cached_options",

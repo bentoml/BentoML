@@ -439,9 +439,7 @@ class JSON(
             if self._pydantic_model:
                 try:
                     if pkg_version_info("pydantic")[0] >= 2:
-                        return self._pydantic_model.model_validate_json(
-                            json.loads(content)
-                        )
+                        return self._pydantic_model.model_validate_json(content)
                     else:
                         return self._pydantic_model.parse_raw(content)
                 except pydantic.ValidationError as e:

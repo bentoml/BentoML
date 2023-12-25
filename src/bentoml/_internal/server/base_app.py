@@ -28,7 +28,7 @@ class BaseAppFactory(abc.ABC):
     _is_ready: bool = False
 
     def __init__(
-        self, *, timeout: int | None = None, max_concurrency: int | None = None
+        self, *, timeout: float | None = None, max_concurrency: int | None = None
     ) -> None:
         self.timeout = timeout
         self.max_concurrency = max_concurrency

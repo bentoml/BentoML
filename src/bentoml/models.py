@@ -244,7 +244,7 @@ if t.TYPE_CHECKING:
 
 @t.overload
 @contextmanager
-def create(
+def _create(
     name: Tag | str, /, **attrs: t.Unpack[CreateKwargs]
 ) -> t.Generator[Model, None, None]:
     ...
@@ -252,7 +252,7 @@ def create(
 
 @t.overload
 @contextmanager
-def create(
+def _create(
     name: Tag | str,
     *,
     module: str = ...,
@@ -271,22 +271,78 @@ def create(
 
 @inject
 @contextmanager
-def create(
+def _create(
     name: Tag | str,
     *,
     module: str = "",
     api_version: str | None = None,
-    signatures: ModelSignaturesType,
+    signatures: ModelSignaturesType | None = None,
     labels: dict[str, t.Any] | None = None,
     options: ModelOptions | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
-    context: ModelContext,
+    context: ModelContext | None = None,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> t.Generator[Model, None, None]:
     options = ModelOptions() if options is None else options
     api_version = "v1" if api_version is None else api_version
+    res = Model.create(
+        name,
+        module=module,
+        api_version=api_version,
+        labels=labels,
+        signatures=signatures or {},
+        options=options,
+        custom_objects=custom_objects,
+        metadata=metadata,
+        context=context or ModelContext("", {}),
+    )
+    external_modules = [] if external_modules is None else external_modules
+    imported_modules: t.List[ModuleType] = []
+    try:
+        res.enter_cloudpickle_context(external_modules, imported_modules)
+        yield res
+    except Exception:
+        raise
+    else:
+        res.flush()
+        res.save(_model_store)
+        track(
+            ModelSaveEvent(
+                module=res.info.module,
+                model_size_in_kb=calc_dir_size(res.path_of("/")) / 1024,
+            ),
+        )
+    finally:
+        res.exit_cloudpickle_context(imported_modules)
+
+
+@inject
+@contextmanager
+def create(
+    name: Tag | str,
+    *,
+    labels: dict[str, t.Any] | None = None,
+    metadata: dict[str, t.Any] | None = None,
+    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    module: str = "",  # deprecated
+    api_version: str = "v1",  # deprecated
+    signatures: ModelSignaturesType = {},  # deprecated
+    options: ModelOptions = ModelOptions(),  # deprecated
+    custom_objects: dict[str, t.Any] | None = None,  # deprecated
+    external_modules: t.List[ModuleType] | None = None,  # deprecated
+    context: ModelContext = ModelContext(
+        framework_name="", framework_versions={}
+    ),  # deprecated
+) -> t.Generator[Model, None, None]:
+    """
+    Create a model instance in BentoML modelstore.
+
+    The following function arguments are deprecated:
+        module, api_version, signatures, options, custom_objects, external_modules, context
+    """
+
     res = Model.create(
         name,
         module=module,
@@ -328,4 +384,5 @@ __all__ = [
     "pull",
     "ModelContext",
     "ModelOptions",
+    "create",
 ]

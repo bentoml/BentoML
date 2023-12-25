@@ -7,7 +7,9 @@ import typing as t
 
 from ..resource import get_resource
 from ..resource import system_resources
-from .runnable import Runnable
+
+if t.TYPE_CHECKING:
+    from .runnable import Runnable
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,7 @@ class Strategy(abc.ABC):
     @abc.abstractmethod
     def get_worker_count(
         cls,
-        runnable_class: t.Type[Runnable],
+        runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
         workers_per_resource: int | float,
     ) -> int:
@@ -27,7 +29,7 @@ class Strategy(abc.ABC):
     @abc.abstractmethod
     def get_worker_env(
         cls,
-        runnable_class: t.Type[Runnable],
+        runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
         workers_per_resource: int | float,
         worker_index: int,
@@ -60,7 +62,7 @@ class DefaultStrategy(Strategy):
     @classmethod
     def get_worker_count(
         cls,
-        runnable_class: t.Type[Runnable],
+        runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
         workers_per_resource: int | float,
     ) -> int:
@@ -103,7 +105,7 @@ class DefaultStrategy(Strategy):
     @classmethod
     def get_worker_env(
         cls,
-        runnable_class: t.Type[Runnable],
+        runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
         workers_per_resource: int | float,
         worker_index: int,

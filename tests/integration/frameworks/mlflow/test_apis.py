@@ -85,7 +85,7 @@ def test_mlflow_save_load(URI: Path, tmp_path: Path):
 
 
 def test_wrong_module_load():
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         "wrong_module",
         module=__name__,
         context=ModelContext("wrong_module", {"wrong_module": "1.0.0"}),

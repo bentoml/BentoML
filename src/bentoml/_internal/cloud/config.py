@@ -34,7 +34,7 @@ class CloudClientContext:
     def get_email(self) -> str:
         if not self.email:
             cli = self.get_rest_api_client()
-            user = cli.get_current_user()
+            user = cli.v1.get_current_user()
             if user is None:
                 raise CloudRESTApiClientError(
                     "Unable to get current user from yatai server"

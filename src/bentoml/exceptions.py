@@ -10,8 +10,10 @@ class BentoMLException(Exception):
 
     error_code = HTTPStatus.INTERNAL_SERVER_ERROR
 
-    def __init__(self, message: str):
+    def __init__(self, message: str, *, error_code: HTTPStatus | None = None):
         self.message = message
+        if error_code is not None:
+            self.error_code = error_code
         super().__init__(message)
 
 

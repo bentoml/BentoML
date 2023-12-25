@@ -96,6 +96,7 @@ if TYPE_CHECKING:
     from . import server  # Server API
     from . import monitoring  # Monitoring API
     from . import cloud  # Cloud API
+    from . import deployment  # deployment API
 
     # isort: on
 else:
@@ -154,8 +155,9 @@ else:
     exceptions = _LazyLoader("bentoml.exceptions", globals(), "bentoml.exceptions")
     monitoring = _LazyLoader("bentoml.monitoring", globals(), "bentoml.monitoring")
     cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
-
+    deployment = _LazyLoader("bentoml.deployment", globals(), "bentoml.deployment")
     del _LazyLoader
+
 
 __all__ = [
     "__version__",
@@ -194,6 +196,7 @@ __all__ = [
     "catboost",
     "detectron",
     "diffusers",
+    "diffusers_simple",
     "easyocr",
     "flax",
     "fastai",
@@ -227,4 +230,5 @@ __all__ = [
     "set_serialization_strategy",
     "Strategy",
     "Resource",
+    "deployment",
 ]

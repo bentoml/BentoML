@@ -240,7 +240,7 @@ def save_model(
     custom_objects = {} if custom_objects is None else custom_objects
     custom_objects["_module"] = module
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

@@ -38,6 +38,8 @@ def depth(_: t.Any, _level: int = 0):  # pragma: no cover
 
 @depth.register(dict)
 def _(d: dict[str, t.Any], level: int = 0, **kw: t.Any):
+    if not d:
+        return level
     return max(depth(v, level + 1, **kw) for v in d.values())
 
 

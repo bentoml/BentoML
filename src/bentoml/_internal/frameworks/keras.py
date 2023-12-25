@@ -252,7 +252,7 @@ def save_model(
 
     options = KerasOptions(include_optimizer=include_optimizer)
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
@@ -338,10 +338,7 @@ def get_runnable(
         return _run_method
 
     def add_run_method(method_name: str, options: ModelSignature):
-        def run_method(
-            runnable_self: KerasRunnable,
-            *args: "KerasArgType",
-        ) -> "ext.NpNDArray":
+        def run_method(runnable_self: KerasRunnable, *args: t.Any) -> t.Any:
             _run_method = runnable_self.methods_cache.get(method_name)
             if not _run_method:
                 _run_method = _gen_run_method(runnable_self, method_name)

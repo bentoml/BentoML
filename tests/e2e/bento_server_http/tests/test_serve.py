@@ -123,7 +123,7 @@ def test_serve_with_timeout():
     with server.start(env=env) as client:
         with pytest.raises(
             BentoMLException,
-            match="504: b'Not able to process the request in 1 seconds'",
+            match="Not able to process the request in 1 seconds",
         ):
             client.call("echo_delay", {})
 

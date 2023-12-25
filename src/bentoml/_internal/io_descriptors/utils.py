@@ -1,68 +1,97 @@
+from __future__ import annotations
+
 import io
-from typing import AsyncGenerator
-from typing import AsyncIterator
-from typing import Optional
+import typing as t
 
 import attr
 
 from bentoml.exceptions import BentoMLException
 
+if t.TYPE_CHECKING:
+
+    class SSEArgs(t.TypedDict, total=False):
+        data: str
+        event: str
+        id: str
+        retry: int
+
 
 @attr.s(auto_attribs=True)
 class SSE:
     data: str
-    event: Optional[str] = None
-    id: Optional[str] = None
-    retry: Optional[int] = None
+    event: str | None = None
+    id: str | None = None
+    retry: int | None = None
 
     def marshal(self) -> str:
-        sse_data = ""
-        if self.id is not None:
-            sse_data += f"id: {self.id}\n"
-        if self.event is not None:
-            sse_data += f"event: {self.event}\n"
-        if self.retry is not None:
-            sse_data += f"retry: {self.retry}\n"
+        with io.StringIO() as buffer:
+            if self.event:
+                if "\n" in self.event:
+                    raise BentoMLException("SSE event name should not contain new line")
+                buffer.write(f"event: {self.event}\n")
+            if self.id is not None:
+                buffer.write(f"id: {self.id}\n")
+            if self.retry is not None:
+                buffer.write(f"retry: {self.retry}\n")
+            for line in self.data.split("\n"):
+                buffer.write(f"data: {line}\n")
+            buffer.write("\n")
+            return buffer.getvalue()
 
-        # Handle multi-line data
-        data_lines = self.data.split("\n")
-        for line in data_lines:
-            sse_data += f"data: {line}\n"
+    @classmethod
+    def _read_sse(cls, buffer: io.StringIO) -> SSE:
+        event: SSEArgs = {}
+        data_buffer: io.StringIO | None = None
+        first_data_line = True
 
-        # Add an extra newline to mark the end of the message
-        sse_data += "\n"
-        return sse_data
+        while True:
+            line = buffer.readline()
+            if not line:
+                break
+            if line == "\n":
+                break
+            if line.startswith("data: "):
+                if first_data_line:
+                    first_data_line = False
+                    event["data"] = line[6:-1]
+                else:
+                    if data_buffer is None:
+                        # only init data_buffer when there is more than one data line
+                        data_buffer = io.StringIO()
+                        data_buffer.write(event.get("data", ""))
+                    data_buffer.write("\n")
+                    data_buffer.write(line[6:-1])
+            if line.startswith("event: "):
+                event["event"] = line[7:].strip()
+            if line.startswith("id: "):
+                event["id"] = line[4:].strip()
+            if line.startswith("retry: "):
+                event["retry"] = int(line[7:].strip())
 
-    @staticmethod
+        if data_buffer is not None:
+            event["data"] = data_buffer.getvalue()
+            data_buffer.close()
+
+        return SSE(**event)
+
+    @classmethod
     async def from_iterator(
-        async_iterator: AsyncIterator[str],
-    ) -> AsyncGenerator["SSE", None]:
-        buffer = io.StringIO()
-        async for chunk in async_iterator:
-            buffer.write(chunk)
-            # Move to the beginning to read content
-            buffer.seek(0, io.SEEK_SET)
-            content = buffer.read()
-
-            while "\n\n" in content:
-                event_text, _, remaining = content.partition("\n\n")
-                fields = {"data": "", "event": None, "id": None, "retry": None}
-                data = []
-                for line in event_text.split("\n"):
-                    key, _, value = line.partition(": ")
-                    if key == "data":
-                        data.append(value)
-                    elif key == "retry":
-                        fields[key] = int(value)
-                    elif key in fields:
-                        fields[key] = value
-                    else:
-                        raise BentoMLException("Invalid SSE message")
-                fields["data"] = "\n".join(data)
-                yield SSE(**fields)
-
-                # Reset buffer
-                buffer.seek(0)
-                buffer.truncate()
-                buffer.write(remaining)
-                content = remaining
+        cls,
+        async_iterator: t.AsyncIterator[str],
+    ) -> t.AsyncGenerator[SSE, None]:
+        with io.StringIO() as buffer:
+            read_cursor = 0
+            last_chunk = ""
+            async for chunk in async_iterator:
+                buffer.write(chunk)
+                if (
+                    "\n\n" in chunk
+                    or chunk
+                    and chunk[0] == "\n"
+                    and last_chunk
+                    and last_chunk[-1] == "\n"
+                ):
+                    buffer.seek(read_cursor)
+                    yield cls._read_sse(buffer)
+                    read_cursor = buffer.tell()
+                last_chunk = chunk

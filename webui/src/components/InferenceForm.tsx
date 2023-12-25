@@ -29,6 +29,7 @@ interface IPanelProps {
 
 function Panel({ route }: IPanelProps) {
   const [activeTab, setActiveTab] = useState<Key>('0')
+  const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>()
   const [error, setError] = useState<Error>()
   const form = useMemo(() => createForm({ validateFirst: true }), [route])
@@ -38,6 +39,7 @@ function Panel({ route }: IPanelProps) {
     e.preventDefault()
 
     try {
+      setLoading(true)
       const res = await submit()
 
       setResult(res)
@@ -48,6 +50,9 @@ function Panel({ route }: IPanelProps) {
         setResult(undefined)
         setError(err)
       }
+    }
+    finally {
+      setLoading(false)
     }
   }
 
@@ -70,7 +75,7 @@ function Panel({ route }: IPanelProps) {
           >
             <Tab title="Form">
               <FormField schema={formSchema} />
-              <Submit>Submit</Submit>
+              <Submit isLoading={loading}>Submit</Submit>
             </Tab>
             {
               Object.entries(codeExamples).map(([title, comp]) => (

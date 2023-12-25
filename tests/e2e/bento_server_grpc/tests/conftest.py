@@ -13,17 +13,12 @@ import pytest
 if TYPE_CHECKING:
     from contextlib import ExitStack
 
-    from _pytest.config import Config
-    from _pytest.main import Session
-    from _pytest.nodes import Item
-
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def pytest_collection_modifyitems(
-    session: Session, config: Config, items: list[Item]
-) -> None:
+@pytest.fixture(scope="session", autouse=True)
+def install_requirements() -> None:
     subprocess.check_call(
         [
             sys.executable,

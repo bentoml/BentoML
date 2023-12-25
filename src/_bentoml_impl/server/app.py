@@ -112,7 +112,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         log_exception(req, sys.exc_info())
         return JSONResponse(
-            {"error": "An unexpected error has occurred, please try again later."},
+            {"error": "An unexpected error has occurred, please check the server log."},
             status_code=500,
         )
 
@@ -217,7 +217,10 @@ class ServiceAppFactory(BaseAppFactory):
     def create_instance(self) -> None:
         self._service_instance = self.service()
 
-    def destroy_instance(self) -> None:
+    async def destroy_instance(self) -> None:
+        from _bentoml_sdk.service.dependency import cleanup
+
+        await cleanup()
         self._service_instance = None
 
     async def readyz(self, _: Request) -> Response:

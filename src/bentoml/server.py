@@ -158,7 +158,7 @@ class Server(ABC, t.Generic[ClientType]):
             text: Whether to output as text or bytes for stdout and stderr. Default to ``None``.
         """
         # NOTE: User shouldn't manually set this since this envvar will be managed by BentoML.
-        os.environ[BENTOML_SERVE_FROM_SERVER_API] = str(True)
+        os.environ[BENTOML_SERVE_FROM_SERVER_API] = "True"
 
         if env is None:
             env = {}
@@ -182,6 +182,7 @@ class Server(ABC, t.Generic[ClientType]):
                     # TODO: Make this default to True in 2.x
                     text=text if text is not None else False,
                 )
+                self.wait_until_ready()
 
                 if blocking:
                     try:
@@ -201,6 +202,10 @@ class Server(ABC, t.Generic[ClientType]):
                 self.stop()
 
         return _Manager()
+
+    @abstractmethod
+    def wait_until_ready(self) -> None:
+        pass
 
     def get_client(self) -> ClientType:
         if self.process is None:
@@ -374,13 +379,13 @@ class HTTPServer(Server[HTTPClient]):
         )
         return self._get_client()
 
+    def wait_until_ready(self) -> None:
+        HTTPClient.wait_until_server_ready(
+            host=self.host, port=self.port, timeout=self.timeout
+        )
+
     def _get_client(self) -> HTTPClient:
         if self._client is None:
-            from .client import HTTPClient
-
-            HTTPClient.wait_until_server_ready(
-                host=self.host, port=self.port, timeout=self.timeout
-            )
             self._client = HTTPClient.from_url(f"http://{self.host}:{self.port}")
         return self._client
 
@@ -444,12 +449,12 @@ class GrpcServer(Server[GrpcClient]):
         if grpc_protocol_version is not None:
             self.args.extend(["--protocol-version", str(grpc_protocol_version)])
 
+    def wait_until_ready(self) -> None:
+        GrpcClient.wait_until_server_ready(
+            host=self.host, port=self.port, timeout=self.timeout
+        )
+
     def _get_client(self) -> GrpcClient:
         if self._client is None:
-            from .client import GrpcClient
-
-            GrpcClient.wait_until_server_ready(
-                host=self.host, port=self.port, timeout=self.timeout
-            )
             self._client = GrpcClient.from_url(f"{self.host}:{self.port}")
         return self._client

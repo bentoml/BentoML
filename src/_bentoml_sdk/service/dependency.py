@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import typing as t
 
 import attrs
@@ -14,6 +15,17 @@ T = t.TypeVar("T")
 
 
 _dependent_cache: dict[str, t.Any] = {}
+
+
+async def cleanup() -> None:
+    from _bentoml_impl.client.proxy import RemoteProxy
+
+    coros: list[t.Coroutine[t.Any, t.Any, None]] = []
+    for svc in _dependent_cache.values():
+        if isinstance(svc, RemoteProxy):
+            coros.append(svc.close())
+    await asyncio.gather(*coros)
+    _dependent_cache.clear()
 
 
 @attrs.frozen

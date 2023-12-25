@@ -63,11 +63,11 @@ cancer_model = FrameworkTestModel(
                 "predict": [
                     Input(
                         input_args=[np.array([cancer_data[0]])],
-                        expected=close_to([[0.87606, 0.123939]]),
+                        expected=close_to([[0.9181239, 0.0818761]]),
                     ),
                     Input(
                         input_args=[np.array([cancer_data[1]])],
-                        expected=close_to([[0.97558, 0.0244234]]),
+                        expected=close_to([[0.97593766, 0.02406229]]),
                     ),
                 ],
             },
@@ -78,11 +78,11 @@ cancer_model = FrameworkTestModel(
                 "predict": [
                     Input(
                         input_args=[pd.DataFrame([cancer_data[0]])],
-                        expected=close_to([[0.87606, 0.123939]]),
+                        expected=close_to([[0.9181239, 0.0818761]]),
                     ),
                     Input(
                         input_args=[pd.DataFrame([cancer_data[1]])],
-                        expected=close_to([[0.97558, 0.0244234]]),
+                        expected=close_to([[0.97593766, 0.02406229]]),
                     ),
                 ],
             },

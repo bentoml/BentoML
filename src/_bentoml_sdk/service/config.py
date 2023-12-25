@@ -29,7 +29,21 @@ class ResourceSchema(TypedDict, total=False):
     cpu: str
     memory: str
     gpu: Posfloat
-    gpu_type: str
+    """
+    gpu type defined here is only a anotation, it will use as an recommendation choice of instance type when deploying this service to bentocloud
+    gpu_type follows the naming convention of AWS EC2 GPU instances, GCP GPU instances etc.
+    """
+    gpu_type: Literal[
+        "nvidia-tesla-t4",
+        "nvidia-tesla-a100",
+        "nvidia-a100-80gb",
+        "nvidia-a10g",
+        "nvidia-l4",
+        "nvidia-tesla-v100",
+        "nvidia-tesla-p100",
+        "nvidia-tesla-k80",
+        "nvidia-tesla-p4",
+    ]
 
 
 class _IndividualWorkerSchema(TypedDict):

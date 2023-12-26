@@ -283,20 +283,30 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
                 # TODO: use fortan contiguous if it's faster
                 batch = np.ascontiguousarray(batch)
 
+            meta: dict[str, bool | int | float | str | list[int]] = {"format": "pickle5"}
+
             bs: bytes
             concat_buffer_bs: bytes
             indices: list[int]
             bs, concat_buffer_bs, indices = pep574_dumps(batch)
-            bs_str = base64.b64encode(bs).decode("ascii")
+
+            if indices:
+                if len(bs) > 6140:  # ceil(6140 / 3) * 4 = 8188 < 8192
+                    meta["format"] = "default"
+                    data = pickle.dumps(batch)
+                else:
+                    meta["with_buffer"] = True
+                    data = concat_buffer_bs
+                    meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
+                    meta["indices"] = indices
+            else:
+                meta["with_buffer"] = False
+                data = bs
 
             return cls.create_payload(
-                concat_buffer_bs,
+                data,
                 batch.shape[batch_dim],
-                {
-                    "format": "pickle5",
-                    "pickle_bytes_str": bs_str,
-                    "indices": indices,
-                },
+                meta=meta,
             )
 
         return cls.create_payload(
@@ -311,13 +321,17 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         payload: Payload,
     ) -> ext.NpNDArray:
         format = payload.meta.get("format", "default")
-        if format == "pickle5":
+        if format == "default":
+            return pickle.loads(payload.data)
+
+        # format can be either "default" or "pickle5"
+        if payload.meta["with_buffer"]:
             bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
             bs = base64.b64decode(bs_str)
             indices = t.cast(t.List[int], payload.meta["indices"])
             return t.cast("ext.NpNDArray", pep574_loads(bs, payload.data, indices))
-
-        return pickle.loads(payload.data)
+        else:
+            return t.cast("ext.NpNDArray", pep574_loads(payload.data, b"", []))
 
     @classmethod
     def batch_to_payloads(
@@ -401,7 +415,7 @@ class PandasDataFrameContainer(
 
         if indices:
             if len(bs) > 6140:  # ceil(6140 / 3) * 4 = 8188 < 8192
-                meta["format"] = "pickle"
+                meta["format"] = "default"
                 data = pickle.dumps(batch)
             else:
                 meta["with_buffer"] = True
@@ -423,7 +437,8 @@ class PandasDataFrameContainer(
         cls,
         payload: Payload,
     ) -> ext.PdDataFrame:
-        if payload.meta["format"] == "pickle":
+
+        if payload.meta["format"] == "default":
             return pickle.loads(payload.data)
 
         if payload.meta["with_buffer"]:

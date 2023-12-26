@@ -283,7 +283,9 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
                 # TODO: use fortan contiguous if it's faster
                 batch = np.ascontiguousarray(batch)
 
-            meta: dict[str, bool | int | float | str | list[int]] = {"format": "pickle5"}
+            meta: dict[str, bool | int | float | str | list[int]] = {
+                "format": "pickle5"
+            }
 
             bs: bytes
             concat_buffer_bs: bytes
@@ -437,7 +439,6 @@ class PandasDataFrameContainer(
         cls,
         payload: Payload,
     ) -> ext.PdDataFrame:
-
         if payload.meta["format"] == "default":
             return pickle.loads(payload.data)
 

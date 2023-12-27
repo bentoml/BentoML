@@ -206,7 +206,9 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
 
     for key in list(override_config):
         if key.startswith("services."):
-            key_parts = key.split(".")
+            # NOTE: We need to remove the quotation in case the runner name includes dashes.
+            # Since unflatten_dict will include the quotes for given name
+            key_parts = [s.replace('"', "") for s in key.split(".")]
             service_name = key_parts[1]
             if service_name in SERVICE_CFG_KEYS:
                 default_service_config[".".join(key_parts[1:])] = override_config[key]

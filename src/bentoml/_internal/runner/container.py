@@ -459,7 +459,9 @@ class PILImageContainer(DataContainer["ext.PILImage", "ext.PILImage"]):
     def to_payload(cls, batch: ext.PILImage, batch_dim: int) -> Payload:
         buffer = io.BytesIO()
         if batch.format is None:
-            raise RuntimeError("PIL.Image recieved has no format, it may cause error in buffer saving. Please replace it or convert it to numpy.ndarray for safe.")
+            raise RuntimeError(
+                "PIL.Image recieved has no format, it may cause error in buffer saving. Please replace it or convert it to numpy.ndarray for safe."
+            )
         batch.save(buffer, format=batch.format)
         return cls.create_payload(buffer.getvalue(), batch_size=1)
 

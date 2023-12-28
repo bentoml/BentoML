@@ -507,14 +507,6 @@ class BentoApiInfo:
             output_type=api.output.__class__.__name__,
         )
 
-    @classmethod
-    def from_api_method(cls, api: APIMethod[..., t.Any]) -> BentoApiInfo:
-        return cls(
-            name=api.name,
-            input_type=api.input_spec.__name__,
-            output_type=api.output_spec.__name__,
-        )
-
 
 @attr.frozen
 class BentoModelInfo:
@@ -542,7 +534,6 @@ class BentoServiceInfo:
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     dependencies: t.List[str] = attr.field(factory=list)
     config: ServiceConfig = attr.field(factory=dict)
-    apis: t.List[BentoApiInfo] = attr.field(factory=list)
 
     @classmethod
     def from_service(
@@ -558,7 +549,6 @@ class BentoServiceInfo:
             models=[BentoModelInfo.from_bento_model(m) for m in d.models],
             dependencies=list(d.dependencies.keys()),
             config=d.config,
-            apis=[BentoApiInfo.from_api_method(api) for api in d.apis.values()],
         )
 
 

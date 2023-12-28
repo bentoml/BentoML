@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 from simple_di import Provide
@@ -10,50 +11,48 @@ from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.resource import system_resources
 from bentoml.exceptions import BentoMLConfigException
 
-
-class ResourceUnavailable(BentoMLConfigException):
-    pass
-
-
 NVIDIA_GPU = "nvidia.com/gpu"
 
 
 class ResourceAllocator:
     def __init__(self) -> None:
         self.system_resources = system_resources()
-        self._available_gpus: dict[int, tuple[float, float]] = dict.fromkeys(
-            # each value is a two-number pair, (remaining, unit)
-            # when a GPU has no remaining, it will be removed from the map.
-            self.system_resources[NVIDIA_GPU],
-            (1.0, 1.0),
-        )
+        self.remaining_gpus = len(self.system_resources[NVIDIA_GPU])
+        self._available_gpus: list[tuple[float, float]] = [
+            (1.0, 1.0)  # each item is (remaining, unit)
+            for _ in range(self.remaining_gpus)
+        ]
 
     def assign_gpus(self, count: float) -> list[int]:
-        if count > (
-            remaining_total := sum(v[0] for v in self._available_gpus.values())
-        ):
-            raise ResourceUnavailable(
-                f"Requested {count} GPUs, but only {remaining_total} are available."
+        if count > self.remaining_gpus:
+            warnings.warn(
+                f"Requested {count} GPUs, but only {self.remaining_gpus} are remaining.",
+                ResourceWarning,
+                stacklevel=3,
             )
-        if count < 1:  # a fragmental GPU
+        self.remaining_gpus = max(0, self.remaining_gpus - count)
+        if count < 1:  # a fractional GPU
             try:
                 # try to find the GPU used with the same fragment
-                gpu = next(k for k, v in self._available_gpus.items() if v[1] == count)
+                gpu = next(
+                    i
+                    for i, v in enumerate(self._available_gpus)
+                    if v[0] > 0 and v[1] == count
+                )
             except StopIteration:
                 try:
                     gpu = next(
-                        k for k, v in self._available_gpus.items() if v[0] == 1.0
+                        i for i, v in enumerate(self._available_gpus) if v[0] == 1.0
                     )
                 except StopIteration:
-                    raise ResourceUnavailable(
-                        f"Can't find an available GPU for {count} resources"
-                    ) from None
+                    gpu = len(self._available_gpus)
+                    self._available_gpus.append((1.0, count))
             remaining, _ = self._available_gpus[gpu]
-            if remaining - count < count:
-                # can't assign to the next one, remove from the available GPUs.
-                del self._available_gpus[gpu]
+            if (remaining := remaining - count) < count:
+                # can't assign to the next one, mark it as zero.
+                self._available_gpus[gpu] = (0.0, count)
             else:
-                self._available_gpus[gpu] = (remaining - count, count)
+                self._available_gpus[gpu] = (remaining, count)
             return [gpu]
         else:  # allocate n GPUs, n is a positive integer
             if int(count) != count:
@@ -62,14 +61,21 @@ class ResourceAllocator:
                 )
             count = int(count)
             unassigned = [
-                gpu for gpu, value in self._available_gpus.items() if value[1] == 1.0
+                gpu
+                for gpu, value in enumerate(self._available_gpus)
+                if value[0] > 0 and value[1] == 1.0
             ]
             if len(unassigned) < count:
-                raise ResourceUnavailable(f"Unable to allocate {count} GPUs")
-            assigned = unassigned[:count]
-            for gpu in assigned:
-                del self._available_gpus[gpu]
-            return assigned
+                warnings.warn(
+                    f"Not enough GPUs to be assigned, {count} is requested",
+                    ResourceWarning,
+                )
+                for _ in range(count - len(unassigned)):
+                    unassigned.append(len(self._available_gpus))
+                    self._available_gpus.append((1.0, 1.0))
+            for gpu in unassigned[:count]:
+                self._available_gpus[gpu] = (0.0, 1.0)
+            return unassigned[:count]
 
     @inject
     def get_worker_env(
@@ -87,42 +93,15 @@ class ResourceAllocator:
         if config.get("workers"):
             if (workers := config["workers"]) == "cpu_count":
                 num_workers = int(self.system_resources["cpu"])
-            elif isinstance(workers, int):
+                # don't assign gpus to workers
+                return num_workers, worker_env
+            else:  # workers is a number
                 num_workers = workers
-                if num_gpus:
-                    assigned = self.assign_gpus(num_gpus)
-                    # assign gpus to all workers
-                    worker_env = [
-                        {"CUDA_VISIBLE_DEVICES": ",".join(map(str, assigned))}
-                        for _ in range(num_workers)
-                    ]
-            else:  # workers is a list
-                num_workers = len(workers)
-                if not workers:
-                    raise BentoMLConfigException("workers list is empty.")
-                for worker in workers:
-                    if isinstance(requested := worker["gpus"], list):
-                        if any(
-                            gpu
-                            not in (system_gpus := self.system_resources[NVIDIA_GPU])
-                            for gpu in requested
-                        ):
-                            raise ResourceUnavailable(
-                                f"Requested GPUs {requested}, but only {system_gpus} are available"
-                            )
-                        worker_env.append(
-                            {"CUDA_VISIBLE_DEVICES": ",".join(map(str, requested))}
-                        )
-                    else:
-                        worker_env.append(
-                            {
-                                "CUDA_VISIBLE_DEVICES": ",".join(
-                                    map(str, self.assign_gpus(requested))
-                                )
-                            }
-                        )
-        elif num_gpus > 0:
+        if num_gpus:
             assigned = self.assign_gpus(num_gpus)
-            num_workers = len(assigned)
-            worker_env = [{"CUDA_VISIBLE_DEVICES": str(i)} for i in assigned]
+            # assign gpus to all workers
+            worker_env = [
+                {"CUDA_VISIBLE_DEVICES": ",".join(map(str, assigned))}
+                for _ in range(num_workers)
+            ]
         return num_workers, worker_env

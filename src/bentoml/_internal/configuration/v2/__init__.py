@@ -74,7 +74,6 @@ _SERVICE_CONFIG = {
         {s.Optional(str): object}, lambda s: s == "system", None
     ),  # type: ignore (incomplete schema typing)
     s.Optional("workers"): s.Or(
-        [{"gpus": s.Or(ensure_larger_than_zero, list)}],
         lambda s: s == "cpu_count",
         s.And(int, ensure_larger_than_zero),
         None,

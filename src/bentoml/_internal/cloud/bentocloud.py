@@ -169,7 +169,7 @@ class BentoCloudClient(CloudClient):
             models=models,
             runners=runners,
             size_bytes=bento.total_size(),
-            config=info.config,
+            config=info.config,  # TODO(fog)
         )
         if not remote_bento:
             with self.spin(

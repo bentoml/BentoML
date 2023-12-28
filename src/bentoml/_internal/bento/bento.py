@@ -48,7 +48,6 @@ if TYPE_CHECKING:
     from fs.base import FS
 
     from _bentoml_sdk import Service as NewService
-    from _bentoml_sdk.api import APIMethod
     from _bentoml_sdk.service import ServiceConfig
 
     from ..models import Model

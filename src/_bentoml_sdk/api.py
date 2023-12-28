@@ -123,6 +123,7 @@ class APIMethod(t.Generic[P, R]):
             return self.func(instance, *args, **kwargs)
 
         wrapped.__signature__ = func_sig.replace(parameters=params)
+        wrapped.__is_bentoml_api_func__ = True
         # same as functools.partial in order that inspect can recognize it
         wrapped.func = self.func
         return wrapped

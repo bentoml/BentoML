@@ -9,11 +9,13 @@ from typing import TYPE_CHECKING
 import attr
 import cattr
 from dateutil.parser import parse
+
 from ..bento.bento import BentoServiceInfo
 
 time_format = "%Y-%m-%d %H:%M:%S.%f"
 
 T = t.TypeVar("T")
+
 
 def datetime_encoder(time_obj: t.Optional[datetime]) -> t.Optional[str]:
     if not time_obj:

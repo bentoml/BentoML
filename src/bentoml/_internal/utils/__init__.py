@@ -483,6 +483,9 @@ class compose:
 
 
 def is_async_callable(obj: t.Any) -> t.TypeGuard[t.Callable[..., t.Awaitable[t.Any]]]:
+    if getattr(obj, "__is_bentoml_api_func__", False):
+        obj = obj.func
+
     # Borrowed from starlette._utils
     while isinstance(obj, functools.partial):
         obj = obj.func

@@ -157,7 +157,7 @@ class ServiceAppFactory(BaseAppFactory):
 
     @property
     def name(self) -> str:
-        return self.service.inner.__name__
+        return self.service.name
 
     @property
     def middlewares(self) -> list[Middleware]:

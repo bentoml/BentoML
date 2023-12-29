@@ -195,7 +195,7 @@ class BentoManifestSchema:
     models: t.List[str] = attr.field(factory=list)
     runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)
     services: t.List[BentoServiceInfo] = attr.field(factory=dict)
-    envs: t.List[t.Dict[str, str]] = attr.field(factory=dict)
+    envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
 
 
 if TYPE_CHECKING:

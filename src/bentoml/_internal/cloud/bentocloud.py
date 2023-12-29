@@ -170,6 +170,7 @@ class BentoCloudClient(CloudClient):
             runners=runners,
             size_bytes=bento.total_size(),
             services=info.services,
+            envs=info.envs,
         )
         if not remote_bento:
             with self.spin(

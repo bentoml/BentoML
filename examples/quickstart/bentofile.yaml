@@ -8,3 +8,6 @@ python:
   packages:
     - scikit-learn
     - pandas
+envs:
+- name: HF_TOKEN
+  value: xxx

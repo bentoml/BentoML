@@ -6,8 +6,8 @@ import click
 
 if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
-    from bentoml._internal.cloud.schemas import DeploymentListSchema
-    from bentoml._internal.cloud.schemas import DeploymentSchema
+    from bentoml._internal.cloud.schemas.schemasv1 import DeploymentListSchema
+    from bentoml._internal.cloud.schemas.schemasv1 import DeploymentSchema
 
     from .utils import SharedOptions
 else:
@@ -189,7 +189,7 @@ def add_deployment_command(cli: click.Group) -> None:
     ) -> DeploymentSchema:
         """Get a deployment on BentoCloud."""
         res = client.deployment.get(
-            deployment_name=deployment_name,
+            name=deployment_name,
             context=shared_options.cloud_context,
             cluster_name=cluster_name,
             kube_namespace=kube_namespace,
@@ -213,7 +213,7 @@ def add_deployment_command(cli: click.Group) -> None:
     ) -> DeploymentSchema:
         """Terminate a deployment on BentoCloud."""
         res = client.deployment.terminate(
-            deployment_name=deployment_name,
+            name=deployment_name,
             context=shared_options.cloud_context,
             cluster_name=cluster_name,
             kube_namespace=kube_namespace,
@@ -237,7 +237,7 @@ def add_deployment_command(cli: click.Group) -> None:
     ) -> DeploymentSchema:
         """Delete a deployment on BentoCloud."""
         res = client.deployment.delete(
-            deployment_name=deployment_name,
+            name=deployment_name,
             context=shared_options.cloud_context,
             cluster_name=cluster_name,
             kube_namespace=kube_namespace,

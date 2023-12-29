@@ -10,7 +10,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import fs
-import requests
+import httpx
 from rich.live import Live
 from simple_di import Provide
 from simple_di import inject
@@ -29,40 +29,36 @@ from .base import FILE_CHUNK_SIZE
 from .base import CallbackIOWrapper
 from .base import CloudClient
 from .config import get_rest_api_client
-from .deployment import Deployment
-from .schemas import BentoApiSchema
-from .schemas import BentoManifestSchema
-from .schemas import BentoRunnerResourceSchema
-from .schemas import BentoRunnerSchema
-from .schemas import BentoUploadStatus
-from .schemas import CompleteMultipartUploadSchema
-from .schemas import CompletePartSchema
-from .schemas import CreateBentoRepositorySchema
-from .schemas import CreateBentoSchema
-from .schemas import CreateModelRepositorySchema
-from .schemas import CreateModelSchema
-from .schemas import FinishUploadBentoSchema
-from .schemas import FinishUploadModelSchema
-from .schemas import LabelItemSchema
-from .schemas import ModelManifestSchema
-from .schemas import ModelUploadStatus
-from .schemas import PreSignMultipartUploadUrlSchema
-from .schemas import TransmissionStrategy
-from .schemas import UpdateBentoSchema
+from .schemas.modelschemas import BentoApiSchema
+from .schemas.modelschemas import BentoRunnerResourceSchema
+from .schemas.modelschemas import BentoRunnerSchema
+from .schemas.schemasv1 import BentoManifestSchema
+from .schemas.schemasv1 import BentoUploadStatus
+from .schemas.schemasv1 import CompleteMultipartUploadSchema
+from .schemas.schemasv1 import CompletePartSchema
+from .schemas.schemasv1 import CreateBentoRepositorySchema
+from .schemas.schemasv1 import CreateBentoSchema
+from .schemas.schemasv1 import CreateModelRepositorySchema
+from .schemas.schemasv1 import CreateModelSchema
+from .schemas.schemasv1 import FinishUploadBentoSchema
+from .schemas.schemasv1 import FinishUploadModelSchema
+from .schemas.schemasv1 import LabelItemSchema
+from .schemas.schemasv1 import ModelManifestSchema
+from .schemas.schemasv1 import ModelUploadStatus
+from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
+from .schemas.schemasv1 import TransmissionStrategy
+from .schemas.schemasv1 import UpdateBentoSchema
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
     from rich.progress import TaskID
 
-    from .schemas import BentoWithRepositoryListSchema
-    from .schemas import ModelWithRepositoryListSchema
+    from .schemas.schemasv1 import BentoWithRepositoryListSchema
+    from .schemas.schemasv1 import ModelWithRepositoryListSchema
 
 
 class BentoCloudClient(CloudClient):
-    def __init__(self):
-        self.deployment = Deployment()
-
     def push_bento(
         self,
         bento: Bento,
@@ -124,18 +120,18 @@ class BentoCloudClient(CloudClient):
             futures: t.Iterator[None] = executor.map(push_model, models)
             list(futures)
         with self.spin(text=f'Fetching Bento repository "{name}"'):
-            bento_repository = yatai_rest_client.get_bento_repository(
+            bento_repository = yatai_rest_client.v1.get_bento_repository(
                 bento_repository_name=name
             )
         if not bento_repository:
             with self.spin(text=f'Bento repository "{name}" not found, creating now..'):
-                bento_repository = yatai_rest_client.create_bento_repository(
+                bento_repository = yatai_rest_client.v1.create_bento_repository(
                     req=CreateBentoRepositorySchema(name=name, description="")
                 )
         with self.spin(
             text=f'Try fetching Bento "{bento.tag}" from remote Bento store..'
         ):
-            remote_bento = yatai_rest_client.get_bento(
+            remote_bento = yatai_rest_client.v1.get_bento(
                 bento_repository_name=name, version=version
             )
         if (
@@ -144,7 +140,7 @@ class BentoCloudClient(CloudClient):
             and remote_bento.upload_status == BentoUploadStatus.SUCCESS
         ):
             self.log_progress.add_task(
-                f'[bold blue]Push failed: Bento "{bento.tag}" already exists in remote Bento store'
+                f'[bold blue]Push skipped: Bento "{bento.tag}" already exists in remote Bento store'
             )
             return
         labels: list[LabelItemSchema] = [
@@ -182,7 +178,7 @@ class BentoCloudClient(CloudClient):
             with self.spin(
                 text=f'Registering Bento "{bento.tag}" with remote Bento store..'
             ):
-                remote_bento = yatai_rest_client.create_bento(
+                remote_bento = yatai_rest_client.v1.create_bento(
                     bento_repository_name=bento_repository.name,
                     req=CreateBentoSchema(
                         description="",
@@ -194,7 +190,7 @@ class BentoCloudClient(CloudClient):
                 )
         else:
             with self.spin(text=f'Updating Bento "{bento.tag}"..'):
-                remote_bento = yatai_rest_client.update_bento(
+                remote_bento = yatai_rest_client.v1.update_bento(
                     bento_repository_name=bento_repository.name,
                     version=version,
                     req=UpdateBentoSchema(
@@ -212,7 +208,7 @@ class BentoCloudClient(CloudClient):
             with self.spin(
                 text=f'Getting a presigned upload url for bento "{bento.tag}" ..'
             ):
-                remote_bento = yatai_rest_client.presign_bento_upload_url(
+                remote_bento = yatai_rest_client.v1.presign_bento_upload_url(
                     bento_repository_name=bento_repository.name, version=version
                 )
                 if remote_bento.presigned_upload_url:
@@ -240,7 +236,7 @@ class BentoCloudClient(CloudClient):
             tar_io.seek(0, 0)
 
             with self.spin(text=f'Start uploading bento "{bento.tag}"..'):
-                yatai_rest_client.start_upload_bento(
+                yatai_rest_client.v1.start_upload_bento(
                     bento_repository_name=bento_repository.name, version=version
                 )
 
@@ -255,7 +251,7 @@ class BentoCloudClient(CloudClient):
 
             if transmission_strategy == "proxy":
                 try:
-                    yatai_rest_client.upload_bento(
+                    yatai_rest_client.v1.upload_bento(
                         bento_repository_name=bento_repository.name,
                         version=version,
                         data=tar_io,
@@ -275,7 +271,7 @@ class BentoCloudClient(CloudClient):
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = requests.put(presigned_upload_url, data=tar_io)
+                    resp = httpx.put(presigned_upload_url, content=tar_io)
                     if resp.status_code != 200:
                         finish_req = FinishUploadBentoSchema(
                             status=BentoUploadStatus.FAILED,
@@ -285,9 +281,11 @@ class BentoCloudClient(CloudClient):
                     with self.spin(
                         text=f'Start multipart uploading Bento "{bento.tag}"...'
                     ):
-                        remote_bento = yatai_rest_client.start_bento_multipart_upload(
-                            bento_repository_name=bento_repository.name,
-                            version=version,
+                        remote_bento = (
+                            yatai_rest_client.v1.start_bento_multipart_upload(
+                                bento_repository_name=bento_repository.name,
+                                version=version,
+                            )
                         )
                         if not remote_bento.upload_id:
                             raise BentoMLException(
@@ -305,7 +303,7 @@ class BentoCloudClient(CloudClient):
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of Bento "{bento.tag}"...'
                         ):
                             remote_bento = (
-                                yatai_rest_client.presign_bento_multipart_upload_url(
+                                yatai_rest_client.v1.presign_bento_multipart_upload_url(
                                     bento_repository_name=bento_repository.name,
                                     version=version,
                                     req=PreSignMultipartUploadUrlSchema(
@@ -330,8 +328,8 @@ class BentoCloudClient(CloudClient):
                             )
 
                             with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
-                                resp = requests.put(
-                                    remote_bento.presigned_upload_url, data=chunk_io
+                                resp = httpx.put(
+                                    remote_bento.presigned_upload_url, content=chunk_io
                                 )
                                 if resp.status_code != 200:
                                     return FinishUploadBentoSchema(
@@ -375,7 +373,7 @@ class BentoCloudClient(CloudClient):
                         text=f'Completing multipart upload of Bento "{bento.tag}"...'
                     ):
                         remote_bento = (
-                            yatai_rest_client.complete_bento_multipart_upload(
+                            yatai_rest_client.v1.complete_bento_multipart_upload(
                                 bento_repository_name=bento_repository.name,
                                 version=version,
                                 req=CompleteMultipartUploadSchema(
@@ -395,7 +393,7 @@ class BentoCloudClient(CloudClient):
                     f'[bold red]Failed to upload Bento "{bento.tag}"'
                 )
             with self.spin(text="Submitting upload status to remote Bento store"):
-                yatai_rest_client.finish_upload_bento(
+                yatai_rest_client.v1.finish_upload_bento(
                     bento_repository_name=bento_repository.name,
                     version=version,
                     req=finish_req,
@@ -460,7 +458,7 @@ class BentoCloudClient(CloudClient):
         yatai_rest_client = get_rest_api_client(context)
 
         with self.spin(text=f'Fetching bento "{_tag}"'):
-            remote_bento = yatai_rest_client.get_bento(
+            remote_bento = yatai_rest_client.v1.get_bento(
                 bento_repository_name=name, version=version
             )
         if not remote_bento:
@@ -498,7 +496,7 @@ class BentoCloudClient(CloudClient):
                 with self.spin(
                     text=f'Getting a presigned download url for bento "{_tag}"'
                 ):
-                    remote_bento = yatai_rest_client.presign_bento_download_url(
+                    remote_bento = yatai_rest_client.v1.presign_bento_download_url(
                         name, version
                     )
                     if remote_bento.presigned_download_url:
@@ -506,7 +504,7 @@ class BentoCloudClient(CloudClient):
                         transmission_strategy = "presigned_url"
 
             if transmission_strategy == "proxy":
-                response = yatai_rest_client.download_bento(
+                response = yatai_rest_client.v1.download_bento(
                     bento_repository_name=name,
                     version=version,
                 )
@@ -515,31 +513,32 @@ class BentoCloudClient(CloudClient):
                     with self.spin(
                         text=f'Getting a presigned download url for bento "{_tag}"'
                     ):
-                        remote_bento = yatai_rest_client.presign_bento_download_url(
+                        remote_bento = yatai_rest_client.v1.presign_bento_download_url(
                             name, version
                         )
                         presigned_download_url = remote_bento.presigned_download_url
-                response = requests.get(presigned_download_url, stream=True)
 
-            if response.status_code != 200:
-                raise BentoMLException(
-                    f'Failed to download bento "{_tag}": {response.text}'
-                )
-            total_size_in_bytes = int(response.headers.get("content-length", 0))
-            block_size = 1024  # 1 Kibibyte
             with NamedTemporaryFile() as tar_file:
-                self.transmission_progress.update(
-                    download_task_id,
-                    completed=0,
-                    total=total_size_in_bytes,
-                    visible=True,
-                )
-                self.transmission_progress.start_task(download_task_id)
-                for data in response.iter_content(block_size):
+                with httpx.stream("GET", presigned_download_url) as response:
+                    if response.status_code != 200:
+                        raise BentoMLException(
+                            f'Failed to download bento "{_tag}": {response.text}'
+                        )
+                    total_size_in_bytes = int(response.headers.get("content-length", 0))
+                    block_size = 1024  # 1 Kibibyte
                     self.transmission_progress.update(
-                        download_task_id, advance=len(data)
+                        download_task_id,
+                        completed=0,
+                        total=total_size_in_bytes,
+                        visible=True,
                     )
-                    tar_file.write(data)
+                    self.transmission_progress.start_task(download_task_id)
+                    for data in response.iter_bytes(block_size):
+                        self.transmission_progress.update(
+                            download_task_id, advance=len(data)
+                        )
+                        tar_file.write(data)
+
                 self.log_progress.add_task(
                     f'[bold green]Finished downloading all bento "{_tag}" files'
                 )
@@ -604,18 +603,18 @@ class BentoCloudClient(CloudClient):
             raise BentoMLException(f'Model "{model.tag}" version cannot be None')
         info = model.info
         with self.spin(text=f'Fetching model repository "{name}"'):
-            model_repository = yatai_rest_client.get_model_repository(
+            model_repository = yatai_rest_client.v1.get_model_repository(
                 model_repository_name=name
             )
         if not model_repository:
             with self.spin(text=f'Model repository "{name}" not found, creating now..'):
-                model_repository = yatai_rest_client.create_model_repository(
+                model_repository = yatai_rest_client.v1.create_model_repository(
                     req=CreateModelRepositorySchema(name=name, description="")
                 )
         with self.spin(
             text=f'Try fetching model "{model.tag}" from remote model store..'
         ):
-            remote_model = yatai_rest_client.get_model(
+            remote_model = yatai_rest_client.v1.get_model(
                 model_repository_name=name, version=version
             )
         if (
@@ -635,7 +634,7 @@ class BentoCloudClient(CloudClient):
             with self.spin(
                 text=f'Registering model "{model.tag}" with remote model store..'
             ):
-                remote_model = yatai_rest_client.create_model(
+                remote_model = yatai_rest_client.v1.create_model(
                     model_repository_name=model_repository.name,
                     req=CreateModelSchema(
                         description="",
@@ -663,7 +662,7 @@ class BentoCloudClient(CloudClient):
             with self.spin(
                 text=f'Getting a presigned upload url for Model "{model.tag}" ..'
             ):
-                remote_model = yatai_rest_client.presign_model_upload_url(
+                remote_model = yatai_rest_client.v1.presign_model_upload_url(
                     model_repository_name=model_repository.name, version=version
                 )
                 if remote_model.presigned_upload_url:
@@ -682,7 +681,7 @@ class BentoCloudClient(CloudClient):
                     tar.add(model.path, arcname="./")
             tar_io.seek(0, 0)
             with self.spin(text=f'Start uploading model "{model.tag}"..'):
-                yatai_rest_client.start_upload_model(
+                yatai_rest_client.v1.start_upload_model(
                     model_repository_name=model_repository.name, version=version
                 )
             file_size = tar_io.getbuffer().nbytes
@@ -696,7 +695,7 @@ class BentoCloudClient(CloudClient):
 
             if transmission_strategy == "proxy":
                 try:
-                    yatai_rest_client.upload_model(
+                    yatai_rest_client.v1.upload_model(
                         model_repository_name=model_repository.name,
                         version=version,
                         data=tar_io,
@@ -716,7 +715,7 @@ class BentoCloudClient(CloudClient):
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = requests.put(presigned_upload_url, data=tar_io)
+                    resp = httpx.put(presigned_upload_url, content=tar_io)
                     if resp.status_code != 200:
                         finish_req = FinishUploadModelSchema(
                             status=ModelUploadStatus.FAILED,
@@ -726,9 +725,11 @@ class BentoCloudClient(CloudClient):
                     with self.spin(
                         text=f'Start multipart uploading Model "{model.tag}"...'
                     ):
-                        remote_model = yatai_rest_client.start_model_multipart_upload(
-                            model_repository_name=model_repository.name,
-                            version=version,
+                        remote_model = (
+                            yatai_rest_client.v1.start_model_multipart_upload(
+                                model_repository_name=model_repository.name,
+                                version=version,
+                            )
                         )
                         if not remote_model.upload_id:
                             raise BentoMLException(
@@ -746,7 +747,7 @@ class BentoCloudClient(CloudClient):
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of model "{model.tag}"...'
                         ):
                             remote_model = (
-                                yatai_rest_client.presign_model_multipart_upload_url(
+                                yatai_rest_client.v1.presign_model_multipart_upload_url(
                                     model_repository_name=model_repository.name,
                                     version=version,
                                     req=PreSignMultipartUploadUrlSchema(
@@ -772,8 +773,8 @@ class BentoCloudClient(CloudClient):
                             )
 
                             with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
-                                resp = requests.put(
-                                    remote_model.presigned_upload_url, data=chunk_io
+                                resp = httpx.put(
+                                    remote_model.presigned_upload_url, content=chunk_io
                                 )
                                 if resp.status_code != 200:
                                     return FinishUploadModelSchema(
@@ -817,7 +818,7 @@ class BentoCloudClient(CloudClient):
                         text=f'Completing multipart upload of model "{model.tag}"...'
                     ):
                         remote_model = (
-                            yatai_rest_client.complete_model_multipart_upload(
+                            yatai_rest_client.v1.complete_model_multipart_upload(
                                 model_repository_name=model_repository.name,
                                 version=version,
                                 req=CompleteMultipartUploadSchema(
@@ -837,11 +838,12 @@ class BentoCloudClient(CloudClient):
                     f'[bold red]Failed to upload model "{model.tag}"'
                 )
             with self.spin(text="Submitting upload status to remote model store"):
-                yatai_rest_client.finish_upload_model(
+                yatai_rest_client.v1.finish_upload_model(
                     model_repository_name=model_repository.name,
                     version=version,
                     req=finish_req,
                 )
+
             if finish_req.status != ModelUploadStatus.SUCCESS:
                 self.log_progress.add_task(
                     f'[bold red]Failed pushing model "{model.tag}" : {finish_req.reason}'
@@ -903,7 +905,7 @@ class BentoCloudClient(CloudClient):
         name = _tag.name
         version = _tag.version
         if version in (None, "latest"):
-            latest_model = yatai_rest_client.get_latest_model(name, query=query)
+            latest_model = yatai_rest_client.v1.get_latest_model(name, query=query)
             if latest_model is None:
                 raise BentoMLException(
                     f'Model "{_tag}" not found on remote model store, you may need to specify a version'
@@ -929,7 +931,9 @@ class BentoCloudClient(CloudClient):
             )
 
         with self.spin(text=f'Getting a presigned download url for model "{_tag}"..'):
-            remote_model = yatai_rest_client.presign_model_download_url(name, version)
+            remote_model = yatai_rest_client.v1.presign_model_download_url(
+                name, version
+            )
 
         if not remote_model:
             raise BentoMLException(f'Model "{_tag}" not found on remote model store')
@@ -942,7 +946,7 @@ class BentoCloudClient(CloudClient):
             transmission_strategy = remote_model.transmission_strategy
         else:
             with self.spin(text=f'Getting a presigned download url for model "{_tag}"'):
-                remote_model = yatai_rest_client.presign_model_download_url(
+                remote_model = yatai_rest_client.v1.presign_model_download_url(
                     name, version
                 )
                 if remote_model.presigned_download_url:
@@ -950,7 +954,7 @@ class BentoCloudClient(CloudClient):
                     transmission_strategy = "presigned_url"
 
         if transmission_strategy == "proxy":
-            response = yatai_rest_client.download_model(
+            response = yatai_rest_client.v1.download_model(
                 model_repository_name=name, version=version
             )
         else:
@@ -958,30 +962,33 @@ class BentoCloudClient(CloudClient):
                 with self.spin(
                     text=f'Getting a presigned download url for model "{_tag}"'
                 ):
-                    remote_model = yatai_rest_client.presign_model_download_url(
+                    remote_model = yatai_rest_client.v1.presign_model_download_url(
                         name, version
                     )
                     presigned_download_url = remote_model.presigned_download_url
 
-            response = requests.get(presigned_download_url, stream=True)
-            if response.status_code != 200:
-                raise BentoMLException(
-                    f'Failed to download model "{_tag}": {response.text}'
-                )
-
-        total_size_in_bytes = int(response.headers.get("content-length", 0))
-        block_size = 1024  # 1 Kibibyte
         with NamedTemporaryFile() as tar_file:
-            self.transmission_progress.update(
-                download_task_id,
-                description=f'Downloading model "{_tag}"',
-                total=total_size_in_bytes,
-                visible=True,
-            )
-            self.transmission_progress.start_task(download_task_id)
-            for data in response.iter_content(block_size):
-                self.transmission_progress.update(download_task_id, advance=len(data))
-                tar_file.write(data)
+            with httpx.stream("GET", presigned_download_url) as response:
+                if response.status_code != 200:
+                    raise BentoMLException(
+                        f'Failed to download model "{_tag}": {response.text}'
+                    )
+
+                total_size_in_bytes = int(response.headers.get("content-length", 0))
+                block_size = 1024  # 1 Kibibyte
+                self.transmission_progress.update(
+                    download_task_id,
+                    description=f'Downloading model "{_tag}"',
+                    total=total_size_in_bytes,
+                    visible=True,
+                )
+                self.transmission_progress.start_task(download_task_id)
+                for data in response.iter_bytes(block_size):
+                    self.transmission_progress.update(
+                        download_task_id, advance=len(data)
+                    )
+                    tar_file.write(data)
+
             self.log_progress.add_task(
                 f'[bold green]Finished downloading model "{_tag}" files'
             )
@@ -1005,7 +1012,7 @@ class BentoCloudClient(CloudClient):
 
     def list_bentos(self, context: str | None = None) -> BentoWithRepositoryListSchema:
         yatai_rest_client = get_rest_api_client(context)
-        res = yatai_rest_client.get_bentos_list()
+        res = yatai_rest_client.v1.get_bentos_list()
         if res is None:
             raise BentoMLException("List bentos request failed")
 
@@ -1017,7 +1024,7 @@ class BentoCloudClient(CloudClient):
 
     def list_models(self, context: str | None = None) -> ModelWithRepositoryListSchema:
         yatai_rest_client = get_rest_api_client(context)
-        res = yatai_rest_client.get_models_list()
+        res = yatai_rest_client.v1.get_models_list()
         if res is None:
             raise BentoMLException("List models request failed")
 

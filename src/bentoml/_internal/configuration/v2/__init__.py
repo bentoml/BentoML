@@ -63,6 +63,7 @@ TRACING_CFG = {
     },
 }
 _SERVICE_CONFIG = {
+    s.Optional("name", default=None): s.Or(str, None),
     s.Optional("batching"): {
         s.Optional("enabled"): bool,
         s.Optional("max_batch_size"): s.And(int, ensure_larger_than_zero),

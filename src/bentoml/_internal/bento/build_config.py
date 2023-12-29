@@ -774,6 +774,7 @@ class BentoBuildConfig:
     models: t.List[ModelSpec] = attr.field(
         factory=list, converter=convert_models_config
     )
+    envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
 
     if t.TYPE_CHECKING:
         # NOTE: This is to ensure that BentoBuildConfig __init__
@@ -851,6 +852,7 @@ class BentoBuildConfig:
             self.python.with_defaults(),
             self.conda.with_defaults(),
             self.models,
+            self.envs,
         )
 
     @property
@@ -939,3 +941,4 @@ class FilledBentoBuildConfig(BentoBuildConfig):
     python: PythonOptions
     conda: CondaOptions
     models: t.List[ModelSpec]
+    envs: t.List[t.Dict[str, str]]

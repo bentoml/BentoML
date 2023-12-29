@@ -588,7 +588,7 @@ class BentoInfo:
     docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
     python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())
     conda: CondaOptions = attr.field(factory=lambda: CondaOptions().with_defaults())
-    envs: t.List[dict[str, str]] = attr.field(factory=list)
+    envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
 
     def __attrs_post_init__(self):
         # Direct set is not available when frozen=True

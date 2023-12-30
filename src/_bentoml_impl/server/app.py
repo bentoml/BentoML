@@ -8,6 +8,7 @@ import sys
 import typing as t
 from pathlib import Path
 
+import pydantic
 from simple_di import Provide
 from simple_di import inject
 from starlette.middleware import Middleware
@@ -116,6 +117,17 @@ class ServiceAppFactory(BaseAppFactory):
             status_code=500,
         )
 
+    async def handle_validation_error(self, req: Request, exc: Exception) -> Response:
+        from starlette.responses import JSONResponse
+
+        assert isinstance(exc, pydantic.ValidationError)
+
+        data = {
+            "error": f"{exc.error_count} validation error for {exc.title}",
+            "detail": exc.errors(),
+        }
+        return JSONResponse(data, status_code=400)
+
     async def handle_bentoml_exception(self, req: Request, exc: Exception) -> Response:
         from starlette.responses import JSONResponse
 
@@ -133,6 +145,9 @@ class ServiceAppFactory(BaseAppFactory):
     def __call__(self, is_main: bool = False) -> Starlette:
         app = super().__call__()
 
+        app.add_exception_handler(
+            pydantic.ValidationError, self.handle_validation_error
+        )
         app.add_exception_handler(BentoMLException, self.handle_bentoml_exception)
         app.add_exception_handler(Exception, self.handle_uncaught_exception)
         app.add_route("/schema.json", self.schema_view, name="schema")

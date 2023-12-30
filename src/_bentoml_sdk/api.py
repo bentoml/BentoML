@@ -148,54 +148,67 @@ class APIMethod(t.Generic[P, R]):
     def openapi_request(self) -> dict[str, t.Any]:
         from .service.openapi import REF_TEMPLATE
 
+        input = _flatten_field(
+            _only_include(
+                self.input_spec.model_json_schema(
+                    ref_template=REF_TEMPLATE, mode="serialization"
+                ),
+                [attr.name for attr in Schema.__attrs_attrs__],
+            ),
+            {},
+            max_depth=1,
+        )
+
         return {
-            "content": {
-                self.input_spec.mime_type(): MediaType(
-                    schema=Schema(
-                        **_only_include(
-                            self.input_spec.model_json_schema(
-                                ref_template=REF_TEMPLATE, mode="serialization"
-                            ),
-                            [attr.name for attr in Schema.__attrs_attrs__],
-                        )
-                    )
-                )
-            },
+            "content": {self.input_spec.mime_type(): MediaType(schema=Schema(**input))},
         }
 
     def openapi_response(self) -> dict[str, t.Any]:
         from .service.openapi import REF_TEMPLATE
 
+        output = _flatten_field(
+            _only_include(
+                self.output_spec.model_json_schema(
+                    ref_template=REF_TEMPLATE, mode="serialization"
+                ),
+                [attr.name for attr in Schema.__attrs_attrs__],
+            ),
+            {},
+            max_depth=1,
+        )
+
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self.output_spec.mime_type(): MediaType(
-                    schema=Schema(
-                        **_only_include(
-                            self.output_spec.model_json_schema(
-                                ref_template=REF_TEMPLATE, mode="serialization"
-                            ),
-                            [attr.name for attr in Schema.__attrs_attrs__],
-                        )
-                    )
-                )
+                self.output_spec.mime_type(): MediaType(schema=Schema(**output))
             },
         }
 
 
 def _flatten_field(
-    schema: dict[str, t.Any], defs: dict[str, t.Any]
+    schema: dict[str, t.Any],
+    defs: dict[str, t.Any],
+    max_depth: int | None = None,
+    _depth: int = 0,
 ) -> dict[str, t.Any]:
     if "allOf" in schema:
         schema.update(schema.pop("allOf")[0])
+    if "anyOf" in schema:
+        schema.update(schema.pop("anyOf")[0])
+    if max_depth is not None and _depth >= max_depth:
+        return schema
     if "$ref" in schema:
         ref = schema.pop("$ref")[len("#/$defs/") :]
-        schema.update(_flatten_field(defs[ref], defs))
+        schema.update(_flatten_field(defs[ref], defs, max_depth, _depth=_depth + 1))
     elif schema.get("type") == "object" and "properties" in schema:
         for k, v in schema["properties"].items():
-            schema["properties"][k] = _flatten_field(v, defs)
+            schema["properties"][k] = _flatten_field(
+                v, defs, max_depth, _depth=_depth + 1
+            )
     elif schema.get("type") == "array" and "items" in schema:
-        schema["items"] = _flatten_field(schema["items"], defs)
+        schema["items"] = _flatten_field(
+            schema["items"], defs, max_depth, _depth=_depth + 1
+        )
     return schema
 
 

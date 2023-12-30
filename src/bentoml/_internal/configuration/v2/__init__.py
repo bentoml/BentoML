@@ -76,7 +76,7 @@ _SERVICE_CONFIG = {
     s.Optional("workers"): s.Or(
         [{"gpus": s.Or(ensure_larger_than_zero, list)}],
         lambda s: s == "cpu_count",
-        ensure_larger_than_zero,
+        s.And(int, ensure_larger_than_zero),
         None,
     ),
     s.Optional("traffic"): {

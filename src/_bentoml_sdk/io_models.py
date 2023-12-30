@@ -90,6 +90,11 @@ class IOMixin:
         for k, field in cls.model_fields.items():
             annotation = field.annotation
             try:
+                if is_union_type(annotation):
+                    any_of = get_args(annotation)
+                    if len(any_of) != 2 or type(None) not in any_of:
+                        raise TypeError("Union type is not supported yet")
+                    annotation = next(a for a in any_of if a is not type(None))
                 if is_list_type(annotation):
                     args = get_args(annotation)
                     annotation = args[0] if args else t.Any
@@ -249,11 +254,6 @@ class IODescriptor(IOMixin, BaseModel):
                 name = ARGS
                 annotation = t.List[annotation]
             default = param.default
-            if is_union_type(annotation):
-                any_of = get_args(annotation)
-                if len(any_of) != 2 or type(None) not in any_of:
-                    raise TypeError("Union type is not supported yet")
-                annotation = next(a for a in any_of if a is not type(None))
             if default is param.empty:
                 default = Field()
             fields[name] = (annotation, default)

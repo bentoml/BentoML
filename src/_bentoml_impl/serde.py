@@ -7,8 +7,10 @@ import pickle
 import typing as t
 
 from starlette.datastructures import UploadFile
+from typing_extensions import get_args
 
 from _bentoml_sdk.typing_utils import is_list_type
+from _bentoml_sdk.typing_utils import is_union_type
 
 if t.TYPE_CHECKING:
     from starlette.requests import Request
@@ -71,6 +73,9 @@ class MultipartSerde(JSONSerde):
             if k in cls.multipart_fields:
                 value = [v for v in form.getlist(k) if isinstance(v, UploadFile)]
                 field_annotation = cls.model_fields[k].annotation
+                if is_union_type(field_annotation):
+                    args = get_args(field_annotation)
+                    field_annotation = args[0]
                 if is_list_type(field_annotation):
                     data[k] = value
                 elif len(value) >= 1:

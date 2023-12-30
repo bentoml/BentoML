@@ -54,7 +54,6 @@ def get_real_bento_tag(
     if project_path:
         from bentoml.bentos import build_bentofile
 
-        logger.info(f"Building bento: {project_path}")
         bento_obj = build_bentofile(build_ctx=project_path, _bento_store=_bento_store)
         _cloud_client.push_bento(bento=bento_obj, context=context)
         return bento_obj.tag
@@ -83,6 +82,7 @@ def get_real_bento_tag(
 class DeploymentInfo:
     __omit_if_default__ = True
     name: str
+    created_at: str
     bento: Tag
     status: DeploymentStatus
     admin_console: str
@@ -256,6 +256,7 @@ class Deployment:
             admin_console=self.get_bento_cloud_url(),
             endpoint=self._urls[0] if self._urls else None,
             config=schema,
+            created_at=self._schema.created_at.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
     def get_config(self) -> dict[str, t.Any]:
@@ -312,10 +313,12 @@ class Deployment:
         while time.time() - start_time < timeout:
             status = self.get_status()
             if status == DeploymentStatus.Running.value:
-                logger.info(f"Deployment '{self.name}' is ready.")
+                logger.info(
+                    f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Deployment '{self.name}' is ready."
+                )
                 return
             logger.info(
-                f"Waiting for deployment '{self.name}' to be ready. Current status: '{status}'."
+                f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Waiting for deployment '{self.name}' to be ready. Current status: '{status}'."
             )
             time.sleep(check_interval)
 
@@ -379,7 +382,7 @@ class Deployment:
         envs: t.List[dict[str, t.Any]] | None = None,
         extras: dict[str, t.Any] | None = None,
         config_dct: dict[str, t.Any] | None = None,
-        config_file: str | None = None,
+        config_file: str | t.TextIO | None = None,
         path_context: str | None = None,
         context: str | None = None,
     ) -> Deployment:
@@ -396,7 +399,7 @@ class Deployment:
         if config_dct:
             merging_dct = config_dct
             pass
-        elif config_file:
+        elif isinstance(config_file, str):
             real_path = resolve_user_filepath(config_file, path_context)
             try:
                 with open(real_path, "r") as file:
@@ -410,6 +413,12 @@ class Deployment:
                 raise ValueError(
                     f"An error occurred while reading the file: {real_path}\n{e}"
                 )
+        elif config_file is not None:
+            try:
+                merging_dct = yaml.safe_load(config_file)
+            except yaml.YAMLError as exc:
+                logger.error("Error while parsing YAML config-file stream: %s", exc)
+                raise
         else:
             merging_dct = {
                 "scaling": {"min_replicas": scaling_min, "max_replicas": scaling_max},
@@ -462,7 +471,7 @@ class Deployment:
         envs: t.List[dict[str, t.Any]] | None = None,
         extras: dict[str, t.Any] | None = None,
         config_dct: dict[str, t.Any] | None = None,
-        config_file: str | None = None,
+        config_file: str | t.TextIO | None = None,
         path_context: str | None = None,
         context: str | None = None,
     ) -> Deployment:
@@ -478,7 +487,7 @@ class Deployment:
         if config_dct:
             merging_dct = config_dct
             pass
-        elif config_file:
+        elif isinstance(config_file, str):
             real_path = resolve_user_filepath(config_file, path_context)
             try:
                 with open(real_path, "r") as file:
@@ -492,6 +501,13 @@ class Deployment:
                 raise ValueError(
                     f"An error occurred while reading the file: {real_path}\n{e}"
                 )
+        elif config_file is not None:
+            try:
+                merging_dct = yaml.safe_load(config_file)
+            except yaml.YAMLError as exc:
+                logger.error("Error while parsing YAML config-file stream: %s", exc)
+                raise
+
         else:
             merging_dct: dict[str, t.Any] = {"scaling": {}}
             if scaling_min is not None:

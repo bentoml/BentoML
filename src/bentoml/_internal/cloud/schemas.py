@@ -10,6 +10,8 @@ import attr
 import cattr
 from dateutil.parser import parse
 
+from bentoml._internal.tag import Tag
+
 from ..bento.bento import BentoServiceInfo
 
 time_format = "%Y-%m-%d %H:%M:%S.%f"
@@ -29,6 +31,18 @@ def datetime_decoder(datetime_str: t.Optional[str], _: t.Any) -> t.Optional[date
     return parse(datetime_str)
 
 
+def tag_encoder(tag_obj: t.Optional[Tag]) -> t.Optional[str]:
+    if not tag_obj:
+        return None
+    return str(tag_obj)
+
+
+def tag_decoder(tag_str: t.Optional[str], _: t.Any) -> t.Optional[Tag]:
+    if not tag_str:
+        return None
+    return Tag.from_str(tag_str)
+
+
 def dict_options_converter(
     options_type: type[T],
 ) -> t.Callable[[T | dict[str, T]], T]:
@@ -46,6 +60,8 @@ cloud_converter = cattr.Converter()
 
 cloud_converter.register_unstructure_hook(datetime, datetime_encoder)
 cloud_converter.register_structure_hook(datetime, datetime_decoder)
+cloud_converter.register_unstructure_hook(Tag, tag_encoder)
+cloud_converter.register_structure_hook(Tag, tag_decoder)
 
 
 def schema_from_json(json_content: str, cls: t.Type[T]) -> T:

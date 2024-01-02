@@ -224,16 +224,15 @@ class Bento(StoreItem):
                 models.add(model)
                 if model_spec.alias:
                     resolved_aliases[model.tag] = model_spec.alias
-        else:
+        elif is_legacy:
             # XXX: legacy way to get models from service
             # Add all models required by the service
             for model in svc.models:
                 models.add(model)
             # Add all models required by service runners
-            if is_legacy:
-                for runner in svc.runners:
-                    for model in runner.models:
-                        models.add(model)
+            for runner in svc.runners:
+                for model in runner.models:
+                    models.add(model)
 
         # create ignore specs
         specs = BentoPathSpec(build_config.include, build_config.exclude)
@@ -309,11 +308,7 @@ class Bento(StoreItem):
                 apis=[BentoApiInfo.from_inference_api(api) for api in svc.apis.values()]
                 if is_legacy
                 else [],
-                services=[BentoServiceInfo.from_service(svc)]
-                + [
-                    BentoServiceInfo.from_service(d.on, seen={svc.name})
-                    for d in svc.dependencies.values()
-                ]
+                services=[BentoServiceInfo.from_service(s) for s in svc.all_services()]
                 if not is_legacy
                 else [],
                 docker=build_config.docker,
@@ -537,18 +532,18 @@ class BentoServiceInfo:
 
     @classmethod
     def from_service(
-        cls, d: NewService[t.Any], seen: set[str] | None = None
+        cls, svc: NewService[t.Any], seen: set[str] | None = None
     ) -> BentoServiceInfo:
         if seen is None:
             seen = set()
-        if (name := d.name) in seen:
-            return cls(name=name, service=d.import_string)
+        if (name := svc.name) in seen:
+            return cls(name=name, service=svc.import_string)
         return cls(
             name=name,
-            service=d.import_string,
-            models=[BentoModelInfo.from_bento_model(m) for m in d.models],
-            dependencies=list(d.dependencies.keys()),
-            config=d.config,
+            service=svc.import_string,
+            models=[BentoModelInfo.from_bento_model(m) for m in svc.models],
+            dependencies=list(svc.dependencies.keys()),
+            config=svc.config,
         )
 
 

@@ -49,7 +49,7 @@ if t.TYPE_CHECKING:
 
 
 def with_config(
-    func: t.Callable[t.Concatenate["Service[t.Any]", P], R]
+    func: t.Callable[t.Concatenate["Service[t.Any]", P], R],
 ) -> t.Callable[t.Concatenate["Service[t.Any]", P], R]:
     def wrapper(self: Service[t.Any], *args: P.args, **kwargs: P.kwargs) -> R:
         self.inject_config()
@@ -60,6 +60,8 @@ def with_config(
 
 @attrs.define
 class Service(t.Generic[T]):
+    """A Bentoml service that can be served by BentoML server."""
+
     config: Config
     inner: type[T]
 
@@ -110,11 +112,12 @@ class Service(t.Generic[T]):
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} name={self.name!r}>"
 
-    def all_config(self) -> dict[str, Config]:
-        result = {self.name: self.config}
-        for dep in self.dependencies.values():
-            result.update(dep.on.all_config())
-        return result
+    def all_services(self) -> list[Service[t.Any]]:
+        """Get a list of the service and all recursive dependencies"""
+        services: list[Service[t.Any]] = [self]
+        for dependency in self.dependencies.values():
+            services.extend(dependency.on.all_services())
+        return services
 
     @property
     def doc(self) -> str:
@@ -213,7 +216,7 @@ class Service(t.Generic[T]):
         # XXX: ensure at least one item to make `flatten_dict` work
         override_defaults = {
             "services": {
-                k: (v or {"workers": None}) for k, v in self.all_config().items()
+                svc.name: (svc.config or {"workers": 1}) for svc in self.all_services()
             }
         }
 

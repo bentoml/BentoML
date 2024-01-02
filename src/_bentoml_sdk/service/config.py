@@ -46,11 +46,7 @@ class ResourceSchema(TypedDict, total=False):
     ]
 
 
-class _IndividualWorkerSchema(TypedDict):
-    gpus: Union[Posfloat, List[int]]
-
-
-WorkerSchema = Union[Posint, Literal["cpu_count"], List[_IndividualWorkerSchema]]
+WorkerSchema = Union[Posint, Literal["cpu_count"]]
 
 
 class MetricDuration(TypedDict, total=False):

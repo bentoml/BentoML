@@ -332,6 +332,7 @@ class ServiceAppFactory(BaseAppFactory):
         from _bentoml_sdk.io_models import KWARGS
         from bentoml._internal.container import BentoMLContainer
         from bentoml._internal.context import trace_context
+        from bentoml._internal.utils import get_original_func
         from bentoml._internal.utils.http import set_cookies
 
         from ..serde import ALL_SERDE
@@ -354,9 +355,7 @@ class ServiceAppFactory(BaseAppFactory):
             if KWARGS in input_params:
                 input_params.update(input_params.pop(KWARGS))
 
-            original_func = func
-            while hasattr(original_func, "func"):
-                original_func = original_func.func
+            original_func = get_original_func(func)
 
             if method.batchable:
                 output = await self.batch_infer(name, input_args, input_params)

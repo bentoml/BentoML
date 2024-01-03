@@ -188,6 +188,7 @@ class LoggingSchema(TypedDict, total=False):
 
 
 class ServiceConfig(TypedDict, total=False):
+    name: str
     traffic: TrafficSchema
     backlog: Annotated[int, Ge(64)]
     max_runner_connections: Posint

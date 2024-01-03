@@ -3,11 +3,14 @@ from __future__ import annotations
 import typing as t
 
 import click
+import yaml
+from rich.syntax import Syntax
+
+from bentoml._internal.cloud.schemas.modelschemas import AccessControl
+from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
 
 if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
-    from bentoml._internal.cloud.schemas import DeploymentListSchema
-    from bentoml._internal.cloud.schemas import DeploymentSchema
 
     from .utils import SharedOptions
 else:
@@ -20,17 +23,145 @@ def add_deployment_command(cli: click.Group) -> None:
     import click_option_group as cog
     from rich.table import Table
 
-    from bentoml._internal.configuration.containers import BentoMLContainer
-    from bentoml._internal.utils import bentoml_cattr
+    from bentoml._internal.cloud.deployment import Deployment
+    from bentoml._internal.cloud.deployment import get_real_bento_tag
     from bentoml._internal.utils import rich_console as console
     from bentoml_cli.utils import BentoMLCommandGroup
 
-    client = BentoMLContainer.bentocloud_client.get()
+    @cli.command()
+    @click.argument(
+        "target",
+        type=click.STRING,
+        required=True,
+    )
+    @click.option(
+        "-n",
+        "--name",
+        type=click.STRING,
+        help="Deployment name",
+    )
+    @click.option(
+        "--cluster",
+        type=click.STRING,
+        help="Name of the cluster",
+    )
+    @click.option(
+        "--access-type",
+        type=click.Choice(
+            [access_ctrl_type.value for access_ctrl_type in AccessControl]
+        ),
+        help="Type of access",
+    )
+    @click.option(
+        "--scaling-min",
+        type=click.INT,
+        help="Minimum scaling value",
+    )
+    @click.option(
+        "--scaling-max",
+        type=click.INT,
+        help="Maximum scaling value",
+    )
+    @click.option(
+        "--instance-type",
+        type=click.STRING,
+        help="Type of instance",
+    )
+    @click.option(
+        "--strategy",
+        type=click.Choice(
+            [deployment_strategy.value for deployment_strategy in DeploymentStrategy]
+        ),
+        help="Deployment strategy",
+    )
+    @click.option(
+        "--env",
+        type=click.STRING,
+        help="List of environment variables pass by --env key=value, --env ...",
+        multiple=True,
+    )
+    @click.option(
+        "--config-file",
+        type=click.File(),
+        help="Configuration file path",
+        default=None,
+    )
+    @click.option(
+        "--wait/--no-wait",
+        type=click.BOOL,
+        is_flag=True,
+        help="Do not wait for deployment to be ready",
+        default=True,
+    )
+    @click.option(
+        "--timeout",
+        type=click.INT,
+        default=300,
+        help="Timeout for deployment to be ready in seconds",
+    )
+    @click.pass_obj
+    def deploy(
+        shared_options: SharedOptions,
+        target: str,
+        name: str | None,
+        cluster: str | None,
+        access_type: str | None,
+        scaling_min: int | None,
+        scaling_max: int | None,
+        instance_type: str | None,
+        strategy: str | None,
+        env: tuple[str] | None,
+        config_file: t.TextIO | None,
+        wait: bool,
+        timeout: int,
+    ) -> None:
+        """Create a deployment on BentoCloud.
+
+        \b
+        Create a deployment using parameters (standalone mode only), or using config yaml file.
+        """
+        from os import path
+
+        # determine if target is a path or a name
+        if path.exists(target):
+            # target is a path
+            click.echo(f"building bento from {target} ...")
+            bento_tag = get_real_bento_tag(project_path=target)
+        else:
+            click.echo(f"using bento {target}...")
+            bento_tag = get_real_bento_tag(bento=target)
+
+        deployment = Deployment.create(
+            bento=bento_tag,
+            name=name,
+            cluster_name=cluster,
+            access_type=access_type,
+            scaling_min=scaling_min,
+            scaling_max=scaling_max,
+            instance_type=instance_type,
+            strategy=strategy,
+            envs=[
+                {"key": item.split("=")[0], "value": item.split("=")[1]} for item in env
+            ]
+            if env is not None
+            else None,
+            config_file=config_file,
+            context=shared_options.cloud_context,
+        )
+        if wait:
+            deployment.wait_until_ready(timeout=timeout)
+            click.echo(
+                f"Deployment '{deployment.name}' created successfully in cluster '{deployment.cluster_name}'."
+            )
+        click.echo(
+            f"To check the deployment, go to: {deployment.get_bento_cloud_url()}."
+        )
+
     output_option = click.option(
         "-o",
         "--output",
-        type=click.Choice(["json", "default"]),
-        default="default",
+        type=click.Choice(["yaml", "json"]),
+        default="yaml",
         help="Display the output of this command.",
     )
 
@@ -42,26 +173,16 @@ def add_deployment_command(cli: click.Group) -> None:
         def decorate(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             options = [
                 click.argument(
-                    "deployment-name",
+                    "name",
                     type=click.STRING,
                     required=required_deployment_name,
                 ),
-                cog.optgroup.group(
-                    cls=cog.AllOptionGroup, name="cluster and kube namespace options"
-                ),
-                cog.optgroup.option(
-                    "--cluster-name",
+                click.option(
+                    "--cluster",
                     type=click.STRING,
                     default=None,
                     help="Name of the cluster.",
                 ),
-                cog.optgroup.option(
-                    "--kube-namespace",
-                    type=click.STRING,
-                    default=None,
-                    help="Kubernetes namespace.",
-                ),
-                output_option,
             ]
             for opt in reversed(options):
                 f = opt(f)
@@ -77,238 +198,201 @@ def add_deployment_command(cli: click.Group) -> None:
         """Deployment Subcommands Groups"""
 
     @deployment_cli.command()
+    @shared_decorator(required_deployment_name=True)
+    @cog.optgroup.group(cls=cog.MutuallyExclusiveOptionGroup, name="target options")
+    @cog.optgroup.option(
+        "--bento",
+        type=click.STRING,
+        help="Bento name",
+    )
+    @cog.optgroup.option(
+        "--project-path",
+        type=click.Path(exists=True),
+        help="Path to the project",
+    )
     @click.option(
-        "-f",
-        "--file",
+        "--access-type",
+        type=click.Choice(
+            [access_ctrl_type.value for access_ctrl_type in AccessControl]
+        ),
+        help="Type of access",
+    )
+    @click.option(
+        "--scaling-min",
+        type=click.INT,
+        help="Minimum scaling value",
+    )
+    @click.option(
+        "--scaling-max",
+        type=click.INT,
+        help="Maximum scaling value",
+    )
+    @click.option(
+        "--instance-type",
+        type=click.STRING,
+        help="Type of instance",
+    )
+    @click.option(
+        "--strategy",
+        type=click.Choice(
+            [deployment_strategy.value for deployment_strategy in DeploymentStrategy]
+        ),
+        help="Deployment strategy",
+    )
+    @click.option(
+        "--env",
+        type=click.STRING,
+        help="List of environment variables pass by --env key=value, --env ...",
+        multiple=True,
+    )
+    @click.option(
+        "--config-file",
         type=click.File(),
-        help="JSON file path for the deployment configuration",
+        help="Configuration file path, mututally exclusive with other config options",
+        default=None,
     )
-    @output_option
-    @click.pass_obj
-    def create(  # type: ignore
-        shared_options: SharedOptions,
-        file: str,
-        output: t.Literal["json", "default"],
-    ) -> DeploymentSchema:
-        """Create a deployment on BentoCloud.
-
-        \b
-        A deployment can be created using a json file with configurations.
-        The json file has the exact format as the one on BentoCloud Deployment UI.
-        """
-        res = client.deployment.create_from_file(
-            path_or_stream=file, context=shared_options.cloud_context
-        )
-        if output == "default":
-            console.print(res)
-        elif output == "json":
-            click.echo(json.dumps(bentoml_cattr.unstructure(res), indent=2))
-        return res
-
-    @deployment_cli.command()
-    @shared_decorator(required_deployment_name=False)
-    @click.option(
-        "-f",
-        "--file",
-        type=click.File(),
-        help="JSON file path for the deployment configuration",
-    )
-    @click.option(
-        "-n", "--name", type=click.STRING, help="Deployment name (deprecated)"
-    )
-    @click.option("--bento", type=click.STRING, help="Bento tag")
     @click.pass_obj
     def update(  # type: ignore
         shared_options: SharedOptions,
-        deployment_name: str | None,
-        file: str | None,
-        name: str | None,
+        name: str,
+        cluster: str | None,
+        project_path: str | None,
         bento: str | None,
-        cluster_name: str | None,
-        kube_namespace: str | None,
-        output: t.Literal["json", "default"],
-    ) -> DeploymentSchema:
+        access_type: str | None,
+        scaling_min: int | None,
+        scaling_max: int | None,
+        instance_type: str | None,
+        strategy: str | None,
+        env: tuple[str] | None,
+        config_file: t.TextIO | None,
+    ) -> None:
         """Update a deployment on BentoCloud.
 
         \b
-        A deployment can be updated using a json file with needed configurations.
-        The json file has the exact format as the one on BentoCloud Deployment UI.
+        A deployment can be updated using parameters (standalone mode only), or using config yaml file.
+        You can also update bento by providing a project path or existing bento.
         """
-        if name is not None:
-            click.echo(
-                "--name is deprecated, pass DEPLOYMENT_NAME as an argument instead, e.g., bentoml update deploy-name"
-            )
-        if file is not None:
-            if name is not None:
-                click.echo("Reading from file, ignoring --name", err=True)
-            elif deployment_name is not None:
-                click.echo(
-                    "Reading from file, ignoring argument DEPLOYMENT_NAME", err=True
-                )
-            res = client.deployment.update_from_file(
-                path_or_stream=file, context=shared_options.cloud_context
-            )
-        elif name is not None:
-            res = client.deployment.update(
-                name,
-                bento=bento,
-                context=shared_options.cloud_context,
-                latest_bento=True,
-                cluster_name=cluster_name,
-                kube_namespace=kube_namespace,
-            )
-        elif deployment_name is not None:
-            res = client.deployment.update(
-                deployment_name,
-                bento=bento,
-                context=shared_options.cloud_context,
-                latest_bento=True,
-                cluster_name=cluster_name,
-                kube_namespace=kube_namespace,
-            )
+        if bento is None and project_path is None:
+            target = None
         else:
-            raise click.BadArgumentUsage(
-                "Either --file or argument DEPLOYMENT_NAME is required for update command"
+            target = get_real_bento_tag(
+                project_path=project_path,
+                bento=bento,
+                context=shared_options.cloud_context,
             )
-        if output == "default":
-            console.print(res)
-        elif output == "json":
-            unstructured = bentoml_cattr.unstructure(res)
-            click.echo(json.dumps(unstructured, indent=2))
-        return res
+
+        Deployment.update(
+            bento=target,
+            access_type=access_type,
+            name=name,
+            cluster_name=cluster,
+            scaling_min=scaling_min,
+            scaling_max=scaling_max,
+            instance_type=instance_type,
+            strategy=strategy,
+            envs=[
+                {"key": item.split("=")[0], "value": item.split("=")[1]} for item in env
+            ]
+            if env is not None
+            else None,
+            config_file=config_file,
+            context=shared_options.cloud_context,
+        )
+
+        click.echo(f"Deployment '{name}' updated successfully.")
 
     @deployment_cli.command()
     @shared_decorator
+    @output_option
     @click.pass_obj
     def get(  # type: ignore
         shared_options: SharedOptions,
-        deployment_name: str,
-        cluster_name: str | None,
-        kube_namespace: str | None,
+        name: str,
+        cluster: str | None,
         output: t.Literal["json", "default"],
-    ) -> DeploymentSchema:
+    ) -> None:
         """Get a deployment on BentoCloud."""
-        res = client.deployment.get(
-            deployment_name=deployment_name,
-            context=shared_options.cloud_context,
-            cluster_name=cluster_name,
-            kube_namespace=kube_namespace,
+        d = Deployment.get(
+            name, context=shared_options.cloud_context, cluster_name=cluster
         )
-        if output == "default":
-            console.print(res)
-        elif output == "json":
-            unstructured = bentoml_cattr.unstructure(res)
-            click.echo(json.dumps(unstructured, indent=2))
-        return res
+        if output == "json":
+            info = json.dumps(d.info.to_dict(), indent=2, default=str)
+            console.print_json(info)
+        else:
+            info = yaml.dump(d.info.to_dict(), indent=2, sort_keys=False)
+            console.print(Syntax(info, "yaml", background_color="default"))
 
     @deployment_cli.command()
     @shared_decorator
     @click.pass_obj
     def terminate(  # type: ignore
         shared_options: SharedOptions,
-        deployment_name: str,
-        cluster_name: str | None,
-        kube_namespace: str | None,
-        output: t.Literal["json", "default"],
-    ) -> DeploymentSchema:
+        name: str,
+        cluster: str | None,
+    ) -> None:
         """Terminate a deployment on BentoCloud."""
-        res = client.deployment.terminate(
-            deployment_name=deployment_name,
-            context=shared_options.cloud_context,
-            cluster_name=cluster_name,
-            kube_namespace=kube_namespace,
+        Deployment.terminate(
+            name, context=shared_options.cloud_context, cluster_name=cluster
         )
-        if output == "default":
-            console.print(res)
-        elif output == "json":
-            unstructured = bentoml_cattr.unstructure(res)
-            click.echo(json.dumps(unstructured, indent=2))
-        return res
+        click.echo(f"Deployment '{name}' terminated successfully.")
 
     @deployment_cli.command()
     @shared_decorator
     @click.pass_obj
     def delete(  # type: ignore
         shared_options: SharedOptions,
-        deployment_name: str,
-        cluster_name: str | None,
-        kube_namespace: str | None,
-        output: t.Literal["json", "default"],
-    ) -> DeploymentSchema:
+        name: str,
+        cluster: str | None,
+    ) -> None:
         """Delete a deployment on BentoCloud."""
-        res = client.deployment.delete(
-            deployment_name=deployment_name,
-            context=shared_options.cloud_context,
-            cluster_name=cluster_name,
-            kube_namespace=kube_namespace,
+        Deployment.delete(
+            name, context=shared_options.cloud_context, cluster_name=cluster
         )
-        if output == "default":
-            console.print(res)
-        elif output == "json":
-            unstructured = bentoml_cattr.unstructure(res)
-            click.echo(json.dumps(unstructured, indent=2))
-        return res
+        click.echo(f"Deployment '{name}' deleted successfully.")
 
     @deployment_cli.command()
     @click.option(
-        "--cluster-name", type=click.STRING, default=None, help="Name of the cluster."
-    )
-    @click.option(
-        "--query", type=click.STRING, default=None, help="Query for list request."
+        "--cluster", type=click.STRING, default=None, help="Name of the cluster."
     )
     @click.option(
         "--search", type=click.STRING, default=None, help="Search for list request."
     )
     @click.option(
-        "--start", type=click.STRING, default=None, help="Start for list request."
-    )
-    @click.option(
-        "--count", type=click.STRING, default=None, help="Count for list request."
-    )
-    @click.option(
         "-o",
         "--output",
         help="Display the output of this command.",
-        type=click.Choice(["json", "default", "table"]),
+        type=click.Choice(["json", "yaml", "table"]),
         default="table",
     )
     @click.pass_obj
     def list(  # type: ignore
         shared_options: SharedOptions,
-        cluster_name: str | None,
-        query: str | None,
+        cluster: str | None,
         search: str | None,
-        count: int | None,
-        start: int | None,
-        output: t.Literal["json", "default", "table"],
-    ) -> DeploymentListSchema:
+        output: t.Literal["json", "yaml", "table"],
+    ) -> None:
         """List existing deployments on BentoCloud."""
-        res = client.deployment.list(
-            context=shared_options.cloud_context,
-            cluster_name=cluster_name,
-            query=query,
-            search=search,
-            count=count,
-            start=start,
+        d_list = Deployment.list(
+            context=shared_options.cloud_context, cluster_name=cluster, search=search
         )
+        res: list[dict[str, t.Any]] = [d.info.to_dict() for d in d_list]
         if output == "table":
             table = Table(box=None)
             table.add_column("Deployment")
+            table.add_column("created_at")
             table.add_column("Bento")
             table.add_column("Status")
-            table.add_column("Created At")
-            for deployment in res.items:
-                target = deployment.latest_revision.targets[0]
+            for info in res:
                 table.add_row(
-                    deployment.name,
-                    f"{target.bento.repository.name}:{target.bento.name}",
-                    deployment.status.value,
-                    deployment.created_at.astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+                    info["name"],
+                    info["created_at"],
+                    info["bento"],
+                    info["status"],
                 )
             console.print(table)
-        elif output == "default":
-            console.print(res)
         elif output == "json":
-            unstructured = bentoml_cattr.unstructure(res)
-            click.echo(json.dumps(unstructured, indent=2))
-        return res
+            info = json.dumps(res, indent=2, default=str)
+            console.print_json(info)
+        else:
+            info = yaml.dump(res, indent=2, sort_keys=False)
+            console.print(Syntax(info, "yaml", background_color="default"))

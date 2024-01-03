@@ -59,30 +59,33 @@ class CallbackIOWrapper(io.BytesIO):
 
 
 class CloudClient(ABC):
-    log_progress = Progress(TextColumn("{task.description}"))
+    # Moved atrributes to __init__ because otherwise it will keep all the log when running SDK.
+    def __init__(self):
+        self.log_progress = Progress(TextColumn("{task.description}"))
 
-    spinner_progress = Progress(
-        TextColumn("  "),
-        TimeElapsedColumn(),
-        TextColumn("[bold purple]{task.fields[action]}"),
-        SpinnerColumn("simpleDots"),
-    )
+        self.spinner_progress = Progress(
+            TextColumn("  "),
+            TimeElapsedColumn(),
+            TextColumn("[bold purple]{task.fields[action]}"),
+            SpinnerColumn("simpleDots"),
+        )
 
-    transmission_progress = Progress(
-        TextColumn("[bold blue]{task.description}", justify="right"),
-        BarColumn(bar_width=None),
-        "[progress.percentage]{task.percentage:>3.1f}%",
-        "•",
-        DownloadColumn(),
-        "•",
-        TransferSpeedColumn(),
-        "•",
-        TimeRemainingColumn(),
-    )
+        self.transmission_progress = Progress(
+            TextColumn("[bold blue]{task.description}", justify="right"),
+            BarColumn(bar_width=None),
+            "[progress.percentage]{task.percentage:>3.1f}%",
+            "•",
+            DownloadColumn(),
+            "•",
+            TransferSpeedColumn(),
+            "•",
+            TimeRemainingColumn(),
+        )
 
-    progress_group = Group(
-        Panel(Group(log_progress, spinner_progress)), transmission_progress
-    )
+        self.progress_group = Group(
+            Panel(Group(self.log_progress, self.spinner_progress)),
+            self.transmission_progress,
+        )
 
     @contextmanager
     def spin(self, *, text: str):

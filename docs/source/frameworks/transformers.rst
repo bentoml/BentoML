@@ -362,7 +362,7 @@ To serve a custom pipeline, simply create a runner and service with the previous
 Adaptive Batching
 -----------------
 
-If the model supports batched interence, it is recommended to enable batching to take advantage of the adaptive batching capability
+If the model supports batched inference, it is recommended to enable batching to take advantage of the adaptive batching capability
 in BentoML by overriding the :code:`signatures` argument with the method name (:code:`__call__`), :code:`batchable`, and :code:`batch_dim`
 configurations when saving the model to the model store .
 

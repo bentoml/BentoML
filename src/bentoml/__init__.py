@@ -99,6 +99,7 @@ if TYPE_CHECKING:
     from . import server  # Server API
     from . import monitoring  # Monitoring API
     from . import cloud  # Cloud API
+    from . import deployment  # deployment API
 
     # isort: on
     from _bentoml_impl.client import AsyncHTTPClient
@@ -166,7 +167,7 @@ else:
     exceptions = _LazyLoader("bentoml.exceptions", globals(), "bentoml.exceptions")
     monitoring = _LazyLoader("bentoml.monitoring", globals(), "bentoml.monitoring")
     cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
-
+    deployment = _LazyLoader("bentoml.deployment", globals(), "bentoml.deployment")
     del _LazyLoader
 
     _NEW_SDK_ATTRS = [
@@ -258,6 +259,7 @@ __all__ = [
     # integrations
     "ray",
     "cloud",
+    "deployment",
     "triton",
     "monitor",
     "load_config",

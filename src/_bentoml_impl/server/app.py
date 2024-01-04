@@ -36,6 +36,28 @@ if t.TYPE_CHECKING:
 R = t.TypeVar("R")
 
 
+@functools.lru_cache()
+def _get_limiter():
+    import anyio
+
+    return anyio.CapacityLimiter(1)
+
+
+async def run_in_threadpool(
+    func: t.Callable[..., R],
+    *args: t.Any,
+    **kwargs: t.Any,
+) -> R:
+    import anyio.to_thread
+
+    func = functools.partial(func, *args, **kwargs)
+    output = await anyio.to_thread.run_sync(
+        func,
+        limiter=_get_limiter(),
+    )
+    return output
+
+
 class ContextMiddleware:
     def __init__(self, app: ext.ASGIApp, context: ServiceContext) -> None:
         self.app = app
@@ -298,7 +320,7 @@ class ServiceAppFactory(BaseAppFactory):
         async def inner_infer(
             batches: t.Sequence[t.Any], **kwargs: t.Any
         ) -> t.Sequence[t.Any]:
-            from starlette.concurrency import run_in_threadpool
+            # from starlette.concurrency import run_in_threadpool
 
             from bentoml._internal.runner.container import AutoContainer
             from bentoml._internal.utils import is_async_callable
@@ -326,7 +348,7 @@ class ServiceAppFactory(BaseAppFactory):
         )(value)
 
     async def api_endpoint(self, name: str, request: Request) -> Response:
-        from starlette.concurrency import run_in_threadpool
+        # from starlette.concurrency import run_in_threadpool
 
         from _bentoml_sdk.io_models import ARGS
         from _bentoml_sdk.io_models import KWARGS

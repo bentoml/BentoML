@@ -101,18 +101,25 @@ def create_service_watchers(
     backlog: int,
     dependency_map: dict[str, str],
     scheduler: ResourceAllocator,
+    import_string: str,
 ) -> tuple[list[Watcher], list[CircusSocket], str]:
     from bentoml.serve import create_watcher
 
     watchers: list[Watcher] = []
     sockets: list[CircusSocket] = []
     num_workers, worker_envs = scheduler.get_worker_env(svc)
-    for dep in svc.dependencies.values():
+    for name, dep in svc.dependencies.items():
         dep_key = dep.cache_key()
         if dep_key in dependency_map:
             continue
         new_watchers, new_sockets, uri = create_service_watchers(
-            dep.on, uds_path, port_stack, backlog, dependency_map, scheduler
+            dep.on,
+            uds_path,
+            port_stack,
+            backlog,
+            dependency_map,
+            scheduler,
+            f"{import_string}.{name}",
         )
         watchers.extend(new_watchers)
         sockets.extend(new_sockets)
@@ -123,7 +130,7 @@ def create_service_watchers(
     args = [
         "-m",
         SERVICE_WORKER_SCRIPT,
-        svc.import_string,
+        import_string,
         "--fd",
         f"$(circus.sockets.{svc.name})",
         "--working-dir",
@@ -201,7 +208,7 @@ def serve_http(
                 tempfile.TemporaryDirectory(prefix="bentoml-uds-")
             )
         if not standalone and not development_mode:
-            for dep in svc.dependencies.values():
+            for name, dep in svc.dependencies.items():
                 dep_key = dep.cache_key()
                 if dep_key in dependency_map:
                     continue
@@ -212,6 +219,7 @@ def serve_http(
                     backlog,
                     dependency_map,
                     allocator,
+                    f"{svc.import_string}.{name}",
                 )
                 watchers.extend(new_watchers)
                 sockets.extend(new_sockets)

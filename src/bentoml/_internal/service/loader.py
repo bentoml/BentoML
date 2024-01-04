@@ -70,7 +70,11 @@ def import_service(
 
         service_types.append(NewService)
     except ImportError:
-        pass
+
+        class NewService:
+            """A dummy class for type checking"""
+
+            pass
 
     prev_cwd = None
     sys_path_modified = False
@@ -154,8 +158,11 @@ def import_service(
             instance = module
             try:
                 for attr_str in attrs_str.split("."):
-                    instance = getattr(instance, attr_str)
-            except AttributeError:
+                    if isinstance(instance, NewService):
+                        instance = instance.dependencies[attr_str].on
+                    else:
+                        instance = getattr(instance, attr_str)
+            except (AttributeError, KeyError):
                 raise ImportServiceError(
                     f'Attribute "{attrs_str}" not found in module "{module_name}".'
                 )
@@ -167,8 +174,7 @@ def import_service(
             ]
 
             if len(instances) == 1:
-                attrs_str = instances[0][0]
-                instance = instances[0][1]
+                attrs_str, instance = instances[0]
             else:
                 raise ImportServiceError(
                     f'Multiple Service instances found in module "{module_name}", use'

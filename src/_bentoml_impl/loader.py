@@ -32,7 +32,10 @@ def normalize_identifier(
     - package.py:Service.dependency
     - .
     """
-    path = pathlib.Path(service_identifier)
+    if working_dir is not None:
+        path = pathlib.Path(working_dir).joinpath(service_identifier)
+    else:
+        path = pathlib.Path(service_identifier)
     if path.exists():
         if path.is_file() and path.name == BENTO_YAML_FILENAME:
             # this is a bento.yaml file
@@ -165,8 +168,8 @@ def import_service(
         from bentoml.exceptions import ImportServiceError
 
         raise ImportServiceError(
-            f'Failed to import service "{service_identifier}": {e}, sys.path: {sys_path}'
-        ) from e
+            f'Failed to import service "{service_identifier}": {e}, sys.path: {sys_path}, cwd: {pathlib.Path.cwd()}'
+        ) from None
 
 
 def normalize_package(service_identifier: str) -> str:

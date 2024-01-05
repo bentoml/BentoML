@@ -12,8 +12,7 @@ import socket
 import tempfile
 import typing as t
 
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 
 from _bentoml_sdk import Service
 from bentoml._internal.container import BentoMLContainer
@@ -103,6 +102,7 @@ def create_service_watchers(
     dependency_map: dict[str, str],
     scheduler: ResourceAllocator,
     import_string: str,
+    working_dir: str | None = None,
 ) -> tuple[list[Watcher], list[CircusSocket], str]:
     from bentoml.serve import create_watcher
 
@@ -121,6 +121,7 @@ def create_service_watchers(
             dependency_map,
             scheduler,
             f"{import_string}.{name}",
+            working_dir,
         )
         watchers.extend(new_watchers)
         sockets.extend(new_sockets)
@@ -146,6 +147,7 @@ def create_service_watchers(
             name=f"dependency_{svc.name}",
             args=args,
             numprocesses=num_workers,
+            working_dir=working_dir,
         )
     )
 
@@ -181,10 +183,12 @@ def serve_http(
     from bentoml._internal.utils import reserve_free_port
     from bentoml._internal.utils.analytics.usage_stats import track_serve
     from bentoml._internal.utils.circus import create_standalone_arbiter
-    from bentoml.serve import construct_ssl_args
-    from bentoml.serve import create_watcher
-    from bentoml.serve import ensure_prometheus_dir
-    from bentoml.serve import make_reload_plugin
+    from bentoml.serve import (
+        construct_ssl_args,
+        create_watcher,
+        ensure_prometheus_dir,
+        make_reload_plugin,
+    )
 
     from .allocator import ResourceAllocator
 
@@ -229,6 +233,7 @@ def serve_http(
                     dependency_map,
                     allocator,
                     f"{svc.import_string}.{name}",
+                    str(bento_path.absolute()),
                 )
                 watchers.extend(new_watchers)
                 sockets.extend(new_sockets)
@@ -298,7 +303,7 @@ def serve_http(
             create_watcher(
                 name="api_server",
                 args=server_args,
-                working_dir=bento_path.absolute(),
+                working_dir=str(bento_path.absolute()),
                 numprocesses=num_workers,
                 close_child_stdin=not development_mode,
             )

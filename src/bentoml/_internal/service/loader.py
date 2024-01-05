@@ -8,16 +8,15 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import fs
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 
-from ...exceptions import BentoMLException
-from ...exceptions import ImportServiceError
-from ...exceptions import NotFound
+from ...exceptions import BentoMLException, ImportServiceError, NotFound
 from ..bento import Bento
-from ..bento.bento import BENTO_PROJECT_DIR_NAME
-from ..bento.bento import BENTO_YAML_FILENAME
-from ..bento.bento import DEFAULT_BENTO_BUILD_FILE
+from ..bento.bento import (
+    BENTO_PROJECT_DIR_NAME,
+    BENTO_YAML_FILENAME,
+    DEFAULT_BENTO_BUILD_FILE,
+)
 from ..bento.build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
@@ -344,6 +343,19 @@ def load(
     if isinstance(bento_identifier, (Bento, Tag)):
         # Load from local BentoStore
         return load_bento(bento_identifier)
+
+    from _bentoml_impl.loader import import_service as import_1_2_service
+    from _bentoml_impl.loader import normalize_identifier
+
+    try:
+        _bento_identifier, _working_dir = normalize_identifier(
+            bento_identifier, working_dir
+        )
+        _svc = import_1_2_service(_bento_identifier, _working_dir)
+
+        return _svc
+    except (ValueError, ImportServiceError) as e:
+        logger.debug(f"Failed to load bento with v1.2 loader, fallback to old loader")
 
     if os.path.isdir(os.path.expanduser(bento_identifier)):
         bento_path = os.path.abspath(os.path.expanduser(bento_identifier))

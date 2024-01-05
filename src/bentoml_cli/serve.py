@@ -249,6 +249,7 @@ def add_serve_command(cli: click.Group) -> None:
             sys.path.insert(0, working_dir)
         svc = load(bento_identifier=bento, working_dir=working_dir)
         if isinstance(svc, Service):
+            # bentoml<1.2
             from bentoml.serve import serve_http_production
 
             if development:
@@ -289,6 +290,8 @@ def add_serve_command(cli: click.Group) -> None:
                     development_mode=False,
                 )
         else:
+            # bentoml>=1.2
+
             from _bentoml_impl.server import serve_http
 
             svc.inject_config()

@@ -5,14 +5,14 @@ import ipaddress
 import json
 import logging
 import os
+import pathlib
 import platform
 import shutil
 import socket
 import tempfile
 import typing as t
 
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 
 from _bentoml_sdk import Service
 from bentoml._internal.container import BentoMLContainer
@@ -133,8 +133,6 @@ def create_service_watchers(
         import_string,
         "--fd",
         f"$(circus.sockets.{svc.name})",
-        "--working-dir",
-        svc.working_dir,
         "--worker-id",
         "$(CIRCUS.WID)",
     ]
@@ -156,7 +154,7 @@ def create_service_watchers(
 @inject
 def serve_http(
     bento_identifier: str | AnyService,
-    working_dir: str,
+    working_dir: str | None = None,
     host: str = Provide[BentoMLContainer.http.host],
     port: int = Provide[BentoMLContainer.http.port],
     backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
@@ -176,24 +174,36 @@ def serve_http(
 ) -> None:
     from circus.sockets import CircusSocket
 
+    from _bentoml_impl.loader import normalize_identifier
     from bentoml._internal.log import SERVER_LOGGING_CONFIG
-    from bentoml._internal.service.loader import load
+    from bentoml._internal.service.loader import import_service
     from bentoml._internal.utils import reserve_free_port
     from bentoml._internal.utils.analytics.usage_stats import track_serve
     from bentoml._internal.utils.circus import create_standalone_arbiter
-    from bentoml.serve import construct_ssl_args
-    from bentoml.serve import create_watcher
-    from bentoml.serve import ensure_prometheus_dir
-    from bentoml.serve import make_reload_plugin
+    from bentoml.serve import (
+        construct_ssl_args,
+        create_watcher,
+        ensure_prometheus_dir,
+        make_reload_plugin,
+    )
 
     from .allocator import ResourceAllocator
 
     prometheus_dir = ensure_prometheus_dir()
-    working_dir = os.path.realpath(os.path.expanduser(working_dir))
     if isinstance(bento_identifier, Service):
         svc = bento_identifier
+        assert (
+            working_dir is None
+        ), "working_dir should not be set when passing a service in process"
+        # use cwd
+        bento_path = pathlib.Path(".")
     else:
-        svc = t.cast(AnyService, load(bento_identifier, working_dir))
+        bento_identifier, bento_path = normalize_identifier(
+            bento_identifier, working_dir
+        )
+        from _bentoml_impl.loader import import_service
+
+        svc = import_service(bento_identifier, bento_path)
 
     watchers: list[Watcher] = []
     sockets: list[CircusSocket] = []
@@ -269,8 +279,6 @@ def serve_http(
             else bento_identifier.import_string,
             "--fd",
             f"$(circus.sockets.{API_SERVER_NAME})",
-            "--working-dir",
-            working_dir,
             "--backlog",
             str(backlog),
             "--worker-id",
@@ -291,7 +299,7 @@ def serve_http(
             create_watcher(
                 name="api_server",
                 args=server_args,
-                working_dir=working_dir,
+                working_dir=bento_path.absolute(),
                 numprocesses=num_workers,
                 close_child_stdin=not development_mode,
             )
@@ -317,7 +325,7 @@ def serve_http(
         arbiter_kwargs: dict[str, t.Any] = {"watchers": watchers, "sockets": sockets}
 
         if reload:
-            reload_plugin = make_reload_plugin(working_dir, bentoml_home)
+            reload_plugin = make_reload_plugin(str(bento_path.absolute()), bentoml_home)
             arbiter_kwargs["plugins"] = [reload_plugin]
 
         if development_mode:

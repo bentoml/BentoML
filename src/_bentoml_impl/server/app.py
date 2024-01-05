@@ -9,6 +9,7 @@ import typing as t
 from pathlib import Path
 
 import anyio
+import anyio.to_thread
 import pydantic
 from simple_di import Provide
 from simple_di import inject
@@ -35,31 +36,6 @@ if t.TYPE_CHECKING:
     from bentoml._internal.types import LifecycleHook
 
 R = t.TypeVar("R")
-
-
-LIMITER_MAP: dict[str, t.Any] = {}
-
-
-def _get_limiter(api_name: str):
-    if api_name not in LIMITER_MAP:
-        LIMITER_MAP[api_name] = anyio.CapacityLimiter(1)
-    return LIMITER_MAP[api_name]
-
-
-async def run_in_threadpool(
-    pool_name: str,
-    func: t.Callable[..., R],
-    *args: t.Any,
-    **kwargs: t.Any,
-) -> R:
-    import anyio.to_thread
-
-    func = functools.partial(func, *args, **kwargs)
-    output = await anyio.to_thread.run_sync(
-        func,
-        limiter=_get_limiter(pool_name),
-    )
-    return output
 
 
 class ContextMiddleware:
@@ -100,6 +76,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         self.dispatchers: dict[str, CorkDispatcher[t.Any, t.Any]] = {}
         self._service_instance: t.Any | None = None
+        self._limiter: anyio.CapacityLimiter | None = None
 
         def fallback() -> t.NoReturn:
             raise ServiceUnavailable("process is overloaded")
@@ -315,6 +292,19 @@ class ServiceAppFactory(BaseAppFactory):
             routes.append(Route(route_path, api_endpoint, methods=["POST"], name=name))
         return routes
 
+    async def _to_thread(
+        self,
+        func: t.Callable[..., R],
+        *args: t.Any,
+        **kwargs: t.Any,
+    ) -> R:
+        if self._limiter is None:
+            threads = self.service.config.get("threads", 1)
+            self._limiter = anyio.CapacityLimiter(threads)
+        func = functools.partial(func, *args, **kwargs)
+        output = await anyio.to_thread.run_sync(func, limiter=self._limiter)
+        return output
+
     async def batch_infer(
         self, name: str, input_args: tuple[t.Any, ...], input_kwargs: dict[str, t.Any]
     ) -> t.Any:
@@ -333,7 +323,7 @@ class ServiceAppFactory(BaseAppFactory):
             if is_async_callable(func):
                 result = await func(batch, **kwargs)
             else:
-                result = await run_in_threadpool(name, func, batch, **kwargs)
+                result = await self._to_thread(func, batch, **kwargs)
             return AutoContainer.batch_to_batches(result, indices, method.batch_dim[1])
 
         arg_names = [k for k in input_kwargs if k not in ("ctx", "context")]
@@ -386,9 +376,7 @@ class ServiceAppFactory(BaseAppFactory):
             elif inspect.isasyncgenfunction(original_func):
                 output = func(*input_args, **input_params)
             else:
-                output = await run_in_threadpool(
-                    name, func, *input_args, **input_params
-                )
+                output = await self._to_thread(func, *input_args, **input_params)
 
             response = await method.output_spec.to_http_response(output, serde)
             response.headers.update({"Server": f"BentoML Service/{self.service.name}"})

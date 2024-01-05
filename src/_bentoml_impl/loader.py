@@ -18,6 +18,9 @@ def normalize_identifier(
     working_dir: str | None = None,
 ) -> tuple[str, pathlib.Path]:
     """
+    Normalize a service identifier to a package:Service format, and return the bento
+    path.
+
     valid identifiers:
     - package:Service                        # bentoml serve projects or normalized
     - package:Service.dependency             # bentocloud dependencies services
@@ -92,7 +95,7 @@ def import_service(
     bento_path: pathlib.Path | None = None,
 ) -> Service[t.Any]:
     """
-    Import a service from a service identifier, which should be normalized by
+    import a service from a service identifier, which should be normalized by
     `normalize_identifier` function.
     """
     from _bentoml_sdk import Service
@@ -100,18 +103,20 @@ def import_service(
     if bento_path is None:
         bento_path = pathlib.Path(".")
 
+    # patch python path if needed
     if bento_path.joinpath(BENTO_YAML_FILENAME).exists():
-        # this is a bento
+        # a built bento
         extra_python_path = str(bento_path.joinpath("src").absolute())
         sys.path.insert(0, extra_python_path)
     elif bento_path != pathlib.Path("."):
-        # this is a project
+        # a project
         extra_python_path = str(bento_path.absolute())
         sys.path.insert(0, extra_python_path)
     else:
-        # this is a project and under current directory
+        # a project under current directory
         extra_python_path = None
 
+    # patch model store if needed
     if (
         bento_path.joinpath(BENTO_YAML_FILENAME).exists()
         and bento_path.joinpath("models").exists()
@@ -132,7 +137,7 @@ def import_service(
 
         assert (
             module_name and attrs_str
-        ), f'Invalid import target "{service_identifier}", must format as "<module>:<attribute>" or "<module>'
+        ), f'Invalid import target "{service_identifier}", must format as "<module>:<attribute>"'
 
         instance = importlib.import_module(module_name)
 
@@ -164,6 +169,9 @@ def import_service(
 
 
 def normalize_package(service_identifier: str) -> str:
+    """
+    service.py:Service -> service:Service
+    """
     package, _, service_path = service_identifier.partition(":")
     if package.endswith(".py"):
         package = package[:-3]

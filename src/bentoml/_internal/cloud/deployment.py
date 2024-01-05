@@ -45,9 +45,10 @@ config_merger = Merger(
 
 
 @inject
-def get_deploy_and_bento_name(
+def get_args_from_config(
     name: str | None = None,
-    bento: Tag | str | None = None,
+    bento: str | None = None,
+    cluster: str | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | t.TextIO | None = None,
     path_context: str | None = None,
@@ -58,6 +59,8 @@ def get_deploy_and_bento_name(
         name = config_dict["name"]
     if bento is None and config_dict is not None and "bento" in config_dict:
         bento = config_dict["bento"]
+    if cluster is None and config_dict is not None and "cluster" in config_dict:
+        cluster = config_dict["cluster"]
 
     if isinstance(config_file, str):
         real_path = resolve_user_filepath(config_file, path_context)
@@ -85,8 +88,10 @@ def get_deploy_and_bento_name(
             bento = file_dict["bento"]
         if name is None and "name" in file_dict:
             name = file_dict["name"]
+        if cluster is None and "cluster" in file_dict:
+            cluster = file_dict["cluster"]
 
-    return name, bento
+    return name, bento, cluster
 
 
 @inject
@@ -129,6 +134,9 @@ class DeploymentConfig(CreateDeploymentSchemaV2):
     def to_yaml(self):
         return yaml.dump(bentoml_cattr.unstructure(self))
 
+    def to_dict(self):
+        return bentoml_cattr.unstructure(self)
+
 
 @attr.define
 class DeploymentState:
@@ -137,6 +145,9 @@ class DeploymentState:
     updated_at: str
     # no error message for now
     # error_msg: str
+
+    def to_dict(self) -> dict[str, t.Any]:
+        return bentoml_cattr.unstructure(self)
 
 
 @attr.define
@@ -152,6 +163,20 @@ class DeploymentInfo:
     _context: t.Optional[str] = attr.field(alias="_context", repr=False)
     _schema: DeploymentSchema = attr.field(alias="_schema", repr=False)
     _urls: t.Optional[list[str]] = attr.field(alias="_urls", default=None, repr=False)
+
+    def to_dict(self) -> dict[str, t.Any]:
+        return {
+            "name": self.name,
+            "cluster": self.cluster,
+            "description": self.description,
+            "organization": self.organization,
+            "admin_console": self.admin_console,
+            "created_at": self.created_at,
+            "created_by": self.created_by,
+            "distributed": self.distributed,
+            "config": self.get_config(refetch=False).to_dict(),
+            "status": self.get_status(refetch=False).to_dict(),
+        }
 
     def _refetch(self) -> None:
         res = Deployment.get(self.name, self.cluster, self._context)
@@ -609,7 +634,7 @@ class Deployment:
         bento: Tag | str | None = None,
         cluster: str | None = None,
         config_dict: dict[str, t.Any] | None = None,
-        config_file: str | None = None,
+        config_file: t.TextIO | str | None = None,
         path_context: str | None = None,
         context: str | None = None,
     ) -> DeploymentInfo:
@@ -636,7 +661,7 @@ class Deployment:
         schema_dict: dict[str, t.Any] = {"bento": str(bento)}
         distributed = res.distributed
 
-        if config_file:
+        if isinstance(config_file, str):
             real_path = resolve_user_filepath(config_file, path_context)
             try:
                 with open(real_path, "r") as file:
@@ -650,6 +675,12 @@ class Deployment:
                 raise ValueError(
                     f"An error occurred while reading the file: {real_path}\n{e}"
                 )
+        elif config_file is not None:
+            try:
+                config_dict = yaml.safe_load(config_file)
+            except yaml.YAMLError as exc:
+                logger.error("Error while parsing YAML config-file stream: %s", exc)
+                raise
         if config_dict is None:
             raise BentoMLException("Apply a deployment needs a configuration input")
 

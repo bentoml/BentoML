@@ -13,6 +13,7 @@ from bentoml._internal.cloud.schemas.modelschemas import AccessControl
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentServiceConfig
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetHPAConf
+from bentoml._internal.cloud.schemas.modelschemas import EnvItemSchema
 from bentoml._internal.cloud.schemas.schemasv1 import BentoFullSchema
 from bentoml._internal.cloud.schemas.schemasv1 import BentoImageBuildStatus
 from bentoml._internal.cloud.schemas.schemasv1 import BentoManifestSchema
@@ -22,7 +23,6 @@ from bentoml._internal.cloud.schemas.schemasv1 import ClusterListSchema
 from bentoml._internal.cloud.schemas.schemasv1 import ClusterSchema
 from bentoml._internal.cloud.schemas.schemasv1 import DeploymentRevisionStatus
 from bentoml._internal.cloud.schemas.schemasv1 import DeploymentStatus
-from bentoml._internal.cloud.schemas.schemasv1 import LabelItemSchema
 from bentoml._internal.cloud.schemas.schemasv1 import ResourceType
 from bentoml._internal.cloud.schemas.schemasv1 import UserSchema
 from bentoml._internal.cloud.schemas.schemasv2 import (
@@ -197,7 +197,7 @@ def fixture_rest_client() -> RestApiClient:
                 True,
                 UpdateDeploymentSchemaV2(
                     bento="abc:123",
-                    envs=[LabelItemSchema(key="env_key", value="env_value")],
+                    envs=[EnvItemSchema(name="env_key", value="env_value")],
                     services={
                         "irisclassifier": DeploymentServiceConfig(
                             instance_type="t3-small",
@@ -226,7 +226,7 @@ def fixture_rest_client() -> RestApiClient:
                     access_type=AccessControl.PUBLIC,
                     scaling=DeploymentTargetHPAConf(min_replicas=3, max_replicas=5),
                     deployment_strategy=DeploymentStrategy.RollingUpdate,
-                    envs=[LabelItemSchema(key="env_key", value="env_value")],
+                    envs=[EnvItemSchema(name="env_key", value="env_value")],
                 ),
             )
 
@@ -284,7 +284,7 @@ def test_create_deployment_custom_standalone(
         scaling_max=4,
         access_type="private",
         cluster="custom-cluster",
-        envs=[{"key": "env_key", "value": "env_value"}],
+        envs=[{"name": "env_key", "value": "env_value"}],
         strategy="RollingUpdate",
     )
     # assert expected schema
@@ -296,7 +296,7 @@ def test_create_deployment_custom_standalone(
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=2, max_replicas=4)
 
     assert config.deployment_strategy == DeploymentStrategy.RollingUpdate
-    assert config.envs == [LabelItemSchema(key="env_key", value="env_value")]
+    assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -354,7 +354,7 @@ def test_create_deployment_config_dict(
             "irisclassifier": {"scaling": {"max_replicas": 2, "min_replicas": 1}},
             "preprocessing": {"scaling": {"max_replicas": 2}},
         },
-        "envs": [{"key": "env_key", "value": "env_value"}],
+        "envs": [{"name": "env_key", "value": "env_value"}],
         "bentoml_config_overrides": {
             "irisclassifier": {
                 "resources": {
@@ -395,7 +395,7 @@ def test_update_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
         name="test",
         bento="abc:1234",
         access_type="private",
-        envs=[{"key": "env_key2", "value": "env_value2"}],
+        envs=[{"name": "env_key2", "value": "env_value2"}],
         strategy="Recreate",
     )
     # assert expected schema
@@ -407,7 +407,7 @@ def test_update_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
     assert config.access_type == AccessControl.PRIVATE
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=3, max_replicas=5)
     assert config.deployment_strategy == DeploymentStrategy.Recreate
-    assert config.envs == [LabelItemSchema(key="env_key2", value="env_value2")]
+    assert config.envs == [EnvItemSchema(name="env_key2", value="env_value2")]
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -424,7 +424,7 @@ def test_update_deployment_scaling_only_min(
     assert config.access_type == AccessControl.PUBLIC
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=1, max_replicas=5)
     assert config.deployment_strategy == DeploymentStrategy.RollingUpdate
-    assert config.envs == [LabelItemSchema(key="env_key", value="env_value")]
+    assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -441,7 +441,7 @@ def test_update_deployment_scaling_only_max(
     assert config.access_type == AccessControl.PUBLIC
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=3, max_replicas=3)
     assert config.deployment_strategy == DeploymentStrategy.RollingUpdate
-    assert config.envs == [LabelItemSchema(key="env_key", value="env_value")]
+    assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -458,7 +458,7 @@ def test_update_deployment_scaling_too_big_min(
     assert config.access_type == AccessControl.PUBLIC
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=5, max_replicas=5)
     assert config.deployment_strategy == DeploymentStrategy.RollingUpdate
-    assert config.envs == [LabelItemSchema(key="env_key", value="env_value")]
+    assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -478,7 +478,7 @@ def test_update_deployment_distributed(
     assert deployment.name == "test-distributed"
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
-    assert config.envs == [LabelItemSchema(key="env_key", value="env_value")]
+    assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
     assert config.services == {
         "irisclassifier": DeploymentServiceConfig(
             instance_type="t3-small",

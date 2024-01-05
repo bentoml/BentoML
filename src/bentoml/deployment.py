@@ -9,11 +9,10 @@ import typing as t
 from simple_di import Provide
 from simple_di import inject
 
-from bentoml._internal.cloud.deployment import Deployment, DeploymentInfo
-from bentoml._internal.cloud.deployment import (
-    get_real_bento_tag,
-    get_deploy_and_bento_name,
-)
+from bentoml._internal.cloud.deployment import Deployment
+from bentoml._internal.cloud.deployment import DeploymentInfo
+from bentoml._internal.cloud.deployment import get_args_from_config
+from bentoml._internal.cloud.deployment import get_real_bento_tag
 from bentoml._internal.tag import Tag
 from bentoml.cloud import BentoCloudClient
 from bentoml.exceptions import BentoMLException
@@ -157,8 +156,10 @@ def create(
         raise BentoMLException(
             "Configure a deployment can only use one of the following: config_dict, config_file, or the other parameters"
         )
-    deploy_name, bento_name = get_deploy_and_bento_name(
-        bento=bento,
+    deploy_name, bento_name, cluster_name = get_args_from_config(
+        bento=str(bento),
+        name=name,
+        cluster=cluster,
         config_dict=config_dict,
         config_file=config_file,
         path_context=path_context,
@@ -178,7 +179,7 @@ def create(
         bento=bento,
         access_type=access_type,
         name=deploy_name,
-        cluster=cluster,
+        cluster=cluster_name,
         scaling_min=scaling_min,
         scaling_max=scaling_max,
         instance_type=instance_type,
@@ -328,8 +329,10 @@ def update(
         raise BentoMLException(
             "Configure a deployment can only use one of the following: config_dict, config_file, or the other parameters"
         )
-    deploy_name, bento_name = get_deploy_and_bento_name(
-        bento=bento,
+    deploy_name, bento_name, cluster_name = get_args_from_config(
+        bento=str(bento),
+        name=name,
+        cluster=cluster,
         config_dict=config_dict,
         config_file=config_file,
         path_context=path_context,
@@ -350,7 +353,7 @@ def update(
         bento=bento,
         access_type=access_type,
         name=deploy_name,
-        cluster=cluster,
+        cluster=cluster_name,
         scaling_min=scaling_min,
         scaling_max=scaling_max,
         instance_type=instance_type,
@@ -437,8 +440,10 @@ def apply(
         raise BentoMLException(
             "Configure a deployment can only use one of the following: config_dict, config_file"
         )
-    deploy_name, bento_name = get_deploy_and_bento_name(
-        bento=bento,
+    deploy_name, bento_name, cluster_name = get_args_from_config(
+        bento=str(bento),
+        name=name,
+        cluster=cluster,
         config_dict=config_dict,
         config_file=config_file,
         path_context=path_context,
@@ -458,7 +463,7 @@ def apply(
     return Deployment.apply(
         name=deploy_name,
         bento=bento_name,
-        cluster=cluster,
+        cluster=cluster_name,
         context=context,
         path_context=path_context,
         config_dict=config_dict,

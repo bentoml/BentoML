@@ -6,6 +6,7 @@ import click
 import yaml
 from rich.syntax import Syntax
 
+from bentoml._internal.cloud.deployment import get_args_from_config
 from bentoml._internal.cloud.schemas.modelschemas import AccessControl
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
 
@@ -32,7 +33,7 @@ def add_deployment_command(cli: click.Group) -> None:
     @click.argument(
         "target",
         type=click.STRING,
-        required=True,
+        required=False,
     )
     @click.option(
         "-n",
@@ -81,6 +82,7 @@ def add_deployment_command(cli: click.Group) -> None:
         multiple=True,
     )
     @click.option(
+        "-f",
         "--config-file",
         type=click.File(),
         help="Configuration file path",
@@ -102,7 +104,7 @@ def add_deployment_command(cli: click.Group) -> None:
     @click.pass_obj
     def deploy(
         shared_options: SharedOptions,
-        target: str,
+        target: str | None,
         name: str | None,
         cluster: str | None,
         access_type: str | None,
@@ -111,7 +113,7 @@ def add_deployment_command(cli: click.Group) -> None:
         instance_type: str | None,
         strategy: str | None,
         env: tuple[str] | None,
-        config_file: t.TextIO | None,
+        config_file: str | t.TextIO | None,
         wait: bool,
         timeout: int,
     ) -> None:
@@ -122,8 +124,16 @@ def add_deployment_command(cli: click.Group) -> None:
         """
         from os import path
 
+        deploy_name, bento_name, cluster_name = get_args_from_config(
+            name=name, bento=target, config_file=config_file, cluster=cluster
+        )
+        if bento_name is None:
+            raise click.BadParameter(
+                "please provide a target to deploy or a config file with bento name"
+            )
+
         # determine if target is a path or a name
-        if path.exists(target):
+        if path.exists(bento_name):
             # target is a path
             click.echo(f"building bento from {target} ...")
             bento_tag = get_real_bento_tag(project_path=target)
@@ -133,8 +143,8 @@ def add_deployment_command(cli: click.Group) -> None:
 
         deployment = Deployment.create(
             bento=bento_tag,
-            name=name,
-            cluster_name=cluster,
+            name=deploy_name,
+            cluster=cluster_name,
             access_type=access_type,
             scaling_min=scaling_min,
             scaling_max=scaling_max,
@@ -151,11 +161,9 @@ def add_deployment_command(cli: click.Group) -> None:
         if wait:
             deployment.wait_until_ready(timeout=timeout)
             click.echo(
-                f"Deployment '{deployment.name}' created successfully in cluster '{deployment.cluster_name}'."
+                f"Deployment '{deployment.name}' created successfully in cluster '{deployment.cluster}'."
             )
-        click.echo(
-            f"To check the deployment, go to: {deployment.get_bento_cloud_url()}."
-        )
+        click.echo(f"To check the deployment, go to: {deployment.admin_console}.")
 
     output_option = click.option(
         "-o",
@@ -166,17 +174,10 @@ def add_deployment_command(cli: click.Group) -> None:
     )
 
     def shared_decorator(
-        f: t.Callable[..., t.Any] | None = None,
-        *,
-        required_deployment_name: bool = True,
+        f: t.Callable[..., t.Any] | None = None
     ) -> t.Callable[..., t.Any]:
         def decorate(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             options = [
-                click.argument(
-                    "name",
-                    type=click.STRING,
-                    required=required_deployment_name,
-                ),
                 click.option(
                     "--cluster",
                     type=click.STRING,
@@ -198,7 +199,7 @@ def add_deployment_command(cli: click.Group) -> None:
         """Deployment Subcommands Groups"""
 
     @deployment_cli.command()
-    @shared_decorator(required_deployment_name=True)
+    @shared_decorator()
     @cog.optgroup.group(cls=cog.MutuallyExclusiveOptionGroup, name="target options")
     @cog.optgroup.option(
         "--bento",
@@ -246,6 +247,7 @@ def add_deployment_command(cli: click.Group) -> None:
         multiple=True,
     )
     @click.option(
+        "-f",
         "--config-file",
         type=click.File(),
         help="Configuration file path, mututally exclusive with other config options",
@@ -254,7 +256,7 @@ def add_deployment_command(cli: click.Group) -> None:
     @click.pass_obj
     def update(  # type: ignore
         shared_options: SharedOptions,
-        name: str,
+        name: str | None,
         cluster: str | None,
         project_path: str | None,
         bento: str | None,
@@ -272,7 +274,10 @@ def add_deployment_command(cli: click.Group) -> None:
         A deployment can be updated using parameters (standalone mode only), or using config yaml file.
         You can also update bento by providing a project path or existing bento.
         """
-        if bento is None and project_path is None:
+        deploy_name, bento_name, cluster_name = get_args_from_config(
+            name=name, bento=bento, cluster=cluster, config_file=config_file
+        )
+        if bento_name is None and project_path is None:
             target = None
         else:
             target = get_real_bento_tag(
@@ -284,8 +289,8 @@ def add_deployment_command(cli: click.Group) -> None:
         Deployment.update(
             bento=target,
             access_type=access_type,
-            name=name,
-            cluster_name=cluster,
+            name=deploy_name,
+            cluster=cluster_name,
             scaling_min=scaling_min,
             scaling_max=scaling_max,
             instance_type=instance_type,
@@ -302,7 +307,58 @@ def add_deployment_command(cli: click.Group) -> None:
         click.echo(f"Deployment '{name}' updated successfully.")
 
     @deployment_cli.command()
+    @cog.optgroup.group(cls=cog.MutuallyExclusiveOptionGroup, name="target options")
+    @click.option(
+        "-f",
+        "--config-file",
+        type=click.File(),
+        help="Configuration file path, mututally exclusive with other config options",
+        default=None,
+    )
+    @click.pass_obj
+    def apply(  # type: ignore
+        shared_options: SharedOptions,
+        name: str | None,
+        cluster: str | None,
+        project_path: str | None,
+        bento: str | None,
+        config_file: str | t.TextIO | None,
+    ) -> None:
+        """Update a deployment on BentoCloud.
+
+        \b
+        A deployment can be updated using parameters (standalone mode only), or using config yaml file.
+        You can also update bento by providing a project path or existing bento.
+        """
+        deploy_name, bento_name, cluster_name = get_args_from_config(
+            name=name, bento=bento, cluster=cluster, config_file=config_file
+        )
+        if bento_name is None and project_path is None:
+            target = None
+        else:
+            target = get_real_bento_tag(
+                project_path=project_path,
+                bento=bento,
+                context=shared_options.cloud_context,
+            )
+
+        Deployment.apply(
+            bento=target,
+            name=deploy_name,
+            cluster=cluster_name,
+            config_file=config_file,
+            context=shared_options.cloud_context,
+        )
+
+        click.echo(f"Deployment '{name}' updated successfully.")
+
+    @deployment_cli.command()
     @shared_decorator
+    @click.argument(
+        "name",
+        type=click.STRING,
+        required=True,
+    )
     @output_option
     @click.pass_obj
     def get(  # type: ignore
@@ -312,18 +368,21 @@ def add_deployment_command(cli: click.Group) -> None:
         output: t.Literal["json", "default"],
     ) -> None:
         """Get a deployment on BentoCloud."""
-        d = Deployment.get(
-            name, context=shared_options.cloud_context, cluster_name=cluster
-        )
+        d = Deployment.get(name, context=shared_options.cloud_context, cluster=cluster)
         if output == "json":
-            info = json.dumps(d.info.to_dict(), indent=2, default=str)
+            info = json.dumps(d.to_dict(), indent=2, default=str)
             console.print_json(info)
         else:
-            info = yaml.dump(d.info.to_dict(), indent=2, sort_keys=False)
+            info = yaml.dump(d.to_dict(), indent=2, sort_keys=False)
             console.print(Syntax(info, "yaml", background_color="default"))
 
     @deployment_cli.command()
     @shared_decorator
+    @click.argument(
+        "name",
+        type=click.STRING,
+        required=True,
+    )
     @click.pass_obj
     def terminate(  # type: ignore
         shared_options: SharedOptions,
@@ -332,7 +391,7 @@ def add_deployment_command(cli: click.Group) -> None:
     ) -> None:
         """Terminate a deployment on BentoCloud."""
         Deployment.terminate(
-            name, context=shared_options.cloud_context, cluster_name=cluster
+            name, context=shared_options.cloud_context, cluster=cluster
         )
         click.echo(f"Deployment '{name}' terminated successfully.")
 
@@ -345,9 +404,7 @@ def add_deployment_command(cli: click.Group) -> None:
         cluster: str | None,
     ) -> None:
         """Delete a deployment on BentoCloud."""
-        Deployment.delete(
-            name, context=shared_options.cloud_context, cluster_name=cluster
-        )
+        Deployment.delete(name, context=shared_options.cloud_context, cluster=cluster)
         click.echo(f"Deployment '{name}' deleted successfully.")
 
     @deployment_cli.command()
@@ -373,21 +430,21 @@ def add_deployment_command(cli: click.Group) -> None:
     ) -> None:
         """List existing deployments on BentoCloud."""
         d_list = Deployment.list(
-            context=shared_options.cloud_context, cluster_name=cluster, search=search
+            context=shared_options.cloud_context, cluster=cluster, search=search
         )
-        res: list[dict[str, t.Any]] = [d.info.to_dict() for d in d_list]
+        res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
         if output == "table":
             table = Table(box=None)
             table.add_column("Deployment")
             table.add_column("created_at")
             table.add_column("Bento")
             table.add_column("Status")
-            for info in res:
+            for info in d_list:
                 table.add_row(
-                    info["name"],
-                    info["created_at"],
-                    info["bento"],
-                    info["status"],
+                    info.name,
+                    info.created_at,
+                    info.get_bento(refetch=False),
+                    info.get_status(refetch=False).status,
                 )
             console.print(table)
         elif output == "json":

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import anyio
 import asyncio
 import functools
 import inspect
@@ -36,14 +37,17 @@ if t.TYPE_CHECKING:
 R = t.TypeVar("R")
 
 
-@functools.lru_cache()
-def _get_limiter():
-    import anyio
+LIMITER_MAP: dict[str, t.Any] = {}
 
-    return anyio.CapacityLimiter(1)
+
+def _get_limiter(api_name: str):
+    if api_name not in LIMITER_MAP:
+        LIMITER_MAP[api_name] = anyio.CapacityLimiter(1)
+    return LIMITER_MAP[api_name]
 
 
 async def run_in_threadpool(
+    pool_name: str,
     func: t.Callable[..., R],
     *args: t.Any,
     **kwargs: t.Any,
@@ -53,7 +57,7 @@ async def run_in_threadpool(
     func = functools.partial(func, *args, **kwargs)
     output = await anyio.to_thread.run_sync(
         func,
-        limiter=_get_limiter(),
+        limiter=_get_limiter(pool_name),
     )
     return output
 
@@ -320,7 +324,6 @@ class ServiceAppFactory(BaseAppFactory):
         async def inner_infer(
             batches: t.Sequence[t.Any], **kwargs: t.Any
         ) -> t.Sequence[t.Any]:
-            # from starlette.concurrency import run_in_threadpool
 
             from bentoml._internal.runner.container import AutoContainer
             from bentoml._internal.utils import is_async_callable
@@ -331,7 +334,7 @@ class ServiceAppFactory(BaseAppFactory):
             if is_async_callable(func):
                 result = await func(batch, **kwargs)
             else:
-                result = await run_in_threadpool(func, batch, **kwargs)
+                result = await run_in_threadpool(name, func, batch, **kwargs)
             return AutoContainer.batch_to_batches(result, indices, method.batch_dim[1])
 
         arg_names = [k for k in input_kwargs if k not in ("ctx", "context")]
@@ -348,7 +351,6 @@ class ServiceAppFactory(BaseAppFactory):
         )(value)
 
     async def api_endpoint(self, name: str, request: Request) -> Response:
-        # from starlette.concurrency import run_in_threadpool
 
         from _bentoml_sdk.io_models import ARGS
         from _bentoml_sdk.io_models import KWARGS
@@ -386,7 +388,9 @@ class ServiceAppFactory(BaseAppFactory):
             elif inspect.isasyncgenfunction(original_func):
                 output = func(*input_args, **input_params)
             else:
-                output = await run_in_threadpool(func, *input_args, **input_params)
+                output = await run_in_threadpool(
+                    name, func, *input_args, **input_params
+                )
 
             response = await method.output_spec.to_http_response(output, serde)
             response.headers.update({"Server": f"BentoML Service/{self.service.name}"})

@@ -154,6 +154,7 @@ def import_service(
         return instance
 
     except (ImportError, AttributeError, KeyError, AssertionError) as e:
+        sys_path = sys.path.copy()
         if extra_python_path is not None:
             sys.path.remove(extra_python_path)
 
@@ -164,7 +165,7 @@ def import_service(
         from bentoml.exceptions import ImportServiceError
 
         raise ImportServiceError(
-            f'Failed to import service "{service_identifier}": {e}'
+            f'Failed to import service "{service_identifier}": {e}, sys.path: {sys_path}'
         ) from e
 
 

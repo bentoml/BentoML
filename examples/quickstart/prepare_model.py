@@ -14,6 +14,6 @@ if __name__ == "__main__":
     clf.fit(X, y)
 
     # Save model to BentoML local model store
-    with bentoml.models.create("iris_clf") as bento_model:
+    with bentoml.models.create("iris_sklearn") as bento_model:
         joblib.dump(clf, bento_model.path_of("model.pkl"))
     print(f"Model saved: {bento_model}")

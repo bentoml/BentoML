@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import anyio
 import asyncio
 import functools
 import inspect
@@ -9,6 +8,7 @@ import sys
 import typing as t
 from pathlib import Path
 
+import anyio
 import pydantic
 from simple_di import Provide
 from simple_di import inject
@@ -324,7 +324,6 @@ class ServiceAppFactory(BaseAppFactory):
         async def inner_infer(
             batches: t.Sequence[t.Any], **kwargs: t.Any
         ) -> t.Sequence[t.Any]:
-
             from bentoml._internal.runner.container import AutoContainer
             from bentoml._internal.utils import is_async_callable
 
@@ -351,7 +350,6 @@ class ServiceAppFactory(BaseAppFactory):
         )(value)
 
     async def api_endpoint(self, name: str, request: Request) -> Response:
-
         from _bentoml_sdk.io_models import ARGS
         from _bentoml_sdk.io_models import KWARGS
         from bentoml._internal.container import BentoMLContainer

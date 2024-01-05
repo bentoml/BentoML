@@ -60,7 +60,7 @@ def normalize_identifier(
         return normalize_package(bento_yaml["service"]), bento_path
 
     elif ":" in service_identifier:
-        # this is a python module or a bento tag
+        # a python import str or a built bento in store
 
         # TODO(jiang): bento store configs are sdk configs, should be moved to sdk in the future
         from bentoml._internal.configuration.containers import BentoMLContainer
@@ -71,7 +71,7 @@ def normalize_identifier(
         try:
             bento = bento_store.get(service_identifier)
         except NotFound:
-            # a python object import path
+            # a python import str
             return normalize_package(service_identifier), pathlib.Path(
                 working_dir if working_dir is not None else "."
             )
@@ -112,7 +112,10 @@ def import_service(
         # this is a project and under current directory
         extra_python_path = None
 
-    if bento_path.joinpath(BENTO_YAML_FILENAME).exists():
+    if (
+        bento_path.joinpath(BENTO_YAML_FILENAME).exists()
+        and bento_path.joinpath("models").exists()
+    ):
         from bentoml._internal.configuration.containers import BentoMLContainer
         from bentoml._internal.models import ModelStore
 

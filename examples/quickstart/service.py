@@ -12,7 +12,7 @@ class Preprocessing:
 
 @bentoml.service(name="iris_classifier", resources={"cpu": "200m", "memory": "512Mi"})
 class IrisClassifier:
-    iris_model = bentoml.models.get("iris_clf:latest")
+    iris_model = bentoml.models.get("iris_sklearn:latest")
     preprocessing = bentoml.depends(Preprocessing)
 
     def __init__(self):

@@ -8,7 +8,6 @@ from datetime import datetime
 from datetime import timezone
 from typing import TYPE_CHECKING
 
-import pathlib
 import attr
 import fs
 import fs.errors

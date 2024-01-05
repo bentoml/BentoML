@@ -4,7 +4,8 @@ import logging
 import os
 from pathlib import Path
 
-from ...exceptions import BentoMLException, MissingDependencyException
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..configuration import is_pypi_installed_bentoml
 from ..utils.pkg import source_locations
@@ -30,9 +31,8 @@ def build_bentoml_editable_wheel(
         return
 
     try:
-        from build.env import DefaultIsolatedEnv
-
         from build import ProjectBuilder
+        from build.env import DefaultIsolatedEnv
     except ModuleNotFoundError as e:
         raise MissingDependencyException(
             f"Environment variable '{BENTOML_DEV_BUILD}=True', which requires the 'pypa/build' package ({e}). Install it with 'pip install -U build' and try again."

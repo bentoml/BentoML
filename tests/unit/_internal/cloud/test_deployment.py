@@ -266,7 +266,7 @@ def test_create_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == ""
-    assert deployment.distributed == False
+    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=1, max_replicas=1)
@@ -290,7 +290,7 @@ def test_create_deployment_custom_standalone(
     # assert expected schema
     assert deployment.cluster == "custom-cluster"
     assert deployment.name == "custom-name"
-    assert deployment.distributed == False
+    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PRIVATE
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=2, max_replicas=4)
@@ -308,7 +308,7 @@ def test_create_deployment_scailing_only_min(
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == ""
-    assert deployment.distributed == False
+    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=3, max_replicas=3)
@@ -323,7 +323,7 @@ def test_create_deployment_scailing_only_max(
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == ""
-    assert deployment.distributed == False
+    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=1, max_replicas=3)
@@ -338,7 +338,7 @@ def test_create_deployment_scailing_mismatch_min_max(
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == ""
-    assert deployment.distributed == False
+    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=2, max_replicas=2)
@@ -402,7 +402,7 @@ def test_update_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
     assert deployment.cluster == "default_display_name"
     assert deployment.get_bento(refetch=False) == "abc:1234"
     assert deployment.name == "test"
-    assert deployment.distributed == False
+    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PRIVATE
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=3, max_replicas=5)
@@ -419,7 +419,7 @@ def test_update_deployment_scaling_only_min(
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "test"
-    assert deployment.distributed == False
+    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=1, max_replicas=5)
@@ -436,7 +436,7 @@ def test_update_deployment_scaling_only_max(
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "test"
-    assert deployment.distributed == False
+    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=3, max_replicas=3)
@@ -453,7 +453,7 @@ def test_update_deployment_scaling_too_big_min(
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "test"
-    assert deployment.distributed == False
+    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
     assert config.scaling == DeploymentTargetHPAConf(min_replicas=5, max_replicas=5)

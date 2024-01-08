@@ -272,8 +272,6 @@ class Service(t.Generic[T]):
 
         configure_logging()
 
-        if working_dir is None:
-            working_dir = self.working_dir
         serve_http(
             self,
             working_dir=working_dir,

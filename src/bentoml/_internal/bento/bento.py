@@ -344,6 +344,12 @@ class Bento(StoreItem):
 
         return res
 
+    @classmethod
+    def from_path(cls, item_path: str) -> Bento:
+        item_path = os.path.expanduser(item_path)
+        item_fs = fs.open_fs(encode_path_for_uri(item_path))
+        return cls.from_fs(item_fs)
+
     def export(
         self,
         path: str,

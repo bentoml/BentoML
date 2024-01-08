@@ -354,7 +354,7 @@ def load(
         _svc = import_1_2_service(_bento_identifier, _working_dir)
 
         return _svc
-    except (ValueError, ImportServiceError):
+    except (ValueError, ImportServiceError, ImportError):
         logger.debug("Failed to load bento with v1.2 loader, fallback to old loader")
 
     if os.path.isdir(os.path.expanduser(bento_identifier)):

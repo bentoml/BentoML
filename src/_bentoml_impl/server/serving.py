@@ -178,9 +178,7 @@ def serve_http(
 ) -> None:
     from circus.sockets import CircusSocket
 
-    from _bentoml_impl.loader import normalize_identifier
     from bentoml._internal.log import SERVER_LOGGING_CONFIG
-    from bentoml._internal.service.loader import import_service
     from bentoml._internal.utils import reserve_free_port
     from bentoml._internal.utils.analytics.usage_stats import track_serve
     from bentoml._internal.utils.circus import create_standalone_arbiter
@@ -189,6 +187,8 @@ def serve_http(
     from bentoml.serve import ensure_prometheus_dir
     from bentoml.serve import make_reload_plugin
 
+    from ..loader import import_service
+    from ..loader import normalize_identifier
     from .allocator import ResourceAllocator
 
     prometheus_dir = ensure_prometheus_dir()
@@ -203,7 +203,6 @@ def serve_http(
         bento_identifier, bento_path = normalize_identifier(
             bento_identifier, working_dir
         )
-        from _bentoml_impl.loader import import_service
 
         svc = import_service(bento_identifier, bento_path)
 

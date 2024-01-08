@@ -2,6 +2,7 @@ version: 2
 services:
   resources: ~
   workers: ~
+  threads: 1
   backlog: 2048
   # the maximum number of connections that will be made to any given runner server at once
   max_runner_connections: 16

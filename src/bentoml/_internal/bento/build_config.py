@@ -556,6 +556,13 @@ set -exuo pipefail
 # Parent directory https://stackoverflow.com/a/246128/8643197
 BASEDIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
 
+# install git if not exist
+# TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! remove this after we release 1.2
+if ! command -v git &> /dev/null; then
+    echo "git not found, installing git.."
+    apt-get update && apt-get install -y git
+fi
+
 PIP_ARGS=("""
                 + " ".join(map(quote, args))
                 + """)

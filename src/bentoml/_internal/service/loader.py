@@ -345,6 +345,19 @@ def load(
         # Load from local BentoStore
         return load_bento(bento_identifier)
 
+    try:
+        from _bentoml_impl.loader import import_service as import_1_2_service
+        from _bentoml_impl.loader import normalize_identifier
+
+        _bento_identifier, _working_dir = normalize_identifier(
+            bento_identifier, working_dir
+        )
+        _svc = import_1_2_service(_bento_identifier, _working_dir)
+
+        return _svc
+    except (ValueError, ImportServiceError, ImportError):
+        logger.debug("Failed to load bento with v1.2 loader, fallback to old loader")
+
     if os.path.isdir(os.path.expanduser(bento_identifier)):
         bento_path = os.path.abspath(os.path.expanduser(bento_identifier))
 

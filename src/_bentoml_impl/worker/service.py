@@ -6,9 +6,6 @@ import typing as t
 
 import click
 
-if t.TYPE_CHECKING:
-    from _bentoml_sdk import Service
-
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
@@ -26,11 +23,6 @@ if t.TYPE_CHECKING:
 )
 @click.option(
     "--backlog", type=click.INT, default=2048, help="Backlog size for the socket"
-)
-@click.option(
-    "--working-dir",
-    type=click.Path(exists=True),
-    help="Working directory for the API server",
 )
 @click.option(
     "--prometheus-dir",
@@ -109,7 +101,6 @@ def main(
     runner_map: str | None,
     backlog: int,
     worker_env: str | None,
-    working_dir: str | None,
     worker_id: int | None,
     prometheus_dir: str | None,
     ssl_certfile: str | None,
@@ -141,10 +132,10 @@ def main(
                 )
             os.environ.update(env_list[worker_key])
 
+    from _bentoml_impl.loader import import_service
     from bentoml._internal.container import BentoMLContainer
     from bentoml._internal.context import component_context
     from bentoml._internal.log import configure_server_logging
-    from bentoml._internal.service import load
 
     from ..server.app import ServiceAppFactory
 
@@ -152,7 +143,8 @@ def main(
         BentoMLContainer.remote_runner_mapping.set(
             t.cast(t.Dict[str, str], json.loads(runner_map))
         )
-    service = t.cast("Service[t.Any]", load(bento_identifier, working_dir=working_dir))
+
+    service = import_service(bento_identifier)
     service.inject_config()
 
     component_context.component_type = "api_server"

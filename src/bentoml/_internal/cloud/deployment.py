@@ -8,7 +8,6 @@ import attr
 import yaml
 from deepmerge.merger import Merger
 from simple_di import Provide
-from simple_di import inject
 
 if t.TYPE_CHECKING:
     from _bentoml_impl.client import AsyncHTTPClient
@@ -44,7 +43,6 @@ config_merger = Merger(
 )
 
 
-@inject
 def get_args_from_config(
     name: str | None = None,
     bento: str | None = None,
@@ -94,7 +92,6 @@ def get_args_from_config(
     return name, bento, cluster
 
 
-@inject
 def get_real_bento_tag(
     project_path: str | None = None,
     bento: str | Tag | None = None,
@@ -180,7 +177,7 @@ class DeploymentInfo:
 
     def _refetch(self) -> None:
         res = Deployment.get(self.name, self.cluster, self._context)
-        self._schema = res._schema
+        attr.evolve(self, _schema=res._schema, _urls=res._urls)
 
     def _refetch_target(self, refetch: bool) -> DeploymentTargetSchema:
         if refetch:

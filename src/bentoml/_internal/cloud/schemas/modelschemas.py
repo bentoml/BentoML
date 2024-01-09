@@ -195,6 +195,12 @@ class LabelItemSchema:
     value: str
 
 
+@attr.define
+class EnvItemSchema:
+    name: str
+    value: str
+
+
 class HPAMetricType(Enum):
     MEMORY = "memory"
     CPU = "cpu"
@@ -367,7 +373,7 @@ class DeploymentServiceConfig:
     __forbid_extra_keys__ = True
     instance_type: t.Optional[str] = attr.field(default=None)
     scaling: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
-    envs: t.Optional[t.List[t.Optional[LabelItemSchema]]] = attr.field(default=None)
+    envs: t.Optional[t.List[t.Optional[EnvItemSchema]]] = attr.field(default=None)
     deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(default=None)
     extras: t.Optional[ExtraDeploymentOverrides] = attr.field(default=None)
     cold_start_timeout: t.Optional[int] = attr.field(default=None)

@@ -157,13 +157,14 @@ def create(
             "Configure a deployment can only use one of the following: config_dict, config_file, or the other parameters"
         )
     deploy_name, bento_name, cluster_name = get_args_from_config(
-        bento=str(bento),
+        bento=bento,
         name=name,
         cluster=cluster,
         config_dict=config_dict,
         config_file=config_file,
         path_context=path_context,
     )
+
     if bento_name and project_path:
         raise BentoMLException("Only one of bento or project_path can be provided")
     if bento_name is None and project_path is None:
@@ -330,7 +331,7 @@ def update(
             "Configure a deployment can only use one of the following: config_dict, config_file, or the other parameters"
         )
     deploy_name, bento_name, cluster_name = get_args_from_config(
-        bento=str(bento),
+        bento=bento,
         name=name,
         cluster=cluster,
         config_dict=config_dict,
@@ -340,7 +341,7 @@ def update(
     if bento_name and project_path:
         raise BentoMLException("Only one of bento or project_path can be provided")
     if bento_name is None and project_path is None:
-        bento_name = None
+        bento = None
     else:
         bento = get_real_bento_tag(
             project_path=project_path,
@@ -441,7 +442,7 @@ def apply(
             "Configure a deployment can only use one of the following: config_dict, config_file"
         )
     deploy_name, bento_name, cluster_name = get_args_from_config(
-        bento=str(bento),
+        bento=bento,
         name=name,
         cluster=cluster,
         config_dict=config_dict,
@@ -451,7 +452,7 @@ def apply(
     if bento_name and project_path:
         raise BentoMLException("Only one of bento or project_path can be provided")
     if bento_name is None and project_path is None:
-        bento_name = None
+        bento = None
     else:
         bento = get_real_bento_tag(
             project_path=project_path,
@@ -462,7 +463,7 @@ def apply(
 
     return Deployment.apply(
         name=deploy_name,
-        bento=bento_name,
+        bento=bento,
         cluster=cluster_name,
         context=context,
         path_context=path_context,

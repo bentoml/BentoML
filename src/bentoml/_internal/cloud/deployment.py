@@ -177,7 +177,8 @@ class DeploymentInfo:
 
     def _refetch(self) -> None:
         res = Deployment.get(self.name, self.cluster, self._context)
-        attr.evolve(self, _schema=res._schema, _urls=res._urls)
+        self._schema = res._schema
+        self._urls = res._urls
 
     def _refetch_target(self, refetch: bool) -> DeploymentTargetSchema:
         if refetch:

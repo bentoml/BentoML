@@ -79,6 +79,7 @@ _SERVICE_CONFIG = {
         s.And(int, ensure_larger_than_zero),
         None,
     ),
+    s.Optional("threads"): s.And(int, ensure_larger_than_zero),
     s.Optional("traffic"): {
         "timeout": s.And(Real, ensure_larger_than_zero),
         s.Optional("max_concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),

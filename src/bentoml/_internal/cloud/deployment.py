@@ -8,7 +8,6 @@ import attr
 import yaml
 from deepmerge.merger import Merger
 from simple_di import Provide
-from simple_di import inject
 
 if t.TYPE_CHECKING:
     from _bentoml_impl.client import AsyncHTTPClient
@@ -29,6 +28,7 @@ from .schemas.modelschemas import DeploymentStatus
 from .schemas.modelschemas import DeploymentTargetHPAConf
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentSchema
+from .schemas.schemasv2 import DeploymentTargetSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,55 @@ config_merger = Merger(
 )
 
 
-@inject
+def get_args_from_config(
+    name: str | None = None,
+    bento: str | None = None,
+    cluster: str | None = None,
+    config_dict: dict[str, t.Any] | None = None,
+    config_file: str | t.TextIO | None = None,
+    path_context: str | None = None,
+):
+    file_dict: dict[str, t.Any] | None = None
+
+    if name is None and config_dict is not None and "name" in config_dict:
+        name = config_dict["name"]
+    if bento is None and config_dict is not None and "bento" in config_dict:
+        bento = config_dict["bento"]
+    if cluster is None and config_dict is not None and "cluster" in config_dict:
+        cluster = config_dict["cluster"]
+
+    if isinstance(config_file, str):
+        real_path = resolve_user_filepath(config_file, path_context)
+        try:
+            with open(real_path, "r") as file:
+                file_dict = yaml.safe_load(file)
+        except FileNotFoundError:
+            raise ValueError(f"File not found: {real_path}")
+        except yaml.YAMLError as exc:
+            logger.error("Error while parsing YAML file: %s", exc)
+            raise
+        except Exception as e:
+            raise ValueError(
+                f"An error occurred while reading the file: {real_path}\n{e}"
+            )
+    elif config_file is not None:
+        try:
+            file_dict = yaml.safe_load(config_file)
+        except yaml.YAMLError as exc:
+            logger.error("Error while parsing YAML config-file stream: %s", exc)
+            raise
+
+    if file_dict is not None:
+        if bento is None and "bento" in file_dict:
+            bento = file_dict["bento"]
+        if name is None and "name" in file_dict:
+            name = file_dict["name"]
+        if cluster is None and "cluster" in file_dict:
+            cluster = file_dict["cluster"]
+
+    return name, bento, cluster
+
+
 def get_real_bento_tag(
     project_path: str | None = None,
     bento: str | Tag | None = None,
@@ -79,28 +127,162 @@ def get_real_bento_tag(
 
 
 @attr.define
-class DeploymentInfo:
-    __omit_if_default__ = True
-    name: str
-    created_at: str
-    bento: Tag
-    status: DeploymentStatus
-    admin_console: str
-    endpoint: t.Optional[str]
-    config: dict[str, t.Any]
+class DeploymentConfig(CreateDeploymentSchemaV2):
+    def to_yaml(self):
+        return yaml.dump(bentoml_cattr.unstructure(self))
 
-    def to_dict(self) -> t.Dict[str, t.Any]:
+    def to_dict(self):
         return bentoml_cattr.unstructure(self)
 
 
 @attr.define
-class Deployment:
-    context: t.Optional[str]
-    cluster_name: str
-    name: str
-    _schema: DeploymentSchema = attr.field(alias="_schema", repr=False)
-    _urls: t.Optional[list[str]] = attr.field(alias="_urls", default=None)
+class DeploymentState:
+    status: str
+    created_at: str
+    updated_at: str
+    # no error message for now
+    # error_msg: str
 
+    def to_dict(self) -> dict[str, t.Any]:
+        return bentoml_cattr.unstructure(self)
+
+
+@attr.define
+class DeploymentInfo:
+    name: str
+    admin_console: str
+    created_at: str
+    created_by: str
+    cluster: str
+    organization: str
+    distributed: bool
+    description: t.Optional[str]
+    _context: t.Optional[str] = attr.field(alias="_context", repr=False)
+    _schema: DeploymentSchema = attr.field(alias="_schema", repr=False)
+    _urls: t.Optional[list[str]] = attr.field(alias="_urls", default=None, repr=False)
+
+    def to_dict(self) -> dict[str, t.Any]:
+        return {
+            "name": self.name,
+            "cluster": self.cluster,
+            "description": self.description,
+            "organization": self.organization,
+            "admin_console": self.admin_console,
+            "created_at": self.created_at,
+            "created_by": self.created_by,
+            "distributed": self.distributed,
+            "config": self.get_config(refetch=False).to_dict(),
+            "status": self.get_status(refetch=False).to_dict(),
+        }
+
+    def _refetch(self) -> None:
+        res = Deployment.get(self.name, self.cluster, self._context)
+        self._schema = res._schema
+        self._urls = res._urls
+
+    def _refetch_target(self, refetch: bool) -> DeploymentTargetSchema:
+        if refetch:
+            self._refetch()
+        if self._schema.latest_revision is None:
+            raise BentoMLException(f"Deployment {self.name} has no latest revision")
+        if len(self._schema.latest_revision.targets) == 0:
+            raise BentoMLException(
+                f"Deployment {self.name} has no latest revision targets"
+            )
+        target = self._schema.latest_revision.targets[0]
+        if target is None:
+            raise BentoMLException(f"Deployment {self.name} has no target")
+        return target
+
+    def get_config(self, refetch: bool = True) -> DeploymentConfig:
+        target = self._refetch_target(refetch)
+        if target.config is None:
+            raise BentoMLException(f"Deployment {self.name} has no config")
+
+        return DeploymentConfig(
+            name=self.name,
+            bento=self.get_bento(refetch=False),
+            distributed=self.distributed,
+            description=self.description,
+            services=target.config.services,
+            instance_type=target.config.instance_type,
+            deployment_strategy=target.config.deployment_strategy,
+            scaling=target.config.scaling,
+            envs=target.config.envs,
+            extras=target.config.extras,
+            access_type=target.config.access_type,
+            bentoml_config_overrides=target.config.bentoml_config_overrides,
+            cold_start_timeout=target.config.cold_start_timeout,
+        )
+
+    def get_status(self, refetch: bool = True) -> DeploymentState:
+        if refetch:
+            self._refetch()
+        updated_at = self._schema.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        if self._schema.updated_at is not None:
+            updated_at = self._schema.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+        return DeploymentState(
+            status=self._schema.status.value,
+            created_at=self._schema.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            updated_at=updated_at,
+        )
+
+    def get_bento(self, refetch: bool = True) -> str:
+        target = self._refetch_target(refetch)
+        if target.bento is None:
+            raise BentoMLException(f"Deployment {self.name} has no bento")
+        return target.bento.name + ":" + target.bento.version
+
+    def get_client(
+        self,
+        media_type: str = "application/json",
+        token: str | None = None,
+    ) -> SyncHTTPClient:
+        from _bentoml_impl.client import SyncHTTPClient
+
+        self._refetch()
+        if self._schema.status != DeploymentStatus.Running:
+            raise BentoMLException(f"Deployment status is {self._schema.status}")
+        if self._urls is None or len(self._urls) != 1:
+            raise BentoMLException("Deployment url is not ready")
+
+        return SyncHTTPClient(self._urls[0], media_type=media_type, token=token)
+
+    def get_async_client(
+        self,
+        media_type: str = "application/json",
+        token: str | None = None,
+    ) -> AsyncHTTPClient:
+        from _bentoml_impl.client import AsyncHTTPClient
+
+        self._refetch()
+        if self._schema.status != DeploymentStatus.Running:
+            raise BentoMLException(f"Deployment status is {self._schema.status}")
+        if self._urls is None or len(self._urls) != 1:
+            raise BentoMLException("Deployment url is not ready")
+        return AsyncHTTPClient(self._urls[0], media_type=media_type, token=token)
+
+    def wait_until_ready(self, timeout: int = 300, check_interval: int = 5) -> None:
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            status = self.get_status()
+            if status.status == DeploymentStatus.Running.value:
+                logger.info(
+                    f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Deployment '{self.name}' is ready."
+                )
+                return
+            logger.info(
+                f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Waiting for deployment '{self.name}' to be ready. Current status: '{status}'."
+            )
+            time.sleep(check_interval)
+
+        raise TimeoutError(
+            f"Timed out waiting for deployment '{self.name}' to be ready."
+        )
+
+
+@attr.define
+class Deployment:
     @staticmethod
     def _fix_scaling(
         scaling: DeploymentTargetHPAConf | None,
@@ -175,48 +357,21 @@ class Deployment:
         if config_struct.access_type is None:
             config_struct.access_type = AccessControl.PUBLIC
 
-    @classmethod
-    def _get_default_kube_namespace(
-        cls,
-        cluster_name: str,
-        context: str | None = None,
-    ) -> str:
-        cloud_rest_client = get_rest_api_client(context)
-        res = cloud_rest_client.v1.get_cluster(cluster_name)
-        if not res:
-            raise BentoMLException("Cannot get default kube namespace")
-        return res.config.default_deployment_kube_namespace
-
-    @classmethod
-    def _get_default_cluster(cls, context: str | None = None) -> str:
-        cloud_rest_client = get_rest_api_client(context)
-        res = cloud_rest_client.v1.get_cluster_list(params={"count": 1})
-        if not res:
-            raise BentoMLException("Failed to get list of clusters.")
-        if not res.items:
-            raise BentoMLException("Cannot get default clusters.")
-        return res.items[0].name
-
-    def _refetch(self) -> None:
-        cloud_rest_client = get_rest_api_client(self.context)
-        res = cloud_rest_client.v2.get_deployment(self.cluster_name, self.name)
-        if res is None:
-            raise NotFound(f"deployment {self.name} is not found")
-        self._schema = res
-        self._urls = res.urls
-
-    def _conver_schema_to_update_schema(self) -> dict[str, t.Any]:
-        if self._schema.latest_revision is None:
+    @staticmethod
+    def _convert_schema_to_update_schema(_schema: DeploymentSchema) -> dict[str, t.Any]:
+        if _schema.latest_revision is None:
+            raise BentoMLException(f"Deployment {_schema.name} has no latest revision")
+        if len(_schema.latest_revision.targets) == 0:
             raise BentoMLException(
-                f"Deployment {self._schema.name} has no latest revision"
+                f"Deployment {_schema.name} has no latest revision targets"
             )
-        target_schema = self._schema.latest_revision.targets[0]
+        target_schema = _schema.latest_revision.targets[0]
         if target_schema is None:
-            raise BentoMLException(f"Deployment {self._schema.name} has no target")
+            raise BentoMLException(f"Deployment {_schema.name} has no target")
         if target_schema.config is None:
-            raise BentoMLException(f"Deployment {self._schema.name} has no config")
+            raise BentoMLException(f"Deployment {_schema.name} has no config")
         if target_schema.bento is None:
-            raise BentoMLException(f"Deployment {self._schema.name} has no bento")
+            raise BentoMLException(f"Deployment {_schema.name} has no bento")
         update_schema = UpdateDeploymentSchemaV2(
             services=target_schema.config.services,
             instance_type=target_schema.config.instance_type,
@@ -231,110 +386,51 @@ class Deployment:
         )
         return bentoml_cattr.unstructure(update_schema)
 
-    def _conver_schema_to_bento(self) -> Tag:
-        if self._schema.latest_revision is None:
-            raise BentoMLException(
-                f"Deployment {self._schema.name} has no latest revision"
-            )
-        target_schema = self._schema.latest_revision.targets[0]
+    @staticmethod
+    def _convert_schema_to_bento(_schema: DeploymentSchema) -> Tag:
+        if _schema.latest_revision is None:
+            raise BentoMLException(f"Deployment {_schema.name} has no latest revision")
+        target_schema = _schema.latest_revision.targets[0]
         if target_schema is None:
-            raise BentoMLException(f"Deployment {self._schema.name} has no target")
+            raise BentoMLException(f"Deployment {_schema.name} has no target")
         if target_schema.bento is None:
-            raise BentoMLException(f"Deployment {self._schema.name} has no bento")
+            raise BentoMLException(f"Deployment {_schema.name} has no bento")
         return Tag.from_taglike(
             target_schema.bento.repository.name + ":" + target_schema.bento.name
         )
 
-    @property
-    def info(self) -> DeploymentInfo:
-        schema = self._conver_schema_to_update_schema()
-        del schema["bento"]
+    @staticmethod
+    def _generate_deployment_info_(
+        context: str | None, res: DeploymentSchema, urls: list[str] | None = None
+    ) -> DeploymentInfo:
+        client = get_rest_api_client(context)
+        cluster_display_name = res.cluster.host_cluster_display_name
+        if cluster_display_name is None:
+            cluster_display_name = res.cluster.name
         return DeploymentInfo(
-            name=self.name,
-            bento=self._conver_schema_to_bento(),
-            status=self._schema.status,
-            admin_console=self.get_bento_cloud_url(),
-            endpoint=self._urls[0] if self._urls else None,
-            config=schema,
-            created_at=self._schema.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-        )
-
-    def get_config(self) -> dict[str, t.Any]:
-        self._refetch()
-        res = self._conver_schema_to_update_schema()
-        # bento should not be in the deployment config
-        del res["bento"]
-        return res
-
-    def get_bento(self) -> str:
-        self._refetch()
-        return str(self._conver_schema_to_bento())
-
-    def get_status(self) -> str:
-        self._refetch()
-        return self._schema.status.value
-
-    def get_client(
-        self,
-        is_async: bool = False,
-        media_type: str = "application/json",
-        token: str | None = None,
-    ) -> SyncHTTPClient:
-        from _bentoml_impl.client import SyncHTTPClient
-
-        self._refetch()
-        if self._schema.status != DeploymentStatus.Running:
-            raise BentoMLException(f"Deployment status is {self._schema.status}")
-        if self._urls is None or len(self._urls) != 1:
-            raise BentoMLException("Deployment url is not ready")
-        return SyncHTTPClient(self._urls[0], media_type=media_type, token=token)
-
-    def get_bento_cloud_url(self) -> str:
-        client = get_rest_api_client(self.context)
-        namespace = self._get_default_kube_namespace(self.cluster_name, self.context)
-        return f"{client.v1.endpoint}/clusters/{self.cluster_name}/namespaces/{namespace}/deployments/{self.name}"
-
-    def get_async_client(
-        self,
-        media_type: str = "application/json",
-        token: str | None = None,
-    ) -> AsyncHTTPClient:
-        from _bentoml_impl.client import AsyncHTTPClient
-
-        self._refetch()
-        if self._schema.status != DeploymentStatus.Running:
-            raise BentoMLException(f"Deployment status is {self._schema.status}")
-        if self._urls is None or len(self._urls) != 1:
-            raise BentoMLException("Deployment url is not ready")
-        return AsyncHTTPClient(self._urls[0], media_type=media_type, token=token)
-
-    def wait_until_ready(self, timeout: int = 300, check_interval: int = 5) -> None:
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            status = self.get_status()
-            if status == DeploymentStatus.Running.value:
-                logger.info(
-                    f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Deployment '{self.name}' is ready."
-                )
-                return
-            logger.info(
-                f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Waiting for deployment '{self.name}' to be ready. Current status: '{status}'."
-            )
-            time.sleep(check_interval)
-
-        raise TimeoutError(
-            f"Timed out waiting for deployment '{self.name}' to be ready."
+            name=res.name,
+            # TODO: update this after the url in the frontend is fixed
+            admin_console=f"{client.v1.endpoint}/clusters/{res.cluster.name}/namespaces/{res.kube_namespace}/deployments/{res.name}",
+            created_at=res.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            created_by=res.creator.name,
+            cluster=cluster_display_name,
+            organization=res.cluster.organization_name,
+            distributed=res.distributed,
+            description=res.description,
+            _schema=res,
+            _context=context,
+            _urls=urls,
         )
 
     @classmethod
     def list(
         cls,
         context: str | None = None,
-        cluster_name: str | None = None,
+        cluster: str | None = None,
         search: str | None = None,
-    ) -> list[Deployment]:
+    ) -> list[DeploymentInfo]:
         cloud_rest_client = get_rest_api_client(context)
-        if cluster_name is None:
+        if cluster is None:
             res_count = cloud_rest_client.v2.list_deployment(all=True, search=search)
             if res_count is None:
                 raise BentoMLException("List deployments request failed")
@@ -346,64 +442,54 @@ class Deployment:
             if res is None:
                 raise BentoMLException("List deployments request failed")
         else:
-            res_count = cloud_rest_client.v2.list_deployment(
-                cluster_name, search=search
-            )
+            res_count = cloud_rest_client.v2.list_deployment(cluster, search=search)
             if res_count is None:
-                raise NotFound(f"Cluster {cluster_name} is not found")
+                raise NotFound(f"Cluster {cluster} is not found")
             if res_count.total == 0:
                 return []
             res = cloud_rest_client.v2.list_deployment(
-                cluster_name, search=search, count=res_count.total
+                cluster, search=search, count=res_count.total
             )
             if res is None:
                 raise BentoMLException("List deployments request failed")
-        return [
-            Deployment(
-                name=schema.name,
-                context=context,
-                cluster_name=schema.cluster.name,
-                _schema=schema,
-            )
-            for schema in res.items
-        ]
+        return [cls._generate_deployment_info_(context, schema) for schema in res.items]
 
     @classmethod
     def create(
         cls,
-        bento: Tag,
+        bento: Tag | str | None = None,
         access_type: str | None = None,
         name: str | None = None,
-        cluster_name: str | None = None,
+        cluster: str | None = None,
         scaling_min: int | None = None,
         scaling_max: int | None = None,
         instance_type: str | None = None,
         strategy: str | None = None,
         envs: t.List[dict[str, t.Any]] | None = None,
         extras: dict[str, t.Any] | None = None,
-        config_dct: dict[str, t.Any] | None = None,
+        config_dict: dict[str, t.Any] | None = None,
         config_file: str | t.TextIO | None = None,
         path_context: str | None = None,
         context: str | None = None,
-    ) -> Deployment:
+    ) -> DeploymentInfo:
         cloud_rest_client = get_rest_api_client(context)
-        dct: dict[str, t.Any] = {
+        dict: dict[str, t.Any] = {
             "bento": str(bento),
         }
         if name:
-            dct["name"] = name
+            dict["name"] = name
         else:
             # the cloud takes care of the name
-            dct["name"] = ""
+            dict["name"] = ""
 
-        if config_dct:
-            merging_dct = config_dct
+        if config_dict:
+            merging_dict = config_dict
             pass
         elif isinstance(config_file, str):
             real_path = resolve_user_filepath(config_file, path_context)
             try:
                 with open(real_path, "r") as file:
-                    merging_dct = yaml.safe_load(file)
+                    merging_dict = yaml.safe_load(file)
             except FileNotFoundError:
                 raise ValueError(f"File not found: {real_path}")
             except yaml.YAMLError as exc:
@@ -415,83 +501,77 @@ class Deployment:
                 )
         elif config_file is not None:
             try:
-                merging_dct = yaml.safe_load(config_file)
+                merging_dict = yaml.safe_load(config_file)
             except yaml.YAMLError as exc:
                 logger.error("Error while parsing YAML config-file stream: %s", exc)
                 raise
         else:
-            merging_dct = {
+            merging_dict = {
                 "scaling": {"min_replicas": scaling_min, "max_replicas": scaling_max},
                 "instance_type": instance_type,
                 "deployment_strategy": strategy,
                 "envs": envs,
                 "extras": extras,
                 "access_type": access_type,
-                "cluster": cluster_name,
             }
-        dct.update(merging_dct)
+        dict.update(merging_dict)
 
-        # add cluster
-        if "cluster" not in dct or dct["cluster"] is None:
-            cluster_name = cls._get_default_cluster(context)
-            dct["cluster"] = cluster_name
-
-        if "distributed" not in dct:
-            dct["distributed"] = (
-                "services" in dct
-                and dct["services"] is not None
-                and dct["services"] != {}
+        if "distributed" not in dict:
+            dict["distributed"] = (
+                "services" in dict
+                and dict["services"] is not None
+                and dict["services"] != {}
             )
 
-        config_struct = bentoml_cattr.structure(dct, CreateDeploymentSchemaV2)
-        cls._fix_and_validate_schema(config_struct, dct["distributed"])
+        config_struct = bentoml_cattr.structure(dict, CreateDeploymentSchemaV2)
+        cls._fix_and_validate_schema(config_struct, dict["distributed"])
 
         res = cloud_rest_client.v2.create_deployment(
-            create_schema=config_struct, cluster_name=config_struct.cluster
+            create_schema=config_struct, cluster=cluster
         )
+
         logger.debug("Deployment Schema: %s", config_struct)
-        return Deployment(
-            context=context,
-            cluster_name=config_struct.cluster,
-            name=res.name,
-            _schema=res,
-        )
+
+        return cls._generate_deployment_info_(context, res, res.urls)
 
     @classmethod
     def update(
         cls,
-        name: str,
+        name: str | None,
         bento: Tag | str | None = None,
         access_type: str | None = None,
-        cluster_name: str | None = None,
+        cluster: str | None = None,
         scaling_min: int | None = None,
         scaling_max: int | None = None,
         instance_type: str | None = None,
         strategy: str | None = None,
         envs: t.List[dict[str, t.Any]] | None = None,
         extras: dict[str, t.Any] | None = None,
-        config_dct: dict[str, t.Any] | None = None,
+        config_dict: dict[str, t.Any] | None = None,
         config_file: str | t.TextIO | None = None,
         path_context: str | None = None,
         context: str | None = None,
-    ) -> Deployment:
-        deployment = Deployment.get(
-            name=name, context=context, cluster_name=cluster_name
-        )
-        orig_dct = deployment._conver_schema_to_update_schema()
-        distributed = deployment._schema.distributed
+    ) -> DeploymentInfo:
+        if name is None:
+            raise ValueError("name is required")
         cloud_rest_client = get_rest_api_client(context)
-        if bento:
-            orig_dct["bento"] = str(bento)
+        deployment_schema = cloud_rest_client.v2.get_deployment(name, cluster)
+        if deployment_schema is None:
+            raise NotFound(f"deployment {name} is not found")
 
-        if config_dct:
-            merging_dct = config_dct
+        orig_dict = cls._convert_schema_to_update_schema(deployment_schema)
+        distributed = deployment_schema.distributed
+        if bento:
+            orig_dict["bento"] = str(bento)
+
+        if config_dict:
+            merging_dict = config_dict
             pass
         elif isinstance(config_file, str):
             real_path = resolve_user_filepath(config_file, path_context)
             try:
                 with open(real_path, "r") as file:
-                    merging_dct = yaml.safe_load(file)
+                    merging_dict = yaml.safe_load(file)
             except FileNotFoundError:
                 raise ValueError(f"File not found: {real_path}")
             except yaml.YAMLError as exc:
@@ -503,90 +583,87 @@ class Deployment:
                 )
         elif config_file is not None:
             try:
-                merging_dct = yaml.safe_load(config_file)
+                merging_dict = yaml.safe_load(config_file)
             except yaml.YAMLError as exc:
                 logger.error("Error while parsing YAML config-file stream: %s", exc)
                 raise
 
         else:
-            merging_dct: dict[str, t.Any] = {"scaling": {}}
+            merging_dict: dict[str, t.Any] = {"scaling": {}}
             if scaling_min is not None:
-                merging_dct["scaling"]["min_replicas"] = scaling_min
+                merging_dict["scaling"]["min_replicas"] = scaling_min
             if scaling_max is not None:
-                merging_dct["scaling"]["max_replicas"] = scaling_max
+                merging_dict["scaling"]["max_replicas"] = scaling_max
             if instance_type is not None:
-                merging_dct["instance_type"] = instance_type
+                merging_dict["instance_type"] = instance_type
 
             if strategy is not None:
-                merging_dct["deployment_strategy"] = strategy
+                merging_dict["deployment_strategy"] = strategy
 
             if envs is not None:
-                merging_dct["envs"] = envs
+                merging_dict["envs"] = envs
 
             if extras is not None:
-                merging_dct["extras"] = extras
+                merging_dict["extras"] = extras
 
             if access_type is not None:
-                merging_dct["access_type"] = access_type
+                merging_dict["access_type"] = access_type
 
-        config_merger.merge(orig_dct, merging_dct)
+        config_merger.merge(orig_dict, merging_dict)
 
-        config_struct = bentoml_cattr.structure(orig_dct, UpdateDeploymentSchemaV2)
+        config_struct = bentoml_cattr.structure(orig_dict, UpdateDeploymentSchemaV2)
 
         cls._fix_and_validate_schema(config_struct, distributed)
 
         res = cloud_rest_client.v2.update_deployment(
-            cluster_name=deployment.cluster_name,
-            deployment_name=name,
+            cluster=deployment_schema.cluster.host_cluster_display_name,
+            name=name,
             update_schema=config_struct,
         )
         if res is None:
             raise NotFound(f"deployment {name} is not found")
         logger.debug("Deployment Schema: %s", config_struct)
-        deployment._schema = res
-        deployment._urls = res.urls
-        return deployment
+        return cls._generate_deployment_info_(context, res, res.urls)
 
     @classmethod
     def apply(
         cls,
-        name: str,
-        bento: Tag | None = None,
-        cluster_name: str | None = None,
-        config_dct: dict[str, t.Any] | None = None,
-        config_file: str | None = None,
+        name: str | None = None,
+        bento: Tag | str | None = None,
+        cluster: str | None = None,
+        config_dict: dict[str, t.Any] | None = None,
+        config_file: t.TextIO | str | None = None,
         path_context: str | None = None,
         context: str | None = None,
-    ) -> Deployment:
-        try:
-            deployment = Deployment.get(
-                name=name, context=context, cluster_name=cluster_name
-            )
-        except NotFound as e:
+    ) -> DeploymentInfo:
+        if name is None:
+            raise ValueError("name is required")
+        cloud_rest_client = get_rest_api_client(context)
+        res = cloud_rest_client.v2.get_deployment(name, cluster)
+        if res is None:
             if bento is not None:
                 return cls.create(
                     bento=bento,
                     name=name,
-                    cluster_name=cluster_name,
-                    config_dct=config_dct,
+                    cluster=cluster,
+                    config_dict=config_dict,
                     config_file=config_file,
                     path_context=path_context,
                     context=context,
                 )
             else:
-                raise e
-        cloud_rest_client = get_rest_api_client(context)
+                raise NotFound(f"deployment {name} is not found")
         if bento is None:
-            bento = deployment._conver_schema_to_bento()
+            bento = cls._convert_schema_to_bento(_schema=res)
 
-        schema_dct: dict[str, t.Any] = {"bento": str(bento)}
-        distributed = deployment._schema.distributed
+        schema_dict: dict[str, t.Any] = {"bento": str(bento)}
+        distributed = res.distributed
 
-        if config_file:
+        if isinstance(config_file, str):
             real_path = resolve_user_filepath(config_file, path_context)
             try:
                 with open(real_path, "r") as file:
-                    config_dct = yaml.safe_load(file)
+                    config_dict = yaml.safe_load(file)
             except FileNotFoundError:
                 raise ValueError(f"File not found: {real_path}")
             except yaml.YAMLError as exc:
@@ -596,79 +673,63 @@ class Deployment:
                 raise ValueError(
                     f"An error occurred while reading the file: {real_path}\n{e}"
                 )
-        if config_dct is None:
+        elif config_file is not None:
+            try:
+                config_dict = yaml.safe_load(config_file)
+            except yaml.YAMLError as exc:
+                logger.error("Error while parsing YAML config-file stream: %s", exc)
+                raise
+        if config_dict is None:
             raise BentoMLException("Apply a deployment needs a configuration input")
 
-        schema_dct.update(config_dct)
-        config_struct = bentoml_cattr.structure(schema_dct, UpdateDeploymentSchemaV2)
+        schema_dict.update(config_dict)
+        config_struct = bentoml_cattr.structure(schema_dict, UpdateDeploymentSchemaV2)
         cls._fix_and_validate_schema(config_struct, distributed)
 
         res = cloud_rest_client.v2.update_deployment(
-            deployment_name=name,
+            name=name,
             update_schema=config_struct,
-            cluster_name=deployment.cluster_name,
+            cluster=res.cluster.host_cluster_display_name,
         )
         if res is None:
             raise NotFound(f"deployment {name} is not found")
         logger.debug("Deployment Schema: %s", config_struct)
-        deployment._schema = res
-        deployment._urls = res.urls
-        return deployment
+        return cls._generate_deployment_info_(context, res, res.urls)
 
     @classmethod
     def get(
         cls,
         name: str,
+        cluster: str | None = None,
         context: str | None = None,
-        cluster_name: str | None = None,
-    ) -> Deployment:
-        if cluster_name is None:
-            cluster_name = cls._get_default_cluster(context)
+    ) -> DeploymentInfo:
         cloud_rest_client = get_rest_api_client(context)
-        res = cloud_rest_client.v2.get_deployment(cluster_name, name)
+        res = cloud_rest_client.v2.get_deployment(name, cluster)
         if res is None:
             raise NotFound(f"deployment {name} is not found")
-
-        deployment = Deployment(
-            context=context,
-            cluster_name=cluster_name,
-            name=name,
-            _schema=res,
-            _urls=res.urls,
-        )
-        return deployment
+        return cls._generate_deployment_info_(context, res, res.urls)
 
     @classmethod
     def terminate(
         cls,
         name: str,
+        cluster: str | None = None,
         context: str | None = None,
-        cluster_name: str | None = None,
-    ) -> Deployment:
+    ) -> DeploymentInfo:
         cloud_rest_client = get_rest_api_client(context)
-        if cluster_name is None:
-            cluster_name = cls._get_default_cluster(context)
-        res = cloud_rest_client.v2.terminate_deployment(cluster_name, name)
+        res = cloud_rest_client.v2.terminate_deployment(name, cluster)
         if res is None:
             raise NotFound(f"Deployment {name} is not found")
-        return Deployment(
-            name=name,
-            cluster_name=cluster_name,
-            context=context,
-            _schema=res,
-            _urls=res.urls,
-        )
+        return cls._generate_deployment_info_(context, res, res.urls)
 
     @classmethod
     def delete(
         cls,
         name: str,
+        cluster: str | None = None,
         context: str | None = None,
-        cluster_name: str | None = None,
     ) -> None:
         cloud_rest_client = get_rest_api_client(context)
-        if cluster_name is None:
-            cluster_name = cls._get_default_cluster(context)
-        res = cloud_rest_client.v2.delete_deployment(cluster_name, name)
+        res = cloud_rest_client.v2.delete_deployment(name, cluster)
         if res is None:
             raise NotFound(f"Deployment {name} is not found")

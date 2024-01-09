@@ -307,7 +307,24 @@ def add_deployment_command(cli: click.Group) -> None:
         click.echo(f"Deployment '{name}' updated successfully.")
 
     @deployment_cli.command()
+    @shared_decorator()
     @cog.optgroup.group(cls=cog.MutuallyExclusiveOptionGroup, name="target options")
+    @cog.optgroup.option(
+        "--bento",
+        type=click.STRING,
+        help="Bento name",
+    )
+    @cog.optgroup.option(
+        "--project-path",
+        type=click.Path(exists=True),
+        help="Path to the project",
+    )
+    @click.option(
+        "-n",
+        "--name",
+        type=click.STRING,
+        help="Deployment name",
+    )
     @click.option(
         "-f",
         "--config-file",

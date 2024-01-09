@@ -194,6 +194,7 @@ class ServiceConfig(TypedDict, total=False):
     max_runner_connections: Posint
     resources: ResourceSchema
     workers: WorkerSchema
+    threads: Posint
     metrics: MetricSchema
     logging: LoggingSchema
     ssl: SSLSchema

@@ -368,7 +368,7 @@ def test_create_deployment_config_dict(
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == ""
-    assert deployment.distributed == True
+    assert deployment.distributed
     config = deployment.get_config(refetch=False)
     assert config.services == {
         "irisclassifier": DeploymentServiceConfig(

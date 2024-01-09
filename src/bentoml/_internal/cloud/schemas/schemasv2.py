@@ -19,17 +19,10 @@ from bentoml._internal.cloud.schemas.schemasv1 import UserSchema
 @attr.define
 class DeploymentTargetSchema(ResourceSchema):
     creator: t.Optional[UserSchema]
-    config: t.Optional[DeploymentTargetConfig]
+    config: t.Optional[DeploymentConfigSchema]
     bento: t.Optional[BentoWithRepositorySchema]
-
-
-@attr.define
-class DeploymentTargetConfig(DeploymentServiceConfig):
     kube_resource_uid: t.Optional[str] = attr.field(default=None)
     kube_resource_version: t.Optional[str] = attr.field(default=None)
-    services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
-    access_type: t.Optional[AccessControl] = attr.field(default=None)
-    bentoml_config_overrides: t.Dict[str, t.Optional[t.Any]] = attr.field(factory=dict)
 
 
 @attr.define
@@ -49,15 +42,22 @@ class DeploymentRevisionListSchema(BaseListSchema):
     items: t.List[t.Optional[DeploymentRevisionSchema]]
 
 
+@attr.define
+class DeploymentConfigSchema(DeploymentServiceConfig):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    access_type: t.Optional[AccessControl] = attr.field(default=None)
+    services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
+    bentoml_config_overrides: t.Dict[str, t.Any] = attr.field(factory=dict)
+
+
 @attr.define(kw_only=True)
-class UpdateDeploymentSchema(DeploymentServiceConfig):
+class UpdateDeploymentSchema(DeploymentConfigSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False  # distributed, cluster and name need to be ignored
     bento: str
     access_type: t.Optional[AccessControl] = attr.field(default=None)
     description: t.Optional[str] = attr.field(default=None)
-    services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
-    bentoml_config_overrides: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
 @attr.define(kw_only=True)
@@ -65,7 +65,6 @@ class CreateDeploymentSchema(UpdateDeploymentSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
     name: str
-    cluster: str
     distributed: bool
 
 
@@ -75,11 +74,12 @@ class DeploymentSchema(ResourceSchema):
     __forbid_extra_keys__ = True
     status: DeploymentStatus
     kube_namespace: str
-    creator: t.Optional[UserSchema]
-    cluster: t.Optional[ClusterSchema]
+    creator: UserSchema
+    cluster: ClusterSchema
     latest_revision: t.Optional[DeploymentRevisionSchema]
     mode: t.Optional[DeploymentMode] = attr.field(default=None)
     distributed: bool = attr.field(default=False)
+    description: str = attr.field(default="")
 
 
 @attr.define

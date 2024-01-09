@@ -10,6 +10,8 @@ from simple_di import Provide
 from simple_di import inject
 
 from bentoml._internal.cloud.deployment import Deployment
+from bentoml._internal.cloud.deployment import DeploymentInfo
+from bentoml._internal.cloud.deployment import get_args_from_config
 from bentoml._internal.cloud.deployment import get_real_bento_tag
 from bentoml._internal.tag import Tag
 from bentoml.cloud import BentoCloudClient
@@ -29,7 +31,7 @@ def create(
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     project_path: str | None = ...,
-    cluster_name: str | None = ...,
+    cluster: str | None = ...,
     access_type: str | None = ...,
     scaling_min: int | None = ...,
     scaling_max: int | None = ...,
@@ -37,7 +39,7 @@ def create(
     strategy: str | None = ...,
     envs: t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
-) -> Deployment:
+) -> DeploymentInfo:
     ...
 
 
@@ -49,7 +51,7 @@ def create(
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     bento: Tag | str | None = ...,
-    cluster_name: str | None = ...,
+    cluster: str | None = ...,
     access_type: str | None = ...,
     scaling_min: int | None = ...,
     scaling_max: int | None = ...,
@@ -57,7 +59,7 @@ def create(
     strategy: str | None = ...,
     envs: t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
-) -> Deployment:
+) -> DeploymentInfo:
     ...
 
 
@@ -70,7 +72,7 @@ def create(
     *,
     bento: Tag | str | None = ...,
     config_file: str | None = ...,
-) -> Deployment:
+) -> DeploymentInfo:
     ...
 
 
@@ -83,7 +85,7 @@ def create(
     *,
     project_path: str | None = ...,
     config_file: str | None = ...,
-) -> Deployment:
+) -> DeploymentInfo:
     ...
 
 
@@ -95,8 +97,8 @@ def create(
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     bento: Tag | str | None = ...,
-    config_dct: dict[str, t.Any] | None = ...,
-) -> Deployment:
+    config_dict: dict[str, t.Any] | None = ...,
+) -> DeploymentInfo:
     ...
 
 
@@ -108,8 +110,8 @@ def create(
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     project_path: str | None = ...,
-    config_dct: dict[str, t.Any] | None = ...,
-) -> Deployment:
+    config_dict: dict[str, t.Any] | None = ...,
+) -> DeploymentInfo:
     ...
 
 
@@ -122,7 +124,7 @@ def create(
     *,
     project_path: str | None = None,
     bento: Tag | str | None = None,
-    cluster_name: str | None = None,
+    cluster: str | None = None,
     access_type: str | None = None,
     scaling_min: int | None = None,
     scaling_max: int | None = None,
@@ -130,12 +132,12 @@ def create(
     strategy: str | None = None,
     envs: t.List[dict[str, t.Any]] | None = None,
     extras: dict[str, t.Any] | None = None,
-    config_dct: dict[str, t.Any] | None = None,
+    config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
-) -> Deployment:
+) -> DeploymentInfo:
     deploy_by_param = (
         access_type
-        or cluster_name
+        or cluster
         or scaling_min
         or scaling_max
         or instance_type
@@ -144,23 +146,31 @@ def create(
         or extras
     )
     if (
-        config_dct
+        config_dict
         and config_file
-        or config_dct
+        or config_dict
         and deploy_by_param
         or config_file
         and deploy_by_param
     ):
         raise BentoMLException(
-            "Configure a deployment can only use one of the following: config_dct, config_file, or the other parameters"
+            "Configure a deployment can only use one of the following: config_dict, config_file, or the other parameters"
         )
-    if bento and project_path:
+    deploy_name, bento_name, cluster_name = get_args_from_config(
+        bento=str(bento),
+        name=name,
+        cluster=cluster,
+        config_dict=config_dict,
+        config_file=config_file,
+        path_context=path_context,
+    )
+    if bento_name and project_path:
         raise BentoMLException("Only one of bento or project_path can be provided")
-    if bento is None and project_path is None:
+    if bento_name is None and project_path is None:
         raise BentoMLException("Either bento or project_path must be provided")
     bento = get_real_bento_tag(
         project_path=project_path,
-        bento=bento,
+        bento=bento_name,
         context=context,
         _cloud_client=BentoCloudClient(),
     )
@@ -168,15 +178,15 @@ def create(
     return Deployment.create(
         bento=bento,
         access_type=access_type,
-        name=name,
-        cluster_name=cluster_name,
+        name=deploy_name,
+        cluster=cluster_name,
         scaling_min=scaling_min,
         scaling_max=scaling_max,
         instance_type=instance_type,
         strategy=strategy,
         envs=envs,
         extras=extras,
-        config_dct=config_dct,
+        config_dict=config_dict,
         config_file=config_file,
         path_context=path_context,
         context=context,
@@ -185,10 +195,10 @@ def create(
 
 @t.overload
 def update(
-    name: str,
+    name: str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
-    cluster_name: str | None = ...,
+    cluster: str | None = ...,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     project_path: str | None = ...,
@@ -199,16 +209,16 @@ def update(
     strategy: str | None = ...,
     envs: t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
-) -> Deployment:
+) -> DeploymentInfo:
     ...
 
 
 @t.overload
 def update(
-    name: str,
+    name: str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
-    cluster_name: str | None = ...,
+    cluster: str | None = ...,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     bento: Tag | str | None = ...,
@@ -219,72 +229,72 @@ def update(
     strategy: str | None = ...,
     envs: t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
-) -> Deployment:
+) -> DeploymentInfo:
     ...
 
 
 @t.overload
 def update(
-    name: str,
+    name: str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
-    cluster_name: str | None = None,
+    cluster: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     project_path: str | None = ...,
     config_file: str | None = ...,
-) -> Deployment:
+) -> DeploymentInfo:
     ...
 
 
 @t.overload
 def update(
-    name: str,
+    name: str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
-    cluster_name: str | None = None,
+    cluster: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     bento: Tag | str | None = ...,
     config_file: str | None = ...,
-) -> Deployment:
+) -> DeploymentInfo:
     ...
 
 
 @t.overload
 def update(
-    name: str,
+    name: str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
-    cluster_name: str | None = None,
+    cluster: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     project_path: str | None = ...,
-    config_dct: dict[str, t.Any] | None = ...,
-) -> Deployment:
+    config_dict: dict[str, t.Any] | None = ...,
+) -> DeploymentInfo:
     ...
 
 
 @t.overload
 def update(
-    name: str,
+    name: str | None = ...,
     path_context: str | None = ...,
     context: str | None = ...,
-    cluster_name: str | None = None,
+    cluster: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     bento: Tag | str | None = ...,
-    config_dct: dict[str, t.Any] | None = ...,
-) -> Deployment:
+    config_dict: dict[str, t.Any] | None = ...,
+) -> DeploymentInfo:
     ...
 
 
 @inject
 def update(
-    name: str,
+    name: str | None = None,
     path_context: str | None = None,
     context: str | None = None,
-    cluster_name: str | None = None,
+    cluster: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     project_path: str | None = None,
@@ -296,9 +306,9 @@ def update(
     strategy: str | None = None,
     envs: t.List[dict[str, t.Any]] | None = None,
     extras: dict[str, t.Any] | None = None,
-    config_dct: dict[str, t.Any] | None = None,
+    config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
-) -> Deployment:
+) -> DeploymentInfo:
     deploy_by_param = (
         access_type
         or scaling_min
@@ -309,24 +319,32 @@ def update(
         or extras
     )
     if (
-        config_dct
+        config_dict
         and config_file
-        or config_dct
+        or config_dict
         and deploy_by_param
         or config_file
         and deploy_by_param
     ):
         raise BentoMLException(
-            "Configure a deployment can only use one of the following: config_dct, config_file, or the other parameters"
+            "Configure a deployment can only use one of the following: config_dict, config_file, or the other parameters"
         )
-    if bento and project_path:
+    deploy_name, bento_name, cluster_name = get_args_from_config(
+        bento=str(bento),
+        name=name,
+        cluster=cluster,
+        config_dict=config_dict,
+        config_file=config_file,
+        path_context=path_context,
+    )
+    if bento_name and project_path:
         raise BentoMLException("Only one of bento or project_path can be provided")
-    if bento is None and project_path is None:
-        bento = None
+    if bento_name is None and project_path is None:
+        bento_name = None
     else:
         bento = get_real_bento_tag(
             project_path=project_path,
-            bento=bento,
+            bento=bento_name,
             context=context,
             _cloud_client=BentoCloudClient(),
         )
@@ -334,15 +352,15 @@ def update(
     return Deployment.update(
         bento=bento,
         access_type=access_type,
-        name=name,
-        cluster_name=cluster_name,
+        name=deploy_name,
+        cluster=cluster_name,
         scaling_min=scaling_min,
         scaling_max=scaling_max,
         instance_type=instance_type,
         strategy=strategy,
         envs=envs,
         extras=extras,
-        config_dct=config_dct,
+        config_dict=config_dict,
         config_file=config_file,
         path_context=path_context,
         context=context,
@@ -351,96 +369,104 @@ def update(
 
 @t.overload
 def apply(
-    name: str,
-    cluster_name: t.Optional[str] = ...,
+    name: str | None = ...,
+    cluster: t.Optional[str] = ...,
     path_context: t.Optional[str] = ...,
     context: t.Optional[str] = ...,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     project_path: t.Optional[str] = ...,
-    config_dct: t.Optional[dict[str, t.Any]] = ...,
-) -> Deployment:
+    config_dict: t.Optional[dict[str, t.Any]] = ...,
+) -> DeploymentInfo:
     ...
 
 
 @t.overload
 def apply(
-    name: str,
-    cluster_name: t.Optional[str] = ...,
+    name: str | None = ...,
+    cluster: t.Optional[str] = ...,
     path_context: t.Optional[str] = ...,
     context: t.Optional[str] = ...,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     bento: t.Optional[t.Union[Tag, str]] = ...,
-    config_dct: t.Optional[dict[str, t.Any]] = ...,
-) -> Deployment:
+    config_dict: t.Optional[dict[str, t.Any]] = ...,
+) -> DeploymentInfo:
     ...
 
 
 @t.overload
 def apply(
-    name: str,
-    cluster_name: t.Optional[str] = ...,
+    name: str | None = ...,
+    cluster: t.Optional[str] = ...,
     path_context: t.Optional[str] = ...,
     context: t.Optional[str] = ...,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     project_path: t.Optional[str] = ...,
     config_file: t.Optional[str] = ...,
-) -> Deployment:
+) -> DeploymentInfo:
     ...
 
 
 @t.overload
 def apply(
-    name: str,
-    cluster_name: t.Optional[str] = ...,
+    name: str | None = ...,
+    cluster: t.Optional[str] = ...,
     path_context: t.Optional[str] = ...,
     context: t.Optional[str] = ...,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     bento: t.Optional[t.Union[Tag, str]] = ...,
     config_file: t.Optional[str] = ...,
-) -> Deployment:
+) -> DeploymentInfo:
     ...
 
 
 @inject
 def apply(
-    name: str,
-    cluster_name: str | None = None,
+    name: str | None = None,
+    cluster: str | None = None,
     path_context: str | None = None,
     context: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     *,
     project_path: str | None = None,
     bento: Tag | str | None = None,
-    config_dct: dict[str, t.Any] | None = None,
+    config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
-) -> Deployment:
-    if config_dct and config_file:
+) -> DeploymentInfo:
+    if config_dict and config_file:
         raise BentoMLException(
-            "Configure a deployment can only use one of the following: config_dct, config_file"
+            "Configure a deployment can only use one of the following: config_dict, config_file"
         )
-    if bento and project_path:
+    deploy_name, bento_name, cluster_name = get_args_from_config(
+        bento=str(bento),
+        name=name,
+        cluster=cluster,
+        config_dict=config_dict,
+        config_file=config_file,
+        path_context=path_context,
+    )
+    if bento_name and project_path:
         raise BentoMLException("Only one of bento or project_path can be provided")
-    if bento is None and project_path is None:
-        bento = None
+    if bento_name is None and project_path is None:
+        bento_name = None
     else:
         bento = get_real_bento_tag(
             project_path=project_path,
-            bento=bento,
+            bento=bento_name,
             context=context,
             _cloud_client=BentoCloudClient(),
         )
 
     return Deployment.apply(
-        name=name,
-        bento=bento,
-        cluster_name=cluster_name,
+        name=deploy_name,
+        bento=bento_name,
+        cluster=cluster_name,
         context=context,
         path_context=path_context,
-        config_dct=config_dct,
+        config_dict=config_dict,
         config_file=config_file,
     )
 
@@ -448,45 +474,45 @@ def apply(
 def get(
     name: str,
     context: str | None = None,
-    cluster_name: str | None = None,
-) -> Deployment:
+    cluster: str | None = None,
+) -> DeploymentInfo:
     return Deployment.get(
         name=name,
         context=context,
-        cluster_name=cluster_name,
+        cluster=cluster,
     )
 
 
 def terminate(
     name: str,
     context: str | None = None,
-    cluster_name: str | None = None,
-) -> Deployment:
+    cluster: str | None = None,
+) -> DeploymentInfo:
     return Deployment.terminate(
         name=name,
         context=context,
-        cluster_name=cluster_name,
+        cluster=cluster,
     )
 
 
 def delete(
     name: str,
     context: str | None = None,
-    cluster_name: str | None = None,
+    cluster: str | None = None,
 ) -> None:
     Deployment.delete(
         name=name,
         context=context,
-        cluster_name=cluster_name,
+        cluster=cluster,
     )
 
 
 def list(
     context: str | None = None,
-    cluster_name: str | None = None,
+    cluster: str | None = None,
     search: str | None = None,
-) -> t.List[Deployment]:
-    return Deployment.list(context=context, cluster_name=cluster_name, search=search)
+) -> t.List[DeploymentInfo]:
+    return Deployment.list(context=context, cluster=cluster, search=search)
 
 
 __all__ = ["create", "get", "update", "apply", "terminate", "delete", "list"]

@@ -8,14 +8,16 @@ import schema as s
 
 from ...utils.metrics import DEFAULT_BUCKET
 from ...utils.unflatten import unflatten
-from ..helpers import depth
-from ..helpers import ensure_iterable_type
-from ..helpers import ensure_larger_than
-from ..helpers import ensure_larger_than_zero
-from ..helpers import ensure_range
-from ..helpers import is_valid_ip_address
-from ..helpers import validate_otlp_protocol
-from ..helpers import validate_tracing_type
+from ..helpers import (
+    depth,
+    ensure_iterable_type,
+    ensure_larger_than,
+    ensure_larger_than_zero,
+    ensure_range,
+    is_valid_ip_address,
+    validate_otlp_protocol,
+    validate_tracing_type,
+)
 
 __all__ = ["SCHEMA", "migration"]
 
@@ -79,6 +81,7 @@ _SERVICE_CONFIG = {
         s.And(int, ensure_larger_than_zero),
         None,
     ),
+    s.Optional("threads"): s.And(int, ensure_larger_than_zero),
     s.Optional("traffic"): {
         "timeout": s.And(Real, ensure_larger_than_zero),
         s.Optional("max_concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),

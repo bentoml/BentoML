@@ -133,7 +133,7 @@ def add_deployment_command(cli: click.Group) -> None:
             )
 
         # determine if target is a path or a name
-        if path.exists(bento_name):
+        if isinstance(bento_name, str) and path.exists(bento_name):
             # target is a path
             click.echo(f"building bento from {target} ...")
             bento_tag = get_real_bento_tag(project_path=target)
@@ -210,6 +210,11 @@ def add_deployment_command(cli: click.Group) -> None:
         "--project-path",
         type=click.Path(exists=True),
         help="Path to the project",
+    )
+    @click.argument(
+        "name",
+        type=click.STRING,
+        required=True,
     )
     @click.option(
         "--access-type",
@@ -307,38 +312,31 @@ def add_deployment_command(cli: click.Group) -> None:
         click.echo(f"Deployment '{name}' updated successfully.")
 
     @deployment_cli.command()
-    @cog.optgroup.group(cls=cog.MutuallyExclusiveOptionGroup, name="target options")
     @click.option(
         "-f",
         "--config-file",
-        type=click.File(),
         help="Configuration file path, mututally exclusive with other config options",
         default=None,
     )
     @click.pass_obj
     def apply(  # type: ignore
         shared_options: SharedOptions,
-        name: str | None,
-        cluster: str | None,
-        project_path: str | None,
-        bento: str | None,
         config_file: str | t.TextIO | None,
     ) -> None:
-        """Update a deployment on BentoCloud.
+        """Apply a deployment on BentoCloud.
 
         \b
-        A deployment can be updated using parameters (standalone mode only), or using config yaml file.
-        You can also update bento by providing a project path or existing bento.
+        A deployment can be applied using config yaml file.
         """
         deploy_name, bento_name, cluster_name = get_args_from_config(
-            name=name, bento=bento, cluster=cluster, config_file=config_file
+            name=None, bento=None, cluster=None, config_file=config_file
         )
-        if bento_name is None and project_path is None:
+        if bento_name is None:
             target = None
         else:
             target = get_real_bento_tag(
-                project_path=project_path,
-                bento=bento,
+                project_path=None,
+                bento=bento_name,
                 context=shared_options.cloud_context,
             )
 
@@ -350,7 +348,7 @@ def add_deployment_command(cli: click.Group) -> None:
             context=shared_options.cloud_context,
         )
 
-        click.echo(f"Deployment '{name}' updated successfully.")
+        click.echo(f"Deployment '{deploy_name}' applied successfully.")
 
     @deployment_cli.command()
     @shared_decorator
@@ -396,6 +394,11 @@ def add_deployment_command(cli: click.Group) -> None:
         click.echo(f"Deployment '{name}' terminated successfully.")
 
     @deployment_cli.command()
+    @click.argument(
+        "name",
+        type=click.STRING,
+        required=True,
+    )
     @shared_decorator
     @click.pass_obj
     def delete(  # type: ignore

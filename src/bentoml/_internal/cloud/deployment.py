@@ -8,6 +8,7 @@ import attr
 import yaml
 from deepmerge.merger import Merger
 from simple_di import Provide
+from simple_di import inject
 
 if t.TYPE_CHECKING:
     from _bentoml_impl.client import AsyncHTTPClient
@@ -45,7 +46,7 @@ config_merger = Merger(
 
 def get_args_from_config(
     name: str | None = None,
-    bento: str | None = None,
+    bento: Tag | str | None = None,
     cluster: str | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | t.TextIO | None = None,
@@ -92,6 +93,7 @@ def get_args_from_config(
     return name, bento, cluster
 
 
+@inject
 def get_real_bento_tag(
     project_path: str | None = None,
     bento: str | Tag | None = None,
@@ -231,7 +233,7 @@ class DeploymentInfo:
         target = self._refetch_target(refetch)
         if target.bento is None:
             raise BentoMLException(f"Deployment {self.name} has no bento")
-        return target.bento.name + ":" + target.bento.version
+        return target.bento.repository.name + ":" + target.bento.version
 
     def get_client(
         self,
@@ -652,7 +654,7 @@ class Deployment:
                     context=context,
                 )
             else:
-                raise NotFound(f"deployment {name} is not found")
+                raise ValueError("bento is required")
         if bento is None:
             bento = cls._convert_schema_to_bento(_schema=res)
 

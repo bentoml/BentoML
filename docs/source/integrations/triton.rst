@@ -93,7 +93,7 @@ From a developer perspective, remote invocation of Triton runners is similar to 
 
 .. note::
 
-   By default, ``bentoml.triton.Runner`` will run the ``tritonserver`` with gRPC protocol. To use HTTP/REST protocol, provide ``tritonserver_type=''http'`` to the ``Runner`` constructor.
+   By default, ``bentoml.triton.Runner`` will run the ``tritonserver`` with gRPC protocol. To use HTTP/REST protocol, provide ``tritonserver_type='http'`` to the ``Runner`` constructor.
 
    .. code-block:: python
 
@@ -255,7 +255,7 @@ There are a few things to note here:
          .. code-block:: python
 
              InferResult = triton_runner.torchscript_mnist.run(np.zeros((1, 28, 28)), np.zeros((1, 28, 28)))
-             return InferResult.get_output("OUTPUT__0", as_json=True)
+             return InferResult.get_output("OUTPUT__1", as_json=True)
 
       .. tab-item:: HTTP
          :sync: http
@@ -263,7 +263,7 @@ There are a few things to note here:
          .. code-block:: python
 
              InferResult = triton_runner.torchscript_mnist.run(np.zeros((1, 28, 28)), np.zeros((1, 28, 28)))
-             return InferResult.get_output("OUTPUT__0")
+             return InferResult.get_output("OUTPUT__1")
 
 Additonally, the Triton runner exposes all `tritonclient <https://github.com/triton-inference-server/client>`_ functions.
 

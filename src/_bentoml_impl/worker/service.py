@@ -147,7 +147,7 @@ def main(
     service = import_service(bento_identifier)
     service.inject_config()
 
-    component_context.component_type = "api_server"
+    component_context.component_type = "new_service"
     if worker_id is not None:
         component_context.component_index = worker_id
 

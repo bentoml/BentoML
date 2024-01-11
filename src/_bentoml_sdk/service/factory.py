@@ -9,8 +9,7 @@ import typing as t
 from functools import partial
 
 import attrs
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 from typing_extensions import Unpack
 
 from bentoml import Runner
@@ -142,7 +141,7 @@ class Service(t.Generic[T]):
     def name(self) -> str:
         if name := self.config.get("name"):
             return name
-        return self.inner.__name__.lower()
+        return self.inner.__name__
 
     @property
     def import_string(self) -> str:
@@ -212,8 +211,10 @@ class Service(t.Generic[T]):
 
     def inject_config(self) -> None:
         from bentoml._internal.configuration import load_config
-        from bentoml._internal.configuration.containers import BentoMLContainer
-        from bentoml._internal.configuration.containers import config_merger
+        from bentoml._internal.configuration.containers import (
+            BentoMLContainer,
+            config_merger,
+        )
 
         # XXX: ensure at least one item to make `flatten_dict` work
         override_defaults = {

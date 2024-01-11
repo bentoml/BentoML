@@ -212,7 +212,9 @@ class ServiceAppFactory(BaseAppFactory):
                 RunnerTrafficMetricsMiddleware,
             )
 
-            middlewares.append(Middleware(RunnerTrafficMetricsMiddleware))
+            middlewares.append(
+                Middleware(RunnerTrafficMetricsMiddleware, namespace="bentoml_service")
+            )
 
         access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():

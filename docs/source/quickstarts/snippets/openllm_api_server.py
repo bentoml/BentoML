@@ -6,7 +6,7 @@ from bentoml import Service
 from bentoml.io import JSON, Text
 from openllm import LLM
 
-llm = LLM[Any, Any]("HuggingFaceH4/zephyr-7b-alpha", backend="vllm")
+llm = LLM("HuggingFaceH4/zephyr-7b-alpha", backend="vllm")
 
 
 svc = Service("tinyllm", runners=[llm.runner])
@@ -24,7 +24,7 @@ class GenerateInput(TypedDict):
         GenerateInput(
             prompt="What is time?",
             stream=False,
-            sampling_params={"temperature": 0.73, "logprobs": 1},
+            sampling_params={"temperature": 0.73},
         )
     ),
     output=Text(content_type="text/event-stream"),

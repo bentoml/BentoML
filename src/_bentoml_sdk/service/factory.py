@@ -142,7 +142,7 @@ class Service(t.Generic[T]):
     def name(self) -> str:
         if name := self.config.get("name"):
             return name
-        return self.inner.__name__.lower()
+        return self.inner.__name__
 
     @property
     def import_string(self) -> str:

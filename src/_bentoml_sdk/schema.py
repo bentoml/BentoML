@@ -180,17 +180,24 @@ class TensorSchema:
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
         value = handler(schema)
-        value.update(
-            dict_filter_none(
-                {
-                    "type": "tensor",
-                    "format": self.format,
-                    "dtype": self.dtype,
-                    "shape": self.shape,
-                    "dim": self.dim,
-                }
+        if handler.mode == "validation":
+            value.update(
+                dict_filter_none(
+                    {
+                        "type": "tensor",
+                        "format": self.format,
+                        "dtype": self.dtype,
+                        "shape": self.shape,
+                        "dim": self.dim,
+                    }
+                )
             )
-        )
+        else:
+            dimension = 1 if self.shape is None else len(self.shape)
+            child = {"type": "number"}
+            for _ in range(dimension):
+                child = {"type": "array", "items": child}
+            value.update(child)
         return value
 
     def __get_pydantic_core_schema__(
@@ -250,15 +257,35 @@ class DataframeSchema:
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> dict[str, t.Any]:
         value = handler(schema)
-        value.update(
-            dict_filter_none(
-                {
-                    "type": "dataframe",
-                    "orient": self.orient,
-                    "columns": self.columns,
-                }
+        if handler.mode == "validation":
+            value.update(
+                dict_filter_none(
+                    {
+                        "type": "dataframe",
+                        "orient": self.orient,
+                        "columns": self.columns,
+                    }
+                )
             )
-        )
+        else:
+            if self.orient == "records":
+                value.update(
+                    {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    }
+                )
+            elif self.orient == "columns":
+                value.update(
+                    {
+                        "type": "object",
+                        "additionalProperties": {"type": "array"},
+                    }
+                )
+            else:
+                raise ValueError(
+                    "Only 'records' and 'columns' are supported for orient"
+                )
         return value
 
     def __get_pydantic_core_schema__(

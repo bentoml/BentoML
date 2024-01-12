@@ -548,7 +548,7 @@ class BentoServiceInfo:
             name=name,
             service=svc.import_string,
             models=[BentoModelInfo.from_bento_model(m) for m in svc.models],
-            dependencies=list(svc.dependencies.keys()),
+            dependencies=[dep.on.name for dep in svc.dependencies.values()],
             config=svc.config,
         )
 

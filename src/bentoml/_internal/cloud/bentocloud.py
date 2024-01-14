@@ -28,6 +28,7 @@ from ..utils import calc_dir_size
 from .base import FILE_CHUNK_SIZE
 from .base import CallbackIOWrapper
 from .base import CloudClient
+from .base import io_wrapper
 from .config import get_rest_api_client
 from .deployment import Deployment
 from .schemas import BentoApiSchema
@@ -70,13 +71,19 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
+        max_memory: int = -1,
     ):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
                 f'Pushing Bento "{bento.tag}"', start=False, visible=False
             )
             self._do_push_bento(
-                bento, upload_task_id, force=force, threads=threads, context=context
+                bento,
+                upload_task_id,
+                force=force,
+                threads=threads,
+                context=context,
+                max_memory=max_memory,
             )
 
     @inject
@@ -88,6 +95,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
+        max_memory: int = -1,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ):
         yatai_rest_client = get_rest_api_client(context)
@@ -113,6 +121,7 @@ class BentoCloudClient(CloudClient):
                     force=force,
                     threads=threads,
                     context=context,
+                    max_memory=max_memory,
                 )
 
             futures: t.Iterator[None] = executor.map(push_model, models)
@@ -570,13 +579,19 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
+        max_memory: int = -1,
     ):
         with Live(self.progress_group):
             upload_task_id = self.transmission_progress.add_task(
                 f'Pushing model "{model.tag}"', start=False, visible=False
             )
             self._do_push_model(
-                model, upload_task_id, force=force, threads=threads, context=context
+                model,
+                upload_task_id,
+                force=force,
+                threads=threads,
+                context=context,
+                max_memory=max_memory,
             )
 
     def _do_push_model(
@@ -587,6 +602,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         context: str | None = None,
+        max_memory: int = -1,
     ):
         yatai_rest_client = get_rest_api_client(context)
         name = model.tag.name
@@ -667,7 +683,8 @@ class BentoCloudClient(CloudClient):
             with io_mutex:
                 self.transmission_progress.update(upload_task_id, advance=x)
 
-        with CallbackIOWrapper(read_cb=io_cb) as tar_io:
+        # limit the max memory usage when uploading model
+        with io_wrapper(max_memory, read_cb=io_cb) as tar_io:
             with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
                 with tarfile.open(fileobj=tar_io, mode="w:") as tar:
                     tar.add(model.path, arcname="./")
@@ -676,7 +693,7 @@ class BentoCloudClient(CloudClient):
                 yatai_rest_client.start_upload_model(
                     model_repository_name=model_repository.name, version=version
                 )
-            file_size = tar_io.getbuffer().nbytes
+            file_size = tar_io.size()
             self.transmission_progress.update(
                 upload_task_id,
                 description=f'Uploading model "{model.tag}"',
@@ -751,15 +768,14 @@ class BentoCloudClient(CloudClient):
                             text=f'({chunk_number}/{chunks_count}) Uploading chunk of model "{model.tag}"...'
                         ):
                             chunk = (
-                                tar_io.getbuffer()[
-                                    (chunk_number - 1)
-                                    * FILE_CHUNK_SIZE : chunk_number
-                                    * FILE_CHUNK_SIZE
-                                ]
+                                tar_io.chunk(
+                                    (chunk_number - 1) * FILE_CHUNK_SIZE,
+                                    chunk_number * FILE_CHUNK_SIZE,
+                                )
                                 if chunk_number < chunks_count
-                                else tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE :
-                                ]
+                                else tar_io.chunk(
+                                    (chunk_number - 1) * FILE_CHUNK_SIZE, -1
+                                )
                             )
 
                             with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:

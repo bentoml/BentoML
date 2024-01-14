@@ -281,8 +281,14 @@ def add_bento_management_commands(cli: Group):
         default=10,
         help="Number of threads to use for upload",
     )
+    @click.option(
+        "-m",
+        "--max_memory",
+        default=-1,
+        help="max memory usage in GB when pushing, default -1 means no limit",
+    )
     @click.pass_obj
-    def push(shared_options: SharedOptions, bento_tag: str, force: bool, threads: int) -> None:  # type: ignore (not accessed)
+    def push(shared_options: SharedOptions, bento_tag: str, force: bool, threads: int, max_memory: int) -> None:  # type: ignore (not accessed)
         """Push Bento to a remote Bento store server."""
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
@@ -292,6 +298,7 @@ def add_bento_management_commands(cli: Group):
             force=force,
             threads=threads,
             context=shared_options.cloud_context,
+            max_memory=max_memory,
         )
 
     @cli.command()

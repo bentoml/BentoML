@@ -92,5 +92,5 @@ Clone the repository to your local folder and install BentoML with ``pip``:
 This command installs BentoML in `editable mode <https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs>`_, which allows you to install the project without copying any files. Python links this folder and adds it to Python library paths. This means that any changes to the folder can be tested immediately.
 
 .. warning::
-    
+
     To keep using the library, you must not remove the ``bentoml`` folder after installing it in editable mode.

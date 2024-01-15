@@ -57,7 +57,7 @@ You can define the serving logic of the model in a ``service.py`` file by creati
         def __init__(self) -> None:
             # Load model into pipeline
             self.pipeline = pipeline('summarization')
-        
+
         @bentoml.api
         def summarize(self, text: str = NEWS_PARAGRAPH) -> str:
             result = self.pipeline(text)

@@ -112,11 +112,26 @@ class Service(t.Generic[T]):
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} name={self.name!r}>"
 
-    def all_services(self) -> list[Service[t.Any]]:
+    def all_services(
+        self, *, _collected: set[str] | None = None, _import_str: str = ""
+    ) -> list[Service[t.Any]]:
         """Get a list of the service and all recursive dependencies"""
+        if _collected is None:
+            _collected = set()
+        if self.name in _collected:
+            return []
         services: list[Service[t.Any]] = [self]
-        for dependency in self.dependencies.values():
-            services.extend(dependency.on.all_services())
+        if _import_str:
+            self._import_str = _import_str
+        else:
+            _import_str = self.import_string
+        _collected.add(self.name)
+        for name, dependency in self.dependencies.items():
+            services.extend(
+                dependency.on.all_services(
+                    _collected=_collected, _import_str=f"{_import_str}.{name}"
+                )
+            )
         return services
 
     @property

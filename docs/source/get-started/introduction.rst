@@ -60,7 +60,7 @@ The following is the basic workflow of using the BentoML framework.
 
 The first step in using BentoML is to save your model in the BentoML Model Store, a centralized repository for managing all local models. BentoML is compatible with a variety of models, including pre-trained models from Hugging Face or custom models trained on your custom datasets. The Model Store simplifies the process of iterating and evaluating different model versions, providing an efficient way to track and manage your ML assets.
 
-1. Service creation
+2. Service creation
 ^^^^^^^^^^^^^^^^^^^
 
 You create BentoML Services by defining a ``service.py`` file, where you outline your model's serving logic through class-based Services. In this file, you can define multiple Services for specific tasks like data preprocessing or model predictions if necessary. Each Service can be customized to handle its own input and output logic. You can test model serving and inference by running Services locally. During deploying, each Service can be independently scaled and separately deployed for better resolution utilization.

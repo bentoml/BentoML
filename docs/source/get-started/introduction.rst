@@ -60,6 +60,8 @@ The following is the basic workflow of using the BentoML framework.
 
 The first step in using BentoML is to save your model in the BentoML Model Store, a centralized repository for managing all local models. BentoML is compatible with a variety of models, including pre-trained models from Hugging Face or custom models trained on your custom datasets. The Model Store simplifies the process of iterating and evaluating different model versions, providing an efficient way to track and manage your ML assets.
 
+Note that for simple use cases, you can skip this step and use pre-trained models directly when creating your BentoML Service.
+
 2. Service creation
 ^^^^^^^^^^^^^^^^^^^
 

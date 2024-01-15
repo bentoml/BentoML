@@ -65,6 +65,10 @@ class ServiceAppFactory(BaseAppFactory):
             BentoMLContainer.api_server_config.metrics.enabled
         ],
         traffic: dict[str, t.Any] = Provide[BentoMLContainer.api_server_config.traffic],
+        enable_access_control: bool = Provide[BentoMLContainer.http.cors.enabled],
+        access_control_options: dict[str, list[str] | str | int] = Provide[
+            BentoMLContainer.access_control_options
+        ],
     ) -> None:
         from bentoml._internal.runner.container import AutoContainer
 
@@ -72,6 +76,8 @@ class ServiceAppFactory(BaseAppFactory):
         self.enable_metrics = enable_metrics
         timeout = traffic.get("timeout")
         max_concurrency = traffic.get("max_concurrency")
+        self.enable_access_control = enable_access_control
+        self.access_control_options = access_control_options
         super().__init__(timeout=timeout, max_concurrency=max_concurrency)
 
         self.dispatchers: dict[str, CorkDispatcher[t.Any, t.Any]] = {}
@@ -189,6 +195,17 @@ class ServiceAppFactory(BaseAppFactory):
 
         for middleware_cls, options in self.service.middlewares:
             middlewares.append(Middleware(middleware_cls, **options))
+
+        if self.enable_access_control:
+            assert (
+                self.access_control_options.get("allow_origins") is not None
+            ), "To enable cors, access_control_allow_origin must be set"
+
+            from starlette.middleware.cors import CORSMiddleware
+
+            middlewares.append(
+                Middleware(CORSMiddleware, **self.access_control_options)
+            )
 
         def client_request_hook(span: Span | None, _scope: dict[str, t.Any]) -> None:
             from bentoml._internal.context import trace_context

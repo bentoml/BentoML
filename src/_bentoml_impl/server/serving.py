@@ -218,7 +218,7 @@ def serve_http(
                 )
                 watchers.append(new_watcher)
                 sockets.append(new_socket)
-                dependency_map[dep_svc.name] = uri
+                dependency_map[name] = uri
             # reserve one more to avoid conflicts
             stack.enter_context(reserve_free_port())
 

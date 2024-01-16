@@ -4,8 +4,7 @@ import json
 import logging
 import os
 import typing as t
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 import attr
@@ -15,34 +14,31 @@ import fs.mirror
 import fs.osfs
 import fs.walk
 import yaml
-from cattr.gen import make_dict_structure_fn
-from cattr.gen import make_dict_unstructure_fn
-from cattr.gen import override
+from cattr.gen import make_dict_structure_fn, make_dict_unstructure_fn, override
 from fs.copy import copy_file
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 
-from ...exceptions import BentoMLException
-from ...exceptions import InvalidArgument
-from ...exceptions import NotFound
+from ...exceptions import BentoMLException, InvalidArgument, NotFound
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
-from ..models import ModelStore
-from ..models import copy_model
+from ..models import ModelStore, copy_model
 from ..runner import Runner
-from ..store import Store
-from ..store import StoreItem
+from ..store import Store, StoreItem
 from ..tag import Tag
 from ..types import PathType
-from ..utils import bentoml_cattr
-from ..utils import copy_file_to_fs_folder
-from ..utils import encode_path_for_uri
-from ..utils import normalize_labels_value
-from .build_config import BentoBuildConfig
-from .build_config import BentoPathSpec
-from .build_config import CondaOptions
-from .build_config import DockerOptions
-from .build_config import PythonOptions
+from ..utils import (
+    bentoml_cattr,
+    copy_file_to_fs_folder,
+    encode_path_for_uri,
+    normalize_labels_value,
+)
+from .build_config import (
+    BentoBuildConfig,
+    BentoPathSpec,
+    CondaOptions,
+    DockerOptions,
+    PythonOptions,
+)
 
 if TYPE_CHECKING:
     from fs.base import FS
@@ -308,7 +304,10 @@ class Bento(StoreItem):
                 apis=[BentoApiInfo.from_inference_api(api) for api in svc.apis.values()]
                 if is_legacy
                 else [],
-                services=[BentoServiceInfo.from_service(s) for s in svc.all_services()]
+                services=[
+                    BentoServiceInfo.from_service(s)
+                    for s in svc.all_services().values()
+                ]
                 if not is_legacy
                 else [],
                 docker=build_config.docker,
@@ -537,18 +536,12 @@ class BentoServiceInfo:
     config: ServiceConfig = attr.field(factory=dict)
 
     @classmethod
-    def from_service(
-        cls, svc: NewService[t.Any], seen: set[str] | None = None
-    ) -> BentoServiceInfo:
-        if seen is None:
-            seen = set()
-        if (name := svc.name) in seen:
-            return cls(name=name, service=svc.import_string)
+    def from_service(cls, svc: NewService[t.Any]) -> BentoServiceInfo:
         return cls(
-            name=name,
-            service=svc.import_string,
+            name=svc.name,
+            service="",
             models=[BentoModelInfo.from_bento_model(m) for m in svc.models],
-            dependencies=[dep.on.name for dep in svc.dependencies.values()],
+            dependencies=[d.on.name for d in svc.dependencies.values()],
             config=svc.config,
         )
 

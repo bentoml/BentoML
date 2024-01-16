@@ -4,8 +4,7 @@ import asyncio
 import typing as t
 
 import attrs
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -44,7 +43,7 @@ class Dependency(t.Generic[T]):
     ) -> T:
         from _bentoml_impl.client.proxy import RemoteProxy
 
-        key = self.cache_key()
+        key = self.on.name
         if key not in _dependent_cache:
             if key in runner_mapping:
                 inst = RemoteProxy(runner_mapping[key], service=self.on).as_service()

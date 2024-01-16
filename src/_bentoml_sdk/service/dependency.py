@@ -4,7 +4,8 @@ import asyncio
 import typing as t
 
 import attrs
-from simple_di import Provide, inject
+from simple_di import Provide
+from simple_di import inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
 

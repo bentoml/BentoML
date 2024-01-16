@@ -4,7 +4,8 @@ import json
 import logging
 import os
 import typing as t
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
 from typing import TYPE_CHECKING
 
 import attr
@@ -14,31 +15,34 @@ import fs.mirror
 import fs.osfs
 import fs.walk
 import yaml
-from cattr.gen import make_dict_structure_fn, make_dict_unstructure_fn, override
+from cattr.gen import make_dict_structure_fn
+from cattr.gen import make_dict_unstructure_fn
+from cattr.gen import override
 from fs.copy import copy_file
-from simple_di import Provide, inject
+from simple_di import Provide
+from simple_di import inject
 
-from ...exceptions import BentoMLException, InvalidArgument, NotFound
+from ...exceptions import BentoMLException
+from ...exceptions import InvalidArgument
+from ...exceptions import NotFound
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
-from ..models import ModelStore, copy_model
+from ..models import ModelStore
+from ..models import copy_model
 from ..runner import Runner
-from ..store import Store, StoreItem
+from ..store import Store
+from ..store import StoreItem
 from ..tag import Tag
 from ..types import PathType
-from ..utils import (
-    bentoml_cattr,
-    copy_file_to_fs_folder,
-    encode_path_for_uri,
-    normalize_labels_value,
-)
-from .build_config import (
-    BentoBuildConfig,
-    BentoPathSpec,
-    CondaOptions,
-    DockerOptions,
-    PythonOptions,
-)
+from ..utils import bentoml_cattr
+from ..utils import copy_file_to_fs_folder
+from ..utils import encode_path_for_uri
+from ..utils import normalize_labels_value
+from .build_config import BentoBuildConfig
+from .build_config import BentoPathSpec
+from .build_config import CondaOptions
+from .build_config import DockerOptions
+from .build_config import PythonOptions
 
 if TYPE_CHECKING:
     from fs.base import FS

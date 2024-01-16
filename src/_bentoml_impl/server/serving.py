@@ -92,48 +92,29 @@ else:
         raise BentoMLException("Unsupported platform")
 
 
-SERVICE_WORKER_SCRIPT = "_bentoml_impl.worker.service"
+_SERVICE_WORKER_SCRIPT = "_bentoml_impl.worker.service"
 
 
-def create_service_watchers(
+def create_dependency_watcher(
+    bento_identifier: str,
     svc: AnyService,
     uds_path: str | None,
     port_stack: contextlib.ExitStack,
     backlog: int,
     dependency_map: dict[str, str],
     scheduler: ResourceAllocator,
-    import_string: str,
     working_dir: str | None = None,
-) -> tuple[list[Watcher], list[CircusSocket], str]:
+) -> tuple[Watcher, CircusSocket, str]:
     from bentoml.serve import create_watcher
 
-    watchers: list[Watcher] = []
-    sockets: list[CircusSocket] = []
     num_workers, worker_envs = scheduler.get_worker_env(svc)
-    for name, dep in svc.dependencies.items():
-        dep_key = dep.cache_key()
-        if dep_key in dependency_map:
-            continue
-        new_watchers, new_sockets, uri = create_service_watchers(
-            dep.on,
-            uds_path,
-            port_stack,
-            backlog,
-            dependency_map,
-            scheduler,
-            f"{import_string}.{name}",
-            working_dir,
-        )
-        watchers.extend(new_watchers)
-        sockets.extend(new_sockets)
-        dependency_map[dep_key] = uri
-
     uri, socket = _get_server_socket(svc, uds_path, port_stack, backlog)
-    sockets.append(socket)
     args = [
         "-m",
-        SERVICE_WORKER_SCRIPT,
-        import_string,
+        _SERVICE_WORKER_SCRIPT,
+        bento_identifier,
+        "--service-name",
+        svc.name,
         "--fd",
         f"$(circus.sockets.{svc.name})",
         "--worker-id",
@@ -143,16 +124,13 @@ def create_service_watchers(
     if worker_envs:
         args.extend(["--worker-env", json.dumps(worker_envs)])
 
-    watchers.append(
-        create_watcher(
-            name=f"dependency_{svc.name}",
-            args=args,
-            numprocesses=num_workers,
-            working_dir=working_dir,
-        )
+    watcher = create_watcher(
+        name=f"service_{svc.name}",
+        args=args,
+        numprocesses=num_workers,
+        working_dir=working_dir,
     )
-
-    return watchers, sockets, uri
+    return watcher, socket, uri
 
 
 @inject
@@ -172,9 +150,9 @@ def serve_http(
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     development_mode: bool = False,
-    standalone: bool = False,
     reload: bool = False,
     dependency_map: dict[str, str] | None = None,
+    service_name: str = "",
 ) -> None:
     from circus.sockets import CircusSocket
 
@@ -194,6 +172,7 @@ def serve_http(
     prometheus_dir = ensure_prometheus_dir()
     if isinstance(bento_identifier, Service):
         svc = bento_identifier
+        bento_identifier = svc.import_string
         assert (
             working_dir is None
         ), "working_dir should not be set when passing a service in process"
@@ -218,24 +197,28 @@ def serve_http(
             uds_path = stack.enter_context(
                 tempfile.TemporaryDirectory(prefix="bentoml-uds-")
             )
-        if not standalone and not development_mode:
-            for name, dep in svc.dependencies.items():
-                dep_key = dep.cache_key()
-                if dep_key in dependency_map:
+
+        if service_name:
+            svc = svc.find_dependent(service_name)
+        elif not development_mode:
+            for name, dep_svc in svc.all_services.items():
+                if name == svc.name:
                     continue
-                new_watchers, new_sockets, uri = create_service_watchers(
-                    dep.on,
+                if name in dependency_map:
+                    continue
+                new_watcher, new_socket, uri = create_dependency_watcher(
+                    bento_identifier,
+                    dep_svc,
                     uds_path,
                     stack,
                     backlog,
                     dependency_map,
                     allocator,
-                    f"{svc.import_string}.{name}",
                     str(bento_path.absolute()),
                 )
-                watchers.extend(new_watchers)
-                sockets.extend(new_sockets)
-                dependency_map[dep_key] = uri
+                watchers.append(new_watcher)
+                sockets.append(new_socket)
+                dependency_map[name] = uri
             # reserve one more to avoid conflicts
             stack.enter_context(reserve_free_port())
 
@@ -275,12 +258,12 @@ def serve_http(
 
         server_args = [
             "-m",
-            SERVICE_WORKER_SCRIPT,
-            bento_identifier
-            if isinstance(bento_identifier, str)
-            else bento_identifier.import_string,
+            _SERVICE_WORKER_SCRIPT,
+            bento_identifier,
             "--fd",
             f"$(circus.sockets.{API_SERVER_NAME})",
+            "--service-name",
+            svc.name,
             "--backlog",
             str(backlog),
             "--worker-id",
@@ -299,7 +282,7 @@ def serve_http(
         scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
         watchers.append(
             create_watcher(
-                name="api_server",
+                name="service",
                 args=server_args,
                 working_dir=str(bento_path.absolute()),
                 numprocesses=num_workers,

@@ -201,10 +201,10 @@ def serve_http(
         if service_name:
             svc = svc.find_dependent(service_name)
         elif not development_mode:
-            for dep_svc in svc.all_services().values():
-                if dep_svc.name == svc.name:
+            for name, dep_svc in svc.all_services().items():
+                if name == svc.name:
                     continue
-                if dep_svc.name in dependency_map:
+                if name in dependency_map:
                     continue
                 new_watcher, new_socket, uri = create_dependency_watcher(
                     bento_identifier,

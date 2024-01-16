@@ -13,12 +13,6 @@ Start your BentoML journey
 
 The BentoML documentation provides detailed guidance on the project with hands-on tutorials and examples. If you are a first-time user of BentoML, we recommend that you read the following documents in order:
 
-1. :doc:`/overview/what-is-bentoml`
-2. :doc:`/overview/ecosystem`
-3. :doc:`/quickstarts/install-bentoml`
-4. :doc:`/quickstarts/deploy-a-transformer-model-with-bentoml`
-5. :doc:`/quickstarts/deploy-a-large-language-model-with-openllm-and-bentoml`
-
 Learn BentoML
 -------------
 
@@ -27,23 +21,11 @@ Learn BentoML
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`💻 Overview <overview/index>`
-        :link: overview/index
+    .. grid-item-card:: :doc:`💻 Get started <get-started/index>`
+        :link: get-started/index
         :link-type: doc
 
         Gain a basic understanding of the BentoML open-source framework, its workflow, and the BentoML ecosystem.
-
-    .. grid-item-card:: :doc:`🚀 Quickstarts <quickstarts/index>`
-        :link: quickstarts/index
-        :link-type: doc
-
-        Hands-on tutorials that help you quickly get started with BentoML by deploying AI applications with common machine learning (ML) models.
-
-    .. grid-item-card:: :doc:`📖 Main Concepts <concepts/index>`
-        :link: concepts/index
-        :link-type: doc
-
-        A step-by-step tour of BentoML's components and introduce you to its philosophy. After reading, you will see what drives BentoML's design, and know what **Bentos** and **Runners** stand for.
 
     .. grid-item-card:: :doc:`🧮 ML Framework Guides <frameworks/index>`
         :link: frameworks/index
@@ -87,8 +69,9 @@ Stay informed
 The BentoML team uses the following channels to announce important updates like major product releases and share tutorials, case studies, as well as community news.
 
 - `BentoML Blog <http://bentoml.com/blog>`_
-- `BentoML Twitter account <http://twitter.com/bentomlai>`_
+- `BentoML X account <http://twitter.com/bentomlai>`_
 - `BentoML LinkedIn account <https://www.linkedin.com/company/bentoml/>`_
+- `BentoML Slack workspace <https://l.bentoml.com/join-slack>`_
 
 To receive release notifications, star and watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_.
 For release notes and detailed changelogs, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.
@@ -99,8 +82,6 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    :hidden:
 
    get-started/index
-   quickstarts/index
-   concepts/index
    frameworks/index
    guides/index
    integrations/index

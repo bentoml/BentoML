@@ -63,7 +63,7 @@ You can define the serving logic of the model in a ``service.py`` file by creati
             result = self.pipeline(text)
             return result[0]['summary_text']
 
-In BentoML, a Service is a deployable and scalable unit, defined as a Python class with the ``@bentoml.service`` decorator. It can manage states and their lifecycle, and expose one or multiple APIs accessible through HTTP. Each API within the Service is defined using the ``@bentoml.api`` decorator, specifying it as a Python function.
+In BentoML, a :doc:`Service </guides/services>` is a deployable and scalable unit, defined as a Python class with the ``@bentoml.service`` decorator. It can manage states and their lifecycle, and expose one or multiple APIs accessible through HTTP. Each API within the Service is defined using the ``@bentoml.api`` decorator, specifying it as a Python function.
 
 In the ``Summarization`` class, the Service retrieves a pre-trained model (``sshleifer/distilbart-cnn-12-6``) from the Hugging Face hub and initializes a pipeline for text summarization. The ``summarize`` method serves as the API endpoint. In this example, it accepts a string input with an example provided, processes it through the pipeline, and returns the summarized text.
 
@@ -108,5 +108,11 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
         Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, and click **Try it out**. In the **Request body** box, enter your prompt and click **Execute**.
 
         .. image:: ../../_static/img/get-started/quickstart/service-ui.png
+
+Expected output:
+
+.. code-block:: bash
+
+    Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly . The event is now being investigated by scientists for potential breaches in the laws of physics . Local authorities considering a town festival to celebrate what is being hailed as 'The Leap of the Century'
 
 Once the Service is ready, you can deploy this BentoML project on BentoCloud or create a Docker image for it and ship it anywhere.

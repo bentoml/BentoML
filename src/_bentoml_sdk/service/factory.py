@@ -236,8 +236,8 @@ class Service(t.Generic[T]):
         # XXX: ensure at least one item to make `flatten_dict` work
         override_defaults = {
             "services": {
-                svc.name: (svc.config or {"workers": 1})
-                for svc in self.all_services().values()
+                name: (svc.config or {"workers": 1})
+                for name, svc in self.all_services().items()
             }
         }
 

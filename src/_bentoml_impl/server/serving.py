@@ -200,9 +200,7 @@ def serve_http(
 
         if service_name:
             svc = svc.find_dependent(service_name)
-        elif development_mode:
-            pass
-        else:
+        elif not development_mode:
             for dep_svc in svc.all_services().values():
                 if dep_svc.name == svc.name:
                     continue

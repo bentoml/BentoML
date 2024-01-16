@@ -65,7 +65,7 @@ Note that for simple use cases, you can skip this step and use pre-trained model
 2. Service creation
 ^^^^^^^^^^^^^^^^^^^
 
-You create BentoML Services by defining a ``service.py`` file, where you outline your model's serving logic through class-based Services. In this file, you can define multiple Services for specific tasks like data preprocessing or model predictions if necessary. Each Service can be customized to handle its own input and output logic. You can test model serving and inference by running Services locally. During deploying, each Service can be independently scaled and separately deployed for better resolution utilization.
+You create BentoML :doc:`/guides/services` by defining a ``service.py`` file, where you outline your model's serving logic through class-based Services. In this file, you can define multiple Services for specific tasks like data preprocessing or model predictions if necessary. Each Service can be customized to handle its own input and output logic. You can test model serving and inference by running Services locally. During deploying, each Service can be independently scaled and separately deployed for better resolution utilization.
 
 3. Deployment
 ^^^^^^^^^^^^^

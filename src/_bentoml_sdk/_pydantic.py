@@ -6,13 +6,13 @@ from pydantic._internal import _known_annotated_metadata
 from typing_extensions import get_args
 from typing_extensions import get_origin
 
-from .schema import ContentType
-from .schema import DataframeSchema
-from .schema import DType
-from .schema import FileSchema
-from .schema import PILImageEncoder
-from .schema import Shape
-from .schema import TensorSchema
+from .validators import ContentType
+from .validators import DataframeSchema
+from .validators import DType
+from .validators import FileSchema
+from .validators import PILImageEncoder
+from .validators import Shape
+from .validators import TensorSchema
 
 if t.TYPE_CHECKING:
     from pydantic import ConfigDict

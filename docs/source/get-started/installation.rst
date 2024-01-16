@@ -69,7 +69,7 @@ If you want to install BentoML from the source, run the following command:
 
 .. code-block:: bash
 
-    pip install git+https://github.com/bentoml/Bentoml
+    pip install git+https://github.com/bentoml/BentoML
 
 This command installs the bleeding edge ``main`` version of BentoML, which is useful for staying up-to-date with the latest features and bug fixes. However, the ``main`` version may not always be stable. If you run into any issues, please either create `an issue <https://github.com/bentoml/BentoML/issues/new/choose>`_ or join our community on `Slack <https://l.bentoml.com/join-slack>`_ to get help.
 
@@ -89,7 +89,7 @@ Clone the repository to your local folder and install BentoML with ``pip``:
     cd bentoml
     pip install -e .
 
-This command installs BentoML in `editable mode <https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs>`_, which allows you to install the project without copying any files. Python links this folder and adds it to Python library paths. This means that any changes to the folder can be tested immediately.
+This command installs BentoML in `editable mode <https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs>`_, which allows you to install the project without copying any files. Python links this folder and adds it to Python library paths. This means that any changes to the folder can be tested immediately. For more information, see the `Developer Guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_.
 
 .. warning::
 

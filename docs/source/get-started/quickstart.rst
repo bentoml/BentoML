@@ -74,9 +74,9 @@ Run ``bentoml serve service:<service_class_name>`` in your project directory to 
     $ bentoml serve service:Summarization
 
     2023-12-18T06:51:51+0000 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service:Summarization" can be accessed at http://localhost:3000/metrics.
-    2023-12-18T06:51:51+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:Summarization" listening on http://0.0.0.0:3000 (Press CTRL+C to quit)
+    2023-12-18T06:51:51+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:Summarization" listening on http://localhost:3000 (Press CTRL+C to quit)
 
-The server is active at `http://0.0.0.0:3000 <http://0.0.0.0:3000>`_. You can interact with it in different ways.
+The server is active at `http://localhost:3000 <http://localhost:3000>`_. You can interact with it in different ways.
 
 .. tab-set::
 
@@ -105,7 +105,7 @@ The server is active at `http://0.0.0.0:3000 <http://0.0.0.0:3000>`_. You can in
 
     .. tab-item:: Swagger UI
 
-        Visit `http://0.0.0.0:3000 <http://0.0.0.0:3000/>`_, scroll down to **Service APIs**, and click **Try it out**. In the **Request body** box, enter your prompt and click **Execute**.
+        Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, and click **Try it out**. In the **Request body** box, enter your prompt and click **Execute**.
 
         .. image:: ../../_static/img/get-started/quickstart/service-ui.png
 

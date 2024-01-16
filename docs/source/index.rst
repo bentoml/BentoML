@@ -98,7 +98,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    :caption: BentoML
    :hidden:
 
-   overview/index
+   get-started/index
    quickstarts/index
    concepts/index
    frameworks/index

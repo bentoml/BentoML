@@ -9,6 +9,7 @@ import click
 
 @click.command()
 @click.argument("bento_identifier", type=click.STRING, required=False, default=".")
+@click.option("--service-name", type=click.STRING, required=False, default="")
 @click.option(
     "--fd",
     type=click.INT,
@@ -97,6 +98,7 @@ import click
 @click.option("--main", "is_main", type=click.BOOL, default=False, is_flag=True)
 def main(
     bento_identifier: str,
+    service_name: str,
     fd: int,
     runner_map: str | None,
     backlog: int,
@@ -147,7 +149,12 @@ def main(
     service = import_service(bento_identifier)
     service.inject_config()
 
-    component_context.component_type = "new_service"
+    if service_name and service_name != service.name:
+        service = service.find_dependent(service_name)
+        component_context.component_type = "service"
+    else:
+        component_context.component_type = "entry_service"
+
     if worker_id is not None:
         component_context.component_index = worker_id
 

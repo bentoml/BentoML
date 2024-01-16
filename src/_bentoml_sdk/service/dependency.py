@@ -44,7 +44,7 @@ class Dependency(t.Generic[T]):
     ) -> T:
         from _bentoml_impl.client.proxy import RemoteProxy
 
-        key = self.cache_key()
+        key = self.on.name
         if key not in _dependent_cache:
             if key in runner_mapping:
                 inst = RemoteProxy(runner_mapping[key], service=self.on).as_service()

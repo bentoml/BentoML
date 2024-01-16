@@ -308,7 +308,9 @@ class Bento(StoreItem):
                 apis=[BentoApiInfo.from_inference_api(api) for api in svc.apis.values()]
                 if is_legacy
                 else [],
-                services=[BentoServiceInfo.from_service(s) for s in svc.all_services()]
+                services=[
+                    BentoServiceInfo.from_service(s) for s in svc.all_services.values()
+                ]
                 if not is_legacy
                 else [],
                 docker=build_config.docker,
@@ -537,18 +539,12 @@ class BentoServiceInfo:
     config: ServiceConfig = attr.field(factory=dict)
 
     @classmethod
-    def from_service(
-        cls, svc: NewService[t.Any], seen: set[str] | None = None
-    ) -> BentoServiceInfo:
-        if seen is None:
-            seen = set()
-        if (name := svc.name) in seen:
-            return cls(name=name, service=svc.import_string)
+    def from_service(cls, svc: NewService[t.Any]) -> BentoServiceInfo:
         return cls(
-            name=name,
-            service=svc.import_string,
+            name=svc.name,
+            service="",
             models=[BentoModelInfo.from_bento_model(m) for m in svc.models],
-            dependencies=[dep.on.name for dep in svc.dependencies.values()],
+            dependencies=[d.on.name for d in svc.dependencies.values()],
             config=svc.config,
         )
 

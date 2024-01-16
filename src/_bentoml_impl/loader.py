@@ -142,19 +142,18 @@ def import_service(
             module_name and attrs_str
         ), f'Invalid import target "{service_identifier}", must format as "<module>:<attribute>"'
 
-        instance = importlib.import_module(module_name)
-
-        for attr_str in attrs_str.split("."):
-            if isinstance(instance, Service):
-                instance = instance.dependencies[attr_str].on
-            else:
-                instance = getattr(instance, attr_str)
+        module = importlib.import_module(module_name)
+        root_service_name, _, depend_path = attrs_str.partition(".")
+        root_service = getattr(module, root_service_name)
 
         assert isinstance(
-            instance, Service
+            root_service, Service
         ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
 
-        return instance
+        if not depend_path:
+            return root_service  # type: ignore
+        else:
+            return root_service.find_dependent(depend_path)
 
     except (ImportError, AttributeError, KeyError, AssertionError) as e:
         sys_path = sys.path.copy()

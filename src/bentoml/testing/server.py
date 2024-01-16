@@ -342,9 +342,9 @@ def run_bento_server_distributed(
                 sys.executable,
                 "-m",
                 "bentoml",
-                "start-runner-server",
+                "start-http-server",
                 str(bento_tag),
-                "--runner-name",
+                "--service-name",
                 runner["name"],
                 "--host",
                 host,
@@ -363,7 +363,7 @@ def run_bento_server_distributed(
             )
         )
     runner_args = [
-        ("--remote-runner", f"{runner['name']}={runner_map[runner['name']]}")
+        ("--depends", f"{runner['name']}={runner_map[runner['name']]}")
         for runner in bentofile["runners"]
     ]
     cmd = [

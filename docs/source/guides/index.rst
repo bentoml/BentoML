@@ -1,16 +1,17 @@
-===============
-Advanced Guides
-===============
+======
+Guides
+======
 
-This guide introduces advanced features in BentoML.
-
-Make sure to go through the :doc:`/tutorial` and :doc:`/concepts/index` before diving
-into this part of the documentation.
+This chapter introduces the key features of BentoML. We recommend you read :doc:`/get-started/quickstart` before diving into this chapter.
 
 .. grid:: 1 2 2 2
     :gutter: 3
     :margin: 0
     :padding: 3 4 0 0
+
+    .. grid-item-card:: :doc:`/guides/services`
+        :link: /guides/services
+        :link-type: doc
 
     .. grid-item-card:: :doc:`/guides/batching`
         :link: /guides/batching
@@ -90,7 +91,8 @@ into this part of the documentation.
 
 .. toctree::
     :hidden:
-
+    
+    services
     batching
     containerization
     client

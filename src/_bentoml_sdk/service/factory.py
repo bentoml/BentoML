@@ -6,8 +6,8 @@ import math
 import os
 import sys
 import typing as t
-from functools import lru_cache
 from functools import cached_property
+from functools import lru_cache
 from functools import partial
 
 import attrs

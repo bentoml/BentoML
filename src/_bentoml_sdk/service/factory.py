@@ -6,6 +6,8 @@ import math
 import os
 import sys
 import typing as t
+from functools import cached_property
+from functools import lru_cache
 from functools import partial
 
 import attrs
@@ -96,7 +98,10 @@ class Service(t.Generic[T]):
             elif isinstance(value, APIMethod):
                 self.apis[field] = t.cast("APIMethod[..., t.Any]", value)
 
-    @_caller_module.default
+    def __hash__(self):
+        return hash(self.name)
+
+    @_caller_module.default  # type: ignore
     def _get_caller_module(self) -> str:
         if __name__ == "__main__":
             return __name__
@@ -112,26 +117,25 @@ class Service(t.Generic[T]):
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} name={self.name!r}>"
 
-    def all_services(
-        self, *, _collected: set[str] | None = None, _import_str: str = ""
-    ) -> list[Service[t.Any]]:
-        """Get a list of the service and all recursive dependencies"""
-        if _collected is None:
-            _collected = set()
-        if self.name in _collected:
-            return []
-        services: list[Service[t.Any]] = [self]
-        if _import_str:
-            self._import_str = _import_str
-        else:
-            _import_str = self.import_string
-        _collected.add(self.name)
-        for name, dependency in self.dependencies.items():
-            services.extend(
-                dependency.on.all_services(
-                    _collected=_collected, _import_str=f"{_import_str}.{name}"
-                )
-            )
+    @lru_cache
+    def find_dependent(self, name_or_path: str) -> Service[t.Any]:
+        """Find a service by name or path"""
+        attr_name, _, path = name_or_path.partition(".")
+        if attr_name not in self.dependencies:
+            if attr_name in self.all_services:
+                return self.all_services[attr_name]
+            else:
+                raise ValueError(f"Service {attr_name} not found")
+        if path:
+            return self.dependencies[attr_name].on.find_dependent(path)
+        return self.dependencies[attr_name].on
+
+    @cached_property
+    def all_services(self) -> dict[str, Service[t.Any]]:
+        """Get a map of the service and all recursive dependencies"""
+        services: dict[str, Service[t.Any]] = {self.name: self}
+        for dependency in self.dependencies.values():
+            services.update(dependency.on.all_services)
         return services
 
     @property
@@ -233,7 +237,8 @@ class Service(t.Generic[T]):
         # XXX: ensure at least one item to make `flatten_dict` work
         override_defaults = {
             "services": {
-                svc.name: (svc.config or {"workers": 1}) for svc in self.all_services()
+                name: (svc.config or {"workers": 1})
+                for name, svc in self.all_services.items()
             }
         }
 

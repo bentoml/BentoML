@@ -309,8 +309,7 @@ class Bento(StoreItem):
                 if is_legacy
                 else [],
                 services=[
-                    BentoServiceInfo.from_service(s)
-                    for s in svc.all_services().values()
+                    BentoServiceInfo.from_service(s) for s in svc.all_services.values()
                 ]
                 if not is_legacy
                 else [],

@@ -201,7 +201,7 @@ def serve_http(
         if service_name:
             svc = svc.find_dependent(service_name)
         elif not development_mode:
-            for name, dep_svc in svc.all_services().items():
+            for name, dep_svc in svc.all_services.items():
                 if name == svc.name:
                     continue
                 if name in dependency_map:

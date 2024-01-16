@@ -7,6 +7,7 @@ import os
 import sys
 import typing as t
 from functools import lru_cache
+from functools import cached_property
 from functools import partial
 
 import attrs
@@ -121,20 +122,20 @@ class Service(t.Generic[T]):
         """Find a service by name or path"""
         attr_name, _, path = name_or_path.partition(".")
         if attr_name not in self.dependencies:
-            if attr_name in self.all_services():
-                return self.all_services()[attr_name]
+            if attr_name in self.all_services:
+                return self.all_services[attr_name]
             else:
                 raise ValueError(f"Service {attr_name} not found")
         if path:
             return self.dependencies[attr_name].on.find_dependent(path)
         return self.dependencies[attr_name].on
 
-    @lru_cache(maxsize=1)
+    @cached_property
     def all_services(self) -> dict[str, Service[t.Any]]:
         """Get a map of the service and all recursive dependencies"""
         services: dict[str, Service[t.Any]] = {self.name: self}
         for dependency in self.dependencies.values():
-            services.update(dependency.on.all_services())
+            services.update(dependency.on.all_services)
         return services
 
     @property
@@ -237,7 +238,7 @@ class Service(t.Generic[T]):
         override_defaults = {
             "services": {
                 name: (svc.config or {"workers": 1})
-                for name, svc in self.all_services().items()
+                for name, svc in self.all_services.items()
             }
         }
 

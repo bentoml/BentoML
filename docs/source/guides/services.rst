@@ -34,7 +34,7 @@ Here is a Service definition example from :doc:`/get-started/quickstart`.
         def __init__(self) -> None:
             # Load model into pipeline
             self.pipeline = pipeline('summarization')
-        
+
         @bentoml.api
         def summarize(self, text: str = NEWS_PARAGRAPH) -> str:
             result = self.pipeline(text)

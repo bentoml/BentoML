@@ -91,7 +91,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
 .. toctree::
     :hidden:
-    
+
     services
     batching
     containerization

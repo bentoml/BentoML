@@ -18,7 +18,6 @@ from .service import Service
 from .service import service
 from .service import runner_service
 from .io_models import IODescriptor
-from .schema import ContentType, DType, Shape
 
 __all__ = [
     "api",
@@ -28,7 +27,4 @@ __all__ = [
     "runner_service",
     # io descriptors
     "IODescriptor",
-    "ContentType",
-    "DType",
-    "Shape",
 ]

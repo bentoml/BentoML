@@ -100,13 +100,11 @@ if TYPE_CHECKING:
     from . import monitoring  # Monitoring API
     from . import cloud  # Cloud API
     from . import deployment  # deployment API
+    from . import validators  # validators
 
     # isort: on
     from _bentoml_impl.client import AsyncHTTPClient
     from _bentoml_impl.client import SyncHTTPClient
-    from _bentoml_sdk import ContentType
-    from _bentoml_sdk import DType
-    from _bentoml_sdk import Shape
     from _bentoml_sdk import api
     from _bentoml_sdk import depends
     from _bentoml_sdk import runner_service
@@ -168,6 +166,7 @@ else:
     monitoring = _LazyLoader("bentoml.monitoring", globals(), "bentoml.monitoring")
     cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
     deployment = _LazyLoader("bentoml.deployment", globals(), "bentoml.deployment")
+    validators = _LazyLoader("bentoml.validators", globals(), "bentoml.validators")
     del _LazyLoader
 
     _NEW_SDK_ATTRS = [
@@ -272,9 +271,7 @@ __all__ = [
     "runner_service",
     "api",
     "depends",
-    "ContentType",
-    "DType",
-    "Shape",
+    "validators",
     "Field",
     # new implementation
     "SyncHTTPClient",

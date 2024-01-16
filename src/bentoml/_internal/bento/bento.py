@@ -368,7 +368,7 @@ class Bento(StoreItem):
         models_dir = self._fs.makedir("models", recreate=True)
         model_store = ModelStore(models_dir)
         global_model_store = BentoMLContainer.model_store.get()
-        for model in self.info.models:
+        for model in self.info.all_models:
             copy_model(
                 model.tag,
                 src_model_store=global_model_store,
@@ -393,7 +393,7 @@ class Bento(StoreItem):
     ) -> int:
         total_size = self.file_size
         local_model_store = self._model_store
-        for model in self.info.models:
+        for model in self.info.all_models:
             if local_model_store is not None:
                 try:
                     local_model_store.get(model.tag)
@@ -587,6 +587,14 @@ class BentoInfo:
     python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())
     conda: CondaOptions = attr.field(factory=lambda: CondaOptions().with_defaults())
     envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
+    
+    @property
+    def all_models(self) -> t.List[BentoModelInfo]:
+        model_map = {model.tag: model for model in self.models}
+        for service in self.services:
+            for model in service.models:
+                model_map[model.tag] = model
+        return list(model_map.values())
 
     def __attrs_post_init__(self):
         # Direct set is not available when frozen=True
@@ -602,6 +610,7 @@ class BentoInfo:
         return bentoml_cattr.unstructure(self)
 
     def dump(self, stream: t.IO[t.Any]):
+        # _models is an alias for models, replace it with models
         return yaml.dump(self, stream, sort_keys=False)
 
     @classmethod

@@ -163,7 +163,7 @@ def construct_containerfile(
         # copy models from model store
         model_store = BentoMLContainer.model_store.get()
         bento_model_store = ModelStore(temp_fs.makedir("models", recreate=True))
-        for model in options.models:
+        for model in options.all_models:
             copy_model(
                 model.tag,
                 src_model_store=model_store,

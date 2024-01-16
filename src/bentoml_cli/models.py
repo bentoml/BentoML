@@ -175,7 +175,7 @@ def add_model_management_commands(cli: Group) -> None:
             for bento in bento_store.list():
                 if bento._model_store is not None:
                     continue
-                if any(model.tag == tag for model in bento.info.models):
+                if any(model.tag == tag for model in bento.info.all_models):
                     in_use.append(bento.tag)
             if in_use:
                 raise BentoMLException(

@@ -71,7 +71,7 @@ You use the ``@bentoml.service`` decorator to specify Service-level configuratio
     class Summarization:
         # Service definition here
 
-All configuration fields are optional with default values. This allows for fine-tuning and optimization of Services according to specific use cases and deployment environments. For more information, see :doc:`/guides/configuration`.
+All configuration fields are optional with default values. This allows for fine-tuning and optimization of Services according to specific use cases and deployment environments.
 
 Service APIs
 ------------

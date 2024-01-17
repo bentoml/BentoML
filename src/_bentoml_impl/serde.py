@@ -4,8 +4,12 @@ import abc
 import io
 import json
 import pickle
+import posixpath
 import typing as t
+from urllib.parse import unquote
+from urllib.parse import urlparse
 
+from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile
 from typing_extensions import get_args
 
@@ -66,12 +70,28 @@ class JSONSerde(Serde):
 class MultipartSerde(JSONSerde):
     media_type = "multipart/form-data"
 
+    async def ensure_file(self, obj: str | UploadFile) -> UploadFile:
+        import httpx
+
+        if isinstance(obj, UploadFile):
+            return obj
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(obj)
+            body = io.BytesIO(await resp.aread())
+            parsed = urlparse(obj)
+            return UploadFile(
+                body,
+                size=len(body.getvalue()),
+                filename=posixpath.basename(unquote(parsed.path)),
+                headers=Headers(raw=resp.headers.raw),
+            )
+
     async def parse_request(self, request: Request, cls: type[T]) -> T:
         form = await request.form()
         data: dict[str, t.Any] = {}
         for k in form:
             if k in cls.multipart_fields:
-                value = [v for v in form.getlist(k) if isinstance(v, UploadFile)]
+                value = [await self.ensure_file(v) for v in form.getlist(k)]
                 field_annotation = cls.model_fields[k].annotation
                 if is_union_type(field_annotation):
                     args = get_args(field_annotation)
@@ -139,3 +159,5 @@ class ArrowSerde(Serde):
 ALL_SERDE: t.Mapping[str, type[Serde]] = {
     s.media_type: s for s in [JSONSerde, PickleSerde, ArrowSerde, MultipartSerde]
 }
+# Special case for application/x-www-form-urlencoded
+ALL_SERDE["application/x-www-form-urlencoded"] = MultipartSerde

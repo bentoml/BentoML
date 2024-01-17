@@ -17,7 +17,7 @@ tag_max_length = 63
 tag_max_length_error_msg = (
     f"a tag's name or version must be at most {tag_max_length} characters in length"
 )
-tag_invalid_error_msg = "a tag's name or version must consist of alphanumeric characters, '_', '-', or '.', and must start and end with an alphanumeric character"
+tag_invalid_error_msg = "a tag's name or version must consist of lowercase alphanumeric characters, '_', '-', or '.', and must start and end with an alphanumeric character"
 tag_regex = re.compile(f"^{tag_fmt}$")
 
 

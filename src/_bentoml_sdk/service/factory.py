@@ -17,6 +17,7 @@ from typing_extensions import Unpack
 from bentoml import Runner
 from bentoml._internal.bento.bento import Bento
 from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.tag import validate_tag_str
 from bentoml._internal.context import ServiceContext
 from bentoml._internal.models import Model
 from bentoml._internal.utils import dict_filter_none
@@ -158,9 +159,9 @@ class Service(t.Generic[T]):
 
     @property
     def name(self) -> str:
-        if name := self.config.get("name"):
-            return name
-        return self.inner.__name__
+        name = self.config.get("name") or self.inner.__name__.lower()
+        validate_tag_str(name)
+        return name
 
     @property
     def import_string(self) -> str:

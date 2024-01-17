@@ -2,6 +2,7 @@ import numpy as np
 from typing_extensions import Annotated
 
 import bentoml
+from bentoml.validators import Shape
 
 
 @bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})
@@ -23,7 +24,7 @@ class IrisClassifier:
 
     @bentoml.api
     def classify(
-        self, input_series: Annotated[np.ndarray, bentoml.Shape((1, 4))]
+        self, input_series: Annotated[np.ndarray, Shape((1, 4))]
     ) -> np.ndarray:
         input_series = self.preprocessing.preprocess(input_series)
         return self.model.predict(input_series)

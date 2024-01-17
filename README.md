@@ -25,8 +25,7 @@ packaging, and production deployment.</p>
 ### 🏄 Freedom to build with any AI models
 
 - Import from any model hub or bring your own models built with frameworks like
-  PyTorch, TensorFlow, Keras, Scikit-Learn, XGBoost and
-  [many more](https://docs.bentoml.com/en/latest/frameworks/index.html).
+  PyTorch, TensorFlow, Keras, Scikit-Learn, XGBoost and many more.
 - Native support for
   [LLM inference](https://github.com/bentoml/openllm/#bentoml),
   [generative AI](https://github.com/bentoml/stable-diffusion-bentoml),
@@ -34,44 +33,42 @@ packaging, and production deployment.</p>
   [multi-modal AI apps](https://github.com/bentoml/Distributed-Visual-ChatGPT).
 - Run and debug your BentoML apps locally on Mac, Windows, or Linux.
 
+### 🤖️ Inference optimization for AI applications
+
+- Integrate with high-performance runtimes such as ONNX-runtime and TorchScript to boost response time and throughput.
+- Support parallel processing of model inferences for improved speed and efficiency.
+- Implement adaptive batching to optimize processing.
+- Built-in optimization for specific model architectures (like OpenLLM for LLMs).
+
 ### 🍭 Simplify modern AI application architecture
 
 - Python-first! Effortlessly scale complex AI workloads.
-- Enable GPU inference
-  [without the headache](https://docs.bentoml.com/en/latest/guides/gpu.html).
-- [Compose multiple models](https://docs.bentoml.com/en/latest/guides/graph.html)
-  to run concurrently or sequentially, over
-  [multiple GPUs](https://docs.bentoml.com/en/latest/guides/scheduling.html) or
+- Enable GPU inference without the headache.
+- Compose multiple models to run concurrently or sequentially, over multiple GPUs or
   [on a Kubernetes Cluster](https://github.com/bentoml/yatai).
-- Natively integrates with
-  [MLFlow](https://docs.bentoml.com/en/latest/integrations/mlflow.html),
-  [LangChain](https://github.com/ssheng/BentoChain),
-  [Kubeflow](https://www.kubeflow.org/docs/external-add-ons/serving/bentoml/),
-  [Triton](https://docs.bentoml.com/en/latest/integrations/triton.html),
-  [Spark](https://docs.bentoml.com/en/latest/integrations/spark.html),
-  [Ray](https://docs.bentoml.com/en/latest/integrations/ray.html), and many more
-  to complete your production AI stack.
+- Natively integrates with MLFlow, [LangChain](https://github.com/ssheng/BentoChain),
+  Kubeflow, Triton, Spark, Ray, and many more to complete your production AI stack.
 
-### 🚀 Deploy Anywhere
+### 🚀 Deploy anywhere
 
 - One-click deployment to [☁️ BentoCloud](https://bentoml.com/cloud), the
   Serverless platform made for hosting and operating AI apps.
 - Scalable BentoML deployment with [🦄️ Yatai](https://github.com/bentoml/yatai)
   on Kubernetes.
-- Deploy auto-generated container images anywhere docker runs.
+- Deploy auto-generated container images anywhere Docker runs.
 
 # Documentation
 
-- Installation: `pip install bentoml`
-- Full Documentation: [docs.bentoml.com](https://docs.bentoml.com/en/latest/)
-- Tutorial: [Intro to BentoML](https://docs.bentoml.com/en/latest/tutorial.html)
+- Installation: `pip install "bentoml>=1.2.0a0"`
+- Documentation: [docs.bentoml.com](https://docs.bentoml.com/en/latest/)
+- Tutorial: [Quickstart](https://docs.bentoml.com/en/1.2/get-started/quickstart.html)
 
 ### 🛠️ What you can build with BentoML
 
 - [OpenLLM](https://github.com/bentoml/OpenLLM) - An open platform for operating
   large language models (LLMs) in production.
 - [StableDiffusion](https://github.com/bentoml/stable-diffusion-bentoml) -
-  Create your own text-to-image service with any diffusion models.
+  Create your own image generation service with any diffusion models..
 - [CLIP-API-service](https://github.com/bentoml/CLIP-API-service) - Embed images
   and sentences, object recognition, visual reasoning, image classification, and
   reverse image search.
@@ -92,98 +89,117 @@ packaging, and production deployment.</p>
 - Check out more examples
   [here](https://github.com/bentoml/BentoML/tree/main/examples).
 
-# Getting Started
+# Getting started
 
-Save or import models in BentoML local model store:
+This example demonstrates how to serve and deploy a simple text summarization application.
+
+## Serving a model locally
+
+Install dependencies:
+
+```
+pip install torch transformers "bentoml>=1.2.0a0"
+```
+
+Define the serving logic of your model in a `service.py` file.
 
 ```python
+from __future__ import annotations
 import bentoml
-import transformers
+from transformers import pipeline
 
-pipe = transformers.pipeline("text-classification")
 
-bentoml.transformers.save_model(
-  "text-classification-pipe",
-  pipe,
-  signatures={
-    "__call__": {"batchable": True}  # Enable dynamic batching for model
-  }
+@bentoml.service(
+    resources={"cpu": "2"},
+    traffic={"timeout": 10},
 )
+class Summarization:
+    def __init__(self) -> None:
+        # Load model into pipeline
+        self.pipeline = pipeline('summarization')
+
+    @bentoml.api
+    def summarize(self, text: str) -> str:
+        result = self.pipeline(text)
+        return result[0]['summary_text']
 ```
 
-View all models saved locally:
+Run this BentoML Service locally, which is accessible at [http://localhost:3000](http://localhost:3000).
 
 ```bash
-$ bentoml models list
-
-Tag                                     Module                Size        Creation Time
-text-classification-pipe:kn6mr3aubcuf…  bentoml.transformers  256.35 MiB  2023-05-17 14:36:25
+bentoml serve service:Summarization
 ```
 
-Define how your model runs in a `service.py` file:
-
-```python
-import bentoml
-
-model_runner = bentoml.models.get("text-classification-pipe").to_runner()
-
-svc = bentoml.Service("text-classification-service", runners=[model_runner])
-
-@svc.api(input=bentoml.io.Text(), output=bentoml.io.JSON())
-async def classify(text: str) -> str:
-    results = await model_runner.async_run([text])
-    return results[0]
-```
-
-Now, run the API service locally:
+Send a request to summarize a short news paragraph:
 
 ```bash
-bentoml serve service.py:svc
+curl -X 'POST' \
+  'http://localhost:3000/summarize' \
+  -H 'accept: text/plain' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "text": "Breaking News: In an astonishing turn of events, the small town of Willow Creek has been taken by storm as local resident Jerry Thompson'\''s cat, Whiskers, performed what witnesses are calling a '\''miraculous and gravity-defying leap.'\'' Eyewitnesses report that Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly. The event, which took place in Thompson'\''s backyard, is now being investigated by scientists for potential breaches in the laws of physics. Local authorities are considering a town festival to celebrate what is being hailed as '\''The Leap of the Century."
+}'
 ```
 
-Sent a prediction request:
+## Deployment
 
-```bash
-$ curl -X POST -H "Content-Type: text/plain" --data "BentoML is awesome" http://localhost:3000/classify
+After your Service is ready, you can deploy it to BentoCloud or as a Docker image.
 
-{"label":"POSITIVE","score":0.9129443168640137}%
-```
-
-Define how a [Bento](https://docs.bentoml.com/en/latest/concepts/bento.html) can
-be built for deployment, with `bentofile.yaml`:
+First, create a `bentofile.yaml` file for building a Bento.
 
 ```yaml
-service: 'service.py:svc'
-name: text-classification-svc
+service: "service:Summarization"
+labels:
+  owner: bentoml-team
+  project: gallery
 include:
-  - 'service.py'
+  - "*.py"
 python:
   packages:
-  - torch>=2.0
+  - torch
   - transformers
 ```
 
-Build a Bento and generate a docker image:
+Then, choose one of the following ways for deployment:
+
+<details>
+
+<summary>BentoCloud</summary>
+
+Make sure you have [logged in to BentoCloud](https://docs.bentoml.com/en/latest/bentocloud/how-tos/manage-access-token.html) and then run the following command:
 
 ```bash
-$ bentoml build
-...
-Successfully built Bento(tag="text-classification-svc:mc322vaubkuapuqj").
+bentoml deploy .
 ```
+
+</details>
+
+<details>
+
+<summary>Docker</summary>
+
+Build a Bento to package necessary dependencies and components into a standard distribution format.
+
+```
+bentoml build
+```
+
+Containerize the Bento.
+
+```
+bentoml containerize summarization:latest
+```
+
+Run this image with Docker.
 
 ```bash
-$ bentoml containerize text-classification-svc
-Building OCI-compliant image for text-classification-svc:mc322vaubkuapuqj with docker
-...
-Successfully built Bento container for "text-classification-svc" with tag(s) "text-classification-svc:mc322vaubkuapuqj"
+docker run -p 3000:3000 summarization:latest
 ```
 
-```bash
-$ docker run -p 3000:3000 text-classification-svc:mc322vaubkuapuqj
-```
+</details>
 
-For a more detailed user guide, check out the
-[BentoML Tutorial](https://docs.bentoml.com/en/latest/tutorial.html).
+For detailed explanations, read [Quickstart](https://docs.bentoml.com/en/1.2/get-started/quickstart.html).
 
 ---
 

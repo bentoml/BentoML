@@ -92,13 +92,7 @@ class BentoCloudClient(CloudClient):
         if version is None:
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
-        model_tags: set[Tag] = set()
-        for m in info.models:
-            model_tags.add(m.tag)
-        for svc in info.services:
-            for m in svc.models:
-                model_tags.add(m.tag)
-
+        model_tags = [m.tag for m in info.all_models]
         local_model_store = bento._model_store  # type: ignore  # using internal BentoML API
         if local_model_store is not None and len(local_model_store.list()) > 0:
             model_store = local_model_store
@@ -147,7 +141,7 @@ class BentoCloudClient(CloudClient):
             LabelItemSchema(key=key, value=value) for key, value in info.labels.items()
         ]
         apis: dict[str, BentoApiSchema] = {}
-        models = [str(m.tag) for m in info.models]
+        models = [str(m.tag) for m in info.all_models]
         runners = [
             BentoRunnerSchema(
                 name=r.name,

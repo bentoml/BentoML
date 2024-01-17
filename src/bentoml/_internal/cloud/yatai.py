@@ -88,7 +88,7 @@ class YataiClient(CloudClient):
         if version is None:
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
-        model_tags = [m.tag for m in info.models]
+        model_tags = [m.tag for m in info.all_models]
         local_model_store = bento._model_store  # type: ignore  # Using internal BentoML APIs
         if local_model_store is not None and len(local_model_store.list()) > 0:
             model_store = local_model_store
@@ -135,7 +135,7 @@ class YataiClient(CloudClient):
             LabelItemSchema(key=key, value=value) for key, value in info.labels.items()
         ]
         apis: dict[str, BentoApiSchema] = {}
-        models = [str(m.tag) for m in info.models]
+        models = [str(m.tag) for m in info.all_models]
         runners = [
             BentoRunnerSchema(
                 name=r.name,

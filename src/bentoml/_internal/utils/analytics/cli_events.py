@@ -21,9 +21,9 @@ def _cli_bentoml_build_event(
             bento_creation_timestamp=bento.info.creation_time,
             bento_size_in_kb=calc_dir_size(bento.path_of("/")) / 1024,
             model_size_in_kb=calc_dir_size(bento.path_of("/models")) / 1024,
-            num_of_models=len(bento.info.models),
+            num_of_models=len(bento.info.all_models),
             num_of_runners=len(bento.info.runners),
-            model_types=[m.module for m in bento.info.models],
+            model_types=[m.module for m in bento.info.all_models],
             runnable_types=[r.runnable_type for r in bento.info.runners],
         )
     else:

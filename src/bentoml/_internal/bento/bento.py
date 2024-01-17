@@ -587,7 +587,7 @@ class BentoInfo:
     python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())
     conda: CondaOptions = attr.field(factory=lambda: CondaOptions().with_defaults())
     envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
-    
+
     @property
     def all_models(self) -> t.List[BentoModelInfo]:
         model_map = {model.tag: model for model in self.models}

@@ -268,7 +268,9 @@ def _load_bento(bento: Bento, standalone_load: bool) -> Service | NewService[t.A
         model_store = local_model_store
 
     # Read the model aliases
-    resolved_model_aliases = {m.alias: str(m.tag) for m in bento.info.all_models if m.alias}
+    resolved_model_aliases = {
+        m.alias: str(m.tag) for m in bento.info.all_models if m.alias
+    }
     BentoMLContainer.model_aliases.set(resolved_model_aliases)
 
     svc = import_service(

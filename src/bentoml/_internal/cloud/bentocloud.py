@@ -92,7 +92,7 @@ class BentoCloudClient(CloudClient):
         if version is None:
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
-        model_tags=[m.tag for m in info.all_models]
+        model_tags = [m.tag for m in info.all_models]
         local_model_store = bento._model_store  # type: ignore  # using internal BentoML API
         if local_model_store is not None and len(local_model_store.list()) > 0:
             model_store = local_model_store

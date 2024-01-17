@@ -167,11 +167,11 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         kwargs: dict[str, t.Any],
         headers: t.Mapping[str, str],
     ) -> httpx.Request:
-        headers = {"Content-Type": self.media_type, **headers}
+        headers = httpx.Headers({"Content-Type": self.media_type, **headers})
         if endpoint.input_spec is not None:
             model = endpoint.input_spec.from_inputs(*args, **kwargs)
             if model.multipart_fields and self.media_type == "application/json":
-                return self._build_multipart(endpoint.route, model, headers)
+                return self._build_multipart(endpoint, model, headers)
             else:
                 return self.client.build_request(
                     "POST",
@@ -197,13 +197,12 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             raise TypeError(
                 f"Missing required arguments in endpoint {endpoint.name}: {missing_args}"
             )
-        multipart_fields = {
-            k
-            for k, v in kwargs.items()
-            if _is_file(v) or isinstance(v, t.Sequence) and v and _is_file(v[0])
-        }
-        if multipart_fields and self.media_type == "application/json":
-            return self._build_multipart(endpoint.route, kwargs, headers)
+        has_file = any(
+            schema.get("type") == "file"
+            for schema in endpoint.input["properties"].values()
+        )
+        if has_file and self.media_type == "application/json":
+            return self._build_multipart(endpoint, kwargs, headers)
         return self.client.build_request(
             "POST",
             endpoint.route,
@@ -213,32 +212,27 @@ class HTTPClient(AbstractClient, t.Generic[C]):
 
     def _build_multipart(
         self,
-        route: str,
+        endpoint: ClientEndpoint,
         model: IODescriptor | dict[str, t.Any],
-        headers: dict[str, str],
+        headers: httpx.Headers,
     ) -> httpx.Request:
         def is_file_field(k: str) -> bool:
             if isinstance(model, IODescriptor):
                 return k in model.multipart_fields
-            return (
-                _is_file(value := model[k])
-                or isinstance(value, t.Sequence)
-                and len(value) > 0
-                and _is_file(value[0])
-            )
+            return endpoint.input["properties"].get(k, {}).get("type") == "file"
 
         if isinstance(model, dict):
             fields = model
         else:
             fields = {k: getattr(model, k) for k in model.model_fields}
-        data: dict[str, str] = {}
+        data: dict[str, t.Any] = {}
         files: RequestFiles = []
 
         for name, value in fields.items():
             if not is_file_field(name):
                 data[name] = json.dumps(value)
                 continue
-            if not isinstance(value, t.Sequence):
+            if not isinstance(value, (list, tuple)):
                 value = [value]
 
             for v in value:
@@ -257,6 +251,8 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     file = open(v, "rb")
                     files.append((name, (v.name, file, mimetypes.guess_type(v)[0])))
                     self._opened_files.append(file)
+                elif isinstance(v, str):
+                    data.setdefault(name, []).append(v)
                 else:
                     assert isinstance(v, t.BinaryIO)
                     filename = (
@@ -270,7 +266,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     files.append((name, (filename, v, content_type)))
         headers.pop("content-type", None)
         return self.client.build_request(
-            "POST", route, data=data, files=files, headers=headers
+            "POST", endpoint.route, data=data, files=files, headers=headers
         )
 
     def _deserialize_output(self, data: bytes, endpoint: ClientEndpoint) -> t.Any:

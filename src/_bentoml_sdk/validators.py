@@ -60,9 +60,7 @@ def arrow_serialization():
 
 
 class PILImageEncoder:
-    def decode(
-        self, obj: bytes | t.BinaryIO | UploadFile | PILImage.Image
-    ) -> PILImage.Image:
+    def decode(self, obj: bytes | t.BinaryIO | UploadFile | PILImage.Image) -> t.Any:
         if is_image_type(type(obj)):
             return t.cast("PILImage.Image", obj)
         if isinstance(obj, UploadFile):
@@ -72,7 +70,9 @@ class PILImageEncoder:
             return PILImage.open(obj.file, formats=formats)
         if is_file_like(obj):
             return PILImage.open(obj)
-        return PILImage.open(io.BytesIO(t.cast(bytes, obj)))
+        if isinstance(obj, bytes):
+            return PILImage.open(io.BytesIO(obj))
+        return obj
 
     def encode(self, obj: PILImage.Image) -> bytes:
         buffer = io.BytesIO()
@@ -123,10 +123,13 @@ class FileSchema:
     def encode(self, obj: Path) -> bytes:
         return obj.read_bytes()
 
-    def decode(self, obj: bytes | t.BinaryIO | UploadFile | PurePath) -> Path:
+    def decode(self, obj: bytes | t.BinaryIO | UploadFile | PurePath | str) -> t.Any:
         from bentoml._internal.context import request_directory
 
         media_type: str | None = None
+
+        if isinstance(obj, str):
+            return obj
         if isinstance(obj, PurePath):
             return Path(obj)
         if isinstance(obj, UploadFile):

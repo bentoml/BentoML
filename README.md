@@ -144,7 +144,7 @@ curl -X 'POST' \
 
 ## Deployment
 
-After your Service is ready, you can deploy it to BentoCloud or as a Docker image.
+After your Service is ready, you can deploy it to [BentoCloud](https://www.bentoml.com/cloud) or as a Docker image.
 
 First, create a `bentofile.yaml` file for building a Bento.
 
@@ -194,7 +194,7 @@ bentoml containerize summarization:latest
 Run this image with Docker.
 
 ```bash
-docker run -p 3000:3000 summarization:latest
+docker run --rm -p 3000:3000 summarization:latest
 ```
 
 </details>

@@ -31,9 +31,6 @@ POSIX = os.name == "posix"
 WINDOWS = os.name == "nt"
 IS_WSL = "microsoft-standard" in platform.release()
 API_SERVER_NAME = "_bento_api_server"
-PROMETHEUS_MESSAGE = (
-    'Prometheus metrics for %s BentoServer from "%s" can be accessed at %s.'
-)
 
 MAX_AF_UNIX_PATH_LENGTH = 103
 logger = logging.getLogger("bentoml.serve")
@@ -291,13 +288,6 @@ def serve_http(
         )
 
         log_host = "localhost" if host in ["0.0.0.0", "::"] else host
-        if BentoMLContainer.api_server_config.metrics.enabled.get():
-            logger.info(
-                PROMETHEUS_MESSAGE,
-                scheme.upper(),
-                bento_identifier,
-                f"{scheme}://{log_host}:{port}/metrics",
-            )
 
         # inject runner map now
         inject_env = {"BENTOML_RUNNER_MAP": json.dumps(dependency_map)}

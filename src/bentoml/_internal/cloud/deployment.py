@@ -264,7 +264,7 @@ class DeploymentInfo:
             raise BentoMLException("Deployment url is not ready")
         return AsyncHTTPClient(self._urls[0], media_type=media_type, token=token)
 
-    def wait_until_ready(self, timeout: int = 300, check_interval: int = 5) -> None:
+    def wait_until_ready(self, timeout: int = 3600, check_interval: int = 30) -> None:
         start_time = time.time()
         while time.time() - start_time < timeout:
             status = self.get_status()

@@ -172,7 +172,7 @@ class Service(t.Generic[T]):
                     assert isinstance(import_module, str)
                     try:
                         import_module_path = pathlib.Path(import_module).relative_to(
-                            pathlib.Path(self.working_dir)
+                            self.working_dir
                         )
                     except ValueError:
                         raise BentoMLException(

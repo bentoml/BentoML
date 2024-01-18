@@ -30,13 +30,11 @@ from ..bento import Bento
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
-from .schemas.modelschemas import AccessControl
 from .schemas.modelschemas import DeploymentStatus
 from .schemas.modelschemas import DeploymentTargetHPAConf
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentSchema
 from .schemas.schemasv2 import DeploymentTargetSchema
-from .schemas.schemasv1 import ResourceInstanceSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 
 logger = logging.getLogger(__name__)
@@ -58,7 +56,7 @@ class DeploymentConfigParameters:
     context: str | None = None
     bento: Tag | str | None = None
     cluster: str | None = None
-    access_type: str | None = None
+    access_authorization: bool | None = None
     scaling_min: int | None = None
     scaling_max: int | None = None
     instance_type: str | None = None
@@ -79,7 +77,7 @@ class DeploymentConfigParameters:
             self.name
             or self.bento
             or self.cluster
-            or self.access_type
+            or self.access_authorization
             or self.scaling_min
             or self.scaling_max
             or self.instance_type
@@ -107,7 +105,7 @@ class DeploymentConfigParameters:
                     ("name", self.name),
                     ("bento", self.bento),
                     ("cluster", self.cluster),
-                    ("access_type", self.access_type),
+                    ("access_authorization", self.access_authorization),
                     ("envs", self.envs),
                 ]
                 if v is not None
@@ -405,7 +403,7 @@ class DeploymentInfo:
             name=self.name,
             bento=self.get_bento(refetch=False),
             services=target.config.services,
-            access_type=target.config.access_type,
+            access_authorization=target.config.access_authorization,
             envs=target.config.envs,
         )
 
@@ -459,7 +457,7 @@ class DeploymentInfo:
     def wait_until_ready(
         self,
         timeout: int = 3600,
-        check_interval: int = 30,
+        check_interval: int = 10,
         spinner: Spinner | None = None,
         spinner_task_id: TaskID | None = None,
     ) -> None:
@@ -474,14 +472,14 @@ class DeploymentInfo:
                 if status.status == DeploymentStatus.Running.value:
                     spinner.spinner_progress.update(
                         spinner_task_id,
-                        action=f'[bold green] Deployment "{self.name}" is ready.[\bold green]',
+                        action=f'[bold green] Deployment "{self.name}" is ready.[/bold green]',
                     )
                     spinner.spinner_progress.stop_task(spinner_task_id)
                     return
                 time.sleep(check_interval)
             spinner.spinner_progress.update(
                 spinner_task_id,
-                action=f'[bold red]Time out waiting for Deployment "{self.name}" ready.[\bold red]',
+                action=f'[bold red]Time out waiting for Deployment "{self.name}" ready.[/bold red]',
             )
             spinner.spinner_progress.stop_task(spinner_task_id)
         else:
@@ -535,8 +533,6 @@ class Deployment:
         # fix scaling
         for _, svc in config_struct.services.items():
             svc.scaling = cls._fix_scaling(svc.scaling)
-        if config_struct.access_type is None:
-            config_struct.access_type = AccessControl.PUBLIC
 
     @staticmethod
     def _convert_schema_to_update_schema(_schema: DeploymentSchema) -> dict[str, t.Any]:
@@ -555,7 +551,7 @@ class Deployment:
             raise BentoMLException(f"Deployment {_schema.name} has no bento")
         update_schema = UpdateDeploymentSchemaV2(
             services=target_schema.config.services,
-            access_type=target_schema.config.access_type,
+            access_authorization=target_schema.config.access_authorization,
             envs=target_schema.config.envs,
             bento=target_schema.bento.repository.name + ":" + target_schema.bento.name,
         )

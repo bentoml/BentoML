@@ -4,7 +4,6 @@ import typing as t
 
 import attr
 
-from bentoml._internal.cloud.schemas.modelschemas import AccessControl
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentMode
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentRevisionStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentServiceConfig
@@ -47,7 +46,7 @@ class DeploymentRevisionListSchema(BaseListSchema):
 class DeploymentConfigSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    access_type: t.Optional[AccessControl] = attr.field(default=None)
+    access_authorization: bool = attr.field(default=False)
     envs: t.Optional[t.List[t.Optional[EnvItemSchema]]] = attr.field(default=None)
     services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
 

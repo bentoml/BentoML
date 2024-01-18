@@ -111,7 +111,7 @@ def dummy_generate_deployment_schema(
                 DeploymentTargetSchemaV2(
                     bento=dummy_bento,
                     config=DeploymentConfigSchemaV2(
-                        access_type=update_schema.access_type,
+                        access_authorization=update_schema.access_authorization,
                         envs=update_schema.envs,
                         services=update_schema.services,
                     ),
@@ -220,7 +220,7 @@ def fixture_rest_client() -> RestApiClient:
                 cluster,
                 UpdateDeploymentSchemaV2(
                     bento="abc:123",
-                    access_type=AccessControl.PUBLIC,
+                    access_authorization=False,
                     services={
                         "irisclassifier": DeploymentServiceConfig(
                             scaling=DeploymentTargetHPAConf(
@@ -277,7 +277,7 @@ def test_create_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "empty_name"
     config = deployment.get_config(refetch=False)
-    assert config.access_type == AccessControl.PUBLIC
+    assert config.access_authorization is False
     for service in config.services.values():
         assert service.scaling == DeploymentTargetHPAConf(
             min_replicas=1, max_replicas=1
@@ -294,7 +294,7 @@ def test_create_deployment_custom_standalone(
             cfg_dict={
                 "bento": "abc:123",
                 "name": "custom-name",
-                "access_type": "private",
+                "access_authorization": "private",
                 "cluster": "custom-cluster",
                 "envs": [{"name": "env_key", "value": "env_value"}],
                 "services": {
@@ -311,7 +311,7 @@ def test_create_deployment_custom_standalone(
     assert deployment.cluster == "custom-cluster"
     assert deployment.name == "custom-name"
     config = deployment.get_config(refetch=False)
-    assert config.access_type == AccessControl.PRIVATE
+    assert config.access_authorization is True
     assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
     for service in config.services.values():
         assert service.scaling == DeploymentTargetHPAConf(
@@ -342,7 +342,7 @@ def test_create_deployment_scailing_only_min(
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "empty_name"
     config = deployment.get_config(refetch=False)
-    assert config.access_type == AccessControl.PUBLIC
+    assert config.access_authorization is False
     for service in config.services.values():
         assert service.scaling == DeploymentTargetHPAConf(
             min_replicas=3, max_replicas=3
@@ -371,7 +371,7 @@ def test_create_deployment_scailing_only_max(
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "empty_name"
     config = deployment.get_config(refetch=False)
-    assert config.access_type == AccessControl.PUBLIC
+    assert config.access_authorization is False
     for service in config.services.values():
         assert service.scaling == DeploymentTargetHPAConf(
             min_replicas=1, max_replicas=3
@@ -429,7 +429,7 @@ def test_update_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
             cfg_dict={
                 "name": "test",
                 "bento": "abc:1234",
-                "access_type": "private",
+                "access_authorization": "private",
                 "envs": [{"name": "env_key2", "value": "env_value2"}],
                 "services": {
                     "irisclassifier": {
@@ -445,7 +445,7 @@ def test_update_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
     assert deployment.get_bento(refetch=False) == "abc:1234"
     assert deployment.name == "test"
     config = deployment.get_config(refetch=False)
-    assert config.access_type == AccessControl.PRIVATE
+    assert config.access_authorization is True
     assert config.envs == [EnvItemSchema(name="env_key2", value="env_value2")]
     for service in config.services.values():
         assert service.scaling == DeploymentTargetHPAConf(
@@ -476,7 +476,7 @@ def test_update_deployment_scaling_only_min(
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "test"
     config = deployment.get_config(refetch=False)
-    assert config.access_type == AccessControl.PUBLIC
+    assert config.access_authorization is False
     assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
     for service in config.services.values():
         assert service.scaling == DeploymentTargetHPAConf(
@@ -507,7 +507,7 @@ def test_update_deployment_scaling_only_max(
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "test"
     config = deployment.get_config(refetch=False)
-    assert config.access_type == AccessControl.PUBLIC
+    assert config.access_authorization is False
     assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
     for service in config.services.values():
         assert service.scaling == DeploymentTargetHPAConf(
@@ -561,7 +561,7 @@ def test_update_deployment_distributed(
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "test-distributed"
     config = deployment.get_config(refetch=False)
-    assert config.access_type == AccessControl.PUBLIC
+    assert config.access_authorization is False
     assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
     assert config.services == {
         "irisclassifier": DeploymentServiceConfig(

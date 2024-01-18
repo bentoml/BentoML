@@ -659,7 +659,7 @@ class RestApiClientV2(BaseRestApiClient):
 
 class RestApiClient:
     def __init__(self, endpoint: str, api_token: str) -> None:
-        self.session = httpx.Client()
+        self.session = httpx.Client(timeout=60)
         self.session.headers.update(
             {
                 "X-YATAI-API-TOKEN": api_token,

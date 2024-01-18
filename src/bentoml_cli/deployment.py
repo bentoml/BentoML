@@ -7,7 +7,6 @@ import yaml
 from rich.syntax import Syntax
 
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
-from bentoml._internal.cloud.schemas.modelschemas import AccessControl
 from bentoml._internal.cloud.base import Spinner
 from rich.live import Live
 from bentoml._internal.cloud.deployment import Deployment
@@ -48,11 +47,9 @@ def add_deployment_command(cli: click.Group) -> None:
         help="Name of the cluster",
     )
     @click.option(
-        "--access-type",
-        type=click.Choice(
-            [access_ctrl_type.value for access_ctrl_type in AccessControl]
-        ),
-        help="Type of access",
+        "--access-authorization",
+        type=click.BOOL,
+        help="Enable access authorization",
     )
     @click.option(
         "--scaling-min",
@@ -108,7 +105,7 @@ def add_deployment_command(cli: click.Group) -> None:
         bento: str | None,
         name: str | None,
         cluster: str | None,
-        access_type: str | None,
+        access_authorization: bool | None,
         scaling_min: int | None,
         scaling_max: int | None,
         instance_type: str | None,
@@ -128,7 +125,7 @@ def add_deployment_command(cli: click.Group) -> None:
             bento=bento,
             name=name,
             cluster=cluster,
-            access_type=access_type,
+            access_authorization=access_authorization,
             scaling_min=scaling_min,
             scaling_max=scaling_max,
             instance_type=instance_type,
@@ -185,11 +182,9 @@ def add_deployment_command(cli: click.Group) -> None:
         help="Bento name or path to Bento project directory",
     )
     @click.option(
-        "--access-type",
-        type=click.Choice(
-            [access_ctrl_type.value for access_ctrl_type in AccessControl]
-        ),
-        help="Type of access",
+        "--access-authorization",
+        type=click.BOOL,
+        help="Enable access authorization",
     )
     @click.option(
         "--scaling-min",
@@ -232,7 +227,7 @@ def add_deployment_command(cli: click.Group) -> None:
         name: str | None,
         cluster: str | None,
         bento: str | None,
-        access_type: str | None,
+        access_authorization: bool | None,
         scaling_min: int | None,
         scaling_max: int | None,
         instance_type: str | None,
@@ -251,7 +246,7 @@ def add_deployment_command(cli: click.Group) -> None:
             context=shared_options.cloud_context,
             bento=bento,
             cluster=cluster,
-            access_type=access_type,
+            access_authorization=access_authorization,
             scaling_max=scaling_max,
             scaling_min=scaling_min,
             instance_type=instance_type,
@@ -328,11 +323,9 @@ def add_deployment_command(cli: click.Group) -> None:
         help="Name of the cluster",
     )
     @click.option(
-        "--access-type",
-        type=click.Choice(
-            [access_ctrl_type.value for access_ctrl_type in AccessControl]
-        ),
-        help="Type of access",
+        "--access-authorization",
+        type=click.BOOL,
+        help="Enable access authorization",
     )
     @click.option(
         "--scaling-min",
@@ -388,7 +381,7 @@ def add_deployment_command(cli: click.Group) -> None:
         bento: str | None,
         name: str | None,
         cluster: str | None,
-        access_type: str | None,
+        access_authorization: bool | None,
         scaling_min: int | None,
         scaling_max: int | None,
         instance_type: str | None,
@@ -408,7 +401,7 @@ def add_deployment_command(cli: click.Group) -> None:
             bento=bento,
             name=name,
             cluster=cluster,
-            access_type=access_type,
+            access_authorization=access_authorization,
             scaling_min=scaling_min,
             scaling_max=scaling_max,
             instance_type=instance_type,
@@ -583,7 +576,7 @@ def create_deployment(
     bento: str | None,
     name: str | None,
     cluster: str | None,
-    access_type: str | None,
+    access_authorization: bool | None,
     scaling_min: int | None,
     scaling_max: int | None,
     instance_type: str | None,
@@ -598,7 +591,7 @@ def create_deployment(
         context=context,
         bento=bento,
         cluster=cluster,
-        access_type=access_type,
+        access_authorization=access_authorization,
         scaling_max=scaling_max,
         scaling_min=scaling_min,
         instance_type=instance_type,

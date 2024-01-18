@@ -12,6 +12,7 @@ from deepmerge.merger import Merger
 from rich.progress import TaskID
 from simple_di import Provide
 from simple_di import inject
+from rich.live import Live
 
 from bentoml._internal.cloud.base import Spinner
 
@@ -24,9 +25,9 @@ if t.TYPE_CHECKING:
 
 from ...exceptions import BentoMLException
 from ...exceptions import NotFound
-from ..bento import Bento
 from ..configuration.containers import BentoMLContainer
 from ..tag import Tag
+from ..bento.bento import BentoInfo
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
@@ -156,20 +157,20 @@ class DeploymentConfigParameters:
                 # target is a path
                 if self.cli:
                     click.echo(f"building bento from {bento_name} ...")
-                bento_obj = get_real_bento(
+                bento_info = get_bento_info(
                     project_path=bento_name,
                     context=self.context,
                 )
             else:
                 if self.cli:
                     click.echo(f"using bento {bento_name}...")
-                bento_obj = get_real_bento(
+                bento_info = get_bento_info(
                     bento=str(bento_name),
                     context=self.context,
                 )
-            self.cfg_dict["bento"] = bento_obj.tag
+            self.cfg_dict["bento"] = bento_info.tag
             if self.service_name is None:
-                self.service_name = bento_obj.info.name
+                self.service_name = bento_info.entry_service
 
     def get_name(self):
         if self.cfg_dict is None:
@@ -200,15 +201,16 @@ class DeploymentConfigParameters:
                         "DeploymentConfigParameters.verify() must be called first"
                     )
                 bento = self.cfg_dict.get("bento")
-            bento_obj = get_real_bento(
+
+            info = get_bento_info(
                 bento=bento,
                 context=self.context,
             )
-            if len(bento_obj.info.services) > 0:
-                self.service_name = bento_obj.info.name
-            else:
+            if info.entry_service == "":
                 # for compatibility
                 self.service_name = "apiserver"
+            else:
+                self.service_name = info.entry_service
         if self._param_config is not None:
             scaling_min = self._param_config.pop("scaling_min", None)
             scaling_max = self._param_config.pop("scaling_max", None)
@@ -281,40 +283,50 @@ def get_args_from_config(
 
 
 @inject
-def get_real_bento(
+def get_bento_info(
     project_path: str | None = None,
     bento: str | Tag | None = None,
     context: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
-) -> Bento:
+) -> BentoInfo:
     if project_path:
         from bentoml.bentos import build_bentofile
 
         bento_obj = build_bentofile(build_ctx=project_path, _bento_store=_bento_store)
         _cloud_client.push_bento(bento=bento_obj, context=context)
-        return bento_obj
+        return bento_obj.info
     elif bento:
         bento = Tag.from_taglike(bento)
         try:
             bento_obj = _bento_store.get(bento)
-        except NotFound as e:
-            # "bento repo needs to exist if it is latest"
-            if bento.version is None or bento.version == "latest":
-                raise e
+        except NotFound:
             bento_obj = None
 
-        if bento_obj is None:
-            # try to pull from bentocloud
-            try:
-                bento_obj = _cloud_client.pull_bento(context=context, tag=bento)
-            except NotFound as e:
-                raise e
-            return bento_obj
-        else:
+        # try to get from bentocloud
+        try:
+            bento_schema = _cloud_client.get_bento(
+                context=context, name=bento.name, version=bento.version
+            )
+        except NotFound:
+            bento_schema = None
+
+        if bento_obj is None and bento_schema is None:
+            raise NotFound(f"bento {bento} not found in both local and cloud")
+        elif bento_obj is not None and bento_schema is None:
             # push to bentocloud
             _cloud_client.push_bento(bento=bento_obj, context=context)
-            return bento_obj
+            return bento_obj.info
+        else:
+            with Live(_cloud_client.spinner.progress_group):
+                _cloud_client.spinner.log_progress.add_task(
+                    f"[bold blue]Using bento {bento.name}:{bento.version} from bentocloud to deploy"
+                )
+            return BentoInfo(
+                tag=Tag(name=bento.name, version=bento.version),
+                entry_service=bento_schema.manifest.entry_service,
+                service=bento_schema.manifest.service,
+            )
     else:
         raise BentoMLException(
             "Create a deployment needs a target; project path or bento is necessary"
@@ -555,7 +567,6 @@ class Deployment:
             envs=target_schema.config.envs,
             bento=target_schema.bento.repository.name + ":" + target_schema.bento.name,
         )
-        print("update_schema", update_schema)
         return bentoml_cattr.unstructure(update_schema)
 
     @staticmethod
@@ -653,12 +664,11 @@ class Deployment:
         deployment_schema = cloud_rest_client.v2.get_deployment(name, cluster)
         orig_dict = cls._convert_schema_to_update_schema(deployment_schema)
 
-        config_params = deployment_config_params.get_config_dict(orig_dict.get("bento"))
+        config_params = deployment_config_params.get_config_dict(
+            orig_dict.get("bento"),
+        )
 
-        print("1111111 orig: ", orig_dict)
-        print("1111111 config: ", config_params)
         config_merger.merge(orig_dict, config_params)
-        print("2222 orig: ", orig_dict)
         config_struct = bentoml_cattr.structure(orig_dict, UpdateDeploymentSchemaV2)
 
         cls._fix_and_validate_schema(config_struct)

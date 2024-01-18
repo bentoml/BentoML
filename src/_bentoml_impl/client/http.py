@@ -126,6 +126,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                         doc=route.get("doc"),
                         stream_output=route["output"].get("is_stream", False),
                     )
+            const_headers = {}
         else:
             for name, method in service.apis.items():
                 routes[name] = ClientEndpoint(
@@ -141,7 +142,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
 
             from bentoml._internal.context import component_context
 
-            self.const_headers = {
+            const_headers = {
                 "Bento-Name": component_context.bento_name,
                 "Bento-Version": component_context.bento_version,
                 "Runner-Name": service.name,
@@ -150,7 +151,11 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             }
 
         self.__attrs_init__(  # type: ignore
-            url=url, endpoints=routes, media_type=media_type, token=token
+            url=url,
+            endpoints=routes,
+            media_type=media_type,
+            token=token,
+            const_headers=const_headers,
         )
         super().__init__()
 

@@ -33,6 +33,8 @@ from .schemas.schemasv1 import ResourceInstanceSchema
 from .schemas.schemasv1 import UpdateBentoSchema
 from .schemas.schemasv1 import UpdateDeploymentSchema
 from .schemas.schemasv1 import UserSchema
+from .schemas.schemasv1 import BentoListSchema
+from .schemas.schemasv1 import ResourceInstanceSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
 from .schemas.schemasv2 import DeploymentListSchema as DeploymentListSchemaV2
@@ -111,6 +113,24 @@ class RestApiClientV1(BaseRestApiClient):
             return None
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
+
+    def list_bentos(
+        self, bento_repository_name: str, count: int = 1
+    ) -> BentoListSchema | None:
+        url = urljoin(
+            self.endpoint,
+            f"/api/v1/bento_repositories/{bento_repository_name}/bentos",
+        )
+        resp = self.session.get(
+            url,
+            params={
+                "count": count,
+            },
+        )
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, BentoListSchema)
 
     def create_bento(
         self, bento_repository_name: str, req: CreateBentoSchema
@@ -651,8 +671,6 @@ class RestApiClientV2(BaseRestApiClient):
             "/api/v1/instance_types",
         )
         resp = self.session.get(url, params={"cluster": cluster})
-        if self._is_not_found(resp):
-            return None
         self._check_resp(resp)
         return schema_from_json(resp.text, list[ResourceInstanceSchema])
 

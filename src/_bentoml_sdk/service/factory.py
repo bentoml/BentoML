@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import pathlib
 import math
 import os
 import sys
@@ -168,6 +169,18 @@ class Service(t.Generic[T]):
             if import_module == "__main__":
                 if hasattr(sys.modules["__main__"], "__file__"):
                     import_module = sys.modules["__main__"].__file__
+                    assert isinstance(import_module, str)
+                    try:
+                        import_module_path = pathlib.Path(import_module).relative_to(
+                            pathlib.Path(self.working_dir)
+                        )
+                    except ValueError:
+                        raise BentoMLException(
+                            "Failed to get service import origin, service object defined in __main__ module is not supported"
+                        )
+                    import_module = str(import_module_path.with_suffix("")).replace(
+                        os.path.sep, "."
+                    )
                 else:
                     raise BentoMLException(
                         "Failed to get service import origin, service object defined interactively in console or notebook is not supported"

@@ -76,7 +76,7 @@ class BentoManifestSchema:
     service: str
     bentoml_version: str
     size_bytes: int
-    entry_service: t.Optional[str] = attr.field(default=None)
+    entry_service: str = attr.field(default="")
     name: t.Optional[str] = attr.field(default=None)
     apis: t.Dict[str, BentoApiSchema] = attr.field(factory=dict)
     models: t.List[str] = attr.field(factory=list)

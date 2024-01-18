@@ -257,7 +257,6 @@ class DeploymentSchema(ResourceSchema):
     cluster: ClusterSchema
     status: DeploymentStatus
     kube_namespace: str
-    distributed: bool = attr.field(default=False)
     latest_revision: t.Optional[DeploymentRevisionSchema] = attr.field(
         default=None
     )  # Delete returns no latest revision
@@ -328,8 +327,6 @@ class CreateDeploymentSchema(UpdateDeploymentSchema):
     __forbid_extra_keys__ = True
     name: str
     kube_namespace: str
-    # cluster: str
-    distributed: t.Optional[bool] = attr.field(default=False)
 
 
 @attr.define(kw_only=True)

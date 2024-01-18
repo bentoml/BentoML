@@ -9,6 +9,7 @@ import pytest
 
 from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.deployment import Deployment
+from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.schemas.modelschemas import AccessControl
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentServiceConfig
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
@@ -58,7 +59,6 @@ class DummyUpdateSchema(UpdateDeploymentSchemaV2):
 def dummy_generate_deployment_schema(
     name: str,
     cluster: str | None,
-    distributed: bool,
     update_schema: UpdateDeploymentSchemaV2,
 ):
     user = UserSchema(name="", email="", first_name="", last_name="")
@@ -106,7 +106,6 @@ def dummy_generate_deployment_schema(
         ),
     )
     return DeploymentFullSchemaV2(
-        distributed=distributed,
         latest_revision=DeploymentRevisionSchemaV2(
             targets=[
                 DeploymentTargetSchemaV2(
@@ -115,9 +114,6 @@ def dummy_generate_deployment_schema(
                         access_type=update_schema.access_type,
                         envs=update_schema.envs,
                         services=update_schema.services,
-                        scaling=update_schema.scaling,
-                        deployment_strategy=update_schema.deployment_strategy,
-                        bentoml_config_overrides=update_schema.bentoml_config_overrides,
                     ),
                     uid="",
                     created_at=datetime(2023, 5, 1),
@@ -170,10 +166,12 @@ def fixture_rest_client() -> RestApiClient:
     def dummy_create_deployment(
         create_schema: CreateDeploymentSchemaV2, cluster: str | None = None
     ):
+        if create_schema.name is None:
+            create_schema.name = "empty_name"
         if cluster is None:
             cluster = "default_display_name"
         return dummy_generate_deployment_schema(
-            create_schema.name, cluster, create_schema.distributed, create_schema
+            create_schema.name, cluster, create_schema
         )
 
     def dummy_update_deployment(
@@ -183,7 +181,7 @@ def fixture_rest_client() -> RestApiClient:
     ):
         if cluster is None:
             cluster = "default_display_name"
-        return dummy_generate_deployment_schema(name, cluster, False, update_schema)
+        return dummy_generate_deployment_schema(name, cluster, update_schema)
 
     def dummy_get_deployment(
         name: str,
@@ -195,7 +193,6 @@ def fixture_rest_client() -> RestApiClient:
             return dummy_generate_deployment_schema(
                 name,
                 cluster,
-                True,
                 UpdateDeploymentSchemaV2(
                     bento="abc:123",
                     envs=[EnvItemSchema(name="env_key", value="env_value")],
@@ -221,12 +218,17 @@ def fixture_rest_client() -> RestApiClient:
             return dummy_generate_deployment_schema(
                 name,
                 cluster,
-                False,
                 UpdateDeploymentSchemaV2(
                     bento="abc:123",
                     access_type=AccessControl.PUBLIC,
-                    scaling=DeploymentTargetHPAConf(min_replicas=3, max_replicas=5),
-                    deployment_strategy=DeploymentStrategy.RollingUpdate,
+                    services={
+                        "irisclassifier": DeploymentServiceConfig(
+                            scaling=DeploymentTargetHPAConf(
+                                min_replicas=3, max_replicas=5
+                            ),
+                            deployment_strategy=DeploymentStrategy.RollingUpdate,
+                        )
+                    },
                     envs=[EnvItemSchema(name="env_key", value="env_value")],
                 ),
             )
@@ -263,14 +265,23 @@ def fixture_rest_client() -> RestApiClient:
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
 def test_create_deployment(mock_get_client: MagicMock, rest_client: RestApiClient):
     mock_get_client.return_value = rest_client
-    deployment = Deployment.create(bento="abc:123")
+    deployment = Deployment.create(
+        deployment_config_params=DeploymentConfigParameters(
+            cfg_dict={
+                "bento": "abc:123",
+            },
+            service_name="irisclassifier",
+        )
+    )
     # assert expected schema
     assert deployment.cluster == "default_display_name"
-    assert deployment.name == ""
-    assert deployment.distributed is False
+    assert deployment.name == "empty_name"
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
-    assert config.scaling == DeploymentTargetHPAConf(min_replicas=1, max_replicas=1)
+    for service in config.services.values():
+        assert service.scaling == DeploymentTargetHPAConf(
+            min_replicas=1, max_replicas=1
+        )
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -279,25 +290,34 @@ def test_create_deployment_custom_standalone(
 ):
     mock_get_client.return_value = rest_client
     deployment = Deployment.create(
-        bento="abc:123",
-        name="custom-name",
-        scaling_min=2,
-        scaling_max=4,
-        access_type="private",
-        cluster="custom-cluster",
-        envs=[{"name": "env_key", "value": "env_value"}],
-        strategy="RollingUpdate",
+        deployment_config_params=DeploymentConfigParameters(
+            cfg_dict={
+                "bento": "abc:123",
+                "name": "custom-name",
+                "access_type": "private",
+                "cluster": "custom-cluster",
+                "envs": [{"name": "env_key", "value": "env_value"}],
+                "services": {
+                    "irisclassifier": {
+                        "deployment_strategy": "RollingUpdate",
+                        "scaling": {"min_replicas": 2, "max_replicas": 4},
+                    },
+                },
+            },
+            service_name="irisclassifier",
+        )
     )
     # assert expected schema
     assert deployment.cluster == "custom-cluster"
     assert deployment.name == "custom-name"
-    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PRIVATE
-    assert config.scaling == DeploymentTargetHPAConf(min_replicas=2, max_replicas=4)
-
-    assert config.deployment_strategy == DeploymentStrategy.RollingUpdate
     assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
+    for service in config.services.values():
+        assert service.scaling == DeploymentTargetHPAConf(
+            min_replicas=2, max_replicas=4
+        )
+        assert service.deployment_strategy == DeploymentStrategy.RollingUpdate
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -305,14 +325,28 @@ def test_create_deployment_scailing_only_min(
     mock_get_client: MagicMock, rest_client: RestApiClient
 ):
     mock_get_client.return_value = rest_client
-    deployment = Deployment.create(bento="abc:123", scaling_min=3)
+    deployment = Deployment.create(
+        deployment_config_params=DeploymentConfigParameters(
+            cfg_dict={
+                "bento": "abc:123",
+                "services": {
+                    "irisclassifier": {
+                        "scaling": {"min_replicas": 3},
+                    },
+                },
+            },
+            service_name="irisclassifier",
+        )
+    )
     # assert expected schema
     assert deployment.cluster == "default_display_name"
-    assert deployment.name == ""
-    assert deployment.distributed is False
+    assert deployment.name == "empty_name"
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
-    assert config.scaling == DeploymentTargetHPAConf(min_replicas=3, max_replicas=3)
+    for service in config.services.values():
+        assert service.scaling == DeploymentTargetHPAConf(
+            min_replicas=3, max_replicas=3
+        )
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -320,29 +354,28 @@ def test_create_deployment_scailing_only_max(
     mock_get_client: MagicMock, rest_client: RestApiClient
 ):
     mock_get_client.return_value = rest_client
-    deployment = Deployment.create(bento="abc:123", scaling_max=3)
+    deployment = Deployment.create(
+        deployment_config_params=DeploymentConfigParameters(
+            cfg_dict={
+                "bento": "abc:123",
+                "services": {
+                    "irisclassifier": {
+                        "scaling": {"max_replicas": 3},
+                    },
+                },
+            },
+            service_name="irisclassifier",
+        )
+    )
     # assert expected schema
     assert deployment.cluster == "default_display_name"
-    assert deployment.name == ""
-    assert deployment.distributed is False
+    assert deployment.name == "empty_name"
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
-    assert config.scaling == DeploymentTargetHPAConf(min_replicas=1, max_replicas=3)
-
-
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_create_deployment_scailing_mismatch_min_max(
-    mock_get_client: MagicMock, rest_client: RestApiClient
-):
-    mock_get_client.return_value = rest_client
-    deployment = Deployment.create(bento="abc:123", scaling_min=3, scaling_max=2)
-    # assert expected schema
-    assert deployment.cluster == "default_display_name"
-    assert deployment.name == ""
-    assert deployment.distributed is False
-    config = deployment.get_config(refetch=False)
-    assert config.access_type == AccessControl.PUBLIC
-    assert config.scaling == DeploymentTargetHPAConf(min_replicas=2, max_replicas=2)
+    for service in config.services.values():
+        assert service.scaling == DeploymentTargetHPAConf(
+            min_replicas=1, max_replicas=3
+        )
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -350,42 +383,41 @@ def test_create_deployment_config_dict(
     mock_get_client: MagicMock, rest_client: RestApiClient
 ):
     mock_get_client.return_value = rest_client
-    config_dict = {
-        "services": {
-            "irisclassifier": {"scaling": {"max_replicas": 2, "min_replicas": 1}},
-            "preprocessing": {"scaling": {"max_replicas": 2}},
-        },
-        "envs": [{"name": "env_key", "value": "env_value"}],
-        "bentoml_config_overrides": {
-            "irisclassifier": {
+    deployment = Deployment.create(
+        deployment_config_params=DeploymentConfigParameters(
+            cfg_dict={
+                "bento": "abc:123",
+                "services": {
+                    "irisclassifier": {
+                        "scaling": {"max_replicas": 2, "min_replicas": 1},
+                        "config_overrides": {
+                            "resources": {"cpu": "300m", "memory": "500m"}
+                        },
+                    },
+                    "preprocessing": {"scaling": {"max_replicas": 2}},
+                },
+                "envs": [{"name": "env_key", "value": "env_value"}],
+            },
+            service_name="irisclassifier",
+        )
+    )
+    # assert expected schema
+    assert deployment.cluster == "default_display_name"
+    assert deployment.name == "empty_name"
+    config = deployment.get_config(refetch=False)
+    assert config.services == {
+        "irisclassifier": DeploymentServiceConfig(
+            scaling=DeploymentTargetHPAConf(min_replicas=1, max_replicas=2),
+            config_overrides={
                 "resources": {
                     "cpu": "300m",
                     "memory": "500m",
                 },
-            }
-        },
-    }
-    deployment = Deployment.create(bento="abc:123", config_dict=config_dict)
-    # assert expected schema
-    assert deployment.cluster == "default_display_name"
-    assert deployment.name == ""
-    assert deployment.distributed
-    config = deployment.get_config(refetch=False)
-    assert config.services == {
-        "irisclassifier": DeploymentServiceConfig(
-            scaling=DeploymentTargetHPAConf(min_replicas=1, max_replicas=2)
+            },
         ),
         "preprocessing": DeploymentServiceConfig(
             scaling=DeploymentTargetHPAConf(min_replicas=1, max_replicas=2)
         ),
-    }
-    assert config.bentoml_config_overrides == {
-        "irisclassifier": {
-            "resources": {
-                "cpu": "300m",
-                "memory": "500m",
-            },
-        }
     }
 
 
@@ -393,22 +425,33 @@ def test_create_deployment_config_dict(
 def test_update_deployment(mock_get_client: MagicMock, rest_client: RestApiClient):
     mock_get_client.return_value = rest_client
     deployment = Deployment.update(
-        name="test",
-        bento="abc:1234",
-        access_type="private",
-        envs=[{"name": "env_key2", "value": "env_value2"}],
-        strategy="Recreate",
+        deployment_config_params=DeploymentConfigParameters(
+            cfg_dict={
+                "name": "test",
+                "bento": "abc:1234",
+                "access_type": "private",
+                "envs": [{"name": "env_key2", "value": "env_value2"}],
+                "services": {
+                    "irisclassifier": {
+                        "deployment_strategy": "Recreate",
+                    },
+                },
+            },
+            service_name="irisclassifier",
+        )
     )
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.get_bento(refetch=False) == "abc:1234"
     assert deployment.name == "test"
-    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PRIVATE
-    assert config.scaling == DeploymentTargetHPAConf(min_replicas=3, max_replicas=5)
-    assert config.deployment_strategy == DeploymentStrategy.Recreate
     assert config.envs == [EnvItemSchema(name="env_key2", value="env_value2")]
+    for service in config.services.values():
+        assert service.scaling == DeploymentTargetHPAConf(
+            min_replicas=3, max_replicas=5
+        )
+        assert service.deployment_strategy == DeploymentStrategy.Recreate
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -416,16 +459,30 @@ def test_update_deployment_scaling_only_min(
     mock_get_client: MagicMock, rest_client: RestApiClient
 ):
     mock_get_client.return_value = rest_client
-    deployment = Deployment.update(name="test", scaling_min=1)
+    deployment = Deployment.update(
+        deployment_config_params=DeploymentConfigParameters(
+            cfg_dict={
+                "name": "test",
+                "services": {
+                    "irisclassifier": {
+                        "scaling": {"min_replicas": 1},
+                    },
+                },
+            },
+            service_name="irisclassifier",
+        )
+    )
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "test"
-    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
-    assert config.scaling == DeploymentTargetHPAConf(min_replicas=1, max_replicas=5)
-    assert config.deployment_strategy == DeploymentStrategy.RollingUpdate
     assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
+    for service in config.services.values():
+        assert service.scaling == DeploymentTargetHPAConf(
+            min_replicas=1, max_replicas=5
+        )
+        assert service.deployment_strategy == DeploymentStrategy.RollingUpdate
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -433,16 +490,30 @@ def test_update_deployment_scaling_only_max(
     mock_get_client: MagicMock, rest_client: RestApiClient
 ):
     mock_get_client.return_value = rest_client
-    deployment = Deployment.update(name="test", scaling_max=3)
+    deployment = Deployment.update(
+        deployment_config_params=DeploymentConfigParameters(
+            cfg_dict={
+                "name": "test",
+                "services": {
+                    "irisclassifier": {
+                        "scaling": {"max_replicas": 3},
+                    },
+                },
+            },
+            service_name="irisclassifier",
+        )
+    )
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "test"
-    assert deployment.distributed is False
     config = deployment.get_config(refetch=False)
     assert config.access_type == AccessControl.PUBLIC
-    assert config.scaling == DeploymentTargetHPAConf(min_replicas=3, max_replicas=3)
-    assert config.deployment_strategy == DeploymentStrategy.RollingUpdate
     assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
+    for service in config.services.values():
+        assert service.scaling == DeploymentTargetHPAConf(
+            min_replicas=3, max_replicas=3
+        )
+        assert service.deployment_strategy == DeploymentStrategy.RollingUpdate
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -450,16 +521,23 @@ def test_update_deployment_scaling_too_big_min(
     mock_get_client: MagicMock, rest_client: RestApiClient
 ):
     mock_get_client.return_value = rest_client
-    deployment = Deployment.update(name="test", scaling_min=10)
-    # assert expected schema
-    assert deployment.cluster == "default_display_name"
-    assert deployment.name == "test"
-    assert deployment.distributed is False
-    config = deployment.get_config(refetch=False)
-    assert config.access_type == AccessControl.PUBLIC
-    assert config.scaling == DeploymentTargetHPAConf(min_replicas=5, max_replicas=5)
-    assert config.deployment_strategy == DeploymentStrategy.RollingUpdate
-    assert config.envs == [EnvItemSchema(name="env_key", value="env_value")]
+    try:
+        Deployment.update(
+            deployment_config_params=DeploymentConfigParameters(
+                cfg_dict={
+                    "name": "test",
+                    "services": {
+                        "irisclassifier": {"scaling": {"min_replicas": 10}},
+                    },
+                },
+                service_name="irisclassifier",
+            )
+        )
+    except Exception as e:
+        assert (
+            "min scaling values must be less than or equal to max scaling values"
+            in str(e)
+        )
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -467,13 +545,18 @@ def test_update_deployment_distributed(
     mock_get_client: MagicMock, rest_client: RestApiClient
 ):
     mock_get_client.return_value = rest_client
-    config_dict = {
-        "services": {
-            "irisclassifier": {"scaling": {"max_replicas": 50}},
-            "preprocessing": {"instance_type": "t3-large"},
-        }
-    }
-    deployment = Deployment.update(name="test-distributed", config_dict=config_dict)
+    deployment = Deployment.update(
+        deployment_config_params=DeploymentConfigParameters(
+            cfg_dict={
+                "name": "test-distributed",
+                "services": {
+                    "irisclassifier": {"scaling": {"max_replicas": 50}},
+                    "preprocessing": {"instance_type": "t3-large"},
+                },
+            },
+            service_name="irisclassifier",
+        )
+    )
     # assert expected schema
     assert deployment.cluster == "default_display_name"
     assert deployment.name == "test-distributed"

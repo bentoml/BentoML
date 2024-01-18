@@ -67,8 +67,8 @@ class BentoCloudClient(CloudClient):
         threads: int = 10,
         context: str | None = None,
     ):
-        with Live(self.progress_group):
-            upload_task_id = self.transmission_progress.add_task(
+        with Live(self.spinner.progress_group):
+            upload_task_id = self.spinner.transmission_progress.add_task(
                 f'Pushing Bento "{bento.tag}"', start=False, visible=False
             )
             self._do_push_bento(
@@ -100,7 +100,7 @@ class BentoCloudClient(CloudClient):
         with ThreadPoolExecutor(max_workers=max(len(model_tags), 1)) as executor:
 
             def push_model(model: Model) -> None:
-                model_upload_task_id = self.transmission_progress.add_task(
+                model_upload_task_id = self.spinner.transmission_progress.add_task(
                     f'Pushing model "{model.tag}"', start=False, visible=False
                 )
                 self._do_push_model(
@@ -113,16 +113,18 @@ class BentoCloudClient(CloudClient):
 
             futures: t.Iterator[None] = executor.map(push_model, models)
             list(futures)
-        with self.spin(text=f'Fetching Bento repository "{name}"'):
+        with self.spinner.spin(text=f'Fetching Bento repository "{name}"'):
             bento_repository = yatai_rest_client.v1.get_bento_repository(
                 bento_repository_name=name
             )
         if not bento_repository:
-            with self.spin(text=f'Bento repository "{name}" not found, creating now..'):
+            with self.spinner.spin(
+                text=f'Bento repository "{name}" not found, creating now..'
+            ):
                 bento_repository = yatai_rest_client.v1.create_bento_repository(
                     req=CreateBentoRepositorySchema(name=name, description="")
                 )
-        with self.spin(
+        with self.spinner.spin(
             text=f'Try fetching Bento "{bento.tag}" from remote Bento store..'
         ):
             remote_bento = yatai_rest_client.v1.get_bento(
@@ -133,7 +135,7 @@ class BentoCloudClient(CloudClient):
             and remote_bento
             and remote_bento.upload_status == BentoUploadStatus.SUCCESS
         ):
-            self.log_progress.add_task(
+            self.spinner.log_progress.add_task(
                 f'[bold blue]Push skipped: Bento "{bento.tag}" already exists in remote Bento store'
             )
             return
@@ -170,7 +172,7 @@ class BentoCloudClient(CloudClient):
             envs=info.envs,
         )
         if not remote_bento:
-            with self.spin(
+            with self.spinner.spin(
                 text=f'Registering Bento "{bento.tag}" with remote Bento store..'
             ):
                 remote_bento = yatai_rest_client.v1.create_bento(
@@ -184,7 +186,7 @@ class BentoCloudClient(CloudClient):
                     ),
                 )
         else:
-            with self.spin(text=f'Updating Bento "{bento.tag}"..'):
+            with self.spinner.spin(text=f'Updating Bento "{bento.tag}"..'):
                 remote_bento = yatai_rest_client.v1.update_bento(
                     bento_repository_name=bento_repository.name,
                     version=version,
@@ -200,7 +202,7 @@ class BentoCloudClient(CloudClient):
         if remote_bento.transmission_strategy is not None:
             transmission_strategy = remote_bento.transmission_strategy
         else:
-            with self.spin(
+            with self.spinner.spin(
                 text=f'Getting a presigned upload url for bento "{bento.tag}" ..'
             ):
                 remote_bento = yatai_rest_client.v1.presign_bento_upload_url(
@@ -212,10 +214,12 @@ class BentoCloudClient(CloudClient):
 
         def io_cb(x: int):
             with io_mutex:
-                self.transmission_progress.update(upload_task_id, advance=x)
+                self.spinner.transmission_progress.update(upload_task_id, advance=x)
 
         with CallbackIOWrapper(read_cb=io_cb) as tar_io:
-            with self.spin(text=f'Creating tar archive for bento "{bento.tag}"..'):
+            with self.spinner.spin(
+                text=f'Creating tar archive for bento "{bento.tag}"..'
+            ):
                 with tarfile.open(fileobj=tar_io, mode="w:") as tar:
 
                     def filter_(
@@ -230,17 +234,17 @@ class BentoCloudClient(CloudClient):
                     tar.add(bento.path, arcname="./", filter=filter_)
             tar_io.seek(0, 0)
 
-            with self.spin(text=f'Start uploading bento "{bento.tag}"..'):
+            with self.spinner.spin(text=f'Start uploading bento "{bento.tag}"..'):
                 yatai_rest_client.v1.start_upload_bento(
                     bento_repository_name=bento_repository.name, version=version
                 )
 
             file_size = tar_io.getbuffer().nbytes
 
-            self.transmission_progress.update(
+            self.spinner.transmission_progress.update(
                 upload_task_id, completed=0, total=file_size, visible=True
             )
-            self.transmission_progress.start_task(upload_task_id)
+            self.spinner.transmission_progress.start_task(upload_task_id)
 
             io_mutex = threading.Lock()
 
@@ -252,11 +256,11 @@ class BentoCloudClient(CloudClient):
                         data=tar_io,
                     )
                 except Exception as e:  # pylint: disable=broad-except
-                    self.log_progress.add_task(
+                    self.spinner.log_progress.add_task(
                         f'[bold red]Failed to upload bento "{bento.tag}"'
                     )
                     raise e
-                self.log_progress.add_task(
+                self.spinner.log_progress.add_task(
                     f'[bold green]Successfully pushed bento "{bento.tag}"'
                 )
                 return
@@ -273,7 +277,7 @@ class BentoCloudClient(CloudClient):
                             reason=resp.text,
                         )
                 else:
-                    with self.spin(
+                    with self.spinner.spin(
                         text=f'Start multipart uploading Bento "{bento.tag}"...'
                     ):
                         remote_bento = (
@@ -294,7 +298,7 @@ class BentoCloudClient(CloudClient):
                     def chunk_upload(
                         upload_id: str, chunk_number: int
                     ) -> FinishUploadBentoSchema | tuple[str, int]:
-                        with self.spin(
+                        with self.spinner.spin(
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of Bento "{bento.tag}"...'
                         ):
                             remote_bento = (
@@ -307,7 +311,7 @@ class BentoCloudClient(CloudClient):
                                     ),
                                 )
                             )
-                        with self.spin(
+                        with self.spinner.spin(
                             text=f'({chunk_number}/{chunks_count}) Uploading chunk of Bento "{bento.tag}"...'
                         ):
                             chunk = (
@@ -364,7 +368,7 @@ class BentoCloudClient(CloudClient):
                                 )
                             )
 
-                    with self.spin(
+                    with self.spinner.spin(
                         text=f'Completing multipart upload of Bento "{bento.tag}"...'
                     ):
                         remote_bento = (
@@ -384,21 +388,23 @@ class BentoCloudClient(CloudClient):
                     reason=str(e),
                 )
             if finish_req.status is BentoUploadStatus.FAILED:
-                self.log_progress.add_task(
+                self.spinner.log_progress.add_task(
                     f'[bold red]Failed to upload Bento "{bento.tag}"'
                 )
-            with self.spin(text="Submitting upload status to remote Bento store"):
+            with self.spinner.spin(
+                text="Submitting upload status to remote Bento store"
+            ):
                 yatai_rest_client.v1.finish_upload_bento(
                     bento_repository_name=bento_repository.name,
                     version=version,
                     req=finish_req,
                 )
             if finish_req.status != BentoUploadStatus.SUCCESS:
-                self.log_progress.add_task(
+                self.spinner.log_progress.add_task(
                     f'[bold red]Failed pushing Bento "{bento.tag}": {finish_req.reason}'
                 )
             else:
-                self.log_progress.add_task(
+                self.spinner.log_progress.add_task(
                     f'[bold green]Successfully pushed Bento "{bento.tag}"'
                 )
 
@@ -411,8 +417,8 @@ class BentoCloudClient(CloudClient):
         context: str | None = None,
         bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> Bento:
-        with Live(self.progress_group):
-            download_task_id = self.transmission_progress.add_task(
+        with Live(self.spinner.progress_group):
+            download_task_id = self.spinner.transmission_progress.add_task(
                 f'Pulling bento "{tag}"', start=False, visible=False
             )
             return self._do_pull_bento(
@@ -437,7 +443,7 @@ class BentoCloudClient(CloudClient):
         try:
             bento = bento_store.get(tag)
             if not force:
-                self.log_progress.add_task(
+                self.spinner.log_progress.add_task(
                     f'[bold blue]Bento "{tag}" exists in local model store'
                 )
                 return bento
@@ -452,7 +458,7 @@ class BentoCloudClient(CloudClient):
 
         yatai_rest_client = get_rest_api_client(context)
 
-        with self.spin(text=f'Fetching bento "{_tag}"'):
+        with self.spinner.spin(text=f'Fetching bento "{_tag}"'):
             remote_bento = yatai_rest_client.v1.get_bento(
                 bento_repository_name=name, version=version
             )
@@ -467,8 +473,10 @@ class BentoCloudClient(CloudClient):
             ) as executor:
 
                 def pull_model(model_tag: Tag):
-                    model_download_task_id = self.transmission_progress.add_task(
-                        f'Pulling model "{model_tag}"', start=False, visible=False
+                    model_download_task_id = (
+                        self.spinner.transmission_progress.add_task(
+                            f'Pulling model "{model_tag}"', start=False, visible=False
+                        )
                     )
                     self._do_pull_model(
                         model_tag,
@@ -488,7 +496,7 @@ class BentoCloudClient(CloudClient):
             if remote_bento.transmission_strategy is not None:
                 transmission_strategy = remote_bento.transmission_strategy
             else:
-                with self.spin(
+                with self.spinner.spin(
                     text=f'Getting a presigned download url for bento "{_tag}"'
                 ):
                     remote_bento = yatai_rest_client.v1.presign_bento_download_url(
@@ -505,7 +513,7 @@ class BentoCloudClient(CloudClient):
                 )
             else:
                 if presigned_download_url is None:
-                    with self.spin(
+                    with self.spinner.spin(
                         text=f'Getting a presigned download url for bento "{_tag}"'
                     ):
                         remote_bento = yatai_rest_client.v1.presign_bento_download_url(
@@ -521,25 +529,25 @@ class BentoCloudClient(CloudClient):
                         )
                     total_size_in_bytes = int(response.headers.get("content-length", 0))
                     block_size = 1024  # 1 Kibibyte
-                    self.transmission_progress.update(
+                    self.spinner.transmission_progress.update(
                         download_task_id,
                         completed=0,
                         total=total_size_in_bytes,
                         visible=True,
                     )
-                    self.transmission_progress.start_task(download_task_id)
+                    self.spinner.transmission_progress.start_task(download_task_id)
                     for data in response.iter_bytes(block_size):
-                        self.transmission_progress.update(
+                        self.spinner.transmission_progress.update(
                             download_task_id, advance=len(data)
                         )
                         tar_file.write(data)
 
-                self.log_progress.add_task(
+                self.spinner.log_progress.add_task(
                     f'[bold green]Finished downloading all bento "{_tag}" files'
                 )
                 tar_file.seek(0, 0)
                 tar = tarfile.open(fileobj=tar_file, mode="r")
-                with self.spin(text=f'Extracting bento "{_tag}" tar file'):
+                with self.spinner.spin(text=f'Extracting bento "{_tag}" tar file'):
                     with fs.open_fs("temp://") as temp_fs:
                         for member in tar.getmembers():
                             f = tar.extractfile(member)
@@ -551,7 +559,7 @@ class BentoCloudClient(CloudClient):
                             temp_fs.writebytes(member.name, f.read())
                         bento = Bento.from_fs(temp_fs)
                         for model_tag in remote_bento.manifest.models:
-                            with self.spin(
+                            with self.spinner.spin(
                                 text=f'Copying model "{model_tag}" to model store'
                             ):
                                 copy_model(
@@ -560,7 +568,7 @@ class BentoCloudClient(CloudClient):
                                     target_model_store=global_model_store,
                                 )
                         bento = bento.save(bento_store)
-                        self.log_progress.add_task(
+                        self.spinner.log_progress.add_task(
                             f'[bold green]Successfully pulled bento "{_tag}"'
                         )
                         return bento
@@ -574,8 +582,8 @@ class BentoCloudClient(CloudClient):
         threads: int = 10,
         context: str | None = None,
     ):
-        with Live(self.progress_group):
-            upload_task_id = self.transmission_progress.add_task(
+        with Live(self.spinner.progress_group):
+            upload_task_id = self.spinner.transmission_progress.add_task(
                 f'Pushing model "{model.tag}"', start=False, visible=False
             )
             self._do_push_model(
@@ -597,16 +605,18 @@ class BentoCloudClient(CloudClient):
         if version is None:
             raise BentoMLException(f'Model "{model.tag}" version cannot be None')
         info = model.info
-        with self.spin(text=f'Fetching model repository "{name}"'):
+        with self.spinner.spin(text=f'Fetching model repository "{name}"'):
             model_repository = yatai_rest_client.v1.get_model_repository(
                 model_repository_name=name
             )
         if not model_repository:
-            with self.spin(text=f'Model repository "{name}" not found, creating now..'):
+            with self.spinner.spin(
+                text=f'Model repository "{name}" not found, creating now..'
+            ):
                 model_repository = yatai_rest_client.v1.create_model_repository(
                     req=CreateModelRepositorySchema(name=name, description="")
                 )
-        with self.spin(
+        with self.spinner.spin(
             text=f'Try fetching model "{model.tag}" from remote model store..'
         ):
             remote_model = yatai_rest_client.v1.get_model(
@@ -617,7 +627,7 @@ class BentoCloudClient(CloudClient):
             and remote_model
             and remote_model.upload_status == ModelUploadStatus.SUCCESS
         ):
-            self.log_progress.add_task(
+            self.spinner.log_progress.add_task(
                 f'[bold blue]Model "{model.tag}" already exists in remote model store, skipping'
             )
             return
@@ -626,7 +636,7 @@ class BentoCloudClient(CloudClient):
                 LabelItemSchema(key=key, value=value)
                 for key, value in info.labels.items()
             ]
-            with self.spin(
+            with self.spinner.spin(
                 text=f'Registering model "{model.tag}" with remote model store..'
             ):
                 remote_model = yatai_rest_client.v1.create_model(
@@ -654,7 +664,7 @@ class BentoCloudClient(CloudClient):
         if remote_model.transmission_strategy is not None:
             transmission_strategy = remote_model.transmission_strategy
         else:
-            with self.spin(
+            with self.spinner.spin(
                 text=f'Getting a presigned upload url for Model "{model.tag}" ..'
             ):
                 remote_model = yatai_rest_client.v1.presign_model_upload_url(
@@ -668,25 +678,27 @@ class BentoCloudClient(CloudClient):
 
         def io_cb(x: int):
             with io_mutex:
-                self.transmission_progress.update(upload_task_id, advance=x)
+                self.spinner.transmission_progress.update(upload_task_id, advance=x)
 
         with CallbackIOWrapper(read_cb=io_cb) as tar_io:
-            with self.spin(text=f'Creating tar archive for model "{model.tag}"..'):
+            with self.spinner.spin(
+                text=f'Creating tar archive for model "{model.tag}"..'
+            ):
                 with tarfile.open(fileobj=tar_io, mode="w:") as tar:
                     tar.add(model.path, arcname="./")
             tar_io.seek(0, 0)
-            with self.spin(text=f'Start uploading model "{model.tag}"..'):
+            with self.spinner.spin(text=f'Start uploading model "{model.tag}"..'):
                 yatai_rest_client.v1.start_upload_model(
                     model_repository_name=model_repository.name, version=version
                 )
             file_size = tar_io.getbuffer().nbytes
-            self.transmission_progress.update(
+            self.spinner.transmission_progress.update(
                 upload_task_id,
                 description=f'Uploading model "{model.tag}"',
                 total=file_size,
                 visible=True,
             )
-            self.transmission_progress.start_task(upload_task_id)
+            self.spinner.transmission_progress.start_task(upload_task_id)
 
             if transmission_strategy == "proxy":
                 try:
@@ -696,11 +708,11 @@ class BentoCloudClient(CloudClient):
                         data=tar_io,
                     )
                 except Exception as e:  # pylint: disable=broad-except
-                    self.log_progress.add_task(
+                    self.spinner.log_progress.add_task(
                         f'[bold red]Failed to upload model "{model.tag}"'
                     )
                     raise e
-                self.log_progress.add_task(
+                self.spinner.log_progress.add_task(
                     f'[bold green]Successfully pushed model "{model.tag}"'
                 )
                 return
@@ -717,7 +729,7 @@ class BentoCloudClient(CloudClient):
                             reason=resp.text,
                         )
                 else:
-                    with self.spin(
+                    with self.spinner.spin(
                         text=f'Start multipart uploading Model "{model.tag}"...'
                     ):
                         remote_model = (
@@ -738,7 +750,7 @@ class BentoCloudClient(CloudClient):
                     def chunk_upload(
                         upload_id: str, chunk_number: int
                     ) -> FinishUploadModelSchema | tuple[str, int]:
-                        with self.spin(
+                        with self.spinner.spin(
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of model "{model.tag}"...'
                         ):
                             remote_model = (
@@ -752,7 +764,7 @@ class BentoCloudClient(CloudClient):
                                 )
                             )
 
-                        with self.spin(
+                        with self.spinner.spin(
                             text=f'({chunk_number}/{chunks_count}) Uploading chunk of model "{model.tag}"...'
                         ):
                             chunk = (
@@ -809,7 +821,7 @@ class BentoCloudClient(CloudClient):
                                 )
                             )
 
-                    with self.spin(
+                    with self.spinner.spin(
                         text=f'Completing multipart upload of model "{model.tag}"...'
                     ):
                         remote_model = (
@@ -829,10 +841,12 @@ class BentoCloudClient(CloudClient):
                     reason=str(e),
                 )
             if finish_req.status is ModelUploadStatus.FAILED:
-                self.log_progress.add_task(
+                self.spinner.log_progress.add_task(
                     f'[bold red]Failed to upload model "{model.tag}"'
                 )
-            with self.spin(text="Submitting upload status to remote model store"):
+            with self.spinner.spin(
+                text="Submitting upload status to remote model store"
+            ):
                 yatai_rest_client.v1.finish_upload_model(
                     model_repository_name=model_repository.name,
                     version=version,
@@ -840,11 +854,11 @@ class BentoCloudClient(CloudClient):
                 )
 
             if finish_req.status != ModelUploadStatus.SUCCESS:
-                self.log_progress.add_task(
+                self.spinner.log_progress.add_task(
                     f'[bold red]Failed pushing model "{model.tag}" : {finish_req.reason}'
                 )
             else:
-                self.log_progress.add_task(
+                self.spinner.log_progress.add_task(
                     f'[bold green]Successfully pushed model "{model.tag}"'
                 )
 
@@ -858,8 +872,8 @@ class BentoCloudClient(CloudClient):
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
         query: str | None = None,
     ) -> Model:
-        with Live(self.progress_group):
-            download_task_id = self.transmission_progress.add_task(
+        with Live(self.spinner.progress_group):
+            download_task_id = self.spinner.transmission_progress.add_task(
                 f'Pulling model "{tag}"', start=False, visible=False
             )
             return self._do_pull_model(
@@ -890,7 +904,7 @@ class BentoCloudClient(CloudClient):
         else:
             if _tag.version not in (None, "latest"):
                 if not force:
-                    self.log_progress.add_task(
+                    self.spinner.log_progress.add_task(
                         f'[bold blue]Model "{tag}" already exists locally, skipping'
                     )
                     return model
@@ -907,13 +921,13 @@ class BentoCloudClient(CloudClient):
                 )
             if model is not None:
                 if not force and latest_model.build_at < model.creation_time:
-                    self.log_progress.add_task(
+                    self.spinner.log_progress.add_task(
                         f'[bold blue]Newer version of model "{name}" exists locally, skipping'
                     )
                     return model
                 if model.tag.version == latest_model.version:
                     if not force:
-                        self.log_progress.add_task(
+                        self.spinner.log_progress.add_task(
                             f'[bold blue]Model "{model.tag}" already exists locally, skipping'
                         )
                         return model
@@ -925,7 +939,9 @@ class BentoCloudClient(CloudClient):
                 "`query` is ignored when model version is specified", UserWarning
             )
 
-        with self.spin(text=f'Getting a presigned download url for model "{_tag}"..'):
+        with self.spinner.spin(
+            text=f'Getting a presigned download url for model "{_tag}"..'
+        ):
             remote_model = yatai_rest_client.v1.presign_model_download_url(
                 name, version
             )
@@ -940,7 +956,9 @@ class BentoCloudClient(CloudClient):
         if remote_model.transmission_strategy is not None:
             transmission_strategy = remote_model.transmission_strategy
         else:
-            with self.spin(text=f'Getting a presigned download url for model "{_tag}"'):
+            with self.spinner.spin(
+                text=f'Getting a presigned download url for model "{_tag}"'
+            ):
                 remote_model = yatai_rest_client.v1.presign_model_download_url(
                     name, version
                 )
@@ -954,7 +972,7 @@ class BentoCloudClient(CloudClient):
             )
         else:
             if presigned_download_url is None:
-                with self.spin(
+                with self.spinner.spin(
                     text=f'Getting a presigned download url for model "{_tag}"'
                 ):
                     remote_model = yatai_rest_client.v1.presign_model_download_url(
@@ -971,25 +989,25 @@ class BentoCloudClient(CloudClient):
 
                 total_size_in_bytes = int(response.headers.get("content-length", 0))
                 block_size = 1024  # 1 Kibibyte
-                self.transmission_progress.update(
+                self.spinner.transmission_progress.update(
                     download_task_id,
                     description=f'Downloading model "{_tag}"',
                     total=total_size_in_bytes,
                     visible=True,
                 )
-                self.transmission_progress.start_task(download_task_id)
+                self.spinner.transmission_progress.start_task(download_task_id)
                 for data in response.iter_bytes(block_size):
-                    self.transmission_progress.update(
+                    self.spinner.transmission_progress.update(
                         download_task_id, advance=len(data)
                     )
                     tar_file.write(data)
 
-            self.log_progress.add_task(
+            self.spinner.log_progress.add_task(
                 f'[bold green]Finished downloading model "{_tag}" files'
             )
             tar_file.seek(0, 0)
             tar = tarfile.open(fileobj=tar_file, mode="r")
-            with self.spin(text=f'Extracting model "{_tag}" tar file'):
+            with self.spinner.spin(text=f'Extracting model "{_tag}" tar file'):
                 with fs.open_fs("temp://") as temp_fs:
                     for member in tar.getmembers():
                         f = tar.extractfile(member)
@@ -1000,7 +1018,7 @@ class BentoCloudClient(CloudClient):
                             temp_fs.makedirs(str(p.parent), recreate=True)
                         temp_fs.writebytes(member.name, f.read())
                     model = Model.from_fs(temp_fs).save(model_store)
-                    self.log_progress.add_task(
+                    self.spinner.log_progress.add_task(
                         f'[bold green]Successfully pulled model "{_tag}"'
                     )
                     return model

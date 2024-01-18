@@ -353,7 +353,6 @@ class DeploymentTargetConfig:
     )
     traffic_control: t.Optional[TrafficControlConfig] = attr.field(default=None)
     deployment_cold_start_wait_timeout: t.Optional[int] = attr.field(default=None)
-    bentoml_config_overrides: t.Optional[dict[str, t.Any]] = attr.field(default=None)
 
 
 @attr.define
@@ -378,6 +377,7 @@ class DeploymentServiceConfig:
     deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(default=None)
     extras: t.Optional[ExtraDeploymentOverrides] = attr.field(default=None)
     cold_start_timeout: t.Optional[int] = attr.field(default=None)
+    config_overrides: t.Optional[t.Dict[str, t.Any]] = attr.field(factory=dict)
 
 
 class DeploymentStatus(Enum):
@@ -405,6 +405,13 @@ class ResourceInstanceConfigSchema:
     resources: DeploymentTargetResources
     price: str
     node_selectors: t.Optional[t.Dict[str, str]] = attr.field(factory=dict)
+    gpu_config: t.Optional[ResourceInstanceGPUConfigSchema] = attr.field(default=None)
+
+
+@attr.define
+class ResourceInstanceGPUConfigSchema:
+    type: str
+    memory: str
 
 
 class DeploymentRevisionStatus(Enum):

@@ -132,7 +132,7 @@ class ServiceAppFactory(BaseAppFactory):
         assert isinstance(exc, pydantic.ValidationError)
 
         data = {
-            "error": f"{exc.error_count} validation error for {exc.title}",
+            "error": f"{exc.error_count()} validation error for {exc.title}",
             "detail": exc.errors(),
         }
         return JSONResponse(data, status_code=400)

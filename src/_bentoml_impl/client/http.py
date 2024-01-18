@@ -51,7 +51,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
     media_type: str = "application/json"
     timeout: int = 30
     token: str | None = None
-    const_headers: dict[str, str] = attr.field(init=False, factory=dict)
+    const_headers: dict[str, str] = attr.field(factory=dict)
 
     _opened_files: list[io.BufferedReader] = attr.field(init=False, factory=list)
     _temp_dir: tempfile.TemporaryDirectory[str] = attr.field(init=False)

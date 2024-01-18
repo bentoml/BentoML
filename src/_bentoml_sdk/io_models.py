@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic import RootModel
 from pydantic import create_model
+from pydantic._internal._typing_extra import is_annotated
 from typing_extensions import get_args
 
 from bentoml._internal.service.openapi.specification import Schema
@@ -19,6 +20,7 @@ from .typing_utils import is_image_type
 from .typing_utils import is_iterator_type
 from .typing_utils import is_list_type
 from .typing_utils import is_union_type
+from .validators import ContentType
 
 if t.TYPE_CHECKING:
     from starlette.requests import Request
@@ -84,8 +86,6 @@ class IOMixin:
 
     @classmethod
     def __pydantic_init_subclass__(cls) -> None:
-        from pydantic._internal._typing_extra import is_annotated
-
         cls.multipart_fields = []
         for k, field in cls.model_fields.items():
             annotation = field.annotation
@@ -288,11 +288,20 @@ class IODescriptor(IOMixin, BaseModel):
             return_annotation = eval_type_lenient(
                 signature.return_annotation, global_ns, None
             )
-
+        media_type: str | None = None
         if is_iterator_type(return_annotation):
             return_annotation = get_args(return_annotation)[0]
+        elif is_annotated(return_annotation):
+            content_type = next(
+                (a for a in get_args(return_annotation) if isinstance(a, ContentType)),
+                None,
+            )
+            if content_type is not None:
+                media_type = content_type.content_type
         try:
-            return ensure_io_descriptor(return_annotation)
+            output = ensure_io_descriptor(return_annotation)
+            output.media_type = media_type
+            return output
         except (ValueError, TypeError) as e:
             raise TypeError(
                 f"Unable to infer the output spec for function {func}, "

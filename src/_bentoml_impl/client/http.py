@@ -165,7 +165,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
 
         return ALL_SERDE[self.media_type]()
 
-    @property
+    @cached_property
     def default_headers(self) -> dict[str, str]:
         headers = self.const_headers.copy()
         headers["User-Agent"] = f"BentoML HTTP Client/{__version__}"

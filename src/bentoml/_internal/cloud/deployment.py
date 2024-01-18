@@ -9,10 +9,10 @@ import attr
 import click
 import yaml
 from deepmerge.merger import Merger
+from rich.live import Live
 from rich.progress import TaskID
 from simple_di import Provide
 from simple_di import inject
-from rich.live import Live
 
 from bentoml._internal.cloud.base import Spinner
 
@@ -25,9 +25,9 @@ if t.TYPE_CHECKING:
 
 from ...exceptions import BentoMLException
 from ...exceptions import NotFound
+from ..bento.bento import BentoInfo
 from ..configuration.containers import BentoMLContainer
 from ..tag import Tag
-from ..bento.bento import BentoInfo
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .config import get_rest_api_client

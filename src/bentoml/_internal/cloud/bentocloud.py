@@ -33,12 +33,12 @@ from .schemas.modelschemas import BentoApiSchema
 from .schemas.modelschemas import BentoRunnerResourceSchema
 from .schemas.modelschemas import BentoRunnerSchema
 from .schemas.schemasv1 import BentoManifestSchema
+from .schemas.schemasv1 import BentoSchema
 from .schemas.schemasv1 import BentoUploadStatus
 from .schemas.schemasv1 import CompleteMultipartUploadSchema
 from .schemas.schemasv1 import CompletePartSchema
 from .schemas.schemasv1 import CreateBentoRepositorySchema
 from .schemas.schemasv1 import CreateBentoSchema
-from .schemas.schemasv1 import BentoSchema
 from .schemas.schemasv1 import CreateModelRepositorySchema
 from .schemas.schemasv1 import CreateModelSchema
 from .schemas.schemasv1 import FinishUploadBentoSchema

@@ -110,7 +110,7 @@ def get_bentoml_override_config_json_from_env() -> dict[str, t.Any] | None:
     if CONFIG_OVERRIDE_JSON_ENV_VAR in os.environ:
         # User local config options for customizing bentoml
         values = os.environ.get(CONFIG_OVERRIDE_JSON_ENV_VAR, None)
-        if values is not None:
+        if values is not None and values != "":
             return json.loads(values)
 
     return None

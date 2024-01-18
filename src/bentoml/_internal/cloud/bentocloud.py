@@ -38,6 +38,7 @@ from .schemas.schemasv1 import CompleteMultipartUploadSchema
 from .schemas.schemasv1 import CompletePartSchema
 from .schemas.schemasv1 import CreateBentoRepositorySchema
 from .schemas.schemasv1 import CreateBentoSchema
+from .schemas.schemasv1 import BentoSchema
 from .schemas.schemasv1 import CreateModelRepositorySchema
 from .schemas.schemasv1 import CreateModelSchema
 from .schemas.schemasv1 import FinishUploadBentoSchema
@@ -1033,6 +1034,26 @@ class BentoCloudClient(CloudClient):
             bento
             for bento in sorted(res.items, key=lambda x: x.created_at, reverse=True)
         ]
+        return res
+
+    def get_bento(
+        self,
+        name: str,
+        version: str | None,
+        context: str | None = None,
+    ) -> BentoSchema:
+        if version is None or version == "latest":
+            res = get_rest_api_client(context).v1.list_bentos(
+                bento_repository_name=name
+            )
+            if res is None:
+                raise BentoMLException("List bento request failed")
+            return res.items[0]
+        res = get_rest_api_client(context).v1.get_bento(
+            bento_repository_name=name, version=version
+        )
+        if res is None:
+            raise NotFound(f'Bento "{name}:{version}" not found')
         return res
 
     def list_models(self, context: str | None = None) -> ModelWithRepositoryListSchema:

@@ -101,6 +101,7 @@ runners:
   - runner_a_model
   resource_config:
     cpu: 2
+entry_service: ''
 services: []
 apis:
 - name: predict

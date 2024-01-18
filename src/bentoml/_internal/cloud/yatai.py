@@ -153,6 +153,7 @@ class YataiClient(CloudClient):
         ]
         manifest = BentoManifestSchema(
             name=info.name,
+            entry_service=info.entry_service,
             service=info.service,
             bentoml_version=info.bentoml_version,
             apis=apis,

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import inspect
 import logging
-import pathlib
 import math
 import os
+import pathlib
 import sys
 import typing as t
 from functools import lru_cache

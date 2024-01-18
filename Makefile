@@ -39,8 +39,6 @@ clean: ## Clean all generated files
 	@echo "Cleaning all generated files..."
 	@$(MAKE) clean -C $(GIT_ROOT)/docs
 	@find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
-ui:
-	cd webui && pnpm i && pnpm run build:copy
 
 # Docs
 watch-docs: ## Build and watch documentation

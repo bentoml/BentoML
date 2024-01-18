@@ -82,6 +82,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    :hidden:
 
    get-started/index
+   use-cases/index
    guides/index
    reference/index
    Examples <https://github.com/bentoml/BentoML/tree/main/examples>

@@ -169,15 +169,7 @@ else:
     validators = _LazyLoader("bentoml.validators", globals(), "bentoml.validators")
     del _LazyLoader
 
-    _NEW_SDK_ATTRS = [
-        "service",
-        "runner_service",
-        "api",
-        "depends",
-        "ContentType",
-        "Dtype",
-        "Shape",
-    ]
+    _NEW_SDK_ATTRS = ["service", "runner_service", "api", "depends"]
     _NEW_CLIENTS = ["SyncHTTPClient", "AsyncHTTPClient"]
 
     def __getattr__(name: str) -> Any:

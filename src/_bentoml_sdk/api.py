@@ -35,7 +35,6 @@ class APIMethod(t.Generic[P, R]):
     name: str = attrs.field()
     input_spec: type[IODescriptor] = attrs.field()
     output_spec: type[IODescriptor] = attrs.field()
-    media_type: str | None = None
     batchable: bool = False
     batch_dim: tuple[int, int] = attrs.field(
         default=(0, 0), converter=lambda x: (x, x) if not isinstance(x, tuple) else x
@@ -84,9 +83,7 @@ class APIMethod(t.Generic[P, R]):
         return IODescriptor.from_output(self.func)
 
     def __attrs_post_init__(self) -> None:
-        if self.media_type:
-            self.output_spec.media_type = self.media_type
-        elif self.is_stream:
+        if self.is_stream and not self.output_spec.media_type:
             self.output_spec.media_type = DEFAULT_STREAM_MEDIA_TYPE
 
     @t.overload
@@ -232,7 +229,6 @@ def api(
     name: str | None = ...,
     input_spec: type[IODescriptor] | None = ...,
     output_spec: type[IODescriptor] | None = ...,
-    media_type: str | None = ...,
     batchable: bool = ...,
     batch_dim: int | tuple[int, int] = ...,
     max_batch_size: int = ...,
@@ -248,7 +244,6 @@ def api(
     name: str | None = None,
     input_spec: type[IODescriptor] | None = None,
     output_spec: type[IODescriptor] | None = None,
-    media_type: str | None = None,
     batchable: bool = False,
     batch_dim: int | tuple[int, int] = 0,
     max_batch_size: int = 100,
@@ -259,7 +254,6 @@ def api(
 ):
     def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
         params: dict[str, t.Any] = {
-            "media_type": media_type,
             "batchable": batchable,
             "batch_dim": batch_dim,
             "max_batch_size": max_batch_size,

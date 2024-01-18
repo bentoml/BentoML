@@ -58,8 +58,7 @@ class CallbackIOWrapper(io.BytesIO):
         return res
 
 
-class CloudClient(ABC):
-    # Moved atrributes to __init__ because otherwise it will keep all the log when running SDK.
+class Spinner(ABC):
     def __init__(self):
         self.log_progress = Progress(TextColumn("{task.description}"))
 
@@ -95,6 +94,12 @@ class CloudClient(ABC):
         finally:
             self.spinner_progress.stop_task(task_id)
             self.spinner_progress.update(task_id, visible=False)
+
+
+class CloudClient(ABC):
+    # Moved atrributes to __init__ because otherwise it will keep all the log when running SDK.
+    def __init__(self):
+        self.spinner = Spinner()
 
     @abstractmethod
     def push_model(

@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 import httpx
 
 from ...exceptions import CloudRESTApiClientError
+from ...exceptions import NotFound
 from ..configuration import BENTOML_VERSION
 from .schemas.schemasv1 import BentoRepositorySchema
 from .schemas.schemasv1 import BentoSchema
@@ -28,6 +29,7 @@ from .schemas.schemasv1 import ModelSchema
 from .schemas.schemasv1 import ModelWithRepositoryListSchema
 from .schemas.schemasv1 import OrganizationSchema
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
+from .schemas.schemasv1 import ResourceInstanceSchema
 from .schemas.schemasv1 import UpdateBentoSchema
 from .schemas.schemasv1 import UpdateDeploymentSchema
 from .schemas.schemasv1 import UserSchema
@@ -556,7 +558,7 @@ class RestApiClientV2(BaseRestApiClient):
         name: str,
         update_schema: UpdateDeploymentSchemaV2,
         cluster: str | None = None,
-    ) -> DeploymentFullSchemaV2 | None:
+    ) -> DeploymentFullSchemaV2:
         url = urljoin(
             self.endpoint,
             f"/api/v2/deployments/{name}",
@@ -564,7 +566,7 @@ class RestApiClientV2(BaseRestApiClient):
         data = schema_to_json(update_schema)
         resp = self.session.put(url, content=data, params={"cluster": cluster})
         if self._is_not_found(resp):
-            return None
+            raise NotFound(f"Deployment {name} is not found: {resp.text}")
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentFullSchemaV2)
 
@@ -572,14 +574,14 @@ class RestApiClientV2(BaseRestApiClient):
         self,
         name: str,
         cluster: str | None = None,
-    ) -> DeploymentFullSchemaV2 | None:
+    ) -> DeploymentFullSchemaV2:
         url = urljoin(
             self.endpoint,
             f"/api/v2/deployments/{name}",
         )
         resp = self.session.get(url, params={"cluster": cluster})
         if self._is_not_found(resp):
-            return None
+            raise NotFound(f"Deployment {name} is not found: {resp.text}")
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentFullSchemaV2)
 
@@ -592,7 +594,7 @@ class RestApiClientV2(BaseRestApiClient):
         q: str | None = None,
         search: str | None = None,
         start: int | None = None,
-    ) -> DeploymentListSchemaV2 | None:
+    ) -> DeploymentListSchemaV2:
         url = urljoin(self.endpoint, "/api/v2/deployments")
         resp = self.session.get(
             url,
@@ -606,7 +608,7 @@ class RestApiClientV2(BaseRestApiClient):
             },
         )
         if self._is_not_found(resp):
-            return None
+            raise NotFound(f"Deployment not found: {resp.text}")
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentListSchemaV2)
 
@@ -614,14 +616,14 @@ class RestApiClientV2(BaseRestApiClient):
         self,
         name: str,
         cluster: str | None = None,
-    ) -> DeploymentFullSchemaV2 | None:
+    ) -> DeploymentFullSchemaV2:
         url = urljoin(
             self.endpoint,
             f"/api/v2/deployments/{name}/terminate",
         )
         resp = self.session.post(url, params={"cluster": cluster})
         if self._is_not_found(resp):
-            return None
+            raise NotFound(f"Deployment {name} is not found: {resp.text}")
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentFullSchemaV2)
 
@@ -629,21 +631,35 @@ class RestApiClientV2(BaseRestApiClient):
         self,
         name: str,
         cluster: str | None = None,
-    ) -> DeploymentFullSchemaV2 | None:
+    ) -> DeploymentFullSchemaV2:
         url = urljoin(
             self.endpoint,
             f"/api/v2/deployments/{name}",
         )
         resp = self.session.delete(url, params={"cluster": cluster})
         if self._is_not_found(resp):
-            return None
+            raise NotFound(f"Deployment {name} is not found: {resp.text}")
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentFullSchemaV2)
+
+    def list_instance_types(
+        self,
+        cluster: str | None = None,
+    ) -> list[ResourceInstanceSchema]:
+        url = urljoin(
+            self.endpoint,
+            "/api/v1/instance_types",
+        )
+        resp = self.session.get(url, params={"cluster": cluster})
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_json(resp.text, list[ResourceInstanceSchema])
 
 
 class RestApiClient:
     def __init__(self, endpoint: str, api_token: str) -> None:
-        self.session = httpx.Client()
+        self.session = httpx.Client(timeout=60)
         self.session.headers.update(
             {
                 "X-YATAI-API-TOKEN": api_token,

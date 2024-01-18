@@ -170,7 +170,7 @@ def add_start_command(cli: click.Group) -> None:
         svc = load(bento, working_dir=working_dir)
         if isinstance(svc, Service):
             # for <1.2 bentos
-            if not service_name:
+            if not service_name or service_name == svc.name:
                 from bentoml.start import start_http_server
 
                 for dep in depends or []:

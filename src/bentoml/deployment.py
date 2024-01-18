@@ -10,8 +10,8 @@ from simple_di import Provide
 from simple_di import inject
 
 from bentoml._internal.cloud.deployment import Deployment
-from bentoml._internal.cloud.deployment import DeploymentInfo
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
+from bentoml._internal.cloud.deployment import DeploymentInfo
 from bentoml._internal.tag import Tag
 from bentoml.exceptions import BentoMLException
 

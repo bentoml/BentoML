@@ -10,7 +10,6 @@ import pytest
 from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.deployment import Deployment
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
-from bentoml._internal.cloud.schemas.modelschemas import AccessControl
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentServiceConfig
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetHPAConf

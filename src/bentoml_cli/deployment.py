@@ -4,14 +4,14 @@ import typing as t
 
 import click
 import yaml
+from rich.live import Live
 from rich.syntax import Syntax
 
-from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.base import Spinner
-from rich.live import Live
 from bentoml._internal.cloud.deployment import Deployment
-from bentoml.exceptions import BentoMLException
+from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
+from bentoml.exceptions import BentoMLException
 
 if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
@@ -622,7 +622,7 @@ def create_deployment(
         if wait:
             spinner.spinner_progress.update(
                 task_id,
-                action=f"[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/bold blue]",
+                action="[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/bold blue]",
             )
             deployment.wait_until_ready(
                 timeout=timeout, spinner_task_id=task_id, spinner=spinner

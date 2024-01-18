@@ -29,10 +29,10 @@ from .schemas.schemasv1 import ModelSchema
 from .schemas.schemasv1 import ModelWithRepositoryListSchema
 from .schemas.schemasv1 import OrganizationSchema
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
+from .schemas.schemasv1 import ResourceInstanceSchema
 from .schemas.schemasv1 import UpdateBentoSchema
 from .schemas.schemasv1 import UpdateDeploymentSchema
 from .schemas.schemasv1 import UserSchema
-from .schemas.schemasv1 import ResourceInstanceSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
 from .schemas.schemasv2 import DeploymentListSchema as DeploymentListSchemaV2
@@ -648,7 +648,7 @@ class RestApiClientV2(BaseRestApiClient):
     ) -> list[ResourceInstanceSchema]:
         url = urljoin(
             self.endpoint,
-            f"/api/v1/instance_types",
+            "/api/v1/instance_types",
         )
         resp = self.session.get(url, params={"cluster": cluster})
         if self._is_not_found(resp):

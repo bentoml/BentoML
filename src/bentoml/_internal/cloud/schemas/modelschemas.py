@@ -74,9 +74,9 @@ class BentoRunnerSchema:
 @attr.define
 class BentoManifestSchema:
     service: str
-    entry_service: str
     bentoml_version: str
     size_bytes: int
+    entry_service: t.Optional[str] = attr.field(default=None)
     name: t.Optional[str] = attr.field(default=None)
     apis: t.Dict[str, BentoApiSchema] = attr.field(factory=dict)
     models: t.List[str] = attr.field(factory=list)

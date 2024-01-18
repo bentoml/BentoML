@@ -21,6 +21,11 @@ tag_invalid_error_msg = "a tag's name or version must consist of lowercase alpha
 tag_regex = re.compile(f"^{tag_fmt}$")
 
 
+def to_snake_case(name: str) -> str:
+    snake_case = re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+    return snake_case
+
+
 def validate_tag_str(value: str):
     """
     Validate that a tag value (either name or version) is a simple string that:

@@ -74,6 +74,7 @@ class BentoRunnerSchema:
 @attr.define
 class BentoManifestSchema:
     service: str
+    entry_service: str
     bentoml_version: str
     size_bytes: int
     name: t.Optional[str] = attr.field(default=None)

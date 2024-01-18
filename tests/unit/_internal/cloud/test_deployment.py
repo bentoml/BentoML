@@ -86,6 +86,7 @@ def dummy_generate_deployment_schema(
         presigned_download_url="",
         manifest=BentoManifestSchema(
             service="",
+            entry_service="",
             bentoml_version="",
             size_bytes=0,
             apis={},

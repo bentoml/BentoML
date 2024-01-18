@@ -9,6 +9,7 @@ import httpx
 from ...exceptions import CloudRESTApiClientError
 from ...exceptions import NotFound
 from ..configuration import BENTOML_VERSION
+from .schemas.schemasv1 import BentoListSchema
 from .schemas.schemasv1 import BentoRepositorySchema
 from .schemas.schemasv1 import BentoSchema
 from .schemas.schemasv1 import BentoWithRepositoryListSchema
@@ -33,8 +34,6 @@ from .schemas.schemasv1 import ResourceInstanceSchema
 from .schemas.schemasv1 import UpdateBentoSchema
 from .schemas.schemasv1 import UpdateDeploymentSchema
 from .schemas.schemasv1 import UserSchema
-from .schemas.schemasv1 import BentoListSchema
-from .schemas.schemasv1 import ResourceInstanceSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
 from .schemas.schemasv2 import DeploymentListSchema as DeploymentListSchemaV2

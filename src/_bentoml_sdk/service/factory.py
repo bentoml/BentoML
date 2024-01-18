@@ -19,7 +19,6 @@ from bentoml._internal.bento.bento import Bento
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
 from bentoml._internal.models import Model
-from bentoml._internal.tag import validate_tag_str
 from bentoml._internal.utils import dict_filter_none
 from bentoml.exceptions import BentoMLException
 
@@ -159,8 +158,7 @@ class Service(t.Generic[T]):
 
     @property
     def name(self) -> str:
-        name = self.config.get("name") or self.inner.__name__.lower()
-        validate_tag_str(name)
+        name = self.config.get("name") or self.inner.__name__
         return name
 
     @property

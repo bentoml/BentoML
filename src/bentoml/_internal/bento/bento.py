@@ -33,6 +33,7 @@ from ..runner import Runner
 from ..store import Store
 from ..store import StoreItem
 from ..tag import Tag
+from ..tag import to_snake_case
 from ..types import PathType
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
@@ -204,7 +205,18 @@ class Bento(StoreItem):
         # Apply default build options
         build_config = build_config.with_defaults()
 
-        bento_name = build_config.name if build_config.name is not None else svc.name
+        if isinstance(svc, Service):
+            # for < 1.2
+            bento_name = (
+                build_config.name if build_config.name is not None else svc.name
+            )
+        else:
+            # for >= 1.2
+            bento_name = (
+                build_config.name
+                if build_config.name is not None
+                else to_snake_case(svc.name)
+            )
         tag = Tag(bento_name, version)
         if version is None:
             tag = tag.make_new_version()
@@ -293,6 +305,7 @@ class Bento(StoreItem):
             BentoInfo(
                 tag=tag,
                 service=svc,  # type: ignore # attrs converters do not typecheck
+                entry_service=svc.name,
                 labels=build_config.labels,
                 models=[
                     BentoModelInfo.from_bento_model(
@@ -581,7 +594,9 @@ class BentoInfo:
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
     # for BentoML 1.2+ SDK
+    entry_service: str = attr.field(factory=str)
     services: t.List[BentoServiceInfo] = attr.field(factory=list)
+
     apis: t.List[BentoApiInfo] = attr.field(factory=list)
     docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
     python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())

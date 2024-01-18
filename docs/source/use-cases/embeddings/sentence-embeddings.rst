@@ -42,7 +42,7 @@ Define a :doc:`BentoML Service </guides/services>` to use a model (``sentence-tr
     class SentenceEmbedding:
 
         def __init__(self) -> None:
-            
+
             # Load model and tokenizer
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
             # Define layers

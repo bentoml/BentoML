@@ -36,8 +36,8 @@ Define a :doc:`BentoML Service </guides/services>` named ``BlipImageCaptioning``
             "memory" : "4Gi"
         }
     )
-    class BlipImageCaptioning:    
-        
+    class BlipImageCaptioning:
+
         def __init__(self) -> None:
             import torch
             from transformers import BlipProcessor, BlipForConditionalGeneration
@@ -45,7 +45,7 @@ Define a :doc:`BentoML Service </guides/services>` named ``BlipImageCaptioning``
             self.model = BlipForConditionalGeneration.from_pretrained(MODEL_ID).to(self.device)
             self.processor = BlipProcessor.from_pretrained(MODEL_ID)
             print("Model blip loaded", "device:", self.device)
-        
+
         @bentoml.api
         async def generate(self, img: Image, txt: str| None = None) -> str:
             if txt:

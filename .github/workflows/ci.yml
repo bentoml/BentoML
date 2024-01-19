@@ -92,7 +92,7 @@ jobs:
       - name: Install dependencies
         run: pipx install nox
       - name: Run framework integration tests
-        run: nox --session framework-integration(framework='${{ matrix.framework }}')
+        run: nox --session "framework-integration(framework='${{ matrix.framework }}')"
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.integrations.ubuntu-latest.3.8.${{ matrix.framework }}"
       - name: Upload coverage data
@@ -171,7 +171,7 @@ jobs:
       - name: Install dependencies
         run: pipx install nox
       - name: Run ${{ matrix.suite }} tests
-        run: nox -s e2e-testing-${{ matrix.python-version }}(suite='${{ matrix.suite }}')
+        run: nox -s "e2e-testing-${{ matrix.python-version }}(suite='${{ matrix.suite }}')"
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.e2e.${{ matrix.os }}.${{ matrix.python-version }}.${{ matrix.suite }}"
       - name: Upload coverage data

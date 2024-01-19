@@ -9,6 +9,12 @@ This section provides a variety of example projects for you to learn how BentoML
     :margin: 0
     :padding: 3 4 0 0
 
+    .. grid-item-card:: :doc:`/use-cases/diffusion-models/index`
+        :link: /use-cases/diffusion-models/index
+        :link-type: doc
+
+        Deploy diffusion models with BentoML.
+
     .. grid-item-card:: :doc:`/use-cases/embeddings/index`
         :link: /use-cases/embeddings/index
         :link-type: doc
@@ -26,5 +32,6 @@ This section provides a variety of example projects for you to learn how BentoML
     :titlesonly:
     :hidden:
 
+    diffusion-models/index
     embeddings/index
     blip

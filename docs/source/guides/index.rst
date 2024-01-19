@@ -15,7 +15,14 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Understand the BentoML Service and its key components.
 
+    .. grid-item-card:: :doc:`/guides/clients`
+        :link: /guides/clients
+        :link-type: doc
+
+        Use BentoML clients to interact with your Service.
+
 .. toctree::
     :hidden:
 
     services
+    clients

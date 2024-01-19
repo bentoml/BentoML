@@ -20,10 +20,19 @@ tag_max_length_error_msg = (
 tag_invalid_error_msg = "a tag's name or version must consist of lowercase alphanumeric characters, '_', '-', or '.', and must start and end with an alphanumeric character"
 tag_regex = re.compile(f"^{tag_fmt}$")
 
+camelcase_re = re.compile(r"([A-Z]+)(?=[a-z0-9])")
+
 
 def to_snake_case(name: str) -> str:
-    snake_case = re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
-    return snake_case
+    def _join(match: re.Match[str]):
+        word = match.group()
+
+        if len(word) > 1:
+            return ("_%s_%s" % (word[:-1], word[-1])).lower()
+
+        return "_" + word.lower()
+
+    return camelcase_re.sub(_join, name).lstrip("_")
 
 
 def validate_tag_str(value: str):

@@ -41,7 +41,7 @@ jobs:
           cache: pip
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: pipx install nox pdm
+        run: pipx install pdm && pipx install nox
       - name: Unit tests
         run: nox --session unit-${{ matrix.python-version }}
       - name: Disambiguate coverage filename
@@ -89,7 +89,7 @@ jobs:
           python-version: '3.8'
           cache: pip
       - name: Install dependencies
-        run: pipx install nox pdm
+        run: pipx install pdm && pipx install nox
       - name: Run framework integration tests
         run: nox --session "framework-integration(framework='${{ matrix.framework }}')"
       - name: Disambiguate coverage filename
@@ -127,7 +127,7 @@ jobs:
           cache: pip
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: pipx install nox pdm
+        run: pipx install pdm && pipx install nox
       - name: Run the monitoring tests
         run: nox -s e2e-monitoring-${{ matrix.python-version }}
       - name: Disambiguate coverage filename
@@ -160,13 +160,13 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         id: buildx
         uses: docker/setup-buildx-action@v3
-      - name: Set up PDM
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           cache: pip
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: pipx install nox
+        run: pipx install pdm && pipx install nox
       - name: Run ${{ matrix.suite }} tests
         run: nox -s "e2e-testing-${{ matrix.python-version }}(suite='${{ matrix.suite }}')"
       - name: Disambiguate coverage filename
@@ -211,7 +211,7 @@ jobs:
         with:
           name: coverage-unit-data
       - name: Install dependencies
-        run: pipx install nox pdm
+        run: pipx install pdm && pipx install nox
       - name: Export coverage reports and generate summary
         run: nox -s coverage
       - name: Upload uncovered HTML report

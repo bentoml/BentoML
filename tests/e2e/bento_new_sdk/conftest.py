@@ -9,18 +9,7 @@ E2E_EXAMPLES = ["quickstart"]
 
 
 @pytest.fixture(scope="package", autouse=True)
-def install_requirements() -> None:
-    subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-r",
-            str(Path(__file__).parent / "requirements.txt"),
-        ],
-        check=True,
-    )
+def prepare_models() -> None:
     for example in E2E_EXAMPLES:
         subprocess.run(
             [sys.executable, str(EXAMPLE_DIR / example / "prepare_model.py")],

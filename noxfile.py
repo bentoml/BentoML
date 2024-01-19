@@ -18,7 +18,7 @@ PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
 @nox.session(python=PYTHON_VERSIONS, name="unit")
 def run_unittest(session: nox.Session):
     session.run("pdm", "sync", "-G", "grpc,io,testing", external=True)
-    session.run(*TEST_ARGS, "tests/unit", "-n auto")
+    session.run(*TEST_ARGS, "-n", "auto", "tests/unit")
 
 
 @nox.session(name="framework-integration")

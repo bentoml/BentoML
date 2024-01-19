@@ -36,13 +36,12 @@ jobs:
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Set up PDM
-        uses: pdm-project/setup-pdm@v3
+        uses: actions/setup-python@v5
         with:
-          cache: true
+          cache: pip
           python-version: ${{ matrix.python-version }}
-          enable-pep582: false
       - name: Install dependencies
-        run: pipx install nox
+        run: pipx install nox pdm
       - name: Unit tests
         run: nox --session unit-${{ matrix.python-version }}
       - name: Disambiguate coverage filename
@@ -84,13 +83,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - name: Set up PDM
-        uses: pdm-project/setup-pdm@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8'
-          enable-pep582: false
+          cache: pip
       - name: Install dependencies
-        run: pipx install nox
+        run: pipx install nox pdm
       - name: Run framework integration tests
         run: nox --session "framework-integration(framework='${{ matrix.framework }}')"
       - name: Disambiguate coverage filename
@@ -122,14 +121,13 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         id: buildx
         uses: docker/setup-buildx-action@v3
-      - name: Set up PDM
-        uses: pdm-project/setup-pdm@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          cache: true
+          cache: pip
           python-version: ${{ matrix.python-version }}
-          enable-pep582: false
       - name: Install dependencies
-        run: pipx install nox
+        run: pipx install nox pdm
       - name: Run the monitoring tests
         run: nox -s e2e-monitoring-${{ matrix.python-version }}
       - name: Disambiguate coverage filename
@@ -163,11 +161,10 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v3
       - name: Set up PDM
-        uses: pdm-project/setup-pdm@v3
+        uses: actions/setup-python@v5
         with:
-          cache: true
+          cache: pip
           python-version: ${{ matrix.python-version }}
-          enable-pep582: false
       - name: Install dependencies
         run: pipx install nox
       - name: Run ${{ matrix.suite }} tests
@@ -193,11 +190,10 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up PDM
-        uses: pdm-project/setup-pdm@v3
+        uses: actions/setup-python@v5
         with:
-          cache: true
+          cache: pip
           python-version: '3.11'
-          enable-pep582: false
       - name: Download e2e coverage
         uses: actions/download-artifact@v3
         with:
@@ -215,7 +211,7 @@ jobs:
         with:
           name: coverage-unit-data
       - name: Install dependencies
-        run: pdm sync -d -G testing
+        run: pipx install nox pdm
       - name: Export coverage reports and generate summary
         run: nox -s coverage
       - name: Upload uncovered HTML report

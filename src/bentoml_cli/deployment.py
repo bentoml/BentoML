@@ -5,6 +5,7 @@ import typing as t
 import click
 import yaml
 from rich.live import Live
+import json
 from rich.syntax import Syntax
 
 from bentoml._internal.cloud.base import Spinner
@@ -22,8 +23,6 @@ else:
 
 
 def add_deployment_command(cli: click.Group) -> None:
-    import json
-
     from rich.table import Table
 
     from bentoml._internal.utils import rich_console as console
@@ -87,6 +86,12 @@ def add_deployment_command(cli: click.Group) -> None:
         default=None,
     )
     @click.option(
+        "--config-dict",
+        type=click.STRING,
+        help="Configuration json string",
+        default=None,
+    )
+    @click.option(
         "--wait/--no-wait",
         type=click.BOOL,
         is_flag=True,
@@ -112,6 +117,7 @@ def add_deployment_command(cli: click.Group) -> None:
         strategy: str | None,
         env: tuple[str] | None,
         config_file: str | t.TextIO | None,
+        config_dict: str | None,
         wait: bool,
         timeout: int,
     ) -> None:
@@ -132,6 +138,7 @@ def add_deployment_command(cli: click.Group) -> None:
             strategy=strategy,
             env=env,
             config_file=config_file,
+            config_dict=config_dict,
             wait=wait,
             timeout=timeout,
         )
@@ -221,6 +228,12 @@ def add_deployment_command(cli: click.Group) -> None:
         help="Configuration file path, mututally exclusive with other config options",
         default=None,
     )
+    @click.option(
+        "--config-dict",
+        type=click.STRING,
+        help="Configuration json string",
+        default=None,
+    )
     @click.pass_obj
     def update(  # type: ignore
         shared_options: SharedOptions,
@@ -234,6 +247,7 @@ def add_deployment_command(cli: click.Group) -> None:
         strategy: str | None,
         env: tuple[str] | None,
         config_file: t.TextIO | None,
+        config_dict: str | None,
     ) -> None:
         """Update a deployment on BentoCloud.
 
@@ -241,6 +255,9 @@ def add_deployment_command(cli: click.Group) -> None:
         A deployment can be updated using parameters, or using config yaml file.
         You can also update bento by providing a project path or existing bento.
         """
+        cfg_dict = None
+        if config_dict is not None and config_dict != "":
+            cfg_dict = json.loads(config_dict)
         config_params = DeploymentConfigParameters(
             name=name,
             context=shared_options.cloud_context,
@@ -257,6 +274,7 @@ def add_deployment_command(cli: click.Group) -> None:
             if env is not None
             else None,
             config_file=config_file,
+            config_dict=cfg_dict,
         )
         try:
             config_params.verify()
@@ -272,25 +290,114 @@ def add_deployment_command(cli: click.Group) -> None:
         click.echo(f"Deployment '{config_params.get_name()}' updated successfully.")
 
     @deployment_cli.command()
+    @click.argument(
+        "bento",
+        type=click.STRING,
+        required=False,
+    )
+    @click.option(
+        "-n",
+        "--name",
+        type=click.STRING,
+        help="Deployment name",
+    )
+    @click.option(
+        "--cluster",
+        type=click.STRING,
+        help="Name of the cluster",
+    )
+    @click.option(
+        "--access-authorization",
+        type=click.BOOL,
+        help="Enable access authorization",
+    )
+    @click.option(
+        "--scaling-min",
+        type=click.INT,
+        help="Minimum scaling value",
+    )
+    @click.option(
+        "--scaling-max",
+        type=click.INT,
+        help="Maximum scaling value",
+    )
+    @click.option(
+        "--instance-type",
+        type=click.STRING,
+        help="Type of instance",
+    )
+    @click.option(
+        "--strategy",
+        type=click.Choice(
+            [deployment_strategy.value for deployment_strategy in DeploymentStrategy]
+        ),
+        help="Deployment strategy",
+    )
+    @click.option(
+        "--env",
+        type=click.STRING,
+        help="List of environment variables pass by --env key=value, --env ...",
+        multiple=True,
+    )
+    @click.option(
+        "-f",
+        "--config-file",
+        type=click.File(),
+        help="Configuration file path",
+        default=None,
+    )
     @click.option(
         "-f",
         "--config-file",
         help="Configuration file path, mututally exclusive with other config options",
         default=None,
     )
+    @click.option(
+        "--config-dict",
+        type=click.STRING,
+        help="Configuration json string",
+        default=None,
+    )
     @click.pass_obj
     def apply(  # type: ignore
         shared_options: SharedOptions,
+        bento: str | None,
+        name: str | None,
+        cluster: str | None,
+        access_authorization: bool | None,
+        scaling_min: int | None,
+        scaling_max: int | None,
+        instance_type: str | None,
+        strategy: str | None,
+        env: tuple[str] | None,
         config_file: str | t.TextIO | None,
+        config_dict: str | None,
     ) -> None:
         """Apply a deployment on BentoCloud.
 
         \b
         A deployment can be applied using config yaml file.
         """
+        cfg_dict = None
+        if config_dict is not None and config_dict != "":
+            cfg_dict = json.loads(config_dict)
         config_params = DeploymentConfigParameters(
+            name=name,
             context=shared_options.cloud_context,
+            bento=bento,
+            cluster=cluster,
+            access_authorization=access_authorization,
+            scaling_max=scaling_max,
+            scaling_min=scaling_min,
+            instance_type=instance_type,
+            strategy=strategy,
+            envs=[
+                {"key": item.split("=")[0], "value": item.split("=")[1]} for item in env
+            ]
+            if env is not None
+            else None,
             config_file=config_file,
+            config_dict=cfg_dict,
         )
         try:
             config_params.verify()
@@ -363,6 +470,12 @@ def add_deployment_command(cli: click.Group) -> None:
         default=None,
     )
     @click.option(
+        "--config-dict",
+        type=click.STRING,
+        help="Configuration json string",
+        default=None,
+    )
+    @click.option(
         "--wait/--no-wait",
         type=click.BOOL,
         is_flag=True,
@@ -388,6 +501,7 @@ def add_deployment_command(cli: click.Group) -> None:
         strategy: str | None,
         env: tuple[str] | None,
         config_file: str | t.TextIO | None,
+        config_dict: str | None,
         wait: bool,
         timeout: int,
     ) -> None:
@@ -408,6 +522,7 @@ def add_deployment_command(cli: click.Group) -> None:
             strategy=strategy,
             env=env,
             config_file=config_file,
+            config_dict=config_dict,
             wait=wait,
             timeout=timeout,
         )
@@ -523,9 +638,6 @@ def add_deployment_command(cli: click.Group) -> None:
     @click.option(
         "--cluster", type=click.STRING, default=None, help="Name of the cluster."
     )
-    # @click.option(
-    #     "--search", type=click.STRING, default=None, help="Search for list request."
-    # )
     @click.option(
         "-o",
         "--output",
@@ -537,7 +649,6 @@ def add_deployment_command(cli: click.Group) -> None:
     def list_instance_types(  # type: ignore
         shared_options: SharedOptions,
         cluster: str | None,
-        # search: str | None,
         output: t.Literal["json", "yaml", "table"],
     ) -> None:
         """List existing instance types in cluster on BentoCloud."""
@@ -583,9 +694,13 @@ def create_deployment(
     strategy: str | None,
     env: tuple[str] | None,
     config_file: str | t.TextIO | None,
+    config_dict: str | None,
     wait: bool,
     timeout: int,
 ) -> None:
+    cfg_dict = None
+    if config_dict is not None and config_dict != "":
+        cfg_dict = json.loads(config_dict)
     config_params = DeploymentConfigParameters(
         name=name,
         context=context,
@@ -600,6 +715,7 @@ def create_deployment(
         if env is not None
         else None,
         config_file=config_file,
+        config_dict=cfg_dict,
     )
     try:
         config_params.verify()

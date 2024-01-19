@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import logging
 import re
@@ -24,11 +26,11 @@ camelcase_re = re.compile(r"([A-Z]+)(?=[a-z0-9])")
 
 
 def to_snake_case(name: str) -> str:
-    def _join(match: re.Match[str]):
+    def _join(match: re.Match[str]) -> str:
         word = match.group()
 
         if len(word) > 1:
-            return ("_%s_%s" % (word[:-1], word[-1])).lower()
+            return f"_{word[:-1]}_{word[-1]}".lower()
 
         return "_" + word.lower()
 

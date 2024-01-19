@@ -14,16 +14,14 @@ import bentoml
 from bentoml._internal.configuration.containers import BentoMLContainer
 
 if t.TYPE_CHECKING:
-    from _pytest.config import Config
     from _pytest.fixtures import FixtureRequest
-    from _pytest.main import Session
-    from _pytest.nodes import Item
     from _pytest.tmpdir import TempPathFactory
 
 PROJECT_DIR = Path(__file__).parent.parent
 
 
-def pytest_collection_modifyitems(session: Session, config: Config, items: list[Item]):
+@pytest.fixture(scope="session", autouse=True)
+def prepare_model() -> None:
     try:
         print(f"Found {bentoml.models.get('iris_clf')}, skipping model saving.")
     except bentoml.exceptions.NotFound:

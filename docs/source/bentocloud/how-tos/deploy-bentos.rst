@@ -92,6 +92,8 @@ Manage Deployments with the BentoML CLI
 The BentoML CLI is a set of tools that you can use to deploy any machine learning models as production-ready API endpoints on the cloud.
 To create and manage your Bento Deployments on BentoCloud, use ``bentoml deployment`` with the corresponding options.
 
+.. _cli-deploy-bento:
+
 Deploy your Bento
 -----------------
 

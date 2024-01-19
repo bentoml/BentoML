@@ -14,6 +14,9 @@ from .http import AbstractClient
 from .http import AsyncHTTPClient
 from .http import SyncHTTPClient
 
+if t.TYPE_CHECKING:
+    from _bentoml_sdk.service import ServiceConfig
+
 T = t.TypeVar("T")
 logger = logging.getLogger("bentoml.io")
 
@@ -27,12 +30,24 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
         *,
         service: Service[T] | None = None,
     ) -> None:
+        from bentoml.container import BentoMLContainer
+
+        svc_config: dict[str, ServiceConfig] = BentoMLContainer.config.services.get()
         assert service is not None, "service must be provided"
+        timeout = (
+            svc_config.get(service.name, {}).get("traffic", {}).get("timeout") or 60
+        ) * 1.01  # get the service timeout add 1% margin for the client
         self._sync = SyncHTTPClient(
-            url, media_type="application/vnd.bentoml+pickle", service=service
+            url,
+            media_type="application/vnd.bentoml+pickle",
+            service=service,
+            timeout=timeout,
         )
         self._async = AsyncHTTPClient(
-            url, media_type="application/vnd.bentoml+pickle", service=service
+            url,
+            media_type="application/vnd.bentoml+pickle",
+            service=service,
+            timeout=timeout,
         )
         self._inner = service.inner
         self.endpoints = self._async.endpoints

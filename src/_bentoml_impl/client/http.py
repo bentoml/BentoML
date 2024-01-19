@@ -49,7 +49,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
     url: str
     endpoints: dict[str, ClientEndpoint] = attr.field(factory=dict)
     media_type: str = "application/json"
-    timeout: int = 30
+    timeout: float = 30
     token: str | None = None
     const_headers: dict[str, str] = attr.field(factory=dict)
 
@@ -92,6 +92,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         media_type: str = "application/json",
         service: Service[t.Any] | None = None,
         token: str | None = None,
+        timeout: float = 30,
     ) -> None:
         """Create a client instance from a URL.
 
@@ -149,13 +150,13 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
                 "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
             }
-
         self.__attrs_init__(  # type: ignore
             url=url,
             endpoints=routes,
             media_type=media_type,
             token=token,
             const_headers=const_headers,
+            timeout=timeout,
         )
         super().__init__()
 

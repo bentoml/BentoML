@@ -716,6 +716,17 @@ class Deployment:
                     context=context,
                 )
             # directly update the deployment with the schema, do not merge with the existing schema
+            if deployment_config_params.get_name() != deployment_schema.name:
+                raise BentoMLException(
+                    f"Deployment name cannot be changed, current name is {deployment_schema.name}"
+                )
+            if (
+                deployment_config_params.get_cluster(pop=False)
+                != deployment_schema.cluster.host_cluster_display_name
+            ):
+                raise BentoMLException(
+                    f"Deployment cluster cannot be changed, current cluster is {deployment_schema.cluster.host_cluster_display_name}"
+                )
             config_struct = bentoml_cattr.structure(
                 deployment_config_params.get_config_dict(), UpdateDeploymentSchemaV2
             )

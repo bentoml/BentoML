@@ -637,7 +637,7 @@ class Deployment:
         ):
             raise ValueError("bento is required")
 
-        config_params = deployment_config_params.cfg_dict
+        config_params = deployment_config_params.get_config_dict()
         config_struct = bentoml_cattr.structure(config_params, CreateDeploymentSchemaV2)
         cls._fix_and_validate_schema(config_struct)
 

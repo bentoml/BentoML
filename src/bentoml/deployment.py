@@ -5,8 +5,8 @@ User facing python APIs for deployment
 from __future__ import annotations
 
 import typing as t
-import attr
 
+import attr
 from simple_di import Provide
 from simple_di import inject
 

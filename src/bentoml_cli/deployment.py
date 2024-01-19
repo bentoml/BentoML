@@ -11,7 +11,6 @@ from bentoml._internal.cloud.base import Spinner
 from bentoml._internal.cloud.deployment import Deployment
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
-from bentoml._internal.cloud.schemas.modelschemas import EnvItemSchema
 from bentoml.exceptions import BentoMLException
 
 if t.TYPE_CHECKING:

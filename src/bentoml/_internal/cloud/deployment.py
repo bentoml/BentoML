@@ -197,9 +197,7 @@ class DeploymentConfigParameters:
         if self.service_name is None:
             if bento is None:
                 if self.cfg_dict.get("bento") is None:
-                    raise BentoMLException(
-                        "DeploymentConfigParameters.verify() must be called first"
-                    )
+                    raise BentoMLException("Bento is required")
                 bento = self.cfg_dict.get("bento")
 
             info = get_bento_info(
@@ -633,10 +631,13 @@ class Deployment:
         context: str | None = None,
     ) -> DeploymentInfo:
         cluster = deployment_config_params.get_cluster()
-        config_params = deployment_config_params.get_config_dict()
-        if config_params.get("bento") is None:
+        if (
+            deployment_config_params.cfg_dict is None
+            or deployment_config_params.cfg_dict.get("bento") is None
+        ):
             raise ValueError("bento is required")
 
+        config_params = deployment_config_params.get_config_dict()
         config_struct = bentoml_cattr.structure(config_params, CreateDeploymentSchemaV2)
         cls._fix_and_validate_schema(config_struct)
 

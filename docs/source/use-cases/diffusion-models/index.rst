@@ -9,6 +9,12 @@ This section provides example projects for diffusion models.
     :margin: 0
     :padding: 3 4 0 0
 
+    .. grid-item-card:: :doc:`/use-cases/diffusion-models/sdxl-turbo`
+        :link: /use-cases/diffusion-models/sdxl-turbo
+        :link-type: doc
+
+        Deploy an image generation application with Stable Diffusion XL Turbo and BentoML.
+
     .. grid-item-card:: :doc:`/use-cases/diffusion-models/controlnet`
         :link: /use-cases/diffusion-models/controlnet
         :link-type: doc
@@ -20,4 +26,5 @@ This section provides example projects for diffusion models.
     :titlesonly:
     :hidden:
 
+    sdxl-turbo
     controlnet

@@ -108,9 +108,7 @@ For file inputs, you pass a ``Path`` object pointing to the file. The client han
         response = client.generate(img=file_path)
         print(response)
 
-If the endpoint returns a file, the client provides the output as a ``Path`` object. You can use this ``Path`` object to access, read, or process the file. For example, if the file is an image, you can save it to a path; if it's a CSV, you can read its contents.
-
-You can also use URLs as the file input as below:
+You can also use URLs as the input as below:
 
 .. code-block:: python
 
@@ -118,6 +116,8 @@ You can also use URLs as the file input as below:
         image_url = 'https://example.org/1.png'
         response = client.generate(img=image_url)
         print(response)
+
+If the endpoint returns a file, the client provides the output as a ``Path`` object. You can use this ``Path`` object to access, read, or process the file. For example, if the file is an image, you can save it to a path; if it's a CSV, you can read its contents.
 
 Streaming
 ^^^^^^^^^

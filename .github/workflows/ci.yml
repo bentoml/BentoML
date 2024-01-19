@@ -42,11 +42,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
       - name: Install dependencies
-        run: |
-          pdm venv create --with-pip --force
-          pdm sync -d -G grpc -G io -G testing
+        run: pipx install nox
       - name: Unit tests
-        run: pdm run -v unit
+        run: nox --session unit-${{ matrix.python-version }}
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.unit.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data
@@ -92,13 +90,9 @@ jobs:
           python-version: '3.8'
           enable-pep582: false
       - name: Install dependencies
-        run: |
-          pdm venv create --with-pip
-          pdm sync -d -G testing -G frameworks
-          pdm run pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
-          pdm run pip install -U tensorflow onnx onnxruntime "jax[cpu]"
+        run: pipx install nox
       - name: Run framework integration tests
-        run: pdm run -v integration "${{ matrix.framework }}"
+        run: nox --session framework-integration(framework='${{ matrix.framework }}')
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.integrations.ubuntu-latest.3.8.${{ matrix.framework }}"
       - name: Upload coverage data
@@ -135,10 +129,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
       - name: Install dependencies
-        run: pdm sync -d -G io -G testing -G monitor-otlp
+        run: pipx install nox
       - name: Run the monitoring tests
-        working-directory: examples/monitoring/task_classification
-        run: mkdir -p monitoring && pdm run -v monitoring
+        run: nox -s e2e-monitoring-${{ matrix.python-version }}
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.monitoring.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data
@@ -146,14 +139,14 @@ jobs:
         with:
           name: coverage-monitoring-data
           path: .coverage.*
-  e2e-bento-server:
+  e2e-test:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: ['3.8', '3.11']
-        server_type: ['http']
-    name: ${{ matrix.server_type }}-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
+        suite: ['bento_server_http', 'bento_new_sdk']
+    name: ${{ matrix.suite }}-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
@@ -176,54 +169,21 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-pep582: false
       - name: Install dependencies
-        run: |
-          pdm venv create --with-pip --force
-          pdm run pip install -r tests/e2e/bento_server_${{ matrix.server_type }}/requirements.txt
-          pdm sync -d -G io -G testing
-      - name: Run ${{ matrix.server_type }} tests
-        run: pdm run -v tests tests/e2e/bento_server_${{ matrix.server_type }}
+        run: pipx install nox
+      - name: Run ${{ matrix.suite }} tests
+        run: nox -s e2e-testing-${{ matrix.python-version }}(suite='${{ matrix.suite }}')
       - name: Disambiguate coverage filename
-        run: mv .coverage ".coverage.e2e.${{ matrix.os }}.${{ matrix.python-version }}"
+        run: mv .coverage ".coverage.e2e.${{ matrix.os }}.${{ matrix.python-version }}.${{ matrix.suite }}"
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
         with:
           name: coverage-e2e-data
           path: .coverage.*
-  e2e-new-sdk:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ['3.8', '3.11']
-    name: new-sdk-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # fetch all tags and branches
-      - name: Set up PDM
-        uses: pdm-project/setup-pdm@v3
-        with:
-          cache: true
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          pdm venv create --with-pip --force
-          pdm sync -L pdm.ionext.lock
-          pdm run pip install -r tests/e2e/bento_new_sdk/requirements.txt
-      - name: Run tests
-        run: pdm run -v tests tests/e2e/bento_new_sdk
-      - name: Upload coverage data
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-e2e-data
-          path: .coverage
   coverage:
     name: report-coverage
     runs-on: ubuntu-latest
     needs:
-      - e2e-bento-server
+      - e2e-test
       - e2e-monitoring
       - unit
       - integrations
@@ -256,18 +216,13 @@ jobs:
           name: coverage-unit-data
       - name: Install dependencies
         run: pdm sync -d -G testing
-      - name: Combine coverage data
-        run: pdm run -v coverage-combine
       - name: Export coverage reports and generate summary
-        run: pdm run -v coverage-generate-reports
+        run: nox -s coverage
       - name: Upload uncovered HTML report
         uses: actions/upload-artifact@v3
         with:
           name: uncovered-html-report
           path: htmlcov
-      - name: Write coverage summary report
-        if: github.event_name == 'pull_request'
-        run: pdm run -v coverage-write-report
       - name: Update coverage pull request comment
         if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
         uses: marocchino/sticky-pull-request-comment@v2
@@ -277,7 +232,7 @@ jobs:
     if: github.event_name == 'pull_request'
     needs:
       - coverage
-      - e2e-bento-server
+      - e2e-test
       - e2e-monitoring
       - unit
       - integrations

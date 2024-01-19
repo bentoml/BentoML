@@ -7,7 +7,6 @@ import logging
 import os
 import pathlib
 import platform
-import shutil
 import socket
 import tempfile
 import typing as t
@@ -39,7 +38,7 @@ if POSIX and not IS_WSL:
 
     def _get_server_socket(
         service: AnyService,
-        uds_path: str | None,
+        uds_path: str,
         port_stack: contextlib.ExitStack,
         backlog: int,
     ) -> tuple[str, CircusSocket]:
@@ -47,7 +46,6 @@ if POSIX and not IS_WSL:
 
         from bentoml._internal.utils.uri import path_to_uri
 
-        assert uds_path is not None
         socket_path = os.path.join(uds_path, f"{id(service)}.sock")
         assert len(socket_path) < MAX_AF_UNIX_PATH_LENGTH
         return path_to_uri(socket_path), CircusSocket(
@@ -58,7 +56,7 @@ elif WINDOWS or IS_WSL:
 
     def _get_server_socket(
         service: AnyService,
-        uds_path: str | None,
+        uds_path: str,
         port_stack: contextlib.ExitStack,
         backlog: int,
     ) -> tuple[str, CircusSocket]:
@@ -95,7 +93,7 @@ _SERVICE_WORKER_SCRIPT = "_bentoml_impl.worker.service"
 def create_dependency_watcher(
     bento_identifier: str,
     svc: AnyService,
-    uds_path: str | None,
+    uds_path: str,
     port_stack: contextlib.ExitStack,
     backlog: int,
     dependency_map: dict[str, str],
@@ -188,36 +186,31 @@ def serve_http(
     if dependency_map is None:
         dependency_map = {}
     num_workers, worker_envs = allocator.get_worker_env(svc)
-    with contextlib.ExitStack() as stack:
-        uds_path: str | None = None
-        if POSIX and not IS_WSL:
-            uds_path = stack.enter_context(
-                tempfile.TemporaryDirectory(prefix="bentoml-uds-")
-            )
-
+    with tempfile.TemporaryDirectory(prefix="bentoml-uds-") as uds_path:
         if service_name:
             svc = svc.find_dependent(service_name)
         elif not development_mode:
-            for name, dep_svc in svc.all_services().items():
-                if name == svc.name:
-                    continue
-                if name in dependency_map:
-                    continue
-                new_watcher, new_socket, uri = create_dependency_watcher(
-                    bento_identifier,
-                    dep_svc,
-                    uds_path,
-                    stack,
-                    backlog,
-                    dependency_map,
-                    allocator,
-                    str(bento_path.absolute()),
-                )
-                watchers.append(new_watcher)
-                sockets.append(new_socket)
-                dependency_map[name] = uri
-            # reserve one more to avoid conflicts
-            stack.enter_context(reserve_free_port())
+            with contextlib.ExitStack() as port_stack:
+                for name, dep_svc in svc.all_services().items():
+                    if name == svc.name:
+                        continue
+                    if name in dependency_map:
+                        continue
+                    new_watcher, new_socket, uri = create_dependency_watcher(
+                        bento_identifier,
+                        dep_svc,
+                        uds_path,
+                        port_stack,
+                        backlog,
+                        dependency_map,
+                        allocator,
+                        str(bento_path.absolute()),
+                    )
+                    watchers.append(new_watcher)
+                    sockets.append(new_socket)
+                    dependency_map[name] = uri
+                # reserve one more to avoid conflicts
+                port_stack.enter_context(reserve_free_port())
 
         try:
             ipaddr = ipaddress.ip_address(host)
@@ -310,17 +303,13 @@ def serve_http(
 
         arbiter = create_standalone_arbiter(**arbiter_kwargs)
         with track_serve(svc, production=not development_mode):
-            try:
-                arbiter.start(
-                    cb=lambda _: logger.info(  # type: ignore
-                        'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
-                        scheme.upper(),
-                        bento_identifier,
-                        scheme,
-                        log_host,
-                        port,
-                    ),
-                )
-            finally:
-                if uds_path is not None:
-                    shutil.rmtree(uds_path)
+            arbiter.start(
+                cb=lambda _: logger.info(  # type: ignore
+                    'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
+                    scheme.upper(),
+                    bento_identifier,
+                    scheme,
+                    log_host,
+                    port,
+                ),
+            )

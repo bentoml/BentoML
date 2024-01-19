@@ -620,6 +620,9 @@ def create_deployment(
         spinner.log_progress.add_task(
             f"[bold green]Successfully created deployment '{deployment.name}' in cluster '{deployment.cluster}'[/bold green]"
         )
+        spinner.log_progress.add_task(
+            f"[bold blue]To check the deployment details, go to: {deployment.admin_console}[/bold blue]"
+        )
         if wait:
             spinner.spinner_progress.update(
                 task_id,
@@ -629,5 +632,3 @@ def create_deployment(
                 timeout=timeout, spinner_task_id=task_id, spinner=spinner
             )
         spinner.spinner_progress.stop_task(task_id)
-
-    click.echo(f"To check the deployment, go to: {deployment.admin_console}.")

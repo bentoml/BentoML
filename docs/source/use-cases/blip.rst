@@ -75,7 +75,7 @@ Run ``bentoml serve`` in your project directory to start the Service.
     2024-01-02T08:32:35+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:BlipImageCaptioning" listening on http://localhost:3000 (Press CTRL+C to quit)
     Model blip loaded device: cuda
 
-The server is active at `http://localhost:3000 <http://localhost:3000>`_. You can interact with it in different ways.
+The server is active at http://localhost:3000. You can interact with it in different ways.
 
 .. tab-set::
 
@@ -105,7 +105,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
 
         Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, and click **Try it out**. In the **Request body** box, select an image, optionally enter your prompt text and click **Execute**.
 
-        .. image:: ../../_static/img/use-cases/blip/service-ui.png
+        .. image:: ../_static/img/use-cases/blip/service-ui.png
 
 `This is the image <https://github.com/bentoml/BentoBlip/blob/main/demo.jpg>`_ sent in the request. Expected output:
 

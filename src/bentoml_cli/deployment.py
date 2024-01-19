@@ -11,6 +11,7 @@ from bentoml._internal.cloud.base import Spinner
 from bentoml._internal.cloud.deployment import Deployment
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
+from bentoml._internal.cloud.schemas.modelschemas import EnvItemSchema
 from bentoml.exceptions import BentoMLException
 
 if t.TYPE_CHECKING:
@@ -252,7 +253,8 @@ def add_deployment_command(cli: click.Group) -> None:
             instance_type=instance_type,
             strategy=strategy,
             envs=[
-                {"key": item.split("=")[0], "value": item.split("=")[1]} for item in env
+                {"name": item.split("=")[0], "value": item.split("=")[1]}
+                for item in env
             ]
             if env is not None
             else None,
@@ -596,7 +598,7 @@ def create_deployment(
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=[{"key": item.split("=")[0], "value": item.split("=")[1]} for item in env]
+        envs=[{"name": item.split("=")[0], "value": item.split("=")[1]} for item in env]
         if env is not None
         else None,
         config_file=config_file,

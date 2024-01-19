@@ -48,7 +48,7 @@ class DeploymentConfigSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
     access_authorization: bool = attr.field(default=False)
-    envs: t.Optional[t.List[t.Optional[EnvItemSchema]]] = attr.field(default=None)
+    envs: t.Optional[t.List[EnvItemSchema]] = attr.field(default=None)
     services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
 
 

@@ -5,6 +5,7 @@ User facing python APIs for deployment
 from __future__ import annotations
 
 import typing as t
+import attr
 
 from simple_di import Provide
 from simple_di import inject
@@ -12,6 +13,7 @@ from simple_di import inject
 from bentoml._internal.cloud.deployment import Deployment
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.deployment import DeploymentInfo
+from bentoml._internal.cloud.schemas.modelschemas import EnvItemSchema
 from bentoml._internal.tag import Tag
 from bentoml.exceptions import BentoMLException
 
@@ -35,7 +37,7 @@ def create(
     scaling_max: int | None = ...,
     instance_type: str | None = ...,
     strategy: str | None = ...,
-    envs: t.List[dict[str, t.Any]] | None = ...,
+    envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
 ) -> DeploymentInfo:
     ...
@@ -81,7 +83,7 @@ def create(
     scaling_max: int | None = None,
     instance_type: str | None = None,
     strategy: str | None = None,
-    envs: t.List[dict[str, t.Any]] | None = None,
+    envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = None,
     extras: dict[str, t.Any] | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
@@ -97,7 +99,12 @@ def create(
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=envs,
+        envs=[
+            attr.asdict(item) if isinstance(item, EnvItemSchema) else item
+            for item in envs
+        ]
+        if envs is not None
+        else None,
         extras=extras,
         config_dict=config_dict,
         config_file=config_file,
@@ -128,7 +135,7 @@ def update(
     scaling_max: int | None = ...,
     instance_type: str | None = ...,
     strategy: str | None = ...,
-    envs: t.List[dict[str, t.Any]] | None = ...,
+    envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
 ) -> DeploymentInfo:
     ...
@@ -176,7 +183,10 @@ def update(
     scaling_max: int | None = None,
     instance_type: str | None = None,
     strategy: str | None = None,
-    envs: t.List[dict[str, t.Any]] | None = None,
+    envs: t.List[EnvItemSchema]
+    | t.List[dict[str, t.Any]]
+    | t.List[dict[str, t.Any]]
+    | None = None,
     extras: dict[str, t.Any] | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
@@ -192,7 +202,12 @@ def update(
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=envs,
+        envs=[
+            attr.asdict(item) if isinstance(item, EnvItemSchema) else item
+            for item in envs
+        ]
+        if envs is not None
+        else None,
         extras=extras,
         config_dict=config_dict,
         config_file=config_file,

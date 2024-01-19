@@ -486,7 +486,22 @@ class DeploymentInfo:
                     )
                     spinner.spinner_progress.stop_task(spinner_task_id)
                     return
+                if status.status in [
+                    DeploymentStatus.Failed.value,
+                    DeploymentStatus.ImageBuildFailed.value,
+                    DeploymentStatus.Terminated.value,
+                    DeploymentStatus.Terminating.value,
+                    DeploymentStatus.Unhealthy.value,
+                ]:
+                    spinner.spinner_progress.update(
+                        spinner_task_id,
+                        action=f'[bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}".[/bold red]',
+                    )
+                    spinner.spinner_progress.stop_task(spinner_task_id)
+                    return
+
                 time.sleep(check_interval)
+
             spinner.spinner_progress.update(
                 spinner_task_id,
                 action=f'[bold red]Time out waiting for Deployment "{self.name}" ready.[/bold red]',

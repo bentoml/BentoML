@@ -31,7 +31,7 @@ This section provides a variety of example projects for you to learn how BentoML
     :maxdepth: 1
     :titlesonly:
     :hidden:
-    
+
     diffusion-models/index
     embeddings/index
     blip

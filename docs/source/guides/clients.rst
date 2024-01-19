@@ -17,7 +17,7 @@ Depending on your requirements, you can create a BentoML client object using the
 Create a client
 ---------------
 
-When creating a client, you need to specify the server address. In addition, to enhance resource management and reduces the risk of connection leaks, we recommend you create the client within a context manager. 
+When creating a client, you need to specify the server address. In addition, to enhance resource management and reduces the risk of connection leaks, we recommend you create the client within a context manager.
 
 Suppose your BentoML Service has an endpoint named ``summarize`` that takes a string ``text`` as input and returns a summarized version of the text as below.
 
@@ -70,7 +70,7 @@ Before making calls to specific Service methods, you can use the ``is_ready`` me
             print(response)
         else:
             print("Service is not ready")
-    
+
 Input and output
 ----------------
 

@@ -16,7 +16,7 @@ Prerequisites
 Install dependencies
 --------------------
 
-.. code-block:: python
+.. code-block:: bash
 
     pip install "bentoml>=1.2.0a0" torch transformers diffusers accelerate xformers opencv-python Pillow
 
@@ -132,7 +132,7 @@ Here is an example of ``service.py``:
 This file defines the following classes:
 
 * ``SDXLControlNetService``: A BentoML Service with custom configurations in timeout, worker count, and resources.
-  
+
   - It loads the three pre-trained models and configures them to use GPU if available. The main pipeline (``StableDiffusionXLControlNetPipeline``) integrates these models.
   - It defines an API endpoint ``generate`` to process a text prompt and an image array. The processed image is converted to a tuple and returned.
 

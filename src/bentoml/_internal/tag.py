@@ -22,8 +22,12 @@ tag_regex = re.compile(f"^{tag_fmt}$")
 
 
 def to_snake_case(name: str) -> str:
-    snake_case = re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
-    return snake_case
+    return (
+        re.sub(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", "_", name)
+        .lower()
+        .replace(" ", "_")
+        .replace("-", "_")
+    )
 
 
 def validate_tag_str(value: str):

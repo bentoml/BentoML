@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import json
 import typing as t
 
 import click
 import yaml
 from rich.live import Live
-import json
 from rich.syntax import Syntax
 
 from bentoml._internal.cloud.base import Spinner

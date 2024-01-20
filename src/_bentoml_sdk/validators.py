@@ -76,7 +76,7 @@ class PILImageEncoder:
 
     def encode(self, obj: PILImage.Image) -> bytes:
         buffer = io.BytesIO()
-        obj.save(buffer, format=obj.format)
+        obj.save(buffer, format=obj.format or "PNG")
         return buffer.getvalue()
 
     def __get_pydantic_core_schema__(

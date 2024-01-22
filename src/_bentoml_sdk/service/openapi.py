@@ -25,6 +25,8 @@ from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound
 
 if t.TYPE_CHECKING:
+    import fastapi as fastapi
+
     from .factory import Service
 
 merger = Merger(

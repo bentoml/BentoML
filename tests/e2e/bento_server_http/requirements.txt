@@ -1,5 +1,3 @@
 -r nested/requirements.txt
-pydantic
 Pillow
 fastapi
-starlette<0.26

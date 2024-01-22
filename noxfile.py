@@ -67,7 +67,7 @@ def run_framework_integration_test(session: nox.Session, framework: str):
         "onnxruntime",
         "skl2onnx",
         # tensorflow dependencies
-        "tensorflow",
+        "tensorflow~=2.13.1",
         # torch-related dependencies
         "lightning",
         # huggingface dependencies

@@ -116,7 +116,7 @@ class ServiceContext:
         return self._response_var.get()
 
     @property
-    def directory(self) -> str:
+    def temp_dir(self) -> str:
         return request_directory.get()
 
     @attr.define

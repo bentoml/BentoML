@@ -312,3 +312,13 @@ def fixture_change_dir(request: FixtureRequest) -> t.Generator[None, None, None]
     os.chdir(
         request.config.invocation_dir,  # type: ignore (bad pytest stubs)
     )
+
+
+@pytest.fixture(scope="function", autouse=True)
+def fixture_reset_config() -> t.Generator[None, None, None]:
+    """Reset BentoML config to default."""
+    before = BentoMLContainer.config.get()
+    try:
+        yield
+    finally:
+        BentoMLContainer.config.set(before)

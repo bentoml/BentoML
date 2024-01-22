@@ -74,7 +74,7 @@ Create a :doc:`BentoML Service </guides/services>` to define the serving logic o
             result = whisperx.align(result["segments"], self.model_a, self.metadata, audio, self.device, return_char_alignments=False)
 
             return result
-        
+
         @bentoml.api
         def diarize(self, audio_file: Path) -> t.Dict:
             import whisperx
@@ -98,7 +98,7 @@ A breakdown of the Service code:
   - Initializes a diarization pipeline, which requires an authentication token (``HF_TOKEN``).
 
 * The Service exposes the following two API endpoints:
-  
+
   - ``transcribe``: Takes an audio file path as input, uses the Whisper model to transcribe the audio, and aligns the transcription with the audio using the alignment model and metadata. The transcription result is returned as a dictionary.
   - ``diarize``: Similar to ``transcribe``, it takes an audio file path and performs transcription and alignment. Additionally, it performs speaker diarization using the diarization pipeline, identifying different speakers in the audio. The final result, including transcription with speaker identification, is returned as a dictionary.
 

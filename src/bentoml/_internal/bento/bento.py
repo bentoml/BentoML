@@ -331,6 +331,7 @@ class Bento(StoreItem):
                 python=build_config.python,
                 conda=build_config.conda,
                 envs=build_config.envs,
+                schema=svc.schema() if not is_legacy else {},
             ),
         )
         # Create bento.yaml
@@ -596,12 +597,13 @@ class BentoInfo:
     # for BentoML 1.2+ SDK
     entry_service: str = attr.field(factory=str)
     services: t.List[BentoServiceInfo] = attr.field(factory=list)
+    envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
+    schema: t.Dict[str, t.Any] = attr.field(factory=dict)
 
     apis: t.List[BentoApiInfo] = attr.field(factory=list)
     docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
     python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())
     conda: CondaOptions = attr.field(factory=lambda: CondaOptions().with_defaults())
-    envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
 
     @property
     def all_models(self) -> t.List[BentoModelInfo]:

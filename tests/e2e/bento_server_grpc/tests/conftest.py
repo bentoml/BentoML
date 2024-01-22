@@ -18,17 +18,7 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 @pytest.fixture(scope="session", autouse=True)
-def install_requirements() -> None:
-    subprocess.check_call(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-r",
-            f"{os.path.join(PROJECT_DIR, 'requirements.txt')}",
-        ]
-    )
+def prepare_model() -> None:
     subprocess.check_call([sys.executable, f"{os.path.join(PROJECT_DIR, 'train.py')}"])
 
 

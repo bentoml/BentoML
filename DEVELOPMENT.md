@@ -279,10 +279,10 @@ docker:
 
 ## Testing
 
-Make sure to install all test dependencies:
+Make sure to install all dev dependencies:
 
 ```bash
-pdm install -G testing -G grpc -G io
+pdm install
 ```
 
 BentoML tests come with a Pytest plugin. Export `PYTEST_PLUGINS`:
@@ -294,7 +294,7 @@ export PYTEST_PLUGINS=bentoml.testing.pytest.plugin
 To run all tests with PDM, do the following:
 
 ```bash
-pdm run all
+pdm run nox
 ```
 
 ### Adding new test suite

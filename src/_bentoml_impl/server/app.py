@@ -21,6 +21,7 @@ from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
+from bentoml._internal.utils.metrics import exponential_buckets
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
 
@@ -98,6 +99,30 @@ class ServiceAppFactory(BaseAppFactory):
                     AutoContainer.get_batch_size, batch_dim=method.batch_dim[0]
                 ),
             )
+
+        metrics_client = BentoMLContainer.metrics_client.get()
+        max_max_batch_size = max(
+            (
+                method.max_batch_size
+                for method in service.apis.values()
+                if method.batchable
+            ),
+            default=100,
+        )
+
+        self.adaptive_batch_size_hist = metrics_client.Histogram(
+            namespace="bentoml_service",
+            name="adaptive_batch_size",
+            documentation="Service adaptive batch size",
+            labelnames=[
+                "runner_name",
+                "worker_index",
+                "method_name",
+                "service_version",
+                "service_name",
+            ],
+            buckets=exponential_buckets(1, 2, max_max_batch_size),
+        )
 
     async def index_page(self, _: Request) -> Response:
         from starlette.responses import FileResponse
@@ -333,8 +358,20 @@ class ServiceAppFactory(BaseAppFactory):
         async def inner_infer(
             batches: t.Sequence[t.Any], **kwargs: t.Any
         ) -> t.Sequence[t.Any]:
+            from bentoml._internal.context import component_context
             from bentoml._internal.runner.container import AutoContainer
             from bentoml._internal.utils import is_async_callable
+
+            self.adaptive_batch_size_hist.labels(  # type: ignore
+                runner_name=self.service.name,
+                worker_index=component_context.component_index,
+                method_name=name,
+                service_version=component_context.bento_version,
+                service_name=component_context.bento_name,
+            ).observe(len(batches))
+
+            if len(batches) == 0:
+                return []
 
             batch, indices = AutoContainer.batches_to_batch(
                 batches, method.batch_dim[0]

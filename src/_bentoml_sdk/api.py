@@ -267,6 +267,23 @@ class _APIWrapper:
         APIMethod[P, R]
         | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]
     ):
+        """Wrap a service method to be exposed as API endpoint.
+
+        Args:
+            func: The service method to be wrapped
+            route: The route of the API endpoint, default to the name of the method prefixed with '/'
+            name: The name of the API endpoint, default to the name of the method
+            input_spec: The input spec of the API endpoint, will be derived if not provided
+            output_spec: The output spec of the API endpoint, will be derived if not provided
+            batchable: Whether the API endpoint is batchable
+            batch_dim: The dimension of the batch, default to (0, 0)
+            max_batch_size: The max batch size, default to 100
+            max_latency_ms: The max latency in milliseconds, default to 60000
+
+        Returns:
+            The API method
+        """
+
         def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
             params: dict[str, t.Any] = {
                 "batchable": batchable,
@@ -307,6 +324,23 @@ class _APIWrapper:
     def sync_to_async(
         self, func: t.Callable[..., t.Any] | None = None, *, threads: int = 1
     ) -> t.Callable[..., t.Any] | _SyncToAsyncDecorator:
+        """Convert a sync function to async function
+
+        Examples::
+
+            @bentoml.api.sync_to_async
+            def add(a: int, b: int) -> int:
+                return a + b
+            # to call: await add(1, 2)
+
+            # Supports generators
+            @bentoml.api.sync_to_async
+            def my_generator(end: int) -> Generator[int, None, None]:
+                for i in range(end):
+                    yield i
+            # to call: async for i in my_generator(3): pass
+        """
+
         import anyio
         import anyio.to_thread
 

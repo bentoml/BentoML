@@ -313,7 +313,7 @@ def add_serve_command(cli: click.Group) -> None:
                 reload=reload,
             )
 
-    @cli.command(name="serve-grpc")
+    @cli.command(name="serve-grpc", hidden=True)
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
         "--development",

@@ -8,60 +8,65 @@ Unified AI Application Framework
 
 `BentoML <https://github.com/bentoml/BentoML>`_ is a framework for building **reliable, scalable and cost-efficient AI applications**. It comes with everything you need for model serving, application packaging, and production deployment.
 
-Start your BentoML journey
---------------------------
-
-The BentoML documentation provides detailed guidance on the project with hands-on tutorials and examples. If you are a first-time user of BentoML, we recommend that you read the following documents in order:
-
-Learn BentoML
--------------
+Featured use cases
+------------------
 
 .. grid:: 1 2 2 2
     :gutter: 3
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`💻 Get started <get-started/index>`
+    .. grid-item-card:: :doc:`/use-cases/diffusion-models/sdxl-turbo`
+        :link: /use-cases/diffusion-models/sdxl-turbo
+        :link-type: doc
+
+        Deploy an image generation application capable of creating high-quality visuals with just a single inference step.
+
+    .. grid-item-card:: :doc:`/use-cases/embeddings/clip-embeddings`
+        :link: /use-cases/embeddings/clip-embeddings
+        :link-type: doc
+
+        Deploy a CLIP application to convert images and text into embeddings.
+
+    .. grid-item-card:: :doc:`/use-cases/audio/whisperx`
+        :link: /use-cases/audio/whisperx
+        :link-type: doc
+
+        Deploy a speech recognition application.
+
+Start your BentoML journey
+--------------------------
+
+The BentoML documentation provides detailed guidance on the project with hands-on tutorials and examples. If you are a first-time user of BentoML, we recommend that you read the following documents in order:
+
+.. grid:: 1 2 2 2
+    :gutter: 3
+    :margin: 0
+    :padding: 3 4 0 0
+
+    .. grid-item-card:: :doc:`Get started <get-started/index>`
         :link: get-started/index
         :link-type: doc
 
-        Gain a basic understanding of the BentoML open-source framework, its workflow, and the BentoML ecosystem.
+        Gain a basic understanding of the BentoML open-source framework, its workflow, installation, and a quickstart example.
 
-    .. grid-item-card:: :doc:`🧮 ML Framework Guides <frameworks/index>`
-        :link: frameworks/index
+    .. grid-item-card:: :doc:`Use cases <use-cases/index>`
+        :link: use-cases/index
         :link-type: doc
 
-        Best practices and example usages by the ML framework used for building your model.
+        Create different BentoML projects for common machine learning scenarios, like large language models, image generation, embeddings, speech recognition, and more.
 
-    .. grid-item-card:: `🎨 Examples <https://bentoml.com/gallery>`_
-        :link: https://github.com/bentoml/BentoML/tree/main/examples
-        :link-type: url
-
-        Example projects demonstrating BentoML usage in a variety of different scenarios.
-
-    .. grid-item-card:: :doc:`💪 Advanced Guides <guides/index>`
+    .. grid-item-card:: :doc:`Guides <guides/index>`
         :link: guides/index
         :link-type: doc
 
-        Dive into BentoML's advanced features, internals, and architecture, including GPU support, inference graph, monitoring, and performance optimization.
+        Dive into BentoML's features and advanced use cases, including GPU support, clients, monitoring, and performance optimization.
 
-    .. grid-item-card:: :doc:`⚙️ Integrations & Ecosystem <integrations/index>`
-        :link: integrations/index
-        :link-type: doc
-
-        Learn how BentoML works together with other tools and products in the Data/ML ecosystem.
-
-    .. grid-item-card:: :doc:`☁️ BentoCloud <bentocloud/getting-started/index>`
+    .. grid-item-card:: :doc:`BentoCloud <bentocloud/getting-started/index>`
         :link: bentocloud/getting-started/index
         :link-type: doc
 
-        Fully managed platform for deploying and scaling BentoML in the cloud.
-
-    .. grid-item-card:: `💬 BentoML Community <https://l.bentoml.com/join-slack>`_
-        :link: https://l.bentoml.com/join-slack
-        :link-type: url
-
-        Join us in our Slack community where thousands of AI application developers are contributing to the project and helping each other.
+        A fully managed platform for deploying and scaling BentoML in the cloud.
 
 Stay informed
 -------------

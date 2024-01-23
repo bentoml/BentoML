@@ -39,7 +39,7 @@ You can define the serving logic of the model in a ``service.py`` file by creati
     from transformers import pipeline
 
 
-    NEWS_PARAGRAPH = "Breaking News: In an astonishing turn of events, the small \
+    EXAMPLE_INPUT = "Breaking News: In an astonishing turn of events, the small \
     town of Willow Creek has been taken by storm as local resident Jerry Thompson's cat, \
     Whiskers, performed what witnesses are calling a 'miraculous and gravity-defying leap.' \
     Eyewitnesses report that Whiskers, an otherwise unremarkable tabby cat, jumped \
@@ -55,11 +55,10 @@ You can define the serving logic of the model in a ``service.py`` file by creati
     )
     class Summarization:
         def __init__(self) -> None:
-            # Load model into pipeline
             self.pipeline = pipeline('summarization')
 
         @bentoml.api
-        def summarize(self, text: str = NEWS_PARAGRAPH) -> str:
+        def summarize(self, text: str = EXAMPLE_INPUT) -> str:
             result = self.pipeline(text)
             return result[0]['summary_text']
 

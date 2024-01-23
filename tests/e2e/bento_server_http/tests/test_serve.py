@@ -15,7 +15,7 @@ from bentoml.testing.utils import async_request
 def test_http_server():
     server = bentoml.HTTPServer("service.py:svc", port=12345)
 
-    server.start()
+    server.start(stdout=sys.stdout, stderr=sys.stderr)
 
     client = server.get_client()
     resp = client.health()

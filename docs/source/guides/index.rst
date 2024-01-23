@@ -15,6 +15,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Understand the BentoML Service and its key components.
 
+    .. grid-item-card:: :doc:`/guides/containerization`
+        :link: /guides/containerization
+        :link-type: doc
+
+        Create an OCI-compliant image for your BentoML project and deploy it anywhere.
+
     .. grid-item-card:: :doc:`/guides/clients`
         :link: /guides/clients
         :link-type: doc
@@ -25,4 +31,5 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     :hidden:
 
     services
+    containerization
     clients

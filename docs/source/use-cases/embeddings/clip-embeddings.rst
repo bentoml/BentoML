@@ -186,8 +186,8 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
     ...
     -0.17775200307369232,0.33587712049484253]]
 
-Deploy the project to BentoCloud
---------------------------------
+Deploy to production
+--------------------
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability.
 
@@ -212,3 +212,7 @@ Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-acc
     bentoml deploy .
 
 Once the application is up and running on BentoCloud, you can access it via the exposed URL.
+
+.. note::
+
+   Alternatively, you can use BentoML to generated an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.

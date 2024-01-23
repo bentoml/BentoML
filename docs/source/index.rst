@@ -71,7 +71,7 @@ The BentoML team uses the following channels to announce important updates like 
 - `BentoML Blog <http://bentoml.com/blog>`_
 - `BentoML X account <http://twitter.com/bentomlai>`_
 - `BentoML LinkedIn account <https://www.linkedin.com/company/bentoml/>`_
-- `BentoML Slack workspace <https://l.bentoml.com/join-slack>`_
+- `BentoML Slack community <https://l.bentoml.com/join-slack>`_
 
 To receive release notifications, star and watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_.
 For release notes and detailed changelogs, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.

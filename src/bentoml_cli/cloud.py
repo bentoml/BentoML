@@ -20,14 +20,9 @@ def add_cloud_command(cli: click.Group) -> click.Group:
     from bentoml.exceptions import CLIException
     from bentoml_cli.utils import BentoMLCommandGroup
 
-    @cli.group(name="cloud", aliases=["yatai"], cls=BentoMLCommandGroup)
+    @cli.group(name="cloud", cls=BentoMLCommandGroup)
     def cloud():
-        """BentoCloud Subcommands Groups
-
-        \b
-        Note that 'bentoml yatai' is mainly for backward compatible reason. It is recommended
-        to use 'bentoml cloud'.
-        """
+        """BentoCloud Subcommands Groups."""
 
     @cloud.command()
     @cog.optgroup.group(

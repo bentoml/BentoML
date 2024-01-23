@@ -15,6 +15,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Understand the BentoML Service and its key components.
 
+    .. grid-item-card:: :doc:`/guides/iotypes`
+        :link: /guides/iotypes
+        :link-type: doc
+
+        Customize the input and output type of BentoML Services.
+
     .. grid-item-card:: :doc:`/guides/containerization`
         :link: /guides/containerization
         :link-type: doc
@@ -31,5 +37,6 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     :hidden:
 
     services
+    iotypes
     containerization
     clients

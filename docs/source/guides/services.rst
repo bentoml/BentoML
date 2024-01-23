@@ -76,6 +76,8 @@ The ``@bentoml.api`` decorator in BentoML is a key component for defining API en
         result = self.pipeline(text)
         return result[0]['summary_text']
 
+You can customize the input and output logic of the Service API. See :doc:`/guides/iotypes` to learn more.
+
 Custom route path
 ^^^^^^^^^^^^^^^^^
 

@@ -217,58 +217,133 @@ def _flatten_model_schema(model: type[IODescriptor]) -> dict[str, t.Any]:
     return _flatten_field(schema, defs)
 
 
-@t.overload
-def api(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
-    ...
+class _SyncToAsyncDecorator(t.Protocol):
+    @t.overload
+    def __call__(
+        self, func: t.Callable[P, t.Generator[R, None, None]]
+    ) -> t.Callable[P, t.AsyncGenerator[R, None]]:
+        ...
+
+    @t.overload
+    def __call__(
+        self, func: t.Callable[P, R]
+    ) -> t.Callable[P, t.Coroutine[None, None, R]]:
+        ...
 
 
-@t.overload
-def api(
-    *,
-    route: str | None = ...,
-    name: str | None = ...,
-    input_spec: type[IODescriptor] | None = ...,
-    output_spec: type[IODescriptor] | None = ...,
-    batchable: bool = ...,
-    batch_dim: int | tuple[int, int] = ...,
-    max_batch_size: int = ...,
-    max_latency_ms: int = ...,
-) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]:
-    ...
+class _APIWrapper:
+    @t.overload
+    def __call__(self, func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
+        ...
+
+    @t.overload
+    def __call__(
+        self,
+        *,
+        route: str | None = ...,
+        name: str | None = ...,
+        input_spec: type[IODescriptor] | None = ...,
+        output_spec: type[IODescriptor] | None = ...,
+        batchable: bool = ...,
+        batch_dim: int | tuple[int, int] = ...,
+        max_batch_size: int = ...,
+        max_latency_ms: int = ...,
+    ) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]:
+        ...
+
+    def __call__(
+        self,
+        func: t.Callable[t.Concatenate[t.Any, P], R] | None = None,
+        *,
+        route: str | None = None,
+        name: str | None = None,
+        input_spec: type[IODescriptor] | None = None,
+        output_spec: type[IODescriptor] | None = None,
+        batchable: bool = False,
+        batch_dim: int | tuple[int, int] = 0,
+        max_batch_size: int = 100,
+        max_latency_ms: int = 60000,
+    ) -> (
+        APIMethod[P, R]
+        | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]
+    ):
+        def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
+            params: dict[str, t.Any] = {
+                "batchable": batchable,
+                "batch_dim": batch_dim,
+                "max_batch_size": max_batch_size,
+                "max_latency_ms": max_latency_ms,
+            }
+            if route is not None:
+                params["route"] = route
+            if name is not None:
+                params["name"] = name
+            if input_spec is not None:
+                params["input_spec"] = input_spec
+            if output_spec is not None:
+                params["output_spec"] = output_spec
+            return APIMethod(func, **params)
+
+        if func is not None:
+            return wrapper(func)
+        return wrapper
+
+    @t.overload
+    def sync_to_async(
+        self, func: t.Callable[P, t.Generator[R, None, None]]
+    ) -> t.Callable[P, t.AsyncGenerator[R, None]]:
+        ...
+
+    @t.overload
+    def sync_to_async(
+        self, func: t.Callable[P, R]
+    ) -> t.Callable[P, t.Coroutine[None, None, R]]:
+        ...
+
+    @t.overload
+    def sync_to_async(self, *, threads: int = 1) -> _SyncToAsyncDecorator:
+        ...
+
+    def sync_to_async(
+        self, func: t.Callable[..., t.Any] | None = None, *, threads: int = 1
+    ) -> t.Callable[..., t.Any] | _SyncToAsyncDecorator:
+        import anyio
+        import anyio.to_thread
+
+        def wrapper(func: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
+            async def wrapped(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+                return await anyio.to_thread.run_sync(
+                    functools.partial(func, **kwargs),
+                    *args,
+                    limiter=anyio.CapacityLimiter(threads),
+                )
+
+            async def wrapped_generator(
+                *args: P.args, **kwargs: P.kwargs
+            ) -> t.AsyncGenerator[t.Any, None]:
+                gen = func(*args, **kwargs)
+                while True:
+                    try:
+                        yield await anyio.to_thread.run_sync(
+                            gen.__next__, limiter=anyio.CapacityLimiter(threads)
+                        )
+                    except StopIteration:
+                        break
+                    except RuntimeError as e:
+                        if "raised StopIteration" in str(e):
+                            break
+                        raise
+
+            if inspect.isgeneratorfunction(func):
+                new_func = wrapped_generator
+            else:
+                new_func = wrapped
+            new_func.__signature__ = inspect.signature(func)
+            return functools.update_wrapper(new_func, func)
+
+        if func is not None:
+            return wrapper(func)
+        return wrapper
 
 
-def api(
-    func: t.Callable[t.Concatenate[t.Any, P], R] | None = None,
-    *,
-    route: str | None = None,
-    name: str | None = None,
-    input_spec: type[IODescriptor] | None = None,
-    output_spec: type[IODescriptor] | None = None,
-    batchable: bool = False,
-    batch_dim: int | tuple[int, int] = 0,
-    max_batch_size: int = 100,
-    max_latency_ms: int = 60000,
-) -> (
-    APIMethod[P, R]
-    | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]
-):
-    def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
-        params: dict[str, t.Any] = {
-            "batchable": batchable,
-            "batch_dim": batch_dim,
-            "max_batch_size": max_batch_size,
-            "max_latency_ms": max_latency_ms,
-        }
-        if route is not None:
-            params["route"] = route
-        if name is not None:
-            params["name"] = name
-        if input_spec is not None:
-            params["input_spec"] = input_spec
-        if output_spec is not None:
-            params["output_spec"] = output_spec
-        return APIMethod(func, **params)
-
-    if func is not None:
-        return wrapper(func)
-    return wrapper
+api = _APIWrapper()

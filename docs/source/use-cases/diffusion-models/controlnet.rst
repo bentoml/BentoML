@@ -168,7 +168,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
                 "num_inference_steps": 25
                 }'
 
-    .. tab-item:: Python client
+    .. tab-item:: BentoML client
 
         .. code-block:: python
 

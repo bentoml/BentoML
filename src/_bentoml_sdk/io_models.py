@@ -179,9 +179,7 @@ class IOMixin:
                     media_type = (
                         mimetypes.guess_type(obj)[0] or "application/octet-stream"
                     )
-                    should_inline = media_type.startswith(
-                        ("image/", "audio/", "video/")
-                    )
+                    should_inline = media_type.startswith("image")
                     content_disposition_type = (
                         "inline" if should_inline else "attachment"
                     )

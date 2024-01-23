@@ -112,6 +112,6 @@ def coverage_report(session: nox.Session):
     session.run("pdm", "sync", "-G", "testing", external=True)
     session.run("coverage", "combine")
     session.run("coverage", "xml")
-    session.run("coverage html", "--skip-covered", "--skip-empty")
+    session.run("coverage", "html", "--skip-covered", "--skip-empty")
     session.run("python", "tools/generate_coverage.py")
     session.run("python", "tools/write_report.py")

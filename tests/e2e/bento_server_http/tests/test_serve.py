@@ -53,7 +53,7 @@ def test_http_server():
 def test_http_server_ctx():
     server = bentoml.HTTPServer("service.py:svc", port=12346)
 
-    with server.start() as client:
+    with server.start(stdout=sys.stdout, stderr=sys.stderr) as client:
         resp = client.health()
         assert resp.status_code == 200
 
@@ -86,7 +86,7 @@ def test_serve_from_svc():
     from service import svc
 
     server = bentoml.HTTPServer(svc, port=12348)
-    server.start()
+    server.start(stdout=sys.stdout, stderr=sys.stderr)
     client = server.get_client()
     resp = client.health()
     assert resp.status_code == 200
@@ -120,7 +120,7 @@ def test_serve_with_timeout():
     env = os.environ.copy()
     env.update(BENTOML_CONFIG=config_file)
 
-    with server.start(env=env) as client:
+    with server.start(env=env, stdout=sys.stdout, stderr=sys.stderr) as client:
         with pytest.raises(
             BentoMLException,
             match="Not able to process the request in 1 seconds",
@@ -136,7 +136,7 @@ async def test_serve_with_api_max_concurrency():
     env = os.environ.copy()
     env.update(BENTOML_CONFIG=config_file)
 
-    with server.start(env=env):
+    with server.start(env=env, stdout=sys.stdout, stderr=sys.stderr):
         client = await bentoml.client.AsyncHTTPClient.from_url(
             f"http://{server.host}:{server.port}"
         )
@@ -165,7 +165,7 @@ async def test_serve_with_lifecycle_hooks(tmp_path: Path):
     env = os.environ.copy()
     env["BENTOML_TEST_DATA"] = str(tmp_path)
 
-    with server.start(env=env) as client:
+    with server.start(env=env, stdout=sys.stdout, stderr=sys.stderr) as client:
         assert client is not None
         status, _, body = await async_request(
             "POST", f"{client.server_url}/use_context?state=data"

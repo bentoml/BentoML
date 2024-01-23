@@ -147,7 +147,7 @@ First, specify a configuration YAML file (``bentofile.yaml``) as below to define
     python:
       requirements_txt: "./requirements.txt" # Put the installed dependencies into a separate requirements.txt file
 
-Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud. Under the hood, this commands automatically builds a Bento, push the Bento, and deploy it on BentoCloud.
+Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud.
 
 .. code-block:: bash
 

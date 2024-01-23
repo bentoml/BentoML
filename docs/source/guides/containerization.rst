@@ -73,7 +73,7 @@ To containerize the Bento with Docker, simply run:
 
     bentoml containerize summarization:latest
 
-.. note:: 
+.. note::
 
     For Mac computers with Apple silicon, you can specify the ``--platform`` option to avoid potential compatibility issues with some Python libraries.
 

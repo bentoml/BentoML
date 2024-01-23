@@ -21,6 +21,12 @@ This section provides a variety of example projects for you to learn how BentoML
 
         Deploy embedding applications with BentoML.
 
+    .. grid-item-card:: :doc:`/use-cases/audio/index`
+        :link: /use-cases/audio/index
+        :link-type: doc
+
+        Deploy audio applications with BentoML.
+
     .. grid-item-card:: :doc:`/use-cases/blip`
         :link: /use-cases/blip
         :link-type: doc
@@ -34,4 +40,5 @@ This section provides a variety of example projects for you to learn how BentoML
 
     diffusion-models/index
     embeddings/index
+    audio/index
     blip

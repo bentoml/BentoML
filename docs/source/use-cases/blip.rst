@@ -88,7 +88,7 @@ The server is active at http://localhost:3000. You can interact with it in diffe
                 -F 'img=@image.jpg' \
                 http://localhost:3000/generate
 
-    .. tab-item:: Python client
+    .. tab-item:: BentoML client
 
         .. code-block:: python
 

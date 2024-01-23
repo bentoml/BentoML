@@ -32,7 +32,7 @@ Create a BentoML Service
 You can define the serving logic of the model in a ``service.py`` file by creating a BentoML Service as below.
 
 .. code-block:: python
-   :caption: `service.py`
+    :caption: `service.py`
 
     from __future__ import annotations
     import bentoml
@@ -115,4 +115,4 @@ Expected output:
 
     Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly . The event is now being investigated by scientists for potential breaches in the laws of physics . Local authorities considering a town festival to celebrate what is being hailed as 'The Leap of the Century'
 
-Once the Service is ready, you can deploy this BentoML project on BentoCloud or create a Docker image for it and ship it anywhere.
+Once the Service is ready, you can deploy this BentoML project on BentoCloud or :doc:`create a Docker image </guides/containerization>` for it and ship it anywhere.

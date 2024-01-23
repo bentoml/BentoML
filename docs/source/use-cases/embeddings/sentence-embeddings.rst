@@ -133,8 +133,8 @@ Expected output:
       ]
     ]
 
-Deploy the project to BentoCloud
---------------------------------
+Deploy to production
+--------------------
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability.
 
@@ -154,10 +154,14 @@ First, specify a configuration YAML file (``bentofile.yaml``) as below to define
         - torch
         - transformers
 
-Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud. Under the hood, this commands automatically builds a Bento, push the Bento, and deploy it on BentoCloud.
+Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud.
 
 .. code-block:: bash
 
     bentoml deploy .
 
 Once the application is up and running on BentoCloud, you can access it via the exposed URL.
+
+.. note::
+
+   Alternatively, you can use BentoML to generated an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.

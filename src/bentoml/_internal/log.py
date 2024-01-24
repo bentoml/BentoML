@@ -4,13 +4,12 @@ import logging
 import logging.config
 import typing as t
 from functools import lru_cache
+from logging import LogRecord
 
 from .configuration import get_debug_mode
 from .configuration import get_quiet_mode
 from .context import component_context
 from .context import trace_context
-
-default_factory = logging.getLogRecordFactory()
 
 
 # TODO: remove this filter after implementing CLI output as something other than INFO logs
@@ -51,6 +50,32 @@ TRACED_LOG_FORMAT = (
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 
+class TraceRecordFilter(logging.Filter):
+    def filter(self, record: LogRecord) -> bool | LogRecord:
+        if record.name in ("bentoml_monitor_data", "bentoml_monitor_schema"):
+            return super().filter(record)
+
+        record.levelname_bracketed = f"[{record.levelname}]"
+        record.component = f"[{_component_name()}]"
+        trace_id = trace_context.trace_id
+        if trace_id in (0, None):
+            record.trace_msg = ""
+        else:
+            from .configuration.containers import BentoMLContainer
+
+            logging_formatting = BentoMLContainer.logging_formatting.get()
+            trace_id_format = logging_formatting["trace_id"]
+            span_id_format = logging_formatting["span_id"]
+
+            trace_id = format(trace_id, trace_id_format)
+            span_id = format(trace_context.span_id, span_id_format)
+            record.trace_msg = f" (trace={trace_id},span={span_id},sampled={trace_context.sampled},service.name={trace_context.service_name})"
+        record.request_id = trace_context.request_id
+        record.service_name = trace_context.service_name
+
+        return super().filter(record)
+
+
 SERVER_LOGGING_CONFIG: dict[str, t.Any] = {
     "version": 1,
     "disable_existing_loggers": True,
@@ -60,11 +85,13 @@ SERVER_LOGGING_CONFIG: dict[str, t.Any] = {
             "datefmt": DATE_FORMAT,
         }
     },
+    "filters": {"tracing": {"()": TraceRecordFilter}},
     "handlers": {
         "tracehandler": {
             "class": "logging.StreamHandler",
             "formatter": "traced",
             "stream": "ext://sys.stdout",
+            "filters": ["tracing"],
         },
     },
     "loggers": {
@@ -109,31 +136,6 @@ def _component_name():
     return result
 
 
-def trace_record_factory(*args: t.Any, **kwargs: t.Any):
-    record = default_factory(*args, **kwargs)
-    if record.name in ("bentoml_monitor_data", "bentoml_monitor_schema"):
-        return record
-    record.levelname_bracketed = f"[{record.levelname}]"
-    record.component = f"[{_component_name()}]"
-    trace_id = trace_context.trace_id
-    if trace_id in (0, None):
-        record.trace_msg = ""
-    else:
-        from .configuration.containers import BentoMLContainer
-
-        logging_formatting = BentoMLContainer.logging_formatting.get()
-        trace_id_format = logging_formatting["trace_id"]
-        span_id_format = logging_formatting["span_id"]
-
-        trace_id = format(trace_id, trace_id_format)
-        span_id = format(trace_context.span_id, span_id_format)
-        record.trace_msg = f" (trace={trace_id},span={span_id},sampled={trace_context.sampled},service.name={trace_context.service_name})"
-    record.request_id = trace_context.request_id
-    record.service_name = trace_context.service_name
-
-    return record
-
-
 def configure_server_logging():
     if get_quiet_mode():
         SERVER_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.ERROR
@@ -144,5 +146,4 @@ def configure_server_logging():
     else:
         SERVER_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.INFO
         SERVER_LOGGING_CONFIG["root"]["level"] = logging.WARNING
-    logging.setLogRecordFactory(trace_record_factory)
     logging.config.dictConfig(SERVER_LOGGING_CONFIG)

@@ -41,6 +41,8 @@ class AccessLogMiddleware:
     and receive callables to generate the BentoML access log.
     """
 
+    EXCLUDE_PATHS = ("/metrics", "/healthz", "/livez", "/readyz")
+
     def __init__(
         self,
         app: ext.ASGIApp,
@@ -71,6 +73,9 @@ class AccessLogMiddleware:
         scheme = scope["scheme"]
         method = scope["method"]
         path = scope["path"]
+        if path.startswith(self.EXCLUDE_PATHS):
+            await self.app(scope, receive, send)
+            return
 
         if self.has_request_content_length or self.has_request_content_type:
             for key, value in scope["headers"]:
@@ -112,7 +117,7 @@ class AccessLogMiddleware:
                     response.append(f"length={response_content_length.get().decode()}")
 
                 latency = max(default_timer() - start, 0) * 1000
-
+                await send(message)
                 self.logger.info(
                     "%s (%s) (%s) %.3fms",
                     address,
@@ -120,6 +125,7 @@ class AccessLogMiddleware:
                     ",".join(response),
                     latency,
                 )
+                return
 
             await send(message)
 

@@ -627,8 +627,7 @@ class BentoInfo:
         return bentoml_cattr.unstructure(self)
 
     def dump(self, stream: t.IO[t.Any]):
-        # _models is an alias for models, replace it with models
-        return yaml.dump(self, stream, sort_keys=False)
+        return yaml.safe_dump(self.to_dict(), stream, sort_keys=False)
 
     @classmethod
     def from_yaml_file(cls, stream: t.IO[t.Any]) -> BentoInfo:

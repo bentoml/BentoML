@@ -283,12 +283,12 @@ def add_deployment_command(cli: click.Group) -> None:
             raise BentoMLException(
                 f"Failed to create deployment due to invalid configuration: {e}"
             )
-        Deployment.update(
+        deployment_info = Deployment.update(
             deployment_config_params=config_params,
             context=shared_options.cloud_context,
         )
 
-        click.echo(f"Deployment '{config_params.get_name()}' updated successfully.")
+        click.echo(f"Deployment '{deployment_info.name}' updated successfully.")
 
     @deployment_cli.command()
     @click.argument(
@@ -406,12 +406,12 @@ def add_deployment_command(cli: click.Group) -> None:
             raise BentoMLException(
                 f"Failed to create deployment due to invalid configuration: {e}"
             )
-        Deployment.apply(
+        deployment_info = Deployment.apply(
             deployment_config_params=config_params,
             context=shared_options.cloud_context,
         )
 
-        click.echo(f"Deployment '{config_params.get_name()}' applied successfully.")
+        click.echo(f"Deployment '{deployment_info.name}' applied successfully.")
 
     @deployment_cli.command()
     @click.argument(

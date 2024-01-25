@@ -428,6 +428,21 @@ class ServiceAppFactory(BaseAppFactory):
                 output = await func(*input_args, **input_params)
             elif inspect.isasyncgenfunction(original_func):
                 output = func(*input_args, **input_params)
+            elif inspect.isgeneratorfunction(original_func):
+
+                async def inner() -> t.AsyncGenerator[t.Any, None]:
+                    gen = func(*input_args, **input_params)
+                    while True:
+                        try:
+                            yield await self._to_thread(next, gen)
+                        except StopIteration:
+                            break
+                        except RuntimeError as e:
+                            if "StopIteration" in str(e):
+                                break
+                            raise
+
+                output = inner()
             else:
                 output = await self._to_thread(func, *input_args, **input_params)
 

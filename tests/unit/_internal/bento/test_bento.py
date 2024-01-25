@@ -103,6 +103,8 @@ runners:
     cpu: 2
 entry_service: ''
 services: []
+envs: []
+schema: {{}}
 apis:
 - name: predict
   input_type: NumpyNdarray
@@ -132,7 +134,6 @@ conda:
   channels: null
   dependencies: null
   pip: null
-envs: []
 """
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:

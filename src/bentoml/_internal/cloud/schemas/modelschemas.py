@@ -83,6 +83,7 @@ class BentoManifestSchema:
     runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)
     services: t.List[BentoServiceInfo] = attr.field(factory=dict)
     envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
+    schema: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
 if TYPE_CHECKING:

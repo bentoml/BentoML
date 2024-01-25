@@ -704,4 +704,9 @@ def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
     return dumper.represent_dict(info.to_dict())
 
 
+def _tuple_dumper(dumper: yaml.Dumper, info: tuple[t.Any, ...]) -> yaml.Node:
+    return dumper.represent_list(info)
+
+
 yaml.add_representer(BentoInfo, _BentoInfo_dumper)  # type: ignore (incomplete yaml types)
+yaml.add_representer(tuple, _tuple_dumper)  # type: ignore (incomplete yaml types)

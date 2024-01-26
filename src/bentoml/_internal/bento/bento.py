@@ -626,9 +626,9 @@ class BentoInfo:
     def to_dict(self) -> t.Dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)
 
-    def dump(self, stream: t.IO[t.Any]):
+    def dump(self, stream: t.IO[t.Any]) -> None:
         # _models is an alias for models, replace it with models
-        return yaml.dump(self, stream, sort_keys=False)
+        return yaml.safe_dump(self.to_dict(), stream, sort_keys=False)
 
     @classmethod
     def from_yaml_file(cls, stream: t.IO[t.Any]) -> BentoInfo:
@@ -698,15 +698,3 @@ bentoml_cattr.register_unstructure_hook(
     # Ignore tag, tag is saved via the name and version field
     make_dict_unstructure_fn(BentoInfo, bentoml_cattr, tag=override(omit=True)),
 )
-
-
-def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
-    return dumper.represent_dict(info.to_dict())
-
-
-def _tuple_dumper(dumper: yaml.Dumper, info: tuple[t.Any, ...]) -> yaml.Node:
-    return dumper.represent_list(info)
-
-
-yaml.add_representer(BentoInfo, _BentoInfo_dumper)  # type: ignore (incomplete yaml types)
-yaml.add_representer(tuple, _tuple_dumper)  # type: ignore (incomplete yaml types)

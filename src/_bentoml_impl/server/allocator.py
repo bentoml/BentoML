@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import warnings
 from typing import Any
 
@@ -12,6 +13,7 @@ from bentoml._internal.resource import system_resources
 from bentoml.exceptions import BentoMLConfigException
 
 NVIDIA_GPU = "nvidia.com/gpu"
+DISABLE_GPU_ALLOCATION_ENV = "BENTOML_DISABLE_GPU_ALLOCATION"
 
 
 class ResourceAllocator:
@@ -26,7 +28,9 @@ class ResourceAllocator:
     def assign_gpus(self, count: float) -> list[int]:
         if count > self.remaining_gpus:
             warnings.warn(
-                f"Requested {count} GPUs, but only {self.remaining_gpus} are remaining.",
+                f"Requested {count} GPUs, but only {self.remaining_gpus} are remaining. "
+                f"Serving may fail due to inadequate GPUs. Set {DISABLE_GPU_ALLOCATION_ENV}=1 "
+                "to disable automatic allocation and allocate GPUs manually.",
                 ResourceWarning,
                 stacklevel=3,
             )
@@ -97,7 +101,7 @@ class ResourceAllocator:
                 return num_workers, worker_env
             else:  # workers is a number
                 num_workers = workers
-        if num_gpus:
+        if num_gpus and DISABLE_GPU_ALLOCATION_ENV not in os.environ:
             assigned = self.assign_gpus(num_gpus)
             # assign gpus to all workers
             worker_env = [

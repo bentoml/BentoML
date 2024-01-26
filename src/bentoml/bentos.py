@@ -402,7 +402,7 @@ def _parse_tag_from_outputs(output: bytes) -> str:
         raise BentoMLException(
             f"Failed to find tag from output: {output}\nNote: Output from 'bentoml build' might not be correct. Please open an issue on GitHub."
         )
-    return matched.group(1)
+    return matched.group(1).strip()
 
 
 @inject

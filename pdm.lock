@@ -5,7 +5,7 @@
 groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "aws", "io-file", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "triton"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:472f357012ba6cc4f6c96b889eb5ec2744581adfa97bff1ba4ce0889a07e3913"
+content_hash = "sha256:8a33d3fb6916aa6c768b53e3e032b624a35ecddcb2955b80957c9f5838478917"
 
 [[package]]
 name = "aiohttp"

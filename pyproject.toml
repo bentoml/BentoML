@@ -54,7 +54,7 @@ dependencies = [
     "pip-requirements-parser>=31.2.0",
     "prometheus-client>=0.10.0",
     "psutil",
-    "pydantic~=2.0",
+    "pydantic<3",
     "python-dateutil",
     "python-multipart",
     "python-json-logger",

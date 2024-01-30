@@ -46,7 +46,7 @@ class IOMixin:
 
         if issubclass(cls, RootModel):
             return {}
-        assert issubclass(cls, IODescriptor)
+        assert issubclass(cls, IOMixin) and issubclass(cls, BaseModel)
         json_schema = cls.model_json_schema(ref_template=REF_TEMPLATE)
         defs = json_schema.pop("$defs", None)
         main_name = (

@@ -544,7 +544,7 @@ class BentoCloudClient(CloudClient):
                                 continue
                             p = Path(member.name)
                             if p.parent != Path("."):
-                                temp_fs.makedirs(str(p.parent), recreate=True)
+                                temp_fs.makedirs(p.parent.as_posix(), recreate=True)
                             temp_fs.writebytes(member.name, f.read())
                         bento = Bento.from_fs(temp_fs)
                         for model_tag in remote_bento.manifest.models:

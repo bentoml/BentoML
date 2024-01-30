@@ -211,7 +211,7 @@ def _flatten_field(
 
 def _flatten_model_schema(model: type[IODescriptor]) -> dict[str, t.Any]:
     schema = model.model_json_schema()
-    if not schema.get("properties") or "$defs" not in schema:
+    if not schema.get("properties"):
         return schema
     defs = schema.pop("$defs", {})
     return _flatten_field(schema, defs)

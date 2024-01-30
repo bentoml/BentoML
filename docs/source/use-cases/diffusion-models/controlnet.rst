@@ -233,4 +233,4 @@ Once the application is up and running on BentoCloud, you can access it via the 
 
 .. note::
 
-   Alternatively, you can use BentoML to generated an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.
+   Alternatively, you can use BentoML to generate an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.

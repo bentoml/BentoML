@@ -2,7 +2,7 @@
 XTTS: Text to speech
 ====================
 
-Text-to-speech machine learning technology can convert written text into spoken words. This may involve analyzing the text, understanding its structure and meaning, and then generating speech that mimics human voice and intonation. 
+Text-to-speech machine learning technology can convert written text into spoken words. This may involve analyzing the text, understanding its structure and meaning, and then generating speech that mimics human voice and intonation.
 
 This document demonstrates how to build a text-to-speech application using BentoML, powered by the model `XTTS <https://huggingface.co/coqui/XTTS-v2>`_.
 
@@ -59,7 +59,7 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
     class XTTS:
         def __init__(self) -> None:
             self.tts = TTS(MODEL_ID, gpu=torch.cuda.is_available())
-        
+
         @bentoml.api
         def synthesize(
                 self,

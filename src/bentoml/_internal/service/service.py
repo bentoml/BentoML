@@ -285,6 +285,37 @@ class Service:
                 return False
 
         return True
+    # fmt: off
+    # case 1: function is not defined, but input and output are
+    @t.overload
+    def add_api(self, input: IODescriptor[IOType], output: IODescriptor[IOType], user_defined_callback: t.Callable[..., t.Any],) -> None: ...
+    # case 2: the decorator itself with custom routes
+    @t.overload
+    def add_api(self, input: IODescriptor[IOType], output: IODescriptor[IOType], user_defined_callback: t.Callable[..., t.Any], *, route: str = ...) -> None: ...
+    # fmt: on
+    def add_api(
+            self,
+            input: IODescriptor[IOType],
+            output: IODescriptor[IOType],
+            user_defined_callback: t.Callable[..., t.Any],
+            *,
+            name: str | None = None,
+            doc: str | None = None,
+            route: str | None = None,
+    ) -> None:
+        _api = InferenceAPI[IOType](
+            name=first_not_none(name, default=fn.__name__),
+            user_defined_callback=user_defined_callback,
+            input_descriptor=input,
+            output_descriptor=output,
+            doc=doc,
+            route=route,
+        )
+        if _api.name in self.apis:
+            raise BentoMLException(
+                f"API {_api.name} is already defined in Service {self.name}"
+            )
+        self.apis[_api.name] = _api
 
     # fmt: off
     # case 1: function is not defined, but input and output are

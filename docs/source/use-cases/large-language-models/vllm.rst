@@ -30,7 +30,7 @@ Create a BentoML Service
 
 Define a :doc:`BentoML Service </guides/services>` to customize the serving logic of your lanaguage model, which uses ``vllm`` as the backend option. You can find the following example ``service.py`` file in the cloned repository.
 
-.. note:: 
+.. note::
 
     This example Service uses the model ``meta-llama/Llama-2-7b-chat-hf``. You can choose any other model supported by vLLM based on your needs. If you are using the same model in the project, you need to obtain access to it on the `Meta website <https://ai.meta.com/resources/models-and-libraries/llama-downloads/>`_ and `Hugging Face <https://huggingface.co/meta-llama/Llama-2-7b-chat-hf>`_.
 
@@ -84,7 +84,7 @@ This script mainly contains the following two parts:
 
   - ``MAX_TOKENS``, ``SAMPLING_PARAM``, and ``ENGINE_ARGS`` are defined to configure the model's behavior. You can change their values as needed.
   - ``PROMPT_TEMPLATE`` is a pre-defined prompt template that provides interaction context and guidelines for the model.
-  
+
 - A BentoML Service named ``VLLMService``. The ``@bentoml.service`` decorator is used to define the ``VLLMService`` class as a BentoML Service, specifying timeout, GPU, and memory allocations.
 
   - The Service initializes an ``AsyncLLMEngine`` with specified engine arguments (``ENGINE_ARGS``). This engine is responsible for processing the language model requests. It also initializes a ``request_id`` to keep track of individual requests.

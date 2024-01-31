@@ -185,11 +185,11 @@ def serve_http(
     allocator = ResourceAllocator()
     if dependency_map is None:
         dependency_map = {}
+    if service_name:
+        svc = svc.find_dependent(service_name)
     num_workers, worker_envs = allocator.get_worker_env(svc)
     with tempfile.TemporaryDirectory(prefix="bentoml-uds-") as uds_path:
-        if service_name:
-            svc = svc.find_dependent(service_name)
-        elif not development_mode:
+        if not service_name and not development_mode:
             with contextlib.ExitStack() as port_stack:
                 for name, dep_svc in svc.all_services().items():
                     if name == svc.name:

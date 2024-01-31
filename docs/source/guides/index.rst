@@ -21,6 +21,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Customize the input and output type of BentoML Services.
 
+    .. grid-item-card:: :doc:`/guides/deployment`
+        :link: /guides/deployment
+        :link-type: doc
+
+        Deploy your BentoML project to BentoCloud and customize deployment configurations.
+
     .. grid-item-card:: :doc:`/guides/containerization`
         :link: /guides/containerization
         :link-type: doc
@@ -38,5 +44,6 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
     services
     iotypes
+    deployment
     containerization
     clients

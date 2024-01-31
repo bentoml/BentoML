@@ -106,11 +106,11 @@ class MonitorBase(t.Generic[DT]):
 
         if role not in BENTOML_MONITOR_ROLES:
             logger.warning(
-                "Role {role} is not officially supported, but will be logged anyway."
+                f"Role {role} is not officially supported, but will be logged anyway."
             )
         if data_type not in BENTOML_MONITOR_TYPES:
             logger.warning(
-                "Data type {data_type} is not officially supported, but will be logged anyway."
+                f"Data type {data_type} is not officially supported, but will be logged anyway."
             )
 
         if self.columns_schema is None:

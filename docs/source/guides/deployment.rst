@@ -313,14 +313,16 @@ To set autoscaling, you need to configure the above fields in a separate YAML or
 .. code-block:: yaml
     :caption: `config-file.yaml`
 
-    scaling:
-      max_replicas: 2
-      min_replicas: 1
-      policy:
-        metrics:
-          - type: "cpu | memory | gpu | qps"  # Specify the type here
-            value: "string"  # Specify the value here
-        scale_down_behavior: "disabled | stable | fast"  # Choose the behavior
-        scale_up_behavior: "disabled | stable | fast"  # Choose the behavior
+    services:
+      MyBentoService: # The Service name
+        scaling:
+          max_replicas: 2
+          min_replicas: 1
+          policy:
+            metrics:
+              - type: "cpu | memory | gpu | qps"  # Specify the type here
+                value: "string"  # Specify the value here
+            scale_down_behavior: "disabled | stable | fast"  # Choose the behavior
+            scale_up_behavior: "disabled | stable | fast"  # Choose the behavior
 
 You can then deploy your project by referencing this file.

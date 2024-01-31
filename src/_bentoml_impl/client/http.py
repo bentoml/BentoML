@@ -214,6 +214,8 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             )
         has_file = any(
             schema.get("type") == "file"
+            or schema.get("type") == "array"
+            and schema["items"].get("type") == "file"
             for schema in endpoint.input["properties"].values()
         )
         if has_file and self.media_type == "application/json":
@@ -234,7 +236,11 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         def is_file_field(k: str) -> bool:
             if isinstance(model, IODescriptor):
                 return k in model.multipart_fields
-            return endpoint.input["properties"].get(k, {}).get("type") == "file"
+            if (f := endpoint.input["properties"].get(k, {})).get("type") == "file":
+                return True
+            if f.get("type") == "array" and f["items"].get("type") == "file":
+                return True
+            return False
 
         if isinstance(model, dict):
             fields = model

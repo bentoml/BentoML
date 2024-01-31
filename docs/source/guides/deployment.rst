@@ -11,19 +11,19 @@ The procedures of deploying a new project on BentoCloud can be summarized as fol
 
 1. Log in to BentoCloud using an :doc:`API token </bentocloud/how-tos/manage-access-token>` with Developer Operations Access.
 2. Deploy the project through either the command line interface (CLI) or Python API.
-   
+
    .. tab-set::
 
        .. tab-item:: BentoML CLI
-      
+
            In your project directory where the ``bentofile.yaml`` file is stored, run the following command:
 
            .. code-block:: bash
 
               bentoml deploy .
-      
+
        .. tab-item:: Python API
-      
+
            Specify the path to your BentoML project using the ``bento`` parameter.
 
            .. code-block:: python
@@ -37,7 +37,7 @@ BentoML does the following automatically during deployment:
 1. **Build**: Build your project into a Bento based on ``bentofile.yaml``.
 2. **Push**: Push the Bento to BentoCloud.
 3. **Deploy**: Deploy the Bento on BentoCloud by performing the following steps in order:
-   
+
    a. Containerize the Bento as an OCI-compliant image.
    b. Provision instances on BentoCloud.
    c. Start the BentoML Service on the instances based on the specified configuration.
@@ -107,7 +107,7 @@ You can set the minimum and maximum scaling replicas to ensure efficient resourc
 
             bentoml.deployment.create(
                 bento="./path_to_your_project",
-                scaling_min=1, 
+                scaling_min=1,
                 scaling_max=3
             )
 

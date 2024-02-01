@@ -9,8 +9,8 @@ This section provides example projects for embeddings.
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`/use-cases/embeddings/sentence-embeddings`
-        :link: /use-cases/embeddings/sentence-embeddings
+    .. grid-item-card:: :doc:`/use-cases/embeddings/sentence-transformer`
+        :link: /use-cases/embeddings/sentence-transformer
         :link-type: doc
 
         Deploy a sentence embedding application with BentoML.
@@ -27,5 +27,5 @@ This section provides example projects for embeddings.
     :titlesonly:
     :hidden:
 
-    sentence-embeddings
+    sentence-transformer
     clip-embeddings

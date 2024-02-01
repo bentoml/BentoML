@@ -68,5 +68,3 @@ Getting started with BentoCloud is easy:
 1. Use the BentoML open-source framework to expose an ML model with a BentoML Service and package all the necessary files into a Bento.
 2. Upload and deploy the Bento to BentoCloud.
 3. When your Bento Deployment is up and running, manage the workload using the BentoCloud Console or the BentoML Command Line Interface (CLI).
-
-To deploy your first AI application on BentoCloud, see :doc:`quickstart`.

@@ -326,3 +326,9 @@ To set autoscaling, you need to configure the above fields in a separate YAML or
             scale_up_behavior: "disabled | stable | fast"  # Choose the behavior
 
 You can then deploy your project by referencing this file.
+
+See also
+--------
+
+- :doc:`/guides/containerization`
+- :doc:`/bentocloud/how-tos/manage-deployments`

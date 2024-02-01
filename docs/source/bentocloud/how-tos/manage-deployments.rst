@@ -4,8 +4,14 @@ Manage Deployments
 
 After you :doc:`deploy a Bento on BentoCloud </guides/deployment>`, you can easily manage them using the BentoML CLI or API. Available operations include viewing, updating, applying, terminating, and deleting Deployments.
 
-Get
----
+View
+----
+
+To list all Deployments in your BentoCloud account:
+
+.. code-block:: bash
+
+    bentoml deployment list
 
 To retrieve details about a specific Deployment:
 
@@ -16,6 +22,12 @@ To retrieve details about a specific Deployment:
     .. code-block:: bash
 
       bentoml deployment get <deployment-name>
+
+      # To output the details in JSON
+      bentoml deployment get <deployment-name> -o json
+
+      # To output the details in YAML (Default)
+      bentoml deployment get <deployment-name> -o yaml
 
   .. tab-item:: Python API
 

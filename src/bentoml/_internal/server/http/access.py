@@ -4,6 +4,7 @@ import logging
 from contextvars import ContextVar
 from timeit import default_timer
 from typing import TYPE_CHECKING
+from typing import Sequence
 
 if TYPE_CHECKING:
     from ... import external_typing as ext
@@ -41,8 +42,6 @@ class AccessLogMiddleware:
     and receive callables to generate the BentoML access log.
     """
 
-    EXCLUDE_PATHS = ("/metrics", "/healthz", "/livez", "/readyz")
-
     def __init__(
         self,
         app: ext.ASGIApp,
@@ -50,6 +49,7 @@ class AccessLogMiddleware:
         has_request_content_type: bool = False,
         has_response_content_length: bool = False,
         has_response_content_type: bool = False,
+        skip_paths: Sequence[str] = (),
     ) -> None:
         self.app = app
         self.has_request_content_length = has_request_content_length
@@ -57,6 +57,7 @@ class AccessLogMiddleware:
         self.has_response_content_length = has_response_content_length
         self.has_response_content_type = has_response_content_type
         self.logger = logging.getLogger("bentoml.access")
+        self.skip_paths = skip_paths
 
     async def __call__(
         self,
@@ -73,7 +74,7 @@ class AccessLogMiddleware:
         scheme = scope["scheme"]
         method = scope["method"]
         path = scope["path"]
-        if path.startswith(self.EXCLUDE_PATHS):
+        if path.startswith(tuple(self.skip_paths)):
             await self.app(scope, receive, send)
             return
 

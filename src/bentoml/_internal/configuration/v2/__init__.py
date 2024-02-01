@@ -106,6 +106,7 @@ _SERVICE_CONFIG = {
             "request_content_type": s.Or(bool, None),
             "response_content_length": s.Or(bool, None),
             "response_content_type": s.Or(bool, None),
+            "skip_paths": [str],
             "format": {
                 "trace_id": str,
                 "span_id": str,

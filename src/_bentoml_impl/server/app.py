@@ -268,6 +268,7 @@ class ServiceAppFactory(BaseAppFactory):
                     has_request_content_type=access_log_config.request_content_type.get(),
                     has_response_content_length=access_log_config.response_content_length.get(),
                     has_response_content_type=access_log_config.response_content_type.get(),
+                    skip_paths=access_log_config.skip_paths.get(),
                 )
             )
 

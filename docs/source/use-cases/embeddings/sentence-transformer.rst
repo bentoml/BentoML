@@ -1,10 +1,10 @@
-===================
-Sentence embeddings
-===================
+====================
+Sentence Transformer
+====================
 
 In natural language processing (NLP), embeddings enable computers to understand the underlying semantics of language by transforming words, phrases, or even documents into numerical vectors. It covers a variety of use cases, from recommending products based on textual descriptions to translating languages and identifying relevant images through semantic understanding.
 
-This document demonstrates how to build a sentence embedding application using BentoML. It uses the `all-MiniLM-L6-v2 <https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2>`_ model, a specific kind of language model developed for generating embeddings. Due to its smaller size, all-MiniLM-L6-v2 is efficient in terms of computational resources and speed, making it an ideal choice for embedding generation in environments with limited resources.
+This document demonstrates how to build a sentence embedding application Sentence Transformer using BentoML. It uses the `all-MiniLM-L6-v2 <https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2>`_ model, a specific kind of language model developed for generating embeddings. Due to its smaller size, all-MiniLM-L6-v2 is efficient in terms of computational resources and speed, making it an ideal choice for embedding generation in environments with limited resources.
 
 Prerequisites
 -------------

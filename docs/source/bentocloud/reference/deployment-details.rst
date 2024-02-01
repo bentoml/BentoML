@@ -5,8 +5,6 @@ Deployment details
 Deployment details refer to the properties of a Bento Deployment, such as its metadata, status, monitoring metrics, and revision records.
 You set some of these properties when you create the Deployment, and you also have the option to edit some of them as needed after creation.
 
-For more information on how to view these properties, see :doc:`/bentocloud/how-tos/view-deployment-details`.
-
 Overview
 --------
 

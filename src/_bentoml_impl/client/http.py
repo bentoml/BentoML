@@ -42,6 +42,10 @@ logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
 
 
+def is_http_url(url: str) -> bool:
+    return urlparse(url).scheme in {"http", "https"}
+
+
 @attr.define
 class HTTPClient(AbstractClient, t.Generic[C]):
     client_cls: t.ClassVar[type[BaseClient]]
@@ -257,6 +261,8 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 value = [value]
 
             for v in value:
+                if isinstance(v, str) and not is_http_url(v):
+                    v = pathlib.Path(v)
                 if is_image_type(type(v)):
                     files.append(
                         (

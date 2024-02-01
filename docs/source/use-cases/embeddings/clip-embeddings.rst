@@ -16,14 +16,18 @@ Prerequisites
 Install dependencies
 --------------------
 
+Clone the project repository and install all the dependencies.
+
 .. code-block:: bash
 
-    pip install torch huggingface_hub transformers numpy Pillow "bentoml>=1.2.0a0"
+    git clone https://github.com/bentoml/BentoClip.git
+    cd BentoClip
+    pip install -r requirements.txt
 
 Create a BentoML Service
 ------------------------
 
-Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to wrap the capabilities of the CLIP model, making them accessible and easy to use in a wide range of applications. Here is an example file:
+Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to wrap the capabilities of the CLIP model, making them accessible and easy to use in a wide range of applications. Here is an example file in the project:
 
 .. code-block:: python
     :caption: `service.py`
@@ -42,7 +46,7 @@ Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to w
             "memory" : "4Gi"
         }
     )
-    class CLIPService:
+    class CLIP:
 
         def __init__(self) -> None:
             import torch
@@ -111,13 +115,14 @@ Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to w
             return exp_scores / np.sum(exp_scores, axis=-1, keepdims=True)
 
 
+
     if __name__ == "__main__":
-        CLIPService.serve_http()
+        CLIP.serve_http()
 
 Here is a breakdown of the Service code:
 
-1. The script uses the ``@bentoml.service`` decorator to annotate the ``CLIPService`` class as a BentoML Service. You can set more configurations for the Service as needed with the decorator.
-2. In the ``__init__`` method, the CLIP model and processor are loaded based on the specified ``MODEL_ID``. The model is transferred to a GPU if available, otherwise, it uses the CPU. The ``logit_scale`` is set to the model’s logit scale or a default value if not available.
+1. The script uses the ``@bentoml.service`` decorator to annotate the ``CLIP`` class as a BentoML Service. You can set more configurations for the Service as needed with the decorator.
+2. In the ``__init__`` method, the CLIP model and processor are loaded based on the specified ``MODEL_ID``. The model is transferred to a GPU if available, otherwise, it uses the CPU. The ``logit_scale`` is set to the model's logit scale or a default value if not available.
 3. The Service defines the following three API endpoints:
 
    - ``encode_image``: Takes a list of images and generates 512-dimensional embeddings for them.
@@ -138,10 +143,9 @@ Run ``bentoml serve`` in your project directory to start the Service.
 
 .. code-block:: bash
 
-    $ bentoml serve service:CLIPService
+    $ bentoml serve service:CLIP
 
-    2024-01-08T09:07:28+0000 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service:CLIPService" can be accessed at http://localhost:3000/metrics.
-    2024-01-08T09:07:28+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:CLIPService" listening on http://localhost:3000 (Press CTRL+C to quit)
+    2024-01-08T09:07:28+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:CLIP" listening on http://localhost:3000 (Press CTRL+C to quit)
     Model clip loaded device: cuda
 
 The server is active at `http://localhost:3000 <http://localhost:3000>`_. You can interact with it in different ways.
@@ -191,19 +195,19 @@ Deploy to production
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability.
 
-First, specify a configuration YAML file (``bentofile.yaml``) as below to define the build options for your application. It is used for packaging your application into a Bento.
+First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project:
 
 .. code-block:: yaml
     :caption: `bentofile.yaml`
 
-    service: "service:CLIPService"
+    service: "service:CLIP"
     labels:
       owner: bentoml-team
       project: gallery
     include:
     - "*.py"
     python:
-      requirements_txt: "./requirements.txt" # Put the installed dependencies into a separate requirements.txt file
+      requirements_txt: "./requirements.txt"
 
 Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud.
 
@@ -215,4 +219,4 @@ Once the application is up and running on BentoCloud, you can access it via the 
 
 .. note::
 
-   Alternatively, you can use BentoML to generated an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.
+   Alternatively, you can use BentoML to generate an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.

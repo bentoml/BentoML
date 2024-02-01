@@ -15,12 +15,6 @@ Get started with your BentoCloud journey by understanding the platform and deplo
 
         An overview of the BentoCloud platform.
 
-    .. grid-item-card:: Quickstart
-        :link: quickstart
-        :link-type: doc
-
-        Deploy a text summarization application on BentoCloud.
-
     .. grid-item-card:: BYOC
         :link: byoc
         :link-type: doc
@@ -31,5 +25,4 @@ Get started with your BentoCloud journey by understanding the platform and deplo
    :hidden:
 
    understand-bentocloud
-   quickstart
    byoc

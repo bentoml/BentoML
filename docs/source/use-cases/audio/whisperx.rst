@@ -18,15 +18,18 @@ Prerequisites
 Install dependencies
 --------------------
 
+Clone the project repository and install all the dependencies.
+
 .. code-block:: bash
 
-    pip install "bentoml>=1.2.0a3"
-    pip install git+https://github.com/m-bain/whisperx.git
+    git clone https://github.com/bentoml/BentoWhisperX.git
+    cd BentoWhisperX
+    pip install -r requirements.txt
 
 Create a BentoML Service
 ------------------------
 
-Create a :doc:`BentoML Service </guides/services>` to define the serving logic of this project. Here is an example:
+Create a :doc:`BentoML Service </guides/services>` to define the serving logic of this project. Here is an example file in the project:
 
 .. code-block:: python
     :caption: `service.py`
@@ -37,7 +40,6 @@ Create a :doc:`BentoML Service </guides/services>` to define the serving logic o
 
     from pathlib import Path
 
-    # Specify the language for recognition
     LANGUAGE_CODE = "en"
 
 
@@ -48,7 +50,7 @@ Create a :doc:`BentoML Service </guides/services>` to define the serving logic o
             "memory": "8Gi",
         },
     )
-    class BentoWhisperX:
+    class WhisperX:
         """
         This class is inspired by the implementation shown in the whisperX project.
         Source: https://github.com/m-bain/whisperX
@@ -74,7 +76,7 @@ Create a :doc:`BentoML Service </guides/services>` to define the serving logic o
             result = whisperx.align(result["segments"], self.model_a, self.metadata, audio, self.device, return_char_alignments=False)
 
             return result
-
+        
         @bentoml.api
         def diarize(self, audio_file: Path) -> t.Dict:
             import whisperx
@@ -90,7 +92,7 @@ Create a :doc:`BentoML Service </guides/services>` to define the serving logic o
 
 A breakdown of the Service code:
 
-* The ``@bentoml.service`` decorator is used to define the ``BentoWhisperX`` class as a BentoML Service, specifying additional configurations like timeout and resource allocations (GPU and memory).
+* The ``@bentoml.service`` decorator is used to define the ``WhisperX`` class as a BentoML Service, specifying additional configurations like timeout and resource allocations (GPU and memory).
 * During initialization, this Service does the following:
 
   - Loads the Whisper model with a specific language code, device, and compute type.
@@ -112,9 +114,9 @@ Run ``bentoml serve`` to start the Service.
 
 .. code-block:: bash
 
-    $ bentoml serve service:BentoWhisperX
+    $ bentoml serve service:WhisperX
 
-    2024-01-22T02:29:10+0000 [WARNING] [cli] Converting 'BentoWhisperX' to lowercase: 'bentowhisperx'.
+    2024-01-22T02:29:10+0000 [WARNING] [cli] Converting 'WhisperX' to lowercase: 'whisperx'.
     2024-01-22T02:29:11+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:BentoWhisperX" listening on http://localhost:3000 (Press CTRL+C to quit)
 
 The server is active at `http://localhost:3000 <http://localhost:3000>`_. You can interact with its two endpoints (``transcribe`` and ``diarize``) in different ways.
@@ -162,19 +164,19 @@ Deploy to production
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability.
 
-First, specify a configuration YAML file (``bentofile.yaml``) as below to define the build options for your application. It is used for packaging your application into a Bento.
+First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project directory:
 
 .. code-block:: yaml
     :caption: `bentofile.yaml`
 
-    service: "service:BentoWhisperX"
+    service: "service:WhisperX"
     labels:
       owner: bentoml-team
       project: gallery
     include:
       - "*.py"
     python:
-      requirements_txt: "./requirements.txt" # Put the installed dependencies into a separate requirements.txt file
+      requirements_txt: "./requirements.txt"
     docker:
       system_packages:
         - ffmpeg
@@ -194,4 +196,4 @@ Once the application is up and running on BentoCloud, you can access it via the 
 
 .. note::
 
-   Alternatively, you can use BentoML to generated an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.
+   Alternatively, you can use BentoML to generate an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.

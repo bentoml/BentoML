@@ -14,17 +14,25 @@ Prerequisites
 Install dependencies
 --------------------
 
+Clone the project repository and install all the dependencies.
+
 .. code-block:: bash
 
-    pip install torch transformers Pillow "bentoml>=1.2.0a0"
+    git clone https://github.com/bentoml/BentoBlip.git
+    cd BentoBlip
+    pip install -r requirements.txt
 
 Create a BentoML Service
 ------------------------
 
-Define a :doc:`BentoML Service </guides/services>` named ``BlipImageCaptioning`` in a ``service.py`` file as below. The BLIP model (``Salesforce/blip-image-captioning-large``) is capable of generating captions for given images, optionally using additional text input for context. You can choose another model based on your need.
+Define a :doc:`BentoML Service </guides/services>` to customize the serving logic. The example ``service.py`` file in the project uses the BLIP model ``Salesforce/blip-image-captioning-large``, which is capable of generating captions for given images, optionally using additional text input for context. You can choose another model based on your need.
 
 .. code-block:: python
     :caption: `service.py`
+
+    from __future__ import annotations
+
+    import typing as t
 
     import bentoml
     from PIL.Image import Image
@@ -36,8 +44,8 @@ Define a :doc:`BentoML Service </guides/services>` named ``BlipImageCaptioning``
             "memory" : "4Gi"
         }
     )
-    class BlipImageCaptioning:
-
+    class BlipImageCaptioning:    
+        
         def __init__(self) -> None:
             import torch
             from transformers import BlipProcessor, BlipForConditionalGeneration
@@ -45,9 +53,9 @@ Define a :doc:`BentoML Service </guides/services>` named ``BlipImageCaptioning``
             self.model = BlipForConditionalGeneration.from_pretrained(MODEL_ID).to(self.device)
             self.processor = BlipProcessor.from_pretrained(MODEL_ID)
             print("Model blip loaded", "device:", self.device)
-
+        
         @bentoml.api
-        async def generate(self, img: Image, txt: str| None = None) -> str:
+        async def generate(self, img: Image, txt: t.Optional[str] = None) -> str:
             if txt:
                 inputs = self.processor(img, txt, return_tensors="pt").to(self.device)
             else:
@@ -71,7 +79,6 @@ Run ``bentoml serve`` in your project directory to start the Service.
 
     $ bentoml serve service:BlipImageCaptioning
 
-    2024-01-02T08:32:34+0000 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service:BlipImageCaptioning" can be accessed at http://localhost:3000/metrics.
     2024-01-02T08:32:35+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:BlipImageCaptioning" listening on http://localhost:3000 (Press CTRL+C to quit)
     Model blip loaded device: cuda
 
@@ -118,7 +125,7 @@ Deploy to production
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability.
 
-First, specify a configuration YAML file (``bentofile.yaml``) as below to define the build options for your application. It is used for packaging your application into a Bento.
+First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project:
 
 .. code-block:: yaml
     :caption: `bentofile.yaml`
@@ -131,10 +138,7 @@ First, specify a configuration YAML file (``bentofile.yaml``) as below to define
     - "*.py"
     - "demo.jpeg"
     python:
-      packages:
-        - torch
-        - transformers
-        - Pillow
+      requirements_txt: "./requirements.txt"
 
 Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud.
 
@@ -146,4 +150,4 @@ Once the application is up and running on BentoCloud, you can access it via the 
 
 .. note::
 
-   Alternatively, you can use BentoML to generated an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.
+   Alternatively, you can use BentoML to generate an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.

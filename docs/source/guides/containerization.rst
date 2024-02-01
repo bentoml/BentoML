@@ -12,7 +12,7 @@ Make sure you have `installed Docker <https://docs.docker.com/engine/install/>`_
 Build a Bento
 -------------
 
-The first step is to package your entire project into the standard distribution format in BentoML, or a Bento. To build a Bento, you need a configuration YAML file (by convention, it's ``bentofile.yaml``). This file defines the build options, such as dependencies and Docker image settings. When a Bento is being created, BentoML creates a Dockerfile within the Bento automatically, which can be used to containerize the Bento later.
+The first step is to package your entire project into the standard distribution format in BentoML, or a Bento. To build a Bento, you need a configuration YAML file (by convention, it's ``bentofile.yaml``). This file defines the build options, such as dependencies and Docker image settings. When a Bento is being created, BentoML creates a Dockerfile within the Bento automatically.
 
 The example file below lists the basic information required to build a Bento for :doc:`/get-started/quickstart`.
 

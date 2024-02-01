@@ -53,7 +53,7 @@ Here is an example:
             "cpu": "1",
             "memory": "500Mi",
             "gpu": 4,
-            "gpu_type": "nvidia-tesla-a100" 
+            "gpu_type": "nvidia-tesla-a100"
         }
     )
     class MyService:
@@ -69,7 +69,7 @@ Here is an example:
     Under the hood, there are one or multiple workers within a BentoML Service. Workers refer to the processes that actually run the code logic within the Service. If a Service has multiple workers, it can process multiple requests concurrently. Using multiple workers (as separate processes) allows the Service to handle multiple requests concurrently without being limited by Python's Global Interpreter Lock (GIL).
 
     Note that configuring too many workers in a BentoML Service can lead to inefficient memory utilization, as each worker independently loads model weights into memory. This can result in high memory consumption, particularly with large models. Additionally, in scenarios where model inference is performed outside the Python process and is thus not limited by the GIL, having too many workers may not significantly improve throughput or resource utilization.
-    
+
 To specify the number of workers (for example, ``3``) within a Service:
 
 .. code-block:: python
@@ -130,31 +130,31 @@ Following the `labeling convention <https://prometheus.io/docs/practices/naming/
 Every BentoML Service will generate three types of metrics:
 
 1. ``request_duration_seconds``: This is a `Histogram <https://prometheus.io/docs/concepts/metric_types/#histogram>`_ that measures the HTTP request duration in seconds. You can customize the `duration bucket size <https://prometheus.io/docs/practices/histograms/#count-and-sum-of-observations>`_ for this metric in the following two ways.
-    
+
    - Manually set the bucket steps for the histogram.
-        
+
      .. code-block:: python
-        
+
          @bentoml.service(metrics={"duration": {"buckets": [0.1, 0.2, 0.5, 1, 2, 5, 10]}})
          class MyService:
             # Service implementation
-        
+
    - Automatically generate exponential buckets with any given ``min`` (the lower bound of the smallest bucket in the histogram), ``max`` (the upper bound of the largest bucket in the histogram) and ``factor`` (determine the exponential growth rate of the bucket sizes. Each subsequent bucket boundary is calculated by multiplying the previous boundary by the factor).
-        
+
      .. code-block:: python
-        
+
          @bentoml.service(metrics={"duration": {"min": 0.1, "max": 10, "factor": 1.2}})
          class MyService:
             # Service implementation
-        
-    
+
+
      .. note::
-    
+
         - ``duration.min``, ``duration.max`` and ``duration.factor`` are mutually exclusive with ``duration.buckets``.
         - ``duration.factor`` must be greater than 1.
-    
+
      By default, BentoML uses the default `duration buckets <https://github.com/prometheus/client_python/blob/f17a8361ad3ed5bc47f193ac03b00911120a8d81/prometheus_client/metrics.py#L544>`_ provided by Prometheus.
-    
+
 2. ``request_total``: A `Counter <https://prometheus.io/docs/concepts/metric_types/#counter>`_ that measures the total number of HTTP requests.
 3. ``request_in_progress``: A `Gauge <https://prometheus.io/docs/concepts/metric_types/#gauge>`_ that measures the number of HTTP requests in progress.
 

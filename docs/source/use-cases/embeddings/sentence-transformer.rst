@@ -16,22 +16,42 @@ Prerequisites
 Install dependencies
 --------------------
 
+Clone the project repository and install all the dependencies.
+
 .. code-block:: bash
 
-    pip install torch transformers "bentoml>=1.2.0a0"
+    git clone https://github.com/bentoml/BentoSentenceTransformers.git
+    cd BentoSentenceTransformers
+    pip install -r requirements.txt
 
 Create a BentoML Service
 ------------------------
 
-Define a :doc:`BentoML Service </guides/services>` to use a model (``sentence-transformers/all-MiniLM-L6-v2`` in this example) for generating sentence embeddings. You can do this by creating a ``service.py`` file as below.
+Define a :doc:`BentoML Service </guides/services>` to use a model for generating sentence embeddings. The example ``service.py`` file in this project uses ``sentence-transformers/all-MiniLM-L6-v2``:
 
 .. code-block:: python
     :caption: `service.py`
+
+    from __future__ import annotations
+
+    import typing as t
 
     import numpy as np
     import torch
     import bentoml
     from sentence_transformers import SentenceTransformer, models
+
+
+    SAMPLE_SENTENCES = [
+        "The sun dips below the horizon, painting the sky orange.",
+        "A gentle breeze whispers through the autumn leaves.",
+        "The moon casts a silver glow on the tranquil lake.",
+        "A solitary lighthouse stands guard on the rocky shore.",
+        "The city awakens as morning light filters through the streets.",
+        "Stars twinkle in the velvety blanket of the night sky.",
+        "The aroma of fresh coffee fills the cozy kitchen.",
+        "A curious kitten pounces on a fluttering butterfly."
+    ]
 
     MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
 
@@ -45,7 +65,7 @@ Define a :doc:`BentoML Service </guides/services>` to use a model (``sentence-tr
 
             # Load model and tokenizer
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
-            # Define layers
+            # define layers
             first_layer = SentenceTransformer(MODEL_ID)
             pooling_model = models.Pooling(first_layer.get_sentence_embedding_dimension())
             self.model = SentenceTransformer(modules=[first_layer, pooling_model])
@@ -55,8 +75,9 @@ Define a :doc:`BentoML Service </guides/services>` to use a model (``sentence-tr
         @bentoml.api(batchable=True)
         def encode(
             self,
-            sentences: list[str],
+            sentences: t.List[str] = SAMPLE_SENTENCES,
         ) -> np.ndarray:
+            print("encoding sentences:", len(sentences))
             # Tokenize sentences
             sentence_embeddings= self.model.encode(sentences)
             return sentence_embeddings
@@ -78,7 +99,6 @@ Run ``bentoml serve`` in your project directory to start the Service.
     $ bentoml serve service:SentenceEmbedding
 
     2023-12-27T07:49:25+0000 [WARNING] [cli] Converting 'all-MiniLM-L6-v2' to lowercase: 'all-minilm-l6-v2'.
-    2023-12-27T07:49:26+0000 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service:SentenceEmbedding" can be accessed at http://localhost:3000/metrics.
     2023-12-27T07:49:26+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:SentenceEmbedding" listening on http://localhost:3000 (Press CTRL+C to quit)
     Model loaded device: cuda
 
@@ -138,7 +158,7 @@ Deploy to production
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability.
 
-First, specify a configuration YAML file (``bentofile.yaml``) as below to define the build options for your application. It is used for packaging your application into a Bento.
+First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project:
 
 .. code-block:: yaml
     :caption: `bentofile.yaml`
@@ -150,9 +170,10 @@ First, specify a configuration YAML file (``bentofile.yaml``) as below to define
     include:
     - "*.py"
     python:
-      packages:
-        - torch
-        - transformers
+      requirements_txt: "./requirements.txt"
+    docker:
+      env:
+        NORMALIZE : "True"
 
 Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud.
 
@@ -164,4 +185,4 @@ Once the application is up and running on BentoCloud, you can access it via the 
 
 .. note::
 
-   Alternatively, you can use BentoML to generated an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.
+   Alternatively, you can use BentoML to generate an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.

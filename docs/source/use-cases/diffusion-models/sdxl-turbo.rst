@@ -17,14 +17,18 @@ Prerequisites
 Install dependencies
 --------------------
 
+Clone the project repository and install all the dependencies.
+
 .. code-block:: bash
 
-    pip install "bentoml>=1.2.0a0" torch transformers diffusers accelerate xformers Pillow
+    git clone https://github.com/bentoml/BentoSDXLTurbo.git
+    cd BentoSDXLTurbo
+    pip install -r requirements.txt
 
 Create a BentoML Service
 ------------------------
 
-Create a BentoML :doc:`Service </guides/services>` in a ``service.py`` file to define the serving logic of the model.
+Create a BentoML :doc:`Service </guides/services>` in a ``service.py`` file to define the serving logic of the model. You can use this example file in the cloned project:
 
 .. code-block:: python
     :caption: `service.py`
@@ -39,9 +43,14 @@ Create a BentoML :doc:`Service </guides/services>` in a ``service.py`` file to d
     @bentoml.service(
         traffic={"timeout": 300},
         workers=1,
-        resources={"gpu": 1, "memory": "12Gi"},
+        resources={
+            "gpu": 1,
+            "gpu_type": "nvidia-l4",
+            # You can also specify GPU memory requirement:
+            # "memory": "16Gi",
+        },
     )
-    class SDXLTurboService:
+    class SDXLTurbo:
         def __init__(self) -> None:
             from diffusers import AutoPipelineForText2Image
             import torch
@@ -67,7 +76,7 @@ Create a BentoML :doc:`Service </guides/services>` in a ``service.py`` file to d
             ).images[0]
             return image
 
-In the Service code, the ``@bentoml.service`` decorator is used to define the ``SDXLTurboService`` class as a BentoML Service. It loads the pre-trained model (``MODEL_ID``) using the ``torch.float16`` data type. The model pipeline (``self.pipe``) is moved to a CUDA-enabled GPU device for efficient computation.
+In the Service code, the ``@bentoml.service`` decorator is used to define the ``SDXLTurbo`` class as a BentoML Service. It loads the pre-trained model (``MODEL_ID``) using the ``torch.float16`` data type. The model pipeline (``self.pipe``) is moved to a CUDA-enabled GPU device for efficient computation.
 
 The ``txt2img`` method is an API endpoint that takes a text prompt, number of inference steps, and a guidance scale as inputs. It uses the model pipeline to generate an image based on the given prompt and parameters.
 
@@ -79,10 +88,10 @@ Run ``bentoml serve`` to start the BentoML server.
 
 .. code-block:: bash
 
-    $ bentoml serve service:SDXLTurboService
+    $ bentoml serve service:SDXLTurbo
 
-    2024-01-19T07:20:29+0000 [WARNING] [cli] Converting 'SDXLTurboService' to lowercase: 'sdxlturboservice'.
-    2024-01-19T07:20:29+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:SDXLTurboService" listening on http://localhost:3000 (Press CTRL+C to quit)
+    2024-01-19T07:20:29+0000 [WARNING] [cli] Converting 'SDXLTurbo' to lowercase: 'sdxlturbo'.
+    2024-01-19T07:20:29+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:SDXLTurbo" listening on http://localhost:3000 (Press CTRL+C to quit)
 
 The server is active at `http://localhost:3000 <http://localhost:3000>`_. You can interact with it in different ways.
 
@@ -133,19 +142,19 @@ Deploy to production
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability.
 
-First, specify a configuration YAML file (``bentofile.yaml``) as below to define the build options for your application. It is used for packaging your application into a Bento.
+First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project:
 
 .. code-block:: yaml
     :caption: `bentofile.yaml`
 
-    service: "service:SDXLTurboService"
+    service: "service:SDXLTurbo"
     labels:
       owner: bentoml-team
       project: gallery
     include:
     - "*.py"
     python:
-      requirements_txt: "./requirements.txt" # Put the installed dependencies into a separate requirements.txt file
+      requirements_txt: "./requirements.txt"
 
 Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud.
 
@@ -157,4 +166,4 @@ Once the application is up and running on BentoCloud, you can access it via the 
 
 .. note::
 
-   Alternatively, you can use BentoML to generated an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.
+   Alternatively, you can use BentoML to generate an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.

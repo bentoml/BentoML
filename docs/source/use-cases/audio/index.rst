@@ -15,9 +15,16 @@ This section provides example projects for audio ML tasks.
 
         Deploy a speech recognition application with BentoML.
 
+    .. grid-item-card:: :doc:`/use-cases/audio/xtts`
+        :link: /use-cases/audio/xtts
+        :link-type: doc
+
+        Deploy a text-to-speech application with BentoML.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
     :hidden:
 
     whisperx
+    xtts

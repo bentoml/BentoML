@@ -1,3 +1,4 @@
+==================
 Manage Deployments
 ==================
 
@@ -47,7 +48,7 @@ To update specific parameters of a single-Service Deployment:
 
       bentoml.deployment.update(
         name = "deployment-1",
-        scaling_min=1, 
+        scaling_min=1,
         scaling_max=3
         # No change to unspecified parameters
       )
@@ -168,5 +169,5 @@ You can delete a Deployment if you no longer need it. To delete a Deployment:
       bentoml.deployment.delete(name="deployment-1")
 
 .. warning::
-    
+
     Exercise caution when deleting a Deployment. This action is irreversible.

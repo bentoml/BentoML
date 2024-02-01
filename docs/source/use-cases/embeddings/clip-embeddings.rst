@@ -47,7 +47,7 @@ Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to w
         }
     )
     class CLIP:
-        
+
         def __init__(self) -> None:
             import torch
             from transformers import CLIPModel, CLIPProcessor
@@ -65,7 +65,7 @@ Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to w
             inputs = self.processor(images=items, return_tensors="pt", padding=True).to(self.device)
             image_embeddings = self.model.get_image_features(**inputs)
             return image_embeddings.cpu().detach().numpy()
-        
+
 
         @bentoml.api(batchable=True)
         async def encode_text(self, items: List[str]) -> np.ndarray:
@@ -75,7 +75,7 @@ Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to w
             inputs = self.processor(text=items, return_tensors="pt", padding=True).to(self.device)
             text_embeddings = self.model.get_text_features(**inputs)
             return text_embeddings.cpu().detach().numpy()
-        
+
         @bentoml.api
         async def rank(self, queries: List[Image], candidates : List[str] = Field(["picture of a dog", "picture of a cat"], description="list of description candidates")) -> Dict[str, List[List[float]]]:
             '''
@@ -94,7 +94,7 @@ Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to w
                 "probabilities": prob_scores.tolist(),
                 "cosine_similarities" : cosine_similarities.tolist(),
             }
-            
+
         @staticmethod
         def cosine_similarity(query_embeds, candidates_embeds):
             # Normalize each embedding to a unit vector
@@ -105,7 +105,7 @@ Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to w
             cosine_similarities = np.matmul(query_embeds, candidates_embeds.T)
 
             return cosine_similarities
-        
+
         @staticmethod
         def softmax(scores):
             # Compute softmax scores (probabilities)
@@ -114,7 +114,7 @@ Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to w
             )  # Subtract max for numerical stability
             return exp_scores / np.sum(exp_scores, axis=-1, keepdims=True)
 
-        
+
 
     if __name__ == "__main__":
         CLIP.serve_http()

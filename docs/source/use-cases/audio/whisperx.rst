@@ -76,7 +76,7 @@ Create a :doc:`BentoML Service </guides/services>` to define the serving logic o
             result = whisperx.align(result["segments"], self.model_a, self.metadata, audio, self.device, return_char_alignments=False)
 
             return result
-        
+
         @bentoml.api
         def diarize(self, audio_file: Path) -> t.Dict:
             import whisperx

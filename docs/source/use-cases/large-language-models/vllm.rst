@@ -67,7 +67,7 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
                 model='meta-llama/Llama-2-7b-chat-hf',
                 max_model_len=MAX_TOKENS
             )
-            
+
             self.engine = AsyncLLMEngine.from_engine_args(ENGINE_ARGS)
             self.request_id = 0
 

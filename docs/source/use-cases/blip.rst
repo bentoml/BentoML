@@ -44,8 +44,8 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
             "memory" : "4Gi"
         }
     )
-    class BlipImageCaptioning:    
-        
+    class BlipImageCaptioning:
+
         def __init__(self) -> None:
             import torch
             from transformers import BlipProcessor, BlipForConditionalGeneration
@@ -53,7 +53,7 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
             self.model = BlipForConditionalGeneration.from_pretrained(MODEL_ID).to(self.device)
             self.processor = BlipProcessor.from_pretrained(MODEL_ID)
             print("Model blip loaded", "device:", self.device)
-        
+
         @bentoml.api
         async def generate(self, img: Image, txt: t.Optional[str] = None) -> str:
             if txt:

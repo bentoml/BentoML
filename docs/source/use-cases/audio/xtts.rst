@@ -60,7 +60,7 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
     class XTTS:
         def __init__(self) -> None:
             self.tts = TTS(MODEL_ID, gpu=torch.cuda.is_available())
-        
+
         @bentoml.api
         def synthesize(
                 self,

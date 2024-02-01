@@ -39,6 +39,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Use BentoML clients to interact with your Service.
 
+    .. grid-item-card:: :doc:`/guides/configurations`
+        :link: /guides/configurations
+        :link-type: doc
+
+        Customize the runtime behaviors of your Service.
+
 .. toctree::
     :hidden:
 
@@ -47,3 +53,4 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     deployment
     containerization
     clients
+    configurations

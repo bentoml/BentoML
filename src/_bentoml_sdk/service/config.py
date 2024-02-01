@@ -64,6 +64,7 @@ class MetricSchema(TypedDict, total=False):
 
 class AccessLoggingSchema(TypedDict, total=False):
     enabled: bool
+    skip_paths: List[str]
     request_content_length: bool
     request_content_type: bool
     response_content_length: bool

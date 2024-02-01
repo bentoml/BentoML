@@ -29,6 +29,7 @@ services:
       request_content_type: true
       response_content_length: true
       response_content_type: true
+      skip_paths: ['/metrics', '/healthz', '/livez', '/readyz']
       format:
         trace_id: 032x
         span_id: 016x

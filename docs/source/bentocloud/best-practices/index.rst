@@ -15,14 +15,7 @@ This section contains a list of best practices for BentoCloud usage.
 
         Optimize your overall costs on BentoCloud by applying best practices.
 
-    .. grid-item-card:: Bento building and deployment
-        :link: bento-building-and-deployment
-        :link-type: doc
-
-        Accelerate your Bento application delivery lifecycle.
-
 .. toctree::
    :hidden:
 
    cost-optimization
-   bento-building-and-deployment

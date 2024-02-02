@@ -1,6 +1,6 @@
-=============
-How-to guides
-=============
+======
+Guides
+======
 
 How-to guides take the reader through the steps required to solve a problem.
 
@@ -8,9 +8,9 @@ They are recipes, directions to achieve a specific end result, and are wholly **
 
 * :doc:`manage-deployments`
 * :doc:`manage-access-token`
-* :doc:`manage-models-and-bentos`
 * :doc:`manage-users`
 * :doc:`manage-cost-and-payment-info`
+* :doc:`byoc`
 
 .. toctree::
    :hidden:
@@ -20,3 +20,4 @@ They are recipes, directions to achieve a specific end result, and are wholly **
    manage-models-and-bentos
    manage-users
    manage-cost-and-payment-info
+   byoc

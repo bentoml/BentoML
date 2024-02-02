@@ -77,11 +77,11 @@ For example, you can load the model into a Transformers pipeline as below for th
     @bentoml.service
     class Summarization:
         model_ref = bentoml.models.get("summarization-model")
-        
+
         def __init__(self) -> None:
             # Load model into pipeline
             self.pipeline = pipeline('summarization', self.model_ref.path)
-        
+
         @bentoml.api
         ...
 
@@ -104,7 +104,7 @@ You can perform the following operations on models by using the BentoML CLI.
         .. code-block:: bash
 
             $ bentoml models list
-            
+
             Tag                                   Module  Size      Creation Time
             summarization-model:btwtmvu5kwqc67i3          1.14 GiB  2023-12-18 03:25:10
 
@@ -115,7 +115,7 @@ You can perform the following operations on models by using the BentoML CLI.
         .. code-block:: bash
 
             $ bentoml models get summarization-model:latest
-            
+
             name: summarization-model
             version: btwtmvu5kwqc67i3
             module: ''
@@ -140,13 +140,13 @@ You can perform the following operations on models by using the BentoML CLI.
         .. code-block:: bash
 
             $ bentoml models export summarization-model:latest .
-            
+
             Model(tag="summarization-model:btwtmvu5kwqc67i3") exported to ./summarization-model-btwtmvu5kwqc67i3.bentomodel
 
         .. code-block:: bash
 
             $ bentoml models import ./summarization-model-btwtmvu5kwqc67i3.bentomodel
-            
+
             Model(tag="summarization-model:btwtmvu5kwqc67i3") imported
 
         You can export models to and import models from external storage devices, such as AWS S3, GCS, FTP and Dropbox. For example:
@@ -163,13 +163,13 @@ You can perform the following operations on models by using the BentoML CLI.
         .. code-block:: bash
 
             $ bentoml models push summarization-model:latest
-            
+
             Successfully pushed model "summarization-model:btwtmvu5kwqc67i3"                                                                                                                                                                                           │
 
         .. code-block:: bash
 
             $ bentoml models pull summarization-model:latest
-            
+
             Successfully pulled model "summarization-model:btwtmvu5kwqc67i3"
 
     .. tab-item:: Delete
@@ -177,11 +177,11 @@ You can perform the following operations on models by using the BentoML CLI.
         .. code-block:: bash
 
             $ bentoml models delete summarization-model:latest -y
-            
+
             INFO [cli] Model(tag="summarization-model:btwtmvu5kwqc67i3") deleted
 
 .. tip::
-    
+
     Learn more about CLI usage by running ``bentoml models --help``.
 
 Python APIs

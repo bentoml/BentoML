@@ -55,12 +55,12 @@ In a typical ML workflow, you may need to prepare the data for your model, train
 
 The following is the basic workflow of using the BentoML framework.
 
-1. Model registry
-^^^^^^^^^^^^^^^^^
+1. Model registration
+^^^^^^^^^^^^^^^^^^^^^
 
-The first step in using BentoML is to save your model in the BentoML Model Store, a centralized repository for managing all local models. BentoML is compatible with a variety of models, including pre-trained models from Hugging Face or custom models trained on your custom datasets. The Model Store simplifies the process of iterating and evaluating different model versions, providing an efficient way to track and manage your ML assets.
+To get started, you can save your model in the BentoML :doc:`/guides/model-store`, a centralized repository for managing all local models. BentoML is compatible with a variety of models, including pre-trained models from Hugging Face or custom models trained on your custom datasets. The Model Store simplifies the process of iterating and evaluating different model versions, providing an efficient way to track and manage your ML assets.
 
-Note that for simple use cases, you can skip this step and use pre-trained models directly when creating your BentoML Service.
+Note that for simple use cases, you can **skip this step** and use pre-trained models directly when creating your BentoML Service.
 
 2. Service creation
 ^^^^^^^^^^^^^^^^^^^
@@ -72,5 +72,5 @@ You create BentoML :doc:`/guides/services` by defining a ``service.py`` file, wh
 
 Before deploying your AI application, you create a ``bentofile.yaml`` file, detailing all necessary build configurations such as Python dependencies and Docker settings. After that, you can choose either of the following ways to deploy your application.
 
-- With a single command, you deploy your application to BentoCloud. In this approach, your project is automatically packaged into a Bento, the standard distribution format for BentoML Services, uploaded and deployed on BentoCloud. This serverless platform offers scalable and hardware-optimized solutions for running AI applications.
-- You can manually package your project into a Bento and containerize it as a Docker image. This Docker image can then be deployed to any Docker-compatible environment, such as Kubernetes. This method provides more flexibility in deployment and is suitable for integration into your existing container orchestration system.
+- With a single command, you :doc:`deploy your application to BentoCloud </guides/deployment>`. In this approach, your project is automatically packaged into a Bento, the standard distribution format for BentoML Services, uploaded and deployed on BentoCloud. This serverless platform offers scalable and hardware-optimized solutions for running AI applications.
+- You can manually package your project into a Bento and :doc:`containerize it as a Docker image </guides/containerization>`. This Docker image can then be deployed to any Docker-compatible environment, such as Kubernetes. This method provides more flexibility in deployment and is suitable for integration into your existing container orchestration system.

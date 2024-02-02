@@ -19,17 +19,18 @@ Prerequisites
 Install dependencies
 --------------------
 
-Run the following command to install the required dependencies.
+Run the following command to clone the repository and install the required dependencies.
 
 .. code-block:: bash
 
-    pip install bentoml --pre
-    pip install transformers torch
+    git clone https://github.com/bentoml/quickstart.git
+    cd quickstart
+    pip install -r requirements.txt
 
 Create a BentoML Service
 ------------------------
 
-You can define the serving logic of the model in a ``service.py`` file by creating a BentoML Service as below.
+You can define the serving logic of the model in a ``service.py`` file by creating a BentoML Service. Here is the example file in this project:
 
 .. code-block:: python
     :caption: `service.py`
@@ -64,7 +65,7 @@ You can define the serving logic of the model in a ``service.py`` file by creati
 
 In BentoML, a :doc:`Service </guides/services>` is a deployable and scalable unit, defined as a Python class with the ``@bentoml.service`` decorator. It can manage states and their lifecycle, and expose one or multiple APIs accessible through HTTP. Each API within the Service is defined using the ``@bentoml.api`` decorator, specifying it as a Python function.
 
-In the ``Summarization`` class, the Service retrieves a pre-trained model (``sshleifer/distilbart-cnn-12-6``) from the Hugging Face hub and initializes a pipeline for text summarization. The ``summarize`` method serves as the API endpoint. In this example, it accepts a string input with an example provided, processes it through the pipeline, and returns the summarized text.
+In the ``Summarization`` class, the Service retrieves a pre-trained model (``sshleifer/distilbart-cnn-12-6``) from the Hugging Face hub and initializes a pipeline for text summarization. The ``summarize`` method serves as the API endpoint. In this example, it accepts a string input with a sample provided, processes it through the pipeline, and returns the summarized text.
 
 Run ``bentoml serve service:<service_class_name>`` in your project directory to start the BentoML server.
 
@@ -72,8 +73,8 @@ Run ``bentoml serve service:<service_class_name>`` in your project directory to 
 
     $ bentoml serve service:Summarization
 
-    2023-12-18T06:51:51+0000 [INFO] [cli] Prometheus metrics for HTTP BentoServer from "service:Summarization" can be accessed at http://localhost:3000/metrics.
-    2023-12-18T06:51:51+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:Summarization" listening on http://localhost:3000 (Press CTRL+C to quit)
+    2024-02-02T07:16:14+0000 [WARNING] [cli] Converting 'Summarization' to lowercase: 'summarization'.
+    2024-02-02T07:16:15+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:Summarization" listening on http://localhost:3000 (Press CTRL+C to quit)
 
 The server is active at http://localhost:3000. You can interact with it in different ways.
 
@@ -114,4 +115,4 @@ Expected output:
 
     Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly . The event is now being investigated by scientists for potential breaches in the laws of physics . Local authorities considering a town festival to celebrate what is being hailed as 'The Leap of the Century'
 
-Once the Service is ready, you can deploy this BentoML project on BentoCloud or :doc:`create a Docker image </guides/containerization>` for it and ship it anywhere.
+Once the Service is ready, you can deploy this :doc:`BentoML project on BentoCloud </guides/deployment>` or :doc:`create a Docker image </guides/containerization>` for it and ship it anywhere.

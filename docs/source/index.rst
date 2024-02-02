@@ -96,7 +96,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    :caption: BentoCloud
    :hidden:
 
-   bentocloud/getting-started/index
+   bentocloud/get-started
    bentocloud/how-tos/index
    bentocloud/best-practices/index
    bentocloud/reference/index

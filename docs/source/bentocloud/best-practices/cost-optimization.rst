@@ -37,12 +37,6 @@ For seasoned users familiar with advanced use cases of BentoML, consider the fol
   This helps you identify the most cost-effective setup and avoid overpaying or underutilizing resources.
 * **Model parallelism**. Understand how parallelized your model can be. Efficiently parallelized models utilize resources better, reducing the need for more expensive compute power.
   If your model can be highly-parallelized, we recommend you enable :doc:`adaptive batching </guides/batching>` to send inputs to your model.
-* **Distributing tasks on Runners**. BentoML :doc:`Runners </concepts/runner>` are the computation unit that can be executed on remote Python workers
-  and scaled independently. Distributing tasks on Runners allows for more efficient resource usage, ensuring each runner is fully utilized without being overloaded. Specifically, you can do the following:
-
-  * Relocate compute-heavy tasks (for example, model inference and heavy pre-processing) to dedicated Runners.
-  * Allocate different models or stages of a pipeline to separate Runners for better resource management.
-
 * **Adaptive scaling**. Take into account of a wide range of factors when setting your scaling strategies. Specifically, think about:
 
   * **Traffic**. Configure your scaling strategy based on observed and predicted traffic patterns. Dynamically adjusting resources based on demand

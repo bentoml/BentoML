@@ -27,8 +27,8 @@ Enterprise
 
 The Enterprise plan includes all the features offered in the Starter plan. It is tailored for teams that want to use BentoCloud in :doc:`their own cloud or on-premises environment (BYOC) </bentocloud/how-tos/byoc>`, ensuring data security and compliance. If you prefer not to use your own cluster, we can provide a dedicated cloud environment for you. Either way, we take care of managing the infrastructure to ensure a scalable and secure model deployment experience.
 
-Obtain access to BentoCloud
----------------------------
+Access BentoCloud
+-----------------
 
 To gain access to BentoCloud, sign up here:
 
@@ -42,7 +42,8 @@ Once you have your BentoCloud account, do the following to get started:
 1. Install BentoML by running ``pip install bentoml``. See :doc:`/get-started/installation` for details.
 2. Create an :doc:`API token with Developer Operations Access </bentocloud/how-tos/manage-access-token>`.
 3. Log in to BentoCloud with the ``bentoml cloud login`` command, which will be displayed on the BentoCloud console after you create the API token.
-4. Try an `example project and deploy it to BentoCloud <https://github.com/bentoml/quickstart>`_.
+
+Now, you can try an `example project and deploy it to BentoCloud <https://github.com/bentoml/quickstart>`_.
 
 Resources
 ---------

@@ -24,6 +24,7 @@ Run the following command to clone the repository and install the required depen
 .. code-block:: bash
 
     git clone https://github.com/bentoml/quickstart.git
+    cd quickstart
     pip install -r requirements.txt
 
 Create a BentoML Service

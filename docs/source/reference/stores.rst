@@ -1,10 +1,9 @@
-================
-Bento Store APIs
-================
+====================
+Bento and model APIs
+====================
 
-
-Managing Bentos
----------------
+Manage Bentos
+-------------
 
 .. autofunction:: bentoml.list
 .. autofunction:: bentoml.get
@@ -13,9 +12,10 @@ Managing Bentos
 .. autofunction:: bentoml.import_bento
 
 
-Managing Models
----------------
+Manage models
+-------------
 
+.. autofunction:: bentoml.models.create
 .. autofunction:: bentoml.models.list
 .. autofunction:: bentoml.models.get
 .. autofunction:: bentoml.models.delete
@@ -23,8 +23,8 @@ Managing Models
 .. autofunction:: bentoml.models.import_model
 
 
-Working with BentoCloud
------------------------
+Work with BentoCloud
+--------------------
 
 .. autofunction:: bentoml.push
 .. autofunction:: bentoml.pull

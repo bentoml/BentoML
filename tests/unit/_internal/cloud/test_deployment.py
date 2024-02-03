@@ -61,6 +61,8 @@ def dummy_generate_deployment_schema(
     update_schema: UpdateDeploymentSchemaV2,
 ):
     user = UserSchema(name="", email="", first_name="", last_name="")
+    if cluster is None:
+        cluster = "default"
     bento = update_schema.bento.split(":")
     if len(bento) == 2:
         bento_name = bento[0]
@@ -145,7 +147,7 @@ def dummy_generate_deployment_schema(
         status=DeploymentStatus.Running,
         cluster=ClusterSchema(
             uid="",
-            name="default",
+            name=cluster,
             host_cluster_display_name=cluster,
             organization_name="default_organization",
             resource_type=ResourceType.CLUSTER,
@@ -168,7 +170,7 @@ def fixture_rest_client() -> RestApiClient:
         if create_schema.name is None:
             create_schema.name = "empty_name"
         if cluster is None:
-            cluster = "default_display_name"
+            cluster = "default"
         return dummy_generate_deployment_schema(
             create_schema.name, cluster, create_schema
         )
@@ -179,7 +181,7 @@ def fixture_rest_client() -> RestApiClient:
         cluster: str | None = None,
     ):
         if cluster is None:
-            cluster = "default_display_name"
+            cluster = "default"
         return dummy_generate_deployment_schema(name, cluster, update_schema)
 
     def dummy_get_deployment(
@@ -187,7 +189,7 @@ def fixture_rest_client() -> RestApiClient:
         cluster: str | None = None,
     ):
         if cluster is None:
-            cluster = "default_display_name"
+            cluster = "default"
         if name == "test-distributed":
             return dummy_generate_deployment_schema(
                 name,
@@ -245,7 +247,7 @@ def fixture_rest_client() -> RestApiClient:
             ClusterSchema(
                 uid="",
                 name="default",
-                host_cluster_display_name="default_display_name",
+                host_cluster_display_name="default",
                 organization_name="default_organization",
                 resource_type=ResourceType.CLUSTER,
                 labels=[],
@@ -273,7 +275,7 @@ def test_create_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
         )
     )
     # assert expected schema
-    assert deployment.cluster == "default_display_name"
+    assert deployment.cluster == "default"
     assert deployment.name == "empty_name"
     config = deployment.get_config(refetch=False)
     assert config.access_authorization is False
@@ -338,7 +340,7 @@ def test_create_deployment_scailing_only_min(
         )
     )
     # assert expected schema
-    assert deployment.cluster == "default_display_name"
+    assert deployment.cluster == "default"
     assert deployment.name == "empty_name"
     config = deployment.get_config(refetch=False)
     assert config.access_authorization is False
@@ -367,7 +369,7 @@ def test_create_deployment_scailing_only_max(
         )
     )
     # assert expected schema
-    assert deployment.cluster == "default_display_name"
+    assert deployment.cluster == "default"
     assert deployment.name == "empty_name"
     config = deployment.get_config(refetch=False)
     assert config.access_authorization is False
@@ -401,7 +403,7 @@ def test_create_deployment_config_dict(
         )
     )
     # assert expected schema
-    assert deployment.cluster == "default_display_name"
+    assert deployment.cluster == "default"
     assert deployment.name == "empty_name"
     config = deployment.get_config(refetch=False)
     assert config.services == {
@@ -440,7 +442,7 @@ def test_update_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
         )
     )
     # assert expected schema
-    assert deployment.cluster == "default_display_name"
+    assert deployment.cluster == "default"
     assert deployment.get_bento(refetch=False) == "abc:1234"
     assert deployment.name == "test"
     config = deployment.get_config(refetch=False)
@@ -472,7 +474,7 @@ def test_update_deployment_scaling_only_min(
         )
     )
     # assert expected schema
-    assert deployment.cluster == "default_display_name"
+    assert deployment.cluster == "default"
     assert deployment.name == "test"
     config = deployment.get_config(refetch=False)
     assert config.access_authorization is False
@@ -503,7 +505,7 @@ def test_update_deployment_scaling_only_max(
         )
     )
     # assert expected schema
-    assert deployment.cluster == "default_display_name"
+    assert deployment.cluster == "default"
     assert deployment.name == "test"
     config = deployment.get_config(refetch=False)
     assert config.access_authorization is False
@@ -557,7 +559,7 @@ def test_update_deployment_distributed(
         )
     )
     # assert expected schema
-    assert deployment.cluster == "default_display_name"
+    assert deployment.cluster == "default"
     assert deployment.name == "test-distributed"
     config = deployment.get_config(refetch=False)
     assert config.access_authorization is False

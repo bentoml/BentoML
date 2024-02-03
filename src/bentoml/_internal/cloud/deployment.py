@@ -602,7 +602,6 @@ class Deployment:
         client = get_rest_api_client(context)
         return DeploymentInfo(
             name=res.name,
-            # TODO: update this after the url in the frontend is fixed
             admin_console=f"{client.v1.endpoint}/deployments/{res.name}/access?cluster={res.cluster.name}&namespace={res.kube_namespace}",
             created_at=res.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             created_by=res.creator.name,

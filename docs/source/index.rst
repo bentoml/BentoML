@@ -16,6 +16,18 @@ Featured use cases
     :margin: 0
     :padding: 3 4 0 0
 
+    .. grid-item-card:: :doc:`/use-cases/large-language-models/vllm`
+        :link: /use-cases/large-language-models/vllm
+        :link-type: doc
+
+        Deploy an LLM application using vLLM as the backend for high-throughput and memory-efficient inference.
+
+    .. grid-item-card:: :doc:`/use-cases/diffusion-models/controlnet`
+        :link: /use-cases/diffusion-models/controlnet
+        :link-type: doc
+
+        Deploy a ControlNet application to influence image composition, adjust specific elements, and ensure spatial consistency.
+
     .. grid-item-card:: :doc:`/use-cases/diffusion-models/sdxl-turbo`
         :link: /use-cases/diffusion-models/sdxl-turbo
         :link-type: doc
@@ -33,6 +45,12 @@ Featured use cases
         :link-type: doc
 
         Deploy a speech recognition application.
+
+    .. grid-item-card:: :doc:`/use-cases/blip`
+        :link: /use-cases/blip
+        :link-type: doc
+
+        Deploy an image captioning application.
 
 Start your BentoML journey
 --------------------------
@@ -62,8 +80,8 @@ The BentoML documentation provides detailed guidance on the project with hands-o
 
         Dive into BentoML's features and advanced use cases, including GPU support, clients, monitoring, and performance optimization.
 
-    .. grid-item-card:: :doc:`BentoCloud <bentocloud/getting-started/index>`
-        :link: bentocloud/getting-started/index
+    .. grid-item-card:: :doc:`BentoCloud <bentocloud/get-started/>`
+        :link: bentocloud/get-started/
         :link-type: doc
 
         A fully managed platform for deploying and scaling BentoML in the cloud.

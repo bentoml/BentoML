@@ -600,16 +600,13 @@ class Deployment:
         context: str | None, res: DeploymentSchema, urls: list[str] | None = None
     ) -> DeploymentInfo:
         client = get_rest_api_client(context)
-        cluster_display_name = res.cluster.host_cluster_display_name
-        if cluster_display_name is None:
-            cluster_display_name = res.cluster.name
         return DeploymentInfo(
             name=res.name,
             # TODO: update this after the url in the frontend is fixed
-            admin_console=f"{client.v1.endpoint}/clusters/{res.cluster.name}/namespaces/{res.kube_namespace}/deployments/{res.name}",
+            admin_console=f"{client.v1.endpoint}/deployments/{res.name}/access?cluster={res.cluster.name}&namespace={res.kube_namespace}",
             created_at=res.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             created_by=res.creator.name,
-            cluster=cluster_display_name,
+            cluster=res.cluster.name,
             _schema=res,
             _context=context,
             _urls=urls,

@@ -13,6 +13,8 @@ BentoML APIs and learn about all the options they provide.
   api_io_descriptors
   metrics
   frameworks/index
+  client
+  sdk
   cli
   batch
   exceptions

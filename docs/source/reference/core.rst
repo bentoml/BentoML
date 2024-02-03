@@ -1,6 +1,6 @@
-===============
-Core Components
-===============
+==========
+Components
+==========
 
 bentoml.Service
 ---------------

@@ -2,11 +2,7 @@
 BentoML CLI
 ===========
 
-.. note::
-
-    BentoML CLI command itself also comes usage documentation. You can learn more from
-    running :code:`bentoml --help`. The :code:`--help` flag also applies to sub-commands
-    for viewing detailed usage of a command, e.g.: :code:`bentoml serve --help`.
+BentoML CLI commands have usage documentation. You can learn more by running ``bentoml --help``. The ``--help`` flag also applies to sub-commands for viewing detailed usage of a command, like ``bentoml deploy --help``.
 
 .. click:: bentoml_cli.cli:cli
   :prog: bentoml

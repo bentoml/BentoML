@@ -7,7 +7,7 @@ BentoML Services are the core building blocks for BentoML projects, allowing you
 Service definitions
 -------------------
 
-BentoML Services are defined using class-based definitions. Each class represents a distinct Service that can perform certain tasks, such as preprocessing data or making predictions with an ML model. You use the decorator ``@bentoml.service`` to annotate a class, indicating that it is a BentoML Service. By convention, you define a Service (or multiple Services) in a ``service.py`` file.
+BentoML Services are defined using class-based definitions. Each class represents a distinct Service that can perform certain tasks, such as preprocessing data or making predictions with an ML model. You use the decorator ``@bentoml.service`` to annotate a class, indicating that it is a BentoML Service. By convention, you define a Service (or multiple Services) in a ``service.py`` file. For more information, see :ref:`reference/sdk:Service decorator`.
 
 Here is a Service definition example from :doc:`/get-started/quickstart`.
 

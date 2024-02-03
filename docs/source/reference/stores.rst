@@ -2,6 +2,8 @@
 Bento and model APIs
 ====================
 
+This page contains management APIs for Bentos and models.
+
 Manage Bentos
 -------------
 

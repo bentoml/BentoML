@@ -737,7 +737,7 @@ def create_deployment(
             f"[bold green]Successfully created deployment '{deployment.name}' in cluster '{deployment.cluster}'[/bold green]"
         )
         spinner.log_progress.add_task(
-            f"[bold blue]To check the deployment details, go to: {deployment.admin_console}[/bold blue]"
+            f"[bold blue]To check the deployment details, go to:\n{deployment.admin_console}[/bold blue]"
         )
         if wait:
             spinner.spinner_progress.update(

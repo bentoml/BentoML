@@ -165,7 +165,7 @@ If you don't want to save temporary files to disk, you can return the data as ``
 Tensors
 ^^^^^^^
 
-BentoML supports various tensor types such as ``numpy.ndarray``, ``torch.Tensor``, and ``tf.Tensor``. Additionally, you can use validators like ``bentoml.Shape`` and ``bentoml.DType`` to enforce specific shapes and data types for tensor input. Here is an example:
+BentoML supports various tensor types such as ``numpy.ndarray``, ``torch.Tensor``, and ``tf.Tensor``. Additionally, you can use :ref:`reference/sdk:bentoml.validators` like ``bentoml.Shape`` and ``bentoml.DType`` to enforce specific shapes and data types for tensor input. Here is an example:
 
 .. code-block:: python
 

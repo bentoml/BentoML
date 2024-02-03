@@ -1,8 +1,8 @@
 ===============
-Batch Inference
+Batch inference
 ===============
 
-Batch Inference Backends
+Batch inference backends
 ------------------------
 
 

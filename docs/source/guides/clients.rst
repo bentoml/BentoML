@@ -4,7 +4,7 @@ Clients
 
 BentoML provides a client implementation that allows you to make synchronous and asynchronous requests to BentoML :doc:`/guides/services`.
 
-This document explains how to use BentoML clients.
+This document explains how to use :doc:`BentoML clients </reference/client>`.
 
 Client types
 ------------

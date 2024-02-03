@@ -148,7 +148,6 @@ def dummy_generate_deployment_schema(
         cluster=ClusterSchema(
             uid="",
             name=cluster,
-            host_cluster_display_name=cluster,
             organization_name="default_organization",
             resource_type=ResourceType.CLUSTER,
             labels=[],
@@ -247,7 +246,6 @@ def fixture_rest_client() -> RestApiClient:
             ClusterSchema(
                 uid="",
                 name="default",
-                host_cluster_display_name="default",
                 organization_name="default_organization",
                 resource_type=ResourceType.CLUSTER,
                 labels=[],

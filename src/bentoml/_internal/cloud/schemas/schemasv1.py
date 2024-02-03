@@ -71,7 +71,6 @@ class OrganizationListSchema(BaseListSchema):
 @attr.define
 class ClusterSchema(ResourceSchema):
     description: str
-    host_cluster_display_name: t.Optional[str]
     organization_name: str
     creator: UserSchema
 

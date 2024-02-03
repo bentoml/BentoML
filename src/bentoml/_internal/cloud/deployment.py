@@ -686,7 +686,7 @@ class Deployment:
         cls._fix_and_validate_schema(config_struct)
 
         res = cloud_rest_client.v2.update_deployment(
-            cluster=deployment_schema.cluster.host_cluster_display_name,
+            cluster=deployment_schema.cluster.name,
             name=name,
             update_schema=config_struct,
         )
@@ -718,10 +718,10 @@ class Deployment:
                 )
             if (
                 deployment_config_params.get_cluster(pop=False)
-                != deployment_schema.cluster.host_cluster_display_name
+                != deployment_schema.cluster.name
             ):
                 raise BentoMLException(
-                    f"Deployment cluster cannot be changed, current cluster is {deployment_schema.cluster.host_cluster_display_name}"
+                    f"Deployment cluster cannot be changed, current cluster is {deployment_schema.cluster.name}"
                 )
             config_struct = bentoml_cattr.structure(
                 deployment_config_params.get_config_dict(), UpdateDeploymentSchemaV2
@@ -731,7 +731,7 @@ class Deployment:
             res = cloud_rest_client.v2.update_deployment(
                 name=name,
                 update_schema=config_struct,
-                cluster=deployment_schema.cluster.host_cluster_display_name,
+                cluster=deployment_schema.cluster.name,
             )
             logger.debug("Deployment Schema: %s", config_struct)
             return cls._generate_deployment_info_(context, res, res.urls)

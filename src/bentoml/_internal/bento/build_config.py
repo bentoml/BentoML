@@ -14,11 +14,13 @@ import fs
 import fs.copy
 import psutil
 import yaml
+from packaging.version import Version
 from pathspec import PathSpec
 
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
 from ..configuration import BENTOML_VERSION
+from ..configuration import clean_bentoml_version
 from ..configuration import get_quiet_mode
 from ..container import generate_containerfile
 from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
@@ -566,7 +568,7 @@ REQUIREMENTS_TXT="$BASEDIR/requirements.txt"
 REQUIREMENTS_LOCK="$BASEDIR/requirements.lock.txt"
 WHEELS_DIR="$BASEDIR/wheels"
 BENTOML_VERSION=${BENTOML_VERSION:-"""
-                + BENTOML_VERSION
+                + clean_bentoml_version(BENTOML_VERSION)
                 + """}
 # Install python packages, prefer installing the requirements.lock.txt file if it exist
 if [ -f "$REQUIREMENTS_LOCK" ]; then
@@ -585,18 +587,23 @@ if [ -d "$WHEELS_DIR" ]; then
     pip3 install "$WHEELS_DIR"/*.whl "${PIP_ARGS[@]}"
 fi
 
-
-existing_bentoml_version=$(python3 -c "import bentoml; print(bentoml.__version__)")
-if [ "$existing_bentoml_version" != "$BENTOML_VERSION" ]; then
-    echo "WARNING: using BentoML version ${existing_bentoml_version}"
+# Install the BentoML from PyPI if it's not already installed
+if python3 -c "import bentoml" &> /dev/null; then
+    existing_bentoml_version=$(python3 -c "import bentoml; print(bentoml.__version__)")
+    if [ "$existing_bentoml_version" != "$BENTOML_VERSION" ]; then
+        echo "WARNING: using BentoML version ${existing_bentoml_version}"
+    fi
+else
+    pip3 install bentoml=="$BENTOML_VERSION"
 fi
 """
             )
             f.write(install_sh)
 
         with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
-            # Add the pinned BentoML requirement first
-            f.write(f"bentoml=={BENTOML_VERSION}\n")
+            # Add the pinned BentoML requirement first if it's not a local version
+            if Version(BENTOML_VERSION).local is None:
+                f.write(f"bentoml=={BENTOML_VERSION}\n")
             if self.requirements_txt is not None:
                 from pip_requirements_parser import RequirementsFile
 
@@ -651,14 +658,12 @@ fi
             cmd.extend(pip_compile_args)
             try:
                 subprocess.check_call(
-                    cmd, text=True, stderr=subprocess.PIPE if get_quiet_mode() else None
+                    cmd,
+                    text=True,
+                    stderr=subprocess.DEVNULL if get_quiet_mode() else None,
                 )
             except subprocess.CalledProcessError as e:
-                if not get_quiet_mode():
-                    logger.error("Failed to lock PyPI packages: %s", e, exc_info=e)
-                    logger.error(
-                        "Falling back to using the user-provided package requirement specifiers, which is equivalent to 'lock_packages=false'."
-                    )
+                raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values

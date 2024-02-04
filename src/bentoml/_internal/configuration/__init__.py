@@ -4,10 +4,11 @@ import importlib.metadata
 import json
 import logging
 import os
-import re
 import typing as t
 from functools import lru_cache
 from warnings import warn
+
+from packaging.version import Version
 
 from ...exceptions import BentoMLConfigException
 from ...exceptions import BentoMLException
@@ -45,10 +46,11 @@ def expand_env_var(env_var: str) -> str:
 
 def clean_bentoml_version(bentoml_version: str) -> str:
     post_version = bentoml_version.split("+")[0]
-    match = re.match(r"^(\d+)\.(\d+)\.(\d+)(?:(a|rc)\d)*", post_version)
-    if match is None:
-        raise BentoMLException("Errors while parsing BentoML version.")
-    return match.group()
+    try:
+        version = Version(post_version)
+        return str(version)
+    except ValueError:
+        raise BentoMLException("Errors while parsing BentoML version.") from None
 
 
 @lru_cache(maxsize=1)

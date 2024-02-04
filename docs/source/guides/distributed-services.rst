@@ -136,7 +136,7 @@ This is the ``service.py`` file:
             )
             return res[0][0]
 
-.. note:: 
+.. note::
 
    You can find this example in the `BentoControlNet <https://github.com/bentoml/BentoControlNet/>`_ project.
 

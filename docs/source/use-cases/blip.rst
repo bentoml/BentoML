@@ -64,9 +64,6 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
             out = self.model.generate(**inputs, max_new_tokens=100, min_new_tokens=20)
             return self.processor.decode(out[0], skip_special_tokens=True)
 
-    if __name__ == "__main__":
-        BlipImageCaptioning.serve_http()
-
 Here is a breakdown of the Service code:
 
 - The ``@bentoml.service`` decorator defines the ``BlipImageCaptioning`` class as a BentoML Service, specifying that it requires ``4Gi`` of memory. You can customize the Service configurations if necessary.

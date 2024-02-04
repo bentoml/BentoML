@@ -169,7 +169,7 @@ For projects with multiple Services, you should reference the primary Service ha
     ...
 
 Deploy distributed Services
-----------------------------
+---------------------------
 
 Deploying a project with distributed Services in BentoML is similar to deploying a single Service, with nuances in setting custom configurations.
 

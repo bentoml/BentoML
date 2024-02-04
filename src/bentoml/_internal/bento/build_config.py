@@ -603,6 +603,10 @@ fi
         with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
             # Add the pinned BentoML requirement first if it's not a local version
             if Version(BENTOML_VERSION).local is None:
+                logger.info(
+                    "Adding current BentoML version to requirements.txt: %s",
+                    BENTOML_VERSION,
+                )
                 f.write(f"bentoml=={BENTOML_VERSION}\n")
             if self.requirements_txt is not None:
                 from pip_requirements_parser import RequirementsFile

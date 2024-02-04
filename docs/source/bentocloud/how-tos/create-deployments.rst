@@ -2,7 +2,7 @@
 Create Deployments
 ==================
 
-Once you have fully tested your BentoML Service locally, you can push it to BentoCloud for production deployment. This document explains how to create a Deployment on BentoCloud and customize its configurations. 
+Once you have fully tested your BentoML Service locally, you can push it to BentoCloud for production deployment. This document explains how to create a Deployment on BentoCloud and customize its configurations.
 
 Prerequisites
 -------------

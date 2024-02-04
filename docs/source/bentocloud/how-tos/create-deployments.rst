@@ -83,7 +83,7 @@ The following sections provide examples for commonly used configuration fields. 
 
 .. note::
 
-   You can refer to the following code examples directly if you only have a single BentoML Service in ``service.py``. If it contains multiple Services, see Distributed Services for details.
+   You can refer to the following code examples directly if you only have a single BentoML Service in ``service.py``. If it contains multiple Services, see :doc:`/guides/distributed-services` for details.
 
 Scaling
 ^^^^^^^
@@ -196,7 +196,7 @@ You can set environment variables for your deployment to configure the behavior 
 
    Ensure that the environment variables you set are relevant to and compatible with your BentoML Service. Use them wisely to manage sensitive data, configuration settings, and other critical information.
 
-If you have multiple Services, you can set environment variables at different levels. For example, setting global environment variables means they will be applied to all Services, while a single Service can have environment variables only specific to itself, which take precedence over global ones. See Distributed Services to learn more.
+If you have multiple Services, you can set environment variables at different levels. For example, setting global environment variables means they will be applied to all Services, while a single Service can have environment variables only specific to itself, which take precedence over global ones. See :doc:`/guides/distributed-services` to learn more.
 
 Deploy with a configuration file
 --------------------------------

@@ -25,7 +25,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
         :link: /guides/deployment
         :link-type: doc
 
-        Deploy your BentoML project to BentoCloud and customize deployment configurations.
+        Gain a general understanding of BentoCloud deployment.
 
     .. grid-item-card:: :doc:`/guides/containerization`
         :link: /guides/containerization

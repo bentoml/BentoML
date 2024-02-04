@@ -453,7 +453,7 @@ The following table provides a full list of available configurations for the ``d
 Build a Bento
 -------------
 
-With a ``bentofile.yaml`` file, you build a Bento by running ``bentoml build``. Note that this command is part of the ``bentoml deploy`` workflow. You should use this command only if you want to build a Bento without deploying it to BentoCloud.
+With a ``bentofile.yaml`` file, you build a Bento by running ``bentoml build``. Note that this command is part of the ``bentoml deploy`` workflow. You should use this command only if you want to build a Bento without :doc:`deploying it to BentoCloud </bentocloud/how-tos/create-deployments>`.
 
 .. code-block:: bash
 

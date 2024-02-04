@@ -82,9 +82,6 @@ Define a :doc:`BentoML Service </guides/services>` to use a model for generating
             sentence_embeddings= self.model.encode(sentences)
             return sentence_embeddings
 
-    if __name__ == "__main__":
-        SentenceEmbedding.serve_http()
-
 Here is a breakdown of the Service code:
 
 - The script uses the ``@bentoml.service`` decorator to annotate the ``SentenceEmbedding`` class as a BentoML Service with timeout and memory specified. You can set more configurations as needed.

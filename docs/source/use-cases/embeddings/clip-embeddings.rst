@@ -114,11 +114,6 @@ Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to w
             )  # Subtract max for numerical stability
             return exp_scores / np.sum(exp_scores, axis=-1, keepdims=True)
 
-
-
-    if __name__ == "__main__":
-        CLIP.serve_http()
-
 Here is a breakdown of the Service code:
 
 1. The script uses the ``@bentoml.service`` decorator to annotate the ``CLIP`` class as a BentoML Service. You can set more configurations for the Service as needed with the decorator.

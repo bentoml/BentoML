@@ -33,6 +33,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Create an OCI-compliant image for your BentoML project and deploy it anywhere.
 
+    .. grid-item-card:: :doc:`/guides/build-options`
+        :link: /guides/build-options
+        :link-type: doc
+
+        Customize the build configurations of a Bento.
+
     .. grid-item-card:: :doc:`/guides/model-store`
         :link: /guides/model-store
         :link-type: doc
@@ -58,6 +64,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     iotypes
     deployment
     containerization
+    build-options
     model-store
     clients
     configurations

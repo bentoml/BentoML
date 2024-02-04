@@ -14,6 +14,7 @@ import fs
 import fs.copy
 import psutil
 import yaml
+from packaging.version import Version
 from pathspec import PathSpec
 
 from ...exceptions import BentoMLException
@@ -73,7 +74,7 @@ def _convert_python_version(py_version: str | None) -> str | None:
 
 
 def _convert_cuda_version(
-    cuda_version: t.Optional[t.Union[str, int]]
+    cuda_version: t.Optional[t.Union[str, int]],
 ) -> t.Optional[str]:
     if cuda_version is None or cuda_version == "" or cuda_version == "None":
         return None
@@ -95,7 +96,7 @@ def _convert_cuda_version(
 
 
 def _convert_env(
-    env: str | list[str] | dict[str, str] | None
+    env: str | list[str] | dict[str, str] | None,
 ) -> dict[str, str] | dict[str, str | None] | None:
     if env is None:
         return None
@@ -456,7 +457,7 @@ class PythonOptions:
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
     lock_packages: t.Optional[bool] = attr.field(
-        default=None,
+        default=True,
         validator=attr.validators.optional(attr.validators.instance_of(bool)),
     )
     index_url: t.Optional[str] = attr.field(
@@ -599,31 +600,35 @@ fi
             )
             f.write(install_sh)
 
-        if self.requirements_txt is not None:
-            from pip_requirements_parser import RequirementsFile
+        with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
+            # Add the pinned BentoML requirement first if it's not a local version
+            if Version(BENTOML_VERSION).local is None:
+                logger.info(
+                    "Adding current BentoML version to requirements.txt: %s",
+                    BENTOML_VERSION,
+                )
+                f.write(f"bentoml=={BENTOML_VERSION}\n")
+            if self.requirements_txt is not None:
+                from pip_requirements_parser import RequirementsFile
 
-            requirements_txt = RequirementsFile.from_file(
-                resolve_user_filepath(self.requirements_txt, build_ctx),
-                include_nested=True,
-            )
-            # We need to make sure that we don't write any file references
-            # back into the final `requirements.txt` file. We've already
-            # resolved them and included their contents so we can discard
-            # them.
-            for option_line in requirements_txt.options:
-                option_line.options.pop("constraints", None)
-                option_line.options.pop("requirements", None)
+                requirements_txt = RequirementsFile.from_file(
+                    resolve_user_filepath(self.requirements_txt, build_ctx),
+                    include_nested=True,
+                )
+                # We need to make sure that we don't write any file references
+                # back into the final `requirements.txt` file. We've already
+                # resolved them and included their contents so we can discard
+                # them.
+                for option_line in requirements_txt.options:
+                    option_line.options.pop("constraints", None)
+                    option_line.options.pop("requirements", None)
 
-            with bento_fs.open(
-                fs.path.combine(py_folder, "requirements.txt"), "w"
-            ) as f:
                 f.write(requirements_txt.dumps(preserve_one_empty_line=True))
-        elif self.packages is not None:
-            with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
-                f.write("\n".join(self.packages))
-        else:
-            # Return early if no python packages were specified
-            return
+            elif self.packages is not None:
+                f.write("\n".join(self.packages) + "\n")
+            else:
+                # Return early if no python packages were specified
+                return
 
         if self.lock_packages and not self.is_empty():
             # Note: "--allow-unsafe" is required for including setuptools in the
@@ -657,24 +662,16 @@ fi
             cmd.extend(pip_compile_args)
             try:
                 subprocess.check_call(
-                    cmd, text=True, stderr=subprocess.PIPE if get_quiet_mode() else None
+                    cmd,
+                    text=True,
+                    stderr=subprocess.DEVNULL if get_quiet_mode() else None,
                 )
             except subprocess.CalledProcessError as e:
-                if not get_quiet_mode():
-                    logger.error("Failed to lock PyPI packages: %s", e, exc_info=e)
-                    logger.error(
-                        "Falling back to using the user-provided package requirement specifiers, which is equivalent to 'lock_packages=false'."
-                    )
+                raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
-        defaults: dict[str, t.Any] = {}
-
-        if self.requirements_txt is None:
-            if self.lock_packages is None:
-                defaults["lock_packages"] = True
-
-        return attr.evolve(self, **defaults)
+        return self
 
 
 def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:

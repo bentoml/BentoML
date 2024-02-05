@@ -149,6 +149,7 @@ class InferenceServerClient:
         will result in an Error.
 
         """
+
     def is_server_live(self, headers: dict[str, t.Any] = ...) -> bool:
         """Contact the inference server and get liveness.
 
@@ -169,6 +170,7 @@ class InferenceServerClient:
             If unable to get liveness.
 
         """
+
     def is_server_ready(self, headers: dict[str, t.Any] = ...) -> bool:
         """Contact the inference server and get readiness.
 
@@ -189,6 +191,7 @@ class InferenceServerClient:
             If unable to get readiness.
 
         """
+
     def is_model_ready(
         self,
         model_name: str,
@@ -220,6 +223,7 @@ class InferenceServerClient:
             If unable to get model readiness.
 
         """
+
     @t.overload
     def get_server_metadata(
         self, headers: dict[str, t.Any] = ..., as_json: t.Literal[True] = ...
@@ -256,6 +260,7 @@ class InferenceServerClient:
             If unable to get server metadata.
 
         """
+
     @t.overload
     def get_model_metadata(
         self,
@@ -306,6 +311,7 @@ class InferenceServerClient:
             If unable to get model metadata.
 
         """
+
     @t.overload
     def get_model_config(
         self,
@@ -356,6 +362,7 @@ class InferenceServerClient:
             If unable to get model configuration.
 
         """
+
     @t.overload
     def get_model_repository_index(
         self, headers: dict[str, t.Any] = ..., as_json: t.Literal[True] = ...
@@ -389,6 +396,7 @@ class InferenceServerClient:
 
         """
         ...
+
     def load_model(
         self,
         model_name: str,
@@ -422,6 +430,7 @@ class InferenceServerClient:
             If unable to load the model.
 
         """
+
     def unload_model(
         self,
         model_name: str,
@@ -446,6 +455,7 @@ class InferenceServerClient:
             If unable to unload the model.
 
         """
+
     @t.overload
     def get_inference_statistics(
         self,
@@ -494,6 +504,7 @@ class InferenceServerClient:
             If unable to get the model inference statistics.
 
         """
+
     @t.overload
     def update_trace_settings(
         self,
@@ -550,6 +561,7 @@ class InferenceServerClient:
 
         """
         ...
+
     @t.overload
     def get_trace_settings(
         self,
@@ -598,6 +610,7 @@ class InferenceServerClient:
             If unable to get the trace settings.
 
         """
+
     @t.overload
     def update_log_settings(
         self,
@@ -641,6 +654,7 @@ class InferenceServerClient:
         InferenceServerException
             If unable to update the log settings.
         """
+
     @t.overload
     def get_log_settings(
         self, headers: dict[str, t.Any] = ..., as_json: t.Literal[True] = ...
@@ -674,6 +688,7 @@ class InferenceServerClient:
         InferenceServerException
             If unable to get the log settings.
         """
+
     @t.overload
     def get_system_shared_memory_status(
         self,
@@ -720,6 +735,7 @@ class InferenceServerClient:
             If unable to get the status of specified shared memory.
 
         """
+
     def register_system_shared_memory(
         self,
         name: str,
@@ -754,6 +770,7 @@ class InferenceServerClient:
             If unable to register the specified system shared memory.
 
         """
+
     def unregister_system_shared_memory(
         self, name: str = ..., headers: dict[str, t.Any] = ...
     ) -> None:
@@ -776,6 +793,7 @@ class InferenceServerClient:
             If unable to unregister the specified system shared memory region.
 
         """
+
     @t.overload
     def get_cuda_shared_memory_status(
         self,
@@ -822,6 +840,7 @@ class InferenceServerClient:
             If unable to get the status of specified shared memory.
 
         """
+
     def register_cuda_shared_memory(
         self,
         name: str,
@@ -853,6 +872,7 @@ class InferenceServerClient:
             If unable to register the specified cuda shared memory.
 
         """
+
     def unregister_cuda_shared_memory(
         self, name: str = ..., headers: dict[str, t.Any] = ...
     ) -> None:
@@ -875,6 +895,7 @@ class InferenceServerClient:
             If unable to unregister the specified cuda shared memory region.
 
         """
+
     def infer(
         self,
         model_name: str,
@@ -963,6 +984,7 @@ class InferenceServerClient:
         InferenceServerException
             If server fails to perform inference.
         """
+
     def async_infer(
         self,
         model_name: str,
@@ -1054,6 +1076,7 @@ class InferenceServerClient:
         InferenceServerException
             If server fails to issue inference.
         """
+
     def start_stream(
         self,
         callback: t.Callable[[InferResult, InferenceServerException], None],
@@ -1093,8 +1116,10 @@ class InferenceServerClient:
             for this client.
 
         """
+
     def stop_stream(self) -> None:
         """Stops a stream if one available."""
+
     def async_stream_infer(
         self,
         model_name: str,
@@ -1189,6 +1214,7 @@ class InferInput:
         str
             The name of input
         """
+
     def datatype(self) -> str:
         """Get the datatype of input associated with this object.
 
@@ -1197,6 +1223,7 @@ class InferInput:
         str
             The datatype of input
         """
+
     def shape(self) -> list[int]:
         """Get the shape of input associated with this object.
 
@@ -1205,6 +1232,7 @@ class InferInput:
         list
             The shape of input
         """
+
     def set_shape(self, shape: list[int]) -> None:
         """Set the shape of input.
 
@@ -1213,6 +1241,7 @@ class InferInput:
         shape : list
             The shape of the associated input.
         """
+
     def set_data_from_numpy(self, input_tensor: NDArray[t.Any]) -> None:
         """Set the tensor data from the specified numpy array for
         input associated with this object.
@@ -1227,6 +1256,7 @@ class InferInput:
         InferenceServerException
             If failed to set data for the tensor.
         """
+
     def set_shared_memory(
         self, region_name: str, byte_size: int, offset: int = ...
     ) -> None:
@@ -1267,6 +1297,7 @@ class InferRequestedOutput:
         str
             The name of output
         """
+
     def set_shared_memory(
         self, region_name: str, byte_size: int, offset: int = ...
     ) -> None:
@@ -1288,6 +1319,7 @@ class InferRequestedOutput:
         InferenceServerException
             If failed to set shared memory for the tensor.
         """
+
     def unset_shared_memory(self) -> None:
         """Clears the shared memory option set by the last call to
         InferRequestedOutput.set_shared_memory(). After call to this
@@ -1322,6 +1354,7 @@ class InferResult:
             The numpy array containing the response data for the tensor or
             None if the data for specified tensor name is not found.
         """
+
     @t.overload
     def get_output(
         self, name: str, as_json: t.Literal[True] = ...
@@ -1354,6 +1387,7 @@ class InferResult:
             ModelInferResponse then returns it as a protobuf messsage
             or dict, otherwise returns None.
         """
+
     @t.overload
     def get_response(self, as_json: t.Literal[True] = ...) -> dict[str, t.Any]: ...
     @t.overload

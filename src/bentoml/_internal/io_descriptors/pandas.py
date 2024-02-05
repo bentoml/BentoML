@@ -682,14 +682,12 @@ class PandasDataFrame(
     @t.overload
     async def _to_proto_impl(
         self, obj: ext.PdDataFrame, *, version: t.Literal["v1"]
-    ) -> pb.DataFrame:
-        ...
+    ) -> pb.DataFrame: ...
 
     @t.overload
     async def _to_proto_impl(
         self, obj: ext.PdDataFrame, *, version: t.Literal["v1alpha1"]
-    ) -> pb_v1alpha1.DataFrame:
-        ...
+    ) -> pb_v1alpha1.DataFrame: ...
 
     async def _to_proto_impl(
         self, obj: ext.PdDataFrame, *, version: str
@@ -1143,14 +1141,12 @@ class PandasSeries(
     @t.overload
     async def _to_proto_impl(
         self, obj: ext.PdSeries, *, version: t.Literal["v1"]
-    ) -> pb.Series:
-        ...
+    ) -> pb.Series: ...
 
     @t.overload
     async def _to_proto_impl(
         self, obj: ext.PdSeries, *, version: t.Literal["v1alpha1"]
-    ) -> pb_v1alpha1.Series:
-        ...
+    ) -> pb_v1alpha1.Series: ...
 
     async def _to_proto_impl(
         self, obj: ext.PdSeries, *, version: str

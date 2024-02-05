@@ -81,12 +81,12 @@ class Metadata(t.Mapping[str, str], ABC):
 
 class ServiceContext:
     def __init__(self) -> None:
-        self._request_var: contextvars.ContextVar[
-            ServiceContext.RequestContext
-        ] = contextvars.ContextVar("request")
-        self._response_var: contextvars.ContextVar[
-            ServiceContext.ResponseContext
-        ] = contextvars.ContextVar("response")
+        self._request_var: contextvars.ContextVar[ServiceContext.RequestContext] = (
+            contextvars.ContextVar("request")
+        )
+        self._response_var: contextvars.ContextVar[ServiceContext.ResponseContext] = (
+            contextvars.ContextVar("response")
+        )
         # A dictionary for storing global state shared by the process
         self.state: dict[str, t.Any] = {}
 

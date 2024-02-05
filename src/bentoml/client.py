@@ -12,6 +12,7 @@ See https://docs.bentoml.com/en/latest/guides/client.html for more information.
 
     client.predict(np.array([[5.9, 3, 5.1, 1.8]]))
 """
+
 from __future__ import annotations
 
 from ._internal.client import AsyncClient

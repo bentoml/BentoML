@@ -54,12 +54,10 @@ class Dependency(t.Generic[T]):
         return _dependent_cache[key]
 
     @t.overload
-    def __get__(self, instance: None, owner: t.Any) -> Dependency[T]:
-        ...
+    def __get__(self, instance: None, owner: t.Any) -> Dependency[T]: ...
 
     @t.overload
-    def __get__(self, instance: t.Any, owner: t.Any) -> T:
-        ...
+    def __get__(self, instance: t.Any, owner: t.Any) -> T: ...
 
     def __get__(self, instance: t.Any, owner: t.Any) -> Dependency[T] | T:
         if instance is None:

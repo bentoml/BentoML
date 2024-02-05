@@ -195,9 +195,9 @@ class File(
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                "*/*"
-                if self._mime_type is None
-                else self._mime_type: MediaType(schema=self.openapi_schema())
+                "*/*" if self._mime_type is None else self._mime_type: MediaType(
+                    schema=self.openapi_schema()
+                )
             },
             "required": True,
             "x-bentoml-io-descriptor": self.to_spec(),
@@ -207,9 +207,9 @@ class File(
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                "*/*"
-                if self._mime_type is None
-                else self._mime_type: MediaType(schema=self.openapi_schema())
+                "*/*" if self._mime_type is None else self._mime_type: MediaType(
+                    schema=self.openapi_schema()
+                )
             },
             "x-bentoml-io-descriptor": self.to_spec(),
         }
@@ -231,9 +231,11 @@ class File(
             res = Response(
                 body,
                 headers={
-                    "content-type": self._mime_type
-                    if self._mime_type
-                    else "application/octet-stream"
+                    "content-type": (
+                        self._mime_type
+                        if self._mime_type
+                        else "application/octet-stream"
+                    )
                 },
             )
         return res
@@ -245,9 +247,11 @@ class File(
             body = obj.read()
 
         return pb.File(
-            kind="appliction/octet-stream"
-            if self._mime_type is None
-            else self._mime_type,
+            kind=(
+                "appliction/octet-stream"
+                if self._mime_type is None
+                else self._mime_type
+            ),
             content=body,
         )
 
@@ -259,9 +263,11 @@ class File(
 
         try:
             kind = mimetype_to_filetype_pb_map()[
-                "application/octet-stream"
-                if self._mime_type is None
-                else self._mime_type
+                (
+                    "application/octet-stream"
+                    if self._mime_type is None
+                    else self._mime_type
+                )
             ]
         except KeyError:
             raise BadInput(

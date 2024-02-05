@@ -8,7 +8,8 @@ from typing import Iterable
 from typing import Iterator
 from typing import Optional
 
-if typing.TYPE_CHECKING: ...
+if typing.TYPE_CHECKING:
+    ...
 
 def make_mode(init: Union[int, Iterable[Text], None]) -> int: ...
 

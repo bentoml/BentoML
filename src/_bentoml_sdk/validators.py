@@ -296,11 +296,13 @@ class DataframeSchema:
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
             self._validate,
-            core_schema.list_schema(core_schema.dict_schema())
-            if self.orient == "records"
-            else core_schema.dict_schema(
-                keys_schema=core_schema.str_schema(),
-                values_schema=core_schema.list_schema(),
+            (
+                core_schema.list_schema(core_schema.dict_schema())
+                if self.orient == "records"
+                else core_schema.dict_schema(
+                    keys_schema=core_schema.str_schema(),
+                    values_schema=core_schema.list_schema(),
+                )
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
         )

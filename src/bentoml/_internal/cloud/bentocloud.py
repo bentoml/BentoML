@@ -150,13 +150,15 @@ class BentoCloudClient(CloudClient):
                 name=r.name,
                 runnable_type=r.runnable_type,
                 models=r.models,
-                resource_config=BentoRunnerResourceSchema(
-                    cpu=r.resource_config.get("cpu"),
-                    nvidia_gpu=r.resource_config.get("nvidia.com/gpu"),
-                    custom_resources=r.resource_config.get("custom_resources"),
-                )
-                if r.resource_config
-                else None,
+                resource_config=(
+                    BentoRunnerResourceSchema(
+                        cpu=r.resource_config.get("cpu"),
+                        nvidia_gpu=r.resource_config.get("nvidia.com/gpu"),
+                        custom_resources=r.resource_config.get("custom_resources"),
+                    )
+                    if r.resource_config
+                    else None
+                ),
             )
             for r in info.runners
         ]

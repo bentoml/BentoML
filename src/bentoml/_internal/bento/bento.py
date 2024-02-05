@@ -307,26 +307,34 @@ class Bento(StoreItem):
                 service=svc,  # type: ignore # attrs converters do not typecheck
                 entry_service=svc.name,
                 labels=build_config.labels,
-                models=[
-                    BentoModelInfo.from_bento_model(
-                        m, alias=resolved_aliases.get(m.tag)
-                    )
-                    for m in models
-                ]
-                if is_legacy
-                else [],
-                runners=[BentoRunnerInfo.from_runner(r) for r in svc.runners]  # type: ignore # attrs converters do not typecheck
-                if is_legacy
-                else [],
-                apis=[BentoApiInfo.from_inference_api(api) for api in svc.apis.values()]
-                if is_legacy
-                else [],
-                services=[
-                    BentoServiceInfo.from_service(s)
-                    for s in svc.all_services().values()
-                ]
-                if not is_legacy
-                else [],
+                models=(
+                    [
+                        BentoModelInfo.from_bento_model(
+                            m, alias=resolved_aliases.get(m.tag)
+                        )
+                        for m in models
+                    ]
+                    if is_legacy
+                    else []
+                ),
+                runners=(
+                    [BentoRunnerInfo.from_runner(r) for r in svc.runners]  # type: ignore # attrs converters do not typecheck
+                    if is_legacy
+                    else []
+                ),
+                apis=(
+                    [BentoApiInfo.from_inference_api(api) for api in svc.apis.values()]
+                    if is_legacy
+                    else []
+                ),
+                services=(
+                    [
+                        BentoServiceInfo.from_service(s)
+                        for s in svc.all_services().values()
+                    ]
+                    if not is_legacy
+                    else []
+                ),
                 docker=build_config.docker,
                 python=build_config.python,
                 conda=build_config.conda,

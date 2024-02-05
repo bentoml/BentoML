@@ -6,7 +6,8 @@ from ..osfs import OSFS
 from .parse import ParseResult
 from .registry import registry
 
-if typing.TYPE_CHECKING: ...
+if typing.TYPE_CHECKING:
+    ...
 
 @registry.install
 class OSFSOpener(Opener):

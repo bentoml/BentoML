@@ -33,9 +33,11 @@ if __name__ == "__main__":
 
         override_attrs: dict[str, t.Any] = {
             "python": {
-                "requirements_txt": os.path.join("requirements", "requirements-gpu.txt")
-                if args.gpu and torch.cuda.is_available()
-                else os.path.join("requirements", "requirements.txt")
+                "requirements_txt": (
+                    os.path.join("requirements", "requirements-gpu.txt")
+                    if args.gpu and torch.cuda.is_available()
+                    else os.path.join("requirements", "requirements.txt")
+                )
             }
         }
         with open(bentofile, "r", encoding="utf-8") as f:

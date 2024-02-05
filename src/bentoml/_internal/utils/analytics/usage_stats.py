@@ -187,17 +187,21 @@ def _track_serve_init(
             num_of_models=num_models,
             num_of_runners=len(svc.runners) if is_legacy else len(svc.dependencies),
             num_of_apis=len(svc.apis.keys()),
-            runnable_types=[r.runnable_class.__name__ for r in svc.runners]
-            if is_legacy
-            else [d.on.name for d in svc.dependencies.values()],
-            api_input_types=[api.input.__class__.__name__ for api in svc.apis.values()]
-            if is_legacy
-            else [],
-            api_output_types=[
-                api.output.__class__.__name__ for api in svc.apis.values()
-            ]
-            if is_legacy
-            else [],
+            runnable_types=(
+                [r.runnable_class.__name__ for r in svc.runners]
+                if is_legacy
+                else [d.on.name for d in svc.dependencies.values()]
+            ),
+            api_input_types=(
+                [api.input.__class__.__name__ for api in svc.apis.values()]
+                if is_legacy
+                else []
+            ),
+            api_output_types=(
+                [api.output.__class__.__name__ for api in svc.apis.values()]
+                if is_legacy
+                else []
+            ),
         )
 
     track(event_properties)

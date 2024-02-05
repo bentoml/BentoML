@@ -8,6 +8,7 @@ We will refer to the Python object that coresponds to an OpenAPI object as POS (
 Note that even though we cover most bases, there are still a lot of OpenAPI features such as deprecation,
 webhooks, securities, etc. are yet to be implemented/exposed to user.
 """
+
 from __future__ import annotations
 
 import logging

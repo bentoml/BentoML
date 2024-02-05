@@ -136,9 +136,9 @@ def save_model(
     tf_signatures: "tf_ext.ConcreteFunction" | None = None,
     tf_save_options: "tf_ext.SaveOptions" | None = None,
     include_optimizer: bool = False,
-    signatures: t.Dict[str, ModelSignature]
-    | t.Dict[str, ModelSignatureDict]
-    | None = None,
+    signatures: (
+        t.Dict[str, ModelSignature] | t.Dict[str, ModelSignatureDict] | None
+    ) = None,
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     external_modules: t.Optional[t.List[ModuleType]] = None,

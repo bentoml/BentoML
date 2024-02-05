@@ -56,6 +56,7 @@ class InferenceServerClient:
         will result in an Error.
 
         """
+
     async def is_server_live(self, headers: dict[str, t.Any] = ...) -> bool:
         """Contact the inference server and get liveness.
 
@@ -76,6 +77,7 @@ class InferenceServerClient:
             If unable to get liveness.
 
         """
+
     async def is_server_ready(self, headers: dict[str, t.Any] = ...) -> bool:
         """Contact the inference server and get readiness.
 
@@ -96,6 +98,7 @@ class InferenceServerClient:
             If unable to get readiness.
 
         """
+
     async def is_model_ready(
         self,
         model_name: str,
@@ -127,6 +130,7 @@ class InferenceServerClient:
             If unable to get model readiness.
 
         """
+
     @t.overload
     async def get_server_metadata(
         self, headers: dict[str, t.Any] = ..., as_json: t.Literal[True] = ...
@@ -163,6 +167,7 @@ class InferenceServerClient:
             If unable to get server metadata.
 
         """
+
     @t.overload
     async def get_model_metadata(
         self,
@@ -213,6 +218,7 @@ class InferenceServerClient:
             If unable to get model metadata.
 
         """
+
     @t.overload
     async def get_model_config(
         self,
@@ -263,6 +269,7 @@ class InferenceServerClient:
             If unable to get model configuration.
 
         """
+
     @t.overload
     async def get_model_repository_index(
         self, headers: dict[str, t.Any] = ..., as_json: t.Literal[True] = ...
@@ -296,6 +303,7 @@ class InferenceServerClient:
 
         """
         ...
+
     async def load_model(
         self,
         model_name: str,
@@ -329,6 +337,7 @@ class InferenceServerClient:
             If unable to load the model.
 
         """
+
     async def unload_model(
         self,
         model_name: str,
@@ -353,6 +362,7 @@ class InferenceServerClient:
             If unable to unload the model.
 
         """
+
     @t.overload
     async def get_inference_statistics(
         self,
@@ -401,6 +411,7 @@ class InferenceServerClient:
             If unable to get the model inference statistics.
 
         """
+
     @t.overload
     async def update_trace_settings(
         self,
@@ -457,6 +468,7 @@ class InferenceServerClient:
 
         """
         ...
+
     @t.overload
     async def get_trace_settings(
         self,
@@ -505,6 +517,7 @@ class InferenceServerClient:
             If unable to get the trace settings.
 
         """
+
     @t.overload
     async def update_log_settings(
         self,
@@ -548,6 +561,7 @@ class InferenceServerClient:
         InferenceServerException
             If unable to update the log settings.
         """
+
     @t.overload
     async def get_log_settings(
         self, headers: dict[str, t.Any] = ..., as_json: t.Literal[True] = ...
@@ -581,6 +595,7 @@ class InferenceServerClient:
         InferenceServerException
             If unable to get the log settings.
         """
+
     @t.overload
     async def get_system_shared_memory_status(
         self,
@@ -627,6 +642,7 @@ class InferenceServerClient:
             If unable to get the status of specified shared memory.
 
         """
+
     async def register_system_shared_memory(
         self,
         name: str,
@@ -661,6 +677,7 @@ class InferenceServerClient:
             If unable to register the specified system shared memory.
 
         """
+
     async def unregister_system_shared_memory(
         self, name: str = ..., headers: dict[str, t.Any] = ...
     ) -> None:
@@ -683,6 +700,7 @@ class InferenceServerClient:
             If unable to unregister the specified system shared memory region.
 
         """
+
     @t.overload
     async def get_cuda_shared_memory_status(
         self,
@@ -729,6 +747,7 @@ class InferenceServerClient:
             If unable to get the status of specified shared memory.
 
         """
+
     async def register_cuda_shared_memory(
         self,
         name: str,
@@ -760,6 +779,7 @@ class InferenceServerClient:
             If unable to register the specified cuda shared memory.
 
         """
+
     async def unregister_cuda_shared_memory(
         self, name: str = ..., headers: dict[str, t.Any] = ...
     ) -> None:
@@ -782,6 +802,7 @@ class InferenceServerClient:
             If unable to unregister the specified cuda shared memory region.
 
         """
+
     async def infer(
         self,
         model_name: str,
@@ -870,6 +891,7 @@ class InferenceServerClient:
         InferenceServerException
             If server fails to perform inference.
         """
+
     async def stream_infer(
         self,
         inputs_iterator: t.AsyncGenerator[

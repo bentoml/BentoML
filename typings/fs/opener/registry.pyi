@@ -11,7 +11,8 @@ from typing import Iterator
 from .base import Opener
 from ..base import FS
 
-if typing.TYPE_CHECKING: ...
+if typing.TYPE_CHECKING:
+    ...
 
 class Registry:
     def __init__(self, default_opener: Text = ..., load_extern: bool = ...) -> None: ...

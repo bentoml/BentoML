@@ -34,8 +34,9 @@ def create_runner(
     *,
     name: str | None = None,
     use_available: bool = False,
-    pipeline_class: str
-    | type[diffusers.DiffusionPipeline] = diffusers.StableDiffusionXLPipeline,
+    pipeline_class: (
+        str | type[diffusers.DiffusionPipeline]
+    ) = diffusers.StableDiffusionXLPipeline,
     scheduler_class: str | type[diffusers.SchedulerMixin] | None = None,
     torch_dtype: str | torch.dtype | None = None,
     enable_xformers: bool | None = None,
@@ -48,9 +49,9 @@ def create_runner(
     load_pretrained_extra_kwargs: dict[str, t.Any] | None = None,
     lora_dir: str | None = None,
     lora_weights: LoraOptionType | list[LoraOptionType] | None = None,
-    textual_inversions: TextualInversionOptionType
-    | list[TextualInversionOptionType]
-    | None = None,
+    textual_inversions: (
+        TextualInversionOptionType | list[TextualInversionOptionType] | None
+    ) = None,
 ) -> bentoml.Runner:
     if isinstance(pipeline_class, str):
         pipeline_class = resolve_pipeline_class(pipeline_class, PIPELINE_MAPPING)

@@ -39,8 +39,7 @@ def create(
     strategy: str | None = ...,
     envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @t.overload
@@ -52,8 +51,7 @@ def create(
     *,
     bento: Tag | str | None = ...,
     config_file: str | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @t.overload
@@ -65,8 +63,7 @@ def create(
     *,
     bento: Tag | str | None = ...,
     config_dict: dict[str, t.Any] | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @inject
@@ -99,12 +96,14 @@ def create(
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=[
-            attr.asdict(item) if isinstance(item, EnvItemSchema) else item
-            for item in envs
-        ]
-        if envs is not None
-        else None,
+        envs=(
+            [
+                attr.asdict(item) if isinstance(item, EnvItemSchema) else item
+                for item in envs
+            ]
+            if envs is not None
+            else None
+        ),
         extras=extras,
         config_dict=config_dict,
         config_file=config_file,
@@ -137,8 +136,7 @@ def update(
     strategy: str | None = ...,
     envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @t.overload
@@ -151,8 +149,7 @@ def update(
     *,
     bento: Tag | str | None = ...,
     config_file: str | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @t.overload
@@ -165,8 +162,7 @@ def update(
     *,
     bento: Tag | str | None = ...,
     config_dict: dict[str, t.Any] | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @inject
@@ -183,10 +179,12 @@ def update(
     scaling_max: int | None = None,
     instance_type: str | None = None,
     strategy: str | None = None,
-    envs: t.List[EnvItemSchema]
-    | t.List[dict[str, t.Any]]
-    | t.List[dict[str, t.Any]]
-    | None = None,
+    envs: (
+        t.List[EnvItemSchema]
+        | t.List[dict[str, t.Any]]
+        | t.List[dict[str, t.Any]]
+        | None
+    ) = None,
     extras: dict[str, t.Any] | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
@@ -202,12 +200,14 @@ def update(
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=[
-            attr.asdict(item) if isinstance(item, EnvItemSchema) else item
-            for item in envs
-        ]
-        if envs is not None
-        else None,
+        envs=(
+            [
+                attr.asdict(item) if isinstance(item, EnvItemSchema) else item
+                for item in envs
+            ]
+            if envs is not None
+            else None
+        ),
         extras=extras,
         config_dict=config_dict,
         config_file=config_file,
@@ -235,8 +235,7 @@ def apply(
     *,
     bento: t.Optional[t.Union[Tag, str]] = ...,
     config_dict: t.Optional[dict[str, t.Any]] = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @t.overload
@@ -249,8 +248,7 @@ def apply(
     *,
     bento: t.Optional[t.Union[Tag, str]] = ...,
     config_file: t.Optional[str] = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @inject

@@ -115,13 +115,11 @@ def add_experimental_docstring(f: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
 
 
 @overload
-def first_not_none(*args: T | None, default: T) -> T:
-    ...
+def first_not_none(*args: T | None, default: T) -> T: ...
 
 
 @overload
-def first_not_none(*args: T | None) -> T | None:
-    ...
+def first_not_none(*args: T | None) -> T | None: ...
 
 
 def first_not_none(*args: T | None, default: None | T = None) -> T | None:

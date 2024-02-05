@@ -54,13 +54,11 @@ class DataContainer(t.Generic[SingleType, BatchType]):
 
     @classmethod
     @abc.abstractmethod
-    def to_payload(cls, batch: BatchType, batch_dim: int) -> Payload:
-        ...
+    def to_payload(cls, batch: BatchType, batch_dim: int) -> Payload: ...
 
     @classmethod
     @abc.abstractmethod
-    def from_payload(cls, payload: Payload) -> BatchType:
-        ...
+    def from_payload(cls, payload: Payload) -> BatchType: ...
 
     @t.overload
     @classmethod
@@ -69,8 +67,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         inp: tritongrpcclient.InferInput,
         meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
         _use_http_client: t.Literal[False] = ...,
-    ) -> tritongrpcclient.InferInput:
-        ...
+    ) -> tritongrpcclient.InferInput: ...
 
     @t.overload
     @classmethod
@@ -79,8 +76,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         inp: tritonhttpclient.InferInput,
         meta: dict[str, t.Any],
         _use_http_client: t.Literal[True] = ...,
-    ) -> tritongrpcclient.InferInput:
-        ...
+    ) -> tritongrpcclient.InferInput: ...
 
     @classmethod
     def to_triton_payload(
@@ -131,29 +127,25 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     @abc.abstractmethod
     def batches_to_batch(
         cls, batches: t.Sequence[BatchType], batch_dim: int
-    ) -> tuple[BatchType, list[int]]:
-        ...
+    ) -> tuple[BatchType, list[int]]: ...
 
     @classmethod
     @abc.abstractmethod
     def batch_to_batches(
         cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int
-    ) -> list[BatchType]:
-        ...
+    ) -> list[BatchType]: ...
 
     @classmethod
     @abc.abstractmethod
     def batch_to_payloads(
         cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int
-    ) -> list[Payload]:
-        ...
+    ) -> list[Payload]: ...
 
     @classmethod
     @abc.abstractmethod
     def from_batch_payloads(
         cls, payloads: t.Sequence[Payload], batch_dim: int
-    ) -> tuple[BatchType, list[int]]:
-        ...
+    ) -> tuple[BatchType, list[int]]: ...
 
     @classmethod
     def get_batch_size(cls, batch: BatchType, batch_dim: int) -> int:
@@ -702,16 +694,16 @@ register_builtin_containers()
 class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
     def to_payload(cls, batch: t.Any, batch_dim: int) -> Payload:
-        container_cls: t.Type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_batch_type(type(batch))
+        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+            DataContainerRegistry.find_by_batch_type(type(batch))
+        )
         return container_cls.to_payload(batch, batch_dim)
 
     @classmethod
     def get_batch_size(cls, batch: Any, batch_dim: int) -> int:
-        container_cls: t.Type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_batch_type(type(batch))
+        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+            DataContainerRegistry.find_by_batch_type(type(batch))
+        )
         return container_cls.get_batch_size(batch, batch_dim)
 
     @classmethod
@@ -726,8 +718,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         inp: tritongrpcclient.InferInput,
         meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
         _use_http_client: t.Literal[False] = ...,
-    ) -> tritongrpcclient.InferInput:
-        ...
+    ) -> tritongrpcclient.InferInput: ...
 
     @t.overload
     @classmethod
@@ -736,8 +727,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         inp: tritonhttpclient.InferInput,
         meta: dict[str, t.Any],
         _use_http_client: t.Literal[True] = ...,
-    ) -> tritongrpcclient.InferInput:
-        ...
+    ) -> tritongrpcclient.InferInput: ...
 
     @classmethod
     def to_triton_payload(
@@ -762,18 +752,18 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     def batches_to_batch(
         cls, batches: t.Sequence[BatchType], batch_dim: int = 0
     ) -> tuple[BatchType, list[int]]:
-        container_cls: t.Type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_batch_type(type(batches[0]))
+        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+            DataContainerRegistry.find_by_batch_type(type(batches[0]))
+        )
         return container_cls.batches_to_batch(batches, batch_dim)
 
     @classmethod
     def batch_to_batches(
         cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int = 0
     ) -> list[BatchType]:
-        container_cls: t.Type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_batch_type(type(batch))
+        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+            DataContainerRegistry.find_by_batch_type(type(batch))
+        )
         return container_cls.batch_to_batches(batch, indices, batch_dim)
 
     @classmethod
@@ -783,9 +773,9 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> list[Payload]:
-        container_cls: t.Type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_batch_type(type(batch))
+        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+            DataContainerRegistry.find_by_batch_type(type(batch))
+        )
         return container_cls.batch_to_payloads(batch, indices, batch_dim)
 
     @classmethod

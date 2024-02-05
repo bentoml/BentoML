@@ -618,12 +618,14 @@ def list_command(  # type: ignore
         table.add_column("created_at")
         table.add_column("Bento")
         table.add_column("Status")
+        table.add_column("Region")
         for info in d_list:
             table.add_row(
                 info.name,
                 info.created_at,
                 info.get_bento(refetch=False),
                 info.get_status(refetch=False).status,
+                info.cluster,
             )
         console.print(table)
     elif output == "json":

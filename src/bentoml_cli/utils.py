@@ -404,10 +404,8 @@ class BentoMLCommandGroup(click.Group):
             # Common wrappers are already applied, call the super() method
             for name, cmd in group.commands.items():
                 super().add_command(cmd, name)
-                aliases = getattr(cmd, "aliases", None)
-                if aliases:
-                    self._commands[name] = aliases
-                    self._aliases.update({alias: name for alias in aliases})
+            self._commands.update(group._commands)
+            self._aliases.update(group._aliases)
         else:
             for name, cmd in group.commands.items():
                 self.add_command(cmd, name)

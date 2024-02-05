@@ -366,9 +366,9 @@ class DeploymentInfo:
     created_at: str
     created_by: str
     cluster: str
-    _context: t.Optional[str] = attr.field(alias="_context", repr=False)
-    _schema: DeploymentSchema = attr.field(alias="_schema", repr=False)
-    _urls: t.Optional[list[str]] = attr.field(alias="_urls", default=None, repr=False)
+    _context: t.Optional[str] = attr.field(repr=False)
+    _schema: DeploymentSchema = attr.field(repr=False)
+    _urls: t.Optional[list[str]] = attr.field(default=None, repr=False)
 
     def to_dict(self) -> dict[str, t.Any]:
         return {

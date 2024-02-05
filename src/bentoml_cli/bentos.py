@@ -18,7 +18,6 @@ from bentoml_cli.utils import is_valid_bento_tag
 
 if t.TYPE_CHECKING:
     from click import Context
-    from click import Group
     from click import Parameter
 
     from bentoml._internal.bento import BentoStore
@@ -60,7 +59,7 @@ def parse_delete_targets_argument_callback(
     return delete_targets
 
 
-def add_bento_management_commands(cli: Group):
+def bento_management_commands() -> click.Group:
     import bentoml
     from bentoml import Tag
     from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
@@ -73,10 +72,12 @@ def add_bento_management_commands(cli: Group):
     from bentoml._internal.utils import rich_console as console
     from bentoml.bentos import import_bento
 
-    bento_store = BentoMLContainer.bento_store.get()
-    cloud_client = BentoMLContainer.bentocloud_client.get()
+    @click.group()
+    def bentos():
+        """Commands for managing Bento bundles."""
+        pass
 
-    @cli.command()
+    @bentos.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-o",
@@ -84,7 +85,12 @@ def add_bento_management_commands(cli: Group):
         type=click.Choice(["json", "yaml", "path"]),
         default="yaml",
     )
-    def get(bento_tag: str, output: str) -> None:  # type: ignore (not accessed)
+    @inject
+    def get(
+        bento_tag: str,
+        output: str,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> None:  # type: ignore (not accessed)
         """Print Bento details by providing the bento_tag.
 
         \b
@@ -102,7 +108,7 @@ def add_bento_management_commands(cli: Group):
             info = yaml.dump(bento.info, indent=2, sort_keys=False)
             console.print(Syntax(info, "yaml", background_color="default"))
 
-    @cli.command(name="list")
+    @bentos.command(name="list")
     @click.argument("bento_name", type=click.STRING, required=False)
     @click.option(
         "-o",
@@ -110,7 +116,12 @@ def add_bento_management_commands(cli: Group):
         type=click.Choice(["json", "yaml", "table"]),
         default="table",
     )
-    def list_bentos(bento_name: str, output: str) -> None:  # type: ignore (not accessed)
+    @inject
+    def list_bentos(
+        bento_name: str,
+        output: str,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> None:  # type: ignore (not accessed)
         """List Bentos in local store
 
         \b
@@ -141,7 +152,7 @@ def add_bento_management_commands(cli: Group):
             info = json.dumps(res, indent=2)
             console.print(info)
         elif output == "yaml":
-            info = yaml.safe_dump(res, indent=2)
+            info = t.cast(str, yaml.safe_dump(res, indent=2))
             console.print(Syntax(info, "yaml", background_color="default"))
         else:
             table = Table(box=None)
@@ -158,7 +169,7 @@ def add_bento_management_commands(cli: Group):
                 )
             console.print(table)
 
-    @cli.command()
+    @bentos.command()
     @click.argument(
         "delete_targets",
         nargs=-1,
@@ -172,7 +183,12 @@ def add_bento_management_commands(cli: Group):
         is_flag=True,
         help="Skip confirmation when deleting a specific bento bundle",
     )
-    def delete(delete_targets: list[str], yes: bool) -> None:  # type: ignore (not accessed)
+    @inject
+    def delete(
+        delete_targets: list[str],
+        yes: bool,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> None:  # type: ignore (not accessed)
         """Delete Bento in local bento store.
 
         \b
@@ -205,7 +221,7 @@ def add_bento_management_commands(cli: Group):
         for target in delete_targets:
             delete_target(target)
 
-    @cli.command()
+    @bentos.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.argument(
         "out_path",
@@ -213,7 +229,12 @@ def add_bento_management_commands(cli: Group):
         default="",
         required=False,
     )
-    def export(bento_tag: str, out_path: str) -> None:  # type: ignore (not accessed)
+    @inject
+    def export(
+        bento_tag: str,
+        out_path: str,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    ) -> None:  # type: ignore (not accessed)
         """Export a Bento to an external file archive
 
         \b
@@ -235,7 +256,7 @@ def add_bento_management_commands(cli: Group):
         out_path = bento.export(out_path)
         click.echo(f"{bento} exported to {out_path}.")
 
-    @cli.command(name="import")
+    @bentos.command(name="import")
     @click.argument("bento_path", type=click.STRING)
     def import_bento_(bento_path: str) -> None:  # type: ignore (not accessed)
         """Import a previously exported Bento archive file
@@ -252,7 +273,7 @@ def add_bento_management_commands(cli: Group):
         bento = import_bento(bento_path)
         click.echo(f"{bento} imported.")
 
-    @cli.command()
+    @bentos.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-f",
@@ -262,13 +283,19 @@ def add_bento_management_commands(cli: Group):
         help="Force pull from remote Bento store to local and overwrite even if it already exists in local",
     )
     @click.pass_obj
-    def pull(shared_options: SharedOptions, bento_tag: str, force: bool) -> None:  # type: ignore (not accessed)
+    @inject
+    def pull(
+        shared_options: SharedOptions,
+        bento_tag: str,
+        force: bool,
+        cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    ) -> None:  # type: ignore (not accessed)
         """Pull Bento from a remote Bento store server."""
         cloud_client.pull_bento(
             bento_tag, force=force, context=shared_options.cloud_context
         )
 
-    @cli.command()
+    @bentos.command()
     @click.argument("bento_tag", type=click.STRING)
     @click.option(
         "-f",
@@ -284,8 +311,14 @@ def add_bento_management_commands(cli: Group):
         help="Number of threads to use for upload",
     )
     @click.pass_obj
+    @inject
     def push(
-        shared_options: SharedOptions, bento_tag: str, force: bool, threads: int
+        shared_options: SharedOptions,
+        bento_tag: str,
+        force: bool,
+        threads: int,
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ) -> None:  # type: ignore (not accessed)
         """Push Bento to a remote Bento store server."""
         bento_obj = bento_store.get(bento_tag)
@@ -298,7 +331,7 @@ def add_bento_management_commands(cli: Group):
             context=shared_options.cloud_context,
         )
 
-    @cli.command()
+    @bentos.command()
     @click.argument("build_ctx", type=click.Path(), default=".")
     @click.option(
         "-f",
@@ -429,3 +462,8 @@ def add_bento_management_commands(cli: Group):
             bentoml.container.build(bento.tag, backend=backend)
 
         return bento
+
+    return bentos
+
+
+bentos = bento_management_commands()

@@ -5,19 +5,19 @@ import importlib.metadata
 import click
 import psutil
 
-from bentoml_cli.bentos import add_bento_management_commands
-from bentoml_cli.cloud import add_cloud_command
-from bentoml_cli.containerize import add_containerize_command
-from bentoml_cli.deployment import add_deployment_command
-from bentoml_cli.env import add_env_command
-from bentoml_cli.models import add_model_management_commands
-from bentoml_cli.serve import add_serve_command
-from bentoml_cli.start import add_start_command
-from bentoml_cli.utils import BentoMLCommandGroup
 
-
-def create_bentoml_cli() -> click.Group:
+def create_bentoml_cli() -> click.Command:
     from bentoml._internal.context import component_context
+    from bentoml_cli.bentos import bentos
+    from bentoml_cli.cloud import cloud_command
+    from bentoml_cli.containerize import containerize_command
+    from bentoml_cli.deployment import deploy_command
+    from bentoml_cli.deployment import deployment_command
+    from bentoml_cli.env import env_command
+    from bentoml_cli.models import model_command
+    from bentoml_cli.serve import serve_command
+    from bentoml_cli.start import start_command
+    from bentoml_cli.utils import BentoMLCommandGroup
 
     component_context.component_type = "cli"
 
@@ -37,14 +37,15 @@ def create_bentoml_cli() -> click.Group:
         """
 
     # Add top-level CLI commands
-    add_env_command(bentoml_cli)
-    add_cloud_command(bentoml_cli)
-    add_bento_management_commands(bentoml_cli)
-    add_model_management_commands(bentoml_cli)
-    add_start_command(bentoml_cli)
-    add_serve_command(bentoml_cli)
-    add_containerize_command(bentoml_cli)
-    add_deployment_command(bentoml_cli)
+    bentoml_cli.add_command(env_command)
+    bentoml_cli.add_command(cloud_command)
+    bentoml_cli.add_command(model_command)
+    bentoml_cli.add_subcommands(bentos)
+    bentoml_cli.add_subcommands(start_command)
+    bentoml_cli.add_subcommands(serve_command)
+    bentoml_cli.add_command(containerize_command)
+    bentoml_cli.add_command(deploy_command)
+    bentoml_cli.add_command(deployment_command)
 
     if psutil.WINDOWS:
         import sys

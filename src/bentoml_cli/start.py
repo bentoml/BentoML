@@ -15,8 +15,9 @@ def build_start_command() -> click.Group:
     from bentoml._internal.configuration.containers import BentoMLContainer
     from bentoml._internal.utils import add_experimental_docstring
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
+    from bentoml_cli.utils import BentoMLCommandGroup
 
-    @click.group(name="start")
+    @click.group(name="start", cls=BentoMLCommandGroup)
     def cli():
         pass
 

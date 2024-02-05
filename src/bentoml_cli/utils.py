@@ -400,8 +400,17 @@ class BentoMLCommandGroup(click.Group):
             raise TypeError(
                 "BentoMLCommandGroup.add_subcommands only accepts click.MultiCommand"
             )
-        for name, cmd in group.commands.items():
-            self.add_command(cmd, name)
+        if isinstance(group, BentoMLCommandGroup):
+            # Common wrappers are already applied, call the super() method
+            for name, cmd in group.commands.items():
+                super().add_command(cmd, name)
+                aliases = getattr(cmd, "aliases", None)
+                if aliases:
+                    self._commands[name] = aliases
+                    self._aliases.update({alias: name for alias in aliases})
+        else:
+            for name, cmd in group.commands.items():
+                self.add_command(cmd, name)
 
     def add_command(self, cmd: Command, name: str | None = None) -> None:
         assert cmd.callback is not None

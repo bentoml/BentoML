@@ -71,8 +71,9 @@ def bento_management_commands() -> click.Group:
     from bentoml._internal.utils import resolve_user_filepath
     from bentoml._internal.utils import rich_console as console
     from bentoml.bentos import import_bento
+    from bentoml_cli.utils import BentoMLCommandGroup
 
-    @click.group()
+    @click.group(cls=BentoMLCommandGroup)
     def bentos():
         """Commands for managing Bento bundles."""
         pass

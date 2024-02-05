@@ -52,8 +52,9 @@ def build_serve_command() -> click.Group:
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml_cli.env_manager import env_manager
     from bentoml_cli.utils import AliasCommand
+    from bentoml_cli.utils import BentoMLCommandGroup
 
-    @click.group(name="serve")
+    @click.group(name="serve", cls=BentoMLCommandGroup)
     def cli():
         pass
 

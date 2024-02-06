@@ -1,8 +1,8 @@
-import typing as t
 import contextlib
+import typing as t
 
-from .base import Opener
 from ..base import FS
+from .base import Opener
 from .parse import parse_fs_url as parse
 from .registry import registry
 

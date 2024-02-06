@@ -1,5 +1,5 @@
-from .core import StrategyList
 from ..merger import Merger
+from .core import StrategyList
 
 class DictStrategies(StrategyList):
     @staticmethod

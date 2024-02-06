@@ -1,11 +1,11 @@
 from typing import Any
+from typing import Iterator
 from typing import List
+from typing import NamedTuple
+from typing import Optional
+from typing import Pattern
 from typing import Text
 from typing import Tuple
-from typing import Pattern
-from typing import Iterator
-from typing import Optional
-from typing import NamedTuple
 
 from .base import FS
 from .info import Info

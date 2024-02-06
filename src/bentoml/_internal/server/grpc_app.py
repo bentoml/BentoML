@@ -332,7 +332,8 @@ class Server(aio._server.Server):
         # mark all services as healthy
         for service in service_names:
             await self.health_servicer.set(
-                service, pb_health.HealthCheckResponse.SERVING  # type: ignore (no types available)
+                service,
+                pb_health.HealthCheckResponse.SERVING,  # type: ignore (no types available)
             )
         await self.start()
 

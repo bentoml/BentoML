@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Text
 from typing import NamedTuple
+from typing import Text
 
 class ParseResult(NamedTuple):
     protocol: Text

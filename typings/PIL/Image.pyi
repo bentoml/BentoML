@@ -1,20 +1,21 @@
 from __future__ import annotations
 
+import typing as t
+from enum import IntEnum
+from pathlib import Path
 from typing import Any
 from typing import Dict
-from typing import Tuple
-from typing import Union
 from typing import Literal
-from typing import TypeVar
 from typing import Protocol
 from typing import Sequence
-from pathlib import Path
-from enum import IntEnum
+from typing import Tuple
+from typing import TypeVar
+from typing import Union
 
 from _typeshed import SupportsRead
 from _typeshed import SupportsWrite
-from numpy.typing import NDArray
 from numpy.typing import DTypeLike
+from numpy.typing import NDArray
 
 _Mode = Literal[
     "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"

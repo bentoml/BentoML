@@ -6,8 +6,8 @@ if TYPE_CHECKING:
 
     F = t.Callable[..., t.Any]
 
-    from pandas import Series as _PdSeries
     from pandas import DataFrame as PdDataFrame
+    from pandas import Series as _PdSeries
     from pandas._typing import Dtype as PdDType
     from pandas._typing import DtypeArg as PdDTypeArg
     from pyarrow.plasma import ObjectID
@@ -19,22 +19,21 @@ if TYPE_CHECKING:
 
     # numpy is always required by bentoml
     from numpy import generic as NpGeneric
-    from numpy.typing import NDArray as _NDArray
     from numpy.typing import DTypeLike as NpDTypeLike
+    from numpy.typing import NDArray as _NDArray
 
     NpNDArray = _NDArray[t.Any]
 
-    from xgboost import DMatrix
     from catboost import Pool as CbPool
+    from PIL.Image import Image as PILImage
+    from xgboost import DMatrix
 
     from .starlette import ASGIApp
-    from .starlette import ASGISend
-    from .starlette import ASGIScope
     from .starlette import ASGIMessage
-    from .starlette import ASGIReceive
     from .starlette import AsgiMiddleware
-
-    from PIL.Image import Image as PILImage
+    from .starlette import ASGIReceive
+    from .starlette import ASGIScope
+    from .starlette import ASGISend
 
     WSGIApp = t.Callable[[F, t.Mapping[str, t.Any]], t.Iterable[bytes]]
 

@@ -157,7 +157,9 @@ def test_generic_arguments(framework: types.ModuleType, test_model: FrameworkTes
     )
 
     for meth in meths:
-        assert bento_model.info.signatures[meth] == ModelSignature.from_dict(kwargs["signatures"][meth])  # type: ignore
+        assert bento_model.info.signatures[meth] == ModelSignature.from_dict(
+            kwargs["signatures"][meth]
+        )  # type: ignore
 
     assert bento_model.info.labels == kwargs["labels"]
     assert bento_model.custom_objects["pytest-custom-object-r7BU"].mean_[0] == 5.5

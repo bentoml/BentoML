@@ -320,8 +320,7 @@ class BentoCloudClient(CloudClient):
                         ):
                             chunk = (
                                 tar_io.getbuffer()[
-                                    (chunk_number - 1)
-                                    * FILE_CHUNK_SIZE : chunk_number
+                                    (chunk_number - 1) * FILE_CHUNK_SIZE : chunk_number
                                     * FILE_CHUNK_SIZE
                                 ]
                                 if chunk_number < chunks_count
@@ -773,8 +772,7 @@ class BentoCloudClient(CloudClient):
                         ):
                             chunk = (
                                 tar_io.getbuffer()[
-                                    (chunk_number - 1)
-                                    * FILE_CHUNK_SIZE : chunk_number
+                                    (chunk_number - 1) * FILE_CHUNK_SIZE : chunk_number
                                     * FILE_CHUNK_SIZE
                                 ]
                                 if chunk_number < chunks_count

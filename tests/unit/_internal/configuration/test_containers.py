@@ -36,7 +36,7 @@ api_server:
 
 @pytest.mark.usefixtures("container_from_envvar")
 def test_containers_from_envvar(
-    container_from_envvar: t.Callable[[str], ConfigDictType]
+    container_from_envvar: t.Callable[[str], ConfigDictType],
 ):
     envvar = 'api_server.http.host="127.0.0.1" api_server.http.port=5000'
     config = container_from_envvar(envvar)
@@ -117,7 +117,7 @@ runners:
 
 @pytest.mark.usefixtures("container_from_file")
 def test_runner_gpu_configuration(
-    container_from_file: t.Callable[[str], ConfigDictType]
+    container_from_file: t.Callable[[str], ConfigDictType],
 ):
     GPU_INDEX = """\
 runners:

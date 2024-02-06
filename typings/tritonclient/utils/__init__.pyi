@@ -1,8 +1,8 @@
 import typing as t
 
 import numpy as np
-from numpy.typing import NDArray
 from numpy.typing import DTypeLike
+from numpy.typing import NDArray
 
 def raise_error(msg: str) -> t.NoReturn:
     """

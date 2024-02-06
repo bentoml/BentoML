@@ -457,7 +457,7 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def duration_buckets(
-        duration: dict[str, t.Any] = Provide[api_server_config.metrics.duration]
+        duration: dict[str, t.Any] = Provide[api_server_config.metrics.duration],
     ) -> tuple[float, ...]:
         """
         Returns a tuple of duration buckets in seconds. If not explicitly configured,

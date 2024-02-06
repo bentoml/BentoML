@@ -1,7 +1,7 @@
-from typing import Text
-from typing import Union
 from typing import Callable
 from typing import Optional
+from typing import Text
+from typing import Union
 
 from .base import FS
 from .walk import Walker

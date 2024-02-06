@@ -1,15 +1,14 @@
 import typing
-from typing import List
-from typing import Text
-from typing import Type
-from typing import Tuple
-from typing import Union
 from typing import Iterable
 from typing import Iterator
+from typing import List
 from typing import Optional
+from typing import Text
+from typing import Tuple
+from typing import Type
+from typing import Union
 
-if typing.TYPE_CHECKING:
-    ...
+if typing.TYPE_CHECKING: ...
 
 def make_mode(init: Union[int, Iterable[Text], None]) -> int: ...
 

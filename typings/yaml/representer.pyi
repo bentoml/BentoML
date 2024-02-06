@@ -1,24 +1,24 @@
-import sys
 import datetime
-from types import NoneType
-from types import ModuleType
-from types import FunctionType
+import sys
 from types import BuiltinFunctionType
+from types import FunctionType
+from types import ModuleType
+from types import NoneType
 from typing import Any
-from typing import Tuple
-from typing import Mapping
-from typing import TypeVar
 from typing import Callable
 from typing import ClassVar
 from typing import Iterable
+from typing import Mapping
 from typing import NoReturn
+from typing import Tuple
+from typing import TypeVar
 
 from _typeshed import SupportsItems
 
 from .error import YAMLError as YAMLError
+from .nodes import MappingNode as MappingNode
 from .nodes import Node as Node
 from .nodes import ScalarNode as ScalarNode
-from .nodes import MappingNode as MappingNode
 from .nodes import SequenceNode as SequenceNode
 
 _T = TypeVar("_T")
@@ -74,8 +74,7 @@ class SafeRepresenter(BaseRepresenter):
     def represent_none(self, data: NoneType) -> ScalarNode: ...
     def represent_str(self, data: str) -> ScalarNode: ...
 
-    if sys.version_info < (3, 0):
-        ...
+    if sys.version_info < (3, 0): ...
 
     def represent_binary(self, data: bytes) -> ScalarNode: ...
     def represent_bool(self, data: bool) -> ScalarNode: ...
@@ -94,8 +93,7 @@ class SafeRepresenter(BaseRepresenter):
     def represent_undefined(self, data: Any) -> NoReturn: ...
 
 class Representer(SafeRepresenter):
-    if sys.version_info < (3, 0):
-        ...
+    if sys.version_info < (3, 0): ...
 
     def represent_complex(self, data: complex) -> ScalarNode: ...
     def represent_tuple(self, data: Iterable[Any]) -> SequenceNode: ...

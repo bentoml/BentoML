@@ -178,7 +178,7 @@ def make_rf_onnx_model() -> (
 # of onnxruntime (also the BentoML runner) to the outputs of original
 # model
 def gen_rf_output_checker(
-    expected_output: tuple[ext.NpNDArray, ext.NpNDArray]
+    expected_output: tuple[ext.NpNDArray, ext.NpNDArray],
 ) -> t.Callable[[t.Any], bool]:
     expected_output1, expected_output2 = expected_output
 

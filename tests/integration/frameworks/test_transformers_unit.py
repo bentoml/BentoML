@@ -75,7 +75,7 @@ def fixture_sentiment() -> tuple[transformers.Pipeline, TaskDefinition]:
 
 
 def test_raise_different_default_definition(
-    sentiment_task: tuple[transformers.Pipeline, TaskDefinition]
+    sentiment_task: tuple[transformers.Pipeline, TaskDefinition],
 ):
     # implementation is different
     sentiment, _ = sentiment_task
@@ -102,7 +102,7 @@ def test_raise_different_default_definition(
 
 
 def test_raise_does_not_match_task_name(
-    sentiment_task: tuple[transformers.Pipeline, TaskDefinition]
+    sentiment_task: tuple[transformers.Pipeline, TaskDefinition],
 ):
     # pipeline task does not match given task name or pipeline.task is None
     sentiment, original_task = sentiment_task
@@ -120,7 +120,7 @@ def test_raise_does_not_match_task_name(
 
 
 def test_raise_does_not_match_impl_field(
-    sentiment_task: tuple[transformers.Pipeline, TaskDefinition]
+    sentiment_task: tuple[transformers.Pipeline, TaskDefinition],
 ):
     sentiment, original_task = sentiment_task
     # task_definition['impl'] is different from pipeline type

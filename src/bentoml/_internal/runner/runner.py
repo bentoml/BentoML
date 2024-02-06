@@ -124,15 +124,17 @@ class Runner(AbstractRunner):
         # the following annotations hacks around the fact that Runner does not
         # have information about signatures at runtime.
         @t.overload
-        def __getattr__(self, item: t.Literal["__attrs_init__"]) -> t.Callable[..., None]:  # type: ignore
+        def __getattr__(
+            self, item: t.Literal["__attrs_init__"]
+        ) -> t.Callable[..., None]:  # type: ignore
             ...
 
         @t.overload
-        def __getattr__(
-            self, item: t.LiteralString
-        ) -> RunnerMethod[t.Any, P, t.Any]: ...
+        def __getattr__(self, item: t.LiteralString) -> RunnerMethod[t.Any, P, t.Any]:
+            ...
 
-        def __getattr__(self, item: str) -> t.Any: ...
+        def __getattr__(self, item: str) -> t.Any:
+            ...
 
     runner_methods: list[RunnerMethod[t.Any, t.Any, t.Any]]
     scheduling_strategy: type[Strategy]

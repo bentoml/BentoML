@@ -1,7 +1,7 @@
 from typing import Any
-from typing import Text
 from typing import Callable
 from typing import Optional
+from typing import Text
 
 __all__ = [
     "CreateFailed",

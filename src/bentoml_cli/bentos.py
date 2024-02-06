@@ -386,17 +386,21 @@ def add_bento_management_commands(cli: Group):
                 click.secho(f"Successfully built {bento}.", fg="green")
 
                 click.secho(
-                    f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ {containerize_cmd}"
-                    + "  [or bentoml build --containerize]"
-                    if not containerize
-                    else "",
+                    (
+                        f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ {containerize_cmd}"
+                        + "  [or bentoml build --containerize]"
+                        if not containerize
+                        else ""
+                    ),
                     fg="blue",
                 )
                 click.secho(
-                    f"\n * Push to BentoCloud with `bentoml push`:\n    $ {push_cmd}"
-                    + " [or bentoml build --push]"
-                    if not push
-                    else "",
+                    (
+                        f"\n * Push to BentoCloud with `bentoml push`:\n    $ {push_cmd}"
+                        + " [or bentoml build --push]"
+                        if not push
+                        else ""
+                    ),
                     fg="blue",
                 )
         if push:

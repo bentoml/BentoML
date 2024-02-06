@@ -106,8 +106,9 @@ class HTTPAppFactory(BaseAppFactory):
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
-        max_concurrency: int
-        | None = Provide[BentoMLContainer.api_server_config.traffic.max_concurrency],
+        max_concurrency: int | None = Provide[
+            BentoMLContainer.api_server_config.traffic.max_concurrency
+        ],
     ):
         self.bento_service = bento_service
         self.enable_access_control = enable_access_control

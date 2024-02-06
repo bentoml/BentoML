@@ -246,8 +246,7 @@ if t.TYPE_CHECKING:
 @contextmanager
 def _create(
     name: Tag | str, /, **attrs: t.Unpack[CreateKwargs]
-) -> t.Generator[Model, None, None]:
-    ...
+) -> t.Generator[Model, None, None]: ...
 
 
 @t.overload
@@ -265,8 +264,7 @@ def _create(
     metadata: dict[str, t.Any] | None = ...,
     context: ModelContext,
     _model_store: ModelStore = ...,
-) -> t.Generator[Model, None, None]:
-    ...
+) -> t.Generator[Model, None, None]: ...
 
 
 @inject

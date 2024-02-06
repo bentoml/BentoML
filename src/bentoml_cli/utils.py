@@ -33,8 +33,7 @@ if t.TYPE_CHECKING:
         def __call__(  # pylint: disable=no-method-argument
             *args: P.args,
             **kwargs: P.kwargs,
-        ) -> F[P]:
-            ...
+        ) -> F[P]: ...
 
     WrappedCLI = t.Callable[P, ClickFunctionWrapper[P]]
 
@@ -128,13 +127,11 @@ def validate_docker_tag(
 
 
 @t.overload
-def normalize_none_type(value: t.Mapping[str, t.Any]) -> t.Mapping[str, t.Any]:
-    ...
+def normalize_none_type(value: t.Mapping[str, t.Any]) -> t.Mapping[str, t.Any]: ...
 
 
 @t.overload
-def normalize_none_type(value: ClickParamType) -> ClickParamType:
-    ...
+def normalize_none_type(value: ClickParamType) -> ClickParamType: ...
 
 
 def normalize_none_type(

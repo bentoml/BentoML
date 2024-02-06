@@ -56,17 +56,14 @@ if t.TYPE_CHECKING:
 
     class PreTrainedProtocol(t.Protocol):
         @property
-        def framework(self) -> str:
-            ...
+        def framework(self) -> str: ...
 
-        def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None:
-            ...
+        def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None: ...
 
         @classmethod
         def from_pretrained(
             cls, pretrained_model_name_or_path: str, *args: t.Any, **kwargs: t.Any
-        ) -> PreTrainedProtocol:
-            ...
+        ) -> PreTrainedProtocol: ...
 
     P = t.ParamSpec("P")
 
@@ -201,14 +198,18 @@ class TransformersOptions(ModelOptions):
     @staticmethod
     def process_task_mapping(
         impl: type[transformers.Pipeline],
-        pt: tuple[BaseAutoModelClass | str, ...]
-        | TupleAutoModel
-        | BaseAutoModelClass
-        | None = None,
-        tf: tuple[BaseAutoModelClass | str, ...]
-        | TupleAutoModel
-        | BaseAutoModelClass
-        | None = None,
+        pt: (
+            tuple[BaseAutoModelClass | str, ...]
+            | TupleAutoModel
+            | BaseAutoModelClass
+            | None
+        ) = None,
+        tf: (
+            tuple[BaseAutoModelClass | str, ...]
+            | TupleAutoModel
+            | BaseAutoModelClass
+            | None
+        ) = None,
         default: DefaultMapping | None = None,
         type: str | None = None,
     ) -> TaskDefinition:
@@ -303,14 +304,18 @@ def get(tag_like: str | Tag) -> Model:
 def register_pipeline(
     task: str,
     impl: type[transformers.Pipeline],
-    pt: tuple[BaseAutoModelClass | str, ...]
-    | TupleAutoModel
-    | BaseAutoModelClass
-    | None = None,
-    tf: tuple[BaseAutoModelClass | str, ...]
-    | TupleAutoModel
-    | BaseAutoModelClass
-    | None = None,
+    pt: (
+        tuple[BaseAutoModelClass | str, ...]
+        | TupleAutoModel
+        | BaseAutoModelClass
+        | None
+    ) = None,
+    tf: (
+        tuple[BaseAutoModelClass | str, ...]
+        | TupleAutoModel
+        | BaseAutoModelClass
+        | None
+    ) = None,
     default: DefaultMapping | None = None,
     type: str | None = None,
 ):
@@ -354,15 +359,13 @@ def delete_pipeline(task: str) -> None:
 @t.overload
 def load_model(
     bento_model: str | Tag | Model, **kwargs: t.Any
-) -> transformers.Pipeline:
-    ...
+) -> transformers.Pipeline: ...
 
 
 @t.overload
 def load_model(
     bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any
-) -> TransformersPreTrained:
-    ...
+) -> TransformersPreTrained: ...
 
 
 def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -916,10 +919,9 @@ def import_model(
 
 def save_model(
     name: Tag | str,
-    pretrained_or_pipeline: TransformersPreTrained
-    | transformers.Pipeline
-    | PreTrainedProtocol
-    | None = None,
+    pretrained_or_pipeline: (
+        TransformersPreTrained | transformers.Pipeline | PreTrainedProtocol | None
+    ) = None,
     pipeline: transformers.Pipeline | None = None,
     task_name: str | None = None,
     task_definition: dict[str, t.Any] | TaskDefinition | None = None,

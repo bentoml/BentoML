@@ -104,9 +104,11 @@ def start_runner_server(
                     break
                 else:
                     cli_args = runner.cli_args + [
-                        f"--http-port={runner.protocol_address.split(':')[-1]}"
-                        if runner.tritonserver_type == "http"
-                        else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                        (
+                            f"--http-port={runner.protocol_address.split(':')[-1]}"
+                            if runner.tritonserver_type == "http"
+                            else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                        )
                     ]
                     watchers.append(
                         create_watcher(
@@ -262,8 +264,9 @@ def start_grpc_server(
     api_workers: int = Provide[BentoMLContainer.api_server_workers],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
-    max_concurrent_streams: int
-    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+    max_concurrent_streams: int | None = Provide[
+        BentoMLContainer.grpc.max_concurrent_streams
+    ],
     ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
     ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],

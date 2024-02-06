@@ -69,9 +69,9 @@ class DiffusersOptions(PartialKwargsModelOptions):
     load_pretrained_extra_kwargs: dict[str, t.Any] | None = None
     lora_dir: str | None = None
     lora_weights: LoraOptionType | list[LoraOptionType] | None = None
-    textual_inversions: TextualInversionOptionType | list[
-        TextualInversionOptionType
-    ] | None = None
+    textual_inversions: (
+        TextualInversionOptionType | list[TextualInversionOptionType] | None
+    ) = None
 
 
 def _prepare_lora_args(
@@ -197,8 +197,9 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 def load_model(
     bento_model: str | Tag | bentoml.Model,
     device_id: str | torch.device | None = None,
-    pipeline_class: str
-    | type[diffusers.pipelines.DiffusionPipeline] = diffusers.DiffusionPipeline,
+    pipeline_class: (
+        str | type[diffusers.pipelines.DiffusionPipeline]
+    ) = diffusers.DiffusionPipeline,
     device_map: str | dict[str, int | str | torch.device] | None = None,
     custom_pipeline: str | None = None,
     scheduler_class: type[diffusers.SchedulerMixin] | None = None,
@@ -211,9 +212,9 @@ def load_model(
     enable_torch_compile: bool | None = None,
     variant: str | None = None,
     lora_weights: LoraOptionType | list[LoraOptionType] | None = None,
-    textual_inversions: TextualInversionOptionType
-    | list[TextualInversionOptionType]
-    | None = None,
+    textual_inversions: (
+        TextualInversionOptionType | list[TextualInversionOptionType] | None
+    ) = None,
     load_pretrained_extra_kwargs: dict[str, t.Any] | None = None,
 ) -> diffusers.DiffusionPipeline:
     """
@@ -652,9 +653,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             type[diffusers.DiffusionPipeline], _str2cls(pipeline_class)
         )
 
-    scheduler_class: str | type[
-        diffusers.SchedulerMixin
-    ] | None = bento_options.scheduler_class
+    scheduler_class: str | type[diffusers.SchedulerMixin] | None = (
+        bento_options.scheduler_class
+    )
 
     if scheduler_class and isinstance(scheduler_class, str):
         scheduler_class = t.cast(
@@ -672,9 +673,9 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     low_cpu_mem_usage: bool | None = bento_options.low_cpu_mem_usage
     variant: str | None = bento_options.variant
     _torch_dtype: str | torch.dtype | None = bento_options.torch_dtype
-    device_map: str | dict[
-        str, int | str | torch.device
-    ] | None = bento_options.device_map
+    device_map: str | dict[str, int | str | torch.device] | None = (
+        bento_options.device_map
+    )
     load_pretrained_extra_kwargs = bento_options.load_pretrained_extra_kwargs
 
     support_lora = True if issubclass(pipeline_class, LoraLoaderMixin) else False

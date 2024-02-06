@@ -371,8 +371,10 @@ async def concat_to_multipart_response(
         # body
         if isinstance(resp, StreamingResponse):
             async for chunk in resp.body_iterator:
-                writer.write(chunk) if isinstance(chunk, bytes) else writer.write(
-                    chunk.encode(resp.charset)
+                (
+                    writer.write(chunk)
+                    if isinstance(chunk, bytes)
+                    else writer.write(chunk.encode(resp.charset))
                 )
         else:
             writer.write(resp.body)

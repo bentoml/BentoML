@@ -31,9 +31,9 @@ class Runnable:
     SUPPORTED_RESOURCES: tuple[str, ...]
     SUPPORTS_CPU_MULTI_THREADING: bool
 
-    bentoml_runnable_methods__: dict[
-        str, RunnableMethod[t.Any, t.Any, t.Any]
-    ] | None = None
+    bentoml_runnable_methods__: (
+        dict[str, RunnableMethod[t.Any, t.Any, t.Any]] | None
+    ) = None
 
     def __setattr__(self, attr_name: str, value: t.Any):
         if attr_name in ("SUPPORTED_RESOURCES", "SUPPORTS_CPU_MULTI_THREADING"):
@@ -83,8 +83,7 @@ class Runnable:
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
-    ) -> RunnableMethod[T, P, R]:
-        ...
+    ) -> RunnableMethod[T, P, R]: ...
 
     @overload
     @staticmethod
@@ -95,8 +94,7 @@ class Runnable:
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
-    ) -> t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]:
-        ...
+    ) -> t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]: ...
 
     @staticmethod
     def method(
@@ -119,9 +117,11 @@ class Runnable:
                     is_stream=inspect.isasyncgenfunction(meth)
                     or inspect.isgeneratorfunction(meth),
                     batchable=batchable,
-                    batch_dim=(batch_dim, batch_dim)
-                    if isinstance(batch_dim, int)
-                    else batch_dim,
+                    batch_dim=(
+                        (batch_dim, batch_dim)
+                        if isinstance(batch_dim, int)
+                        else batch_dim
+                    ),
                     input_spec=input_spec,
                     output_spec=output_spec,
                 ),

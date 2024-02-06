@@ -498,8 +498,9 @@ def serve(
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
     enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     enable_channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
-    max_concurrent_streams: int
-    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+    max_concurrent_streams: int | None = Provide[
+        BentoMLContainer.grpc.max_concurrent_streams
+    ],
     grpc_protocol_version: str | None = None,
 ) -> Server[t.Any]:
     logger.warning(

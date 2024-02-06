@@ -268,12 +268,14 @@ def add_deployment_command(cli: click.Group) -> None:
             scaling_min=scaling_min,
             instance_type=instance_type,
             strategy=strategy,
-            envs=[
-                {"name": item.split("=")[0], "value": item.split("=")[1]}
-                for item in env
-            ]
-            if env is not None
-            else None,
+            envs=(
+                [
+                    {"name": item.split("=")[0], "value": item.split("=")[1]}
+                    for item in env
+                ]
+                if env is not None
+                else None
+            ),
             config_file=config_file,
             config_dict=cfg_dict,
         )
@@ -392,11 +394,14 @@ def add_deployment_command(cli: click.Group) -> None:
             scaling_min=scaling_min,
             instance_type=instance_type,
             strategy=strategy,
-            envs=[
-                {"key": item.split("=")[0], "value": item.split("=")[1]} for item in env
-            ]
-            if env is not None
-            else None,
+            envs=(
+                [
+                    {"key": item.split("=")[0], "value": item.split("=")[1]}
+                    for item in env
+                ]
+                if env is not None
+                else None
+            ),
             config_file=config_file,
             config_dict=cfg_dict,
         )
@@ -712,9 +717,11 @@ def create_deployment(
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=[{"name": item.split("=")[0], "value": item.split("=")[1]} for item in env]
-        if env is not None
-        else None,
+        envs=(
+            [{"name": item.split("=")[0], "value": item.split("=")[1]} for item in env]
+            if env is not None
+            else None
+        ),
         config_file=config_file,
         config_dict=cfg_dict,
     )

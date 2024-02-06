@@ -1,6 +1,7 @@
 """Trains and evaluate a simple MLP
 on the Reuters newswire topic classification task.
 """
+
 # pylint: disable=no-name-in-module
 # The following import and function call are the only additions to code required
 # to automatically log metrics and parameters to MLflow.

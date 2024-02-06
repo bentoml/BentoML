@@ -8,7 +8,8 @@ import six
 from ..base import FS
 from .parse import ParseResult
 
-if typing.TYPE_CHECKING: ...
+if typing.TYPE_CHECKING:
+    ...
 
 @six.add_metaclass(abc.ABCMeta)
 class Opener:

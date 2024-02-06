@@ -35,8 +35,7 @@ class BaseAppFactory(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...
 
     @property
     def on_startup(self) -> list[LifecycleHook]:

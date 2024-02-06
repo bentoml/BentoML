@@ -376,9 +376,11 @@ def serve_http_production(
                 # Make sure that the tritonserver uses the correct protocol
                 runner_bind_map[runner.name] = runner.protocol_address
                 cli_args = runner.cli_args + [
-                    f"--http-port={runner.protocol_address.split(':')[-1]}"
-                    if runner.tritonserver_type == "http"
-                    else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                    (
+                        f"--http-port={runner.protocol_address.split(':')[-1]}"
+                        if runner.tritonserver_type == "http"
+                        else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                    )
                 ]
                 watchers.append(
                     create_watcher(
@@ -526,8 +528,9 @@ def serve_grpc_production(
     ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
     ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
-    max_concurrent_streams: int
-    | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+    max_concurrent_streams: int | None = Provide[
+        BentoMLContainer.grpc.max_concurrent_streams
+    ],
     channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     protocol_version: str = LATEST_PROTOCOL_VERSION,
@@ -617,9 +620,11 @@ def serve_grpc_production(
                 # Make sure that the tritonserver uses the correct protocol
                 runner_bind_map[runner.name] = runner.protocol_address
                 cli_args = runner.cli_args + [
-                    f"--http-port={runner.protocol_address.split(':')[-1]}"
-                    if runner.tritonserver_type == "http"
-                    else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                    (
+                        f"--http-port={runner.protocol_address.split(':')[-1]}"
+                        if runner.tritonserver_type == "http"
+                        else f"--grpc-port={runner.protocol_address.split(':')[-1]}"
+                    )
                 ]
                 watchers.append(
                     create_watcher(

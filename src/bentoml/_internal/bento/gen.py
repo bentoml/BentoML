@@ -1,6 +1,7 @@
 """
 This module is shim for bentoctl. NOT FOR DIRECT USE.
 """
+
 from __future__ import annotations
 
 import logging

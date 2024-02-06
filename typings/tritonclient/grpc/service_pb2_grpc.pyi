@@ -27,6 +27,7 @@ OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+
 import abc
 import collections.abc
 import grpc
@@ -269,6 +270,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Check liveness of the inference server.
         @@
         """
+
     @abc.abstractmethod
     def ServerReady(
         self,
@@ -281,6 +283,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Check readiness of the inference server.
         @@
         """
+
     @abc.abstractmethod
     def ModelReady(
         self,
@@ -293,6 +296,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Check readiness of a model in the inference server.
         @@
         """
+
     @abc.abstractmethod
     def ServerMetadata(
         self,
@@ -305,6 +309,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Get server metadata.
         @@
         """
+
     @abc.abstractmethod
     def ModelMetadata(
         self,
@@ -317,6 +322,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Get model metadata.
         @@
         """
+
     @abc.abstractmethod
     def ModelInfer(
         self,
@@ -329,6 +335,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Perform inference using a specific model.
         @@
         """
+
     @abc.abstractmethod
     def ModelStreamInfer(
         self,
@@ -341,6 +348,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Perform streaming inference.
         @@
         """
+
     @abc.abstractmethod
     def ModelConfig(
         self,
@@ -353,6 +361,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Get model configuration.
         @@
         """
+
     @abc.abstractmethod
     def ModelStatistics(
         self,
@@ -366,6 +375,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Get the cumulative inference statistics for a model.
         @@
         """
+
     @abc.abstractmethod
     def RepositoryIndex(
         self,
@@ -378,6 +388,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Get the index of model repository contents.
         @@
         """
+
     @abc.abstractmethod
     def RepositoryModelLoad(
         self,
@@ -390,6 +401,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Load or reload a model from a repository.
         @@
         """
+
     @abc.abstractmethod
     def RepositoryModelUnload(
         self,
@@ -402,6 +414,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Unload a model.
         @@
         """
+
     @abc.abstractmethod
     def SystemSharedMemoryStatus(
         self,
@@ -415,6 +428,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Get the status of all registered system-shared-memory regions.
         @@
         """
+
     @abc.abstractmethod
     def SystemSharedMemoryRegister(
         self,
@@ -428,6 +442,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Register a system-shared-memory region.
         @@
         """
+
     @abc.abstractmethod
     def SystemSharedMemoryUnregister(
         self,
@@ -441,6 +456,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Unregister a system-shared-memory region.
         @@
         """
+
     @abc.abstractmethod
     def CudaSharedMemoryStatus(
         self,
@@ -454,6 +470,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Get the status of all registered CUDA-shared-memory regions.
         @@
         """
+
     @abc.abstractmethod
     def CudaSharedMemoryRegister(
         self,
@@ -467,6 +484,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Register a CUDA-shared-memory region.
         @@
         """
+
     @abc.abstractmethod
     def CudaSharedMemoryUnregister(
         self,
@@ -480,6 +498,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Unregister a CUDA-shared-memory region.
         @@
         """
+
     @abc.abstractmethod
     def TraceSetting(
         self,
@@ -492,6 +511,7 @@ class GRPCInferenceServiceServicer(metaclass=abc.ABCMeta):
         @@     Update and get the trace setting of the Triton server.
         @@
         """
+
     @abc.abstractmethod
     def LogSettings(
         self,

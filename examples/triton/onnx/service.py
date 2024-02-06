@@ -20,9 +20,11 @@ triton_runner = bentoml.triton.Runner(
 bentoml_yolov5_onnx = (
     bentoml.onnx.get("onnx-yolov5")
     .with_options(
-        providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
-        if torch.cuda.is_available()
-        else ["CPUExecutionProvider"]
+        providers=(
+            ["CUDAExecutionProvider", "CPUExecutionProvider"]
+            if torch.cuda.is_available()
+            else ["CPUExecutionProvider"]
+        )
     )
     .to_runner()
 )

@@ -27,6 +27,7 @@ OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+
 import builtins
 import collections.abc
 import google.protobuf.descriptor
@@ -253,6 +254,7 @@ class ServerMetadataResponse(google.protobuf.message.Message):
         @@     The extensions supported by the server.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -359,6 +361,7 @@ class ModelMetadataResponse(google.protobuf.message.Message):
             @@       by a -1 value.
             @@
             """
+
         def __init__(
             self,
             *,
@@ -414,6 +417,7 @@ class ModelMetadataResponse(google.protobuf.message.Message):
         @@     The model's inputs.
         @@
         """
+
     @property
     def outputs(
         self,
@@ -426,16 +430,21 @@ class ModelMetadataResponse(google.protobuf.message.Message):
         @@     The model's outputs.
         @@
         """
+
     def __init__(
         self,
         *,
         name: builtins.str = ...,
         versions: collections.abc.Iterable[builtins.str] | None = ...,
         platform: builtins.str = ...,
-        inputs: collections.abc.Iterable[global___ModelMetadataResponse.TensorMetadata]
-        | None = ...,
-        outputs: collections.abc.Iterable[global___ModelMetadataResponse.TensorMetadata]
-        | None = ...,
+        inputs: (
+            collections.abc.Iterable[global___ModelMetadataResponse.TensorMetadata]
+            | None
+        ) = ...,
+        outputs: (
+            collections.abc.Iterable[global___ModelMetadataResponse.TensorMetadata]
+            | None
+        ) = ...,
     ) -> None: ...
     def ClearField(
         self,
@@ -562,6 +571,7 @@ class InferTensorContents(google.protobuf.message.Message):
         @@     one-dimensional, row-major order of the tensor elements.
         @@
         """
+
     @property
     def int_contents(
         self,
@@ -575,6 +585,7 @@ class InferTensorContents(google.protobuf.message.Message):
         @@     tensor elements.
         @@
         """
+
     @property
     def int64_contents(
         self,
@@ -587,6 +598,7 @@ class InferTensorContents(google.protobuf.message.Message):
         @@     flattened, one-dimensional, row-major order of the tensor elements.
         @@
         """
+
     @property
     def uint_contents(
         self,
@@ -600,6 +612,7 @@ class InferTensorContents(google.protobuf.message.Message):
         @@     tensor elements.
         @@
         """
+
     @property
     def uint64_contents(
         self,
@@ -612,6 +625,7 @@ class InferTensorContents(google.protobuf.message.Message):
         @@     flattened, one-dimensional, row-major order of the tensor elements.
         @@
         """
+
     @property
     def fp32_contents(
         self,
@@ -626,6 +640,7 @@ class InferTensorContents(google.protobuf.message.Message):
         @@     one-dimensional, row-major order of the tensor elements.
         @@
         """
+
     @property
     def fp64_contents(
         self,
@@ -640,6 +655,7 @@ class InferTensorContents(google.protobuf.message.Message):
         @@     one-dimensional, row-major order of the tensor elements.
         @@
         """
+
     @property
     def bytes_contents(
         self,
@@ -654,6 +670,7 @@ class InferTensorContents(google.protobuf.message.Message):
         @@     one-dimensional, row-major order of the tensor elements.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -763,6 +780,7 @@ class ModelInferRequest(google.protobuf.message.Message):
             @@       The tensor shape.
             @@
             """
+
         @property
         def parameters(
             self,
@@ -774,6 +792,7 @@ class ModelInferRequest(google.protobuf.message.Message):
             @@       Optional inference input tensor parameters.
             @@
             """
+
         @property
         def contents(self) -> global___InferTensorContents:
             """@@    .. cpp:var:: InferTensorContents contents
@@ -783,14 +802,16 @@ class ModelInferRequest(google.protobuf.message.Message):
             @@       in ModelInferRequest.raw_input_contents.
             @@
             """
+
         def __init__(
             self,
             *,
             name: builtins.str = ...,
             datatype: builtins.str = ...,
             shape: collections.abc.Iterable[builtins.int] | None = ...,
-            parameters: collections.abc.Mapping[builtins.str, global___InferParameter]
-            | None = ...,
+            parameters: (
+                collections.abc.Mapping[builtins.str, global___InferParameter] | None
+            ) = ...,
             contents: global___InferTensorContents | None = ...,
         ) -> None: ...
         def HasField(
@@ -864,12 +885,14 @@ class ModelInferRequest(google.protobuf.message.Message):
             @@       Optional requested output tensor parameters.
             @@
             """
+
         def __init__(
             self,
             *,
             name: builtins.str = ...,
-            parameters: collections.abc.Mapping[builtins.str, global___InferParameter]
-            | None = ...,
+            parameters: (
+                collections.abc.Mapping[builtins.str, global___InferParameter] | None
+            ) = ...,
         ) -> None: ...
         def ClearField(
             self,
@@ -938,6 +961,7 @@ class ModelInferRequest(google.protobuf.message.Message):
         @@     Optional inference parameters.
         @@
         """
+
     @property
     def inputs(
         self,
@@ -950,6 +974,7 @@ class ModelInferRequest(google.protobuf.message.Message):
         @@     The input tensors for the inference.
         @@
         """
+
     @property
     def outputs(
         self,
@@ -964,6 +989,7 @@ class ModelInferRequest(google.protobuf.message.Message):
         @@     returned.
         @@
         """
+
     @property
     def raw_input_contents(
         self,
@@ -994,20 +1020,25 @@ class ModelInferRequest(google.protobuf.message.Message):
         @@     must not be specified for any input tensor.
         @@
         """
+
     def __init__(
         self,
         *,
         model_name: builtins.str = ...,
         model_version: builtins.str = ...,
         id: builtins.str = ...,
-        parameters: collections.abc.Mapping[builtins.str, global___InferParameter]
-        | None = ...,
-        inputs: collections.abc.Iterable[global___ModelInferRequest.InferInputTensor]
-        | None = ...,
-        outputs: collections.abc.Iterable[
-            global___ModelInferRequest.InferRequestedOutputTensor
-        ]
-        | None = ...,
+        parameters: (
+            collections.abc.Mapping[builtins.str, global___InferParameter] | None
+        ) = ...,
+        inputs: (
+            collections.abc.Iterable[global___ModelInferRequest.InferInputTensor] | None
+        ) = ...,
+        outputs: (
+            collections.abc.Iterable[
+                global___ModelInferRequest.InferRequestedOutputTensor
+            ]
+            | None
+        ) = ...,
         raw_input_contents: collections.abc.Iterable[builtins.bytes] | None = ...,
     ) -> None: ...
     def ClearField(
@@ -1105,6 +1136,7 @@ class ModelInferResponse(google.protobuf.message.Message):
             @@       The tensor shape.
             @@
             """
+
         @property
         def parameters(
             self,
@@ -1116,6 +1148,7 @@ class ModelInferResponse(google.protobuf.message.Message):
             @@       Optional output tensor parameters.
             @@
             """
+
         @property
         def contents(self) -> global___InferTensorContents:
             """@@    .. cpp:var:: InferTensorContents contents
@@ -1125,14 +1158,16 @@ class ModelInferResponse(google.protobuf.message.Message):
             @@       in ModelInferResponse.raw_output_contents.
             @@
             """
+
         def __init__(
             self,
             *,
             name: builtins.str = ...,
             datatype: builtins.str = ...,
             shape: collections.abc.Iterable[builtins.int] | None = ...,
-            parameters: collections.abc.Mapping[builtins.str, global___InferParameter]
-            | None = ...,
+            parameters: (
+                collections.abc.Mapping[builtins.str, global___InferParameter] | None
+            ) = ...,
             contents: global___InferTensorContents | None = ...,
         ) -> None: ...
         def HasField(
@@ -1211,6 +1246,7 @@ class ModelInferResponse(google.protobuf.message.Message):
         @@     Optional inference response parameters.
         @@
         """
+
     @property
     def outputs(
         self,
@@ -1223,6 +1259,7 @@ class ModelInferResponse(google.protobuf.message.Message):
         @@     The output tensors holding inference results.
         @@
         """
+
     @property
     def raw_output_contents(
         self,
@@ -1253,16 +1290,20 @@ class ModelInferResponse(google.protobuf.message.Message):
         @@     must not be specified for any output tensor.
         @@
         """
+
     def __init__(
         self,
         *,
         model_name: builtins.str = ...,
         model_version: builtins.str = ...,
         id: builtins.str = ...,
-        parameters: collections.abc.Mapping[builtins.str, global___InferParameter]
-        | None = ...,
-        outputs: collections.abc.Iterable[global___ModelInferResponse.InferOutputTensor]
-        | None = ...,
+        parameters: (
+            collections.abc.Mapping[builtins.str, global___InferParameter] | None
+        ) = ...,
+        outputs: (
+            collections.abc.Iterable[global___ModelInferResponse.InferOutputTensor]
+            | None
+        ) = ...,
         raw_output_contents: collections.abc.Iterable[builtins.bytes] | None = ...,
     ) -> None: ...
     def ClearField(
@@ -1313,6 +1354,7 @@ class ModelStreamInferResponse(google.protobuf.message.Message):
         @@     Holds the results of the request.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -1389,6 +1431,7 @@ class ModelConfigResponse(google.protobuf.message.Message):
         @@     The model configuration.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -1505,6 +1548,7 @@ class InferStatistics(google.protobuf.message.Message):
         @@     cache hits.
         @@
         """
+
     @property
     def fail(self) -> global___StatisticDuration:
         """@@  .. cpp:var:: StatisticDuration fail
@@ -1513,6 +1557,7 @@ class InferStatistics(google.protobuf.message.Message):
         @@     request.
         @@
         """
+
     @property
     def queue(self) -> global___StatisticDuration:
         """@@  .. cpp:var:: StatisticDuration queue
@@ -1522,6 +1567,7 @@ class InferStatistics(google.protobuf.message.Message):
         @@     duration includes cache hits.
         @@
         """
+
     @property
     def compute_input(self) -> global___StatisticDuration:
         """@@  .. cpp:var:: StatisticDuration compute_input
@@ -1534,6 +1580,7 @@ class InferStatistics(google.protobuf.message.Message):
         @@     info.
         @@
         """
+
     @property
     def compute_infer(self) -> global___StatisticDuration:
         """@@  .. cpp:var:: StatisticDuration compute_infer
@@ -1544,6 +1591,7 @@ class InferStatistics(google.protobuf.message.Message):
         @@     info.
         @@
         """
+
     @property
     def compute_output(self) -> global___StatisticDuration:
         """@@  .. cpp:var:: StatisticDuration compute_output
@@ -1556,6 +1604,7 @@ class InferStatistics(google.protobuf.message.Message):
         @@     info.
         @@
         """
+
     @property
     def cache_hit(self) -> global___StatisticDuration:
         """@@  .. cpp:var:: StatisticDuration cache_hit
@@ -1575,6 +1624,7 @@ class InferStatistics(google.protobuf.message.Message):
         @@     https://github.com/triton-inference-server/server/blob/main/docs/response_cache.md
         @@
         """
+
     @property
     def cache_miss(self) -> global___StatisticDuration:
         """@@  .. cpp:var:: StatisticDuration cache_miss
@@ -1590,6 +1640,7 @@ class InferStatistics(google.protobuf.message.Message):
         @@     https://github.com/triton-inference-server/server/blob/main/docs/response_cache.md
         @@
         """
+
     def __init__(
         self,
         *,
@@ -1677,6 +1728,7 @@ class InferBatchStatistics(google.protobuf.message.Message):
         @@     tensor data to the GPU.
         @@
         """
+
     @property
     def compute_infer(self) -> global___StatisticDuration:
         """@@  .. cpp:var:: StatisticDuration compute_infer
@@ -1685,6 +1737,7 @@ class InferBatchStatistics(google.protobuf.message.Message):
         @@     batch size.
         @@
         """
+
     @property
     def compute_output(self) -> global___StatisticDuration:
         """@@  .. cpp:var:: StatisticDuration compute_output
@@ -1695,6 +1748,7 @@ class InferBatchStatistics(google.protobuf.message.Message):
         @@     tensor data from the GPU.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -1801,6 +1855,7 @@ class ModelStatistics(google.protobuf.message.Message):
         @@     The aggregate statistics for the model/version.
         @@
         """
+
     @property
     def batch_stats(
         self,
@@ -1816,6 +1871,7 @@ class ModelStatistics(google.protobuf.message.Message):
         @@     compute).
         @@
         """
+
     def __init__(
         self,
         *,
@@ -1825,8 +1881,9 @@ class ModelStatistics(google.protobuf.message.Message):
         inference_count: builtins.int = ...,
         execution_count: builtins.int = ...,
         inference_stats: global___InferStatistics | None = ...,
-        batch_stats: collections.abc.Iterable[global___InferBatchStatistics]
-        | None = ...,
+        batch_stats: (
+            collections.abc.Iterable[global___InferBatchStatistics] | None
+        ) = ...,
     ) -> None: ...
     def HasField(
         self,
@@ -1876,6 +1933,7 @@ class ModelStatisticsResponse(google.protobuf.message.Message):
         @@     Statistics for each requested model.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -2101,11 +2159,13 @@ class RepositoryIndexResponse(google.protobuf.message.Message):
         @@     An index entry for each model.
         @@
         """
+
     def __init__(
         self,
         *,
-        models: collections.abc.Iterable[global___RepositoryIndexResponse.ModelIndex]
-        | None = ...,
+        models: (
+            collections.abc.Iterable[global___RepositoryIndexResponse.ModelIndex] | None
+        ) = ...,
     ) -> None: ...
     def ClearField(
         self, field_name: typing_extensions.Literal["models", b"models"]
@@ -2172,15 +2232,16 @@ class RepositoryModelLoadRequest(google.protobuf.message.Message):
         @@     Optional model repository request parameters.
         @@
         """
+
     def __init__(
         self,
         *,
         repository_name: builtins.str = ...,
         model_name: builtins.str = ...,
-        parameters: collections.abc.Mapping[
-            builtins.str, global___ModelRepositoryParameter
-        ]
-        | None = ...,
+        parameters: (
+            collections.abc.Mapping[builtins.str, global___ModelRepositoryParameter]
+            | None
+        ) = ...,
     ) -> None: ...
     def ClearField(
         self,
@@ -2271,15 +2332,16 @@ class RepositoryModelUnloadRequest(google.protobuf.message.Message):
         @@     Optional model repository request parameters.
         @@
         """
+
     def __init__(
         self,
         *,
         repository_name: builtins.str = ...,
         model_name: builtins.str = ...,
-        parameters: collections.abc.Mapping[
-            builtins.str, global___ModelRepositoryParameter
-        ]
-        | None = ...,
+        parameters: (
+            collections.abc.Mapping[builtins.str, global___ModelRepositoryParameter]
+            | None
+        ) = ...,
     ) -> None: ...
     def ClearField(
         self,
@@ -2450,13 +2512,16 @@ class SystemSharedMemoryStatusResponse(google.protobuf.message.Message):
         @@     region name.
         @@
         """
+
     def __init__(
         self,
         *,
-        regions: collections.abc.Mapping[
-            builtins.str, global___SystemSharedMemoryStatusResponse.RegionStatus
-        ]
-        | None = ...,
+        regions: (
+            collections.abc.Mapping[
+                builtins.str, global___SystemSharedMemoryStatusResponse.RegionStatus
+            ]
+            | None
+        ) = ...,
     ) -> None: ...
     def ClearField(
         self, field_name: typing_extensions.Literal["regions", b"regions"]
@@ -2713,13 +2778,16 @@ class CudaSharedMemoryStatusResponse(google.protobuf.message.Message):
         @@     region name.
         @@
         """
+
     def __init__(
         self,
         *,
-        regions: collections.abc.Mapping[
-            builtins.str, global___CudaSharedMemoryStatusResponse.RegionStatus
-        ]
-        | None = ...,
+        regions: (
+            collections.abc.Mapping[
+                builtins.str, global___CudaSharedMemoryStatusResponse.RegionStatus
+            ]
+            | None
+        ) = ...,
     ) -> None: ...
     def ClearField(
         self, field_name: typing_extensions.Literal["regions", b"regions"]
@@ -2887,6 +2955,7 @@ class TraceSettingRequest(google.protobuf.message.Message):
             @@       The value.
             @@
             """
+
         def __init__(
             self,
             *,
@@ -2943,10 +3012,12 @@ class TraceSettingRequest(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        settings: collections.abc.Mapping[
-            builtins.str, global___TraceSettingRequest.SettingValue
-        ]
-        | None = ...,
+        settings: (
+            collections.abc.Mapping[
+                builtins.str, global___TraceSettingRequest.SettingValue
+            ]
+            | None
+        ) = ...,
         model_name: builtins.str = ...,
     ) -> None: ...
     def ClearField(
@@ -2991,6 +3062,7 @@ class TraceSettingResponse(google.protobuf.message.Message):
             @@       The value.
             @@
             """
+
         def __init__(
             self,
             *,
@@ -3035,13 +3107,16 @@ class TraceSettingResponse(google.protobuf.message.Message):
         @@     by TraceSettingRequest.
         @@
         """
+
     def __init__(
         self,
         *,
-        settings: collections.abc.Mapping[
-            builtins.str, global___TraceSettingResponse.SettingValue
-        ]
-        | None = ...,
+        settings: (
+            collections.abc.Mapping[
+                builtins.str, global___TraceSettingResponse.SettingValue
+            ]
+            | None
+        ) = ...,
     ) -> None: ...
     def ClearField(
         self, field_name: typing_extensions.Literal["settings", b"settings"]
@@ -3160,13 +3235,16 @@ class LogSettingsRequest(google.protobuf.message.Message):
         @@     The current log settings.
         @@
         """
+
     def __init__(
         self,
         *,
-        settings: collections.abc.Mapping[
-            builtins.str, global___LogSettingsRequest.SettingValue
-        ]
-        | None = ...,
+        settings: (
+            collections.abc.Mapping[
+                builtins.str, global___LogSettingsRequest.SettingValue
+            ]
+            | None
+        ) = ...,
     ) -> None: ...
     def ClearField(
         self, field_name: typing_extensions.Literal["settings", b"settings"]
@@ -3285,13 +3363,16 @@ class LogSettingsResponse(google.protobuf.message.Message):
         @@     The current log settings.
         @@
         """
+
     def __init__(
         self,
         *,
-        settings: collections.abc.Mapping[
-            builtins.str, global___LogSettingsResponse.SettingValue
-        ]
-        | None = ...,
+        settings: (
+            collections.abc.Mapping[
+                builtins.str, global___LogSettingsResponse.SettingValue
+            ]
+            | None
+        ) = ...,
     ) -> None: ...
     def ClearField(
         self, field_name: typing_extensions.Literal["settings", b"settings"]

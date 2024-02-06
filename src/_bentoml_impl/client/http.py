@@ -327,14 +327,12 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         kwargs: dict[str, t.Any],
         *,
         headers: t.Mapping[str, str] | None = None,
-    ) -> t.Any:
-        ...
+    ) -> t.Any: ...
 
     @abstractmethod
     def _get_stream(
         self, endpoint: ClientEndpoint, args: t.Any, kwargs: t.Any
-    ) -> t.Any:
-        ...
+    ) -> t.Any: ...
 
 
 class SyncHTTPClient(HTTPClient[httpx.Client]):

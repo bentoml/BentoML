@@ -53,9 +53,11 @@ def add_cloud_command(cli: click.Group) -> click.Group:
             raise CLIException("current organization is not found")
 
         ctx = CloudClientContext(
-            name=shared_options.cloud_context
-            if shared_options.cloud_context is not None
-            else default_context_name,
+            name=(
+                shared_options.cloud_context
+                if shared_options.cloud_context is not None
+                else default_context_name
+            ),
             endpoint=endpoint,
             api_token=api_token,
             email=user.email,

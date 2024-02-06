@@ -65,15 +65,13 @@ FIELDPB_TO_NPDTYPE_NAME_MAP = {
 @t.overload
 def dtypepb_to_npdtype_map(
     version: t.Literal["v1"] = ...,
-) -> dict[pb.NDArray.DType.ValueType, ext.NpDTypeLike]:
-    ...
+) -> dict[pb.NDArray.DType.ValueType, ext.NpDTypeLike]: ...
 
 
 @t.overload
 def dtypepb_to_npdtype_map(
     version: t.Literal["v1alpha1"] = ...,
-) -> dict[pb_v1alpha1.NDArray.DType.ValueType, ext.NpDTypeLike]:
-    ...
+) -> dict[pb_v1alpha1.NDArray.DType.ValueType, ext.NpDTypeLike]: ...
 
 
 @lru_cache(maxsize=2)
@@ -97,15 +95,13 @@ def dtypepb_to_npdtype_map(
 @t.overload
 def dtypepb_to_fieldpb_map(
     version: t.Literal["v1"] = ...,
-) -> dict[pb.NDArray.DType.ValueType, str]:
-    ...
+) -> dict[pb.NDArray.DType.ValueType, str]: ...
 
 
 @t.overload
 def dtypepb_to_fieldpb_map(
     version: t.Literal["v1alpha1"] = ...,
-) -> dict[pb_v1alpha1.NDArray.DType.ValueType, str]:
-    ...
+) -> dict[pb_v1alpha1.NDArray.DType.ValueType, str]: ...
 
 
 @lru_cache(maxsize=2)
@@ -125,15 +121,13 @@ def fieldpb_to_npdtype_map() -> dict[str, ext.NpDTypeLike]:
 @t.overload
 def npdtype_to_dtypepb_map(
     version: t.Literal["v1"] = ...,
-) -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType]:
-    ...
+) -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType]: ...
 
 
 @t.overload
 def npdtype_to_dtypepb_map(
     version: t.Literal["v1alpha1"] = ...,
-) -> dict[ext.NpDTypeLike, pb_v1alpha1.NDArray.DType.ValueType]:
-    ...
+) -> dict[ext.NpDTypeLike, pb_v1alpha1.NDArray.DType.ValueType]: ...
 
 
 @lru_cache(maxsize=2)
@@ -593,14 +587,12 @@ class NumpyNdarray(
     @t.overload
     async def _to_proto_impl(
         self, obj: ext.NpNDArray, *, version: t.Literal["v1"]
-    ) -> pb.NDArray:
-        ...
+    ) -> pb.NDArray: ...
 
     @t.overload
     async def _to_proto_impl(
         self, obj: ext.NpNDArray, *, version: t.Literal["v1alpha1"]
-    ) -> pb_v1alpha1.NDArray:
-        ...
+    ) -> pb_v1alpha1.NDArray: ...
 
     async def _to_proto_impl(
         self, obj: ext.NpNDArray, *, version: str

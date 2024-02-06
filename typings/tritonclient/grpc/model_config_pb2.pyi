@@ -29,6 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Copyright (c) 2018, TensorFlow Authors. All rights reserved.
 """
+
 import builtins
 import collections.abc
 import google.protobuf.descriptor
@@ -206,8 +207,9 @@ class ModelRateLimiter(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        resources: collections.abc.Iterable[global___ModelRateLimiter.Resource]
-        | None = ...,
+        resources: (
+            collections.abc.Iterable[global___ModelRateLimiter.Resource] | None
+        ) = ...,
         priority: builtins.int = ...,
     ) -> None: ...
     def ClearField(
@@ -336,7 +338,9 @@ class ModelInstanceGroup(google.protobuf.message.Message):
             builtins.type,
         ):  # noqa: F821
             DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
-            KIND_NVDLA: ModelInstanceGroup.SecondaryDevice._SecondaryDeviceKind.ValueType  # 0
+            KIND_NVDLA: (
+                ModelInstanceGroup.SecondaryDevice._SecondaryDeviceKind.ValueType
+            )  # 0
             """@@    .. cpp:enumerator:: SecondaryDeviceKind::KIND_NVDLA = 0
             @@
             @@       An NVDLA core. http://nvdla.org
@@ -354,7 +358,9 @@ class ModelInstanceGroup(google.protobuf.message.Message):
             @@
             """
 
-        KIND_NVDLA: ModelInstanceGroup.SecondaryDevice.SecondaryDeviceKind.ValueType  # 0
+        KIND_NVDLA: (
+            ModelInstanceGroup.SecondaryDevice.SecondaryDeviceKind.ValueType
+        )  # 0
         """@@    .. cpp:enumerator:: SecondaryDeviceKind::KIND_NVDLA = 0
         @@
         @@       An NVDLA core. http://nvdla.org
@@ -432,6 +438,7 @@ class ModelInstanceGroup(google.protobuf.message.Message):
         @@     will be applied to this instance group.
         @@
         """
+
     @property
     def gpus(
         self,
@@ -444,6 +451,7 @@ class ModelInstanceGroup(google.protobuf.message.Message):
         @@     available GPUs.
         @@
         """
+
     @property
     def secondary_devices(
         self,
@@ -456,6 +464,7 @@ class ModelInstanceGroup(google.protobuf.message.Message):
         @@     instance group. Optional.
         @@
         """
+
     @property
     def profile(
         self,
@@ -497,10 +506,9 @@ class ModelInstanceGroup(google.protobuf.message.Message):
         count: builtins.int = ...,
         rate_limiter: global___ModelRateLimiter | None = ...,
         gpus: collections.abc.Iterable[builtins.int] | None = ...,
-        secondary_devices: collections.abc.Iterable[
-            global___ModelInstanceGroup.SecondaryDevice
-        ]
-        | None = ...,
+        secondary_devices: (
+            collections.abc.Iterable[global___ModelInstanceGroup.SecondaryDevice] | None
+        ) = ...,
         profile: collections.abc.Iterable[builtins.str] | None = ...,
         passive: builtins.bool = ...,
         host_policy: builtins.str = ...,
@@ -554,6 +562,7 @@ class ModelTensorReshape(google.protobuf.message.Message):
         @@     The shape to use for reshaping.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -684,6 +693,7 @@ class ModelInput(google.protobuf.message.Message):
         @@     when invoking the inference API for this model.
         @@
         """
+
     @property
     def reshape(self) -> global___ModelTensorReshape:
         """@@  .. cpp:var:: ModelTensorReshape reshape
@@ -797,6 +807,7 @@ class ModelOutput(google.protobuf.message.Message):
         @@     The dimensions/shape of the output tensor.
         @@
         """
+
     @property
     def reshape(self) -> global___ModelTensorReshape:
         """@@  .. cpp:var:: ModelTensorReshape reshape
@@ -1043,6 +1054,7 @@ class BatchInput(google.protobuf.message.Message):
         @@       inputs.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -1143,6 +1155,7 @@ class BatchOutput(google.protobuf.message.Message):
         @@     'source_input' gives the names of those inputs.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -1238,6 +1251,7 @@ class ModelVersionPolicy(google.protobuf.message.Message):
             @@       The specific versions of the model that will be served.
             @@
             """
+
         def __init__(
             self,
             *,
@@ -1257,6 +1271,7 @@ class ModelVersionPolicy(google.protobuf.message.Message):
         @@       Serve only latest version(s) of the model.
         @@
         """
+
     @property
     def all(self) -> global___ModelVersionPolicy.All:
         """@@    .. cpp:var:: All all
@@ -1264,6 +1279,7 @@ class ModelVersionPolicy(google.protobuf.message.Message):
         @@       Serve all versions of the model.
         @@
         """
+
     @property
     def specific(self) -> global___ModelVersionPolicy.Specific:
         """@@    .. cpp:var:: Specific specific
@@ -1271,6 +1287,7 @@ class ModelVersionPolicy(google.protobuf.message.Message):
         @@       Serve only specific version(s) of the model.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -1457,6 +1474,7 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                     @@           The dimension.
                     @@
                     """
+
                 def __init__(
                     self,
                     *,
@@ -1483,8 +1501,9 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                         self,
                         *,
                         key: builtins.str = ...,
-                        value: global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape
-                        | None = ...,
+                        value: (
+                            global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape | None
+                        ) = ...,
                     ) -> None: ...
                     def HasField(
                         self, field_name: typing_extensions.Literal["value", b"value"]
@@ -1518,15 +1537,18 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                     @@         the input without batching dimension.
                     @@
                     """
+
                 def __init__(
                     self,
                     *,
                     batch_size: builtins.int = ...,
-                    input: collections.abc.Mapping[
-                        builtins.str,
-                        global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape,
-                    ]
-                    | None = ...,
+                    input: (
+                        collections.abc.Mapping[
+                            builtins.str,
+                            global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape,
+                        ]
+                        | None
+                    ) = ...,
                 ) -> None: ...
                 def ClearField(
                     self,
@@ -1549,8 +1571,9 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                     self,
                     *,
                     key: builtins.str = ...,
-                    value: global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape
-                    | None = ...,
+                    value: (
+                        global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape | None
+                    ) = ...,
                 ) -> None: ...
                 def HasField(
                     self, field_name: typing_extensions.Literal["value", b"value"]
@@ -1585,6 +1608,7 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                 @@         input without batching dimension.
                 @@
                 """
+
             @property
             def graph_lower_bound(
                 self,
@@ -1603,16 +1627,21 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                 @@         the model is sensitive to uninitialized data.
                 @@
                 """
+
             def __init__(
                 self,
                 *,
                 batch_size: builtins.int = ...,
-                input: collections.abc.Mapping[
-                    builtins.str, global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape
-                ]
-                | None = ...,
-                graph_lower_bound: global___ModelOptimizationPolicy.Cuda.GraphSpec.LowerBound
-                | None = ...,
+                input: (
+                    collections.abc.Mapping[
+                        builtins.str,
+                        global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape,
+                    ]
+                    | None
+                ) = ...,
+                graph_lower_bound: (
+                    global___ModelOptimizationPolicy.Cuda.GraphSpec.LowerBound | None
+                ) = ...,
             ) -> None: ...
             def HasField(
                 self,
@@ -1683,10 +1712,12 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
             *,
             graphs: builtins.bool = ...,
             busy_wait_events: builtins.bool = ...,
-            graph_spec: collections.abc.Iterable[
-                global___ModelOptimizationPolicy.Cuda.GraphSpec
-            ]
-            | None = ...,
+            graph_spec: (
+                collections.abc.Iterable[
+                    global___ModelOptimizationPolicy.Cuda.GraphSpec
+                ]
+                | None
+            ) = ...,
             output_copy_stream: builtins.bool = ...,
         ) -> None: ...
         def ClearField(
@@ -1775,12 +1806,14 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                 @@       Additional paremeters used to configure the accelerator.
                 @@
                 """
+
             def __init__(
                 self,
                 *,
                 name: builtins.str = ...,
-                parameters: collections.abc.Mapping[builtins.str, builtins.str]
-                | None = ...,
+                parameters: (
+                    collections.abc.Mapping[builtins.str, builtins.str] | None
+                ) = ...,
             ) -> None: ...
             def ClearField(
                 self,
@@ -1836,6 +1869,7 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
             @@       created with KIND_GPU.
             @@
             """
+
         @property
         def cpu_execution_accelerator(
             self,
@@ -1851,17 +1885,22 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
             @@       and no parameters are required.
             @@
             """
+
         def __init__(
             self,
             *,
-            gpu_execution_accelerator: collections.abc.Iterable[
-                global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator
-            ]
-            | None = ...,
-            cpu_execution_accelerator: collections.abc.Iterable[
-                global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator
-            ]
-            | None = ...,
+            gpu_execution_accelerator: (
+                collections.abc.Iterable[
+                    global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator
+                ]
+                | None
+            ) = ...,
+            cpu_execution_accelerator: (
+                collections.abc.Iterable[
+                    global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator
+                ]
+                | None
+            ) = ...,
         ) -> None: ...
         def ClearField(
             self,
@@ -1935,6 +1974,7 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
         @@     CUDA-specific optimization settings. Optional.
         @@
         """
+
     @property
     def execution_accelerators(
         self,
@@ -1944,6 +1984,7 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
         @@     The accelerators used for the model. Optional.
         @@
         """
+
     @property
     def input_pinned_memory(
         self,
@@ -1955,6 +1996,7 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
         @@     Default is true.
         @@
         """
+
     @property
     def output_pinned_memory(
         self,
@@ -1995,12 +2037,15 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
         graph: global___ModelOptimizationPolicy.Graph | None = ...,
         priority: global___ModelOptimizationPolicy.ModelPriority.ValueType = ...,
         cuda: global___ModelOptimizationPolicy.Cuda | None = ...,
-        execution_accelerators: global___ModelOptimizationPolicy.ExecutionAccelerators
-        | None = ...,
-        input_pinned_memory: global___ModelOptimizationPolicy.PinnedMemoryBuffer
-        | None = ...,
-        output_pinned_memory: global___ModelOptimizationPolicy.PinnedMemoryBuffer
-        | None = ...,
+        execution_accelerators: (
+            global___ModelOptimizationPolicy.ExecutionAccelerators | None
+        ) = ...,
+        input_pinned_memory: (
+            global___ModelOptimizationPolicy.PinnedMemoryBuffer | None
+        ) = ...,
+        output_pinned_memory: (
+            global___ModelOptimizationPolicy.PinnedMemoryBuffer | None
+        ) = ...,
         gather_kernel_buffer_threshold: builtins.int = ...,
         eager_batching: builtins.bool = ...,
     ) -> None: ...
@@ -2270,6 +2315,7 @@ class ModelDynamicBatching(google.protobuf.message.Message):
         @@     default field values will be used.
         @@
         """
+
     @property
     def priority_queue_policy(
         self,
@@ -2283,6 +2329,7 @@ class ModelDynamicBatching(google.protobuf.message.Message):
         @@     policy.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -2292,10 +2339,9 @@ class ModelDynamicBatching(google.protobuf.message.Message):
         priority_levels: builtins.int = ...,
         default_priority_level: builtins.int = ...,
         default_queue_policy: global___ModelQueuePolicy | None = ...,
-        priority_queue_policy: collections.abc.Mapping[
-            builtins.int, global___ModelQueuePolicy
-        ]
-        | None = ...,
+        priority_queue_policy: (
+            collections.abc.Mapping[builtins.int, global___ModelQueuePolicy] | None
+        ) = ...,
     ) -> None: ...
     def HasField(
         self,
@@ -2475,6 +2521,7 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             @@       first the false value and the second the true value.
             @@
             """
+
         @property
         def fp32_false_true(
             self,
@@ -2490,6 +2537,7 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             @@       first the false value and the second the true value.
             @@
             """
+
         @property
         def bool_false_true(
             self,
@@ -2565,12 +2613,14 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             @@       model using this model input.
             @@
             """
+
         def __init__(
             self,
             *,
             name: builtins.str = ...,
-            control: collections.abc.Iterable[global___ModelSequenceBatching.Control]
-            | None = ...,
+            control: (
+                collections.abc.Iterable[global___ModelSequenceBatching.Control] | None
+            ) = ...,
         ) -> None: ...
         def ClearField(
             self,
@@ -2719,6 +2769,7 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             @@       The dimension.
             @@
             """
+
         @property
         def initial_state(
             self,
@@ -2730,6 +2781,7 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             @@     The optional field to specify the initial state for the model.
             @@
             """
+
         def __init__(
             self,
             *,
@@ -2737,10 +2789,10 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             output_name: builtins.str = ...,
             data_type: global___DataType.ValueType = ...,
             dims: collections.abc.Iterable[builtins.int] | None = ...,
-            initial_state: collections.abc.Iterable[
-                global___ModelSequenceBatching.InitialState
-            ]
-            | None = ...,
+            initial_state: (
+                collections.abc.Iterable[global___ModelSequenceBatching.InitialState]
+                | None
+            ) = ...,
         ) -> None: ...
         def ClearField(
             self,
@@ -2894,6 +2946,7 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@       StrategyDirect scheduling strategy.
         @@
         """
+
     @property
     def oldest(self) -> global___ModelSequenceBatching.StrategyOldest:
         """@@    .. cpp:var:: StrategyOldest oldest
@@ -2926,6 +2979,7 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@     model.
         @@
         """
+
     @property
     def state(
         self,
@@ -2943,18 +2997,19 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@     in the sequence contains garbage data.
         @@
         """
+
     def __init__(
         self,
         *,
         direct: global___ModelSequenceBatching.StrategyDirect | None = ...,
         oldest: global___ModelSequenceBatching.StrategyOldest | None = ...,
         max_sequence_idle_microseconds: builtins.int = ...,
-        control_input: collections.abc.Iterable[
-            global___ModelSequenceBatching.ControlInput
-        ]
-        | None = ...,
-        state: collections.abc.Iterable[global___ModelSequenceBatching.State]
-        | None = ...,
+        control_input: (
+            collections.abc.Iterable[global___ModelSequenceBatching.ControlInput] | None
+        ) = ...,
+        state: (
+            collections.abc.Iterable[global___ModelSequenceBatching.State] | None
+        ) = ...,
     ) -> None: ...
     def HasField(
         self,
@@ -3079,6 +3134,7 @@ class ModelEnsembling(google.protobuf.message.Message):
             @@     to multiple model inputs.
             @@
             """
+
         @property
         def output_map(
             self,
@@ -3092,14 +3148,16 @@ class ModelEnsembling(google.protobuf.message.Message):
             @@     can appear in an output map only once.
             @@
             """
+
         def __init__(
             self,
             *,
             model_name: builtins.str = ...,
             model_version: builtins.int = ...,
             input_map: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-            output_map: collections.abc.Mapping[builtins.str, builtins.str]
-            | None = ...,
+            output_map: (
+                collections.abc.Mapping[builtins.str, builtins.str] | None
+            ) = ...,
         ) -> None: ...
         def ClearField(
             self,
@@ -3127,6 +3185,7 @@ class ModelEnsembling(google.protobuf.message.Message):
         @@     The models and the input / output mappings used within the ensemble.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -3358,8 +3417,9 @@ class ModelWarmup(google.protobuf.message.Message):
         *,
         name: builtins.str = ...,
         batch_size: builtins.int = ...,
-        inputs: collections.abc.Mapping[builtins.str, global___ModelWarmup.Input]
-        | None = ...,
+        inputs: (
+            collections.abc.Mapping[builtins.str, global___ModelWarmup.Input] | None
+        ) = ...,
         count: builtins.int = ...,
     ) -> None: ...
     def ClearField(
@@ -3399,6 +3459,7 @@ class ModelOperations(google.protobuf.message.Message):
         @@     this model. Valid only for ONNX models.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -3503,12 +3564,14 @@ class ModelRepositoryAgents(google.protobuf.message.Message):
             @@       The parameters for the agent.
             @@
             """
+
         def __init__(
             self,
             *,
             name: builtins.str = ...,
-            parameters: collections.abc.Mapping[builtins.str, builtins.str]
-            | None = ...,
+            parameters: (
+                collections.abc.Mapping[builtins.str, builtins.str] | None
+            ) = ...,
         ) -> None: ...
         def ClearField(
             self,
@@ -3532,11 +3595,13 @@ class ModelRepositoryAgents(google.protobuf.message.Message):
         @@     model.
         @@
         """
+
     def __init__(
         self,
         *,
-        agents: collections.abc.Iterable[global___ModelRepositoryAgents.Agent]
-        | None = ...,
+        agents: (
+            collections.abc.Iterable[global___ModelRepositoryAgents.Agent] | None
+        ) = ...,
     ) -> None: ...
     def ClearField(
         self, field_name: typing_extensions.Literal["agents", b"agents"]
@@ -3726,6 +3791,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     The inputs request by the model.
         @@
         """
+
     @property
     def output(
         self,
@@ -3737,6 +3803,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     The outputs produced by the model.
         @@
         """
+
     @property
     def batch_input(
         self,
@@ -3749,6 +3816,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     batch related values to the model.
         @@
         """
+
     @property
     def batch_output(
         self,
@@ -3761,6 +3829,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     by the model backend.
         @@
         """
+
     @property
     def optimization(self) -> global___ModelOptimizationPolicy:
         """@@  .. cpp:var:: ModelOptimizationPolicy optimization
@@ -3769,6 +3838,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     then default optimization policy is used.
         @@
         """
+
     @property
     def dynamic_batching(self) -> global___ModelDynamicBatching:
         """@@    .. cpp:var:: ModelDynamicBatching dynamic_batching
@@ -3779,6 +3849,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@       improve inference throughput.
         @@
         """
+
     @property
     def sequence_batching(self) -> global___ModelSequenceBatching:
         """@@    .. cpp:var:: ModelSequenceBatching sequence_batching
@@ -3791,6 +3862,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@       improve inference throughput.
         @@
         """
+
     @property
     def ensemble_scheduling(self) -> global___ModelEnsembling:
         """@@    .. cpp:var:: ModelEnsembling ensemble_scheduling
@@ -3803,6 +3875,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@       specified will be the output of the ensemble.
         @@
         """
+
     @property
     def instance_group(
         self,
@@ -3836,6 +3909,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     refers to a file within the model version directory.
         @@
         """
+
     @property
     def metric_tags(
         self,
@@ -3847,6 +3921,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     reported on the HTTP metrics port.
         @@
         """
+
     @property
     def parameters(
         self,
@@ -3858,6 +3933,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     Optional model parameters. User-specified parameter values.
         @@
         """
+
     @property
     def model_warmup(
         self,
@@ -3873,6 +3949,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     model.
         @@
         """
+
     @property
     def model_operations(self) -> global___ModelOperations:
         """@@  .. cpp:var:: ModelOperations model_operations
@@ -3881,6 +3958,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     this model.
         @@
         """
+
     @property
     def model_transaction_policy(self) -> global___ModelTransactionPolicy:
         """@@  .. cpp:var:: ModelTransactionPolicy model_transaction_policy
@@ -3889,6 +3967,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     to be expected from the model.
         @@
         """
+
     @property
     def model_repository_agents(self) -> global___ModelRepositoryAgents:
         """@@  .. cpp:var:: ModelRepositoryAgents model_repository_agents
@@ -3897,6 +3976,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     with repository actions are performed for this model.
         @@
         """
+
     @property
     def response_cache(self) -> global___ModelResponseCache:
         """@@  .. cpp:var:: ModelResponseCache response_cache
@@ -3905,6 +3985,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     model.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -3921,14 +4002,17 @@ class ModelConfig(google.protobuf.message.Message):
         dynamic_batching: global___ModelDynamicBatching | None = ...,
         sequence_batching: global___ModelSequenceBatching | None = ...,
         ensemble_scheduling: global___ModelEnsembling | None = ...,
-        instance_group: collections.abc.Iterable[global___ModelInstanceGroup]
-        | None = ...,
+        instance_group: (
+            collections.abc.Iterable[global___ModelInstanceGroup] | None
+        ) = ...,
         default_model_filename: builtins.str = ...,
-        cc_model_filenames: collections.abc.Mapping[builtins.str, builtins.str]
-        | None = ...,
+        cc_model_filenames: (
+            collections.abc.Mapping[builtins.str, builtins.str] | None
+        ) = ...,
         metric_tags: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-        parameters: collections.abc.Mapping[builtins.str, global___ModelParameter]
-        | None = ...,
+        parameters: (
+            collections.abc.Mapping[builtins.str, global___ModelParameter] | None
+        ) = ...,
         model_warmup: collections.abc.Iterable[global___ModelWarmup] | None = ...,
         model_operations: global___ModelOperations | None = ...,
         model_transaction_policy: global___ModelTransactionPolicy | None = ...,

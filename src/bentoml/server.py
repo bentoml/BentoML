@@ -330,8 +330,9 @@ class HTTPServer(Server[HTTPClient]):
         backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
         ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
         ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
-        ssl_keyfile_password: str
-        | None = Provide[BentoMLContainer.ssl.keyfile_password],
+        ssl_keyfile_password: str | None = Provide[
+            BentoMLContainer.ssl.keyfile_password
+        ],
         ssl_version: int | None = Provide[BentoMLContainer.ssl.version],
         ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
         ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
@@ -408,8 +409,9 @@ class GrpcServer(Server[GrpcClient]):
         backlog: int = Provide[BentoMLContainer.api_server_config.backlog],
         enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
         enable_channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
-        max_concurrent_streams: int
-        | None = Provide[BentoMLContainer.grpc.max_concurrent_streams],
+        max_concurrent_streams: int | None = Provide[
+            BentoMLContainer.grpc.max_concurrent_streams
+        ],
         ssl_certfile: str | None = Provide[BentoMLContainer.ssl.certfile],
         ssl_keyfile: str | None = Provide[BentoMLContainer.ssl.keyfile],
         ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],

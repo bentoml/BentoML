@@ -207,12 +207,12 @@ class TensorSchema:
         self, source_type: t.Any, handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
-            self._validate,
+            self.validate,
             core_schema.any_schema(),
             serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
         )
 
-    def encode(self, arr: TensorType) -> bytes:
+    def encode(self, arr: TensorType) -> list[t.Any]:
         if self.format == "numpy-array":
             numpy_array = arr
         elif self.format == "tf-tensor":
@@ -235,7 +235,7 @@ class TensorSchema:
         else:
             return getattr(torch, dtype)
 
-    def _validate(self, obj: t.Any) -> t.Any:
+    def validate(self, obj: t.Any) -> t.Any:
         arr: t.Any
         if self.format == "numpy-array":
             arr = np.array(obj, dtype=self.framework_dtype)
@@ -295,15 +295,8 @@ class DataframeSchema:
         self, source_type: t.Any, handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
-            self._validate,
-            (
-                core_schema.list_schema(core_schema.dict_schema())
-                if self.orient == "records"
-                else core_schema.dict_schema(
-                    keys_schema=core_schema.str_schema(),
-                    values_schema=core_schema.list_schema(),
-                )
-            ),
+            self.validate,
+            core_schema.any_schema(),
             serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
         )
 
@@ -315,7 +308,7 @@ class DataframeSchema:
         else:
             raise ValueError("Only 'records' and 'columns' are supported for orient")
 
-    def _validate(self, obj: t.Any) -> pd.DataFrame:
+    def validate(self, obj: t.Any) -> pd.DataFrame:
         return pd.DataFrame(obj, columns=self.columns)
 
 

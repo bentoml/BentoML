@@ -111,6 +111,7 @@ if TYPE_CHECKING:
     from _bentoml_sdk import service
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
+    from ._internal.utils.pkg import pkg_version_info
 
     # ML Frameworks
     catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
@@ -172,11 +173,19 @@ else:
     _NEW_SDK_ATTRS = ["service", "runner_service", "api", "depends"]
     _NEW_CLIENTS = ["SyncHTTPClient", "AsyncHTTPClient"]
 
+    if (ver := pkg_version_info("pydantic")) >= (2,):
+        import _bentoml_sdk
+    else:
+        _bentoml_sdk = None
+
     def __getattr__(name: str) -> Any:
         if name not in _NEW_SDK_ATTRS + _NEW_CLIENTS:
             raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-        import _bentoml_sdk
+        if _bentoml_sdk is None:
+            raise ImportError(
+                f"The new SDK runs on pydantic>=2.0.0, but the you have {'.'.join(map(str, ver))}. "
+                "Please upgrade it."
+            )
 
         if name in _NEW_CLIENTS:
             import _bentoml_impl.client

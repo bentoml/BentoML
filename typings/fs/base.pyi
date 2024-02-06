@@ -1,35 +1,35 @@
 import abc
 import typing
+from datetime import datetime
+from threading import RLock
 from types import TracebackType
 from typing import IO
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Text
-from typing import Type
-from typing import Tuple
-from typing import Union
 from typing import AnyStr
-from typing import Mapping
 from typing import BinaryIO
 from typing import Callable
+from typing import Collection
+from typing import Dict
 from typing import Iterable
 from typing import Iterator
+from typing import List
+from typing import Mapping
 from typing import Optional
-from typing import Collection
-from datetime import datetime
-from threading import RLock
+from typing import Text
+from typing import Tuple
+from typing import Type
+from typing import Union
 
 import six
 
+from .enums import ResourceType
 from .glob import BoundGlobber
 from .info import Info
 from .info import RawInfo
-from .walk import Walker
-from .walk import BoundWalker
-from .enums import ResourceType
-from .subfs import SubFS
 from .permissions import Permissions
+from .subfs import SubFS
+from .walk import BoundWalker
+from .walk import Walker
 
 _F = typing.TypeVar("_F", bound="FS")
 _T = typing.TypeVar("_T", bound="FS")

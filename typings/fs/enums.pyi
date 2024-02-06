@@ -1,5 +1,5 @@
-from enum import unique
 from enum import IntEnum
+from enum import unique
 
 @unique
 class ResourceType(IntEnum):

@@ -244,16 +244,16 @@ def test_legacy_get_metrics_report(
 ):
     mock_do_not_track.return_value = True
     mock_prometheus_client.multiproc.return_value = False
-    mock_prometheus_client.text_string_to_metric_families.return_value = text_string_to_metric_families(
-        b"""\
+    mock_prometheus_client.text_string_to_metric_families.return_value = (
+        text_string_to_metric_families(
+            b"""\
 # HELP BENTOML_simple_service_request_in_progress Multiprocess metric
 # TYPE BENTOML_simple_service_request_in_progress gauge
 BENTOML_simple_service_request_in_progress{endpoint="/predict",service_version="not available"} 0.0
 # HELP BENTOML_simple_service_request_total Multiprocess metric
 # TYPE BENTOML_simple_service_request_total counter
 BENTOML_simple_service_request_total{endpoint="/predict",http_response_code="200",service_version="not available"} 8.0
-""".decode(
-            "utf-8"
+""".decode("utf-8")
         )
     )
     output = analytics.usage_stats.get_metrics_report(
@@ -299,9 +299,7 @@ BENTOML_simple_service_request_total{endpoint="/predict",http_response_code="200
                 # HELP bentoml_api_server_request_in_progress Multiprocess metric
                 # TYPE bentoml_api_server_request_in_progress gauge
                 bentoml_api_server_request_in_progress{api_name="pred_json",service_name="simple_service",service_version="not available"} 0.0
-                """.decode(
-                "utf-8"
-            )
+                """.decode("utf-8")
         )
     ],
 )

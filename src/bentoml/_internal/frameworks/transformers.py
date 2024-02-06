@@ -56,14 +56,17 @@ if t.TYPE_CHECKING:
 
     class PreTrainedProtocol(t.Protocol):
         @property
-        def framework(self) -> str: ...
+        def framework(self) -> str:
+            ...
 
-        def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None: ...
+        def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None:
+            ...
 
         @classmethod
         def from_pretrained(
             cls, pretrained_model_name_or_path: str, *args: t.Any, **kwargs: t.Any
-        ) -> PreTrainedProtocol: ...
+        ) -> PreTrainedProtocol:
+            ...
 
     P = t.ParamSpec("P")
 
@@ -119,7 +122,7 @@ HAS_PIPELINE_REGISTRY = TRANSFORMERS_VERSION >= (4, 21, 0)
 
 
 def _deep_convert_to_tuple(
-    dct: dict[str, str | TupleStr | list[str] | dict[str, t.Any]]
+    dct: dict[str, str | TupleStr | list[str] | dict[str, t.Any]],
 ) -> dict[str, str | TupleStr | list[str] | dict[str, t.Any]]:
     for k, v in dct.items():
         override = v
@@ -158,7 +161,7 @@ else:
 
 
 def _autoclass_converter(
-    value: tuple[BaseAutoModelClass | str, ...] | None
+    value: tuple[BaseAutoModelClass | str, ...] | None,
 ) -> TupleStr:
     if value is None:
         return TupleStr()
@@ -359,13 +362,15 @@ def delete_pipeline(task: str) -> None:
 @t.overload
 def load_model(
     bento_model: str | Tag | Model, **kwargs: t.Any
-) -> transformers.Pipeline: ...
+) -> transformers.Pipeline:
+    ...
 
 
 @t.overload
 def load_model(
     bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any
-) -> TransformersPreTrained: ...
+) -> TransformersPreTrained:
+    ...
 
 
 def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) -> t.Any:

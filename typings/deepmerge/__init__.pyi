@@ -1,7 +1,7 @@
 from typing import List
+from typing import Literal
 from typing import Tuple
 from typing import Union
-from typing import Literal
 
 from .merger import Merger
 

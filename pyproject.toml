@@ -222,33 +222,6 @@ exclude_lines = [
     "@(abc\\.)?abstractmethod",
 ]
 
-[tool.black]
-line-length = 88
-exclude = '''
-(
-  /(
-      \.eggs
-    | \.git
-    | \.tox
-    | \.venv
-    | _build
-    | .build
-    | bazel-*
-    | build
-    | venv
-    | lib
-    | dist
-    | typings
-    | src/bentoml/grpc/v1alpha1
-    | src/bentoml/grpc/v1
-    | tests/proto
-    | grpc-client/thirdparty
-    | grpc-client/bentoml
-  )/
-  | src/bentoml/_version.py
-)
-'''
-
 [tool.pytest.ini_options]
 addopts = ["-rfEX", "-pno:warnings", "-pbentoml.testing.pytest.plugin"]
 python_files = ["test_*.py", "*_test.py"]
@@ -257,6 +230,9 @@ testpaths = ["tests"]
 [tool.ruff]
 # similar to black's
 line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
 # We ignore E501 (line too long) here because we keep user-visible strings on one line.
 ignore = ["E501"]
 extend-select = ["I"]
@@ -270,16 +246,15 @@ exclude = [
     "src/bentoml/grpc/v1",
     "tests/proto",
 ]
-target-version = "py310"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 # ignore imports violations in __init__.py
 "src/bentoml/__init__.py" = ["E402"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 force-single-line = true
 known-first-party = ["bentoml", "bentoml_cli", "_bentoml_sdk", "_bentoml_impl"]
 

@@ -26,7 +26,8 @@ def monitor(
     name: str | t.Any,
     monitor_class: DefaultMonitor = ...,
     monitor_options: dict[str, t.Any] | None = ...,
-) -> t.Generator[DefaultMonitor, None, None]: ...
+) -> t.Generator[DefaultMonitor, None, None]:
+    ...
 
 
 @t.overload
@@ -35,7 +36,8 @@ def monitor(
     name: str | t.Any,
     monitor_class: str = ...,
     monitor_options: dict[str, t.Any] | None = ...,
-) -> t.Generator[MonitorBase[t.Any], None, None]: ...
+) -> t.Generator[MonitorBase[t.Any], None, None]:
+    ...
 
 
 @t.overload
@@ -44,7 +46,8 @@ def monitor(
     name: str | t.Any,
     monitor_class: None = ...,
     monitor_options: dict[str, t.Any] | None = ...,
-) -> t.Generator[MonitorBase[t.Any], None, None]: ...
+) -> t.Generator[MonitorBase[t.Any], None, None]:
+    ...
 
 
 @contextlib.contextmanager

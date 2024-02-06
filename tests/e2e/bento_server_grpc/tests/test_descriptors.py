@@ -97,7 +97,8 @@ async def test_numpy(host: str):
             channel=channel,
             data={
                 "ndarray": pb.NDArray(
-                    dtype=123, string_values=np.array(["2", "2f"])  # type: ignore (test exception)
+                    dtype=123,
+                    string_values=np.array(["2", "2f"]),  # type: ignore (test exception)
                 )
             },
             assert_code=grpc.StatusCode.INVALID_ARGUMENT,

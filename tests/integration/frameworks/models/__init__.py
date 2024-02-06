@@ -49,13 +49,9 @@ class FrameworkTestModelInput:
         if isinstance(self.expected, t.Callable):
             result = self.expected(outp)
             if result is not None:
-                assert (
-                    result
-                ), f"Output from model call (args={', '.join(map(str, self.input_args))}, kwargs={self.input_kwargs}) is not expected (output={outp})"
+                assert result, f"Output from model call (args={', '.join(map(str, self.input_args))}, kwargs={self.input_kwargs}) is not expected (output={outp})"
         else:
             check = outp == self.expected
             if isinstance(check, np.ndarray):
                 check = check.all()
-            assert (
-                check
-            ), f"Output from model call (args={', '.join(map(str, self.input_args))}, kwargs={self.input_kwargs}) is not expected (output={outp}, expected={self.expected})"
+            assert check, f"Output from model call (args={', '.join(map(str, self.input_args))}, kwargs={self.input_kwargs}) is not expected (output={outp}, expected={self.expected})"

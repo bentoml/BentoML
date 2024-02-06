@@ -75,7 +75,9 @@ def initialize_pillow():
 
     PIL.Image.init()
     MIME_EXT_MAPPING = {v: k for k, v in PIL.Image.MIME.items()}  # type: ignore (lazy constant)
-    READABLE_MIMES = {k for k, v in MIME_EXT_MAPPING.items() if v not in PIL_WRITE_ONLY_FORMATS}  # type: ignore (lazy constant)
+    READABLE_MIMES = {
+        k for k, v in MIME_EXT_MAPPING.items() if v not in PIL_WRITE_ONLY_FORMATS
+    }  # type: ignore (lazy constant)
 
 
 class Image(

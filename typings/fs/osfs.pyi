@@ -2,21 +2,21 @@ from __future__ import annotations
 
 from typing import IO
 from typing import Any
+from typing import BinaryIO
+from typing import Collection
+from typing import Iterator
 from typing import List
+from typing import Optional
+from typing import SupportsInt
 from typing import Text
 from typing import Tuple
-from typing import BinaryIO
-from typing import Iterator
-from typing import Optional
-from typing import Collection
-from typing import SupportsInt
 
 from .base import FS
+from .enums import ResourceType
 from .info import Info
 from .info import RawInfo
-from .enums import ResourceType
-from .subfs import SubFS
 from .permissions import Permissions
+from .subfs import SubFS
 
 _O = Any
 

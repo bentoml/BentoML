@@ -33,13 +33,17 @@ if TYPE_CHECKING:
         ENV: dict[str, str] | None
         BUILDKIT_SUPPORT: bool
 
-        def find_binary(self) -> str | None: ...
+        def find_binary(self) -> str | None:
+            ...
 
         def construct_build_args(
-            self, **kwargs: t.Any  # pylint: disable=unused-argument
-        ) -> Arguments: ...
+            self,
+            **kwargs: t.Any,  # pylint: disable=unused-argument
+        ) -> Arguments:
+            ...
 
-        def health(self) -> bool: ...
+        def health(self) -> bool:
+            ...
 
     DefaultBuilder: t.TypeAlias = t.Literal[
         "docker", "podman", "buildah", "buildx", "nerdctl", "buildctl"
@@ -300,11 +304,13 @@ def register_backend(
 
 
 @t.overload
-def health(backend: DefaultBuilder) -> bool: ...
+def health(backend: DefaultBuilder) -> bool:
+    ...
 
 
 @t.overload
-def health(backend: str) -> bool: ...
+def health(backend: str) -> bool:
+    ...
 
 
 def health(backend: str) -> bool:
@@ -326,11 +332,13 @@ def health(backend: str) -> bool:
 
 
 @t.overload
-def get_backend(backend: DefaultBuilder) -> OCIBuilder: ...
+def get_backend(backend: DefaultBuilder) -> OCIBuilder:
+    ...
 
 
 @t.overload
-def get_backend(backend: str) -> OCIBuilder: ...
+def get_backend(backend: str) -> OCIBuilder:
+    ...
 
 
 def get_backend(backend: str) -> OCIBuilder:

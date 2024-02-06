@@ -385,9 +385,7 @@ def load(
                     encoding="utf-8",
                 ) as f:
                     build_config = BentoBuildConfig.from_yaml(f)
-                assert (
-                    build_config.service
-                ), '"service" field in "bentofile.yaml" is required for loading the service, e.g. "service: my_service.py:svc"'
+                assert build_config.service, '"service" field in "bentofile.yaml" is required for loading the service, e.g. "service: my_service.py:svc"'
                 BentoMLContainer.model_aliases.set(build_config.model_aliases)
                 svc = import_service(
                     build_config.service,

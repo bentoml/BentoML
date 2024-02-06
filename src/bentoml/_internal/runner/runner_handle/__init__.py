@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 class RunnerHandle(ABC):
     @abstractmethod
-    def __init__(self, runner: AbstractRunner) -> None: ...
+    def __init__(self, runner: AbstractRunner) -> None:
+        ...
 
     @abstractmethod
     async def is_ready(self, timeout: int) -> bool:
@@ -34,7 +35,8 @@ class RunnerHandle(ABC):
         __bentoml_method: RunnerMethod[t.Any, P, R],
         *args: P.args,
         **kwargs: P.kwargs,
-    ) -> R: ...
+    ) -> R:
+        ...
 
     @abstractmethod
     async def async_run_method(
@@ -42,7 +44,8 @@ class RunnerHandle(ABC):
         __bentoml_method: RunnerMethod[t.Any, P, R],
         *args: P.args,
         **kwargs: P.kwargs,
-    ) -> R: ...
+    ) -> R:
+        ...
 
     @abstractmethod
     def async_stream_method(
@@ -50,7 +53,8 @@ class RunnerHandle(ABC):
         __bentoml_method: RunnerMethod[t.Any, P, R],
         *args: P.args,
         **kwargs: P.kwargs,
-    ) -> t.AsyncGenerator[R, None]: ...
+    ) -> t.AsyncGenerator[R, None]:
+        ...
 
 
 class DummyRunnerHandle(RunnerHandle):

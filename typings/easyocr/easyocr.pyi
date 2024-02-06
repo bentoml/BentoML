@@ -1,5 +1,5 @@
-from .config import *
 import typing as t
+
 from numpy.typing import NDArray
 
 class Reader:

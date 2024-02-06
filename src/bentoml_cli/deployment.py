@@ -152,7 +152,7 @@ def add_deployment_command(cli: click.Group) -> None:
     )
 
     def shared_decorator(
-        f: t.Callable[..., t.Any] | None = None
+        f: t.Callable[..., t.Any] | None = None,
     ) -> t.Callable[..., t.Any]:
         def decorate(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             options = [

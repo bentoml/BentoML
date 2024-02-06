@@ -5,12 +5,12 @@ import contextvars
 import logging
 import typing as t
 
-MON_COLUMN_VAR: contextvars.ContextVar["dict[str, dict[str, str]] | None"] = (
-    contextvars.ContextVar("MON_COLUMN_VAR", default=None)
-)
-MON_DATAS_VAR: contextvars.ContextVar["dict[str, collections.deque[t.Any]] | None"] = (
-    contextvars.ContextVar("MON_DATAS_VAR", default=None)
-)
+MON_COLUMN_VAR: contextvars.ContextVar[
+    "dict[str, dict[str, str]] | None"
+] = contextvars.ContextVar("MON_COLUMN_VAR", default=None)
+MON_DATAS_VAR: contextvars.ContextVar[
+    "dict[str, collections.deque[t.Any]] | None"
+] = contextvars.ContextVar("MON_DATAS_VAR", default=None)
 
 DT = t.TypeVar("DT")
 MT = t.TypeVar("MT", bound="MonitorBase[t.Any]")

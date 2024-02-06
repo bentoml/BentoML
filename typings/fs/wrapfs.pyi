@@ -1,27 +1,27 @@
 import typing
-from typing import IO
-from typing import Any
-from typing import List
-from typing import Text
-from typing import Tuple
-from typing import AnyStr
-from typing import Mapping
-from typing import BinaryIO
-from typing import Callable
-from typing import Iterable
-from typing import Iterator
-from typing import Optional
-from typing import Collection
 from datetime import datetime
 from threading import RLock
+from typing import IO
+from typing import Any
+from typing import AnyStr
+from typing import BinaryIO
+from typing import Callable
+from typing import Collection
+from typing import Iterable
+from typing import Iterator
+from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Text
+from typing import Tuple
 
 from .base import FS
+from .enums import ResourceType
 from .info import Info
 from .info import RawInfo
-from .walk import BoundWalker
-from .enums import ResourceType
-from .subfs import SubFS
 from .permissions import Permissions
+from .subfs import SubFS
+from .walk import BoundWalker
 
 _T = typing.TypeVar("_T", bound="FS")
 _OpendirFactory = Callable[[_T, Text], SubFS[_T]]

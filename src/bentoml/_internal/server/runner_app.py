@@ -367,7 +367,7 @@ class RunnerAppFactory(BaseAppFactory):
 
 
 async def stream_encoder(
-    payload: t.AsyncGenerator[str, None]
+    payload: t.AsyncGenerator[str, None],
 ) -> t.AsyncGenerator[bytes, None]:
     """
     Extract Data from a AsyncGenerator[str, None]

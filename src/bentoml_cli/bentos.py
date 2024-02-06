@@ -38,7 +38,9 @@ BENTOML_FIGLET = """
 
 
 def parse_delete_targets_argument_callback(
-    ctx: Context, params: Parameter, value: t.Any  # pylint: disable=unused-argument
+    ctx: Context,
+    params: Parameter,
+    value: t.Any,  # pylint: disable=unused-argument
 ) -> list[str]:
     if value is None:
         return value
@@ -282,7 +284,9 @@ def add_bento_management_commands(cli: Group):
         help="Number of threads to use for upload",
     )
     @click.pass_obj
-    def push(shared_options: SharedOptions, bento_tag: str, force: bool, threads: int) -> None:  # type: ignore (not accessed)
+    def push(
+        shared_options: SharedOptions, bento_tag: str, force: bool, threads: int
+    ) -> None:  # type: ignore (not accessed)
         """Push Bento to a remote Bento store server."""
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:

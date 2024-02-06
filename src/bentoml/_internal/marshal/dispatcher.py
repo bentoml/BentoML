@@ -143,9 +143,9 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         self.tick_interval = 0.001
 
         self._controller = None
-        self._queue: collections.deque[Job[T_IN, T_OUT]] = (
-            collections.deque()
-        )  # TODO(bojiang): maxlen
+        self._queue: collections.deque[
+            Job[T_IN, T_OUT]
+        ] = collections.deque()  # TODO(bojiang): maxlen
         self.get_batch_size = get_batch_size
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 

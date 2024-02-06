@@ -1,14 +1,14 @@
 import typing
 from typing import Any
-from typing import List
-from typing import Text
-from typing import Type
-from typing import Tuple
 from typing import Callable
-from typing import Iterator
-from typing import Optional
 from typing import Collection
+from typing import Iterator
+from typing import List
 from typing import NamedTuple
+from typing import Optional
+from typing import Text
+from typing import Tuple
+from typing import Type
 
 from .base import FS
 from .info import Info

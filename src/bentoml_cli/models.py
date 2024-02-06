@@ -21,7 +21,9 @@ if t.TYPE_CHECKING:
 
 
 def parse_delete_targets_argument_callback(
-    ctx: Context, params: Parameter, value: t.Any  # pylint: disable=unused-argument
+    ctx: Context,
+    params: Parameter,
+    value: t.Any,  # pylint: disable=unused-argument
 ) -> t.Any:
     if value is None:
         return value

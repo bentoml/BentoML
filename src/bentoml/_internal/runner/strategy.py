@@ -22,7 +22,8 @@ class Strategy(abc.ABC):
         runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
         workers_per_resource: int | float,
-    ) -> int: ...
+    ) -> int:
+        ...
 
     @classmethod
     @abc.abstractmethod
@@ -147,8 +148,7 @@ class DefaultStrategy(Strategy):
                     )
                 assigned_gpu = nvidia_gpus[
                     assigned_resource_per_worker
-                    * worker_index : assigned_resource_per_worker
-                    * (worker_index + 1)
+                    * worker_index : assigned_resource_per_worker * (worker_index + 1)
                 ]
                 dev = ",".join(map(str, assigned_gpu))
             else:

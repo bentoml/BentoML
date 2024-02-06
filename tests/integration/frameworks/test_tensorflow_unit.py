@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def requires_disable_eager_execution(
-    function: t.Callable[P, None]
+    function: t.Callable[P, None],
 ) -> t.Callable[P, None]:
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
         if tf.executing_eagerly():

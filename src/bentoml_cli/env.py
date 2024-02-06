@@ -75,9 +75,7 @@ def format_md(env: list[str], info_dict: dict[str, str | list[str]]) -> list[str
 ```bash
 {env}
 ```
-""".format(
-            env="\n".join(_format_env(env))
-        )
+""".format(env="\n".join(_format_env(env)))
     )
     out.append("#### System information\n")
     for key, value in info_dict.items():

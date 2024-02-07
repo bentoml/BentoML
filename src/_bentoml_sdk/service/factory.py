@@ -25,7 +25,6 @@ from bentoml.exceptions import BentoMLException
 
 from ..api import APIMethod
 from .config import ServiceConfig as Config
-from .config import validate
 
 logger = logging.getLogger("bentoml.io")
 
@@ -345,7 +344,7 @@ def service(inner: type[T] | None = None, /, **kwargs: Unpack[Config]) -> t.Any:
             def predict(self, input: str) -> str:
                 return input
     """
-    config = validate(kwargs)
+    config = kwargs
 
     def decorator(inner: type[T]) -> Service[T]:
         if isinstance(inner, Service):

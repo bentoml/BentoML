@@ -152,4 +152,4 @@ class Const(Schema): ...
 OpsType = Schema | And | Or | Use | Optional | Regex | Literal | Const
 AcceptedDictType = dict[str | OpsType, t.Any]
 _CallableLike = FunctionType | BuiltinFunctionType | t.Callable[..., t.Any]
-_SchemaLike = _CallableLike | OpsType
+_SchemaLike = _CallableLike | OpsType | AcceptedDictType

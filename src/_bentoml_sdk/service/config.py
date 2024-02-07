@@ -44,6 +44,8 @@ class ResourceSchema(TypedDict, total=False):
         "nvidia-tesla-k80",
         "nvidia-tesla-p4",
     ]
+    tpu: Posfloat
+    tpu_type: str
 
 
 WorkerSchema = Union[Posint, Literal["cpu_count"]]

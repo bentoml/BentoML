@@ -72,8 +72,15 @@ _SERVICE_CONFIG = {
     # NOTE: there is a distinction between being unset and None here; if set to 'None'
     # in configuration for a specific runner, it will override the global configuration.
     s.Optional("resources"): s.Or(
-        {s.Optional(str): object}, lambda s: s == "system", None
-    ),  # type: ignore (incomplete schema typing)
+        {
+            s.Optional("cpu"): str,
+            s.Optional("memory"): str,
+            s.Optional("gpu"): s.And(Real, ensure_larger_than_zero),
+            s.Optional("gpu_type"): str,
+            s.Optional("tpu_type"): str,
+        },
+        None,
+    ),
     s.Optional("workers"): s.Or(
         lambda s: s == "cpu_count",
         s.And(int, ensure_larger_than_zero),

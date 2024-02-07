@@ -44,6 +44,21 @@ class ResourceSchema(TypedDict, total=False):
         "nvidia-tesla-k80",
         "nvidia-tesla-p4",
     ]
+    tpu_type: Literal[
+        "v4-2x2x1",
+        "v4-2x2x2",
+        "v4-2x2x4",
+        "v4-2x4x4",
+        "v5p-2x2x1",
+        "v5p-2x2x2",
+        "v5p-2x2x4",
+        "v5p-2x4x4",
+        "v5e-1x1",
+        "v5e-2x2",
+        "v5e-2x4",
+        "v5e-4x4",
+        "v5e-4x8",
+    ]
 
 
 WorkerSchema = Union[Posint, Literal["cpu_count"]]

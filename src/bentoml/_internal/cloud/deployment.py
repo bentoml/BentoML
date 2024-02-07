@@ -375,6 +375,7 @@ class DeploymentInfo:
             "name": self.name,
             "bento": self.get_bento(refetch=False),
             "cluster": self.cluster,
+            "endpoint_url": self._urls[0] if self._urls else None,
             "admin_console": self.admin_console,
             "created_at": self.created_at,
             "created_by": self.created_by,

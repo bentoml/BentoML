@@ -12,7 +12,7 @@ Prerequisites
 - Python 3.8+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
 - You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/quickstart` first.
 - If you want to test this project locally, install FFmpeg on your system.
-- Gain access to the models used in this project: `pyannote/segmentation-3.0 <https://huggingface.co/pyannote/segmentation-3.0>`_ and `pyannote/speaker-diarization-3.1 <https://huggingface.co/pyannote/speaker-diarization-3.1>`_.
+- Gain access to the model used in this project: `pyannote/segmentation-3.0 <https://huggingface.co/pyannote/segmentation-3.0>`_.
 - (Optional) We recommend you create a virtual environment for dependency isolation. See the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ or the `Python documentation <https://docs.python.org/3/library/venv.html>`_ for details.
 
 Install dependencies
@@ -65,7 +65,6 @@ Create a :doc:`BentoML Service </guides/services>` to define the serving logic o
             compute_type = "float16" if torch.cuda.is_available() else "int8"
             self.model = whisperx.load_model("large-v2", self.device, compute_type=compute_type, language=LANGUAGE_CODE)
             self.model_a, self.metadata = whisperx.load_align_model(language_code=LANGUAGE_CODE, device=self.device)
-            self.diarize_model = whisperx.DiarizationPipeline(use_auth_token=os.getenv("HF_TOKEN"), device=self.device)
 
         @bentoml.api
         def transcribe(self, audio_file: Path) -> t.Dict:
@@ -77,38 +76,15 @@ Create a :doc:`BentoML Service </guides/services>` to define the serving logic o
 
             return result
 
-        @bentoml.api
-        def diarize(self, audio_file: Path) -> t.Dict:
-            import whisperx
-
-            audio = whisperx.load_audio(audio_file)
-            result = self.model.transcribe(audio, batch_size=self.batch_size)
-            result = whisperx.align(result["segments"], self.model_a, self.metadata, audio, self.device, return_char_alignments=False)
-
-            diarize_segments = self.diarize_model(audio)
-            result = whisperx.assign_word_speakers(diarize_segments, result)
-
-            return result
-
 A breakdown of the Service code:
 
 * The ``@bentoml.service`` decorator is used to define the ``WhisperX`` class as a BentoML Service, specifying additional configurations like timeout and resource allocations (GPU and memory).
 * During initialization, this Service does the following:
 
-  - Loads the Whisper model with a specific language code, device, and compute type.
+  - Loads the Whisper model with a specific language code, device, and compute type. It runs on either a GPU or CPU based on availability.
   - Loads an alignment model and metadata for the specified language.
-  - Initializes a diarization pipeline, which requires an authentication token (``HF_TOKEN``).
 
-* The Service exposes the following two API endpoints:
-
-  - ``transcribe``: Takes an audio file path as input, uses the Whisper model to transcribe the audio, and aligns the transcription with the audio using the alignment model and metadata. The transcription result is returned as a dictionary.
-  - ``diarize``: Similar to ``transcribe``, it takes an audio file path and performs transcription and alignment. Additionally, it performs speaker diarization using the diarization pipeline, identifying different speakers in the audio. The final result, including transcription with speaker identification, is returned as a dictionary.
-
-To serve the Service locally, make sure you set your ``HF_TOKEN`` first.
-
-.. code-block:: bash
-
-    export HF_TOKEN='your hugging face access token'
+* The Service exposes a ``transcribe`` API endpoint: Takes an audio file path as input, uses the Whisper model to transcribe the audio, and aligns the transcription with the audio using the alignment model and metadata. The transcription result is returned as a dictionary.
 
 Run ``bentoml serve`` to start the Service.
 
@@ -149,7 +125,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
 
     .. tab-item:: Swagger UI
 
-        Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, and select the desired API endpoint for interaction.
+        Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, and select an audio file for interaction.
 
         .. image:: ../../_static/img/use-cases/audio/whisperx/service-ui.png
 
@@ -181,10 +157,6 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
       system_packages:
         - ffmpeg
         - git
-    # Add your Hugging Face token
-    envs:
-    - name: HF_TOKEN
-      value: Null
 
 Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud.
 

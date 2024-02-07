@@ -75,7 +75,7 @@ _SERVICE_CONFIG = {
         {
             s.Optional("cpu"): str,
             s.Optional("memory"): str,
-            s.Optional("gpu"): s.And(float, ensure_larger_than_zero),
+            s.Optional("gpu"): s.And(Real, ensure_larger_than_zero),
             s.Optional("gpu_type"): str,
             s.Optional("tpu_type"): str,
         },

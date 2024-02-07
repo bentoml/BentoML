@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 import pathlib
 import sys
 import typing as t
@@ -106,6 +107,7 @@ def import_service(
     if bento_path is None:
         bento_path = pathlib.Path(".")
 
+    original_cwd = os.getcwd()
     # patch python path if needed
     if bento_path.joinpath(BENTO_YAML_FILENAME).exists():
         # a built bento
@@ -118,6 +120,9 @@ def import_service(
     else:
         # a project under current directory
         extra_python_path = None
+    # change working directory to the bento path to make relative paths work
+    if extra_python_path:
+        os.chdir(extra_python_path)
 
     # patch model store if needed
     if (
@@ -159,6 +164,7 @@ def import_service(
         sys_path = sys.path.copy()
         if extra_python_path is not None:
             sys.path.remove(extra_python_path)
+            os.chdir(original_cwd)
 
         if original_model_store is not None:
             from bentoml._internal.configuration.containers import BentoMLContainer

@@ -59,35 +59,29 @@ packaging, and production deployment.</p>
 
 # Documentation
 
-- Installation: `pip install "bentoml>=1.2.0a0"`
+- Installation: `pip install bentoml`
 - Documentation: [docs.bentoml.com](https://docs.bentoml.com/en/latest/)
-- Tutorial: [Quickstart](https://docs.bentoml.com/en/1.2/get-started/quickstart.html)
+- Tutorial: [Quickstart](https://docs.bentoml.com/en/latest/get-started/quickstart.html)
 
 ### 🛠️ What you can build with BentoML
 
-- [OpenLLM](https://github.com/bentoml/OpenLLM) - An open platform for operating
-  large language models (LLMs) in production.
-- [StableDiffusion](https://github.com/bentoml/stable-diffusion-bentoml) -
-  Create your own image generation service with any diffusion models..
-- [CLIP-API-service](https://github.com/bentoml/CLIP-API-service) - Embed images
-  and sentences, object recognition, visual reasoning, image classification, and
-  reverse image search.
-- [Transformer NLP Service](https://github.com/bentoml/transformers-nlp-service) -
-  Online inference API for Transformer NLP models.
-- [Distributed TaskMatrix(Visual ChatGPT)](https://github.com/bentoml/Distributed-Visual-ChatGPT) -
-  Scalable deployment for TaskMatrix from Microsoft.
-- [Fraud Detection](https://github.com/bentoml/Fraud-Detection-Model-Serving) -
-  Online model serving with custom XGBoost model.
-- [OCR as a Service](https://github.com/bentoml/OCR-as-a-Service) - Turn any OCR
-  models into online inference API endpoints.
-- [Replace Anything](https://github.com/yuqwu/Replace-Anything) - Combine the
-  power of Segment Anything and Stable Diffusion.
-- [DeepFloyd IF Multi-GPU serving](https://github.com/bentoml/IF-multi-GPUs-demo) -
-  Serve IF models easily across multiple GPUs.
-- [Sentence Embedding as a Service](https://github.com/bentoml/sentence-embedding-bento) -
-  Start a high-performance REST API server for generating text embeddings with one command.
-- Check out more examples
-  [here](https://github.com/bentoml/BentoML/tree/main/examples).
+- [OpenLLM](https://github.com/bentoml/OpenLLM) - An open platform for operating large language models (LLMs) in production.
+- [BentoXTTS](https://github.com/bentoml/BentoXTTS) - Convert text to speech based on your custom audio data.
+- [BentoSDXLTurbo](https://github.com/bentoml/BentoSDXLTurbo) - Create an image generation application and run inference with a single step.
+- [BentoSD2Upscaler](https://github.com/bentoml/BentoSD2Upscaler) - Build an image generation application with upscaling capability.
+- [BentoControlNet](https://github.com/bentoml/BentoControlNet/) - Influence image composition, adjust specific elements, and ensure spatial consistency by integrating ControlNet with your image generation process.
+- [BentoWhisperX](https://github.com/bentoml/BentoWhisperX) - Convert spoken words into text for AI scenarios like virtual assistants, voice-controlled devices, and automated transcription services.
+- [Sentence Transformer](https://github.com/bentoml/BentoSentenceTransformers) - Transform text into numerical vectors for a variety of natural language processing (NLP) tasks.
+- [BentoCLIP](https://github.com/bentoml/BentoClip) - Build a CLIP (Contrastive Language-Image Pre-training) application for tasks like zero-shot learning, image classification, and image-text matching.
+- [BentoBLIP](https://github.com/bentoml/BentoBlip) - Leverage BLIP (Bootstrapping Language Image Pre-training) to improve the way AI models understand and process the relationship between images and textual descriptions.
+- [BentoLCM](https://github.com/bentoml/BentoLCM) - Deploy a REST API server for Stable Diffusion with Latent Consistency LoRAs.
+- [BentoSVD](https://github.com/bentoml/BentoSVD) - Create a video generation application powered by Stable Video Diffusion (SVD).
+- [BentoVLLM](https://github.com/bentoml/BentoVLLM) - Accelerate your model inference and improve serving throughput by using vLLM as your LLM backend.
+- [Fraud Detection](https://github.com/bentoml/Fraud-Detection-Model-Serving) - Online model serving with custom XGBoost model.
+- [OCR as a Service](https://github.com/bentoml/OCR-as-a-Service) - Turn any OCR models into online inference API endpoints.
+- [Replace Anything](https://github.com/yuqwu/Replace-Anything) - Combine the power of Segment Anything and Stable Diffusion.
+- [DeepFloyd IF Multi-GPU serving](https://github.com/bentoml/IF-multi-GPUs-demo) - Serve IF models easily across multiple GPUs.
+- Check out more examples [here](https://github.com/bentoml/BentoML/tree/main/examples).
 
 # Getting started
 
@@ -199,7 +193,7 @@ docker run --rm -p 3000:3000 summarization:latest
 
 </details>
 
-For detailed explanations, read [Quickstart](https://docs.bentoml.com/en/1.2/get-started/quickstart.html).
+For detailed explanations, read [Quickstart](https://docs.bentoml.com/en/latest/get-started/quickstart.html).
 
 ---
 

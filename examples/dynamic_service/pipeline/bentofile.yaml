@@ -1,5 +1,6 @@
 service: "service.py:svc"
 include:
   - "service.py"
+  - "requirements.txt"
 python:
   requirements_txt: "./requirements.txt"

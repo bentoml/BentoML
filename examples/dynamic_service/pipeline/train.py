@@ -95,3 +95,24 @@ test_runner.init_local()
 assert test_runner.predict.run(["hello"]) == grid_search.best_estimator_.predict(
     ["hello"]
 )
+
+bento_model = bentoml.sklearn.save_model(
+    "twenty_news_group_second",
+    grid_search.best_estimator_,
+    signatures={
+        "predict": {"batchable": True, "batch_dim": 0},
+        "predict_proba": {"batchable": True, "batch_dim": 0},
+    },
+    custom_objects={
+        "target_names": data.target_names,
+    },
+    metadata=best_parameters,
+)
+print(f"Model saved: {bento_model}")
+
+# Test running inference with BentoML runner
+test_runner = bentoml.sklearn.get("twenty_news_group_second:latest").to_runner()
+test_runner.init_local()
+assert test_runner.predict.run(["hello"]) == grid_search.best_estimator_.predict(
+    ["hello"]
+)

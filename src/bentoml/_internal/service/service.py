@@ -283,6 +283,7 @@ class Service:
                 return False
 
         return True
+
     # fmt: off
     # case 1: function is not defined, but input and output are
     @t.overload
@@ -292,14 +293,14 @@ class Service:
     def add_api(self, input: IODescriptor[IOType], output: IODescriptor[IOType], user_defined_callback: t.Callable[..., t.Any], *, route: str = ...) -> None: ...
     # fmt: on
     def add_api(
-            self,
-            input: IODescriptor[IOType],
-            output: IODescriptor[IOType],
-            user_defined_callback: t.Callable[..., t.Any],
-            *,
-            name: str | None = None,
-            doc: str | None = None,
-            route: str | None = None,
+        self,
+        input: IODescriptor[IOType],
+        output: IODescriptor[IOType],
+        user_defined_callback: t.Callable[..., t.Any],
+        *,
+        name: str | None = None,
+        doc: str | None = None,
+        route: str | None = None,
     ) -> None:
         _api = InferenceAPI[IOType](
             name=first_not_none(name, default=user_defined_callback.__name__),

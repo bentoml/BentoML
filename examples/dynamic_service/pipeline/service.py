@@ -16,9 +16,9 @@ Therefore, you create an endpoint for every available model that can be deployed
 Scenario: You trained hundreds of models.
 While they are still in the training pipeline, you want to begin serving your first models already in production.
 
-When constructing Bentos, you require a predefined service.py file. However, the number of endpoints is unknown 
-during construction of this file. You aim to reuse the same file each time you create a new Bento, without the need 
-to alter the service definitions repeatedly. Each model should ideally have a route with a unique running index, 
+When constructing Bentos, you require a predefined service.py file. However, the number of endpoints is unknown
+during construction of this file. You aim to reuse the same file each time you create a new Bento, without the need
+to alter the service definitions repeatedly. Each model should ideally have a route with a unique running index,
 for instance. """
 
 
@@ -58,7 +58,9 @@ svc = bentoml.Service("doc_classifier", runners=model_runner_list)
 for idx, (model_runner, target_name) in enumerate(zip(model_runner_list, target_names)):
     path_predict = f"predict_model_{idx}"
     path_predict_proba = f"predict_proba_model_{idx}"
-    fn_pred, fn_pred_proba = wrap_service_methods(runner=model_runner, targets=target_name)
+    fn_pred, fn_pred_proba = wrap_service_methods(
+        runner=model_runner, targets=target_name
+    )
 
     svc.add_api(
         input=Text(),

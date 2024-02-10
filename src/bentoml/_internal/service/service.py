@@ -302,7 +302,7 @@ class Service:
             route: str | None = None,
     ) -> None:
         _api = InferenceAPI[IOType](
-            name=first_not_none(name, default=fn.__name__),
+            name=first_not_none(name, default=user_defined_callback.__name__),
             user_defined_callback=user_defined_callback,
             input_descriptor=input,
             output_descriptor=output,

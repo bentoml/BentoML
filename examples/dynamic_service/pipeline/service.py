@@ -1,21 +1,25 @@
+from typing import Any
+
 import bentoml
+from bentoml import Runner
 from bentoml.io import JSON
 from bentoml.io import Text
 
-"""The following example is based on the example sklearn/pipeline.
+"""The following example is based on the sklearn/pipeline example.
 
-The idea of dynamically building the service endpoints:
+The concept revolves around dynamically constructing service endpoints:
 
-Imaging you have n models ready for production. When building your bento, you do not actually know, which models should
-be served, so you create a endpoint for every model that is available for deployment.
+Imagine you have n models ready for production.
+When creating your Bento, you may not know in advance which models will be served.
+Therefore, you create an endpoint for every available model that can be deployed.
 
-Scenario: You are training hundreds of models, while still are in the training pipeline, you already want to serve your
-first models in production.
+Scenario: You trained hundreds of models.
+While they are still in the training pipeline, you want to begin serving your first models already in production.
 
-When building bentos, you need a predefined service.py file - but with an unknown number of endpoints when building.
-You want to reuse a single file everytime when creating a new bento, without changing the service definitions each time.
-Every model should have (for example) a route with a running index.
-"""
+When constructing Bentos, you require a predefined service.py file. However, the number of endpoints is unknown 
+during construction of this file. You aim to reuse the same file each time you create a new Bento, without the need 
+to alter the service definitions repeatedly. Each model should ideally have a route with a unique running index, 
+for instance. """
 
 
 def wrap_service_methods(runner: Runner, targets: Any):
@@ -35,19 +39,26 @@ def wrap_service_methods(runner: Runner, targets: Any):
     return predict, predict_proba
 
 
-bento_model = bentoml.sklearn.get("twenty_news_group:latest")
+available_model_set = set()
+# Add all unique variations of twenty_news_group to the service
+for available_model in bentoml.models.list():
+    if "twenty_news_group" in available_model.tag.name:
+        available_model_set.add(available_model.tag.name)
 
-target_names = bento_model.custom_objects["target_names"]
+model_runner_list: [Runner] = []
+target_names: [] = []
 
-# Imaging we have different models, which need the same predict and predict_proba implementations
-model_runner_list: [Runner] = [bento_model.to_runner(), bento_model.to_runner()]
+for available_model in available_model_set:
+    bento_model = bentoml.sklearn.get(f"{available_model}:latest")
+    target_names.append(bento_model.custom_objects["target_names"])
+    model_runner_list.append(bento_model.to_runner())
 
-svc = bentoml.Service("doc_classifier", runners=[model_runner])
+svc = bentoml.Service("doc_classifier", runners=model_runner_list)
 
-for idx, model_runner in enumerate(model_runner_list):
+for idx, (model_runner, target_name) in enumerate(zip(model_runner_list, target_names)):
     path_predict = f"predict_model_{idx}"
     path_predict_proba = f"predict_proba_model_{idx}"
-    fn_pred, fn_pred_proba = setMethod(runner=model_runner, targets=target_names)
+    fn_pred, fn_pred_proba = wrap_service_methods(runner=model_runner, targets=target_name)
 
     svc.add_api(
         input=Text(),

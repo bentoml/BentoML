@@ -22,12 +22,12 @@ bentoml serve service.py:svc
 
 Test the `/predict` endpoint:
 ```bash
-curl -X POST -H "content-type: application/text" --data "hello world" http://127.0.0.1:3000/predict
+curl -X POST -H "content-type: application/text" --data "hello world" http://127.0.0.1:3000/predict_model_0
 ```
 
 Test the `/predict_proba` endpoint:
 ```bash
-curl -X POST -H "content-type: application/text" --data "hello world" http://127.0.0.1:3000/predict_proba
+curl -X POST -H "content-type: application/text" --data "hello world" http://127.0.0.1:3000/predict_proba_model_0
 ```
 
 

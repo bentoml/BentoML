@@ -10,9 +10,12 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 
 import bentoml
+
 if __name__ == "__main__":
     # Display progress logs on stdout
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
 
     # Load some categories from the training set
     categories = [
@@ -71,7 +74,8 @@ if __name__ == "__main__":
     print("Best score: %0.3f" % grid_search.best_score_)
     best_parameters = grid_search.best_estimator_.get_params()
     best_parameters = {
-        param_name: best_parameters[param_name] for param_name in sorted(parameters.keys())
+        param_name: best_parameters[param_name]
+        for param_name in sorted(parameters.keys())
     }
     print(f"Best parameters set: {best_parameters}")
 

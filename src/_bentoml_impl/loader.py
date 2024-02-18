@@ -40,11 +40,11 @@ def normalize_identifier(
         if path.is_file() and path.name == BENTO_YAML_FILENAME:
             # this is a bento.yaml file
             yaml_path = path
-            bento_path = path.parent
+            bento_path = path.parent.joinpath("src")
         elif path.is_dir() and path.joinpath(BENTO_YAML_FILENAME).is_file():
             # this is a bento directory
             yaml_path = path.joinpath(BENTO_YAML_FILENAME)
-            bento_path = path
+            bento_path = path.joinpath("src")
         elif path.is_file() and path.name == "bentofile.yaml":
             # this is a bentofile.yaml file
             yaml_path = path

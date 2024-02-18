@@ -107,11 +107,7 @@ def import_service(
         bento_path = pathlib.Path(".")
 
     # patch python path if needed
-    if bento_path.joinpath(BENTO_YAML_FILENAME).exists():
-        # a built bento
-        extra_python_path = str(bento_path.joinpath("src").absolute())
-        sys.path.insert(0, extra_python_path)
-    elif bento_path != pathlib.Path("."):
+    if bento_path != pathlib.Path("."):
         # a project
         extra_python_path = str(bento_path.absolute())
         sys.path.insert(0, extra_python_path)
@@ -121,7 +117,7 @@ def import_service(
 
     # patch model store if needed
     if (
-        bento_path.joinpath(BENTO_YAML_FILENAME).exists()
+        bento_path.parent.joinpath(BENTO_YAML_FILENAME).exists()
         and bento_path.joinpath("models").exists()
     ):
         from bentoml._internal.configuration.containers import BentoMLContainer

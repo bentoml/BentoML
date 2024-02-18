@@ -118,7 +118,7 @@ def import_service(
     # patch model store if needed
     if (
         bento_path.parent.joinpath(BENTO_YAML_FILENAME).exists()
-        and bento_path.joinpath("models").exists()
+        and bento_path.parent.joinpath("models").exists()
     ):
         from bentoml._internal.configuration.containers import BentoMLContainer
         from bentoml._internal.models import ModelStore
@@ -126,7 +126,7 @@ def import_service(
         original_model_store = BentoMLContainer.model_store.get()
 
         BentoMLContainer.model_store.set(
-            ModelStore((bento_path.joinpath("models").absolute()))
+            ModelStore((bento_path.parent.joinpath("models").absolute()))
         )
     else:
         original_model_store = None

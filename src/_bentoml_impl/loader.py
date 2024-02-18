@@ -88,7 +88,9 @@ def normalize_identifier(
             with open(yaml_path, "r") as f:
                 bento_yaml = yaml.safe_load(f)
             assert "service" in bento_yaml, "service field is required in bento.yaml"
-            return normalize_package(bento_yaml["service"]), yaml_path.parent.joinpath("src")
+            return normalize_package(bento_yaml["service"]), yaml_path.parent.joinpath(
+                "src"
+            )
     else:
         raise ValueError(f"invalid service: {service_identifier}")
 

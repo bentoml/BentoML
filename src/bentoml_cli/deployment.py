@@ -625,7 +625,7 @@ def add_deployment_command(cli: click.Group) -> None:
             table.add_column("created_at")
             table.add_column("Bento")
             table.add_column("Status")
-            table.add_column("Cluster")
+            table.add_column("Region")
             for info in d_list:
                 table.add_row(
                     info.name,

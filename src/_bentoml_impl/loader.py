@@ -40,11 +40,11 @@ def normalize_identifier(
         if path.is_file() and path.name == BENTO_YAML_FILENAME:
             # this is a bento.yaml file
             yaml_path = path
-            bento_path = path.parent
+            bento_path = path.parent.joinpath("src")
         elif path.is_dir() and path.joinpath(BENTO_YAML_FILENAME).is_file():
             # this is a bento directory
             yaml_path = path.joinpath(BENTO_YAML_FILENAME)
-            bento_path = path
+            bento_path = path.joinpath("src")
         elif path.is_file() and path.name == "bentofile.yaml":
             # this is a bentofile.yaml file
             yaml_path = path
@@ -88,7 +88,9 @@ def normalize_identifier(
             with open(yaml_path, "r") as f:
                 bento_yaml = yaml.safe_load(f)
             assert "service" in bento_yaml, "service field is required in bento.yaml"
-            return normalize_package(bento_yaml["service"]), yaml_path.parent
+            return normalize_package(bento_yaml["service"]), yaml_path.parent.joinpath(
+                "src"
+            )
     else:
         raise ValueError(f"invalid service: {service_identifier}")
 
@@ -107,11 +109,7 @@ def import_service(
         bento_path = pathlib.Path(".")
 
     # patch python path if needed
-    if bento_path.joinpath(BENTO_YAML_FILENAME).exists():
-        # a built bento
-        extra_python_path = str(bento_path.joinpath("src").absolute())
-        sys.path.insert(0, extra_python_path)
-    elif bento_path != pathlib.Path("."):
+    if bento_path != pathlib.Path("."):
         # a project
         extra_python_path = str(bento_path.absolute())
         sys.path.insert(0, extra_python_path)
@@ -121,8 +119,8 @@ def import_service(
 
     # patch model store if needed
     if (
-        bento_path.joinpath(BENTO_YAML_FILENAME).exists()
-        and bento_path.joinpath("models").exists()
+        bento_path.parent.joinpath(BENTO_YAML_FILENAME).exists()
+        and bento_path.parent.joinpath("models").exists()
     ):
         from bentoml._internal.configuration.containers import BentoMLContainer
         from bentoml._internal.models import ModelStore
@@ -130,7 +128,7 @@ def import_service(
         original_model_store = BentoMLContainer.model_store.get()
 
         BentoMLContainer.model_store.set(
-            ModelStore((bento_path.joinpath("models").absolute()))
+            ModelStore((bento_path.parent.joinpath("models").absolute()))
         )
     else:
         original_model_store = None

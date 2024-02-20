@@ -45,7 +45,7 @@ def expand_env_var(env_var: str) -> str:
 
 
 def clean_bentoml_version(bentoml_version: str) -> str:
-    post_version = bentoml_version.split("+")[0]
+    post_version = ".".join(bentoml_version.split(".")[:3])
     try:
         version = Version(post_version)
         return str(version)

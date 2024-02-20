@@ -106,7 +106,7 @@ def import_service(
     from _bentoml_sdk import Service
 
     if bento_path is None:
-        bento_path = pathlib.Path(".")
+        bento_path = pathlib.Path(".").absolute()
 
     # patch python path if needed
     if bento_path != pathlib.Path("."):

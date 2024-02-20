@@ -82,7 +82,7 @@ A breakdown of the Service code:
 * Uses the ``@bentoml.service`` decorator to define a Service called ``LatentConsistency``. It includes service-specific :doc:`configurations </guides/configurations>` such as timeout settings, the number of workers, and resources (in this example, GPU requirements on BentoCloud).
 * Loads and configures the SDXL model, LoRA weights, and the LCM scheduler during initialization. The model is moved to a GPU device for efficient computation.
 * Exposes the ``txt2img`` method as a web API endpoint, making it callable via HTTP requests. It accepts a text prompt, the number of inference steps, and a guidance scale as inputs, all of which provide default values. These parameters control the image generation process:
-  
+
   - ``prompt``: The textual description based on which an image will be generated.
   - ``num_inference_steps``: The number of steps the model takes to refine the generated image. A higher number can lead to more detailed images but requires more computation. Using 4 to 6 steps for this example should be sufficient. See this `Hugging Face blog post <https://huggingface.co/blog/lcm_lora>`_ to learn the difference among images created using different steps.
   - ``guidance_scale``: A factor that influences how closely the generated image should adhere to the input prompt. A higher value may affect the creativity of the result.
@@ -118,7 +118,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
     .. tab-item:: BentoML client
 
         The Service returns the image as a ``Path`` object. You can use it to access, read, or process the file. In the following example, the client saves the image to the path ``/path/to/save/image.png``.
-        
+
         For more information, see :doc:`/guides/clients`.
 
         .. code-block:: python

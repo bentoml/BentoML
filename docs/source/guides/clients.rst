@@ -70,7 +70,7 @@ After you start the ``Summarization`` Service, you can create the following clie
                 client = bentoml.AsyncHTTPClient('http://localhost:3000')
                 response = await client.summarize(text="Your long text to summarize")
                 print(response)
-  
+
                 # Close the client to release resources
                 await client.close()
 

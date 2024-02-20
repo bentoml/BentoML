@@ -227,7 +227,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         return self.client.build_request(
             "POST",
             endpoint.route,
-            content=self.serde.serialize(kwargs),
+            content=self.serde.serialize(kwargs, endpoint.input),
             headers=headers,
         )
 
@@ -307,7 +307,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         elif ot == "bytes":
             return data
         else:
-            return self.serde.deserialize(data)
+            return self.serde.deserialize(data, endpoint.output)
 
     def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         try:

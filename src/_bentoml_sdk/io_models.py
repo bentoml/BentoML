@@ -143,15 +143,6 @@ class IOMixin:
 
         structured_media_type = cls.media_type or serde.media_type
 
-        if not issubclass(cls, RootModel):
-            if cls.multipart_fields:
-                return Response(
-                    "Multipart response is not supported yet", status_code=500
-                )
-            return Response(
-                content=serde.serialize_model(t.cast(IODescriptor, obj)),
-                media_type=structured_media_type,
-            )
         if inspect.isasyncgen(obj):
 
             async def async_stream() -> t.AsyncGenerator[str | bytes, None]:
@@ -159,7 +150,8 @@ class IOMixin:
                     if isinstance(item, (str, bytes)):
                         yield item
                     else:
-                        yield serde.serialize_model(t.cast(IODescriptor, cls(item)))
+                        obj_item = cls(item) if issubclass(cls, RootModel) else item
+                        yield serde.serialize_model(t.cast(IODescriptor, obj_item))
 
             return StreamingResponse(async_stream(), media_type=cls.mime_type())
 
@@ -170,9 +162,19 @@ class IOMixin:
                     if isinstance(item, (str, bytes)):
                         yield item
                     else:
-                        yield serde.serialize_model(t.cast(IODescriptor, cls(item)))
+                        obj_item = cls(item) if issubclass(cls, RootModel) else item
+                        yield serde.serialize_model(t.cast(IODescriptor, obj_item))
 
             return StreamingResponse(content_stream(), media_type=cls.mime_type())
+        elif not issubclass(cls, RootModel):
+            if cls.multipart_fields:
+                return Response(
+                    "Multipart response is not supported yet", status_code=500
+                )
+            return Response(
+                content=serde.serialize_model(t.cast(IODescriptor, obj)),
+                media_type=structured_media_type,
+            )
         else:
             if is_file_type(type(obj)) and isinstance(serde, JSONSerde):
                 if isinstance(obj, pathlib.PurePath):

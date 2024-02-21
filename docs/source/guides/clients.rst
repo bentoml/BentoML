@@ -39,6 +39,19 @@ After you start the ``Summarization`` Service, you can create the following clie
 
     .. tab-item:: Synchronous
 
+        To directly instantiate a synchronous client:
+
+        .. code-block:: python
+
+            client = bentoml.SyncHTTPClient('http://localhost:3000')
+            response = client.summarize(text="Your long text to summarize")
+            print(response)
+
+            # Close the client to release resources
+            client.close()
+
+        To create a synchronous client with a context manager:
+
         .. code-block:: python
 
             with bentoml.SyncHTTPClient('http://localhost:3000') as client:
@@ -46,6 +59,24 @@ After you start the ``Summarization`` Service, you can create the following clie
                 print(response)
 
     .. tab-item:: Asynchronous
+
+        To directly instantiate an asynchronous client:
+
+        .. code-block:: python
+
+            import asyncio
+
+            async def async_client_operation():
+                client = bentoml.AsyncHTTPClient('http://localhost:3000')
+                response = await client.summarize(text="Your long text to summarize")
+                print(response)
+
+                # Close the client to release resources
+                await client.close()
+
+            asyncio.run(async_client_operation())
+
+        To create an asynchronous client with a context manager:
 
         .. code-block:: python
 

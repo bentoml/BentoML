@@ -2,23 +2,11 @@
 Manage access tokens
 ====================
 
-In BentoCloud, API tokens serve as a key method of authorization for two distinct scopes - **BentoCloud resources** and **Bento Deployments**.
-They correspond to two different types of tokens - **User tokens** and **Developer tokens**.
+In BentoCloud, API tokens serve as a key method of authorization for two distinct scopes - BentoCloud access and Bento Deployments.
+They correspond to two different types of tokens - **Developer tokens** and **User tokens**.
 
-User tokens are granted permissions to access deployed Bento applications. You can control access to Bento Deployments with the following endpoint access types.
-
-- **Protected**: The Deployment is accessible to anyone on the internet, provided that they have a valid token.
-- **Public**: The Deployment is accessible to anyone on the internet.
-
-.. note::
-
-   You can specify the endpoint access type when creating and updating a Deployment.
-
-Developer tokens are granted permissions to manage BentoCloud resources. For example, you can perform the following tasks with a Developer token:
-
-- Manage BentoCloud cluster configurations.
-- Handle identity and access management (IAM) policies.
-- Manage models, Bentos, and Deployments.
+- Developer tokens are granted permissions to log in to BentoCloud and manage resources.
+- User tokens are granted permissions to access protected Deployments, which have :ref:`bentocloud/how-tos/create-deployments:authorization` enabled.
 
 This tutorial explains how to create and use API tokens in BentoCloud.
 
@@ -76,20 +64,35 @@ After you log in, you should be able to manage BentoCloud resources. For more in
 Use the User token
 ==================
 
-You can use User tokens to access Protected Bento Deployments.
-
-For HTTP-based servers, include the token in the header of your HTTP request.
+You can use User tokens to access Protected Bento Deployments. The following example provides different ways to interact with the :doc:`/get-started/quickstart` Summarization Service deployed with authorization enabled.
 
 .. tab-set::
 
     .. tab-item:: CURL
 
+        Include the token in the header of your HTTP request.
+
         .. code-block:: bash
 
-            curl "http://app-name.organization.cloud-apps.bentoml.com" \
-               -H "Content-Type: application/json" \
-               -H "Authorization: Bearer $YOUR_TOKEN" \
-               --data '{"prompt": "What state is Los Angeles in?", "llm_config": {"max_new_tokens": 129}}'
+            curl -s -X POST \
+               'https://app-name.organization.cloud-apps.bentoml.com/summarize' \
+               -H 'Authorization: Bearer $YOUR_TOKEN' \
+               -H 'Content-Type: application/json' \
+               -d '{
+                  "text": "Your long text to summarize"
+               }'
+
+    .. tab-item:: BentoML client
+
+        Set the ``token`` parameter in your :doc:`client </guides/clients>`.
+
+        .. code-block:: python
+
+            import bentoml
+
+            client = bentoml.SyncHTTPClient("https://app-name.organization.cloud-apps.bentoml.com", token="******")
+            response = client.summarize(text="Your long text to summarize")
+            print(response)
 
     .. tab-item:: Browser
 

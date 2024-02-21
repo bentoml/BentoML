@@ -183,20 +183,14 @@ The following is an example file that defines some custom configurations for bot
     name: "deployment-name"
     description: "This project creates an image generation application based on users' requirements."
     envs: # Optional. If you specify environment variables here, they will be applied to all Services
-      - name: "AA"
-        value: "aa"
+      - name: "ENV_VAR_NAME"
+        value: "env_var_value"
     services: # Add the configs of each Service under this field
       SDXLControlNetService: # Service one
         instance_type: "gpu.l4.1"
         scaling:
           max_replicas: 2
           min_replicas: 1
-          policy:
-            metrics:
-              - type: "cpu | memory | gpu | qps"
-                value: "string"
-            scale_down_behavior: "disabled | stable | fast"
-            scale_up_behavior: "disabled | stable | fast"
         envs: # Environment variables specific to Service one
           - name: "BB"
             value: "bb"

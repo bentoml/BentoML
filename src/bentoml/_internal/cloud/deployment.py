@@ -430,6 +430,13 @@ class DeploymentInfo:
             updated_at=updated_at,
         )
 
+    def get_endpoint_url(self, refetch: bool = True) -> str:
+        if refetch:
+            self._refetch()
+        if self._urls is None or len(self._urls) != 1:
+            raise BentoMLException("Deployment endpoint url is not ready")
+        return self._urls[0]
+
     def get_bento(self, refetch: bool = True) -> str:
         target = self._refetch_target(refetch)
         if target.bento is None:

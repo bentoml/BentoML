@@ -79,7 +79,7 @@ Customize deployment configurations
 
 When deploying a BentoML project on BentoCloud, you can customize the deployment by providing additional configurations to the BentoML CLI command or the Python client.
 
-The following sections provide examples for commonly used configuration fields. See the API reference for details.
+The following sections provide examples for commonly used configuration fields.
 
 .. note::
 
@@ -197,6 +197,36 @@ You can set environment variables for your deployment to configure the behavior 
    Ensure that the environment variables you set are relevant to and compatible with your BentoML Service. Use them wisely to manage sensitive data, configuration settings, and other critical information.
 
 If you have multiple Services, you can set environment variables at different levels. For example, setting global environment variables means they will be applied to all Services, while a single Service can have environment variables only specific to itself, which take precedence over global ones. See :doc:`/guides/distributed-services` to learn more.
+
+Authorization
+^^^^^^^^^^^^^
+
+Enabling authorization for a Deployment in BentoCloud is essential for security reasons. It allows you to control access to a Deployment by creating a protected endpoint, ensuring that only individuals with a valid token can access it. This mechanism helps in safeguarding sensitive data and functionality exposed by the application, preventing unauthorized access and potential misuse.
+
+.. tab-set::
+
+    .. tab-item:: BentoML CLI
+
+        To set authorization via the BentoML CLI, you can use the ``--access-authorization`` option:
+
+        .. code-block:: bash
+
+            bentoml deploy . --access-authorization true
+
+    .. tab-item:: Python API
+
+        Set the ``access_authorization`` parameter to ``True`` to enable it.
+
+        .. code-block:: python
+
+            import bentoml
+
+            bentoml.deployment.create(
+                bento="./path_to_your_project",
+                access_authorization=True
+            )
+
+To access a Deployment with authorization enabled, :ref:`create an API token with Protected Endpoint Access <bentocloud/how-tos/manage-access-token:create an api token>` and refer to :ref:`bentocloud/how-tos/manage-access-token:use the user token`.
 
 Deploy with a configuration file
 --------------------------------

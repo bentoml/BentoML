@@ -174,7 +174,7 @@ You can set environment variables for your deployment to configure the behavior 
 
         .. code-block:: bash
 
-            bentoml deploy . --env AAA=aaa --env BBB=bbb
+            bentoml deploy . --env FIRST_VAR_NAME=value --env SECOND_VAR_NAME=value
 
     .. tab-item:: Python API
 
@@ -187,8 +187,8 @@ You can set environment variables for your deployment to configure the behavior 
             bentoml.deployment.create(
                 bento="./path_to_your_project",
                 envs=[
-                    {"name": "AAA", "value": "aaa"},  # First environment variable
-                    {"name": "BBB", "value": "bbb"}   # Second environment variable
+                    {"name": "FIRST_VAR_NAME", "value": "first_var_value"},  # First environment variable
+                    {"name": "SECOND_VAR_NAME", "value": "second_var_value"}   # Second environment variable
                 ]
             )
 
@@ -211,8 +211,8 @@ Here is an example ``config-file.yaml`` file:
     name: "my-deployment-name"
     access_authorization: true # Setting it to `true` means you need an API token with Protected Endpoint Access to access the exposed endpoint.
     envs: # Set global environment variables
-      - name: AAA
-        value: aaa
+      - name: ENV_VAR_NAME
+        value: env_var_value
     services:
         MyBentoService: # Your Service name
           instance_type: "cpu.2" # The instance type name on BentoCloud

@@ -106,14 +106,3 @@ For HTTP-based servers, include the token in the header of your HTTP request.
 
       4. Click **Save**.
       5. Access the exposed URL of your Protected Deployment again and you should be able to access it.
-
-For gRPC servers, include it in the metadata of your gRPC call:
-
-.. code-block:: python
-
-   import grpc
-
-   creds = grpc.ssl_channel_credentials()
-   auth_creds = grpc.access_token_call_credentials('<your-api-token>')
-   channel = grpc.secure_channel('<your-deployed-api-endpoint>', creds)
-   stub = <YourGRPCServiceStub>(channel)

@@ -379,7 +379,11 @@ class DeploymentInfo:
             "admin_console": self.admin_console,
             "created_at": self.created_at,
             "created_by": self.created_by,
-            "config": self.get_config(refetch=False).to_dict(with_meta=False),
+            "config": (
+                self.get_config(refetch=False)
+                if self.get_config(refetch=False) is not None
+                else None
+            ),
             "status": self.get_status(refetch=False).to_dict(),
         }
 
@@ -391,24 +395,21 @@ class DeploymentInfo:
         self._schema = res._schema
         self._urls = res._urls
 
-    def _refetch_target(self, refetch: bool) -> DeploymentTargetSchema:
+    def _refetch_target(self, refetch: bool) -> DeploymentTargetSchema | None:
         if refetch:
             self._refetch()
         if self._schema.latest_revision is None:
-            raise BentoMLException(f"Deployment {self.name} has no latest revision")
+            return None
         if len(self._schema.latest_revision.targets) == 0:
-            raise BentoMLException(
-                f"Deployment {self.name} has no latest revision targets"
-            )
-        target = self._schema.latest_revision.targets[0]
-        if target is None:
-            raise BentoMLException(f"Deployment {self.name} has no target")
-        return target
+            return None
+        return self._schema.latest_revision.targets[0]
 
-    def get_config(self, refetch: bool = True) -> DeploymentConfig:
+    def get_config(self, refetch: bool = True) -> DeploymentConfig | None:
         target = self._refetch_target(refetch)
+        if target is None:
+            return None
         if target.config is None:
-            raise BentoMLException(f"Deployment {self.name} has no config")
+            return None
 
         return DeploymentConfig(
             name=self.name,
@@ -432,8 +433,10 @@ class DeploymentInfo:
 
     def get_bento(self, refetch: bool = True) -> str:
         target = self._refetch_target(refetch)
+        if target is None:
+            return ""
         if target.bento is None:
-            raise BentoMLException(f"Deployment {self.name} has no bento")
+            return ""
         return target.bento.repository.name + ":" + target.bento.version
 
     def get_client(

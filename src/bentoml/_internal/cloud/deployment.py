@@ -375,7 +375,7 @@ class DeploymentInfo:
             "name": self.name,
             "bento": self.get_bento(refetch=False),
             "cluster": self.cluster,
-            "endpoint_url": self._urls[0] if self._urls else None,
+            "endpoint_urls": self._urls if self._urls else None,
             "admin_console": self.admin_console,
             "created_at": self.created_at,
             "created_by": self.created_by,
@@ -430,12 +430,12 @@ class DeploymentInfo:
             updated_at=updated_at,
         )
 
-    def get_endpoint_url(self, refetch: bool = True) -> str:
+    def get_endpoint_urls(self, refetch: bool = True) -> list[str]:
         if refetch:
             self._refetch()
         if self._urls is None or len(self._urls) != 1:
             raise BentoMLException("Deployment endpoint url is not ready")
-        return self._urls[0]
+        return self._urls
 
     def get_bento(self, refetch: bool = True) -> str:
         target = self._refetch_target(refetch)

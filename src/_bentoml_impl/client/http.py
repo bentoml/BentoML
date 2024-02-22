@@ -340,14 +340,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
 class SyncHTTPClient(HTTPClient[httpx.Client]):
     """A synchronous client for BentoML service.
 
-    Example:
-
-        with SyncHTTPClient("http://localhost:3000") as client:
-            resp = client.call("classify", input_series=[[1,2,3,4]])
-            assert resp == [0]
-            # Or using named method directly
-            resp = client.classify(input_series=[[1,2,3,4]])
-            assert resp == [0]
+    .. note:: Inner usage ONLY
     """
 
     client_cls = httpx.Client
@@ -449,24 +442,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
 class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
     """An asynchronous client for BentoML service.
 
-    Example:
-
-        async with AsyncHTTPClient("http://localhost:3000") as client:
-            resp = await client.call("classify", input_series=[[1,2,3,4]])
-            assert resp == [0]
-            # Or using named method directly
-            resp = await client.classify(input_series=[[1,2,3,4]])
-            assert resp == [0]
-
-    .. note::
-
-        If the endpoint returns an async generator, it should be awaited before iterating.
-
-        Example:
-
-            resp = await client.stream(prompt="hello")
-            async for data in resp:
-                print(data)
+    .. note:: Inner usage ONLY
     """
 
     client_cls = httpx.AsyncClient

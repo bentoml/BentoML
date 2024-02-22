@@ -84,9 +84,27 @@ Perform the following steps to quickly deploy an example application on BentoClo
 
       bentoml deploy .
 
-5. On the BentoCloud console, navigate to the **Deployments** page, and click your Deployment. Once it is up and running, interact with it using the Form, BentoML Python client, or CURL command on the **Playground** tab. The sample input already provides a new article and you can summarize it with the application.
+5. On the BentoCloud console, navigate to the **Deployments** page, and click your Deployment. On its details page, you can see the sample input and summarize it with the application once it is up and running.
 
    .. image:: ../_static/img/bentocloud/get-started/bentocloud-playground-quickstart.png
+
+   Interact with it using the Form, Python client, or CURL command on the **Playground** tab. Here is an example of creating a Python client to interact with it. Replace the endpoint URL with your own.
+
+   .. code-block:: python
+
+      import bentoml
+
+      client = bentoml.SyncHTTPClient("https://summarization-example--aws-ca-1.mt1.bentoml.ai")
+      result: str = client.summarize(
+            text="Breaking News: In an astonishing turn of events, the small town of Willow Creek has been taken by storm as local resident Jerry Thompson's cat, Whiskers, performed what witnesses are calling a 'miraculous and gravity-defying leap.' Eyewitnesses report that Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly. The event, which took place in Thompson's backyard, is now being investigated by scientists for potential breaches in the laws of physics. Local authorities are considering a town festival to celebrate what is being hailed as 'The Leap of the Century.",
+         )
+      print(result)
+
+6. To terminate this Deployment, click **Stop** in the top right corner of its details page or simply run:
+
+   .. code-block:: bash
+
+      bentoml deployment terminate summarization
 
 Resources
 ---------
@@ -95,3 +113,5 @@ If you are a first-time user of BentoCloud, we recommend you read the following 
 
 - Deploy :doc:`example projects </use-cases/index>` to BentoCloud
 - :doc:`/bentocloud/how-tos/manage-deployments`
+- :doc:`/bentocloud/how-tos/create-deployments`
+- :doc:`/bentocloud/how-tos/manage-access-token`

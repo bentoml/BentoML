@@ -136,10 +136,6 @@ This is the ``service.py`` file:
             )
             return res[0][0]
 
-.. note::
-
-   You can find this example in the `BentoControlNet <https://github.com/bentoml/BentoControlNet/>`_ project.
-
 To declare a dependency, you use the ``bentoml.depends()`` function by passing the dependent Service class as an argument. This creates a direct link between Services, facilitating easy method invocation. This example uses the following code to achieve this:
 
 .. code-block:: python
@@ -168,14 +164,16 @@ For projects with multiple Services, you should reference the primary Service ha
       project: gallery
     ...
 
+You can then :doc:`containerize it as a Docker image </guides/containerization>` or deploy it to `BentoCloud <https://www.bentoml.com/>`_.
+
 Deploy distributed Services
 ---------------------------
 
-Deploying a project with distributed Services in BentoML is similar to deploying a single Service, with nuances in setting custom configurations.
+Deploying a project with distributed Services to BentoCloud is similar to deploying a single Service, with nuances in setting custom configurations.
 
 To set custom configurations for each, we recommend you use a separate configuration file and reference it in the BentoML CLI command or Python API for deployment.
 
-The following is an example file that defines some custom configurations for both Services in the BentoControlNet project. You set configurations of each Service in the ``services`` field. Refer to :doc:`/bentocloud/how-tos/create-deployments` to see the available configuration fields.
+The following is an example file that defines some custom configurations for the above two Services. You set configurations of each Service in the ``services`` field. Refer to :doc:`/bentocloud/how-tos/create-deployments` to see the available configuration fields.
 
 .. code-block:: yaml
 
@@ -183,7 +181,7 @@ The following is an example file that defines some custom configurations for bot
     name: "deployment-name"
     description: "This project creates an image generation application based on users' requirements."
     envs: # Optional. If you specify environment variables here, they will be applied to all Services
-      - name: "ENV_VAR_NAME"
+      - name: "GLOBAL_ENV_VAR_NAME"
         value: "env_var_value"
     services: # Add the configs of each Service under this field
       SDXLControlNetService: # Service one
@@ -192,8 +190,8 @@ The following is an example file that defines some custom configurations for bot
           max_replicas: 2
           min_replicas: 1
         envs: # Environment variables specific to Service one
-          - name: "BB"
-            value: "bb"
+          - name: "ENV_VAR_NAME"
+            value: "env_var_value"
         deployment_strategy: "RollingUpdate"
         config_overrides:
           traffic:

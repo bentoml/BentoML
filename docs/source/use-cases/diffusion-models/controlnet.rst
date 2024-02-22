@@ -94,7 +94,7 @@ Create BentoML :doc:`/guides/services` in a ``service.py`` file to specify the s
         @bentoml.api
         async def generate(self, image: PIL_Image, params: Params) -> PIL_Image:
             import cv2
-            
+
             arr = np.array(image)
             arr = cv2.Canny(arr, 100, 200)
             arr = arr[:, :, None]
@@ -107,7 +107,7 @@ Create BentoML :doc:`/guides/services` in a ``service.py`` file to specify the s
                 image=image,
                 **params_d
             ).to_tuple()[0][0]
-        
+
     class Params(BaseModel):
         prompt: str
         negative_prompt: t.Optional[str]

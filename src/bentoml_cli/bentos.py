@@ -467,4 +467,4 @@ def bento_management_commands() -> click.Group:
     return bentos
 
 
-bentos = bento_management_commands()
+bento_command = bento_management_commands()

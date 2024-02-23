@@ -8,7 +8,7 @@ import psutil
 
 def create_bentoml_cli() -> click.Command:
     from bentoml._internal.context import component_context
-    from bentoml_cli.bentos import bentos
+    from bentoml_cli.bentos import bento_command
     from bentoml_cli.cloud import cloud_command
     from bentoml_cli.containerize import containerize_command
     from bentoml_cli.deployment import deploy_command
@@ -40,7 +40,7 @@ def create_bentoml_cli() -> click.Command:
     bentoml_cli.add_command(env_command)
     bentoml_cli.add_command(cloud_command)
     bentoml_cli.add_command(model_command)
-    bentoml_cli.add_subcommands(bentos)
+    bentoml_cli.add_subcommands(bento_command)
     bentoml_cli.add_subcommands(start_command)
     bentoml_cli.add_subcommands(serve_command)
     bentoml_cli.add_command(containerize_command)

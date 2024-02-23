@@ -5,11 +5,8 @@ Deployment details
 Deployment details refer to the properties of a Bento Deployment, such as its metadata, status, monitoring metrics, and revision records.
 You set some of these properties when you create the Deployment, and you also have the option to edit some of them as needed after creation.
 
-Overview
---------
-
-Overview
-^^^^^^^^
+Playground
+----------
 
 .. list-table::
    :widths: 20 80
@@ -17,53 +14,16 @@ Overview
 
    * - Property
      - Description
-   * - Name
-     - The name of the Deployment, serving as a unique identifier for the Bento Deployment on BentoCloud.
-   * - URL
-     - The endpoint at which the Bento Deployment is accessible.
-   * - Bento
-     - The specific Bento package being used for this Deployment, which includes the model, source code, and dependencies.
-   * - Endpoint Access Type
-     - The level of access allowed to the endpoint, including Public and Protected.
-   * - Description
-     - A brief explanation of the Bento Deployment.
-   * - Creator
-     - The user who created this Bento Deployment.
-   * - Created at
-     - The date and time when the Bento Deployment was initially created.
-
-Component Status
-^^^^^^^^^^^^^^^^
-
-.. list-table::
-   :widths: 20 80
-   :header-rows: 1
-
-   * - Property
-     - Description
-   * - Name
-     - The name of the component, such as API Server or a specific Runner.
-   * - Instance Type
-     - The classification of the cloud instance that the component is using.
-   * - Resources
-     - The allocated computing resources for the component, such as CPU and memory.
-   * - Status
-     - The current operational status of the component, indicated by one of the status lights:
-
-       - Green: Active
-       - Grey: Not deployed
-       - Red: Failed
-
-Events
-^^^^^^
-
-This section displays a chronological record of system events related to the Deployment's operation on BentoCloud. Each entry logs the actions performed by the system, such as scaling, component status changes, and updates to the Bento configurations. These logs are instrumental for auditing, debugging, and understanding the behavior of the Deployment over time.
-
-You can search for event keywords in the search bar.
-
-.. note::
-
-   The Events section is also available on the **Replicas** and **Revisions** tabs.
+   * - Form
+     - Interact with the Deployment using a form, which contains the same parameters defined for the Service endpoint.
+   * - Python
+     - Provide the code to create a Python client to interact with the Deployment.
+   * - CURL
+     - Provide the CURL command to interact with the Deployment.
+   * - Result
+     - Display the output by the Deployment.
+   * - Authorized/Unauthorized
+     - Available only when you enable :ref:`bentocloud/how-tos/configure-deployments:authorization`. Click it to enter the authorization token.
 
 Replicas
 --------
@@ -74,25 +34,23 @@ Replicas
 
    * - Property
      - Description
-   * - Group
-     - The group type the replica belongs to, including API Server and Runner.
-   * - Name
-     - The name of the API Server or Runner replica.
+   * - Service Name
+     - The name of the BentoML Service.
+   * - Instance Type
+     - The instance where the Service runs.
    * - Status
-     - The status of the replica, indicating whether the replica is running or if it needs your attention. Possible statuses include ``Running`` and ``Failed``.
-   * - Cluster
-     - The name of the cloud cluster where the replica is running.
-   * - Node
-     - The specific node within the cluster where the replica is running.
-   * - Start Time
-     - The time when the replica was deployed.
-   * - Operation
+     - The status of the Service, indicating whether it is running or if it needs your attention. Possible statuses include ``Running`` and ``Failed``.
+   * - Launch Time
+     - The time when the Service was deployed.
+   * - Replica ID
+     - A unique identifier of the Service replica.
+   * - Actions
      - Operations that you can perform:
 
-       - View logs: Inspect the logs of different containers within the Pod replica. You can use the drop-down menu at the top to switch between containers.
-       - Inspect events: View the operational events of the replica.
-       - Enter containers: `Exec into different containers <https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/>`_ of the Pod replica. You can click **Show File Manager** to upload files to and download files from the container.
-       - Troubleshoot containers: `Troubleshoot issues with an ephemeral debug container <https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container>`_. You can click **Show File Manager** to upload files to and download files from the container.
+       - Logs: Inspect the logs of different containers within the Pod replica. You can use the drop-down menu at the top to switch between containers.
+       - Events: View the operational events of the replica.
+       - Terminal: `Exec into different containers <https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/>`_ of the Pod replica. You can click **Show File Manager** to upload files to and download files from the container.
+       - Debug: `Troubleshoot issues with an ephemeral debug container <https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container>`_. You can click **Show File Manager** to upload files to and download files from the container.
 
 Logging
 -------
@@ -167,11 +125,11 @@ Revisions
 
    * - Property
      - Description
-   * - ID
+   * - Revision ID
      - A unique identifier assigned to each revision of the Deployment.
-   * - Deployment Targets
+   * - Bento
      - The Bento used to create the Deployment.
-   * - Creator
+   * - Created by
      - The user who created this Bento Deployment.
    * - Created at
      - The date and time when the Bento Deployment was initially created.

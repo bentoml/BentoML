@@ -17,7 +17,6 @@ from click.exceptions import UsageError
 if t.TYPE_CHECKING:
     from click import Command
     from click import Context
-    from click import Group
     from click import HelpFormatter
     from click import Option
     from click import Parameter
@@ -33,7 +32,7 @@ if t.TYPE_CHECKING:
         def __call__(  # pylint: disable=no-method-argument
             *args: P.args,
             **kwargs: P.kwargs,
-        ) -> F[P]:
+        ) -> t.Any:
             ...
 
     WrappedCLI = t.Callable[P, ClickFunctionWrapper[P]]
@@ -197,9 +196,46 @@ class SharedOptions:
     """This is the click.Context object that will be used in BentoML CLI."""
 
     cloud_context: str | None = attr.field(default=None)
+    do_not_track: bool = attr.field(default=False)
 
     def with_options(self, **attrs: t.Any) -> t.Any:
         return attr.evolve(self, **attrs)
+
+
+def setup_verbosity(ctx: Context, param: Parameter, value: int) -> int:
+    from bentoml._internal.configuration import set_debug_mode
+    from bentoml._internal.configuration import set_quiet_mode
+    from bentoml._internal.log import configure_logging
+
+    if value == 1:
+        set_debug_mode(True)
+    elif value == -1:
+        set_quiet_mode(True)
+
+    configure_logging()
+    return value
+
+
+def setup_track(ctx: Context, param: Parameter, value: bool) -> bool:
+    if value:
+        obj = ctx.ensure_object(SharedOptions)
+        obj.do_not_track = True
+    return value
+
+
+def setup_cloud_client(ctx: Context, param: Parameter, value: str | None) -> str | None:
+    if value:
+        obj = ctx.ensure_object(SharedOptions)
+        obj.cloud_context = value
+    return value
+
+
+class AliasCommand(click.Command):
+    def __init__(
+        self, *args: t.Any, aliases: list[str] | None = None, **kwargs: t.Any
+    ) -> None:
+        super(AliasCommand, self).__init__(*args, **kwargs)
+        self.aliases = aliases or []
 
 
 class BentoMLCommandGroup(click.Group):
@@ -226,87 +262,69 @@ class BentoMLCommandGroup(click.Group):
     NUMBER_OF_COMMON_PARAMS = 5  # NOTE: 4 shared options and a option group title
 
     @staticmethod
-    def bentoml_common_params(func: F[P]) -> WrappedCLI[bool, bool, str | None]:
+    def bentoml_common_params(f: F[P]) -> ClickFunctionWrapper[P]:
         # NOTE: update NUMBER_OF_COMMON_PARAMS when adding option.
         from bentoml._internal.configuration import DEBUG_ENV_VAR
         from bentoml._internal.configuration import QUIET_ENV_VAR
-        from bentoml._internal.configuration import set_debug_mode
-        from bentoml._internal.configuration import set_quiet_mode
-        from bentoml._internal.log import configure_logging
         from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
 
-        @cog.optgroup.group("Global options")
-        @cog.optgroup.option(
+        f = cog.optgroup.option(
             "-q",
             "--quiet",
-            is_flag=True,
-            default=False,
+            "verbosity",
+            flag_value=-1,
+            default=0,
+            expose_value=False,
             envvar=QUIET_ENV_VAR,
             help="Suppress all warnings and info logs",
-        )
-        @cog.optgroup.option(
+            callback=setup_verbosity,
+            is_eager=True,
+        )(f)
+        f = cog.optgroup.option(
             "--verbose",
             "--debug",
-            "verbose",
-            is_flag=True,
-            default=False,
+            "verbosity",
+            flag_value=1,
+            expose_value=False,
             envvar=DEBUG_ENV_VAR,
             help="Generate debug information",
-        )
-        @cog.optgroup.option(
+        )(f)
+        f = cog.optgroup.option(
             "--do-not-track",
             is_flag=True,
             default=False,
             envvar=BENTOML_DO_NOT_TRACK,
+            expose_value=False,
             help="Do not send usage info",
-        )
-        @cog.optgroup.option(
+            callback=setup_track,
+        )(f)
+        f = cog.optgroup.option(
             "--context",
             "cloud_context",
             type=click.STRING,
             default=None,
             help="BentoCloud context name.",
-        )
-        @click.pass_context
-        @functools.wraps(func)
-        def wrapper(
-            ctx: click.Context,
-            quiet: bool,
-            verbose: bool,
-            cloud_context: str | None,
-            *args: P.args,
-            **kwargs: P.kwargs,
-        ) -> t.Any:
-            ctx.obj = SharedOptions(cloud_context=cloud_context)
-            if quiet:
-                set_quiet_mode(True)
-                if verbose:
-                    logger.warning("'--quiet' passed; ignoring '--verbose/--debug'")
-            elif verbose:
-                set_debug_mode(True)
-
-            configure_logging()
-
-            return func(*args, **kwargs)
-
-        return wrapper
+            expose_value=False,
+            callback=setup_cloud_client,
+        )(f)
+        f = cog.optgroup.group("Global options")(f)
+        return t.cast("ClickFunctionWrapper[P]", f)
 
     @staticmethod
     def bentoml_track_usage(
-        func: F[P] | WrappedCLI[bool, bool, str | None],
-        cmd_group: click.Group,
-        **kwargs: t.Any,
-    ) -> WrappedCLI[bool]:
+        func: F[P], cmd_group: click.Group, name: str | None
+    ) -> F[P]:
         from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
         from bentoml._internal.utils.analytics import CliEvent
         from bentoml._internal.utils.analytics import cli_events_map
         from bentoml._internal.utils.analytics import track
 
-        command_name = kwargs.get("name", func.__name__)
+        command_name = name or func.__name__
 
-        @functools.wraps(func)
-        def wrapper(do_not_track: bool, *args: P.args, **kwargs: P.kwargs) -> t.Any:
-            if do_not_track:
+        @click.pass_context
+        def wrapper(ctx: Context, *args: P.args, **kwargs: P.kwargs) -> t.Any:
+            options = ctx.ensure_object(SharedOptions)
+            if options.do_not_track:
                 os.environ[BENTOML_DO_NOT_TRACK] = str(True)
                 return func(*args, **kwargs)
 
@@ -349,12 +367,12 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def raise_click_exception(
-        func: F[P] | WrappedCLI[bool], cmd_group: click.Group, **kwargs: t.Any
-    ) -> ClickFunctionWrapper[t.Any]:
+        func: F[P], cmd_group: click.Group, name: str | None
+    ) -> F[P]:
         from bentoml._internal.configuration import get_debug_mode
         from bentoml.exceptions import BentoMLException
 
-        command_name = kwargs.get("name", func.__name__)
+        command_name = name or func.__name__
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
@@ -368,58 +386,49 @@ class BentoMLCommandGroup(click.Group):
                 else:
                     raise ClickException(click.style(msg, fg="red")) from err
 
-        return t.cast("ClickFunctionWrapper[t.Any]", wrapper)
+        return wrapper
 
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        self.aliases = kwargs.pop("aliases", [])
         super(BentoMLCommandGroup, self).__init__(*args, **kwargs)
         # these two dictionaries will store known aliases for commands and groups
         self._commands: dict[str, list[str]] = {}
         self._aliases: dict[str, str] = {}
 
-    def command(self, *args: t.Any, **kwargs: t.Any) -> t.Callable[[F[P]], Command]:
-        if "context_settings" not in kwargs:
-            kwargs["context_settings"] = {}
-        kwargs["context_settings"]["max_content_width"] = 120
-        aliases = kwargs.pop("aliases", None)
-
-        def wrapper(func: F[P]) -> Command:
-            # add common parameters to command.
-            options = BentoMLCommandGroup.bentoml_common_params(func)
-            # Send tracking events before command finish.
-            usage = BentoMLCommandGroup.bentoml_track_usage(options, self, **kwargs)
-            # If BentoMLException raise ClickException instead before exit.
-            wrapped = BentoMLCommandGroup.raise_click_exception(usage, self, **kwargs)
-
-            # move common parameters to end of the parameters list
-            wrapped.__click_params__ = (
-                wrapped.__click_params__[-self.NUMBER_OF_COMMON_PARAMS :]
-                + wrapped.__click_params__[: -self.NUMBER_OF_COMMON_PARAMS]
+    def add_subcommands(self, group: click.Group) -> None:
+        if not isinstance(group, click.MultiCommand):
+            raise TypeError(
+                "BentoMLCommandGroup.add_subcommands only accepts click.MultiCommand"
             )
-            cmd = super(BentoMLCommandGroup, self).command(*args, **kwargs)(wrapped)
-            # add aliases to a given commands if it is specified.
-            if aliases is not None:
-                assert cmd.name
-                self._commands[cmd.name] = aliases
-                self._aliases.update({alias: cmd.name for alias in aliases})
-            return cmd
+        if isinstance(group, BentoMLCommandGroup):
+            # Common wrappers are already applied, call the super() method
+            for name, cmd in group.commands.items():
+                super().add_command(cmd, name)
+            self._commands.update(group._commands)
+            self._aliases.update(group._aliases)
+        else:
+            for name, cmd in group.commands.items():
+                self.add_command(cmd, name)
 
-        return wrapper
-
-    def group(self, *args: t.Any, **kwargs: t.Any) -> t.Callable[[F[P]], Group]:
-        aliases = kwargs.pop("aliases", None)
-
-        def decorator(f: F[P]):
-            # create the main group
-            grp = super(BentoMLCommandGroup, self).group(*args, **kwargs)(f)
-
-            if aliases is not None:
-                assert grp.name
-                self._commands[grp.name] = aliases
-                self._aliases.update({k: grp.name for k in aliases})
-
-            return grp
-
-        return decorator
+    def add_command(self, cmd: Command, name: str | None = None) -> None:
+        assert cmd.callback is not None
+        callback = BentoMLCommandGroup.bentoml_track_usage(
+            cmd.callback, self, name=cmd.name
+        )
+        callback = BentoMLCommandGroup.raise_click_exception(
+            callback, self, name=cmd.name
+        )
+        callback = BentoMLCommandGroup.bentoml_common_params(callback)
+        cmd.params.extend(reversed(callback.__click_params__))
+        del callback.__click_params__
+        cmd.callback = callback
+        cmd.context_settings["max_content_width"] = 120
+        aliases = getattr(cmd, "aliases", None)
+        if aliases:
+            assert cmd.name
+            self._commands[cmd.name] = aliases
+            self._aliases.update({alias: cmd.name for alias in aliases})
+        return super().add_command(cmd, name)
 
     def resolve_alias(self, cmd_name: str):
         return self._aliases[cmd_name] if cmd_name in self._aliases else cmd_name

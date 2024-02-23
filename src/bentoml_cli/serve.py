@@ -46,13 +46,19 @@ def deprecated_option(*param_decls: str, **attrs: t.Any):
     return decorator
 
 
-def add_serve_command(cli: click.Group) -> None:
+def build_serve_command() -> click.Group:
     from bentoml._internal.configuration.containers import BentoMLContainer
     from bentoml._internal.log import configure_server_logging
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml_cli.env_manager import env_manager
+    from bentoml_cli.utils import AliasCommand
+    from bentoml_cli.utils import BentoMLCommandGroup
 
-    @cli.command(aliases=["serve-http"])
+    @click.group(name="serve", cls=BentoMLCommandGroup)
+    def cli():
+        pass
+
+    @cli.command(aliases=["serve-http"], cls=AliasCommand)
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
         "--development",
@@ -526,3 +532,8 @@ def add_serve_command(cli: click.Group) -> None:
                 reload=reload,
                 development_mode=False,
             )
+
+    return cli
+
+
+serve_command = build_serve_command()

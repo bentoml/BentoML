@@ -41,6 +41,8 @@ clean: ## Clean all generated files
 	@find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 # Docs
+watch-docs: ## Build and watch documentation
+	pdm run sphinx-autobuild docs/source docs/build/html --watch $(GIT_ROOT)/src/ --ignore "bazel-*"
 spellcheck-docs: ## Spell check documentation
 	pdm run sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
 OS := $(shell uname)

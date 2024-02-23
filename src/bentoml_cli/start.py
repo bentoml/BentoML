@@ -11,10 +11,15 @@ import click
 logger = logging.getLogger(__name__)
 
 
-def add_start_command(cli: click.Group) -> None:
+def build_start_command() -> click.Group:
     from bentoml._internal.configuration.containers import BentoMLContainer
     from bentoml._internal.utils import add_experimental_docstring
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
+    from bentoml_cli.utils import BentoMLCommandGroup
+
+    @click.group(name="start", cls=BentoMLCommandGroup)
+    def cli():
+        pass
 
     @cli.command(hidden=True)
     @click.argument("bento", type=click.STRING, default=".")
@@ -480,3 +485,8 @@ def add_start_command(cli: click.Group) -> None:
             host=host,
             backlog=backlog,
         )
+
+    return cli
+
+
+start_command = build_start_command()

@@ -1,6 +1,6 @@
-====
-BYOC
-====
+====================
+Bring your own cloud
+====================
 
 BentoCloud provides Bring Your Own Cloud (BYOC) as a part of the Enterprise plan, which allows you to run BentoCloud services within your
 private cloud environment. This means the BentoCloud Control Plane and the Data Plane are separated, enabling you to stay closer to your data

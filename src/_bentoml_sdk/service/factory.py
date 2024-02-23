@@ -64,9 +64,6 @@ class Service(t.Generic[T]):
     models: list[Model] = attrs.field(factory=list)
     apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict)
     dependencies: dict[str, Dependency[t.Any]] = attrs.field(factory=dict, init=False)
-    deployment_hooks: list[t.Callable[[], t.Any]] = attrs.field(
-        factory=list, init=False
-    )
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
         factory=list, init=False
     )
@@ -194,12 +191,6 @@ class Service(t.Generic[T]):
                     "Failed to get service import origin, service object must be assigned to a variable at module level"
                 )
         return self._import_str
-
-    def on_deployment(self, func: t.Callable[[], t.Any]) -> t.Callable[[], t.Any]:
-        if inspect.iscoroutinefunction(func) or inspect.isasyncgenfunction(func):
-            raise ValueError("Deployment hooks must be sync functions")
-        self.deployment_hooks.append(func)
-        return func
 
     def mount_asgi_app(
         self, app: ext.ASGIApp, path: str = "/", name: str | None = None

@@ -283,6 +283,20 @@ class ServiceAppFactory(BaseAppFactory):
     async def destroy_instance(self) -> None:
         from _bentoml_sdk.service.dependency import cleanup
 
+        # Call on_shutdown hook with optional ctx or context parameter
+        on_shutdown = getattr(self._service_instance, "on_shutdown", None)
+        if on_shutdown is not None:
+            params = inspect.signature(on_shutdown).parameters
+            ctx_param = (
+                "ctx" if "ctx" in params else "context" if "context" in params else None
+            )
+            if ctx_param is not None:
+                result = on_shutdown(**{ctx_param: self.service.context})
+            else:
+                result = on_shutdown()
+            if inspect.isawaitable(result):
+                await result
+
         await cleanup()
         self._service_instance = None
 
@@ -307,15 +321,11 @@ class ServiceAppFactory(BaseAppFactory):
 
     @property
     def on_startup(self) -> list[LifecycleHook]:
-        return [*super().on_startup, self.create_instance, *self.service.startup_hooks]
+        return [*super().on_startup, self.create_instance]
 
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
-        return [
-            *super().on_shutdown,
-            self.destroy_instance,
-            *self.service.shutdown_hooks,
-        ]
+        return [*super().on_shutdown, self.destroy_instance]
 
     async def schema_view(self, request: Request) -> Response:
         from starlette.responses import JSONResponse

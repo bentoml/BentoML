@@ -103,6 +103,8 @@ def create_dependency_watcher(
     from bentoml.serve import create_watcher
 
     num_workers, worker_envs = scheduler.get_worker_env(svc)
+    for deployment_hook in svc.deployment_hooks:
+        deployment_hook()
     uri, socket = _get_server_socket(svc, uds_path, port_stack, backlog)
     args = [
         "-m",
@@ -188,6 +190,8 @@ def serve_http(
     if service_name:
         svc = svc.find_dependent(service_name)
     num_workers, worker_envs = allocator.get_worker_env(svc)
+    for deployment_hook in svc.deployment_hooks:
+        deployment_hook()
     with tempfile.TemporaryDirectory(prefix="bentoml-uds-") as uds_path:
         if not service_name and not development_mode:
             with contextlib.ExitStack() as port_stack:

@@ -106,12 +106,13 @@ def import_service(
     from _bentoml_sdk import Service
 
     if bento_path is None:
-        bento_path = pathlib.Path(".").absolute()
+        bento_path = pathlib.Path(".")
+    bento_path = bento_path.absolute()
 
     # patch python path if needed
-    if bento_path != pathlib.Path("."):
+    if bento_path != pathlib.Path(".").absolute():
         # a project
-        extra_python_path = str(bento_path.absolute())
+        extra_python_path = str(bento_path)
         sys.path.insert(0, extra_python_path)
     else:
         # a project under current directory

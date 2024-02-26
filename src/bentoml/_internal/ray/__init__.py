@@ -3,9 +3,10 @@ from __future__ import annotations
 import typing as t
 from functools import partial
 
-import requests
-
 from ..._internal.utils import pkg
+
+if t.TYPE_CHECKING:
+    from starlette import requests
 
 if pkg.pkg_version_info("ray")[:2] >= (2, 5):
     from ray.serve._private.http_util import BufferedASGISender as ASGIHTTPSender

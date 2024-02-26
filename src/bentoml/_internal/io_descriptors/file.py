@@ -14,7 +14,6 @@ from starlette.responses import Response
 from ...exceptions import BadInput
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
-from ...exceptions import MissingDependencyException
 from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import MediaType
@@ -158,17 +157,13 @@ class File(
             ValueError: If the MIME type cannot be inferred automatically.
             :class:`BadInput`: Any other errors that may occur during the process of figure out the MIME type.
         """
-        try:
-            import filetype
-        except ModuleNotFoundError:
-            raise MissingDependencyException(
-                "'filetype' is required to use 'from_sample'. Install it with 'pip install bentoml[io-file]'."
-            )
+        import mimetypes
+
         if isinstance(sample, t.IO):
             sample = FileLike[bytes](sample, "<sample>")
         elif isinstance(sample, (str, os.PathLike)):
             p = resolve_user_filepath(sample, ctx=None)
-            mime = filetype.guess_mime(p)
+            mime = mimetypes.guess_type(p)[0]
             self._mime_type = mime
             with open(p, "rb") as f:
                 sample = FileLike[bytes](f, "<sample>")

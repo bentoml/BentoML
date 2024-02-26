@@ -58,7 +58,6 @@ dependencies = [
     "python-dateutil",
     "python-multipart",
     "python-json-logger",
-    "requests",
     "rich>=11.2.0",
     "schema",
     "simple-di>=0.1.4",
@@ -83,10 +82,9 @@ all = [
 ]
 aws = ["fs-s3fs"]
 io = [
-    "bentoml[io-image,io-pandas,io-file]",
+    "bentoml[io-image,io-pandas]",
 ]
-io-file = ["filetype"] # Currently use for from_sample
-io-image = ["bentoml[io-file]", "Pillow"]
+io-image = ["Pillow"]
 io-pandas = ["pandas>=1", "pyarrow"]
 triton = ["tritonclient>=2.29.0", "tritonclient[all]; sys_platform != 'darwin'"]
 grpc = [

@@ -2,17 +2,17 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "aws", "io-file", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "triton"]
+groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "aws", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "triton"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:6ab46492b995785e8120dbcb1596223087d8667dab036d4a49d405aaef373517"
+content_hash = "sha256:e7bc23ab68fef9a6be86d39e7a77e30002cc638ce9b9d9bca15861a2acbdca94"
 
 [[package]]
 name = "aiohttp"
 version = "3.9.1"
 requires_python = ">=3.8"
 summary = "Async http client/server framework (asyncio)"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
 dependencies = [
     "aiosignal>=1.1.2",
     "async-timeout<5.0,>=4.0; python_version < \"3.11\"",
@@ -129,7 +129,7 @@ name = "aiosignal"
 version = "1.3.1"
 requires_python = ">=3.7"
 summary = "aiosignal: a list of registered asynchronous callbacks"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
 dependencies = [
     "frozenlist>=1.1.0",
 ]
@@ -154,7 +154,7 @@ name = "annotated-types"
 version = "0.6.0"
 requires_python = ">=3.8"
 summary = "Reusable constraint types to use with typing.Annotated"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "typing-extensions>=4.0.0; python_version < \"3.9\"",
 ]
@@ -179,7 +179,7 @@ name = "anyio"
 version = "4.0.0"
 requires_python = ">=3.8"
 summary = "High level compatibility layer for multiple asynchronous event loop implementations"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "exceptiongroup>=1.0.2; python_version < \"3.11\"",
     "idna>=2.8",
@@ -194,7 +194,7 @@ files = [
 name = "appdirs"
 version = "1.4.4"
 summary = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
-groups = ["all", "aws", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "aws", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
     {file = "appdirs-1.4.4.tar.gz", hash = "sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41"},
@@ -216,7 +216,7 @@ name = "asgiref"
 version = "3.7.2"
 requires_python = ">=3.7"
 summary = "ASGI specs, helper code, and adapters"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "typing-extensions>=4; python_version < \"3.11\"",
 ]
@@ -230,7 +230,7 @@ name = "async-timeout"
 version = "4.0.3"
 requires_python = ">=3.7"
 summary = "Timeout context manager for asyncio programs"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
 marker = "python_version < \"3.11\""
 files = [
     {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
@@ -242,7 +242,7 @@ name = "attrs"
 version = "23.2.0"
 requires_python = ">=3.7"
 summary = "Classes Without Boilerplate"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
 files = [
     {file = "attrs-23.2.0-py3-none-any.whl", hash = "sha256:99b87a485a5820b23b879f04c2305b44b951b502fd64be915879d77a7e8fc6f1"},
     {file = "attrs-23.2.0.tar.gz", hash = "sha256:935dc3b529c262f6cf76e50877d35a4bd3c1de194fd41f47a2b7ae8f19971f30"},
@@ -412,7 +412,7 @@ name = "build"
 version = "0.10.0"
 requires_python = ">= 3.7"
 summary = "A simple, correct Python build frontend"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "testing", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 dependencies = [
     "colorama; os_name == \"nt\"",
     "packaging>=19.0",
@@ -457,7 +457,7 @@ name = "cattrs"
 version = "23.1.2"
 requires_python = ">=3.7"
 summary = "Composable complex class support for attrs and dataclasses."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "attrs>=20",
     "exceptiongroup; python_version < \"3.11\"",
@@ -473,7 +473,7 @@ name = "certifi"
 version = "2023.7.22"
 requires_python = ">=3.6"
 summary = "Python package for providing Mozilla's CA Bundle."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin", "triton"]
 files = [
     {file = "certifi-2023.7.22-py3-none-any.whl", hash = "sha256:92d6037539857d8206b8f6ae472e8b77db8058fec5937a1ef3f54304089edbb9"},
     {file = "certifi-2023.7.22.tar.gz", hash = "sha256:539cc1d13202e33ca466e88b2807e29f4c13049d6d87031a3c110744495cb082"},
@@ -484,7 +484,7 @@ name = "cffi"
 version = "1.16.0"
 requires_python = ">=3.8"
 summary = "Foreign Function Interface for Python calling C code."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing", "triton"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
 marker = "platform_python_implementation == \"CPython\" and sys_platform == \"win32\" or implementation_name == \"pypy\""
 dependencies = [
     "pycparser",
@@ -560,7 +560,7 @@ name = "charset-normalizer"
 version = "3.3.0"
 requires_python = ">=3.7.0"
 summary = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "docs", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "charset-normalizer-3.3.0.tar.gz", hash = "sha256:63563193aec44bce707e0c5ca64ff69fa72ed7cf34ce6e11d5127555756fd2f6"},
     {file = "charset_normalizer-3.3.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:effe5406c9bd748a871dbcaf3ac69167c38d72db8c9baf3ff954c344f31c4cbe"},
@@ -646,7 +646,7 @@ name = "circus"
 version = "0.18.0"
 requires_python = ">=3.7"
 summary = "Circus is a program that will let you run and watch multiple processes and sockets."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "psutil",
     "pyzmq>=17.0",
@@ -662,7 +662,7 @@ name = "click"
 version = "8.1.7"
 requires_python = ">=3.7"
 summary = "Composable command line interface toolkit"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "colorama; platform_system == \"Windows\"",
 ]
@@ -676,7 +676,7 @@ name = "click-option-group"
 version = "0.5.6"
 requires_python = ">=3.6,<4"
 summary = "Option groups missing in Click"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "Click<9,>=7.0",
 ]
@@ -690,7 +690,7 @@ name = "cloudpickle"
 version = "3.0.0"
 requires_python = ">=3.8"
 summary = "Pickler class to extend the standard pickle.Pickler functionality"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "cloudpickle-3.0.0-py3-none-any.whl", hash = "sha256:246ee7d0c295602a036e86369c77fecda4ab17b506496730f2f576d9016fd9c7"},
     {file = "cloudpickle-3.0.0.tar.gz", hash = "sha256:996d9a482c6fb4f33c1a35335cf8afd065d2a56e973270364840712d9131a882"},
@@ -701,7 +701,7 @@ name = "colorama"
 version = "0.4.6"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 summary = "Cross-platform colored terminal text."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "testing", "tooling", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tooling", "tracing"]
 files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
@@ -739,7 +739,7 @@ name = "contextlib2"
 version = "21.6.0"
 requires_python = ">=3.6"
 summary = "Backports and enhancements for the contextlib module"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "contextlib2-21.6.0-py2.py3-none-any.whl", hash = "sha256:3fbdb64466afd23abaf6c977627b75b6139a5a3e8ce38405c5b413aed7a0471f"},
     {file = "contextlib2-21.6.0.tar.gz", hash = "sha256:ab1e2bfe1d01d968e1b7e8d9023bc51ef3509bba217bb730cee3827e1ee82869"},
@@ -936,7 +936,7 @@ files = [
 name = "deepmerge"
 version = "1.1.1"
 summary = "a toolset to deeply merge python dictionaries."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "deepmerge-1.1.1-py3-none-any.whl", hash = "sha256:7219dad9763f15be9dcd4bcb53e00f48e4eed6f5ed8f15824223eb934bb35977"},
     {file = "deepmerge-1.1.1.tar.gz", hash = "sha256:53a489dc9449636e480a784359ae2aab3191748c920649551c8e378622f0eca4"},
@@ -947,7 +947,7 @@ name = "deprecated"
 version = "1.2.14"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 summary = "Python @deprecated decorator to deprecate old python classes, functions or methods."
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "wrapt<2,>=1.10",
 ]
@@ -982,7 +982,7 @@ name = "exceptiongroup"
 version = "1.1.3"
 requires_python = ">=3.7"
 summary = "Backport of PEP 654 (exception groups)"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "testing", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 marker = "python_version < \"3.11\""
 files = [
     {file = "exceptiongroup-1.1.3-py3-none-any.whl", hash = "sha256:343280667a4585d195ca1cf9cef84a4e178c4b6cf2274caef9859782b567d5e3"},
@@ -1028,21 +1028,11 @@ files = [
 ]
 
 [[package]]
-name = "filetype"
-version = "1.2.0"
-summary = "Infer file type and MIME type of any file/buffer. No external dependencies."
-groups = ["all", "io", "io-file", "io-image"]
-files = [
-    {file = "filetype-1.2.0-py2.py3-none-any.whl", hash = "sha256:7ce71b6880181241cf7ac8697a2f1eb6a8bd9b429f7ad6d27b8db9ba5f1c2d25"},
-    {file = "filetype-1.2.0.tar.gz", hash = "sha256:66b56cd6474bf41d8c54660347d37afcc3f7d1970648de365c102ef77548aadb"},
-]
-
-[[package]]
 name = "frozenlist"
 version = "1.4.0"
 requires_python = ">=3.8"
 summary = "A list-like structure which implements collections.abc.MutableSequence"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
 files = [
     {file = "frozenlist-1.4.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:764226ceef3125e53ea2cb275000e309c0aa5464d43bd72abd661e27fffc26ab"},
     {file = "frozenlist-1.4.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d6484756b12f40003c6128bfcc3fa9f0d49a687e171186c2d85ec82e3758c559"},
@@ -1111,7 +1101,7 @@ files = [
 name = "fs"
 version = "2.4.16"
 summary = "Python's filesystem abstraction layer"
-groups = ["all", "aws", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "aws", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "appdirs~=1.4.3",
     "setuptools",
@@ -1517,7 +1507,7 @@ name = "h11"
 version = "0.14.0"
 requires_python = ">=3.7"
 summary = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "h11-0.14.0-py3-none-any.whl", hash = "sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761"},
     {file = "h11-0.14.0.tar.gz", hash = "sha256:8f19fbbe99e72420ff35c00b27a34cb9937e902a8b810e2c88300c6f0a3b699d"},
@@ -1528,7 +1518,7 @@ name = "httpcore"
 version = "1.0.2"
 requires_python = ">=3.8"
 summary = "A minimal low-level HTTP client."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "certifi",
     "h11<0.15,>=0.13",
@@ -1588,7 +1578,7 @@ name = "httpx"
 version = "0.26.0"
 requires_python = ">=3.8"
 summary = "The next generation HTTP client."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "anyio",
     "certifi",
@@ -1617,7 +1607,7 @@ name = "idna"
 version = "3.4"
 requires_python = ">=3.5"
 summary = "Internationalized Domain Names in Applications (IDNA)"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin", "triton"]
 files = [
     {file = "idna-3.4-py3-none-any.whl", hash = "sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2"},
     {file = "idna-3.4.tar.gz", hash = "sha256:814f528e8dead7d329833b91c5faa87d60bf71824cd12a7530b5526063d02cb4"},
@@ -1639,7 +1629,7 @@ name = "importlib-metadata"
 version = "6.8.0"
 requires_python = ">=3.8"
 summary = "Read metadata from Python packages"
-groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "zipp>=0.5",
 ]
@@ -1668,7 +1658,7 @@ name = "inflection"
 version = "0.5.1"
 requires_python = ">=3.5"
 summary = "A port of Ruby on Rails inflector to Python"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "inflection-0.5.1-py2.py3-none-any.whl", hash = "sha256:f38b2b640938a4f35ade69ac3d053042959b62a0f1076a5bbaa1b9526605a8a2"},
     {file = "inflection-0.5.1.tar.gz", hash = "sha256:1a29730d366e996aaacffb2f1f1cb9593dc38e2ddd30c91250c6dde09ea9b417"},
@@ -1690,7 +1680,7 @@ name = "jinja2"
 version = "3.1.3"
 requires_python = ">=3.7"
 summary = "A very fast and expressive template engine."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "MarkupSafe>=2.0",
 ]
@@ -1859,7 +1849,7 @@ name = "markdown-it-py"
 version = "3.0.0"
 requires_python = ">=3.8"
 summary = "Python port of markdown-it. Markdown parsing, done right!"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "mdurl~=0.1",
 ]
@@ -1873,7 +1863,7 @@ name = "markupsafe"
 version = "2.1.3"
 requires_python = ">=3.7"
 summary = "Safely add untrusted strings to HTML/XML markup."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "MarkupSafe-2.1.3-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:cd0f502fe016460680cd20aaa5a76d241d6f35a1c3350c474bac1273803893fa"},
     {file = "MarkupSafe-2.1.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e09031c87a1e51556fdcb46e5bd4f59dfb743061cf93c4d6831bf894f125eb57"},
@@ -1947,7 +1937,7 @@ name = "mdurl"
 version = "0.1.2"
 requires_python = ">=3.7"
 summary = "Markdown URL utilities"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
     {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
@@ -2023,7 +2013,7 @@ name = "multidict"
 version = "6.0.4"
 requires_python = ">=3.7"
 summary = "multidict implementation"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
 files = [
     {file = "multidict-6.0.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:0b1a97283e0c85772d613878028fec909f003993e1007eafa715b24b377cb9b8"},
     {file = "multidict-6.0.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:eeb6dcc05e911516ae3d1f207d4b0520d07f54484c49dfc294d6e7d63b734171"},
@@ -2143,7 +2133,7 @@ name = "numpy"
 version = "1.24.4"
 requires_python = ">=3.8"
 summary = "Fundamental package for array computing in Python"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "testing", "tooling", "tracing", "triton"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-pandas", "testing", "tooling", "tracing", "triton"]
 files = [
     {file = "numpy-1.24.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:c0bfb52d2169d58c1cdb8cc1f16989101639b34c7d3ce60ed70b19c63eba0b64"},
     {file = "numpy-1.24.4-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:ed094d4f0c177b1b8e7aa9cba7d6ceed51c0e569a5318ac0ca9a090680a6a1b1"},
@@ -2179,7 +2169,7 @@ files = [
 name = "nvidia-ml-py"
 version = "11.525.150"
 summary = "Python Bindings for the NVIDIA Management Library"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "nvidia-ml-py-11.525.150.tar.gz", hash = "sha256:50af55b99ea167781102345a7de29bac94a57c8f38de6757ef9f945dd137c90a"},
     {file = "nvidia_ml_py-11.525.150-py3-none-any.whl", hash = "sha256:a7c410f4a63a78119d8e9d969dbd22d3b86d8d39aa9316be56c2e6ba9271a5c3"},
@@ -2214,7 +2204,7 @@ name = "opentelemetry-api"
 version = "1.20.0"
 requires_python = ">=3.7"
 summary = "OpenTelemetry Python API"
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "deprecated>=1.2.6",
     "importlib-metadata<7.0,>=6.0",
@@ -2398,7 +2388,7 @@ name = "opentelemetry-instrumentation"
 version = "0.41b0"
 requires_python = ">=3.7"
 summary = "Instrumentation Tools & Auto Instrumentation for OpenTelemetry Python"
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "opentelemetry-api~=1.4",
     "setuptools>=16.0",
@@ -2414,7 +2404,7 @@ name = "opentelemetry-instrumentation-aiohttp-client"
 version = "0.41b0"
 requires_python = ">=3.7"
 summary = "OpenTelemetry aiohttp client instrumentation"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "opentelemetry-api~=1.12",
     "opentelemetry-instrumentation==0.41b0",
@@ -2432,7 +2422,7 @@ name = "opentelemetry-instrumentation-asgi"
 version = "0.41b0"
 requires_python = ">=3.7"
 summary = "ASGI instrumentation for OpenTelemetry"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "asgiref~=3.0",
     "opentelemetry-api~=1.12",
@@ -2482,7 +2472,7 @@ name = "opentelemetry-sdk"
 version = "1.20.0"
 requires_python = ">=3.7"
 summary = "OpenTelemetry Python SDK"
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "opentelemetry-api==1.20.0",
     "opentelemetry-semantic-conventions==0.41b0",
@@ -2498,7 +2488,7 @@ name = "opentelemetry-semantic-conventions"
 version = "0.41b0"
 requires_python = ">=3.7"
 summary = "OpenTelemetry Semantic Conventions"
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "opentelemetry_semantic_conventions-0.41b0-py3-none-any.whl", hash = "sha256:45404391ed9e50998183a4925ad1b497c01c143f06500c3b9c3d0013492bb0f2"},
     {file = "opentelemetry_semantic_conventions-0.41b0.tar.gz", hash = "sha256:0ce5b040b8a3fc816ea5879a743b3d6fe5db61f6485e4def94c6ee4d402e1eb7"},
@@ -2509,7 +2499,7 @@ name = "opentelemetry-util-http"
 version = "0.41b0"
 requires_python = ">=3.7"
 summary = "Web util for OpenTelemetry"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "opentelemetry_util_http-0.41b0-py3-none-any.whl", hash = "sha256:6a167fd1e0e8b0f629530d971165b5d82ed0be2154b7f29498499c3a517edee5"},
     {file = "opentelemetry_util_http-0.41b0.tar.gz", hash = "sha256:16d5bd04a380dc1079e766562d1e1626cbb47720f197f67010c45f090fffdfb3"},
@@ -2579,7 +2569,7 @@ name = "packaging"
 version = "23.2"
 requires_python = ">=3.7"
 summary = "Core utilities for Python packages"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "testing", "tooling", "tracing", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tooling", "tracing", "triton"]
 files = [
     {file = "packaging-23.2-py3-none-any.whl", hash = "sha256:8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7"},
     {file = "packaging-23.2.tar.gz", hash = "sha256:048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5"},
@@ -2647,7 +2637,7 @@ name = "pathspec"
 version = "0.12.1"
 requires_python = ">=3.8"
 summary = "Utility library for gitignore style pattern matching of file paths."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "testing", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 files = [
     {file = "pathspec-0.12.1-py3-none-any.whl", hash = "sha256:a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08"},
     {file = "pathspec-0.12.1.tar.gz", hash = "sha256:a482d51503a1ab33b1c67a6c3813a26953dbdc71c31dacaef9a838c4e29f5712"},
@@ -2725,7 +2715,7 @@ name = "pip"
 version = "23.2.1"
 requires_python = ">=3.7"
 summary = "The PyPA recommended tool for installing Python packages."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "pip-23.2.1-py3-none-any.whl", hash = "sha256:7ccf472345f20d35bdc9d1841ff5f313260c2c33fe417f48c30ac46cccabf5be"},
     {file = "pip-23.2.1.tar.gz", hash = "sha256:fb0bd5435b3200c602b5bf61d2d43c2f13c02e29c1707567ae7fbc514eb9faf2"},
@@ -2736,7 +2726,7 @@ name = "pip-requirements-parser"
 version = "32.0.1"
 requires_python = ">=3.6.0"
 summary = "pip requirements parser - a mostly correct pip requirements parsing library because it uses pip's own code."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "packaging",
     "pyparsing",
@@ -2751,7 +2741,7 @@ name = "pip-tools"
 version = "7.3.0"
 requires_python = ">=3.8"
 summary = "pip-tools keeps your pinned dependencies fresh."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "build",
     "click>=8",
@@ -2822,7 +2812,7 @@ name = "prometheus-client"
 version = "0.19.0"
 requires_python = ">=3.8"
 summary = "Python client for the Prometheus monitoring system."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "prometheus_client-0.19.0-py3-none-any.whl", hash = "sha256:c88b1e6ecf6b41cd8fb5731c7ae919bf66df6ec6fafa555cd6c0e16ca169ae92"},
     {file = "prometheus_client-0.19.0.tar.gz", hash = "sha256:4585b0d1223148c27a225b10dbec5ae9bc4c81a99a3fa80774fa6209935324e1"},
@@ -2858,7 +2848,7 @@ name = "psutil"
 version = "5.9.7"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 summary = "Cross-platform lib for process and system monitoring in Python."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "testing", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 files = [
     {file = "psutil-5.9.7-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:ea36cc62e69a13ec52b2f625c27527f6e4479bca2b340b7a452af55b34fcbe2e"},
     {file = "psutil-5.9.7-cp36-abi3-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1132704b876e58d277168cd729d64750633d5ff0183acf5b3c986b8466cd0284"},
@@ -2967,7 +2957,7 @@ name = "pycparser"
 version = "2.21"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 summary = "C parser in Python"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing", "triton"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
 marker = "platform_python_implementation == \"CPython\" and sys_platform == \"win32\" or implementation_name == \"pypy\""
 files = [
     {file = "pycparser-2.21-py2.py3-none-any.whl", hash = "sha256:8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9"},
@@ -2979,7 +2969,7 @@ name = "pydantic"
 version = "2.5.3"
 requires_python = ">=3.7"
 summary = "Data validation using Python type hints"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "annotated-types>=0.4.0",
     "pydantic-core==2.14.6",
@@ -2995,7 +2985,7 @@ name = "pydantic-core"
 version = "2.14.6"
 requires_python = ">=3.7"
 summary = ""
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "typing-extensions!=4.7.0,>=4.6.0",
 ]
@@ -3113,7 +3103,7 @@ name = "pygments"
 version = "2.16.1"
 requires_python = ">=3.7"
 summary = "Pygments is a syntax highlighting package written in Python."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "Pygments-2.16.1-py3-none-any.whl", hash = "sha256:13fc09fa63bc8d8671a6d247e1eb303c4b343eaee81d861f3404db2935653692"},
     {file = "Pygments-2.16.1.tar.gz", hash = "sha256:1daff0494820c69bc8941e407aa20f577374ee88364ee10a98fdbe0aece96e29"},
@@ -3124,7 +3114,7 @@ name = "pyparsing"
 version = "3.1.1"
 requires_python = ">=3.6.8"
 summary = "pyparsing module - Classes and methods to define and execute parsing grammars"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "pyparsing-3.1.1-py3-none-any.whl", hash = "sha256:32c7c0b711493c72ff18a981d24f28aaf9c1fb7ed5e9667c9e84e3db623bdbfb"},
     {file = "pyparsing-3.1.1.tar.gz", hash = "sha256:ede28a1a32462f5a9705e07aea48001a08f7cf81a021585011deba701581a0db"},
@@ -3135,7 +3125,7 @@ name = "pyproject-hooks"
 version = "1.0.0"
 requires_python = ">=3.7"
 summary = "Wrappers to call pyproject.toml-based build backend hooks."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "testing", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 dependencies = [
     "tomli>=1.1.0; python_version < \"3.11\"",
 ]
@@ -3241,7 +3231,7 @@ name = "python-dateutil"
 version = "2.8.2"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 summary = "Extensions to the standard Python datetime module"
-groups = ["all", "aws", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "testing", "tracing"]
+groups = ["all", "aws", "default", "grpc-channelz", "grpc-reflection", "io", "io-pandas", "testing", "tracing"]
 dependencies = [
     "six>=1.5",
 ]
@@ -3266,7 +3256,7 @@ name = "python-json-logger"
 version = "2.0.7"
 requires_python = ">=3.6"
 summary = "A python library adding a json log formatter"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "python-json-logger-2.0.7.tar.gz", hash = "sha256:23e7ec02d34237c5aa1e29a070193a4ea87583bb4e7f8fd06d3de8264c4b2e1c"},
     {file = "python_json_logger-2.0.7-py3-none-any.whl", hash = "sha256:f380b826a991ebbe3de4d897aeec42760035ac760345e57b812938dc8b35e2bd"},
@@ -3277,7 +3267,7 @@ name = "python-multipart"
 version = "0.0.6"
 requires_python = ">=3.7"
 summary = "A streaming multipart parser for Python"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "python_multipart-0.0.6-py3-none-any.whl", hash = "sha256:ee698bab5ef148b0a760751c261902cd096e57e10558e11aca17646b74ee1c18"},
     {file = "python_multipart-0.0.6.tar.gz", hash = "sha256:e9925a80bb668529f1b67c7fdb0a5dacdd7cbfc6fb0bff3ea443fe22bdd62132"},
@@ -3363,7 +3353,7 @@ name = "pyyaml"
 version = "6.0.1"
 requires_python = ">=3.6"
 summary = "YAML parser and emitter for Python"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "testing", "tooling", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tooling", "tracing"]
 files = [
     {file = "PyYAML-6.0.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d858aa552c999bc8a8d57426ed01e40bef403cd8ccdd0fc5f6f04a00414cac2a"},
     {file = "PyYAML-6.0.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:fd66fc5d0da6d9815ba2cebeb4205f95818ff4b79c3ebe268e75d961704af52f"},
@@ -3411,7 +3401,7 @@ name = "pyzmq"
 version = "25.1.1"
 requires_python = ">=3.6"
 summary = "Python bindings for 0MQ"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "cffi; implementation_name == \"pypy\"",
 ]
@@ -3605,7 +3595,7 @@ name = "requests"
 version = "2.31.0"
 requires_python = ">=3.7"
 summary = "Python HTTP for Humans."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "docs", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "certifi>=2017.4.17",
     "charset-normalizer<4,>=2",
@@ -3622,7 +3612,7 @@ name = "rich"
 version = "13.7.0"
 requires_python = ">=3.7.0"
 summary = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "markdown-it-py>=2.2.0",
     "pygments<3.0.0,>=2.13.0",
@@ -3774,7 +3764,7 @@ files = [
 name = "schema"
 version = "0.7.5"
 summary = "Simple data validation library"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "contextlib2>=0.5.5",
 ]
@@ -3862,7 +3852,7 @@ name = "setuptools"
 version = "68.2.2"
 requires_python = ">=3.8"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
-groups = ["all", "aws", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "tooling", "tracing", "triton"]
+groups = ["all", "aws", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "tooling", "tracing", "triton"]
 files = [
     {file = "setuptools-68.2.2-py3-none-any.whl", hash = "sha256:b454a35605876da60632df1a60f736524eb73cc47bbc9f3f1ef1b644de74fd2a"},
     {file = "setuptools-68.2.2.tar.gz", hash = "sha256:4ac1475276d2f1c48684874089fefcd83bd7162ddaafb81fac866ba0db282a87"},
@@ -3890,7 +3880,7 @@ name = "simple-di"
 version = "0.1.5"
 requires_python = ">=3.6.1"
 summary = "simple dependency injection library"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "simple_di-0.1.5-py3-none-any.whl", hash = "sha256:e3fb6242f18f389a3c2d571dd51ade47c74cdbc4550590894664ad59bfb2a345"},
     {file = "simple_di-0.1.5.tar.gz", hash = "sha256:192b999dee4cd4fb11a5d861165caad02d8f0617c0f806fc5b09f905f1a03ca0"},
@@ -3901,7 +3891,7 @@ name = "six"
 version = "1.16.0"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 summary = "Python 2 and 3 compatibility utilities"
-groups = ["all", "aws", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "testing", "tracing", "tracing-jaeger", "triton"]
+groups = ["all", "aws", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-pandas", "testing", "tracing", "tracing-jaeger", "triton"]
 files = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
@@ -3923,7 +3913,7 @@ name = "sniffio"
 version = "1.3.0"
 requires_python = ">=3.7"
 summary = "Sniff out which async library your code is running under"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "sniffio-1.3.0-py3-none-any.whl", hash = "sha256:eecefdce1e5bbfb7ad2eeaabf7c1eeb404d7757c379bd1f7e5cce9d8bf425384"},
     {file = "sniffio-1.3.0.tar.gz", hash = "sha256:e60305c5e5d314f5389259b7f22aaa33d8f7dee49763119234af3755c55b9101"},
@@ -4219,7 +4209,7 @@ name = "starlette"
 version = "0.35.1"
 requires_python = ">=3.8"
 summary = "The little ASGI library that shines."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "anyio<5,>=3.4.0",
     "typing-extensions>=3.10.0; python_version < \"3.10\"",
@@ -4257,7 +4247,7 @@ name = "tomli"
 version = "2.0.1"
 requires_python = ">=3.7"
 summary = "A lil' TOML parser"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "testing", "tooling", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "testing", "tooling", "tracing"]
 marker = "python_version < \"3.11\""
 files = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
@@ -4269,7 +4259,7 @@ name = "tornado"
 version = "6.3.3"
 requires_python = ">= 3.8"
 summary = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "tornado-6.3.3-cp38-abi3-macosx_10_9_universal2.whl", hash = "sha256:502fba735c84450974fec147340016ad928d29f1e91f49be168c0a4c18181e1d"},
     {file = "tornado-6.3.3-cp38-abi3-macosx_10_9_x86_64.whl", hash = "sha256:805d507b1f588320c26f7f097108eb4023bbaa984d63176d1652e184ba24270a"},
@@ -4338,7 +4328,7 @@ name = "typing-extensions"
 version = "4.9.0"
 requires_python = ">=3.8"
 summary = "Backported and Experimental Type Hints for Python 3.8+"
-groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "typing_extensions-4.9.0-py3-none-any.whl", hash = "sha256:af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd"},
     {file = "typing_extensions-4.9.0.tar.gz", hash = "sha256:23478f88c37f27d76ac8aee6c905017a143b0b1b886c3c9f66bc2fd94f9f5783"},
@@ -4360,7 +4350,7 @@ name = "urllib3"
 version = "1.26.17"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 summary = "HTTP library with thread-safe connection pooling, file post, and more."
-groups = ["all", "aws", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "aws", "docs", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "urllib3-1.26.17-py2.py3-none-any.whl", hash = "sha256:94a757d178c9be92ef5539b8840d48dc9cf1b2709c9d6b588232a055c524458b"},
     {file = "urllib3-1.26.17.tar.gz", hash = "sha256:24d6a242c28d29af46c3fae832c36db3bbebcc533dd1bb549172cd739c82df21"},
@@ -4371,7 +4361,7 @@ name = "uvicorn"
 version = "0.26.0"
 requires_python = ">=3.8"
 summary = "The lightning-fast ASGI server."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "click>=7.0",
     "h11>=0.8",
@@ -4466,7 +4456,7 @@ name = "watchfiles"
 version = "0.21.0"
 requires_python = ">=3.8"
 summary = "Simple, modern and high performance file watching and code reload in python."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "anyio>=3.0.0",
 ]
@@ -4644,7 +4634,7 @@ name = "wheel"
 version = "0.41.2"
 requires_python = ">=3.7"
 summary = "A built-package format for Python"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 files = [
     {file = "wheel-0.41.2-py3-none-any.whl", hash = "sha256:75909db2664838d015e3d9139004ee16711748a52c8f336b52882266540215d8"},
     {file = "wheel-0.41.2.tar.gz", hash = "sha256:0c5ac5ff2afb79ac23ab82bab027a0be7b5dbcf2e54dc50efe4bf507de1f7985"},
@@ -4655,7 +4645,7 @@ name = "wrapt"
 version = "1.15.0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 summary = "Module for decorators, wrappers and monkey patching."
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "wrapt-1.15.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:21f6d9a0d5b3a207cdf7acf8e58d7d13d463e639f0c7e01d82cdb671e6cb7923"},
     {file = "wrapt-1.15.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:ce42618f67741d4697684e501ef02f29e758a123aa2d669e2d964ff734ee00ee"},
@@ -4721,7 +4711,7 @@ name = "yarl"
 version = "1.9.2"
 requires_python = ">=3.7"
 summary = "Yet another URL library"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-image", "tracing", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
 dependencies = [
     "idna>=2.0",
     "multidict>=4.0",
@@ -4795,7 +4785,7 @@ name = "zipp"
 version = "3.17.0"
 requires_python = ">=3.8"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
-groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "zipp-3.17.0-py3-none-any.whl", hash = "sha256:0e923e726174922dce09c53c59ad483ff7bbb8e572e00c7f7c46b88556409f31"},
     {file = "zipp-3.17.0.tar.gz", hash = "sha256:84e64a1c28cf7e91ed2078bb8cc8c259cb19b76942096c8d7b84947690cabaf0"},

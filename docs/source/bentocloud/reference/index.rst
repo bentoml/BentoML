@@ -15,9 +15,23 @@ This section contains detailed explanations of BentoCloud UI elements and API re
 
         Understand the properties on the Deployment details page.
 
+    .. grid-item-card:: BentoCloud CLI
+        :link: bentocloud-cli
+        :link-type: doc
+
+        Manage BentoCloud resources using CLI commands.
+
+    .. grid-item-card:: BentoCloud API
+        :link: bentocloud-api
+        :link-type: doc
+
+        Manage BentoCloud resources using the Python API.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
     :hidden:
 
     deployment-details
+    bentocloud-cli
+    bentocloud-api

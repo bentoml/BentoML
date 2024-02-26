@@ -380,7 +380,7 @@ class DeploymentInfo:
             "created_at": self.created_at,
             "created_by": self.created_by,
             "config": (
-                self.get_config(refetch=False)
+                self.get_config(refetch=False).to_dict(with_meta=False)
                 if self.get_config(refetch=False) is not None
                 else None
             ),

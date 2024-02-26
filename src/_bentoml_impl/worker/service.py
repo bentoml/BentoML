@@ -95,7 +95,6 @@ import click
     type=click.INT,
     help="Specify the timeout for API server",
 )
-@click.option("--main", "is_main", type=click.BOOL, default=False, is_flag=True)
 def main(
     bento_identifier: str,
     service_name: str,
@@ -114,7 +113,6 @@ def main(
     ssl_ciphers: str | None,
     development_mode: bool,
     timeout: int,
-    is_main: bool = False,
 ):
     """
     Start a HTTP server worker for given service.
@@ -165,8 +163,10 @@ def main(
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
     component_context.component_name = service.name
 
-    app_factory = ServiceAppFactory(service)
-    asgi_app = app_factory(is_main=is_main)
+    asgi_app = ServiceAppFactory(
+        service, is_main=component_context.component_type == "entry_service"
+    )()
+
     uvicorn_extra_options: dict[str, t.Any] = {}
     if ssl_version is not None:
         uvicorn_extra_options["ssl_version"] = ssl_version

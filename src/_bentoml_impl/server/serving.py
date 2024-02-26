@@ -260,7 +260,6 @@ def serve_http(
             "$(CIRCUS.WID)",
             "--prometheus-dir",
             prometheus_dir,
-            "--main",
             *ssl_args,
             *timeout_args,
         ]

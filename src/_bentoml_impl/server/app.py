@@ -5,6 +5,7 @@ import functools
 import inspect
 import sys
 import typing as t
+from http import HTTPStatus
 from pathlib import Path
 
 import anyio
@@ -61,6 +62,7 @@ class ServiceAppFactory(BaseAppFactory):
     def __init__(
         self,
         service: Service[t.Any],
+        is_main: bool = False,
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
@@ -74,6 +76,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         self.service = service
         self.enable_metrics = enable_metrics
+        self.is_main = is_main
         timeout = traffic.get("timeout")
         max_concurrency = traffic.get("max_concurrency")
         self.enable_access_control = enable_access_control
@@ -175,7 +178,7 @@ class ServiceAppFactory(BaseAppFactory):
         else:
             return JSONResponse("", status_code=status)
 
-    def __call__(self, is_main: bool = False) -> Starlette:
+    def __call__(self) -> Starlette:
         app = super().__call__()
 
         app.add_exception_handler(
@@ -184,7 +187,7 @@ class ServiceAppFactory(BaseAppFactory):
         app.add_exception_handler(BentoMLException, self.handle_bentoml_exception)
         app.add_exception_handler(Exception, self.handle_uncaught_exception)
         app.add_route("/schema.json", self.schema_view, name="schema")
-        if is_main:
+        if self.is_main:
             if BentoMLContainer.new_index:
                 assets = Path(__file__).parent / "assets"
                 app.mount("/assets", StaticFiles(directory=assets), name="assets")
@@ -407,6 +410,12 @@ class ServiceAppFactory(BaseAppFactory):
 
         media_type = request.headers.get("Content-Type", "application/json")
         media_type = media_type.split(";")[0].strip()
+        if self.is_main and media_type == "application/vnd.bentoml+pickle":
+            # Disallow pickle media type for main service for security reasons
+            raise BentoMLException(
+                "Pickle media type is not allowed for main service",
+                error_code=HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+            )
 
         method = self.service.apis[name]
         func = getattr(self._service_instance, name)

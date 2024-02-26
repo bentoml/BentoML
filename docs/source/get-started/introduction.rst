@@ -49,9 +49,7 @@ BentoML standardizes the saved model format, Service API definition and the Bent
 How does BentoML work?
 ----------------------
 
-In a typical ML workflow, you may need to prepare the data for your model, train and evaluate the model, serve the model in production, monitor its performance, and retrain the model for better inferences and predictions. BentoML features a streamlined path for transforming an ML model into a production-ready model serving endpoint. See the following diagram to understand the role of BentoML in the ML workflow:
-
-.. image:: ../_static/img/get-started/introduction/bentoml-in-ml-workflow.png
+In a typical ML workflow, you may need to prepare the data for your model, train and evaluate the model, serve the model in production, monitor its performance, and retrain the model for better inferences and predictions. BentoML features a streamlined path for transforming an ML model into a production-ready model serving endpoint.
 
 The following is the basic workflow of using the BentoML framework.
 

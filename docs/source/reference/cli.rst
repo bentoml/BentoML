@@ -4,7 +4,7 @@ BentoML CLI
 
 BentoML CLI commands have usage documentation. You can learn more by running ``bentoml --help``. The ``--help`` flag also applies to sub-commands for viewing detailed usage of a command, like ``bentoml build --help``.
 
-.. seealso:: 
+.. seealso::
 
    For details about managing BentoCloud Deployments using the BentoML CLI, see :doc:`/bentocloud/reference/bentocloud-cli`.
 

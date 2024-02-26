@@ -4,7 +4,7 @@ BentoCloud API
 
 This page provides API reference for creating and managing BentoCloud Deployments.
 
-.. seealso:: 
+.. seealso::
 
     See :doc:`/bentocloud/how-tos/manage-deployments` for usage details.
 

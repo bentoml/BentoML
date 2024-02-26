@@ -2,11 +2,11 @@
 Manage access tokens
 ====================
 
-In BentoCloud, API tokens serve as a key method of authorization for two distinct scopes - BentoCloud access and Bento Deployments.
-They correspond to two different types of tokens - **Developer tokens** and **User tokens**.
+In BentoCloud, API tokens serve as a key method of authorization. You may use tokens to:
 
-- Developer tokens are granted permissions to log in to BentoCloud and manage resources.
-- User tokens are granted permissions to access protected Deployments, which have :ref:`bentocloud/how-tos/create-deployments:authorization` enabled.
+- Log in to BentoCloud
+- Manage BentoCloud resources
+- Access protected Deployments, which have :ref:`bentocloud/how-tos/configure-deployments:Authorization` enabled
 
 This tutorial explains how to create and use API tokens in BentoCloud.
 
@@ -17,7 +17,7 @@ Create an API token
 
 To create an API token, perform the following steps:
 
-1. Navigate to the `API Tokens <http://cloud.bentoml.com/api_tokens>`_ page in the BentoCloud Console.
+1. Navigate to the `API Tokens <http://cloud.bentoml.com/api_tokens>`_ page on the BentoCloud console.
 2. Click **Create**.
 3. In the dialog that appears, specify the following fields. Note that you must select at least one of the token types.
 
@@ -25,18 +25,18 @@ To create an API token, perform the following steps:
 
    - **Name**: The name of the API token.
    - **Description**: A description of the token, detailing its usage.
-   - **Developer Operations Access (Developer token)**: Grant permissions to access BentoCloud and manage resources on it.
-   - **Protected Endpoint Access (User token)**: Grant permissions to access Bento Deployments with Protected endpoints. If you select this token type, you need to choose the Deployment that you want the token to access. If you want to use the token to access all the Protected Deployments, select **All Deployments**.
+   - **Developer Operations Access**: Grant permissions to access BentoCloud and manage resources on it.
+   - **Protected Endpoint Access**: Grant permissions to access Bento Deployments with Protected endpoints. If you select this token type, you need to choose the Deployment that you want the token to access. If you want to use the token to access all the Protected Deployments, select **All Deployments**.
    - **Expired At**: Set an expiration date for the token. You won't be able to use the token after it expires.
 
 4. Click **Submit**.
 5. Record the token. This is the only opportunity to record it.
 6. All available tokens appear on the **API Tokens** page. Click **Delete** if you no longer needs a token.
 
-Use the Developer token
-=======================
+Log in to BentoCloud using the BentoML CLI
+==========================================
 
-Interact with BentoCloud programmatically via the BentoML Command Line
+After you create an token with Developer Operations Access, you can interact with BentoCloud programmatically via the BentoML Command Line
 Interface (CLI). Log in using the following command.
 
 .. code-block:: bash
@@ -45,7 +45,7 @@ Interface (CLI). Log in using the following command.
 
 .. note::
 
-   You should see the above command after you create a token.
+   The above command is displayed automatically after you create a token.
 
 Expected output:
 
@@ -61,10 +61,10 @@ To retrieve the current endpoint and API token locally, make sure you have insta
 
 After you log in, you should be able to manage BentoCloud resources. For more information on the CLI, see :doc:`Reference - CLI </reference/cli>`.
 
-Use the User token
-==================
+Access protected Deployments
+============================
 
-You can use User tokens to access Protected Bento Deployments. The following example provides different ways to interact with the :doc:`/get-started/quickstart` Summarization Service deployed with authorization enabled.
+You can use a token with **Protected Endpoint Access** to access a protected Bento Deployment. The following example provides different ways to interact with the :doc:`/get-started/quickstart` Summarization Service deployed with authorization enabled.
 
 .. tab-set::
 
@@ -82,7 +82,7 @@ You can use User tokens to access Protected Bento Deployments. The following exa
                   "text": "Your long text to summarize"
                }'
 
-    .. tab-item:: BentoML client
+    .. tab-item:: Python client
 
         Set the ``token`` parameter in your :doc:`client </guides/clients>`.
 

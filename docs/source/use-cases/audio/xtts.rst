@@ -114,7 +114,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
                 "lang": "en"
             }'
 
-    .. tab-item:: BentoML client
+    .. tab-item:: Python client
 
         This client returns the audio file as a ``Path`` object. You can use it to access or process the file. See :doc:`/guides/clients` for details.
 
@@ -134,10 +134,10 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
 
         .. image:: ../../_static/img/use-cases/audio/xtts/service-ui.png
 
-Deploy to production
+Deploy to BentoCloud
 --------------------
 
-After the Service is ready, you can deploy the project to BentoCloud for better management and scalability.
+After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $30 in free credits.
 
 First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project:
 
@@ -157,14 +157,16 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
       - name: "COQUI_TOS_AGREED"
         value: 1
 
-Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud.
+:ref:`Create an API token with Developer Operations Access to log in to BentoCloud <bentocloud/how-tos/manage-access-token:create an api token>`, then run the following command to deploy the project.
 
 .. code-block:: bash
 
     bentoml deploy .
 
-Once the application is up and running on BentoCloud, you can access it via the exposed URL.
+Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
+
+.. image:: ../../_static/img/use-cases/audio/xtts/xtts-bentocloud.png
 
 .. note::
 
-   Alternatively, you can use BentoML to generate an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.
+   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image</guides/containerization>`.

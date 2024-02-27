@@ -9,6 +9,7 @@ They are recipes, directions to achieve a specific end result, and are wholly **
 * :doc:`create-deployments`
 * :doc:`configure-deployments`
 * :doc:`manage-deployments`
+* :doc:`call-deployment-endpoints`
 * :doc:`autoscaling`
 * :doc:`manage-access-token`
 * :doc:`manage-users`
@@ -20,6 +21,7 @@ They are recipes, directions to achieve a specific end result, and are wholly **
    create-deployments
    configure-deployments
    manage-deployments
+   call-deployment-endpoints
    autoscaling
    manage-access-token
    manage-users

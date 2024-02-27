@@ -154,7 +154,7 @@ Enabling authorization for a Deployment in BentoCloud is essential for security 
                 access_authorization=True
             )
 
-To access a Deployment with authorization enabled, :ref:`create an API token with Protected Endpoint Access <bentocloud/how-tos/manage-access-token:create an api token>` and refer to :ref:`bentocloud/how-tos/manage-access-token:use the user token`.
+To access a Deployment with authorization enabled, :ref:`create an API token with Protected Endpoint Access <bentocloud/how-tos/manage-access-token:create an api token>` and refer to :ref:`bentocloud/how-tos/manage-access-token:access protected deployments`.
 
 .. _deploy-with-config-file:
 

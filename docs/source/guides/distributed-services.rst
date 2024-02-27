@@ -164,7 +164,7 @@ For projects with multiple Services, you should reference the primary Service ha
       project: gallery
     ...
 
-You can then :doc:`containerize it as a Docker image </guides/containerization>` or deploy it to `BentoCloud <https://www.bentoml.com/>`_.
+You can then :doc:`containerize it as an OCI-compliant image </guides/containerization>` or deploy it to `BentoCloud <https://www.bentoml.com/>`_.
 
 Deploy distributed Services
 ---------------------------
@@ -173,7 +173,7 @@ Deploying a project with distributed Services to BentoCloud is similar to deploy
 
 To set custom configurations for each, we recommend you use a separate configuration file and reference it in the BentoML CLI command or Python API for deployment.
 
-The following is an example file that defines some custom configurations for the above two Services. You set configurations of each Service in the ``services`` field. Refer to :doc:`/bentocloud/how-tos/create-deployments` to see the available configuration fields.
+The following is an example file that defines some custom configurations for the above two Services. You set configurations of each Service in the ``services`` field. Refer to :doc:`/bentocloud/how-tos/configure-deployments` to see the available configuration fields.
 
 .. code-block:: yaml
 

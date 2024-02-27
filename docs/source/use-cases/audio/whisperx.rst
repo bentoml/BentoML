@@ -95,7 +95,7 @@ Run ``bentoml serve`` to start the Service.
     2024-01-22T02:29:10+0000 [WARNING] [cli] Converting 'WhisperX' to lowercase: 'whisperx'.
     2024-01-22T02:29:11+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:BentoWhisperX" listening on http://localhost:3000 (Press CTRL+C to quit)
 
-The server is active at `http://localhost:3000 <http://localhost:3000>`_. You can interact with its two endpoints (``transcribe`` and ``diarize``) in different ways.
+The server is active at `http://localhost:3000 <http://localhost:3000>`_. You can interact with it in different ways.
 
 .. tab-set::
 
@@ -109,7 +109,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
                 -H 'Content-Type: multipart/form-data' \
                 -F 'audio_file=@female.wav;type=audio/wav'
 
-    .. tab-item:: BentoML client
+    .. tab-item:: Python client
 
         You can either include an URL or a local path to your audio file in the BentoML :doc:`client </guides/clients>`.
 
@@ -135,10 +135,10 @@ Expected output:
 
     {"segments":[{"start":0.009,"end":2.813,"text":" The Hispaniola was rolling scuppers under in the ocean swell.","words":[{"word":"The","start":0.009,"end":0.069,"score":0.0},{"word":"Hispaniola","start":0.109,"end":0.81,"score":0.917},{"word":"was","start":0.83,"end":0.95,"score":0.501},{"word":"rolling","start":0.99,"end":1.251,"score":0.839},{"word":"scuppers","start":1.311,"end":1.671,"score":0.947},{"word":"under","start":1.751,"end":1.932,"score":0.939},{"word":"in","start":1.952,"end":2.012,"score":0.746},{"word":"the","start":2.032,"end":2.132,"score":0.667},{"word":"ocean","start":2.212,"end":2.472,"score":0.783},{"word":"swell.","start":2.512,"end":2.813,"score":0.865}]},{"start":3.494,"end":10.263,"text":"The booms were tearing at the blocks, the rudder was banging to and fro, and the whole ship creaking, groaning, and jumping like a manufactory.","words":[{"word":"The","start":3.494,"end":3.594,"score":0.752},{"word":"booms","start":3.614,"end":3.914,"score":0.867},{"word":"were","start":3.934,"end":4.054,"score":0.778},{"word":"tearing","start":4.074,"end":4.315,"score":0.808},{"word":"at","start":4.335,"end":4.395,"score":0.748},{"word":"the","start":4.415,"end":4.475,"score":0.993},{"word":"blocks,","start":4.495,"end":4.855,"score":0.918},{"word":"the","start":5.236,"end":5.316,"score":0.859},{"word":"rudder","start":5.356,"end":5.576,"score":0.894},{"word":"was","start":5.596,"end":5.717,"score":0.711},{"word":"banging","start":5.757,"end":6.117,"score":0.767},{"word":"to","start":6.177,"end":6.317,"score":0.781},{"word":"and","start":6.377,"end":6.458,"score":0.833},{"word":"fro,","start":6.498,"end":6.758,"score":0.657},{"word":"and","start":7.058,"end":7.159,"score":0.759},{"word":"the","start":7.179,"end":7.259,"score":0.833},{"word":"whole","start":7.299,"end":7.479,"score":0.807},{"word":"ship","start":7.539,"end":7.759,"score":0.79},{"word":"creaking,","start":7.859,"end":8.26,"score":0.774},{"word":"groaning,","start":8.44,"end":8.821,"score":0.75},{"word":"and","start":8.861,"end":8.941,"score":0.837},{"word":"jumping","start":8.981,"end":9.321,"score":0.859},{"word":"like","start":9.382,"end":9.502,"score":0.876},{"word":"a","start":9.542,"end":9.582,"score":0.5},{"word":"manufactory.","start":9.622,"end":10.263,"score":0.886}]}],"word_segments":[{"word":"The","start":0.009,"end":0.069,"score":0.0},{"word":"Hispaniola","start":0.109,"end":0.81,"score":0.917},{"word":"was","start":0.83,"end":0.95,"score":0.501},{"word":"rolling","start":0.99,"end":1.251,"score":0.839},{"word":"scuppers","start":1.311,"end":1.671,"score":0.947},{"word":"under","start":1.751,"end":1.932,"score":0.939},{"word":"in","start":1.952,"end":2.012,"score":0.746},{"word":"the","start":2.032,"end":2.132,"score":0.667},{"word":"ocean","start":2.212,"end":2.472,"score":0.783},{"word":"swell.","start":2.512,"end":2.813,"score":0.865},{"word":"The","start":3.494,"end":3.594,"score":0.752},{"word":"booms","start":3.614,"end":3.914,"score":0.867},{"word":"were","start":3.934,"end":4.054,"score":0.778},{"word":"tearing","start":4.074,"end":4.315,"score":0.808},{"word":"at","start":4.335,"end":4.395,"score":0.748},{"word":"the","start":4.415,"end":4.475,"score":0.993},{"word":"blocks,","start":4.495,"end":4.855,"score":0.918},{"word":"the","start":5.236,"end":5.316,"score":0.859},{"word":"rudder","start":5.356,"end":5.576,"score":0.894},{"word":"was","start":5.596,"end":5.717,"score":0.711},{"word":"banging","start":5.757,"end":6.117,"score":0.767},{"word":"to","start":6.177,"end":6.317,"score":0.781},{"word":"and","start":6.377,"end":6.458,"score":0.833},{"word":"fro,","start":6.498,"end":6.758,"score":0.657},{"word":"and","start":7.058,"end":7.159,"score":0.759},{"word":"the","start":7.179,"end":7.259,"score":0.833},{"word":"whole","start":7.299,"end":7.479,"score":0.807},{"word":"ship","start":7.539,"end":7.759,"score":0.79},{"word":"creaking,","start":7.859,"end":8.26,"score":0.774},{"word":"groaning,","start":8.44,"end":8.821,"score":0.75},{"word":"and","start":8.861,"end":8.941,"score":0.837},{"word":"jumping","start":8.981,"end":9.321,"score":0.859},{"word":"like","start":9.382,"end":9.502,"score":0.876},{"word":"a","start":9.542,"end":9.582,"score":0.5},{"word":"manufactory.","start":9.622,"end":10.263,"score":0.886}]}%
 
-Deploy to production
+Deploy to BentoCloud
 --------------------
 
-After the Service is ready, you can deploy the project to BentoCloud for better management and scalability.
+After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $30 in free credits.
 
 First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project directory:
 
@@ -158,14 +158,16 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
         - ffmpeg
         - git
 
-Make sure you :doc:`have logged in to BentoCloud </bentocloud/how-tos/manage-access-token>`, then run the following command in your project directory to deploy the application to BentoCloud.
+:ref:`Create an API token with Developer Operations Access to log in to BentoCloud <bentocloud/how-tos/manage-access-token:create an api token>`, then run the following command to deploy the project.
 
 .. code-block:: bash
 
     bentoml deploy .
 
-Once the application is up and running on BentoCloud, you can access it via the exposed URL.
+Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
+
+.. image:: ../../_static/img/use-cases/audio/whisperx/whisperx-bentocloud.png
 
 .. note::
 
-   Alternatively, you can use BentoML to generate an :doc:`OCI-compliant image for a more custom deployment </guides/containerization>`.
+   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image</guides/containerization>`.

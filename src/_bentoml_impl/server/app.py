@@ -160,7 +160,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         data = {
             "error": f"{exc.error_count()} validation error for {exc.title}",
-            "detail": exc.errors(),
+            "detail": exc.errors(include_context=False),
         }
         return JSONResponse(data, status_code=400)
 

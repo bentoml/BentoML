@@ -12,7 +12,7 @@ add_custom_preparers()
 del add_custom_preparers
 # ruff: noqa
 
-from .api import api
+from .api import api, on_shutdown
 from .service import depends
 from .service import Service
 from .service import service
@@ -21,6 +21,7 @@ from .io_models import IODescriptor
 
 __all__ = [
     "api",
+    "on_shutdown",
     "depends",
     "Service",
     "service",

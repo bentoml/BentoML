@@ -284,11 +284,13 @@ class ServiceAppFactory(BaseAppFactory):
         from _bentoml_sdk.service.dependency import cleanup
 
         # Call on_shutdown hook with optional ctx or context parameter
-        on_shutdown = getattr(self._service_instance, "on_shutdown", None)
-        if on_shutdown is not None:
-            result = on_shutdown()
-            if inspect.isawaitable(result):
-                await result
+        for name, member in vars(self.service).items():
+            if callable(member) and getattr(member, "__bentoml_shutdown_hook__", False):
+                result = getattr(
+                    self._service_instance, name
+                )()  # call the bound method
+                if inspect.isawaitable(result):
+                    await result
 
         await cleanup()
         self._service_instance = None

@@ -13,19 +13,25 @@ This section provides example projects for diffusion models.
         :link: /use-cases/diffusion-models/sdxl-turbo
         :link-type: doc
 
-        Deploy an image generation application with Stable Diffusion XL Turbo and BentoML.
+        Deploy an image generation server with Stable Diffusion XL Turbo and BentoML.
 
     .. grid-item-card:: :doc:`/use-cases/diffusion-models/sdxl-lcm-lora`
         :link: /use-cases/diffusion-models/sdxl-lcm-lora
         :link-type: doc
 
-        Deploy an image generation application with Stable Diffusion XL and Latent Consistency Model (LCM) LoRAs.
+        Deploy an image generation server with Stable Diffusion XL and Latent Consistency Model (LCM) LoRAs.
+
+    .. grid-item-card:: :doc:`/use-cases/diffusion-models/svd`
+        :link: /use-cases/diffusion-models/svd
+        :link-type: doc
+
+        Deploy a video generation server with Stable Video Diffusion and BentoML.
 
     .. grid-item-card:: :doc:`/use-cases/diffusion-models/controlnet`
         :link: /use-cases/diffusion-models/controlnet
         :link-type: doc
 
-        Deploy an image generation application for specific user requirements with BentoML using ControlNet.
+        Deploy an image generation server for specific user requirements with BentoML using ControlNet.
 
 .. toctree::
     :maxdepth: 1
@@ -34,4 +40,5 @@ This section provides example projects for diffusion models.
 
     sdxl-turbo
     sdxl-lcm-lora
+    svd
     controlnet

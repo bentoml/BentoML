@@ -286,7 +286,7 @@ class ServiceAppFactory(BaseAppFactory):
         from _bentoml_sdk.service.dependency import cleanup
 
         # Call on_shutdown hook with optional ctx or context parameter
-        for name, member in vars(self.service).items():
+        for name, member in vars(self.service.inner).items():
             if callable(member) and getattr(member, "__bentoml_shutdown_hook__", False):
                 result = getattr(
                     self._service_instance, name

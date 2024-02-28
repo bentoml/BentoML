@@ -312,14 +312,18 @@ class IODescriptor(IOMixin, BaseModel):
 def ensure_io_descriptor(output_type: type) -> type[IODescriptor]:
     if inspect.isclass(output_type) and issubclass(output_type, BaseModel):
         if not issubclass(output_type, IODescriptor):
-
-            class Output(IOMixin, output_type):
-                pass
-
-            return t.cast(t.Type[IODescriptor], Output)
-
+            return t.cast(
+                t.Type[IODescriptor],
+                create_model(
+                    f"{output_type.__name__}IODescriptor",
+                    __base__=(IOMixin, output_type),
+                ),
+            )
         return output_type
     return t.cast(
         t.Type[IODescriptor],
-        create_model("Output", __base__=(IOMixin, RootModel[output_type])),  # type: ignore
+        create_model(
+            f"{output_type.__name__}IODescriptor",
+            __base__=(IOMixin, RootModel[output_type]),
+        ),
     )

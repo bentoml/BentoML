@@ -5,6 +5,7 @@ import inspect
 import typing as t
 
 import attrs
+import pydantic
 
 from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
 from bentoml._internal.service.openapi.specification import MediaType
@@ -30,7 +31,11 @@ def _only_include(data: dict[str, t.Any], fields: t.Container[str]) -> dict[str,
 
 
 def _io_descriptor_converter(it: t.Any) -> type[IODescriptor]:
-    if isinstance(it, type) and issubclass(it, IODescriptor):
+    if not inspect.isclass(it, type):
+        raise ValueError(f"{it} must be a class type")
+    if not issubclass(it, (IODescriptor, pydantic.BaseModel)):
+        raise ValueError(f"{it} is not a valid IODescriptor accepted type.")
+    if issubclass(it, IODescriptor):
         return it
     return ensure_io_descriptor(it)
 

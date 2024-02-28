@@ -45,7 +45,7 @@ class APIMethod(t.Generic[P, R]):
     func: t.Callable[t.Concatenate[t.Any, P], R]
     route: str = attrs.field()
     name: str = attrs.field()
-    input_spec: type[IODescriptor] = attrs.field(coverter=_io_descriptor_converter)
+    input_spec: type[IODescriptor] = attrs.field(converter=_io_descriptor_converter)
     output_spec: type[IODescriptor] = attrs.field(converter=_io_descriptor_converter)
     batchable: bool = False
     batch_dim: tuple[int, int] = attrs.field(

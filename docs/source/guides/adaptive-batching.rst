@@ -47,7 +47,7 @@ By default, adaptive batching is disabled. To enable and control it, you use the
             # Model initialization and other setup code
 
         @bentoml.api(
-            batchable=True, 
+            batchable=True,
             batch_dim=(0, 0),
             max_batch_size=32,
             max_latency_ms=1000
@@ -59,29 +59,29 @@ Available parameters for adaptive batching:
 
 - ``batchable``: Set to ``True`` to indicate that the endpoint can process requests in batches. When it is enabled, you can only configure **one parameter for the endpoint function** in addition to ``bentoml.Context``.
 - ``batch_dim``: The batch dimension for both input and output, which can be a tuple or a single value.
-  
+
   - For a tuple (``input_dim``, ``output_dim``):
-  
+
     - ``input_dim``: Determines along which dimension the input arrays should be batched (or stacked) together before sending them for processing. For example, if you are working with 2-D arrays and ``input_dim`` is set to 0, BentoML will stack the arrays along the first dimension. This means if you have two 2-D input arrays with dimensions 5x2 and 10x2, specifying an ``input_dim`` of 0 would combine these into a single 15x2 array for processing.
     - ``output_dim``: After the inference is done, the output array needs to be split back into the original batch sizes. The ``output_dim`` indicates along which dimension the output array should be split. In the example above, if the inference process returns a 15x2 array and ``output_dim`` is set to 0, BentoML will split this array back into the original sizes of 5x2 and 10x2, based on the recorded boundaries of the input batch. This ensures that each requester receives the correct portion of the output corresponding to their input.
-    
+
   - If you specify a single value for ``batch_dim``, this value will apply to both ``input_dim`` and ``output_dim``. In other words, the same dimension is used for both batching inputs and splitting outputs.
-  
+
   .. dropdown:: Image illustration of ``batch_dim``
-        
-        This image illustrates the concept of ``batch_dim`` in the context of processing 2-D arrays. 
-        
+
+        This image illustrates the concept of ``batch_dim`` in the context of processing 2-D arrays.
+
         .. image:: ../../_static/img/guides/adaptive-batching/batch-dim-example.png
-        
+
         On the left side, there are two 2-D arrays of size 5x2, represented by blue and green boxes. The arrows show two different paths that these arrays can take depending on the ``batch_dim`` configuration:
-        
+
         - The top path has ``batch_dim=(0,0)``. This means that batching occurs along the first dimension (the number of rows). The two arrays are stacked on top of each other, resulting in a new combined array of size 10x2, which is sent for inference. After inference, the result is split back into two separate 5x2 arrays.
         - The bottom path has ``batch_dim=(1,1)``. This implies that batching occurs along the second dimension (the number of columns). The two arrays are concatenated side by side, forming a larger array of size 5x4, which is processed by the model. After inference, the output array is split back into the original dimensions, resulting in two separate 5x2 arrays.
-   
+
 - ``max_batch_size``: The upper limit for the number of requests that can be grouped into a single batch. It's crucial to set this parameter based on the available system resources, like memory or GPU, to avoid overloading the system.
 - ``max_latency_ms``: The maximum time in milliseconds that a batch will wait to accumulate more requests before processing. Setting the maximum latency is essential to balance between throughput and the latency requirements of your Service.
 
-.. note:: 
+.. note::
 
     When you specify ``max_batch_size`` and ``max_latency_ms`` parameters, BentoML ensures that these constraints are respected, even as it dynamically adjusts batch sizes and processing intervals based on the adaptive batching algorithm. The algorithm's primary goal is to optimize both throughput (by batching requests together) and latency (by ensuring requests are processed within an acceptable time frame). However, it operates within the bounds set by these parameters.
 

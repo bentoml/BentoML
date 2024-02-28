@@ -31,7 +31,7 @@ def _only_include(data: dict[str, t.Any], fields: t.Container[str]) -> dict[str,
 
 
 def _io_descriptor_converter(it: t.Any) -> type[IODescriptor]:
-    if not inspect.isclass(it, type):
+    if not inspect.isclass(it):
         raise ValueError(f"{it} must be a class type")
     if not issubclass(it, (IODescriptor, pydantic.BaseModel)):
         raise ValueError(f"{it} is not a valid IODescriptor accepted type.")

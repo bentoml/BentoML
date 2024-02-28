@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import typing as t
+from http import HTTPStatus
 
 import attr
 import yaml
@@ -54,7 +55,8 @@ class CloudClientConfig:
             if ctx.name == context:
                 return ctx
         raise CloudRESTApiClientError(
-            f"Not found {context} cloud context, please login!"
+            f"BentoCloud API token for {context} cloud context is required.",
+            error_code=HTTPStatus.UNAUTHORIZED,
         )
 
     def set_current_context(self, context: str | None) -> CloudClientContext:

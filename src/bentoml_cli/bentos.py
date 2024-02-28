@@ -422,25 +422,27 @@ def bento_management_commands() -> click.Group:
             if not get_quiet_mode():
                 click.echo(BENTOML_FIGLET)
                 click.secho(f"Successfully built {bento}.", fg="green")
+                next_steps = [
+                    f"\n\n* Deploy to BentoCloud:\n    $ bentoml deploy {bento.tag} -n ${{DEPLOYMENT_NAME}}",
+                    "\n\n* Update an existing deployment on BentoCloud:\n"
+                    f"    $ bentoml deployment update --bento {bento.tag} ${{DEPLOYMENT_NAME}}",
+                ]
+                if not containerize:
+                    next_steps.append(
+                        "\n\n* Containerize your Bento with `bentoml containerize`:\n"
+                        f"    $ {containerize_cmd} [or bentoml build --containerize]"
+                    )
+                if not push:
+                    next_steps.append(
+                        "\n\n* Push to BentoCloud with `bentoml push`:\n"
+                        f"    $ {push_cmd} [or bentoml build --push]"
+                    )
 
-                click.secho(
-                    (
-                        f"\nPossible next steps:\n\n * Containerize your Bento with `bentoml containerize`:\n    $ {containerize_cmd}"
-                        + "  [or bentoml build --containerize]"
-                        if not containerize
-                        else ""
-                    ),
-                    fg="blue",
-                )
-                click.secho(
-                    (
-                        f"\n * Push to BentoCloud with `bentoml push`:\n    $ {push_cmd}"
-                        + " [or bentoml build --push]"
-                        if not push
-                        else ""
-                    ),
-                    fg="blue",
-                )
+                if next_steps:
+                    click.secho(
+                        "\nNext steps:" + "".join(next_steps),
+                        fg="blue",
+                    )
         if push:
             if not get_quiet_mode():
                 click.secho(f"\nPushing {bento} to BentoCloud...", fg="magenta")

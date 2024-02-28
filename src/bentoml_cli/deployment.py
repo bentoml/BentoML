@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import typing as t
+from http import HTTPStatus
 
 import click
 import yaml
@@ -23,6 +24,18 @@ if t.TYPE_CHECKING:
     from .utils import SharedOptions
 else:
     TupleStrAny = tuple
+
+
+def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoReturn:
+    if err.error_code == HTTPStatus.UNAUTHORIZED:
+        raise BentoMLException(
+            f"{err}\n* BentoCloud sign up: https://cloud.bentoml.com/\n"
+            "* Login with your API token: "
+            "https://docs.bentoml.com/en/latest/bentocloud/how-tos/manage-access-token.html"
+        ) from None
+    raise BentoMLException(
+        f"Failed to {action} deployment due to invalid configuration: {err}"
+    ) from None
 
 
 @click.command(name="deploy")
@@ -278,9 +291,7 @@ def update(  # type: ignore
     try:
         config_params.verify()
     except BentoMLException as e:
-        raise BentoMLException(
-            f"Failed to create deployment due to invalid configuration: {e}"
-        )
+        raise_deployment_config_error(e, "update")
     deployment_info = Deployment.update(
         deployment_config_params=config_params,
         context=shared_options.cloud_context,
@@ -400,9 +411,7 @@ def apply(  # type: ignore
     try:
         config_params.verify()
     except BentoMLException as e:
-        raise BentoMLException(
-            f"Failed to create deployment due to invalid configuration: {e}"
-        )
+        raise_deployment_config_error(e, "apply")
     deployment_info = Deployment.apply(
         deployment_config_params=config_params,
         context=shared_options.cloud_context,
@@ -722,9 +731,7 @@ def create_deployment(
     try:
         config_params.verify()
     except BentoMLException as e:
-        raise BentoMLException(
-            f"Failed to create deployment due to invalid configuration: {e}"
-        )
+        raise_deployment_config_error(e, "create")
     spinner = Spinner()
     with Live(spinner.progress_group):
         task_id = spinner.spinner_progress.add_task(

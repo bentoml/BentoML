@@ -8,7 +8,6 @@ import pathlib
 import sys
 import typing as t
 from functools import lru_cache
-from functools import partial
 
 import attrs
 from simple_di import Provide
@@ -33,16 +32,11 @@ T = t.TypeVar("T", bound=object)
 if t.TYPE_CHECKING:
     from bentoml._internal import external_typing as ext
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
-    from bentoml._internal.types import LifecycleHook
 
     from .dependency import Dependency
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
-
-    ContextFunc = t.Callable[[ServiceContext], None | t.Coroutine[t.Any, t.Any, None]]
-    HookF = t.TypeVar("HookF", bound=LifecycleHook)
-    HookF_ctx = t.TypeVar("HookF_ctx", bound=ContextFunc)
 
     class _ServiceDecorator(t.Protocol):
         def __call__(self, inner: type[T]) -> Service[T]:
@@ -70,8 +64,6 @@ class Service(t.Generic[T]):
     models: list[Model] = attrs.field(factory=list)
     apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict)
     dependencies: dict[str, Dependency[t.Any]] = attrs.field(factory=dict, init=False)
-    startup_hooks: list[LifecycleHook] = attrs.field(factory=list, init=False)
-    shutdown_hooks: list[LifecycleHook] = attrs.field(factory=list, init=False)
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
         factory=list, init=False
     )
@@ -199,14 +191,6 @@ class Service(t.Generic[T]):
                     "Failed to get service import origin, service object must be assigned to a variable at module level"
                 )
         return self._import_str
-
-    def on_startup(self, func: HookF_ctx) -> HookF_ctx:
-        self.startup_hooks.append(partial(func, self.context))
-        return func
-
-    def on_shutdown(self, func: HookF_ctx) -> HookF_ctx:
-        self.shutdown_hooks.append(partial(func, self.context))
-        return func
 
     def mount_asgi_app(
         self, app: ext.ASGIApp, path: str = "/", name: str | None = None

@@ -18,6 +18,7 @@ from .io_models import ensure_io_descriptor
 
 R = t.TypeVar("R")
 T = t.TypeVar("T", bound="APIMethod[..., t.Any]")
+F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 if t.TYPE_CHECKING:
     P = t.ParamSpec("P")
 else:
@@ -285,3 +286,9 @@ def api(
     if func is not None:
         return wrapper(func)
     return wrapper
+
+
+def on_shutdown(func: F) -> F:
+    """Mark a method as a shutdown hook for the service."""
+    func.__bentoml_shutdown_hook__ = True
+    return func

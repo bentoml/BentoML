@@ -96,7 +96,6 @@ def create_dependency_watcher(
     uds_path: str,
     port_stack: contextlib.ExitStack,
     backlog: int,
-    dependency_map: dict[str, str],
     scheduler: ResourceAllocator,
     working_dir: str | None = None,
 ) -> tuple[Watcher, CircusSocket, str]:
@@ -202,7 +201,6 @@ def serve_http(
                         uds_path,
                         port_stack,
                         backlog,
-                        dependency_map,
                         allocator,
                         str(bento_path.absolute()),
                     )

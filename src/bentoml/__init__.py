@@ -107,6 +107,7 @@ if TYPE_CHECKING:
     from _bentoml_impl.client import SyncHTTPClient
     from _bentoml_sdk import api
     from _bentoml_sdk import depends
+    from _bentoml_sdk import on_shutdown
     from _bentoml_sdk import runner_service
     from _bentoml_sdk import service
 else:
@@ -170,7 +171,7 @@ else:
     validators = _LazyLoader("bentoml.validators", globals(), "bentoml.validators")
     del _LazyLoader
 
-    _NEW_SDK_ATTRS = ["service", "runner_service", "api", "depends"]
+    _NEW_SDK_ATTRS = ["service", "runner_service", "api", "depends", "on_shutdown"]
     _NEW_CLIENTS = ["SyncHTTPClient", "AsyncHTTPClient"]
 
     if (ver := pkg_version_info("pydantic")) >= (2,):
@@ -271,6 +272,7 @@ __all__ = [
     "service",
     "runner_service",
     "api",
+    "on_shutdown",
     "depends",
     "validators",
     "Field",

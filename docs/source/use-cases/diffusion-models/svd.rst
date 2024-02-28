@@ -90,7 +90,7 @@ A breakdown of the Service code:
 - It defines a BentoML Service ``StableDiffusionVideo`` using the ``@bentoml.service`` decorator, with specified GPU requirements for deployment on BentoCloud, and a timeout of 600 seconds. See :doc:`/guides/configurations` for details.
 - During initialization, the Service loads the model into the ``StableVideoDiffusionPipeline`` and moves it to GPU for efficient computation.
 - It defines an endpoint for video generation using the ``@bentoml.api`` decorator, taking the following parameters:
-  
+
   - ``image``: A base image for generating video, which will be resized and converted to RGB format for the SVD model.
   - ``decode_chunk_size``: The number of frames that are decoded at once. A lower ``decode_chunk_size`` value means reduced memory consumption but may lead to inconsistencies between frames, such as flickering. Set this value based on your GPU resources.
   - ``seed``:  A randomly generated number when not specified. Every time you generate a video with the same seed and input image, you will get the exact same output. This is particularly useful for generating reproducible results.

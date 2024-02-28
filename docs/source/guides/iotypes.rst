@@ -236,7 +236,7 @@ Here is an example of using PIL:
 
 .. code-block:: python
 
-    from PIL.Image import PIL as PILImage
+    from PIL.Image import Image as PILImage
 
     @bentoml.service
     class MnistPredictor:

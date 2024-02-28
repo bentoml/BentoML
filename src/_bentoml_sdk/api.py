@@ -13,6 +13,7 @@ from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.utils import dict_filter_none
 
 from .io_models import IODescriptor
+from .io_models import IOMixin
 from .io_models import ensure_io_descriptor
 
 R = t.TypeVar("R")
@@ -33,9 +34,9 @@ def _only_include(data: dict[str, t.Any], fields: t.Container[str]) -> dict[str,
 def _io_descriptor_converter(it: t.Any) -> type[IODescriptor]:
     if not inspect.isclass(it):
         raise ValueError(f"{it} must be a class type")
-    if not issubclass(it, (IODescriptor, pydantic.BaseModel)):
+    if not issubclass(it, pydantic.BaseModel):
         raise ValueError(f"{it} is not a valid IODescriptor accepted type.")
-    if issubclass(it, IODescriptor):
+    if issubclass(it, IOMixin):
         return it
     return ensure_io_descriptor(it)
 

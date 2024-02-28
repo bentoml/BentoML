@@ -17,6 +17,7 @@ from starlette.middleware import Middleware
 from starlette.staticfiles import StaticFiles
 
 from _bentoml_sdk import Service
+from _bentoml_sdk.api import set_current_service
 from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.server.base_app import BaseAppFactory
@@ -279,6 +280,7 @@ class ServiceAppFactory(BaseAppFactory):
 
     def create_instance(self) -> None:
         self._service_instance = self.service()
+        set_current_service(self._service_instance)
 
     async def destroy_instance(self) -> None:
         from _bentoml_sdk.service.dependency import cleanup
@@ -294,6 +296,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         await cleanup()
         self._service_instance = None
+        set_current_service(None)
 
     async def readyz(self, _: Request) -> Response:
         from starlette.exceptions import HTTPException

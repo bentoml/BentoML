@@ -12,6 +12,7 @@ from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.utils import dict_filter_none
 
 from .io_models import IODescriptor
+from .io_models import ensure_io_descriptor
 
 R = t.TypeVar("R")
 T = t.TypeVar("T", bound="APIMethod[..., t.Any]")
@@ -28,13 +29,19 @@ def _only_include(data: dict[str, t.Any], fields: t.Container[str]) -> dict[str,
     return {k: v for k, v in data.items() if k in fields}
 
 
+def _io_descriptor_converter(it: t.Any) -> type[IODescriptor]:
+    if isinstance(it, type) and issubclass(it, IODescriptor):
+        return it
+    return ensure_io_descriptor(it)
+
+
 @attrs.define
 class APIMethod(t.Generic[P, R]):
     func: t.Callable[t.Concatenate[t.Any, P], R]
     route: str = attrs.field()
     name: str = attrs.field()
-    input_spec: type[IODescriptor] = attrs.field()
-    output_spec: type[IODescriptor] = attrs.field()
+    input_spec: type[IODescriptor] = attrs.field(coverter=_io_descriptor_converter)
+    output_spec: type[IODescriptor] = attrs.field(converter=_io_descriptor_converter)
     batchable: bool = False
     batch_dim: tuple[int, int] = attrs.field(
         default=(0, 0), converter=lambda x: (x, x) if not isinstance(x, tuple) else x

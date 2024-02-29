@@ -46,7 +46,7 @@ If you have an existing model on disk, you can import it into the BentoML Model 
         name='my-local-model', # Name of the model in the Model Store
     ) as model_ref:
         # Copy the entire model directory to the BentoML Model Store
-        shutil.copytree(local_model_dir, model_ref.path)
+        shutil.copytree(local_model_dir, model_ref.path, dirs_exist_ok=True)
         print(f"Model saved: {model_ref}")
 
 By default, all models downloaded to the Model Store are saved in the directory ``/home/user/bentoml/models/``.

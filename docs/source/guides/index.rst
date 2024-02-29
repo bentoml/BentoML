@@ -57,6 +57,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Use BentoML clients to interact with your Service.
 
+    .. grid-item-card:: :doc:`/guides/adaptive-batching`
+        :link: /guides/adaptive-batching
+        :link-type: doc
+
+        Enable adaptive batching to batch requests for reduced latency and optimized resource use.
+
     .. grid-item-card:: :doc:`/guides/configurations`
         :link: /guides/configurations
         :link-type: doc
@@ -74,4 +80,5 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     model-store
     distributed-services
     clients
+    adaptive-batching
     configurations

@@ -51,6 +51,14 @@ class CloudClientConfig:
     current_context_name: str = attr.field(default=default_context_name)
 
     def get_context(self, context: t.Optional[str]) -> CloudClientContext:
+        from os import environ
+
+        if "BENTO_CLOUD_API_KEY" in environ and "BENTO_CLOUD_API_ENDPOINT" in environ:
+            return CloudClientContext(
+                name="__env__",
+                endpoint=environ["BENTO_CLOUD_API_ENDPOINT"],
+                api_token=environ["BENTO_CLOUD_API_KEY"],
+            )
         for ctx in self.contexts:
             if ctx.name == context:
                 return ctx

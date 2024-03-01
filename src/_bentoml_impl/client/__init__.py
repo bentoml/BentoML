@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .base import AbstractClient
 from .http import AsyncHTTPClient as _AsyncHTTPClient
 from .http import HTTPClient

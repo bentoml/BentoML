@@ -39,6 +39,9 @@ By default, adaptive batching is disabled. To enable and control it, you use the
 
 .. code-block:: python
 
+    import typing as t
+    import numpy as np
+
     @bentoml.service(
         resources={"gpu": 1, "memory": "8Gi"},
     )
@@ -52,7 +55,7 @@ By default, adaptive batching is disabled. To enable and control it, you use the
             max_batch_size=32,
             max_latency_ms=1000
         )
-        def function(self, text: str) -> str:
+        def function(self, text: t.List[str]) -> np.ndarray:
             # Logic that uses batching
 
 Available parameters for adaptive batching:

@@ -40,41 +40,58 @@ To retrieve details about a specific Deployment:
       # To output the details in YAML (Default)
       bentoml deployment get <deployment-name> -o yaml
 
+    Expected output in YAML:
+
+    .. code-block:: yaml
+
+        name: summarization
+        bento: summarization:ghfvclwp2kwm5e56
+        cluster: aws-ca-1
+        endpoint_url: https://summarization-test--aws-ca-1.mt1.bentoml.ai
+        admin_console: https://test.cloud.bentoml.com/deployments/summarization/access?cluster=aws-ca-1&namespace=test--aws-ca-1
+        created_at: '2024-02-20 09:27:52'
+        created_by: bentoml-user
+        config:
+          envs: []
+          services:
+            Summarization:
+              instance_type: cpu.2
+              scaling:
+                min_replicas: 1
+                max_replicas: 2
+              envs: []
+              deployment_strategy: Recreate
+              extras: {}
+              config_overrides:
+                traffic:
+                  timeout: 10
+        status:
+          status: running
+          created_at: '2024-02-20 09:27:52'
+          updated_at: '2024-02-21 05:46:18'
+
   .. tab-item:: Python API
 
     .. code-block:: python
 
-      bentoml.deployment.get(name="deployment-1")
+      import bentoml
 
-Expected output in YAML:
+      dep = bentoml.deployment.get(name="deploy-1")
+      print(dep)
 
-.. code-block:: yaml
+      # Output: DeploymentInfo(name='deploy-1', admin_console='https://test.cloud.bentoml.com/deployments/deploy-1/access?cluster=aws-ca-1&namespace=test--aws-ca-1', created_at='2024-03-01 05:00:19', created_by='bentoml-user', cluster='aws-ca-1')
 
-    name: summarization
-    bento: summarization:ghfvclwp2kwm5e56
-    cluster: aws-ca-1
-    endpoint_url: https://summarization-test--aws-ca-1.mt1.bentoml.ai
-    admin_console: https://test.cloud.bentoml.com/deployments/summarization/access?cluster=aws-ca-1&namespace=test--aws-ca-1
-    created_at: '2024-02-20 09:27:52'
-    created_by: bentoml-user
-    config:
-      envs: []
-      services:
-        Summarization:
-          instance_type: cpu.2
-          scaling:
-            min_replicas: 1
-            max_replicas: 2
-          envs: []
-          deployment_strategy: Recreate
-          extras: {}
-          config_overrides:
-            traffic:
-              timeout: 10
-    status:
-      status: running
-      created_at: '2024-02-20 09:27:52'
-      updated_at: '2024-02-21 05:46:18'
+    To check the Deployment's status:
+
+    .. code-block:: python
+
+      import bentoml
+
+      dep = bentoml.deployment.get(name="deploy-1")
+      status = dep.get_status()
+      print(status)
+
+      # Output: DeploymentState(status='running', created_at='2024-03-01 05:00:19', updated_at='2024-03-01 05:22:08')
 
 Update
 ------
@@ -119,6 +136,8 @@ You can also update Deployment configurations using a separate file (only add th
   .. tab-item:: Python API
 
     .. code-block:: python
+
+      import bentoml
 
       bentoml.deployment.update(name="deployment-1", config_file="patch.yaml")
 
@@ -199,6 +218,7 @@ To terminate a Deployment:
     .. code-block:: python
 
       import bentoml
+
       bentoml.deployment.terminate(name="deployment-1")
 
 Delete
@@ -219,6 +239,7 @@ You can delete a Deployment if you no longer need it. To delete a Deployment:
     .. code-block:: python
 
       import bentoml
+
       bentoml.deployment.delete(name="deployment-1")
 
 .. warning::

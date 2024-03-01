@@ -21,7 +21,7 @@ async def test_mount_asgi_app():
 
     TestService.inject_config()
 
-    factory = ServiceAppFactory(TestService, is_main=True)
+    factory = ServiceAppFactory(TestService, is_main=True, enable_metrics=False)
     factory.create_instance()
     try:
         async with httpx.AsyncClient(
@@ -52,7 +52,7 @@ async def test_mount_asgi_app_later():
 
     TestService.inject_config()
 
-    factory = ServiceAppFactory(TestService, is_main=True)
+    factory = ServiceAppFactory(TestService, is_main=True, enable_metrics=False)
     factory.create_instance()
     try:
         async with httpx.AsyncClient(

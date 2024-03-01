@@ -36,6 +36,7 @@ if t.TYPE_CHECKING:
     from bentoml._internal import external_typing as ext
     from bentoml._internal.context import ServiceContext
     from bentoml._internal.types import LifecycleHook
+    from bentoml.metrics import Histogram
 
 R = t.TypeVar("R")
 
@@ -103,17 +104,19 @@ class ServiceAppFactory(BaseAppFactory):
                 ),
             )
 
+    @functools.cached_property
+    def adaptive_batch_size_hist(self) -> Histogram:
         metrics_client = BentoMLContainer.metrics_client.get()
         max_max_batch_size = max(
             (
                 method.max_batch_size
-                for method in service.apis.values()
+                for method in self.service.apis.values()
                 if method.batchable
             ),
             default=100,
         )
 
-        self.adaptive_batch_size_hist = metrics_client.Histogram(
+        return metrics_client.Histogram(
             namespace="bentoml_service",
             name="adaptive_batch_size",
             documentation="Service adaptive batch size",
@@ -371,13 +374,14 @@ class ServiceAppFactory(BaseAppFactory):
             from bentoml._internal.runner.container import AutoContainer
             from bentoml._internal.utils import is_async_callable
 
-            self.adaptive_batch_size_hist.labels(  # type: ignore
-                runner_name=self.service.name,
-                worker_index=component_context.component_index,
-                method_name=name,
-                service_version=component_context.bento_version,
-                service_name=component_context.bento_name,
-            ).observe(len(batches))
+            if self.enable_metrics:
+                self.adaptive_batch_size_hist.labels(  # type: ignore
+                    runner_name=self.service.name,
+                    worker_index=component_context.component_index,
+                    method_name=name,
+                    service_version=component_context.bento_version,
+                    service_name=component_context.bento_name,
+                ).observe(len(batches))
 
             if len(batches) == 0:
                 return []

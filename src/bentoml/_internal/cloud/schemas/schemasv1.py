@@ -10,10 +10,8 @@ from bentoml._internal.cloud.schemas.modelschemas import BentoManifestSchema
 from bentoml._internal.cloud.schemas.modelschemas import BentoUploadStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentMode
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentRevisionStatus
-from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetCanaryRule
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetConfig
-from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetType
 from bentoml._internal.cloud.schemas.modelschemas import LabelItemSchema
 from bentoml._internal.cloud.schemas.modelschemas import ModelImageBuildStatus
 from bentoml._internal.cloud.schemas.modelschemas import ModelManifestSchema
@@ -239,7 +237,6 @@ class BentoListSchema(BaseListSchema):
 class CreateDeploymentTargetSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
-    type: DeploymentTargetType  # stable by default
     bento_repository: str
     bento: str
     config: DeploymentTargetConfig
@@ -254,12 +251,11 @@ class DeploymentSchema(ResourceSchema):
     __forbid_extra_keys__ = True
     creator: UserSchema
     cluster: ClusterSchema
-    status: DeploymentStatus
+    status: str
     kube_namespace: str
     latest_revision: t.Optional[DeploymentRevisionSchema] = attr.field(
         default=None
     )  # Delete returns no latest revision
-    mode: t.Optional[DeploymentMode] = attr.field(default=None)
 
 
 @attr.define
@@ -267,7 +263,6 @@ class DeploymentTargetSchema(ResourceSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
     creator: UserSchema
-    type: DeploymentTargetType
     bento: BentoFullSchema
     config: DeploymentTargetConfig
     canary_rules: t.Optional[t.List[DeploymentTargetCanaryRule]] = attr.field(
@@ -314,7 +309,6 @@ class UpdateDeploymentSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
     targets: t.List[CreateDeploymentTargetSchema]
-    mode: t.Optional[DeploymentMode] = attr.field(default=None)
     labels: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
     description: t.Optional[str] = attr.field(default=None)
     do_not_deploy: t.Optional[bool] = attr.field(default=None)

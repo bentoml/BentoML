@@ -226,6 +226,10 @@ class _ComponentContext:
         return self.service_name
 
     @property
+    def component_index(self) -> int | None:
+        return self.worker_index
+
+    @property
     def yatai_bento_deployment_name(self) -> str:
         return os.environ.get("YATAI_BENTO_DEPLOYMENT_NAME", "")
 

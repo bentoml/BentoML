@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import typing as t
 from urllib.parse import urljoin
@@ -252,16 +253,17 @@ class RestApiClientV1(BaseRestApiClient):
         self._check_resp(resp)
         return None
 
+    @contextlib.contextmanager
     def download_bento(
         self, bento_repository_name: str, version: str
-    ) -> httpx.Response:
+    ) -> t.Generator[httpx.Response, None, None]:
         url = urljoin(
             self.endpoint,
             f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/download",
         )
         with self.session.stream("GET", url) as resp:
             self._check_resp(resp)
-            return resp
+            yield resp
 
     def get_model_repository(
         self, model_repository_name: str
@@ -404,16 +406,17 @@ class RestApiClientV1(BaseRestApiClient):
         self._check_resp(resp)
         return None
 
+    @contextlib.contextmanager
     def download_model(
         self, model_repository_name: str, version: str
-    ) -> httpx.Response:
+    ) -> t.Generator[httpx.Response, None, None]:
         url = urljoin(
             self.endpoint,
             f"/api/v1/model_repositories/{model_repository_name}/models/{version}/download",
         )
         with self.session.stream("GET", url) as resp:
             self._check_resp(resp)
-            return resp
+            yield resp
 
     def get_bento_repositories_list(
         self, bento_repository_name: str

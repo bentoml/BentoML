@@ -11,6 +11,7 @@ from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
 from bentoml._internal.service.openapi.specification import MediaType
 from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.utils import dict_filter_none
+from bentoml.exceptions import BentoMLException
 
 from .io_models import IODescriptor
 from .io_models import IOMixin
@@ -18,7 +19,6 @@ from .io_models import ensure_io_descriptor
 
 R = t.TypeVar("R")
 T = t.TypeVar("T", bound="APIMethod[..., t.Any]")
-F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 if t.TYPE_CHECKING:
     P = t.ParamSpec("P")
 else:
@@ -231,64 +231,16 @@ def _flatten_model_schema(model: type[IODescriptor]) -> dict[str, t.Any]:
     return _flatten_field(schema, defs)
 
 
-@t.overload
-def api(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
-    ...
+_current_service: t.Any | None = None
 
 
-@t.overload
-def api(
-    *,
-    route: str | None = ...,
-    name: str | None = ...,
-    input_spec: type[IODescriptor] | None = ...,
-    output_spec: type[IODescriptor] | None = ...,
-    batchable: bool = ...,
-    batch_dim: int | tuple[int, int] = ...,
-    max_batch_size: int = ...,
-    max_latency_ms: int = ...,
-) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]:
-    ...
+def get_current_service() -> t.Any:
+    """Return the current active service instance."""
+    if _current_service is None:
+        raise BentoMLException("service isn't instantiated yet")
+    return _current_service
 
 
-def api(
-    func: t.Callable[t.Concatenate[t.Any, P], R] | None = None,
-    *,
-    route: str | None = None,
-    name: str | None = None,
-    input_spec: type[IODescriptor] | None = None,
-    output_spec: type[IODescriptor] | None = None,
-    batchable: bool = False,
-    batch_dim: int | tuple[int, int] = 0,
-    max_batch_size: int = 100,
-    max_latency_ms: int = 60000,
-) -> (
-    APIMethod[P, R]
-    | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]
-):
-    def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
-        params: dict[str, t.Any] = {
-            "batchable": batchable,
-            "batch_dim": batch_dim,
-            "max_batch_size": max_batch_size,
-            "max_latency_ms": max_latency_ms,
-        }
-        if route is not None:
-            params["route"] = route
-        if name is not None:
-            params["name"] = name
-        if input_spec is not None:
-            params["input_spec"] = input_spec
-        if output_spec is not None:
-            params["output_spec"] = output_spec
-        return APIMethod(func, **params)
-
-    if func is not None:
-        return wrapper(func)
-    return wrapper
-
-
-def on_shutdown(func: F) -> F:
-    """Mark a method as a shutdown hook for the service."""
-    func.__bentoml_shutdown_hook__ = True
-    return func
+def set_current_service(service: t.Any) -> None:
+    global _current_service
+    _current_service = service

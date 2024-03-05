@@ -89,6 +89,11 @@ class Service(t.Generic[T]):
             elif isinstance(value, APIMethod):
                 self.apis[field] = t.cast("APIMethod[..., t.Any]", value)
 
+        pre_mount_apps = getattr(self.inner, "__bentoml_mounted_apps__", [])
+        if pre_mount_apps:
+            self.mount_apps.extend(pre_mount_apps)
+            delattr(self.inner, "__bentoml_mounted_apps__")
+
     def __hash__(self):
         return hash(self.name)
 

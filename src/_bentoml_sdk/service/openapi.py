@@ -46,7 +46,10 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
     mounted_app_paths = {}
     schema_components: dict[str, dict[str, Schema]] = {}
 
-    for app, _, _ in svc.mount_apps:
+    def join_path(prefix: str, path: str) -> str:
+        return f"{prefix.rstrip('/')}/{path.lstrip('/')}"
+
+    for app, path, _ in svc.mount_apps:
         if LazyType["fastapi.FastAPI"]("fastapi.FastAPI").isinstance(app):
             from fastapi.openapi.utils import get_openapi
 
@@ -55,10 +58,9 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
                 version=app.version,
                 routes=app.routes,
             )
-
             mounted_app_paths.update(
                 {
-                    k: bentoml_cattr.structure(v, PathItem)
+                    join_path(path, k): bentoml_cattr.structure(v, PathItem)
                     for k, v in openapi["paths"].items()
                 }
             )

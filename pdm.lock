@@ -5,7 +5,7 @@
 groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "aws", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "triton"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:e7bc23ab68fef9a6be86d39e7a77e30002cc638ce9b9d9bca15861a2acbdca94"
+content_hash = "sha256:e64d2e94ab07d852baddcab0c40fe3d708d17cdcc258d0b3120178f6212a8782"
 
 [[package]]
 name = "aiohttp"
@@ -154,7 +154,7 @@ name = "annotated-types"
 version = "0.6.0"
 requires_python = ">=3.8"
 summary = "Reusable constraint types to use with typing.Annotated"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 dependencies = [
     "typing-extensions>=4.0.0; python_version < \"3.9\"",
 ]
@@ -179,7 +179,7 @@ name = "anyio"
 version = "4.0.0"
 requires_python = ">=3.8"
 summary = "High level compatibility layer for multiple asynchronous event loop implementations"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 dependencies = [
     "exceptiongroup>=1.0.2; python_version < \"3.11\"",
     "idna>=2.8",
@@ -1005,7 +1005,7 @@ name = "fastapi"
 version = "0.109.0"
 requires_python = ">=3.8"
 summary = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
-groups = ["docs"]
+groups = ["docs", "testing"]
 dependencies = [
     "pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4",
     "starlette<0.36.0,>=0.35.0",
@@ -1607,7 +1607,7 @@ name = "idna"
 version = "3.4"
 requires_python = ">=3.5"
 summary = "Internationalized Domain Names in Applications (IDNA)"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin", "triton"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "testing", "tracing", "tracing-otlp", "tracing-zipkin", "triton"]
 files = [
     {file = "idna-3.4-py3-none-any.whl", hash = "sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2"},
     {file = "idna-3.4.tar.gz", hash = "sha256:814f528e8dead7d329833b91c5faa87d60bf71824cd12a7530b5526063d02cb4"},
@@ -2969,7 +2969,7 @@ name = "pydantic"
 version = "2.5.3"
 requires_python = ">=3.7"
 summary = "Data validation using Python type hints"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 dependencies = [
     "annotated-types>=0.4.0",
     "pydantic-core==2.14.6",
@@ -2985,7 +2985,7 @@ name = "pydantic-core"
 version = "2.14.6"
 requires_python = ">=3.7"
 summary = ""
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 dependencies = [
     "typing-extensions!=4.7.0,>=4.6.0",
 ]
@@ -3913,7 +3913,7 @@ name = "sniffio"
 version = "1.3.0"
 requires_python = ">=3.7"
 summary = "Sniff out which async library your code is running under"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 files = [
     {file = "sniffio-1.3.0-py3-none-any.whl", hash = "sha256:eecefdce1e5bbfb7ad2eeaabf7c1eeb404d7757c379bd1f7e5cce9d8bf425384"},
     {file = "sniffio-1.3.0.tar.gz", hash = "sha256:e60305c5e5d314f5389259b7f22aaa33d8f7dee49763119234af3755c55b9101"},
@@ -4209,7 +4209,7 @@ name = "starlette"
 version = "0.35.1"
 requires_python = ">=3.8"
 summary = "The little ASGI library that shines."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
 dependencies = [
     "anyio<5,>=3.4.0",
     "typing-extensions>=3.10.0; python_version < \"3.10\"",
@@ -4328,7 +4328,7 @@ name = "typing-extensions"
 version = "4.9.0"
 requires_python = ">=3.8"
 summary = "Backported and Experimental Type Hints for Python 3.8+"
-groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "typing_extensions-4.9.0-py3-none-any.whl", hash = "sha256:af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd"},
     {file = "typing_extensions-4.9.0.tar.gz", hash = "sha256:23478f88c37f27d76ac8aee6c905017a143b0b1b886c3c9f66bc2fd94f9f5783"},

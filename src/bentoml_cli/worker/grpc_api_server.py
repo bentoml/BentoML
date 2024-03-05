@@ -113,7 +113,7 @@ def main(
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
 
-    server_context.component_type = "grpc_api_server"
+    server_context.service_type = "grpc_api_server"
     server_context.worker_index = worker_id
     configure_server_logging()
 

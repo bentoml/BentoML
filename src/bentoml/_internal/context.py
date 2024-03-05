@@ -217,9 +217,13 @@ class _ServiceTraceContext:
 class _ComponentContext:
     bento_name: str = ""
     bento_version: str = "not available"
-    component_type: str | None = None
+    service_type: str | None = None
     service_name: str | None = None
     worker_index: int | None = None
+
+    @property
+    def component_type(self) -> str | None:
+        return self.service_type
 
     @property
     def component_name(self) -> str | None:

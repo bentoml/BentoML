@@ -149,9 +149,9 @@ def main(
 
     if service_name and service_name != service.name:
         service = service.find_dependent(service_name)
-        server_context.component_type = "service"
+        server_context.service_type = "service"
     else:
-        server_context.component_type = "entry_service"
+        server_context.service_type = "entry_service"
 
     if worker_id is not None:
         server_context.worker_index = worker_id
@@ -164,7 +164,7 @@ def main(
     server_context.service_name = service.name
 
     asgi_app = ServiceAppFactory(
-        service, is_main=server_context.component_type == "entry_service"
+        service, is_main=server_context.service_type == "entry_service"
     )()
 
     uvicorn_extra_options: dict[str, t.Any] = {}

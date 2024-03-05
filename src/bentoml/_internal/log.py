@@ -127,8 +127,8 @@ def configure_logging():
 @lru_cache(maxsize=1)
 def _component_name():
     result = ""
-    if server_context.component_type:
-        result = server_context.component_type
+    if server_context.service_type:
+        result = server_context.service_type
     if server_context.service_name:
         result = f"{result}:{server_context.service_name}"
     if server_context.worker_index:

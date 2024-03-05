@@ -34,7 +34,7 @@ class ServiceReloaderPlugin(CircusPlugin):
         assert "working_dir" in config, "`working_dir` is required"
 
         configure_server_logging()
-        server_context.component_type = "observer"
+        server_context.service_type = "observer"
 
         super().__init__(*args, **config)
 

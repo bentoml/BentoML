@@ -92,7 +92,7 @@ def main(
     from bentoml._internal.context import server_context
 
     # setup context
-    server_context.component_type = "runner"
+    server_context.service_type = "runner"
     server_context.service_name = runner_name
     server_context.worker_index = worker_id
 

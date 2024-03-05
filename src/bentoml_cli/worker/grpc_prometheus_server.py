@@ -60,7 +60,7 @@ def main(fd: int, backlog: int, prometheus_dir: str | None):
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
 
-    server_context.component_type = "prom_server"
+    server_context.service_type = "prom_server"
 
     configure_server_logging()
 

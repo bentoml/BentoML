@@ -426,7 +426,7 @@ class DeploymentInfo:
         if self._schema.updated_at is not None:
             updated_at = self._schema.updated_at.strftime("%Y-%m-%d %H:%M:%S")
         return DeploymentState(
-            status=self._schema.status.value,
+            status=self._schema.status,
             created_at=self._schema.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             updated_at=updated_at,
         )

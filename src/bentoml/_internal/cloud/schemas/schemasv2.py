@@ -4,10 +4,8 @@ import typing as t
 
 import attr
 
-from bentoml._internal.cloud.schemas.modelschemas import DeploymentMode
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentRevisionStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentServiceConfig
-from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
 from bentoml._internal.cloud.schemas.schemasv1 import BaseListSchema
 from bentoml._internal.cloud.schemas.schemasv1 import BentoWithRepositorySchema
 from bentoml._internal.cloud.schemas.schemasv1 import ClusterSchema
@@ -70,12 +68,11 @@ class CreateDeploymentSchema(UpdateDeploymentSchema):
 class DeploymentSchema(ResourceSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
-    status: DeploymentStatus
+    status: str
     kube_namespace: str
     creator: UserSchema
     cluster: ClusterSchema
     latest_revision: t.Optional[DeploymentRevisionSchema]
-    mode: t.Optional[DeploymentMode] = attr.field(default=None)
 
 
 @attr.define

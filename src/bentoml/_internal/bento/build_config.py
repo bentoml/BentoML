@@ -17,21 +17,18 @@ import yaml
 from packaging.version import Version
 from pathspec import PathSpec
 
-from ...exceptions import BentoMLException
-from ...exceptions import InvalidArgument
-from ..configuration import BENTOML_VERSION
-from ..configuration import clean_bentoml_version
-from ..configuration import get_quiet_mode
+from ...exceptions import BentoMLException, InvalidArgument
+from ..configuration import BENTOML_VERSION, clean_bentoml_version, get_quiet_mode
 from ..container import generate_containerfile
-from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
-from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
-from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
-from ..container.frontend.dockerfile import DistroSpec
-from ..container.frontend.dockerfile import get_supported_spec
+from ..container.frontend.dockerfile import (
+    ALLOWED_CUDA_VERSION_ARGS,
+    CONTAINER_SUPPORTED_DISTROS,
+    SUPPORTED_CUDA_VERSIONS,
+    DistroSpec,
+    get_supported_spec,
+)
 from ..container.generate import BENTO_PATH
-from ..utils import bentoml_cattr
-from ..utils import copy_file_to_fs_folder
-from ..utils import resolve_user_filepath
+from ..utils import bentoml_cattr, copy_file_to_fs_folder, resolve_user_filepath
 from ..utils.dotenv import parse_dotenv
 from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
@@ -98,8 +95,12 @@ def _convert_cuda_version(
 def _convert_env(
     env: str | list[str] | dict[str, str] | None,
 ) -> dict[str, str] | dict[str, str | None] | None:
-    if env is None:
+    if not env:
         return None
+
+    logger.warning(
+        "Deprecated build option: 'docker.env' is used, please use 'envs' instead."
+    )
 
     if isinstance(env, str):
         env_path = os.path.expanduser(os.path.expandvars(env))
@@ -207,7 +208,9 @@ class DockerOptions:
                     f'Distro "{self.distro}" does not support CUDA. Distros that support CUDA are: {supports_cuda}.'
                 )
 
-    def with_defaults(self) -> DockerOptions:
+    def with_defaults(
+        self, default_envs: list[dict[str, str]] | None = None
+    ) -> DockerOptions:
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -217,6 +220,9 @@ class DockerOptions:
             if self.python_version is None:
                 python_version = f"{version_info.major}.{version_info.minor}"
                 defaults["python_version"] = python_version
+
+        if self.env is None and default_envs:
+            defaults["env"] = {e["name"]: e.get("value", "") for e in default_envs}
 
         return attr.evolve(self, **defaults)
 
@@ -791,8 +797,7 @@ class BentoBuildConfig:
             python: PythonOptions | dict[str, t.Any] | None = ...,
             conda: CondaOptions | dict[str, t.Any] | None = ...,
             models: list[ModelSpec | str | dict[str, t.Any]] | None = ...,
-        ) -> None:
-            ...
+        ) -> None: ...
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()
@@ -845,7 +850,7 @@ class BentoBuildConfig:
             {} if self.labels is None else self.labels,
             ["*"] if self.include is None else self.include,
             [] if self.exclude is None else self.exclude,
-            self.docker.with_defaults(),
+            self.docker.with_defaults(self.envs),
             self.python.with_defaults(),
             self.conda.with_defaults(),
             self.models,

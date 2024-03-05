@@ -134,7 +134,7 @@ def main(
 
     from _bentoml_impl.loader import import_service
     from bentoml._internal.container import BentoMLContainer
-    from bentoml._internal.context import component_context
+    from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
 
     from ..server.app import ServiceAppFactory
@@ -149,22 +149,22 @@ def main(
 
     if service_name and service_name != service.name:
         service = service.find_dependent(service_name)
-        component_context.component_type = "service"
+        server_context.component_type = "service"
     else:
-        component_context.component_type = "entry_service"
+        server_context.component_type = "entry_service"
 
     if worker_id is not None:
-        component_context.component_index = worker_id
+        server_context.worker_index = worker_id
 
     configure_server_logging()
     BentoMLContainer.development_mode.set(development_mode)
 
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-    component_context.component_name = service.name
+    server_context.service_name = service.name
 
     asgi_app = ServiceAppFactory(
-        service, is_main=component_context.component_type == "entry_service"
+        service, is_main=server_context.component_type == "entry_service"
     )()
 
     uvicorn_extra_options: dict[str, t.Any] = {}

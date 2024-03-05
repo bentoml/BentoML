@@ -22,7 +22,7 @@ from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_TIMEOUT
 from opentelemetry.sdk.resources import Resource
 
 from ...exceptions import MissingDependencyException
-from ..context import component_context
+from ..context import server_context
 from ..context import trace_context
 from .base import MonitorBase
 
@@ -143,10 +143,10 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         # configure resource if user has not explicitly configured it.
         system_otel_resources: Resource = OTELResourceDetector().detect()
         _resource = {}
-        if component_context.bento_name:
-            _resource[SERVICE_NAME] = f"{component_context.bento_name}:{self.name}"
-        if component_context.bento_version:
-            _resource[SERVICE_INSTANCE_ID] = component_context.bento_version
+        if server_context.bento_name:
+            _resource[SERVICE_NAME] = f"{server_context.bento_name}:{self.name}"
+        if server_context.bento_version:
+            _resource[SERVICE_INSTANCE_ID] = server_context.bento_version
 
         bentoml_resource = Resource.create(_resource)
 
@@ -216,8 +216,8 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
                 self.COLUMN_TIME: datetime.datetime.now().timestamp(),
                 self.COLUMN_RID: str(trace_context.request_id),
                 self.COLUMN_META: {
-                    "bento_name": component_context.bento_name,
-                    "bento_version": component_context.bento_version,
+                    "bento_name": server_context.bento_name,
+                    "bento_version": server_context.bento_version,
                     "monitor_name": self.name,
                     "schema": self._schema,
                 },

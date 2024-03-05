@@ -15,7 +15,7 @@ from watchfiles import watch
 from ...bento.build_config import BentoBuildConfig
 from ...bento.build_config import BentoPathSpec
 from ...configuration import is_pypi_installed_bentoml
-from ...context import component_context
+from ...context import server_context
 from ...log import configure_server_logging
 from ...utils.pkg import source_locations
 
@@ -34,7 +34,7 @@ class ServiceReloaderPlugin(CircusPlugin):
         assert "working_dir" in config, "`working_dir` is required"
 
         configure_server_logging()
-        component_context.component_type = "observer"
+        server_context.component_type = "observer"
 
         super().__init__(*args, **config)
 

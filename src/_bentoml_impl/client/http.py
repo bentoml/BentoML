@@ -145,14 +145,14 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     stream_output=method.is_stream,
                 )
 
-            from bentoml._internal.context import component_context
+            from bentoml._internal.context import server_context
 
             const_headers = {
-                "Bento-Name": component_context.bento_name,
-                "Bento-Version": component_context.bento_version,
+                "Bento-Name": server_context.bento_name,
+                "Bento-Version": server_context.bento_version,
                 "Runner-Name": service.name,
-                "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-                "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+                "Yatai-Bento-Deployment-Name": server_context.yatai_bento_deployment_name,
+                "Yatai-Bento-Deployment-Namespace": server_context.yatai_bento_deployment_namespace,
             }
         self.__attrs_init__(  # type: ignore
             url=url,

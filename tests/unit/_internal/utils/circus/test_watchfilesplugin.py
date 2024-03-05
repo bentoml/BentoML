@@ -65,7 +65,7 @@ class TestServiceReloaderPlugin(TestCircus):
         from bentoml._internal.context import _ComponentContext
 
         # prevent error from double setting component name
-        _ComponentContext.component_name = None
+        _ComponentContext.service_name = None
 
     def mock_bentoml_server_logging(self) -> MagicMock:
         patcher = patch(

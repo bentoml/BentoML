@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 from ....exceptions import RemoteException
 from ....exceptions import ServiceUnavailable
 from ...configuration.containers import BentoMLContainer
-from ...context import component_context
+from ...context import server_context
 from ...utils import LazyLoader
 from ...utils.uri import uri_to_path
 from ..container import Payload
@@ -172,11 +172,11 @@ class RemoteRunnerClient(RunnerHandle):
         inp_batch_dim = __bentoml_method.config.batch_dim[0]
 
         headers = {
-            "Bento-Name": component_context.bento_name,
-            "Bento-Version": component_context.bento_version,
+            "Bento-Name": server_context.bento_name,
+            "Bento-Version": server_context.bento_version,
             "Runner-Name": self._runner.name,
-            "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-            "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+            "Yatai-Bento-Deployment-Name": server_context.yatai_bento_deployment_name,
+            "Yatai-Bento-Deployment-Namespace": server_context.yatai_bento_deployment_namespace,
         }
         total_args_num = len(args) + len(kwargs)
         headers["Args-Number"] = str(total_args_num)
@@ -287,11 +287,11 @@ class RemoteRunnerClient(RunnerHandle):
         inp_batch_dim = __bentoml_method.config.batch_dim[0]
 
         headers = {
-            "Bento-Name": component_context.bento_name,
-            "Bento-Version": component_context.bento_version,
+            "Bento-Name": server_context.bento_name,
+            "Bento-Version": server_context.bento_version,
             "Runner-Name": self._runner.name,
-            "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-            "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+            "Yatai-Bento-Deployment-Name": server_context.yatai_bento_deployment_name,
+            "Yatai-Bento-Deployment-Namespace": server_context.yatai_bento_deployment_namespace,
         }
         total_args_num = len(args) + len(kwargs)
         headers["Args-Number"] = str(total_args_num)
@@ -360,11 +360,11 @@ class RemoteRunnerClient(RunnerHandle):
             async with self._client.get(
                 f"{self._addr}/readyz",
                 headers={
-                    "Bento-Name": component_context.bento_name,
-                    "Bento-Version": component_context.bento_version,
+                    "Bento-Name": server_context.bento_name,
+                    "Bento-Version": server_context.bento_version,
                     "Runner-Name": self._runner.name,
-                    "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-                    "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+                    "Yatai-Bento-Deployment-Name": server_context.yatai_bento_deployment_name,
+                    "Yatai-Bento-Deployment-Namespace": server_context.yatai_bento_deployment_namespace,
                 },
                 timeout=aio_timeout,
             ) as resp:

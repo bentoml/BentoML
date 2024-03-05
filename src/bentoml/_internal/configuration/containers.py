@@ -16,7 +16,7 @@ from simple_di import Provide
 from simple_di import providers
 
 from ...exceptions import BentoMLConfigException
-from ..context import component_context
+from ..context import server_context
 from ..context import trace_context
 from ..resource import CpuResource
 from ..utils import split_with_quotes
@@ -362,14 +362,14 @@ class _BentoMLContainerClass:
         system_otel_resources: Resource = OTELResourceDetector().detect()
 
         _resource = {}
-        if component_context.component_name:
-            _resource[SERVICE_NAME] = component_context.component_name
-        if component_context.component_index:
-            _resource[SERVICE_INSTANCE_ID] = component_context.component_index
-        if component_context.bento_name:
-            _resource[SERVICE_NAMESPACE] = component_context.bento_name
-        if component_context.bento_version:
-            _resource[SERVICE_VERSION] = component_context.bento_version
+        if server_context.service_name:
+            _resource[SERVICE_NAME] = server_context.service_name
+        if server_context.worker_index:
+            _resource[SERVICE_INSTANCE_ID] = server_context.worker_index
+        if server_context.bento_name:
+            _resource[SERVICE_NAMESPACE] = server_context.bento_name
+        if server_context.bento_version:
+            _resource[SERVICE_VERSION] = server_context.bento_version
 
         bentoml_resource = Resource.create(_resource)
 

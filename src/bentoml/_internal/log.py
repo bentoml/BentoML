@@ -8,7 +8,7 @@ from logging import LogRecord
 
 from .configuration import get_debug_mode
 from .configuration import get_quiet_mode
-from .context import component_context
+from .context import server_context
 from .context import trace_context
 
 
@@ -127,12 +127,12 @@ def configure_logging():
 @lru_cache(maxsize=1)
 def _component_name():
     result = ""
-    if component_context.component_type:
-        result = component_context.component_type
-    if component_context.component_name:
-        result = f"{result}:{component_context.component_name}"
-    if component_context.component_index:
-        result = f"{result}:{component_context.component_index}"
+    if server_context.component_type:
+        result = server_context.component_type
+    if server_context.service_name:
+        result = f"{result}:{server_context.service_name}"
+    if server_context.worker_index:
+        result = f"{result}:{server_context.worker_index}"
     return result
 
 

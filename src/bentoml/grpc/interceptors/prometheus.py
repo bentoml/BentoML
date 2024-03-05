@@ -11,7 +11,7 @@ from simple_di import Provide
 from simple_di import inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.context import component_context
+from bentoml._internal.context import server_context
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.grpc.utils import import_grpc
 from bentoml.grpc.utils import to_http_status
@@ -116,8 +116,8 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                 # instrument request total count
                 self.metrics_request_total.labels(
                     api_name=api_name,
-                    service_name=component_context.bento_name,
-                    service_version=component_context.bento_version,
+                    service_name=server_context.bento_name,
+                    service_version=server_context.bento_version,
                     http_response_code=to_http_status(
                         t.cast(grpc.StatusCode, context.code())
                     ),
@@ -128,20 +128,18 @@ class PrometheusServerInterceptor(aio.ServerInterceptor):
                 total_time = max(default_timer() - START_TIME_VAR.get(), 0)
                 self.metrics_request_duration.labels(  # type: ignore (unfinished prometheus types)
                     api_name=api_name,
-                    service_name=component_context.bento_name,
-                    service_version=component_context.bento_version,
+                    service_name=server_context.bento_name,
+                    service_version=server_context.bento_version,
                     http_response_code=to_http_status(
                         t.cast(grpc.StatusCode, context.code())
                     ),
-                ).observe(
-                    total_time
-                )
+                ).observe(total_time)
                 START_TIME_VAR.set(0)
                 # instrument request in progress
                 with self.metrics_request_in_progress.labels(
                     api_name=api_name,
-                    service_version=component_context.bento_version,
-                    service_name=component_context.bento_name,
+                    service_version=server_context.bento_version,
+                    service_name=server_context.bento_name,
                 ).track_inprogress():
                     response = await behaviour(request, context)
                 return response

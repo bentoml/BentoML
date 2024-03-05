@@ -15,7 +15,7 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
 
 from ..configuration.containers import BentoMLContainer
-from ..context import component_context
+from ..context import server_context
 from ..context import trace_context
 from ..marshal.dispatcher import CorkDispatcher
 from ..runner.container import AutoContainer
@@ -227,8 +227,8 @@ class RunnerAppFactory(BaseAppFactory):
                         runner_name=self.runner.name,
                         worker_index=self.worker_index,
                         method_name=runner_method.name,
-                        service_version=component_context.bento_version,
-                        service_name=component_context.bento_name,
+                        service_version=server_context.bento_version,
+                        service_name=server_context.bento_name,
                     ).observe(len(params_list))
 
                     if not params_list:

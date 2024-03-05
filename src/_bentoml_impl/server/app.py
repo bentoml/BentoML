@@ -370,17 +370,17 @@ class ServiceAppFactory(BaseAppFactory):
         async def inner_infer(
             batches: t.Sequence[t.Any], **kwargs: t.Any
         ) -> t.Sequence[t.Any]:
-            from bentoml._internal.context import component_context
+            from bentoml._internal.context import server_context
             from bentoml._internal.runner.container import AutoContainer
             from bentoml._internal.utils import is_async_callable
 
             if self.enable_metrics:
                 self.adaptive_batch_size_hist.labels(  # type: ignore
                     runner_name=self.service.name,
-                    worker_index=component_context.component_index,
+                    worker_index=server_context.worker_index,
                     method_name=name,
-                    service_version=component_context.bento_version,
-                    service_name=component_context.bento_name,
+                    service_version=server_context.bento_version,
+                    service_name=server_context.bento_name,
                 ).observe(len(batches))
 
             if len(batches) == 0:

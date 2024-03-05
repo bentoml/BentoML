@@ -213,12 +213,25 @@ class _ServiceTraceContext:
         self._service_name_var.set(service_name)
 
 
+@attr.define
 class _ComponentContext:
     bento_name: str = ""
     bento_version: str = "not available"
-    component_type: str | None = None
-    component_name: str | None = None
-    component_index: int | None = None
+    service_type: str | None = None
+    service_name: str | None = None
+    worker_index: int | None = None
+
+    @property
+    def component_type(self) -> str | None:
+        return self.service_type
+
+    @property
+    def component_name(self) -> str | None:
+        return self.service_name
+
+    @property
+    def component_index(self) -> int | None:
+        return self.worker_index
 
     @property
     def yatai_bento_deployment_name(self) -> str:
@@ -230,4 +243,4 @@ class _ComponentContext:
 
 
 trace_context = _ServiceTraceContext()
-component_context = _ComponentContext()
+server_context = component_context = _ComponentContext()

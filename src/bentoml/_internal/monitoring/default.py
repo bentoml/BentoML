@@ -9,7 +9,7 @@ from pathlib import Path
 
 import yaml
 
-from ..context import component_context
+from ..context import server_context
 from ..context import trace_context
 from .base import MonitorBase
 
@@ -78,7 +78,7 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
             with open(self.log_config_file, "r", encoding="utf8") as f:
                 logging_config_yaml = f.read()
 
-        worker_id = component_context.component_index or 0
+        worker_id = server_context.worker_index or 0
         schema_path = Path(self.log_path).joinpath(
             self.name, "schema", f"schema.{worker_id}.log"
         )
@@ -118,8 +118,8 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         self.schema_logger.info(
             dict(
                 meta_data={
-                    "bento_name": component_context.bento_name,
-                    "bento_version": component_context.bento_version,
+                    "bento_name": server_context.bento_name,
+                    "bento_version": server_context.bento_version,
                 },
                 columns=list(columns_schema.values()),
             )

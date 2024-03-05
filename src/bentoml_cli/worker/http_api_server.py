@@ -121,11 +121,11 @@ def main(
 
     import bentoml
     from bentoml._internal.configuration.containers import BentoMLContainer
-    from bentoml._internal.context import component_context
+    from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
 
-    component_context.component_type = "api_server"
-    component_context.component_index = worker_id
+    server_context.service_type = "api_server"
+    server_context.worker_index = worker_id
     configure_server_logging()
 
     if worker_id is None:
@@ -146,13 +146,13 @@ def main(
     svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
-    component_context.component_name = svc.name
+    server_context.service_name = svc.name
     if svc.tag is None:
-        component_context.bento_name = svc.name
-        component_context.bento_version = "not available"
+        server_context.bento_name = svc.name
+        server_context.bento_version = "not available"
     else:
-        component_context.bento_name = svc.tag.name
-        component_context.bento_version = svc.tag.version or "not available"
+        server_context.bento_name = svc.tag.name
+        server_context.bento_version = svc.tag.version or "not available"
 
     uvicorn_options: dict[str, t.Any] = {
         "backlog": backlog,

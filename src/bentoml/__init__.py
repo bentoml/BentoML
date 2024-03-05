@@ -31,6 +31,7 @@ from pydantic import Field
 from ._internal.bento import Bento
 from ._internal.cloud import YataiClient
 from ._internal.context import ServiceContext as Context
+from ._internal.context import component_context
 from ._internal.models import Model
 from ._internal.monitoring import monitor
 from ._internal.resource import Resource
@@ -205,6 +206,7 @@ __all__ = [
     "batch",
     "metrics",
     "container",
+    "component_context",
     "client",
     "server",
     "io",

@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as t
 from enum import Enum
 from typing import TYPE_CHECKING
-from typing_extensions import Literal
 
 import attr
 
@@ -344,9 +343,9 @@ class DeploymentTargetConfig:
     deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(
         default=None
     )  # Specific
-    bento_deployment_overrides: t.Optional[ApiServerBentoDeploymentOverrides] = (
-        attr.field(default=None)
-    )
+    bento_deployment_overrides: t.Optional[
+        ApiServerBentoDeploymentOverrides
+    ] = attr.field(default=None)
     bento_request_overrides: t.Optional[BentoRequestOverrides] = attr.field(
         default=None
     )  # Put into image builder

@@ -8,7 +8,6 @@ import attr
 from bentoml._internal.cloud.schemas.modelschemas import BentoImageBuildStatus
 from bentoml._internal.cloud.schemas.modelschemas import BentoManifestSchema
 from bentoml._internal.cloud.schemas.modelschemas import BentoUploadStatus
-from bentoml._internal.cloud.schemas.modelschemas import DeploymentMode
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentRevisionStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetCanaryRule
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetConfig

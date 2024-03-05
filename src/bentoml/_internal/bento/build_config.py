@@ -17,18 +17,21 @@ import yaml
 from packaging.version import Version
 from pathspec import PathSpec
 
-from ...exceptions import BentoMLException, InvalidArgument
-from ..configuration import BENTOML_VERSION, clean_bentoml_version, get_quiet_mode
+from ...exceptions import BentoMLException
+from ...exceptions import InvalidArgument
+from ..configuration import BENTOML_VERSION
+from ..configuration import clean_bentoml_version
+from ..configuration import get_quiet_mode
 from ..container import generate_containerfile
-from ..container.frontend.dockerfile import (
-    ALLOWED_CUDA_VERSION_ARGS,
-    CONTAINER_SUPPORTED_DISTROS,
-    SUPPORTED_CUDA_VERSIONS,
-    DistroSpec,
-    get_supported_spec,
-)
+from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
+from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
+from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
+from ..container.frontend.dockerfile import DistroSpec
+from ..container.frontend.dockerfile import get_supported_spec
 from ..container.generate import BENTO_PATH
-from ..utils import bentoml_cattr, copy_file_to_fs_folder, resolve_user_filepath
+from ..utils import bentoml_cattr
+from ..utils import copy_file_to_fs_folder
+from ..utils import resolve_user_filepath
 from ..utils.dotenv import parse_dotenv
 from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
@@ -797,7 +800,8 @@ class BentoBuildConfig:
             python: PythonOptions | dict[str, t.Any] | None = ...,
             conda: CondaOptions | dict[str, t.Any] | None = ...,
             models: list[ModelSpec | str | dict[str, t.Any]] | None = ...,
-        ) -> None: ...
+        ) -> None:
+            ...
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()

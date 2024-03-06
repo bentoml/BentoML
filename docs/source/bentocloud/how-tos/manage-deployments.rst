@@ -74,21 +74,54 @@ To retrieve details about a specific Deployment:
 
   .. tab-item:: Python API
 
-    To get basic information of a Deployment:
+    To get detailed information about a Deployment:
 
     .. code-block:: python
 
       import bentoml
 
       dep = bentoml.deployment.get(name="deploy-1")
-      print(dep)
-      # Output: DeploymentInfo(name='deploy-1', admin_console='https://test.cloud.bentoml.com/deployments/deploy-1/access?cluster=aws-ca-1&namespace=test--aws-ca-1', created_at='2024-03-01 05:00:19', created_by='bentoml-user', cluster='aws-ca-1')
+      print(dep.to_dict())  # To output the details in JSON
+      print(dep.to_yaml())  # To output the details in YAML
 
-      print(dep.name)  # Print the name of the Deployment
-      print(dep.admin_console)  # Print the URL to the admin console for this Deployment
-      print(dep.created_at)  # Print the creation time
-      print(dep.created_by)  # Print the user who created the Deployment
-      print(dep.cluster)  # Print the cluster where the Deployment is hosted
+    Expected output in JSON:
+
+    .. code-block:: json
+
+       {
+        "name": "deploy-1",
+        "bento": "summarization:5vsa3ywqsoefgl7l",
+        "cluster": "aws-ca-1",
+        "endpoint_url": "https://deploy-1-test--aws-ca-1.mt1.bentoml.ai",
+        "admin_console": "https://test.cloud.bentoml.com/deployments/deploy-1/access?cluster=aws-ca-1&namespace=test--aws-ca-1",
+        "created_at": "2024-03-01 05:00:19",
+        "created_by": "bentoml-user",
+        "config": {
+          "envs": [],
+          "services": {
+            "Summarization": {
+              "instance_type": "cpu.2",
+              "scaling": {
+                "min_replicas": 1,
+                "max_replicas": 1
+              },
+              "envs": [],
+              "deployment_strategy": "Recreate",
+              "extras": {},
+              "config_overrides": {
+                "traffic": {
+                  "timeout": 10
+                }
+              }
+            }
+          }
+        },
+        "status": {
+          "status": "running",
+          "created_at": "2024-03-01 05:00:19",
+          "updated_at": "2024-03-06 06:22:53"
+         }
+       }
 
     To check the Deployment's status:
 
@@ -101,11 +134,22 @@ To retrieve details about a specific Deployment:
       print(status.to_dict()) # Show the current status of the Deployment
       # Output: {'status': 'running', 'created_at': '2024-03-01 05:00:19', 'updated_at': '2024-03-06 03:55:17'}
 
-    .. note::
+    ``get_status()`` has a parameter ``refetch`` to automatically refresh the status, which defaults to ``True``. You can use ``dep.get_status(refetch=False)`` to disable it.
 
-       ``get_status()`` has a parameter ``refetch`` to automatically refresh the status, which defaults to ``True``. You can use ``dep.get_status(refetch=False)`` to disable it.
+    To get the Deployment's Bento:
 
-    To retrieve details:
+    .. code-block:: python
+
+      import bentoml
+
+      dep = bentoml.deployment.get(name="deploy-1")
+      bento = dep.get_bento()
+      print(bento) # Show the Bento of the Deployment
+      # Output: summarization:5vsa3ywqsoefgl7l
+
+    ``get_bento()`` has a parameter ``refetch`` to automatically refresh the Bento information, which defaults to ``True``. You can use ``dep.get_bento(refetch=False)`` to disable it.
+
+    To retrieve configuration details:
 
     .. code-block:: python
 
@@ -118,7 +162,9 @@ To retrieve details about a specific Deployment:
 
     .. note::
 
-       ``get_config()`` has a parameter ``refetch`` to automatically refresh the configuration data, which defaults to ``True``. You can use ``dep.get_config(refetch=False)`` to disable it.
+       The output is the same as the ``config`` value in the example output above.
+
+    ``get_config()`` has a parameter ``refetch`` to automatically refresh the configuration data, which defaults to ``True``. You can use ``dep.get_config(refetch=False)`` to disable it.
 
 Update
 ------

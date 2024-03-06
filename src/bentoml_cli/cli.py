@@ -7,7 +7,7 @@ import psutil
 
 
 def create_bentoml_cli() -> click.Command:
-    from bentoml._internal.context import component_context
+    from bentoml._internal.context import server_context
     from bentoml_cli.bentos import bento_command
     from bentoml_cli.cloud import cloud_command
     from bentoml_cli.containerize import containerize_command
@@ -19,7 +19,7 @@ def create_bentoml_cli() -> click.Command:
     from bentoml_cli.start import start_command
     from bentoml_cli.utils import BentoMLCommandGroup
 
-    component_context.component_type = "cli"
+    server_context.service_type = "cli"
 
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
 

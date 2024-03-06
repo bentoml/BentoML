@@ -31,6 +31,7 @@ from pydantic import Field
 from ._internal.bento import Bento
 from ._internal.cloud import YataiClient
 from ._internal.context import ServiceContext as Context
+from ._internal.context import server_context
 from ._internal.models import Model
 from ._internal.monitoring import monitor
 from ._internal.resource import Resource
@@ -107,6 +108,8 @@ if TYPE_CHECKING:
     from _bentoml_impl.client import SyncHTTPClient
     from _bentoml_sdk import api
     from _bentoml_sdk import depends
+    from _bentoml_sdk import get_current_service
+    from _bentoml_sdk import mount_asgi_app
     from _bentoml_sdk import on_shutdown
     from _bentoml_sdk import runner_service
     from _bentoml_sdk import service
@@ -171,7 +174,15 @@ else:
     validators = _LazyLoader("bentoml.validators", globals(), "bentoml.validators")
     del _LazyLoader
 
-    _NEW_SDK_ATTRS = ["service", "runner_service", "api", "depends", "on_shutdown"]
+    _NEW_SDK_ATTRS = [
+        "service",
+        "runner_service",
+        "api",
+        "depends",
+        "on_shutdown",
+        "mount_asgi_app",
+        "get_current_service",
+    ]
     _NEW_CLIENTS = ["SyncHTTPClient", "AsyncHTTPClient"]
 
     if (ver := pkg_version_info("pydantic")) >= (2,):
@@ -205,6 +216,7 @@ __all__ = [
     "batch",
     "metrics",
     "container",
+    "server_context",
     "client",
     "server",
     "io",
@@ -276,6 +288,8 @@ __all__ = [
     "depends",
     "validators",
     "Field",
+    "get_current_service",
+    "mount_asgi_app",
     # new implementation
     "SyncHTTPClient",
     "AsyncHTTPClient",

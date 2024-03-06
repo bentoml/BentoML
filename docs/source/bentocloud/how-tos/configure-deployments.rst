@@ -94,6 +94,10 @@ Environment variables
 
 You can set environment variables for your deployment to configure the behavior of your BentoML Service, such as API keys, configuration flags, or other runtime settings. During deploying, they will be injected into the image builder container and the Bento Deployment container.
 
+.. important::
+
+    You DO NOT need to set the same environment variables again if you have already specified them in ``bentofile.yaml`` using the ``envs`` field. See :doc:`/guides/build-options` for details.
+
 .. tab-set::
 
     .. tab-item:: BentoML CLI

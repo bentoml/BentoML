@@ -6,6 +6,8 @@ CLIP (Contrastive Language-Image Pre-training) is a machine learning model devel
 
 This document demonstrates how to build a CLIP application using BentoML, powered by the `clip-vit-base-patch32 <https://huggingface.co/openai/clip-vit-base-patch32>`_ model.
 
+All the source code in this tutorial is available in the `BentoClip GitHub repository <https://github.com/bentoml/BentoClip>`_.
+
 Prerequisites
 -------------
 

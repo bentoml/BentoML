@@ -17,6 +17,7 @@ from starlette.middleware import Middleware
 from starlette.staticfiles import StaticFiles
 
 from _bentoml_sdk import Service
+from _bentoml_sdk.api import set_current_service
 from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.server.base_app import BaseAppFactory
@@ -35,6 +36,7 @@ if t.TYPE_CHECKING:
     from bentoml._internal import external_typing as ext
     from bentoml._internal.context import ServiceContext
     from bentoml._internal.types import LifecycleHook
+    from bentoml.metrics import Histogram
 
 R = t.TypeVar("R")
 
@@ -102,17 +104,19 @@ class ServiceAppFactory(BaseAppFactory):
                 ),
             )
 
+    @functools.cached_property
+    def adaptive_batch_size_hist(self) -> Histogram:
         metrics_client = BentoMLContainer.metrics_client.get()
         max_max_batch_size = max(
             (
                 method.max_batch_size
-                for method in service.apis.values()
+                for method in self.service.apis.values()
                 if method.batchable
             ),
             default=100,
         )
 
-        self.adaptive_batch_size_hist = metrics_client.Histogram(
+        return metrics_client.Histogram(
             namespace="bentoml_service",
             name="adaptive_batch_size",
             documentation="Service adaptive batch size",
@@ -279,12 +283,13 @@ class ServiceAppFactory(BaseAppFactory):
 
     def create_instance(self) -> None:
         self._service_instance = self.service()
+        set_current_service(self._service_instance)
 
     async def destroy_instance(self) -> None:
         from _bentoml_sdk.service.dependency import cleanup
 
         # Call on_shutdown hook with optional ctx or context parameter
-        for name, member in vars(self.service).items():
+        for name, member in vars(self.service.inner).items():
             if callable(member) and getattr(member, "__bentoml_shutdown_hook__", False):
                 result = getattr(
                     self._service_instance, name
@@ -294,6 +299,7 @@ class ServiceAppFactory(BaseAppFactory):
 
         await cleanup()
         self._service_instance = None
+        set_current_service(None)
 
     async def readyz(self, _: Request) -> Response:
         from starlette.exceptions import HTTPException
@@ -364,17 +370,18 @@ class ServiceAppFactory(BaseAppFactory):
         async def inner_infer(
             batches: t.Sequence[t.Any], **kwargs: t.Any
         ) -> t.Sequence[t.Any]:
-            from bentoml._internal.context import component_context
+            from bentoml._internal.context import server_context
             from bentoml._internal.runner.container import AutoContainer
             from bentoml._internal.utils import is_async_callable
 
-            self.adaptive_batch_size_hist.labels(  # type: ignore
-                runner_name=self.service.name,
-                worker_index=component_context.component_index,
-                method_name=name,
-                service_version=component_context.bento_version,
-                service_name=component_context.bento_name,
-            ).observe(len(batches))
+            if self.enable_metrics:
+                self.adaptive_batch_size_hist.labels(  # type: ignore
+                    runner_name=self.service.name,
+                    worker_index=server_context.worker_index,
+                    method_name=name,
+                    service_version=server_context.bento_version,
+                    service_name=server_context.bento_name,
+                ).observe(len(batches))
 
             if len(batches) == 0:
                 return []

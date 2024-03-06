@@ -6,6 +6,8 @@ Speech recognition involves the translation of spoken words into text. It is wid
 
 This document demonstrates how to create a speech recognition application with BentoML. It is inspired by the `WhisperX <https://github.com/m-bain/whisperX>`_ project.
 
+All the source code in this tutorial is available in the `BentoWhisperX GitHub repository <https://github.com/bentoml/BentoWhisperX>`_.
+
 Prerequisites
 -------------
 

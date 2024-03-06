@@ -98,8 +98,12 @@ def _convert_cuda_version(
 def _convert_env(
     env: str | list[str] | dict[str, str] | None,
 ) -> dict[str, str] | dict[str, str | None] | None:
-    if env is None:
+    if not env:
         return None
+
+    logger.warning(
+        "Deprecated build option: 'docker.env' is used, please use 'envs' instead."
+    )
 
     if isinstance(env, str):
         env_path = os.path.expanduser(os.path.expandvars(env))
@@ -207,7 +211,9 @@ class DockerOptions:
                     f'Distro "{self.distro}" does not support CUDA. Distros that support CUDA are: {supports_cuda}.'
                 )
 
-    def with_defaults(self) -> DockerOptions:
+    def with_defaults(
+        self, default_envs: list[dict[str, str]] | None = None
+    ) -> DockerOptions:
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -217,6 +223,9 @@ class DockerOptions:
             if self.python_version is None:
                 python_version = f"{version_info.major}.{version_info.minor}"
                 defaults["python_version"] = python_version
+
+        if self.env is None and default_envs:
+            defaults["env"] = {e["name"]: e.get("value", "") for e in default_envs}
 
         return attr.evolve(self, **defaults)
 
@@ -845,7 +854,7 @@ class BentoBuildConfig:
             {} if self.labels is None else self.labels,
             ["*"] if self.include is None else self.include,
             [] if self.exclude is None else self.exclude,
-            self.docker.with_defaults(),
+            self.docker.with_defaults(self.envs),
             self.python.with_defaults(),
             self.conda.with_defaults(),
             self.models,

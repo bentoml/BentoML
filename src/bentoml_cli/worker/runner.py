@@ -89,12 +89,12 @@ def main(
     import psutil
 
     from bentoml import load
-    from bentoml._internal.context import component_context
+    from bentoml._internal.context import server_context
 
     # setup context
-    component_context.component_type = "runner"
-    component_context.component_name = runner_name
-    component_context.component_index = worker_id
+    server_context.service_type = "runner"
+    server_context.service_name = runner_name
+    server_context.worker_index = worker_id
 
     from bentoml._internal.log import configure_server_logging
 
@@ -117,11 +117,11 @@ def main(
 
     # setup context
     if service.tag is None:
-        component_context.bento_name = service.name
-        component_context.bento_version = "not available"
+        server_context.bento_name = service.name
+        server_context.bento_version = "not available"
     else:
-        component_context.bento_name = service.tag.name
-        component_context.bento_version = service.tag.version or "not available"
+        server_context.bento_name = service.tag.name
+        server_context.bento_version = service.tag.version or "not available"
 
     for runner in service.runners:
         if runner.name == runner_name:

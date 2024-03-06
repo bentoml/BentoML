@@ -510,7 +510,7 @@ class BentoCloudClient(CloudClient):
                         transmission_strategy = "presigned_url"
 
             if transmission_strategy == "proxy":
-                response = yatai_rest_client.v1.download_bento(
+                response_ctx = yatai_rest_client.v1.download_bento(
                     bento_repository_name=name,
                     version=version,
                 )
@@ -524,8 +524,10 @@ class BentoCloudClient(CloudClient):
                         )
                         presigned_download_url = remote_bento.presigned_download_url
 
+                response_ctx = httpx.stream("GET", presigned_download_url)
+
             with NamedTemporaryFile() as tar_file:
-                with httpx.stream("GET", presigned_download_url) as response:
+                with response_ctx as response:
                     if response.status_code != 200:
                         raise BentoMLException(
                             f'Failed to download bento "{_tag}": {response.text}'
@@ -575,7 +577,6 @@ class BentoCloudClient(CloudClient):
                             f'[bold green]Successfully pulled bento "{_tag}"'
                         )
                         return bento
-        raise BentoMLException(f'Failed to pull bento "{_tag}"')
 
     def push_model(
         self,
@@ -969,7 +970,7 @@ class BentoCloudClient(CloudClient):
                     transmission_strategy = "presigned_url"
 
         if transmission_strategy == "proxy":
-            response = yatai_rest_client.v1.download_model(
+            response_ctx = yatai_rest_client.v1.download_model(
                 model_repository_name=name, version=version
             )
         else:
@@ -982,8 +983,10 @@ class BentoCloudClient(CloudClient):
                     )
                     presigned_download_url = remote_model.presigned_download_url
 
+            response_ctx = httpx.stream("GET", presigned_download_url)
+
         with NamedTemporaryFile() as tar_file:
-            with httpx.stream("GET", presigned_download_url) as response:
+            with response_ctx as response:
                 if response.status_code != 200:
                     raise BentoMLException(
                         f'Failed to download model "{_tag}": {response.text}'

@@ -82,7 +82,7 @@ class Metadata(t.Mapping[str, str], ABC):
 class ServiceContext:
     def __init__(self) -> None:
         self._request_var: contextvars.ContextVar[
-            ServiceContext.RequestContext
+            starlette.requests.Request
         ] = contextvars.ContextVar("request")
         self._response_var: contextvars.ContextVar[
             ServiceContext.ResponseContext
@@ -94,9 +94,8 @@ class ServiceContext:
     def in_request(
         self, request: starlette.requests.Request
     ) -> t.Generator[ServiceContext, None, None]:
-        request_token = self._request_var.set(
-            ServiceContext.RequestContext.from_http(request)
-        )
+        request.metadata = request.headers  # type: ignore[attr-defined]
+        request_token = self._request_var.set(request)
         response_token = self._response_var.set(ServiceContext.ResponseContext())
         with tempfile.TemporaryDirectory(prefix="bentoml-request-") as temp_dir:
             dir_token = request_directory.set(temp_dir)
@@ -108,7 +107,7 @@ class ServiceContext:
                 request_directory.reset(dir_token)
 
     @property
-    def request(self) -> RequestContext:
+    def request(self) -> starlette.requests.Request:
         return self._request_var.get()
 
     @property
@@ -118,26 +117,6 @@ class ServiceContext:
     @property
     def temp_dir(self) -> str:
         return request_directory.get()
-
-    @attr.define
-    class RequestContext:
-        metadata: Metadata
-        headers: Metadata
-        query_params: Metadata
-
-        def __init__(self, metadata: Metadata, query_params: Metadata):
-            self.metadata = metadata
-            self.headers = metadata
-            self.query_params = query_params
-
-        @classmethod
-        def from_http(
-            cls, request: starlette.requests.Request
-        ) -> ServiceContext.RequestContext:
-            return cls(
-                request.headers,  # type: ignore # coercing Starlette types to Metadata
-                request.query_params,  # type: ignore
-            )
 
     @attr.define
     class ResponseContext:
@@ -234,12 +213,25 @@ class _ServiceTraceContext:
         self._service_name_var.set(service_name)
 
 
+@attr.define
 class _ComponentContext:
     bento_name: str = ""
     bento_version: str = "not available"
-    component_type: str | None = None
-    component_name: str | None = None
-    component_index: int | None = None
+    service_type: str | None = None
+    service_name: str | None = None
+    worker_index: int | None = None
+
+    @property
+    def component_type(self) -> str | None:
+        return self.service_type
+
+    @property
+    def component_name(self) -> str | None:
+        return self.service_name
+
+    @property
+    def component_index(self) -> int | None:
+        return self.worker_index
 
     @property
     def yatai_bento_deployment_name(self) -> str:
@@ -251,4 +243,4 @@ class _ComponentContext:
 
 
 trace_context = _ServiceTraceContext()
-component_context = _ComponentContext()
+server_context = component_context = _ComponentContext()

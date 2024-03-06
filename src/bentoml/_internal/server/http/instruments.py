@@ -9,7 +9,7 @@ from simple_di import Provide
 from simple_di import inject
 
 from ...configuration.containers import BentoMLContainer
-from ...context import component_context
+from ...context import server_context
 
 if TYPE_CHECKING:
     from ... import external_typing as ext
@@ -109,8 +109,8 @@ class HTTPTrafficMetricsMiddleware:
                     # instrument request total count
                     self.metrics_request_total.labels(
                         endpoint=endpoint,
-                        service_name=component_context.bento_name,
-                        service_version=component_context.bento_version,
+                        service_name=server_context.bento_name,
+                        service_version=server_context.bento_version,
                         http_response_code=STATUS_VAR.get(),
                     ).inc()
 
@@ -118,8 +118,8 @@ class HTTPTrafficMetricsMiddleware:
                     total_time = max(default_timer() - START_TIME_VAR.get(), 0)
                     self.metrics_request_duration.labels(  # type: ignore
                         endpoint=endpoint,
-                        service_name=component_context.bento_name,
-                        service_version=component_context.bento_version,
+                        service_name=server_context.bento_name,
+                        service_version=server_context.bento_version,
                         http_response_code=STATUS_VAR.get(),
                     ).observe(total_time)
 
@@ -129,8 +129,8 @@ class HTTPTrafficMetricsMiddleware:
 
         with self.metrics_request_in_progress.labels(
             endpoint=endpoint,
-            service_name=component_context.bento_name,
-            service_version=component_context.bento_version,
+            service_name=server_context.bento_name,
+            service_version=server_context.bento_version,
         ).track_inprogress():
             await self.app(scope, receive, wrapped_send)
             return
@@ -223,20 +223,20 @@ class RunnerTrafficMetricsMiddleware:
                     # instrument request total count
                     self.metrics_request_total.labels(
                         endpoint=endpoint,
-                        service_name=component_context.bento_name,
-                        service_version=component_context.bento_version,
+                        service_name=server_context.bento_name,
+                        service_version=server_context.bento_version,
                         http_response_code=STATUS_VAR.get(),
-                        runner_name=component_context.component_name,
+                        runner_name=server_context.service_name,
                     ).inc()
 
                     # instrument request duration
                     total_time = max(default_timer() - START_TIME_VAR.get(), 0)
                     self.metrics_request_duration.labels(  # type: ignore
                         endpoint=endpoint,
-                        service_name=component_context.bento_name,
-                        service_version=component_context.bento_version,
+                        service_name=server_context.bento_name,
+                        service_version=server_context.bento_version,
                         http_response_code=STATUS_VAR.get(),
-                        runner_name=component_context.component_name,
+                        runner_name=server_context.service_name,
                     ).observe(total_time)
 
                     START_TIME_VAR.set(0)
@@ -245,9 +245,9 @@ class RunnerTrafficMetricsMiddleware:
 
         with self.metrics_request_in_progress.labels(
             endpoint=endpoint,
-            service_name=component_context.bento_name,
-            service_version=component_context.bento_version,
-            runner_name=component_context.component_name,
+            service_name=server_context.bento_name,
+            service_version=server_context.bento_version,
+            runner_name=server_context.service_name,
         ).track_inprogress():
             await self.app(scope, receive, wrapped_send)
             return

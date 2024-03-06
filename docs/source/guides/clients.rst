@@ -17,8 +17,6 @@ Depending on your requirements, you can create a BentoML client object using the
 Create a client
 ---------------
 
-When creating a client, you need to specify the server address. In addition, to enhance resource management and reduces the risk of connection leaks, we recommend you create the client within a context manager.
-
 Suppose your BentoML Service has an endpoint named ``summarize`` that takes a string ``text`` as input and returns a summarized version of the text as below.
 
 .. code-block:: python
@@ -33,60 +31,67 @@ Suppose your BentoML Service has an endpoint named ``summarize`` that takes a st
             result = self.pipeline(text)
             return result[0]['summary_text']
 
-After you start the ``Summarization`` Service, you can create the following clients as needed to interact with it.
+After you start the ``Summarization`` Service, you can create the following clients by specifying the server address.
 
 .. tab-set::
 
     .. tab-item:: Synchronous
 
-        To directly instantiate a synchronous client:
-
         .. code-block:: python
 
+            import bentoml
+
             client = bentoml.SyncHTTPClient('http://localhost:3000')
-            response = client.summarize(text="Your long text to summarize")
-            print(response)
+            summarized_text: str = client.summarize(text="Your long text to summarize")
+            print(summarized_text)
 
             # Close the client to release resources
             client.close()
 
-        To create a synchronous client with a context manager:
-
-        .. code-block:: python
-
-            with bentoml.SyncHTTPClient('http://localhost:3000') as client:
-                response = client.summarize(text="Your long text to summarize")
-                print(response)
-
     .. tab-item:: Asynchronous
-
-        To directly instantiate an asynchronous client:
 
         .. code-block:: python
 
             import asyncio
+            import bentoml
 
             async def async_client_operation():
                 client = bentoml.AsyncHTTPClient('http://localhost:3000')
-                response = await client.summarize(text="Your long text to summarize")
-                print(response)
+                summarized_text: str = await client.summarize(text="Your long text to summarize")
+                print(summarized_text)
 
                 # Close the client to release resources
                 await client.close()
 
             asyncio.run(async_client_operation())
 
-        To create an asynchronous client with a context manager:
-
-        .. code-block:: python
-
-            async with bentoml.AsyncHTTPClient('http://localhost:3000') as client:
-                response = await client.summarize(text="Your long text to summarize")
-                print(response)
-
 In the above synchronous and asynchronous clients, requests are sent to the ``summarize`` endpoint of the Service hosted at ``http://localhost:3000``. The BentoML client implementation supports methods corresponding to the Service APIs and they should be called with the same arguments (``text`` in this example) as defined in the Service. These methods are dynamically created based on the Service's endpoints, providing a direct mapping to the Service’s functionality.
 
 In this example, the ``summarize`` method on the client is directly mapped to the ``summarize`` method in the ``Summarization`` Service. The data passed to the ``summarize`` method (``text="Your long text to summarize"``) conforms to the expected input of the Service.
+
+To enhance resource management and reduce the risk of connection leaks, we recommend you create a client within a context manager as below.
+
+.. tab-set::
+
+    .. tab-item:: Synchronous
+
+        .. code-block:: python
+
+            import bentoml
+
+            with bentoml.SyncHTTPClient('http://localhost:3000') as client:
+                summarized_text: str = client.summarize(text="Your long text to summarize")
+                print(summarized_text)
+
+    .. tab-item:: Asynchronous
+
+        .. code-block:: python
+
+            import bentoml
+
+            async with bentoml.AsyncHTTPClient('http://localhost:3000') as client:
+                summarized_text: str = await client.summarize(text="Your long text to summarize")
+                print(summarized_text)
 
 .. note::
 
@@ -95,16 +100,20 @@ In this example, the ``summarize`` method on the client is directly mapped to th
 Check Service readiness
 -----------------------
 
-Before making calls to specific Service methods, you can use the ``is_ready`` method of the client to check if the Service is ready to handle requests. This ensures that your API calls are made only when the Service is up and running. For example:
+Before making calls to specific Service methods, you can use the ``is_ready`` method of the client to check if the Service is ready to handle requests. This ensures that your API calls are made only when the Service is up and running.
 
 .. code-block:: python
 
-    with bentoml.SyncHTTPClient('http://localhost:3000') as client:
-        if client.is_ready():
-            response = client.summarize(text="Your long text to summarize.")
-            print(response)
-        else:
-            print("Service is not ready")
+    import bentoml
+
+    client = bentoml.SyncHTTPClient('http://localhost:3000')
+    if client.is_ready():
+        summarized_text: str = client.summarize(text="Your long text to summarize.")
+        print("Summarized text:", summarized_text)
+    else:
+        print("Service is not ready")
+
+    client.close()
 
 Input and output
 ----------------
@@ -116,43 +125,175 @@ JSON
 
 You can easily handle JSONable data input and JSON output with BentoML's HTTP clients, which are designed to seamlessly serialize and deserialize JSON data.
 
-When you send data that can be serialized to JSON (for example, dictionaries, lists, strings, and numbers), you simply pass it as arguments to the client method corresponding to your Service API.
+For input, when you send data that can be serialized to JSON (for example, dictionaries, lists, strings, and numbers), you simply pass it as arguments to the client method corresponding to your Service API.
+
+The following code comes from the Service ``SentenceEmbedding`` of the :doc:`/use-cases/embeddings/sentence-transformer` use case, which accepts JSONable input (lists in this case).
 
 .. code-block:: python
 
-    with bentoml.SyncHTTPClient('http://localhost:3000') as client:
-        data_to_send = {'name': 'Alice', 'age': 30}
-        response = client.predict(data=data_to_send)
-        print(response)
+    import typing as t
 
-When the BentoML Service returns JSON data, the client automatically deserializes this JSON into a Python data structure (like a dictionary or a list, depending on the JSON structure).
+    @bentoml.service
+    class SentenceEmbedding:
+        ...
+
+        @bentoml.api
+        def encode(self, sentences: t.List[str] = SAMPLE_SENTENCES) -> np.ndarray:
+        ...
+
+To create a client to handle JSONable input for Services like ``SentenceEmbedding``:
+
+.. code-block:: python
+
+    import bentoml
+    import typing as t
+
+    client = bentoml.SyncHTTPClient("http://localhost:3000")
+
+    # Specify the sentences for the request
+    sentences_list: t.List[str] = [
+        "The sun dips below the horizon, painting the sky orange.",
+        "A gentle breeze whispers through the autumn leaves.",
+        "The moon casts a silver glow on the tranquil lake.",
+        # Add more if necessary
+    ]
+
+    # Make the request using the Service endpoint
+    result = client.encode(sentences=sentences_list)
+
+    # Print the result
+    print(f"Encoded sentences result: {result}")
+
+    client.close()
+
+For output, when a BentoML Service returns JSON data, the client automatically deserializes this JSON into a Python data structure (like a dictionary or a list, depending on the JSON structure).
+
+The following code comes from the Service ``WhisperX`` of the :doc:`/use-cases/audio/whisperx` use case, which returns JSONable output (dictionaries in this case).
+
+.. code-block:: python
+
+    import typing as t
+    from pathlib import Path
+
+    @bentoml.service
+    class WhisperX:
+        ...
+
+        @bentoml.api
+        def transcribe(self, audio_file: Path) -> t.Dict:
+        ...
+
+To create a client to handle JSONable output for Services like ``WhisperX``:
+
+.. code-block:: python
+
+    import bentoml
+    import typing as t
+
+    client = bentoml.SyncHTTPClient('http://localhost:3000')
+
+    # Set the audio URL
+    audio_url = 'https://example.org/female.wav'
+
+    # The response is expected to be a dictionary
+    response: t.Dict = client.transcribe(audio_file=audio_url)
+
+    print(response)
+
+.. tip::
+
+    You can print specific values of keys from the JSON response. For example, the Service ``WhisperX`` returns the following and you can output the text of the first segment:
+
+    .. code-block:: python
+
+        response = {
+            "segments": [
+                {
+                    "start": 0.009,
+                    "end": 2.813,
+                    "text": " The Hispaniola was rolling scuppers under in the ocean swell.",
+                    "words": [
+                        {"word": "The", "start": 0.009, "end": 0.069, "score": 0.0},
+                        {"word": "Hispaniola", "start": 0.109, "end": 0.81, "score": 0.917},
+                        # Other words omitted...
+                    ],
+                },
+                # Other segments omitted...
+            ],
+            "word_segments": [
+                {"word": "The", "start": 0.009, "end": 0.069, "score": 0.0},
+                {"word": "Hispaniola", "start": 0.109, "end": 0.81, "score": 0.917},
+                # Other words omitted...
+            ],
+        }
+
+        # Print the text of the first segment
+        # Add the following line to your client code
+        print("Segment text:", response["segments"][0]["text"])
 
 Files
 ^^^^^
 
 BentoML clients support a variety of file types, such as images and generic binary files.
 
-For file inputs, you pass a ``Path`` object pointing to the file. The client handles the file reading and sends it as part of the request.
+For file input, you pass a ``Path`` object pointing to the file. The client handles the file reading and sends it as part of the request. For file output, the client provides the output as a ``Path`` object. You can use this ``Path`` object to access, read, or process the file.
+
+The following code snippet comes from the Service ``ControlNet`` of the :doc:`/use-cases/diffusion-models/controlnet` use case, which accepts and returns an image file.
 
 .. code-block:: python
 
+    import PIL
+    from PIL.Image import Image as PIL_Image
+
+    @bentoml.service
+    class ControlNet:
+        ...
+
+        @bentoml.api
+        async def generate(self, image: PIL_Image, params: Params) -> PIL_Image:
+        ...
+
+To create a client to handle file input and output for Services like ``ControlNet``:
+
+.. code-block:: python
+
+    import bentoml
     from pathlib import Path
 
-    with bentoml.SyncHTTPClient('http://localhost:3000') as client:
-        file_path = Path('/path/to/your/file')
-        response = client.generate(img=file_path)
-        print(response)
+    client = bentoml.SyncHTTPClient("http://localhost:3000")
+
+    # Specify the image path and other parameters for the request
+    image_path: Path = Path("/path/to/example-image.png")
+    params = {
+        "prompt": "A young man walking in a park, wearing jeans.",
+        "negative_prompt": "ugly, disfigured, ill-structure, low resolution",
+        "controlnet_conditioning_scale": 0.5,
+        "num_inference_steps": 25
+    }
+
+    # Make the request using the Service endpoint
+    result_path: Path = client.generate(
+        image=image_path,
+        params=params,
+    )
+
+    print(f"Generated file saved at: {result_path}")
+
+    client.close()
 
 You can also use URLs as the input as below:
 
 .. code-block:: python
 
-    with bentoml.SyncHTTPClient('http://localhost:3000') as client:
-        image_url = 'https://example.org/1.png'
-        response = client.generate(img=image_url)
-        print(response)
+    import bentoml
+    from pathlib import Path
 
-If the endpoint returns a file, the client provides the output as a ``Path`` object. You can use this ``Path`` object to access, read, or process the file. For example, if the file is an image, you can save it to a path; if it's a CSV, you can read its contents.
+    client = bentoml.SyncHTTPClient("http://localhost:3000")
+
+    # Specify the image URL and other parameters for the request
+    image_url = 'https://example.org/1.png'
+    # The remaining code is the same
+    ...
 
 Streaming
 ^^^^^^^^^
@@ -167,10 +308,14 @@ You can add streaming logic to a BentoML client, which is especially useful when
 
         .. code-block:: python
 
-            with bentoml.SyncHTTPClient("http://localhost:3000") as client:
-                for data_chunk in client.stream_data():
-                    # Process each chunk of data as it arrives
-                    process_data(data_chunk)
+            import bentoml
+
+            client = bentoml.SyncHTTPClient("http://localhost:3000")
+            for data_chunk in client.stream_data():
+                # Process each chunk of data as it arrives
+                process_data(data_chunk)
+
+            client.close()
 
             def process_data(data_chunk):
                 # Add processing logic
@@ -183,10 +328,14 @@ You can add streaming logic to a BentoML client, which is especially useful when
 
         .. code-block:: python
 
-            async with bentoml.AsyncHTTPClient("http://localhost:3000") as client:
-                async for data_chunk in client.stream_data():
-                    # Process each chunk of data as it arrives
-                    await process_data_async(data_chunk)
+            import bentoml
+
+            client = bentoml.AsyncHTTPClient("http://localhost:3000")
+            async for data_chunk in client.stream_data():
+                # Process each chunk of data as it arrives
+                await process_data_async(data_chunk)
+
+            await client.close()
 
             async def process_data_async(data_chunk):
                 # Add processing logic
@@ -203,6 +352,71 @@ To authorize a client, you pass the token as an argument during initialization.
 
 .. code-block:: python
 
-    with bentoml.SyncHTTPClient('http://localhost:3000', token='your_token_here') as client:
-        response = client.summarize(text="Your long text to summarize.")
-        print(response)
+    import bentoml
+
+    client = bentoml.SyncHTTPClient('http://localhost:3000', token='your_token_here')
+    summarized_text: str = client.summarize(text="Your long text to summarize")
+    print(summarized_text)
+
+    client.close()
+
+Error handling
+--------------
+
+Handling errors, checking for error code and messages, and implementing retries are important for reliable client-server communication. Here are some strategies and examples on error handling and retries.
+
+Basics
+^^^^^^
+
+When interacting with a BentoML Service, errors like network issues, Service downtime, or invalid input, may occur. Proper error handling allows your client to respond gracefully to these issues.
+
+You can use ``try`` and ``except`` blocks to catch exceptions that may occur during the request:
+
+.. code-block:: python
+
+    import bentoml
+    from bentoml.exceptions import BentoMLException
+
+    client = bentoml.SyncHTTPClient('http://localhost:3000')
+
+    try:
+        summarized_text: str = client.summarize(text="Your long text to summarize.")
+        print(summarized_text)
+    except BentoMLException as e:
+        print(f"An error occurred: {e}")
+    finally:
+        client.close()
+
+When catching exceptions, it's useful to examine specific error code or messages to determine the cause of the failure. This can guide the retry logic or inform you about the issue more precisely.
+
+Implement retry logic
+^^^^^^^^^^^^^^^^^^^^^
+
+Retrying failed requests can help overcome temporary issues like network disruptions or service unavailability. When implementing retries, consider exponential backoff to avoid overwhelming the server or the network.
+
+Here's a simple example of implementing retries with exponential backoff.
+
+.. code-block:: python
+
+    import time
+    from bentoml.exceptions import BentoMLException
+    import bentoml
+
+    def retry_request(client, max_retries=3, backoff_factor=2):
+        for attempt in range(max_retries):
+            try:
+                summarized_text: str = client.summarize(text="Your long text to summarize.")
+                return summarized_text
+            except BentoMLException as e:
+                print(f"Attempt {attempt+1}: An error occurred: {e}")
+                time.sleep(backoff_factor ** attempt)
+        print("Max retries reached. Giving up.")
+
+    client = bentoml.SyncHTTPClient('http://localhost:3000')
+
+    try:
+        response = retry_request(client)
+        if response:
+            print(response)
+    finally:
+        client.close()

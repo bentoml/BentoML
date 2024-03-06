@@ -6,6 +6,8 @@ Text-to-speech machine learning technology can convert written text into spoken 
 
 This document demonstrates how to build a text-to-speech application using BentoML, powered by the model `XTTS <https://huggingface.co/coqui/XTTS-v2>`_.
 
+All the source code in this tutorial is available in the `BentoXTTS GitHub repository <https://github.com/bentoml/BentoXTTS>`_.
+
 Prerequisites
 -------------
 

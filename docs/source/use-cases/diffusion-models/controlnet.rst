@@ -6,6 +6,8 @@ ControlNet is a neural network architecture designed to enhance the precision an
 
 This document demonstrates how to use ControlNet and Stable Diffusion XL to create an image generation application for specific user requirements.
 
+All the source code in this tutorial is available in the `BentoControlNet GitHub repository <https://github.com/bentoml/BentoControlNet>`_.
+
 Prerequisites
 -------------
 

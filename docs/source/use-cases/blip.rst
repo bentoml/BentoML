@@ -4,6 +4,8 @@ BLIP: Image captioning
 
 BLIP (Bootstrapping Language Image Pre-training) is a technique to improve the way AI models understand and process the relationship between images and textual descriptions. It has a variety of use cases in the AI field, particularly in applications that require a nuanced understanding of both visual and textual data, such as image captioning, visual question answering (VQA), and image-text matching. This document demonstrates how to build an image captioning application on top of a BLIP model with BentoML.
 
+All the source code in this tutorial is available in the `BentoBlip GitHub repository <https://github.com/bentoml/BentoBlip>`_.
+
 Prerequisites
 -------------
 

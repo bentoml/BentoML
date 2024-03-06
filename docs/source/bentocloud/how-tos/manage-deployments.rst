@@ -30,6 +30,8 @@ To retrieve details about a specific Deployment:
 
   .. tab-item:: BentoML CLI
 
+    Choose one of the following commands as needed.
+
     .. code-block:: bash
 
       bentoml deployment get <deployment-name>
@@ -72,14 +74,21 @@ To retrieve details about a specific Deployment:
 
   .. tab-item:: Python API
 
+    To get basic information of a Deployment:
+
     .. code-block:: python
 
       import bentoml
 
       dep = bentoml.deployment.get(name="deploy-1")
       print(dep)
-
       # Output: DeploymentInfo(name='deploy-1', admin_console='https://test.cloud.bentoml.com/deployments/deploy-1/access?cluster=aws-ca-1&namespace=test--aws-ca-1', created_at='2024-03-01 05:00:19', created_by='bentoml-user', cluster='aws-ca-1')
+
+      print(dep.name)  # Print the name of the Deployment
+      print(dep.admin_console)  # Print the URL to the admin console for this Deployment
+      print(dep.created_at)  # Print the creation time
+      print(dep.created_by)  # Print the user who created the Deployment
+      print(dep.cluster)  # Print the cluster where the Deployment is hosted
 
     To check the Deployment's status:
 
@@ -89,9 +98,27 @@ To retrieve details about a specific Deployment:
 
       dep = bentoml.deployment.get(name="deploy-1")
       status = dep.get_status()
-      print(status)
+      print(status.to_dict()) # Show the current status of the Deployment
+      # Output: {'status': 'running', 'created_at': '2024-03-01 05:00:19', 'updated_at': '2024-03-06 03:55:17'}
 
-      # Output: DeploymentState(status='running', created_at='2024-03-01 05:00:19', updated_at='2024-03-01 05:22:08')
+    .. note::
+
+       ``get_status()`` has a parameter ``refetch`` to automatically refresh the status, which defaults to ``True``. You can use ``dep.get_status(refetch=False)`` to disable it.
+
+    To retrieve details:
+
+    .. code-block:: python
+
+      import bentoml
+
+      dep = bentoml.deployment.get(name="deploy-1")
+      config = dep.get_config()
+      print(config.to_dict()) # Show the Deployment's configuration details in JSON
+      print(config.to_yaml()) # Show the Deployment's configuration details in YAML
+
+    .. note::
+
+       ``get_config()`` has a parameter ``refetch`` to automatically refresh the configuration data, which defaults to ``True``. You can use ``dep.get_config(refetch=False)`` to disable it.
 
 Update
 ------

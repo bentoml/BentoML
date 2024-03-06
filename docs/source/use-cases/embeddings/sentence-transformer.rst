@@ -6,6 +6,8 @@ In natural language processing (NLP), embeddings enable computers to understand 
 
 This document demonstrates how to build a sentence embedding application Sentence Transformer using BentoML. It uses the `all-MiniLM-L6-v2 <https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2>`_ model, a specific kind of language model developed for generating embeddings. Due to its smaller size, all-MiniLM-L6-v2 is efficient in terms of computational resources and speed, making it an ideal choice for embedding generation in environments with limited resources.
 
+All the source code in this tutorial is available in the `BentoSentenceTransformers GitHub repository <https://github.com/bentoml/BentoSentenceTransformers>`_.
+
 Prerequisites
 -------------
 

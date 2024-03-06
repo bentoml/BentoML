@@ -6,6 +6,8 @@ vLLM inference
 
 This document demonstrates how to build an LLM application using BentoML and vLLM.
 
+All the source code in this tutorial is available in the `BentoVLLM GitHub repository <https://github.com/bentoml/BentoVLLM>`_.
+
 Prerequisites
 -------------
 

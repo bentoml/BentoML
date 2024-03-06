@@ -6,6 +6,8 @@ Stable Diffusion XL with LCM LoRAs
 
 This document explains how to deploy `SDXL <https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0>`_ with `LCM LoRA weights <https://huggingface.co/latent-consistency/lcm-lora-sdxl>`_ using BentoML.
 
+All the source code in this tutorial is available in the `BentoLCM GitHub repository <https://github.com/bentoml/BentoLCM>`_.
+
 Prerequisites
 -------------
 

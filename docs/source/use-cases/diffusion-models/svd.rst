@@ -6,6 +6,8 @@ Stable Video Diffusion
 
 This document demonstrates how to create a video generation server with SVD and BentoML.
 
+All the source code in this tutorial is available in the `BentoSVD GitHub repository <https://github.com/bentoml/BentoSVD>`_.
+
 Prerequisites
 -------------
 

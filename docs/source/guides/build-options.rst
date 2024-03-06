@@ -251,6 +251,27 @@ The following table provides a full list of available configurations for the ``p
 | wheels            | List of paths to wheels to include in the Bento                                    |
 +-------------------+------------------------------------------------------------------------------------+
 
+``envs``
+^^^^^^^^
+
+Environment variables are important for managing configuration and secrets in a secure and flexible manner. They allow you to configure BentoML Services without hard-coding sensitive information, such as API keys, database credentials, or configurable parameters that might change between different environments.
+
+You set environment variables under the ``envs`` key in ``bentofile.yaml``. Each environment variable is defined with ``name`` and ``value`` keys. For example:
+
+.. code-block:: yaml
+
+    envs:
+      - name: "VAR_NAME"
+        value: "value"
+      - name: "API_KEY"
+        value: "your_api_key_here"
+
+The specified environment variables will be injected into the Bento container.
+
+.. note::
+
+    If you deploy your BentoML Service on :doc:`BentoCloud </bentocloud/get-started>`, you can either set environment variables by specifying ``envs`` in ``benfofile.yaml`` or using the ``--env`` flag when running ``bentoml deploy``. See :ref:`bentocloud/how-tos/configure-deployments:environment variables` for details.
+
 ``conda``
 ^^^^^^^^^
 
@@ -314,9 +335,6 @@ The following ``docker`` field contains some basic Docker configurations:
           - libblas-dev
           - liblapack-dev
           - gfortran
-        env:
-          FOO: value1
-          BAR: value2
 
 .. note::
 
@@ -440,8 +458,6 @@ The following table provides a full list of available configurations for the ``d
 | python_version      | The Python version on the Docker image [``3.7``, ``3.8``, ``3.9``, ``3.10``]. It defaults to the Python version in the build environment.      |
 +---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | system_packages     | The system packages that will be installed in the container.                                                                                   |
-+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| env                 | The environment variables in the generated Dockerfile.                                                                                         |
 +---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | setup_script        | A Python or Shell script that will be executed during the Docker build process.                                                                |
 +---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+

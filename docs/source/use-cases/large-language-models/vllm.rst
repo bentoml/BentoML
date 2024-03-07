@@ -34,7 +34,7 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
 
 .. note::
 
-    This example Service uses the model ``meta-llama/Llama-2-7b-chat-hf``. You can choose any other model supported by vLLM based on your needs. If you are using the same model in the project, you need to obtain access to it on the `Meta website <https://ai.meta.com/resources/models-and-libraries/llama-downloads/>`_ and `Hugging Face <https://huggingface.co/meta-llama/Llama-2-7b-chat-hf>`_.
+    This example Service uses the model ``mistralai/Mistral-7B-Instruct-v0.2``. You can choose any other model supported by vLLM based on your needs.
 
 .. code-block:: python
     :caption: `service.py`
@@ -46,6 +46,8 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
     from annotated_types import Ge, Le
     from typing_extensions import Annotated
 
+    from bentovllm_openai.utils import openai_endpoints
+
 
     MAX_TOKENS = 1024
     PROMPT_TEMPLATE = """<s>[INST] <<SYS>>
@@ -56,7 +58,9 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
 
     {user_prompt} [/INST] """
 
+    MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.2"
 
+    @openai_endpoints(served_model=MODEL_ID)
     @bentoml.service(
         traffic={
             "timeout": 300,
@@ -69,9 +73,8 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
     class VLLM:
         def __init__(self) -> None:
             from vllm import AsyncEngineArgs, AsyncLLMEngine
-
             ENGINE_ARGS = AsyncEngineArgs(
-                model='meta-llama/Llama-2-7b-chat-hf',
+                model=MODEL_ID,
                 max_model_len=MAX_TOKENS
             )
 
@@ -110,6 +113,10 @@ This script mainly contains the following two parts:
     - The prompt is formatted using ``PROMPT_TEMPLATE`` to enforce the model's output to adhere to certain guidelines.
     - ``SamplingParams`` is configured with the ``max_tokens`` parameter, and a request is added to the model's queue using ``self.engine.add_request``. Each request is uniquely identified using a uuid.
     - The method returns an asynchronous generator to stream the model's output as it becomes available.
+
+.. note::
+
+    This Service uses the ``@openai_endpoints`` decorator to set up OpenAI-compatible endpoints. This means your client can interact with the backend Service (in this case, the VLLM class) as if they were communicating directly with OpenAI's API. This `utility <https://github.com/bentoml/BentoVLLM/tree/main/bentovllm_openai>`_ does not affect your BentoML Service code, and you can use it for other LLMs as well.
 
 Run ``bentoml serve`` in your project directory to start the Service.
 
@@ -161,7 +168,7 @@ Deploy to BentoCloud
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $30 in free credits.
 
-First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project (remember to set your `Hugging Face token <https://huggingface.co/settings/tokens>`_):
+First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project:
 
 .. code-block:: yaml
     :caption: `bentofile.yaml`
@@ -172,11 +179,9 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
       stage: demo
     include:
     - "*.py"
+    - "bentovllm_openai/*.py"
     python:
       requirements_txt: "./requirements.txt"
-    envs:
-      - name: HF_TOKEN
-        value: Null
 
 :ref:`Create an API token with Developer Operations Access to log in to BentoCloud <bentocloud/how-tos/manage-access-token:create an api token>`, then run the following command to deploy the project.
 

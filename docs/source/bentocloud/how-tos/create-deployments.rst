@@ -19,21 +19,33 @@ You can deploy a new project through either the command line interface (CLI) or 
 
     .. tab-item:: BentoML CLI
 
-        In your project directory where the ``bentofile.yaml`` file is stored, run the following command:
+        In your project directory where the ``bentofile.yaml`` file is stored, run the following command and use the ``-n`` flag to optionally set a name.
 
         .. code-block:: bash
 
-           bentoml deploy .
+           bentoml deploy . -n <deployment_name>
+
+        You can see the Deployment status in your terminal after running the command.
 
     .. tab-item:: Python API
 
-        Specify the path to your BentoML project using the ``bento`` parameter.
+        Specify the path to your BentoML project using the ``bento`` parameter and optionally set a name.
 
         .. code-block:: python
 
             import bentoml
 
-            bentoml.deployment.create(bento = "./path_to_your_project")
+            bentoml.deployment.create(bento = "./path_to_your_project", name = "my_deployment_name")
+
+        You can use the block function ``wait_until_ready`` to periodically check the status of a Deployment until it becomes ready or until a specified timeout is reached.
+
+        .. code-block:: python
+
+            import bentoml
+
+            dep = bentoml.deployment.create(bento="./path_to_your_project", name = "my_deployment_name")
+
+            dep.wait_until_ready(timeout=3600)
 
 BentoML does the following automatically during deployment:
 
@@ -58,17 +70,31 @@ If you already have a Bento, either available locally or on BentoCloud, you can 
 
     .. tab-item:: BentoML CLI
 
+        In your project directory where the ``bentofile.yaml`` file is stored, run the following command and use the ``-n`` flag to optionally set a name.
+
         .. code-block:: bash
 
             bentoml deploy bento_name:version -n <deployment_name>
 
     .. tab-item:: Python API
 
+        Specify the Bento tag using the ``bento`` parameter and optionally set a name.
+
         .. code-block:: python
 
             import bentoml
 
             bentoml.deployment.create(bento = "bento_name:version", name = "my_deployment_name")
+
+        You can use the block function ``wait_until_ready`` to periodically check the status of a Deployment until it becomes ready or until a specified timeout is reached.
+
+        .. code-block:: python
+
+            import bentoml
+
+            dep = bentoml.deployment.create(bento = "bento_name:version", name = "my_deployment_name")
+
+            dep.wait_until_ready(timeout=3600)
 
     .. tab-item:: BentoCloud console
 

@@ -93,6 +93,10 @@ To enhance resource management and reduce the risk of connection leaks, we recom
                 summarized_text: str = await client.summarize(text="Your long text to summarize")
                 print(summarized_text)
 
+.. note::
+
+    If you deploy your Service to :doc:`BentoCloud </bentocloud/get-started>`, you can get the client of a Deployment by using ``get_client()`` or ``get_async_client()``. For more information, see :ref:`bentocloud/how-tos/call-deployment-endpoints:interact with the Deployment`.
+
 Check Service readiness
 -----------------------
 

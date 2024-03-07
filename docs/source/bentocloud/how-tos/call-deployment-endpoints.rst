@@ -67,6 +67,18 @@ Choose one of the following ways to access your Deployment with the endpoint URL
             result: str = client.summarize(text="Your long text to summarize")
             print(result)
 
+        You can retrieve the information of a client by using ``get_client`` or ``get_async_client`` (set the ``token`` parameter if you enable :ref:`bentocloud/how-tos/configure-deployments:authorization`), then use it to make HTTP requests to your Deployment.
+
+        .. code-block:: python
+
+            import bentoml
+
+            dep = bentoml.deployment.get(name="deploy-1")
+            # Get synchronous HTTP client for Deployment:
+            client = dep.get_client()
+            # Get asynchronous HTTP client for Deployment:
+            async_client = dep.get_async_client()
+
     .. tab-item:: Swagger UI
 
         Access the Deployment endpoint URL directly. The Swagger UI dynamically generates documentation and a user interface based on OpenAPI Specifications.

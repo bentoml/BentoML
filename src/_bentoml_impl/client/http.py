@@ -237,10 +237,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         if timeout is None:
             timeout = self.timeout
         with self._make_client(
-            httpx.Client,
-            self.url,
-            self.default_headers,
-            timeout,
+            httpx.Client, self.url, self.default_headers, timeout
         ) as client:
             start = time.monotonic()
             while time.monotonic() - start < timeout:

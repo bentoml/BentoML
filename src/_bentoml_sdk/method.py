@@ -11,7 +11,6 @@ from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
 from bentoml._internal.service.openapi.specification import MediaType
 from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.utils import dict_filter_none
-from bentoml.exceptions import BentoMLException
 
 from .io_models import IODescriptor
 from .io_models import IOMixin
@@ -229,18 +228,3 @@ def _flatten_model_schema(model: type[IODescriptor]) -> dict[str, t.Any]:
         return schema
     defs = schema.pop("$defs", {})
     return _flatten_field(schema, defs)
-
-
-_current_service: t.Any | None = None
-
-
-def get_current_service() -> t.Any:
-    """Return the current active service instance."""
-    if _current_service is None:
-        raise BentoMLException("service isn't instantiated yet")
-    return _current_service
-
-
-def set_current_service(service: t.Any) -> None:
-    global _current_service
-    _current_service = service

@@ -7,7 +7,7 @@ import logging
 import typing as t
 
 from _bentoml_sdk import Service
-from _bentoml_sdk.api import APIMethod
+from _bentoml_sdk.method import APIMethod
 from bentoml.exceptions import BentoMLException
 
 from .http import AbstractClient
@@ -18,7 +18,7 @@ if t.TYPE_CHECKING:
     from _bentoml_sdk.service import ServiceConfig
 
 T = t.TypeVar("T")
-logger = logging.getLogger("bentoml.io")
+logger = logging.getLogger("bentoml.impl")
 
 
 class RemoteProxy(AbstractClient, t.Generic[T]):

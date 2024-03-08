@@ -13,7 +13,7 @@ del add_custom_preparers
 # ruff: noqa
 
 from .decorators import api, on_shutdown, mount_asgi_app
-from .api import get_current_service
+from .service import get_current_service
 from .service import depends
 from .service import Service
 from .service import service

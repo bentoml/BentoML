@@ -4,8 +4,8 @@ import typing as t
 
 from bentoml._internal.types import LazyType
 
-from .api import APIMethod
 from .io_models import IODescriptor
+from .method import APIMethod
 
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 R = t.TypeVar("R")

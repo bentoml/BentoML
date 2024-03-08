@@ -22,7 +22,7 @@ from bentoml._internal.models import Model
 from bentoml._internal.utils import dict_filter_none
 from bentoml.exceptions import BentoMLException
 
-from ..api import APIMethod
+from ..method import APIMethod
 from .config import ServiceConfig as Config
 
 logger = logging.getLogger("bentoml.io")

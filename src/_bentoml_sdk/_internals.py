@@ -16,7 +16,7 @@ def make_fastapi_class_views(cls: type[Any], app: FastAPI) -> None:
     from fastapi.routing import APIRouter
     from fastapi.routing import APIWebSocketRoute
 
-    from .api import get_current_service
+    from .service import get_current_service
 
     class_methods = [meth for meth in vars(cls).values() if callable(meth)]
     api_routes = [

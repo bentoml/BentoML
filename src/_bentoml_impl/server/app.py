@@ -17,7 +17,7 @@ from starlette.middleware import Middleware
 from starlette.staticfiles import StaticFiles
 
 from _bentoml_sdk import Service
-from _bentoml_sdk.api import set_current_service
+from _bentoml_sdk.service import set_current_service
 from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.server.base_app import BaseAppFactory

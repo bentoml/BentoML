@@ -22,6 +22,8 @@ class SyncHTTPClient(_SyncHTTPClient):
         url (str): URL of the BentoML service.
         token (str, optional): Authentication token. Defaults to None.
         timeout (float, optional): Timeout for the client. Defaults to 30.
+        server_ready_timeout (float, optional): Timeout for the server to be ready.
+            If not provided, it will use the same value as `timeout`.
 
     Example::
 
@@ -34,9 +36,16 @@ class SyncHTTPClient(_SyncHTTPClient):
     """
 
     def __init__(
-        self, url: str, *, token: str | None = None, timeout: float = 30
+        self,
+        url: str,
+        *,
+        token: str | None = None,
+        timeout: float = 30,
+        server_ready_timeout: float | None = None,
     ) -> None:
-        super().__init__(url, token=token, timeout=timeout)
+        super().__init__(
+            url, token=token, timeout=timeout, server_ready_timeout=server_ready_timeout
+        )
 
 
 class AsyncHTTPClient(_AsyncHTTPClient):
@@ -46,6 +55,8 @@ class AsyncHTTPClient(_AsyncHTTPClient):
         url (str): URL of the BentoML service.
         token (str, optional): Authentication token. Defaults to None.
         timeout (float, optional): Timeout for the client. Defaults to 30.
+        server_ready_timeout (float, optional): Timeout for the server to be ready.
+            If not provided, it will use the same value as `timeout`.
 
     Example::
 
@@ -63,6 +74,13 @@ class AsyncHTTPClient(_AsyncHTTPClient):
     """
 
     def __init__(
-        self, url: str, *, token: str | None = None, timeout: float = 30
+        self,
+        url: str,
+        *,
+        token: str | None = None,
+        timeout: float = 30,
+        server_ready_timeout: float | None = None,
     ) -> None:
-        super().__init__(url, token=token, timeout=timeout)
+        super().__init__(
+            url, token=token, timeout=timeout, server_ready_timeout=server_ready_timeout
+        )

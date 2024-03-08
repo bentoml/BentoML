@@ -1,12 +1,11 @@
+import asyncio
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 import pytest
 
 import bentoml
-from bentoml.client import SyncClient
 
 port = 35678
 
@@ -25,19 +24,11 @@ async def test_async_serve_and_prediction(examples: Path) -> None:
             "--port",
             str(port),
         ],
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        text=True,
     )
 
-    try:
-        time.sleep(5)
-        if server.poll() is not None:
-            raise RuntimeError("Server failed to start")
-        SyncClient.wait_until_server_ready(
-            host="http://127.0.0.1", port=port, timeout=60
-        )
+    await asyncio.sleep(5)
 
+    try:
         with bentoml.SyncHTTPClient(f"http://127.0.0.1:{port}") as client:
             result = client.classify([[4.9, 3.0, 1.4, 0.2]])
         assert result == [0]
@@ -69,15 +60,9 @@ def test_build_and_prediction(examples: Path) -> None:
             "--port",
             f"{port}",
         ],
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        text=True,
     )
 
     try:
-        SyncClient.wait_until_server_ready(
-            host="http://127.0.0.1", port=port, timeout=60
-        )
         with bentoml.SyncHTTPClient(f"http://127.0.0.1:{port}") as client:
             result = client.classify([[4.9, 3.0, 1.4, 0.2]])
         assert result == [0]

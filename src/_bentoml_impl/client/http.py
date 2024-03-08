@@ -5,8 +5,10 @@ import io
 import json
 import logging
 import mimetypes
+import os
 import pathlib
 import tempfile
+import time
 import typing as t
 from abc import abstractmethod
 from functools import cached_property
@@ -28,7 +30,6 @@ from .base import AbstractClient
 from .base import ClientEndpoint
 
 if t.TYPE_CHECKING:
-    from httpx._client import BaseClient
     from httpx._types import RequestFiles
 
     from _bentoml_sdk import Service
@@ -37,7 +38,8 @@ if t.TYPE_CHECKING:
 
     T = t.TypeVar("T", bound="HTTPClient[t.Any]")
 
-C = t.TypeVar("C", bound="BaseClient")
+C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
+AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
 logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
 
@@ -48,41 +50,41 @@ def is_http_url(url: str) -> bool:
 
 @attr.define
 class HTTPClient(AbstractClient, t.Generic[C]):
-    client_cls: t.ClassVar[type[BaseClient]]
+    client_cls: t.ClassVar[type[httpx.Client] | type[httpx.AsyncClient]]
 
     url: str
     endpoints: dict[str, ClientEndpoint] = attr.field(factory=dict)
     media_type: str = "application/json"
     timeout: float = 30
-    token: str | None = None
-    const_headers: dict[str, str] = attr.field(factory=dict)
+    default_headers: dict[str, str] = attr.field(factory=dict)
 
     _opened_files: list[io.BufferedReader] = attr.field(init=False, factory=list)
     _temp_dir: tempfile.TemporaryDirectory[str] = attr.field(init=False)
 
-    @cached_property
-    def client(self) -> C:
-        parsed = urlparse(self.url)
+    @staticmethod
+    def _make_client(
+        client_cls: type[AnyClient],
+        url: str,
+        headers: t.Mapping[str, str],
+        timeout: float,
+    ) -> AnyClient:
+        parsed = urlparse(url)
         transport = None
-        url = self.url
         if parsed.scheme == "file":
-            uds = uri_to_path(self.url)
-            if self.client_cls is httpx.Client:
+            uds = uri_to_path(url)
+            if client_cls is httpx.Client:
                 transport = httpx.HTTPTransport(uds=uds)
             else:
                 transport = httpx.AsyncHTTPTransport(uds=uds)
             url = "http://127.0.0.1:3000"
         elif parsed.scheme == "tcp":
             url = f"http://{parsed.netloc}"
-        return t.cast(
-            "C",
-            self.client_cls(
-                base_url=url,
-                transport=transport,  # type: ignore
-                headers=self.default_headers,
-                timeout=self.timeout,
-                follow_redirects=True,
-            ),
+        return client_cls(
+            base_url=url,
+            transport=transport,  # type: ignore
+            headers=headers,
+            timeout=timeout,
+            follow_redirects=True,
         )
 
     @_temp_dir.default  # type: ignore
@@ -95,6 +97,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         *,
         media_type: str = "application/json",
         service: Service[t.Any] | None = None,
+        server_ready_timeout: float | None = None,
         token: str | None = None,
         timeout: float = 30,
     ) -> None:
@@ -110,29 +113,13 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             The client created with this method can only return primitive types without a model.
         """
         routes: dict[str, ClientEndpoint] = {}
-        if service is None:
-            schema_url = urljoin(url, "/schema.json")
+        default_headers = {"User-Agent": f"BentoML HTTP Client/{__version__}"}
+        if token is None:
+            token = os.getenv("BENTO_CLOUD_API_KEY")
+        if token:
+            default_headers["Authorization"] = f"Bearer {token}"
 
-            headers = {"User-Agent": f"BentoML HTTP Client/{__version__}"}
-            if token:
-                headers["Authorization"] = f"Bearer {token}"
-
-            with httpx.Client(headers=headers) as client:
-                resp = client.get(schema_url)
-
-                if resp.is_error:
-                    raise RuntimeError(f"Failed to fetch schema from {schema_url}")
-                for route in resp.json()["routes"]:
-                    routes[route["name"]] = ClientEndpoint(
-                        name=route["name"],
-                        route=route["route"],
-                        input=route["input"],
-                        output=route["output"],
-                        doc=route.get("doc"),
-                        stream_output=route["output"].get("is_stream", False),
-                    )
-            const_headers = {}
-        else:
+        if service is not None:
             for name, method in service.apis.items():
                 routes[name] = ClientEndpoint(
                     name=name,
@@ -147,37 +134,56 @@ class HTTPClient(AbstractClient, t.Generic[C]):
 
             from bentoml._internal.context import server_context
 
-            const_headers = {
-                "Bento-Name": server_context.bento_name,
-                "Bento-Version": server_context.bento_version,
-                "Runner-Name": service.name,
-                "Yatai-Bento-Deployment-Name": server_context.yatai_bento_deployment_name,
-                "Yatai-Bento-Deployment-Namespace": server_context.yatai_bento_deployment_namespace,
-            }
+            default_headers.update(
+                {
+                    "Bento-Name": server_context.bento_name,
+                    "Bento-Version": server_context.bento_version,
+                    "Runner-Name": service.name,
+                    "Yatai-Bento-Deployment-Name": server_context.yatai_bento_deployment_name,
+                    "Yatai-Bento-Deployment-Namespace": server_context.yatai_bento_deployment_namespace,
+                }
+            )
         self.__attrs_init__(  # type: ignore
             url=url,
             endpoints=routes,
             media_type=media_type,
-            token=token,
-            const_headers=const_headers,
+            default_headers=default_headers,
             timeout=timeout,
         )
+        if server_ready_timeout is None or server_ready_timeout > 0:
+            self.wait_until_server_ready(server_ready_timeout)
+        if service is None:
+            schema_url = urljoin(url, "/schema.json")
+
+            with self._make_client(
+                httpx.Client, url, default_headers, timeout
+            ) as client:
+                resp = client.get("/schema.json")
+
+                if resp.is_error:
+                    raise BentoMLException(f"Failed to fetch schema from {schema_url}")
+                for route in resp.json()["routes"]:
+                    self.endpoints[route["name"]] = ClientEndpoint(
+                        name=route["name"],
+                        route=route["route"],
+                        input=route["input"],
+                        output=route["output"],
+                        doc=route.get("doc"),
+                        stream_output=route["output"].get("is_stream", False),
+                    )
         super().__init__()
+
+    @cached_property
+    def client(self) -> C:
+        return self._make_client(
+            self.client_cls, self.url, self.default_headers, self.timeout
+        )
 
     @cached_property
     def serde(self) -> Serde:
         from ..serde import ALL_SERDE
 
         return ALL_SERDE[self.media_type]()
-
-    @cached_property
-    def default_headers(self) -> dict[str, str]:
-        headers = self.const_headers.copy()
-        headers["User-Agent"] = f"BentoML HTTP Client/{__version__}"
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
-
-        return headers
 
     def _build_request(
         self,
@@ -230,6 +236,22 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             content=self.serde.serialize(kwargs, endpoint.input),
             headers=headers,
         )
+
+    def wait_until_server_ready(self, timeout: int | None = None) -> None:
+        if timeout is None:
+            timeout = self.timeout
+        with self._make_client(
+            httpx.Client, self.url, self.default_headers, timeout
+        ) as client:
+            start = time.monotonic()
+            while time.monotonic() - start < timeout:
+                try:
+                    resp = client.get("/readyz")
+                    if resp.status_code == 200:
+                        return
+                except (httpx.TimeoutException, httpx.ConnectError):
+                    pass
+        raise BentoMLException(f"Server is not ready after {timeout} seconds")
 
     def _build_multipart(
         self,
@@ -372,6 +394,9 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
         for data in resp:
             yield data
 
+    def request(self, method: str, url: str, **kwargs: t.Any) -> httpx.Response:
+        return self.client.request(method, url, **kwargs)
+
     def _call(
         self,
         endpoint: ClientEndpoint,
@@ -470,6 +495,9 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
 
     async def __aexit__(self, *args: t.Any) -> None:
         return await self.close()
+
+    async def request(self, method: str, url: str, **kwargs: t.Any) -> httpx.Response:
+        return await self.client.request(method, url, **kwargs)
 
     async def _call(
         self,

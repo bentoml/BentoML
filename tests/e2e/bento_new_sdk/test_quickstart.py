@@ -32,6 +32,7 @@ async def test_async_serve_and_prediction(examples: Path) -> None:
         with bentoml.SyncHTTPClient(
             f"http://127.0.0.1:{port}", server_ready_timeout=0
         ) as client:
+            assert client.is_ready()
             result = client.classify([[4.9, 3.0, 1.4, 0.2]])
         assert result == [0]
 

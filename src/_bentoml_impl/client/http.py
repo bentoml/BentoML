@@ -5,6 +5,7 @@ import io
 import json
 import logging
 import mimetypes
+import os
 import pathlib
 import tempfile
 import time
@@ -113,6 +114,8 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         """
         routes: dict[str, ClientEndpoint] = {}
         default_headers = {"User-Agent": f"BentoML HTTP Client/{__version__}"}
+        if token is None:
+            token = os.getenv("BENTO_CLOUD_API_KEY")
         if token:
             default_headers["Authorization"] = f"Bearer {token}"
 

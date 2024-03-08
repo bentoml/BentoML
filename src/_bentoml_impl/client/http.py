@@ -150,7 +150,8 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             default_headers=default_headers,
             timeout=timeout,
         )
-        self.wait_until_server_ready(server_ready_timeout)
+        if server_ready_timeout is None or server_ready_timeout > 0:
+            self.wait_until_server_ready(server_ready_timeout)
         if service is None:
             schema_url = urljoin(url, "/schema.json")
 

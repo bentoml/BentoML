@@ -42,12 +42,14 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
             media_type="application/vnd.bentoml+pickle",
             service=service,
             timeout=timeout,
+            server_ready_timeout=0,
         )
         self._async = AsyncHTTPClient(
             url,
             media_type="application/vnd.bentoml+pickle",
             service=service,
             timeout=timeout,
+            server_ready_timeout=0,
         )
         self._inner = service.inner
         self.endpoints = self._async.endpoints

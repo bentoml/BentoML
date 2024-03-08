@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
+import math
 import sys
 import typing as t
 from http import HTTPStatus
@@ -21,6 +22,7 @@ from _bentoml_sdk import Service
 from _bentoml_sdk.service import set_current_service
 from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
+from bentoml._internal.resource import system_resources
 from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
 from bentoml._internal.utils.metrics import exponential_buckets
@@ -68,7 +70,8 @@ class ServiceAppFactory(BaseAppFactory):
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
-        traffic: dict[str, t.Any] = Provide[BentoMLContainer.api_server_config.traffic],
+        services: dict[str, t.Any] = Provide[BentoMLContainer.config.services],
+        #traffic: dict[str, t.Any] = Provide[BentoMLContainer.api_server_config.traffic],
         enable_access_control: bool = Provide[BentoMLContainer.http.cors.enabled],
         access_control_options: dict[str, list[str] | str | int] = Provide[
             BentoMLContainer.access_control_options
@@ -79,11 +82,22 @@ class ServiceAppFactory(BaseAppFactory):
         self.service = service
         self.enable_metrics = enable_metrics
         self.is_main = is_main
+        config = services[service.name]
+        traffic = config.get("traffic")
+        workers = config.get("workers")
         timeout = traffic.get("timeout")
         max_concurrency = traffic.get("max_concurrency")
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
-        super().__init__(timeout=timeout, max_concurrency=max_concurrency)
+        # max_concurrency per worker is the max_concurrency per service divided by the number of workers
+        num_workers = 1
+        if workers:
+            if (workers := config["workers"]) == "cpu_count":
+                srs = system_resources()
+                num_workers = int(srs["cpu"])
+            else:  # workers is a number
+                num_workers = workers
+        super().__init__(timeout=timeout, max_concurrency= max_concurrency if not max_concurrency else math.ceil(max_concurrency / num_workers))
 
         self.dispatchers: dict[str, CorkDispatcher[t.Any, t.Any]] = {}
         self._service_instance: t.Any | None = None

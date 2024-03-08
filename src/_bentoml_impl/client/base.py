@@ -27,9 +27,10 @@ class AbstractClient(abc.ABC):
 
     def __init__(self) -> None:
         for name in self.endpoints:
-            if getattr(self, name, None) is None:
-                name = f"api_{name}"  # prefix to avoid name conflict
-            setattr(self, name, self._make_method(name))
+            attr_name = name
+            if getattr(self, attr_name, None) is not None:
+                attr_name = f"api_{name}"  # prefix to avoid name conflict
+            setattr(self, attr_name, self._make_method(name))
 
     def _make_method(self, name: str) -> t.Callable[..., t.Any]:
         endpoint = self.endpoints[name]

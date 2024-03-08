@@ -23,9 +23,6 @@ async def test_async_serve_and_prediction(examples: Path) -> None:
             "--port",
             str(port),
         ],
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        text=True,
     )
 
     try:
@@ -60,9 +57,6 @@ def test_build_and_prediction(examples: Path) -> None:
             "--port",
             f"{port}",
         ],
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        text=True,
     )
 
     try:

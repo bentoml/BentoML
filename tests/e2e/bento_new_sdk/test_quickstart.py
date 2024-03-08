@@ -26,19 +26,14 @@ async def test_async_serve_and_prediction(examples: Path) -> None:
         ],
     )
 
-    await asyncio.sleep(8)
+    await asyncio.sleep(5)
 
     try:
-        with bentoml.SyncHTTPClient(
-            f"http://127.0.0.1:{port}", server_ready_timeout=0
-        ) as client:
-            assert client.is_ready()
+        with bentoml.SyncHTTPClient(f"http://127.0.0.1:{port}") as client:
             result = client.classify([[4.9, 3.0, 1.4, 0.2]])
         assert result == [0]
 
-        async with bentoml.AsyncHTTPClient(
-            f"http://127.0.0.1:{port}", server_ready_timeout=0
-        ) as client:
+        async with bentoml.AsyncHTTPClient(f"http://127.0.0.1:{port}") as client:
             result = await client.classify([[4.9, 3.0, 1.4, 0.2]])
         assert result == [0]
     finally:

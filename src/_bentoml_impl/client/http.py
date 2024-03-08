@@ -158,7 +158,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             with self._make_client(
                 httpx.Client, url, default_headers, timeout
             ) as client:
-                resp = client.get(schema_url)
+                resp = client.get("/schema.json")
 
                 if resp.is_error:
                     raise BentoMLException(f"Failed to fetch schema from {schema_url}")

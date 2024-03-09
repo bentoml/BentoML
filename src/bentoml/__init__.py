@@ -110,6 +110,7 @@ if TYPE_CHECKING:
     from _bentoml_sdk import depends
     from _bentoml_sdk import get_current_service
     from _bentoml_sdk import mount_asgi_app
+    from _bentoml_sdk import on_deployment
     from _bentoml_sdk import on_shutdown
     from _bentoml_sdk import runner_service
     from _bentoml_sdk import service
@@ -180,6 +181,7 @@ else:
         "api",
         "depends",
         "on_shutdown",
+        "on_deployment",
         "mount_asgi_app",
         "get_current_service",
     ]
@@ -285,6 +287,7 @@ __all__ = [
     "runner_service",
     "api",
     "on_shutdown",
+    "on_deployment",
     "depends",
     "validators",
     "Field",

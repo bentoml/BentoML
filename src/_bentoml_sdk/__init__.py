@@ -12,7 +12,7 @@ add_custom_preparers()
 del add_custom_preparers
 # ruff: noqa
 
-from .decorators import api, on_shutdown, mount_asgi_app
+from .decorators import api, on_shutdown, mount_asgi_app, on_deployment
 from .service import get_current_service
 from .service import depends
 from .service import Service
@@ -23,6 +23,7 @@ from .io_models import IODescriptor
 __all__ = [
     "api",
     "on_shutdown",
+    "on_deployment",
     "mount_asgi_app",
     "depends",
     "Service",

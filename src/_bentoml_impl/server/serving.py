@@ -7,10 +7,12 @@ import logging
 import os
 import pathlib
 import platform
+import shutil
 import socket
 import tempfile
 import typing as t
 
+import attrs
 from simple_di import Provide
 from simple_di import inject
 
@@ -23,6 +25,8 @@ AnyService = Service[t.Any]
 if t.TYPE_CHECKING:
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
+
+    from bentoml._internal.utils.circus import Arbiter
 
     from .allocator import ResourceAllocator
 
@@ -154,7 +158,8 @@ def serve_http(
     reload: bool = False,
     dependency_map: dict[str, str] | None = None,
     service_name: str = "",
-) -> None:
+    threaded: bool = False,
+) -> Server:
     from circus.sockets import CircusSocket
 
     from bentoml._internal.log import SERVER_LOGGING_CONFIG
@@ -194,9 +199,8 @@ def serve_http(
     if service_name:
         svc = svc.find_dependent(service_name)
     num_workers, worker_envs = allocator.get_worker_env(svc)
-    server_on_deployment(svc)
-
-    with tempfile.TemporaryDirectory(prefix="bentoml-uds-") as uds_path:
+    uds_path = tempfile.mkdtemp(prefix="bentoml-uds-")
+    try:
         if not service_name and not development_mode:
             with contextlib.ExitStack() as port_stack:
                 for name, dep_svc in svc.all_services().items():
@@ -297,7 +301,11 @@ def serve_http(
             else:
                 watcher.env.update(inject_env)
 
-        arbiter_kwargs: dict[str, t.Any] = {"watchers": watchers, "sockets": sockets}
+        arbiter_kwargs: dict[str, t.Any] = {
+            "watchers": watchers,
+            "sockets": sockets,
+            "threaded": threaded,
+        }
 
         if reload:
             reload_plugin = make_reload_plugin(str(bento_path.absolute()), bentoml_home)
@@ -309,14 +317,34 @@ def serve_http(
             arbiter_kwargs["loglevel"] = "WARNING"
 
         arbiter = create_standalone_arbiter(**arbiter_kwargs)
-        with track_serve(svc, production=not development_mode):
-            arbiter.start(
-                cb=lambda _: logger.info(  # type: ignore
-                    'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
-                    scheme.upper(),
-                    bento_identifier,
-                    scheme,
-                    log_host,
-                    port,
-                ),
-            )
+        arbiter.exit_stack.enter_context(
+            track_serve(svc, production=not development_mode)
+        )
+        arbiter.exit_stack.callback(shutil.rmtree, uds_path, ignore_errors=True)
+        arbiter.start(
+            cb=lambda _: logger.info(  # type: ignore
+                'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
+                scheme.upper(),
+                bento_identifier,
+                scheme,
+                log_host,
+                port,
+            ),
+        )
+        return Server(url=f"{scheme}://{host}:{port}", arbiter=arbiter)
+    except Exception:
+        shutil.rmtree(uds_path, ignore_errors=True)
+        raise
+
+
+@attrs.frozen
+class Server:
+    url: str
+    arbiter: Arbiter = attrs.field(repr=False)
+
+    def stop(self) -> None:
+        self.arbiter.stop()
+
+    @property
+    def running(self) -> bool:
+        return self.arbiter.running

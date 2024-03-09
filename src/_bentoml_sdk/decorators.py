@@ -27,6 +27,12 @@ def on_shutdown(func: F) -> F:
     return func
 
 
+def on_deployment(func: t.Callable[P, R] | staticmethod[P, R]) -> staticmethod[P, R]:
+    inner = func.__func__ if isinstance(func, staticmethod) else func
+    setattr(inner, "__bentoml_deployment_hook__", True)
+    return func if isinstance(func, staticmethod) else staticmethod(func)  # type: ignore
+
+
 @t.overload
 def api(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
     ...

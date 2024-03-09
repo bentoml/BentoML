@@ -127,6 +127,13 @@ def create_dependency_watcher(
     return watcher, socket, uri
 
 
+def server_on_deployment(svc: AnyService) -> None:
+    for name in dir(svc.inner):
+        member = getattr(svc.inner, name)
+        if callable(member) and getattr(member, "__bentoml_deployment_hook__", False):
+            member()
+
+
 @inject
 def serve_http(
     bento_identifier: str | AnyService,
@@ -187,6 +194,8 @@ def serve_http(
     if service_name:
         svc = svc.find_dependent(service_name)
     num_workers, worker_envs = allocator.get_worker_env(svc)
+    server_on_deployment(svc)
+
     with tempfile.TemporaryDirectory(prefix="bentoml-uds-") as uds_path:
         if not service_name and not development_mode:
             with contextlib.ExitStack() as port_stack:
@@ -207,6 +216,7 @@ def serve_http(
                     watchers.append(new_watcher)
                     sockets.append(new_socket)
                     dependency_map[name] = uri
+                    server_on_deployment(dep_svc)
                 # reserve one more to avoid conflicts
                 port_stack.enter_context(reserve_free_port())
 

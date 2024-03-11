@@ -274,7 +274,9 @@ class BentoCloudClient(CloudClient):
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = httpx.put(presigned_upload_url, content=tar_io)
+                    resp = httpx.put(
+                        presigned_upload_url, content=tar_io, timeout=36000
+                    )
                     if resp.status_code != 200:
                         finish_req = FinishUploadBentoSchema(
                             status=BentoUploadStatus.FAILED,
@@ -320,7 +322,8 @@ class BentoCloudClient(CloudClient):
                         ):
                             chunk = (
                                 tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE : chunk_number
+                                    (chunk_number - 1)
+                                    * FILE_CHUNK_SIZE : chunk_number
                                     * FILE_CHUNK_SIZE
                                 ]
                                 if chunk_number < chunks_count
@@ -331,7 +334,9 @@ class BentoCloudClient(CloudClient):
 
                             with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
                                 resp = httpx.put(
-                                    remote_bento.presigned_upload_url, content=chunk_io
+                                    remote_bento.presigned_upload_url,
+                                    content=chunk_io,
+                                    timeout=36000,
                                 )
                                 if resp.status_code != 200:
                                     return FinishUploadBentoSchema(
@@ -725,7 +730,9 @@ class BentoCloudClient(CloudClient):
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = httpx.put(presigned_upload_url, content=tar_io)
+                    resp = httpx.put(
+                        presigned_upload_url, content=tar_io, timeout=36000
+                    )
                     if resp.status_code != 200:
                         finish_req = FinishUploadModelSchema(
                             status=ModelUploadStatus.FAILED,
@@ -772,7 +779,8 @@ class BentoCloudClient(CloudClient):
                         ):
                             chunk = (
                                 tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE : chunk_number
+                                    (chunk_number - 1)
+                                    * FILE_CHUNK_SIZE : chunk_number
                                     * FILE_CHUNK_SIZE
                                 ]
                                 if chunk_number < chunks_count
@@ -783,7 +791,9 @@ class BentoCloudClient(CloudClient):
 
                             with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
                                 resp = httpx.put(
-                                    remote_model.presigned_upload_url, content=chunk_io
+                                    remote_model.presigned_upload_url,
+                                    content=chunk_io,
+                                    timeout=36000,
                                 )
                                 if resp.status_code != 200:
                                     return FinishUploadModelSchema(

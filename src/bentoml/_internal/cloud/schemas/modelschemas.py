@@ -341,9 +341,9 @@ class DeploymentTargetConfig:
         default=None
     )
     deployment_strategy: t.Optional[str] = attr.field(default=None)  # Specific
-    bento_deployment_overrides: t.Optional[ApiServerBentoDeploymentOverrides] = (
-        attr.field(default=None)
-    )
+    bento_deployment_overrides: t.Optional[
+        ApiServerBentoDeploymentOverrides
+    ] = attr.field(default=None)
     bento_request_overrides: t.Optional[BentoRequestOverrides] = attr.field(
         default=None
     )  # Put into image builder

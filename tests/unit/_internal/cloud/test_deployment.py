@@ -12,18 +12,17 @@ from bentoml._internal.cloud.deployment import Deployment
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentServiceConfig
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
-from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetHPAConf
 from bentoml._internal.cloud.schemas.modelschemas import EnvItemSchema
 from bentoml._internal.cloud.schemas.schemasv1 import BentoFullSchema
-from bentoml._internal.cloud.schemas.schemasv1 import BentoImageBuildStatus
+from bentoml._internal.cloud.schemas.modelschemas import BentoImageBuildStatus
 from bentoml._internal.cloud.schemas.schemasv1 import BentoManifestSchema
 from bentoml._internal.cloud.schemas.schemasv1 import BentoRepositorySchema
-from bentoml._internal.cloud.schemas.schemasv1 import BentoUploadStatus
+from bentoml._internal.cloud.schemas.modelschemas import BentoUploadStatus
 from bentoml._internal.cloud.schemas.schemasv1 import ClusterListSchema
 from bentoml._internal.cloud.schemas.schemasv1 import ClusterSchema
-from bentoml._internal.cloud.schemas.schemasv1 import DeploymentRevisionStatus
-from bentoml._internal.cloud.schemas.schemasv1 import ResourceType
+from bentoml._internal.cloud.schemas.modelschemas import DeploymentRevisionStatus
+from bentoml._internal.cloud.schemas.modelschemas import ResourceType
 from bentoml._internal.cloud.schemas.schemasv1 import UserSchema
 from bentoml._internal.cloud.schemas.schemasv2 import (
     CreateDeploymentSchema as CreateDeploymentSchemaV2,
@@ -202,14 +201,14 @@ def fixture_rest_client() -> RestApiClient:
                             scaling=DeploymentTargetHPAConf(
                                 min_replicas=1, max_replicas=1
                             ),
-                            deployment_strategy=DeploymentStrategy.RollingUpdate,
+                            deployment_strategy="RollingUpdate",
                         ),
                         "preprocessing": DeploymentServiceConfig(
                             instance_type="t3-small",
                             scaling=DeploymentTargetHPAConf(
                                 min_replicas=1, max_replicas=1
                             ),
-                            deployment_strategy=DeploymentStrategy.RollingUpdate,
+                            deployment_strategy="RollingUpdate",
                         ),
                     },
                 ),
@@ -226,7 +225,7 @@ def fixture_rest_client() -> RestApiClient:
                             scaling=DeploymentTargetHPAConf(
                                 min_replicas=3, max_replicas=5
                             ),
-                            deployment_strategy=DeploymentStrategy.RollingUpdate,
+                            deployment_strategy="RollingUpdate",
                         )
                     },
                     envs=[EnvItemSchema(name="env_key", value="env_value")],
@@ -316,7 +315,7 @@ def test_create_deployment_custom_standalone(
         assert service.scaling == DeploymentTargetHPAConf(
             min_replicas=2, max_replicas=4
         )
-        assert service.deployment_strategy == DeploymentStrategy.RollingUpdate
+        assert service.deployment_strategy == "RollingUpdate"
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -450,7 +449,7 @@ def test_update_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
         assert service.scaling == DeploymentTargetHPAConf(
             min_replicas=3, max_replicas=5
         )
-        assert service.deployment_strategy == DeploymentStrategy.Recreate
+        assert service.deployment_strategy == "Recreate"
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -481,7 +480,7 @@ def test_update_deployment_scaling_only_min(
         assert service.scaling == DeploymentTargetHPAConf(
             min_replicas=1, max_replicas=5
         )
-        assert service.deployment_strategy == DeploymentStrategy.RollingUpdate
+        assert service.deployment_strategy == "RollingUpdate"
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -512,7 +511,7 @@ def test_update_deployment_scaling_only_max(
         assert service.scaling == DeploymentTargetHPAConf(
             min_replicas=3, max_replicas=3
         )
-        assert service.deployment_strategy == DeploymentStrategy.RollingUpdate
+        assert service.deployment_strategy == "RollingUpdate"
 
 
 @patch("bentoml._internal.cloud.deployment.get_rest_api_client")
@@ -566,11 +565,11 @@ def test_update_deployment_distributed(
         "irisclassifier": DeploymentServiceConfig(
             instance_type="t3-small",
             scaling=DeploymentTargetHPAConf(min_replicas=1, max_replicas=50),
-            deployment_strategy=DeploymentStrategy.RollingUpdate,
+            deployment_strategy="RollingUpdate",
         ),
         "preprocessing": DeploymentServiceConfig(
             instance_type="t3-large",
             scaling=DeploymentTargetHPAConf(min_replicas=1, max_replicas=1),
-            deployment_strategy=DeploymentStrategy.RollingUpdate,
+            deployment_strategy="RollingUpdate",
         ),
     }

@@ -127,7 +127,7 @@ class DeploymentTargetCanaryRuleType(Enum):
 class DeploymentTargetCanaryRule:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
-    type: DeploymentTargetCanaryRuleType
+    type: str
     weight: int
     header: str
     cookie: str
@@ -214,7 +214,7 @@ class HPAMetricType(Enum):
 class HPAMetric:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
-    type: HPAMetricType  # enum
+    type: str
     value: t.Any  # resource.Quantity
 
 
@@ -229,8 +229,8 @@ class HPAPolicy:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
     metrics: t.Optional[t.List[HPAMetric]] = attr.field(default=None)
-    scale_down_behavior: t.Optional[HPAScaleBehavior] = attr.field(default=None)
-    scale_up_behavior: t.Optional[HPAScaleBehavior] = attr.field(default=None)
+    scale_down_behavior: t.Optional[str] = attr.field(default=None)
+    scale_up_behavior: t.Optional[str] = attr.field(default=None)
 
 
 @attr.define
@@ -302,7 +302,7 @@ class DeploymentTargetRunnerConfig:
     enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
         default=None
     )
-    deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(default=None)
+    deployment_strategy: t.Optional[str] = attr.field(default=None)
     bento_deployment_overrides: t.Optional[RunnerBentoDeploymentOverrides] = attr.field(
         default=None
     )
@@ -333,19 +333,17 @@ class DeploymentTargetConfig:
     runners: t.Optional[t.Dict[str, DeploymentTargetRunnerConfig]] = attr.field(
         default=None
     )
-    access_control: t.Optional[AccessControl] = attr.field(default=None)
+    access_control: t.Optional[str] = attr.field(default=None)
     enable_ingress: t.Optional[bool] = attr.field(default=None)  # false for enables
     enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(default=None)
     enable_debug_mode: t.Optional[bool] = attr.field(default=None)
     enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
         default=None
     )
-    deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(
-        default=None
-    )  # Specific
-    bento_deployment_overrides: t.Optional[
-        ApiServerBentoDeploymentOverrides
-    ] = attr.field(default=None)
+    deployment_strategy: t.Optional[str] = attr.field(default=None)  # Specific
+    bento_deployment_overrides: t.Optional[ApiServerBentoDeploymentOverrides] = (
+        attr.field(default=None)
+    )
     bento_request_overrides: t.Optional[BentoRequestOverrides] = attr.field(
         default=None
     )  # Put into image builder
@@ -375,7 +373,7 @@ class DeploymentServiceConfig:
     instance_type: t.Optional[str] = attr.field(default=None)
     scaling: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
     envs: t.Optional[t.List[t.Optional[EnvItemSchema]]] = attr.field(default=None)
-    deployment_strategy: t.Optional[DeploymentStrategy] = attr.field(default=None)
+    deployment_strategy: t.Optional[str] = attr.field(default=None)
     extras: t.Optional[ExtraDeploymentOverrides] = attr.field(default=None)
     cold_start_timeout: t.Optional[int] = attr.field(default=None)
     config_overrides: t.Optional[t.Dict[str, t.Any]] = attr.field(factory=dict)

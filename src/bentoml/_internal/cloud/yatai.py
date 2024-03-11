@@ -33,7 +33,7 @@ from .schemas.modelschemas import BentoApiSchema
 from .schemas.modelschemas import BentoRunnerResourceSchema
 from .schemas.modelschemas import BentoRunnerSchema
 from .schemas.schemasv1 import BentoManifestSchema
-from .schemas.schemasv1 import BentoUploadStatus
+from .schemas.modelschemas import BentoUploadStatus
 from .schemas.schemasv1 import CompleteMultipartUploadSchema
 from .schemas.schemasv1 import CompletePartSchema
 from .schemas.schemasv1 import CreateBentoRepositorySchema
@@ -44,7 +44,7 @@ from .schemas.schemasv1 import FinishUploadBentoSchema
 from .schemas.schemasv1 import FinishUploadModelSchema
 from .schemas.schemasv1 import LabelItemSchema
 from .schemas.schemasv1 import ModelManifestSchema
-from .schemas.schemasv1 import ModelUploadStatus
+from .schemas.modelschemas import ModelUploadStatus
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
 from .schemas.schemasv1 import TransmissionStrategy
 from .schemas.schemasv1 import UpdateBentoSchema
@@ -304,7 +304,8 @@ class YataiClient(CloudClient):
                         ):
                             chunk = (
                                 tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE : chunk_number
+                                    (chunk_number - 1)
+                                    * FILE_CHUNK_SIZE : chunk_number
                                     * FILE_CHUNK_SIZE
                                 ]
                                 if chunk_number < chunks_count
@@ -740,7 +741,8 @@ class YataiClient(CloudClient):
                         ):
                             chunk = (
                                 tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE : chunk_number
+                                    (chunk_number - 1)
+                                    * FILE_CHUNK_SIZE : chunk_number
                                     * FILE_CHUNK_SIZE
                                 ]
                                 if chunk_number < chunks_count

@@ -342,9 +342,18 @@ class Server:
     url: str
     arbiter: Arbiter = attrs.field(repr=False)
 
+    def start(self) -> None:
+        pass
+
     def stop(self) -> None:
         self.arbiter.stop()
 
     @property
     def running(self) -> bool:
         return self.arbiter.running
+
+    def __enter__(self) -> Server:
+        return self
+
+    def __exit__(self, exc_type: t.Any, exc_value: t.Any, traceback: t.Any) -> None:
+        self.stop()

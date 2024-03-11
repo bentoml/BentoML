@@ -5,18 +5,12 @@ from datetime import datetime
 
 import attr
 
-from bentoml._internal.cloud.schemas.modelschemas import BentoImageBuildStatus
 from bentoml._internal.cloud.schemas.modelschemas import BentoManifestSchema
-from bentoml._internal.cloud.schemas.modelschemas import BentoUploadStatus
-from bentoml._internal.cloud.schemas.modelschemas import DeploymentRevisionStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetCanaryRule
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetConfig
 from bentoml._internal.cloud.schemas.modelschemas import LabelItemSchema
-from bentoml._internal.cloud.schemas.modelschemas import ModelImageBuildStatus
 from bentoml._internal.cloud.schemas.modelschemas import ModelManifestSchema
-from bentoml._internal.cloud.schemas.modelschemas import ModelUploadStatus
 from bentoml._internal.cloud.schemas.modelschemas import ResourceInstanceConfigSchema
-from bentoml._internal.cloud.schemas.modelschemas import ResourceType
 from bentoml._internal.cloud.schemas.modelschemas import TransmissionStrategy
 
 
@@ -38,7 +32,7 @@ class BaseListSchema:
 @attr.define
 class ResourceSchema(BaseSchema):
     name: str
-    resource_type: ResourceType
+    resource_type: str
     labels: t.List[LabelItemSchema]
 
 
@@ -92,8 +86,8 @@ class CreateBentoRepositorySchema:
 class BentoSchema(ResourceSchema):
     description: str
     version: str
-    image_build_status: BentoImageBuildStatus
-    upload_status: BentoUploadStatus
+    image_build_status: str
+    upload_status: str
     upload_finished_reason: str
     presigned_upload_url: str
     presigned_download_url: str
@@ -162,7 +156,7 @@ class CompleteMultipartUploadSchema:
 
 @attr.define
 class FinishUploadBentoSchema:
-    status: t.Optional[BentoUploadStatus]
+    status: t.Optional[str]
     reason: t.Optional[str]
 
 
@@ -176,8 +170,8 @@ class CreateModelRepositorySchema:
 class ModelSchema(ResourceSchema):
     description: str
     version: str
-    image_build_status: ModelImageBuildStatus
-    upload_status: ModelUploadStatus
+    image_build_status: str
+    upload_status: str
     upload_finished_reason: str
     presigned_upload_url: str
     presigned_download_url: str
@@ -218,7 +212,7 @@ class CreateModelSchema:
 
 @attr.define
 class FinishUploadModelSchema:
-    status: t.Optional[ModelUploadStatus]
+    status: t.Optional[str]
     reason: t.Optional[str]
 
 
@@ -274,7 +268,7 @@ class DeploymentRevisionSchema(ResourceSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
     creator: UserSchema
-    status: DeploymentRevisionStatus
+    status: str
     targets: t.List[DeploymentTargetSchema]
 
 

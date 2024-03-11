@@ -32,8 +32,9 @@ from .config import get_rest_api_client
 from .schemas.modelschemas import BentoApiSchema
 from .schemas.modelschemas import BentoRunnerResourceSchema
 from .schemas.modelschemas import BentoRunnerSchema
+from .schemas.modelschemas import BentoUploadStatus
+from .schemas.modelschemas import ModelUploadStatus
 from .schemas.schemasv1 import BentoManifestSchema
-from .schemas.schemasv1 import BentoUploadStatus
 from .schemas.schemasv1 import CompleteMultipartUploadSchema
 from .schemas.schemasv1 import CompletePartSchema
 from .schemas.schemasv1 import CreateBentoRepositorySchema
@@ -44,7 +45,6 @@ from .schemas.schemasv1 import FinishUploadBentoSchema
 from .schemas.schemasv1 import FinishUploadModelSchema
 from .schemas.schemasv1 import LabelItemSchema
 from .schemas.schemasv1 import ModelManifestSchema
-from .schemas.schemasv1 import ModelUploadStatus
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
 from .schemas.schemasv1 import TransmissionStrategy
 from .schemas.schemasv1 import UpdateBentoSchema

@@ -4,7 +4,6 @@ import typing as t
 
 import attr
 
-from bentoml._internal.cloud.schemas.modelschemas import DeploymentRevisionStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentServiceConfig
 from bentoml._internal.cloud.schemas.schemasv1 import BaseListSchema
 from bentoml._internal.cloud.schemas.schemasv1 import BentoWithRepositorySchema
@@ -32,7 +31,7 @@ class DeploymentTargetListSchema(BaseListSchema):
 @attr.define
 class DeploymentRevisionSchema(ResourceSchema):
     creator: t.Optional[UserSchema]
-    status: DeploymentRevisionStatus
+    status: str
     targets: t.List[t.Optional[DeploymentTargetSchema]]
 
 

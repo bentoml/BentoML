@@ -115,6 +115,21 @@ Before making calls to specific Service methods, you can use the ``is_ready`` me
 
     client.close()
 
+Alternatively, use the ``server_ready_timeout`` parameter to specify the maximum duration in seconds the client will wait for the BentoML Service to become ready before timing out. This is useful during the initial connection to a Service that might be starting up. If the Service does not become ready within the specified timeout, the client will raise a timeout exception.
+
+.. code-block:: python
+
+    import bentoml
+
+    client = bentoml.SyncHTTPClient(
+      'http://localhost:3000',
+      server_ready_timeout=60  # Wait up to 60 seconds for the Service to be ready
+    )
+    summarized_text: str = client.summarize(text="Your long text to summarize")
+    print(summarized_text)
+
+    client.close()
+
 Input and output
 ----------------
 

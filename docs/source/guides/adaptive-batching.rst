@@ -55,12 +55,17 @@ By default, adaptive batching is disabled. To enable and control it, you use the
             max_batch_size=32,
             max_latency_ms=1000
         )
-        def function(self, text: t.List[str]) -> np.ndarray:
-            # Logic that uses batching
+        # Use a list to handle multiple sentences in one batch
+        def encode(self, sentences: t.List[str]) -> np.ndarray:
+            # Logic to encode a list of sentences
+
+        # Use a np.ndarray to encapsulate multiple text inputs in one batch
+        def analyze_sentiment(self, texts: np.ndarray) -> t.List[str]:
+            # Logic to analyze sentiment for a batch of text inputs.
 
 Available parameters for adaptive batching:
 
-- ``batchable``: Set to ``True`` to indicate that the endpoint can process requests in batches. When it is enabled, you can only configure **one parameter for the endpoint function** in addition to ``bentoml.Context``.
+- ``batchable``: Set to ``True`` to indicate that the endpoint can process requests in batches. When it is enabled, the **batchable API endpoint accepts only one parameter** in addition to ``bentoml.Context``. This parameter represents the aggregated result of batching and should be of a type that can encapsulate multiple individual requests, such as ``t.List[str]`` or ``np.ndarray`` in the above code snippet.
 - ``batch_dim``: The batch dimension for both input and output, which can be a tuple or a single value.
 
   - For a tuple (``input_dim``, ``output_dim``):

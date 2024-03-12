@@ -796,10 +796,24 @@ class Deployment:
             InstanceTypeInfo(
                 name=schema.display_name,
                 description=schema.description,
-                cpu=schema.config.resources.requests.cpu,
-                memory=schema.config.resources.requests.memory,
-                gpu=schema.config.resources.requests.gpu,
-                gpu_type=schema.config.gpu_config.type,
+                cpu=(
+                    schema.config.resources.requests.cpu
+                    if schema.config.resources and schema.config.resources.requests
+                    else None
+                ),
+                memory=(
+                    schema.config.resources.requests.memory
+                    if schema.config.resources and schema.config.resources.requests
+                    else None
+                ),
+                gpu=(
+                    schema.config.resources.requests.gpu
+                    if schema.config.resources and schema.config.resources.requests
+                    else None
+                ),
+                gpu_type=(
+                    schema.config.gpu_config.type if schema.config.gpu_config else None
+                ),
                 price=schema.config.price,
             )
             for schema in res

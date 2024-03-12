@@ -199,6 +199,7 @@ def serve_http(
     if service_name:
         svc = svc.find_dependent(service_name)
     num_workers, worker_envs = allocator.get_worker_env(svc)
+    server_on_deployment(svc)
     uds_path = tempfile.mkdtemp(prefix="bentoml-uds-")
     try:
         if not service_name and not development_mode:

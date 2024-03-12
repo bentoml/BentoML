@@ -81,7 +81,7 @@ class IOMixin:
                 return "audio/*"
             elif format == "video":
                 return "video/*"
-            return "*/*"
+            return "application/octet-stream"
         return "application/json"
 
     @classmethod
@@ -178,9 +178,7 @@ class IOMixin:
         else:
             if is_file_type(type(obj)) and isinstance(serde, JSONSerde):
                 if isinstance(obj, pathlib.PurePath):
-                    media_type = (
-                        mimetypes.guess_type(obj)[0] or "application/octet-stream"
-                    )
+                    media_type = mimetypes.guess_type(obj)[0] or cls.mime_type()
                     should_inline = media_type.startswith("image")
                     content_disposition_type = (
                         "inline" if should_inline else "attachment"

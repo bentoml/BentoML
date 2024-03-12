@@ -129,8 +129,17 @@ You can also use a Pydantic model directly at the top level for a BentoML Servic
     class AdsWriter:
         @bentoml.api(input_spec=AdsGenerationParams)
         def generate(self, **params: t.Any) -> str:
+
+            # Access parameters from the request
+            prompt = params['prompt']
+            industry = params['industry']
+            target_audience = params['target_audience']
+            temperature = params['temperature']
+            # Use the parameters in your Service logic
             # Implementation logic
             ...
+
+In the above code snippet, all the validated and parsed fields from the incoming request are passed into the ``generate`` method as keyword arguments stored in the ``params`` dictionary. You can access these parameters directly by their field names defined in ``AdsGenerationParams`` as keys in the dictionary.
 
 Files
 ^^^^^

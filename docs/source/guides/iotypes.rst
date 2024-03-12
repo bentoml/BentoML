@@ -32,6 +32,7 @@ Python's standard types such as strings, integers, floats, booleans, lists, and 
 .. code-block:: python
 
     from pydantic import Field
+    import bentoml
 
     @bentoml.service
     class LanguageModel:
@@ -56,6 +57,7 @@ To set an example value, you can use ``pydantic.Field``:
 .. code-block:: python
 
     from pydantic import Field
+    import bentoml
 
     @bentoml.service
     class IrisClassifier:
@@ -69,6 +71,7 @@ To handle nullable input, you can use ``Optional``:
 
     from pydantic import Field
     from typing import Optional
+    import bentoml
 
     @bentoml.service
     class LanguageModel:
@@ -90,6 +93,7 @@ Pydantic models allow for more structured data with validation. They are particu
 .. code-block:: python
 
     from pydantic import BaseModel, Field
+    import bentoml
 
     # Define a Pydantic model for structured data input
     class AdsGenerationParams(BaseModel):
@@ -105,7 +109,37 @@ Pydantic models allow for more structured data with validation. They are particu
             # Implementation logic
             ...
 
-In the above code snippet, the ``AdsGenerationParams`` class is a Pydantic model which defines the structure and validation of input data. Each field in the class is annotated with a type, and can include default values and descriptions. Pydantic automatically validates incoming data against the ``AdsGenerationParams`` schema. If the data doesn’t conform to the schema, an error will be raised before the method is executed.
+In the above code snippet, the ``AdsGenerationParams`` class is a Pydantic model which defines the structure and validation of input data. Each field in the class is annotated with a type, and can include default values and descriptions. Pydantic automatically validates incoming data against the ``AdsGenerationParams`` schema. If the data doesn't conform to the schema, an error will be raised before the method is executed.
+
+You can also use a Pydantic model directly at the top level for a BentoML Service API without wrapping the payload inside a key:
+
+.. code-block:: python
+
+    from pydantic import BaseModel, Field
+    import typing as t
+    import bentoml
+
+    class AdsGenerationParams(BaseModel):
+        prompt: str = Field(description="The prompt text")
+        industry: str = Field(description="The industry the company belongs to")
+        target_audience: str = Field(description="Target audience for the advertisement")
+        temperature: float = Field(default=0.0, description="A sampling temperature between 0 and 2")
+
+    @bentoml.service
+    class AdsWriter:
+        @bentoml.api(input_spec=AdsGenerationParams)
+        def generate(self, **params: t.Any) -> str:
+
+            # Access parameters from the request
+            prompt = params['prompt']
+            industry = params['industry']
+            target_audience = params['target_audience']
+            temperature = params['temperature']
+            # Use the parameters in your Service logic
+            # Implementation logic
+            ...
+
+In the above code snippet, all the validated and parsed fields from the incoming request are passed into the ``generate`` method as keyword arguments stored in the ``params`` dictionary. You can access these parameters directly by their field names defined in ``AdsGenerationParams`` as keys in the dictionary.
 
 Files
 ^^^^^
@@ -117,6 +151,7 @@ Here's a simple example that accepts a ``Path`` object as input, representing th
 .. code-block:: python
 
     from pathlib import Path
+    import bentoml
 
     @bentoml.service
     class WhisperX:
@@ -133,6 +168,7 @@ To restrict the file type to a specific format, such as audio files, you can use
     from bentoml.validators import ContentType
     from typing import Annotated  # Python 3.9 or above
     from typing_extensions import Annotated  # Older than 3.9
+    import bentoml
 
     @bentoml.service
     class WhisperX:
@@ -145,6 +181,7 @@ To output a file with a path, you can use ``context.temp_dir`` to provide a uniq
 .. code-block:: python
 
     from pathlib import Path
+    import bentoml
 
     @bentoml.service
     class Vits:
@@ -174,6 +211,7 @@ BentoML supports various tensor types such as ``numpy.ndarray``, ``torch.Tensor`
     from typing import Annotated  # Python 3.9 or above
     from typing_extensions import Annotated  # Older than 3.9
     from pydantic import Field
+    import bentoml
 
     @bentoml.service
     class IrisClassifier:
@@ -204,6 +242,7 @@ Here is an example:
     from typing_extensions import Annotated  # Older than 3.9
     import pandas as pd
     from bentoml.validators import DataframeSchema
+    import bentoml
 
     @bentoml.service
     class IrisClassifier:
@@ -237,6 +276,7 @@ Here is an example of using PIL:
 .. code-block:: python
 
     from PIL.Image import Image as PILImage
+    import bentoml
 
     @bentoml.service
     class MnistPredictor:
@@ -253,6 +293,7 @@ Alternatively, you can use ``pathlib.Path`` with a ``ContentType`` validator to 
     from typing import Annotated  # Python 3.9 or above
     from typing_extensions import Annotated  # Older than 3.9
     from bentoml.validators import ContentType
+    import bentoml
 
     @bentoml.service
     class MnistPredictor:
@@ -274,6 +315,7 @@ Here is an example:
     from typing import Annotated  # Python 3.9 or above
     from typing_extensions import Annotated  # older than 3.9
     from annotated_types import Ge, Lt, Gt, MultipleOf, MaxLen
+    import bentoml
 
     @bentoml.service
     class LLMPredictor:

@@ -331,7 +331,7 @@ def serve_http(
                 port,
             ),
         )
-        return Server(url=f"{scheme}://{host}:{port}", arbiter=arbiter)
+        return Server(url=f"{scheme}://{log_host}:{port}", arbiter=arbiter)
     except Exception:
         shutil.rmtree(uds_path, ignore_errors=True)
         raise

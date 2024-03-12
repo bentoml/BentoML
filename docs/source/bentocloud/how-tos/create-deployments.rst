@@ -64,7 +64,7 @@ BentoML does the following automatically during deployment:
 Deploy an existing Bento to BentoCloud
 --------------------------------------
 
-If you already have a Bento, either available locally or on BentoCloud, you can use one of the following ways to deploy it.
+If you already have a Bento built locally (run ``bentoml list`` to view all the local Bentos), you can deploy it using either the BentoML CLI or Python API.
 
 .. tab-set::
 
@@ -96,6 +96,15 @@ If you already have a Bento, either available locally or on BentoCloud, you can 
 
             dep.wait_until_ready(timeout=3600)
 
-    .. tab-item:: BentoCloud console
+The ``bentoml deploy`` command and the ``bentoml.deployment.create`` function automatically push and deploy the Bento to BentoCloud. If you only need to share a Bento with your team and deploy it later, you can push the Bento to BentoCloud by running the following command:
 
-        The BentoCloud console provides a web-based, graphical user interface (UI) that you can use to create and manage your Bento Deployments. When you use the BentoCloud console to deploy a Bento, make sure the Bento is already available on BentoCloud.
+.. code-block:: bash
+
+    $ bentoml push <bento_name:version>
+
+    ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+    │ Successfully pushed Bento "bento_name:version"                                                                                                                                   │
+    ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+    Pushing Bento "bento_name:version" ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 51.2/51.2 kB • ? • 0:00:00
+
+You can then view your pushed Bento on the BentoCloud console, which provides a web-based, graphical user interface (UI), and create a Deployment using the Bento.

@@ -39,9 +39,7 @@ Define a :doc:`BentoML Service </guides/services>` to use a model for generating
     import typing as t
 
     import numpy as np
-    import torch
     import bentoml
-    from sentence_transformers import SentenceTransformer, models
 
 
     SAMPLE_SENTENCES = [
@@ -61,9 +59,12 @@ Define a :doc:`BentoML Service </guides/services>` to use a model for generating
         traffic={"timeout": 60},
         resources={"memory": "2Gi"},
     )
-    class SentenceEmbedding:
+    class SentenceTransformers:
 
         def __init__(self) -> None:
+
+            import torch
+            from sentence_transformers import SentenceTransformer, models
 
             # Load model and tokenizer
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -86,8 +87,8 @@ Define a :doc:`BentoML Service </guides/services>` to use a model for generating
 
 Here is a breakdown of the Service code:
 
-- The script uses the ``@bentoml.service`` decorator to annotate the ``SentenceEmbedding`` class as a BentoML Service with timeout and memory specified. You can set more configurations as needed.
-- ``__init__`` loads the model and tokenizer when an instance of the ``SentenceEmbedding`` class is created. The model is loaded onto the appropriate device (GPU if available, otherwise CPU).
+- The script uses the ``@bentoml.service`` decorator to annotate the ``SentenceTransformers`` class as a BentoML Service with timeout and memory specified. You can set more configurations as needed.
+- ``__init__`` loads the model and tokenizer when an instance of the ``SentenceTransformers`` class is created. The model is loaded onto the appropriate device (GPU if available, otherwise CPU).
 - The model consists of two layers: The first layer is the pre-trained MiniLM model (``all-MiniLM-L6-v2``), and the second layer is a pooling layer to aggregate word embeddings into sentence embeddings.
 - The ``encode`` method is defined as a BentoML API endpoint. It takes a list of sentences as input and uses the sentence transformer model to generate sentence embeddings. The returned embeddings are NumPy arrays.
 
@@ -95,10 +96,10 @@ Run ``bentoml serve`` in your project directory to start the Service.
 
 .. code-block:: bash
 
-    $ bentoml serve service:SentenceEmbedding
+    $ bentoml serve service:SentenceTransformers
 
     2023-12-27T07:49:25+0000 [WARNING] [cli] Converting 'all-MiniLM-L6-v2' to lowercase: 'all-minilm-l6-v2'.
-    2023-12-27T07:49:26+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:SentenceEmbedding" listening on http://localhost:3000 (Press CTRL+C to quit)
+    2023-12-27T07:49:26+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:SentenceTransformers" listening on http://localhost:3000 (Press CTRL+C to quit)
     Model loaded device: cuda
 
 The server is active at `http://localhost:3000 <http://localhost:3000>`_. You can interact with it in different ways.
@@ -162,7 +163,7 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
 .. code-block:: yaml
     :caption: `bentofile.yaml`
 
-    service: "service:SentenceEmbedding"
+    service: "service:SentenceTransformers"
     labels:
       owner: bentoml-team
       project: gallery

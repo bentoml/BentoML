@@ -613,7 +613,7 @@ class Deployment:
         client = get_rest_api_client(context)
         return DeploymentInfo(
             name=res.name,
-            admin_console=f"{client.v1.endpoint}/deployments/{res.name}/access?cluster={res.cluster.name}&namespace={res.kube_namespace}",
+            admin_console=f"{client.v1.endpoint}/deployments/{res.name}?cluster={res.cluster.name}&namespace={res.kube_namespace}",
             created_at=res.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             created_by=res.creator.name,
             cluster=res.cluster.name,

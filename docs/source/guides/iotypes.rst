@@ -105,7 +105,27 @@ Pydantic models allow for more structured data with validation. They are particu
             # Implementation logic
             ...
 
-In the above code snippet, the ``AdsGenerationParams`` class is a Pydantic model which defines the structure and validation of input data. Each field in the class is annotated with a type, and can include default values and descriptions. Pydantic automatically validates incoming data against the ``AdsGenerationParams`` schema. If the data doesn’t conform to the schema, an error will be raised before the method is executed.
+In the above code snippet, the ``AdsGenerationParams`` class is a Pydantic model which defines the structure and validation of input data. Each field in the class is annotated with a type, and can include default values and descriptions. Pydantic automatically validates incoming data against the ``AdsGenerationParams`` schema. If the data doesn't conform to the schema, an error will be raised before the method is executed.
+
+You can also use a Pydantic model directly at the top level for a BentoML Service API without wrapping the payload inside a key:
+
+.. code-block:: python
+
+    from pydantic import BaseModel, Field
+    import typing as t
+
+    class AdsGenerationParams(BaseModel):
+        prompt: str = Field(description="The prompt text")
+        industry: str = Field(description="The industry the company belongs to")
+        target_audience: str = Field(description="Target audience for the advertisement")
+        temperature: float = Field(default=0.0, description="A sampling temperature between 0 and 2")
+
+    @bentoml.service
+    class AdsWriter:
+        @bentoml.api(input_spec=AdsGenerationParams)
+        def generate(self, **params: t.Any) -> str:
+            # Implementation logic
+            ...
 
 Files
 ^^^^^

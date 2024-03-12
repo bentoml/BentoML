@@ -59,9 +59,15 @@ By default, adaptive batching is disabled. To enable and control it, you use the
         def encode(self, sentences: t.List[str]) -> np.ndarray:
             # Logic to encode a list of sentences
 
+        @bentoml.api(
+            batchable=True,
+            batch_dim=(0, 0),
+            max_batch_size=32,
+            max_latency_ms=1000
+        )
         # Use a np.ndarray to encapsulate multiple text inputs in one batch
         def analyze_sentiment(self, texts: np.ndarray) -> t.List[str]:
-            # Logic to analyze sentiment for a batch of text inputs.
+            # Logic to analyze sentiment for a batch of text inputs
 
 Available parameters for adaptive batching:
 

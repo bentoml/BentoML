@@ -137,8 +137,6 @@ def main(
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
 
-    from ..server.app import ServiceAppFactory
-
     if runner_map:
         BentoMLContainer.remote_runner_mapping.set(
             t.cast(t.Dict[str, str], json.loads(runner_map))
@@ -163,9 +161,9 @@ def main(
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
     server_context.service_name = service.name
 
-    asgi_app = ServiceAppFactory(
-        service, is_main=server_context.service_type == "entry_service"
-    )()
+    asgi_app = service.to_asgi(
+        is_main=server_context.service_type == "entry_service", init=False
+    )
 
     uvicorn_extra_options: dict[str, t.Any] = {}
     if ssl_version is not None:

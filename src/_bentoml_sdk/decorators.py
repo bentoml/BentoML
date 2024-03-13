@@ -107,7 +107,7 @@ def api(
 
 def mount_asgi_app(
     app: ASGIApp, *, path: str = "/", name: str | None = None
-) -> t.Callable[[T], T]:
+) -> t.Callable[[R], R]:
     """Mount an ASGI app to the service.
 
     Args:
@@ -119,7 +119,7 @@ def mount_asgi_app(
     from ._internals import make_fastapi_class_views
     from .service import Service
 
-    def decorator(obj: T) -> T:
+    def decorator(obj: R) -> R:
         lazy_fastapi = LazyType["FastAPI"]("fastapi.FastAPI")
 
         if isinstance(obj, Service):

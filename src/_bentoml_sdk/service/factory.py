@@ -198,6 +198,15 @@ class Service(t.Generic[T]):
                 )
         return self._import_str
 
+    def to_asgi(self, is_main: bool = True, init: bool = False) -> ext.ASGIApp:
+        from _bentoml_impl.server.app import ServiceAppFactory
+
+        self.inject_config()
+        factory = ServiceAppFactory(self, is_main=is_main)
+        if init:
+            factory.create_instance()
+        return factory()
+
     def mount_asgi_app(
         self, app: ext.ASGIApp, path: str = "/", name: str | None = None
     ) -> None:

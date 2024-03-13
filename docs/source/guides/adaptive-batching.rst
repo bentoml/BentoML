@@ -146,6 +146,54 @@ Below is a practical example of a Service that uses adaptive batching to encode 
 
 In this Service, the ``encode`` endpoint is marked as ``batchable``. It's configured to process up to 32 sentences at once and will wait no longer than 1 second to form a batch. This means if fewer than 32 sentences are received, the Service will wait for additional sentences to arrive within the 1-second window before proceeding with encoding.
 
+Handle multiple parameters
+--------------------------
+
+In some cases, you might need to use a BentoML Service to process requests that include multiple parameters. Since the batchable API supports only one batchable parameter (in addition to ``bentoml.Context``), you can use a composite input type, such as a :ref:`Pydantic model <guides/iotypes:pydantic>`, to group these parameters into a single object. You also need a wrapper Service to serve as an intermediary to handle individual requests from clients.
+
+Here is a ``service.py`` file example of defining multiple parameters when using adaptive batching.
+
+.. code-block:: python
+
+    from __future__ import annotations
+
+    from pathlib import Path
+
+    import bentoml
+    from pydantic import BaseModel
+
+
+    class BatchInput(BaseModel):
+        image: Path
+        threshold: float
+
+
+    @bentoml.service
+    class ImageService:
+        @bentoml.api(batchable=True)
+        def predict(self, inputs: list[BatchInput]) -> list[Path]:
+            # Inference logic here using the image and threshold from each input
+            # For demonstration, return the image paths directly
+            return [input.image for input in inputs]
+
+
+    @bentoml.service
+    class MyService:
+        batch = bentoml.depends(ImageService)
+
+        @bentoml.api
+        def generate(self, image: Path, threshold: float) -> Path:
+            result = self.batch.predict([BatchInput(image=image, threshold=threshold)])
+            return result[0]
+
+Specifically, perform the following three steps to create a similar ``service.py`` file.
+
+1. **Define composite input types with Pydantic**. The Pydantic model (``BatchInput`` in this example) groups together all the parameters needed for processing a batch of requests. Each ``BatchInput`` instance represents a single request's parameters, like ``image`` and ``threshold``.
+2. **Create the primary Service for inference**. The primary BentoML Service ``ImageService`` has a batchable API method to accept a list of ``BatchInput`` objects. In this example, the method processes each input in the batch using the provided image and threshold values and returns a list of results.
+3. **Set a wrapper Service for single requests**. The wrapper Service defines an API ``generate`` that accepts individual parameters (``image`` and ``threshold``) for a single request. It uses ``bentoml.depends`` to invoke the ``ImageService``'s batchable ``predict`` method with a list containing a single ``BatchInput`` instance. The result for this individual request is then returned. For more information about creating multiple Services, see :doc:`/guides/distributed-services`.
+
+The primary Service performs the core inference logic in batches, improving efficiency and throughput. The wrapper Service serves as an interface for clients to send individual requests, encapsulating the complexity of batching and simplifying client interactions. This pattern enables you to leverage BentoML's adaptive batching features while accommodating more complex input structures that include multiple parameters per request.
+
 Error handling
 --------------
 

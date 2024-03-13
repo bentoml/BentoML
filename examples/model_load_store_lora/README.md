@@ -1,6 +1,6 @@
 # Model Load and Store with Multiple Models
 
-In this example, we will use LoRA and StableDiffusion to demonstrate how to load and store multiple models both for local models and remote models. 
+In this example, we will use LoRA and StableDiffusion to demonstrate how to load and store multiple models both for local models and remote models.
 
 ## Utilization
 ```bash
@@ -36,13 +36,13 @@ with bentoml.models.create(
 When storing multiple models, you can simply create new directories corresponding to these models inside the bentoml.models.create() context manager. For local models, use shutil.copytree to copy the local models and files. For remote models, use the respective library tools to save the models to the directory you just created.
 
 ## Model Load (service.py)
-Now that the models are saved, we can get the directory of the saved models by using `model_ref = bentoml.models.get("sd2:latest")`. You can get the path by calling `model_ref.path`. This will return the sd2 directory you have just created. To 
-get each individual model, simply append the directory names ('diffusion and 'lora' in this example). 
+Now that the models are saved, we can get the directory of the saved models by using `model_ref = bentoml.models.get("sd2:latest")`. You can get the path by calling `model_ref.path`. This will return the sd2 directory you have just created. To
+get each individual model, simply append the directory names ('diffusion and 'lora' in this example).
 
 ```python
 class StableDiffusion:
     model_ref = bentoml.models.get("sd2:latest")
-    
+
     def __init__(self) -> None:
         # Load model into pipeline
         self.diffusion_ref = os.path.join(self.model_ref.path, "diffusion")

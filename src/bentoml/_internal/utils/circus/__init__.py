@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import contextlib
 import typing as t
+from threading import Thread
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+from circus.arbiter import Arbiter as _Arbiter
+
 if TYPE_CHECKING:
-    from circus.arbiter import Arbiter
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
 
@@ -13,6 +16,41 @@ __all__ = [
     "create_circus_socket_from_uri",
     "create_standalone_arbiter",
 ]
+
+
+class Arbiter(_Arbiter):
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.exit_stack = contextlib.ExitStack()
+
+    def start(self, cb: t.Callable[[t.Any], t.Any] | None = None) -> None:
+        self.exit_stack.__enter__()
+        return super().start(cb)
+
+    def stop(self) -> None:
+        self.exit_stack.__exit__(None, None, None)
+        return super().stop()
+
+
+class ThreadedArbiter(Arbiter, Thread):
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        Arbiter.__init__(self, *args, **kwargs)
+        Thread.__init__(self)
+        self.__cb: t.Optional[t.Callable[[t.Any], t.Any]] = None
+
+    def start(self, cb: t.Callable[[t.Any], t.Any] | None = None) -> None:
+        self.__cb = cb
+        Thread.start(self)
+
+    def run(self) -> None:
+        # reset the loop in thread
+        self.loop = None
+        self.ctrl.loop = self._ensure_ioloop()  # type: ignore[union-attr]
+        Arbiter.start(self, self.__cb)
+
+    def stop(self) -> None:
+        self.loop.add_callback(Arbiter.stop, self)  # type: ignore[union-attr]
+        Thread.join(self)
 
 
 def create_circus_socket_from_uri(
@@ -42,14 +80,16 @@ def create_circus_socket_from_uri(
         raise ValueError(f"Unsupported URI scheme: {parsed.scheme}")
 
 
-def create_standalone_arbiter(watchers: list[Watcher], **kwargs: t.Any) -> Arbiter:
-    from circus.arbiter import Arbiter
-
+def create_standalone_arbiter(
+    watchers: list[Watcher], *, threaded: bool = False, **kwargs: t.Any
+) -> Arbiter:
     from .. import reserve_free_port
+
+    arbiter_cls = ThreadedArbiter if threaded else Arbiter
 
     with reserve_free_port() as endpoint_port:
         with reserve_free_port() as pubsub_port:
-            return Arbiter(
+            return arbiter_cls(
                 watchers,
                 endpoint=f"tcp://127.0.0.1:{endpoint_port}",
                 pubsub_endpoint=f"tcp://127.0.0.1:{pubsub_port}",

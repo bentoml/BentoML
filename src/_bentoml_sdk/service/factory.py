@@ -30,6 +30,7 @@ logger = logging.getLogger("bentoml.io")
 T = t.TypeVar("T", bound=object)
 
 if t.TYPE_CHECKING:
+    from _bentoml_impl.server.serving import Server
     from bentoml._internal import external_typing as ext
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
 
@@ -197,6 +198,15 @@ class Service(t.Generic[T]):
                 )
         return self._import_str
 
+    def to_asgi(self, is_main: bool = True, init: bool = False) -> ext.ASGIApp:
+        from _bentoml_impl.server.app import ServiceAppFactory
+
+        self.inject_config()
+        factory = ServiceAppFactory(self, is_main=is_main)
+        if init:
+            factory.create_instance()
+        return factory()
+
     def mount_asgi_app(
         self, app: ext.ASGIApp, path: str = "/", name: str | None = None
     ) -> None:
@@ -286,13 +296,14 @@ class Service(t.Generic[T]):
         bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
         development_mode: bool = False,
         reload: bool = False,
-    ) -> None:
+        threaded: bool = False,
+    ) -> Server:
         from _bentoml_impl.server import serve_http
         from bentoml._internal.log import configure_logging
 
         configure_logging()
 
-        serve_http(
+        return serve_http(
             self,
             working_dir=working_dir,
             host=host,
@@ -309,6 +320,7 @@ class Service(t.Generic[T]):
             bentoml_home=bentoml_home,
             development_mode=development_mode,
             reload=reload,
+            threaded=threaded,
         )
 
 

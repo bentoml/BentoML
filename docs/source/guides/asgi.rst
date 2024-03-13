@@ -31,7 +31,7 @@ FastAPI
 
 `FastAPI <https://fastapi.tiangolo.com/>`_ is a web framework for building APIs that is built on top of ASGI, allowing it to handle asynchronous requests. To integrate a FastAPI application with a BentoML Service, you can define a FastAPI route either inside or outside the Service as below.
 
-.. note:: 
+.. note::
 
    Make sure you have installed FastAPI by running ``pip install fastapi``. See `the FastAPI documentation <https://fastapi.tiangolo.com/tutorial/>`_ to learn more.
 
@@ -61,27 +61,27 @@ Specifically, do the following to mount FastAPI:
 1. Create a FastAPI application with ``FastAPI()``.
 2. Use the ``@bentoml.mount_asgi_app(app)`` decorator to mount the FastAPI application to the BentoML Service, enabling them to be served together.
 3. Define a FastAPI route inside or outside the Service class using ``@app.get("/<route-name>")``.
-   
+
    - Inside the class: Use ``self`` to access the Service instance's attributes and methods.
    - Outside the class: Use FastAPI's dependency injection system (``Depends``) to inject the BentoML Service instance into the route function. In the code above, the ``hello1`` route uses ``Depends(bentoml.get_current_service)`` to inject the ``MyService`` instance, allowing the route to access the Service's attributes and methods.
 
 4. Within the FastAPI route, add your desired implementation logic. This example returns a greeting message using the Service's name.
 
-.. note:: 
+.. note::
 
     In addition to ``get``, you can use the other operations like ``post``, ``put``, and ``delete``. See `the FastAPI documentation <https://fastapi.tiangolo.com/tutorial/first-steps/>`_ to learn more.
 
 .. dropdown:: Design choice: Inside vs. Outside
-    
+
     Accessing the BentoML Service instance both inside and outside the Service class offers flexibility in how you structure and interact with your Service logic and dependencies. The differences in accessing the BentoML Service instance in these contexts primarily relate to scope and the intended use cases.
-    
+
     Inside the Service class
-    
+
     - Direct access: Within the class defining a BentoML Service, you have direct access to ``self``, which represents the instance of the Service. This allows you to directly access its attributes and methods without injecting any dependency. It's the most straightforward way to use the Service's functionality from within its own definition.
     - Contextual use: Accessing the Service instance inside the class is typical for defining the Service's internal logic, such as setting up endpoints, performing operations with the model, and handling requests directly related to the Service's primary functionality.
-    
+
     Outside the Service class
-    
+
     - Dependency injection: Accessing the BentoML Service instance outside the class typically requires dependency injection mechanisms, such as the ``Depends`` function in FastAPI. This approach is necessary when you want to use the Service instance in other parts of your project.
     - Modular and decoupled design: This approach allows different components of your BentoML project to interact with the Service without being tightly integrated into its class definition. For example, your ML logic can be encapsulated within the BentoML Service, while other aspects, such as custom authentication, supplementary data processing, or additional REST endpoints, can be managed externally yet still interact with the Service as needed.
 
@@ -116,7 +116,7 @@ The following is a more practical example of mounting FastAPI onto the Summariza
         def summarize(self, text: str = EXAMPLE_INPUT) -> str:
             result = self.pipeline(text)
             return result[0]['summary_text']
-        
+
         # Access the Service instance inside the class
         @app.get("/hello-inside")
         def hello(self):
@@ -150,7 +150,7 @@ Quart
 
 The following is an example of integrating Quart with BentoML.
 
-.. note:: 
+.. note::
 
     Make sure you have installed Quart by running ``pip install quart``. See `the Quart documentation <https://quart.palletsprojects.com/en/latest/tutorials/installation.html>`_ to learn more.
 
@@ -177,7 +177,7 @@ Specifically, do the following to mount Quart:
 3. Define a Quart route outside the Service class using ``@app.get(/"<route-name>")``. Use ``bentoml.get_current_service()`` to inject the ``MyService`` instance, allowing the route to access the Service's attributes and methods.
 4. Within the Quart route, add your desired implementation logic. This example returns a greeting message using the Service's name.
 
-.. note:: 
+.. note::
 
     In addition to ``get``, you can use the other operations like ``post``, ``put``, and ``delete``. See `the Quart documentation <https://quart.palletsprojects.com/en/latest/tutorials/index.html>`_ to learn more.
 
@@ -227,7 +227,7 @@ After you start the BentoML Service, which is accessible at `http://localhost:30
 
     Hello, MyService
 
-.. note:: 
+.. note::
 
     Unlike FastAPI, Quart does not natively support the OpenAPI specification, so the endpoint is not displayed on the Swagger UI. You can use other ways to communicate with it, such as ``curl``.
 

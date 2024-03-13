@@ -140,8 +140,11 @@ class RunnableMethod(t.Generic[T, P, R]):
     config: RunnableMethodConfig
     _bentoml_runnable_method: None = None
 
-    def __get__(self, obj: T, _: t.Type[T] | None = None) -> t.Callable[P, R]:
+    def __get__(self, obj: T | None, _: t.Type[T] | None = None) -> t.Callable[P, R]:
         from ..utils import is_async_callable
+
+        if obj is None:
+            return self
 
         if is_async_callable(self.func):
 

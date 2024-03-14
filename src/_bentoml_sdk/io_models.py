@@ -305,23 +305,25 @@ class IODescriptor(IOMixin, BaseModel):
             ) from e
 
 
-def ensure_io_descriptor(output_type: type) -> type[IODescriptor]:
+def ensure_io_descriptor(typ_: type) -> type[IODescriptor]:
     from pydantic._internal._utils import lenient_issubclass
 
-    if inspect.isclass(output_type) and lenient_issubclass(output_type, BaseModel):
-        if not issubclass(output_type, IODescriptor):
+    type_name = getattr(typ_, "__name__", "")
+
+    if inspect.isclass(typ_) and lenient_issubclass(typ_, BaseModel):
+        if not issubclass(typ_, IODescriptor):
             return t.cast(
                 t.Type[IODescriptor],
                 create_model(
-                    f"{output_type.__name__}IODescriptor",
-                    __base__=(IOMixin, output_type),
+                    f"{type_name}IODescriptor",
+                    __base__=(IOMixin, typ_),
                 ),
             )
-        return output_type
+        return typ_
     return t.cast(
         t.Type[IODescriptor],
         create_model(
-            f"{output_type.__name__}IODescriptor",
-            __base__=(IOMixin, RootModel[output_type]),
+            f"{type_name}IODescriptor",
+            __base__=(IOMixin, RootModel[typ_]),
         ),
     )

@@ -7,7 +7,6 @@ import logging
 import typing as t
 
 from _bentoml_sdk import Service
-from _bentoml_sdk.method import APIMethod
 from bentoml.exceptions import BentoMLException
 
 from .http import AbstractClient
@@ -68,7 +67,7 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
 
     def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         original_func = getattr(self._inner, __name)
-        if not isinstance(original_func, APIMethod):
+        if not hasattr(original_func, "func"):
             raise BentoMLException(f"calling non-api method {__name} is not allowed")
         original_func = original_func.func
         while isinstance(original_func, functools.partial):

@@ -141,8 +141,6 @@ class IOMixin:
 
         from _bentoml_impl.serde import JSONSerde
 
-        structured_media_type = cls.media_type or serde.media_type
-
         if inspect.isasyncgen(obj):
 
             async def async_stream() -> t.AsyncGenerator[str | bytes, None]:
@@ -173,7 +171,7 @@ class IOMixin:
                 )
             return Response(
                 content=serde.serialize_model(t.cast(IODescriptor, obj)),
-                media_type=structured_media_type,
+                media_type=cls.mime_type(),
             )
         else:
             if is_file_type(type(obj)) and isinstance(serde, JSONSerde):
@@ -208,7 +206,7 @@ class IOMixin:
                 return Response(content=rendered, media_type=cls.mime_type())
             else:
                 return Response(
-                    content=serde.serialize_model(ins), media_type=structured_media_type
+                    content=serde.serialize_model(ins), media_type=cls.mime_type()
                 )
 
 
@@ -307,23 +305,25 @@ class IODescriptor(IOMixin, BaseModel):
             ) from e
 
 
-def ensure_io_descriptor(output_type: type) -> type[IODescriptor]:
+def ensure_io_descriptor(typ_: type) -> type[IODescriptor]:
     from pydantic._internal._utils import lenient_issubclass
 
-    if inspect.isclass(output_type) and lenient_issubclass(output_type, BaseModel):
-        if not issubclass(output_type, IODescriptor):
+    type_name = getattr(typ_, "__name__", "")
+
+    if inspect.isclass(typ_) and lenient_issubclass(typ_, BaseModel):
+        if not issubclass(typ_, IODescriptor):
             return t.cast(
                 t.Type[IODescriptor],
                 create_model(
-                    f"{output_type.__name__}IODescriptor",
-                    __base__=(IOMixin, output_type),
+                    f"{type_name}IODescriptor",
+                    __base__=(IOMixin, typ_),
                 ),
             )
-        return output_type
+        return typ_
     return t.cast(
         t.Type[IODescriptor],
         create_model(
-            f"{output_type.__name__}IODescriptor",
-            __base__=(IOMixin, RootModel[output_type]),
+            f"{type_name}IODescriptor",
+            __base__=(IOMixin, RootModel[typ_]),
         ),
     )

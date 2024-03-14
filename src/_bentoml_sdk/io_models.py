@@ -141,8 +141,6 @@ class IOMixin:
 
         from _bentoml_impl.serde import JSONSerde
 
-        structured_media_type = cls.media_type or serde.media_type
-
         if inspect.isasyncgen(obj):
 
             async def async_stream() -> t.AsyncGenerator[str | bytes, None]:
@@ -173,7 +171,7 @@ class IOMixin:
                 )
             return Response(
                 content=serde.serialize_model(t.cast(IODescriptor, obj)),
-                media_type=structured_media_type,
+                media_type=cls.mime_type(),
             )
         else:
             if is_file_type(type(obj)) and isinstance(serde, JSONSerde):
@@ -208,7 +206,7 @@ class IOMixin:
                 return Response(content=rendered, media_type=cls.mime_type())
             else:
                 return Response(
-                    content=serde.serialize_model(ins), media_type=structured_media_type
+                    content=serde.serialize_model(ins), media_type=cls.mime_type()
                 )
 
 

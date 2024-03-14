@@ -21,7 +21,7 @@ sample_img2img_input = dict(prompt="make the image black and white", strength=0.
 
 @bentoml.service(
     resources={"memory": "500MiB"},
-    traffic={"timeout": 30},
+    traffic={"timeout": 600},
 )
 class StableDiffusion:
     model_ref = bentoml.models.get("sd2:latest")

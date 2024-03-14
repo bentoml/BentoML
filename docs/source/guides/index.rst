@@ -63,6 +63,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Enable adaptive batching to batch requests for reduced latency and optimized resource use.
 
+    .. grid-item-card:: :doc:`/guides/asgi`
+        :link: /guides/asgi
+        :link-type: doc
+
+        Integrate ASGI frameworks in a BentoML Service to provide additional features to exposed endpoints.
+
     .. grid-item-card:: :doc:`/guides/configurations`
         :link: /guides/configurations
         :link-type: doc
@@ -81,4 +87,5 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     distributed-services
     clients
     adaptive-batching
+    asgi
     configurations

@@ -796,6 +796,7 @@ class BentoBuildConfig:
             labels: dict[str, t.Any] | None = ...,
             include: list[str] | None = ...,
             exclude: list[str] | None = ...,
+            envs: list[dict[str, str]] | None = ...,
             docker: DockerOptions | dict[str, t.Any] | None = ...,
             python: PythonOptions | dict[str, t.Any] | None = ...,
             conda: CondaOptions | dict[str, t.Any] | None = ...,

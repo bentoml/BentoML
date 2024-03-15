@@ -1,4 +1,3 @@
-import os
 import shutil
 
 from diffusers import StableDiffusionPipeline

@@ -1,10 +1,8 @@
-import os
-import typing as t
-
+import torch
 from PIL.Image import Image
 
 import bentoml
-import torch
+
 
 @bentoml.service(
     resources={
@@ -18,8 +16,8 @@ class StableDiffusion:
     model_ref = bentoml.models.get("sd:latest")
 
     def __init__(self) -> None:
-        from diffusers import StableDiffusionImg2ImgPipeline
         from diffusers import StableDiffusionPipeline
+
         # Load model into pipeline
         self.diffusion_ref = self.model_ref.path_of("diffusion")
         self.lora_ref = self.model_ref.path_of("lora")
@@ -32,7 +30,7 @@ class StableDiffusion:
 
     @bentoml.api
     def txt2img(
-        self, 
+        self,
         prompt: str = "A Pokemon with blue eyes.",
         height: int = 768,
         width: int = 768,

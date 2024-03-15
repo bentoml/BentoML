@@ -2,7 +2,7 @@
 Lifecycle hooks
 ===============
 
-Lifecycle hooks in BentoML offers mechanism to run custom logic at various stages of a Service's lifecycle. By leveraging these hooks, you can perform setup actions at startup, clean up resources before shutdown, and more. 
+Lifecycle hooks in BentoML offers mechanism to run custom logic at various stages of a Service's lifecycle. By leveraging these hooks, you can perform setup actions at startup, clean up resources before shutdown, and more.
 
 This document provides an overview of lifecycle hooks and how to use them in BentoML :doc:`/guides/services`.
 
@@ -43,7 +43,7 @@ Deployment hooks are similar to static methods as they do not receive the ``self
             print("Do more preparation work if needed, also running only once.")
 
         def __init__(self) -> None:
-            # Startup logic and initialization code 
+            # Startup logic and initialization code
             print("This runs on Service startup, once for each worker, so it runs 4 times.")
 
         @bentoml.api
@@ -82,18 +82,18 @@ Use the ``@bentoml.on_shutdown`` decorator to specify a method as a shutdown hoo
             print("Do some preparation work, running only once.")
 
         def __init__(self) -> None:
-            # Startup logic and initialization code 
+            # Startup logic and initialization code
             print("This runs on Service startup, once for each worker, so it runs 4 times.")
 
         @bentoml.api
         def predict(self, text) -> str:
             # Endpoint implementation logic
-            
+
         @bentoml.on_shutdown
         def shutdown(self):
             # Logic on shutdown
             print("Cleanup actions on Service shutdown.")
-            
+
         @bentoml.on_shutdown
         async def async_shutdown(self):
             print("Async cleanup actions on Service shutdown.")

@@ -60,7 +60,7 @@ This unit test does the following:
 2. Create a mock object that simulates the behavior of the callable object returned by the real ``pipeline`` function. Whenever this mock callable object is called, it returns a list containing a single dictionary with the key ``"summary_text"`` and value ``"Mock summary"``. For more information, see `mock object library <https://docs.python.org/3/library/unittest.mock.html>`_.
 3. Make assertions to ensure the Service is functioning correctly.
 
-.. note:: 
+.. note::
 
     When the output is fixed and known (for example, a function that returns a constant value or a predictable result based on the input), you can write tests that directly assert the expected output. In such cases, mocking might still be used to isolate the function from any dependencies it has, but the focus of the test can be on asserting that the function returns the exact expected value.
 
@@ -107,7 +107,7 @@ An example:
             try:
                 client = bentoml.SyncHTTPClient("http://localhost:50001", server_ready_timeout=10)
                 summarized_text = client.summarize(text=EXAMPLE_INPUT)
-                
+
                 # Ensure the summarized text is not empty
                 assert summarized_text, "The summarized text should not be empty."
                 # Check the type of the response
@@ -164,7 +164,7 @@ An example:
     async def test_request():
         # Initialize the ASGI transport with the Summarization Service
         transport=httpx.ASGITransport(app=Summarization.to_asgi(init=True))
-        
+
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as test_client:
             response = await test_client.post("/summarize", json={"text": EXAMPLE_INPUT})
             # Retrieve the text from the response for validation
@@ -187,7 +187,7 @@ Run the HTTP behavior test:
 
     pytest test_http.py -v
 
-.. note:: 
+.. note::
 
     You need a plugin like ``pytest-asyncio`` to run async tests. You can install it by running ``pip install pytest-asyncio``.
 
@@ -217,27 +217,27 @@ Consider the following when designing your tests:
 * Keep tests simple and focused. A test should ideally verify one behavior.
 * Ensure your testing environment closely mirrors your production environment to avoid "it works on my machine" issues.
 * To `customize or configure <https://docs.pytest.org/en/stable/reference/customize.html>`_ ``pytest`` and make your testing process more efficient and tailored to your needs, you can create a ``pytest.ini`` configuration file. By specifying settings in ``pytest.ini``, you ensure that ``pytest`` consistently recognizes your project structure and preferences across different environments and setups. Here is an example:
-  
+
   .. code-block:: ini
 
      [pytest]
      # Add current directory to PYTHONPATH for easy module imports
      pythonpath = .
-        
+
      # Specify where pytest should look for tests, in this case, a directory named `test`
      testpaths = test
-        
+
      # Optionally, configure pytest to use specific markers
      markers =
         integration: mark tests as integration tests.
         unit: mark tests as unit tests.
-    
+
   Navigate to the root directory of your project (where ``pytest.ini`` is located), then run the following command to start testing:
-    
+
   .. code-block:: bash
 
         pytest -v
-    
+
   Expected output:
 
   .. code-block:: bash

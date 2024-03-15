@@ -1,4 +1,6 @@
 service: "service.py:StableDiffusion"
+model:
+  tag: sd
 labels:
   owner: bentoml-team
   project: gallery

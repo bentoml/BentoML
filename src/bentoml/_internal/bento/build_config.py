@@ -101,10 +101,6 @@ def _convert_env(
     if not env:
         return None
 
-    logger.warning(
-        "Deprecated build option: 'docker.env' is used, please use 'envs' instead."
-    )
-
     if isinstance(env, str):
         env_path = os.path.expanduser(os.path.expandvars(env))
         if os.path.exists(env_path):

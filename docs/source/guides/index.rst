@@ -51,6 +51,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Create distributed Services for advanced use cases.
 
+    .. grid-item-card:: :doc:`/guides/testing`
+        :link: /guides/testing
+        :link-type: doc
+
+        Create tests to verify the functionality of your model and the operational aspect of your Service.
+
     .. grid-item-card:: :doc:`/guides/clients`
         :link: /guides/clients
         :link-type: doc
@@ -85,6 +91,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     build-options
     model-store
     distributed-services
+    testing
     clients
     adaptive-batching
     asgi

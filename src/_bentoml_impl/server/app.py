@@ -191,6 +191,10 @@ class ServiceAppFactory(BaseAppFactory):
         app.add_exception_handler(BentoMLException, self.handle_bentoml_exception)
         app.add_exception_handler(Exception, self.handle_uncaught_exception)
         app.add_route("/schema.json", self.schema_view, name="schema")
+
+        for mount_app, path, name in self.service.mount_apps:
+            app.mount(app=mount_app, path=path, name=name)
+
         if self.is_main:
             if BentoMLContainer.new_index:
                 assets = Path(__file__).parent / "assets"
@@ -206,8 +210,7 @@ class ServiceAppFactory(BaseAppFactory):
                 )
                 app.add_route("/docs.json", self.openapi_spec_view, name="openapi-spec")
             app.add_route("/", self.index_page, name="index")
-        for mount_app, path, name in self.service.mount_apps:
-            app.mount(app=mount_app, path=path, name=name)
+
         return app
 
     @property

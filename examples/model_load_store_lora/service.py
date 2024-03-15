@@ -7,7 +7,11 @@ import bentoml
 import torch
 
 @bentoml.service(
-    # resources={"memory": "500MiB"},
+    resources={
+        "memory": "500MiB",
+        "gpu": 1,
+        "gpu_type": "nvidia-tesla-t4",
+    },
     traffic={"timeout": 600},
 )
 class StableDiffusion:

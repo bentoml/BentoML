@@ -788,6 +788,12 @@ class BentoBuildConfig:
         # dict[str, t.Any] since our converter will handle the conversion.
         # There is no way to tell type checker signatures of the converter from attrs
         # if given attribute is alrady has a type annotation.
+        from typing_extensions import TypedDict
+
+        class EnvironmentEntry(TypedDict):
+            name: str
+            value: str
+
         def __init__(
             self,
             service: str,
@@ -796,7 +802,7 @@ class BentoBuildConfig:
             labels: dict[str, t.Any] | None = ...,
             include: list[str] | None = ...,
             exclude: list[str] | None = ...,
-            envs: list[dict[str, str]] | None = ...,
+            envs: list[EnvironmentEntry] | None = ...,
             docker: DockerOptions | dict[str, t.Any] | None = ...,
             python: PythonOptions | dict[str, t.Any] | None = ...,
             conda: CondaOptions | dict[str, t.Any] | None = ...,

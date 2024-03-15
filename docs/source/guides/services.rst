@@ -125,6 +125,16 @@ You can retrieve the context of an inference call by adding ``bentoml.Context`` 
 
         return result[0]['summary_text']
 
+Lifecycle hooks
+^^^^^^^^^^^^^^^
+
+BentoML's lifecycle hooks provide a way to insert custom logic at specific stages of a Service's lifecycle.
+
+- Deployment hooks (``@bentoml.on_deployment``): Execute global setup actions before Service workers are spawned. They run only once regardless of the number of workers, ideal for one-time initializations.
+- Shutdown hooks (``@bentoml.on_shutdown``): Run cleanup logic when a BentoML Service is shutting down. They enable tasks such as closing connections and releasing resources to ensure a graceful shutdown.
+
+You use decorators to set lifecycle hooks. For details, see :doc:`/guides/lifecycle-hooks`.
+
 Synchronous and asynchronous APIs
 ----------------------------------
 

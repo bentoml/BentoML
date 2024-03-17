@@ -355,7 +355,7 @@ def build(
         labels=labels,
         include=include,
         exclude=exclude,
-        envs=envs,
+        envs=envs or [],
         docker=docker,
         python=python,
         conda=conda,

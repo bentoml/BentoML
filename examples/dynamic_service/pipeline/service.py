@@ -1,9 +1,6 @@
 from typing import Any
-
 import bentoml
-from bentoml import Runner
-from bentoml.io import JSON
-from bentoml.io import Text
+
 
 """The following example is based on the sklearn/pipeline example.
 
@@ -21,60 +18,55 @@ during construction of this file. You aim to reuse the same file each time you c
 to alter the service definitions repeatedly. Each model should ideally have a route with a unique running index,
 for instance. """
 
-
-def wrap_service_methods(runner: Runner, targets: Any):
-    """Pass Runner and target names, as they are needed in both methods.
-
-    Note: Only passed arguments are available in the methods below, scope is not overwritten.
-    """
-
+def wrap_service_methods(model: bentoml.Model,
+                         targets: Any,
+                         predict_route: str,
+                         predict_name: str,
+                         predict_proba_route: str,
+                         predict_proba_name: str,
+                         ):
+    """Wrap models in service methods and annotate as api."""
+    @bentoml.api(route=predict_route, name=predict_name)
     async def predict(input_doc: str):
-        predictions = await runner.predict.async_run([input_doc])
+        predictions = await model.predict.async_run([input_doc])
         return {"result": targets[predictions[0]]}
 
+    @bentoml.api(route=predict_proba_route, name=predict_proba_name)
     async def predict_proba(input_doc: str):
-        predictions = await runner.predict_proba.async_run([input_doc])
+        predictions = await model.predict_proba.async_run([input_doc])
         return predictions[0]
+
 
     return predict, predict_proba
 
 
-available_model_set = set()
-# Add all unique variations of twenty_news_group to the service
-for available_model in bentoml.models.list():
-    if "twenty_news_group" in available_model.tag.name:
-        available_model_set.add(available_model.tag.name)
+@bentoml.service(
+workers=1, resources={"cpu": "1"}
+)
+class DynamicService:
+    """Dynamic Service class.
 
-model_runner_list: [Runner] = []
-target_names: [] = []
+    Note: Variables must not be added in the init function, as the service apis would not be visible in the openapi doc.
+    """
 
-for available_model in available_model_set:
-    bento_model = bentoml.sklearn.get(f"{available_model}:latest")
-    target_names.append(bento_model.custom_objects["target_names"])
-    model_runner_list.append(bento_model.to_runner())
+    # Manually add api methods to local scope as via locals() method (current scope).
+    for idx, available_model in enumerate(bentoml.models.list()):
+        if "twenty_news_group" in available_model.tag.name:
+            print(f"Creating Endpoint {idx}")
+            bento_model = bentoml.sklearn.get(f"{available_model.tag.name}:latest")
+            target_names = bento_model.custom_objects["target_names"]
+            path_predict = f"predict_model_{idx}"
+            path_predict_proba = f"predict_proba_model_{idx}"
 
-svc = bentoml.Service("doc_classifier", runners=model_runner_list)
+            locals()[path_predict], locals()[path_predict_proba] = wrap_service_methods(bento_model,
+                                                          target_names,
+                                                          predict_route=path_predict,
+                                                          predict_name=path_predict,
+                                                          predict_proba_route=path_predict_proba,
+                                                          predict_proba_name=path_predict_proba,
+                                                          )
 
-for idx, (model_runner, target_name) in enumerate(zip(model_runner_list, target_names)):
-    path_predict = f"predict_model_{idx}"
-    path_predict_proba = f"predict_proba_model_{idx}"
-    fn_pred, fn_pred_proba = wrap_service_methods(
-        runner=model_runner, targets=target_name
-    )
+    def __init__(self):
+        """Nothing to do here."""
+        ...
 
-    svc.add_api(
-        input=Text(),
-        output=JSON(),
-        user_defined_callback=fn_pred,
-        name=path_predict,
-        doc=None,
-        route=path_predict,
-    )
-    svc.add_api(
-        input=Text(),
-        output=JSON(),
-        user_defined_callback=fn_pred_proba,
-        name=path_predict_proba,
-        doc=None,
-        route=path_predict_proba,
-    )

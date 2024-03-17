@@ -1,4 +1,4 @@
-service: "service.py:svc"
+service: "service:DynamicService"
 include:
   - "service.py"
   - "requirements.txt"

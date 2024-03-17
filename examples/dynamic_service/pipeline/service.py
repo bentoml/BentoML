@@ -1,6 +1,6 @@
 from typing import Any
-import bentoml
 
+import bentoml
 
 """The following example is based on the sklearn/pipeline example.
 
@@ -18,14 +18,17 @@ during construction of this file. You aim to reuse the same file each time you c
 to alter the service definitions repeatedly. Each model should ideally have a route with a unique running index,
 for instance. """
 
-def wrap_service_methods(model: bentoml.Model,
-                         targets: Any,
-                         predict_route: str,
-                         predict_name: str,
-                         predict_proba_route: str,
-                         predict_proba_name: str,
-                         ):
+
+def wrap_service_methods(
+    model: bentoml.Model,
+    targets: Any,
+    predict_route: str,
+    predict_name: str,
+    predict_proba_route: str,
+    predict_proba_name: str,
+):
     """Wrap models in service methods and annotate as api."""
+
     @bentoml.api(route=predict_route, name=predict_name)
     async def predict(input_doc: str):
         predictions = await model.predict.async_run([input_doc])
@@ -36,13 +39,10 @@ def wrap_service_methods(model: bentoml.Model,
         predictions = await model.predict_proba.async_run([input_doc])
         return predictions[0]
 
-
     return predict, predict_proba
 
 
-@bentoml.service(
-workers=1, resources={"cpu": "1"}
-)
+@bentoml.service(workers=1, resources={"cpu": "1"})
 class DynamicService:
     """Dynamic Service class.
 
@@ -58,15 +58,15 @@ class DynamicService:
             path_predict = f"predict_model_{idx}"
             path_predict_proba = f"predict_proba_model_{idx}"
 
-            locals()[path_predict], locals()[path_predict_proba] = wrap_service_methods(bento_model,
-                                                          target_names,
-                                                          predict_route=path_predict,
-                                                          predict_name=path_predict,
-                                                          predict_proba_route=path_predict_proba,
-                                                          predict_proba_name=path_predict_proba,
-                                                          )
+            locals()[path_predict], locals()[path_predict_proba] = wrap_service_methods(
+                bento_model,
+                target_names,
+                predict_route=path_predict,
+                predict_name=path_predict,
+                predict_proba_route=path_predict_proba,
+                predict_proba_name=path_predict_proba,
+            )
 
     def __init__(self):
         """Nothing to do here."""
         ...
-

@@ -780,7 +780,7 @@ class BentoBuildConfig:
     models: t.List[ModelSpec] = attr.field(
         factory=list, converter=convert_models_config
     )
-    envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
+    envs: t.List[t.Dict[str, str]] = attr.field(default=None, factory=list)
 
     if t.TYPE_CHECKING:
         # NOTE: This is to ensure that BentoBuildConfig __init__

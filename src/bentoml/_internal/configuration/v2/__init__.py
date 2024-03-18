@@ -13,6 +13,7 @@ from ..helpers import ensure_iterable_type
 from ..helpers import ensure_larger_than
 from ..helpers import ensure_larger_than_zero
 from ..helpers import ensure_range
+from ..helpers import flatten_dict
 from ..helpers import is_valid_ip_address
 from ..helpers import validate_otlp_protocol
 from ..helpers import validate_tracing_type
@@ -213,6 +214,7 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
     for svc, svc_cfg in default_config["services"].items():
         if svc in SERVICE_CFG_KEYS:
             default_service_config[svc] = svc_cfg
+    default_service_config = dict(flatten_dict(default_service_config))
 
     for key in list(override_config):
         if key.startswith("services."):

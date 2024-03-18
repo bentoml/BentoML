@@ -18,13 +18,15 @@ during construction of this file. You aim to reuse the same file each time you c
 to alter the service definitions repeatedly. Each model should ideally have a route with a unique running index,
 for instance. """
 
-def wrap_service_methods(model: bentoml.Model,
-                         targets: Any,
-                         predict_route: str,
-                         predict_name: str,
-                         predict_proba_route: str,
-                         predict_proba_name: str,
-                         ):
+
+def wrap_service_methods(
+    model: bentoml.Model,
+    targets: Any,
+    predict_route: str,
+    predict_name: str,
+    predict_proba_route: str,
+    predict_proba_name: str,
+):
     """Wrap models in service methods and annotate as api."""
     @bentoml.api(route=predict_route, name=predict_name)
     async def predict(input_doc: str):

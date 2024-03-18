@@ -1,6 +1,6 @@
 from typing import Any
-import bentoml
 
+import bentoml
 
 """The following example is based on the sklearn/pipeline example.
 
@@ -28,6 +28,7 @@ def wrap_service_methods(
     predict_proba_name: str,
 ):
     """Wrap models in service methods and annotate as api."""
+
     @bentoml.api(route=predict_route, name=predict_name)
     async def predict(input_doc: str):
         predictions = await model.predict.async_run([input_doc])
@@ -38,10 +39,10 @@ def wrap_service_methods(
         predictions = await model.predict_proba.async_run([input_doc])
         return predictions[0]
 
-
     return predict, predict_proba
 
-class_attrs = {} # Empty dict for storing methods
+
+class_attrs = {}  # Empty dict for storing methods
 # Manually add api methods to local scope as via locals() method (current scope).
 distinct_models = set()
 for model in bentoml.models.list():
@@ -53,17 +54,23 @@ for idx, available_model in enumerate(distinct_models):
         path_predict = f"predict_model_{idx}"
         path_predict_proba = f"predict_proba_model_{idx}"
 
-        class_attrs[path_predict],class_attrs[path_predict_proba] = wrap_service_methods(bento_model,
-                                                      target_names,
-                                                      predict_route="/"+path_predict,
-                                                      predict_name="/"+path_predict,
-                                                      predict_proba_route=path_predict_proba,
-                                                      predict_proba_name=path_predict_proba,
-                                                      )
+        (
+            class_attrs[path_predict],
+            class_attrs[path_predict_proba],
+        ) = wrap_service_methods(
+            bento_model,
+            target_names,
+            predict_route="/" + path_predict,
+            predict_name="/" + path_predict,
+            predict_proba_route=path_predict_proba,
+            predict_proba_name=path_predict_proba,
+        )
 
 #  Create class with type and add generated methods
 DynamicServiceClass = type(
-    "DynamicService", (object,), class_attrs,
+    "DynamicService",
+    (object,),
+    class_attrs,
 )
 
 #  Create Endpoint Service defined in bentofile.yaml

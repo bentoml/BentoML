@@ -39,34 +39,30 @@ def wrap_service_methods(model: bentoml.Model,
 
     return predict, predict_proba
 
+class_attrs = {} # Empty dict for storing methods
+# Manually add api methods to local scope as via locals() method (current scope).
+distinct_models = set()
+for model in bentoml.models.list():
+    distinct_models.add(model.tag.name)
+for idx, available_model in enumerate(distinct_models):
+    if "twenty_news_group" in available_model:
+        bento_model = bentoml.sklearn.get(f"{available_model}:latest")
+        target_names = bento_model.custom_objects["target_names"]
+        path_predict = f"predict_model_{idx}"
+        path_predict_proba = f"predict_proba_model_{idx}"
 
-@bentoml.service(
-workers=1, resources={"cpu": "1"}
+        class_attrs[path_predict],class_attrs[path_predict_proba] = wrap_service_methods(bento_model,
+                                                      target_names,
+                                                      predict_route="/"+path_predict,
+                                                      predict_name="/"+path_predict,
+                                                      predict_proba_route=path_predict_proba,
+                                                      predict_proba_name=path_predict_proba,
+                                                      )
+
+#  Create class with type and add generated methods
+DynamicServiceClass = type(
+    "DynamicService", (object,), class_attrs,
 )
-class DynamicService:
-    """Dynamic Service class.
 
-    Note: Variables must not be added in the init function, as the service apis would not be visible in the openapi doc.
-    """
-
-    # Manually add api methods to local scope as via locals() method (current scope).
-    for idx, available_model in enumerate(bentoml.models.list()):
-        if "twenty_news_group" in available_model.tag.name:
-            print(f"Creating Endpoint {idx}")
-            bento_model = bentoml.sklearn.get(f"{available_model.tag.name}:latest")
-            target_names = bento_model.custom_objects["target_names"]
-            path_predict = f"predict_model_{idx}"
-            path_predict_proba = f"predict_proba_model_{idx}"
-
-            locals()[path_predict], locals()[path_predict_proba] = wrap_service_methods(bento_model,
-                                                          target_names,
-                                                          predict_route=path_predict,
-                                                          predict_name=path_predict,
-                                                          predict_proba_route=path_predict_proba,
-                                                          predict_proba_name=path_predict_proba,
-                                                          )
-
-    def __init__(self):
-        """Nothing to do here."""
-        ...
-
+#  Create Endpoint Service defined in bentofile.yaml
+DynamicService = bentoml.service(workers=1, resources={"cpu": "1"})(DynamicServiceClass)

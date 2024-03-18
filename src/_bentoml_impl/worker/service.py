@@ -143,7 +143,6 @@ def main(
         )
 
     service = import_service(bento_identifier)
-    service.inject_config()
 
     if service_name and service_name != service.name:
         service = service.find_dependent(service_name)

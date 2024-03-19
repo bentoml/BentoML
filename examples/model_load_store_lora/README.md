@@ -22,7 +22,7 @@ pipeline = StableDiffusionPipeline.from_pretrained(model_id, use_safetensors=Tru
 
 local_lora = "./lora"
 with bentoml.models.create(
-    name='sd', # All models are created under ~/bentoml/models/{name = sd2}
+    name='sd', # All models are created under ~/bentoml/models/{name = sd}
 ) as model_ref:
     local_diffusion_path = model_ref.path_of("diffusion")
     local_lora_path = model_ref.path_of("lora")

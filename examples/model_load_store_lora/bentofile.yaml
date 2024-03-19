@@ -7,14 +7,7 @@ labels:
 include:
   - "service.py"
 python:
-  packages:
-    - torch
-    - transformers
-    - accelerate
-    - diffusers
-    - triton
-    - xformers
-    - pydantic
+  requirements_txt: "./requirements.txt"
+  lock_packages: false
 docker:
     distro: debian
-    cuda_version: "11.7"

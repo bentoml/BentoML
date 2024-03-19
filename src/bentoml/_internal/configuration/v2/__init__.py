@@ -92,6 +92,7 @@ _SERVICE_CONFIG = {
         "timeout": s.And(Real, ensure_larger_than_zero),
         s.Optional("max_concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),
         s.Optional("external_queue"): bool,
+        s.Optional("concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),
     },
     s.Optional("backlog"): s.And(int, ensure_larger_than(64)),
     s.Optional("max_runner_connections"): s.And(int, ensure_larger_than_zero),

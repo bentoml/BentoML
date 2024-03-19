@@ -18,10 +18,11 @@ from typing_extensions import TypedDict
 Posint = Annotated[int, Gt(0)]
 Posfloat = Annotated[float, Gt(0.0)]
 
+
 class TrafficSchema(TypedDict, total=False):
     timeout: Posfloat
-    max_concurrency: Posint # concurrent request will be rejected if it exceeds this limit
-    concurrency: Posint # capabilty of handling concurrent request
+    max_concurrency: Posint  # concurrent request will be rejected if it exceeds this limit
+    concurrency: Posint  # capabilty of handling concurrent request
     external_queue: bool  # bentocloud only, if set to true, bentocloud will use external queue to handle request
 
 
@@ -206,6 +207,8 @@ class LoggingSchema(TypedDict, total=False):
 """
 service level (per replica) config
 """
+
+
 class ServiceConfig(TypedDict, total=False):
     name: str
     traffic: TrafficSchema

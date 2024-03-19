@@ -71,7 +71,7 @@ class ServiceAppFactory(BaseAppFactory):
             BentoMLContainer.api_server_config.metrics.enabled
         ],
         services: dict[str, t.Any] = Provide[BentoMLContainer.config.services],
-        #traffic: dict[str, t.Any] = Provide[BentoMLContainer.api_server_config.traffic],
+        # traffic: dict[str, t.Any] = Provide[BentoMLContainer.api_server_config.traffic],
         enable_access_control: bool = Provide[BentoMLContainer.http.cors.enabled],
         access_control_options: dict[str, list[str] | str | int] = Provide[
             BentoMLContainer.access_control_options
@@ -97,7 +97,12 @@ class ServiceAppFactory(BaseAppFactory):
                 num_workers = int(srs["cpu"])
             else:  # workers is a number
                 num_workers = workers
-        super().__init__(timeout=timeout, max_concurrency= max_concurrency if not max_concurrency else math.ceil(max_concurrency / num_workers))
+        super().__init__(
+            timeout=timeout,
+            max_concurrency=max_concurrency
+            if not max_concurrency
+            else math.ceil(max_concurrency / num_workers),
+        )
 
         self.dispatchers: dict[str, CorkDispatcher[t.Any, t.Any]] = {}
         self._service_instance: t.Any | None = None

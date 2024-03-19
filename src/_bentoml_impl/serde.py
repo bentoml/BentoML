@@ -25,6 +25,7 @@ if t.TYPE_CHECKING:
 
     from _bentoml_sdk import IODescriptor
 
+
 T = t.TypeVar("T", bound="IODescriptor")
 
 
@@ -39,6 +40,14 @@ class Payload:
     @property
     def headers(self) -> t.Mapping[str, str]:
         return {"content-length": str(self.total_bytes()), **self.metadata}
+
+
+@attrs.frozen
+class SerializationInfo:
+    mode: str
+
+    def mode_is_json(self) -> bool:
+        return self.mode == "json"
 
 
 class Serde(abc.ABC):
@@ -70,23 +79,24 @@ class Serde(abc.ABC):
 
 class GenericSerde:
     def _encode(self, obj: t.Any, schema: dict[str, t.Any]) -> t.Any:
+        mode = "json" if isinstance(self, JSONSerde) else "python"
+        info = SerializationInfo(mode=mode)
         if schema.get("type") == "tensor":
             child_schema = TensorSchema(
                 format=schema.get("format", ""),
                 dtype=schema.get("dtype"),
                 shape=schema.get("shape"),
             )
-            return child_schema.encode(child_schema.validate(obj))
+            return child_schema.encode(child_schema.validate(obj), info)
         if schema.get("type") == "dataframe":
             child_schema = DataframeSchema(
                 orient=schema.get("orient", "records"), columns=schema.get("columns")
             )
-            return child_schema.encode(child_schema.validate(obj))
+            return child_schema.encode(child_schema.validate(obj), info)
         if schema.get("type") == "array" and "items" in schema:
             return [self._encode(v, schema["items"]) for v in obj]
         if schema.get("type") == "object" and schema.get("properties"):
             if isinstance(obj, BaseModel):
-                mode = "json" if isinstance(self, JSONSerde) else "python"
                 return obj.model_dump(mode=mode)
             return {
                 k: self._encode(obj[k], child)

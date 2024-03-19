@@ -164,7 +164,6 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
         .. code-block:: python
 
             from openai import OpenAI
-            import os
 
             client = OpenAI(base_url='http://localhost:3000/v1', api_key='na')
 

@@ -77,7 +77,7 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
                 model=MODEL_ID,
                 max_model_len=MAX_TOKENS
             )
-            
+
             self.engine = AsyncLLMEngine.from_engine_args(ENGINE_ARGS)
 
         @bentoml.api
@@ -159,7 +159,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
 
     .. tab-item:: OpenAI-compatible endpoints
 
-        The ``@openai_endpoints`` decorator provides OpenAI-compatible endpoints (``chat/completions`` and ``completions``) for the Service. To interact with them, simply set the ``base_url`` parameter as the BentoML server address in the client. If your Service is deployed as protected endpoints on BentoCloud, set ``OPENAI_API_KEY`` to your BentoCloud API key.
+        The ``@openai_endpoints`` decorator provides OpenAI-compatible endpoints (``chat/completions`` and ``completions``) for the Service. To interact with them, simply set the ``base_url`` parameter as the BentoML server address in the client. If your Service is deployed as :ref:`protected endpoints on BentoCloud <bentocloud/how-tos/manage-access-token:access protected deployments>`, set ``OPENAI_API_KEY`` to your BentoCloud API key.
 
         .. code-block:: python
 

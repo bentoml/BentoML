@@ -8,6 +8,7 @@ import pathlib
 import sys
 import typing as t
 from functools import lru_cache
+from functools import partial
 
 import attrs
 from simple_di import Provide
@@ -227,7 +228,9 @@ class Service(t.Generic[T]):
 
     def __call__(self) -> T:
         try:
-            return self.inner()
+            instance = self.inner()
+            instance.to_async = _AsyncWrapper(instance, self.apis.keys())
+            return instance
         except Exception:
             logger.exception("Initializing service error")
             raise
@@ -412,3 +415,55 @@ def runner_service(runner: Runner, **kwargs: Unpack[Config]) -> Service[t.Any]:
         )
     config.update(kwargs)
     return Service(config=config, inner=RunnerHandle, models=runner.models, apis=apis)
+
+
+class _AsyncWrapper:
+    def __init__(self, wrapped: t.Any, apis: t.Iterable[str]) -> None:
+        for name in apis:
+            setattr(self, name, self.__make_method(wrapped, name))
+
+    def __make_method(self, inner: t.Any, name: str) -> t.Any:
+        import asyncio
+        import subprocess
+
+        subprocess.Popen
+        import anyio.to_thread
+
+        original_func = func = getattr(inner, name)
+        while hasattr(original_func, "func"):
+            original_func = original_func.func
+        is_async_func = (
+            asyncio.iscoroutinefunction(original_func)
+            or (
+                callable(original_func)
+                and asyncio.iscoroutinefunction(original_func.__call__)  # type: ignore
+            )
+            or inspect.isasyncgenfunction(original_func)
+        )
+        if is_async_func:
+            return func
+
+        if inspect.isgeneratorfunction(original_func):
+
+            async def wrapped_gen(
+                *args: t.Any, **kwargs: t.Any
+            ) -> t.AsyncGenerator[t.Any, None]:
+                gen = func(*args, **kwargs)
+                next_fun = gen.__next__
+                while True:
+                    try:
+                        yield await anyio.to_thread.run_sync(next_fun)
+                    except StopIteration:
+                        break
+                    except RuntimeError as e:
+                        if "raised StopIteration" in str(e):
+                            break
+                        raise
+
+            return wrapped_gen
+        else:
+
+            async def wrapped(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+                return await anyio.to_thread.run_sync(partial(func, **kwargs), *args)
+
+            return wrapped

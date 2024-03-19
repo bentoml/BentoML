@@ -38,6 +38,7 @@ if t.TYPE_CHECKING:
     from ..serde import Serde
 
     T = t.TypeVar("T", bound="HTTPClient[t.Any]")
+    A = t.TypeVar("A")
 
 C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
 AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
@@ -47,6 +48,14 @@ MAX_RETRIES = 3
 
 def is_http_url(url: str) -> bool:
     return urlparse(url).scheme in {"http", "https"}
+
+
+def to_async_iterable(iterable: t.Iterable[A]) -> t.AsyncIterable[A]:
+    async def _gen() -> t.AsyncIterator[A]:
+        for item in iterable:
+            yield item
+
+    return _gen()
 
 
 @attr.define
@@ -202,7 +211,12 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 payload = self.serde.serialize_model(model)
                 headers.update(payload.headers)
                 return self.client.build_request(
-                    "POST", endpoint.route, headers=headers, content=payload.data
+                    "POST",
+                    endpoint.route,
+                    headers=headers,
+                    content=to_async_iterable(payload.data)
+                    if self.client_cls is httpx.AsyncClient
+                    else payload.data,
                 )
 
         for name, value in zip(endpoint.input["properties"], args):
@@ -233,7 +247,12 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         payload = self.serde.serialize(kwargs, endpoint.input)
         headers.update(payload.headers)
         return self.client.build_request(
-            "POST", endpoint.route, content=payload.data, headers=headers
+            "POST",
+            endpoint.route,
+            content=to_async_iterable(payload.data)
+            if self.client_cls is httpx.AsyncClient
+            else payload.data,
+            headers=headers,
         )
 
     def wait_until_server_ready(self, timeout: int | None = None) -> None:

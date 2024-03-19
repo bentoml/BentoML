@@ -159,7 +159,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
 
     .. tab-item:: OpenAI-compatible endpoints
 
-        The ``@openai_endpoints`` decorator provides OpenAI-compatible endpoints (``chat/completions`` and ``completions``) for the Service. To interact with them, simply set the ``base_url`` parameter as the BentoML server address in the client. If your Service is deployed as :ref:`protected endpoints on BentoCloud <bentocloud/how-tos/manage-access-token:access protected deployments>`, set ``OPENAI_API_KEY`` to your BentoCloud API key.
+        The ``@openai_endpoints`` decorator provides OpenAI-compatible endpoints (``chat/completions`` and ``completions``) for the Service. To interact with them, simply set the ``base_url`` parameter as the BentoML server address in the client.
 
         .. code-block:: python
 
@@ -167,7 +167,6 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
             import os
 
             client = OpenAI(base_url='http://localhost:3000/v1', api_key='na')
-            # Alternatively, set api_key=os.environ.get("OPENAI_API_KEY") to retrieve the OPENAI_API_KEY env var
 
             # Use the following func to get the available models
             client.models.list()
@@ -187,6 +186,18 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
                 print(chunk.choices[0].delta.content or "", end="")
 
         For more information, see the `OpenAI API reference documentation <https://platform.openai.com/docs/api-reference/introduction>`_.
+
+        If your Service is deployed with :ref:`protected endpoints on BentoCloud <bentocloud/how-tos/manage-access-token:access protected deployments>`, you need to set the environment variable ``OPENAI_API_KEY`` to your BentoCloud API key first.
+
+        .. code-block:: bash
+
+            export OPENAI_API_KEY={YOUR_BENTOCLOUD_API_TOKEN}
+
+        You can then use the following line to replace the client in the above code snippet. Refer to :ref:`bentocloud/how-tos/call-deployment-endpoints:obtain the endpoint url` to retrieve the endpoint URL.
+
+        .. code-block:: python
+
+            client = OpenAI(base_url='your_bentocloud_deployment_endpoint_url/v1')
 
     .. tab-item:: Swagger UI
 

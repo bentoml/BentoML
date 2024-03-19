@@ -12,6 +12,7 @@ from pydantic import Field
 from pydantic import RootModel
 from pydantic import create_model
 from pydantic._internal._typing_extra import is_annotated
+from starlette.responses import Response
 from typing_extensions import get_args
 
 from bentoml._internal.service.openapi.specification import Schema
@@ -23,8 +24,11 @@ from .typing_utils import is_union_type
 from .validators import ContentType
 
 if t.TYPE_CHECKING:
+    from starlette.background import BackgroundTask
     from starlette.requests import Request
-    from starlette.responses import Response
+    from starlette.types import Receive
+    from starlette.types import Scope
+    from starlette.types import Send
 
     from _bentoml_impl.serde import Serde
 
@@ -34,6 +38,38 @@ DEFAULT_TEXT_MEDIA_TYPE = "text/plain"
 
 def is_file_type(type_: type) -> bool:
     return issubclass(type_, pathlib.PurePath) or is_image_type(type_)
+
+
+class IterableResponse(Response):
+    def __init__(
+        self,
+        content: t.Iterable[memoryview | bytes],
+        headers: t.Optional[t.Mapping[str, str]] = None,
+        media_type: str | None = None,
+        status_code: int = 200,
+        background: t.Optional[BackgroundTask] = None,
+    ) -> None:
+        self.status_code = status_code
+        if media_type is not None:
+            self.media_type = media_type
+        self.background = background
+        self.body_iterator = iter(content)
+        self.init_headers(headers)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        await send(
+            {
+                "type": "http.response.start",
+                "status": self.status_code,
+                "headers": self.raw_headers,
+            }
+        )
+        for chunk in self.body_iterator:
+            await send({"type": "http.response.body", "body": chunk, "more_body": True})
+        await send({"type": "http.response.body", "body": b"", "more_body": False})
+
+        if self.background is not None:
+            await self.background()
 
 
 class IOMixin:
@@ -149,7 +185,10 @@ class IOMixin:
                         yield item
                     else:
                         obj_item = cls(item) if issubclass(cls, RootModel) else item
-                        yield serde.serialize_model(t.cast(IODescriptor, obj_item))
+                        for chunk in serde.serialize_model(
+                            t.cast(IODescriptor, obj_item)
+                        ).data:
+                            yield chunk
 
             return StreamingResponse(async_stream(), media_type=cls.mime_type())
 
@@ -161,7 +200,9 @@ class IOMixin:
                         yield item
                     else:
                         obj_item = cls(item) if issubclass(cls, RootModel) else item
-                        yield serde.serialize_model(t.cast(IODescriptor, obj_item))
+                        yield from serde.serialize_model(
+                            t.cast(IODescriptor, obj_item)
+                        ).data
 
             return StreamingResponse(content_stream(), media_type=cls.mime_type())
         elif not issubclass(cls, RootModel):
@@ -169,9 +210,11 @@ class IOMixin:
                 return Response(
                     "Multipart response is not supported yet", status_code=500
                 )
-            return Response(
-                content=serde.serialize_model(t.cast(IODescriptor, obj)),
+            payload = serde.serialize_model(t.cast(IODescriptor, obj))
+            return IterableResponse(
+                content=payload.data,
                 media_type=cls.mime_type(),
+                headers=payload.headers,
             )
         else:
             if is_file_type(type(obj)) and isinstance(serde, JSONSerde):
@@ -200,13 +243,16 @@ class IOMixin:
                 ins: IODescriptor = t.cast(IODescriptor, cls(obj))
             else:
                 ins = t.cast(IODescriptor, obj)
-            if isinstance(rendered := ins.model_dump(), (str, bytes)) and isinstance(
-                serde, JSONSerde
+            if isinstance(serde, JSONSerde) and isinstance(
+                rendered := ins.model_dump(), (str, bytes)
             ):
                 return Response(content=rendered, media_type=cls.mime_type())
             else:
-                return Response(
-                    content=serde.serialize_model(ins), media_type=cls.mime_type()
+                payload = serde.serialize_model(ins)
+                return IterableResponse(
+                    content=payload.data,
+                    media_type=cls.mime_type(),
+                    headers=payload.headers,
                 )
 
 

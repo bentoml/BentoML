@@ -9,6 +9,7 @@ import typing as t
 from urllib.parse import unquote
 from urllib.parse import urlparse
 
+import attrs
 from pydantic import BaseModel
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile
@@ -27,29 +28,44 @@ if t.TYPE_CHECKING:
 T = t.TypeVar("T", bound="IODescriptor")
 
 
+@attrs.frozen
+class Payload:
+    data: t.Iterable[bytes | memoryview]
+    metadata: t.Mapping[str, str] = attrs.field(factory=dict)
+
+    def total_bytes(self) -> int:
+        return sum(len(d) for d in self.data)
+
+    @property
+    def headers(self) -> t.Mapping[str, str]:
+        return {"content-length": str(self.total_bytes()), **self.metadata}
+
+
 class Serde(abc.ABC):
     media_type: str
 
     @abc.abstractmethod
-    def serialize_model(self, model: IODescriptor) -> bytes:
+    def serialize_model(self, model: IODescriptor) -> Payload:
         ...
 
     @abc.abstractmethod
-    def deserialize_model(self, model_bytes: bytes, cls: type[T]) -> T:
+    def deserialize_model(self, payload: Payload, cls: type[T]) -> T:
         ...
 
     @abc.abstractmethod
-    def serialize(self, obj: t.Any, schema: dict[str, t.Any]) -> bytes:
+    def serialize(self, obj: t.Any, schema: dict[str, t.Any]) -> Payload:
         ...
 
     @abc.abstractmethod
-    def deserialize(self, obj_bytes: bytes, schema: dict[str, t.Any]) -> t.Any:
+    def deserialize(self, payload: Payload, schema: dict[str, t.Any]) -> t.Any:
         ...
 
     async def parse_request(self, request: Request, cls: type[T]) -> T:
         """Parse a input model from HTTP request"""
         json_str = await request.body()
-        return self.deserialize_model(json_str, cls)
+        return self.deserialize_model(
+            Payload((json_str,), metadata=request.headers), cls
+        )
 
 
 class GenericSerde:
@@ -70,7 +86,8 @@ class GenericSerde:
             return [self._encode(v, schema["items"]) for v in obj]
         if schema.get("type") == "object" and schema.get("properties"):
             if isinstance(obj, BaseModel):
-                return obj.model_dump()
+                mode = "json" if isinstance(self, JSONSerde) else "python"
+                return obj.model_dump(mode=mode)
             return {
                 k: self._encode(obj[k], child)
                 for k, child in schema["properties"].items()
@@ -105,35 +122,39 @@ class GenericSerde:
             }
         return obj
 
-    def serialize(self, obj: t.Any, schema: dict[str, t.Any]) -> bytes:
+    def serialize(self, obj: t.Any, schema: dict[str, t.Any]) -> Payload:
         return self.serialize_value(self._encode(obj, schema))
 
-    def deserialize(self, obj_bytes: bytes, schema: dict[str, t.Any]) -> t.Any:
-        return self._decode(self.deserialize_value(obj_bytes), schema)
+    def deserialize(self, payload: Payload, schema: dict[str, t.Any]) -> t.Any:
+        return self._decode(self.deserialize_value(payload), schema)
 
-    def serialize_value(self, obj: t.Any) -> bytes:
+    def serialize_value(self, obj: t.Any) -> Payload:
         raise NotImplementedError
 
-    def deserialize_value(self, obj_bytes: bytes) -> t.Any:
+    def deserialize_value(self, payload: Payload) -> t.Any:
         raise NotImplementedError
 
 
 class JSONSerde(GenericSerde, Serde):
     media_type = "application/json"
 
-    def serialize_model(self, model: IODescriptor) -> bytes:
-        return model.model_dump_json(
-            exclude=set(getattr(model, "multipart_fields", set()))
-        ).encode("utf-8")
+    def serialize_model(self, model: IODescriptor) -> Payload:
+        return Payload(
+            (
+                model.model_dump_json(
+                    exclude=set(getattr(model, "multipart_fields", set()))
+                ).encode("utf-8"),
+            )
+        )
 
-    def deserialize_model(self, model_bytes: bytes, cls: type[T]) -> T:
-        return cls.model_validate_json(model_bytes)
+    def deserialize_model(self, payload: Payload, cls: type[T]) -> T:
+        return cls.model_validate_json(b"".join(payload.data) or b"{}")
 
-    def serialize_value(self, obj: t.Any) -> bytes:
-        return json.dumps(obj).encode("utf-8")
+    def serialize_value(self, obj: t.Any) -> Payload:
+        return Payload((json.dumps(obj).encode("utf-8"),))
 
-    def deserialize_value(self, obj_bytes: bytes) -> t.Any:
-        return json.loads(obj_bytes)
+    def deserialize_value(self, payload: Payload) -> t.Any:
+        return json.loads(b"".join(payload.data) or b"{}")
 
 
 class MultipartSerde(JSONSerde):
@@ -181,52 +202,45 @@ class MultipartSerde(JSONSerde):
 class PickleSerde(GenericSerde, Serde):
     media_type = "application/vnd.bentoml+pickle"
 
-    def serialize_model(self, model: IODescriptor) -> bytes:
+    def serialize_model(self, model: IODescriptor) -> Payload:
         model_data = model.model_dump()
-        return pickle.dumps(model_data)
+        return self.serialize_value(model_data)
 
-    def deserialize_model(self, model_bytes: bytes, cls: type[T]) -> T:
-        obj = pickle.loads(model_bytes)
+    def deserialize_model(self, payload: Payload, cls: type[T]) -> T:
+        obj = self.deserialize_value(payload)
         if not isinstance(obj, cls):
             obj = cls.model_validate(obj)
         return obj
 
-    def serialize_value(self, obj: t.Any) -> bytes:
-        return pickle.dumps(obj)
+    def serialize_value(self, obj: t.Any) -> Payload:
+        buffers: list[pickle.PickleBuffer] = []
+        main_bytes = pickle.dumps(obj, protocol=5, buffer_callback=buffers.append)
+        data: list[bytes | memoryview] = [main_bytes]
+        lengths = [len(main_bytes)]
+        for buff in buffers:
+            data.append(buff.raw())
+            lengths.append(len(data[-1]))
+            buff.release()
+        metadata = {"buffer-lengths": ",".join(map(str, lengths))}
+        return Payload(data, metadata)
 
-    def deserialize_value(self, obj_bytes: bytes) -> t.Any:
-        return pickle.loads(obj_bytes)
-
-
-class ArrowSerde(Serde):
-    media_type = "application/vnd.bentoml+arrow"
-
-    def serialize_model(self, model: IODescriptor) -> bytes:
-        from .arrow import serialize_to_arrow
-
-        buffer = io.BytesIO()
-        serialize_to_arrow(model, buffer)
-        return buffer.getvalue()
-
-    def deserialize_model(self, model_bytes: bytes, cls: type[T]) -> T:
-        from .arrow import deserialize_from_arrow
-
-        buffer = io.BytesIO(model_bytes)
-        return deserialize_from_arrow(cls, buffer)
-
-    def serialize(self, obj: t.Any, schema: dict[str, t.Any]) -> bytes:
-        raise NotImplementedError(
-            "Serializing arbitrary object to Arrow is not supported"
-        )
-
-    def deserialize(self, obj_bytes: bytes, schema: dict[str, t.Any]) -> t.Any:
-        raise NotImplementedError(
-            "Deserializing arbitrary object from Arrow is not supported"
-        )
+    def deserialize_value(self, payload: Payload) -> t.Any:
+        if "buffer-lengths" not in payload.metadata:
+            return pickle.loads(b"".join(payload.data))
+        buffer_lengths = list(map(int, payload.metadata["buffer-lengths"].split(",")))
+        data_stream = b"".join(payload.data)
+        data = memoryview(data_stream)
+        start = buffer_lengths[0]
+        main_bytes = data[:start]
+        buffers: list[pickle.PickleBuffer] = []
+        for length in buffer_lengths[1:]:
+            buffers.append(pickle.PickleBuffer(data[start : start + length]))
+            start += length
+        return pickle.loads(main_bytes, buffers=buffers)
 
 
 ALL_SERDE: t.Mapping[str, type[Serde]] = {
-    s.media_type: s for s in [JSONSerde, PickleSerde, ArrowSerde, MultipartSerde]
+    s.media_type: s for s in [JSONSerde, PickleSerde, MultipartSerde]
 }
 # Special case for application/x-www-form-urlencoded
 ALL_SERDE["application/x-www-form-urlencoded"] = MultipartSerde

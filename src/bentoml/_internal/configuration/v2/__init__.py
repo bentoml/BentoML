@@ -13,6 +13,7 @@ from ..helpers import ensure_iterable_type
 from ..helpers import ensure_larger_than
 from ..helpers import ensure_larger_than_zero
 from ..helpers import ensure_range
+from ..helpers import flatten_dict
 from ..helpers import is_valid_ip_address
 from ..helpers import validate_otlp_protocol
 from ..helpers import validate_tracing_type
@@ -91,6 +92,7 @@ _SERVICE_CONFIG = {
         "timeout": s.And(Real, ensure_larger_than_zero),
         s.Optional("max_concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),
         s.Optional("external_queue"): bool,
+        s.Optional("concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),
     },
     s.Optional("backlog"): s.And(int, ensure_larger_than(64)),
     s.Optional("max_runner_connections"): s.And(int, ensure_larger_than_zero),
@@ -180,7 +182,8 @@ SCHEMA = s.Schema(
             **_SERVICE_CONFIG,
             s.Optional(str): _SERVICE_CONFIG,
         },
-    }
+    },
+    ignore_extra_keys=True,
 )
 
 
@@ -213,6 +216,7 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
     for svc, svc_cfg in default_config["services"].items():
         if svc in SERVICE_CFG_KEYS:
             default_service_config[svc] = svc_cfg
+    default_service_config = dict(flatten_dict(default_service_config))
 
     for key in list(override_config):
         if key.startswith("services."):

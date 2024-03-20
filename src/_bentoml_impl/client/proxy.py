@@ -54,6 +54,10 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
         self.endpoints = self._async.endpoints
         super().__init__()
 
+    @property
+    def to_async(self) -> t.Any:
+        return self._async
+
     async def is_ready(self, timeout: int | None = None) -> bool:
         return await self._async.is_ready(timeout=timeout)
 

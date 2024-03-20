@@ -21,6 +21,7 @@ from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
 from ..configuration import BENTOML_VERSION
 from ..configuration import clean_bentoml_version
+from ..configuration import get_debug_mode
 from ..configuration import get_quiet_mode
 from ..container import generate_containerfile
 from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
@@ -100,10 +101,6 @@ def _convert_env(
 ) -> dict[str, str] | dict[str, str | None] | None:
     if not env:
         return None
-
-    logger.warning(
-        "Deprecated build option: 'docker.env' is used, please use 'envs' instead."
-    )
 
     if isinstance(env, str):
         env_path = os.path.expanduser(os.path.expandvars(env))
@@ -658,7 +655,6 @@ fi
             pip_compile_args.extend(pip_compile_compat)
             pip_compile_args.extend(
                 [
-                    "--quiet",
                     "--allow-unsafe",
                     "--no-header",
                     f"--output-file={pip_compile_out}",
@@ -666,6 +662,10 @@ fi
                     "--no-annotate",
                 ]
             )
+            if get_quiet_mode():
+                pip_compile_args.append("--quiet")
+            elif get_debug_mode():
+                pip_compile_args.append("--verbose")
             logger.info("Locking PyPI package versions.")
             cmd = [sys.executable, "-m", "piptools", "compile"]
             cmd.extend(pip_compile_args)
@@ -788,6 +788,12 @@ class BentoBuildConfig:
         # dict[str, t.Any] since our converter will handle the conversion.
         # There is no way to tell type checker signatures of the converter from attrs
         # if given attribute is alrady has a type annotation.
+        from typing_extensions import TypedDict
+
+        class EnvironmentEntry(TypedDict):
+            name: str
+            value: str
+
         def __init__(
             self,
             service: str,
@@ -796,6 +802,7 @@ class BentoBuildConfig:
             labels: dict[str, t.Any] | None = ...,
             include: list[str] | None = ...,
             exclude: list[str] | None = ...,
+            envs: list[EnvironmentEntry] | None = ...,
             docker: DockerOptions | dict[str, t.Any] | None = ...,
             python: PythonOptions | dict[str, t.Any] | None = ...,
             conda: CondaOptions | dict[str, t.Any] | None = ...,
@@ -900,9 +907,10 @@ class BentoPathSpec:
     _exclude: PathSpec = attr.field(
         converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
     )
-    # we want to ignore .git folder in cases the .git folder is very large.
-    git: PathSpec = attr.field(
-        default=PathSpec.from_lines("gitwildmatch", [".git"]), init=False
+    # we want to ignore .git and venv folders in cases they are very large.
+    extra: PathSpec = attr.field(
+        default=PathSpec.from_lines("gitwildmatch", [".git/", ".venv/", "venv/"]),
+        init=False,
     )
 
     def includes(
@@ -916,7 +924,7 @@ class BentoPathSpec:
         to_include = (
             self._include.match_file(path)
             and not self._exclude.match_file(path)
-            and not self.git.match_file(path)
+            and not self.extra.match_file(path)
         )
         if to_include:
             if recurse_exclude_spec is not None:

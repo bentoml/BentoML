@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
+import math
 import sys
 import typing as t
 from http import HTTPStatus
@@ -14,12 +15,14 @@ import pydantic
 from simple_di import Provide
 from simple_di import inject
 from starlette.middleware import Middleware
+from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 
 from _bentoml_sdk import Service
 from _bentoml_sdk.service import set_current_service
 from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
+from bentoml._internal.resource import system_resources
 from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
 from bentoml._internal.utils.metrics import exponential_buckets
@@ -30,7 +33,6 @@ if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
     from starlette.applications import Starlette
     from starlette.requests import Request
-    from starlette.responses import Response
     from starlette.routing import BaseRoute
 
     from bentoml._internal import external_typing as ext
@@ -68,7 +70,8 @@ class ServiceAppFactory(BaseAppFactory):
         enable_metrics: bool = Provide[
             BentoMLContainer.api_server_config.metrics.enabled
         ],
-        traffic: dict[str, t.Any] = Provide[BentoMLContainer.api_server_config.traffic],
+        services: dict[str, t.Any] = Provide[BentoMLContainer.config.services],
+        # traffic: dict[str, t.Any] = Provide[BentoMLContainer.api_server_config.traffic],
         enable_access_control: bool = Provide[BentoMLContainer.http.cors.enabled],
         access_control_options: dict[str, list[str] | str | int] = Provide[
             BentoMLContainer.access_control_options
@@ -79,11 +82,27 @@ class ServiceAppFactory(BaseAppFactory):
         self.service = service
         self.enable_metrics = enable_metrics
         self.is_main = is_main
+        config = services[service.name]
+        traffic = config.get("traffic")
+        workers = config.get("workers")
         timeout = traffic.get("timeout")
         max_concurrency = traffic.get("max_concurrency")
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
-        super().__init__(timeout=timeout, max_concurrency=max_concurrency)
+        # max_concurrency per worker is the max_concurrency per service divided by the number of workers
+        num_workers = 1
+        if workers:
+            if (workers := config["workers"]) == "cpu_count":
+                srs = system_resources()
+                num_workers = int(srs["cpu"])
+            else:  # workers is a number
+                num_workers = workers
+        super().__init__(
+            timeout=timeout,
+            max_concurrency=max_concurrency
+            if not max_concurrency
+            else math.ceil(max_concurrency / num_workers),
+        )
 
         self.dispatchers: dict[str, CorkDispatcher[t.Any, t.Any]] = {}
         self._service_instance: t.Any | None = None
@@ -191,6 +210,10 @@ class ServiceAppFactory(BaseAppFactory):
         app.add_exception_handler(BentoMLException, self.handle_bentoml_exception)
         app.add_exception_handler(Exception, self.handle_uncaught_exception)
         app.add_route("/schema.json", self.schema_view, name="schema")
+
+        for mount_app, path, name in self.service.mount_apps:
+            app.mount(app=mount_app, path=path, name=name)
+
         if self.is_main:
             if BentoMLContainer.new_index:
                 assets = Path(__file__).parent / "assets"
@@ -206,8 +229,7 @@ class ServiceAppFactory(BaseAppFactory):
                 )
                 app.add_route("/docs.json", self.openapi_spec_view, name="openapi-spec")
             app.add_route("/", self.index_page, name="index")
-        for mount_app, path, name in self.service.mount_apps:
-            app.mount(app=mount_app, path=path, name=name)
+
         return app
 
     @property
@@ -469,7 +491,10 @@ class ServiceAppFactory(BaseAppFactory):
         else:
             output = await self._to_thread(func, *input_args, **input_params)
 
-        response = await method.output_spec.to_http_response(output, serde)
+        if isinstance(output, Response):
+            response = output
+        else:
+            response = await method.output_spec.to_http_response(output, serde)
         response.headers.update({"Server": f"BentoML Service/{self.service.name}"})
 
         if method.ctx_param is not None:

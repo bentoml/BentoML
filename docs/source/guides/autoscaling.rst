@@ -31,7 +31,7 @@ Key points about concurrency in BentoML:
 Concurrency and max concurrency
 -------------------------------
 
-When using the ``traffic`` field in the ```@bentoml.service``` decorator, you can configure ``concurrency`` and ``max_concurrency`` at the same time, which are both related to how many requests a Service can handle simultaneously. However, they serve different purposes and should be used 
+When using the ``traffic`` field in the ```@bentoml.service``` decorator, you can configure ``concurrency`` and ``max_concurrency`` at the same time, which are both related to how many requests a Service can handle simultaneously. However, they serve different purposes and should be used
 
 - ``concurrency``: Indicates the ideal number of simultaneous requests that a Service is designed to handle efficiently. It's a guideline for optimizing performance, particularly in terms of how batching or parallel processing is implemented. Note that the simultaneous requests being processed by a Service instance can still exceed the ``concurrency`` configured.
 - ``max_concurrency``: Acts as a hard limit on the number of requests that can be processed simultaneously by a single instance of a Service. It's used to prevent a Service from being overwhelmed by too many requests at once, which could degrade performance or lead to resource exhaustion. Requests that exceed the ``max_concurrency`` limit will be rejected to maintain QoS and ensure that each request is handled within an acceptable time frame.

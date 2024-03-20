@@ -26,7 +26,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
         :link-type: doc
 
         Gain a general understanding of BentoCloud deployment.
-    
+
     .. grid-item-card:: :doc:`/guides/autoscaling`
         :link: /guides/autoscaling
         :link-type: doc

@@ -268,6 +268,8 @@ class Bento(StoreItem):
                         specs.from_path(build_ctx),
                     ),
                 ):
+                    if ctx_fs.getsize(path) > 10 * 1024 * 1024:
+                        logger.warn("File size is larger than 10MiB: %s", path)
                     target_fs.makedirs(dir_path, recreate=True)
                     copy_file(ctx_fs, path, target_fs, path)
 

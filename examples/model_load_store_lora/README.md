@@ -2,15 +2,16 @@
 
 In this example, we will use LoRA and StableDiffusion to demonstrate how to load and store multiple models both for local models and remote models.
 
-## Utilization
+## Install Dependencies
 ```bash
-python -m venv venv
-source venv/bin/activate
+python -m venv model-load-store-lora
+source model-load-store-lora/bin/activate
 pip install -r requirement.txt
 ```
 
-## Model Store (import_model.py)
+## Import Models
 
+Run the import_model.py script in this example to save models to the BentoML Model Store.
 ```python
 import bentoml
 import shutil
@@ -31,9 +32,16 @@ with bentoml.models.create(
     print(f"Model saved: {model_ref}")
 ```
 
-When storing multiple models, you can simply create new directories corresponding to these models inside the bentoml.models.create() context manager. For local models, use shutil.copytree to copy the local models and files. For remote models, use the respective library tools to save the models to the directory you just created.
+When storing multiple models, you can simply create new directories corresponding to these models inside the `bentoml.models.create()` context manager. For local models, use `shutil.copytree()` to copy the local models and files. For remote models, use the respective library tools to save the models to the directory you just created.
 
-## Model Load (service.py)
+To view all the models in the Model Store, run bentoml models list:
+```bash
+$ bentoml models list
+ Tag                                                                             Module                              Size        Creation Time       
+ sd:l42k7zxcmksxhyln                                                                                                 5.11 GiB    2024-03-15 00:24:22 
+```
+
+## Load Models
 Now that the models are saved, we can get the directory of the saved models by using `model_ref = bentoml.models.get("sd:latest")`. You can get the base path by calling `model_ref.path`. This will return the sd directory you have just created. To
 get each individual model subpath, use `model_ref.path_of("{subpath}")`.
 
@@ -60,3 +68,15 @@ class StableDiffusion:
         self.stable_diffusion_txt2img.to('cuda')
         self.stable_diffusion_img2img.to('cuda')
 ```
+
+To serve this Service locally, run:
+```bash
+bentoml serve .
+```
+
+## Deploy to BentoCloud
+Run the following command to deploy this example to BentoCloud for better management and scalability. [Sign up](https://www.bentoml.com/) if you haven't got a BentoCloud account.
+```bash
+bentoml deploy .
+```
+For more information, see [Create Deployments](https://docs.bentoml.com/en/latest/bentocloud/how-tos/create-deployments.html).

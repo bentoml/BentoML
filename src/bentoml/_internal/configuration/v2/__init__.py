@@ -182,7 +182,7 @@ SCHEMA = s.Schema(
             **_SERVICE_CONFIG,
             s.Optional(str): _SERVICE_CONFIG,
         },
-    }
+    }, ignore_extra_keys=True
 )
 
 

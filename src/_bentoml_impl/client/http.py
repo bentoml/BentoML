@@ -26,6 +26,7 @@ from bentoml import __version__
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
 
+from ..serde import Payload
 from .base import AbstractClient
 from .base import ClientEndpoint
 
@@ -37,6 +38,7 @@ if t.TYPE_CHECKING:
     from ..serde import Serde
 
     T = t.TypeVar("T", bound="HTTPClient[t.Any]")
+    A = t.TypeVar("A")
 
 C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
 AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
@@ -46,6 +48,14 @@ MAX_RETRIES = 3
 
 def is_http_url(url: str) -> bool:
     return urlparse(url).scheme in {"http", "https"}
+
+
+def to_async_iterable(iterable: t.Iterable[A]) -> t.AsyncIterable[A]:
+    async def _gen() -> t.AsyncIterator[A]:
+        for item in iterable:
+            yield item
+
+    return _gen()
 
 
 @attr.define
@@ -198,11 +208,15 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             if model.multipart_fields and self.media_type == "application/json":
                 return self._build_multipart(endpoint, model, headers)
             else:
+                payload = self.serde.serialize_model(model)
+                headers.update(payload.headers)
                 return self.client.build_request(
                     "POST",
                     endpoint.route,
                     headers=headers,
-                    content=self.serde.serialize_model(model),
+                    content=to_async_iterable(payload.data)
+                    if self.client_cls is httpx.AsyncClient
+                    else payload.data,
                 )
 
         for name, value in zip(endpoint.input["properties"], args):
@@ -230,10 +244,14 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         )
         if has_file and self.media_type == "application/json":
             return self._build_multipart(endpoint, kwargs, headers)
+        payload = self.serde.serialize(kwargs, endpoint.input)
+        headers.update(payload.headers)
         return self.client.build_request(
             "POST",
             endpoint.route,
-            content=self.serde.serialize(kwargs, endpoint.input),
+            content=to_async_iterable(payload.data)
+            if self.client_cls is httpx.AsyncClient
+            else payload.data,
             headers=headers,
         )
 
@@ -318,18 +336,19 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             "POST", endpoint.route, data=data, files=files, headers=headers
         )
 
-    def _deserialize_output(self, data: bytes, endpoint: ClientEndpoint) -> t.Any:
+    def _deserialize_output(self, payload: Payload, endpoint: ClientEndpoint) -> t.Any:
+        data = iter(payload.data)
         if endpoint.output_spec is not None:
-            model = self.serde.deserialize_model(data, endpoint.output_spec)
+            model = self.serde.deserialize_model(payload, endpoint.output_spec)
             if isinstance(model, RootModel):
                 return model.root  # type: ignore
             return model
         elif (ot := endpoint.output.get("type")) == "string":
-            return data.decode("utf-8")
+            return bytes(next(data)).decode("utf-8")
         elif ot == "bytes":
-            return data
+            return bytes(next(data))
         else:
-            return self.serde.deserialize(data, endpoint.output)
+            return self.serde.deserialize(payload, endpoint.output)
 
     def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         try:
@@ -429,15 +448,15 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
             self._opened_files.clear()
 
     def _parse_response(self, endpoint: ClientEndpoint, resp: httpx.Response) -> t.Any:
-        data = resp.read()
-        return self._deserialize_output(data, endpoint)
+        payload = Payload((resp.read(),), resp.headers)
+        return self._deserialize_output(payload, endpoint)
 
     def _parse_stream_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response
     ) -> t.Generator[t.Any, None, None]:
         try:
             for data in resp.iter_bytes():
-                yield self._deserialize_output(data, endpoint)
+                yield self._deserialize_output(Payload((data,), resp.headers), endpoint)
         finally:
             resp.close()
 
@@ -534,14 +553,14 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
         self, endpoint: ClientEndpoint, resp: httpx.Response
     ) -> t.Any:
         data = await resp.aread()
-        return self._deserialize_output(data, endpoint)
+        return self._deserialize_output(Payload((data,), resp.headers), endpoint)
 
     async def _parse_stream_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response
     ) -> t.AsyncGenerator[t.Any, None]:
         try:
             async for data in resp.aiter_bytes():
-                yield self._deserialize_output(data, endpoint)
+                yield self._deserialize_output(Payload((data,), resp.headers), endpoint)
         finally:
             await resp.aclose()
 

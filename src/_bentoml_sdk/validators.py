@@ -209,19 +209,30 @@ class TensorSchema:
         return core_schema.no_info_after_validator_function(
             self.validate,
             core_schema.any_schema(),
-            serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                self.encode, info_arg=True
+            ),
         )
 
-    def encode(self, arr: TensorType) -> list[t.Any]:
+    def encode(self, arr: TensorType, info: core_schema.SerializationInfo) -> t.Any:
         if self.format == "numpy-array":
+            assert isinstance(arr, np.ndarray)
             numpy_array = arr
         elif self.format == "tf-tensor":
+            if not info.mode_is_json():  # tf.Tensor supports picklev5 serialization
+                return arr
             numpy_array = arr.numpy()
         else:
-            numpy_array = arr.cpu().numpy()
+            assert isinstance(arr, torch.Tensor)
+            if arr.device.type != "cpu":
+                numpy_array = arr.cpu().numpy()
+            else:
+                numpy_array = arr.numpy()
         if __in_arrow_serialization__:
             numpy_array = numpy_array.flatten()
-        return numpy_array.tolist()
+        if info.mode_is_json():
+            return numpy_array.tolist()
+        return numpy_array
 
     @property
     def framework_dtype(self) -> t.Any:
@@ -238,17 +249,26 @@ class TensorSchema:
     def validate(self, obj: t.Any) -> t.Any:
         arr: t.Any
         if self.format == "numpy-array":
+            if isinstance(obj, np.ndarray):
+                return obj
             arr = np.array(obj, dtype=self.framework_dtype)
             if self.shape is not None:
                 arr = arr.reshape(self.shape)
+            return arr
         elif self.format == "tf-tensor":
-            arr = tf.constant(obj, dtype=self.framework_dtype, shape=self.shape)  # type: ignore
+            if isinstance(obj, tf.Tensor):
+                return obj
+            else:
+                return tf.constant(obj, dtype=self.framework_dtype, shape=self.shape)  # type: ignore
         else:
+            if isinstance(obj, torch.Tensor):
+                return obj
+            if isinstance(obj, np.ndarray):
+                return torch.from_numpy(obj)
             arr = torch.tensor(obj, dtype=self.framework_dtype)
             if self.shape is not None:
                 arr = arr.reshape(self.shape)
-
-        return arr
+            return arr
 
 
 @attrs.frozen(unsafe_hash=True)
@@ -297,10 +317,14 @@ class DataframeSchema:
         return core_schema.no_info_after_validator_function(
             self.validate,
             core_schema.any_schema(),
-            serialization=core_schema.plain_serializer_function_ser_schema(self.encode),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                self.encode, info_arg=True
+            ),
         )
 
-    def encode(self, df: pd.DataFrame) -> list | dict:
+    def encode(self, df: pd.DataFrame, info: core_schema.SerializationInfo) -> t.Any:
+        if not info.mode_is_json():
+            return df
         if self.orient == "records":
             return df.to_dict(orient="records")
         elif self.orient == "columns":
@@ -309,6 +333,8 @@ class DataframeSchema:
             raise ValueError("Only 'records' and 'columns' are supported for orient")
 
     def validate(self, obj: t.Any) -> pd.DataFrame:
+        if isinstance(obj, pd.DataFrame):
+            return obj
         return pd.DataFrame(obj, columns=self.columns)
 
 

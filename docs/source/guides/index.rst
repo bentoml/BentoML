@@ -27,6 +27,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Gain a general understanding of BentoCloud deployment.
 
+    .. grid-item-card:: :doc:`/guides/autoscaling`
+        :link: /guides/autoscaling
+        :link-type: doc
+
+        Learn how autoscaling works for your services running on BentoCloud.
+
     .. grid-item-card:: :doc:`/guides/containerization`
         :link: /guides/containerization
         :link-type: doc
@@ -93,6 +99,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     services
     iotypes
     deployment
+    autoscaling
     containerization
     build-options
     model-store

@@ -89,16 +89,25 @@ To specify the number of workers (for example, ``3``) within a Service:
 ``traffic``
 ^^^^^^^^^^^
 
-``traffic`` in BentoML allows you to manage how requests are handled by your Service. This includes settings for timeout periods and maximum concurrent requests, which are helpful for optimizing the Service's responsiveness and load management. Specifically, you can use the following fields:
+``traffic`` in BentoML allows you to manage how requests are handled by your Service. It includes settings for managing request concurrency and ensuring timely responses, which are helpful for optimizing the Service's responsiveness and load management. The following fields are available:
 
 - ``timeout``: Determines the maximum time the Service will wait for a response to be sent back to the client. The default timeout is set to 60 seconds.
-- ``max_concurrency``: Specifies the maximum number of requests that can be queued for processing by the Service. It helps you control the load and prevent the Service from being overwhelmed by too many simultaneous requests. If the max concurrency is reached, requests will be rejected returning ``429``. By default, there is no limit on the maximum concurrency.
+- ``concurrency``: Represents the ideal number of simultaneous requests a Service is designed to handle. Concurrency helps optimize resource utilization and influences how BentoCloud autoscales your Service. By default, concurrency is set to allow infinite requests to avoid system bottlenecks.
+- ``max_concurrency``: Specifies the hard limit on the number of requests that can be processed simultaneously by a single Service instance. It helps you control the load and prevent the Service from being overwhelmed by too many simultaneous requests.
+- ``external_queue``: A BentoCloud-specific field. When deploying a Service on BentoCloud with this field enabled, an external request queue is used to manage incoming traffic more effectively. This is done by queuing excess requests until they can be processed within the defined concurrency limits.
 
-Here is an example:
+For detailed information, see :doc:`/guides/concurrency`. Here is an example of configuring these settings in your Service definition:
 
 .. code-block:: python
 
-    @bentoml.service(traffic={"timeout": 120, "max_concurrency": 50})
+    @bentoml.service(
+        traffic={
+            "timeout": 120,
+            "concurrency": 10,
+            "max_concurrency": 50,
+            "external_queue": True,
+        }
+    )
     class MyService:
         # Service implementation
 

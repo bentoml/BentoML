@@ -11,7 +11,7 @@ BentoML's default configurations are suitable for a wide range of use cases. How
 
 .. note::
 
-   If you are using BentoML versions prior to 1.2, you need to `set these runtime configurations <https://docs.bentoml.com/en/latest/guides/configuration.html>`_ via a separate ``configuration.yaml`` file.
+   If you are using BentoML versions prior to 1.2, you need to `set these runtime configurations <https://docs.bentoml.com/en/v1.1.11/guides/configuration.html>`_ via a separate ``configuration.yaml`` file.
 
 You only need to specify the configurations you want to customize. BentoML automatically fills in any unspecified configurations with their default values. The following is an example:
 

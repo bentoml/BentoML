@@ -37,8 +37,8 @@ When storing multiple models, you can simply create new directories correspondin
 To view all the models in the Model Store, run bentoml models list:
 ```bash
 $ bentoml models list
- Tag                                                                             Module                              Size        Creation Time       
- sd:l42k7zxcmksxhyln                                                                                                 5.11 GiB    2024-03-15 00:24:22 
+ Tag                                                                             Module                              Size        Creation Time
+ sd:l42k7zxcmksxhyln                                                                                                 5.11 GiB    2024-03-15 00:24:22
 ```
 
 ## Load Models

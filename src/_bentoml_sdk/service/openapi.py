@@ -110,8 +110,6 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
                             },
                         },
                         "tags": [APP_TAG.name],
-                        "consumes": [api.input_spec.mime_type()],
-                        "produces": [api.output_spec.mime_type()],
                         "x-bentoml-name": api.name,
                         "description": api.doc or "",
                         "requestBody": api.openapi_request(),

@@ -4,8 +4,8 @@ html {
   overflow-y: scroll;
 }
 *,
-:after,
-:before {
+*:before,
+*:after {
   box-sizing: inherit;
 }
 body {

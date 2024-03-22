@@ -8,4 +8,8 @@ python:
   requirements_txt: "./requirements.txt"
   lock_packages: false
 docker:
+<<<<<<< HEAD
     distro: debian
+=======
+    distro: debian
+>>>>>>> 0392d279 (docs: initialized inference_graph eexample)

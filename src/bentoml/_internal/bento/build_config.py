@@ -12,10 +12,12 @@ from sys import version_info
 import attr
 import fs
 import fs.copy
+import jinja2
 import psutil
 import yaml
 from packaging.version import Version
 from pathspec import PathSpec
+from pip_requirements_parser import functools
 
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
@@ -511,6 +513,15 @@ class PythonOptions:
     def is_empty(self) -> bool:
         return not self.requirements_txt and not self.packages
 
+    @functools.cached_property
+    def _jinja_environment(self) -> jinja2.Environment:
+        return jinja2.Environment(
+            extensions=["jinja2.ext.debug"],
+            variable_start_string="[[",
+            variable_end_string="]]",
+            loader=jinja2.FileSystemLoader(os.path.dirname(__file__), followlinks=True),
+        )
+
     def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
@@ -552,59 +563,15 @@ class PythonOptions:
             pip_args.extend(self.pip_args.split())
 
         with bento_fs.open(fs.path.combine(py_folder, "install.sh"), "w") as f:
-            args = ["--no-warn-script-location"]
+            args: list[str] = []
             if pip_args:
                 args.extend(pip_args)
-            install_sh = (
-                """\
-#!/usr/bin/env bash
-set -exuo pipefail
-
-# Parent directory https://stackoverflow.com/a/246128/8643197
-BASEDIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
-
-PIP_ARGS=("""
-                + " ".join(map(quote, args))
-                + """)
-
-# BentoML by default generates two requirement files:
-#  - ./env/python/requirements.lock.txt: all dependencies locked to its version presented during `build`
-#  - ./env/python/requirements.txt: all dependencies as user specified in code or requirements.txt file
-REQUIREMENTS_TXT="$BASEDIR/requirements.txt"
-REQUIREMENTS_LOCK="$BASEDIR/requirements.lock.txt"
-WHEELS_DIR="$BASEDIR/wheels"
-BENTOML_VERSION=${BENTOML_VERSION:-"""
-                + clean_bentoml_version(BENTOML_VERSION)
-                + """}
-# Install python packages, prefer installing the requirements.lock.txt file if it exist
-if [ -f "$REQUIREMENTS_LOCK" ]; then
-    echo "Installing pip packages from 'requirements.lock.txt'.."
-    pip3 install -r "$REQUIREMENTS_LOCK" "${PIP_ARGS[@]}"
-else
-    if [ -f "$REQUIREMENTS_TXT" ]; then
-        echo "Installing pip packages from 'requirements.txt'.."
-        pip3 install -r "$REQUIREMENTS_TXT" "${PIP_ARGS[@]}"
-    fi
-fi
-
-# Install user-provided wheels
-if [ -d "$WHEELS_DIR" ]; then
-    echo "Installing wheels packaged in Bento.."
-    pip3 install "$WHEELS_DIR"/*.whl "${PIP_ARGS[@]}"
-fi
-
-# Install the BentoML from PyPI if it's not already installed
-if python3 -c "import bentoml" &> /dev/null; then
-    existing_bentoml_version=$(python3 -c "import bentoml; print(bentoml.__version__)")
-    if [ "$existing_bentoml_version" != "$BENTOML_VERSION" ]; then
-        echo "WARNING: using BentoML version ${existing_bentoml_version}"
-    fi
-else
-    pip3 install bentoml=="$BENTOML_VERSION"
-fi
-"""
+            f.write(
+                self._jinja_environment.get_template("install.sh.j2").render(
+                    bentoml_version=clean_bentoml_version(BENTOML_VERSION),
+                    pip_args=" ".join(map(quote, args)),
+                )
             )
-            f.write(install_sh)
 
         with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
             # Add the pinned BentoML requirement first if it's not a local version

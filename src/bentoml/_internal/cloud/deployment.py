@@ -11,7 +11,8 @@ import yaml
 from deepmerge.merger import Merger
 from rich.live import Live
 from rich.progress import TaskID
-from simple_di import Provide, inject
+from simple_di import Provide
+from simple_di import inject
 
 from bentoml._internal.cloud.base import Spinner
 
@@ -21,18 +22,20 @@ if t.TYPE_CHECKING:
     from bentoml._internal.bento.bento import BentoStore
     from bentoml._internal.cloud.bentocloud import BentoCloudClient
 
-from ...exceptions import BentoMLException, NotFound
+from ...exceptions import BentoMLException
+from ...exceptions import NotFound
 from ..bento.bento import BentoInfo
 from ..configuration.containers import BentoMLContainer
 from ..tag import Tag
-from ..utils import bentoml_cattr, resolve_user_filepath
+from ..utils import bentoml_cattr
+from ..utils import resolve_user_filepath
 from .config import get_rest_api_client
-from .schemas.modelschemas import DeploymentStatus, DeploymentTargetHPAConf
-from .schemas.schemasv2 import \
-    CreateDeploymentSchema as CreateDeploymentSchemaV2
-from .schemas.schemasv2 import DeploymentSchema, DeploymentTargetSchema
-from .schemas.schemasv2 import \
-    UpdateDeploymentSchema as UpdateDeploymentSchemaV2
+from .schemas.modelschemas import DeploymentStatus
+from .schemas.modelschemas import DeploymentTargetHPAConf
+from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
+from .schemas.schemasv2 import DeploymentSchema
+from .schemas.schemasv2 import DeploymentTargetSchema
+from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 
 logger = logging.getLogger(__name__)
 

@@ -22,7 +22,7 @@ The service definition below achieves the inference graph logic described above.
 
 First, we create two classes using different GPT text generation models (GPT2 and DistilGPT2 respectively. Although
 they are no longer prevelant models, they are comparatively small in size, which aligns with the goal of demonstrating
-BentoML inference graph functionality with minimal resources.) Thier corresponding service api is wrapped by `@bentoml.api()` decorator, which takes a sentence as a imput, passed to thier transormer pipeline, finally output text auto completion. 
+BentoML inference graph functionality with minimal resources.) Thier corresponding service api is wrapped by `@bentoml.api()` decorator, which takes a sentence as a imput, passed to thier transormer pipeline, finally output text auto completion.
 
 Second, following the similar pattern, we create a classifier class called `BertBaseUncased`. Its service api will take the text auto compeletion result by the above services one by one, and generate a score for each text compeletion to classify
 the results. (For example, if one text completion says "This movie is bad" and the other completion says "This movie is good", the classification score will differ.)
@@ -64,7 +64,7 @@ class BertBaseUncased:
             model="bert-base-uncased",
             tokenizer="bert-base-uncased",
         )
-    
+
     @bentoml.api()
     async def classify_generated_texts(self, sentence: str) -> float | str:
         score = self.classification_pipeline(sentence)[0]["score"] # type: ignore
@@ -75,7 +75,7 @@ class InferenceGraph:
     gpt2_generator = bentoml.depends(GPT2)
     distilgpt2_generator = bentoml.depends(DistilGPT2)
     bert_classifier = bentoml.depends(BertBaseUncased)
-    
+
     @bentoml.api()
     async def generate_score(self, original_sentence: str = "I have an idea!") -> t.List[t.Dict[str, t.Any]]:
         generated_sentences = [ # type: ignore

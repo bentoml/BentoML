@@ -9,7 +9,11 @@ python:
   lock_packages: false
 docker:
 <<<<<<< HEAD
+<<<<<<< HEAD
     distro: debian
 =======
     distro: debian
 >>>>>>> 0392d279 (docs: initialized inference_graph eexample)
+=======
+    distro: debian
+>>>>>>> d578c69c (ci: auto fixes from pre-commit.ci)

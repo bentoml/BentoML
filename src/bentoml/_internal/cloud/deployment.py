@@ -22,7 +22,6 @@ if t.TYPE_CHECKING:
     from bentoml._internal.bento.bento import BentoStore
     from bentoml._internal.cloud.bentocloud import BentoCloudClient
 
-
 from ...exceptions import BentoMLException
 from ...exceptions import NotFound
 from ..bento.bento import BentoInfo
@@ -686,6 +685,8 @@ class Deployment:
         cloud_rest_client = get_rest_api_client(context)
         deployment_schema = cloud_rest_client.v2.get_deployment(name, cluster)
         orig_dict = cls._convert_schema_to_update_schema(deployment_schema)
+        for service in orig_dict.get("services", {}).values():
+            service.pop("envs", None)
 
         config_params = deployment_config_params.get_config_dict(
             orig_dict.get("bento"),

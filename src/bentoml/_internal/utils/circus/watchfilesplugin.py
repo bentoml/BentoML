@@ -51,7 +51,7 @@ class ServiceReloaderPlugin(CircusPlugin):
             logger.info(
                 "BentoML is installed via development mode, adding source root to 'watch_dirs'."
             )
-            watch_dirs.append(t.cast(str, source_locations("bentoml")))
+            watch_dirs.append(t.cast(str, os.path.dirname(source_locations("bentoml"))))
 
         logger.info("Watching directories: %s", watch_dirs)
         self.watch_dirs = watch_dirs

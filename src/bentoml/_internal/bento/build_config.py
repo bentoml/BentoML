@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import logging
 import os
 import re
@@ -17,7 +18,6 @@ import psutil
 import yaml
 from packaging.version import Version
 from pathspec import PathSpec
-from pip_requirements_parser import functools
 
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument

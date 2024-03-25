@@ -77,11 +77,6 @@ packaging, and production deployment.</p>
 - [BentoLCM](https://github.com/bentoml/BentoLCM) - Deploy a REST API server for Stable Diffusion with Latent Consistency LoRAs.
 - [BentoSVD](https://github.com/bentoml/BentoSVD) - Create a video generation application powered by Stable Video Diffusion (SVD).
 - [BentoVLLM](https://github.com/bentoml/BentoVLLM) - Accelerate your model inference and improve serving throughput by using vLLM as your LLM backend.
-- [Fraud Detection](https://github.com/bentoml/Fraud-Detection-Model-Serving) - Online model serving with custom XGBoost model.
-- [OCR as a Service](https://github.com/bentoml/OCR-as-a-Service) - Turn any OCR models into online inference API endpoints.
-- [Replace Anything](https://github.com/yuqwu/Replace-Anything) - Combine the power of Segment Anything and Stable Diffusion.
-- [DeepFloyd IF Multi-GPU serving](https://github.com/bentoml/IF-multi-GPUs-demo) - Serve IF models easily across multiple GPUs.
-- Check out more examples [here](https://github.com/bentoml/BentoML/tree/main/examples).
 
 # Getting started
 

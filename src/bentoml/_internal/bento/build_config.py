@@ -517,8 +517,8 @@ class PythonOptions:
     def _jinja_environment(self) -> jinja2.Environment:
         return jinja2.Environment(
             extensions=["jinja2.ext.debug"],
-            variable_start_string="[[",
-            variable_end_string="]]",
+            variable_start_string="<<",
+            variable_end_string=">>",
             loader=jinja2.FileSystemLoader(os.path.dirname(__file__), followlinks=True),
         )
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 import typing as t
 
 import easyocr
+import httpx
 import numpy as np
-import requests
 from PIL import Image
 
 import bentoml
@@ -26,29 +26,26 @@ def check_output(output: list[tuple[list[t.Any], str, float]]):
     )
 
 
-en_reader = FrameworkTestModel(
-    name="en_reader",
-    model=easyocr.Reader(["en"]),
-    configurations=[
-        Config(
-            test_inputs={
-                "readtext": [
-                    Input(
-                        input_args=(
-                            [
-                                np.asarray(
-                                    Image.open(
-                                        requests.get(url, stream=True).raw
-                                    ).convert("RGB")
-                                )
-                            ]
-                        ),
-                        expected=check_output,
-                    )
-                ]
-            }
-        )
-    ],
-)
+with httpx.stream("GET", url) as resp:
+    en_reader = FrameworkTestModel(
+        name="en_reader",
+        model=easyocr.Reader(["en"]),
+        configurations=[
+            Config(
+                test_inputs={
+                    "readtext": [
+                        Input(
+                            input_args=(
+                                [
+                                    np.asarray(Image.open(resp).convert("RGB")),
+                                ]
+                            ),
+                            expected=check_output,
+                        )
+                    ]
+                }
+            )
+        ],
+    )
 
 models = [en_reader]

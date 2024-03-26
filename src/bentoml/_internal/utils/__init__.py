@@ -273,6 +273,39 @@ def copy_file_to_fs_folder(
     fs.copy.copy_file(src_fs, file_name, dst_fs, dst_path)
 
 
+def download_and_zip_git_repo(
+    url: str, ref: str, subdirectory: str | None, dst_path: str
+) -> str:
+    """
+    Download the git repo at the given url and ref, and zip it to a file at dst_path
+    """
+    import shutil
+    import subprocess
+
+    from ...exceptions import BentoMLException
+
+    name = os.path.splitext(os.path.basename(url))[0]
+
+    with fs.open_fs("temp://") as temp_fs:
+        dest_dir = temp_fs.getsyspath(name)
+        git_command = ["git", "clone", "--filter=blob:none", "--quiet", url, dest_dir]
+        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+        try:
+            subprocess.check_call(git_command, env=env)
+            if ref:
+                subprocess.check_call(["git", "fetch", "-q", url, ref], cwd=dest_dir)
+                subprocess.check_call(["git", "checkout", "FETCH_HEAD"], cwd=dest_dir)
+        except subprocess.CalledProcessError as e:
+            raise BentoMLException(
+                f"Failed to clone git repository {url}: {e.stderr}"
+            ) from e
+        zipball = os.path.join(dst_path, subdirectory or name)
+        shutil.rmtree(os.path.join(dest_dir, ".git"), ignore_errors=True)
+        source_dir = os.path.join(dest_dir, subdirectory) if subdirectory else dest_dir
+        result = shutil.make_archive(zipball, "zip", source_dir)
+        return os.path.basename(result)
+
+
 def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
     """Resolve the abspath of a filepath provided by user. User provided file path can:
     * be a relative path base on ctx dir

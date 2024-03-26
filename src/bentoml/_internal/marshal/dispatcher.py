@@ -327,12 +327,23 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                         continue
                     await asyncio.sleep(self.tick_interval)
                     continue
-                if (
+
+                # we are now free to dispatch whenever we like
+                while (
+                    # if we don't already have enough requests,
                     n < self.max_batch_size
-                    and n * (wn + dt + (a or 0)) <= self.optimizer.wait * decay
+                    # we are not about to cancel the first request,
+                    and latency_0 + dt <= self.max_latency_in_ms * 0.95
+                    # and waiting will cause average latency to decrese
+                    and n * (wn + dt + a) <= self.optimizer.wait * decay
                 ):
+                    n = len(self._queue)
+                    now = time.time()
+                    wn = now - self._queue[-1][0]
+                    latency_0 = w0 + a * n + b
+
+                    # wait for additional requests to arrive
                     await asyncio.sleep(self.tick_interval)
-                    continue
 
                 if self.max_batch_size == -1:  # batching is disabled
                     n_call_out = 1

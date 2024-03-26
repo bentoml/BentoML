@@ -1,0 +1,6 @@
+service: "service:DynamicService"
+include:
+  - "service.py"
+  - "requirements.txt"
+python:
+  requirements_txt: "./requirements.txt"

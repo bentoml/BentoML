@@ -4,10 +4,10 @@ import functools
 import logging
 import os
 import re
+import shlex
 import subprocess
 import sys
 import typing as t
-from shlex import quote
 from sys import version_info
 
 import attr
@@ -541,7 +541,7 @@ class PythonOptions:
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
-        pip_compile_compat: t.List[str] = []
+        pip_compile_compat: list[str] = []
         if self.index_url:
             pip_compile_compat.extend(["--index-url", self.index_url])
         if self.trusted_host:
@@ -555,7 +555,7 @@ class PythonOptions:
                 pip_compile_compat.extend(["--extra-index-url", url])
 
         # add additional pip args that does not apply to pip-compile
-        pip_args: t.List[str] = []
+        pip_args: list[str] = []
         pip_args.extend(pip_compile_compat)
         if self.no_index:
             pip_args.append("--no-index")
@@ -569,7 +569,7 @@ class PythonOptions:
             f.write(
                 self._jinja_environment.get_template("install.sh.j2").render(
                     bentoml_version=clean_bentoml_version(BENTOML_VERSION),
-                    pip_args=" ".join(map(quote, args)),
+                    pip_args=shlex.join(args),
                 )
             )
 

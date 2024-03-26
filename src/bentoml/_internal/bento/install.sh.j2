@@ -28,10 +28,12 @@ fi
 # the pattern itself is not returned if no files match.
 shopt -s nullglob
 wheels=($WHEELS_DIR/*.whl)
+{% raw %}
 if [ ${#wheels[@]} -gt 0 ]; then
     echo "Installing wheels packaged in Bento.."
     pip3 install "${wheels[@]}" "${PIP_ARGS[@]}"
 fi
+{% endraw %}
 
 # Install the BentoML from PyPI if it's not already installed
 if python3 -c "import bentoml" &> /dev/null; then

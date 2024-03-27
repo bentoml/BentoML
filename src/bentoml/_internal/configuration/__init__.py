@@ -13,9 +13,6 @@ from packaging.version import Version
 from ...exceptions import BentoMLConfigException
 from ...exceptions import BentoMLException
 
-# Find BentoML version managed by setuptools_scm
-BENTOML_VERSION = importlib.metadata.version("bentoml")
-
 if t.TYPE_CHECKING:
     from .containers import SerializationStrategy
 
@@ -30,6 +27,20 @@ CONFIG_OVERRIDE_ENV_VAR = "BENTOML_CONFIG_OPTIONS"
 CONFIG_OVERRIDE_JSON_ENV_VAR = "BENTOML_CONFIG_OVERRIDES"
 # https://github.com/grpc/grpc/blob/master/doc/environment_variables.md
 GRPC_DEBUG_ENV_VAR = "GRPC_VERBOSITY"
+
+
+def get_bentoml_version() -> str:
+    try:
+        # Find BentoML version managed by setuptools_scm
+        from ..._version import __version__
+    except ImportError:
+        # Find BentoML version managed from dist metadata
+        __version__ = importlib.metadata.version("bentoml")
+
+    return __version__
+
+
+BENTOML_VERSION = get_bentoml_version()
 
 
 def expand_env_var(env_var: str) -> str:

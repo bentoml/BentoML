@@ -64,6 +64,9 @@ dependencies = [
     "starlette>=0.24.0",
     "uvicorn",
     "watchfiles>=0.15.0",
+    # for manipulating pyproject.toml
+    "tomli>=1.1.0; python_version < \"3.11\"",
+    "tomli-w",
 ]
 dynamic = ["version"]
 [project.urls]
@@ -173,7 +176,6 @@ testing = [
     "pytest==7.4.0",
     "pytest-xdist[psutil]==3.3.1",
     "pytest-asyncio==0.21.1",
-    "build[virtualenv]==0.10.0",
     "Pillow<10",
 ]
 

@@ -93,6 +93,13 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Confgiure hooks to run custom logic at different stages of a Service's lifecycle.
 
+    .. grid-item-card:: :doc:`/guides/migrate-v1-to-v12-higher`
+        :link: /guides/migrate-v1-to-v12-higher
+        :link-type: doc
+
+        Guideline to migrate v1.x.x to v1.2.x higher
+
+
 .. toctree::
     :hidden:
 
@@ -110,3 +117,4 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     asgi
     configurations
     lifecycle-hooks
+    migrate-v1-to-v12-higher

@@ -43,7 +43,7 @@ FastAPI
     app = FastAPI()
 
     @bentoml.service
-    @bentoml.mount_asgi_app(app)
+    @bentoml.mount_asgi_app(app, path="/v1")
     class MyService:
         name = "MyService"
 
@@ -59,7 +59,7 @@ FastAPI
 Specifically, do the following to mount FastAPI:
 
 1. Create a FastAPI application with ``FastAPI()``.
-2. Use the ``@bentoml.mount_asgi_app(app)`` decorator to mount the FastAPI application to the BentoML Service, enabling them to be served together.
+2. Use the ``@bentoml.mount_asgi_app`` decorator to mount the FastAPI application to the BentoML Service, enabling them to be served together. Set the ``path`` parameter to :ref:`customize the prefix path <customize-prefix-path>`.
 3. Define a FastAPI route inside or outside the Service class using ``@app.get("/<route-name>")``.
 
    - Inside the class: Use ``self`` to access the Service instance's attributes and methods.
@@ -103,7 +103,7 @@ The following is a more practical example of mounting FastAPI onto the Summariza
         resources={"cpu": "2"},
         traffic={"timeout": 10},
     )
-    @bentoml.mount_asgi_app(app)
+    @bentoml.mount_asgi_app(app, path="/v1")
     class Summarization:
         def __init__(self) -> None:
             self.pipeline = pipeline('summarization')
@@ -166,14 +166,14 @@ The following is an example of integrating Quart with BentoML.
         return f"Hello, {service.name}"
 
     @bentoml.service
-    @bentoml.mount_asgi_app(app)
+    @bentoml.mount_asgi_app(app, path="/v1")
     class MyService:
         name = "MyService"
 
 Specifically, do the following to mount Quart:
 
 1. Create a Quart application with ``Quart()``.
-2. Use the ``@bentoml.mount_asgi_app(app)`` decorator to mount the Quart application to the BentoML Service, enabling them to be served together.
+2. Use the ``@bentoml.mount_asgi_app`` decorator to mount the Quart application to the BentoML Service, enabling them to be served together. Set the ``path`` parameter to :ref:`customize the prefix path <customize-prefix-path>`.
 3. Define a Quart route outside the Service class using ``@app.get(/"<route-name>")``. Use ``bentoml.get_current_service()`` to inject the ``MyService`` instance, allowing the route to access the Service's attributes and methods.
 4. Within the Quart route, add your desired implementation logic. This example returns a greeting message using the Service's name.
 
@@ -205,7 +205,7 @@ The following is a more practical example of mounting Quart onto the Summarizati
         resources={"cpu": "2"},
         traffic={"timeout": 10},
     )
-    @bentoml.mount_asgi_app(app)
+    @bentoml.mount_asgi_app(app, path="/v1")
     class Summarization:
         def __init__(self) -> None:
             self.pipeline = pipeline('summarization')
@@ -223,13 +223,15 @@ After you start the BentoML Service, which is accessible at `http://localhost:30
 
 .. code-block:: bash
 
-    $ curl http://localhost:3000/hello
+    $ curl http://localhost:3000/v1/hello
 
     Hello, MyService
 
 .. note::
 
     Unlike FastAPI, Quart does not natively support the OpenAPI specification, so the endpoint is not displayed on the Swagger UI. You can use other ways to communicate with it, such as ``curl``.
+
+.. _customize-prefix-path:
 
 Customize the prefix path
 -------------------------

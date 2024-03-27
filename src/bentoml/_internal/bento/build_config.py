@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 import logging
 import os
 import re
@@ -16,7 +15,6 @@ import fs.copy
 import jinja2
 import psutil
 import yaml
-from packaging.version import Version
 from pathspec import PathSpec
 
 from ...exceptions import BentoMLException
@@ -25,6 +23,7 @@ from ..configuration import BENTOML_VERSION
 from ..configuration import clean_bentoml_version
 from ..configuration import get_debug_mode
 from ..configuration import get_quiet_mode
+from ..configuration import is_pypi_installed_bentoml
 from ..container import generate_containerfile
 from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
 from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
@@ -37,7 +36,6 @@ from ..utils import copy_file_to_fs_folder
 from ..utils import download_and_zip_git_repo
 from ..utils import resolve_user_filepath
 from ..utils.dotenv import parse_dotenv
-from .build_dev_bentoml_whl import build_bentoml_editable_wheel
 
 if t.TYPE_CHECKING:
     from attr import Attribute
@@ -514,7 +512,7 @@ class PythonOptions:
     def is_empty(self) -> bool:
         return not self.requirements_txt and not self.packages
 
-    @functools.cached_property
+    @property
     def _jinja_environment(self) -> jinja2.Environment:
         return jinja2.Environment(
             extensions=["jinja2.ext.debug"],
@@ -524,6 +522,8 @@ class PythonOptions:
         )
 
     def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
+        from .bentoml_builder import build_bentoml_sdist
+
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
         bento_fs.makedirs(py_folder, recreate=True)
@@ -532,8 +532,8 @@ class PythonOptions:
         with bento_fs.open(fs.path.join(py_folder, "version.txt"), "w") as f:
             f.write(f"{version_info.major}.{version_info.minor}.{version_info.micro}")
 
-        # Build BentoML whl from local source if BENTOML_BUNDLE_LOCAL_BUILD=True
-        build_bentoml_editable_wheel(bento_fs.getsyspath(wheels_folder))
+        # Build BentoML sdist from local source if BENTOML_BUNDLE_LOCAL_BUILD=True
+        sdist_name = build_bentoml_sdist(bento_fs.getsyspath(wheels_folder))
 
         # Move over required wheel files
         if self.wheels:
@@ -576,12 +576,14 @@ class PythonOptions:
 
         with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
             # Add the pinned BentoML requirement first if it's not a local version
-            if Version(BENTOML_VERSION).local is None:
+            if is_pypi_installed_bentoml():
                 logger.info(
                     "Adding current BentoML version to requirements.txt: %s",
                     BENTOML_VERSION,
                 )
                 f.write(f"bentoml=={BENTOML_VERSION}\n")
+            elif sdist_name:
+                f.write(f"./wheels/{sdist_name}\n")
             if self.requirements_txt is not None:
                 from pip_requirements_parser import RequirementsFile
 
@@ -642,24 +644,23 @@ class PythonOptions:
                     cmd,
                     text=True,
                     stderr=subprocess.DEVNULL if get_quiet_mode() else None,
+                    cwd=bento_fs.getsyspath(py_folder),
                 )
             except subprocess.CalledProcessError as e:
                 raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
-            self._download_git_deps(pip_compile_out, bento_fs.getsyspath(wheels_folder))
+            self._fix_dep_urls(pip_compile_out, bento_fs.getsyspath(wheels_folder))
         else:
             requirements_txt = bento_fs.getsyspath(
                 fs.path.combine(py_folder, "requirements.txt")
             )
             if os.path.exists(requirements_txt):
-                self._download_git_deps(
-                    requirements_txt, bento_fs.getsyspath(wheels_folder)
-                )
+                self._fix_dep_urls(requirements_txt, bento_fs.getsyspath(wheels_folder))
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
         return self
 
-    def _download_git_deps(self, requirements_txt: str, wheels_folder: str) -> None:
+    def _fix_dep_urls(self, requirements_txt: str, wheels_folder: str) -> None:
         """Replace the git dependencies in the requirements.lock file with the
         paths to the local copy.
         """
@@ -671,17 +672,23 @@ class PythonOptions:
         )
         for req in parsed_requirements.requirements:
             link = req.link
-            if not link or not link.url.startswith("git+ssh://"):
-                # We are only able to handle SSH Git URLs
+            if not link:
                 continue
-            url, _, ref = link.url[4:].rpartition("@")
-            zipball = download_and_zip_git_repo(
-                url, ref, link.subdirectory_fragment, wheels_folder
-            )
-            parsed_parts = parse_reqparts_from_string(f"./wheels/{zipball}")
+
+            if "/env/python/wheels" in link.url:
+                filename = link.filename
+            elif link.url.startswith("git+ssh://"):
+                # We are only able to handle SSH Git URLs
+                url, _, ref = link.url[4:].rpartition("@")
+                filename = download_and_zip_git_repo(
+                    url, ref, link.subdirectory_fragment, wheels_folder
+                )
+            else:
+                continue
+            parsed_parts = parse_reqparts_from_string(f"./wheels/{filename}")
             req.link = parsed_parts.link
             req.req = parsed_parts.requirement
-            req.requirement_line.line = f"./wheels/{zipball}"
+            req.requirement_line.line = f"./wheels/{filename}"
 
         with open(requirements_txt, "w") as f:
             f.write(parsed_requirements.dumps(preserve_one_empty_line=True))

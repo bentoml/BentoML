@@ -64,6 +64,9 @@ dependencies = [
     "starlette>=0.24.0",
     "uvicorn",
     "watchfiles>=0.15.0",
+    # for manipulating pyproject.toml
+    "tomli>=1.1.0; python_version < \"3.11\"",
+    "tomli-w",
 ]
 dynamic = ["version"]
 [project.urls]

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import importlib.metadata
-
 import click
 import psutil
 
 
 def create_bentoml_cli() -> click.Command:
+    from bentoml._internal.configuration import BENTOML_VERSION
     from bentoml._internal.context import server_context
     from bentoml_cli.bentos import bento_command
     from bentoml_cli.cloud import cloud_command
@@ -24,7 +23,7 @@ def create_bentoml_cli() -> click.Command:
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
 
     @click.group(cls=BentoMLCommandGroup, context_settings=CONTEXT_SETTINGS)
-    @click.version_option(importlib.metadata.version("bentoml"), "-v", "--version")
+    @click.version_option(BENTOML_VERSION, "-v", "--version")
     def bentoml_cli():
         """
         \b

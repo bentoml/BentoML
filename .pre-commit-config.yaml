@@ -19,7 +19,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.12.3
+    rev: 2.13.0
     hooks:
       - id: pdm-lock-check
   - repo: https://github.com/bufbuild/buf

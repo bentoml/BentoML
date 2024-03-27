@@ -176,7 +176,6 @@ testing = [
     "pytest==7.4.0",
     "pytest-xdist[psutil]==3.3.1",
     "pytest-asyncio==0.21.1",
-    "build[virtualenv]==0.10.0",
     "Pillow<10",
 ]
 

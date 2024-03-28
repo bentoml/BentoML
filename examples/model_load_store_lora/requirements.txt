@@ -1,5 +1,0 @@
-diffusers
-bentoml
-transformers
-torch
-accelerate

@@ -40,7 +40,7 @@ You can set the minimum and maximum scaling replicas to ensure efficient resourc
                 scaling_max=3
             )
 
-For metric-based scaling use cases, see :doc:`/bentocloud/how-tos/autoscaling`.
+For more information, see :doc:`/bentocloud/how-tos/autoscaling`.
 
 Instance types
 ^^^^^^^^^^^^^^

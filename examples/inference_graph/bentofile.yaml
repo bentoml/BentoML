@@ -1,10 +1,11 @@
-service: "service.py:svc"
+service: "service.py:InferenceGraph"
 labels:
   owner: bentoml-team
   project: gallery
 include:
-- "*.py"
+  - "service.py"
 python:
-  packages:
-    - transformers
-    - torch
+  requirements_txt: "./requirements.txt"
+  lock_packages: false
+docker:
+    distro: debian

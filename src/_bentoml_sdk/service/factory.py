@@ -41,7 +41,8 @@ if t.TYPE_CHECKING:
     R = t.TypeVar("R")
 
     class _ServiceDecorator(t.Protocol):
-        def __call__(self, inner: type[T]) -> Service[T]: ...
+        def __call__(self, inner: type[T]) -> Service[T]:
+            ...
 
 
 def with_config(
@@ -327,11 +328,13 @@ class Service(t.Generic[T]):
 
 
 @t.overload
-def service(inner: type[T], /) -> Service[T]: ...
+def service(inner: type[T], /) -> Service[T]:
+    ...
 
 
 @t.overload
-def service(inner: None = ..., /, **kwargs: Unpack[Config]) -> _ServiceDecorator: ...
+def service(inner: None = ..., /, **kwargs: Unpack[Config]) -> _ServiceDecorator:
+    ...
 
 
 def service(inner: type[T] | None = None, /, **kwargs: Unpack[Config]) -> t.Any:

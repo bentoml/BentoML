@@ -260,7 +260,7 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                 req_count += 1
                 # call
                 self._sema.acquire()
-                inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
+                inputs_info = tuple(self._queue.popleft() for _ in range(n_call_out))
                 for info in inputs_info:
                     # fake wait as 0 for training requests
                     info.enqueue_time = now
@@ -358,7 +358,7 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                         )
                 # call
                 self._sema.acquire()
-                inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))
+                inputs_info = tuple(self._queue.popleft() for _ in range(n_call_out))
                 self._loop.create_task(self.outbound_call(inputs_info))
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc(), exc_info=e)

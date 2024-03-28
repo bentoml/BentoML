@@ -41,8 +41,7 @@ if t.TYPE_CHECKING:
     R = t.TypeVar("R")
 
     class _ServiceDecorator(t.Protocol):
-        def __call__(self, inner: type[T]) -> Service[T]:
-            ...
+        def __call__(self, inner: type[T]) -> Service[T]: ...
 
 
 def with_config(
@@ -328,13 +327,11 @@ class Service(t.Generic[T]):
 
 
 @t.overload
-def service(inner: type[T], /) -> Service[T]:
-    ...
+def service(inner: type[T], /) -> Service[T]: ...
 
 
 @t.overload
-def service(inner: None = ..., /, **kwargs: Unpack[Config]) -> _ServiceDecorator:
-    ...
+def service(inner: None = ..., /, **kwargs: Unpack[Config]) -> _ServiceDecorator: ...
 
 
 def service(inner: type[T] | None = None, /, **kwargs: Unpack[Config]) -> t.Any:
@@ -419,14 +416,21 @@ def runner_service(runner: Runner, **kwargs: Unpack[Config]) -> Service[t.Any]:
 
 class _AsyncWrapper:
     def __init__(self, wrapped: t.Any, apis: t.Iterable[str]) -> None:
+        self.__call = None
         for name in apis:
-            setattr(self, name, self.__make_method(wrapped, name))
+            if name == "__call__":
+                self.__call = self.__make_method(wrapped, name)
+            else:
+                setattr(self, name, self.__make_method(wrapped, name))
+
+    def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        if self.__call is None:
+            raise TypeError("This service is not callable.")
+        return self.__call(*args, **kwargs)
 
     def __make_method(self, inner: t.Any, name: str) -> t.Any:
         import asyncio
-        import subprocess
 
-        subprocess.Popen
         import anyio.to_thread
 
         original_func = func = getattr(inner, name)

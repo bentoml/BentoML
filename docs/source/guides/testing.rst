@@ -23,6 +23,29 @@ Tests can be run using a test runner like ``pytest``. Install ``pytest`` via ``p
 
 For more information, see `the pytest documentation <https://docs.pytest.org/en/latest/index.html>`_.
 
+Service verification
+--------------------
+
+After you create a ``service.py`` file, you can use a simple and straightforward verification script to quickly ensure that your Service is functioning as expected. This is ideal for use in a Jupyter Notebook or similar environments, allowing you to interactively debug and verify code changes during the development process. Here's how you can implement it:
+
+.. code-block:: python
+    :caption: `service_verification.py`
+
+    from service import Summarization, EXAMPLE_INPUT # Imported from the Summarization service.py file
+
+    # Initialize the Service
+    svc = Summarization()
+
+    # Invoke the Service with example input and print the output
+    output = svc.summarize(EXAMPLE_INPUT)
+    print(output)
+
+This verification test provides immediate feedback by initializing the Service and loading the model into memory, which helps you verify that all components of the Service, including external dependencies and the model itself, are correctly set up.
+
+If the model is too large or requires GPU resources, running this test on a laptop or in environments with limited resources (for example, GitHub Actions) might not be feasible. In such cases, you could connect to a remote GPU machine or utilize a Jupyter Notebook hosted on a server with adequate resources. For situations where loading the model is not practical, read the :ref:`unit-test` section below to use mocking techniques to simulate model inference.
+
+.. _unit-test:
+
 Unit tests
 ----------
 

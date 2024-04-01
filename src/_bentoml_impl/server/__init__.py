@@ -1,9 +1,9 @@
 """
-    _bentoml_impl.server
-    ~~~~~~~~~~~~~~~~~~~~
+_bentoml_impl.server
+~~~~~~~~~~~~~~~~~~~~
 
-    A reference implementation of serving a BentoML service.
-    This will be eventually migrated to Rust.
+A reference implementation of serving a BentoML service.
+This will be eventually migrated to Rust.
 """
 
 from .serving import serve_http

@@ -79,8 +79,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
 
     if t.TYPE_CHECKING:
         # Populated by subclasses. Makes pyright happy.
-        def __init__(self, **kwargs: t.Any) -> None:
-            ...
+        def __init__(self, **kwargs: t.Any) -> None: ...
 
     __slots__ = (
         "_mime_type",
@@ -140,8 +139,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     if t.TYPE_CHECKING:
 
         @classmethod
-        def from_sample(cls, sample: t.Any, **attrs: t.Any) -> t.Self:
-            ...
+        def from_sample(cls, sample: t.Any, **attrs: t.Any) -> t.Self: ...
 
     @abstractmethod
     def _from_sample(self, sample: t.Any) -> IOType:

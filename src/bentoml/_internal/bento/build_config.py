@@ -818,8 +818,7 @@ class BentoBuildConfig:
             python: PythonOptions | dict[str, t.Any] | None = ...,
             conda: CondaOptions | dict[str, t.Any] | None = ...,
             models: list[ModelSpec | str | dict[str, t.Any]] | None = ...,
-        ) -> None:
-            ...
+        ) -> None: ...
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()

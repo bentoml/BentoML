@@ -203,16 +203,14 @@ class _TritonRunner(_AbstractRunner):
     @t.overload
     def __getattr__(
         self, item: _ClientMethod
-    ) -> t.Callable[..., t.Coroutine[t.Any, t.Any, t.Any]]:
-        ...
+    ) -> t.Callable[..., t.Coroutine[t.Any, t.Any, t.Any]]: ...
 
     @t.overload
     def __getattr__(
         self, item: _ModelName
     ) -> _RunnerMethod[
         t.Any, _P, _tritongrpcclient.InferResult | _tritonhttpclient.InferResult
-    ]:
-        ...
+    ]: ...
 
     def __getattr__(self, item: str) -> t.Any:
         from ._internal.runner.runner_handle.remote import TritonRunnerHandle

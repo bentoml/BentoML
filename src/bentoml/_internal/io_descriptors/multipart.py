@@ -327,14 +327,12 @@ class Multipart(
     @t.overload
     async def _to_proto_impl(
         self, obj: dict[str, t.Any], *, version: t.Literal["v1"]
-    ) -> pb.Multipart:
-        ...
+    ) -> pb.Multipart: ...
 
     @t.overload
     async def _to_proto_impl(
         self, obj: dict[str, t.Any], *, version: t.Literal["v1alpha1"]
-    ) -> pb_v1alpha1.Multipart:
-        ...
+    ) -> pb_v1alpha1.Multipart: ...
 
     async def _to_proto_impl(
         self, obj: dict[str, t.Any], *, version: str

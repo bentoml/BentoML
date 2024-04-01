@@ -197,9 +197,10 @@ def run_bento_server_container(
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     container_name = f"bentoml-test-{image_tag.replace(':', '_')}-{hash(config_file)}"
-    with reserve_free_port(enable_so_reuseport=use_grpc) as port, reserve_free_port(
-        enable_so_reuseport=use_grpc
-    ) as prom_port:
+    with (
+        reserve_free_port(enable_so_reuseport=use_grpc) as port,
+        reserve_free_port(enable_so_reuseport=use_grpc) as prom_port,
+    ):
         pass
 
     cmd = [

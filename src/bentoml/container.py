@@ -61,8 +61,7 @@ def build(
     ssh: str | ArgType = ...,
     target: str | ArgType = ...,
     **kwargs: t.Any,
-) -> t.Any:
-    ...
+) -> t.Any: ...
 
 
 @t.overload
@@ -88,8 +87,7 @@ def build(
     metadata_file: PathType | None = ...,
     opt: tuple[str, ...] | dict[str, str | tuple[str, ...]] | None = ...,
     **kwargs: t.Any,
-) -> t.Any:
-    ...
+) -> t.Any: ...
 
 
 @t.overload
@@ -132,8 +130,7 @@ def build(
     target: str | None = ...,
     ulimit: str | dict[str, tuple[int, int]] | ArgType = ...,
     **kwargs: t.Any,
-) -> t.Any:
-    ...
+) -> t.Any: ...
 
 
 @t.overload
@@ -177,8 +174,7 @@ def build(
     snapshotter: str | None = ...,
     storage_driver: str | None = ...,
     **kwargs: t.Any,
-) -> t.Any:
-    ...
+) -> t.Any: ...
 
 
 @t.overload
@@ -277,8 +273,7 @@ def build(
     variant: str | None = ...,
     volume: str | tuple[str, str, str] | None = ...,
     **kwargs: t.Any,
-) -> t.Any:
-    ...
+) -> t.Any: ...
 
 
 @t.overload
@@ -360,8 +355,7 @@ def build(
     variant: str | None = ...,
     volume: str | tuple[str, str, str] | None = ...,
     **kwargs: t.Any,
-) -> t.Any:
-    ...
+) -> t.Any: ...
 
 
 @inject

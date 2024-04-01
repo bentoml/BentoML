@@ -98,9 +98,9 @@ class Service:
     mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str]] = attr.field(
         init=False, factory=list
     )
-    middlewares: t.List[
-        t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]
-    ] = attr.field(init=False, factory=list)
+    middlewares: t.List[t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]] = (
+        attr.field(init=False, factory=list)
+    )
 
     # gRPC related
     mount_servicers: list[tuple[ServicerClass, AddServicerFn, list[str]]] = attr.field(

@@ -39,8 +39,7 @@ def create(
     strategy: str | None = ...,
     envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @t.overload
@@ -52,8 +51,7 @@ def create(
     *,
     bento: Tag | str | None = ...,
     config_file: str | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @t.overload
@@ -65,8 +63,7 @@ def create(
     *,
     bento: Tag | str | None = ...,
     config_dict: dict[str, t.Any] | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @inject
@@ -139,8 +136,7 @@ def update(
     strategy: str | None = ...,
     envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @t.overload
@@ -153,8 +149,7 @@ def update(
     *,
     bento: Tag | str | None = ...,
     config_file: str | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @t.overload
@@ -167,8 +162,7 @@ def update(
     *,
     bento: Tag | str | None = ...,
     config_dict: dict[str, t.Any] | None = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @inject
@@ -241,8 +235,7 @@ def apply(
     *,
     bento: t.Optional[t.Union[Tag, str]] = ...,
     config_dict: t.Optional[dict[str, t.Any]] = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @t.overload
@@ -255,8 +248,7 @@ def apply(
     *,
     bento: t.Optional[t.Union[Tag, str]] = ...,
     config_file: t.Optional[str] = ...,
-) -> DeploymentInfo:
-    ...
+) -> DeploymentInfo: ...
 
 
 @inject

@@ -185,23 +185,6 @@ SCHEMA = s.Schema(
     ignore_extra_keys=True,
 )
 
-SERVICE_CFG_KEYS = [
-    "batching",
-    "resources",
-    "workers",
-    "traffic",
-    "backlog",
-    "max_runner_connections",
-    "logging",
-    "metrics",
-    "http",
-    "grpc",
-    "ssl",
-    "runner_probe",
-    "monitoring",
-    "tracing",
-]
-
 
 def migration(*, override_config: dict[str, t.Any]):
     # We will use a flattened config to make it easier to migrate,
@@ -217,6 +200,23 @@ def migration(*, override_config: dict[str, t.Any]):
 
 def finalize_config(config: dict[str, t.Any]) -> dict[str, t.Any]:
     from ..containers import config_merger
+
+    SERVICE_CFG_KEYS = [
+        "batching",
+        "resources",
+        "workers",
+        "traffic",
+        "backlog",
+        "max_runner_connections",
+        "logging",
+        "metrics",
+        "http",
+        "grpc",
+        "ssl",
+        "runner_probe",
+        "monitoring",
+        "tracing",
+    ]
 
     default_service_config = {
         key: value

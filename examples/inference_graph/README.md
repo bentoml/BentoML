@@ -3,16 +3,19 @@
 This is a sample project demonstrating model inference graph of [BentoML](https://github.com/bentoml)
 with Huggingface Transformers.
 
-In this project, we will use pretrained text generation models and a pretrained text classification model. We will then build a service that accepts a text input, passes the input to the two text generation models,
-classify each generated paragraph with the classification model, and return both generated paragraphs with their classification
-scores. The service will be served via HTTP and containerized as a docker image for production deployment.
+In this project, we will use pretrained text generation models and a pretrained text classification model to build multiple Services. You will learn how to use these Services to:
+- Accept a text input and pass the input to the two text generation models
+- Classify each generated paragraph with the classification model
+- Return both generated paragraphs with their classification
+- Serve the models locally via HTTP
+These Services can be deployed to BentoCloud or containerized as an OCI-compliant image.
 
 ### Install Dependencies
 
 Install python packages required for running this project:
 ```bash
 python -m venv inference_graph
-source venv/bin/activate
+source inference_graph/bin/activate
 pip install -r ./requirements.txt
 ```
 
@@ -21,15 +24,15 @@ pip install -r ./requirements.txt
 The service definition below achieves the inference graph logic described above.
 
 First, we create two classes using different GPT text generation models (GPT2 and DistilGPT2 respectively. Although
-they are no longer prevelant models, they are comparatively small in size, which aligns with the goal of demonstrating
-BentoML inference graph functionality with minimal resources.) Thier corresponding service api is wrapped by `@bentoml.api()` decorator, which takes a sentence as a imput, passed to thier transormer pipeline, finally output text auto completion.
+they are no longer prevalant models, they are comparatively small in size, which aligns with the goal of demonstrating
+BentoML inference graph functionality with minimal resources.) Their corresponding Service API is wrapped by `@bentoml.api()` decorator, which takes a sentence as a input, passed to their transformer pipeline, finally output text auto completion.
 
-Second, following the similar pattern, we create a classifier class called `BertBaseUncased`. Its service api will take the text auto compeletion result by the above services one by one, and generate a score for each text compeletion to classify
+Second, following the similar pattern, we create a classifier class called `BertBaseUncased`. Its Service API will take the text auto compeletion result by the above services one by one, and generate a score for each text compeletion to classify
 the results. (For example, if one text completion says "This movie is bad" and the other completion says "This movie is good", the classification score will differ.)
 
-Finally, we will have a InferenceGraph class to use all of the above procedures. its service api `generate_score` would be the service endpoint to users. Notice that at the beginning of the class, we instancialize the GPTs and the Classifier. This enables BentoML to call these services in a graph manner.
+Finally, we will have an `InferenceGraph` class to use all of the above procedures. Its Service API `generate_score` would be the Service endpoint to users. Notice that at the beginning of the class, we instancialize the GPTs and the Classifier. This enables BentoML to call these Services in a graph manner.
 
-Inside the api, we use `asyncio.gather` to gather the text autocompletions, store them into `generated_sentences`. We use the `to_async` function so that the two GPT services will run in parallel (It is equivalent to defining the GPT apis as `async def`; it is just the BentoML's way of defining asynchronous functions, so that each api can be called both synchrnously and asynchrounously). Then, we pass the `generated_sentences` one by one to the classifier service, and return the classify score as final result.
+Inside the API, we use `asyncio.gather` to gather the text autocompletions, storing them into `generated_sentences`. We use the `to_async` function so that the two GPT services will run in parallel (It is equivalent to defining the GPT APIs as `async def`; this is how BentoML defines asynchronous functions, so that each API can be called both synchronously and asynchronously). Then, we pass the `generated_sentences` one by one to the classifier Service, and return the classify score as final result.
 
 ```python
 @bentoml.service()
@@ -107,14 +110,14 @@ class InferenceGraph:
         return results
 ```
 
-To serve the model locally, run `bentoml serve .`
+To serve the models locally, run `bentoml serve .`
 
 ```bash
 bentoml serve .
 2024-03-22T19:25:24+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:InferenceGraph" listening on http://localhost:3000 (Press CTRL+C to quit)
 ```
 
-Open your web browser at http://0.0.0.0:3000 to view the Bento UI for sending test requests.
+Open your web browser at http://0.0.0.0:3000 to view the Swagger UI for sending test requests.
 
 You may also send request with `curl` command or any HTTP client, e.g.:
 

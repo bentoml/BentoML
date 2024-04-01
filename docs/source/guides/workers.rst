@@ -62,7 +62,7 @@ Here is an example:
 
     def __init__(self):
         import torch
-        
+
             cuda = torch.device(f"cuda:{bentoml.server_context.worker_index-1}")
             model = models.resnet18(pretrained=True)
             model.to(cuda)

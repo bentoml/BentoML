@@ -17,8 +17,6 @@ from ..helpers import is_valid_ip_address
 from ..helpers import validate_otlp_protocol
 from ..helpers import validate_tracing_type
 
-__all__ = ["SCHEMA", "migration"]
-
 TRACING_CFG = {
     "exporter_type": s.Or(s.And(str, s.Use(str.lower), validate_tracing_type), None),
     "sample_rate": s.Or(s.And(float, ensure_range(0, 1)), None),

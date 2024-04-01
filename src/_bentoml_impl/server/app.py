@@ -171,10 +171,12 @@ class ServiceAppFactory(BaseAppFactory):
         from starlette.responses import JSONResponse
 
         log_exception(req, sys.exc_info())
-        return JSONResponse(
+        resp = JSONResponse(
             {"error": "An unexpected error has occurred, please check the server log."},
             status_code=500,
         )
+        self._add_response_headers(resp)
+        return resp
 
     async def handle_validation_error(self, req: Request, exc: Exception) -> Response:
         from starlette.responses import JSONResponse
@@ -185,7 +187,9 @@ class ServiceAppFactory(BaseAppFactory):
             "error": f"{exc.error_count()} validation error for {exc.title}",
             "detail": exc.errors(include_context=False),
         }
-        return JSONResponse(data, status_code=400)
+        resp = JSONResponse(data, status_code=400)
+        self._add_response_headers(resp)
+        return resp
 
     async def handle_bentoml_exception(self, req: Request, exc: Exception) -> Response:
         from starlette.responses import JSONResponse
@@ -194,12 +198,14 @@ class ServiceAppFactory(BaseAppFactory):
         assert isinstance(exc, BentoMLException)
         status = exc.error_code.value
         if 400 <= status < 500 and status not in (401, 403):
-            return JSONResponse(
+            resp = JSONResponse(
                 {"error": f"BentoService error handling API request: {exc}"},
                 status_code=status,
             )
         else:
-            return JSONResponse("", status_code=status)
+            resp = JSONResponse("", status_code=status)
+        self._add_response_headers(resp)
+        return resp
 
     def __call__(self) -> Starlette:
         app = super().__call__()
@@ -306,6 +312,17 @@ class ServiceAppFactory(BaseAppFactory):
     def create_instance(self) -> None:
         self._service_instance = self.service()
         set_current_service(self._service_instance)
+
+    def _add_response_headers(self, resp: Response) -> None:
+        from bentoml._internal.context import trace_context
+
+        if trace_context.request_id is not None:
+            resp.headers["X-BentoML-Request-ID"] = str(trace_context.request_id)
+        if (
+            BentoMLContainer.http.response.trace_id.get()
+            and trace_context.trace_id is not None
+        ):
+            resp.headers["X-BentoML-Trace-ID"] = str(trace_context.trace_id)
 
     async def destroy_instance(self) -> None:
         from _bentoml_sdk.service.dependency import cleanup
@@ -435,8 +452,6 @@ class ServiceAppFactory(BaseAppFactory):
 
         from _bentoml_sdk.io_models import ARGS
         from _bentoml_sdk.io_models import KWARGS
-        from bentoml._internal.container import BentoMLContainer
-        from bentoml._internal.context import trace_context
         from bentoml._internal.utils import get_original_func
         from bentoml._internal.utils.http import set_cookies
 
@@ -501,13 +516,7 @@ class ServiceAppFactory(BaseAppFactory):
             response.status_code = ctx.response.status_code
             response.headers.update(ctx.response.metadata)
             set_cookies(response, ctx.response.cookies)
-        if trace_context.request_id is not None:
-            response.headers["X-BentoML-Request-ID"] = str(trace_context.request_id)
-        if (
-            BentoMLContainer.http.response.trace_id.get()
-            and trace_context.trace_id is not None
-        ):
-            response.headers["X-BentoML-Trace-ID"] = str(trace_context.trace_id)
+        self._add_response_headers(response)
         # clean the request resources after the response is consumed.
         response.background = BackgroundTask(request.close)
         return response

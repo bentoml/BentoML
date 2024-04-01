@@ -9,7 +9,7 @@ This document explains how to configure and allocate workers for different use c
 Configure workers
 -----------------
 
-When you define a BentoML Service, use the ``workers`` parameter to set the number of workers. For example, setting ``workers=4`` launches four instances of the Service, each running in its process. Each worker is homogeneous, which means they perform the same tasks.
+When you define a BentoML Service, use the ``workers`` parameter to set the number of workers. For example, setting ``workers=4`` launches four worker instances of the Service, each running in its process. Each worker is homogeneous, which means they perform the same tasks.
 
 .. code-block:: python
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import typing as t
+from copy import deepcopy
 from numbers import Real
 
 import schema as s
@@ -13,7 +14,6 @@ from ..helpers import ensure_iterable_type
 from ..helpers import ensure_larger_than
 from ..helpers import ensure_larger_than_zero
 from ..helpers import ensure_range
-from ..helpers import flatten_dict
 from ..helpers import is_valid_ip_address
 from ..helpers import rename_fields
 from ..helpers import validate_otlp_protocol
@@ -194,7 +194,7 @@ SCHEMA = s.Schema(
 )
 
 
-def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.Any]):
+def migration(*, override_config: dict[str, t.Any]):
     # We will use a flattened config to make it easier to migrate,
     # Then we will convert it back to a nested config.
     if depth(override_config) > 1:
@@ -310,8 +310,13 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
                 replace_with=f"runners.{runner_name}.traffic.timeout",
             )
 
+    return unflatten(override_config)
+
+
+def finalize_config(config: dict[str, t.Any]) -> None:
+    from ..containers import config_merger
+
     # 8. if runner is overriden, set the runner default values
-    default_runner_config = dict(flatten_dict(default_config["runners"]))
     RUNNER_CFG_KEYS = [
         "batching",
         "resources",
@@ -320,23 +325,14 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
         "traffic",
         "workers_per_resource",
     ]
-    default_runner_config: dict[str, t.Any] = {}
-    for runner_name, runner_cfg in default_config["runners"].items():
-        if runner_name in RUNNER_CFG_KEYS:
-            default_runner_config[runner_name] = runner_cfg
+    default_runner_config: dict[str, t.Any] = {
+        key: value for key, value in config["runners"].items() if key in RUNNER_CFG_KEYS
+    }
 
-    for key in list(override_config):
-        if key.startswith("runners."):
-            key_parts = key.split(".")
-            runner_name = key_parts[1]
-            if runner_name in RUNNER_CFG_KEYS:
-                default_runner_config[".".join(key_parts[1:])] = override_config[key]
-                for i in range(2, len(key_parts)):
-                    if (k := ".".join(key_parts[1:i])) in default_runner_config:
-                        del default_runner_config[k]
-            else:
-                if runner_name not in default_config["runners"].keys():
-                    default_config["runners"][runner_name] = unflatten(
-                        default_runner_config
-                    )
-    return unflatten(override_config)
+    for runner_name, runner_cfg in config["runners"].items():
+        if runner_name in RUNNER_CFG_KEYS:
+            continue
+        # key is a runner name
+        config["runners"][runner_name] = config_merger.merge(
+            deepcopy(default_runner_config), runner_cfg
+        )

@@ -71,7 +71,6 @@ class BentoMLConfiguration:
         if override_defaults:
             if migration is not None:
                 override_defaults = migration(
-                    default_config=self.config,
                     override_config=dict(flatten_dict(override_defaults)),
                 )
             config_merger.merge(self.config, override_defaults)
@@ -85,7 +84,6 @@ class BentoMLConfiguration:
             # Running migration layer if it exists
             if migration is not None:
                 override = migration(
-                    default_config=self.config,
                     override_config=dict(flatten_dict(override)),
                 )
             config_merger.merge(self.config, override)
@@ -97,7 +95,6 @@ class BentoMLConfiguration:
             # Running migration layer if it exists
             if migration is not None:
                 override_config_json = migration(
-                    default_config=self.config,
                     override_config=dict(flatten_dict(override_config_json)),
                 )
             config_merger.merge(self.config, override_config_json)
@@ -122,9 +119,7 @@ class BentoMLConfiguration:
             }
             # Running migration layer if it exists
             if migration is not None:
-                override_config_map = migration(
-                    default_config=self.config, override_config=override_config_map
-                )
+                override_config_map = migration(override_config=override_config_map)
             # Previous behaviour, before configuration versioning.
             try:
                 override = unflatten(override_config_map)
@@ -133,6 +128,9 @@ class BentoMLConfiguration:
                     f"Failed to parse config options from the env var:\n{e}.\n*** Note: You can use '\"' to quote the key if it contains special characters. ***"
                 ) from None
             config_merger.merge(self.config, override)
+
+        if finalize_config := getattr(spec_module, "finalize_config", None):
+            finalize_config(self.config)
         expand_env_var_in_values(self.config)
 
         if validate_schema:

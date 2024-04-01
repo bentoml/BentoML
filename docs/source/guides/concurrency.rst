@@ -31,38 +31,25 @@ Key points about concurrency in BentoML:
 Concurrency and max concurrency
 -------------------------------
 
-When using the ``traffic`` field in the ``@bentoml.service`` decorator, you can configure ``concurrency`` and ``max_concurrency`` at the same time, which are both related to how many requests a Service can handle simultaneously. However, they serve different purposes.
-
-- ``concurrency``: Indicates the ideal number of simultaneous requests that a Service is designed to handle efficiently. It's a guideline for optimizing performance, particularly in terms of how batching or parallel processing is implemented. Note that the simultaneous requests being processed by a Service instance can still exceed the ``concurrency`` configured.
-- ``max_concurrency``: Acts as a hard limit on the number of requests that can be processed simultaneously by a single instance of a Service. It's used to prevent a Service from being overwhelmed by too many requests at once, which could degrade performance or lead to resource exhaustion. Requests that exceed the ``max_concurrency`` limit will be rejected to maintain QoS and ensure that each request is handled within an acceptable time frame.
-
-How does concurrency work on BentoCloud
----------------------------------------
-
-Autoscaling
-^^^^^^^^^^^
-
-When a Service is deployed to BentoCloud, the serverless platform dynamically adjusts the number of Service replicas based on the incoming traffic and the concurrency value. Autoscaling ensures that your Service can handle varying loads efficiently without exceeding the maximum replicas configured.
-
-External queue
-^^^^^^^^^^^^^^
-
-You can enhance concurrency management with an external request queue on BentoCloud:
+When using the ``traffic`` field in the ``@bentoml.service`` decorator, you can configure ``concurrency`` and ``max_concurrency`` at the same time, which are both related to how many requests a Service can handle simultaneously.
 
 .. code-block:: python
 
     @bentoml.service(
         traffic={
-            "concurrency": 3,  # An integer value
-            "external_queue": True, # A BentoCloud-only field. If set to true, BentoCloud will use an external queue to handle excess requests
+            "concurrency": 5,
+            "max_concurrency": 10,
         }
     )
     class MyService:
         ...
 
-The external request queue is used to moderate incoming traffic, ensuring that a Service instance never receives more requests simultaneously than the ``concurrency`` setting allows. Excess requests are held in the queue until the Service has the capacity to process them, preventing overloading and maintaining efficient operation.
+Note that they serve different purposes:
 
-.. note::
+- ``concurrency``: Indicates the ideal number of simultaneous requests that a Service is designed to handle efficiently. It's a guideline for optimizing performance, particularly in terms of how batching or parallel processing is implemented. This means that the simultaneous requests being processed by a Service instance can still exceed the ``concurrency`` configured.
+- ``max_concurrency``: Acts as a hard limit on the number of requests that can be processed simultaneously by a single instance of a Service. It's used to prevent a Service from being overwhelmed by too many requests at once, which could degrade performance or lead to resource exhaustion. Requests that exceed the ``max_concurrency`` limit will be rejected to maintain QoS and ensure that each request is handled within an acceptable time frame.
 
-    - If you enable ``external_queue`` in the ``@bentoml.service`` decorator, you must specify a ``concurrency`` value.
-    - ``max_concurrency`` does not take effect on BentoCloud. You need to enable ``external_queue`` to handle excess requests.
+Concurrency-based autoscaling
+-----------------------------
+
+For using concurrency-based autoscaling on BentoCloud, see :doc:`/bentocloud/how-tos/autoscaling`.

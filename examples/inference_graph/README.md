@@ -127,10 +127,14 @@ class InferenceGraph:
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 To serve the models locally, run `bentoml serve .`
 =======
 To serve the model locally, run `bentoml serve .`
 >>>>>>> 0392d279 (docs: initialized inference_graph eexample)
+=======
+To serve the models locally, run `bentoml serve .`
+>>>>>>> 866974b1 (fix: README)
 
 ```bash
 bentoml serve .
@@ -138,10 +142,14 @@ bentoml serve .
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 Open your web browser at http://0.0.0.0:3000 to view the Swagger UI for sending test requests.
 =======
 Open your web browser at http://0.0.0.0:3000 to view the Bento UI for sending test requests.
 >>>>>>> 0392d279 (docs: initialized inference_graph eexample)
+=======
+Open your web browser at http://0.0.0.0:3000 to view the Swagger UI for sending test requests.
+>>>>>>> 866974b1 (fix: README)
 
 You may also send request with `curl` command or any HTTP client, e.g.:
 

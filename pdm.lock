@@ -5,7 +5,7 @@
 groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "aws", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "triton"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:e64d2e94ab07d852baddcab0c40fe3d708d17cdcc258d0b3120178f6212a8782"
+content_hash = "sha256:a1c9464c5e9bd1b44fc133d411fda401edec683e3c23caa58696f65b9eeda3c5"
 
 [[package]]
 name = "aiohttp"
@@ -412,28 +412,12 @@ name = "build"
 version = "0.10.0"
 requires_python = ">= 3.7"
 summary = "A simple, correct Python build frontend"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "colorama; os_name == \"nt\"",
     "packaging>=19.0",
     "pyproject-hooks",
     "tomli>=1.1.0; python_version < \"3.11\"",
-]
-files = [
-    {file = "build-0.10.0-py3-none-any.whl", hash = "sha256:af266720050a66c893a6096a2f410989eeac74ff9a68ba194b3f6473e8e26171"},
-    {file = "build-0.10.0.tar.gz", hash = "sha256:d5b71264afdb5951d6704482aac78de887c80691c52b88a9ad195983ca2c9269"},
-]
-
-[[package]]
-name = "build"
-version = "0.10.0"
-extras = ["virtualenv"]
-requires_python = ">= 3.7"
-summary = "A simple, correct Python build frontend"
-groups = ["testing"]
-dependencies = [
-    "build==0.10.0",
-    "virtualenv>=20.0.35",
 ]
 files = [
     {file = "build-0.10.0-py3-none-any.whl", hash = "sha256:af266720050a66c893a6096a2f410989eeac74ff9a68ba194b3f6473e8e26171"},
@@ -960,7 +944,7 @@ files = [
 name = "distlib"
 version = "0.3.8"
 summary = "Distribution utilities"
-groups = ["docs", "testing", "tooling"]
+groups = ["docs", "tooling"]
 files = [
     {file = "distlib-0.3.8-py2.py3-none-any.whl", hash = "sha256:034db59a0b96f8ca18035f36290806a9a6e6bd9d1ff91e45a7f172eb17e51784"},
     {file = "distlib-0.3.8.tar.gz", hash = "sha256:1530ea13e350031b6312d8580ddb6b27a104275a31106523b8f123787f494f64"},
@@ -1021,7 +1005,7 @@ name = "filelock"
 version = "3.13.1"
 requires_python = ">=3.8"
 summary = "A platform independent file lock."
-groups = ["docs", "testing", "tooling"]
+groups = ["docs", "tooling"]
 files = [
     {file = "filelock-3.13.1-py3-none-any.whl", hash = "sha256:57dbda9b35157b05fb3e58ee91448612eb674172fab98ee235ccb0b5bee19a1c"},
     {file = "filelock-3.13.1.tar.gz", hash = "sha256:521f5f56c50f8426f5e03ad3b281b490a87ef15bc6c526f168290f0c7148d44e"},
@@ -2772,7 +2756,7 @@ name = "platformdirs"
 version = "4.1.0"
 requires_python = ">=3.8"
 summary = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
-groups = ["docs", "testing", "tooling"]
+groups = ["docs", "tooling"]
 files = [
     {file = "platformdirs-4.1.0-py3-none-any.whl", hash = "sha256:11c8f37bcca40db96d8144522d925583bdb7a31f7b0e37e3ed4318400a8e2380"},
     {file = "platformdirs-4.1.0.tar.gz", hash = "sha256:906d548203468492d432bcb294d4bc2fff751bf84971fbb2c10918cc206ee420"},
@@ -3125,7 +3109,7 @@ name = "pyproject-hooks"
 version = "1.0.0"
 requires_python = ">=3.7"
 summary = "Wrappers to call pyproject.toml-based build backend hooks."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
 dependencies = [
     "tomli>=1.1.0; python_version < \"3.11\"",
 ]
@@ -4255,6 +4239,17 @@ files = [
 ]
 
 [[package]]
+name = "tomli-w"
+version = "1.0.0"
+requires_python = ">=3.7"
+summary = "A lil' TOML writer"
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+files = [
+    {file = "tomli_w-1.0.0-py3-none-any.whl", hash = "sha256:9f2a07e8be30a0729e533ec968016807069991ae2fd921a78d42f429ae5f4463"},
+    {file = "tomli_w-1.0.0.tar.gz", hash = "sha256:f463434305e0336248cac9c2dc8076b707d8a12d019dd349f5c1e382dd1ae1b9"},
+]
+
+[[package]]
 name = "tornado"
 version = "6.3.3"
 requires_python = ">= 3.8"
@@ -4440,7 +4435,7 @@ name = "virtualenv"
 version = "20.25.0"
 requires_python = ">=3.7"
 summary = "Virtual Python Environment builder"
-groups = ["docs", "testing", "tooling"]
+groups = ["docs", "tooling"]
 dependencies = [
     "distlib<1,>=0.3.7",
     "filelock<4,>=3.12.2",

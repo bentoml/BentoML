@@ -83,8 +83,7 @@ class Runnable:
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
-    ) -> RunnableMethod[T, P, R]:
-        ...
+    ) -> RunnableMethod[T, P, R]: ...
 
     @overload
     @staticmethod
@@ -95,8 +94,7 @@ class Runnable:
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
-    ) -> t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]:
-        ...
+    ) -> t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]: ...
 
     @staticmethod
     def method(

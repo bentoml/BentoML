@@ -34,8 +34,7 @@ def on_deployment(func: t.Callable[P, R] | staticmethod[P, R]) -> staticmethod[P
 
 
 @t.overload
-def api(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
-    ...
+def api(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]: ...
 
 
 @t.overload
@@ -49,8 +48,7 @@ def api(
     batch_dim: int | tuple[int, int] = ...,
     max_batch_size: int = ...,
     max_latency_ms: int = ...,
-) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]:
-    ...
+) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]: ...
 
 
 def api(

@@ -56,17 +56,14 @@ if t.TYPE_CHECKING:
 
     class PreTrainedProtocol(t.Protocol):
         @property
-        def framework(self) -> str:
-            ...
+        def framework(self) -> str: ...
 
-        def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None:
-            ...
+        def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None: ...
 
         @classmethod
         def from_pretrained(
             cls, pretrained_model_name_or_path: str, *args: t.Any, **kwargs: t.Any
-        ) -> PreTrainedProtocol:
-            ...
+        ) -> PreTrainedProtocol: ...
 
     P = t.ParamSpec("P")
 
@@ -362,15 +359,13 @@ def delete_pipeline(task: str) -> None:
 @t.overload
 def load_model(
     bento_model: str | Tag | Model, **kwargs: t.Any
-) -> transformers.Pipeline:
-    ...
+) -> transformers.Pipeline: ...
 
 
 @t.overload
 def load_model(
     bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any
-) -> TransformersPreTrained:
-    ...
+) -> TransformersPreTrained: ...
 
 
 def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) -> t.Any:

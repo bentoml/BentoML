@@ -100,12 +100,10 @@ class APIMethod(t.Generic[P, R]):
             self.output_spec.media_type = DEFAULT_STREAM_MEDIA_TYPE
 
     @t.overload
-    def __get__(self: T, instance: None, owner: type) -> T:
-        ...
+    def __get__(self: T, instance: None, owner: type) -> T: ...
 
     @t.overload
-    def __get__(self, instance: object, owner: type) -> t.Callable[P, R]:
-        ...
+    def __get__(self, instance: object, owner: type) -> t.Callable[P, R]: ...
 
     def __get__(self: T, instance: t.Any, owner: type) -> t.Callable[P, R] | T:
         from pydantic.fields import FieldInfo

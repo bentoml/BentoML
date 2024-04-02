@@ -639,12 +639,10 @@ class ModelInfo:
         return bentoml_cattr.unstructure(self)
 
     @overload
-    def dump(self, stream: io.StringIO) -> io.BytesIO:
-        ...
+    def dump(self, stream: io.StringIO) -> io.BytesIO: ...
 
     @overload
-    def dump(self, stream: None = None) -> None:
-        ...
+    def dump(self, stream: None = None) -> None: ...
 
     def dump(self, stream: io.StringIO | None = None) -> io.BytesIO | None:
         return yaml.safe_dump(self.to_dict(), stream=stream, sort_keys=False)  # type: ignore (bad yaml types)

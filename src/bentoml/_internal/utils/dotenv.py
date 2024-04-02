@@ -23,6 +23,7 @@
 This module is a port of jpadilla/django-dotenv. Refer to https://github.com/jpadilla/django-dotenv
 for original implementation
 """
+
 from __future__ import annotations
 
 import logging

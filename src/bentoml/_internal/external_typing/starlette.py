@@ -10,8 +10,7 @@ if TYPE_CHECKING:
     from starlette.types import Send as ASGISend
 
     class AsgiMiddleware(t.Protocol):
-        def __call__(self, app: ASGIApp, **options: t.Any) -> ASGIApp:
-            ...
+        def __call__(self, app: ASGIApp, **options: t.Any) -> ASGIApp: ...
 
     __all__ = [
         "AsgiMiddleware",

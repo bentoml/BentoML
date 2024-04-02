@@ -33,17 +33,14 @@ if TYPE_CHECKING:
         ENV: dict[str, str] | None
         BUILDKIT_SUPPORT: bool
 
-        def find_binary(self) -> str | None:
-            ...
+        def find_binary(self) -> str | None: ...
 
         def construct_build_args(
             self,
             **kwargs: t.Any,  # pylint: disable=unused-argument
-        ) -> Arguments:
-            ...
+        ) -> Arguments: ...
 
-        def health(self) -> bool:
-            ...
+        def health(self) -> bool: ...
 
     DefaultBuilder: t.TypeAlias = t.Literal[
         "docker", "podman", "buildah", "buildx", "nerdctl", "buildctl"
@@ -153,11 +150,10 @@ def construct_containerfile(
     dockerfile_path = "env/docker/Dockerfile"
     instruction: list[str] = []
 
-    with fs.open_fs("temp://") as temp_fs, open(
-        bento.path_of("bento.yaml"), "rb"
-    ) as bento_yaml:
+    with fs.open_fs("temp://") as temp_fs:
         tempdir = temp_fs.getsyspath("/")
-        options = BentoInfo.from_yaml_file(bento_yaml)
+        with open(bento.path_of("bento.yaml"), "rb") as bento_yaml:
+            options = BentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
         fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
 
@@ -304,13 +300,11 @@ def register_backend(
 
 
 @t.overload
-def health(backend: DefaultBuilder) -> bool:
-    ...
+def health(backend: DefaultBuilder) -> bool: ...
 
 
 @t.overload
-def health(backend: str) -> bool:
-    ...
+def health(backend: str) -> bool: ...
 
 
 def health(backend: str) -> bool:
@@ -332,13 +326,11 @@ def health(backend: str) -> bool:
 
 
 @t.overload
-def get_backend(backend: DefaultBuilder) -> OCIBuilder:
-    ...
+def get_backend(backend: DefaultBuilder) -> OCIBuilder: ...
 
 
 @t.overload
-def get_backend(backend: str) -> OCIBuilder:
-    ...
+def get_backend(backend: str) -> OCIBuilder: ...
 
 
 def get_backend(backend: str) -> OCIBuilder:

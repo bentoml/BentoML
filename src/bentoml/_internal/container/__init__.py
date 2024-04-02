@@ -150,12 +150,10 @@ def construct_containerfile(
     dockerfile_path = "env/docker/Dockerfile"
     instruction: list[str] = []
 
-    with (
-        fs.open_fs("temp://") as temp_fs,
-        open(bento.path_of("bento.yaml"), "rb") as bento_yaml,
-    ):
+    with fs.open_fs("temp://") as temp_fs:
         tempdir = temp_fs.getsyspath("/")
-        options = BentoInfo.from_yaml_file(bento_yaml)
+        with open(bento.path_of("bento.yaml"), "rb") as bento_yaml:
+            options = BentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
         fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
 

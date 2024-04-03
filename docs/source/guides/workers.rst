@@ -31,7 +31,9 @@ The default worker count in BentoML is set to ``1``. However, depending on your 
 CPU workloads
 ^^^^^^^^^^^^^
 
-Python processes are subject to the Global Interpreter Lock (GIL), which limits the execution of multiple threads in a single process. To avoid this and fully leverage multi-core CPUs, you can start multiple workers. However, be mindful of the memory implications, as each worker will load a copy of the model into memory. Ensure that your machine's memory can support the cumulative memory requirements of all workers.
+Python processes are subject to the Global Interpreter Lock (GIL), a mechanism that prevents multiple native threads from executing Python code at once. This means in a multi-threaded Python program, even if it runs on a multi-core processor, only one thread can execute Python code at a time. This limits the performance of CPU-bound Python programs, making them unable to fully utilize the computational power of multi-core CPUs through multi-threading.
+
+To avoid this and fully leverage multi-core CPUs, you can start multiple workers. However, be mindful of the memory implications, as each worker will load a copy of the model into memory. Ensure that your machine's memory can support the cumulative memory requirements of all workers.
 
 You can set the number of worker processes based on the available CPU cores by setting ``workers`` to ``cpu_count``.
 

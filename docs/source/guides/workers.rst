@@ -62,8 +62,8 @@ Here is an example:
     )
     class MyService:
 
-    def __init__(self):
-        import torch
+        def __init__(self):
+            import torch
 
             cuda = torch.device(f"cuda:{bentoml.server_context.worker_index-1}")
             model = models.resnet18(pretrained=True)
@@ -75,7 +75,7 @@ This Service dynamically determines the GPU device to use for the model by creat
     :width: 400px
     :align: center
 
-When determining which device ID to assign to each worker for tasks such as loading models onto GPUs, this 1-indexing approach means you need to subtract 1 from the ``worker_index`` to get the 0-based device ID. This is because hardware devices like GPUs are usually indexed starting from 0. For more information, see GPU inference.
+When determining which device ID to assign to each worker for tasks such as loading models onto GPUs, this 1-indexing approach means you need to subtract 1 from the ``worker_index`` to get the 0-based device ID. This is because hardware devices like GPUs are usually indexed starting from 0.
 
 If you want to use multiple GPUs for distributed operations (multiple GPUs for the same worker), PyTorch and TensorFlow offer different methods:
 

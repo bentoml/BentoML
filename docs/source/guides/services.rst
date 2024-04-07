@@ -93,7 +93,7 @@ Each API endpoint has a unique route (URL path). By default, the route is derive
 Inference context
 ^^^^^^^^^^^^^^^^^
 
-You can retrieve the context of an inference call by adding ``bentoml.Context`` to the Service API function. This parameter allows you to access information about the incoming request (like client headers) and also modify the outgoing response (like setting response headers, cookies, or HTTP status codes). Additionally, you can read and write to the global state dictionary via the ``ctx.state`` attribute, which is a per-worker dictionary that can be read and written across API endpoints.
+You can retrieve the context of an inference call by adding ``bentoml.Context`` to the Service API function. This parameter allows you to access information about the incoming request (like client headers) and also modify the outgoing response (like setting response headers, cookies, or HTTP status codes). Additionally, you can read and write to the global state dictionary via the ``ctx.state`` attribute, which is a :doc:`per-worker </guides/workers>` dictionary that can be read and written across API endpoints.
 
 .. code-block:: python
 
@@ -130,7 +130,7 @@ Lifecycle hooks
 
 BentoML's lifecycle hooks provide a way to insert custom logic at specific stages of a Service's lifecycle.
 
-- Deployment hooks (``@bentoml.on_deployment``): Execute global setup actions before Service workers are spawned. They run only once regardless of the number of workers, ideal for one-time initializations.
+- Deployment hooks (``@bentoml.on_deployment``): Execute global setup actions before :doc:`Service workers </guides/workers>` are spawned. They run only once regardless of the number of workers, ideal for one-time initializations.
 - Shutdown hooks (``@bentoml.on_shutdown``): Run cleanup logic when a BentoML Service is shutting down. They enable tasks such as closing connections and releasing resources to ensure a graceful shutdown.
 
 You use decorators to set lifecycle hooks. For details, see :doc:`/guides/lifecycle-hooks`.

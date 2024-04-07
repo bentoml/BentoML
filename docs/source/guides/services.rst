@@ -184,3 +184,40 @@ However, for scenarios where you want to maximize performance and throughput, sy
                 yield request_output.outputs[0].text
 
 The asynchronous API implementation is more efficient because when an asynchronous method is invoked, the event loop becomes available to serve other requests as the current request awaits method results. In addition, BentoML automatically configures the ideal amount of parallelism based on the available number of CPU cores. This eliminates the need for further event loop configuration in common use cases.
+
+Convert legacy Runners to a Service
+-----------------------------------
+
+`Runners <https://docs.bentoml.com/en/v1.1.11/concepts/runner.html>`_ are a legacy concept in BentoML 1.1, which represent a computation unit that can be executed on a remote Python worker and scales independently. In BentoML 1.1, Services are defined using both ``Service`` and ``Runner`` components, where a Service could contain one or more Runners. Starting with BentoML 1.2, the framework has been streamlined to use a Python class to define a BentoML Service.
+
+To minimize code changes when migrating from 1.1 to 1.2+, you can use the ``bentoml.runner_service()`` function to convert Runners to a Service. Here is an example:
+
+.. code-block:: python
+    :caption: `service.py`
+
+    import bentoml
+    import numpy as np
+
+
+    # Create a legacy runner
+    sample_legacy_runner = bentoml.models.get("bento_name:version").to_runner()
+    # Create an internal Service
+    SampleService = bentoml.runner_service(runner = sample_legacy_runner)
+
+    # Use the @bentoml.service decorator to mark a class as a Service
+    @bentoml.service(
+        resources={"cpu": "2", "memory": "500MiB"},
+        workers=1,
+        traffic={"timeout": 20},
+    )
+    # Define the BentoML Service
+    class MyService:
+        # Integrate the internal Service using bentoml.depends() to inject it as a dependency
+        sample_model_runner = bentoml.depends(SampleService)
+
+        # Define Service API and IO schema
+        @bentoml.api
+        def classify(self, input_series: np.ndarray) -> np.ndarray:
+            # Use the internal Service for prediction
+            result = self.sample_model_runner.predict.run(input_series)
+            return result

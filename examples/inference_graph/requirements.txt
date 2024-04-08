@@ -1,3 +1,0 @@
-bentoml
-torch
-transformers==4.30.0

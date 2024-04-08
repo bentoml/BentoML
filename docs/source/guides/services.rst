@@ -138,7 +138,12 @@ You use decorators to set lifecycle hooks. For details, see :doc:`/guides/lifecy
 Synchronous and asynchronous APIs
 ----------------------------------
 
-APIs in a BentoML Service can be defined as either synchronous functions or asynchronous coroutines in Python. For synchronous logic, BentoML creates a pool of workers of optimal size to handle the execution. Synchronous APIs are straightforward and suitable for most of the model serving scenarios. Here's an example of a synchronous API:
+APIs in a BentoML Service can be defined as either synchronous functions or asynchronous coroutines in Python.
+
+Basic usage
+^^^^^^^^^^^
+
+For synchronous logic, BentoML creates a pool of workers of optimal size to handle the execution. Synchronous APIs are straightforward and suitable for most of the model serving scenarios. Here's an example of a synchronous API:
 
 .. code-block:: python
    :emphasize-lines: 11, 12, 13
@@ -185,6 +190,67 @@ However, for scenarios where you want to maximize performance and throughput, sy
 
 The asynchronous API implementation is more efficient because when an asynchronous method is invoked, the event loop becomes available to serve other requests as the current request awaits method results. In addition, BentoML automatically configures the ideal amount of parallelism based on the available number of CPU cores. This eliminates the need for further event loop configuration in common use cases.
 
+Convert synchronous to asynchronous
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For machine learning inference tasks, though traditionally executed synchronously, may require asynchronous execution for different reasons, such as:
+
+- Running tasks in parallel
+- Using resources like databases that support asynchronous connections
+
+However, directly calling synchronous blocking functions within an asynchronous context is generally considered bad practice, as this can block the event loop, leading to decreased performance and responsiveness. In such cases, you can use the ``.to_async`` property of a Service, which allows you to convert synchronous methods of the Service to an asynchronous one. This can enable non-blocking execution and improve performance in IO-bound operations. Here is an example:
+
+.. code-block:: python
+   :emphasize-lines: 29, 30
+
+    ...
+    @bentoml.service(
+        traffic={"timeout": 600},
+        workers=4,
+        resources={
+            "memory": "4Gi"
+        },
+    )
+    class GreetingCardService:
+        # Services StableLMService, SDXLTurboService, and XTTSService are previously defined
+        # Retrieve these Services using `bentoml.depends` so that their methods can be called directly
+        stablelm = bentoml.depends(StableLMService)
+        sdxl = bentoml.depends(SDXLTurboService)
+        xtts = bentoml.depends(XTTSService)
+
+        @bentoml.api
+        async def generate_card(
+                self,
+                context: bentoml.Context,
+                message: str = "Happy new year!",
+        ) -> Annotated[Path, bentoml.validators.ContentType("video/*")]:
+            greeting_message = await self.stablelm.enhance_message(message)
+
+            sdxl_prompt_tmpl = "a happy and heart-warming greeting card based on greeting message {message}"
+            sdxl_prompt = sdxl_prompt_tmpl.format(message=greeting_message)
+
+            # Run `txt2img` and `synthesize` operations in parallel
+            audio_path, image = await asyncio.gather(
+                self.xtts.to_async.synthesize(greeting_message),
+                self.sdxl.to_async.txt2img(sdxl_prompt)
+            )
+
+            image_path = os.path.join(context.temp_dir, "output.png")
+            image.save(image_path)
+
+            cmd = ["ffmpeg", "-loop", "1", "-i", str(image_path), "-i", str(audio_path), "-shortest"]
+            output_path = os.path.join(context.temp_dir, "output.mp4")
+            cmd.append(output_path)
+            subprocess.run(cmd)
+
+            return Path(output_path)
+
+.. note::
+
+    ``bentoml.depends()`` is commonly used for interservice communication as it allows you to directly call the API methods of a BentoML Service within another Service as if they were local class functions. For more information, see :doc:`/guides/distributed-services`.
+
+In this example, the ``.to_async`` property converts synchronous methods (``txt2img`` and ``synthesize`` of ``SDXLTurboService`` and ``XTTSService`` respectively) into their asynchronous versions, enabling the ``generate_card`` method to perform multiple asynchronous operations concurrently with ``asyncio.gather``.
+
 Convert legacy Runners to a Service
 -----------------------------------
 
@@ -200,7 +266,7 @@ To minimize code changes when migrating from 1.1 to 1.2+, you can use the ``bent
 
 
     # Create a legacy runner
-    sample_legacy_runner = bentoml.models.get("bento_name:version").to_runner()
+    sample_legacy_runner = bentoml.models.get("model_name:version").to_runner()
     # Create an internal Service
     SampleService = bentoml.runner_service(runner = sample_legacy_runner)
 

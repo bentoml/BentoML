@@ -13,12 +13,9 @@ from ..helpers import ensure_iterable_type
 from ..helpers import ensure_larger_than
 from ..helpers import ensure_larger_than_zero
 from ..helpers import ensure_range
-from ..helpers import flatten_dict
 from ..helpers import is_valid_ip_address
 from ..helpers import validate_otlp_protocol
 from ..helpers import validate_tracing_type
-
-__all__ = ["SCHEMA", "migration"]
 
 TRACING_CFG = {
     "exporter_type": s.Or(s.And(str, s.Use(str.lower), validate_tracing_type), None),
@@ -187,7 +184,7 @@ SCHEMA = s.Schema(
 )
 
 
-def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.Any]):
+def migration(*, override_config: dict[str, t.Any]):
     # We will use a flattened config to make it easier to migrate,
     # Then we will convert it back to a nested config.
     if depth(override_config) > 1:
@@ -195,6 +192,12 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
 
     if "version" not in override_config:
         override_config["version"] = 2
+
+    return unflatten(override_config)
+
+
+def finalize_config(config: dict[str, t.Any]) -> dict[str, t.Any]:
+    from ..containers import config_merger
 
     SERVICE_CFG_KEYS = [
         "batching",
@@ -212,26 +215,16 @@ def migration(*, default_config: dict[str, t.Any], override_config: dict[str, t.
         "monitoring",
         "tracing",
     ]
-    default_service_config: dict[str, t.Any] = {}
-    for svc, svc_cfg in default_config["services"].items():
-        if svc in SERVICE_CFG_KEYS:
-            default_service_config[svc] = svc_cfg
-    default_service_config = dict(flatten_dict(default_service_config))
 
-    for key in list(override_config):
-        if key.startswith("services."):
-            # NOTE: We need to remove the quotation in case the runner name includes dashes.
-            # Since unflatten_dict will include the quotes for given name
-            key_parts = [s.replace('"', "") for s in key.split(".")]
-            service_name = key_parts[1]
-            if service_name in SERVICE_CFG_KEYS:
-                default_service_config[".".join(key_parts[1:])] = override_config[key]
-                for i in range(2, len(key_parts)):
-                    if (k := ".".join(key_parts[1:i])) in default_service_config:
-                        del default_service_config[k]
-            else:
-                if service_name not in default_config["services"].keys():
-                    default_config["services"][service_name] = unflatten(
-                        default_service_config
-                    )
-    return unflatten(override_config)
+    default_service_config = {
+        key: value
+        for key, value in config["services"].items()
+        if key in SERVICE_CFG_KEYS
+    }
+
+    for svc, service_config in config["services"].items():
+        if svc in SERVICE_CFG_KEYS:
+            continue
+        config["services"][svc] = config_merger.merge(
+            default_service_config, service_config
+        )

@@ -27,6 +27,9 @@ class AbstractClient(abc.ABC):
 
     def __init__(self) -> None:
         for name in self.endpoints:
+            if name == "__call__":
+                # __call__ must be set on the class
+                continue
             attr_name = name
             if getattr(self, attr_name, None) is not None:
                 attr_name = f"api_{name}"  # prefix to avoid name conflict
@@ -49,3 +52,8 @@ class AbstractClient(abc.ABC):
         """Call a service method by its name.
         It takes the same arguments as the service method.
         """
+
+    def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        if "__call__" not in self.endpoints:
+            raise TypeError("This service is not callable.")
+        return self.call("__call__", *args, **kwargs)

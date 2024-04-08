@@ -1,7 +1,11 @@
 service: "service.py:AudioSpeedUp"
 include:
 <<<<<<< HEAD
+<<<<<<< HEAD
   - "service.py"
 =======
   - "service.py"
 >>>>>>> 708c553a (docs: init io-descriptors examples)
+=======
+  - "service.py"
+>>>>>>> df6fdb90 (ci: auto fixes from pre-commit.ci)

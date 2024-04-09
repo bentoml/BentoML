@@ -1,12 +1,12 @@
-================================
-Unified AI Application Framework
-================================
+===============================
+Unified Model Serving Framework
+===============================
 
 |github_stars| |pypi_status| |actions_status| |documentation_status| |join_slack|
 
 ----
 
-`BentoML <https://github.com/bentoml/BentoML>`_ is a framework for building **reliable, scalable and cost-efficient AI applications**. It comes with everything you need for model serving, application packaging, and production deployment.
+`BentoML <https://github.com/bentoml/BentoML>`_ is an open-source model serving library for **building performant and scalable AI applications with Python**. It comes with everything you need for **serving optimization, model packaging, and production deployment**.
 
 Featured use cases
 ------------------

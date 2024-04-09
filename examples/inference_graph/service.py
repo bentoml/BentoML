@@ -1,66 +1,91 @@
 import asyncio
+import typing as t
+
+import transformers
 
 import bentoml
-from bentoml.io import JSON
-from bentoml.io import Text
-
-gpt2_generator = bentoml.transformers.get("gpt2-generation:latest").to_runner()
-distilgpt2_generator = bentoml.transformers.get(
-    "distilgpt2-generation:latest"
-).to_runner()
-distilbegpt2_medium_generator = bentoml.transformers.get(
-    "gpt2-medium-generation:latest"
-).to_runner()
-bert_base_uncased_classifier = bentoml.transformers.get(
-    "bert-base-uncased-classification:latest"
-).to_runner()
-
-svc = bentoml.Service(
-    "inference_graph",
-    runners=[
-        gpt2_generator,
-        distilgpt2_generator,
-        distilbegpt2_medium_generator,
-        bert_base_uncased_classifier,
-    ],
-)
-
 
 MAX_LENGTH = 128
 NUM_RETURN_SEQUENCE = 1
 
 
-@svc.api(input=Text(), output=JSON())
-async def classify_generated_texts(original_sentence: str) -> dict:
-    generated_sentences = [
-        result[0]["generated_text"]
-        for result in await asyncio.gather(
-            gpt2_generator.async_run(
-                original_sentence,
-                max_length=MAX_LENGTH,
-                num_return_sequences=NUM_RETURN_SEQUENCE,
-            ),
-            distilgpt2_generator.async_run(
-                original_sentence,
-                max_length=MAX_LENGTH,
-                num_return_sequences=NUM_RETURN_SEQUENCE,
-            ),
-            distilbegpt2_medium_generator.async_run(
-                original_sentence,
-                max_length=MAX_LENGTH,
-                num_return_sequences=NUM_RETURN_SEQUENCE,
-            ),
-        )
-    ]
-
-    results = []
-    for sentence in generated_sentences:
-        score = (await bert_base_uncased_classifier.async_run(sentence))[0]["score"]
-        results.append(
-            {
-                "generated": sentence,
-                "score": score,
-            }
+@bentoml.service()
+class GPT2:
+    def __init__(self):
+        self.generation_pipeline_1 = transformers.pipeline(
+            task="text-generation",
+            model="gpt2",
         )
 
-    return results
+    @bentoml.api()
+    def generate(self, sentence: str) -> t.List[t.Any]:
+        return self.generation_pipeline_1(sentence)
+
+
+@bentoml.service()
+class DistilGPT2:
+    def __init__(self):
+        self.generation_pipeline_2 = transformers.pipeline(
+            task="text-generation",
+            model="distilgpt2",
+        )
+
+    @bentoml.api()
+    def generate(self, sentence: str) -> t.List[t.Any]:
+        return self.generation_pipeline_2(sentence)
+
+
+@bentoml.service()
+class BertBaseUncased:
+    def __init__(self):
+        self.classification_pipeline = transformers.pipeline(
+            task="text-classification",
+            model="bert-base-uncased",
+            tokenizer="bert-base-uncased",
+        )
+
+    @bentoml.api()
+    def classify_generated_texts(self, sentence: str) -> float | str:
+        score = self.classification_pipeline(sentence)[0]["score"]  # type: ignore
+        return score
+
+
+@bentoml.service()
+class InferenceGraph:
+    gpt2_generator = bentoml.depends(GPT2)
+    distilgpt2_generator = bentoml.depends(DistilGPT2)
+    bert_classifier = bentoml.depends(BertBaseUncased)
+
+    @bentoml.api()
+    async def generate_score(
+        self, original_sentence: str = "I have an idea!"
+    ) -> t.List[t.Dict[str, t.Any]]:
+        generated_sentences = [  # type: ignore
+            result[0]["generated_text"]
+            for result in await asyncio.gather(  # type: ignore
+                self.gpt2_generator.to_async.generate(  # type: ignore
+                    original_sentence,
+                    max_length=MAX_LENGTH,
+                    num_return_sequences=NUM_RETURN_SEQUENCE,
+                ),
+                self.distilgpt2_generator.to_async.generate(  # type: ignore
+                    original_sentence,
+                    max_length=MAX_LENGTH,
+                    num_return_sequences=NUM_RETURN_SEQUENCE,
+                ),
+            )
+        ]
+
+        results = []
+        for sentence in generated_sentences:  # type: ignore
+            score = await self.bert_classifier.to_async.classify_generated_texts(
+                sentence
+            )  # type: ignore
+            results.append(
+                {
+                    "generated": sentence,
+                    "score": score,
+                }
+            )
+
+        return results

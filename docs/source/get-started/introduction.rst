@@ -2,7 +2,7 @@
 Introduction
 ============
 
-`BentoML <https://github.com/bentoml/BentoML>`_ is a unified AI application framework for building reliable, scalable, and cost-efficient AI applications. It provides an end-to-end solution for streamlining the deployment process, incorporating everything you need for model serving, application packaging, and production deployment.
+`BentoML <https://github.com/bentoml/BentoML>`_ is a unified model serving framework for building performant and scalable AI applications with Python. It provides everything you need for serving optimization, model packaging, and production deployment.
 
 Who is BentoML for?
 -------------------

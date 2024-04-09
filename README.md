@@ -1,13 +1,11 @@
 <div align="center">
   <img src="https://github.com/bentoml/BentoML/assets/489344/398274c1-a572-477b-b115-52497a085496" width="180px" alt="bentoml" />
-  <h1 align="center">BentoML: The Unified AI Application Framework</h1>
+  <h1 align="center">BentoML: The Unified Model Serving Framework</h1>
   <a href="https://pypi.org/project/bentoml"><img src="https://img.shields.io/pypi/v/bentoml.svg" alt="pypi_status" /></a>
   <a href="https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://github.com/bentoml/bentoml/workflows/CI/badge.svg?branch=main" alt="CI" /></a>
   <a href="https://twitter.com/bentomlai"><img src="https://badgen.net/badge/icon/@bentomlai/1DA1F2?icon=twitter&label=Follow%20Us" alt="Twitter" /></a>
   <a href="https://join.slack.bentoml.org"><img src="https://badgen.net/badge/Join/Community/cyan?icon=slack" alt="Community" /></a>
-  <p>BentoML is a framework for building <b>reliable, scalable, and cost-efficient AI
-applications</b>. It comes with everything you need for model serving, application
-packaging, and production deployment.</p>
+  <p>BentoML is an open-source model serving library for building performant and scalable AI applications with Python. It comes with everything you need for serving optimization, model packaging, and production deployment.</p>
   <i><a href="https://l.bentoml.com/join-slack">👉 Join our Slack community!</a></i>
 </div>
 

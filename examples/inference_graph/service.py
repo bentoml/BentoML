@@ -84,7 +84,7 @@ class BertBaseUncased:
 
 
 =======
-    
+
 =======
 
 >>>>>>> d578c69c (ci: auto fixes from pre-commit.ci)
@@ -115,7 +115,7 @@ class InferenceGraph:
             for result in await asyncio.gather(  # type: ignore
                 self.gpt2_generator.to_async.generate(  # type: ignore
 =======
-    
+
 =======
 
 >>>>>>> d578c69c (ci: auto fixes from pre-commit.ci)

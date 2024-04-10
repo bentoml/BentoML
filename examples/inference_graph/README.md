@@ -71,7 +71,7 @@ class BertBaseUncased:
 <<<<<<< HEAD
 
 =======
-    
+
 >>>>>>> 0392d279 (docs: initialized inference_graph eexample)
 =======
 
@@ -90,7 +90,7 @@ class InferenceGraph:
 <<<<<<< HEAD
 
 =======
-    
+
 >>>>>>> 0392d279 (docs: initialized inference_graph eexample)
 =======
 

@@ -1,0 +1,7 @@
+diffusers
+bentoml
+transformers
+torch
+accelerate
+pydub
+pdf2img

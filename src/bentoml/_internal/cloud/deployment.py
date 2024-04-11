@@ -517,6 +517,7 @@ class DeploymentInfo:
                 action=f'[bold red]Time out waiting for Deployment "{self.name}" ready.[/bold red]',
             )
             spinner.spinner_progress.stop_task(spinner_task_id)
+            return
         else:
             while time.time() - start_time < timeout:
                 status = self.get_status()
@@ -530,9 +531,7 @@ class DeploymentInfo:
                 )
                 time.sleep(check_interval)
 
-        raise TimeoutError(
-            f"Timed out waiting for deployment '{self.name}' to be ready."
-        )
+        logger.error(f"Timed out waiting for deployment '{self.name}' to be ready.")
 
 
 @attr.define

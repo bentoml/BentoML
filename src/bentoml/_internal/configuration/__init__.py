@@ -20,8 +20,7 @@ if t.TYPE_CHECKING:
 # used within functions in this file
 logger = logging.getLogger(__name__)
 
-DEBUG_ENV_VAR = "BENTOML_DEBUG"
-QUIET_ENV_VAR = "BENTOML_QUIET"
+VERBOSITY_ENV_VAR = "BENTOML_VERBOSITY"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
 CONFIG_OVERRIDE_ENV_VAR = "BENTOML_CONFIG_OPTIONS"
 CONFIG_OVERRIDE_JSON_ENV_VAR = "BENTOML_CONFIG_OVERRIDES"
@@ -129,31 +128,31 @@ def get_bentoml_override_config_json_from_env() -> dict[str, t.Any] | None:
     return None
 
 
-def set_debug_mode(enabled: bool) -> None:
-    os.environ[DEBUG_ENV_VAR] = str(enabled)
-    os.environ[GRPC_DEBUG_ENV_VAR] = "DEBUG"
+def set_verbosity(verbosity: int) -> None:
+    os.environ[VERBOSITY_ENV_VAR] = str(verbosity)
+    if verbosity > 0:
+        os.environ[GRPC_DEBUG_ENV_VAR] = "DEBUG"
+    elif verbosity < 0:
+        os.environ[GRPC_DEBUG_ENV_VAR] = "NONE"
 
-    logger.info(
-        "%s debug mode for current BentoML session",
-        "Enabling" if enabled else "Disabling",
-    )
+
+def set_debug_mode() -> None:
+    set_verbosity(1)
+
+
+def set_quiet_mode() -> None:
+    set_verbosity(-1)
 
 
 def get_debug_mode() -> bool:
-    if DEBUG_ENV_VAR in os.environ:
-        return os.environ[DEBUG_ENV_VAR].lower() == "true"
+    if VERBOSITY_ENV_VAR in os.environ:
+        return int(os.environ[VERBOSITY_ENV_VAR]) > 0
     return False
 
 
-def set_quiet_mode(enabled: bool) -> None:
-    # do not log setting quiet mode
-    os.environ[QUIET_ENV_VAR] = str(enabled)
-    os.environ[GRPC_DEBUG_ENV_VAR] = "NONE"
-
-
 def get_quiet_mode() -> bool:
-    if QUIET_ENV_VAR in os.environ:
-        return os.environ[QUIET_ENV_VAR].lower() == "true"
+    if VERBOSITY_ENV_VAR in os.environ:
+        return int(os.environ[VERBOSITY_ENV_VAR]) < 0
     return False
 
 

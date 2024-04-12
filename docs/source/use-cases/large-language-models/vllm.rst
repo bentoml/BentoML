@@ -34,7 +34,7 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
 
 .. note::
 
-    This example Service uses the model ``mistralai/Mistral-7B-Instruct-v0.2``. You can choose other models in the BentoVLLM repository or any other model supported by vLLM based on your needs.
+    This example Service uses the model ``mistralai/Mistral-7B-Instruct-v0.2``. You can choose other models in the `BentoVLLM repository <https://github.com/bentoml/BentoVLLM>`_ or any other model supported by vLLM based on your needs.
 
 .. code-block:: python
     :caption: `service.py`
@@ -116,7 +116,11 @@ This script mainly contains the following two parts:
 
 .. note::
 
-    This Service uses the ``@openai_endpoints`` decorator to set up OpenAI-compatible endpoints. This means your client can interact with the backend Service (in this case, the VLLM class) as if they were communicating directly with OpenAI's API. This `utility <https://github.com/bentoml/BentoVLLM/tree/main/bentovllm_openai>`_ does not affect your BentoML Service code, and you can use it for other LLMs as well. See the **OpenAI-compatible endpoints** tab below for details.
+    This Service uses the ``@openai_endpoints`` decorator to set up OpenAI-compatible endpoints (``chat/completions`` and ``completions``). This means your client can interact with the backend Service (in this case, the VLLM class) as if they were communicating directly with OpenAI's API. In addition, it is also possible to generate structured output like JSON using the endpoints.
+
+    This is made possible by this `utility <https://github.com/bentoml/BentoVLLM/tree/main/mistral-7b-instruct/bentovllm_openai>`_, which does not affect your BentoML Service code, and you can use it for other LLMs as well.
+
+    See the **OpenAI-compatible endpoints** tab below for interaction details.
 
 Run ``bentoml serve`` in your project directory to start the Service.
 
@@ -184,7 +188,39 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
                 # Extract and print the content of the model's reply
                 print(chunk.choices[0].delta.content or "", end="")
 
-        For more information, see the `OpenAI API reference documentation <https://platform.openai.com/docs/api-reference/introduction>`_.
+        .. seealso::
+
+            `OpenAI API reference documentation <https://platform.openai.com/docs/api-reference/introduction>`_
+
+        These OpenAI-compatible endpoints support `vLLM extra parameters <https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html#extra-parameters>`_. For example, you can force the ``chat/completions`` endpoint to output a JSON object by using ``guided_json``:
+
+        .. code-block:: python
+
+            from openai import OpenAI
+
+            client = OpenAI(base_url='http://localhost:3000/v1', api_key='na')
+
+            # Use the following func to get the available models
+            client.models.list()
+
+            json_schema = {
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string"}
+                }
+            }
+
+            chat_completion = client.chat.completions.create(
+                model="mistralai/Mistral-7B-Instruct-v0.2",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "What is the capital of France?"
+                    }
+                ],
+                extra_body=dict(guided_json=json_schema),
+            )
+            print(chat_completion.choices[0].message.content)  # Return something like: {"city": "Paris"}
 
         If your Service is deployed with :ref:`protected endpoints on BentoCloud <bentocloud/how-tos/manage-access-token:access protected deployments>`, you need to set the environment variable ``OPENAI_API_KEY`` to your BentoCloud API key first.
 

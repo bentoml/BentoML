@@ -264,7 +264,7 @@ By customizing the ``http`` configuration, you can fine-tune how your BentoML Se
 ``monitoring``
 ^^^^^^^^^^^^^^
 
-``monitoring`` allows you to keep track of the performance and health of a Service for maintaining its reliability and efficiency.
+``monitoring`` allows you to collect logs and keep track of the performance and health of a Service for maintaining its reliability and efficiency. By default, BentoML provides a built-in monitoring mechanism, while you can customize it by setting a configuration file in YAML. For more information, see :doc:`/guides/observability/monitoring-and-data-collection`.
 
 .. code-block:: python
 
@@ -272,8 +272,8 @@ By customizing the ``http`` configuration, you can fine-tune how your BentoML Se
         "enabled": True,
         "type": "default",
         "options": {
-            "log_config_file": "path/to/log/file",
-            "log_path": "monitoring"
+            "log_config_file": "path/to/log_config.yaml", # A configuration file for customizing monitoring behavior, using Python's logging module
+            "log_path": "monitoring" # The directory where logs will be exported
         }
     })
     class MyService:

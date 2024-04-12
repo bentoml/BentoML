@@ -203,7 +203,7 @@ def setup_verbosity(ctx: Context, param: Parameter, value: int) -> int:
     from bentoml._internal.configuration import set_verbosity
     from bentoml._internal.log import configure_logging
 
-    set_verbosity(value)
+    set_verbosity(value or 0)
     configure_logging()
     return value
 

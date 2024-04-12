@@ -41,44 +41,6 @@ After you start the ``Summarization`` Service, you can create the following clie
 
             import bentoml
 
-            client = bentoml.SyncHTTPClient('http://localhost:3000')
-            summarized_text: str = client.summarize(text="Your long text to summarize")
-            print(summarized_text)
-
-            # Close the client to release resources
-            client.close()
-
-    .. tab-item:: Asynchronous
-
-        .. code-block:: python
-
-            import asyncio
-            import bentoml
-
-            async def async_client_operation():
-                client = bentoml.AsyncHTTPClient('http://localhost:3000')
-                summarized_text: str = await client.summarize(text="Your long text to summarize")
-                print(summarized_text)
-
-                # Close the client to release resources
-                await client.close()
-
-            asyncio.run(async_client_operation())
-
-In the above synchronous and asynchronous clients, requests are sent to the ``summarize`` endpoint of the Service hosted at ``http://localhost:3000``. The BentoML client implementation supports methods corresponding to the Service APIs and they should be called with the same arguments (``text`` in this example) as defined in the Service. These methods are dynamically created based on the Service's endpoints, providing a direct mapping to the Service’s functionality.
-
-In this example, the ``summarize`` method on the client is directly mapped to the ``summarize`` method in the ``Summarization`` Service. The data passed to the ``summarize`` method (``text="Your long text to summarize"``) conforms to the expected input of the Service.
-
-To enhance resource management and reduce the risk of connection leaks, we recommend you create a client within a context manager as below.
-
-.. tab-set::
-
-    .. tab-item:: Synchronous
-
-        .. code-block:: python
-
-            import bentoml
-
             with bentoml.SyncHTTPClient('http://localhost:3000') as client:
                 summarized_text: str = client.summarize(text="Your long text to summarize")
                 print(summarized_text)
@@ -92,6 +54,12 @@ To enhance resource management and reduce the risk of connection leaks, we recom
             async with bentoml.AsyncHTTPClient('http://localhost:3000') as client:
                 summarized_text: str = await client.summarize(text="Your long text to summarize")
                 print(summarized_text)
+
+In the above synchronous and asynchronous clients, requests are sent to the ``summarize`` endpoint of the Service hosted at ``http://localhost:3000``. The BentoML client implementation supports methods corresponding to the Service APIs and they should be called with the same arguments (``text`` in this example) as defined in the Service. These methods are dynamically created based on the Service's endpoints, providing a direct mapping to the Service’s functionality.
+
+In this example, the ``summarize`` method on the client is directly mapped to the ``summarize`` method in the ``Summarization`` Service. The data passed to the ``summarize`` method (``text="Your long text to summarize"``) conforms to the expected input of the Service.
+
+To enhance resource management and reduce the risk of connection leaks, we recommend you create a client within a context manager as below.
 
 .. note::
 

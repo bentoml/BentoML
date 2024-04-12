@@ -31,7 +31,7 @@ In systems with multiple GPUs, each GPU is assigned an index starting from 0 (``
 
 To use a specific GPU:
 
-.. code-block:: 
+.. code-block::
 
     @bentoml.service(resources={"gpu": 2})
     class MultiGPUService:
@@ -46,7 +46,7 @@ This image explains how different models use the GPUs assigned to them.
     :width: 400px
     :align: center
 
-.. note:: 
+.. note::
 
     Workers are the processes that actually run the code logic within a BentoML Service. By default, a BentoML Service has one worker. It is possible to set multiple workers and allocate specific GPUs to individual workers. See :doc:`/guides/workers` for details.
 

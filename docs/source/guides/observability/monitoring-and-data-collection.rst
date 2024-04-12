@@ -64,19 +64,19 @@ Within the ``bentoml.monitor`` context, you use the ``log`` method to record ind
 - ``data``: The actual data value you want to log. This could be an input/output parameter value (the input ``text`` and output ``summary_text`` in this example).
 - ``name``: A string identifier for the data point, which will be displayed in logs. This helps label the data in your logs, making it clear what each logged value represents.
 - ``role``: The role of the data in model inference. Default roles include:
-  
+
   - ``"feature"``: Indicates that the logged data is an input feature of the model.
   - ``"prediction"``: Indicates that the logged data is a prediction made by the model.
   - ``"target"``: Indicates that the logged data is the target or label.
-    
+
   You can set a custom ``role`` like ``original_text`` in the example, which will also be logged.
-    
+
 - ``data_type``: The type of the data. Default data types include:
-  
+
   - ``"numerical"``: For quantitative data.
   - ``"categorical"``: For discrete values representing categories.
   - ``"numerical_sequence"``: For sequences or lists of numerical values.
-    
+
   You can set a custom ``data_type`` like ``text`` in the example, which will also be logged.
 
 View request and schema logs
@@ -140,11 +140,11 @@ Available fields for ``monitoring``:
 - ``enabled``:  Whether monitoring is enabled for the Service. Setting it to ``True`` allows BentoML to collect and log data based on the specified configurations.
 - ``type``: Specifies the type of monitoring system to use. The value ``default`` means the use of BentoML's built-in monitoring system, which collects data and logs it to files as shown in the previous section.
 - ``options``: A dictionary that allows you to customize the monitoring setup.
-  
+
   - ``log_config_file``: Specifies the path to a custom logging configuration file in YAML, which specifies logging behavior, such as log rotation policies, handlers, log formats, and log levels. The logging parameters should be set according to `the Python logging module's configuration schema <https://docs.python.org/3/library/logging.html>`_. If not provided, BentoML uses the default logging configuration, which are suitable for most use cases.
-        
+
     Here is an example configuration file, which outputs log messages to a stream:
-        
+
     .. code-block:: yaml
 
         version: 1
@@ -175,7 +175,7 @@ Available fields for ``monitoring``:
             format: "()"
             validate: false
 
-        
+
   - ``log_path``: Defines the directory where monitoring logs will be stored, which is relative to the Service's running location. It defaults to ``monitoring``.
 
 For deployments using :doc:`the OCI-compliant image </guides/containerization>`, you can persist log files by mounting the specified log directory (``monitoring`` in the example) to a volume. This ensures that your monitoring data is retained across container restarts and redeployments.
@@ -185,10 +185,10 @@ In Kubernetes, you can persist and ship logs by mounting the log directory and u
 Through an OTLP endpoint
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In scenarios where you can't directly access log files, such as when using AWS Lambda since it doesn't support log files, BentoML supports exporting monitoring data to an external telemetry system using the OpenTelemetry Protocol (OTLP). 
+In scenarios where you can't directly access log files, such as when using AWS Lambda since it doesn't support log files, BentoML supports exporting monitoring data to an external telemetry system using the OpenTelemetry Protocol (OTLP).
 
 .. note::
-    
+
     Some log collectors like fluentbit also support OTLP input.
 
 Below is an example of setting up OTLP for a BentoML Service:
@@ -238,7 +238,7 @@ To use a plugin, you need to install it and include it in ``bentofile.yaml``. Fo
 Arize AI
 """"""""
 
-For end-to-end solutions for data and model monitoring, BentoML works with `Arize AI <https://arize.com/docs/>`_ to provide a plugin for Arize. If you don't want to deploy a pipeline by yourself but still need data and model monitoring, Arize AI is a good choice. It provides a unified platform for data scientists, data engineers, and ML engineers to monitor, analyze, and debug ML models in production. 
+For end-to-end solutions for data and model monitoring, BentoML works with `Arize AI <https://arize.com/docs/>`_ to provide a plugin for Arize. If you don't want to deploy a pipeline by yourself but still need data and model monitoring, Arize AI is a good choice. It provides a unified platform for data scientists, data engineers, and ML engineers to monitor, analyze, and debug ML models in production.
 
 To use this plugin, make sure you have installed it first:
 

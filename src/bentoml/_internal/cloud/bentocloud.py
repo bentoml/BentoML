@@ -134,7 +134,7 @@ class BentoCloudClient(CloudClient):
         if (
             not force
             and remote_bento
-            and remote_bento.upload_status == BentoUploadStatus.SUCCESS
+            and remote_bento.upload_status == BentoUploadStatus.SUCCESS.value
         ):
             self.spinner.log_progress.add_task(
                 f'[bold blue]Push skipped: Bento "{bento.tag}" already exists in remote Bento store'
@@ -394,7 +394,7 @@ class BentoCloudClient(CloudClient):
                     status=BentoUploadStatus.FAILED,
                     reason=str(e),
                 )
-            if finish_req.status is BentoUploadStatus.FAILED:
+            if finish_req.status == BentoUploadStatus.FAILED.value:
                 self.spinner.log_progress.add_task(
                     f'[bold red]Failed to upload Bento "{bento.tag}"'
                 )
@@ -406,7 +406,7 @@ class BentoCloudClient(CloudClient):
                     version=version,
                     req=finish_req,
                 )
-            if finish_req.status != BentoUploadStatus.SUCCESS:
+            if finish_req.status != BentoUploadStatus.SUCCESS.value:
                 self.spinner.log_progress.add_task(
                     f'[bold red]Failed pushing Bento "{bento.tag}": {finish_req.reason}'
                 )
@@ -633,7 +633,7 @@ class BentoCloudClient(CloudClient):
         if (
             not force
             and remote_model
-            and remote_model.upload_status == ModelUploadStatus.SUCCESS
+            and remote_model.upload_status == ModelUploadStatus.SUCCESS.value
         ):
             self.spinner.log_progress.add_task(
                 f'[bold blue]Model "{model.tag}" already exists in remote model store, skipping'
@@ -851,7 +851,7 @@ class BentoCloudClient(CloudClient):
                     status=ModelUploadStatus.FAILED,
                     reason=str(e),
                 )
-            if finish_req.status is ModelUploadStatus.FAILED:
+            if finish_req.status == ModelUploadStatus.FAILED.value:
                 self.spinner.log_progress.add_task(
                     f'[bold red]Failed to upload model "{model.tag}"'
                 )
@@ -864,7 +864,7 @@ class BentoCloudClient(CloudClient):
                     req=finish_req,
                 )
 
-            if finish_req.status != ModelUploadStatus.SUCCESS:
+            if finish_req.status != ModelUploadStatus.SUCCESS.value:
                 self.spinner.log_progress.add_task(
                     f'[bold red]Failed pushing model "{model.tag}" : {finish_req.reason}'
                 )

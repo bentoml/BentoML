@@ -47,9 +47,10 @@ Expected output:
 
     Commands:
     build               Build a new Bento from current directory.
-    cloud (yatai)       BentoCloud Subcommands Groups
+    cloud               BentoCloud Subcommands Groups.
     containerize        Containerizes given Bento into an OCI-compliant...
     delete              Delete Bento in local bento store.
+    deploy              Create a deployment on BentoCloud.
     deployment          Deployment Subcommands Groups
     env                 Print environment info and exit
     export              Export a Bento to an external file archive
@@ -60,7 +61,6 @@ Expected output:
     pull                Pull Bento from a remote Bento store server.
     push                Push Bento to a remote Bento store server.
     serve (serve-http)  Start a HTTP BentoServer from a given 🍱
-    serve-grpc          Start a gRPC BentoServer from a given 🍱
 
 Install BentoML from source code
 --------------------------------

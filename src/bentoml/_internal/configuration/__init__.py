@@ -20,6 +20,8 @@ if t.TYPE_CHECKING:
 # used within functions in this file
 logger = logging.getLogger(__name__)
 
+DEBUG_ENV_VAR = "BENTOML_DEBUG"
+QUIET_ENV_VAR = "BENTOML_QUIET"
 VERBOSITY_ENV_VAR = "BENTOML_VERBOSITY"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
 CONFIG_OVERRIDE_ENV_VAR = "BENTOML_CONFIG_OPTIONS"
@@ -131,16 +133,18 @@ def get_bentoml_override_config_json_from_env() -> dict[str, t.Any] | None:
 def set_verbosity(verbosity: int) -> None:
     os.environ[VERBOSITY_ENV_VAR] = str(verbosity)
     if verbosity > 0:
+        os.environ[DEBUG_ENV_VAR] = "true"
         os.environ[GRPC_DEBUG_ENV_VAR] = "DEBUG"
     elif verbosity < 0:
+        os.environ[QUIET_ENV_VAR] = "true"
         os.environ[GRPC_DEBUG_ENV_VAR] = "NONE"
 
 
-def set_debug_mode() -> None:
+def set_debug_mode(enabled: bool = True) -> None:
     set_verbosity(1)
 
 
-def set_quiet_mode() -> None:
+def set_quiet_mode(enabled: bool = True) -> None:
     set_verbosity(-1)
 
 

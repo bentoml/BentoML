@@ -151,12 +151,16 @@ def set_quiet_mode(enabled: bool = True) -> None:
 def get_debug_mode() -> bool:
     if VERBOSITY_ENV_VAR in os.environ:
         return int(os.environ[VERBOSITY_ENV_VAR]) > 0
+    if DEBUG_ENV_VAR in os.environ:
+        return os.environ[DEBUG_ENV_VAR].lower() == "true"
     return False
 
 
 def get_quiet_mode() -> bool:
     if VERBOSITY_ENV_VAR in os.environ:
         return int(os.environ[VERBOSITY_ENV_VAR]) < 0
+    if QUIET_ENV_VAR in os.environ:
+        return os.environ[QUIET_ENV_VAR].lower() == "true"
     return False
 
 

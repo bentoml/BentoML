@@ -4,7 +4,7 @@ Monitoring and data collection
 
 Data-centric AI is a paradigm that positions data as the cornerstone of AI systems. This approach emphasizes the importance of data quality and relevance, suggesting that the effectiveness of AI models can be primarily determined by the data they are trained on and interact with.
 
-BentoML fully embraces this paradigm by offering APIs to implement a data-centric workflow, making it straightforward to collect inference data and monitor models within your AI project.
+BentoML fully embraces this paradigm by offering APIs to implement a data-centric workflow, making it straightforward to collect inference data, monitor models, and ship the data to various destinations (for example, local storage, cloud services, and any OTLP supported tools) for your AI project.
 
 This document explains how to implement monitoring and collect inference data in BentoML.
 
@@ -110,12 +110,35 @@ Ship the collected data
 
 BentoML provides a general monitoring data collection API. It allows you to transmit collected data to various destinations such as data warehouses, analytics pipelines, or specialized monitoring and drift detection solutions, all without requiring any modifications to your existing codebase.
 
+The following table outlines the available targets for shipping monitoring data, the monitoring types (read the following sections for details), and additional notes.
+
+.. list-table::
+    :widths: 33 33 34
+    :header-rows: 1
+
+    - - Destination
+      - Monitoring type
+      - Note
+    - - ``./monitoring/<name>/data/xxx.log``
+      - ``default``
+      - Logs are stored locally by default.
+    - - Cloud and monitoring services (Amazon S3, Azure Blob, Datadog, Elasticsearch, InfluxDB, Google BigQuery, Kafka, etc.)
+      - ``otlp`` + deployed Fluent Bit
+      - For more output options and configurations, see `Fluent Bit Outputs <https://docs.fluentbit.io/manual/pipeline/outputs>`_.
+    - - Any OTLP supported tools
+      - ``otlp``
+      - Useful for environments where direct file access is restricted, like AWS Lambda.
+    - - Arize
+      - ``bentoml_plugins.arize.ArizeMonitor``
+      - Ensure API keys and space keys are configured correctly.
+
+
 .. _through-log-files:
 
 Through log files
 ^^^^^^^^^^^^^^^^^
 
-Writing monitoring data to log files is the most common way of data collection in BentoML, which is compatible with popular logging tools such as `fluentbit <https://fluentbit.io/>`_, `filebeat <https://www.elastic.co/beats/filebeat>`_, and `logstash <https://www.elastic.co/logstash/>`_. You can customize the monitoring configuration using the ``@bentoml.service`` decorator.
+Writing monitoring data to log files is the most common way of data collection in BentoML, which is compatible with popular logging tools such as `Fluent Bit <https://fluentbit.io/>`_, `Filebeat <https://www.elastic.co/beats/filebeat>`_, and `Logstash <https://www.elastic.co/logstash/>`_. You can customize the monitoring configuration using the ``@bentoml.service`` decorator.
 
 .. code-block:: python
 
@@ -180,7 +203,7 @@ Available fields for ``monitoring``:
 
 For deployments using :doc:`the OCI-compliant image </guides/containerization>`, you can persist log files by mounting the specified log directory (``monitoring`` in the example) to a volume. This ensures that your monitoring data is retained across container restarts and redeployments.
 
-In Kubernetes, you can persist and ship logs by mounting the log directory and using a `fluentbit <https://fluentbit.io/>`_ DaemonSet or a sidecar container. This allows the collected log files to be automatically forwarded to your designated monitoring system or data warehouse, ensuring that your monitoring data is centralized and accessible for analysis and alerting.
+In Kubernetes, you can persist and ship logs by mounting the log directory and using a `Fluent Bit <https://fluentbit.io/>`_ DaemonSet or a sidecar container. This allows the collected log files to be automatically forwarded to your designated monitoring system or data warehouse, ensuring that your monitoring data is centralized and accessible for analysis and alerting.
 
 Through an OTLP endpoint
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -189,7 +212,7 @@ In scenarios where you can't directly access log files, such as when using AWS L
 
 .. note::
 
-    Some log collectors like fluentbit also support OTLP input.
+    Some log collectors like Fluent Bit also support OTLP input.
 
 Below is an example of setting up OTLP for a BentoML Service:
 

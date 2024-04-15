@@ -186,7 +186,7 @@ This example defines a sequential pipeline where output from one model is fed as
     @bentoml.service(resources={"cpu": 2, "memory": "2Gi"})
     class PreprocessingService:
         model_a_ref = bentoml.models.get("model_a:latest")
-            
+
         def __init__(self) -> None:
             # Initialize pipeline for model
             self.pipeline_a = pipeline('task_a', model=self.model_a_ref.path)
@@ -201,7 +201,7 @@ This example defines a sequential pipeline where output from one model is fed as
     class InferenceService:
         model_b_ref = bentoml.models.get("model_b:latest")
         preprocessing_service = bentoml.depends(PreprocessingService)
-        
+
         def __init__(self) -> None:
             # Initialize pipeline for model
             self.pipeline_b = pipeline('task_b', model=self.model_b_ref.path)
@@ -228,11 +228,11 @@ This example runs two independent models concurrently to generate different type
     @bentoml.service(resources={"gpu": 1, "memory": "4Gi"})
     class ModelAService:
         model_a_ref = bentoml.models.get("model_a:latest")
-            
+
         def __init__(self) -> None:
             # Initialize pipeline for model
             self.pipeline_a = pipeline('task_a', model=self.model_a_ref.path)
-            
+
         @bentoml.api
         def predict(self, input_data: np.ndarray) -> np.ndarray:
             # Dummy preprocessing steps
@@ -242,7 +242,7 @@ This example runs two independent models concurrently to generate different type
     @bentoml.service(resources={"gpu": 1, "memory": "4Gi"})
     class ModelBService:
         model_b_ref = bentoml.models.get("model_b:latest")
-            
+
         def __init__(self) -> None:
             # Initialize pipeline for model
             self.pipeline_b = pipeline('task_b', model=self.model_b_ref.path)
@@ -377,6 +377,6 @@ This ``service.py`` file does the following:
 3. **Classify text sequentially**: After receiving the generated text from both models, each piece of text is then sequentially processed by a text classification model (``BertBaseUncased``). It evaluates the content of each generated text based on its sentiment, and assigns a classification score to them.
 4. **Generate results**: Finally, the scores assigned by the classification model, along with the generated text themselves, are compiled into a single response.
 
-.. note:: 
-    
+.. note::
+
     In some cases, you may want to stream output directly from one LLM to another LLM as input to build a compound LLM system. This is not yet supported in BentoML, but it is on its roadmap. If you are interested in this topic, you are welcome to join our discussion in the `BentoML Slack community <https://l.bentoml.com/join-slack>`_ or `raise an issue in GitHub <https://github.com/bentoml/BentoML/issues/new/choose>`_.

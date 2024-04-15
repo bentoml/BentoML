@@ -57,6 +57,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Configure GPUs to power your machine learning server with BentoML.
 
+    .. grid-item-card:: :doc:`/guides/model-composition`
+        :link: /guides/model-composition
+        :link-type: doc
+
+        Compose multiple models in your BentoML project.
+
     .. grid-item-card:: :doc:`/guides/distributed-services`
         :link: /guides/distributed-services
         :link-type: doc
@@ -116,6 +122,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     build-options
     model-store
     gpu-inference
+    model-composition
     distributed-services
     concurrency
     testing

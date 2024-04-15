@@ -192,6 +192,7 @@ def main(
         ssl_keyfile=ssl_keyfile,
         ssl_keyfile_password=ssl_keyfile_password,
         ssl_ca_certs=ssl_ca_certs,
+        server_header=False,
         **uvicorn_extra_options,
     )
 

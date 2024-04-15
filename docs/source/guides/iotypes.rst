@@ -258,8 +258,9 @@ In this example:
 
 - The ``classify`` method of the ``IrisClassifier`` Service accepts a Pandas DataFrame as input.
 - The ``Annotated`` type is used with ``DataframeSchema`` to specify the expected orientation and columns of the DataFrame.
-    - ``orient="records"`` indicates that the DataFrame is expected in a record-oriented format.
-    - ``columns=["petal_length", "petal_width"]`` specifies the expected columns in the DataFrame.
+
+  - ``orient="records"`` indicates that the DataFrame is expected in a record-oriented format.
+  - ``columns=["petal_length", "petal_width"]`` specifies the expected columns in the DataFrame.
 
 The ``DataframeSchema`` validator supports the following two orientations, which determine how the data is structured when received by the API.
 

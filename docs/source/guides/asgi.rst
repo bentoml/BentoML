@@ -257,3 +257,46 @@ To set a prefix path, simply set the ``path`` parameter in the decorator ``@bent
             return f"Hello {self.name}"
 
 By specifying ``path="/fastapi"``, the entire FastAPI application is served under this prefix. This means all the routes defined within the FastAPI application will be accessible under ``/fastapi``. In this example, after you start this BentoML Service, you should interact with the ``/fastapi/hello`` endpoint.
+
+Add custom ASGI middleware
+--------------------------
+
+``add_asgi_middleware`` is an API provided by BentoML to apply `custom ASGI middleware <https://asgi.readthedocs.io/en/latest/specs/main.html>`_. Middleware functions as a layer that processes requests and responses, allowing you to manipulate them or execute additional actions based on specific conditions. It is commonly used for implementing security measures and custom headers, managing CORS, compressing responses, and more.
+
+Example usage:
+
+.. code-block:: python
+
+    from __future__ import annotations
+    import bentoml
+    from transformers import pipeline
+
+    from starlette.middleware.trustedhost import TrustedHostMiddleware
+
+    @bentoml.service(
+        resources={"cpu": "2"},
+        traffic={"timeout": 10},
+    )
+    class Summarization:
+        def __init__(self) -> None:
+            self.pipeline = pipeline('summarization')
+
+        @bentoml.api
+        def summarize(self, text: str) -> str:
+            result = self.pipeline(text)
+            return result[0]['summary_text']
+
+    # Add TrustedHostMiddleware to ensure the Service only accepts requests from certain hosts
+    Summarization.add_asgi_middleware(TrustedHostMiddleware, allowed_hosts=['example.com', '*.example.com'])
+
+This example ensures that the ``Summarization`` Service only accepts requests from specified hosts and prevents host header attacks. You can then interact with the Service by manually specifying the ``Host`` header in requests:
+
+.. code-block:: bash
+
+    curl -H "Host: example.com" http://localhost:3000
+
+.. note::
+
+    Alternatively, you can edit your ``hosts`` file to map ``example.com`` to ``127.0.0.1`` (localhost) and then access ``http://example.com:3000/``.
+
+While ``add_asgi_middleware`` is used to add middleware to the ASGI application that BentoML uses to serve the APIs, ``@bentoml.mount_asgi_app`` is used to integrate the entire ASGI application into the BentoML Service. This is suitable for adding complete web applications like FastAPI or Quart applications that come with their routing logic, directly alongside your BentoML Service.

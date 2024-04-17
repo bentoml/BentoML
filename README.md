@@ -75,6 +75,8 @@
 - [BentoLCM](https://github.com/bentoml/BentoLCM) - Deploy a REST API server for Stable Diffusion with Latent Consistency LoRAs.
 - [BentoSVD](https://github.com/bentoml/BentoSVD) - Create a video generation application powered by Stable Video Diffusion (SVD).
 - [BentoVLLM](https://github.com/bentoml/BentoVLLM) - Accelerate your model inference and improve serving throughput by using vLLM as your LLM backend.
+- [BentoBark](https://github.com/bentoml/BentoBark) - Generate highly realistic audio like music, background noise and simple sound effects with Bark.
+- [BentoYolo](https://github.com/bentoml/BentoYolo) - Build an object detection inference API server with YOLO.
 
 # Getting started
 

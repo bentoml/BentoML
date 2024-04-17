@@ -63,7 +63,7 @@
 
 ### 🛠️ What you can build with BentoML
 
-- [OpenLLM](https://github.com/bentoml/OpenLLM) - An open platform for operating large language models (LLMs) in production.
+- [OpenLLM](https://github.com/bentoml/OpenLLM) - Run any open-source LLMs, such as Llama 2 and Mistral, as OpenAI compatible API endpoints, locally and in the cloud.
 - [BentoXTTS](https://github.com/bentoml/BentoXTTS) - Convert text to speech based on your custom audio data.
 - [BentoSDXLTurbo](https://github.com/bentoml/BentoSDXLTurbo) - Create an image generation application and run inference with a single step.
 - [BentoSD2Upscaler](https://github.com/bentoml/BentoSD2Upscaler) - Build an image generation application with upscaling capability.

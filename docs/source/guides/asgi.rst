@@ -300,3 +300,5 @@ This example ensures that the ``Summarization`` Service only accepts requests fr
     Alternatively, you can edit your ``hosts`` file to map ``example.com`` to ``127.0.0.1`` (localhost) and then access ``http://example.com:3000/``.
 
 While ``add_asgi_middleware`` is used to add middleware to the ASGI application that BentoML uses to serve the APIs, ``@bentoml.mount_asgi_app`` is used to integrate the entire ASGI application into the BentoML Service. This is suitable for adding complete web applications like FastAPI or Quart applications that come with their routing logic, directly alongside your BentoML Service.
+
+The middleware added via ``add_asgi_middleware`` applies to the entire ASGI application, including both the BentoML Service and any mounted ASGI applications. This ensures consistent processing of all requests across the application, whether they target BentoML Services or other components.

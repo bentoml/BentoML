@@ -63,7 +63,7 @@
 
 ### 🛠️ What you can build with BentoML
 
-- [OpenLLM](https://github.com/bentoml/OpenLLM) - An open platform for operating large language models (LLMs) in production.
+- [OpenLLM](https://github.com/bentoml/OpenLLM) - Run any open-source LLMs, such as Llama 2 and Mistral, as OpenAI compatible API endpoints, locally and in the cloud.
 - [BentoXTTS](https://github.com/bentoml/BentoXTTS) - Convert text to speech based on your custom audio data.
 - [BentoSDXLTurbo](https://github.com/bentoml/BentoSDXLTurbo) - Create an image generation application and run inference with a single step.
 - [BentoSD2Upscaler](https://github.com/bentoml/BentoSD2Upscaler) - Build an image generation application with upscaling capability.
@@ -75,6 +75,8 @@
 - [BentoLCM](https://github.com/bentoml/BentoLCM) - Deploy a REST API server for Stable Diffusion with Latent Consistency LoRAs.
 - [BentoSVD](https://github.com/bentoml/BentoSVD) - Create a video generation application powered by Stable Video Diffusion (SVD).
 - [BentoVLLM](https://github.com/bentoml/BentoVLLM) - Accelerate your model inference and improve serving throughput by using vLLM as your LLM backend.
+- [BentoBark](https://github.com/bentoml/BentoBark) - Generate highly realistic audio like music, background noise and simple sound effects with Bark.
+- [BentoYolo](https://github.com/bentoml/BentoYolo) - Build an object detection inference API server with YOLO.
 
 # Getting started
 

@@ -143,7 +143,7 @@ def dummy_generate_deployment_schema(
         resource_type=ResourceType.DEPLOYMENT_REVISION,
         labels=[],
         creator=user,
-        status=DeploymentStatus.Running,
+        status=DeploymentStatus.Running.value,
         cluster=ClusterSchema(
             uid="",
             name=cluster,

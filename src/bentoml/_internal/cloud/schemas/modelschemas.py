@@ -92,13 +92,6 @@ else:
     TransmissionStrategy = str
 
 
-class ModelImageBuildStatus(Enum):
-    PENDING = "pending"
-    BUILDING = "building"
-    SUCCESS = "success"
-    FAILED = "failed"
-
-
 class ModelUploadStatus(Enum):
     PENDING = "pending"
     BUILDING = "uploading"
@@ -115,12 +108,6 @@ class ModelManifestSchema:
     metadata: t.Dict[str, t.Any] = attr.field(factory=dict)
     context: t.Dict[str, t.Any] = attr.field(factory=dict)
     options: t.Dict[str, t.Any] = attr.field(factory=dict)
-
-
-class DeploymentTargetCanaryRuleType(Enum):
-    WEIGHT = "weight"
-    HEADER = "header"
-    COOKIE = "cookie"
 
 
 @attr.define
@@ -203,25 +190,12 @@ class EnvItemSchema:
     value: str
 
 
-class HPAMetricType(Enum):
-    MEMORY = "memory"
-    CPU = "cpu"
-    GPU = "gpu"
-    QPS = "qps"
-
-
 @attr.define
 class HPAMetric:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
     type: str
     value: t.Any  # resource.Quantity
-
-
-class HPAScaleBehavior(Enum):
-    DISABLED = "disabled"
-    STABLE = "stable"
-    FAST = "fast"
 
 
 @attr.define
@@ -283,12 +257,6 @@ class DeploymentStrategy(Enum):
     BestEffortControlledRollout = "BestEffortControlledRollout"
 
 
-class AccessControl(Enum):
-    PUBLIC = "public"
-    PROTECTED = "protected"
-    PRIVATE = "private"
-
-
 @attr.define
 class DeploymentTargetRunnerConfig:
     __omit_if_default__ = True
@@ -311,11 +279,6 @@ class DeploymentTargetRunnerConfig:
     )
     traffic_control: t.Optional[TrafficControlConfig] = attr.field(default=None)
     deployment_cold_start_wait_timeout: t.Optional[int] = attr.field(default=None)
-
-
-class DeploymentTargetType(Enum):
-    STABLE = "stable"
-    CANARY = "canary"
 
 
 @attr.define
@@ -391,11 +354,6 @@ class DeploymentStatus(Enum):
     ImageBuilding = "image-building"
     ImageBuildFailed = "image-build-failed"
     ImageBuildSucceeded = "image-build-succeeded"
-
-
-class DeploymentMode(Enum):
-    Deployment = "deployment"
-    Function = "function"
 
 
 @attr.define

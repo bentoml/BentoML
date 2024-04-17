@@ -453,7 +453,7 @@ class DeploymentInfo:
         from _bentoml_impl.client import SyncHTTPClient
 
         self._refetch()
-        if self._schema.status != DeploymentStatus.Running:
+        if self._schema.status != DeploymentStatus.Running.value:
             raise BentoMLException(f"Deployment status is {self._schema.status}")
         if self._urls is None or len(self._urls) != 1:
             raise BentoMLException("Deployment url is not ready")
@@ -468,7 +468,7 @@ class DeploymentInfo:
         from _bentoml_impl.client import AsyncHTTPClient
 
         self._refetch()
-        if self._schema.status != DeploymentStatus.Running:
+        if self._schema.status != DeploymentStatus.Running.value:
             raise BentoMLException(f"Deployment status is {self._schema.status}")
         if self._urls is None or len(self._urls) != 1:
             raise BentoMLException("Deployment url is not ready")

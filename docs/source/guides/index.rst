@@ -93,6 +93,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Enable adaptive batching to batch requests for reduced latency and optimized resource use.
 
+    .. grid-item-card:: :doc:`/guides/observability/index`
+        :link: /guides/observability/index
+        :link-type: doc
+
+        Understand observability in BentoML, including monitoring, logging, tracing, and metrics.
+
     .. grid-item-card:: :doc:`/guides/asgi`
         :link: /guides/asgi
         :link-type: doc
@@ -128,6 +134,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     testing
     clients
     adaptive-batching
+    observability/index
     asgi
     configurations
     lifecycle-hooks

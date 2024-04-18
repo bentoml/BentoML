@@ -255,7 +255,7 @@ An example:
     def bentoml_client():
         # Deploy the Summarization Service to BentoCloud
         deployment = bentoml.deployment.create(
-            bento="./path_to_your_project", # Alternatively, use an existing Bento name
+            bento="./path_to_your_project", # Alternatively, use an existing Bento tag
             name="test-summarization",
             scaling_min=1,
             scaling_max=1

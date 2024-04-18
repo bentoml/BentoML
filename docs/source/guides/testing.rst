@@ -230,6 +230,86 @@ Expected output:
 
     =================================================================================== 1 passed in 6.13s ====================================================================================
 
+End-to-end tests
+----------------
+
+End-to-end testing is important to ensure that your AI application not only performs well under controlled test conditions but also runs effectively in a live, production-like environment.
+
+You can implement the following in your end-to-end test when deploying a BentoML Service to :doc:`BentoCloud </bentocloud/get-started>`.
+
+1. **Create a test Deployment**: Deploy your BentoML Service to BentoCloud.
+2. **Wait for Deployment readiness**: Ensure the Deployment is fully ready to handle requests.
+3. **Send test requests and verify output**: Interact with the Deployment by sending test requests and validating the responses to ensure the Service is performing as expected.
+4. **Shut down and delete the Deployment**: Clean up by shutting down and deleting the test deployment to avoid unnecessary costs.
+
+An example:
+
+.. code-block:: python
+    :caption: `test_e2e.py`
+
+    import pytest
+    import bentoml
+    from service import Summarization, EXAMPLE_INPUT  # Imported from the Summarization service.py file
+
+    @pytest.fixture(scope="session")
+    def bentoml_client():
+        # Deploy the Summarization Service to BentoCloud
+        deployment = bentoml.deployment.create(
+            bento="./path_to_your_project", # Alternatively, use an existing Bento name
+            name="test-summarization",
+            scaling_min=1,
+            scaling_max=1
+        )
+        try:
+            # Wait until the Deployment is ready
+            deployment.wait_until_ready(timeout=3600)
+
+            # Provide the Deployment's client for testing
+            yield deployment.get_client()
+        finally:
+            # Clean up
+            bentoml.deployment.terminate(name="test-summarization")
+            bentoml.deployment.delete(name="test-summarization")
+
+    def test_summarization_service(bentoml_client):
+        # Send a request to the deployed Summarization service
+        summarized_text: str = bentoml_client.summarize(text=EXAMPLE_INPUT)
+        # Ensure the summarized text is not empty
+        assert summarized_text, "The summarized text should not be empty."
+        # Check the type of the response
+        assert isinstance(summarized_text, str), "The response should be a string."
+        # Verify the length of the summarized text is less than the original input
+        assert len(summarized_text) < len(EXAMPLE_INPUT), "The summarized text should be shorter than the input."
+
+This test does the following:
+
+- Set up the Deployment of the Summarization Service on BentoCloud with the ``bentoml_client`` fixture. It ensures the Deployment is created and ready before yielding a client for testing.
+- Use the client to interact with the Summarization Service and make assertions to ensure the Service is functioning correctly.
+- Clean up by terminating and deleting the Deployment after the test to prevent ongoing charges for unused resources.
+
+Run the end-to-end test:
+
+.. code-block:: bash
+
+    pytest test_e2e.py -v
+
+Expected result:
+
+.. code-block:: bash
+
+    =================================================================================================== test session starts ===================================================================================================
+    platform linux -- Python 3.11.7, pytest-8.1.1, pluggy-1.4.0 -- /home/demo/Documents/summarization/summarization/bin/python
+    cachedir: .pytest_cache
+    rootdir: /home/demo/Documents/summarization/test
+    plugins: anyio-4.3.0
+    collected 1 item
+
+    test_e2e.py::test_summarization_service PASSED                                                                                                                                                                      [100%]
+
+    ============================================================================================== 1 passed in 120.65s (0:02:00) ==============================================================================================
+
+For more information, see :doc:`/bentocloud/how-tos/configure-deployments` and :doc:`/bentocloud/how-tos/manage-deployments`.
+
 Best practices
 --------------
 

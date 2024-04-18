@@ -33,6 +33,8 @@ You can register a model to the Model Store using ``bentoml.models.create()`` wi
         pipeline.save_pretrained(model_ref.path)
         print(f"Model saved: {model_ref}")
 
+By default, all models downloaded to the Model Store are saved in the directory ``/home/user/bentoml/models/``, with each of them assigned a specific subdirectory. For example, the above code snippet will save the summarization model to ``/home/user/bentoml/models/summarization-model/``. You can retrieve the path of the saved model by using its ``path`` property.
+
 If you have an existing model on disk, you can import it into the BentoML Model Store through ``shutil``.
 
 .. code-block:: python
@@ -49,8 +51,6 @@ If you have an existing model on disk, you can import it into the BentoML Model 
         shutil.copytree(local_model_dir, model_ref.path, dirs_exist_ok=True)
         print(f"Model saved: {model_ref}")
 
-By default, all models downloaded to the Model Store are saved in the directory ``/home/user/bentoml/models/``.
-
 Retrieve a model
 ----------------
 
@@ -65,7 +65,7 @@ To retrieve a model from the BentoML Model Store, use the ``get`` method.
     print(bento_model.tag)
     print(bento_model.path)
 
-``bentoml.models.get`` returns a ``bentoml.Model`` instance, linking to a saved model entry in the BentoML Model Store. You can then use the instance to get model information like tag, labels, and file system paths, or create a Service on top of it.
+``bentoml.models.get`` returns a ``bentoml.Model`` instance, linking to a saved model entry in the BentoML Model Store. You can then use the instance to get model information like tag, labels, and file system paths, or create a :doc:`Service </guides/services>` on top of it.
 
 For example, you can load the model into a Transformers pipeline as below for the project in :doc:`/get-started/quickstart`.
 
@@ -76,6 +76,7 @@ For example, you can load the model into a Transformers pipeline as below for th
 
     @bentoml.service
     class Summarization:
+        # Define the model as a class variable
         model_ref = bentoml.models.get("summarization-model")
 
         def __init__(self) -> None:
@@ -84,6 +85,18 @@ For example, you can load the model into a Transformers pipeline as below for th
 
         @bentoml.api
         ...
+
+When you retrieve your model within a Service class, it is important to consider whether you want to define the model as a class variable or within the constructor (``init`` method). By defining the model as a class variable, you explicitly declare it as a dependency of the Service. This makes it clear to BentoML's packaging mechanism which resources need to be included when the Service is packaged as a Bento and deployed. This is important in ensuring that all necessary models are available in production, not just in the local development setup.
+
+If you use ``bentoml.models.get()`` inside the constructor, it works locally because the model is fetched every time an instance of the Service is created. In local development, this might not be a problem because the environment is controlled and the model is readily available. However, when you deploy the Service in a production environment like BentoCloud, this can lead to issues:
+
+- Dependency tracking: BentoML might not automatically recognize the model as a dependency of the Service, as it's not declared at the class level. This can lead to deployment packages missing required models. To avoid this, you can specify the ``models`` field in ``bentofile.yaml`` to tell BentoML explicitly what models should be referenced. For more information, see :ref:`build-options-model`.
+- Performance: Loading the model in every instance initialization can significantly increase memory usage and slow down the startup time of each :doc:`worker </guides/workers>`, especially if your model is large.
+
+Consider the following when deciding where to use ``bentoml.models.get()``:
+
+- Class-level definitions: Defining models and other dependencies as class-level attributes can help you make dependencies explicit and manage them efficiently.
+- Constructor usage: The constructor should be used for initializing instance-specific configurations that do not involve heavy lifting like loading models.
 
 Manage models
 -------------

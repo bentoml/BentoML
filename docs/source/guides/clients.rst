@@ -89,7 +89,7 @@ To enhance resource management and reduce the risk of connection leaks, we recom
             with bentoml.SyncHTTPClient('http://localhost:3000') as client:
                 summarized_text: str = client.summarize(text="Your long text to summarize")
                 print(summarized_text)
-    
+
     .. tab-item:: Asynchronous
 
         .. code-block:: python

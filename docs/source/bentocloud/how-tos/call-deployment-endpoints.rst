@@ -67,7 +67,7 @@ Choose one of the following ways to access your Deployment with the endpoint URL
             result: str = client.summarize(text="Your long text to summarize")
             print(result)
 
-        You can retrieve the information of a client by using ``get_client`` or ``get_async_client`` (set the ``token`` parameter if you enable :ref:`bentocloud/how-tos/configure-deployments:authorization`), then use it to make HTTP requests to your Deployment.
+        You can retrieve the information of a client by using ``get_client`` or ``get_async_client`` (set the ``token`` parameter if you enable :ref:`bentocloud/how-tos/configure-deployments:authorization`), then call its available endpoint to make HTTP requests to your Deployment.
 
         .. code-block:: python
 
@@ -78,6 +78,8 @@ Choose one of the following ways to access your Deployment with the endpoint URL
             client = dep.get_client()
             # Get asynchronous HTTP client for Deployment:
             async_client = dep.get_async_client()
+            # Call the client's endpoint to interact
+            result = client.summarize(text="Your long text to summarize")
 
     .. tab-item:: Swagger UI
 

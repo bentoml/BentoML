@@ -127,6 +127,27 @@ Alternatively, create a ``.bentoignore`` file in the ``build_ctx`` directory as 
 
     ``exclude`` is always applied after ``include``.
 
+.. _build-options-model:
+
+``models``
+^^^^^^^^^^
+
+You can specify the model to be used for building a Bento using a string model tag or a dictionary. When you start from an existing project, you can download models from BentoCloud to your local :doc:`/guides/model-store` with the ``models`` configurations by running ``bentoml models pull``.
+
+See the following example for details. If you don't define models in ``bentofile.yaml``, the model specified in the Service is used to build the Bento.
+
+.. code-block:: yaml
+
+    models:
+    - "summarization-model:latest" # A string model tag
+    - tag: "summarization-model:version1" # A dictionary
+      filter: "label:staging"
+      alias: "summarization-model_v1"
+
+- ``tag``: The name and version of the model, separated by a colon.
+- ``filter``: This field uses the same filter syntax in BentoCloud. You use a filter to list specific models, such as the models with the same label. You can add multiple comma-separated filters to a model.
+- ``alias``: An alias for the model. If this is specified, you can use it directly in code like ``bentoml.models.get(alias)``.
+
 Python packages
 ^^^^^^^^^^^^^^^
 

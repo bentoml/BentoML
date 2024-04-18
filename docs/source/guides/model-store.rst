@@ -65,7 +65,7 @@ To retrieve a model from the BentoML Model Store, use the ``get`` method.
     print(bento_model.tag)
     print(bento_model.path)
 
-``bentoml.models.get`` returns a ``bentoml.Model`` instance, linking to a saved model entry in the BentoML Model Store. You can then use the instance to get model information like tag, labels, and file system paths, or create a Service on top of it.
+``bentoml.models.get`` returns a ``bentoml.Model`` instance, linking to a saved model entry in the BentoML Model Store. You can then use the instance to get model information like tag, labels, and file system paths, or create a :doc:`Service </guides/services>` on top of it.
 
 For example, you can load the model into a Transformers pipeline as below for the project in :doc:`/get-started/quickstart`.
 
@@ -90,7 +90,7 @@ When you retrieve your model within a Service class, it is important to consider
 
 If you use ``bentoml.models.get()`` inside the constructor, it works locally because the model is fetched every time an instance of the Service is created. In local development, this might not be a problem because the environment is controlled and the model is readily available. However, when you deploy the Service in a production environment like BentoCloud, this can lead to issues:
 
-- Dependency tracking: BentoML might not automatically recognize the model as a dependency of the Service, as it's not declared at the class level. This can lead to deployment packages missing required models.
+- Dependency tracking: BentoML might not automatically recognize the model as a dependency of the Service, as it's not declared at the class level. This can lead to deployment packages missing required models. To avoid this, you can specify the ``models`` field in ``bentofile.yaml`` to tell BentoML explicitly what models should be referenced. For more information, see :ref:`build-options-model`.
 - Performance: Loading the model in every instance initialization can significantly increase memory usage and slow down the startup time of each :doc:`worker </guides/workers>`, especially if your model is large.
 
 Consider the following when deciding where to use ``bentoml.models.get()``:

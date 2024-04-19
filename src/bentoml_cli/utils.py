@@ -200,15 +200,10 @@ class SharedOptions:
 
 
 def setup_verbosity(ctx: Context, param: Parameter, value: int) -> int:
-    from bentoml._internal.configuration import set_debug_mode
-    from bentoml._internal.configuration import set_quiet_mode
+    from bentoml._internal.configuration import set_verbosity
     from bentoml._internal.log import configure_logging
 
-    if value == 1:
-        set_debug_mode(True)
-    elif value == -1:
-        set_quiet_mode(True)
-
+    set_verbosity(value or 0)
     configure_logging()
     return value
 
@@ -261,8 +256,7 @@ class BentoMLCommandGroup(click.Group):
     @staticmethod
     def bentoml_common_params(f: F[P]) -> ClickFunctionWrapper[P]:
         # NOTE: update NUMBER_OF_COMMON_PARAMS when adding option.
-        from bentoml._internal.configuration import DEBUG_ENV_VAR
-        from bentoml._internal.configuration import QUIET_ENV_VAR
+        from bentoml._internal.configuration import VERBOSITY_ENV_VAR
         from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
 
         f = cog.optgroup.option(
@@ -272,7 +266,8 @@ class BentoMLCommandGroup(click.Group):
             flag_value=-1,
             default=0,
             expose_value=False,
-            envvar=QUIET_ENV_VAR,
+            envvar=VERBOSITY_ENV_VAR,
+            type=click.INT,
             help="Suppress all warnings and info logs",
             callback=setup_verbosity,
             is_eager=True,
@@ -283,7 +278,6 @@ class BentoMLCommandGroup(click.Group):
             "verbosity",
             flag_value=1,
             expose_value=False,
-            envvar=DEBUG_ENV_VAR,
             help="Generate debug information",
         )(f)
         f = cog.optgroup.option(

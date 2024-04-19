@@ -394,7 +394,7 @@ def bento_management_commands() -> click.Group:
         from bentoml._internal.log import configure_logging
 
         if output == "tag":
-            set_quiet_mode(True)
+            set_quiet_mode()
             configure_logging()
 
         try:

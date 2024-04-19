@@ -7,11 +7,13 @@ import subprocess
 import sys
 import textwrap
 import typing as t
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from simple_di import Provide, inject
+from simple_di import Provide
+from simple_di import inject
 
 from ._internal.bento import Bento
 from ._internal.client import Client
@@ -21,7 +23,9 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import Service
 from ._internal.tag import Tag
 from ._internal.utils.analytics.usage_stats import BENTOML_SERVE_FROM_SERVER_API
-from .exceptions import InvalidArgument, ServerStateException, UnservableException
+from .exceptions import InvalidArgument
+from .exceptions import ServerStateException
+from .exceptions import UnservableException
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -339,7 +343,8 @@ class HTTPServer(Server[HTTPClient]):
         ],
     ):
         # hacky workaround to prevent bentoml.serve being overwritten immediately
-        from .serve import construct_ssl_args, construct_timeouts_args
+        from .serve import construct_ssl_args
+        from .serve import construct_timeouts_args
 
         super().__init__(
             bento,

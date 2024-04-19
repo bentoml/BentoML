@@ -13,7 +13,8 @@ import tempfile
 import typing as t
 
 import attrs
-from simple_di import Provide, inject
+from simple_di import Provide
+from simple_di import inject
 
 from _bentoml_sdk import Service
 from bentoml._internal.container import BentoMLContainer
@@ -169,15 +170,14 @@ def serve_http(
     from bentoml._internal.utils import reserve_free_port
     from bentoml._internal.utils.analytics.usage_stats import track_serve
     from bentoml._internal.utils.circus import create_standalone_arbiter
-    from bentoml.serve import (
-        construct_ssl_args,
-        construct_timeouts_args,
-        create_watcher,
-        ensure_prometheus_dir,
-        make_reload_plugin,
-    )
+    from bentoml.serve import construct_ssl_args
+    from bentoml.serve import construct_timeouts_args
+    from bentoml.serve import create_watcher
+    from bentoml.serve import ensure_prometheus_dir
+    from bentoml.serve import make_reload_plugin
 
-    from ..loader import import_service, normalize_identifier
+    from ..loader import import_service
+    from ..loader import normalize_identifier
     from .allocator import ResourceAllocator
 
     prometheus_dir = ensure_prometheus_dir()

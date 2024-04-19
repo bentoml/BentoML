@@ -15,14 +15,16 @@ from functools import partial
 from pathlib import Path
 
 import psutil
-from simple_di import Provide, inject
+from simple_di import Provide
+from simple_di import inject
 
 from bentoml._internal.log import SERVER_LOGGING_CONFIG
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner.runner import Runner
 from ._internal.utils import is_async_callable
-from .exceptions import BentoMLConfigException, BentoMLException
+from .exceptions import BentoMLConfigException
+from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
 
 if t.TYPE_CHECKING:
@@ -327,7 +329,8 @@ def serve_http_production(
     prometheus_dir = ensure_prometheus_dir()
 
     import ipaddress
-    from socket import AF_INET, AF_INET6
+    from socket import AF_INET
+    from socket import AF_INET6
 
     from circus.sockets import CircusSocket
 

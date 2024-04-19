@@ -5,7 +5,8 @@ import json
 import logging
 import os
 
-from simple_di import Provide, inject
+from simple_di import Provide
+from simple_di import inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner.runner import Runner
@@ -43,7 +44,8 @@ def start_runner_server(
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from .serve import create_watcher, find_triton_binary
+    from .serve import create_watcher
+    from .serve import find_triton_binary
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -172,13 +174,11 @@ def start_http_server(
     from . import load
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from .serve import (
-        API_SERVER_NAME,
-        PROMETHEUS_MESSAGE,
-        construct_ssl_args,
-        construct_timeouts_args,
-        create_watcher,
-    )
+    from .serve import API_SERVER_NAME
+    from .serve import PROMETHEUS_MESSAGE
+    from .serve import construct_ssl_args
+    from .serve import construct_timeouts_args
+    from .serve import create_watcher
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -294,12 +294,10 @@ def start_grpc_server(
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from .serve import (
-        PROMETHEUS_MESSAGE,
-        PROMETHEUS_SERVER_NAME,
-        construct_ssl_args,
-        create_watcher,
-    )
+    from .serve import PROMETHEUS_MESSAGE
+    from .serve import PROMETHEUS_SERVER_NAME
+    from .serve import construct_ssl_args
+    from .serve import create_watcher
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)

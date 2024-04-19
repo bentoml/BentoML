@@ -12,23 +12,24 @@ import sys
 import tempfile
 import typing as t
 
-from simple_di import Provide, inject
+from simple_di import Provide
+from simple_di import inject
 
 from ._internal.bento import Bento
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.tag import Tag
 from ._internal.utils import resolve_user_filepath
-from .exceptions import BadInput, BentoMLException, InvalidArgument
+from .exceptions import BadInput
+from .exceptions import BentoMLException
+from .exceptions import InvalidArgument
 
 if t.TYPE_CHECKING:
     from ._internal.bento import BentoStore
-    from ._internal.bento.build_config import (
-        CondaOptions,
-        DockerOptions,
-        ModelSpec,
-        PythonOptions,
-    )
+    from ._internal.bento.build_config import CondaOptions
+    from ._internal.bento.build_config import DockerOptions
+    from ._internal.bento.build_config import ModelSpec
+    from ._internal.bento.build_config import PythonOptions
     from ._internal.cloud import BentoCloudClient
     from .server import Server
 

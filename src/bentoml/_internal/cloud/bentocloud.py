@@ -269,7 +269,7 @@ class BentoCloudClient(CloudClient):
                 )
                 return
             finish_req = FinishUploadBentoSchema(
-                status=BentoUploadStatus.SUCCESS,
+                status=BentoUploadStatus.SUCCESS.value,
                 reason="",
             )
             try:
@@ -279,7 +279,7 @@ class BentoCloudClient(CloudClient):
                     )
                     if resp.status_code != 200:
                         finish_req = FinishUploadBentoSchema(
-                            status=BentoUploadStatus.FAILED,
+                            status=BentoUploadStatus.FAILED.value,
                             reason=resp.text,
                         )
                 else:
@@ -322,7 +322,8 @@ class BentoCloudClient(CloudClient):
                         ):
                             chunk = (
                                 tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE : chunk_number
+                                    (chunk_number - 1)
+                                    * FILE_CHUNK_SIZE : chunk_number
                                     * FILE_CHUNK_SIZE
                                 ]
                                 if chunk_number < chunks_count
@@ -339,7 +340,7 @@ class BentoCloudClient(CloudClient):
                                 )
                                 if resp.status_code != 200:
                                     return FinishUploadBentoSchema(
-                                        status=BentoUploadStatus.FAILED,
+                                        status=BentoUploadStatus.FAILED.value,
                                         reason=resp.text,
                                     )
                                 return resp.headers["ETag"], chunk_number
@@ -391,7 +392,7 @@ class BentoCloudClient(CloudClient):
 
             except Exception as e:  # pylint: disable=broad-except
                 finish_req = FinishUploadBentoSchema(
-                    status=BentoUploadStatus.FAILED,
+                    status=BentoUploadStatus.FAILED.value,
                     reason=str(e),
                 )
             if finish_req.status == BentoUploadStatus.FAILED.value:
@@ -475,6 +476,7 @@ class BentoCloudClient(CloudClient):
         with tempfile.TemporaryDirectory() as temp_dir:
             # Download models to a temporary directory
             model_store = ModelStore(temp_dir)
+            assert remote_bento.manifest is not None
             with ThreadPoolExecutor(
                 max_workers=max(len(remote_bento.manifest.models), 1)
             ) as executor:
@@ -482,7 +484,9 @@ class BentoCloudClient(CloudClient):
                 def pull_model(model_tag: Tag):
                     model_download_task_id = (
                         self.spinner.transmission_progress.add_task(
-                            f'Pulling model "{model_tag}"', start=False, visible=False
+                            f'Pulling model "{model_tag}"',
+                            start=False,
+                            visible=False,
                         )
                     )
                     self._do_pull_model(
@@ -567,6 +571,7 @@ class BentoCloudClient(CloudClient):
                                 temp_fs.makedirs(p.parent.as_posix(), recreate=True)
                             temp_fs.writebytes(member.name, f.read())
                         bento = Bento.from_fs(temp_fs)
+                        assert remote_bento.manifest is not None
                         for model_tag in remote_bento.manifest.models:
                             with self.spinner.spin(
                                 text=f'Copying model "{model_tag}" to model store'
@@ -725,7 +730,7 @@ class BentoCloudClient(CloudClient):
                 )
                 return
             finish_req = FinishUploadModelSchema(
-                status=ModelUploadStatus.SUCCESS,
+                status=ModelUploadStatus.SUCCESS.value,
                 reason="",
             )
             try:
@@ -735,7 +740,7 @@ class BentoCloudClient(CloudClient):
                     )
                     if resp.status_code != 200:
                         finish_req = FinishUploadModelSchema(
-                            status=ModelUploadStatus.FAILED,
+                            status=ModelUploadStatus.FAILED.value,
                             reason=resp.text,
                         )
                 else:
@@ -779,7 +784,8 @@ class BentoCloudClient(CloudClient):
                         ):
                             chunk = (
                                 tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE : chunk_number
+                                    (chunk_number - 1)
+                                    * FILE_CHUNK_SIZE : chunk_number
                                     * FILE_CHUNK_SIZE
                                 ]
                                 if chunk_number < chunks_count
@@ -796,7 +802,7 @@ class BentoCloudClient(CloudClient):
                                 )
                                 if resp.status_code != 200:
                                     return FinishUploadModelSchema(
-                                        status=ModelUploadStatus.FAILED,
+                                        status=ModelUploadStatus.FAILED.value,
                                         reason=resp.text,
                                     )
                                 return resp.headers["ETag"], chunk_number
@@ -848,7 +854,7 @@ class BentoCloudClient(CloudClient):
 
             except Exception as e:  # pylint: disable=broad-except
                 finish_req = FinishUploadModelSchema(
-                    status=ModelUploadStatus.FAILED,
+                    status=ModelUploadStatus.FAILED.value,
                     reason=str(e),
                 )
             if finish_req.status == ModelUploadStatus.FAILED.value:

@@ -1,19 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Sequence
-from typing import Union
+from typing import Any, Dict, List, Sequence, Union
 
-from annotated_types import Ge
-from annotated_types import Gt
-from annotated_types import Le
-from pydantic import IPvAnyAddress
-from pydantic import TypeAdapter
-from typing_extensions import Annotated
-from typing_extensions import Literal
-from typing_extensions import TypedDict
+from annotated_types import Ge, Gt, Le
+from pydantic import IPvAnyAddress, TypeAdapter
+from typing_extensions import Annotated, Literal, TypedDict
 
 Posint = Annotated[int, Gt(0)]
 Posfloat = Annotated[float, Gt(0.0)]
@@ -100,6 +91,11 @@ class SSLSchema(TypedDict, total=False):
     version: Posint
     cert_reqs: int
     ciphers: str
+
+
+class TimeoutsSchema(TypedDict, total=False):
+    keep_alive: Posint
+    graceful_shutdown: Posint
 
 
 class HTTPCorsSchema(TypedDict, total=False):
@@ -221,6 +217,7 @@ class ServiceConfig(TypedDict, total=False):
     metrics: MetricSchema
     logging: LoggingSchema
     ssl: SSLSchema
+    timeouts: TimeoutsSchema
     http: HTTPSchema
     grpc: GRPCSchema
     runner_probe: RunnerProbeSchema

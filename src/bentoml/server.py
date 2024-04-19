@@ -7,13 +7,11 @@ import subprocess
 import sys
 import textwrap
 import typing as t
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 
 from ._internal.bento import Bento
 from ._internal.client import Client
@@ -23,9 +21,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import Service
 from ._internal.tag import Tag
 from ._internal.utils.analytics.usage_stats import BENTOML_SERVE_FROM_SERVER_API
-from .exceptions import InvalidArgument
-from .exceptions import ServerStateException
-from .exceptions import UnservableException
+from .exceptions import InvalidArgument, ServerStateException, UnservableException
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -337,9 +333,13 @@ class HTTPServer(Server[HTTPClient]):
         ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
         ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
         ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+        timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
+        timeout_graceful_shutdown: int | None = Provide[
+            BentoMLContainer.timeouts.graceful_shutdown
+        ],
     ):
         # hacky workaround to prevent bentoml.serve being overwritten immediately
-        from .serve import construct_ssl_args
+        from .serve import construct_ssl_args, construct_timeouts_args
 
         super().__init__(
             bento,
@@ -368,6 +368,13 @@ class HTTPServer(Server[HTTPClient]):
         )
 
         self.args.extend(construct_ssl_args(**ssl_args))
+
+        timeouts_args = {
+            "timeout_keep_alive": timeout_keep_alive,
+            "timeout_graceful_shutdown": timeout_graceful_shutdown,
+        }
+
+        self.args.extend(construct_timeouts_args(**timeouts_args))
 
     def get_client(self) -> HTTPClient:
         return super().get_client()

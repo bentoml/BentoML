@@ -83,6 +83,18 @@ import click
     help="Ciphers to use (see stdlib 'ssl' module)",
 )
 @click.option(
+    "--timeout-keep-alive",
+    type=int,
+    default=5,
+    help="Close Keep-Alive connections if no new data is received within this timeout. Default: 5",
+)
+@click.option(
+    "--timeout-graceful-shutdown",
+    type=int,
+    default=None,
+    help="Maximum number of seconds to wait for graceful shutdown. After this timeout, the server will start terminating requests.",
+)
+@click.option(
     "--development-mode",
     type=click.BOOL,
     help="Run the API server in development mode",
@@ -111,6 +123,8 @@ def main(
     ssl_cert_reqs: int | None,
     ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
+    timeout_keep_alive: int,
+    timeout_graceful_shutdown: int | None,
     development_mode: bool,
     timeout: int,
 ):
@@ -192,6 +206,8 @@ def main(
         ssl_keyfile=ssl_keyfile,
         ssl_keyfile_password=ssl_keyfile_password,
         ssl_ca_certs=ssl_ca_certs,
+        timeout_keep_alive=timeout_keep_alive,
+        timeout_graceful_shutdown=timeout_graceful_shutdown,
         server_header=False,
         **uvicorn_extra_options,
     )

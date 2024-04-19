@@ -5,8 +5,7 @@ import json
 import logging
 import os
 
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner.runner import Runner
@@ -44,8 +43,7 @@ def start_runner_server(
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from .serve import create_watcher
-    from .serve import find_triton_binary
+    from .serve import create_watcher, find_triton_binary
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -159,6 +157,10 @@ def start_http_server(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+    timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
+    timeout_graceful_shutdown: int | None = Provide[
+        BentoMLContainer.timeouts.graceful_shutdown
+    ],
 ) -> None:
     from .serve import ensure_prometheus_dir
 
@@ -170,10 +172,13 @@ def start_http_server(
     from . import load
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from .serve import API_SERVER_NAME
-    from .serve import PROMETHEUS_MESSAGE
-    from .serve import construct_ssl_args
-    from .serve import create_watcher
+    from .serve import (
+        API_SERVER_NAME,
+        PROMETHEUS_MESSAGE,
+        construct_ssl_args,
+        construct_timeouts_args,
+        create_watcher,
+    )
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -201,6 +206,10 @@ def start_http_server(
         ssl_ca_certs=ssl_ca_certs,
         ssl_ciphers=ssl_ciphers,
     )
+    timeouts_args = construct_timeouts_args(
+        timeout_keep_alive=timeout_keep_alive,
+        timeout_graceful_shutdown=timeout_graceful_shutdown,
+    )
     scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     watchers.append(
         create_watcher(
@@ -222,6 +231,7 @@ def start_http_server(
                 "--prometheus-dir",
                 prometheus_dir,
                 *ssl_args,
+                *timeouts_args,
                 *timeout_args,
             ],
             working_dir=working_dir,
@@ -284,10 +294,12 @@ def start_grpc_server(
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from .serve import PROMETHEUS_MESSAGE
-    from .serve import PROMETHEUS_SERVER_NAME
-    from .serve import construct_ssl_args
-    from .serve import create_watcher
+    from .serve import (
+        PROMETHEUS_MESSAGE,
+        PROMETHEUS_SERVER_NAME,
+        construct_ssl_args,
+        create_watcher,
+    )
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)

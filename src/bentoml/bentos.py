@@ -12,24 +12,23 @@ import sys
 import tempfile
 import typing as t
 
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 
 from ._internal.bento import Bento
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.tag import Tag
 from ._internal.utils import resolve_user_filepath
-from .exceptions import BadInput
-from .exceptions import BentoMLException
-from .exceptions import InvalidArgument
+from .exceptions import BadInput, BentoMLException, InvalidArgument
 
 if t.TYPE_CHECKING:
     from ._internal.bento import BentoStore
-    from ._internal.bento.build_config import CondaOptions
-    from ._internal.bento.build_config import DockerOptions
-    from ._internal.bento.build_config import ModelSpec
-    from ._internal.bento.build_config import PythonOptions
+    from ._internal.bento.build_config import (
+        CondaOptions,
+        DockerOptions,
+        ModelSpec,
+        PythonOptions,
+    )
     from ._internal.cloud import BentoCloudClient
     from .server import Server
 
@@ -498,6 +497,10 @@ def serve(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+    timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
+    timeout_graceful_shutdown: int | None = Provide[
+        BentoMLContainer.timeouts.graceful_shutdown
+    ],
     enable_reflection: bool = Provide[BentoMLContainer.grpc.reflection.enabled],
     enable_channelz: bool = Provide[BentoMLContainer.grpc.channelz.enabled],
     max_concurrent_streams: int | None = Provide[
@@ -534,6 +537,8 @@ def serve(
             ssl_cert_reqs=ssl_cert_reqs,
             ssl_ca_certs=ssl_ca_certs,
             ssl_ciphers=ssl_ciphers,
+            timeout_keep_alive=timeout_keep_alive,
+            timeout_graceful_shutdown=timeout_graceful_shutdown,
         )
     elif server_type == "grpc":
         from .server import GrpcServer

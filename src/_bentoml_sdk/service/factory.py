@@ -7,12 +7,10 @@ import os
 import pathlib
 import sys
 import typing as t
-from functools import lru_cache
-from functools import partial
+from functools import lru_cache, partial
 
 import attrs
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 from typing_extensions import Unpack
 
 from bentoml import Runner
@@ -242,8 +240,10 @@ class Service(t.Generic[T]):
 
     def inject_config(self) -> None:
         from bentoml._internal.configuration import load_config
-        from bentoml._internal.configuration.containers import BentoMLContainer
-        from bentoml._internal.configuration.containers import config_merger
+        from bentoml._internal.configuration.containers import (
+            BentoMLContainer,
+            config_merger,
+        )
 
         # XXX: ensure at least one item to make `flatten_dict` work
         override_defaults = {
@@ -295,6 +295,10 @@ class Service(t.Generic[T]):
         ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
         ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
         ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+        timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
+        timeout_graceful_shutdown: int | None = Provide[
+            BentoMLContainer.timeouts.graceful_shutdown
+        ],
         bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
         development_mode: bool = False,
         reload: bool = False,
@@ -319,6 +323,8 @@ class Service(t.Generic[T]):
             ssl_cert_reqs=ssl_cert_reqs,
             ssl_ca_certs=ssl_ca_certs,
             ssl_ciphers=ssl_ciphers,
+            timeout_keep_alive=timeout_keep_alive,
+            timeout_graceful_shutdown=timeout_graceful_shutdown,
             bentoml_home=bentoml_home,
             development_mode=development_mode,
             reload=reload,

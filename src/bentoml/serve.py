@@ -15,16 +15,14 @@ from functools import partial
 from pathlib import Path
 
 import psutil
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 
 from bentoml._internal.log import SERVER_LOGGING_CONFIG
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner.runner import Runner
 from ._internal.utils import is_async_callable
-from .exceptions import BentoMLConfigException
-from .exceptions import BentoMLException
+from .exceptions import BentoMLConfigException, BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
 
 if t.TYPE_CHECKING:
@@ -170,6 +168,20 @@ def construct_ssl_args(
     return args
 
 
+def construct_timeouts_args(
+    timeout_keep_alive: int | None,
+    timeout_graceful_shutdown: int | None,
+) -> list[str]:
+    args: list[str] = []
+
+    if timeout_keep_alive:
+        args.extend(["--timeout-keep-alive", str(timeout_keep_alive)])
+    if timeout_graceful_shutdown:
+        args.extend(["--timeout-graceful-shutdown", str(timeout_graceful_shutdown)])
+
+    return args
+
+
 def find_triton_binary():
     binary = shutil.which("tritonserver")
     if binary is None:
@@ -218,6 +230,10 @@ def serve_http_development(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+    timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
+    timeout_graceful_shutdown: int | None = Provide[
+        BentoMLContainer.timeouts.graceful_shutdown
+    ],
     reload: bool = False,
 ) -> None:
     logger.warning(
@@ -238,6 +254,8 @@ def serve_http_development(
         ssl_cert_reqs=ssl_cert_reqs,
         ssl_ca_certs=ssl_ca_certs,
         ssl_ciphers=ssl_ciphers,
+        timeout_keep_alive=timeout_keep_alive,
+        timeout_graceful_shutdown=timeout_graceful_shutdown,
         reload=reload,
         api_workers=1,
         development_mode=True,
@@ -298,6 +316,10 @@ def serve_http_production(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+    timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
+    timeout_graceful_shutdown: int | None = Provide[
+        BentoMLContainer.timeouts.graceful_shutdown
+    ],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     development_mode: bool = False,
     reload: bool = False,
@@ -305,8 +327,7 @@ def serve_http_production(
     prometheus_dir = ensure_prometheus_dir()
 
     import ipaddress
-    from socket import AF_INET
-    from socket import AF_INET6
+    from socket import AF_INET, AF_INET6
 
     from circus.sockets import CircusSocket
 
@@ -428,6 +449,11 @@ def serve_http_production(
         ssl_ciphers=ssl_ciphers,
     )
 
+    timeouts_args = construct_timeouts_args(
+        timeout_keep_alive=timeout_keep_alive,
+        timeout_graceful_shutdown=timeout_graceful_shutdown,
+    )
+
     api_server_args = [
         "-m",
         SCRIPT_API_SERVER,
@@ -445,6 +471,7 @@ def serve_http_production(
         "--prometheus-dir",
         prometheus_dir,
         *ssl_args,
+        *timeouts_args,
         *timeout_args,
     ]
 

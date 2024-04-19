@@ -13,8 +13,7 @@ import tempfile
 import typing as t
 
 import attrs
-from simple_di import Provide
-from simple_di import inject
+from simple_di import Provide, inject
 
 from _bentoml_sdk import Service
 from bentoml._internal.container import BentoMLContainer
@@ -153,6 +152,10 @@ def serve_http(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+    timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
+    timeout_graceful_shutdown: int | None = Provide[
+        BentoMLContainer.timeouts.graceful_shutdown
+    ],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     development_mode: bool = False,
     reload: bool = False,
@@ -166,13 +169,15 @@ def serve_http(
     from bentoml._internal.utils import reserve_free_port
     from bentoml._internal.utils.analytics.usage_stats import track_serve
     from bentoml._internal.utils.circus import create_standalone_arbiter
-    from bentoml.serve import construct_ssl_args
-    from bentoml.serve import create_watcher
-    from bentoml.serve import ensure_prometheus_dir
-    from bentoml.serve import make_reload_plugin
+    from bentoml.serve import (
+        construct_ssl_args,
+        construct_timeouts_args,
+        create_watcher,
+        ensure_prometheus_dir,
+        make_reload_plugin,
+    )
 
-    from ..loader import import_service
-    from ..loader import normalize_identifier
+    from ..loader import import_service, normalize_identifier
     from .allocator import ResourceAllocator
 
     prometheus_dir = ensure_prometheus_dir()
@@ -257,6 +262,10 @@ def serve_http(
             ssl_ca_certs=ssl_ca_certs,
             ssl_ciphers=ssl_ciphers,
         )
+        timeouts_args = construct_timeouts_args(
+            timeout_keep_alive=timeout_keep_alive,
+            timeout_graceful_shutdown=timeout_graceful_shutdown,
+        )
         timeout_args = ["--timeout", str(timeout)] if timeout else []
 
         server_args = [
@@ -274,6 +283,7 @@ def serve_http(
             "--prometheus-dir",
             prometheus_dir,
             *ssl_args,
+            *timeouts_args,
             *timeout_args,
         ]
         if worker_envs:

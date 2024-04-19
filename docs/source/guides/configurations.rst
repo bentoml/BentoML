@@ -225,6 +225,21 @@ BentoML parses all the available fields directly to `Uvicorn <https://www.uvicor
     class MyService:
         # Service implementation
 
+``timeouts``
+^^^^^^^^^^^
+
+``timeouts`` allows you to set the timeout for keep alive and graceful shutdown.
+
+BentoML parses all the available fields directly to `Uvicorn <https://www.uvicorn.org/settings/#timeouts>`_. Here is an example:
+.. code-block:: python
+
+    @bentoml.service(timeouts={
+        "keep_alive": 60,
+        "graceful_shutdown": 120,
+    })
+    class MyService:
+        # Service implementation
+
 ``http``
 ^^^^^^^^
 

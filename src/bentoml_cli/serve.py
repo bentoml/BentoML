@@ -51,8 +51,7 @@ def build_serve_command() -> click.Group:
     from bentoml._internal.log import configure_server_logging
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
     from bentoml_cli.env_manager import env_manager
-    from bentoml_cli.utils import AliasCommand
-    from bentoml_cli.utils import BentoMLCommandGroup
+    from bentoml_cli.utils import AliasCommand, BentoMLCommandGroup
 
     @click.group(name="serve", cls=BentoMLCommandGroup)
     def cli():
@@ -189,6 +188,22 @@ def build_serve_command() -> click.Group:
         show_default=True,
         hidden=True,
     )
+    @click.option(
+        "--timeout-keep-alive",
+        type=int,
+        default=BentoMLContainer.timeouts.keep_alive.get(),
+        help="Close Keep-Alive connections if no new data is received within this timeout. Default: 5",
+        show_default=True,
+        hidden=True,
+    )
+    @click.option(
+        "--timeout-graceful-shutdown",
+        type=int,
+        default=BentoMLContainer.timeouts.graceful_shutdown.get(),
+        help="Maximum number of seconds to wait for graceful shutdown. After this timeout, the server will start terminating requests.",
+        show_default=True,
+        hidden=True,
+    )
     @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,
@@ -207,6 +222,8 @@ def build_serve_command() -> click.Group:
         ssl_cert_reqs: int | None,
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
+        timeout_keep_alive: int | None,
+        timeout_graceful_shutdown: int | None,
         **attrs: t.Any,
     ) -> None:
         """Start a HTTP BentoServer from a given 🍱
@@ -274,6 +291,8 @@ def build_serve_command() -> click.Group:
                     ssl_cert_reqs=ssl_cert_reqs,
                     ssl_ca_certs=ssl_ca_certs,
                     ssl_ciphers=ssl_ciphers,
+                    timeout_keep_alive=timeout_keep_alive,
+                    timeout_graceful_shutdown=timeout_graceful_shutdown,
                     reload=reload,
                     development_mode=True,
                 )
@@ -292,6 +311,8 @@ def build_serve_command() -> click.Group:
                     ssl_cert_reqs=ssl_cert_reqs,
                     ssl_ca_certs=ssl_ca_certs,
                     ssl_ciphers=ssl_ciphers,
+                    timeout_keep_alive=timeout_keep_alive,
+                    timeout_graceful_shutdown=timeout_graceful_shutdown,
                     reload=reload,
                     development_mode=False,
                 )
@@ -315,6 +336,8 @@ def build_serve_command() -> click.Group:
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
+                timeout_keep_alive=timeout_keep_alive,
+                timeout_graceful_shutdown=timeout_graceful_shutdown,
                 development_mode=development,
                 reload=reload,
             )

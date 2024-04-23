@@ -117,6 +117,8 @@ def main(
     """
     Start a HTTP server worker for given service.
     """
+    import socket
+
     import psutil
     import uvicorn
 
@@ -182,9 +184,8 @@ def main(
 
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
-    uvicorn.run(
+    config = uvicorn.Config(
         app=asgi_app,
-        fd=fd,
         backlog=backlog,
         log_config=None,
         workers=1,
@@ -195,6 +196,8 @@ def main(
         server_header=False,
         **uvicorn_extra_options,
     )
+    socket = socket.socket(fileno=fd)
+    uvicorn.Server(config).run(sockets=[socket])
 
 
 if __name__ == "__main__":

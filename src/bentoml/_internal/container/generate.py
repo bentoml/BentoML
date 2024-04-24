@@ -57,6 +57,7 @@ def get_templates_variables(
     conda: CondaOptions,
     bento_fs: FS,
     *,
+    python_packages: dict[str, str] | None = None,
     _is_cuda: bool = False,
     **bento_env: str | bool,
 ) -> dict[str, t.Any]:
@@ -97,6 +98,8 @@ def get_templates_variables(
     if bento_env:
         default_env.update(bento_env)
 
+    PREHEAT_PIP_PACKAGES = ["torch", "vllm"]
+
     return {
         **{to_options_field(k): v for k, v in docker.to_dict().items()},
         **{to_bento_field(k): v for k, v in default_env.items()},
@@ -104,6 +107,11 @@ def get_templates_variables(
         "__base_image__": base_image,
         "__conda_python_version__": conda_python_version,
         "__is_cuda__": _is_cuda,
+        "__pip_preheat_packages__": {
+            k: python_packages[k]
+            for k in PREHEAT_PIP_PACKAGES
+            if python_packages and python_packages.get(k)
+        },
     }
 
 
@@ -190,12 +198,53 @@ def generate_containerfile(
             globals={"bento_base_template": template, **J2_FUNCTION},
         )
 
+    try:
+        requirement_file = resolve_user_filepath(
+            "env/python/requirements.lock.txt", build_ctx
+        )
+    except FileNotFoundError:
+        try:
+            requirement_file = resolve_user_filepath(
+                "env/python/requirements.txt", build_ctx
+            )
+        except FileNotFoundError:
+            requirement_file = None
+
+    python_packages = (
+        _resolve_package_versions(requirement_file) if requirement_file else {}
+    )
+
     return template.render(
         **get_templates_variables(
             docker,
             conda,
             bento_fs,
+            python_packages=python_packages,
             _is_cuda=release_type == "cuda",
             **override_bento_env,
         )
     )
+
+
+def _resolve_package_versions(requirement: str) -> dict[str, str]:
+    from pip_requirements_parser import RequirementsFile
+
+    requirements_txt = RequirementsFile.from_file(
+        requirement,
+        include_nested=True,
+    )
+    versions: dict[str, str] = {}
+    for req in requirements_txt.requirements:
+        if (
+            req.is_editable
+            or req.is_local_path
+            or req.is_url
+            or req.is_wheel
+            or not req.name
+        ):
+            continue
+        for sp in req.specifier:
+            if sp.operator == "==":
+                versions[req.name] = sp.version
+                break
+    return versions
